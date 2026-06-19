@@ -2,6 +2,7 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react"
@@ -219,17 +220,41 @@ const SlashMenuView = forwardRef<MenuHandle, MenuProps>(function SlashMenuView(
     },
   }))
 
+  const menuRef = useRef<HTMLDivElement>(null)
   const rect = clientRect?.()
+  const [pos, setPos] = useState<{ left: number; top: number }>(() => ({
+    left: rect ? rect.left : 0,
+    top: rect ? rect.bottom + 6 : 0,
+  }))
+
+  // Position below the cursor, but flip above when there isn't room below
+  // (e.g. triggered near the bottom of the viewport). Measured after render.
+  useLayoutEffect(() => {
+    const r = clientRect?.()
+    const el = menuRef.current
+    if (!r || !el) return
+    const margin = 6
+    const menuH = el.offsetHeight
+    const menuW = el.offsetWidth
+    const spaceBelow = window.innerHeight - r.bottom
+    let top = r.bottom + margin
+    if (spaceBelow < menuH + margin && r.top - margin > menuH) {
+      top = r.top - menuH - margin
+    }
+    top = Math.max(margin, Math.min(top, window.innerHeight - menuH - margin))
+    let left = Math.min(r.left, window.innerWidth - menuW - margin)
+    left = Math.max(margin, left)
+    if (left !== pos.left || top !== pos.top) setPos({ left, top })
+  }, [clientRect, items, pos.left, pos.top])
+
   if (!rect) return null
 
-  const style: React.CSSProperties = {
-    position: "fixed",
-    left: rect.left,
-    top: rect.bottom + 6,
-  }
-
   return (
-    <div className="slash-menu" style={style}>
+    <div
+      ref={menuRef}
+      className="slash-menu"
+      style={{ position: "fixed", left: pos.left, top: pos.top }}
+    >
       {items.length === 0 && <div className="slash-empty">No matching blocks</div>}
       {items.map((item, i) => (
         <button
