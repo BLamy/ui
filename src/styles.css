@@ -150,24 +150,25 @@
 .gb-tabs-title-input { width: 7ch; font-size: 0.8125rem; }
 .gb-tabs-content { padding: 0.75rem 0.875rem; }
 
-/* Show only the active tab panel (data-active is the active index). */
-.gb-tabs-content > .gb-tab { display: none; }
-.gb-tabs-content[data-active="0"] > .gb-tab:nth-child(1),
-.gb-tabs-content[data-active="1"] > .gb-tab:nth-child(2),
-.gb-tabs-content[data-active="2"] > .gb-tab:nth-child(3),
-.gb-tabs-content[data-active="3"] > .gb-tab:nth-child(4),
-.gb-tabs-content[data-active="4"] > .gb-tab:nth-child(5),
-.gb-tabs-content[data-active="5"] > .gb-tab:nth-child(6),
-.gb-tabs-content[data-active="6"] > .gb-tab:nth-child(7),
-.gb-tabs-content[data-active="7"] > .gb-tab:nth-child(8),
-.gb-tabs-content[data-active="8"] > .gb-tab:nth-child(9),
-.gb-tabs-content[data-active="9"] > .gb-tab:nth-child(10),
-.gb-tabs-content[data-active="10"] > .gb-tab:nth-child(11),
-.gb-tabs-content[data-active="11"] > .gb-tab:nth-child(12) {
+/* Show only the active tab panel (data-active is the active index). The .gb-tab
+   panels sit inside a NodeViewContent wrapper, so use a descendant combinator. */
+.gb-tabs-content .gb-tab { display: none; }
+.gb-tabs-content[data-active="0"] .gb-tab:nth-child(1),
+.gb-tabs-content[data-active="1"] .gb-tab:nth-child(2),
+.gb-tabs-content[data-active="2"] .gb-tab:nth-child(3),
+.gb-tabs-content[data-active="3"] .gb-tab:nth-child(4),
+.gb-tabs-content[data-active="4"] .gb-tab:nth-child(5),
+.gb-tabs-content[data-active="5"] .gb-tab:nth-child(6),
+.gb-tabs-content[data-active="6"] .gb-tab:nth-child(7),
+.gb-tabs-content[data-active="7"] .gb-tab:nth-child(8),
+.gb-tabs-content[data-active="8"] .gb-tab:nth-child(9),
+.gb-tabs-content[data-active="9"] .gb-tab:nth-child(10),
+.gb-tabs-content[data-active="10"] .gb-tab:nth-child(11),
+.gb-tabs-content[data-active="11"] .gb-tab:nth-child(12) {
   display: block;
 }
-.gb-tabs-content > .gb-tab > :first-child { margin-top: 0; }
-.gb-tabs-content > .gb-tab > :last-child { margin-bottom: 0; }
+.gb-tabs-content .gb-tab > :first-child { margin-top: 0; }
+.gb-tabs-content .gb-tab > :last-child { margin-bottom: 0; }
 
 /* ── Stepper ────────────────────────────────────────────── */
 .gb-stepper { margin: 0.75rem 0; }
