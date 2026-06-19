@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream-editor",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "TipTap editor for Docstream GitBook-style markdown documents.",
   "type": "module",
   "main": "./src/index.ts",
