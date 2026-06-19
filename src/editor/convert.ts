@@ -1,4 +1,4 @@
-import { plainText, type Block, type DocumentNode, type Inline, type ListItemNode } from "@brett_lamy/docstream"
+import { plainText, type Block, type DocumentNode, type Inline, type ListItemNode } from "@brett_lamy/docstream/gitbook"
 
 // TipTap/ProseMirror JSON shape (loosely typed on purpose)
 export interface PMNode {

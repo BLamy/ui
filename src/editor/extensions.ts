@@ -2,7 +2,8 @@ import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
 import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table"
-import type { AnyExtension } from "@tiptap/core"
+import { getSchema, type AnyExtension } from "@tiptap/core"
+import type { Schema } from "@tiptap/pm/model"
 import { GbCodeBlock, gitbookNodes } from "./nodes"
 import { SlashMenu, createSlashMenu, type SlashItem } from "./slash-menu"
 
@@ -61,4 +62,13 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
 
   list.push(...extensions)
   return list
+}
+
+/**
+ * The ProseMirror schema for GitBook documents — identical to what GitbookEditor
+ * uses. Hosts wiring Yjs collaboration (y-prosemirror) need this exact schema to
+ * convert between a Y.XmlFragment and ProseMirror/markdown safely.
+ */
+export function getGitbookSchema(): Schema {
+  return getSchema(createGitbookExtensions({ slashMenu: false }))
 }

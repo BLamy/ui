@@ -10,7 +10,7 @@ import {
   Strikethrough,
 } from "lucide-react"
 
-import { parseMarkdown, serializeMarkdown } from "@brett_lamy/docstream"
+import { parseMarkdown, serializeMarkdown } from "@brett_lamy/docstream/gitbook"
 import { astToTiptap, tiptapToAst, type PMNode } from "./convert"
 import { createGitbookExtensions } from "./extensions"
 import type { SlashItem } from "./slash-menu"

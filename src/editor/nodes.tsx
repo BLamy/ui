@@ -18,7 +18,9 @@ import {
   XCircle,
 } from "lucide-react"
 
-import { OpenApiOperation, resolveAsset, type HintStyle } from "@brett_lamy/docstream"
+import { resolveAsset } from "@brett_lamy/docstream/assets"
+import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
+import type { HintStyle } from "@brett_lamy/docstream/gitbook"
 
 // ---------- Hint ----------
 
