@@ -10,8 +10,8 @@ export type {
   ReplaySource,
 } from "./replay"
 export { isReplayQaUrl, normalizeReplayEmbedUrl } from "./replay"
-export { VideoEmbed } from "@brett_lamy/viz-engine"
-export type { VideoEmbedProps } from "@brett_lamy/viz-engine"
+export { VideoEmbed } from "./video"
+export type { VideoEmbedProps } from "./video"
 export { OpenApiOperation } from "./openapi/OpenApiOperation"
 export { resolveAsset, setAssetBase } from "./assets"
 export { parseMarkdown, parseBlocks } from "./gitbook/parse"

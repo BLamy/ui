@@ -11,7 +11,7 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 - Parser and serializer for round-tripping supported GitBook syntax.
 - Syntax-highlighted code blocks through `lowlight`.
 - GitBook block support for hints, tabs, expandables, steppers, embeds, content refs, columns, figures, tables, math, dividers, updates, and OpenAPI operations.
-- Embed blocks render YouTube/direct video URLs through `VideoEmbed` from `@brett_lamy/viz-engine` and public Loop QA task, journey, exploration, or test-run URLs through the built-in `ReplayPreview`.
+- Embed blocks render YouTube/direct video URLs through the built-in `VideoEmbed` and public Loop QA task, journey, exploration, or test-run URLs through `ReplayPreview`.
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.
 
 ## Installation

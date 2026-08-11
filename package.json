@@ -33,10 +33,13 @@
       "types": "./src/replay/index.ts",
       "import": "./src/replay/index.ts"
     },
+    "./video": {
+      "types": "./src/video/index.ts",
+      "import": "./src/video/index.ts"
+    },
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
-    "@brett_lamy/viz-engine": "^0.1.0",
     "hast-util-to-html": "^9.0.5",
     "lowlight": "^3.3.0",
     "lucide-react": "^1.17.0",
