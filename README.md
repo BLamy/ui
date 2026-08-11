@@ -11,6 +11,7 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 - Parser and serializer for round-tripping supported GitBook syntax.
 - Syntax-highlighted code blocks through `lowlight`.
 - GitBook block support for hints, tabs, expandables, steppers, embeds, content refs, columns, figures, tables, math, dividers, updates, and OpenAPI operations.
+- Embed blocks render YouTube/direct video URLs through `VideoEmbed` from `@brett_lamy/viz-engine` and public Loop QA task, journey, exploration, or test-run URLs through the built-in `ReplayPreview`.
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.
 
 ## Installation
@@ -77,6 +78,25 @@ import { MarkdownContent } from "@brett_lamy/docstream"
 export function Preview({ markdown }: { markdown: string }) {
   return <MarkdownContent markdown={markdown} />
 }
+```
+
+## Video and Replay QA embeds
+
+`embed` blocks accept direct `.mp4`, `.webm`, and `.ogg` assets, YouTube URLs,
+and public Loop QA project URLs. Loop QA project URLs are converted to the
+chrome-free `/p/...` route automatically:
+
+```md
+{% embed url="https://loop-qa.replay.io/projects/project-id/journeys/journey-id" /%}
+```
+
+The replay component is also available directly when a document needs a
+custom source or native rrweb events:
+
+```tsx
+import { ReplayPreview } from "@brett_lamy/docstream"
+
+<ReplayPreview source="https://loop-qa.replay.io/projects/project-id/tasks/task-id" />
 ```
 
 ## GitBook Syntax
@@ -158,6 +178,8 @@ You can also resolve paths yourself with `resolveAsset`.
 - `GitbookStreamdown`: Parses and renders markdown for read-only stream output.
 - `DocsRenderer`: Renders a parsed `DocumentNode`.
 - `MarkdownContent`: Parses and renders a markdown string.
+- `ReplayPreview` / `ReplayEmbed`: Embeds public Loop QA pages or plays CORS-enabled rrweb event data.
+- `VideoEmbed`: Renders direct video assets or hosted video players.
 - `OpenApiOperation`: Renders a parsed OpenAPI operation block.
 
 ### Parser and Serializer

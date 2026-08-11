@@ -29,13 +29,19 @@
       "types": "./src/openapi/OpenApiOperation.tsx",
       "import": "./src/openapi/OpenApiOperation.tsx"
     },
+    "./replay": {
+      "types": "./src/replay/index.ts",
+      "import": "./src/replay/index.ts"
+    },
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
+    "@brett_lamy/viz-engine": "^0.1.0",
     "hast-util-to-html": "^9.0.5",
     "lowlight": "^3.3.0",
     "lucide-react": "^1.17.0",
     "mermaid": "^11.15.0",
+    "rrweb": "2.0.0-alpha.20",
     "streamdown": "^2.5.0",
     "yaml": "^2.9.0"
   },
