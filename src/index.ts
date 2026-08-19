@@ -12,6 +12,8 @@ export type {
 export { isReplayQaUrl, normalizeReplayEmbedUrl } from "./replay"
 export { VideoEmbed } from "./video"
 export type { VideoEmbedProps } from "./video"
+export { VizEmbed } from "./viz"
+export type { VizEmbedProps } from "./viz"
 export { OpenApiOperation } from "./openapi/OpenApiOperation"
 export {
   ReactCodePreview,

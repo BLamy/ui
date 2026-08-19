@@ -60,8 +60,18 @@ function serializeBlock(b: Block): string {
         })
         .join("\n\n")}\n{% endstepper %}`
 
-    case "embed":
-      return `{% embed url="${b.url}" %}`
+    case "embed": {
+      const attrs = [
+        ` url="${b.url}"`,
+        b.title ? ` title="${b.title}"` : "",
+        b.poster ? ` poster="${b.poster}"` : "",
+        b.autoplay === undefined ? "" : ` autoplay="${b.autoplay}"`,
+        b.loop === undefined ? "" : ` loop="${b.loop}"`,
+        b.muted === undefined ? "" : ` muted="${b.muted}"`,
+        b.controls === undefined ? "" : ` controls="${b.controls}"`,
+      ].join("")
+      return `{% embed${attrs} %}`
+    }
 
     case "content-ref":
       return `{% content-ref url="${b.url}" %}\n${serializeInline(b.children)}\n{% endcontent-ref %}`

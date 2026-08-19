@@ -85,6 +85,12 @@ export interface StepperNode {
 export interface EmbedNode {
   type: "embed"
   url: string
+  title?: string
+  autoplay?: boolean
+  loop?: boolean
+  muted?: boolean
+  controls?: boolean
+  poster?: string
 }
 
 export interface ContentRefNode {

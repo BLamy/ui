@@ -66,6 +66,11 @@ function parseAttrs(raw: string | undefined): Record<string, string> {
   return attrs
 }
 
+function booleanAttr(attrs: Record<string, string>, key: string): boolean | undefined {
+  if (!(key in attrs)) return undefined
+  return attrs[key] !== "false"
+}
+
 interface TemplateTag {
   name: string
   attrs: Record<string, string>
@@ -197,7 +202,24 @@ export function parseBlocks(lines: string[]): Block[] {
       }
 
       if (tag.name === "embed") {
-        blocks.push({ type: "embed", url: tag.attrs.url ?? "" })
+        blocks.push({
+          type: "embed",
+          url: tag.attrs.url ?? "",
+          ...(tag.attrs.title ? { title: tag.attrs.title } : {}),
+          ...(tag.attrs.poster ? { poster: tag.attrs.poster } : {}),
+          ...(booleanAttr(tag.attrs, "autoplay") === undefined
+            ? {}
+            : { autoplay: booleanAttr(tag.attrs, "autoplay") }),
+          ...(booleanAttr(tag.attrs, "loop") === undefined
+            ? {}
+            : { loop: booleanAttr(tag.attrs, "loop") }),
+          ...(booleanAttr(tag.attrs, "muted") === undefined
+            ? {}
+            : { muted: booleanAttr(tag.attrs, "muted") }),
+          ...(booleanAttr(tag.attrs, "controls") === undefined
+            ? {}
+            : { controls: booleanAttr(tag.attrs, "controls") }),
+        })
         i++
         // tolerate optional {% endembed %}
         if (i < lines.length && templateTag(lines[i])?.name === "endembed") i++

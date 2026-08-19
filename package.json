@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "type": "module",
   "main": "./src/index.ts",
@@ -37,6 +37,10 @@
       "types": "./src/video/index.ts",
       "import": "./src/video/index.ts"
     },
+    "./viz": {
+      "types": "./src/viz/index.ts",
+      "import": "./src/viz/index.ts"
+    },
     "./playground": {
       "types": "./src/playground/index.ts",
       "import": "./src/playground/index.ts"
@@ -50,14 +54,21 @@
     "mermaid": "^11.15.0",
     "rrweb": "2.0.0-alpha.20",
     "streamdown": "^2.5.0",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "@brett_lamy/viz-engine": "^0.2.0"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "@agent-wasm/core": ">=0.4.0"
+    "@agent-wasm/core": ">=0.4.0",
+    "@brett_lamy/viz-engine": ">=0.2.0",
+    "react": ">=18"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/BLamy/docstream.git"
+  },
+  "devDependencies": {
+    "@agent-wasm/core": "^0.4.0",
+    "@types/react": "^18.3.3",
+    "typescript": "^5.5.4"
   }
 }

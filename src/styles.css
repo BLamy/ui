@@ -122,6 +122,22 @@
   margin-top: 8px;
 }
 
+.docstream-viz {
+  margin: 1.5rem 0;
+}
+
+.docstream-viz__player {
+  overflow: hidden;
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  background: var(--gb-muted);
+}
+
+.docstream-viz figcaption {
+  margin-top: 8px;
+  color: var(--gb-muted-foreground);
+}
+
 .docs-hint {
   display: flex;
   gap: 12px;
