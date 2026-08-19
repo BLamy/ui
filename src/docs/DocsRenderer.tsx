@@ -336,8 +336,16 @@ function Blocks({ blocks, inline, liveRenderer }: { blocks: Block[]; inline?: bo
 
 // Renders a markdown string inline — used for embedded markdown like
 // OpenAPI descriptions, which can themselves contain GitBook blocks.
-export function MarkdownContent({ markdown, liveRenderer }: { markdown: string; liveRenderer?: LivePreviewRenderer }) {
-  return <Blocks blocks={parseMarkdown(markdown).children} liveRenderer={liveRenderer} />
+export function MarkdownContent({
+  markdown,
+  liveRenderer,
+  className,
+}: { markdown: string; liveRenderer?: LivePreviewRenderer; className?: string }) {
+  return (
+    <div data-docstream="" className={className}>
+      <Blocks blocks={parseMarkdown(markdown).children} liveRenderer={liveRenderer} />
+    </div>
+  )
 }
 
 export function DocsRenderer({ doc, liveRenderer }: { doc: DocumentNode; liveRenderer?: LivePreviewRenderer }) {
