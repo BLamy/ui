@@ -5,6 +5,7 @@ import { GitbookEditor } from '@brett_lamy/docstream-editor';
 import '@brett_lamy/docstream/styles.css';
 import '@brett_lamy/docstream-editor/styles.css';
 import { PAGES } from './content';
+import { liveRenderer } from './live-renderer';
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif";
 const MONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace";
@@ -76,7 +77,7 @@ function App() {
       </nav>
       <main style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: cur.demo === 'playground' ? 1100 : 760, padding: '28px 32px 80px', boxSizing: 'border-box' }}>
-          <MarkdownContent markdown={cur.markdown} />
+          <MarkdownContent markdown={cur.markdown} liveRenderer={liveRenderer} />
           {cur.demo === 'playground' ? <Playground /> : null}
           {cur.demo === 'readonly' ? <ReadonlyPlayground /> : null}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 48, borderTop: '1px solid #e6e6ee', paddingTop: 16 }}>

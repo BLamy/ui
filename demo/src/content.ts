@@ -101,6 +101,15 @@ The complete prop reference for the batteries-included editor component.
 
 The component tracks the last markdown it emitted through \`onChange\`. When the \`markdown\` prop changes to something else (e.g. the host switched files), the content is reset via \`setContent\` without emitting an update; when the prop merely echoes the editor's own output, nothing happens. This avoids caret jumps and infinite loops in the common state-lift pattern.
 
+{% code title="GitbookEditor, toolbar={false}" live="true" %}
+\`\`\`jsx
+// demo:editor-basic
+<GitbookEditor markdown={md} onChange={setMd} toolbar={false} />
+\`\`\`
+{% endcode %}
+
+The serialized markdown below the editor updates on every edit.
+
 ## Yjs collaboration
 
 \`\`\`tsx
@@ -136,6 +145,13 @@ The same component with \`toolbar={false}\` and \`editable={false}\` — useful 
 \`\`\`tsx
 <GitbookEditor markdown={md} toolbar={false} editable={false} />
 \`\`\`
+
+{% code title="Read-only GitbookEditor" live="true" %}
+\`\`\`jsx
+// demo:editor-readonly
+<GitbookEditor markdown={md} toolbar={false} editable={false} />
+\`\`\`
+{% endcode %}
 `,
   },
   {
@@ -196,6 +212,17 @@ const SlashMenuExt = createSlashMenu(items)
 \`\`\`
 
 \`SlashMenu\` (the default instance, \`createSlashMenu()\`) is also exported. On selection the menu deletes the "/query" range and calls the item's \`run\` with the editor.
+
+## Try it
+
+Click into the editor below and press \`/\`:
+
+{% code title="Slash menu playground" live="true" %}
+\`\`\`jsx
+// demo:editor-slash
+<GitbookEditor markdown="" toolbar={false} autofocus />
+\`\`\`
+{% endcode %}
 `,
   },
   {
