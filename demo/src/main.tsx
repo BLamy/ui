@@ -4,117 +4,10 @@ import { MarkdownContent } from '@brett_lamy/docstream';
 import { GitbookEditor } from '@brett_lamy/docstream-editor';
 import '@brett_lamy/docstream/styles.css';
 import '@brett_lamy/docstream-editor/styles.css';
+import { PAGES } from './content';
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif";
 const MONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace";
-
-interface DocPage { id: string; title: string; markdown: string; playground?: boolean }
-
-const PAGES: DocPage[] = [
-  {
-    id: 'introduction',
-    title: 'Introduction',
-    markdown: `# docstream-editor
-
-A rich GitBook-flavored markdown **editor** built on [Tiptap](https://tiptap.dev), paired with [@brett_lamy/docstream](https://www.npmjs.com/package/@brett_lamy/docstream) for parsing and serialization.
-
-{% hint style="info" %}
-The prose on this site is rendered by docstream; the playground page embeds the actual \`GitbookEditor\`. The pair round-trips the same GitBook markdown.
-{% endhint %}
-
-## What it does
-
-- WYSIWYG editing of GitBook-style markdown: hints, tabs, expandables, steppers, tables, code blocks with syntax highlighting.
-- **Round-tripping** — the editor state serializes back to GitBook markdown via docstream's AST (\`tiptapToAst\` → \`serialize\`), so what you edit is what you commit.
-- A built-in formatting toolbar and a "/" slash menu for inserting blocks.
-- Composable internals for custom editors (Yjs collaboration, bespoke menus).
-
-## Installation
-
-\`\`\`sh
-npm install @brett_lamy/docstream-editor @brett_lamy/docstream react
-\`\`\`
-
-Tiptap packages are peer dependencies — see the package.json for the exact list (\`@tiptap/core\`, \`@tiptap/react\`, \`@tiptap/starter-kit\`, table/list/placeholder/code-block-lowlight extensions, \`@tiptap/pm\`, \`@tiptap/suggestion\`).
-`,
-  },
-  {
-    id: 'quick-start',
-    title: 'Quick start',
-    markdown: `# Quick start
-
-\`\`\`tsx
-import { GitbookEditor } from "@brett_lamy/docstream-editor"
-import "@brett_lamy/docstream/styles.css"
-import "@brett_lamy/docstream-editor/styles.css"
-
-export function Editor() {
-  const [md, setMd] = useState("# Hello")
-  return <GitbookEditor markdown={md} onChange={setMd} />
-}
-\`\`\`
-
-## GitbookEditor props
-
-| Prop | Type | Purpose |
-| --- | --- | --- |
-| \`markdown\` | \`string\` | Markdown source; the editor stays in sync (controlled). |
-| \`onChange\` | \`(md: string) => void\` | Serialized GitBook markdown on every edit. |
-| \`toolbar\` | \`boolean\` | Built-in formatting toolbar (default true). |
-| \`slashMenu\` | \`boolean \\| { items }\` | The "/" insert menu — or your own item list. |
-| \`editable\` | \`boolean\` | Read-only mode when false. |
-| \`placeholder\` | \`string\` | Placeholder for an empty document. |
-| \`autofocus\` | \`boolean\` | Focus on mount. |
-| \`className\` | \`string\` | Wrapper class. |
-`,
-  },
-  {
-    id: 'playground',
-    title: 'Playground',
-    playground: true,
-    markdown: `# Playground
-
-The real \`GitbookEditor\`, live. Type below — try the toolbar, or press \`/\` for the slash menu (hints, tables, code blocks…). The right pane shows the GitBook markdown the editor serializes on every edit.
-`,
-  },
-  {
-    id: 'architecture',
-    title: 'How it works',
-    markdown: `# How it works
-
-## markdown ⇄ editor round trip
-
-\`\`\`mermaid
-graph LR
-  MD[GitBook markdown] -->|parseMarkdown| AST[docstream AST]
-  AST -->|astToTiptap| PM[Tiptap/ProseMirror doc]
-  PM -->|edits| PM
-  PM -->|tiptapToAst| AST2[docstream AST]
-  AST2 -->|serialize| MD2[GitBook markdown]
-\`\`\`
-
-\`convert.ts\` owns both directions: \`astToTiptap(ast)\` builds the ProseMirror document, and \`tiptapToAst(doc)\` maps editor nodes back onto docstream's block AST, which \`serialize\` turns into markdown. Because both ends share docstream's parser, the editor never invents syntax the renderer can't display.
-
-## Building blocks
-
-For a custom editor (collaboration, custom menus) skip \`GitbookEditor\` and compose the parts:
-
-\`\`\`ts
-import {
-  createGitbookExtensions,  // Tiptap extensions for all GitBook nodes
-  getGitbookSchema,         // the ProseMirror schema
-  gitbookNodes,             // node definitions (GbCodeBlock, GbTable, …)
-  createSlashMenu, SLASH_ITEMS,
-  astToTiptap, tiptapToAst,
-} from "@brett_lamy/docstream-editor"
-\`\`\`
-
-{% hint style="success" %}
-\`ReactDemoEditor\` is also exported — an editor variant used for live React code demos in docs.
-{% endhint %}
-`,
-  },
-];
 
 const SEED = `# Release notes draft
 
@@ -148,6 +41,17 @@ function Playground() {
   );
 }
 
+function ReadonlyPlayground() {
+  return (
+    <div style={{ border: '1px solid #e2e2ea', borderRadius: 12, overflow: 'hidden', margin: '18px 0' }}>
+      <div style={{ padding: '8px 14px', borderBottom: '1px solid #eee', fontSize: 12, fontWeight: 700, color: '#77777f' }}>
+        GitbookEditor · toolbar={'{false}'} editable={'{false}'}
+      </div>
+      <GitbookEditor markdown={SEED} toolbar={false} editable={false} />
+    </div>
+  );
+}
+
 function App() {
   const [page, setPage] = useState(PAGES[0].id);
   const cur = PAGES.find((p) => p.id === page) ?? PAGES[0];
@@ -171,9 +75,26 @@ function App() {
         </div>
       </nav>
       <main style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: cur.playground ? 1100 : 760, padding: '28px 32px 80px', boxSizing: 'border-box' }}>
+        <div style={{ width: '100%', maxWidth: cur.demo === 'playground' ? 1100 : 760, padding: '28px 32px 80px', boxSizing: 'border-box' }}>
           <MarkdownContent markdown={cur.markdown} />
-          {cur.playground ? <Playground /> : null}
+          {cur.demo === 'playground' ? <Playground /> : null}
+          {cur.demo === 'readonly' ? <ReadonlyPlayground /> : null}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 48, borderTop: '1px solid #e6e6ee', paddingTop: 16 }}>
+            {(() => {
+              const i = PAGES.indexOf(cur);
+              const prev = PAGES[i - 1]; const next = PAGES[i + 1];
+              const btn = (p: typeof cur, label: string) => (
+                <button onClick={() => setPage(p.id)} style={{ border: '1px solid #e2e2ea', background: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 13, fontFamily: 'inherit', cursor: 'pointer' }}>
+                  <span style={{ color: '#9a9aa2', display: 'block', fontSize: 11 }}>{label}</span>
+                  <span style={{ fontWeight: 650 }}>{p.title}</span>
+                </button>
+              );
+              return (<>
+                <span>{prev ? btn(prev, '← Previous') : null}</span>
+                <span>{next ? btn(next, 'Next →') : null}</span>
+              </>);
+            })()}
+          </div>
         </div>
       </main>
     </div>
