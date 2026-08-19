@@ -333,6 +333,9 @@
   border: 1px solid var(--gb-border);
   border-radius: var(--gb-radius);
 }
+.gb-embed .replay-preview {
+  width: 100%;
+}
 .gb-embed-link {
   display: flex;
   align-items: center;
@@ -535,3 +538,121 @@
 .slash-item-active { background: var(--accent, #f4f4f5); }
 .slash-item svg { color: var(--muted-foreground, #6b7280); }
 .slash-empty { padding: 8px 10px; font-size: 13px; color: var(--muted-foreground, #6b7280); }
+
+.gb-code-live {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--gb-muted-foreground);
+  font-size: 11px;
+}
+.gb-code-entry { flex: 1; min-width: 130px; }
+.gb-code-live-badge {
+  border: 1px solid var(--gb-success-border, rgba(34, 197, 94, 0.45));
+  border-radius: 999px;
+  padding: 2px 6px;
+  color: var(--gb-success, #22c55e);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.gb-react-demo-editor {
+  overflow: hidden;
+  border: 1px solid var(--gb-border, var(--border));
+  border-radius: 12px;
+  background: var(--gb-panel, var(--card));
+}
+.gb-react-demo-editor-source {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.28fr) minmax(0, 1fr);
+  min-height: 260px;
+}
+.gb-react-demo-files {
+  border-right: 1px solid var(--gb-border, var(--border));
+  background: var(--gb-muted, var(--muted));
+}
+.gb-react-demo-files-header,
+.gb-react-demo-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--gb-border, var(--border));
+  font-size: 12px;
+}
+.gb-react-demo-files-header svg {
+  margin-left: auto;
+  color: var(--gb-muted-foreground, var(--muted-foreground));
+}
+.gb-react-demo-file {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  overflow: hidden;
+  color: var(--gb-muted-foreground, var(--muted-foreground));
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gb-react-demo-file-active {
+  color: var(--gb-panel-foreground, var(--foreground));
+  background: var(--gb-panel, var(--card));
+}
+.gb-react-demo-editor-pane {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.gb-react-demo-editor-toolbar code {
+  overflow: hidden;
+  color: var(--gb-muted-foreground, var(--muted-foreground));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gb-react-demo-preview-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  border: 1px solid var(--gb-border, var(--border));
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--gb-panel-foreground, var(--foreground));
+  font-size: 11px;
+}
+.gb-react-demo-preview-button:disabled { opacity: 0.5; }
+.gb-react-demo-textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  border: 0;
+  padding: 14px;
+  outline: none;
+  color: var(--gb-panel-foreground, var(--foreground));
+  background: var(--gb-panel, var(--card));
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.gb-react-demo-editor-empty {
+  padding: 18px;
+  color: var(--gb-muted-foreground, var(--muted-foreground));
+  font-size: 12px;
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .gb-react-demo-editor-source { grid-template-columns: 1fr; }
+  .gb-react-demo-files {
+    display: flex;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--gb-border, var(--border));
+  }
+  .gb-react-demo-files-header { flex: 0 0 auto; border-bottom: 0; }
+  .gb-react-demo-file { width: auto; flex: 0 0 auto; }
+}

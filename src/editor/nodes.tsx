@@ -21,6 +21,7 @@ import {
 import { resolveAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
 import type { HintStyle } from "@brett_lamy/docstream/gitbook"
+import { ReplayPreview, VideoEmbed, isReplayQaUrl } from "@brett_lamy/docstream"
 
 // ---------- Hint ----------
 
@@ -301,13 +302,19 @@ function embedPreview(url: string): string | null {
   return null
 }
 
+function isDirectVideo(url: string): boolean {
+  return /\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(url)
+}
+
 function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
   const url = node.attrs.url as string
   const preview = embedPreview(url)
   return (
     <NodeViewWrapper className="gb-embed" contentEditable={false}>
-      {preview ? (
-        <iframe className="gb-embed-frame" src={preview} title={url} allowFullScreen />
+      {isReplayQaUrl(url) ? (
+        <ReplayPreview source={url} title="Replay preview" />
+      ) : preview || isDirectVideo(url) ? (
+        <VideoEmbed src={preview ?? url} className="gb-embed-frame" title={url} />
       ) : (
         <a className="gb-embed-link" href={url} target="_blank" rel="noreferrer">
           <Link2 className="size-4" /> {url || "Embed URL…"}
@@ -536,11 +543,28 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
               />
               #
             </label>
+            <label className="gb-code-live">
+              <input
+                type="checkbox"
+                checked={!!node.attrs.live}
+                onChange={(e) => updateAttributes({ live: e.target.checked })}
+              />
+              Live
+            </label>
+            {node.attrs.live && (
+              <input
+                className="gb-inline-input gb-code-entry"
+                value={node.attrs.entry ?? ""}
+                placeholder="entry (e.g. src/main.jsx)"
+                onChange={(e) => updateAttributes({ entry: e.target.value || null })}
+              />
+            )}
           </>
         ) : (
           <>
             {node.attrs.title && <span className="gb-code-title">{node.attrs.title}</span>}
             {node.attrs.language && <span className="gb-code-lang">{node.attrs.language}</span>}
+            {node.attrs.live && <span className="gb-code-live-badge">Live</span>}
           </>
         )}
       </div>
@@ -557,6 +581,8 @@ export const GbCodeBlock = CodeBlockLowlight.extend({
       ...this.parent?.(),
       title: { default: null },
       lineNumbers: { default: false },
+      live: { default: false },
+      entry: { default: null },
     }
   },
   addNodeView() {

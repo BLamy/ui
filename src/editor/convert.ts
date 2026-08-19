@@ -63,7 +63,13 @@ function blockToPM(b: Block): PMNode {
     case "code":
       return {
         type: "codeBlock",
-        attrs: { language: b.language, title: b.title, lineNumbers: b.lineNumbers },
+        attrs: {
+          language: b.language,
+          title: b.title,
+          lineNumbers: b.lineNumbers,
+          live: !!b.live,
+          entry: b.entry ?? null,
+        },
         content: b.code ? [{ type: "text", text: b.code }] : [],
       }
     case "hint":
@@ -215,6 +221,8 @@ function pmToBlock(n: PMNode): Block | null {
         language: (n.attrs?.language as string) || null,
         title: (n.attrs?.title as string) || null,
         lineNumbers: !!n.attrs?.lineNumbers,
+        live: !!n.attrs?.live,
+        entry: (n.attrs?.entry as string) || null,
         code: n.content?.map((c) => c.text ?? "").join("") ?? "",
       }
     case "gbHint":
