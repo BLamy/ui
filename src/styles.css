@@ -713,27 +713,27 @@
 .hljs-type,
 .hljs-tag,
 .hljs-name {
-  color: var(--chart-4, var(--gb-primary));
+  color: var(--chart-4, #cf222e);
 }
 
 .hljs-string,
 .hljs-attr,
 .hljs-symbol,
 .hljs-bullet {
-  color: var(--chart-1, var(--gb-primary));
+  color: var(--chart-1, #0a7a4b);
 }
 
 .hljs-title,
 .hljs-section,
 .hljs-function .hljs-title {
-  color: var(--chart-2, var(--gb-primary));
+  color: var(--chart-2, #8250df);
 }
 
 .hljs-number,
 .hljs-literal,
 .hljs-variable,
 .hljs-template-variable {
-  color: var(--chart-3, var(--gb-primary));
+  color: var(--chart-3, #0550ae);
 }
 
 .hljs-comment,
