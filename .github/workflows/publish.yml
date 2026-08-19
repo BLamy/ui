@@ -22,5 +22,5 @@ jobs:
             echo "$NAME@$VERSION already on npm — skipping"
           else
             npm install -g npm@latest
-            npm publish --access public --provenance
+            npm publish --access public
           fi
