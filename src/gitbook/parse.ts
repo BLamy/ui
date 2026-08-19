@@ -188,6 +188,8 @@ export function parseBlocks(lines: string[]): Block[] {
         if (code && code.type === "code") {
           code.title = tag.attrs.title ?? null
           code.lineNumbers = tag.attrs.lineNumbers === "true"
+          code.live = tag.attrs.live === "true"
+          code.entry = tag.attrs.entry ?? null
           blocks.push(code)
         }
         i = next

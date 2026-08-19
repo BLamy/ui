@@ -11,9 +11,12 @@ import {
 import type { Block, DocumentNode, Inline } from "../gitbook/ast"
 import { resolveAsset } from "../assets"
 import { parseMarkdown } from "../gitbook/parse"
+import { ReplayPreview, isReplayQaUrl } from "../replay"
+import { VideoEmbed } from "../video"
 import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
 import { HighlightedCode } from "./HighlightedCode"
+import { ReactCodePreview } from "../playground"
 
 function InlineText({ nodes }: { nodes: Inline[] }) {
   return (
@@ -65,6 +68,10 @@ function embedSrc(url: string): string | null {
   return yt ? `https://www.youtube.com/embed/${yt[1]}` : null
 }
 
+function isDirectVideo(url: string): boolean {
+  return /\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(url)
+}
+
 function Tabs({ block }: { block: Extract<Block, { type: "tabs" }> }) {
   const [active, setActive] = useState(0)
   return (
@@ -105,6 +112,16 @@ function BlockView({ block }: { block: Block }) {
     }
     case "code":
       if (block.language === "mermaid") return <Mermaid code={block.code} />
+      if (block.live && isReactLanguage(block.language)) {
+        const entry = block.entry ?? "/src/main.jsx"
+        return (
+          <ReactCodePreview
+            files={{ [entry]: block.code }}
+            entry={entry}
+            title={block.title ?? "Live React preview"}
+          />
+        )
+      }
       return (
         <div className="docs-code">
           {(block.title || block.language) && (
@@ -162,9 +179,16 @@ function BlockView({ block }: { block: Block }) {
         </div>
       )
     case "embed": {
+      if (isReplayQaUrl(block.url)) {
+        return <ReplayPreview source={block.url} title="Replay preview" />
+      }
       const src = embedSrc(block.url)
-      return src ? (
-        <iframe className="docs-embed" src={src} title={block.url} allowFullScreen />
+      return src || isDirectVideo(block.url) ? (
+        <VideoEmbed
+          src={src ?? block.url}
+          className="docs-embed"
+          title={block.url}
+        />
       ) : (
         <a className="docs-content-ref" href={block.url} target="_blank" rel="noreferrer">
           <File className="size-4" /> {block.url}
@@ -284,6 +308,10 @@ function BlockView({ block }: { block: Block }) {
         />
       )
   }
+}
+
+function isReactLanguage(language: string | null): boolean {
+  return language === "jsx" || language === "tsx" || language === "react"
 }
 
 function Blocks({ blocks, inline }: { blocks: Block[]; inline?: boolean }) {
