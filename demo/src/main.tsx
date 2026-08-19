@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState } from 'react';
+import { StrictMode, useEffect, useState, type CSSProperties } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GitbookStreamdown, MarkdownContent } from '@brett_lamy/docstream';
 import '@brett_lamy/docstream/styles.css';
@@ -41,6 +41,45 @@ function StreamDemo() {
   );
 }
 
+const THEME_DEMO_MD = `{% hint style="info" %}
+This hint, the code block, and the table below inherit the overridden tokens.
+{% endhint %}
+
+\`\`\`ts
+const themed = true // syntax colors come from --chart-1..4
+\`\`\`
+
+| Token | Overridden to |
+| --- | --- |
+| \`--card\` / \`--background\` | near-black |
+| \`--border\` | deep slate |
+| \`--primary\` | periwinkle |
+`;
+
+function ThemeDemo() {
+  const darkTokens = {
+    '--background': '#0b0b10',
+    '--foreground': '#e6e6f0',
+    '--card': '#12121a',
+    '--card-foreground': '#e6e6f0',
+    '--muted': '#1b1b26',
+    '--muted-foreground': '#9a9ab0',
+    '--border': '#2a2a3c',
+    '--accent': '#1e1e2c',
+    '--accent-foreground': '#e6e6f0',
+    '--primary': '#8b8bf0',
+    '--chart-1': '#7ee2a8',
+    '--chart-2': '#c8a2ff',
+    '--chart-3': '#7cb8ff',
+    '--chart-4': '#ff8a8a',
+  } as CSSProperties;
+  return (
+    <div style={{ ...darkTokens, background: '#0b0b10', color: '#e6e6f0', border: '1px solid #2a2a3c', borderRadius: 12, padding: '4px 20px 16px', margin: '16px 0' }}>
+      <MarkdownContent markdown={THEME_DEMO_MD} />
+    </div>
+  );
+}
+
 function App() {
   const [page, setPage] = useState(PAGES[0].id);
   const cur = PAGES.find((p) => p.id === page) ?? PAGES[0];
@@ -71,6 +110,7 @@ function App() {
         <div style={{ width: '100%', maxWidth: 760, padding: '28px 32px 80px', boxSizing: 'border-box' }}>
           <MarkdownContent markdown={cur.markdown} />
           {cur.id === 'streaming' ? <StreamDemo /> : null}
+          {cur.id === 'theming' ? <ThemeDemo /> : null}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 48, borderTop: '1px solid #e6e6ee', paddingTop: 16 }}>
             {(() => {
               const i = PAGES.indexOf(cur);
