@@ -2,3 +2,6 @@
    playground entry, whose @agent-wasm/core peer isn't needed for docs rendering. */
 export { GitbookStreamdown } from '../../src/streamdown';
 export { DocsRenderer, MarkdownContent } from '../../src/docs/DocsRenderer';
+export type { LivePreviewProps, LivePreviewRenderer } from '../../src/docs/DocsRenderer';
+export { VideoEmbed } from '../../src/video';
+export { parseMarkdown } from '../../src/gitbook/parse';

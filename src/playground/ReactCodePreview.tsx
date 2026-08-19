@@ -4,6 +4,7 @@ import {
   createReactDemoFiles,
   type AlmostNodeFiles,
   type AlmostNodeWorkspace,
+  type AlmostNodeWorkspaceOptions,
 } from "./filesystem"
 
 export interface ReactDemoProps {
@@ -21,6 +22,8 @@ export interface ReactDemoProps {
   autoStart?: boolean
   /** iframe sandbox value. The same-origin permission lets the almost-node service worker route the preview. */
   sandbox?: string
+  /** Extra options spread into `createAlmostNodeWorkspace` (e.g. `basePath` for static hosting). */
+  workspaceOptions?: Partial<AlmostNodeWorkspaceOptions>
   className?: string
   onReady?: (url: string) => void
   onError?: (error: Error) => void
@@ -49,6 +52,7 @@ export function ReactDemo({
   title = "Live React preview",
   autoStart = true,
   sandbox = "allow-scripts allow-same-origin allow-forms allow-modals",
+  workspaceOptions,
   className,
   onReady,
   onError,
@@ -77,9 +81,11 @@ export function ReactDemo({
       try {
         const projectFiles = createReactDemoFiles(files, { entry })
         workspace = await createAlmostNodeWorkspace(projectFiles, {
-          env: DETACHED_SERVER_ENV,
-          onServerReady: (_port, serverUrl) => {
+          ...workspaceOptions,
+          env: { ...DETACHED_SERVER_ENV, ...workspaceOptions?.env },
+          onServerReady: (serverPort, serverUrl) => {
             readyUrl = serverUrl.endsWith("/") ? serverUrl : `${serverUrl}/`
+            workspaceOptions?.onServerReady?.(serverPort, serverUrl)
           },
         })
 
@@ -114,7 +120,7 @@ export function ReactDemo({
       cancelled = true
       workspace?.dispose()
     }
-  }, [entry, files, onError, onReady, port, run])
+  }, [entry, files, onError, onReady, port, run, workspaceOptions])
 
   const wrapperClass = className ? `docs-react-demo ${className}` : "docs-react-demo"
   const running = state === "starting"

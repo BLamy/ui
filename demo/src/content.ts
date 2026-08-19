@@ -132,6 +132,13 @@ The streaming renderer. It parses the markdown with \`parseMarkdown\` on each re
 <GitbookStreamdown markdown={md} isStreaming={!done} />
 \`\`\`
 
+{% code title="GitbookStreamdown rendering nested markdown" live="true" %}
+\`\`\`jsx
+// demo:nested-markdown
+<GitbookStreamdown markdown={nestedGitbookMarkdown} />
+\`\`\`
+{% endcode %}
+
 ## MarkdownContent
 
 Static renderer for a markdown string. Renders a plain \`div\` with the \`data-docstream\` attribute (plus your \`className\`) around the parsed blocks — no \`<article>\` chrome, so it composes into any layout (this page is rendered with it).
@@ -141,6 +148,13 @@ Static renderer for a markdown string. Renders a plain \`div\` with the \`data-d
 | \`markdown\` | \`string\` | The markdown source (required). |
 | \`className\` | \`string\` | Extra class on the \`data-docstream\` wrapper. |
 | \`liveRenderer\` | \`LivePreviewRenderer\` | Optional renderer for live code blocks. |
+
+{% code title="MarkdownContent with className" live="true" %}
+\`\`\`jsx
+// demo:markdown-classname
+<MarkdownContent className="demo-compact-md" markdown={source} />
+\`\`\`
+{% endcode %}
 
 ## DocsRenderer
 
@@ -174,6 +188,13 @@ Renders a direct media file (\`.mp4\` / \`.webm\` / \`.ogg\`, detected by extens
 | \`muted\` | \`boolean\` | \`false\` | Muted (direct video only). |
 | \`poster\` | \`string\` | — | Poster image (direct video only). |
 | \`allowFullScreen\` | \`boolean\` | \`true\` | Fullscreen permission (iframe only). |
+
+{% code title="VideoEmbed with a YouTube embed URL" live="true" %}
+\`\`\`jsx
+// demo:video-embed
+<VideoEmbed src="https://www.youtube.com/embed/8aGhZQkoFbQ" title="Event loop talk" />
+\`\`\`
+{% endcode %}
 
 ## ReplayPreview / ReplayEmbed
 
@@ -237,7 +258,7 @@ The package root re-exports \`Streamdown\` (and \`StreamdownProps\`) from the up
 Docstream can run multi-file React projects inside the page through **almost-node** — a browser Node.js runtime with a virtual filesystem and a real Vite dev server, provided by the \`@agent-wasm/core\` peer dependency.
 
 {% hint style="warning" %}
-Live demos require the host app to install \`@agent-wasm/core\` (>= 0.4.0) and import from \`@brett_lamy/docstream/playground\` (or the package root, which includes it). The runtime is loaded lazily, so ordinary markdown rendering never pulls the WASM runtime into your bundle. This docs site intentionally excludes the playground entry, so there is no running demo on this page.
+Live demos require the host app to install \`@agent-wasm/core\` (>= 0.4.0) and import from \`@brett_lamy/docstream/playground\` (or the package root, which includes it). The runtime is loaded lazily, so ordinary markdown rendering never pulls the WASM runtime into your bundle. The panel at the bottom of this page is a real \`ReactCodePreview\` booting Vite in your browser.
 {% endhint %}
 
 ## ReactDemo / ReactCodePreview
@@ -723,7 +744,14 @@ Define the host tokens on \`:root\` (the shadcn way) — docstream picks them up
 }
 \`\`\`
 
-Or scope overrides by setting the \`--gb-*\` tokens directly on any wrapper element — they inherit into \`[data-docstream]\`... almost: because the tokens are *defined* on \`[data-docstream]\` itself, scoped overrides set the **host** tokens (\`--card\`, \`--border\`, …) on the wrapper instead, and the \`var()\` fallbacks pick them up. The block below is a **live demonstration**: the same \`MarkdownContent\` component, wrapped in a div that overrides a handful of host tokens to a dark card theme.
+Or scope overrides by setting the \`--gb-*\` tokens directly on any wrapper element — they inherit into \`[data-docstream]\`... almost: because the tokens are *defined* on \`[data-docstream]\` itself, scoped overrides set the **host** tokens (\`--card\`, \`--border\`, …) on the wrapper instead, and the \`var()\` fallbacks pick them up. The block below is a **live demonstration**: the same \`MarkdownContent\` content twice — unthemed, and wrapped in a div that overrides a handful of host tokens (\`--card\`, \`--border\`, \`--primary\`, \`--gb-info\`, \`--chart-1..4\`) to a dark card theme.
+
+{% code title="Scoped token overrides" live="true" %}
+\`\`\`jsx
+// demo:theme-tokens
+<div style={darkHostTokens}>\n  <MarkdownContent markdown={content} />\n</div>
+\`\`\`
+{% endcode %}
 `,
   },
   {
@@ -745,6 +773,17 @@ plainText(inline)                    // "hi x" — flattens to plain text (alt t
 \`\`\`
 
 \`parseMarkdown\` first extracts reference-style link definitions into the exported \`refDefinitions\` map, then parses the remaining lines with \`parseBlocks\`. \`parseInline\` accepts an optional second argument of marks to apply to everything it emits.
+
+### Try it
+
+Type markdown on the left; the parsed \`DocumentNode\` JSON updates live:
+
+{% code title="parseMarkdown explorer" live="true" %}
+\`\`\`tsx
+// demo:parse-explorer
+const ast = parseMarkdown(textarea.value) // rendered as JSON below
+\`\`\`
+{% endcode %}
 
 ## Serializing
 
