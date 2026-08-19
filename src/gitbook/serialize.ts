@@ -29,10 +29,12 @@ function serializeBlock(b: Block): string {
     case "code": {
       const fence = "```" + (b.language ?? "")
       const body = `${fence}\n${b.code}\n\`\`\``
-      if (b.title || b.lineNumbers) {
+      if (b.title || b.lineNumbers || b.live || b.entry) {
         const attrs = [
           b.title ? ` title="${b.title}"` : "",
           b.lineNumbers ? ` lineNumbers="true"` : "",
+          b.live ? ` live="true"` : "",
+          b.entry ? ` entry="${b.entry}"` : "",
         ].join("")
         return `{% code${attrs} %}\n${body}\n{% endcode %}`
       }

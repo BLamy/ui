@@ -1,7 +1,35 @@
 export { GitbookStreamdown } from "./streamdown"
 export type { GitbookStreamdownProps } from "./streamdown"
 export { DocsRenderer, MarkdownContent } from "./docs/DocsRenderer"
+export { ReplayEmbed, ReplayPreview } from "./replay"
+export type {
+  ReplayEventsSource,
+  ReplayEventsUrlSource,
+  ReplayPageSource,
+  ReplayPreviewProps,
+  ReplaySource,
+} from "./replay"
+export { isReplayQaUrl, normalizeReplayEmbedUrl } from "./replay"
+export { VideoEmbed } from "./video"
+export type { VideoEmbedProps } from "./video"
 export { OpenApiOperation } from "./openapi/OpenApiOperation"
+export {
+  ReactCodePreview,
+  ReactDemo,
+  createReactDemoFiles,
+  createAlmostNodeFilesystem,
+  createAlmostNodeWorkspace,
+} from "./playground"
+export type {
+  AlmostNodeFile,
+  AlmostNodeFileContent,
+  AlmostNodeFiles,
+  AlmostNodeFilesystemOptions,
+  AlmostNodeWorkspace,
+  AlmostNodeWorkspaceOptions,
+  ReactCodePreviewProps,
+  ReactDemoProps,
+} from "./playground"
 export { resolveAsset, setAssetBase } from "./assets"
 export { parseMarkdown, parseBlocks } from "./gitbook/parse"
 export { serializeBlocks, serializeMarkdown } from "./gitbook/serialize"

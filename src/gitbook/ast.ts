@@ -42,6 +42,10 @@ export interface CodeBlockNode {
   title: string | null
   lineNumbers: boolean
   code: string
+  /** Run a React/JSX/TSX entry file in the optional almost-node preview. */
+  live?: boolean
+  /** Project-relative entry file used by a live preview. */
+  entry?: string | null
 }
 
 export interface HintNode {

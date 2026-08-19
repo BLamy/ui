@@ -738,3 +738,77 @@
 .hljs-addition {
   color: var(--gb-success);
 }
+
+.docs-react-demo {
+  overflow: hidden;
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  background: var(--gb-panel);
+}
+
+.docs-react-demo-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--gb-border);
+  color: var(--gb-panel-foreground);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.docs-react-demo-status {
+  margin-left: auto;
+  color: var(--gb-muted-foreground);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.docs-react-demo-status-ready {
+  color: var(--gb-success);
+}
+
+.docs-react-demo-status-error {
+  color: var(--gb-danger);
+}
+
+.docs-react-demo-run {
+  border: 1px solid var(--gb-border);
+  border-radius: 6px;
+  padding: 4px 9px;
+  color: var(--gb-panel-foreground);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.docs-react-demo-run:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.docs-react-demo-frame,
+.docs-react-demo-placeholder {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.docs-react-demo-placeholder {
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.docs-react-demo-error {
+  margin: 0;
+  min-height: 100px;
+  overflow: auto;
+  padding: 14px;
+  color: var(--gb-danger);
+  background: var(--gb-code-bg);
+  white-space: pre-wrap;
+}
