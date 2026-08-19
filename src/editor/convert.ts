@@ -98,8 +98,16 @@ function blockToPM(b: Block): PMNode {
           content: blocksPM(s.children),
         })),
       }
-    case "embed":
-      return { type: "gbEmbed", attrs: { url: b.url } }
+    case "embed": {
+      const attrs: Record<string, string | boolean> = { url: b.url }
+      if (b.title !== undefined) attrs.title = b.title
+      if (b.poster !== undefined) attrs.poster = b.poster
+      if (b.autoplay !== undefined) attrs.autoplay = b.autoplay
+      if (b.loop !== undefined) attrs.loop = b.loop
+      if (b.muted !== undefined) attrs.muted = b.muted
+      if (b.controls !== undefined) attrs.controls = b.controls
+      return { type: "gbEmbed", attrs }
+    }
     case "content-ref":
       return { type: "gbContentRef", attrs: { url: b.url, label: plainText(b.children) } }
     case "columns":
@@ -255,8 +263,19 @@ function pmToBlock(n: PMNode): Block | null {
           children: pmToBlocks(s.content),
         })),
       }
-    case "gbEmbed":
-      return { type: "embed", url: String(n.attrs?.url ?? "") }
+    case "gbEmbed": {
+      const embed: Extract<Block, { type: "embed" }> = {
+        type: "embed",
+        url: String(n.attrs?.url ?? ""),
+      }
+      if (typeof n.attrs?.title === "string") embed.title = n.attrs.title
+      if (typeof n.attrs?.poster === "string") embed.poster = n.attrs.poster
+      if (typeof n.attrs?.autoplay === "boolean") embed.autoplay = n.attrs.autoplay
+      if (typeof n.attrs?.loop === "boolean") embed.loop = n.attrs.loop
+      if (typeof n.attrs?.muted === "boolean") embed.muted = n.attrs.muted
+      if (typeof n.attrs?.controls === "boolean") embed.controls = n.attrs.controls
+      return embed
+    }
     case "gbContentRef":
       return {
         type: "content-ref",

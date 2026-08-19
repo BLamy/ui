@@ -306,15 +306,34 @@ function isDirectVideo(url: string): boolean {
   return /\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(url)
 }
 
+function booleanAttribute(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined
+}
+
 function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
   const url = node.attrs.url as string
   const preview = embedPreview(url)
+  const title = typeof node.attrs.title === "string" && node.attrs.title ? node.attrs.title : url
+  const poster = typeof node.attrs.poster === "string" ? node.attrs.poster : undefined
+  const autoplay = booleanAttribute(node.attrs.autoplay)
+  const loop = booleanAttribute(node.attrs.loop)
+  const muted = booleanAttribute(node.attrs.muted)
+  const controls = booleanAttribute(node.attrs.controls)
   return (
     <NodeViewWrapper className="gb-embed" contentEditable={false}>
       {isReplayQaUrl(url) ? (
         <ReplayPreview source={url} title="Replay preview" />
       ) : preview || isDirectVideo(url) ? (
-        <VideoEmbed src={preview ?? url} className="gb-embed-frame" title={url} />
+        <VideoEmbed
+          src={preview ?? url}
+          className="gb-embed-frame"
+          title={title}
+          {...(autoplay === undefined ? {} : { autoplay })}
+          {...(loop === undefined ? {} : { loop })}
+          {...(muted === undefined ? {} : { muted })}
+          {...(controls === undefined ? {} : { controls })}
+          {...(poster === undefined ? {} : { poster })}
+        />
       ) : (
         <a className="gb-embed-link" href={url} target="_blank" rel="noreferrer">
           <Link2 className="size-4" /> {url || "Embed URL…"}
@@ -337,7 +356,15 @@ export const GbEmbed = Node.create({
   group: "block",
   atom: true,
   addAttributes() {
-    return { url: { default: "" } }
+    return {
+      url: { default: "" },
+      title: { default: null },
+      autoplay: { default: null },
+      loop: { default: null },
+      muted: { default: null },
+      controls: { default: null },
+      poster: { default: null },
+    }
   },
   parseHTML() {
     return [{ tag: "div[data-gb-embed]" }]

@@ -172,3 +172,9 @@ import { GitbookStreamdown } from "@brett_lamy/docstream"
 
 <GitbookStreamdown markdown={markdown} isStreaming={false} />
 ```
+
+Embed nodes preserve the Docstream media attributes (`title`, `poster`,
+`autoplay`, `loop`, `muted`, and `controls`) when converting between the
+editable TipTap document and GitBook markdown. This makes short, muted,
+autoplaying clips round-trip through the editor without losing their playback
+contract.
