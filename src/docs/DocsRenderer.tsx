@@ -187,7 +187,12 @@ function BlockView({ block }: { block: Block }) {
         <VideoEmbed
           src={src ?? block.url}
           className="docs-embed"
-          title={block.url}
+          title={block.title ?? block.url}
+          {...(block.autoplay === undefined ? {} : { autoplay: block.autoplay })}
+          {...(block.loop === undefined ? {} : { loop: block.loop })}
+          {...(block.muted === undefined ? {} : { muted: block.muted })}
+          {...(block.controls === undefined ? {} : { controls: block.controls })}
+          {...(block.poster === undefined ? {} : { poster: resolveAsset(block.poster) })}
         />
       ) : (
         <a className="docs-content-ref" href={block.url} target="_blank" rel="noreferrer">

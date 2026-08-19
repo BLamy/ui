@@ -12,6 +12,8 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 - Syntax-highlighted code blocks through `lowlight`.
 - GitBook block support for hints, tabs, expandables, steppers, embeds, content refs, columns, figures, tables, math, dividers, updates, and OpenAPI operations.
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.
+- Attribute-aware direct video embeds for muted, looping inline clips in long-form posts.
+- Optional `VizEmbed` integration for mounting deterministic `@brett_lamy/viz-engine` scenes in a document.
 
 ## Installation
 
@@ -138,6 +140,40 @@ Call the API.
 ```
 
 When a spec cannot be resolved, the renderer displays a fallback asking for an OpenAPI spec URL.
+
+### Inline video clips
+
+Direct media embeds can opt into browser-safe inline playback. `muted` is
+important when `autoplay` is enabled:
+
+```md
+{% embed url="/generated/example/clips/offsets.mp4"
+  title="A reader resumes from its bookmark"
+  autoplay="true" loop="true" muted="true" controls="false" %}
+```
+
+The attributes round-trip through `parseMarkdown` and `serializeMarkdown` and
+are rendered as a native `<video playsInline>` element.
+
+### VizEngine scenes
+
+Install the optional peer dependency when a document needs a live, seekable
+scene rather than a rendered clip:
+
+```sh
+npm install @brett_lamy/docstream @brett_lamy/viz-engine
+```
+
+```tsx
+import { VizEmbed } from "@brett_lamy/docstream/viz"
+import "@brett_lamy/docstream/styles.css"
+
+<VizEmbed scene={scene} title="The same event, replayed into two projections" />
+```
+
+`VizEmbed` keeps the scene's timeline deterministic and delegates the clock to
+VizEngine, so a reader can pause or scrub the same explanation used to produce
+the short clip.
 
 ## Assets and OpenAPI Specs
 
