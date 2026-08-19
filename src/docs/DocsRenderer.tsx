@@ -16,7 +16,14 @@ import { VideoEmbed } from "../video"
 import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
 import { HighlightedCode } from "./HighlightedCode"
-import { ReactCodePreview } from "../playground"
+
+export interface LivePreviewProps {
+  files: Record<string, string>
+  entry: string
+  title: string
+}
+
+export type LivePreviewRenderer = (props: LivePreviewProps) => ReactNode
 
 function InlineText({ nodes }: { nodes: Inline[] }) {
   return (
@@ -72,7 +79,7 @@ function isDirectVideo(url: string): boolean {
   return /\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(url)
 }
 
-function Tabs({ block }: { block: Extract<Block, { type: "tabs" }> }) {
+function Tabs({ block, liveRenderer }: { block: Extract<Block, { type: "tabs" }>; liveRenderer?: LivePreviewRenderer }) {
   const [active, setActive] = useState(0)
   return (
     <div className="docs-tabs">
@@ -88,13 +95,13 @@ function Tabs({ block }: { block: Extract<Block, { type: "tabs" }> }) {
         ))}
       </div>
       <div className="docs-tabs-body">
-        <Blocks blocks={block.tabs[active]?.children ?? []} />
+        <Blocks blocks={block.tabs[active]?.children ?? []} liveRenderer={liveRenderer} />
       </div>
     </div>
   )
 }
 
-function BlockView({ block }: { block: Block }) {
+function BlockView({ block, liveRenderer }: { block: Block; liveRenderer?: LivePreviewRenderer }) {
   switch (block.type) {
     case "paragraph":
       return (
@@ -112,15 +119,13 @@ function BlockView({ block }: { block: Block }) {
     }
     case "code":
       if (block.language === "mermaid") return <Mermaid code={block.code} />
-      if (block.live && isReactLanguage(block.language)) {
+      if (block.live && isReactLanguage(block.language) && liveRenderer) {
         const entry = block.entry ?? "/src/main.jsx"
-        return (
-          <ReactCodePreview
-            files={{ [entry]: block.code }}
-            entry={entry}
-            title={block.title ?? "Live React preview"}
-          />
-        )
+        return liveRenderer({
+          files: { [entry]: block.code },
+          entry,
+          title: block.title ?? "Live React preview",
+        })
       }
       return (
         <div className="docs-code">
@@ -145,19 +150,19 @@ function BlockView({ block }: { block: Block }) {
         <div className={`docs-hint docs-hint-${block.style}`}>
           <Icon className="docs-hint-icon" />
           <div>
-            <Blocks blocks={block.children} />
+            <Blocks blocks={block.children} liveRenderer={liveRenderer} />
           </div>
         </div>
       )
     }
     case "tabs":
-      return <Tabs block={block} />
+      return <Tabs block={block} liveRenderer={liveRenderer} />
     case "expandable":
       return (
         <details className="docs-expandable">
           <summary>{block.summary}</summary>
           <div className="docs-expandable-body">
-            <Blocks blocks={block.children} />
+            <Blocks blocks={block.children} liveRenderer={liveRenderer} />
           </div>
         </details>
       )
@@ -172,7 +177,7 @@ function BlockView({ block }: { block: Block }) {
               </div>
               <div className="docs-step-main">
                 {s.title && <div className="docs-step-title">{s.title}</div>}
-                <Blocks blocks={s.children} />
+                <Blocks blocks={s.children} liveRenderer={liveRenderer} />
               </div>
             </div>
           ))}
@@ -215,7 +220,7 @@ function BlockView({ block }: { block: Block }) {
         <div className="docs-columns">
           {block.columns.map((c, i) => (
             <div key={i} className="docs-column">
-              <Blocks blocks={c.children} />
+              <Blocks blocks={c.children} liveRenderer={liveRenderer} />
             </div>
           ))}
         </div>
@@ -234,7 +239,7 @@ function BlockView({ block }: { block: Block }) {
           {block.items.map((item, i) => (
             <li key={i}>
               {block.task && <input type="checkbox" checked={!!item.checked} readOnly />}
-              <Blocks blocks={item.children} inline />
+              <Blocks blocks={item.children} inline liveRenderer={liveRenderer} />
             </li>
           ))}
         </Tag>
@@ -243,7 +248,7 @@ function BlockView({ block }: { block: Block }) {
     case "blockquote":
       return (
         <blockquote>
-          <Blocks blocks={block.children} />
+          <Blocks blocks={block.children} liveRenderer={liveRenderer} />
         </blockquote>
       )
     case "divider":
@@ -298,7 +303,7 @@ function BlockView({ block }: { block: Block }) {
             <div key={i} className="docs-update">
               <div className="docs-update-date">{u.date}</div>
               <div className="docs-update-body">
-                <Blocks blocks={u.children} />
+                <Blocks blocks={u.children} liveRenderer={liveRenderer} />
               </div>
             </div>
           ))}
@@ -319,11 +324,11 @@ function isReactLanguage(language: string | null): boolean {
   return language === "jsx" || language === "tsx" || language === "react"
 }
 
-function Blocks({ blocks, inline }: { blocks: Block[]; inline?: boolean }) {
+function Blocks({ blocks, inline, liveRenderer }: { blocks: Block[]; inline?: boolean; liveRenderer?: LivePreviewRenderer }) {
   return (
     <div className={inline ? "docs-blocks-inline" : undefined} style={inline ? { display: "inline" } : undefined}>
       {blocks.map((b, i) => (
-        <BlockView key={i} block={b} />
+        <BlockView key={i} block={b} liveRenderer={liveRenderer} />
       ))}
     </div>
   )
@@ -331,14 +336,14 @@ function Blocks({ blocks, inline }: { blocks: Block[]; inline?: boolean }) {
 
 // Renders a markdown string inline — used for embedded markdown like
 // OpenAPI descriptions, which can themselves contain GitBook blocks.
-export function MarkdownContent({ markdown }: { markdown: string }) {
-  return <Blocks blocks={parseMarkdown(markdown).children} />
+export function MarkdownContent({ markdown, liveRenderer }: { markdown: string; liveRenderer?: LivePreviewRenderer }) {
+  return <Blocks blocks={parseMarkdown(markdown).children} liveRenderer={liveRenderer} />
 }
 
-export function DocsRenderer({ doc }: { doc: DocumentNode }) {
+export function DocsRenderer({ doc, liveRenderer }: { doc: DocumentNode; liveRenderer?: LivePreviewRenderer }) {
   return (
     <article className="docs-article">
-      <Blocks blocks={doc.children} />
+      <Blocks blocks={doc.children} liveRenderer={liveRenderer} />
     </article>
   )
 }

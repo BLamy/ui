@@ -41,6 +41,13 @@ If your TypeScript app checks CSS side-effect imports, include Vite's standard e
 
 Use `GitbookStreamdown` when markdown may arrive incrementally from an AI stream. The component accepts either `markdown` or string children.
 
+Markdown-only applications can import the renderer from the `streamdown`
+subpath. This keeps optional playground integrations out of the host bundle:
+
+```tsx
+import { GitbookStreamdown } from "@brett_lamy/docstream/streamdown"
+```
+
 ```tsx
 import { GitbookStreamdown } from "@brett_lamy/docstream"
 import "@brett_lamy/docstream/styles.css"
