@@ -1,4 +1,4 @@
-node_modules/
-dist/
-.DS_Store
-*.log
+node_modules
+dist
+demo/node_modules
+demo/dist

@@ -1,9 +1,22 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../node_modules/.tmp/docstream-editor.tsbuildinfo",
-    "lib": ["ES2023", "DOM"],
-    "types": ["vite/client"]
+    "target": "ES2022",
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "types": [
+      "vite/client"
+    ]
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
