@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "type": "module",
   "main": "./src/index.ts",
@@ -20,6 +20,10 @@
     "./gitbook": {
       "types": "./src/gitbook/index.ts",
       "import": "./src/gitbook/index.ts"
+    },
+    "./streamdown": {
+      "types": "./src/streamdown.tsx",
+      "import": "./src/streamdown.tsx"
     },
     "./assets": {
       "types": "./src/assets.ts",

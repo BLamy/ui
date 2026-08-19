@@ -1,5 +1,5 @@
-export { GitbookStreamdown } from "./streamdown"
-export type { GitbookStreamdownProps } from "./streamdown"
+export { PlaygroundStreamdown as GitbookStreamdown } from "./playground/PlaygroundStreamdown"
+export type { PlaygroundStreamdownProps as GitbookStreamdownProps } from "./playground/PlaygroundStreamdown"
 export { DocsRenderer, MarkdownContent } from "./docs/DocsRenderer"
 export { ReplayEmbed, ReplayPreview } from "./replay"
 export type {
