@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Info,
   Link2,
+  FileCode2,
   Plus,
   X,
   XCircle,
@@ -21,7 +22,8 @@ import {
 import { resolveAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
 import type { HintStyle } from "@brett_lamy/docstream/gitbook"
-import { ReplayPreview, VideoEmbed, isReplayQaUrl } from "@brett_lamy/docstream"
+import { ReplayPreview, isReplayQaUrl } from "@brett_lamy/docstream/replay"
+import { VideoEmbed } from "@brett_lamy/docstream/video"
 
 // ---------- Hint ----------
 
@@ -425,6 +427,54 @@ export const GbContentRef = Node.create({
   },
 })
 
+// ---------- Source ref ----------
+
+function SourceRefView({ node, updateAttributes, editor }: NodeViewProps) {
+  const editable = editor.isEditable
+  return (
+    <NodeViewWrapper className="gb-source-ref" contentEditable={false}>
+      <FileCode2 className="size-4 shrink-0" />
+      {editable ? (
+        <>
+          <input className="gb-inline-input gb-source-ref-mount" value={node.attrs.mount} placeholder="mount" onChange={(event) => updateAttributes({ mount: event.target.value })} />
+          <input className="gb-inline-input gb-source-ref-path" value={node.attrs.path} placeholder="src/Button.tsx" onChange={(event) => updateAttributes({ path: event.target.value })} />
+          <input className="gb-inline-input gb-source-ref-export" value={node.attrs.exportName} placeholder="Button" onChange={(event) => updateAttributes({ exportName: event.target.value })} />
+          <select className="gb-source-ref-kind" value={node.attrs.kind} onChange={(event) => updateAttributes({ kind: event.target.value })}>
+            <option value="component">component</option>
+            <option value="story">story</option>
+          </select>
+        </>
+      ) : (
+        <span>{node.attrs.title || `${node.attrs.path}#${node.attrs.exportName}`}</span>
+      )}
+    </NodeViewWrapper>
+  )
+}
+
+export const GbSourceRef = Node.create({
+  name: "gbSourceRef",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return {
+      mount: { default: "source" },
+      path: { default: "" },
+      exportName: { default: "default" },
+      kind: { default: "component" },
+      title: { default: "" },
+    }
+  },
+  parseHTML() {
+    return [{ tag: "div[data-gb-source-ref]" }]
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    return ["div", mergeAttributes(HTMLAttributes, { "data-gb-source-ref": `${node.attrs.mount}:${node.attrs.path}` })]
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(SourceRefView)
+  },
+})
+
 // ---------- Columns ----------
 
 export const GbColumns = Node.create({
@@ -790,6 +840,7 @@ export const gitbookNodes = [
   GbStep,
   GbEmbed,
   GbContentRef,
+  GbSourceRef,
   GbColumns,
   GbColumn,
   GbFigure,

@@ -13,6 +13,7 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 - Code block support through `lowlight`.
 - Table, task list, heading, quote, and inline formatting support.
 - Preserves Docstream/GitBook block semantics when converting back to markdown.
+- Preserves mounted source-file/export provenance and can write edits to the real file through Vite.
 
 ## Installation
 
@@ -97,11 +98,38 @@ The editor supports common ProseMirror/TipTap content plus GitBook-flavored bloc
 - Steppers
 - Embeds
 - Content references
+- Component and Storybook source references
 - Columns
 - Figures and images
 - OpenAPI operation placeholders
 
 Some blocks are intentionally represented as structured nodes rather than fully bespoke editing controls. They are preserved through parse, edit, and serialize flows so the document can continue to round-trip as GitBook-style markdown.
+
+## Edit a referenced source file
+
+`GitbookEditor` edits the Markdown composition, including a structured
+`source-ref` node. `SourceFileEditor` edits the real file behind that node:
+
+```tsx
+import { createViteSourceClient, type SourceRefNode } from "@brett_lamy/docstream"
+import { SourceFileEditor } from "@brett_lamy/docstream-editor"
+
+const client = createViteSourceClient()
+const reference: SourceRefNode = {
+  type: "source-ref",
+  mount: "ui",
+  path: "Button.stories.tsx",
+  exportName: "Primary",
+  kind: "story",
+}
+
+<SourceFileEditor reference={reference} client={client} />
+```
+
+Saving calls the Docstream Vite plugin, writes the mounted file, returns its
+provenance, and refreshes the live component/story preview. Configure the mount
+with `docstreamSources()` from `@brett_lamy/docstream/vite` as shown in the
+Docstream README.
 
 ## Slash Menu
 
@@ -127,6 +155,8 @@ Exports:
 - `astToTiptap`
 - `tiptapToAst`
 - `PMNode`
+- `SourceFileEditor`
+- `SourceFileEditorProps`
 
 ## Styling and Theming
 
