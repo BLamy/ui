@@ -1,7 +1,7 @@
 export { PlaygroundStreamdown as GitbookStreamdown } from "./playground/PlaygroundStreamdown"
 export type { PlaygroundStreamdownProps as GitbookStreamdownProps } from "./playground/PlaygroundStreamdown"
 export { DocsRenderer, MarkdownContent } from "./docs/DocsRenderer"
-export type { LivePreviewProps, LivePreviewRenderer } from "./docs/DocsRenderer"
+export type { LivePreviewProps, LivePreviewRenderer, SourceReferenceRenderer } from "./docs/DocsRenderer"
 export { ReplayEmbed, ReplayPreview } from "./replay"
 export type {
   ReplayEventsSource,
@@ -34,6 +34,14 @@ export type {
   ReactDemoProps,
 } from "./playground"
 export { resolveAsset, setAssetBase } from "./assets"
+export { createViteSourceClient, SourcePreview } from "./source"
+export type {
+  SourceFileSnapshot,
+  SourceModule,
+  SourcePreviewProps,
+  SourceProvenance,
+  SourceReferenceClient,
+} from "./source"
 export { parseMarkdown, parseBlocks } from "./gitbook/parse"
 export { serializeBlocks, serializeMarkdown } from "./gitbook/serialize"
 export { parseInline, plainText, refDefinitions, serializeInline } from "./gitbook/inline"

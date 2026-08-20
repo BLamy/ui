@@ -99,6 +99,24 @@ export interface ContentRefNode {
   children: Inline[]
 }
 
+export type SourceReferenceKind = "component" | "story"
+
+/**
+ * A reference to an export in a real source file. The source file remains the
+ * authority; Markdown only stores the composition and presentation metadata.
+ */
+export interface SourceRefNode {
+  type: "source-ref"
+  /** Name of the directory mounted by the Docstream Vite plugin. */
+  mount: string
+  /** POSIX-style path relative to the mounted source directory. */
+  path: string
+  /** Named export to render. Defaults to `default`. */
+  exportName: string
+  kind: SourceReferenceKind
+  title?: string
+}
+
 export interface ColumnNode {
   type: "column"
   children: Block[]
@@ -182,6 +200,7 @@ export type Block =
   | StepperNode
   | EmbedNode
   | ContentRefNode
+  | SourceRefNode
   | ColumnsNode
   | FigureNode
   | ListNode

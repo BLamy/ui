@@ -8,7 +8,7 @@ import {
   XCircle,
 } from "lucide-react"
 
-import type { Block, DocumentNode, Inline } from "../gitbook/ast"
+import type { Block, DocumentNode, Inline, SourceRefNode } from "../gitbook/ast"
 import { resolveAsset } from "../assets"
 import { parseMarkdown } from "../gitbook/parse"
 import { ReplayPreview, isReplayQaUrl } from "../replay"
@@ -24,6 +24,8 @@ export interface LivePreviewProps {
 }
 
 export type LivePreviewRenderer = (props: LivePreviewProps) => ReactNode
+
+export type SourceReferenceRenderer = (reference: SourceRefNode) => ReactNode
 
 function InlineText({ nodes }: { nodes: Inline[] }) {
   return (
@@ -79,7 +81,12 @@ function isDirectVideo(url: string): boolean {
   return /\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(url)
 }
 
-function Tabs({ block, liveRenderer }: { block: Extract<Block, { type: "tabs" }>; liveRenderer?: LivePreviewRenderer }) {
+interface Renderers {
+  liveRenderer?: LivePreviewRenderer
+  sourceRenderer?: SourceReferenceRenderer
+}
+
+function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, { type: "tabs" }> } & Renderers) {
   const [active, setActive] = useState(0)
   return (
     <div className="docs-tabs">
@@ -95,13 +102,13 @@ function Tabs({ block, liveRenderer }: { block: Extract<Block, { type: "tabs" }>
         ))}
       </div>
       <div className="docs-tabs-body">
-        <Blocks blocks={block.tabs[active]?.children ?? []} liveRenderer={liveRenderer} />
+        <Blocks blocks={block.tabs[active]?.children ?? []} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       </div>
     </div>
   )
 }
 
-function BlockView({ block, liveRenderer }: { block: Block; liveRenderer?: LivePreviewRenderer }) {
+function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & Renderers) {
   switch (block.type) {
     case "paragraph":
       return (
@@ -150,19 +157,19 @@ function BlockView({ block, liveRenderer }: { block: Block; liveRenderer?: LiveP
         <div className={`docs-hint docs-hint-${block.style}`}>
           <Icon className="docs-hint-icon" />
           <div>
-            <Blocks blocks={block.children} liveRenderer={liveRenderer} />
+            <Blocks blocks={block.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
           </div>
         </div>
       )
     }
     case "tabs":
-      return <Tabs block={block} liveRenderer={liveRenderer} />
+      return <Tabs block={block} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
     case "expandable":
       return (
         <details className="docs-expandable">
           <summary>{block.summary}</summary>
           <div className="docs-expandable-body">
-            <Blocks blocks={block.children} liveRenderer={liveRenderer} />
+            <Blocks blocks={block.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
           </div>
         </details>
       )
@@ -177,7 +184,7 @@ function BlockView({ block, liveRenderer }: { block: Block; liveRenderer?: LiveP
               </div>
               <div className="docs-step-main">
                 {s.title && <div className="docs-step-title">{s.title}</div>}
-                <Blocks blocks={s.children} liveRenderer={liveRenderer} />
+                <Blocks blocks={s.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
               </div>
             </div>
           ))}
@@ -215,12 +222,22 @@ function BlockView({ block, liveRenderer }: { block: Block; liveRenderer?: LiveP
           <ChevronRight className="size-4 ml-auto" />
         </a>
       )
+    case "source-ref":
+      return sourceRenderer ? (
+        sourceRenderer(block)
+      ) : (
+        <div className="docs-source-ref" data-docstream-source-ref="">
+          <File className="size-4" />
+          <span>{block.title ?? `${block.path}#${block.exportName}`}</span>
+          <code>{block.mount}:{block.path}</code>
+        </div>
+      )
     case "columns":
       return (
         <div className="docs-columns">
           {block.columns.map((c, i) => (
             <div key={i} className="docs-column">
-              <Blocks blocks={c.children} liveRenderer={liveRenderer} />
+              <Blocks blocks={c.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
             </div>
           ))}
         </div>
@@ -239,7 +256,7 @@ function BlockView({ block, liveRenderer }: { block: Block; liveRenderer?: LiveP
           {block.items.map((item, i) => (
             <li key={i}>
               {block.task && <input type="checkbox" checked={!!item.checked} readOnly />}
-              <Blocks blocks={item.children} inline liveRenderer={liveRenderer} />
+              <Blocks blocks={item.children} inline liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
             </li>
           ))}
         </Tag>
@@ -248,7 +265,7 @@ function BlockView({ block, liveRenderer }: { block: Block; liveRenderer?: LiveP
     case "blockquote":
       return (
         <blockquote>
-          <Blocks blocks={block.children} liveRenderer={liveRenderer} />
+          <Blocks blocks={block.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
         </blockquote>
       )
     case "divider":
@@ -303,7 +320,7 @@ function BlockView({ block, liveRenderer }: { block: Block; liveRenderer?: LiveP
             <div key={i} className="docs-update">
               <div className="docs-update-date">{u.date}</div>
               <div className="docs-update-body">
-                <Blocks blocks={u.children} liveRenderer={liveRenderer} />
+                <Blocks blocks={u.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
               </div>
             </div>
           ))}
@@ -324,11 +341,11 @@ function isReactLanguage(language: string | null): boolean {
   return language === "jsx" || language === "tsx" || language === "react"
 }
 
-function Blocks({ blocks, inline, liveRenderer }: { blocks: Block[]; inline?: boolean; liveRenderer?: LivePreviewRenderer }) {
+function Blocks({ blocks, inline, liveRenderer, sourceRenderer }: { blocks: Block[]; inline?: boolean } & Renderers) {
   return (
     <div className={inline ? "docs-blocks-inline" : undefined} style={inline ? { display: "inline" } : undefined}>
       {blocks.map((b, i) => (
-        <BlockView key={i} block={b} liveRenderer={liveRenderer} />
+        <BlockView key={i} block={b} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       ))}
     </div>
   )
@@ -339,19 +356,20 @@ function Blocks({ blocks, inline, liveRenderer }: { blocks: Block[]; inline?: bo
 export function MarkdownContent({
   markdown,
   liveRenderer,
+  sourceRenderer,
   className,
-}: { markdown: string; liveRenderer?: LivePreviewRenderer; className?: string }) {
+}: { markdown: string; className?: string } & Renderers) {
   return (
     <div data-docstream="" className={className}>
-      <Blocks blocks={parseMarkdown(markdown).children} liveRenderer={liveRenderer} />
+      <Blocks blocks={parseMarkdown(markdown).children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
     </div>
   )
 }
 
-export function DocsRenderer({ doc, liveRenderer }: { doc: DocumentNode; liveRenderer?: LivePreviewRenderer }) {
+export function DocsRenderer({ doc, liveRenderer, sourceRenderer }: { doc: DocumentNode } & Renderers) {
   return (
     <article className="docs-article">
-      <Blocks blocks={doc.children} liveRenderer={liveRenderer} />
+      <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
     </article>
   )
 }

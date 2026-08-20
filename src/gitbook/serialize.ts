@@ -76,6 +76,17 @@ function serializeBlock(b: Block): string {
     case "content-ref":
       return `{% content-ref url="${b.url}" %}\n${serializeInline(b.children)}\n{% endcontent-ref %}`
 
+    case "source-ref": {
+      const attrs = [
+        ` mount="${b.mount}"`,
+        ` path="${b.path}"`,
+        ` export="${b.exportName}"`,
+        ` kind="${b.kind}"`,
+        b.title ? ` title="${b.title}"` : "",
+      ].join("")
+      return `{% source-ref${attrs} %}`
+    }
+
     case "columns":
       return `{% columns %}\n${b.columns
         .map((c) => `{% column %}\n${serializeBlocks(c.children)}\n{% endcolumn %}`)

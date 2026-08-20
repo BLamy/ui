@@ -14,6 +14,7 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.
 - Attribute-aware direct video embeds for muted, looping inline clips in long-form posts.
 - Optional `VizEmbed` integration for mounting deterministic `@brett_lamy/viz-engine` scenes in a document.
+- Vite source mounts for rendering and editing real component or Storybook files without copying implementations into Markdown.
 
 ## Installation
 
@@ -182,6 +183,59 @@ import "@brett_lamy/docstream/styles.css"
 VizEngine, so a reader can pause or scrub the same explanation used to produce
 the short clip.
 
+### File-backed components and stories
+
+Markdown is the composition layer. Keep component and Storybook implementations
+in normal source files, then mount their directory in Vite:
+
+```ts
+// vite.config.ts
+import react from "@vitejs/plugin-react"
+import { defineConfig } from "vite"
+import { docstreamSources } from "@brett_lamy/docstream/vite"
+
+export default defineConfig({
+  plugins: [
+    react(),
+    docstreamSources({
+      mounts: [{ name: "ui", root: "src/components" }],
+    }),
+  ],
+})
+```
+
+Reference a named component export or a CSF story from Markdown:
+
+```md
+{% source-ref mount="ui" path="Button.tsx" export="Button" kind="component" title="Button" %}
+
+{% source-ref mount="ui" path="Button.stories.tsx" export="Primary" kind="story" title="Primary button" %}
+```
+
+Render references using the Vite client. The AST keeps `mount`, `path`,
+`exportName`, and `kind`, so provenance survives parse/edit/serialize cycles:
+
+```tsx
+import { MarkdownContent, SourcePreview, createViteSourceClient } from "@brett_lamy/docstream"
+
+const client = createViteSourceClient()
+
+export function Guide({ markdown }: { markdown: string }) {
+  return (
+    <MarkdownContent
+      markdown={markdown}
+      sourceRenderer={(reference) => <SourcePreview reference={reference} client={client} />}
+    />
+  )
+}
+```
+
+`client.read(reference)` returns the current file plus provenance.
+`client.write(reference, content)` writes back to the mounted real file. The
+plugin validates the mount boundary, only edits existing files, and notifies
+Vite after a save so the preview reloads through Vite's normal module pipeline.
+Set `writable: false` on a mount when a documentation site should only render.
+
 ## Assets and OpenAPI Specs
 
 Relative image and OpenAPI spec paths can be resolved against an asset base:
@@ -202,6 +256,8 @@ You can also resolve paths yourself with `resolveAsset`.
 - `DocsRenderer`: Renders a parsed `DocumentNode`.
 - `MarkdownContent`: Parses and renders a markdown string.
 - `OpenApiOperation`: Renders a parsed OpenAPI operation block.
+- `SourcePreview`: Imports and renders a mounted component or CSF story export.
+- `createViteSourceClient`: Reads, writes, and imports files exposed by the Vite plugin.
 
 ### Parser and Serializer
 
