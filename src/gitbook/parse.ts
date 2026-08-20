@@ -234,6 +234,21 @@ export function parseBlocks(lines: string[]): Block[] {
         continue
       }
 
+      if (tag.name === "source-ref" || tag.name === "component" || tag.name === "story") {
+        const kind = tag.name === "story" || tag.attrs.kind === "story" ? "story" : "component"
+        blocks.push({
+          type: "source-ref",
+          mount: tag.attrs.mount ?? "source",
+          path: tag.attrs.path ?? tag.attrs.src ?? "",
+          exportName: tag.attrs.export ?? (kind === "story" ? "Primary" : "default"),
+          kind,
+          ...(tag.attrs.title ? { title: tag.attrs.title } : {}),
+        })
+        i++
+        if (i < lines.length && templateTag(lines[i])?.name === `end${tag.name}`) i++
+        continue
+      }
+
       if (tag.name === "updates") {
         const { body, next } = collectUntil(lines, i + 1, "updates")
         blocks.push({

@@ -339,6 +339,24 @@ Also exported: \`normalizeAlmostNodeFiles\`, \`normalizeAlmostNodePath\`, \`toAl
 `,
   },
   {
+    id: 'source-files',
+    title: 'File-backed components',
+    markdown: `# File-backed components and stories
+
+These previews are not implemented in this Markdown string. Vite mounts the real \`demo/src/examples\` directory, and each block retains its mount, file, export, and kind as provenance.
+
+## Component export
+
+{% source-ref mount="demo" path="Button.tsx" export="Button" kind="component" title="Button component" %}
+
+## Storybook CSF export
+
+{% source-ref mount="demo" path="Button.stories.tsx" export="Primary" kind="story" title="Primary story" %}
+
+\`createViteSourceClient().read(reference)\` reads the authoritative file. The editor package's \`SourceFileEditor\` saves through the same client, writes the real file, preserves provenance, and lets Vite reload the preview.
+`,
+  },
+  {
     id: 'gitbook-syntax',
     title: 'GitBook syntax',
     markdown: `# GitBook syntax

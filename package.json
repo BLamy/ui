@@ -1,12 +1,17 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "files": [
     "src",
+    "!src/**/*.test.ts",
     "README.md"
   ],
   "sideEffects": [
@@ -49,6 +54,14 @@
       "types": "./src/playground/index.ts",
       "import": "./src/playground/index.ts"
     },
+    "./source": {
+      "types": "./src/source/index.ts",
+      "import": "./src/source/index.ts"
+    },
+    "./vite": {
+      "types": "./src/vite/index.ts",
+      "import": "./src/vite/index.ts"
+    },
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
@@ -64,7 +77,13 @@
   "peerDependencies": {
     "@agent-wasm/core": ">=0.4.0",
     "@brett_lamy/viz-engine": ">=0.2.0",
-    "react": ">=18"
+    "react": ">=18",
+    "vite": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
   },
   "repository": {
     "type": "git",
@@ -72,7 +91,10 @@
   },
   "devDependencies": {
     "@agent-wasm/core": "^0.4.0",
+    "@types/node": "^24.0.0",
     "@types/react": "^18.3.3",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
   }
 }

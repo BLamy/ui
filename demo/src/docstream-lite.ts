@@ -3,5 +3,7 @@
 export { GitbookStreamdown } from '../../src/streamdown';
 export { DocsRenderer, MarkdownContent } from '../../src/docs/DocsRenderer';
 export type { LivePreviewProps, LivePreviewRenderer } from '../../src/docs/DocsRenderer';
+export type { SourceReferenceRenderer } from '../../src/docs/DocsRenderer';
+export { SourcePreview, createViteSourceClient } from '../../src/source';
 export { VideoEmbed } from '../../src/video';
 export { parseMarkdown } from '../../src/gitbook/parse';

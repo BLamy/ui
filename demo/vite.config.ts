@@ -2,10 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import path from 'node:path';
+import { docstreamSources } from '../src/vite/index';
 
 export default defineConfig({
   base: '/docstream/',
-  plugins: [react(), nodePolyfills()],
+  plugins: [react(), docstreamSources({ mounts: [{ name: 'demo', root: 'src/examples' }] }), nodePolyfills()],
   resolve: {
     alias: {
       react: path.resolve(__dirname, "node_modules/react"),

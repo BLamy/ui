@@ -32,6 +32,42 @@
   --gb-danger-bg: rgba(239, 68, 68, 0.1);
 }
 
+.docs-source-ref,
+.docs-source-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.docs-source-ref,
+.docs-source-preview {
+  border: 1px solid var(--gb-border);
+  border-radius: var(--gb-radius);
+  overflow: hidden;
+}
+
+.docs-source-ref,
+.docs-source-preview-header {
+  padding: 0.65rem 0.8rem;
+  background: var(--gb-muted);
+}
+
+.docs-source-ref code,
+.docs-source-preview-header code {
+  margin-left: auto;
+  color: var(--gb-muted-foreground);
+  font-size: 0.75rem;
+}
+
+.docs-source-preview-body {
+  padding: 1rem;
+}
+
+.docs-source-preview-error {
+  color: var(--gb-danger-foreground, #b42318);
+  white-space: pre-wrap;
+}
+
 .docs-article {
   max-width: 760px;
   margin: 0 auto;
