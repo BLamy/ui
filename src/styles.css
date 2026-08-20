@@ -48,6 +48,65 @@
   color: var(--gb-text);
 }
 
+.gb-source-ref,
+.gb-source-file-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gb-source-ref {
+  border: 1px solid var(--gb-border);
+  border-radius: var(--gb-radius);
+  padding: 0.65rem 0.8rem;
+  background: var(--gb-muted);
+}
+
+.gb-source-ref-path {
+  flex: 1;
+}
+
+.gb-source-ref-mount,
+.gb-source-ref-export {
+  width: 8rem;
+}
+
+.gb-source-file-editor {
+  border: 1px solid var(--gb-border);
+  border-radius: var(--gb-radius);
+  overflow: hidden;
+}
+
+.gb-source-file-editor-header {
+  padding: 0.55rem 0.7rem;
+  background: var(--gb-muted);
+}
+
+.gb-source-file-editor-header button {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.gb-source-file-editor > textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 16rem;
+  border: 0;
+  border-top: 1px solid var(--gb-border);
+  border-bottom: 1px solid var(--gb-border);
+  padding: 0.8rem;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.gb-source-file-editor-error {
+  color: var(--gb-danger-foreground, #b42318);
+  padding: 0.6rem 0.8rem;
+  white-space: pre-wrap;
+}
+
 /* lucide icon sizing (the node views use size-* utility classes) */
 .gb .size-3 { width: 12px; height: 12px; }
 .gb .size-3\.5 { width: 14px; height: 14px; }

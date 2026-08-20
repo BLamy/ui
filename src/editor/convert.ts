@@ -110,6 +110,17 @@ function blockToPM(b: Block): PMNode {
     }
     case "content-ref":
       return { type: "gbContentRef", attrs: { url: b.url, label: plainText(b.children) } }
+    case "source-ref":
+      return {
+        type: "gbSourceRef",
+        attrs: {
+          mount: b.mount,
+          path: b.path,
+          exportName: b.exportName,
+          kind: b.kind,
+          title: b.title ?? "",
+        },
+      }
     case "columns":
       return {
         type: "gbColumns",
@@ -281,6 +292,15 @@ function pmToBlock(n: PMNode): Block | null {
         type: "content-ref",
         url: String(n.attrs?.url ?? ""),
         children: [{ type: "text", text: String(n.attrs?.label ?? "") }],
+      }
+    case "gbSourceRef":
+      return {
+        type: "source-ref",
+        mount: String(n.attrs?.mount ?? "source"),
+        path: String(n.attrs?.path ?? ""),
+        exportName: String(n.attrs?.exportName ?? "default"),
+        kind: n.attrs?.kind === "story" ? "story" : "component",
+        ...(n.attrs?.title ? { title: String(n.attrs.title) } : {}),
       }
     case "gbColumns":
       return {

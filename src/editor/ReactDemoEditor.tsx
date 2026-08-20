@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { FileCode2, Play } from "lucide-react"
 
-import { ReactCodePreview } from "@brett_lamy/docstream"
+import { ReactCodePreview } from "@brett_lamy/docstream/playground"
 
 export interface ReactDemoEditorProps {
   /** Source files keyed by their project-relative or absolute paths. */
