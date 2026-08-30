@@ -61,6 +61,11 @@ The shell measures its own container, not the browser viewport, so it works in r
 - Terminal: `TerminalDock`, `TermHeader`, `TermBody`, `SnapSheet`
 - Markdown: `MarkdownView`, backed by `@brett_lamy/docstream`
 
+`Composer` uses `@brett_lamy/docstream-editor` for structured GitBook-flavored Markdown.
+Type `/` for blocks; Enter sends a plain top-level paragraph, structured blocks retain their
+native Enter behavior, and ⌘/Ctrl+Enter always sends. Pasted Markdown becomes rich nodes while
+pasted images keep the Workbench annotation flow.
+
 The package ships runnable Storybook examples for every shell width class, empty chat state, terminal sheet, panel drawer, and full-screen surface.
 
 ## Workspace development

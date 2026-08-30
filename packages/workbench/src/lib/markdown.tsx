@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { GitbookStreamdown } from '@brett_lamy/docstream';
+import { GitbookStreamdown } from '@brett_lamy/docstream/streamdown';
 import '@brett_lamy/docstream/styles.css';
 import { cn } from './util';
 

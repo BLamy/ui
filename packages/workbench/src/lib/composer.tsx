@@ -1,5 +1,9 @@
 import * as React from 'react';
 import { useState, useRef } from 'react';
+import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
+import { astToTiptap } from '@brett_lamy/docstream-editor/convert';
+import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
+import '@brett_lamy/docstream-editor/styles.css';
 import { cn, MONO, WFONT } from './util';
 import { vib, tick } from './haptics';
 import { WIcon, type WIconName } from './icons';
@@ -50,6 +54,30 @@ export function Pill({ icon, label, onPress, tint, className, style }: PillProps
 interface Att {
   id: string;
   src: string;
+}
+
+type ComposerEditor = NonNullable<Parameters<NonNullable<GitbookEditorProps['onEditorReady']>>[0]>;
+
+function caretOnPlainLine(editor: ComposerEditor): boolean {
+  const { $from, empty } = editor.state.selection;
+  return empty && $from.depth === 1 && $from.parent.type.name === 'paragraph';
+}
+
+const MARKDOWN_HINTS = [
+  /^\s{0,3}#{1,6}\s/m,
+  /^\s*(?:[-*+]|\d+[.)])\s/m,
+  /^\s*>\s/m,
+  /```/,
+  /\{%\s*[a-z-]+/,
+  /\*\*[^*\n]+\*\*|__[^_\n]+__/,
+  /`[^`\n]+`/,
+  /\[[^\]\n]+\]\([^)\s]+\)/,
+  /^\s*\|.+\|\s*$/m,
+  /^\s*(?:---|\*\*\*)\s*$/m,
+];
+
+function looksLikeMarkdown(text: string): boolean {
+  return MARKDOWN_HINTS.some((pattern) => pattern.test(text));
 }
 
 /* AnnotateLightbox — click a pasted image: an annotation canvas overlays it; Save rasterizes image + strokes
@@ -166,51 +194,88 @@ export interface ComposerProps {
   modelPicker?: React.ReactNode;
   /** optional drawing surface passed through to the AnnotateLightbox */
   annotateCanvas?: React.ReactNode;
+  /** Initial GitBook-flavored Markdown shown in the Docstream editor. */
+  defaultValue?: string;
+  /** Called with serialized Markdown whenever the rich editor changes. */
+  onChange?: (markdown: string) => void;
+  placeholder?: string;
   className?: string;
   style?: React.CSSProperties;
 }
-export function Composer({ onSend, streaming, onStop, autoFocus, wide, modelPicker, annotateCanvas, className, style }: ComposerProps) {
-  const [v, setV] = useState('');
+export function Composer({
+  onSend,
+  streaming,
+  onStop,
+  autoFocus,
+  wide,
+  modelPicker,
+  annotateCanvas,
+  defaultValue,
+  onChange,
+  placeholder = 'Ask anything — @ files, / commands, paste images',
+  className,
+  style,
+}: ComposerProps) {
+  const [v, setV] = useState(() => defaultValue ?? '');
   const [mi, setMi] = useState(0),
     [ei, setEi] = useState(0),
     [ai, setAi] = useState(0);
   const [atts, setAtts] = useState<Att[]>([]);
   const [anno, setAnno] = useState<string | null>(null);
-  const ta = useRef<HTMLTextAreaElement>(null);
-  const grow = (el: HTMLTextAreaElement) => {
-    el.style.height = 'auto';
-    el.style.height = Math.min(190, el.scrollHeight) + 'px';
-  };
+  const editorRef = useRef<ComposerEditor | null>(null);
+  const markdownRef = useRef(v);
+  markdownRef.current = v;
   const can = !!(v.trim() || atts.length);
   const send = () => {
     if (!can || streaming) return;
     vib([8]);
-    const t = v.trim(),
+    const t = markdownRef.current.trim(),
       imgs = atts.map((a) => a.src);
-    setV('');
     setAtts([]);
-    if (ta.current) {
-      ta.current.style.height = 'auto';
-    }
+    if (editorRef.current) editorRef.current.commands.clearContent(true);
+    else setV('');
     onSend(t, imgs);
   };
-  const paste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const items = e.clipboardData && e.clipboardData.items;
-    if (!items) return;
-    let got = false;
-    for (const it of Array.from(items))
-      if (it.type && it.type.indexOf('image/') === 0) {
-        const f = it.getAsFile();
-        if (!f) continue;
-        got = true;
-        const rd = new FileReader();
-        rd.onload = () => {
-          vib([8]);
-          setAtts((a) => [...a, { id: 'att' + Date.now() + Math.random(), src: rd.result as string }]);
-        };
-        rd.readAsDataURL(f);
-      }
-    if (got) e.preventDefault();
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  const handleKeyDown = (event: KeyboardEvent) => {
+    const editor = editorRef.current;
+    if (!editor || event.key !== 'Enter') return false;
+    if (event.metaKey || event.ctrlKey) {
+      sendRef.current();
+      return true;
+    }
+    if (event.shiftKey) return editor.commands.insertContent({ type: 'hardBreak' });
+    if (document.querySelector('.slash-menu') || !caretOnPlainLine(editor)) return false;
+    sendRef.current();
+    return true;
+  };
+  const handlePaste = (event: ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    let gotImage = false;
+    for (const item of Array.from(items ?? [])) {
+      if (!item.type.startsWith('image/')) continue;
+      const file = item.getAsFile();
+      if (!file) continue;
+      gotImage = true;
+      const reader = new FileReader();
+      reader.onload = () => {
+        vib([8]);
+        setAtts((attachments) => [
+          ...attachments,
+          { id: 'att' + Date.now() + Math.random(), src: reader.result as string },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    }
+    if (gotImage) return true;
+
+    const text = event.clipboardData?.getData('text/plain') ?? '';
+    if (!looksLikeMarkdown(text) || !editorRef.current) return false;
+    const doc = astToTiptap(parseMarkdown(text));
+    if (!doc.content?.length) return false;
+    editorRef.current.commands.insertContent(doc.content);
+    return true;
   };
   const annoAtt = anno ? atts.find((a) => a.id === anno) : null;
   return (
@@ -269,38 +334,21 @@ export function Composer({ onSend, streaming, onStop, autoFocus, wide, modelPick
             ))}
           </div>
         ) : null}
-        <textarea
-          ref={ta}
-          value={v}
-          rows={wide ? 3 : 1}
-          autoFocus={autoFocus}
-          aria-label="Message"
-          placeholder="Ask anything — @ files, / commands, paste images"
-          onChange={(e) => {
-            setV(e.target.value);
-            grow(e.target);
+        <GitbookEditor
+          markdown={v}
+          onChange={(markdown) => {
+            setV(markdown);
+            onChange?.(markdown);
           }}
-          onPaste={paste}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              send();
-            }
-          }}
-          style={{
-            display: 'block',
-            width: '100%',
-            boxSizing: 'border-box',
-            border: 0,
-            outline: 'none',
-            background: 'none',
-            resize: 'none',
-            color: 'var(--wb-label)',
-            fontFamily: 'inherit',
-            fontSize: 14,
-            lineHeight: 1.5,
-            padding: '12px 14px 4px',
-            minHeight: wide ? 64 : 38,
+          toolbar={false}
+          slashMenu
+          placeholder={placeholder}
+          autofocus={autoFocus}
+          className={cn('wb-composer-doc', wide && 'wb-composer-doc-wide')}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          onEditorReady={(editor) => {
+            editorRef.current = editor;
           }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px 8px 8px', flexWrap: 'wrap' }}>

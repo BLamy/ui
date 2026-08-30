@@ -3,10 +3,22 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "@brett_lamy/docstream-editor": "0.3.6",
+    "@tiptap/core": "3.30.5",
+    "@tiptap/extension-code-block-lowlight": "3.30.5",
+    "@tiptap/extension-list": "3.30.5",
+    "@tiptap/extension-placeholder": "3.30.5",
+    "@tiptap/extension-table": "3.30.5",
+    "@tiptap/pm": "3.30.5",
+    "@tiptap/react": "3.30.5",
+    "@tiptap/starter-kit": "3.30.5",
+    "@tiptap/suggestion": "3.30.5",
+    "@touchkit/beautiful": "workspace:*",
+    "@touchkit/chatkit": "workspace:*",
+    "@touchkit/pencilkit": "workspace:*",
     "@touchkit/ui": "workspace:*",
     "@touchkit/workbench": "workspace:*",
-    "@touchkit/chatkit": "workspace:*",
-    "@touchkit/beautiful": "workspace:*",
-    "@touchkit/pencilkit": "workspace:*"
+    "highlight.js": "11.11.2",
+    "lowlight": "3.3.0"
   }
 }

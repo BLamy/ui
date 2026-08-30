@@ -8,7 +8,7 @@ import {
 } from '@touchkit/ui';
 import { ChatDemo } from '@touchkit/chatkit';
 import {
-  Composer, MarkdownView, MessageScroller, MONO, REPLY_SERVERS, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
+  Composer, MarkdownView, MessageScroller, REPLY_SERVERS, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
 } from '@touchkit/workbench';
 import { DemoBtn, TKDK, TKFrame, TKL, type LiveSpec } from './frame';
@@ -111,17 +111,17 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   composer: {
-    title: 'Composer', theme: 'wb', h: 320,
-    code: 'import { Composer } from "./workbench.tsx"\n\nexport default function App() {\n  const [sent, setSent] = React.useState(null)\n  const [streaming, setStreaming] = React.useState(false)\n  const send = text => {\n    setSent(text); setStreaming(true)\n    setTimeout(() => setStreaming(false), 2600)\n  }\n  return (\n    <div style={{ maxWidth: 560, margin: "0 auto" }}>\n      <Composer wide onSend={send} streaming={streaming}\n        onStop={() => setStreaming(false)}/>\n      {sent && <p style={{ font: "12px ui-monospace" }}>sent: {sent}</p>}\n    </div>\n  )\n}',
+    title: 'Composer · Docstream editor', theme: 'wb', h: 400,
+    code: 'import { Composer, MarkdownView } from "@touchkit/workbench"\n\nexport default function App() {\n  const [sent, setSent] = React.useState("")\n  const [streaming, setStreaming] = React.useState(false)\n  const send = markdown => {\n    setSent(markdown); setStreaming(true)\n    setTimeout(() => setStreaming(false), 1600)\n  }\n  return (\n    <div style={{ maxWidth: 560, margin: "0 auto" }}>\n      <Composer wide defaultValue={"## Ship checklist\\n\\n- Highlight code\\n- Publish package"}\n        onSend={send} streaming={streaming}\n        onStop={() => setStreaming(false)}/>\n      {sent && <MarkdownView markdown={sent}/>}\n    </div>\n  )\n}',
     Render: function CompLive() {
       const [sent, setSent] = useState<string | null>(null);
       const [streaming, setStreaming] = useState(false);
       const t = useRef<any>(null);
       useEffect(() => () => clearTimeout(t.current), []);
       return <div style={{ maxWidth: 560, margin: '0 auto' }}>
-        <Composer wide onSend={(text) => { setSent(text); setStreaming(true); clearTimeout(t.current); t.current = setTimeout(() => setStreaming(false), 2600); }}
+        <Composer wide defaultValue={'## Ship checklist\n\n- Highlight code\n- Publish package'} onSend={(text) => { setSent(text); setStreaming(true); clearTimeout(t.current); t.current = setTimeout(() => setStreaming(false), 1600); }}
           streaming={streaming} onStop={() => { clearTimeout(t.current); setStreaming(false); }} />
-        {sent ? <div style={{ fontFamily: MONO, fontSize: 12, color: 'var(--wb-label2)', marginTop: 10 }}>sent: {sent}</div> : null}
+        {sent ? <div style={{ fontSize: 12, color: 'var(--wb-label)', marginTop: 10 }}><MarkdownView markdown={sent} /></div> : null}
       </div>;
     },
   },

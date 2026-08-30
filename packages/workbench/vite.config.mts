@@ -38,7 +38,13 @@ export default defineConfig(() => ({
     },
     rolldownOptions: {
       // External packages that should not be bundled into your library.
-      external: ['react', 'react-dom', 'react/jsx-runtime', '@brett_lamy/docstream'],
+      external: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        /^@brett_lamy\/docstream(?:-editor)?(?:\/.*)?$/,
+        /^@tiptap\//,
+      ],
     },
   },
 }));

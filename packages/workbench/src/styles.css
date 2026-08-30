@@ -27,3 +27,36 @@
 .wb-md :where(a){color:var(--wb-tint,#0A84FF);text-decoration:none}
 .wb-md :where(a:hover){text-decoration:underline}
 .wb-md :where(img){max-width:100%;border-radius:8px}
+.wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name){color:#C792EA}
+.wb-md :where(.hljs-string,.hljs-attr,.hljs-symbol,.hljs-bullet){color:#A5D6A7}
+.wb-md :where(.hljs-title,.hljs-section,.hljs-function .hljs-title){color:#82AAFF}
+.wb-md :where(.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable){color:#F78C6C}
+.wb-md :where(.hljs-comment,.hljs-quote,.hljs-meta){color:#777784;font-style:italic}
+.wb-md :where(.hljs-operator,.hljs-punctuation){color:#89DDFF}
+.wb-md :where(.hljs-deletion){color:#FF6B6B}
+.wb-md :where(.hljs-addition){color:#69DB7C}
+
+/* Docstream editor compressed into the Workbench composer. The editor package defaults to a
+   full document canvas, so this adapter supplies the same narrow, auto-growing surface used by
+   the GitHub clone while keeping structured blocks and the slash menu available. */
+.wb-composer-doc.gb{
+  --card:var(--wb-card);
+  --background:var(--wb-card);
+  --foreground:var(--wb-label);
+  --muted:var(--wb-fill);
+  --muted-foreground:var(--wb-label2);
+  --border:var(--wb-sep);
+  --accent:var(--wb-fill2);
+  --accent-foreground:var(--wb-label);
+  --primary:var(--wb-tint);
+  width:100%;max-width:none;max-height:190px;min-height:0;margin:0;padding:0 14px 2px;
+  box-sizing:border-box;overflow-y:auto;color:var(--wb-label);font-family:inherit;font-size:14px;line-height:1.5
+}
+.wb-composer-doc.gb .ProseMirror{min-height:38px;padding:10px 0 4px;outline:none;font-size:14px;line-height:1.5}
+.wb-composer-doc-wide.gb .ProseMirror{min-height:64px}
+.wb-composer-doc.gb .ProseMirror>*+*{margin-top:.4em}
+.wb-composer-doc.gb .ProseMirror p{margin:0}
+.wb-composer-doc.gb .ProseMirror p:is(.is-empty,.is-editor-empty):first-child:before{
+  content:attr(data-placeholder);float:left;height:0;color:var(--wb-label3);pointer-events:none
+}
+.wb-composer-doc.gb .gb-code{margin:.45em 0}

@@ -1,0 +1,59 @@
+name: Publish TouchKit UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/ui/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'nx.json'
+      - 'tsconfig*.json'
+      - '.github/workflows/publish-ui.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build UI package
+        run: pnpm nx build @touchkit/ui
+
+      - name: Publish if version is new
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./packages/ui/package.json').version")
+          PACKAGE_NAME='@brett_lamy/ui'
+          if npm view "$PACKAGE_NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$PACKAGE_NAME@$VERSION already exists — skipping"
+            exit 0
+          fi
+
+          npm install --global npm@latest
+          cp -R packages/ui "$RUNNER_TEMP/touchkit-ui"
+          cd "$RUNNER_TEMP/touchkit-ui"
+          npm pkg set name="$PACKAGE_NAME"
+          npm publish --access public
