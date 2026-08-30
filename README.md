@@ -73,11 +73,15 @@ export function EditorPage() {
 export interface GitbookEditorProps {
   markdown: string
   onChange: (markdown: string) => void
+  onKeyDown?: (event: KeyboardEvent) => boolean
+  onPaste?: (event: ClipboardEvent) => boolean
 }
 ```
 
 - `markdown`: Source markdown to load into the editor.
 - `onChange`: Called with serialized markdown whenever TipTap content changes.
+- `onKeyDown` / `onPaste`: Optional host hooks that run before the built-in editor behavior;
+  return `true` when the application handled the event.
 
 The editor tracks the last markdown it emitted so normal controlled updates do not continuously reset the TipTap document. Passing a different external `markdown` value replaces the editor content.
 

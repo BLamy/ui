@@ -39,6 +39,10 @@ export interface GitbookEditorProps {
   disableHistory?: boolean
   /** Extra TipTap extensions appended last (e.g. Collaboration, CollaborationCursor). */
   extensions?: AnyExtension[]
+  /** Handle a key before the editor's built-in keymaps. Return true when handled. */
+  onKeyDown?: (event: KeyboardEvent) => boolean
+  /** Handle clipboard content before the editor's built-in paste behavior. Return true when handled. */
+  onPaste?: (event: ClipboardEvent) => boolean
   /** Receive the underlying TipTap editor instance (and null on teardown). */
   onEditorReady?: (editor: TiptapEditor | null) => void
 }
@@ -114,6 +118,8 @@ export function GitbookEditor({
   autofocus = false,
   disableHistory,
   extensions,
+  onKeyDown,
+  onPaste,
   onEditorReady,
 }: GitbookEditorProps) {
   // Tracks the markdown the editor itself produced, so external updates
@@ -130,6 +136,10 @@ export function GitbookEditor({
       ...(disableHistory !== undefined ? { disableHistory } : {}),
       ...(extensions ? { extensions } : {}),
     }),
+    editorProps: {
+      handleKeyDown: (_view, event) => onKeyDown?.(event) ?? false,
+      handlePaste: (_view, event) => onPaste?.(event) ?? false,
+    },
     ...(controlled ? { content: astToTiptap(parseMarkdown(markdown as string)) } : {}),
     onUpdate({ editor }) {
       if (!onChange) return
