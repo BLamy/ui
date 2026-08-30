@@ -1,18 +1,76 @@
 /* Core TouchKit / Workbench live blocks — ported from the prototype's DocsLive LIVE registry
    (project/workbench.jsx), rebuilt on the @touchkit/* package public APIs. */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   Avatar, Credenza, Haptics, Icon, IndexBar, NavigationStack, Segmented, SideDrawer, SplitView, Spinner,
   Switch as TKSwitch, TabBar, List as TKList, ListSection as TKSection, ListRow as TKRow,
   type Screen,
 } from '@touchkit/ui';
+import { ChatDemo } from '@touchkit/chatkit';
 import {
-  Composer, MarkdownView, MessageScroller, MONO, REPLY_SERVERS, SurfacePanel, TermBody, TermHeader, WFONT,
+  Composer, MarkdownView, MessageScroller, MONO, REPLY_SERVERS, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
 } from '@touchkit/workbench';
 import { DemoBtn, TKDK, TKFrame, TKL, type LiveSpec } from './frame';
 
+function ScaledShell({ width, height, children }: { width: number; height: number; children: ReactNode }) {
+  const host = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const resize = () => setScale(Math.min(1, el.clientWidth / width));
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [width]);
+  return <div ref={host} style={{ width: '100%', height: height * scale, position: 'relative', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', width, height, transform: `scale(${scale})`, transformOrigin: 'top left' }}>{children}</div>
+  </div>;
+}
+
 export const LIVE_CORE: Record<string, LiveSpec> = {
+  chatshell: {
+    title: 'ChatShell · responsive composition', theme: 'tk', h: 580,
+    code: 'import { ChatShell } from "@touchkit/chatkit"\n\nexport default function Chat() {\n  return (\n    <ChatShell breakpoint={880}>\n      <ChatShell.Rail><WorkspaceRail /></ChatShell.Rail>\n      <ChatShell.Nav><ChannelNav /></ChatShell.Nav>\n      <ChatShell.Main><ChannelMain /></ChatShell.Main>\n    </ChatShell>\n  )\n}',
+    Render: function ChatShellLive() {
+      const [mode, setMode] = useState('wide');
+      const compact = mode === 'compact';
+      const width = compact ? 430 : 1040;
+      return <div>
+        <div style={{ width: 260, margin: '0 auto 12px' }}>
+          <Segmented aria-label="ChatShell width" value={mode} onChange={setMode} options={[{ id: 'wide', label: 'Wide' }, { id: 'compact', label: 'Compact' }]} />
+        </div>
+        <ScaledShell width={width} height={520}>
+          <ChatDemo initialThread={null} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }} />
+        </ScaledShell>
+        <div style={{ fontSize: 12, color: 'var(--tk-label2)', textAlign: 'center', marginTop: 8 }}>
+          {compact ? 'Compact: open the hamburger to reveal the rail and channels.' : 'Wide: the workspace rail and channel navigation stay docked.'}
+        </div>
+      </div>;
+    },
+  },
+  workbenchshell: {
+    title: 'WorkbenchShell · responsive composition', theme: 'wb', h: 590,
+    code: 'import { WorkbenchShell } from "@touchkit/workbench"\n\nexport default function Workbench() {\n  return (\n    <WorkbenchShell>\n      <WorkbenchShell.Sidebar><ThreadList /></WorkbenchShell.Sidebar>\n      <WorkbenchShell.Main><Conversation /></WorkbenchShell.Main>\n      <WorkbenchShell.Dock><TerminalDock /></WorkbenchShell.Dock>\n      <WorkbenchShell.Panel><SurfacePanel /></WorkbenchShell.Panel>\n      <WorkbenchShell.TabBar><SurfaceTabs /></WorkbenchShell.TabBar>\n    </WorkbenchShell>\n  )\n}',
+    Render: function WorkbenchShellLive() {
+      const [mode, setMode] = useState('regular');
+      const compact = mode === 'compact';
+      const width = compact ? 430 : 1180;
+      return <div>
+        <div style={{ ...TKDK, width: 280, margin: '0 auto 12px' } as CSSProperties}>
+          <Segmented aria-label="WorkbenchShell width" value={mode} onChange={setMode} options={[{ id: 'regular', label: 'Regular' }, { id: 'compact', label: 'Compact' }]} />
+        </div>
+        <ScaledShell width={width} height={560}>
+          <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 12 }}><WorkbenchDemo terminal /></div>
+        </ScaledShell>
+        <div style={{ fontSize: 12, color: 'var(--wb-label2)', textAlign: 'center', marginTop: 8 }}>
+          {compact ? 'Compact: sidebar, terminal, and surfaces move into sheets and tabs.' : 'Regular: sidebar, terminal dock, and surface panel share the workspace.'}
+        </div>
+      </div>;
+    },
+  },
   row: {
     title: 'TKList · TKSection · TKRow', theme: 'tk', h: 340,
     code: 'import { TKList, TKSection, TKRow, Avatar, TKSwitch, Haptics } from "./touchkit.tsx"\n\nexport default function App() {\n  const [dnd, setDnd] = React.useState(true)\n  const people = [\n    { f: "Maya", l: "Lindqvist", role: "Industrial design" },\n    { f: "Jonas", l: "Ito", role: "Haptics engineering" },\n  ]\n  return (\n    <TKList inset>\n      <TKSection title="Team" footer="Rows are real buttons — arrow keys work too.">\n        {people.map(p => (\n          <TKRow key={p.l} leading={<Avatar c={p} size={36}/>}\n            title={p.f + " " + p.l} subtitle={p.role}\n            accessory="chevron" onPress={() => Haptics.impact("light")}/>\n        ))}\n        <TKRow title="Do Not Disturb" divider={false}\n          trailing={<TKSwitch checked={dnd} onChange={setDnd}/>}/>\n      </TKSection>\n    </TKList>\n  )\n}',
