@@ -20,7 +20,8 @@
     "framer-motion": "^12 || ^13",
     "clsx": "^2",
     "tailwind-merge": "^3",
-    "class-variance-authority": "^0.7"
+    "class-variance-authority": "^0.7",
+    "ios-vibrator-pro-max": "3.0.3"
   },
   "peerDependencies": {
     "react": "^18 || ^19",

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { enableDebugMode } from 'ios-vibrator-pro-max';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { EASE } from '../lib/utils';
@@ -21,19 +22,13 @@ export function Sun({ size, color }: { size?: number; color?: string }) {
   );
 }
 
-let vibModule: any = null;
-const VIB_URL: string = 'https://cdn.jsdelivr.net/npm/ios-vibrator-pro-max@3.0.3/+esm';
-
 export function ShowMagicRow() {
   const [on, setOn] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-  const toggle = async (v: boolean) => {
+  const toggle = (v: boolean) => {
     setOn(v); Haptics.impact('light');
-    try {
-      const m = vibModule || (vibModule = await import(/* @vite-ignore */ VIB_URL));
-      if (m.enableDebugMode) { m.enableDebugMode(v); setNote(v ? 'Overlay switches are now visible' : null); }
-      else setNote('debug API missing in this build');
-    } catch (e) { setNote('polyfill only loads in Safari'); }
+    enableDebugMode(v);
+    setNote(v ? 'Overlay switches are now visible' : null);
   };
   return (
     <ListRow leading={sq('#BF5AF2', 'wave')} title="Show the magic!" divider={false}

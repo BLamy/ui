@@ -336,6 +336,9 @@ importers:
       framer-motion:
         specifier: ^12 || ^13
         version: 13.1.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      ios-vibrator-pro-max:
+        specifier: 3.0.3
+        version: 3.0.3
       react:
         specifier: ^18 || ^19
         version: 19.0.0
@@ -5121,6 +5124,9 @@ packages:
   internmap@2.0.3:
     resolution: {integrity: sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg==}
     engines: {node: '>=12'}
+
+  ios-vibrator-pro-max@3.0.3:
+    resolution: {integrity: sha512-D1C+goFN1qw2v9jJFO9FksOte5V73PSDirWijRGLsjtOrl4ZyT3WanEUrxPXO/YENIOgj56BHtyb++9DPOel4g==}
 
   ip-regex@2.1.0:
     resolution: {integrity: sha512-58yWmlHpp7VYfcdTwMTvwMmqx/Elfxjd9RXTDyMsbL7lLWmhMylLEqiYVLKuLzOZqVgiWXD9MfR62Vv89VRxkw==}
@@ -13165,6 +13171,8 @@ snapshots:
   internmap@1.0.1: {}
 
   internmap@2.0.3: {}
+
+  ios-vibrator-pro-max@3.0.3: {}
 
   ip-regex@2.1.0: {}
 
