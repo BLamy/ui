@@ -1,0 +1,40 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/ui"
+    },
+    {
+      "path": "./packages/chatkit"
+    },
+    {
+      "path": "./packages/workbench"
+    },
+    {
+      "path": "./packages/pencilkit"
+    },
+    {
+      "path": "./apps/contacts"
+    },
+    {
+      "path": "./apps/workbench-app"
+    },
+    {
+      "path": "./apps/chat"
+    },
+    {
+      "path": "./apps/pencil"
+    },
+    {
+      "path": "./apps/beautiful"
+    },
+    {
+      "path": "./packages/beautiful"
+    },
+    {
+      "path": "./apps/docs"
+    }
+  ]
+}

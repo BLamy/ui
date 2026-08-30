@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<script src="./docs-content.js"></script>
+<style>
+html,body{margin:0;padding:0;background:#FCFCFD;color:#17171C;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#2E66D0}a:hover{color:#1E4AA6}
+*:focus{outline:none}
+*:focus-visible{outline:2.5px solid #0A84FF;outline-offset:2px;border-radius:4px}
+.dk-scroll{scrollbar-width:thin;scrollbar-color:rgba(128,128,140,.35) transparent}
+.dk-scroll::-webkit-scrollbar{width:8px}
+.dk-scroll::-webkit-scrollbar-thumb{background:rgba(128,128,140,.3);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+.dk-scroll::-webkit-scrollbar-track{background:transparent}
+.dk-doc .wb-md{font-size:14.5px;line-height:1.65}
+.dk-doc .wb-md :where(h1){font-size:28px;letter-spacing:-.5px;margin:6px 0 14px}
+.dk-doc .wb-md :where(h2){font-size:19px;margin:26px 0 8px;padding-top:6px}
+.dk-doc .wb-md :where(h3){font-size:15.5px;margin:18px 0 6px}
+.dk-doc .wb-md :where(th){font-size:11.5px}
+.dk-doc .wb-md :where(pre){font-size:12.5px}
+</style>
+</helmet>
+<div style="height:100vh;display:flex;overflow:hidden">
+<sc-if value="{{ fixedNav }}" hint-placeholder-val="{{ true }}">
+<div style="width:262px;flex-shrink:0;background:#F6F6F8;border-right:1px solid rgba(20,20,40,0.08);display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:9px;padding:16px 16px 10px">
+<svg width="26" height="26" viewBox="0 0 34 34" style="flex-shrink:0"><defs><linearGradient id="dklg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A84FF"></stop><stop offset="1" stop-color="#5E5CE6"></stop></linearGradient></defs><rect width="34" height="34" rx="8.5" fill="url(#dklg)"></rect><path d="M8 15.5v3M12.25 11.5v11M17 7.5v19M21.75 11.5v11M26 15.5v3" stroke="#fff" stroke-width="2.3" stroke-linecap="round"></path></svg>
+<div><div style="font-size:14.5px;font-weight:800;letter-spacing:-.2px;line-height:1.1">TouchKit</div><div style="font-size:10.5px;color:#8A8A94;font-weight:600;letter-spacing:.4px">DOCUMENTATION</div></div>
+</div>
+<div class="dk-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:0 10px 10px">
+<sc-for list="{{ navRows }}" as="r" hint-placeholder-count="14">
+<sc-if value="{{ r.isSection }}" hint-placeholder-val="{{ false }}">
+<div style="padding:16px 10px 5px;font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#8A8A94">{{ r.label }}</div>
+</sc-if>
+<sc-if value="{{ r.notSection }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ r.pick }}" style="{{ r.st }}" class="dk-nav">{{ r.label }}</button>
+</sc-if>
+</sc-for>
+</div>
+<div style="padding:12px 16px;border-top:1px solid rgba(20,20,40,0.08);font-size:12px;line-height:1.9">
+<div><a href="TouchKit Demo.dc.html">Contacts demo →</a></div>
+<div><a href="Workbench.dc.html">Workbench demo →</a></div>
+<div><a href="PencilKit Demo.dc.html">PencilKit demo →</a></div>
+<div><a href="Chat Demo.dc.html">Chat demo →</a></div>
+<div style="font-size:10.5px;color:#9A9AA3;font-family:ui-monospace,Menlo,monospace;margin-top:4px">rendered with docstream</div>
+</div>
+</div>
+</sc-if>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<sc-if value="{{ overlayNav }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;border-bottom:1px solid rgba(20,20,40,0.08);background:#FCFCFD;flex-shrink:0">
+<button onClick="{{ openNav }}" aria-label="Open navigation" style="border:0;background:none;cursor:pointer;padding:6px;display:grid;color:#55555E"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16"></path></svg></button>
+<span style="font-size:13.5px;font-weight:700">TouchKit Docs</span>
+<span style="font-size:12.5px;color:#8A8A94;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">/ {{ pageTitle }}</span>
+</div>
+</sc-if>
+<div id="tkdocs-scroll" class="dk-scroll" style="flex:1;min-height:0;overflow-y:auto">
+<div class="dk-doc" style="max-width:780px;margin:0 auto;padding:34px 34px 90px;box-sizing:border-box">
+<div style="font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#0A84FF;margin-bottom:2px">{{ secLabel }}</div>
+<sc-for list="{{ segs }}" as="seg" hint-placeholder-count="2">
+<div>
+<sc-if value="{{ seg.md }}" hint-placeholder-val="{{ true }}">
+<x-import component="MdView" from="./workbench.jsx" markdown="{{ seg.md }}" hint-size="100%,300px"></x-import>
+</sc-if>
+<sc-if value="{{ seg.haptics }}" hint-placeholder-val="{{ false }}">
+<div style="background:#F2F2F7;border:1px solid rgba(20,20,40,0.07);border-radius:16px;padding:10px 4px 14px;margin:16px 0;--tk-bg:#fff;--tk-bg2:#F2F2F7;--tk-card:#fff;--tk-label:#0B0B0F;--tk-label2:rgba(60,60,67,.6);--tk-label3:rgba(60,60,67,.33);--tk-sep:rgba(60,60,67,.22);--tk-fill:rgba(120,120,128,.13);--tk-fill2:rgba(120,120,128,.24);--tk-press:rgba(120,120,128,.16);--tk-tint:#0A84FF;--tk-green:#34C759;--tk-red:#FF3B30">
+<x-import component="HapticsPlayground" from="./touchkit.jsx" hint-size="100%,860px"></x-import>
+</div>
+</sc-if>
+<sc-if value="{{ seg.workbench }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;height:600px;border:1px solid rgba(20,20,40,0.1);border-radius:14px;overflow:hidden;margin:16px 0;box-shadow:0 18px 44px -18px rgba(15,15,35,0.3)">
+<x-import component="Workbench" from="./workbench.jsx" style="position:absolute;inset:0" hint-size="100%,600px"></x-import>
+</div>
+<div style="height:0;overflow:hidden" aria-hidden="true"><x-import component="BUIReady" from="./beautiful.jsx" hint-size="0px,0px"></x-import><div style="position:relative;width:0;height:0;overflow:hidden"><x-import component="PencilCanvas" from="./pencilkit.jsx" hint-size="0px,0px"></x-import></div></div>
+</sc-if>
+<sc-if value="{{ seg.pencil }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;height:540px;border:1px solid rgba(20,20,40,0.1);border-radius:14px;overflow:hidden;margin:16px 0;box-shadow:0 18px 44px -18px rgba(15,15,35,0.3)">
+<x-import component="PencilKitDemo" from="./pencilkit.jsx" style="position:absolute;inset:0" hint-size="100%,540px"></x-import>
+</div>
+</sc-if>
+<sc-if value="{{ seg.app }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;height:560px;max-width:920px;border:1px solid rgba(20,20,40,0.1);border-radius:14px;overflow:hidden;margin:16px 0;box-shadow:0 18px 44px -18px rgba(15,15,35,0.3)">
+<x-import component="App" from="./touchkit.jsx" style="position:absolute;inset:0" hint-size="100%,560px"></x-import>
+</div>
+</sc-if>
+<sc-if value="{{ seg.live }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="height:0;overflow:hidden" aria-hidden="true"><x-import component="Icon" from="./touchkit.jsx" name="check" hint-size="0px,0px"></x-import></div>
+<sc-if value="{{ seg.bui }}" hint-placeholder-val="{{ false }}">
+<div style="height:0;overflow:hidden" aria-hidden="true"><x-import component="BUIReady" from="./beautiful.jsx" hint-size="0px,0px"></x-import><div style="position:relative;width:0;height:0;overflow:hidden"><x-import component="PencilCanvas" from="./pencilkit.jsx" hint-size="0px,0px"></x-import></div></div>
+</sc-if>
+<x-import component="DocsLive" from="./workbench.jsx" demo="{{ seg.live }}" hint-size="100%,420px"></x-import>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<div style="display:flex;gap:12px;margin-top:44px">
+<sc-if value="{{ prev }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ prev.pick }}" class="dk-pn" style="text-align:left">
+<span style="display:block;font-size:11px;font-weight:600;color:#8A8A94;margin-bottom:3px">← Previous</span>
+<span style="display:block;font-size:14px;font-weight:650;color:#17171C">{{ prev.title }}</span>
+</button>
+</sc-if>
+<sc-if value="{{ next }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ next.pick }}" class="dk-pn" style="text-align:right;margin-left:auto">
+<span style="display:block;font-size:11px;font-weight:600;color:#8A8A94;margin-bottom:3px">Next →</span>
+<span style="display:block;font-size:14px;font-weight:650;color:#17171C">{{ next.title }}</span>
+</button>
+</sc-if>
+</div>
+</div>
+</div>
+</div>
+<sc-if value="{{ hasToc }}" hint-placeholder-val="{{ false }}">
+<div style="width:198px;flex-shrink:0;padding:36px 20px 20px;border-left:1px solid rgba(20,20,40,0.06)">
+<div style="font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#8A8A94;margin-bottom:8px">On this page</div>
+<sc-for list="{{ toc }}" as="t" hint-placeholder-count="3">
+<button onClick="{{ t.jump }}" class="dk-toc">{{ t.text }}</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ overlayNav }}" hint-placeholder-val="{{ false }}">
+<div>
+<div onClick="{{ closeNav }}" style="{{ scrimStyle }}"></div>
+<div style="{{ drawerStyle }}">
+<div style="display:flex;align-items:center;gap:9px;padding:16px 16px 10px">
+<svg width="26" height="26" viewBox="0 0 34 34" style="flex-shrink:0"><rect width="34" height="34" rx="8.5" fill="#0A84FF"></rect><path d="M8 15.5v3M12.25 11.5v11M17 7.5v19M21.75 11.5v11M26 15.5v3" stroke="#fff" stroke-width="2.3" stroke-linecap="round"></path></svg>
+<div style="flex:1"><div style="font-size:14.5px;font-weight:800;letter-spacing:-.2px;line-height:1.1">TouchKit</div><div style="font-size:10.5px;color:#8A8A94;font-weight:600;letter-spacing:.4px">DOCUMENTATION</div></div>
+<button onClick="{{ closeNav }}" aria-label="Close navigation" style="border:0;background:none;cursor:pointer;padding:6px;color:#8A8A94"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<div class="dk-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:0 10px 10px">
+<sc-for list="{{ navRows }}" as="r" hint-placeholder-count="14">
+<sc-if value="{{ r.isSection }}" hint-placeholder-val="{{ false }}">
+<div style="padding:16px 10px 5px;font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#8A8A94">{{ r.label }}</div>
+</sc-if>
+<sc-if value="{{ r.notSection }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ r.pick }}" style="{{ r.st }}" class="dk-nav">{{ r.label }}</button>
+</sc-if>
+</sc-for>
+</div>
+<div style="padding:12px 16px;border-top:1px solid rgba(20,20,40,0.08);font-size:12px;line-height:1.9">
+<div><a href="TouchKit Demo.dc.html">Contacts demo →</a></div>
+<div><a href="Workbench.dc.html">Workbench demo →</a></div>
+<div><a href="PencilKit Demo.dc.html">PencilKit demo →</a></div>
+<div><a href="Chat Demo.dc.html">Chat demo →</a></div>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {slug: 'introduction', navOpen: false, w: 1400};
+  componentDidMount() {
+    this._onR = () => this.setState({w: window.innerWidth});
+    window.addEventListener('resize', this._onR);
+    this.setState({w: window.innerWidth});
+    if (!document.getElementById('dk-nav-css')) {
+      const s = document.createElement('style'); s.id = 'dk-nav-css';
+      s.textContent = '.dk-nav{display:block;width:100%;box-sizing:border-box;border:0;background:none;text-align:left;cursor:pointer;font-family:inherit;font-size:13.5px;color:#3A3A42;padding:6px 10px;border-radius:8px;margin:1px 0}.dk-nav:hover{background:rgba(120,120,128,.1)}.dk-pn{flex:1;max-width:48%;border:1px solid rgba(20,20,40,.1);background:#fff;border-radius:12px;padding:12px 14px;cursor:pointer;font-family:inherit}.dk-pn:hover{border-color:#0A84FF}.dk-toc{display:block;width:100%;box-sizing:border-box;border:0;background:none;text-align:left;cursor:pointer;font-family:inherit;font-size:12.5px;color:#71717C;padding:4px 0;line-height:1.4}.dk-toc:hover{color:#0A84FF}';
+      document.head.appendChild(s);
+    }
+    if (!window.TKDocs) this._poll = setInterval(() => { if (window.TKDocs) { clearInterval(this._poll); this.forceUpdate(); } }, 120);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onR); clearInterval(this._poll); }
+  pick(slug) {
+    this.setState({slug, navOpen: false});
+    setTimeout(() => { const sc = document.getElementById('tkdocs-scroll'); if (sc) sc.scrollTop = 0; }, 30);
+  }
+  jumpHead(text) {
+    const sc = document.getElementById('tkdocs-scroll'); if (!sc) return;
+    const hs = sc.querySelectorAll('h2, h3');
+    for (const h of hs) if (h.textContent.trim() === text) { sc.scrollTop += h.getBoundingClientRect().top - sc.getBoundingClientRect().top - 22; return; }
+  }
+  renderVals() {
+    const docs = window.TKDocs || {nav: [], pages: {}};
+    const slug = this.state.slug;
+    const page = docs.pages[slug] || {title: '', md: ''};
+    const flat = [], navRows = [];
+    docs.nav.forEach(sec => {
+      navRows.push({id: 's-' + sec.section, label: sec.section, isSection: true, notSection: false});
+      sec.pages.forEach(p => {
+        flat.push(p);
+        const active = p === slug;
+        navRows.push({id: p, label: (docs.pages[p] || {}).title || p, isSection: false, notSection: true,
+          st: active ? {background: 'rgba(10,132,255,.1)', color: '#0A84FF', fontWeight: 600} : {},
+          pick: () => this.pick(p)});
+      });
+    });
+    const idx = flat.indexOf(slug);
+    const mk = p => p ? {title: (docs.pages[p] || {}).title || p, pick: () => this.pick(p)} : null;
+    const segs = [];
+    const parts = (page.md || '').split(/^%%(demo|live):(\w+)%%$/m);
+    for (let i = 0; i < parts.length; i += 3) {
+      const text = parts[i];
+      if (text && text.trim()) segs.push({id: slug + '-m' + i, md: text.trim(), haptics: false, workbench: false, pencil: false, app: false, live: ''});
+      const kind = parts[i + 1], name = parts[i + 2];
+      if (!kind) continue;
+      segs.push({id: slug + '-x' + i, md: '', live: kind === 'live' ? name : '', bui: kind === 'live' && /^bui/.test(name),
+        haptics: kind === 'demo' && name === 'haptics', workbench: kind === 'demo' && name === 'workbench',
+        pencil: kind === 'demo' && name === 'pencil', app: kind === 'demo' && name === 'app'});
+    }
+    const toc = [];
+    (page.md || '').split('\n').forEach(l => { const m = l.match(/^## (.+)$/); if (m) toc.push({id: m[1], text: m[1], jump: () => this.jumpHead(m[1])}); });
+    const w = this.state.w;
+    return {
+      navRows, segs, toc,
+      prev: mk(flat[idx - 1]), next: mk(flat[idx + 1]),
+      secLabel: (docs.nav.find(s => s.pages.includes(slug)) || {}).section || '',
+      pageTitle: page.title,
+      hasToc: toc.length > 0 && w >= 1220,
+      fixedNav: w >= 900, overlayNav: w < 900,
+      navOpen: this.state.navOpen,
+      openNav: () => this.setState({navOpen: true}),
+      closeNav: () => this.setState({navOpen: false}),
+      drawerStyle: {position: 'fixed', top: 0, bottom: 0, left: 0, width: 280, maxWidth: '85%', zIndex: 91, background: '#F6F6F8',
+        boxShadow: this.state.navOpen ? '0 0 44px rgba(0,0,0,.25)' : 'none', display: 'flex', flexDirection: 'column',
+        transform: this.state.navOpen ? 'none' : 'translateX(-102%)', transition: 'transform .38s cubic-bezier(.32,.72,0,1)'},
+      scrimStyle: {position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(0,0,0,.35)',
+        opacity: this.state.navOpen ? 1 : 0, pointerEvents: this.state.navOpen ? 'auto' : 'none', transition: 'opacity .3s'}
+    };
+  }
+}
+</script>
+</body>
+</html>

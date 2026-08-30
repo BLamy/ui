@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<style>
+html,body{margin:0;padding:0;background:#EEEEF1;color:#17171C;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#2E66D0}a:hover{color:#1E4AA6}
+*:focus{outline:none}
+*:focus-visible{outline:2.5px solid #0A84FF;outline-offset:2px;border-radius:4px}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+<header style="display:flex;align-items:center;gap:14px;padding:16px 26px 10px;flex-wrap:wrap">
+<svg width="34" height="34" viewBox="0 0 34 34" style="flex-shrink:0"><defs><linearGradient id="cklg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A84FF"></stop><stop offset="1" stop-color="#5E5CE6"></stop></linearGradient></defs><rect width="34" height="34" rx="8.5" fill="url(#cklg)"></rect><path d="M10 11h14v10H15l-5 5zM13 15h8M13 18h5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>
+<div style="min-width:220px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:18px;font-weight:800;letter-spacing:-0.3px">TouchKit ChatKit</span><span style="font-size:10px;font-weight:700;font-family:ui-monospace,Menlo,monospace;background:rgba(10,132,255,0.12);color:#2565c4;padding:2px 7px;border-radius:99px">v0.1</span></div>
+<div style="font-size:12.5px;color:#71717C;margin-top:2px">A team-chat scaffold with full threads — every thread opens in a real TouchKit <b style="color:#55555e">SideDrawer</b> (docked column when wide, overlay sheet when not). <a href="TouchKit Docs.dc.html">Read the docs</a> · <a href="Workbench.dc.html">Workbench demo</a></div>
+</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+<span style="font-size:11.5px;color:#8A8A94;font-weight:600">FRAME</span>
+<div style="width:300px"><x-import component="Segmented" from="./touchkit.jsx" options="{{ simOptions }}" value="{{ sim }}" on-change="{{ setSim }}" hint-size="300px,32px"></x-import></div>
+</div>
+</header>
+<div style="padding:0 26px 12px;font-size:12px;color:#8A8A94">Try: pick a thread in the <b style="color:#55555e">channel column</b> — it opens full-view (with “Open as drawer”) · click a <b style="color:#55555e">thread preview card</b> under a message for the SideDrawer · hover any message to react or start a new thread · at Phone width the channel column becomes a hamburger drawer.</div>
+<main style="flex:1;padding:0 26px;display:block">
+<div style="{{ frameStyle }}">
+<x-import component="ChatDemo" from="./chatkit.jsx" style="position:absolute;inset:0" tint="{{ tint }}" members="{{ members }}" hint-size="100%,700px"></x-import>
+</div>
+</main>
+<div style="padding:16px 26px 26px;font-size:11.5px;color:#9A9AA3;line-height:1.5">Original design in TouchKit's dark language — the thread panel is the same <a href="TouchKit Docs.dc.html">SideDrawer</a> the Contacts demo uses, in both of its modes.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;tint&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#0A84FF&quot;,&quot;options&quot;:[&quot;#0A84FF&quot;,&quot;#5E5CE6&quot;,&quot;#BF5AF2&quot;,&quot;#32D74B&quot;,&quot;#FF9F0A&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;members&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+class Component extends DCLogic {
+  state = {sim: 'full'};
+  renderVals() {
+    const sim = this.state.sim;
+    const widths = {phone: '390px', tablet: 'min(900px,100%)', full: '100%'};
+    const radius = {phone: '34px', tablet: '22px', full: '14px'};
+    return {
+      sim,
+      simOptions: [{id:'phone', label:'Phone 390'}, {id:'tablet', label:'Tablet 900'}, {id:'full', label:'Fluid'}],
+      setSim: id => this.setState({sim: id}),
+      frameStyle: {
+        position: 'relative', margin: '0 auto', overflow: 'hidden', background: '#131318',
+        width: widths[sim], borderRadius: radius[sim],
+        height: 'clamp(560px, calc(100vh - 240px), 940px)',
+        boxShadow: '0 30px 70px -20px rgba(15,15,35,0.35), 0 0 0 1px rgba(10,10,20,0.1)',
+        transition: 'width .35s cubic-bezier(.3,.8,.3,1), border-radius .35s'
+      },
+      tint: this.props.tint ?? '#0A84FF',
+      members: this.props.members ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>

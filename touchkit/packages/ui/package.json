@@ -1,0 +1,49 @@
+{
+  "name": "@touchkit/ui",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@org/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./dist/index.css"
+  },
+  "dependencies": {
+    "react-aria-components": "^1",
+    "framer-motion": "^12 || ^13",
+    "clsx": "^2",
+    "tailwind-merge": "^3",
+    "class-variance-authority": "^0.7"
+  },
+  "peerDependencies": {
+    "react": "^18 || ^19",
+    "react-dom": "^18 || ^19"
+  },
+  "description": "iOS-flavored React core — containers, lists, haptics, tokens (react-aria base, shadcn conventions)",
+  "license": "MIT",
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "react",
+    "touchkit",
+    "ios",
+    "react-aria",
+    "shadcn",
+    "components"
+  ]
+}

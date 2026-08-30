@@ -1,0 +1,10 @@
+{
+  "name": "@touchkit/workbench-demo",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@touchkit/ui": "workspace:*",
+    "@touchkit/workbench": "workspace:*",
+    "@touchkit/beautiful": "workspace:*"
+  }
+}

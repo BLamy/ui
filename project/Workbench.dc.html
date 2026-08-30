@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<style>
+html,body{margin:0;padding:0;background:#EEEEF1;color:#17171C;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#2E66D0}a:hover{color:#1E4AA6}
+*:focus{outline:none}
+*:focus-visible{outline:2.5px solid #0A84FF;outline-offset:2px;border-radius:4px}
+.wb-dark .docs-article{color:inherit;background:transparent}
+.wb-dark .wb-md pre{background:#0C0C10!important;color:#D8D8E2!important}
+.wb-dark .wb-md code:not(pre code){background:rgba(255,255,255,.1)!important;color:#EDEDF2!important}
+.wb-dark .wb-md :where(table,th,td){border-color:rgba(255,255,255,.1)!important}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+<header style="display:flex;align-items:center;gap:14px;padding:16px 26px 10px;flex-wrap:wrap">
+<svg width="34" height="34" viewBox="0 0 34 34" style="flex-shrink:0"><defs><linearGradient id="wblg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A84FF"></stop><stop offset="1" stop-color="#5E5CE6"></stop></linearGradient></defs><rect width="34" height="34" rx="8.5" fill="url(#wblg)"></rect><path d="M9 12l5 5-5 5M16.5 22h8.5" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>
+<div style="min-width:220px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:18px;font-weight:800;letter-spacing:-0.3px">TouchKit Workbench</span><span style="font-size:10px;font-weight:700;font-family:ui-monospace,Menlo,monospace;background:rgba(10,132,255,0.12);color:#2565c4;padding:2px 7px;border-radius:99px">v0.1</span></div>
+<div style="font-size:12.5px;color:#71717C;margin-top:2px">The IDE scaffold layer — thread sidebar, MessageScroller chat, resizable terminal, surface panel with full-screen mode. Chat markdown streams through docstream. <a href="TouchKit Docs.dc.html">Read the docs</a> · <a href="TouchKit Demo.dc.html">phone demo</a></div>
+</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+<span style="font-size:11.5px;color:#8A8A94;font-weight:600">FRAME</span>
+<div style="width:300px"><x-import component="Segmented" from="./touchkit.jsx" options="{{ simOptions }}" value="{{ sim }}" on-change="{{ setSim }}" hint-size="300px,32px"></x-import></div>
+</div>
+</header>
+<div style="padding:0 26px 12px;font-size:12px;color:#8A8A94">Try: send a message — the reply <b style="color:#55555e">streams as markdown</b> and the new turn anchors near the top · scroll up mid-stream, then use the jump pill · open a <b style="color:#55555e">surface</b> in the right panel and hit expand for full screen · drag the terminal's top edge · at Tablet width the surface panel becomes a <b style="color:#55555e">right-edge drawer</b>; at Phone width the sidebar is a hamburger, the terminal a <b style="color:#55555e">vaul drawer</b>, and surfaces live in a <b style="color:#55555e">bottom tab bar</b> — tap one to focus it.</div>
+<main style="flex:1;padding:0 26px;display:block">
+<div style="{{ frameStyle }}">
+<x-import component="Workbench" from="./workbench.jsx" style="position:absolute;inset:0" tint="{{ tint }}" terminal="{{ terminal }}" surface="{{ surface }}" hint-size="100%,700px"></x-import>
+<div style="height:0;overflow:hidden" aria-hidden="true"><x-import component="BUIReady" from="./beautiful.jsx" hint-size="0px,0px"></x-import><div style="position:relative;width:0;height:0;overflow:hidden"><x-import component="PencilCanvas" from="./pencilkit.jsx" hint-size="0px,0px"></x-import></div></div>
+</div>
+</main>
+<section style="padding:22px 26px 8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px">
+<div style="background:#fff;border:1px solid rgba(20,20,40,0.08);border-radius:14px;padding:16px 18px">
+<div style="font-size:11px;font-weight:700;letter-spacing:0.6px;color:#8A8A94;text-transform:uppercase;margin-bottom:10px">Adaptive regions</div>
+<pre style="margin:0;background:#101014;color:#D8D8E2;border-radius:10px;padding:13px 14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto">sidebar   <span style="color:#5B5B66">column →</span> <b style="color:#7EE0B8">hamburger drawer</b>
+terminal  <span style="color:#5B5B66">bottom dock →</span> <b style="color:#7EE0B8">vaul snap sheet</b>
+panel     <span style="color:#5B5B66">column → drawer →</span> <b style="color:#7EE0B8">bottom tab bar</b></pre>
+<div style="font-size:12px;color:#71717C;margin-top:9px;line-height:1.5">One tree, three presentations — the shell measures its own width, so the FRAME switch above exercises every mode.</div>
+</div>
+<div style="background:#fff;border:1px solid rgba(20,20,40,0.08);border-radius:14px;padding:16px 18px">
+<div style="font-size:11px;font-weight:700;letter-spacing:0.6px;color:#8A8A94;text-transform:uppercase;margin-bottom:10px">MessageScroller semantics</div>
+<pre style="margin:0;background:#101014;color:#D8D8E2;border-radius:10px;padding:13px 14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto">&lt;<b style="color:#8AB4FF">MessageScroller</b>
+  items={msgs.map(m =&gt; ({
+    id: m.id,
+    <b style="color:#F2B36B">anchor</b>: m.role === 'user',
+    node: &lt;Message m={m}/&gt;
+  }))}
+  streaming={isStreaming}/&gt;</pre>
+<div style="font-size:12px;color:#71717C;margin-top:9px;line-height:1.5">Anchors new turns near the top with a peek of the previous one; follows the live edge only while you're there — the shadcn message-scroller behaviors.</div>
+</div>
+<div style="background:#fff;border:1px solid rgba(20,20,40,0.08);border-radius:14px;padding:16px 18px">
+<div style="font-size:11px;font-weight:700;letter-spacing:0.6px;color:#8A8A94;text-transform:uppercase;margin-bottom:10px">Markdown via docstream</div>
+<pre style="margin:0;background:#101014;color:#D8D8E2;border-radius:10px;padding:13px 14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto">&lt;<b style="color:#8AB4FF">MdView</b> markdown={md}/&gt;
+&lt;<b style="color:#8AB4FF">MdView</b> markdown={chunk} <b style="color:#F2B36B">streaming</b>/&gt;
+
+<span style="color:#5B5B66">@brett_lamy/docstream → GitbookStreamdown
+esm.sh · import-map react shim · fallback</span></pre>
+<div style="font-size:12px;color:#71717C;margin-top:9px;line-height:1.5">Tables, fences and lists assemble live mid-stream; a built-in fallback renders until the CDN module arrives.</div>
+</div>
+</section>
+<div style="padding:0 26px 26px;font-size:11.5px;color:#9A9AA3;line-height:1.5">Full write-ups for every part live in the <a href="TouchKit Docs.dc.html">TouchKit docs</a> — a gitbook-style site rendered with the same docstream pipeline the chat uses.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;tint&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#0A84FF&quot;,&quot;options&quot;:[&quot;#0A84FF&quot;,&quot;#5E5CE6&quot;,&quot;#30B0C7&quot;,&quot;#34C759&quot;,&quot;#FF9F0A&quot;,&quot;#FF375F&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;terminal&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;surface&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;browser&quot;,&quot;terminal&quot;,&quot;files&quot;,&quot;diff&quot;,&quot;agents&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;'none'|'browser'|'terminal'|'files'|'diff'|'agents'&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+class Component extends DCLogic {
+  state = {sim: 'full'};
+  renderVals() {
+    const sim = this.state.sim;
+    const widths = {phone: '390px', tablet: 'min(834px,100%)', full: '100%'};
+    const radius = {phone: '34px', tablet: '22px', full: '14px'};
+    return {
+      sim,
+      simOptions: [{id:'phone', label:'Phone 390'}, {id:'tablet', label:'Tablet 834'}, {id:'full', label:'Fluid'}],
+      setSim: id => this.setState({sim: id}),
+      frameStyle: {
+        position: 'relative', margin: '0 auto', overflow: 'hidden', background: '#141419',
+        width: widths[sim], borderRadius: radius[sim],
+        height: 'clamp(560px, calc(100vh - 250px), 960px)',
+        boxShadow: '0 30px 70px -20px rgba(15,15,35,0.35), 0 0 0 1px rgba(10,10,20,0.1)',
+        transition: 'width .35s cubic-bezier(.3,.8,.3,1), border-radius .35s'
+      },
+      tint: this.props.tint ?? '#0A84FF',
+      terminal: this.props.terminal ?? true,
+      surface: this.props.surface ?? 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>

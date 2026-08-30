@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<style>
+html,body{margin:0;padding:0;background:#EEEEF1;color:#17171C;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#2E66D0}a:hover{color:#1E4AA6}
+*:focus{outline:none}
+*:focus-visible{outline:2.5px solid #0A84FF;outline-offset:2px;border-radius:4px}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+<header style="display:flex;align-items:center;gap:14px;padding:16px 26px 10px;flex-wrap:wrap">
+<svg width="34" height="34" viewBox="0 0 34 34" style="flex-shrink:0"><defs><linearGradient id="pklg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF9F0A"></stop><stop offset="1" stop-color="#FF375F"></stop></linearGradient></defs><rect width="34" height="34" rx="8.5" fill="url(#pklg)"></rect><path d="M8 26l1.6-5.4L23 7.2a2.4 2.4 0 0 1 3.4 3.4L13 24l-5 2z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>
+<div style="min-width:220px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:18px;font-weight:800;letter-spacing:-0.3px">TouchKit PencilKit</span><span style="font-size:10px;font-weight:700;font-family:ui-monospace,Menlo,monospace;background:rgba(255,159,10,0.14);color:#B36A00;padding:2px 7px;border-radius:99px">v0.1</span></div>
+<div style="font-size:12.5px;color:#71717C;margin-top:2px">A drawing surface on <a href="https://github.com/steveruizok/perfect-freehand" target="_blank" rel="noreferrer">perfect-freehand</a> — pressure-thinned pen, translucent marker, tapered pencil, stroke eraser. <a href="TouchKit Docs.dc.html">Read the docs</a> · <a href="TouchKit Demo.dc.html">phone demo</a> · <a href="Workbench.dc.html">workbench</a></div>
+</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+<span style="font-size:11.5px;color:#8A8A94;font-weight:600">FRAME</span>
+<div style="width:300px"><x-import component="Segmented" from="./touchkit.jsx" options="{{ simOptions }}" value="{{ sim }}" on-change="{{ setSim }}" hint-size="300px,32px"></x-import></div>
+</div>
+</header>
+<div style="padding:0 26px 12px;font-size:12px;color:#8A8A94">Try: draw slow then fast — <b style="color:#55555e">speed and pressure thin the pen</b> · marker overlaps build up like real ink · the eraser removes whole strokes it touches · every palette pick lands a selection tick.</div>
+<main style="flex:1;padding:0 26px;display:block">
+<div style="{{ frameStyle }}">
+<x-import component="PencilKitDemo" from="./pencilkit.jsx" style="position:absolute;inset:0" dark="{{ dark }}" tint="{{ tint }}" hint-size="100%,640px"></x-import>
+</div>
+</main>
+<section style="padding:22px 26px 8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px">
+<div style="background:#fff;border:1px solid rgba(20,20,40,0.08);border-radius:14px;padding:16px 18px">
+<div style="font-size:11px;font-weight:700;letter-spacing:0.6px;color:#8A8A94;text-transform:uppercase;margin-bottom:10px">The pipeline</div>
+<pre style="margin:0;background:#101014;color:#D8D8E2;border-radius:10px;padding:13px 14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto">pointer <span style="color:#5B5B66">[x, y, pressure]</span>
+  → <b style="color:#8AB4FF">getStroke</b>(points, options)
+  → outline polygon
+  → <b style="color:#7EE0B8">one filled SVG path</b></pre>
+<div style="font-size:12px;color:#71717C;margin-top:9px;line-height:1.5">No per-segment strokes — the whole mark is a single outline, so joins, tapers, and pressure bulges are geometrically exact.</div>
+</div>
+<div style="background:#fff;border:1px solid rgba(20,20,40,0.08);border-radius:14px;padding:16px 18px">
+<div style="font-size:11px;font-weight:700;letter-spacing:0.6px;color:#8A8A94;text-transform:uppercase;margin-bottom:10px">Tool tuning</div>
+<pre style="margin:0;background:#101014;color:#D8D8E2;border-radius:10px;padding:13px 14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto"><span style="color:#F2B36B">pen</span>     size 7   thinning .62
+<span style="color:#F2B36B">marker</span>  size 20  thinning .06  <span style="color:#5B5B66">50% alpha</span>
+<span style="color:#F2B36B">pencil</span>  size 4.5 thinning .72  <span style="color:#5B5B66">taper 22</span>
+<span style="color:#F2B36B">eraser</span>  hit-tests + removes strokes</pre>
+<div style="font-size:12px;color:#71717C;margin-top:9px;line-height:1.5">Mouse and touch get simulated pressure from velocity; Apple Pencil reports the real thing. Coalesced events keep fast strokes dense.</div>
+</div>
+</section>
+<div style="padding:0 26px 26px;font-size:11.5px;color:#9A9AA3;line-height:1.5">perfect-freehand by Steve Ruiz (MIT) — the ink engine behind tldraw. Full write-up on the <a href="TouchKit Docs.dc.html">PencilKit docs page</a>.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;dark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;tint&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#0A84FF&quot;,&quot;options&quot;:[&quot;#0A84FF&quot;,&quot;#5E5CE6&quot;,&quot;#30B0C7&quot;,&quot;#34C759&quot;,&quot;#FF9F0A&quot;,&quot;#FF375F&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;}}">
+class Component extends DCLogic {
+  state = {sim: 'full'};
+  renderVals() {
+    const sim = this.state.sim;
+    const widths = {phone: '390px', tablet: 'min(834px,100%)', full: '100%'};
+    const radius = {phone: '34px', tablet: '22px', full: '14px'};
+    return {
+      sim,
+      simOptions: [{id:'phone', label:'Phone 390'}, {id:'tablet', label:'Tablet 834'}, {id:'full', label:'Fluid'}],
+      setSim: id => this.setState({sim: id}),
+      frameStyle: {
+        position: 'relative', margin: '0 auto', overflow: 'hidden',
+        width: widths[sim], borderRadius: radius[sim],
+        height: 'clamp(500px, calc(100vh - 250px), 900px)',
+        boxShadow: '0 30px 70px -20px rgba(15,15,35,0.35), 0 0 0 1px rgba(10,10,20,0.1)',
+        transition: 'width .35s cubic-bezier(.3,.8,.3,1), border-radius .35s'
+      },
+      dark: this.props.dark ?? false,
+      tint: this.props.tint ?? '#0A84FF'
+    };
+  }
+}
+</script>
+</body>
+</html>

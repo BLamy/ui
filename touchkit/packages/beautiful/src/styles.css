@@ -1,0 +1,13 @@
+/* @touchkit/beautiful — framework CSS (the prototype's #bui-css block, verbatim) */
+@keyframes bui-spin{to{transform:rotate(360deg)}}
+@keyframes bui-pulse{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes bui-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes bui-sweep{from{background-position:-200% 0}to{background-position:200% 0}}
+.bui-hl:hover{background:var(--wb-fill)!important}
+
+/* .wb-scroll — thin scrollbars the prototypes get from the workbench layer;
+   included here so Beautiful UI renders identically standalone. */
+.wb-scroll{scrollbar-width:thin;scrollbar-color:rgba(140,140,155,.3) transparent}
+.wb-scroll::-webkit-scrollbar{width:8px;height:8px}
+.wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+.wb-scroll::-webkit-scrollbar-track{background:transparent}

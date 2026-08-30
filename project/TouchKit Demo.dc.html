@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<style>
+html,body{margin:0;padding:0;background:#EEEEF1;color:#17171C;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#2E66D0}a:hover{color:#1E4AA6}
+*:focus{outline:none}
+*:focus-visible{outline:2.5px solid var(--tk-tint,#0A84FF);outline-offset:2px;border-radius:4px}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+<header style="display:flex;align-items:center;gap:14px;padding:16px 26px 10px;flex-wrap:wrap">
+<svg width="34" height="34" viewBox="0 0 34 34" style="flex-shrink:0"><defs><linearGradient id="tklg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A84FF"></stop><stop offset="1" stop-color="#5E5CE6"></stop></linearGradient></defs><rect width="34" height="34" rx="8.5" fill="url(#tklg)"></rect><path d="M8 15.5v3M12.25 11.5v11M17 7.5v19M21.75 11.5v11M26 15.5v3" stroke="#fff" stroke-width="2.3" stroke-linecap="round"></path></svg>
+<div style="min-width:220px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:18px;font-weight:800;letter-spacing:-0.3px">TouchKit</span><span style="font-size:10px;font-weight:700;font-family:ui-monospace,Menlo,monospace;background:rgba(10,132,255,0.12);color:#2565c4;padding:2px 7px;border-radius:99px">v0.1</span></div>
+<div style="font-size:12.5px;color:#71717C;margin-top:2px">Cocoa Touch container controllers in JSX — the tree is the behavior. NavigationStack · SplitView · composable TabBar · Credenza tray · adaptive SideDrawer · A–Z index with haptics.</div>
+</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+<span style="font-size:11.5px;color:#8A8A94;font-weight:600">FRAME</span>
+<div style="width:300px"><x-import component="Segmented" from="./touchkit.jsx" options="{{ simOptions }}" value="{{ sim }}" on-change="{{ setSim }}" hint-size="300px,32px"></x-import></div>
+</div>
+</header>
+<div style="padding:0 26px 12px;font-size:12px;color:#8A8A94">Try: scrub the <b style="color:#55555e">A–Z rail</b> · swipe a row left · pull down · open a contact → <b style="color:#55555e">Share Contact</b> for the Credenza tray (heights morph between states) · the clock button opens <b style="color:#55555e">Activity</b> — fixed panel at 1280px+, overlay sheet below, pushed page on phone · drag from the left edge to go back · Settings swaps composition &amp; table style live · scroll down and the nav bar and tab bar slide away — on <b style="color:#55555e">Phone 390</b> the bar stops at the Dynamic Island instead of vanishing.</div>
+<main style="flex:1;padding:0 26px;display:block">
+<div style="{{ frameStyle }}">
+<x-import component="App" from="./touchkit.jsx" style="position:absolute;inset:0" composition="{{ composition }}" list-style="{{ listStyle }}" dark="{{ dark }}" tint="{{ tint }}" indicator="{{ indicator }}" safe-top="{{ safeTop }}" hint-size="100%,700px"></x-import>
+</div>
+</main>
+<section style="padding:22px 26px 30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
+<div style="background:#fff;border:1px solid rgba(20,20,40,0.08);border-radius:14px;padding:16px 18px">
+<div style="font-size:11px;font-weight:700;letter-spacing:0.6px;color:#8A8A94;text-transform:uppercase;margin-bottom:10px">Composition A — bar persists</div>
+<pre style="margin:0;background:#101014;color:#D8D8E2;border-radius:10px;padding:13px 14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto">&lt;<b style="color:#8AB4FF;font-weight:600">TabView</b>&gt;
+  &lt;<b style="color:#8AB4FF;font-weight:600">Tab</b> id="contacts" icon="person"&gt;
+    &lt;<b style="color:#8AB4FF;font-weight:600">NavigationStack</b>&gt;
+      &lt;<b style="color:#7EE0B8;font-weight:600">ContactList</b> /&gt;  <span style="color:#5B5B66">// pushes slide under the bar</span>
+    &lt;/<b style="color:#8AB4FF;font-weight:600">NavigationStack</b>&gt;
+  &lt;/<b style="color:#8AB4FF;font-weight:600">Tab</b>&gt;
+  &lt;<b style="color:#8AB4FF;font-weight:600">Tab</b> id="settings"&gt;…&lt;/<b style="color:#8AB4FF;font-weight:600">Tab</b>&gt;
+&lt;/<b style="color:#8AB4FF;font-weight:600">TabView</b>&gt;</pre>
+<div style="font-size:12px;color:#71717C;margin-top:9px;line-height:1.5">Each tab owns a NavigationStack, so the bar stays put across pushes — UIKit's <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px">tabBarController(navController)</span> shape.</div>
+</div>
+<div style="background:#fff;border:1px solid rgba(20,20,40,0.08);border-radius:14px;padding:16px 18px">
+<div style="font-size:11px;font-weight:700;letter-spacing:0.6px;color:#8A8A94;text-transform:uppercase;margin-bottom:10px">Composition B — bar rides the root view</div>
+<pre style="margin:0;background:#101014;color:#D8D8E2;border-radius:10px;padding:13px 14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto">&lt;<b style="color:#8AB4FF;font-weight:600">NavigationStack</b>&gt;
+  &lt;<b style="color:#8AB4FF;font-weight:600">TabView</b>&gt;  <span style="color:#5B5B66">// the root screen</span>
+    &lt;<b style="color:#8AB4FF;font-weight:600">Tab</b> id="contacts"&gt;
+      &lt;<b style="color:#7EE0B8;font-weight:600">ContactList</b> /&gt;  <span style="color:#5B5B66">// a push covers bar + root</span>
+    &lt;/<b style="color:#8AB4FF;font-weight:600">Tab</b>&gt;
+    &lt;<b style="color:#8AB4FF;font-weight:600">Tab</b> id="settings"&gt;…&lt;/<b style="color:#8AB4FF;font-weight:600">Tab</b>&gt;
+  &lt;/<b style="color:#8AB4FF;font-weight:600">TabView</b>&gt;
+&lt;/<b style="color:#8AB4FF;font-weight:600">NavigationStack</b>&gt;</pre>
+<div style="font-size:12px;color:#71717C;margin-top:9px;line-height:1.5">No mode flag — nesting alone decides. Swap trees live in <b style="color:#55555e">Settings → Composition</b>; app state survives the remount.</div>
+</div>
+<div style="background:#fff;border:1px solid rgba(20,20,40,0.08);border-radius:14px;padding:16px 18px">
+<div style="font-size:11px;font-weight:700;letter-spacing:0.6px;color:#8A8A94;text-transform:uppercase;margin-bottom:10px">One haptics engine</div>
+<pre style="margin:0;background:#101014;color:#D8D8E2;border-radius:10px;padding:13px 14px;font:11.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto"><b style="color:#F2B36B;font-weight:600">Haptics</b>.impact(<span style="color:#7EE0B8">'light' | 'medium' | 'heavy'</span>)
+<b style="color:#F2B36B;font-weight:600">Haptics</b>.selection()  <span style="color:#5B5B66">// A–Z scrub · tabs · pickers</span>
+<b style="color:#F2B36B;font-weight:600">Haptics</b>.notification(<span style="color:#7EE0B8">'success' | 'warning' | 'error'</span>)
+
+<span style="color:#5B5B66">navigator.vibrate()   → Android / Chrome
+ios-vibrator-pro-max  → iOS/macOS Safari (vibrator.dev)
+&lt;input switch&gt; click  → offline fallback</span></pre>
+<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px">
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">NavigationStack</span>
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">SplitView</span>
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">TabBar</span>
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">List / Section / Row</span>
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">IndexBar</span>
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">Switch</span>
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">Segmented</span>
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">Credenza</span>
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">SideDrawer</span>
+<span style="font:600 10.5px ui-monospace,Menlo,monospace;background:#F0F0F4;color:#55555E;padding:3px 8px;border-radius:99px">Haptics</span>
+</div>
+</div>
+</section>
+<div style="padding:0 26px 26px;font-size:11.5px;color:#9A9AA3;line-height:1.5">Sugar syntax shown above; underneath, containers are controlled components — state in, events out. Interaction semantics follow react-aria's listbox patterns (arrow keys, Esc pops, aria-selected, focus rings), swap-in ready for react-aria-components + shadcn tokens in a real codebase. Desktop width shows sidebar + master–detail; below 1024px the split collapses into the stack and the sidebar tucks behind the sidebar button; below 640px it's the phone layout; at 1280px+ the Activity drawer docks as a fixed column beside the detail view.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;composition&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;nav-in-tabs&quot;,&quot;tabs-in-nav&quot;],&quot;default&quot;:&quot;nav-in-tabs&quot;,&quot;tsType&quot;:&quot;'nav-in-tabs'|'tabs-in-nav'&quot;,&quot;section&quot;:&quot;Composition&quot;},&quot;listStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;plain&quot;,&quot;grouped&quot;],&quot;default&quot;:&quot;plain&quot;,&quot;tsType&quot;:&quot;'plain'|'grouped'&quot;,&quot;section&quot;:&quot;Composition&quot;},&quot;dark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;tint&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#0A84FF&quot;,&quot;options&quot;:[&quot;#0A84FF&quot;,&quot;#5E5CE6&quot;,&quot;#30B0C7&quot;,&quot;#34C759&quot;,&quot;#FF9F0A&quot;,&quot;#FF375F&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;hapticIndicator&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Haptics&quot;},&quot;dynamicIsland&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Appearance&quot;}}">
+class Component extends DCLogic {
+  state = {sim: 'full'};
+  renderVals() {
+    const sim = this.state.sim;
+    const widths = {phone: '390px', tablet: 'min(834px,100%)', full: '100%'};
+    const radius = {phone: '34px', tablet: '22px', full: '14px'};
+    return {
+      sim,
+      simOptions: [{id:'phone', label:'Phone 390'}, {id:'tablet', label:'Tablet 834'}, {id:'full', label:'Fluid'}],
+      setSim: id => this.setState({sim: id}),
+      frameStyle: {
+        position: 'relative', margin: '0 auto', overflow: 'hidden', background: '#fff',
+        width: widths[sim], borderRadius: radius[sim],
+        height: 'clamp(540px, calc(100vh - 265px), 940px)',
+        boxShadow: '0 30px 70px -20px rgba(15,15,35,0.28), 0 0 0 1px rgba(10,10,20,0.08)',
+        transition: 'width .35s cubic-bezier(.3,.8,.3,1), border-radius .35s'
+      },
+      composition: this.props.composition ?? 'nav-in-tabs',
+      listStyle: this.props.listStyle ?? 'plain',
+      dark: this.props.dark ?? false,
+      tint: this.props.tint ?? '#0A84FF',
+      indicator: this.props.hapticIndicator ?? false,
+      /* Dynamic Island: only the phone frame has one. The nav bar collapses to this floor on scroll-down. */
+      safeTop: sim === 'phone' && (this.props.dynamicIsland ?? true) ? 59 : 0
+    };
+  }
+}
+</script>
+</body>
+</html>

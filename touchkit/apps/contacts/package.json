@@ -1,0 +1,8 @@
+{
+  "name": "@touchkit/contacts-app",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@touchkit/ui": "workspace:*"
+  }
+}

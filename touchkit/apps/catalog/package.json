@@ -1,0 +1,16 @@
+{
+  "name": "@touchkit/catalog",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "storybook": "storybook dev -p 6006 -c .storybook",
+    "build-storybook": "storybook build -c .storybook"
+  },
+  "dependencies": {
+    "@touchkit/ui": "workspace:*",
+    "@touchkit/chatkit": "workspace:*",
+    "@touchkit/workbench": "workspace:*",
+    "@touchkit/beautiful": "workspace:*",
+    "@touchkit/pencilkit": "workspace:*"
+  }
+}

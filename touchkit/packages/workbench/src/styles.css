@@ -1,0 +1,29 @@
+/* TouchKit Workbench — framework-owned CSS (scrollbars, caret pulse, spin, markdown). */
+@keyframes wbBlink{0%,55%{opacity:1}56%,100%{opacity:0}}
+@keyframes wbPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes wbSpin{to{transform:rotate(360deg)}}
+.wb-scroll{scrollbar-width:thin;scrollbar-color:rgba(140,140,155,.3) transparent}
+.wb-scroll::-webkit-scrollbar{width:8px;height:8px}
+.wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+.wb-scroll::-webkit-scrollbar-track{background:transparent}
+.wb-btn{-webkit-tap-highlight-color:transparent;font-family:inherit}
+.wb-btn:hover{filter:brightness(1.12)}
+.wb-hl:hover{background:var(--wb-fill)!important}
+.wb-md{line-height:1.6;font-size:14px}
+.wb-md :where(h1){font-size:20px;font-weight:700;margin:18px 0 8px;letter-spacing:-.2px}
+.wb-md :where(h2){font-size:16.5px;font-weight:650;margin:18px 0 6px}
+.wb-md :where(h3){font-size:14.5px;font-weight:650;margin:14px 0 4px}
+.wb-md :where(p){margin:8px 0}
+.wb-md :where(ul,ol){margin:8px 0;padding-left:22px}
+.wb-md :where(li){margin:3px 0}
+.wb-md :where(code){font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.86em;background:var(--mdc-code,rgba(120,120,140,.14));padding:2px 5px;border-radius:5px}
+.wb-md :where(pre){background:var(--mdc-pre,#101014);color:#D8D8E2;border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
+.wb-md :where(pre code){background:none;padding:0;font-size:inherit;color:inherit}
+.wb-md :where(table){border-collapse:collapse;margin:10px 0;width:100%;font-size:13.5px}
+.wb-md :where(th){text-align:left;font-weight:600;color:var(--mdc-mut,#8E8E98);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+.wb-md :where(th,td){padding:7px 12px 7px 0;border-bottom:1px solid var(--mdc-border,rgba(128,128,145,.22))}
+.wb-md :where(blockquote){margin:10px 0;padding:2px 14px;border-left:3px solid var(--mdc-border,rgba(128,128,145,.3));color:var(--mdc-mut,#8E8E98)}
+.wb-md :where(hr){border:0;border-top:1px solid var(--mdc-border,rgba(128,128,145,.22));margin:16px 0}
+.wb-md :where(a){color:var(--wb-tint,#0A84FF);text-decoration:none}
+.wb-md :where(a:hover){text-decoration:underline}
+.wb-md :where(img){max-width:100%;border-radius:8px}

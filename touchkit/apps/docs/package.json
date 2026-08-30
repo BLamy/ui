@@ -1,0 +1,12 @@
+{
+  "name": "@touchkit/docs-app",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@touchkit/ui": "workspace:*",
+    "@touchkit/workbench": "workspace:*",
+    "@touchkit/chatkit": "workspace:*",
+    "@touchkit/beautiful": "workspace:*",
+    "@touchkit/pencilkit": "workspace:*"
+  }
+}
