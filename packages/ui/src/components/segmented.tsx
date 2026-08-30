@@ -1,5 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
-import { Radio, RadioGroup } from 'react-aria-components';
+import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 
@@ -17,29 +16,49 @@ export interface SegmentedProps {
   style?: CSSProperties;
 }
 
-/** Segmented control — react-aria RadioGroup/Radio behavior, prototype-exact visuals. */
+/** Segmented control with direct button targets so Safari's haptic click passthrough can replay clicks. */
 export function Segmented({ options, value, onChange, className, style, ...rest }: SegmentedProps) {
+  const select = (id: string) => {
+    if (id === value) return;
+    Haptics.selection();
+    onChange(id);
+  };
+  const move = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let next = index;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % options.length;
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + options.length) % options.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = options.length - 1;
+    else return;
+    event.preventDefault();
+    const option = options[next];
+    if (!option) return;
+    select(option.id);
+    event.currentTarget.parentElement
+      ?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]
+      ?.focus();
+  };
   return (
-    <RadioGroup
+    <div
       data-slot="segmented"
-      value={value}
-      onChange={(id) => { Haptics.selection(); onChange(id); }}
       aria-label={rest['aria-label'] || 'Segmented control'}
-      orientation="horizontal"
+      aria-orientation="horizontal"
+      role="radiogroup"
       className={cn(className)}
       style={{ display: 'flex', gap: 2, background: 'var(--tk-fill,#e4e4ea)', borderRadius: 9, padding: 2, ...style }}
     >
-      {options.map((o) => {
+      {options.map((o, index) => {
         const on = o.id === value;
         return (
-          <Radio key={o.id} value={o.id} className="tk-btn" style={{
+          <button key={o.id} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
+            onClick={() => select(o.id)} onKeyDown={(event) => move(event, index)} className="tk-btn" style={{
             flex: 1, border: 0, padding: '5px 12px', borderRadius: 7, fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
             cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: on ? 'var(--tk-card,#fff)' : 'transparent', color: 'var(--tk-label,#16161a)',
             boxShadow: on ? '0 1px 4px rgba(0,0,0,.14)' : 'none', transition: 'background .2s, box-shadow .2s',
-          }}>{o.label}</Radio>
+          }}>{o.label}</button>
         );
       })}
-    </RadioGroup>
+    </div>
   );
 }
