@@ -8,7 +8,7 @@ import {
 } from '@touchkit/ui';
 import { ChatDemo } from '@touchkit/chatkit';
 import {
-  Composer, MarkdownView, MessageScroller, REPLY_SERVERS, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
+  Composer, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
 } from '@touchkit/workbench';
 import { DemoBtn, TKDK, TKFrame, TKL, type LiveSpec } from './frame';
@@ -357,6 +357,16 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
         <SurfacePanel kind={kind} compact onOpen={(k) => setKind(k)} onClose={() => setKind(null)} full={false} onFull={() => undefined} />
       </div>;
     },
+  },
+  filetree: {
+    title: 'File tree · @pierre/trees', theme: 'wb', h: 430,
+    code: 'import { FileTree, useFileTree } from "@pierre/trees/react"\n\nconst paths = [\n  "src/App.tsx",\n  "src/components/Composer.tsx",\n  "package.json",\n]\n\nexport default function ProjectFiles() {\n  const { model } = useFileTree({ paths, search: true, initialExpansion: "open" })\n  return <FileTree model={model} style={{ height: 320 }}/>\n}',
+    Render: () => <div style={{ height: 330, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--wb-sep)' }}><SurfaceFiles /></div>,
+  },
+  diff: {
+    title: 'Code diff · @pierre/diffs', theme: 'wb', h: 430,
+    code: 'import { MultiFileDiff } from "@pierre/diffs/react"\n\nexport default function Change() {\n  return <MultiFileDiff\n    oldFile={{ name: "src/haptics.ts", contents: before }}\n    newFile={{ name: "src/haptics.ts", contents: after }}\n    options={{ diffStyle: "unified", themeType: "dark" }}\n  />\n}',
+    Render: () => <div style={{ height: 330, borderRadius: 12, overflow: 'auto', border: '1px solid var(--wb-sep)' }}><SurfaceDiff /></div>,
   },
   stream: {
     title: 'MarkdownView · Docstream renderer', theme: 'tk', h: 480,

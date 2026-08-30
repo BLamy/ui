@@ -65,6 +65,8 @@ export const NAV: DocSection[] = [
       "message-scroller",
       "composer",
       "terminal-dock",
+      "file-tree",
+      "diff-view",
       "surface-panel",
       "docstream"
     ]
@@ -239,6 +241,20 @@ export const PAGES: Record<string, DocPage> = {
     markdown:
       "# SurfacePanel\n\nThe right-hand panel from the Workbench: pick a **surface** to fill it, expand it to full screen, or close it.\n\n## Surfaces\n\n| Surface | Contents |\n| --- | --- |\n| Browser | URL bar + a mock of the app served on :3000 |\n| Terminal | a second shell session |\n| Files | workspace tree with selection |\n| Diff | unified diff with +/− line tinting |\n| Agents | subagent runs with live status dots |\n\nThe empty state is a card grid — \"Open a surface / Choose what to show in the right panel.\"\n\n```jsx\n<SurfacePanel\n  kind={kind} onOpen={setKind}\n  full={full} onFull={setFull}     // desktop full-screen mode\n  compact={isMobile} onClose={close}\n/>\n```\n\n## Full-screen mode\n\nThe expand button re-parents the panel over the entire shell — sidebar, chat, and terminal included — and turns into a restore button. State (the open surface, terminal scrollback) survives because the panel is the same component either way.\n\n## On mobile\n\nThere is no right column on small screens. On **tablet** widths the panel toggle opens it as a right-edge drawer with a scrim — same panel, slid over the chat. On **phones** the surfaces become a bottom tab bar (Chat · Browser · Terminal · Files · Diff · Agents); tapping a surface focuses it full-screen above the bar, and Chat brings the transcript back. `compact` hides the expand control since there's nothing bigger to expand to.\n\n## Live example\n\nThe picker, then any surface — the close button returns to the picker:\n\n%%live:surfaces%%",
   },
+  "file-tree": {
+    id: "file-tree",
+    section: "Workbench",
+    title: "File tree",
+    markdown:
+      "# File tree\n\nEvery workspace file tree in TouchKit is rendered by **[@pierre/trees](https://trees.software/)**. The Workbench adapter supplies TouchKit tokens and haptics while Pierre owns path-first selection, expansion, search, keyboard navigation, and virtualization.\n\n```sh\npnpm add @pierre/trees\n```\n\n```tsx\nimport { FileTree, useFileTree } from '@pierre/trees/react'\n\nconst { model } = useFileTree({ paths, search: true, initialExpansion: 'open' })\nreturn <FileTree model={model} style={{ height: 320 }} />\n```\n\n## Live example\n\nSearch, collapse folders, and select files in the real Pierre tree:\n\n%%live:filetree%%\n\nSee the full [Trees documentation](https://trees.software/docs).",
+  },
+  "diff-view": {
+    id: "diff-view",
+    section: "Workbench",
+    title: "Code diff",
+    markdown:
+      "# Code diff\n\nEvery source diff in TouchKit is rendered by **[@pierre/diffs](https://diffs.com/)**, including the Workbench review surface and Beautiful UI's compatibility `DiffTable`. Pierre supplies Shiki syntax highlighting, unified and split layouts, selection, and scalable rendering.\n\n```sh\npnpm add @pierre/diffs\n```\n\n```tsx\nimport { MultiFileDiff } from '@pierre/diffs/react'\n\n<MultiFileDiff\n  oldFile={{ name: 'src/haptics.ts', contents: before }}\n  newFile={{ name: 'src/haptics.ts', contents: after }}\n  options={{ diffStyle: 'unified', themeType: 'dark' }}\n/>\n```\n\n## Live example\n\nThis is the same Pierre-backed renderer used by the Workbench Diff surface:\n\n%%live:diff%%\n\nSee the full [Diffs documentation](https://diffs.com/docs).",
+  },
   "docstream": {
     id: "docstream",
     section: "Workbench",
@@ -356,7 +372,7 @@ export const PAGES: Record<string, DocPage> = {
     section: "BUI · Decisions & data",
     title: "DiffTable",
     markdown:
-      "# DiffTable\n\nAI-proposed edits sweeping through tabular data. Press **Apply sweep** and the proposal lands row by row — drops strike through in red, adds glow green.\n\n%%live:buiDiff%%\n\n## Row kinds\n\n| Kind | Effect |\n| --- | --- |\n| `remove` | Red wash, strikethrough, `− drop` tag |\n| `add` | Green wash, `+ add` tag |\n| `keep` | Untouched |",
+      "# DiffTable\n\nA compatibility adapter that converts proposed tabular edits to CSV versions and renders the result with **[@pierre/diffs](https://diffs.com/)**. Syntax highlighting, line selection, and diff layout all come from Pierre.\n\n```sh\npnpm add @pierre/diffs\n```\n\n%%live:buiDiff%%\n\n## Row kinds\n\n| Kind | Pierre input |\n| --- | --- |\n| `remove` | Present only in `oldFile` |\n| `add` | Present only in `newFile` |\n| `keep` | Present in both versions |",
   },
   "bui-records-table": {
     id: "bui-records-table",

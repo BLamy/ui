@@ -43,6 +43,7 @@ export default defineConfig(() => ({
         'react-dom',
         'react/jsx-runtime',
         /^@brett_lamy\/docstream(?:-editor)?(?:\/.*)?$/,
+        /^@pierre\/(?:diffs|trees)(?:\/.*)?$/,
         /^@tiptap\//,
       ],
     },

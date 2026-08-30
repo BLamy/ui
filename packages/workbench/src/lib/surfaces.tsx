@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { MultiFileDiff } from '@pierre/diffs/react';
+import { FileTree, useFileTree } from '@pierre/trees/react';
 import { cn, MONO } from './util';
 import { vib, tick } from './haptics';
 import { WIcon, IconBtn, type WIconName } from './icons';
@@ -83,94 +84,67 @@ export function SurfaceBrowser() {
   );
 }
 
-const FILE_TREE: [string, number, 'folder' | 'doc'][] = [
-  ['cookbook', 0, 'folder'],
-  ['src', 1, 'folder'],
-  ['components', 2, 'folder'],
-  ['Credenza.tsx', 3, 'doc'],
-  ['SideDrawer.tsx', 3, 'doc'],
-  ['MessageScroller.tsx', 3, 'doc'],
-  ['haptics.ts', 2, 'doc'],
-  ['App.tsx', 2, 'doc'],
-  ['touchkit.jsx', 1, 'doc'],
-  ['workbench.jsx', 1, 'doc'],
-  ['package.json', 1, 'doc'],
-  ['vite.config.js', 1, 'doc'],
+const FILE_PATHS = [
+  'cookbook/src/components/Credenza.tsx',
+  'cookbook/src/components/SideDrawer.tsx',
+  'cookbook/src/components/MessageScroller.tsx',
+  'cookbook/src/haptics.ts',
+  'cookbook/src/App.tsx',
+  'cookbook/touchkit.jsx',
+  'cookbook/workbench.jsx',
+  'cookbook/package.json',
+  'cookbook/vite.config.js',
 ];
 export function SurfaceFiles() {
-  const [sel, setSel] = useState('App.tsx');
+  const { model } = useFileTree({
+    paths: FILE_PATHS,
+    initialExpansion: 'open',
+    initialSelectedPaths: ['cookbook/src/App.tsx'],
+    onSelectionChange: () => tick(),
+    search: true,
+  });
   return (
-    <div data-slot="surface-files" className="wb-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 10px' }}>
-      {FILE_TREE.map(([name, depth, kind]) => (
-        <button
-          key={name}
-          type="button"
-          className="wb-btn wb-hl"
-          onClick={() => {
-            setSel(name);
-            tick();
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 7,
-            width: '100%',
-            padding: '4.5px 8px',
-            paddingLeft: 8 + depth * 16,
-            border: 0,
-            borderRadius: 7,
-            background: sel === name ? 'var(--wb-fill2)' : 'none',
-            color: 'var(--wb-label)',
-            fontSize: 12.5,
-            fontFamily: kind === 'folder' ? 'inherit' : MONO,
-            cursor: 'pointer',
-            textAlign: 'left',
-            boxSizing: 'border-box',
-          }}
-        >
-          {kind === 'folder' ? <WIcon name="chevD" size={11} sw={2.4} style={{ color: 'var(--wb-label3)' }} /> : <span style={{ width: 11 }} />}
-          <WIcon name={kind === 'folder' ? 'folder' : 'doc'} size={14.5} sw={1.7} style={{ color: kind === 'folder' ? '#8AB4FF' : 'var(--wb-label3)' }} />
-          <span>{name}</span>
-        </button>
-      ))}
+    <div data-slot="surface-files" data-renderer="pierre-trees" style={{ flex: 1, minHeight: 0, padding: '8px 10px' }}>
+      <FileTree
+        model={model}
+        header={<strong style={{ fontSize: 12.5 }}>Project files</strong>}
+        style={{
+          height: '100%',
+          minHeight: 220,
+          '--trees-fg-override': 'var(--wb-label)',
+          '--trees-border-color-override': 'var(--wb-sep)',
+          '--trees-selected-bg-override': 'var(--wb-fill2)',
+        } as React.CSSProperties}
+      />
     </div>
   );
 }
 
-const DIFF_LINES: [string, string][] = [
-  [' ', 'function Haptics.boot() {'],
-  ['-', '  if (navigator.vibrate) return;          // skipped the polyfill'],
-  ['-', '  import("https://esm.run/ios-vibrator-pro-max");'],
-  ['+', '  if (stub) delete navigator.vibrate;     // clear blockers first'],
-  ['+', '  import("…/ios-vibrator-pro-max@3.0.3/+esm");  // pinned'],
-  ['+', '  window.addEventListener("tk-vib", report);'],
-  [' ', '}'],
-];
+const OLD_HAPTICS = `export async function bootHaptics() {
+  if (navigator.vibrate) return
+  await import('https://esm.run/ios-vibrator-pro-max')
+}`;
+const NEW_HAPTICS = `export async function bootHaptics() {
+  if (isBlockingStub(navigator.vibrate)) delete navigator.vibrate
+  await import('https://esm.sh/ios-vibrator-pro-max@3.0.3')
+  window.addEventListener('tk-vib', reportHaptic)
+}`;
+const surfaceDiffOptions = {
+  diffStyle: 'unified' as const,
+  diffIndicators: 'bars' as const,
+  hunkSeparators: 'line-info' as const,
+  overflow: 'scroll' as const,
+  themeType: 'dark' as const,
+};
 export function SurfaceDiff() {
   return (
-    <div data-slot="surface-diff" className="wb-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 12px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <WIcon name="doc" size={15} sw={1.8} style={{ color: 'var(--wb-label3)' }} />
-        <span style={{ fontSize: 12.5, fontFamily: MONO }}>touchkit.jsx</span>
-        <span style={{ fontSize: 11.5, fontFamily: MONO, color: 'var(--wb-green)' }}>+3</span>
-        <span style={{ fontSize: 11.5, fontFamily: MONO, color: 'var(--wb-red)' }}>−2</span>
-      </div>
+    <div data-slot="surface-diff" data-renderer="pierre-diffs" className="wb-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 12px' }}>
       <div style={{ border: '1px solid var(--wb-sep)', borderRadius: 9, overflow: 'hidden' }}>
-        {DIFF_LINES.map((l, i) => (
-          <div
-            key={i}
-            style={{
-              display: 'flex',
-              fontFamily: MONO,
-              fontSize: 11.5,
-              lineHeight: 1.75,
-              background: l[0] === '+' ? 'rgba(48,209,88,.11)' : l[0] === '-' ? 'rgba(255,69,58,.10)' : 'transparent',
-            }}
-          >
-            <span style={{ width: 22, textAlign: 'center', flexShrink: 0, color: l[0] === '+' ? 'var(--wb-green)' : l[0] === '-' ? 'var(--wb-red)' : 'var(--wb-label3)' }}>{l[0]}</span>
-            <span style={{ whiteSpace: 'pre', color: 'var(--wb-label2)' }}>{l[1]}</span>
-          </div>
-        ))}
+        <MultiFileDiff
+          oldFile={{ name: 'src/haptics.ts', contents: OLD_HAPTICS }}
+          newFile={{ name: 'src/haptics.ts', contents: NEW_HAPTICS }}
+          options={surfaceDiffOptions}
+        />
       </div>
     </div>
   );
