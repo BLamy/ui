@@ -158,6 +158,14 @@ Exports:
 - `SourceFileEditor`
 - `SourceFileEditorProps`
 
+Applications that only need the core editor can import the narrow entrypoint. It avoids loading
+the source-file and React playground integrations:
+
+```tsx
+import { GitbookEditor } from "@brett_lamy/docstream-editor/editor"
+import { astToTiptap } from "@brett_lamy/docstream-editor/convert"
+```
+
 ## Styling and Theming
 
 The editor CSS is designed to sit beside `@brett_lamy/docstream/styles.css` and inherit the same application theme tokens. In a shadcn-style app, define your theme variables globally and import both CSS entrypoints once.

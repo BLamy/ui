@@ -538,6 +538,30 @@
 }
 .gb-code pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
 .gb-code pre code .hljs-comment { font-style: italic; }
+.gb-code .hljs-keyword,
+.gb-code .hljs-selector-tag,
+.gb-code .hljs-built_in,
+.gb-code .hljs-type,
+.gb-code .hljs-tag,
+.gb-code .hljs-name { color: #c792ea; }
+.gb-code .hljs-string,
+.gb-code .hljs-attr,
+.gb-code .hljs-symbol,
+.gb-code .hljs-bullet { color: #a5d6a7; }
+.gb-code .hljs-title,
+.gb-code .hljs-section,
+.gb-code .hljs-function .hljs-title { color: #82aaff; }
+.gb-code .hljs-number,
+.gb-code .hljs-literal,
+.gb-code .hljs-variable,
+.gb-code .hljs-template-variable { color: #f78c6c; }
+.gb-code .hljs-comment,
+.gb-code .hljs-quote,
+.gb-code .hljs-meta { color: #777784; }
+.gb-code .hljs-operator,
+.gb-code .hljs-punctuation { color: #89ddff; }
+.gb-code .hljs-deletion { color: #ff6b6b; }
+.gb-code .hljs-addition { color: #69db7c; }
 
 /* ── Updates / changelog (mirrors .docs-updates) ────────── */
 .gb-updates { margin: 0.85em 0; border-top: 1px solid var(--gb-border); }
