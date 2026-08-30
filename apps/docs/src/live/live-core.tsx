@@ -111,17 +111,15 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   composer: {
-    title: 'Composer · Docstream editor', theme: 'wb', h: 400,
-    code: 'import { Composer, MarkdownView } from "@touchkit/workbench"\n\nexport default function App() {\n  const [sent, setSent] = React.useState("")\n  const [streaming, setStreaming] = React.useState(false)\n  const send = markdown => {\n    setSent(markdown); setStreaming(true)\n    setTimeout(() => setStreaming(false), 1600)\n  }\n  return (\n    <div style={{ maxWidth: 560, margin: "0 auto" }}>\n      <Composer wide defaultValue={"## Ship checklist\\n\\n- Highlight code\\n- Publish package"}\n        onSend={send} streaming={streaming}\n        onStop={() => setStreaming(false)}/>\n      {sent && <MarkdownView markdown={sent}/>}\n    </div>\n  )\n}',
+    title: 'Composer · Docstream editor', theme: 'wb', h: 520,
+    code: 'import { Composer } from "@touchkit/workbench"\n\nexport default function App() {\n  const [streaming, setStreaming] = React.useState(false)\n  const send = markdown => {\n    console.log(markdown); setStreaming(true)\n    setTimeout(() => setStreaming(false), 1600)\n  }\n  return (\n    <div style={{ maxWidth: 560, margin: "0 auto" }}>\n      <Composer wide defaultValue={"## Ship checklist\\n\\n- Highlight code\\n- Publish package"}\n        onSend={send} streaming={streaming}\n        onStop={() => setStreaming(false)}/>\n    </div>\n  )\n}',
     Render: function CompLive() {
-      const [sent, setSent] = useState<string | null>(null);
       const [streaming, setStreaming] = useState(false);
       const t = useRef<any>(null);
       useEffect(() => () => clearTimeout(t.current), []);
       return <div style={{ maxWidth: 560, margin: '0 auto' }}>
-        <Composer wide defaultValue={'## Ship checklist\n\n- Highlight code\n- Publish package'} onSend={(text) => { setSent(text); setStreaming(true); clearTimeout(t.current); t.current = setTimeout(() => setStreaming(false), 1600); }}
+        <Composer wide defaultValue={'## Ship checklist\n\n- Highlight code\n- Publish package'} onSend={() => { setStreaming(true); clearTimeout(t.current); t.current = setTimeout(() => setStreaming(false), 1600); }}
           streaming={streaming} onStop={() => { clearTimeout(t.current); setStreaming(false); }} />
-        {sent ? <div style={{ fontSize: 12, color: 'var(--wb-label)', marginTop: 10 }}><MarkdownView markdown={sent} /></div> : null}
       </div>;
     },
   },

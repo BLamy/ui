@@ -198,6 +198,12 @@ export interface ComposerProps {
   defaultValue?: string;
   /** Called with serialized Markdown whenever the rich editor changes. */
   onChange?: (markdown: string) => void;
+  /** Controls the tall drafting mode. Omit to let Composer manage it internally. */
+  expanded?: boolean;
+  /** Initial tall drafting mode when `expanded` is uncontrolled. */
+  defaultExpanded?: boolean;
+  /** Called when the expand or restore control is pressed. */
+  onExpandedChange?: (expanded: boolean) => void;
   placeholder?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -212,11 +218,20 @@ export function Composer({
   annotateCanvas,
   defaultValue,
   onChange,
+  expanded,
+  defaultExpanded = false,
+  onExpandedChange,
   placeholder = 'Ask anything — @ files, / commands, paste images',
   className,
   style,
 }: ComposerProps) {
   const [v, setV] = useState(() => defaultValue ?? '');
+  const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+  const isExpanded = expanded ?? internalExpanded;
+  const setExpanded = (next: boolean) => {
+    if (expanded === undefined) setInternalExpanded(next);
+    onExpandedChange?.(next);
+  };
   const [mi, setMi] = useState(0),
     [ei, setEi] = useState(0),
     [ai, setAi] = useState(0);
@@ -280,7 +295,36 @@ export function Composer({
   const annoAtt = anno ? atts.find((a) => a.id === anno) : null;
   return (
     <div data-slot="composer" className={cn(className)} style={{ width: '100%', boxSizing: 'border-box', ...style }}>
-      <div style={{ background: 'var(--wb-card)', border: '1px solid var(--wb-sep)', borderRadius: 15, boxShadow: '0 6px 24px rgba(0,0,0,.28)' }}>
+      <div style={{ position: 'relative', background: 'var(--wb-card)', border: '1px solid var(--wb-sep)', borderRadius: 15, boxShadow: '0 6px 24px rgba(0,0,0,.28)' }}>
+        <button
+          type="button"
+          className="wb-btn wb-hl"
+          aria-label={isExpanded ? 'Collapse composer' : 'Expand composer'}
+          aria-pressed={isExpanded}
+          title={isExpanded ? 'Collapse composer' : 'Expand composer'}
+          onClick={() => {
+            tick();
+            setExpanded(!isExpanded);
+          }}
+          style={{
+            position: 'absolute',
+            zIndex: 2,
+            top: 7,
+            right: 8,
+            width: 28,
+            height: 28,
+            display: 'grid',
+            placeItems: 'center',
+            padding: 0,
+            border: 0,
+            borderRadius: 7,
+            background: 'var(--wb-card)',
+            color: 'var(--wb-label2)',
+            cursor: 'pointer',
+          }}
+        >
+          <WIcon name={isExpanded ? 'restore' : 'expand'} size={14} sw={2} />
+        </button>
         {atts.length ? (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '10px 12px 0' }}>
             {atts.map((a) => (
@@ -344,7 +388,7 @@ export function Composer({
           slashMenu
           placeholder={placeholder}
           autofocus={autoFocus}
-          className={cn('wb-composer-doc', wide && 'wb-composer-doc-wide')}
+          className={cn('wb-composer-doc', wide && 'wb-composer-doc-wide', isExpanded && 'wb-composer-doc-expanded')}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           onEditorReady={(editor) => {

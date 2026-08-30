@@ -1,0 +1,17 @@
+diff --git a/dist/methods/click-passthrough/movable.js b/dist/methods/click-passthrough/movable.js
+index f061323d6f32f3d43aae8a63303cb036410ac6f9..aa9be69d4bfaca765f8cf2d9a0b4cb560ad6c2b4 100644
+--- a/dist/methods/click-passthrough/movable.js
++++ b/dist/methods/click-passthrough/movable.js
+@@ -50,6 +50,12 @@ export function handleMovable(element) {
+         const box = element.getBoundingClientRect();
+         x = event.clientX - box.x;
+         y = event.clientY - box.y;
++        // Safari commonly emits a tiny pointermove during an otherwise stationary tap.
++        // Keep treating that gesture as a click so the passthrough can replay it to the
++        // underlying button; only switch to movable/drag behavior after real travel.
++        if (Math.hypot(x - startX, y - startY) < 4) {
++            return;
++        }
+         pointerMove = true;
+         flippedDirection = !flippedDirection;
+         updateClipStyles();

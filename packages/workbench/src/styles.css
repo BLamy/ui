@@ -49,11 +49,13 @@
   --accent:var(--wb-fill2);
   --accent-foreground:var(--wb-label);
   --primary:var(--wb-tint);
-  width:100%;max-width:none;max-height:190px;min-height:0;margin:0;padding:0 14px 2px;
+  width:100%;max-width:none;max-height:120px;min-height:0;margin:0;padding:0 14px 2px;
   box-sizing:border-box;overflow-y:auto;color:var(--wb-label);font-family:inherit;font-size:14px;line-height:1.5
 }
-.wb-composer-doc.gb .ProseMirror{min-height:38px;padding:10px 0 4px;outline:none;font-size:14px;line-height:1.5}
-.wb-composer-doc-wide.gb .ProseMirror{min-height:64px}
+.wb-composer-doc.gb .ProseMirror{min-height:38px;padding:10px 34px 4px 0;outline:none;font-size:14px;line-height:1.5}
+.wb-composer-doc-wide.gb .ProseMirror{min-height:38px}
+.wb-composer-doc-expanded.gb{max-height:min(58vh,440px)}
+.wb-composer-doc-expanded.gb .ProseMirror{min-height:min(52vh,400px)}
 .wb-composer-doc.gb .ProseMirror>*+*{margin-top:.4em}
 .wb-composer-doc.gb .ProseMirror p{margin:0}
 .wb-composer-doc.gb .ProseMirror p:is(.is-empty,.is-editor-empty):first-child:before{

@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Composer, AnnotateLightbox } from './composer';
 import { WorkbenchTheme } from './theme';
-import { MONO } from './util';
 import '../styles.css';
 
 const meta: Meta<typeof Composer> = {
@@ -35,15 +34,13 @@ export const Streaming: Story = {
 };
 
 function LiveDemo() {
-  const [sent, setSent] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
   return (
     <div>
       <Composer
         wide
-        onSend={(text) => {
-          setSent(text);
+        onSend={() => {
           setStreaming(true);
           if (t.current) clearTimeout(t.current);
           t.current = setTimeout(() => setStreaming(false), 2600);
@@ -54,7 +51,6 @@ function LiveDemo() {
           setStreaming(false);
         }}
       />
-      {sent ? <div style={{ fontFamily: MONO, fontSize: 12, color: 'var(--wb-label2)', marginTop: 10 }}>sent: {sent}</div> : null}
     </div>
   );
 }
