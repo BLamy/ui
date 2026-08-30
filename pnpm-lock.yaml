@@ -236,6 +236,13 @@ importers:
       '@touchkit/workbench':
         specifier: workspace:*
         version: link:../../packages/workbench
+    devDependencies:
+      highlight.js:
+        specifier: 11.11.2
+        version: 11.11.2
+      use-sync-external-store:
+        specifier: 1.6.0
+        version: 1.6.0(react@19.0.0)
 
   apps/chat:
     dependencies:

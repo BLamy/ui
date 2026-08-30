@@ -13,7 +13,13 @@ for (const s of stories) {
   page.on('pageerror', onPageErr);
   try {
     await page.goto(`http://localhost:6006/iframe.html?id=${s.id}`, { waitUntil: 'load', timeout: 20000 });
-    await page.waitForTimeout(600);
+    // Cold dependency chunks can take longer than the old fixed delay. Wait for Storybook
+    // to either mount the story or display its error surface so slow starts are not failures.
+    await page.waitForFunction(() => {
+      const root = document.getElementById('storybook-root');
+      const err = document.querySelector('.sb-show-errordisplay, .sb-errordisplay');
+      return (root?.children.length ?? 0) > 0 || (!!err && getComputedStyle(err).display !== 'none');
+    }, undefined, { timeout: 3000 }).catch(() => undefined);
     const state = await page.evaluate(() => {
       const root = document.getElementById('storybook-root');
       const err = document.querySelector('.sb-show-errordisplay, .sb-errordisplay');

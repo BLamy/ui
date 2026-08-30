@@ -13,6 +13,6 @@ jobs:
       - run: pnpm exec playwright install chromium --with-deps
       - name: Storybook story smoke test
         run: |
-          pnpm --filter @touchkit/catalog storybook -- --no-open --quiet &
+          pnpm --filter @touchkit/catalog storybook --no-open --quiet &
           npx wait-on http://localhost:6006/index.json -t 120000
           pnpm test:stories
