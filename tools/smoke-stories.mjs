@@ -20,11 +20,22 @@ for (const s of stories) {
       const err = document.querySelector('.sb-show-errordisplay, .sb-errordisplay');
       return (root?.children.length ?? 0) > 0 || (!!err && getComputedStyle(err).display !== 'none');
     }, undefined, { timeout: 3000 }).catch(() => undefined);
-    const state = await page.evaluate(() => {
+    let state = await page.evaluate(() => {
       const root = document.getElementById('storybook-root');
       const err = document.querySelector('.sb-show-errordisplay, .sb-errordisplay');
       return { kids: root ? root.children.length : -1, err: !!err && getComputedStyle(err).display !== 'none' };
     });
+    // Vite can finish a cold dependency optimization after the first iframe request. A
+    // blank, error-free root is inconclusive, so retry that story once after optimization.
+    if (state.kids <= 0 && !state.err && !pageErrs.length) {
+      await page.reload({ waitUntil: 'load', timeout: 20000 });
+      await page.waitForFunction(() => (document.getElementById('storybook-root')?.children.length ?? 0) > 0, undefined, { timeout: 10000 }).catch(() => undefined);
+      state = await page.evaluate(() => {
+        const root = document.getElementById('storybook-root');
+        const err = document.querySelector('.sb-show-errordisplay, .sb-errordisplay');
+        return { kids: root ? root.children.length : -1, err: !!err && getComputedStyle(err).display !== 'none' };
+      });
+    }
     if (state.kids <= 0 || state.err || pageErrs.length) fails.push({ id: s.id, kids: state.kids, err: state.err, pageErrs, errs });
   } catch (e) { fails.push({ id: s.id, crash: String(e).slice(0, 150) }); }
   page.off('console', onErr); page.off('pageerror', onPageErr);
