@@ -1,19 +1,29 @@
 # Dependencies and generated output
-touchkit/node_modules/
-touchkit/**/node_modules/
-touchkit/dist/
-touchkit/**/dist/
-touchkit/.nx/
-touchkit/**/.nx/
-touchkit/coverage/
-touchkit/**/coverage/
-touchkit/tmp/
-touchkit/**/tmp/
-touchkit/out-tsc/
-touchkit/**/out-tsc/
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.nx/
+**/.nx/
+coverage/
+**/coverage/
+tmp/
+**/tmp/
+out-tsc/
+**/out-tsc/
 
 # Local tooling and system files
 .playwright-mcp/
 .DS_Store
 **/.DS_Store
 *.log
+
+# Local editor and generated metadata
+.idea/
+.project
+.classpath
+.c9/
+.sass-cache/
+connect.lock
+typings/
+*.tsbuildinfo

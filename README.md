@@ -1,22 +1,25 @@
-# CODING AGENTS: READ THIS FIRST
+# TouchKit
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+TouchKit is an iOS-flavored React component monorepo built with Nx and pnpm. It contains the component packages, demo applications, Storybook catalog, and a GitBook-style documentation app.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+## Workspace layout
 
-## What you should do — IMPORTANT
+- `packages/ui` — core TouchKit components, containers, haptics, and tokens
+- `packages/chatkit` — composable team-chat primitives
+- `packages/workbench` — IDE workbench shell and Docstream-backed markdown
+- `packages/beautiful` — AI-native interface primitives
+- `packages/pencilkit` — freehand drawing components
+- `apps/docs` — the documentation site
+- `apps/catalog` — the Storybook component catalog
+- `project` — original HTML design prototypes and source assets
 
-**Read `touchkit-demo-app/project/TouchKit Docs.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+## Development
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+```sh
+pnpm install
+pnpm dev:docs          # docs app on :4206
+pnpm storybook         # component catalog on :6006
+pnpm nx run-many -t build
+```
 
-## About the design files
-
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
-
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
-
-## Bundle contents
-
-- `touchkit-demo-app/README.md` — this file
-- `touchkit-demo-app/project/` — the `TouchKit demo app` project files (HTML prototypes, assets, components)
+The docs app renders markdown through [`@brett_lamy/docstream`](https://www.npmjs.com/package/@brett_lamy/docstream). Every push to `main` builds `apps/docs` and deploys it to [GitHub Pages](https://blamy.github.io/ui/).

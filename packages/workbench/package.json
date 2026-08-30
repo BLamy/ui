@@ -16,6 +16,7 @@
     "./styles.css": "./dist/index.css"
   },
   "dependencies": {
+    "@brett_lamy/docstream": "0.3.0",
     "@touchkit/ui": "workspace:*"
   },
   "peerDependencies": {

@@ -63,11 +63,9 @@ function NavList({ slug, pick }: { slug: string; pick: (id: string) => void }) {
 function NavFooter() {
   return (
     <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(20,20,40,0.08)', fontSize: 12, lineHeight: 1.9 }}>
-      <div><a href="TouchKit Demo.dc.html">Contacts demo →</a></div>
-      <div><a href="Workbench.dc.html">Workbench demo →</a></div>
-      <div><a href="PencilKit Demo.dc.html">PencilKit demo →</a></div>
-      <div><a href="Chat Demo.dc.html">Chat demo →</a></div>
-      <div style={{ fontSize: 10.5, color: '#9A9AA3', fontFamily: 'ui-monospace,Menlo,monospace', marginTop: 4 }}>rendered with TouchKit MarkdownView</div>
+      <div><a href="https://github.com/BLamy/ui/tree/main/project">Prototype source →</a></div>
+      <div><a href="https://github.com/BLamy/ui">GitHub repository →</a></div>
+      <div style={{ fontSize: 10.5, color: '#9A9AA3', fontFamily: 'ui-monospace,Menlo,monospace', marginTop: 4 }}>rendered with Docstream</div>
     </div>
   );
 }

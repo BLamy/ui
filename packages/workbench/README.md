@@ -59,7 +59,7 @@ The shell measures its own container, not the browser viewport, so it works in r
 - Conversation: `MessageScroller`, `ChatView`, `Composer`, `EmptyThread`, `WorkTrace`
 - Navigation and surfaces: `ThreadSidebar`, `SurfacePanel`, `SurfaceTabBar`, surface views
 - Terminal: `TerminalDock`, `TermHeader`, `TermBody`, `SnapSheet`
-- Markdown: `MarkdownView`
+- Markdown: `MarkdownView`, backed by `@brett_lamy/docstream`
 
 The package ships runnable Storybook examples for every shell width class, empty chat state, terminal sheet, panel drawer, and full-screen surface.
 

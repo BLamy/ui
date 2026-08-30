@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
+  base: process.env.GITHUB_ACTIONS ? '/ui/' : '/',
   cacheDir: '../../node_modules/.vite/apps/docs',
   server: {
     port: 4206,

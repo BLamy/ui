@@ -1,7 +1,9 @@
 import * as React from 'react';
+import { GitbookStreamdown } from '@brett_lamy/docstream';
+import '@brett_lamy/docstream/styles.css';
 import { cn } from './util';
 
-/* ══ MarkdownView — the prototype's built-in mini-markdown renderer (local, no network) ══ */
+/* ══ MarkdownView — Docstream-backed GitBook markdown for docs and chat ══ */
 function fbInline(s: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   let k = 0;
@@ -167,15 +169,15 @@ export function FbMd({ md }: { md?: string }) {
 
 export interface MarkdownViewProps {
   markdown?: string;
-  /** kept for API parity with the prototype's MdView; the local renderer treats streamed and static markdown alike */
+  /** Passes streaming state through to Docstream for accessible streaming markup. */
   streaming?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
-export function MarkdownView({ markdown, className, style }: MarkdownViewProps) {
+export function MarkdownView({ markdown, streaming, className, style }: MarkdownViewProps) {
   return (
-    <div data-slot="markdown-view" data-renderer="fallback" className={cn('wb-md', className)} style={style}>
-      <FbMd md={markdown} />
+    <div data-slot="markdown-view" data-renderer="docstream" className={cn('wb-md', className)} style={style}>
+      <GitbookStreamdown markdown={markdown ?? ''} isStreaming={streaming} />
     </div>
   );
 }

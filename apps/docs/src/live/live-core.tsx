@@ -301,7 +301,7 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   stream: {
-    title: 'MarkdownView · local renderer', theme: 'tk', h: 480,
+    title: 'MarkdownView · Docstream renderer', theme: 'tk', h: 480,
     code: 'import { MarkdownView } from "@touchkit/workbench"\n\nexport default function App() {\n  const [text, setText] = React.useState("")\n  const [live, setLive] = React.useState(false)\n  // feed the accumulated string as chunks arrive:\n  //   setText(partial); setLive(true)  …  setLive(false) when done\n  return <MarkdownView markdown={text} streaming={live}/>\n}',
     Render: function StreamLive() {
       const [txt, setTxt] = useState(REPLY_SERVERS);
