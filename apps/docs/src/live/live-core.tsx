@@ -111,7 +111,7 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   composer: {
-    title: 'Composer · Docstream editor', theme: 'wb', h: 520,
+    title: 'Composer · Docstream editor', theme: 'wb', h: 260,
     code: 'import { Composer } from "@touchkit/workbench"\n\nexport default function App() {\n  const [streaming, setStreaming] = React.useState(false)\n  const send = markdown => {\n    console.log(markdown); setStreaming(true)\n    setTimeout(() => setStreaming(false), 1600)\n  }\n  return (\n    <div style={{ maxWidth: 560, margin: "0 auto" }}>\n      <Composer wide defaultValue={"## Ship checklist\\n\\n- Highlight code\\n- Publish package"}\n        onSend={send} streaming={streaming}\n        onStop={() => setStreaming(false)}/>\n    </div>\n  )\n}',
     Render: function CompLive() {
       const [streaming, setStreaming] = useState(false);

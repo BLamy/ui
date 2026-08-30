@@ -53,6 +53,8 @@
   box-sizing:border-box;overflow-y:auto;color:var(--wb-label);font-family:inherit;font-size:14px;line-height:1.5
 }
 .wb-composer-doc.gb .ProseMirror{min-height:38px;padding:10px 34px 4px 0;outline:none;font-size:14px;line-height:1.5}
+.wb-composer-doc.gb,.wb-composer-doc.gb .ProseMirror{color:var(--wb-label);caret-color:var(--wb-tint)}
+.wb-composer-doc.gb .ProseMirror :where(h1,h2,h3,h4,h5,h6,p,li){color:inherit}
 .wb-composer-doc-wide.gb .ProseMirror{min-height:38px}
 .wb-composer-doc-expanded.gb{max-height:min(58vh,440px)}
 .wb-composer-doc-expanded.gb .ProseMirror{min-height:min(52vh,400px)}
