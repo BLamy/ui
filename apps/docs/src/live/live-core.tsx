@@ -6,7 +6,7 @@ import {
   Switch as TKSwitch, TabBar, List as TKList, ListSection as TKSection, ListRow as TKRow,
   type Screen,
 } from '@touchkit/ui';
-import { ArtifactChatContainer, ChatDemo, Composer as ChatComposer } from '@touchkit/chatkit';
+import { ArtifactChatContainer, ChatDemo } from '@touchkit/chatkit';
 import {
   Composer, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
@@ -33,7 +33,7 @@ function ScaledShell({ width, height, children }: { width: number; height: numbe
 export const LIVE_CORE: Record<string, LiveSpec> = {
   artifactchat: {
     title: 'ArtifactChatContainer · split to floating chat', theme: 'tk', h: 620,
-    code: 'import { ArtifactChatContainer, Composer } from "@touchkit/chatkit"\n\nexport default function ArtifactWorkspace() {\n  return (\n    <ArtifactChatContainer breakpoint={760} working={isWorking}\n      onAdd={() => setIsWorking(false)}>\n      <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>\n      <ArtifactChatContainer.Composer>\n        <Composer tint="#0A84FF" placeholder="Do anything" onSend={send} />\n      </ArtifactChatContainer.Composer>\n      <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>\n    </ArtifactChatContainer>\n  )\n}',
+    code: 'import { ArtifactChatContainer } from "@touchkit/chatkit"\nimport { Composer } from "@touchkit/workbench"\n\nexport default function ArtifactWorkspace() {\n  return (\n    <ArtifactChatContainer breakpoint={760} working={isWorking}\n      onAdd={() => setIsWorking(false)}>\n      <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>\n      <ArtifactChatContainer.Composer>\n        <Composer wide placeholder="Do anything" onSend={send} />\n      </ArtifactChatContainer.Composer>\n      <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>\n    </ArtifactChatContainer>\n  )\n}',
     Render: function ArtifactChatLive() {
       const [mode, setMode] = useState('wide');
       const [working, setWorking] = useState(false);
@@ -74,7 +74,7 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
           <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 12 }}>
             <ArtifactChatContainer breakpoint={760} working={working} workingLabel="Working on the artifact…" onAdd={() => setWorking(false)}>
               <ArtifactChatContainer.Chat>{transcript}</ArtifactChatContainer.Chat>
-              <ArtifactChatContainer.Composer><div style={{ padding: 8, background: 'transparent' }}><ChatComposer tint="#0A84FF" placeholder="Do anything" onSend={() => setWorking(true)} /></div></ArtifactChatContainer.Composer>
+              <ArtifactChatContainer.Composer><div style={{ padding: 8, background: 'transparent' }}><Composer wide placeholder="Do anything" onSend={() => setWorking(true)} /></div></ArtifactChatContainer.Composer>
               <ArtifactChatContainer.Content>{artifact}</ArtifactChatContainer.Content>
             </ArtifactChatContainer>
           </div>

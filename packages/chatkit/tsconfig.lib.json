@@ -31,6 +31,9 @@
   "references": [
     {
       "path": "../ui/tsconfig.lib.json"
+    },
+    {
+      "path": "../workbench/tsconfig.lib.json"
     }
   ]
 }

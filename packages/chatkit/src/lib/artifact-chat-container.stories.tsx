@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Composer } from '@touchkit/workbench';
+import '@touchkit/workbench/styles.css';
 import { ArtifactChatContainer } from './artifact-chat-container';
-import { Composer } from './composer';
 import { K, KFONT } from './chat-tokens';
 import '../styles.css';
 
@@ -78,7 +79,7 @@ function Demo({ width, height, working = false, defaultChatOpen = false }: DemoP
         <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
         <ArtifactChatContainer.Composer>
           <div style={{ padding: 8, background: 'transparent' }}>
-            <Composer tint="#0A84FF" placeholder="Do anything" onSend={() => setBusy(true)} />
+            <Composer wide placeholder="Do anything" onSend={() => setBusy(true)} />
           </div>
         </ArtifactChatContainer.Composer>
         <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
@@ -93,7 +94,7 @@ const meta: Meta<DemoProps> = {
   parameters: {
     docs: {
       description: {
-        component: 'Uses the real ChatKit Composer. In compact mode, drag the cap upward to continuously turn the floating glass composer into the full-page chat, then drag it down to collapse it.',
+        component: 'Uses the full Docstream-backed Workbench Composer. In compact mode, drag the cap upward to continuously turn the floating glass composer into the full-page chat, then drag it down to collapse it.',
       },
     },
   },

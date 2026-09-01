@@ -41,5 +41,8 @@
     "react-aria",
     "shadcn",
     "components"
-  ]
+  ],
+  "devDependencies": {
+    "@touchkit/workbench": "workspace:*"
+  }
 }
