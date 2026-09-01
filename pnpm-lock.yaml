@@ -262,8 +262,8 @@ importers:
   apps/docs:
     dependencies:
       '@brett_lamy/docstream-editor':
-        specifier: 0.5.4
-        version: 0.5.4(6143cf0e76e47a3b7212af63b3b36e31)
+        specifier: 0.5.5
+        version: 0.5.5(6143cf0e76e47a3b7212af63b3b36e31)
       '@tiptap/core':
         specifier: 3.30.5
         version: 3.30.5(@tiptap/pm@3.30.5)
@@ -410,11 +410,11 @@ importers:
   packages/workbench:
     dependencies:
       '@brett_lamy/docstream':
-        specifier: 0.5.4
-        version: 0.5.4(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0))
+        specifier: 0.5.5
+        version: 0.5.5(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0))
       '@brett_lamy/docstream-editor':
-        specifier: 0.5.4
-        version: 0.5.4(6143cf0e76e47a3b7212af63b3b36e31)
+        specifier: 0.5.5
+        version: 0.5.5(6143cf0e76e47a3b7212af63b3b36e31)
       '@pierre/diffs':
         specifier: ^1.3.6
         version: 1.3.6(@shikijs/themes@4.4.3)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1230,8 +1230,8 @@ packages:
   '@braintree/sanitize-url@7.1.2':
     resolution: {integrity: sha512-jigsZK+sMF/cuiB7sERuo9V7N9jx+dhmHHnQyDSVdpZwVutaBu7WvNYqMDLSgFgfB30n452TP3vjDAvFC973mA==}
 
-  '@brett_lamy/docstream-editor@0.5.4':
-    resolution: {integrity: sha512-2LDSalehRrgyqVZIBKiVO1JmRzeKlVrsNIui1ZfPvW2+GLz4qFI17SjTQRuKtextobmQky2jXNZzlwVUyx3lZA==}
+  '@brett_lamy/docstream-editor@0.5.5':
+    resolution: {integrity: sha512-ox0ph+ikLNOdAaoHv+5JqR42LI8CnbxkSiK3MRvIz9BdFKA9/IV03XU7BwnP+erywYOk9+wgX0tUysWGaenmHQ==}
     peerDependencies:
       '@tiptap/core': ^3.26.1
       '@tiptap/extension-code-block-lowlight': ^3.26.1
@@ -1244,8 +1244,8 @@ packages:
       '@tiptap/suggestion': ^3.26.1
       react: '>=18'
 
-  '@brett_lamy/docstream@0.5.4':
-    resolution: {integrity: sha512-q4Ha21k8OcWPGtCNRyp7gOpypwx+93thTxBqXFDLF2qpzyiRdPwRsSNuv0ymFSg5LlQleCDMkZDviBzXAtE1sg==}
+  '@brett_lamy/docstream@0.5.5':
+    resolution: {integrity: sha512-epBoyoCyh5pY/IjfrVzjyxh/w3pG4qCrvtKdOL0fDC6KDx/P4gMV+k8cvbVU2BoCfvAhDJGppOUZXXhr3GIFuQ==}
     peerDependencies:
       '@agent-wasm/core': '>=0.4.0'
       '@brett_lamy/viz-engine': '>=0.2.0'
@@ -4420,6 +4420,10 @@ packages:
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
 
+  commander@15.0.0:
+    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+    engines: {node: '>=22.12.0'}
+
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
 
@@ -6211,6 +6215,10 @@ packages:
 
   katex@0.17.0:
     resolution: {integrity: sha512-Vdw0ATsQ9V+LuegM/BTwQqV/6cTl5lbGcIrU+BCgLxyf6bo38ybOr372tuSIxir3CN720flu1meYR6XzNMwQnw==}
+    hasBin: true
+
+  katex@0.18.5:
+    resolution: {integrity: sha512-1FU5H3RjGJVj6GT9fMjf2uMIXmPQp232aXS3UEeQzf0dxefHg/CKMvNB3DuOC46LFG/E5PNxrE8dOwB782FDGg==}
     hasBin: true
 
   keyv@4.5.4:
@@ -9650,9 +9658,9 @@ snapshots:
 
   '@braintree/sanitize-url@7.1.2': {}
 
-  '@brett_lamy/docstream-editor@0.5.4(6143cf0e76e47a3b7212af63b3b36e31)':
+  '@brett_lamy/docstream-editor@0.5.5(6143cf0e76e47a3b7212af63b3b36e31)':
     dependencies:
-      '@brett_lamy/docstream': 0.5.4(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0))
+      '@brett_lamy/docstream': 0.5.5(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0))
       '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
       '@tiptap/extension-code-block-lowlight': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/extension-code-block@3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)(highlight.js@11.11.2)(lowlight@3.3.0)
       '@tiptap/extension-list': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
@@ -9672,12 +9680,13 @@ snapshots:
       - supports-color
       - vite
 
-  '@brett_lamy/docstream@0.5.4(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0))':
+  '@brett_lamy/docstream@0.5.5(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0))':
     dependencies:
       '@agent-wasm/core': 0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0))
       '@brett_lamy/viz-engine': 0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       framer-motion: 13.1.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       hast-util-to-html: 9.0.5
+      katex: 0.18.5
       lowlight: 3.3.0
       lucide-react: 1.37.0(react@19.0.0)
       mermaid: 11.17.2
@@ -13210,6 +13219,8 @@ snapshots:
 
   comma-separated-tokens@2.0.3: {}
 
+  commander@15.0.0: {}
+
   commander@2.20.3: {}
 
   commander@6.2.1: {}
@@ -15437,6 +15448,10 @@ snapshots:
   katex@0.17.0:
     dependencies:
       commander: 8.3.0
+
+  katex@0.18.5:
+    dependencies:
+      commander: 15.0.0
 
   keyv@4.5.4:
     dependencies:
