@@ -250,12 +250,13 @@ export function ArtifactChatContainer({
           '--ck-artifact-bottom-gutter': `${FLOATING_GUTTER * (1 - grown)}px`,
           '--ck-artifact-radius': `${28 * (1 - grown)}px`,
           // Fades the glass from composer-light to conversation-dark as it grows.
-          '--ck-artifact-scrim-opacity': `${0.24 * grown}`,
-          '--ck-artifact-border-alpha': `${0.16 + 0.04 * grown}`,
-          '--ck-artifact-bg-alpha': `${0.62 + 0.24 * grown}`,
+          '--ck-artifact-scrim-opacity': `${0.16 * grown}`,
+          '--ck-artifact-border-alpha': `${0.12 + 0.04 * grown}`,
+          '--ck-artifact-bg-alpha': `${0.28 + 0.3 * grown}`,
           '--ck-artifact-shadow-y': `${14 + 20 * grown}px`,
           '--ck-artifact-shadow-blur': `${34 + 30 * grown}px`,
-          '--ck-artifact-shadow-alpha': `${0.32 + 0.22 * grown}`,
+          '--ck-artifact-shadow-alpha': `${0.22 + 0.18 * grown}`,
+          '--ck-artifact-blur': `${16 + 8 * grown}px`,
           '--ck-artifact-divider-alpha': `${0.09 * grown}`,
           ...style,
         } as CSSProperties}
