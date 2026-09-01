@@ -14,11 +14,12 @@ interface DemoProps {
 
 function Transcript() {
   return (
-    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 18, background: K.bg, color: K.label }}>
-      <div style={{ fontWeight: 750, fontSize: 15, marginBottom: 22 }}>Artifact chat</div>
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '18px 18px 14px', background: K.bg, color: K.label }}>
       {[
         ['You', 'Can you compare the conversion rate by region?'],
         ['TouchKit', 'I added the regional breakdown to the artifact. West is leading at 34%.'],
+        ['You', 'Which region moved the most against last month?'],
+        ['TouchKit', 'Northeast — up 6.1 points. I highlighted it in the chart.'],
         ['You', 'Call out the biggest change from last month.'],
       ].map(([author, copy], index) => (
         <div key={copy} style={{ marginBottom: 18 }}>
@@ -48,6 +49,16 @@ function Artifact() {
         <div style={{ height: 170, display: 'flex', alignItems: 'end', gap: 18, padding: '14px 10px 0' }}>
           {[58, 92, 72, 48, 82].map((height, index) => <div key={index} style={{ flex: 1, height: `${height}%`, minWidth: 18, borderRadius: '7px 7px 2px 2px', background: index === 1 ? '#0A84FF' : '#B7D7FF' }} />)}
         </div>
+      </div>
+      {/* Runs behind the floating overlay so its translucency reads against real content. */}
+      <div style={{ marginTop: 16, border: '1px solid #E1E3E8', borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
+        {[['Northeast', '34.1%', '+6.1'], ['West', '31.8%', '+2.4'], ['Midwest', '27.2%', '-0.8'], ['South', '24.6%', '+1.2'], ['Mountain', '22.9%', '+0.4']].map(([region, rate, delta], index) => (
+          <div key={region} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 18px', borderTop: index ? '1px solid #EEF0F4' : 0, fontSize: 13.5 }}>
+            <span style={{ flex: 1 }}>{region}</span>
+            <strong>{rate}</strong>
+            <span style={{ width: 46, textAlign: 'right', color: delta.startsWith('-') ? '#C7362F' : '#1B873F' }}>{delta}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

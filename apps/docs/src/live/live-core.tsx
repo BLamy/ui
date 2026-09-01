@@ -39,9 +39,8 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
       const [working, setWorking] = useState(false);
       const compact = mode === 'compact';
       const width = compact ? 430 : 1040;
-      const transcript = <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 18, background: '#131318', color: '#EDEDF2' }}>
-        <strong style={{ fontSize: 15 }}>Artifact chat</strong>
-        {[['You', 'Compare conversion by region.'], ['TouchKit', 'I added the regional breakdown. West is leading at 34%.'], ['You', 'Call out the largest change.']].map(([author, copy], index) => <div key={copy} style={{ marginTop: 20 }}>
+      const transcript = <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '18px 18px 14px', background: '#131318', color: '#EDEDF2' }}>
+        {[['You', 'Compare conversion by region.'], ['TouchKit', 'I added the regional breakdown. West is leading at 34%.'], ['You', 'Which region moved most against last month?'], ['TouchKit', 'Northeast — up 6.1 points. I highlighted it in the chart.'], ['You', 'Call out the largest change.']].map(([author, copy], index) => <div key={copy} style={{ marginBottom: 18 }}>
           <div style={{ color: index % 2 ? '#68A7FF' : 'rgba(235,235,245,.6)', fontSize: 11, fontWeight: 700 }}>{author}</div>
           <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>{copy}</div>
         </div>)}
@@ -59,6 +58,12 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
           <div style={{ height: 180, display: 'flex', alignItems: 'end', gap: 14, paddingTop: 12 }}>
             {[55, 92, 68, 44, 78].map((height, index) => <div key={index} style={{ flex: 1, height: `${height}%`, borderRadius: '6px 6px 2px 2px', background: index === 1 ? '#0A84FF' : '#B7D7FF' }} />)}
           </div>
+        </div>
+        <div style={{ marginTop: 14, border: '1px solid #E1E3E8', borderRadius: 13, background: '#fff', overflow: 'hidden' }}>
+          {[['Northeast', '34.1%', '+6.1'], ['West', '31.8%', '+2.4'], ['Midwest', '27.2%', '-0.8'], ['South', '24.6%', '+1.2']].map(([region, rate, delta], index) => <div key={region} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 17px', borderTop: index ? '1px solid #EEF0F4' : 0, fontSize: 13 }}>
+            <span style={{ flex: 1, minWidth: 0 }}>{region}</span><strong>{rate}</strong>
+            <span style={{ width: 42, textAlign: 'right', color: delta.startsWith('-') ? '#C7362F' : '#1B873F' }}>{delta}</span>
+          </div>)}
         </div>
       </div>;
       return <div>

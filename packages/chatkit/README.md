@@ -51,7 +51,7 @@ The hook throws a clear error when called outside `ChatShell`.
 
 ## Artifact chat
 
-`ArtifactChatContainer` keeps a conversation beside an artifact when space permits. Below its container breakpoint, the artifact remains full-size while the composer floats over it; its grabber opens the full conversation as a bottom drawer.
+`ArtifactChatContainer` keeps a conversation beside an artifact when space permits. Below its container breakpoint, the artifact keeps the full canvas and the composer becomes a dark translucent overlay floating over it, with the page still visible underneath. A grabber cap fused to the overlay's top edge grows the full conversation upward out of itself — tap to toggle, or drag the cap and the surface follows the pointer.
 
 ```tsx
 <ArtifactChatContainer working={isWorking} onAdd={() => setIsWorking(false)}>
@@ -61,7 +61,7 @@ The hook throws a clear error when called outside `ChatShell`.
 </ArtifactChatContainer>
 ```
 
-The compact working state is tappable to reveal the composer for another request. By default the floating dock subscribes to TouchKit's shared scroll-chrome state, so it hides and returns with a `NavigationStack` header and `TabBar`.
+The compact working state is tappable to reveal the composer for another request. By default the collapsed overlay subscribes to TouchKit's shared scroll-chrome state, so it hides and returns with a `NavigationStack` header and `TabBar`.
 
 ## Other exports
 
