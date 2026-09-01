@@ -335,7 +335,6 @@ export function ArtifactChatContainer({
           '--ck-artifact-shadow-y': `${14 + 20 * grown}px`,
           '--ck-artifact-shadow-blur': `${34 + 30 * grown}px`,
           '--ck-artifact-shadow-alpha': `${0.22 + 0.18 * grown}`,
-          '--ck-artifact-blur': `${16 + 8 * grown}px`,
           '--ck-artifact-divider-alpha': `${0.09 * grown}`,
           ...style,
         } as CSSProperties}
