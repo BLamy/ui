@@ -1,7 +1,10 @@
-import { useEffect, useState, type CSSProperties } from "react"
+import { useEffect, useId, useMemo, useState, type CSSProperties } from "react"
+import { HighlightedCode } from "../docs/HighlightedCode"
 import {
   createAlmostNodeWorkspace,
   createReactDemoFiles,
+  normalizeAlmostNodeFiles,
+  normalizeAlmostNodePath,
   type AlmostNodeFiles,
   type AlmostNodeWorkspace,
   type AlmostNodeWorkspaceOptions,
@@ -16,6 +19,12 @@ export interface ReactDemoProps {
   port?: number
   /** Height of the embedded preview. */
   height?: number | string
+  /** Source file displayed below the preview. Defaults to the entry file. */
+  codeFile?: string
+  /** Number of source lines visible while the code preview is collapsed. Defaults to 3. */
+  collapsedCodeLines?: number
+  /** Maximum visible source lines before expanded code scrolls. Defaults to 30. */
+  expandedCodeLines?: number
   /** Label shown above the preview. */
   title?: string
   /** Start the runtime on mount (default true). */
@@ -43,12 +52,33 @@ function frameHeight(height: number | string): CSSProperties {
   return { height: typeof height === "number" ? `${height}px` : height }
 }
 
+function positiveLineCount(value: number, fallback: number): number {
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback
+}
+
+function sourceLanguage(path: string): string | null {
+  const extension = path.split(".").pop()?.toLowerCase()
+  return extension && extension !== path ? extension : null
+}
+
+function sourceText(files: AlmostNodeFiles, requestedPath: string): string | null {
+  const normalizedPath = normalizeAlmostNodePath(requestedPath)
+  const file = normalizeAlmostNodeFiles(files).find(
+    (candidate) => normalizeAlmostNodePath(candidate.path) === normalizedPath,
+  )
+  if (!file) return null
+  return typeof file.content === "string" ? file.content : new TextDecoder().decode(file.content)
+}
+
 /** Render a multi-file React/JSX/TSX project through almost-node's Vite server. */
 export function ReactDemo({
   files,
   entry = "/src/main.jsx",
   port = 4173,
   height = 360,
+  codeFile,
+  collapsedCodeLines = 3,
+  expandedCodeLines = 30,
   title = "Live React preview",
   autoStart = true,
   sandbox = "allow-scripts allow-same-origin allow-forms allow-modals",
@@ -61,6 +91,18 @@ export function ReactDemo({
   const [state, setState] = useState<PreviewState>(autoStart ? "starting" : "idle")
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [codeExpanded, setCodeExpanded] = useState(false)
+  const codePanelId = useId()
+  const displayedCodeFile = codeFile ?? entry
+  const code = useMemo(
+    () => sourceText(files, displayedCodeFile),
+    [displayedCodeFile, files],
+  )
+  const collapsedLines = positiveLineCount(collapsedCodeLines, 3)
+  const expandedLines = Math.max(
+    collapsedLines,
+    positiveLineCount(expandedCodeLines, 30),
+  )
 
   useEffect(() => {
     if (!run) {
@@ -158,6 +200,32 @@ export function ReactDemo({
           {running ? "Starting almost-node…" : "Run the demo to open its virtual filesystem."}
         </div>
       )}
+      {code !== null ? (
+        <div className="docs-react-demo-code">
+          <pre
+            id={codePanelId}
+            className={codeExpanded ? "docs-react-demo-code-body docs-react-demo-code-body-expanded" : "docs-react-demo-code-body"}
+            style={{
+              "--docs-react-demo-code-lines": codeExpanded ? expandedLines : collapsedLines,
+            } as CSSProperties}
+          >
+            <HighlightedCode
+              code={code}
+              language={sourceLanguage(displayedCodeFile)}
+              lineNumbers
+            />
+          </pre>
+          <button
+            type="button"
+            className="docs-react-demo-code-toggle"
+            aria-controls={codePanelId}
+            aria-expanded={codeExpanded}
+            onClick={() => setCodeExpanded((value) => !value)}
+          >
+            {codeExpanded ? "Hide Code" : "View Code"}
+          </button>
+        </div>
+      ) : null}
     </section>
   )
 }

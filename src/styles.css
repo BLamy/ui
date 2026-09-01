@@ -775,27 +775,36 @@
 .hljs-comment,
 .hljs-quote,
 .hljs-meta {
-  color: var(--gb-muted-foreground);
+  color: var(--gb-muted-foreground, #71717a);
 }
 
 .hljs-operator,
 .hljs-punctuation {
-  color: var(--gb-code-fg);
+  color: var(--gb-code-fg, #18181b);
 }
 
 .hljs-deletion {
-  color: var(--gb-danger);
+  color: var(--gb-danger, #ef4444);
 }
 
 .hljs-addition {
-  color: var(--gb-success);
+  color: var(--gb-success, #22c55e);
 }
 
 .docs-react-demo {
+  --docs-react-demo-panel: var(--gb-panel, var(--card, #ffffff));
+  --docs-react-demo-foreground: var(--gb-panel-foreground, var(--card-foreground, #18181b));
+  --docs-react-demo-muted-foreground: var(--gb-muted-foreground, var(--muted-foreground, #71717a));
+  --docs-react-demo-border: var(--gb-border, var(--border, #e4e4e7));
+  --docs-react-demo-accent: var(--gb-accent, var(--accent, #f4f4f5));
+  --docs-react-demo-primary: var(--gb-primary, var(--primary, #4f46e5));
+  --docs-react-demo-code-bg: var(--gb-code-bg, rgba(128, 128, 128, 0.13));
+  --docs-react-demo-success: var(--gb-success, #22c55e);
+  --docs-react-demo-danger: var(--gb-danger, #ef4444);
   overflow: hidden;
-  border: 1px solid var(--gb-border);
+  border: 1px solid var(--docs-react-demo-border);
   border-radius: 12px;
-  background: var(--gb-panel);
+  background: var(--docs-react-demo-panel);
 }
 
 .docs-react-demo-header {
@@ -804,33 +813,33 @@
   gap: 10px;
   min-height: 42px;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--gb-border);
-  color: var(--gb-panel-foreground);
+  border-bottom: 1px solid var(--docs-react-demo-border);
+  color: var(--docs-react-demo-foreground);
   font-size: 13px;
   font-weight: 550;
 }
 
 .docs-react-demo-status {
   margin-left: auto;
-  color: var(--gb-muted-foreground);
+  color: var(--docs-react-demo-muted-foreground);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .docs-react-demo-status-ready {
-  color: var(--gb-success);
+  color: var(--docs-react-demo-success);
 }
 
 .docs-react-demo-status-error {
-  color: var(--gb-danger);
+  color: var(--docs-react-demo-danger);
 }
 
 .docs-react-demo-run {
-  border: 1px solid var(--gb-border);
+  border: 1px solid var(--docs-react-demo-border);
   border-radius: 6px;
   padding: 4px 9px;
-  color: var(--gb-panel-foreground);
+  color: var(--docs-react-demo-foreground);
   font-size: 12px;
   cursor: pointer;
 }
@@ -860,7 +869,87 @@
   min-height: 100px;
   overflow: auto;
   padding: 14px;
-  color: var(--gb-danger);
-  background: var(--gb-code-bg);
+  color: var(--docs-react-demo-danger);
+  background: var(--docs-react-demo-code-bg);
   white-space: pre-wrap;
+}
+
+.docs-react-demo-code {
+  position: relative;
+  border-top: 1px solid var(--docs-react-demo-border);
+  background: var(--docs-react-demo-code-bg);
+}
+
+.docs-react-demo-code-body {
+  --docs-react-demo-code-line-height: 1.6rem;
+  max-height: calc(var(--docs-react-demo-code-lines) * var(--docs-react-demo-code-line-height));
+  margin: 0;
+  overflow: hidden;
+  padding: 1.15rem 1rem 2.4rem;
+  font-size: 0.875rem;
+  line-height: var(--docs-react-demo-code-line-height);
+  tab-size: 2;
+}
+
+.docs-react-demo-code-body::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4.5rem;
+  background: linear-gradient(to bottom, transparent, var(--docs-react-demo-panel));
+  content: "";
+  pointer-events: none;
+}
+
+.docs-react-demo-code-body-expanded {
+  overflow: auto;
+  padding-bottom: 3.25rem;
+}
+
+.docs-react-demo-code-body-expanded::after {
+  display: none;
+}
+
+.docs-react-demo-code-body > code {
+  display: block;
+  min-width: max-content;
+  padding: 0;
+  background: transparent;
+}
+
+.docs-react-demo-code-body:not(.docs-react-demo-code-body-expanded) > code {
+  max-height: calc(var(--docs-react-demo-code-lines) * var(--docs-react-demo-code-line-height));
+  overflow: hidden;
+}
+
+.docs-react-demo-code-body .docs-code-line {
+  min-height: var(--docs-react-demo-code-line-height);
+}
+
+.docs-react-demo-code-toggle {
+  position: absolute;
+  bottom: 0.85rem;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  border: 1px solid var(--docs-react-demo-border);
+  border-radius: 0.65rem;
+  padding: 0.45rem 0.85rem;
+  color: var(--docs-react-demo-foreground);
+  background: var(--docs-react-demo-panel);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.docs-react-demo-code-toggle:hover {
+  background: var(--docs-react-demo-accent);
+}
+
+.docs-react-demo-code-toggle:focus-visible {
+  outline: 2px solid var(--docs-react-demo-primary);
+  outline-offset: 2px;
 }

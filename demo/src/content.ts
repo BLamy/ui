@@ -271,6 +271,9 @@ Live demos require the host app to install \`@agent-wasm/core\` (>= 0.4.0) and i
 | \`entry\` | \`string\` | \`"/src/main.jsx"\` | Vite entry file. |
 | \`port\` | \`number\` | \`4173\` | Preferred virtual port; almost-node picks the next free one if taken. |
 | \`height\` | \`number \\| string\` | \`360\` | Preview height. |
+| \`codeFile\` | \`string\` | \`entry\` | Source file shown in the expandable code preview. |
+| \`collapsedCodeLines\` | \`number\` | \`3\` | Source lines visible before expanding the code preview. |
+| \`expandedCodeLines\` | \`number\` | \`30\` | Maximum visible source lines before the expanded preview scrolls. |
 | \`title\` | \`string\` | \`"Live React preview"\` | Header label. |
 | \`autoStart\` | \`boolean\` | \`true\` | Start the runtime on mount. |
 | \`sandbox\` | \`string\` | \`"allow-scripts allow-same-origin allow-forms allow-modals"\` | iframe sandbox; same-origin lets the almost-node service worker route the preview. |

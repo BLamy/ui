@@ -46,6 +46,7 @@ export function ReactDemoLive() {
       <ReactCodePreview
         files={FILES}
         entry="/src/main.jsx"
+        codeFile="/src/App.jsx"
         title="Counter app — real Vite dev server in your browser"
         height={320}
         workspaceOptions={WORKSPACE_OPTIONS}
