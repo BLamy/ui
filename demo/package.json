@@ -7,7 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@brett_lamy/docstream": "^0.5.2",
+    "@brett_lamy/docstream": "^0.5.3",
     "@tiptap/core": "^3.26.1",
     "@tiptap/extension-code-block-lowlight": "^3.26.1",
     "@tiptap/extension-list": "^3.26.1",
