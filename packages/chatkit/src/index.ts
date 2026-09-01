@@ -39,6 +39,13 @@ export {
   type ChatShellSlotChildren,
 } from './lib/chat-shell';
 export {
+  ArtifactChatContainer,
+  useArtifactChatContainer,
+  type ArtifactChatContainerProps,
+  type ArtifactChatContainerContextValue,
+  type ArtifactChatContainerSlotChildren,
+} from './lib/artifact-chat-container';
+export {
   ChatDemo,
   ChannelNav,
   ChannelMain,

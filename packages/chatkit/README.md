@@ -49,9 +49,23 @@ Slots take ordinary React elements. A component inside the shell reads layout st
 
 The hook throws a clear error when called outside `ChatShell`.
 
+## Artifact chat
+
+`ArtifactChatContainer` keeps a conversation beside an artifact when space permits. Below its container breakpoint, the artifact remains full-size while the composer floats over it; its grabber opens the full conversation as a bottom drawer.
+
+```tsx
+<ArtifactChatContainer working={isWorking} onAdd={() => setIsWorking(false)}>
+  <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>
+  <ArtifactChatContainer.Composer><Composer /></ArtifactChatContainer.Composer>
+  <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
+</ArtifactChatContainer>
+```
+
+The compact working state is tappable to reveal the composer for another request. By default the floating dock subscribes to TouchKit's shared scroll-chrome state, so it hides and returns with a `NavigationStack` header and `TabBar`.
+
 ## Other exports
 
-The package also includes `WorkspaceRail`, `ChannelList`, `Message`, `Composer`, `ThreadPreview`, `RichText`, and `ChatUsersProvider`. Exported props and data types are available from the package root.
+The package also includes `ArtifactChatContainer`, `WorkspaceRail`, `ChannelList`, `Message`, `Composer`, `ThreadPreview`, `RichText`, and `ChatUsersProvider`. Exported props and data types are available from the package root.
 
 ## Workspace development
 

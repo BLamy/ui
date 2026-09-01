@@ -6,7 +6,7 @@ import {
   Switch as TKSwitch, TabBar, List as TKList, ListSection as TKSection, ListRow as TKRow,
   type Screen,
 } from '@touchkit/ui';
-import { ChatDemo } from '@touchkit/chatkit';
+import { ArtifactChatContainer, ChatDemo, Composer as ChatComposer } from '@touchkit/chatkit';
 import {
   Composer, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
@@ -31,6 +31,53 @@ function ScaledShell({ width, height, children }: { width: number; height: numbe
 }
 
 export const LIVE_CORE: Record<string, LiveSpec> = {
+  artifactchat: {
+    title: 'ArtifactChatContainer · split to floating chat', theme: 'tk', h: 620,
+    code: 'import { ArtifactChatContainer } from "@touchkit/chatkit"\n\nexport default function ArtifactWorkspace() {\n  return (\n    <ArtifactChatContainer breakpoint={760} working={isWorking}\n      onAdd={() => setIsWorking(false)}>\n      <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>\n      <ArtifactChatContainer.Composer><Composer /></ArtifactChatContainer.Composer>\n      <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>\n    </ArtifactChatContainer>\n  )\n}',
+    Render: function ArtifactChatLive() {
+      const [mode, setMode] = useState('wide');
+      const [working, setWorking] = useState(false);
+      const compact = mode === 'compact';
+      const width = compact ? 430 : 1040;
+      const transcript = <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 18, background: '#131318', color: '#EDEDF2' }}>
+        <strong style={{ fontSize: 15 }}>Artifact chat</strong>
+        {[['You', 'Compare conversion by region.'], ['TouchKit', 'I added the regional breakdown. West is leading at 34%.'], ['You', 'Call out the largest change.']].map(([author, copy], index) => <div key={copy} style={{ marginTop: 20 }}>
+          <div style={{ color: index % 2 ? '#68A7FF' : 'rgba(235,235,245,.6)', fontSize: 11, fontWeight: 700 }}>{author}</div>
+          <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>{copy}</div>
+        </div>)}
+      </div>;
+      const artifact = <div style={{ minHeight: '100%', boxSizing: 'border-box', padding: compact ? 20 : 28, background: '#F6F7FA', color: '#15161A' }}>
+        <div style={{ color: '#777B84', fontSize: 11, fontWeight: 750, letterSpacing: '.08em' }}>LIVE ARTIFACT</div>
+        <h2 style={{ fontSize: compact ? 23 : 28, margin: '8px 0 22px' }}>Quarterly performance</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }}>
+          {[['Revenue', '$1.84M'], ['Conversion', '28.4%'], ['Retention', '91.2%']].map(([label, value]) => <div key={label} style={{ minWidth: 0, border: '1px solid #E1E3E8', borderRadius: 13, padding: compact ? 11 : 17, background: '#fff' }}>
+            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', color: '#777B84', fontSize: 11 }}>{label}</div><strong style={{ display: 'block', marginTop: 7, fontSize: compact ? 15 : 21 }}>{value}</strong>
+          </div>)}
+        </div>
+        <div style={{ marginTop: 14, height: 235, border: '1px solid #E1E3E8', borderRadius: 13, padding: 17, background: '#fff' }}>
+          <strong style={{ fontSize: 14 }}>Conversion by region</strong>
+          <div style={{ height: 180, display: 'flex', alignItems: 'end', gap: 14, paddingTop: 12 }}>
+            {[55, 92, 68, 44, 78].map((height, index) => <div key={index} style={{ flex: 1, height: `${height}%`, borderRadius: '6px 6px 2px 2px', background: index === 1 ? '#0A84FF' : '#B7D7FF' }} />)}
+          </div>
+        </div>
+      </div>;
+      return <div>
+        <div style={{ width: 300, margin: '0 auto 12px' }}>
+          <Segmented aria-label="Artifact chat width" value={mode} onChange={setMode} options={[{ id: 'wide', label: 'Split' }, { id: 'compact', label: 'Floating' }]} />
+        </div>
+        <ScaledShell width={width} height={555}>
+          <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 12 }}>
+            <ArtifactChatContainer breakpoint={760} working={working} workingLabel="Working on the artifact…" onAdd={() => setWorking(false)}>
+              <ArtifactChatContainer.Chat>{transcript}</ArtifactChatContainer.Chat>
+              <ArtifactChatContainer.Composer><div style={{ padding: 10, background: '#131318' }}><ChatComposer tint="#0A84FF" placeholder="Ask about this artifact" onSend={() => setWorking(true)} /></div></ArtifactChatContainer.Composer>
+              <ArtifactChatContainer.Content>{artifact}</ArtifactChatContainer.Content>
+            </ArtifactChatContainer>
+          </div>
+        </ScaledShell>
+        <div style={{ textAlign: 'center', marginTop: 8 }}><button type="button" onClick={() => setWorking((value) => !value)} style={{ border: 0, background: 'none', color: 'var(--tk-tint)', font: 'inherit', fontSize: 12, cursor: 'pointer' }}>{working ? 'Show composer state' : 'Preview working state'}</button></div>
+      </div>;
+    },
+  },
   chatshell: {
     title: 'ChatShell · responsive composition', theme: 'tk', h: 580,
     code: 'import { ChatShell } from "@touchkit/chatkit"\n\nexport default function Chat() {\n  return (\n    <ChatShell breakpoint={880}>\n      <ChatShell.Rail><WorkspaceRail /></ChatShell.Rail>\n      <ChatShell.Nav><ChannelNav /></ChatShell.Nav>\n      <ChatShell.Main><ChannelMain /></ChatShell.Main>\n    </ChatShell>\n  )\n}',
