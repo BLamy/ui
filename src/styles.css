@@ -176,6 +176,7 @@
 
 .docs-hint {
   display: flex;
+  align-items: center;
   gap: 12px;
   padding: 14px 16px;
   border-radius: 12px;
@@ -186,12 +187,19 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  margin-top: 3px;
 }
 
 .docs-hint > div {
   flex: 1;
   min-width: 0;
+}
+
+.docs-hint > div > :first-child {
+  margin-top: 0;
+}
+
+.docs-hint > div > :last-child {
+  margin-bottom: 0;
 }
 
 .docs-hint-info {
@@ -234,31 +242,77 @@
   border: 1px solid var(--gb-border);
   border-radius: 12px;
   overflow: hidden;
+  background: var(--gb-panel);
 }
 
 .docs-tabs-header {
   display: flex;
+  width: fit-content;
+  max-width: calc(100% - 24px);
   gap: 2px;
-  padding: 6px 8px 0;
+  margin: 10px auto 0;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--gb-border);
+  border-radius: 999px;
   background: var(--gb-muted);
-  border-bottom: 1px solid var(--gb-border);
 }
 
 .docs-tabs-header button {
+  position: relative;
+  z-index: 0;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
   padding: 7px 14px;
+  background: transparent;
+  font: inherit;
   font-size: 13.5px;
-  border-radius: 8px 8px 0 0;
+  line-height: 1.25;
   color: var(--gb-muted-foreground);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 160ms ease;
 }
 
 .docs-tabs-header .docs-tab-active {
-  background: var(--background, #ffffff);
-  color: var(--foreground, #18181b);
-  font-weight: 500;
+  color: var(--gb-panel-foreground);
+  font-weight: 600;
+}
+
+.docs-tabs-header button:hover:not(.docs-tab-active) {
+  color: var(--gb-panel-foreground);
+}
+
+.docs-tabs-header button:focus-visible {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: 2px;
+}
+
+.docs-tab-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid var(--gb-border);
+  border-radius: inherit;
+  background: var(--gb-panel);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 1px 6px rgba(15, 23, 42, 0.06);
+}
+
+.docs-tab-label {
+  position: relative;
 }
 
 .docs-tabs-body {
+  margin-top: 10px;
   padding: 14px 16px;
+  border-top: 1px solid var(--gb-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-tabs-header button {
+    transition: none;
+  }
 }
 
 .docs-expandable {

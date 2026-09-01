@@ -484,25 +484,21 @@ One import of \`styles.css\` at the app root.
 
 ## Code blocks
 
-Plain fences (backticks or tildes) work as usual, with lowlight syntax highlighting. Wrapping a fence in a \`code\` tag adds attributes: \`title\`, \`lineNumbers="true"\`, and for live React previews \`live="true"\` + \`entry\` (see **Live React demos**):
+Plain fences (backticks or tildes) work as usual, with lowlight syntax highlighting and line numbers by default. Add metadata directly after the language. Use \`lineNumbers="false"\` to hide numbers; live React previews also accept \`live="true"\` + \`entry\` (see **Live React demos**). The older \`{% code %}\` wrapper remains supported for compatibility:
 
 ~~~md
-{% code title="hello.ts" lineNumbers="true" %}
-\`\`\`ts
+\`\`\`ts title="hello.ts"
 export function hello(name: string) {
   return "Hello, " + name + "!"
 }
 \`\`\`
-{% endcode %}
 ~~~
 
-{% code title="hello.ts" lineNumbers="true" %}
-\`\`\`ts
+\`\`\`ts title="hello.ts"
 export function hello(name: string) {
   return "Hello, " + name + "!"
 }
 \`\`\`
-{% endcode %}
 
 Indented (4-space) code blocks are also recognized. Fences with language \`mermaid\` render as diagrams:
 
@@ -784,7 +780,7 @@ The stylesheet (\`@brett_lamy/docstream/styles.css\`) is driven entirely by CSS 
 | \`--gb-code-bg\` | — | \`rgba(128, 128, 128, 0.13)\` |
 | \`--gb-code-fg\` | \`--foreground\` | \`#18181b\` |
 
-A few rules read host tokens directly with the same fallback pattern: \`--background\` / \`--foreground\` (\`#ffffff\` / \`#18181b\`) for active tabs and mermaid surfaces.
+Mermaid surfaces also read \`--background\` / \`--foreground\` directly with the same fallback pattern.
 
 ### Semantic hint palette
 

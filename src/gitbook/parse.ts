@@ -225,7 +225,7 @@ export function parseBlocks(lines: string[]): Block[] {
         const code = inner.find((b) => b.type === "code")
         if (code && code.type === "code") {
           code.title = tag.attrs.title ?? null
-          code.lineNumbers = tag.attrs.lineNumbers === "true"
+          code.lineNumbers = booleanAttr(tag.attrs, "lineNumbers") ?? booleanAttr(tag.attrs, "showLineNumbers") ?? true
           code.live = tag.attrs.live === "true"
           code.entry = tag.attrs.entry ?? null
           blocks.push(code)
@@ -428,13 +428,14 @@ export function parseBlocks(lines: string[]): Block[] {
     }
 
     // fenced code (``` or ~~~)
-    const fence = trimmed.match(/^(`{3,}|~{3,})(\S*)\s*$/)
+    const fence = trimmed.match(/^(`{3,}|~{3,})([^\s`]*)?(?:\s+(.*?))?\s*$/)
     if (fence) {
       flushParagraph()
       const marker = fence[1][0]
+      const attrs = parseAttrs(fence[3])
       const code: string[] = []
       i++
-      while (i < lines.length && !lines[i].trim().startsWith(marker.repeat(3))) {
+      while (i < lines.length && !lines[i].trim().startsWith(fence[1])) {
         code.push(lines[i])
         i++
       }
@@ -442,9 +443,11 @@ export function parseBlocks(lines: string[]): Block[] {
       blocks.push({
         type: "code",
         language: fence[2] || null,
-        title: null,
-        lineNumbers: false,
+        title: attrs.title ?? null,
+        lineNumbers: booleanAttr(attrs, "lineNumbers") ?? booleanAttr(attrs, "showLineNumbers") ?? true,
         code: code.join("\n"),
+        ...(booleanAttr(attrs, "live") === undefined ? {} : { live: booleanAttr(attrs, "live") }),
+        ...(attrs.entry ? { entry: attrs.entry } : {}),
       })
       continue
     }
@@ -459,7 +462,7 @@ export function parseBlocks(lines: string[]): Block[] {
         code.push(lines[i].slice(4))
         i++
       }
-      blocks.push({ type: "code", language: null, title: null, lineNumbers: false, code: code.join("\n") })
+      blocks.push({ type: "code", language: null, title: null, lineNumbers: true, code: code.join("\n") })
       continue
     }
 

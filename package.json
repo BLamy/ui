@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "type": "module",
   "scripts": {
@@ -70,6 +70,7 @@
   },
   "dependencies": {
     "@brett_lamy/viz-engine": ">=0.2.0",
+    "framer-motion": "^13.1.1",
     "hast-util-to-html": "^9.0.5",
     "lowlight": "^3.3.0",
     "lucide-react": "^1.17.0",

@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react"
+import { LayoutGroup, motion } from "framer-motion"
 import {
   AlertTriangle,
   CheckCircle2,
@@ -92,18 +93,30 @@ function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, {
   const [active, setActive] = useState(0)
   return (
     <div className="docs-tabs">
-      <div className="docs-tabs-header">
-        {block.tabs.map((t, i) => (
-          <button
-            key={i}
-            className={i === active ? "docs-tab-active" : ""}
-            onClick={() => setActive(i)}
-          >
-            {t.title}
-          </button>
-        ))}
-      </div>
-      <div className="docs-tabs-body">
+      <LayoutGroup>
+        <div className="docs-tabs-header" role="tablist" aria-label="Content tabs">
+          {block.tabs.map((t, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={i === active}
+              className={i === active ? "docs-tab-active" : ""}
+              onClick={() => setActive(i)}
+            >
+              {i === active ? (
+                <motion.span
+                  className="docs-tab-indicator"
+                  layoutId="docs-tab-indicator"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              ) : null}
+              <span className="docs-tab-label">{t.title}</span>
+            </button>
+          ))}
+        </div>
+      </LayoutGroup>
+      <div className="docs-tabs-body" role="tabpanel">
         <Blocks blocks={block.tabs[active]?.children ?? []} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       </div>
     </div>
