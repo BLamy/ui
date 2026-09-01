@@ -353,6 +353,10 @@ export function ArtifactChatContainer({
             />
             <div
               className="ck-artifact-chat__overlay"
+              style={{
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+              }}
               data-open={chatOpen || undefined}
               data-expanded={expanded || undefined}
               data-dragging={dragging || undefined}
