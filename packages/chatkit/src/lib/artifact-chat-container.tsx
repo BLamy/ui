@@ -110,7 +110,7 @@ export function ArtifactChatContainer({
   const footRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1200);
   const [height, setHeight] = useState(800);
-  const [footHeight, setFootHeight] = useState(74);
+  const [composerHeight, setComposerHeight] = useState(117);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultChatOpen);
   const [composing, setComposing] = useState(!working);
   const [minimized, setMinimized] = useState(false);
@@ -144,15 +144,15 @@ export function ArtifactChatContainer({
   }, []);
 
   useEffect(() => {
-    const foot = footRef.current;
-    if (!foot || !compact) return;
-    const measure = () => setFootHeight(foot.offsetHeight);
+    const composer = footRef.current;
+    if (!composer || !compact) return;
+    const measure = () => setComposerHeight(composer.offsetHeight);
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
-    observer.observe(foot);
+    observer.observe(composer);
     return () => observer.disconnect();
-  }, [compact, composing, working]);
+  }, [compact]);
 
   useEffect(() => {
     setComposing(!working);
@@ -178,7 +178,8 @@ export function ArtifactChatContainer({
   }, [compact, hideOnScroll]);
 
   // The collapsed overlay footprint the artifact scrolls clear of.
-  const dockHeight = footHeight + CAP_HEIGHT;
+  const activeFootHeight = working && !composing ? 46 : composerHeight;
+  const dockHeight = activeFootHeight + CAP_HEIGHT;
   // At the end of the drag the cap reaches the very top edge and the composer reaches
   // the bottom edge. The compact glass has literally become the full-page chat.
   const maxReveal = Math.max(0, height - dockHeight - OVERLAY_BORDER_HEIGHT);
@@ -378,6 +379,7 @@ export function ArtifactChatContainer({
                 onPointerMove={onCapMove}
                 onPointerUp={endDrag}
                 onPointerCancel={cancelDrag}
+                onLostPointerCapture={cancelDrag}
               >
                 <span className="ck-artifact-chat__grip" />
               </button>
@@ -395,7 +397,7 @@ export function ArtifactChatContainer({
                   {slots.chat}
                 </div>
               </div>
-              <div ref={footRef} className="ck-artifact-chat__foot">
+              <div className="ck-artifact-chat__foot">
                 {working && !composing ? (
                   <button type="button" className="ck-artifact-chat__working" onClick={revealComposer}>
                     <span className="ck-artifact-chat__working-icon" aria-hidden="true">
@@ -405,9 +407,16 @@ export function ArtifactChatContainer({
                     <ChatIcon d={chatIconPaths.plus} size={20} />
                     <span className="ck-sr-only">Add something new</span>
                   </button>
-                ) : (
-                  <div className="ck-artifact-chat__composer">{slots.composer}</div>
-                )}
+                ) : null}
+                <div
+                  ref={footRef}
+                  className="ck-artifact-chat__composer"
+                  data-inactive={working && !composing ? true : undefined}
+                  aria-hidden={working && !composing}
+                  inert={working && !composing}
+                >
+                  {slots.composer}
+                </div>
               </div>
               <button type="button" className="ck-artifact-chat__fab" aria-label="Open chat" onClick={restoreComposer}>
                 <ChatIcon d={chatIconPaths.spark} size={22} />
