@@ -15,7 +15,7 @@
 .ck-sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 
 .ck-artifact-chat[data-layout="compact"]{display:block}
-.ck-artifact-chat[data-layout="compact"] .ck-artifact-chat__content{position:absolute;inset:0;padding-bottom:calc(var(--ck-artifact-dock-height,100px) + 30px)}
+.ck-artifact-chat[data-layout="compact"] .ck-artifact-chat__content{position:absolute;inset:0;padding-bottom:0}
 /* The scrim tracks the drag through resolved custom properties, so the artifact dims only as far
    as the chat has actually grown. */
 .ck-artifact-chat__scrim{position:absolute;display:block;inset:0;z-index:40;border:0;padding:0;background:#000;opacity:var(--ck-artifact-scrim-opacity,0);pointer-events:none;transition:opacity .42s cubic-bezier(.32,.72,0,1)}
@@ -28,12 +28,23 @@
    Everything that changes with the drag is resolved into Safari-safe custom properties:
    collapsed it is light glass at a small blur radius, so the artifact stays
    legible through it; grown it deepens and blurs harder so the transcript reads. */
-.ck-artifact-chat__overlay{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;left:50%;width:calc(100% - var(--ck-artifact-inline-gutter,20px) - var(--ck-artifact-inline-gutter,20px));bottom:var(--ck-artifact-bottom-gutter,20px);z-index:42;min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,var(--ck-artifact-border-alpha,.12));border-radius:var(--ck-artifact-radius,28px);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.018) 34%,rgba(255,255,255,.026)),rgba(18,18,22,var(--ck-artifact-bg-alpha,.28));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(255,255,255,.03),0 2px 10px rgba(0,0,0,.12),0 var(--ck-artifact-shadow-y,14px) var(--ck-artifact-shadow-blur,34px) -12px rgba(0,0,0,var(--ck-artifact-shadow-alpha,.22));backdrop-filter:blur(var(--ck-artifact-blur,16px)) saturate(1.35) contrast(1.02);-webkit-backdrop-filter:blur(var(--ck-artifact-blur,16px)) saturate(1.35) contrast(1.02);transform:translateX(-50%);transition:width .44s cubic-bezier(.32,.72,0,1),bottom .44s cubic-bezier(.32,.72,0,1),border-radius .44s cubic-bezier(.32,.72,0,1),transform .34s cubic-bezier(.32,.72,0,1),opacity .24s ease,background .34s ease,border-color .34s ease,box-shadow .34s ease,backdrop-filter .34s ease}
+.ck-artifact-chat__overlay{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;left:50%;width:var(--ck-artifact-overlay-width,calc(100% - 40px));height:var(--ck-artifact-overlay-height,auto);bottom:var(--ck-artifact-bottom-gutter,20px);z-index:42;min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,var(--ck-artifact-border-alpha,.12));border-radius:var(--ck-artifact-radius,28px);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.018) 34%,rgba(255,255,255,.026)),rgba(18,18,22,var(--ck-artifact-bg-alpha,.28));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(255,255,255,.03),0 2px 10px rgba(0,0,0,.12),0 var(--ck-artifact-shadow-y,14px) var(--ck-artifact-shadow-blur,34px) -12px rgba(0,0,0,var(--ck-artifact-shadow-alpha,.22));backdrop-filter:blur(var(--ck-artifact-blur,16px)) saturate(1.35) contrast(1.02);-webkit-backdrop-filter:blur(var(--ck-artifact-blur,16px)) saturate(1.35) contrast(1.02);transform:translateX(-50%);transition:left .48s cubic-bezier(.22,1,.36,1),right .48s cubic-bezier(.22,1,.36,1),top .48s cubic-bezier(.22,1,.36,1),width .48s cubic-bezier(.22,1,.36,1),height .48s cubic-bezier(.22,1,.36,1),bottom .48s cubic-bezier(.22,1,.36,1),border-radius .44s cubic-bezier(.32,.72,0,1),transform .48s cubic-bezier(.22,1,.36,1),opacity .24s ease,background .34s ease,border-color .34s ease,box-shadow .34s ease,backdrop-filter .34s ease}
 .ck-artifact-chat__overlay[data-hidden]{transform:translate(-50%,calc(100% + 44px));opacity:0;pointer-events:none}
 .ck-artifact-chat__overlay[data-dragging]{transition:none}
+.ck-artifact-chat__overlay[data-minimized]{top:auto;right:auto;bottom:20px;left:50%;transform:translateX(-50%)}
+.ck-artifact-chat__overlay[data-minimized][data-fab-position="top-left"]{top:20px;bottom:auto;left:20px;transform:none}
+.ck-artifact-chat__overlay[data-minimized][data-fab-position="top-center"]{top:20px;bottom:auto;left:50%;transform:translateX(-50%)}
+.ck-artifact-chat__overlay[data-minimized][data-fab-position="top-right"]{top:20px;right:20px;bottom:auto;left:auto;transform:none}
+.ck-artifact-chat__overlay[data-minimized][data-fab-position="center-left"]{top:50%;bottom:auto;left:20px;transform:translateY(-50%)}
+.ck-artifact-chat__overlay[data-minimized][data-fab-position="center-right"]{top:50%;right:20px;bottom:auto;left:auto;transform:translateY(-50%)}
+.ck-artifact-chat__overlay[data-minimized][data-fab-position="bottom-left"]{right:auto;bottom:20px;left:20px;transform:none}
+.ck-artifact-chat__overlay[data-minimized][data-fab-position="bottom-right"]{right:20px;bottom:20px;left:auto;transform:none}
+.ck-artifact-chat__overlay[data-snapping-closed]{animation:ck-artifact-close-bounce .48s cubic-bezier(.22,1,.36,1)}
+@keyframes ck-artifact-close-bounce{0%{transform:translateX(-50%) scale(1)}72%{transform:translateX(-50%) scale(.985)}100%{transform:translateX(-50%) scale(1)}}
 
 /* The cap is the top row of that surface rather than a tab stuck onto it. */
-.ck-artifact-chat__cap{box-sizing:border-box;flex-shrink:0;width:100%;height:26px;display:grid;place-items:center;padding:0;border:0;background:none;color:inherit;cursor:grab;touch-action:none}
+.ck-artifact-chat__cap{box-sizing:border-box;flex-shrink:0;width:100%;height:18px;display:grid;place-items:center;padding:0;border:0;background:none;color:inherit;cursor:grab;touch-action:none}
+.ck-artifact-chat__cap,.ck-artifact-chat__reveal,.ck-artifact-chat__foot{opacity:calc(1 - var(--ck-artifact-minimize,0));transition:opacity .18s ease}
 .ck-artifact-chat__overlay[data-dragging] .ck-artifact-chat__cap{cursor:grabbing}
 .ck-artifact-chat__grip{display:block;width:32px;height:4px;border-radius:999px;background:var(--tk-label3,rgba(235,235,245,.32));transition:width .24s ease,background .24s ease}
 .ck-artifact-chat__cap:hover .ck-artifact-chat__grip,.ck-artifact-chat__cap:focus-visible .ck-artifact-chat__grip,.ck-artifact-chat__cap[data-open] .ck-artifact-chat__grip{width:40px;background:var(--tk-label2,rgba(235,235,245,.62))}
@@ -50,8 +61,12 @@
 .ck-artifact-chat__reveal .ck-artifact-chat__transcript>*{width:100%;min-height:100%;background:transparent!important}
 
 .ck-artifact-chat__foot{flex-shrink:0;min-width:0;border-top:1px solid rgba(255,255,255,var(--ck-artifact-divider-alpha,0))}
-.ck-artifact-chat__working{box-sizing:border-box;width:100%;min-height:54px;display:flex;align-items:center;gap:10px;border:0;border-radius:24px;padding:9px 15px;background:transparent;color:var(--tk-label,#f5f5f7);font:inherit;cursor:pointer;text-align:left}
+.ck-artifact-chat__composer [data-slot="composer"]{--wb-card:rgba(20,20,25,.34);--wb-sep:rgba(255,255,255,.1)}
+.ck-artifact-chat__composer [data-slot="composer"]>div:first-child{backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2)}
+.ck-artifact-chat__fab{position:absolute;inset:0;display:grid;place-items:center;width:100%;height:100%;padding:0;border:0;border-radius:50%;background:transparent;color:var(--tk-label,#f5f5f7);opacity:var(--ck-artifact-minimize,0);pointer-events:none;cursor:pointer}
+.ck-artifact-chat__overlay[data-minimized] .ck-artifact-chat__fab{pointer-events:auto}
+.ck-artifact-chat__working{box-sizing:border-box;width:100%;min-height:46px;display:flex;align-items:center;gap:10px;border:0;border-radius:24px;padding:5px 15px 7px;background:transparent;color:var(--tk-label,#f5f5f7);font:inherit;cursor:pointer;text-align:left}
 .ck-artifact-chat__working-icon{display:grid;place-items:center;color:var(--tk-label2,rgba(235,235,245,.62));animation:ck-artifact-working 1.8s ease-in-out infinite}
 .ck-artifact-chat__working-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:560;color:var(--tk-label2,rgba(235,235,245,.62))}
 @keyframes ck-artifact-working{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}
-@media (prefers-reduced-motion:reduce){.ck-artifact-chat__scrim,.ck-artifact-chat__overlay,.ck-artifact-chat__grip{transition:none}.ck-artifact-chat__reveal{transition:visibility 0s}.ck-artifact-chat__working-icon{animation:none}}
+@media (prefers-reduced-motion:reduce){.ck-artifact-chat__scrim,.ck-artifact-chat__overlay,.ck-artifact-chat__grip{transition:none;animation:none}.ck-artifact-chat__reveal{transition:visibility 0s}.ck-artifact-chat__working-icon{animation:none}}

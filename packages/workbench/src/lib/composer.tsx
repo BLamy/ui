@@ -204,6 +204,10 @@ export interface ComposerProps {
   defaultExpanded?: boolean;
   /** Called when the expand or restore control is pressed. */
   onExpandedChange?: (expanded: boolean) => void;
+  /** Shows the model, effort, and access selectors. */
+  showOptions?: boolean;
+  /** Shows the checkout and branch context row. */
+  showCheckout?: boolean;
   placeholder?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -221,6 +225,8 @@ export function Composer({
   expanded,
   defaultExpanded = false,
   onExpandedChange,
+  showOptions = true,
+  showCheckout = true,
   placeholder = 'Ask anything — @ files, / commands, paste images',
   className,
   style,
@@ -396,32 +402,36 @@ export function Composer({
           }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px 8px 8px', flexWrap: 'wrap' }}>
-          {modelPicker ?? (
-            <Pill
-              icon="spark"
-              label={MODELS[mi]}
-              tint
-              onPress={() => {
-                setMi((i) => (i + 1) % MODELS.length);
-                tick();
-              }}
-            />
-          )}
-          <Pill
-            label={EFFORTS[ei]}
-            onPress={() => {
-              setEi((i) => (i + 1) % EFFORTS.length);
-              tick();
-            }}
-          />
-          <Pill
-            icon="lock"
-            label={ACCESS[ai]}
-            onPress={() => {
-              setAi((i) => (i + 1) % ACCESS.length);
-              tick();
-            }}
-          />
+          {showOptions ? (
+            <>
+              {modelPicker ?? (
+                <Pill
+                  icon="spark"
+                  label={MODELS[mi]}
+                  tint
+                  onPress={() => {
+                    setMi((i) => (i + 1) % MODELS.length);
+                    tick();
+                  }}
+                />
+              )}
+              <Pill
+                label={EFFORTS[ei]}
+                onPress={() => {
+                  setEi((i) => (i + 1) % EFFORTS.length);
+                  tick();
+                }}
+              />
+              <Pill
+                icon="lock"
+                label={ACCESS[ai]}
+                onPress={() => {
+                  setAi((i) => (i + 1) % ACCESS.length);
+                  tick();
+                }}
+              />
+            </>
+          ) : null}
           <span style={{ flex: 1 }} />
           {streaming ? (
             <button
@@ -463,15 +473,17 @@ export function Composer({
           )}
         </div>
       </div>
-      <div
-        style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--wb-fill)', borderRadius: 9, padding: '6px 11px', margin: '6px 8px 0', fontSize: 12, color: 'var(--wb-label2)' }}
-      >
-        <WIcon name="folder" size={13.5} sw={1.9} />
-        <span style={{ flex: 1 }}>Local checkout</span>
-        <WIcon name="branch" size={13.5} sw={1.9} />
-        <span style={{ fontFamily: MONO, fontSize: 11.5 }}>main</span>
-        <WIcon name="chevD" size={11} sw={2.4} style={{ opacity: 0.6 }} />
-      </div>
+      {showCheckout ? (
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--wb-fill)', borderRadius: 9, padding: '6px 11px', margin: '6px 8px 0', fontSize: 12, color: 'var(--wb-label2)' }}
+        >
+          <WIcon name="folder" size={13.5} sw={1.9} />
+          <span style={{ flex: 1 }}>Local checkout</span>
+          <WIcon name="branch" size={13.5} sw={1.9} />
+          <span style={{ fontFamily: MONO, fontSize: 11.5 }}>main</span>
+          <WIcon name="chevD" size={11} sw={2.4} style={{ opacity: 0.6 }} />
+        </div>
+      ) : null}
       {annoAtt ? (
         <AnnotateLightbox
           src={annoAtt.src}

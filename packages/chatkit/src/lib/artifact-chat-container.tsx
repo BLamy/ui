@@ -35,6 +35,15 @@ export function useArtifactChatContainer(): ArtifactChatContainerContextValue {
 }
 
 export type ArtifactChatContainerSlotChildren = ReactNode;
+export type ArtifactChatFabPosition =
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'center-left'
+  | 'center-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right';
 
 interface SlotComponent {
   (props: { children?: ArtifactChatContainerSlotChildren }): null;
@@ -48,13 +57,15 @@ function slot(name: string): SlotComponent {
 }
 
 /** Height of the grabber cap row at the top of the floating overlay. */
-const CAP_HEIGHT = 26;
+const CAP_HEIGHT = 18;
 /** Horizontal and bottom inset of the collapsed floating composer. */
 const FLOATING_GUTTER = 20;
 /** The overlay's top and bottom borders are outside its flex children. */
 const OVERLAY_BORDER_HEIGHT = 2;
 /** Pointer travel below which a cap drag counts as a tap. */
 const TAP_SLOP = 4;
+/** Extra downward travel that collapses the floating composer into its FAB. */
+const MINIMIZE_TRAVEL = 96;
 
 export interface ArtifactChatContainerProps {
   /** Switches from the side-by-side layout to the floating composer at this container width. */
@@ -72,6 +83,8 @@ export interface ArtifactChatContainerProps {
   onAdd?: () => void;
   /** Follow NavigationStack/List scroll chrome, like TabBar. */
   hideOnScroll?: boolean;
+  /** Resting position after the compact chat is dragged down into its FAB. */
+  fabPosition?: ArtifactChatFabPosition;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -87,19 +100,25 @@ export function ArtifactChatContainer({
   workingLabel = 'Working…',
   onAdd,
   hideOnScroll = true,
+  fabPosition = 'bottom-center',
   children,
   className,
   style,
 }: ArtifactChatContainerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1200);
   const [height, setHeight] = useState(800);
   const [footHeight, setFootHeight] = useState(74);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultChatOpen);
   const [composing, setComposing] = useState(!working);
+  const [minimized, setMinimized] = useState(false);
+  const [settlingClose, setSettlingClose] = useState(false);
+  const [contentScrollHidden, setContentScrollHidden] = useState(false);
   /** Live height of the growing chat surface while the cap is being dragged. */
   const [dragReveal, setDragReveal] = useState<number | null>(null);
+  const [dragMinimize, setDragMinimize] = useState<number | null>(null);
   const chromeHidden = useChromeHidden();
   const compact = width < breakpoint;
   const chatOpen = controlledChatOpen ?? uncontrolledOpen;
@@ -139,6 +158,25 @@ export function ArtifactChatContainer({
     setComposing(!working);
   }, [working]);
 
+  useEffect(() => {
+    const scroller = contentRef.current;
+    if (!scroller || !compact || !hideOnScroll) {
+      setContentScrollHidden(false);
+      return;
+    }
+    let previous = scroller.scrollTop;
+    const onScroll = () => {
+      const next = scroller.scrollTop;
+      const delta = next - previous;
+      previous = next;
+      if (next < 4) setContentScrollHidden(false);
+      else if (delta > 3) setContentScrollHidden(true);
+      else if (delta < -3) setContentScrollHidden(false);
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => scroller.removeEventListener('scroll', onScroll);
+  }, [compact, hideOnScroll]);
+
   // The collapsed overlay footprint the artifact scrolls clear of.
   const dockHeight = footHeight + CAP_HEIGHT;
   // At the end of the drag the cap reaches the very top edge and the composer reaches
@@ -148,6 +186,15 @@ export function ArtifactChatContainer({
   const dragging = dragReveal != null;
   const expanded = reveal > 0;
   const grown = maxReveal > 0 ? reveal / maxReveal : 0;
+  const minimizeProgress = dragMinimize ?? (minimized ? 1 : 0);
+  const workingInset = working && !composing ? 12 * (1 - grown) : 0;
+  const collapsedWidth = Math.max(52, width - FLOATING_GUTTER * 2 - workingInset * 2);
+  const expandedWidth = collapsedWidth + (width - collapsedWidth) * grown;
+  const overlayWidth = expandedWidth + (52 - expandedWidth) * minimizeProgress;
+  const expandedHeight = dockHeight + reveal + OVERLAY_BORDER_HEIGHT;
+  const overlayHeight = expandedHeight + (52 - expandedHeight) * minimizeProgress;
+  const expandedRadius = 28 * (1 - grown);
+  const overlayRadius = expandedRadius + (26 - expandedRadius) * minimizeProgress;
 
   const closeRef = useRef(() => setChatOpen(false));
   closeRef.current = () => setChatOpen(false);
@@ -159,6 +206,10 @@ export function ArtifactChatContainer({
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [compact, chatOpen]);
+
+  useEffect(() => {
+    if (chatOpen) setMinimized(false);
+  }, [chatOpen]);
 
   const slots: Record<string, ReactNode> = {};
   Children.forEach(children, (child) => {
@@ -180,7 +231,10 @@ export function ArtifactChatContainer({
     if (!drag.current.moved && Math.abs(delta) < TAP_SLOP) return;
     drag.current.moved = true;
     // Dragging the cap pulls the chat surface out of it one-to-one with the pointer.
-    setDragReveal(Math.max(0, Math.min(maxReveal, drag.current.from + delta)));
+    // Continuing below the closed position folds the whole surface into its FAB.
+    const rawReveal = drag.current.from + delta;
+    setDragReveal(Math.max(0, Math.min(maxReveal, rawReveal)));
+    setDragMinimize(rawReveal < 0 ? Math.min(1, -rawReveal / MINIMIZE_TRAVEL) : 0);
   };
 
   const endDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -194,18 +248,30 @@ export function ArtifactChatContainer({
       setDragReveal(null);
       return;
     }
-    const settled = Math.max(0, Math.min(maxReveal, from + (drag.current.y - event.clientY)));
-    const open = settled > maxReveal * 0.35;
+    const rawReveal = from + (drag.current.y - event.clientY);
+    const settled = Math.max(0, Math.min(maxReveal, rawReveal));
+    const shouldMinimize = rawReveal < -MINIMIZE_TRAVEL * 0.5;
+    const open = !shouldMinimize && settled > maxReveal * 0.35;
     setDragReveal(null);
+    setDragMinimize(null);
+    setMinimized(shouldMinimize);
+    if (!open && !shouldMinimize) setSettlingClose(true);
+    if (open && working && !composing) {
+      setComposing(true);
+      onAdd?.();
+    }
     if (open !== chatOpen) {
       Haptics.selection();
       setChatOpen(open);
+    } else if (shouldMinimize) {
+      Haptics.selection();
     }
   };
 
   const cancelDrag = () => {
     drag.current.active = false;
     setDragReveal(null);
+    setDragMinimize(null);
   };
 
   const toggleChat = () => {
@@ -215,7 +281,19 @@ export function ArtifactChatContainer({
       return;
     }
     Haptics.selection();
+    setMinimized(false);
+    if (chatOpen) setSettlingClose(true);
+    if (!chatOpen && working && !composing) {
+      setComposing(true);
+      onAdd?.();
+    }
     setChatOpen(!chatOpen);
+  };
+
+  const restoreComposer = () => {
+    Haptics.selection();
+    setChatOpen(false);
+    setMinimized(false);
   };
 
   const revealComposer = () => {
@@ -232,7 +310,7 @@ export function ArtifactChatContainer({
     composing,
     setComposing,
   };
-  const hideDock = compact && hideOnScroll && chromeHidden && !expanded;
+  const hideDock = compact && hideOnScroll && (chromeHidden || contentScrollHidden) && !expanded;
 
   return (
     <ArtifactChatContainerContext.Provider value={value}>
@@ -246,9 +324,12 @@ export function ArtifactChatContainer({
           '--ck-artifact-chat-width': typeof chatWidth === 'number' ? `${chatWidth}px` : chatWidth,
           '--ck-artifact-dock-height': `${dockHeight}px`,
           '--ck-artifact-reveal': `${reveal}px`,
+          '--ck-artifact-overlay-width': `${overlayWidth}px`,
+          '--ck-artifact-overlay-height': `${overlayHeight}px`,
+          '--ck-artifact-minimize': `${minimizeProgress}`,
           '--ck-artifact-inline-gutter': `${FLOATING_GUTTER * (1 - grown)}px`,
           '--ck-artifact-bottom-gutter': `${FLOATING_GUTTER * (1 - grown)}px`,
-          '--ck-artifact-radius': `${28 * (1 - grown)}px`,
+          '--ck-artifact-radius': `${overlayRadius}px`,
           // Fades the glass from composer-light to conversation-dark as it grows.
           '--ck-artifact-scrim-opacity': `${0.16 * grown}`,
           '--ck-artifact-border-alpha': `${0.12 + 0.04 * grown}`,
@@ -263,7 +344,7 @@ export function ArtifactChatContainer({
       >
         {compact ? (
           <>
-            <main className="ck-artifact-chat__content">{slots.content}</main>
+            <main ref={contentRef} className="ck-artifact-chat__content">{slots.content}</main>
             <button
               type="button"
               aria-label="Close full chat"
@@ -280,6 +361,10 @@ export function ArtifactChatContainer({
               data-dragging={dragging || undefined}
               data-hidden={hideDock || undefined}
               data-working={working && !composing ? true : undefined}
+              data-minimized={minimized || undefined}
+              data-fab-position={fabPosition}
+              data-snapping-closed={settlingClose || undefined}
+              onAnimationEnd={() => setSettlingClose(false)}
             >
               <button
                 type="button"
@@ -324,6 +409,9 @@ export function ArtifactChatContainer({
                   <div className="ck-artifact-chat__composer">{slots.composer}</div>
                 )}
               </div>
+              <button type="button" className="ck-artifact-chat__fab" aria-label="Open chat" onClick={restoreComposer}>
+                <ChatIcon d={chatIconPaths.spark} size={22} />
+              </button>
             </div>
           </>
         ) : (

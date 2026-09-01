@@ -44,6 +44,7 @@ export {
   type ArtifactChatContainerProps,
   type ArtifactChatContainerContextValue,
   type ArtifactChatContainerSlotChildren,
+  type ArtifactChatFabPosition,
 } from './lib/artifact-chat-container';
 export {
   ChatDemo,

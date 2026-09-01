@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Composer } from '@touchkit/workbench';
 import '@touchkit/workbench/styles.css';
-import { ArtifactChatContainer } from './artifact-chat-container';
+import { ArtifactChatContainer, type ArtifactChatFabPosition } from './artifact-chat-container';
 import { K, KFONT } from './chat-tokens';
 import '../styles.css';
 
@@ -11,6 +11,7 @@ interface DemoProps {
   height: number;
   working?: boolean;
   defaultChatOpen?: boolean;
+  fabPosition?: ArtifactChatFabPosition;
 }
 
 function Transcript() {
@@ -65,7 +66,7 @@ function Artifact() {
   );
 }
 
-function Demo({ width, height, working = false, defaultChatOpen = false }: DemoProps) {
+function Demo({ width, height, working = false, defaultChatOpen = false, fabPosition = 'bottom-center' }: DemoProps) {
   const [busy, setBusy] = useState(working);
   return (
     <div style={{ width, height, overflow: 'hidden', fontFamily: KFONT }}>
@@ -75,11 +76,12 @@ function Demo({ width, height, working = false, defaultChatOpen = false }: DemoP
         workingLabel="Working on the artifact…"
         onAdd={() => setBusy(false)}
         defaultChatOpen={defaultChatOpen}
+        fabPosition={fabPosition}
       >
         <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
         <ArtifactChatContainer.Composer>
           <div style={{ padding: 8, background: 'transparent' }}>
-            <Composer wide placeholder="Do anything" onSend={() => setBusy(true)} />
+            <Composer wide showOptions={false} showCheckout={false} placeholder="Do anything" onSend={() => setBusy(true)} />
           </div>
         </ArtifactChatContainer.Composer>
         <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
@@ -96,6 +98,12 @@ const meta: Meta<DemoProps> = {
       description: {
         component: 'Uses the full Docstream-backed Workbench Composer. In compact mode, drag the cap upward to continuously turn the floating glass composer into the full-page chat, then drag it down to collapse it.',
       },
+    },
+  },
+  argTypes: {
+    fabPosition: {
+      control: 'select',
+      options: ['top-left', 'top-center', 'top-right', 'center-left', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right'],
     },
   },
 };
