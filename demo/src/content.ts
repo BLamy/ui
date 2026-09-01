@@ -96,6 +96,11 @@ The complete prop reference for the batteries-included editor component.
 | \`disableHistory\` | \`boolean\` | \`false\` | Disable StarterKit's undo/redo — required with Yjs Collaboration, which manages shared history itself. |
 | \`extensions\` | \`AnyExtension[]\` | — | Extra TipTap extensions appended last (e.g. \`Collaboration\`, \`CollaborationCursor\`). |
 | \`onEditorReady\` | \`(editor: TiptapEditor \\| null) => void\` | — | Receive the underlying TipTap editor instance (and \`null\` on teardown) for commands, awareness, etc. |
+| \`sourceClient\` | \`SourceReferenceClient\` | — | Read, write, and preview files referenced by \`{% source-ref %}\` blocks. |
+| \`sourcePreview\` | \`boolean\` | \`true\` | Render the referenced component or story below its source editor. |
+| \`sourceAutoSave\` | \`boolean \\| number\` | \`true\` | Autosave referenced files after 500ms, or use a custom delay. |
+| \`onSourceSaved\` | \`(snapshot: SourceFileSnapshot) => void\` | — | Called after a referenced file is written. |
+| \`onSourceError\` | \`(error: Error) => void\` | — | Called when a referenced file read or write fails. |
 
 ## Controlled sync semantics
 
@@ -310,7 +315,7 @@ The array of GitBook node extensions with React node views: \`GbHint\`, \`GbTabs
 
 ## GbCodeBlock
 
-\`CodeBlockLowlight\` extended with GitBook code attributes — \`title\`, \`lineNumbers\`, \`live\`, \`entry\` — plus a React node view with a language selector, and configured with lowlight's common grammar set. These attributes round-trip to GitBook code tags in markdown.
+\`CodeBlockLowlight\` extended with GitBook code attributes — \`title\`, \`lineNumbers\`, \`live\`, \`entry\` — plus a React node view with a language selector, and configured with lowlight's common grammar set. Mermaid fences render a live diagram above the editable source. Live JSX/TSX fences render their AlmostNode preview above the source and refresh after a short editing pause. These attributes round-trip to GitBook code tags in markdown.
 
 ## GbTable
 
@@ -377,7 +382,7 @@ interface PMNode {
     title: 'ReactDemoEditor',
     markdown: `# ReactDemoEditor
 
-A small multi-file source editor paired with docstream's live React preview (\`ReactCodePreview\`). It shows a file list, a textarea editor for the selected file, and a **Run demo** button that boots the current draft in almost-node's Vite server.
+A small multi-file source editor paired with docstream's live React preview (\`ReactCodePreview\`). The preview appears above the file list and source editor, and refreshes automatically as the selected virtual file changes.
 
 {% hint style="warning" %}
 The preview side requires the \`@agent-wasm/core\` peer (almost-node), same as docstream's live demos — the source-editing UI itself has no extra runtime requirements. This docs site excludes that runtime, so there is no live instance here.
@@ -389,6 +394,8 @@ The preview side requires the \`@agent-wasm/core\` peer (almost-node), same as d
 | \`entry\` | \`string\` | \`"/src/main.jsx"\` | Vite entry file for the preview. |
 | \`height\` | \`number \\| string\` | \`320\` | Preview height after the user runs the demo. |
 | \`onChange\` | \`(files: Record<string, string>) => void\` | — | Called whenever a file is edited. |
+| \`autoPreview\` | \`boolean\` | \`true\` | Write edited files into the refreshed AlmostNode preview automatically. |
+| \`previewDebounceMs\` | \`number\` | \`350\` | Pause before edited virtual files update the preview. |
 | \`className\` | \`string\` | — | Appended to \`gb-react-demo-editor\`. |
 
 \`\`\`tsx
@@ -405,7 +412,7 @@ import { ReactDemoEditor } from "@brett_lamy/docstream-editor"
 />
 \`\`\`
 
-Behavior notes: edits are kept as a local draft; the preview only updates when the user presses Run (each run remounts the preview with the drafted files). When the \`files\` prop changes, the draft resets and the selection falls back to the first file if the selected path disappeared.
+Behavior notes: edits stay at their existing virtual paths and flow into the AlmostNode filesystem after the debounce. Set \`autoPreview={false}\` to restore the manual **Run demo** workflow. When the \`files\` prop changes, the draft and preview reset, and selection falls back to the first file if the selected path disappeared.
 `,
   },
   {

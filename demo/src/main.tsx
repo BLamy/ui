@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MarkdownContent } from '@brett_lamy/docstream';
+import type { SourceFileSnapshot, SourceReferenceClient } from '@brett_lamy/docstream/source';
 import { GitbookEditor } from '@brett_lamy/docstream-editor';
 import '@brett_lamy/docstream/styles.css';
 import '@brett_lamy/docstream-editor/styles.css';
@@ -9,6 +10,26 @@ import { liveRenderer } from './live-renderer';
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif";
 const MONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace";
+
+const demoVirtualFiles = new Map([['src/Button.tsx', 'export default function Button() {\n  return <button>Virtual file</button>\n}\n']]);
+const demoSourceClient: SourceReferenceClient = {
+  async read(reference) {
+    return {
+      content: demoVirtualFiles.get(reference.path) ?? '',
+      provenance: { mount: reference.mount, path: reference.path, exportName: reference.exportName, kind: reference.kind },
+    };
+  },
+  async write(reference, content) {
+    demoVirtualFiles.set(reference.path, content);
+    return {
+      content,
+      provenance: { mount: reference.mount, path: reference.path, exportName: reference.exportName, kind: reference.kind },
+    };
+  },
+  async importModule() {
+    return {};
+  },
+};
 
 const SEED = `# Release notes draft
 
@@ -29,15 +50,34 @@ Ask @brett about the #seasonal numbers [^1].
 \`\`\`ts
 const answer = 42
 \`\`\`
+
+\`\`\`mermaid
+graph LR
+  Draft[Edit source below] --> Preview[Live diagram above]
+\`\`\`
+
+{% source-ref mount="demo" path="src/Button.tsx" export="default" kind="component" title="Virtual Button" %}
+
 `;
 
 function Playground() {
   const [md, setMd] = useState(SEED);
+  const [savedFile, setSavedFile] = useState<SourceFileSnapshot | null>(null);
   return (
     <div style={{ display: 'flex', gap: 16, alignItems: 'stretch', margin: '18px 0', minHeight: 420 }}>
       <div style={{ flex: 1, minWidth: 0, border: '1px solid #e2e2ea', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: '8px 14px', borderBottom: '1px solid #eee', fontSize: 12, fontWeight: 700, color: '#77777f' }}>GitbookEditor</div>
-        <GitbookEditor markdown={SEED} onChange={setMd} placeholder="Write something…" />
+        <GitbookEditor
+          markdown={SEED}
+          onChange={setMd}
+          placeholder="Write something…"
+          sourceClient={demoSourceClient}
+          sourcePreview={false}
+          onSourceSaved={setSavedFile}
+        />
+        <div data-demo-file-save="" style={{ padding: '8px 14px', borderTop: '1px solid #eee', fontSize: 11, color: '#77777f' }}>
+          {savedFile ? `Saved ${savedFile.provenance.path}: ${savedFile.content.length} bytes` : 'Virtual file autosave ready'}
+        </div>
       </div>
       <div style={{ flex: 1, minWidth: 0, border: '1px solid #e2e2ea', borderRadius: 12, overflow: 'hidden', background: '#fafafc' }}>
         <div style={{ padding: '8px 14px', borderBottom: '1px solid #eee', fontSize: 12, fontWeight: 700, color: '#77777f' }}>Serialized markdown (live)</div>

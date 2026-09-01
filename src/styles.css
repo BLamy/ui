@@ -62,6 +62,23 @@
   background: var(--gb-muted);
 }
 
+.gb-source-ref-block {
+  margin: 0.85em 0;
+}
+
+.gb-source-ref-block > .gb-source-ref {
+  margin: 0;
+}
+
+.gb-source-ref-block > .gb-source-ref-editor {
+  margin-top: -1px;
+  border-radius: 0 0 var(--gb-radius) var(--gb-radius);
+}
+
+.gb-source-ref-block-editing > .gb-source-ref {
+  border-radius: var(--gb-radius) var(--gb-radius) 0 0;
+}
+
 .gb-source-ref-path {
   flex: 1;
 }
@@ -87,6 +104,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+}
+
+.gb-source-file-editor-status {
+  margin-left: auto;
+  color: var(--gb-muted-foreground);
+  font-size: 11px;
+}
+
+.gb-source-file-editor-status + button {
+  margin-left: 0;
 }
 
 .gb-source-file-editor > textarea {
@@ -502,6 +529,24 @@
   margin: 0.85em 0;
   overflow: hidden;
 }
+.gb-code-preview {
+  min-height: 120px;
+  border-bottom: 1px solid var(--gb-border);
+  background: var(--gb-panel);
+}
+.gb-code-preview .docs-article {
+  margin: 0;
+  padding: 14px;
+}
+.gb-code-mermaid-preview .docs-mermaid-code,
+.gb-code-almost-preview .docs-react-demo-code {
+  display: none;
+}
+.gb-code-almost-preview .docs-react-demo {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
 .gb-code-header {
   display: flex;
   align-items: center;
@@ -526,7 +571,7 @@
   color: var(--gb-muted-foreground);
   font-size: 11px;
 }
-.gb-code pre {
+.gb-code > pre {
   margin: 0;
   padding: 13px 15px;
   overflow-x: auto;
@@ -536,8 +581,8 @@
   background: var(--gb-code-bg);
   color: var(--gb-code-fg);
 }
-.gb-code pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
-.gb-code pre code .hljs-comment { font-style: italic; }
+.gb-code > pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+.gb-code > pre code .hljs-comment { font-style: italic; }
 .gb-code .hljs-keyword,
 .gb-code .hljs-selector-tag,
 .gb-code .hljs-built_in,
@@ -646,6 +691,15 @@
   border-radius: 12px;
   background: var(--gb-panel, var(--card, #ffffff));
 }
+.gb-react-demo-editor > .docs-react-demo {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--gb-border, var(--border, #e4e4e7));
+}
+.gb-react-demo-editor > .docs-react-demo .docs-react-demo-code {
+  display: none;
+}
 .gb-react-demo-editor-source {
   display: grid;
   grid-template-columns: minmax(150px, 0.28fr) minmax(0, 1fr);
@@ -708,6 +762,12 @@
   font-size: 11px;
 }
 .gb-react-demo-preview-button:disabled { opacity: 0.5; }
+.gb-react-demo-live-status {
+  margin-left: auto;
+  color: var(--gb-success, #22c55e);
+  font-size: 11px;
+  font-weight: 600;
+}
 .gb-react-demo-textarea {
   flex: 1;
   width: 100%;

@@ -13,6 +13,10 @@ export interface ReactDemoEditorProps {
   className?: string
   /** Called whenever a file is edited. */
   onChange?: (files: Record<string, string>) => void
+  /** Refresh the AlmostNode preview as files are edited (default true). */
+  autoPreview?: boolean
+  /** Delay before a live preview receives edited files (default 350ms). */
+  previewDebounceMs?: number
 }
 
 function nextFile(files: Readonly<Record<string, string>>): string {
@@ -26,16 +30,28 @@ export function ReactDemoEditor({
   height = 320,
   className,
   onChange,
+  autoPreview = true,
+  previewDebounceMs = 350,
 }: ReactDemoEditorProps) {
   const [draftFiles, setDraftFiles] = useState<Record<string, string>>(() => ({ ...files }))
   const [selectedFile, setSelectedFile] = useState(() => nextFile(files))
-  const [previewFiles, setPreviewFiles] = useState<Record<string, string> | null>(null)
+  const [previewFiles, setPreviewFiles] = useState<Record<string, string>>(() => ({ ...files }))
   const [previewRevision, setPreviewRevision] = useState(0)
 
   useEffect(() => {
     setDraftFiles({ ...files })
+    setPreviewFiles({ ...files })
     setSelectedFile((current) => (current && files[current] !== undefined ? current : nextFile(files)))
   }, [files])
+
+  useEffect(() => {
+    if (!autoPreview) return
+    const timer = window.setTimeout(
+      () => setPreviewFiles({ ...draftFiles }),
+      Math.max(0, previewDebounceMs),
+    )
+    return () => window.clearTimeout(timer)
+  }, [autoPreview, draftFiles, previewDebounceMs])
 
   const updateFile = (content: string) => {
     if (!selectedFile) return
@@ -48,6 +64,13 @@ export function ReactDemoEditor({
 
   return (
     <section className={wrapperClass} data-docstream-react-demo-editor="">
+      <ReactCodePreview
+        key={previewRevision}
+        files={previewFiles}
+        entry={entry}
+        height={height}
+        title="React demo preview"
+      />
       <div className="gb-react-demo-editor-source">
         <aside className="gb-react-demo-files" aria-label="Demo files">
           <div className="gb-react-demo-files-header">
@@ -70,17 +93,21 @@ export function ReactDemoEditor({
         <div className="gb-react-demo-editor-pane">
           <div className="gb-react-demo-editor-toolbar">
             <code>{selectedFile || "No file selected"}</code>
-            <button
-              type="button"
-              className="gb-react-demo-preview-button"
-              disabled={!selectedFile}
-              onClick={() => {
-                setPreviewFiles({ ...draftFiles })
-                setPreviewRevision((value) => value + 1)
-              }}
-            >
-              <Play className="size-3.5" /> Run demo
-            </button>
+            {autoPreview ? (
+              <span className="gb-react-demo-live-status">Live preview</span>
+            ) : (
+              <button
+                type="button"
+                className="gb-react-demo-preview-button"
+                disabled={!selectedFile}
+                onClick={() => {
+                  setPreviewFiles({ ...draftFiles })
+                  setPreviewRevision((value) => value + 1)
+                }}
+              >
+                <Play className="size-3.5" /> Run demo
+              </button>
+            )}
           </div>
           <textarea
             className="gb-react-demo-textarea"
@@ -92,17 +119,6 @@ export function ReactDemoEditor({
           />
         </div>
       </div>
-      {previewFiles ? (
-        <ReactCodePreview
-          key={previewRevision}
-          files={previewFiles}
-          entry={entry}
-          height={height}
-          title="React demo preview"
-        />
-      ) : (
-        <div className="gb-react-demo-editor-empty">Edit a file, then run the demo to preview the complete project.</div>
-      )}
     </section>
   )
 }

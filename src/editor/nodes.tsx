@@ -1,6 +1,7 @@
 import { Node, mergeAttributes } from "@tiptap/core"
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
 import { common, createLowlight } from "lowlight"
+import { useEffect, useMemo, useState } from "react"
 import {
   NodeViewContent,
   NodeViewWrapper,
@@ -21,11 +22,24 @@ import {
   XCircle,
 } from "lucide-react"
 
+import { DocsRenderer } from "@brett_lamy/docstream"
 import { resolveAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
-import type { HintStyle } from "@brett_lamy/docstream/gitbook"
+import type { DocumentNode, HintStyle, SourceRefNode } from "@brett_lamy/docstream/gitbook"
+import { ReactCodePreview } from "@brett_lamy/docstream/playground"
 import { ReplayPreview, isReplayQaUrl } from "@brett_lamy/docstream/replay"
 import { VideoEmbed } from "@brett_lamy/docstream/video"
+import { SourceFileEditor } from "./SourceFileEditor"
+import { useEditorRuntime } from "./runtime"
+
+function useDebouncedValue<T>(value: T, delay = 350): T {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(value), delay)
+    return () => window.clearTimeout(timer)
+  }, [delay, value])
+  return debounced
+}
 
 // ---------- Hint ----------
 
@@ -433,22 +447,44 @@ export const GbContentRef = Node.create({
 
 function SourceRefView({ node, updateAttributes, editor }: NodeViewProps) {
   const editable = editor.isEditable
+  const { sourceClient, sourcePreview = true, sourceAutoSave = true, onSourceSaved, onSourceError } = useEditorRuntime()
+  const reference = useMemo<SourceRefNode>(() => ({
+    type: "source-ref",
+    mount: String(node.attrs.mount || "source"),
+    path: String(node.attrs.path || ""),
+    exportName: String(node.attrs.exportName || "default"),
+    kind: node.attrs.kind === "story" ? "story" : "component",
+    title: String(node.attrs.title || ""),
+  }), [node.attrs.exportName, node.attrs.kind, node.attrs.mount, node.attrs.path, node.attrs.title])
   return (
-    <NodeViewWrapper className="gb-source-ref" contentEditable={false}>
-      <FileCode2 className="size-4 shrink-0" />
-      {editable ? (
-        <>
-          <input className="gb-inline-input gb-source-ref-mount" value={node.attrs.mount} placeholder="mount" onChange={(event) => updateAttributes({ mount: event.target.value })} />
-          <input className="gb-inline-input gb-source-ref-path" value={node.attrs.path} placeholder="src/Button.tsx" onChange={(event) => updateAttributes({ path: event.target.value })} />
-          <input className="gb-inline-input gb-source-ref-export" value={node.attrs.exportName} placeholder="Button" onChange={(event) => updateAttributes({ exportName: event.target.value })} />
-          <select className="gb-source-ref-kind" value={node.attrs.kind} onChange={(event) => updateAttributes({ kind: event.target.value })}>
-            <option value="component">component</option>
-            <option value="story">story</option>
-          </select>
-        </>
-      ) : (
-        <span>{node.attrs.title || `${node.attrs.path}#${node.attrs.exportName}`}</span>
-      )}
+    <NodeViewWrapper className={sourceClient && reference.path ? "gb-source-ref-block gb-source-ref-block-editing" : "gb-source-ref-block"} contentEditable={false}>
+      <div className="gb-source-ref">
+        <FileCode2 className="size-4 shrink-0" />
+        {editable ? (
+          <>
+            <input className="gb-inline-input gb-source-ref-mount" value={node.attrs.mount} placeholder="mount" onChange={(event) => updateAttributes({ mount: event.target.value })} />
+            <input className="gb-inline-input gb-source-ref-path" value={node.attrs.path} placeholder="src/Button.tsx" onChange={(event) => updateAttributes({ path: event.target.value })} />
+            <input className="gb-inline-input gb-source-ref-export" value={node.attrs.exportName} placeholder="Button" onChange={(event) => updateAttributes({ exportName: event.target.value })} />
+            <select className="gb-source-ref-kind" value={node.attrs.kind} onChange={(event) => updateAttributes({ kind: event.target.value })}>
+              <option value="component">component</option>
+              <option value="story">story</option>
+            </select>
+          </>
+        ) : (
+          <span>{node.attrs.title || `${node.attrs.path}#${node.attrs.exportName}`}</span>
+        )}
+      </div>
+      {sourceClient && reference.path ? (
+        <SourceFileEditor
+          reference={reference}
+          client={sourceClient}
+          preview={sourcePreview}
+          autoSave={editable ? sourceAutoSave : false}
+          onSaved={onSourceSaved}
+          onError={onSourceError}
+          className="gb-source-ref-editor"
+        />
+      ) : null}
     </NodeViewWrapper>
   )
 }
@@ -597,8 +633,36 @@ export const GbMath = Node.create({
 // ---------- Code block with GitBook title/lineNumbers ----------
 
 function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
+  const code = node.textContent
+  const previewCode = useDebouncedValue(code)
+  const language = String(node.attrs.language ?? "").toLowerCase()
+  const mermaid = language === "mermaid"
+  const almostNode = !!node.attrs.live && (language === "jsx" || language === "tsx" || language === "react")
+  const entry = String(node.attrs.entry || (language === "tsx" ? "/src/main.tsx" : "/src/main.jsx"))
+  const files = useMemo(() => ({ [entry]: previewCode }), [entry, previewCode])
+  const mermaidDocument = useMemo<DocumentNode>(() => ({
+    type: "doc",
+    children: [{ type: "code", language: "mermaid", code: previewCode, title: null, lineNumbers: true }],
+  }), [previewCode])
+
   return (
     <NodeViewWrapper className="gb-code">
+      {mermaid ? (
+        <div className="gb-code-preview gb-code-mermaid-preview" contentEditable={false}>
+          <DocsRenderer doc={mermaidDocument} />
+        </div>
+      ) : null}
+      {almostNode ? (
+        <div className="gb-code-preview gb-code-almost-preview" contentEditable={false}>
+          <ReactCodePreview
+            files={files}
+            entry={entry}
+            codeFile={entry}
+            height={300}
+            title={node.attrs.title || "Live preview"}
+          />
+        </div>
+      ) : null}
       <div className="gb-code-header" contentEditable={false}>
         {editor.isEditable ? (
           <>

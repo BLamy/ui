@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { EditorContent, useEditor, type Editor as TiptapEditor } from "@tiptap/react"
 import type { AnyExtension } from "@tiptap/core"
 import {
@@ -11,8 +11,10 @@ import {
 } from "lucide-react"
 
 import { parseMarkdown, serializeMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
+import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import { astToTiptap, tiptapToAst, type PMNode } from "./convert"
 import { createGitbookExtensions } from "./extensions"
+import { EditorRuntimeProvider } from "./runtime"
 import type { SlashItem } from "./slash-menu"
 
 export interface GitbookEditorProps {
@@ -47,6 +49,16 @@ export interface GitbookEditorProps {
   onPaste?: (event: ClipboardEvent) => boolean
   /** Receive the underlying TipTap editor instance (and null on teardown). */
   onEditorReady?: (editor: TiptapEditor | null) => void
+  /** Client used to edit and preview `{% source-ref %}` files. */
+  sourceClient?: SourceReferenceClient
+  /** Show the rendered export below a file-backed source editor (default true). */
+  sourcePreview?: boolean
+  /** Autosave file-backed source edits. `true` defaults to 500ms; a number sets the delay. */
+  sourceAutoSave?: boolean | number
+  /** Called after a file-backed source edit is written. */
+  onSourceSaved?: (snapshot: SourceFileSnapshot) => void
+  /** Called when reading, writing, or previewing a file-backed source fails. */
+  onSourceError?: (error: Error) => void
 }
 
 function ToolbarButton({
@@ -124,6 +136,11 @@ export function GitbookEditor({
   onKeyDown,
   onPaste,
   onEditorReady,
+  sourceClient,
+  sourcePreview = true,
+  sourceAutoSave = true,
+  onSourceSaved,
+  onSourceError,
 }: GitbookEditorProps) {
   // Tracks the markdown the editor itself produced, so external updates
   // (file switches) reset content but our own onChange echoes don't.
@@ -179,12 +196,22 @@ export function GitbookEditor({
     editor.commands.setContent(astToTiptap(doc), { emitUpdate: false })
   }, [editor, controlled, markdown])
 
+  const runtime = useMemo(() => ({
+    ...(sourceClient ? { sourceClient } : {}),
+    sourcePreview,
+    sourceAutoSave,
+    ...(onSourceSaved ? { onSourceSaved } : {}),
+    ...(onSourceError ? { onSourceError } : {}),
+  }), [onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
+
   if (!editor) return null
 
   return (
     <div className={className ? `gb ${className}` : "gb"}>
       {toolbar && <Toolbar editor={editor} />}
-      <EditorContent editor={editor} className="gb-content" />
+      <EditorRuntimeProvider value={runtime}>
+        <EditorContent editor={editor} className="gb-content" />
+      </EditorRuntimeProvider>
     </div>
   )
 }
