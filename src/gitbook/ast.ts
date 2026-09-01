@@ -68,6 +68,10 @@ export interface CodeBlockNode {
   live?: boolean
   /** Project-relative entry file used by a live preview. */
   entry?: string | null
+  /** Source lines visible before an expandable code preview is opened. */
+  collapsedCodeLines?: number
+  /** Maximum source lines visible before expanded code scrolls. */
+  expandedCodeLines?: number
 }
 
 export interface HintNode {

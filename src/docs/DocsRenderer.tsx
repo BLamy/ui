@@ -29,6 +29,8 @@ export interface LivePreviewProps {
   files: Record<string, string>
   entry: string
   title: string
+  collapsedCodeLines?: number
+  expandedCodeLines?: number
 }
 
 export type LivePreviewRenderer = (props: LivePreviewProps) => ReactNode
@@ -146,13 +148,23 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       )
     }
     case "code":
-      if (block.language === "mermaid") return <Mermaid code={block.code} />
+      if (block.language === "mermaid") {
+        return (
+          <Mermaid
+            code={block.code}
+            collapsedCodeLines={block.collapsedCodeLines}
+            expandedCodeLines={block.expandedCodeLines}
+          />
+        )
+      }
       if (block.live && isReactLanguage(block.language) && liveRenderer) {
         const entry = block.entry ?? "/src/main.jsx"
         return liveRenderer({
           files: { [entry]: block.code },
           entry,
           title: block.title ?? "Live React preview",
+          collapsedCodeLines: block.collapsedCodeLines,
+          expandedCodeLines: block.expandedCodeLines,
         })
       }
       return (

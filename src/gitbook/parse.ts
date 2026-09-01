@@ -71,6 +71,12 @@ function booleanAttr(attrs: Record<string, string>, key: string): boolean | unde
   return attrs[key] !== "false"
 }
 
+function positiveNumberAttr(attrs: Record<string, string>, key: string): number | undefined {
+  if (!(key in attrs)) return undefined
+  const value = Number(attrs[key])
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : undefined
+}
+
 interface TemplateTag {
   name: string
   attrs: Record<string, string>
@@ -447,6 +453,12 @@ export function parseBlocks(lines: string[]): Block[] {
         code: code.join("\n"),
         ...(booleanAttr(attrs, "live") === undefined ? {} : { live: booleanAttr(attrs, "live") }),
         ...(attrs.entry ? { entry: attrs.entry } : {}),
+        ...(positiveNumberAttr(attrs, "collapsedCodeLines") === undefined
+          ? {}
+          : { collapsedCodeLines: positiveNumberAttr(attrs, "collapsedCodeLines") }),
+        ...(positiveNumberAttr(attrs, "expandedCodeLines") === undefined
+          ? {}
+          : { expandedCodeLines: positiveNumberAttr(attrs, "expandedCodeLines") }),
       })
       continue
     }

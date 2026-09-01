@@ -123,15 +123,29 @@
   padding-left: 1.5em;
 }
 
-.docs-article .docs-tasklist {
+.docs-tasklist {
   list-style: none;
   padding-left: 0.2em;
 }
 
-.docs-article .docs-tasklist li {
+.docs-tasklist li {
   display: flex;
   gap: 8px;
-  align-items: baseline;
+  align-items: flex-start;
+}
+
+.docs-tasklist li > input {
+  flex: 0 0 auto;
+  margin-top: 0.45em;
+}
+
+.docs-tasklist .docs-blocks-inline {
+  flex: 1;
+  min-width: 0;
+}
+
+.docs-tasklist .docs-blocks-inline > p:first-child {
+  margin: 0;
 }
 
 .docs-article blockquote {
@@ -549,12 +563,16 @@
   margin-top: 4px;
 }
 
+.docs-mermaid-preview {
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .docs-mermaid {
   display: flex;
   justify-content: center;
   padding: 16px;
-  border: 1px solid var(--gb-border);
-  border-radius: 12px;
   background: var(--background, #ffffff);
 }
 
@@ -563,12 +581,15 @@
 }
 
 .docs-mermaid-error {
+  margin: 0;
   font-size: 12px;
   color: var(--gb-danger);
-  border: 1px solid var(--gb-border);
-  border-radius: 8px;
   padding: 10px;
   white-space: pre-wrap;
+}
+
+.docs-mermaid-code {
+  border-top: 1px solid var(--gb-border);
 }
 
 .docs-inline-img {

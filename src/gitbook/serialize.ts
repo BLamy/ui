@@ -39,6 +39,8 @@ function serializeBlock(b: Block): string {
         !b.lineNumbers ? `lineNumbers="false"` : "",
         b.live ? `live="true"` : "",
         b.entry ? `entry="${b.entry}"` : "",
+        b.collapsedCodeLines ? `collapsedCodeLines="${b.collapsedCodeLines}"` : "",
+        b.expandedCodeLines ? `expandedCodeLines="${b.expandedCodeLines}"` : "",
       ].filter(Boolean)
       const info = [b.language ?? "", ...attrs].filter(Boolean).join(" ")
       return `\`\`\`${info}\n${b.code}\n\`\`\``

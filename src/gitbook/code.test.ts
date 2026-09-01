@@ -44,4 +44,13 @@ describe("fenced code metadata", () => {
     expect(block).toMatchObject({ live: true, entry: "/src/main.tsx", lineNumbers: true })
     expect(serializeMarkdown(parseMarkdown(markdown))).toBe(markdown + "\n")
   })
+
+  it("round-trips configurable expandable code line limits", () => {
+    const markdown = '```mermaid collapsedCodeLines="4" expandedCodeLines="24"\ngraph TD\n  A --> B\n```'
+    expect(codeBlock(markdown)).toMatchObject({
+      collapsedCodeLines: 4,
+      expandedCodeLines: 24,
+    })
+    expect(serializeMarkdown(parseMarkdown(markdown))).toBe(markdown + "\n")
+  })
 })

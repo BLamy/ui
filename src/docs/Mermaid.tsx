@@ -1,11 +1,26 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react"
+import { HighlightedCode } from "./HighlightedCode"
 
 let seq = 0
 
-export function Mermaid({ code }: { code: string }) {
+export interface MermaidProps {
+  code: string
+  collapsedCodeLines?: number
+  expandedCodeLines?: number
+}
+
+function positiveLineCount(value: number | undefined, fallback: number): number {
+  return value !== undefined && Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback
+}
+
+export function Mermaid({ code, collapsedCodeLines = 3, expandedCodeLines = 30 }: MermaidProps) {
   const [svg, setSvg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [codeExpanded, setCodeExpanded] = useState(false)
   const idRef = useRef(`mermaid-${++seq}`)
+  const codePanelId = useId()
+  const collapsedLines = positiveLineCount(collapsedCodeLines, 3)
+  const expandedLines = Math.max(collapsedLines, positiveLineCount(expandedCodeLines, 30))
 
   useEffect(() => {
     let cancelled = false
@@ -23,15 +38,35 @@ export function Mermaid({ code }: { code: string }) {
     }
   }, [code])
 
-  if (error) {
-    return (
-      <pre className="docs-mermaid-error">
-        mermaid error: {error}
-        {"\n"}
-        {code}
-      </pre>
-    )
-  }
-  if (!svg) return <div className="docs-mermaid">Rendering diagram…</div>
-  return <div className="docs-mermaid" dangerouslySetInnerHTML={{ __html: svg }} />
+  return (
+    <section className="docs-mermaid-preview" data-docstream-mermaid="">
+      {error ? (
+        <pre className="docs-mermaid-error">mermaid error: {error}</pre>
+      ) : svg ? (
+        <div className="docs-mermaid" dangerouslySetInnerHTML={{ __html: svg }} />
+      ) : (
+        <div className="docs-mermaid">Rendering diagram…</div>
+      )}
+      <div className="docs-react-demo-code docs-mermaid-code">
+        <pre
+          id={codePanelId}
+          className={codeExpanded ? "docs-react-demo-code-body docs-react-demo-code-body-expanded" : "docs-react-demo-code-body"}
+          style={{
+            "--docs-react-demo-code-lines": codeExpanded ? expandedLines : collapsedLines,
+          } as CSSProperties}
+        >
+          <HighlightedCode code={code} language="mermaid" lineNumbers />
+        </pre>
+        <button
+          type="button"
+          className="docs-react-demo-code-toggle"
+          aria-controls={codePanelId}
+          aria-expanded={codeExpanded}
+          onClick={() => setCodeExpanded((value) => !value)}
+        >
+          {codeExpanded ? "Hide Code" : "View Code"}
+        </button>
+      </div>
+    </section>
+  )
 }

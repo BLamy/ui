@@ -29,8 +29,14 @@ export function PlaygroundStreamdown({
     () => parseMarkdown(isStreaming ? trimPartialInlineToken(content) : content),
     [content, isStreaming]
   )
-  const liveRenderer: LivePreviewRenderer = ({ files, entry, title }) => (
-    <ReactCodePreview files={files} entry={entry} title={title} />
+  const liveRenderer: LivePreviewRenderer = ({ files, entry, title, collapsedCodeLines, expandedCodeLines }) => (
+    <ReactCodePreview
+      files={files}
+      entry={entry}
+      title={title}
+      collapsedCodeLines={collapsedCodeLines}
+      expandedCodeLines={expandedCodeLines}
+    />
   )
 
   return (

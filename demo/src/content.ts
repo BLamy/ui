@@ -500,9 +500,9 @@ export function hello(name: string) {
 }
 \`\`\`
 
-Indented (4-space) code blocks are also recognized. Fences with language \`mermaid\` render as diagrams:
+Indented (4-space) code blocks are also recognized. Fences with language \`mermaid\` render as diagrams with an expandable source block. The source defaults to 3 collapsed lines and a 30-line expanded scroll cap; set \`collapsedCodeLines\` and \`expandedCodeLines\` on the fence to customize them:
 
-\`\`\`mermaid
+\`\`\`mermaid collapsedCodeLines="4" expandedCodeLines="24"
 graph LR
   MD[markdown] --> P(parseMarkdown)
   P --> AST[block AST]
