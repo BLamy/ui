@@ -431,7 +431,6 @@ export function parseBlocks(lines: string[]): Block[] {
     const fence = trimmed.match(/^(`{3,}|~{3,})([^\s`]*)?(?:\s+(.*?))?\s*$/)
     if (fence) {
       flushParagraph()
-      const marker = fence[1][0]
       const attrs = parseAttrs(fence[3])
       const code: string[] = []
       i++
