@@ -226,6 +226,44 @@ Click into the editor below and press \`/\`:
 `,
   },
   {
+    id: 'references',
+    title: 'References & citations',
+    markdown: `# References & citations
+
+The editor understands docstream's reference chips: \`@mention\`, \`#tag\`, and footnote citations (\`[^1]\`). They round-trip losslessly between markdown and the editor — chips are atomic inline nodes you can select and delete like a character.
+
+## Triggers
+
+- Type \`@\` to mention — the picker filters known ids and always offers inserting exactly what you typed.
+- Type \`#\` for tags, same behavior.
+- Press \`/\` and pick **Citation** to insert the next free numeric citation marker.
+
+Configure known ids through the component or extension options:
+
+\`\`\`tsx
+<GitbookEditor references={{ mentions: ["brett", "dana"], tags: ["seasonal", "ops"] }} />
+
+// or composed
+createGitbookExtensions({ references: { mentions: ["brett"] } })
+\`\`\`
+
+Set \`references={false}\` to disable the pickers (typed \`@\`/\`#\` text still parses as chips when markdown is loaded).
+
+## Citation definitions
+
+Definition lines (\`[^1]: url "Label"\`) aren't editable in the WYSIWYG — the editor preserves the document's existing definitions and re-appends them on serialize. Edit them in the markdown source.
+
+## Try it
+
+{% code title="References playground" live="true" %}
+\`\`\`jsx
+// demo:editor-references
+<GitbookEditor markdown={md} toolbar={false} autofocus />
+\`\`\`
+{% endcode %}
+`,
+  },
+  {
     id: 'extensions',
     title: 'Extensions & composition',
     markdown: `# Extensions & composition

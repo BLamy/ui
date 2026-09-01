@@ -9,8 +9,10 @@ import {
 } from "@tiptap/react"
 import {
   AlertTriangle,
+  AtSign,
   CheckCircle2,
   ChevronDown,
+  Hash,
   Info,
   Link2,
   FileCode2,
@@ -711,6 +713,56 @@ export const GbInlineImage = Node.create({
   },
 })
 
+// ---------- Reference chips (@mention, #tag, [^n] citation) ----------
+
+function ReferenceView({ node }: NodeViewProps) {
+  const { kind, id, url, label } = node.attrs
+  return (
+    <NodeViewWrapper as="span" className="gb-ref-wrap" contentEditable={false}>
+      {kind === "citation" ? (
+        <span className="gb-cite" title={label || url || undefined}>
+          {id}
+        </span>
+      ) : (
+        <span className={`gb-ref gb-ref-${kind}`}>
+          {kind === "mention" ? <AtSign className="gb-ref-icon" /> : <Hash className="gb-ref-icon" />}
+          {id}
+        </span>
+      )}
+    </NodeViewWrapper>
+  )
+}
+
+export const GbReference = Node.create({
+  name: "gbReference",
+  group: "inline",
+  inline: true,
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      kind: { default: "mention" },
+      id: { default: "" },
+      url: { default: "" },
+      label: { default: "" },
+    }
+  },
+  parseHTML() {
+    return [{ tag: "span[data-gb-ref]" }]
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const sigil = node.attrs.kind === "mention" ? "@" : node.attrs.kind === "tag" ? "#" : "^"
+    return [
+      "span",
+      mergeAttributes(HTMLAttributes, { "data-gb-ref": node.attrs.kind, "data-gb-ref-id": node.attrs.id }),
+      `${sigil}${node.attrs.id}`,
+    ]
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ReferenceView)
+  },
+})
+
 // ---------- Updates (changelog) ----------
 
 export const GbUpdates = Node.create({
@@ -849,4 +901,5 @@ export const gitbookNodes = [
   GbUpdate,
   GbOpenapi,
   GbInlineImage,
+  GbReference,
 ]

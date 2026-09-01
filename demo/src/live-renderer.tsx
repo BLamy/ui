@@ -42,10 +42,32 @@ function EditorSlashDemo() {
   );
 }
 
+const REFERENCES_MD = `Ask @brett to review the #seasonal numbers [^1].
+
+[^1]: https://scoopdata.io/q3 "ScoopData Q3"
+`;
+
+function EditorReferencesDemo() {
+  const [md, setMd] = useState(REFERENCES_MD);
+  return (
+    <div>
+      <GitbookEditor
+        markdown={md}
+        onChange={setMd}
+        toolbar={false}
+        references={{ mentions: ['brett', 'dana'], tags: ['seasonal', 'ops'] }}
+        placeholder="Type @ or # for chips, / for blocks…"
+      />
+      <pre style={{ margin: '10px 0 0', padding: 10, background: '#f7f7fa', border: '1px solid #e6e6ee', borderRadius: 8, fontFamily: MONO, fontSize: 11.5, whiteSpace: 'pre-wrap' }}>{md}</pre>
+    </div>
+  );
+}
+
 const REGISTRY: Record<string, () => ReactNode> = {
   'editor-basic': () => <EditorBasicDemo />,
   'editor-readonly': () => <EditorReadonlyDemo />,
   'editor-slash': () => <EditorSlashDemo />,
+  'editor-references': () => <EditorReferencesDemo />,
 };
 
 interface LivePreviewProps {

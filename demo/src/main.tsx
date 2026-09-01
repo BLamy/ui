@@ -20,6 +20,11 @@ Edit me — this hint is a real GitBook block.
 
 - Editor and renderer share one AST
 - Slash menu: press \`/\` on an empty line
+- Reference chips: type \`@\` or \`#\`, citations via /citation
+
+Ask @brett about the #seasonal numbers [^1].
+
+[^1]: https://scoopdata.io/q3 "ScoopData Q3"
 
 \`\`\`ts
 const answer = 42

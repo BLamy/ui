@@ -10,7 +10,7 @@ import {
   Strikethrough,
 } from "lucide-react"
 
-import { parseMarkdown, serializeMarkdown } from "@brett_lamy/docstream/gitbook"
+import { parseMarkdown, serializeMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
 import { astToTiptap, tiptapToAst, type PMNode } from "./convert"
 import { createGitbookExtensions } from "./extensions"
 import type { SlashItem } from "./slash-menu"
@@ -24,6 +24,8 @@ export interface GitbookEditorProps {
   toolbar?: boolean
   /** Built-in "/" slash menu: true (default), false, or a custom item list. */
   slashMenu?: boolean | { items?: SlashItem[] }
+  /** The "@" / "#" reference chip pickers: true (default), false, or known id lists. */
+  references?: boolean | { mentions?: string[]; tags?: string[] }
   /** Whether the document is editable (default true). */
   editable?: boolean
   /** Placeholder shown in an empty document. */
@@ -112,6 +114,7 @@ export function GitbookEditor({
   onChange,
   toolbar = true,
   slashMenu = true,
+  references = true,
   editable = true,
   placeholder,
   className,
@@ -125,7 +128,16 @@ export function GitbookEditor({
   // Tracks the markdown the editor itself produced, so external updates
   // (file switches) reset content but our own onChange echoes don't.
   const lastEmitted = useRef<string | null>(null)
+  // PM JSON has nowhere to carry doc-level citation definitions; remember the
+  // ones from the last applied markdown and reattach them on serialize.
+  const citationsRef = useRef<CitationDef[] | undefined>(undefined)
   const controlled = markdown !== undefined
+
+  const parseAndTrack = (md: string) => {
+    const doc = parseMarkdown(md)
+    citationsRef.current = doc.citations
+    return doc
+  }
 
   const editor = useEditor({
     editable,
@@ -133,6 +145,7 @@ export function GitbookEditor({
     extensions: createGitbookExtensions({
       ...(placeholder !== undefined ? { placeholder } : {}),
       slashMenu,
+      references,
       ...(disableHistory !== undefined ? { disableHistory } : {}),
       ...(extensions ? { extensions } : {}),
     }),
@@ -140,10 +153,12 @@ export function GitbookEditor({
       handleKeyDown: (_view, event) => onKeyDown?.(event) ?? false,
       handlePaste: (_view, event) => onPaste?.(event) ?? false,
     },
-    ...(controlled ? { content: astToTiptap(parseMarkdown(markdown as string)) } : {}),
+    ...(controlled ? { content: astToTiptap(parseAndTrack(markdown as string)) } : {}),
     onUpdate({ editor }) {
       if (!onChange) return
-      const md = serializeMarkdown(tiptapToAst(editor.getJSON() as PMNode))
+      const ast = tiptapToAst(editor.getJSON() as PMNode)
+      if (citationsRef.current?.length) ast.citations = citationsRef.current
+      const md = serializeMarkdown(ast)
       lastEmitted.current = md
       onChange(md)
     },
@@ -159,7 +174,9 @@ export function GitbookEditor({
     if (!editor || !controlled) return
     if (markdown === lastEmitted.current) return
     lastEmitted.current = markdown as string
-    editor.commands.setContent(astToTiptap(parseMarkdown(markdown as string)), { emitUpdate: false })
+    const doc = parseMarkdown(markdown as string)
+    citationsRef.current = doc.citations
+    editor.commands.setContent(astToTiptap(doc), { emitUpdate: false })
   }, [editor, controlled, markdown])
 
   if (!editor) return null

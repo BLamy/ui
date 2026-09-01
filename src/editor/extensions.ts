@@ -6,6 +6,7 @@ import { getSchema, type AnyExtension } from "@tiptap/core"
 import type { Schema } from "@tiptap/pm/model"
 import { GbCodeBlock, gitbookNodes } from "./nodes"
 import { SlashMenu, createSlashMenu, type SlashItem } from "./slash-menu"
+import { createReferenceSuggestion } from "./reference-menu"
 
 // Carries GitBook's data-view (e.g. "cards") through the editor untouched.
 export const GbTable = Table.extend({
@@ -18,6 +19,11 @@ export interface GitbookExtensionOptions {
   placeholder?: string
   /** Built-in "/" slash menu: true (default), false, or a custom item list. */
   slashMenu?: boolean | { items?: SlashItem[] }
+  /**
+   * The "@" / "#" reference chip pickers: true (default), false, or lists of
+   * known ids to offer. Free-form entry always works.
+   */
+  references?: boolean | { mentions?: string[]; tags?: string[] }
   /**
    * Disable StarterKit's built-in undo/redo. Required when wiring Yjs
    * Collaboration, which provides its own shared history.
@@ -36,6 +42,7 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
   const {
     placeholder = "Write, or type / to insert a block…",
     slashMenu = true,
+    references = true,
     disableHistory = false,
     extensions = [],
   } = options
@@ -58,6 +65,14 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
 
   if (slashMenu) {
     list.push(slashMenu === true ? SlashMenu : createSlashMenu(slashMenu.items))
+  }
+
+  if (references) {
+    const opts = references === true ? {} : references
+    list.push(
+      createReferenceSuggestion({ char: "@", ...(opts.mentions ? { items: opts.mentions } : {}) }),
+      createReferenceSuggestion({ char: "#", ...(opts.tags ? { items: opts.tags } : {}) })
+    )
   }
 
   list.push(...extensions)

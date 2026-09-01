@@ -739,3 +739,56 @@
   .gb-react-demo-files-header { flex: 0 0 auto; border-bottom: 0; }
   .gb-react-demo-file { width: auto; flex: 0 0 auto; }
 }
+
+/* ---- Inline reference chips (@mention, #tag) and citations ---- */
+
+.gb-ref-wrap {
+  display: inline;
+}
+
+.gb-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1.5;
+  vertical-align: baseline;
+}
+
+.gb-ref-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.gb-ref-mention {
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--gb-info, #3b82f6);
+}
+
+.gb-ref-tag {
+  border: 1px solid var(--gb-border);
+  background: var(--gb-muted);
+  color: var(--gb-muted-foreground);
+}
+
+.gb-cite {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(59, 130, 246, 0.14);
+  color: var(--gb-info, #3b82f6);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  vertical-align: super;
+}
+
+.ProseMirror-selectednode .gb-ref,
+.ProseMirror-selectednode .gb-cite {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: 1px;
+}

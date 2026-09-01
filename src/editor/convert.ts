@@ -13,8 +13,16 @@ export interface PMNode {
 
 function inlineToPM(nodes: Inline[]): PMNode[] {
   return nodes
-    .filter((n) => n.type === "image" || n.text.length > 0)
+    // Only empty text nodes are dropped — every non-text inline must pass, or
+    // it silently vanishes on the first edit round-trip.
+    .filter((n) => n.type !== "text" || n.text.length > 0)
     .map((n) => {
+      if (n.type === "reference") {
+        return {
+          type: "gbReference",
+          attrs: { kind: n.kind, id: n.id, url: n.url ?? "", label: n.label ?? "" },
+        }
+      }
       if (n.type === "image") {
         return {
           type: "gbInlineImage",
@@ -191,8 +199,19 @@ export function astToTiptap(doc: DocumentNode): PMNode {
 function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
   if (!nodes) return []
   return nodes
-    .filter((n) => (n.type === "text" && n.text) || n.type === "gbInlineImage")
+    .filter((n) => (n.type === "text" && n.text) || n.type === "gbInlineImage" || n.type === "gbReference")
     .map((n): Inline => {
+      if (n.type === "gbReference") {
+        const a = n.attrs ?? {}
+        const kind = a.kind === "tag" ? "tag" : a.kind === "citation" ? "citation" : "mention"
+        return {
+          type: "reference",
+          kind,
+          id: String(a.id ?? ""),
+          ...(a.url ? { url: String(a.url) } : {}),
+          ...(a.label ? { label: String(a.label) } : {}),
+        }
+      }
       if (n.type === "gbInlineImage") {
         const a = n.attrs ?? {}
         return {

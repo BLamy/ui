@@ -1,14 +1,5 @@
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react"
 import { Extension, type Editor, type Range } from "@tiptap/core"
-import Suggestion, { type SuggestionProps } from "@tiptap/suggestion"
-import { ReactRenderer } from "@tiptap/react"
+import Suggestion from "@tiptap/suggestion"
 import {
   Columns2,
   FileCode2,
@@ -29,6 +20,7 @@ import {
   Quote,
   Sigma,
   SquareChevronDown,
+  Superscript,
   Table as TableIcon,
   Webhook,
   Workflow,
@@ -36,6 +28,7 @@ import {
 } from "lucide-react"
 
 import type { PMNode } from "./convert"
+import { createSuggestionRender } from "./suggestion-menu"
 
 const para = (text = ""): PMNode =>
   text ? { type: "paragraph", content: [{ type: "text", text }] } : { type: "paragraph" }
@@ -176,106 +169,26 @@ export const SLASH_ITEMS: SlashItem[] = [
       content: [{ type: "text", text: "graph TD\n  A --> B" }],
     }),
   },
-]
-
-interface MenuProps {
-  items: SlashItem[]
-  command: (item: SlashItem) => void
-  clientRect: (() => DOMRect | null) | null
-}
-
-interface MenuHandle {
-  onKeyDown: (event: KeyboardEvent) => boolean
-}
-
-const SlashMenuView = forwardRef<MenuHandle, MenuProps>(function SlashMenuView(
-  { items, command, clientRect },
-  ref
-) {
-  const [index, setIndex] = useState(0)
-  const itemRefs = useRef<Array<HTMLButtonElement | null>>([])
-
-  useEffect(() => setIndex(0), [items])
-
-  // Keep the active item visible while arrowing through a long list.
-  useEffect(() => {
-    itemRefs.current[index]?.scrollIntoView({ block: "nearest" })
-  }, [index])
-
-  useImperativeHandle(ref, () => ({
-    onKeyDown(event) {
-      if (event.key === "ArrowDown") {
-        setIndex((i) => (i + 1) % Math.max(items.length, 1))
-        return true
-      }
-      if (event.key === "ArrowUp") {
-        setIndex((i) => (i - 1 + items.length) % Math.max(items.length, 1))
-        return true
-      }
-      if (event.key === "Enter") {
-        if (items[index]) command(items[index])
-        return true
-      }
-      return false
+  {
+    title: "Citation",
+    keywords: "cite footnote source reference superscript",
+    icon: Superscript,
+    run: (e) => {
+      // Next free numeric citation id in the document.
+      let max = 0
+      e.state.doc.descendants((node) => {
+        if (node.type.name === "gbReference" && node.attrs.kind === "citation") {
+          const n = Number(node.attrs.id)
+          if (Number.isInteger(n) && n > max) max = n
+        }
+      })
+      e.chain()
+        .focus()
+        .insertContent([{ type: "gbReference", attrs: { kind: "citation", id: String(max + 1) } }])
+        .run()
     },
-  }))
-
-  const menuRef = useRef<HTMLDivElement>(null)
-  const rect = clientRect?.()
-  const [pos, setPos] = useState<{ left: number; top: number }>(() => ({
-    left: rect ? rect.left : 0,
-    top: rect ? rect.bottom + 6 : 0,
-  }))
-
-  // Position below the cursor, but flip above when there isn't room below
-  // (e.g. triggered near the bottom of the viewport). Measured after render.
-  useLayoutEffect(() => {
-    const r = clientRect?.()
-    const el = menuRef.current
-    if (!r || !el) return
-    const margin = 6
-    const menuH = el.offsetHeight
-    const menuW = el.offsetWidth
-    const spaceBelow = window.innerHeight - r.bottom
-    let top = r.bottom + margin
-    if (spaceBelow < menuH + margin && r.top - margin > menuH) {
-      top = r.top - menuH - margin
-    }
-    top = Math.max(margin, Math.min(top, window.innerHeight - menuH - margin))
-    let left = Math.min(r.left, window.innerWidth - menuW - margin)
-    left = Math.max(margin, left)
-    if (left !== pos.left || top !== pos.top) setPos({ left, top })
-  }, [clientRect, items, pos.left, pos.top])
-
-  if (!rect) return null
-
-  return (
-    <div
-      ref={menuRef}
-      className="slash-menu"
-      style={{ position: "fixed", left: pos.left, top: pos.top }}
-    >
-      {items.length === 0 && <div className="slash-empty">No matching blocks</div>}
-      {items.map((item, i) => (
-        <button
-          key={item.title}
-          ref={(el) => {
-            itemRefs.current[i] = el
-          }}
-          className={`slash-item ${i === index ? "slash-item-active" : ""}`}
-          onMouseEnter={() => setIndex(i)}
-          onMouseDown={(e) => {
-            e.preventDefault()
-            command(item)
-          }}
-        >
-          <item.icon className="size-4" />
-          <span>{item.title}</span>
-        </button>
-      ))}
-    </div>
-  )
-})
+  },
+]
 
 export type { SlashItem }
 
@@ -287,7 +200,6 @@ export function createSlashMenu(items: SlashItem[] = SLASH_ITEMS) {
   return Extension.create({
     name: "slashMenu",
     addProseMirrorPlugins() {
-      let renderer: ReactRenderer<MenuHandle, MenuProps> | null = null
       return [
         Suggestion<SlashItem>({
           editor: this.editor,
@@ -297,44 +209,11 @@ export function createSlashMenu(items: SlashItem[] = SLASH_ITEMS) {
             items.filter((item) =>
               `${item.title} ${item.keywords}`.toLowerCase().includes(query.toLowerCase())
             ),
-        command: ({ editor, range, props }) => {
-          editor.chain().focus().deleteRange(range as Range).run()
-          props.run(editor as Editor)
-        },
-        render: () => ({
-          onStart: (props: SuggestionProps<SlashItem>) => {
-            renderer = new ReactRenderer(SlashMenuView, {
-              editor: props.editor,
-              props: {
-                items: props.items,
-                command: props.command,
-                clientRect: props.clientRect ?? null,
-              },
-            })
-            document.body.appendChild(renderer.element)
+          command: ({ editor, range, props }) => {
+            editor.chain().focus().deleteRange(range as Range).run()
+            props.run(editor as Editor)
           },
-          onUpdate: (props: SuggestionProps<SlashItem>) => {
-            renderer?.updateProps({
-              items: props.items,
-              command: props.command,
-              clientRect: props.clientRect ?? null,
-            })
-          },
-          onKeyDown: ({ event }) => {
-            if (event.key === "Escape") {
-              renderer?.destroy()
-              renderer?.element.remove()
-              renderer = null
-              return true
-            }
-            return renderer?.ref?.onKeyDown(event) ?? false
-          },
-          onExit: () => {
-            renderer?.element.remove()
-            renderer?.destroy()
-            renderer = null
-          },
-          }),
+          render: createSuggestionRender<SlashItem>("No matching blocks"),
         }),
       ]
     },
