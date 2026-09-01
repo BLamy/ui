@@ -36,8 +36,9 @@ export type {
   ReactDemoProps,
 } from "./playground"
 export { resolveAsset, setAssetBase } from "./assets"
-export { createViteSourceClient, SourcePreview } from "./source"
+export { createBundledSourceClient, createViteSourceClient, SourcePreview } from "./source"
 export type {
+  BundledSourceModule,
   SourceFileSnapshot,
   SourceModule,
   SourcePreviewProps,

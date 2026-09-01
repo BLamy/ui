@@ -236,6 +236,21 @@ plugin validates the mount boundary, only edits existing files, and notifies
 Vite after a save so the preview reloads through Vite's normal module pipeline.
 Set `writable: false` on a mount when a documentation site should only render.
 
+The Vite endpoints exist only during development. For a deployed static site,
+bundle the referenced modules and use the read-only production client:
+
+```tsx
+import { createBundledSourceClient } from "@brett_lamy/docstream"
+import * as ButtonModule from "./components/Button"
+
+const client = createBundledSourceClient({
+  "ui:Button.tsx": ButtonModule,
+})
+```
+
+Entries may also be lazy import functions. Keys can be `mount:path` (recommended)
+or just `path` when names cannot collide.
+
 ## Assets and OpenAPI Specs
 
 Relative image and OpenAPI spec paths can be resolved against an asset base:
@@ -258,6 +273,7 @@ You can also resolve paths yourself with `resolveAsset`.
 - `OpenApiOperation`: Renders a parsed OpenAPI operation block.
 - `SourcePreview`: Imports and renders a mounted component or CSF story export.
 - `createViteSourceClient`: Reads, writes, and imports files exposed by the Vite plugin.
+- `createBundledSourceClient`: Imports bundled source modules in read-only production builds.
 
 ### Parser and Serializer
 

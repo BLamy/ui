@@ -346,7 +346,7 @@ Also exported: \`normalizeAlmostNodeFiles\`, \`normalizeAlmostNodePath\`, \`toAl
     title: 'File-backed components',
     markdown: `# File-backed components and stories
 
-These previews are not implemented in this Markdown string. Vite mounts the real \`demo/src/examples\` directory, and each block retains its mount, file, export, and kind as provenance.
+These previews are not implemented in this Markdown string. During development Vite mounts the real \`demo/src/examples\` directory; the deployed documentation bundles the same modules as read-only previews. Each block retains its mount, file, export, and kind as provenance.
 
 ## Component export
 
@@ -356,7 +356,7 @@ These previews are not implemented in this Markdown string. Vite mounts the real
 
 {% source-ref mount="demo" path="Button.stories.tsx" export="Primary" kind="story" title="Primary story" %}
 
-\`createViteSourceClient().read(reference)\` reads the authoritative file. The editor package's \`SourceFileEditor\` saves through the same client, writes the real file, preserves provenance, and lets Vite reload the preview.
+During development, \`createViteSourceClient().read(reference)\` reads the authoritative file. The editor package's \`SourceFileEditor\` saves through the same client, writes the real file, preserves provenance, and lets Vite reload the preview. Production sites can supply a read-only client backed by modules bundled at build time.
 `,
   },
   {

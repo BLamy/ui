@@ -1,13 +1,19 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DocstreamRefContext, GitbookStreamdown, MarkdownContent, SourcePreview, createViteSourceClient, type CitationPreviewResolver, type SourceReferenceRenderer } from '@brett_lamy/docstream';
+import { DocstreamRefContext, GitbookStreamdown, MarkdownContent, SourcePreview, createBundledSourceClient, createViteSourceClient, type CitationPreviewResolver, type SourceReferenceRenderer } from '@brett_lamy/docstream';
 import '@brett_lamy/docstream/styles.css';
 import { PAGES } from './content';
+import * as ButtonModule from './examples/Button';
+import * as ButtonStoriesModule from './examples/Button.stories';
 import { liveRenderer } from './live-renderer';
 import { ReactDemoLive } from './react-demo-live';
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif";
-const sourceClient = createViteSourceClient();
+const bundledSourceClient = createBundledSourceClient({
+  'Button.tsx': ButtonModule,
+  'Button.stories.tsx': ButtonStoriesModule,
+});
+const sourceClient = import.meta.env.DEV ? createViteSourceClient() : bundledSourceClient;
 const sourceRenderer: SourceReferenceRenderer = (reference) => <SourcePreview reference={reference} client={sourceClient} />;
 const citationPreviews: CitationPreviewResolver = (citation) => {
   if (citation.url?.includes('trends.google.com')) {

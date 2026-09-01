@@ -4,7 +4,7 @@ export { GitbookStreamdown } from '../../src/streamdown';
 export { DocsRenderer, MarkdownContent } from '../../src/docs/DocsRenderer';
 export type { LivePreviewProps, LivePreviewRenderer } from '../../src/docs/DocsRenderer';
 export type { SourceReferenceRenderer } from '../../src/docs/DocsRenderer';
-export { SourcePreview, createViteSourceClient } from '../../src/source';
+export { SourcePreview, createBundledSourceClient, createViteSourceClient } from '../../src/source';
 export { VideoEmbed } from '../../src/video';
 export { parseMarkdown, trimPartialInlineToken } from '../../src/gitbook/parse';
 export { CitationSources, DocstreamRefContext, InlineReference } from '../../src/docs/reference';

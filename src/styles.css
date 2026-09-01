@@ -489,10 +489,12 @@
   border-radius: 12px;
   padding: 14px 16px;
   background: var(--gb-muted);
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 13.5px;
   text-align: center;
-  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.docs-math .katex-display {
+  margin: 0;
 }
 
 .docs-updates {

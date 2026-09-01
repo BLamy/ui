@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react"
 import { LayoutGroup, motion } from "framer-motion"
+import "katex/dist/katex.min.css"
 import {
   AlertTriangle,
   CheckCircle2,
@@ -18,6 +19,11 @@ import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
 import { HighlightedCode } from "./HighlightedCode"
 import { CitationSources, InlineReference } from "./reference"
+import { renderMathToHtml } from "./math"
+
+function MathBlock({ formula }: { formula: string }) {
+  return <div className="docs-math" dangerouslySetInnerHTML={{ __html: renderMathToHtml(formula) }} />
+}
 
 export interface LivePreviewProps {
   files: Record<string, string>
@@ -327,7 +333,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         </table>
       )
     case "math":
-      return <pre className="docs-math">{block.formula}</pre>
+      return <MathBlock formula={block.formula} />
     case "updates":
       return (
         <div className="docs-updates">

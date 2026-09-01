@@ -1,6 +1,8 @@
 import type { SourceRefNode } from "../gitbook/ast"
 import type { SourceFileSnapshot, SourceReferenceClient, SourceModule } from "./types"
 
+export type BundledSourceModule = SourceModule | (() => SourceModule | Promise<SourceModule>)
+
 function params(reference: SourceRefNode): URLSearchParams {
   return new URLSearchParams({
     mount: reference.mount,
@@ -35,6 +37,23 @@ export function createViteSourceClient(apiBase = "/@docstream"): SourceReference
       const url = `${base}/module?${params(reference)}&t=${Date.now()}`
       const loaded = await import(/* @vite-ignore */ url) as { default?: SourceModule }
       return loaded.default ?? (loaded as SourceModule)
+    },
+  }
+}
+
+/** Create a read-only source client for modules included in a production bundle. */
+export function createBundledSourceClient(modules: Record<string, BundledSourceModule>): SourceReferenceClient {
+  return {
+    async read() {
+      throw new Error("Source text is unavailable in a bundled source client.")
+    },
+    async write() {
+      throw new Error("Bundled source previews are read-only.")
+    },
+    async importModule(reference) {
+      const entry = modules[`${reference.mount}:${reference.path}`] ?? modules[reference.path]
+      if (!entry) throw new Error(`No bundled source module found for ${reference.mount}:${reference.path}`)
+      return typeof entry === "function" ? entry() : entry
     },
   }
 }

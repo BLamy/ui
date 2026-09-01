@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { parseMarkdown } from "../gitbook/parse"
 import { serializeMarkdown } from "../gitbook/serialize"
+import { createBundledSourceClient } from "./client"
 
 describe("source references", () => {
   it("round-trips component provenance without embedding its implementation", () => {
@@ -33,5 +34,29 @@ describe("source references", () => {
       path: "Card.stories.tsx",
       exportName: "Empty",
     })
+  })
+
+  it("loads production source previews from eager and lazy bundled modules", async () => {
+    const eager = { Button: () => null }
+    const lazy = { Primary: { args: { label: "Primary" } } }
+    const client = createBundledSourceClient({
+      "demo:Button.tsx": eager,
+      "Button.stories.tsx": async () => lazy,
+    })
+
+    await expect(client.importModule({
+      type: "source-ref",
+      mount: "demo",
+      path: "Button.tsx",
+      exportName: "Button",
+      kind: "component",
+    })).resolves.toBe(eager)
+    await expect(client.importModule({
+      type: "source-ref",
+      mount: "demo",
+      path: "Button.stories.tsx",
+      exportName: "Primary",
+      kind: "story",
+    })).resolves.toBe(lazy)
   })
 })
