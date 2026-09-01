@@ -1,7 +1,13 @@
 import * as React from 'react';
 import { GitbookStreamdown } from '@brett_lamy/docstream/streamdown';
+import { DocstreamRefContext, type DocstreamRefContextValue } from '@brett_lamy/docstream/reference';
+import type { ReferenceNode } from '@brett_lamy/docstream/gitbook';
 import '@brett_lamy/docstream/styles.css';
 import { cn } from './util';
+
+// Hosts handle chip clicks through MarkdownView props — no direct docstream import needed.
+export { DocstreamRefContext };
+export type { DocstreamRefContextValue, ReferenceNode };
 
 /* ══ MarkdownView — Docstream-backed GitBook markdown for docs and chat ══ */
 function fbInline(s: string): React.ReactNode[] {
@@ -171,13 +177,26 @@ export interface MarkdownViewProps {
   markdown?: string;
   /** Passes streaming state through to Docstream for accessible streaming markup. */
   streaming?: boolean;
+  /** Called when an @mention / #tag / citation chip is clicked. */
+  onReferenceClick?: (ref: ReferenceNode) => void;
+  /** Override chip rendering; return null to fall back to the default chips. */
+  renderReference?: (ref: ReferenceNode) => React.ReactNode | null;
   className?: string;
   style?: React.CSSProperties;
 }
-export function MarkdownView({ markdown, streaming, className, style }: MarkdownViewProps) {
-  return (
+export function MarkdownView({ markdown, streaming, onReferenceClick, renderReference, className, style }: MarkdownViewProps) {
+  const refCtx = React.useMemo<DocstreamRefContextValue>(
+    () => ({
+      ...(onReferenceClick ? { onReferenceClick } : {}),
+      ...(renderReference ? { renderReference } : {}),
+    }),
+    [onReferenceClick, renderReference]
+  );
+  const view = (
     <div data-slot="markdown-view" data-renderer="docstream" className={cn('wb-md', className)} style={style}>
       <GitbookStreamdown markdown={markdown ?? ''} isStreaming={streaming} />
     </div>
   );
+  if (!onReferenceClick && !renderReference) return view;
+  return <DocstreamRefContext.Provider value={refCtx}>{view}</DocstreamRefContext.Provider>;
 }

@@ -38,7 +38,7 @@ export default defineConfig(() => ({
     },
     rolldownOptions: {
       // External packages that should not be bundled into your library.
-      external: ['react', 'react-dom', 'react/jsx-runtime', /^@pierre\/diffs(?:\/.*)?$/],
+      external: ['react', 'react-dom', 'react/jsx-runtime', /^@pierre\/diffs(?:\/.*)?$/, /^@touchkit\/workbench(?:\/.*)?$/],
     },
   },
 }));

@@ -30,6 +30,9 @@
   "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
   "references": [
     {
+      "path": "../workbench/tsconfig.lib.json"
+    },
+    {
       "path": "../ui/tsconfig.lib.json"
     }
   ]

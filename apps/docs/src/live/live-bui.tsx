@@ -2,7 +2,8 @@
    (project/beautiful.jsx), rebuilt on the @touchkit/beautiful public API. */
 import {
   ApprovalCard, CodeBlockStream, ContextCards, DiffTable, FilterTable, FineTuneCard, InsightCards,
-  RecommendationCard, RecordsTable, SearchPalette, SelectionActions, StreamingText, TaskRows, ToolChips,
+  MarkdownStreamDemo,
+  RecommendationCard, RecordsTable, SearchPalette, SelectionActions, TaskRows, ToolChips,
   // pre-composed catalog demos (prototype-exact demo data)
   ThinkingDemo, SidebarDemo, ToastDemo, PlanReviewDemo, MemoryPillsDemo, AgentBoardDemo, CommandMenuDemo,
   PopoverDropdownDemo, CiteDemo, SkeletonDemo, LoadingStateDemo, DatePickerDemo, ComboboxDemo,
@@ -22,8 +23,9 @@ export const LIVE_BUI: Record<string, LiveSpec> = {
   buiThinking: { title: 'Thinking', theme: 'wb', h: 340,
     code: 'import { Thinking } from "./beautiful.tsx"\n\nexport default function App() {\n  return (\n    <Thinking defaultOpen>\n      <Thinking.Trigger>Thinking</Thinking.Trigger>\n      <Thinking.Content>\n        <Thinking.Tabs>\n          <Thinking.Tab id="steps">Steps</Thinking.Tab>\n          <Thinking.Tab id="search">Search</Thinking.Tab>\n          <Thinking.Tab id="coding">Coding</Thinking.Tab>\n        </Thinking.Tabs>\n        <Thinking.Panel id="steps">\n          <Thinking.Step done>Pull supplier lead times</Thinking.Step>\n          <Thinking.Step>Draft the reorder plan</Thinking.Step>\n        </Thinking.Panel>\n        <Thinking.Panel id="search">\n          <Thinking.Search site="scoopdata.io">seasonal cone demand</Thinking.Search>\n        </Thinking.Panel>\n        <Thinking.Panel id="coding">\n          <Thinking.Code>{"const risk = score(skus)"}</Thinking.Code>\n        </Thinking.Panel>\n      </Thinking.Content>\n    </Thinking>\n  )\n}',
     Render: () => wrap(520, <ThinkingDemo />) },
-  buiStreaming: { title: 'StreamingText', theme: 'wb', h: 360, code: imp('StreamingText'),
-    Render: () => wrap(520, <StreamingText />) },
+  buiStreaming: { title: 'MarkdownStream', theme: 'wb', h: 420,
+    code: 'import { MarkdownView } from "@touchkit/workbench"\n\nconst MD = `Pistachio is up 18% quarter over quarter [^1],\nsharpest on weekend afternoons [^2].\nAsk @brett about the #seasonal push.\n\n[^1]: https://scoopdata.io/q3 "ScoopData Q3"\n[^2]: https://trends.google.com/ice-cream`\n\nexport default function App() {\n  // stream MD word-by-word into MarkdownView; docstream renders\n  // superscript citations, @/# chips, and the sources row\n  return <MarkdownView markdown={MD} streaming/>\n}',
+    Render: () => wrap(520, <MarkdownStreamDemo />) },
   buiApproval: { title: 'ApprovalCard', theme: 'wb', h: 290,
     code: 'import { ApprovalCard } from "./beautiful.tsx"\n\nexport default function App() {\n  return <ApprovalCard\n    question="How many flavors should we launch?"\n    options={["Three (core line)", "Five (full case)", "Just one hero"]}\n    onPick={console.log}/>\n}',
     Render: () => wrap(420, <ApprovalCard question="How many flavors should we launch?" options={['Three (core line)', 'Five (full case)', 'Just one hero']} />) },

@@ -19,7 +19,7 @@ import {
 } from '../lib/base';
 import { LoadingState, type LoadingStateVariant } from '../lib/loading-state';
 import { Thinking } from '../lib/thinking';
-import { StreamingText } from '../lib/streaming-text';
+import { MarkdownStreamDemo } from './markdown-stream';
 import { ApprovalCard } from '../lib/approval-card';
 import { ToolChips } from '../lib/tool-chips';
 import { TaskRows } from '../lib/task-rows';
@@ -639,8 +639,8 @@ export function BeautifulCatalog({ style, className }: { style?: CSSProperties; 
       <Section title="Thinking">
         <ThinkingDemo />
       </Section>
-      <Section title="StreamingText">
-        <StreamingText />
+      <Section title="MarkdownStream">
+        <MarkdownStreamDemo />
       </Section>
       <Section title="ApprovalCard">
         <ApprovalCard />
