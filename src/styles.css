@@ -996,6 +996,12 @@
   color: var(--gb-accent-foreground);
 }
 
+.docs-cite-wrap {
+  position: relative;
+  display: inline-block;
+  vertical-align: super;
+}
+
 .docs-cite {
   display: inline-block;
   padding: 1px 5px;
@@ -1005,13 +1011,128 @@
   font-size: 10px;
   font-weight: 700;
   line-height: 1.4;
-  vertical-align: super;
+  vertical-align: baseline;
   text-decoration: none !important;
   cursor: pointer;
 }
 
 .docs-cite:hover {
   background: rgba(59, 130, 246, 0.22);
+}
+
+.docs-cite:focus-visible {
+  outline: 2px solid var(--gb-info);
+  outline-offset: 2px;
+}
+
+.docs-cite-card {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 50;
+  display: block;
+  width: min(320px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  color: var(--gb-panel-foreground);
+  background: var(--gb-panel);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -4px);
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms;
+  pointer-events: none;
+  text-align: left;
+  white-space: normal;
+}
+
+.docs-cite-wrap:hover .docs-cite-card,
+.docs-cite-wrap:focus-within .docs-cite-card {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+.docs-cite-card-image-wrap {
+  display: block;
+  aspect-ratio: 1.91 / 1;
+  overflow: hidden;
+  border-bottom: 1px solid var(--gb-border);
+  background: var(--gb-muted);
+}
+
+.docs-cite-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.docs-cite-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 13px;
+}
+
+.docs-cite-card-source,
+.docs-cite-card-url {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--gb-muted-foreground);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.docs-cite-card-favicon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+}
+
+.docs-cite-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--gb-panel-foreground);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.docs-cite-card-description {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--gb-muted-foreground);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.docs-cite-card-url {
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docs-cite-card-url svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-cite-card {
+    transition: none;
+  }
 }
 
 .docs-sources {

@@ -3,7 +3,7 @@ export type { PlaygroundStreamdownProps as GitbookStreamdownProps } from "./play
 export { DocsRenderer, MarkdownContent } from "./docs/DocsRenderer"
 export type { LivePreviewProps, LivePreviewRenderer, SourceReferenceRenderer } from "./docs/DocsRenderer"
 export { CitationSources, DocstreamRefContext, InlineReference } from "./docs/reference"
-export type { DocstreamRefContextValue } from "./docs/reference"
+export type { CitationPreview, CitationPreviewResolver, DocstreamRefContextValue } from "./docs/reference"
 export { ReplayEmbed, ReplayPreview } from "./replay"
 export type {
   ReplayEventsSource,

@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { GitbookStreamdown, MarkdownContent, SourcePreview, createViteSourceClient, type SourceReferenceRenderer } from '@brett_lamy/docstream';
+import { DocstreamRefContext, GitbookStreamdown, MarkdownContent, SourcePreview, createViteSourceClient, type CitationPreviewResolver, type SourceReferenceRenderer } from '@brett_lamy/docstream';
 import '@brett_lamy/docstream/styles.css';
 import { PAGES } from './content';
 import { liveRenderer } from './live-renderer';
@@ -9,6 +9,25 @@ import { ReactDemoLive } from './react-demo-live';
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif";
 const sourceClient = createViteSourceClient();
 const sourceRenderer: SourceReferenceRenderer = (reference) => <SourcePreview reference={reference} client={sourceClient} />;
+const citationPreviews: CitationPreviewResolver = (citation) => {
+  if (citation.url?.includes('trends.google.com')) {
+    return {
+      title: 'Explore what the world is searching',
+      description: 'Compare search interest for ice cream flavors across regions and time ranges with Google Trends.',
+      siteName: 'Google Trends',
+      image: 'https://ssl.gstatic.com/trends_nrtr/4116_RC01/embed_loader.gif',
+    };
+  }
+  if (citation.url?.includes('scoopdata.io')) {
+    return {
+      title: citation.label ?? 'ScoopData Q3 report',
+      description: 'Quarterly category performance, seasonal shifts, and the signals behind this period’s strongest movers.',
+      siteName: 'ScoopData',
+      image: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=640&q=80',
+    };
+  }
+  return null;
+};
 
 const STREAM_SOURCE = `## Live stream demo
 
@@ -89,8 +108,10 @@ function App() {
       </nav>
       <main style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 760, padding: '28px 32px 80px', boxSizing: 'border-box' }}>
-          <MarkdownContent markdown={cur.markdown} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
-          {cur.id === 'streaming' ? <StreamDemo /> : null}
+          <DocstreamRefContext.Provider value={{ resolveCitationPreview: citationPreviews }}>
+            <MarkdownContent markdown={cur.markdown} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+            {cur.id === 'streaming' ? <StreamDemo /> : null}
+          </DocstreamRefContext.Provider>
           {cur.id === 'live-demos' ? <ReactDemoLive /> : null}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 48, borderTop: '1px solid #e6e6ee', paddingTop: 16 }}>
             {(() => {

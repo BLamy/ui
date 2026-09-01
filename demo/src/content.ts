@@ -699,6 +699,16 @@ import { DocstreamRefContext, GitbookStreamdown } from "@brett_lamy/docstream"
 </DocstreamRefContext.Provider>
 \`\`\`
 
+Provide \`resolveCitationPreview\` to add Open Graph-style hovercards. It runs lazily the first time a citation is hovered or keyboard-focused, and results are cached by URL. Resolve metadata through your own server or build-time index so cross-origin pages do not depend on browser CORS:
+
+\`\`\`tsx
+<DocstreamRefContext.Provider value={{
+  resolveCitationPreview: async (citation) => fetch(\`/api/link-preview?url=\${encodeURIComponent(citation.url!)}\`).then(r => r.json())
+}}>
+  <GitbookStreamdown markdown={md} />
+</DocstreamRefContext.Provider>
+\`\`\`
+
 ## Citations
 
 Cite sources GitBook-footnote style: a marker like [^1] in the prose, and a definition line anywhere in the document. Markers render as superscript badges linking to the source [^1], and every defined source appears in the chip row at the bottom of the document [^2].
