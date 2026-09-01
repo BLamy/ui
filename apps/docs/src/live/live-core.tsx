@@ -69,7 +69,7 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
           <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 12 }}>
             <ArtifactChatContainer breakpoint={760} working={working} workingLabel="Working on the artifact…" onAdd={() => setWorking(false)}>
               <ArtifactChatContainer.Chat>{transcript}</ArtifactChatContainer.Chat>
-              <ArtifactChatContainer.Composer><div style={{ padding: 10, background: '#131318' }}><ChatComposer tint="#0A84FF" placeholder="Ask about this artifact" onSend={() => setWorking(true)} /></div></ArtifactChatContainer.Composer>
+              <ArtifactChatContainer.Composer><div style={{ padding: 8, background: 'transparent' }}><ChatComposer tint="#0A84FF" placeholder="Ask about this artifact" onSend={() => setWorking(true)} /></div></ArtifactChatContainer.Composer>
               <ArtifactChatContainer.Content>{artifact}</ArtifactChatContainer.Content>
             </ArtifactChatContainer>
           </div>

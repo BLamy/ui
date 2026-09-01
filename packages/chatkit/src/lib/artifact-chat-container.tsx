@@ -203,6 +203,7 @@ export function ArtifactChatContainer({
               <button
                 type="button"
                 className="ck-artifact-chat__handle"
+                data-open={chatOpen || undefined}
                 aria-label={chatOpen ? 'Collapse full chat' : 'Open full chat'}
                 aria-expanded={chatOpen}
                 onClick={toggleChat}
