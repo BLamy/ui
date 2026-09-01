@@ -2,9 +2,12 @@
   "name": "docstream-editor-demo",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "vite", "build": "vite build" },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
   "dependencies": {
-    "@brett_lamy/docstream": "^0.3.3",
+    "@brett_lamy/docstream": "^0.4.0",
     "@tiptap/core": "^3.26.1",
     "@tiptap/extension-code-block-lowlight": "^3.26.1",
     "@tiptap/extension-list": "^3.26.1",
