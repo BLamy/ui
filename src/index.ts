@@ -2,6 +2,8 @@ export { PlaygroundStreamdown as GitbookStreamdown } from "./playground/Playgrou
 export type { PlaygroundStreamdownProps as GitbookStreamdownProps } from "./playground/PlaygroundStreamdown"
 export { DocsRenderer, MarkdownContent } from "./docs/DocsRenderer"
 export type { LivePreviewProps, LivePreviewRenderer, SourceReferenceRenderer } from "./docs/DocsRenderer"
+export { CitationSources, DocstreamRefContext, InlineReference } from "./docs/reference"
+export type { DocstreamRefContextValue } from "./docs/reference"
 export { ReplayEmbed, ReplayPreview } from "./replay"
 export type {
   ReplayEventsSource,
@@ -42,9 +44,16 @@ export type {
   SourceProvenance,
   SourceReferenceClient,
 } from "./source"
-export { parseMarkdown, parseBlocks } from "./gitbook/parse"
+export { parseMarkdown, parseBlocks, trimPartialInlineToken } from "./gitbook/parse"
 export { serializeBlocks, serializeMarkdown } from "./gitbook/serialize"
-export { parseInline, plainText, refDefinitions, serializeInline } from "./gitbook/inline"
+export {
+  footnoteDefinitions,
+  parseInline,
+  plainText,
+  refDefinitions,
+  serializeInline,
+  serializeReference,
+} from "./gitbook/inline"
 export { Streamdown } from "streamdown"
 export type { StreamdownProps } from "streamdown"
 export type * from "./gitbook/ast"

@@ -27,7 +27,13 @@ for await (const c of chunks) append(c)
 - lists build up item by item
 - tables and math work the same way
 
-Done — the stream restarts in a few seconds.`;
+Pistachio is your strongest seasonal climber — up 18% quarter over quarter [^1], with the sharpest lift on weekend afternoons [^2]. Ask @brett about the #seasonal push. Rocky Road keeps sliding [^3].
+
+Done — the stream restarts in a few seconds.
+
+[^1]: https://scoopdata.io/q3 "ScoopData Q3 report"
+[^2]: https://trends.google.com/ice-cream "Google Trends"
+[^3]: https://marketbasket.io/flavors "Market Basket"`;
 
 function StreamDemo() {
   const [n, setN] = useState(0);

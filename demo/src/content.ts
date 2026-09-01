@@ -675,6 +675,54 @@ $$
 `,
   },
   {
+    id: 'references',
+    title: 'References & citations',
+    markdown: `# References & citations
+
+Inline reference chips and footnote-style citations turn plain streamed text into a sourced answer. Everything on this page is rendered live from this page's own markdown.
+
+## Mentions and tags
+
+Write \\@name or \\#tag mid-sentence and docstream renders a clickable chip — ask @brett to review the #seasonal numbers with @dana.
+
+- Chips are recognized only at a word boundary, so brett@replay.io and C# stay plain text.
+- Escape with a backslash (\\\\@name) to keep a literal sigil.
+- Ids allow letters, digits, dots, dashes and underscores: @flavor-ops works.
+
+Wrap your app in \`DocstreamRefContext.Provider\` to handle clicks or swap in your own renderer:
+
+\`\`\`tsx
+import { DocstreamRefContext, GitbookStreamdown } from "@brett_lamy/docstream"
+
+<DocstreamRefContext.Provider value={{ onReferenceClick: (ref) => openPanel(ref.kind, ref.id) }}>
+  <GitbookStreamdown markdown={md} />
+</DocstreamRefContext.Provider>
+\`\`\`
+
+## Citations
+
+Cite sources GitBook-footnote style: a marker like [^1] in the prose, and a definition line anywhere in the document. Markers render as superscript badges linking to the source [^1], and every defined source appears in the chip row at the bottom of the document [^2].
+
+\`\`\`markdown
+Pistachio is up 18% quarter over quarter [^1].
+
+[^1]: https://scoopdata.io/q3 "ScoopData Q3 report"
+[^2]: https://trends.google.com/ice-cream
+\`\`\`
+
+{% hint style="info" %}
+Definitions can stream in after the markers — a marker without a definition renders as a plain badge and picks up its link once the definition arrives.
+{% endhint %}
+
+## Streaming behavior
+
+While \`isStreaming\` is set, a half-arrived token like \`[^\` or \`@bre\` at the end of the buffer is held back (\`trimPartialInlineToken\`) so chips never flash as plain text mid-stream. See the Streaming page for it live.
+
+[^1]: https://scoopdata.io/q3 "ScoopData Q3 report"
+[^2]: https://trends.google.com/ice-cream "Google Trends"
+`,
+  },
+  {
     id: 'streaming',
     title: 'Streaming',
     markdown: `# Streaming

@@ -6,4 +6,6 @@ export type { LivePreviewProps, LivePreviewRenderer } from '../../src/docs/DocsR
 export type { SourceReferenceRenderer } from '../../src/docs/DocsRenderer';
 export { SourcePreview, createViteSourceClient } from '../../src/source';
 export { VideoEmbed } from '../../src/video';
-export { parseMarkdown } from '../../src/gitbook/parse';
+export { parseMarkdown, trimPartialInlineToken } from '../../src/gitbook/parse';
+export { CitationSources, DocstreamRefContext, InlineReference } from '../../src/docs/reference';
+export type { DocstreamRefContextValue } from '../../src/docs/reference';

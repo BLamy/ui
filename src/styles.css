@@ -953,3 +953,94 @@
   outline: 2px solid var(--docs-react-demo-primary);
   outline-offset: 2px;
 }
+
+/* ---- Inline reference chips (@mention, #tag) and citations ---- */
+
+.docs-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1.5;
+  vertical-align: baseline;
+  cursor: pointer;
+}
+
+.docs-ref-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.docs-ref-mention {
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--gb-info);
+}
+
+.docs-ref-mention:hover {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+.docs-ref-tag {
+  border: 1px solid var(--gb-border);
+  background: var(--gb-muted);
+  color: var(--gb-muted-foreground);
+}
+
+.docs-ref-tag:hover {
+  background: var(--gb-accent);
+  color: var(--gb-accent-foreground);
+}
+
+.docs-cite {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(59, 130, 246, 0.14);
+  color: var(--gb-info) !important;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  vertical-align: super;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+
+.docs-cite:hover {
+  background: rgba(59, 130, 246, 0.22);
+}
+
+.docs-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.docs-source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid var(--gb-border);
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--gb-muted-foreground) !important;
+  text-decoration: none !important;
+}
+
+.docs-source-chip:hover {
+  background: var(--gb-accent);
+  color: var(--gb-accent-foreground) !important;
+}
+
+.docs-source-favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}

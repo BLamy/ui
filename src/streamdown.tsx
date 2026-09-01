@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { DocsRenderer } from "./docs/DocsRenderer"
-import { parseMarkdown } from "./gitbook/parse"
+import { parseMarkdown, trimPartialInlineToken } from "./gitbook/parse"
 
 export interface GitbookStreamdownProps {
   children?: string
@@ -18,7 +18,10 @@ export function GitbookStreamdown({
   markdown,
 }: GitbookStreamdownProps) {
   const content = markdown ?? children ?? ""
-  const gitbookDoc = useMemo(() => parseMarkdown(content), [content])
+  const gitbookDoc = useMemo(
+    () => parseMarkdown(isStreaming ? trimPartialInlineToken(content) : content),
+    [content, isStreaming]
+  )
 
   return (
     <div

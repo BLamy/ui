@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 
 import { DocsRenderer, type LivePreviewRenderer } from "../docs/DocsRenderer"
-import { parseMarkdown } from "../gitbook/parse"
+import { parseMarkdown, trimPartialInlineToken } from "../gitbook/parse"
 import { ReactCodePreview } from "./ReactCodePreview"
 
 export interface PlaygroundStreamdownProps {
@@ -25,7 +25,10 @@ export function PlaygroundStreamdown({
   markdown,
 }: PlaygroundStreamdownProps) {
   const content = markdown ?? children ?? ""
-  const doc = useMemo(() => parseMarkdown(content), [content])
+  const doc = useMemo(
+    () => parseMarkdown(isStreaming ? trimPartialInlineToken(content) : content),
+    [content, isStreaming]
+  )
   const liveRenderer: LivePreviewRenderer = ({ files, entry, title }) => (
     <ReactCodePreview files={files} entry={entry} title={title} />
   )

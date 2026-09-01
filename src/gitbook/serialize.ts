@@ -1,8 +1,15 @@
 import type { Block, DocumentNode, Inline, ListItemNode } from "./ast"
-import { serializeInline } from "./inline"
+import { serializeInline, serializeReference } from "./inline"
 
 export function serializeMarkdown(doc: DocumentNode): string {
-  return serializeBlocks(doc.children).trimEnd() + "\n"
+  let out = serializeBlocks(doc.children).trimEnd()
+  if (doc.citations?.length) {
+    const defs = doc.citations
+      .map((c) => `[^${c.id}]: ${c.url}${c.label ? ` "${c.label}"` : ""}`)
+      .join("\n")
+    out = out ? `${out}\n\n${defs}` : defs
+  }
+  return out + "\n"
 }
 
 export function serializeBlocks(blocks: Block[]): string {
@@ -156,6 +163,9 @@ function inlineToHtml(nodes: Inline[]): string {
         const img = `<img src="${n.src}"${n.alt ? ` alt="${n.alt}"` : ""}>`
         return n.link ? `<a href="${n.link}">${img}</a>` : img
       }
+      // HTML card tables round-trip through htmlToInlineMd, which strips
+      // tags — plain markers are the only representation that survives.
+      if (n.type === "reference") return serializeReference(n)
       let s = n.text
       if (n.code) s = `<code>${s}</code>`
       if (n.bold) s = `<strong>${s}</strong>`

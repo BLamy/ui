@@ -16,6 +16,7 @@ import { VideoEmbed } from "../video"
 import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
 import { HighlightedCode } from "./HighlightedCode"
+import { CitationSources, InlineReference } from "./reference"
 
 export interface LivePreviewProps {
   files: Record<string, string>
@@ -31,6 +32,7 @@ function InlineText({ nodes }: { nodes: Inline[] }) {
   return (
     <>
       {nodes.map((n, i) => {
+        if (n.type === "reference") return <InlineReference key={i} node={n} />
         if (n.type === "image") {
           const img = (
             <img
@@ -359,9 +361,11 @@ export function MarkdownContent({
   sourceRenderer,
   className,
 }: { markdown: string; className?: string } & Renderers) {
+  const doc = parseMarkdown(markdown)
   return (
     <div data-docstream="" className={className}>
-      <Blocks blocks={parseMarkdown(markdown).children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+      <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+      <CitationSources citations={doc.citations} />
     </div>
   )
 }
@@ -370,6 +374,7 @@ export function DocsRenderer({ doc, liveRenderer, sourceRenderer }: { doc: Docum
   return (
     <article className="docs-article">
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+      <CitationSources citations={doc.citations} />
     </article>
   )
 }

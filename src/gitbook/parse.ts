@@ -9,7 +9,7 @@ import type {
   TabNode,
   UpdateNode,
 } from "./ast"
-import { parseInline, plainText, refDefinitions } from "./inline"
+import { footnoteDefinitions, parseInline, plainText, refDefinitions } from "./inline"
 
 // Minimal HTML-inline → markdown-inline bridge for HTML table cells.
 function htmlToInlineMd(html: string): string {
@@ -119,13 +119,46 @@ const HINT_STYLES: HintStyle[] = ["info", "success", "warning", "danger"]
 export function parseMarkdown(src: string): DocumentNode {
   const lines = src.split(/\r?\n/)
   refDefinitions.clear()
+  footnoteDefinitions.clear()
   const content: string[] = []
+  let inFence = false
   for (const line of lines) {
-    const def = line.match(/^\[([^\]]+)\]:\s*(\S+)\s*$/)
-    if (def) refDefinitions.set(def[1].toLowerCase(), def[2])
-    else content.push(line)
+    // Definition lines inside code fences are content, not definitions.
+    if (/^\s*(?:```|~~~)/.test(line)) inFence = !inFence
+    if (!inFence) {
+      // Footnote citation definitions first: [^id]: url "Optional Label"
+      const foot = line.match(/^\[\^([^\]\s]+)\]:\s*(\S+)(?:\s+"([^"]*)")?\s*$/)
+      if (foot) {
+        footnoteDefinitions.set(foot[1], { url: foot[2], ...(foot[3] ? { label: foot[3] } : {}) })
+        continue
+      }
+      const def = line.match(/^\[([^\]]+)\]:\s*(\S+)\s*$/)
+      // Keys starting with ^ are reserved for footnotes and must never
+      // shadow reference-style link definitions.
+      if (def && !def[1].startsWith("^")) {
+        refDefinitions.set(def[1].toLowerCase(), def[2])
+        continue
+      }
+    }
+    content.push(line)
   }
-  return { type: "doc", children: parseBlocks(content) }
+  const doc: DocumentNode = { type: "doc", children: parseBlocks(content) }
+  if (footnoteDefinitions.size) {
+    doc.citations = [...footnoteDefinitions.entries()].map(([id, d]) => ({ id, ...d }))
+  }
+  return doc
+}
+
+// Strips an in-progress inline token (`[^1`, `@bre`, a lone `#`, a trailing
+// `\`) from the end of a partially streamed document so chips don't flash as
+// plain text mid-stream. No-op inside an unterminated code fence.
+export function trimPartialInlineToken(md: string): string {
+  const fences = md.match(/^\s*(?:```|~~~)/gm)
+  if (fences && fences.length % 2 === 1) return md
+  return md
+    .replace(/\[\^[^\]]*$/, "")
+    .replace(/(^|[\s([{])[@#][\w.-]*$/, "$1")
+    .replace(/\\$/, "")
 }
 
 export function parseBlocks(lines: string[]): Block[] {

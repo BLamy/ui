@@ -1,10 +1,21 @@
-import type { Inline, InlineImageNode, TextNode } from "./ast"
+import type { Inline, InlineImageNode, ReferenceNode, TextNode } from "./ast"
 
 type Marks = Partial<Omit<TextNode, "type" | "text">>
 
 // Reference-style link definitions ([ref]: url), populated by parseMarkdown
 // and consumed here for [text][ref] / [text][] forms.
 export const refDefinitions = new Map<string, string>()
+
+// Footnote citation definitions ([^id]: url "Label"), populated by
+// parseMarkdown and consumed here to resolve [^id] markers.
+export const footnoteDefinitions = new Map<string, { url: string; label?: string }>()
+
+// @mention / #tag body: letter/underscore start, then word chars, dots, dashes.
+const REFERENCE_BODY_RE = /^[@#]([A-Za-z_][\w.-]*)/
+// Chips are only recognized at start-of-input or after whitespace/open brackets,
+// so brett@replay.io and C# stay plain text.
+const isReferenceBoundary = (prev: string | undefined) =>
+  prev === undefined || /[\s([{]/.test(prev)
 
 function imgAttrs(attrStr: string): Omit<InlineImageNode, "type" | "link"> {
   const attr = (name: string) => attrStr.match(new RegExp(`${name}="([^"]*)"`, "i"))?.[1]
@@ -110,6 +121,30 @@ export function parseInline(src: string, marks: Marks = {}): Inline[] {
     }
     if (matched) continue
 
+    // [^id] — footnote citation marker (must precede [text](url) / [text][ref])
+    const cite = rest.match(/^\[\^([^\]\s]+)\]/)
+    if (cite) {
+      flush()
+      const def = footnoteDefinitions.get(cite[1])
+      out.push({ type: "reference", kind: "citation", id: cite[1], ...def })
+      i += cite[0].length
+      continue
+    }
+
+    // @mention / #tag chips, only at a word boundary
+    if ((rest[0] === "@" || rest[0] === "#") && isReferenceBoundary(src[i - 1])) {
+      const m = rest.match(REFERENCE_BODY_RE)
+      if (m) {
+        const id = m[1].replace(/[.-]+$/, "")
+        if (id) {
+          flush()
+          out.push({ type: "reference", kind: rest[0] === "@" ? "mention" : "tag", id })
+          i += 1 + id.length
+          continue
+        }
+      }
+    }
+
     // [text](url)
     if (rest[0] === "[") {
       const m = rest.match(/^\[([^\]]*)\]\(([^)\s]+)\)/)
@@ -162,7 +197,18 @@ export function parseInline(src: string, marks: Marks = {}): Inline[] {
   return out
 }
 
-const escapeText = (t: string) => t.replace(/([*_~`[\]\\])/g, "\\$1")
+const escapeText = (t: string) =>
+  t
+    .replace(/([*_~`[\]\\])/g, "\\$1")
+    // Escape @/# only at a chip boundary so emails/C# survive untouched.
+    // Note: node-local — a boundary formed across adjacent inline nodes
+    // (previous node ending in whitespace) is not caught; rare, accepted.
+    .replace(/(^|[\s([{])([@#])(?=[A-Za-z_])/g, "$1\\$2")
+
+export function serializeReference(n: ReferenceNode): string {
+  if (n.kind === "citation") return `[^${n.id}]`
+  return `${n.kind === "mention" ? "@" : "#"}${n.id}`
+}
 
 function serializeImage(n: InlineImageNode): string {
   const attrs = [
@@ -182,6 +228,7 @@ export function serializeInline(nodes: Inline[]): string {
   return nodes
     .map((n) => {
       if (n.type === "image") return serializeImage(n)
+      if (n.type === "reference") return serializeReference(n)
       // bare autolink: text identical to the URL, no other marks
       if (n.link && n.text === n.link && !n.bold && !n.italic && !n.strike && !n.code) {
         return n.link
@@ -198,5 +245,14 @@ export function serializeInline(nodes: Inline[]): string {
 }
 
 export function plainText(nodes: Inline[]): string {
-  return nodes.map((n) => (n.type === "text" ? n.text : (n.alt ?? ""))).join("")
+  return nodes
+    .map((n) => {
+      if (n.type === "text") return n.text
+      if (n.type === "reference") {
+        // Citation superscripts are visual noise in plain text (titles etc.).
+        return n.kind === "citation" ? "" : serializeReference(n)
+      }
+      return n.alt ?? ""
+    })
+    .join("")
 }

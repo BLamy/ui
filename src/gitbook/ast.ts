@@ -23,7 +23,29 @@ export interface InlineImageNode {
   link?: string
 }
 
-export type Inline = TextNode | InlineImageNode
+export type ReferenceKind = "mention" | "tag" | "citation"
+
+/**
+ * Inline reference chip: `@mention`, `#tag`, or footnote-style citation `[^id]`.
+ * `id` carries no sigil. Citations resolve `url`/`label` from their
+ * `[^id]: url "Label"` definition at parse time when one exists.
+ */
+export interface ReferenceNode {
+  type: "reference"
+  kind: ReferenceKind
+  id: string
+  url?: string
+  label?: string
+}
+
+/** A footnote citation definition (`[^id]: url "Label"`), collected doc-level. */
+export interface CitationDef {
+  id: string
+  url: string
+  label?: string
+}
+
+export type Inline = TextNode | InlineImageNode | ReferenceNode
 
 export interface ParagraphNode {
   type: "paragraph"
@@ -214,6 +236,8 @@ export type Block =
 export interface DocumentNode {
   type: "doc"
   children: Block[]
+  /** Footnote citation definitions, in definition order. */
+  citations?: CitationDef[]
 }
 
 export const text = (t: string, marks: Partial<Omit<TextNode, "type" | "text">> = {}): TextNode => ({
