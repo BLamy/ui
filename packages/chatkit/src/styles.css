@@ -28,13 +28,13 @@
    Everything that changes with the drag is resolved into Safari-safe custom properties:
    collapsed it is light glass at a small blur radius, so the artifact stays
    legible through it; grown it deepens and blurs harder so the transcript reads. */
-.ck-artifact-chat__overlay{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;left:50%;width:min(calc(100% - 48px),620px);bottom:max(20px,env(safe-area-inset-bottom));z-index:42;min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,var(--ck-artifact-border-alpha,.1));border-radius:28px;background:rgba(18,18,22,var(--ck-artifact-bg-alpha,.6));box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 2px 10px rgba(0,0,0,.16),0 var(--ck-artifact-shadow-y,14px) var(--ck-artifact-shadow-blur,34px) -12px rgba(0,0,0,var(--ck-artifact-shadow-alpha,.32));backdrop-filter:blur(var(--ck-artifact-blur,10px)) saturate(1.5);-webkit-backdrop-filter:blur(var(--ck-artifact-blur,10px)) saturate(1.5);transform:translateX(-50%);transition:transform .34s cubic-bezier(.32,.72,0,1),opacity .24s ease,background .34s ease,border-color .34s ease,box-shadow .34s ease,backdrop-filter .34s ease}
+.ck-artifact-chat__overlay{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;left:50%;width:calc(100% - (var(--ck-artifact-inline-gutter,20px) * 2));bottom:var(--ck-artifact-bottom-gutter,20px);z-index:42;min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,var(--ck-artifact-border-alpha,.16));border-radius:var(--ck-artifact-radius,28px);background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.025) 34%,rgba(255,255,255,.045)),rgba(18,18,22,var(--ck-artifact-bg-alpha,.38));box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -1px 0 rgba(255,255,255,.035),0 2px 10px rgba(0,0,0,.16),0 var(--ck-artifact-shadow-y,14px) var(--ck-artifact-shadow-blur,34px) -12px rgba(0,0,0,var(--ck-artifact-shadow-alpha,.32));backdrop-filter:blur(var(--ck-artifact-blur,18px)) saturate(1.8) contrast(1.04);-webkit-backdrop-filter:blur(var(--ck-artifact-blur,18px)) saturate(1.8) contrast(1.04);transform:translateX(-50%);transition:width .44s cubic-bezier(.32,.72,0,1),bottom .44s cubic-bezier(.32,.72,0,1),border-radius .44s cubic-bezier(.32,.72,0,1),transform .34s cubic-bezier(.32,.72,0,1),opacity .24s ease,background .34s ease,border-color .34s ease,box-shadow .34s ease,backdrop-filter .34s ease}
 .ck-artifact-chat__overlay[data-hidden]{transform:translate(-50%,calc(100% + 44px));opacity:0;pointer-events:none}
 .ck-artifact-chat__overlay[data-dragging]{transition:none}
 
 /* The cap is the top row of that surface rather than a tab stuck onto it. */
 .ck-artifact-chat__cap{box-sizing:border-box;flex-shrink:0;width:100%;height:26px;display:grid;place-items:center;padding:0;border:0;background:none;color:inherit;cursor:grab;touch-action:none}
-.ck-artifact-chat__overlay[data-expanded] .ck-artifact-chat__cap{cursor:grabbing}
+.ck-artifact-chat__overlay[data-dragging] .ck-artifact-chat__cap{cursor:grabbing}
 .ck-artifact-chat__grip{display:block;width:32px;height:4px;border-radius:999px;background:var(--tk-label3,rgba(235,235,245,.32));transition:width .24s ease,background .24s ease}
 .ck-artifact-chat__cap:hover .ck-artifact-chat__grip,.ck-artifact-chat__cap:focus-visible .ck-artifact-chat__grip,.ck-artifact-chat__cap[data-open] .ck-artifact-chat__grip{width:40px;background:var(--tk-label2,rgba(235,235,245,.62))}
 /* Inset, because the surface clips its own overflow. */
@@ -47,7 +47,7 @@
 .ck-artifact-chat__overlay[data-expanded] .ck-artifact-chat__reveal{visibility:visible;transition:height .44s cubic-bezier(.32,.72,0,1),visibility 0s}
 .ck-artifact-chat__overlay[data-dragging] .ck-artifact-chat__reveal{transition:visibility 0s}
 .ck-artifact-chat__reveal .ck-artifact-chat__transcript{position:absolute;left:0;right:0;bottom:0;justify-content:flex-end}
-.ck-artifact-chat__reveal .ck-artifact-chat__transcript>*{flex:0 1 auto!important;background:transparent!important}
+.ck-artifact-chat__reveal .ck-artifact-chat__transcript>*{width:100%;min-height:100%;background:transparent!important}
 
 .ck-artifact-chat__foot{flex-shrink:0;min-width:0;border-top:1px solid rgba(255,255,255,var(--ck-artifact-divider-alpha,0))}
 .ck-artifact-chat[data-layout="compact"] .ck-artifact-chat__composer [data-slot="composer"]{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.09)!important;box-shadow:none!important}

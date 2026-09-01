@@ -78,7 +78,7 @@ function Demo({ width, height, working = false, defaultChatOpen = false }: DemoP
         <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
         <ArtifactChatContainer.Composer>
           <div style={{ padding: 8, background: 'transparent' }}>
-            <Composer tint="#0A84FF" placeholder="Ask about this artifact" onSend={() => setBusy(true)} />
+            <Composer tint="#0A84FF" placeholder="Do anything" onSend={() => setBusy(true)} />
           </div>
         </ArtifactChatContainer.Composer>
         <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
@@ -90,6 +90,13 @@ function Demo({ width, height, working = false, defaultChatOpen = false }: DemoP
 const meta: Meta<DemoProps> = {
   title: 'Templates/ArtifactChatContainer',
   render: (args) => <Demo {...args} />,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Uses the real ChatKit Composer. In compact mode, drag the cap upward to continuously turn the floating glass composer into the full-page chat, then drag it down to collapse it.',
+      },
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<DemoProps>;

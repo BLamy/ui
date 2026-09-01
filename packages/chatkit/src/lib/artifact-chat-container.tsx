@@ -49,10 +49,10 @@ function slot(name: string): SlotComponent {
 
 /** Height of the grabber cap row at the top of the floating overlay. */
 const CAP_HEIGHT = 26;
-/** Gutter kept between the fully grown overlay and the top of the container. */
-const TOP_GUTTER = 44;
-/** Overlay bottom inset plus a little slack, so the grown surface never touches the edge. */
-const BOTTOM_GUTTER = 32;
+/** Horizontal and bottom inset of the collapsed floating composer. */
+const FLOATING_GUTTER = 20;
+/** The overlay's top and bottom borders are outside its flex children. */
+const OVERLAY_BORDER_HEIGHT = 2;
 /** Pointer travel below which a cap drag counts as a tap. */
 const TAP_SLOP = 4;
 
@@ -141,8 +141,9 @@ export function ArtifactChatContainer({
 
   // The collapsed overlay footprint the artifact scrolls clear of.
   const dockHeight = footHeight + CAP_HEIGHT;
-  // How far the chat surface can grow out of the cap before it hits the top gutter.
-  const maxReveal = Math.max(140, height - dockHeight - TOP_GUTTER - BOTTOM_GUTTER);
+  // At the end of the drag the cap reaches the very top edge and the composer reaches
+  // the bottom edge. The compact glass has literally become the full-page chat.
+  const maxReveal = Math.max(0, height - dockHeight - OVERLAY_BORDER_HEIGHT);
   const reveal = dragReveal ?? (chatOpen ? maxReveal : 0);
   const dragging = dragReveal != null;
   const expanded = reveal > 0;
@@ -245,14 +246,17 @@ export function ArtifactChatContainer({
           '--ck-artifact-chat-width': typeof chatWidth === 'number' ? `${chatWidth}px` : chatWidth,
           '--ck-artifact-dock-height': `${dockHeight}px`,
           '--ck-artifact-reveal': `${reveal}px`,
+          '--ck-artifact-inline-gutter': `${FLOATING_GUTTER * (1 - grown)}px`,
+          '--ck-artifact-bottom-gutter': `${FLOATING_GUTTER * (1 - grown)}px`,
+          '--ck-artifact-radius': `${28 * (1 - grown)}px`,
           // Fades the glass from composer-light to conversation-dark as it grows.
-          '--ck-artifact-scrim-opacity': `${0.36 * grown}`,
-          '--ck-artifact-border-alpha': `${0.1 + 0.05 * grown}`,
-          '--ck-artifact-bg-alpha': `${0.6 + 0.22 * grown}`,
+          '--ck-artifact-scrim-opacity': `${0.24 * grown}`,
+          '--ck-artifact-border-alpha': `${0.16 + 0.04 * grown}`,
+          '--ck-artifact-bg-alpha': `${0.38 + 0.46 * grown}`,
           '--ck-artifact-shadow-y': `${14 + 20 * grown}px`,
           '--ck-artifact-shadow-blur': `${34 + 30 * grown}px`,
           '--ck-artifact-shadow-alpha': `${0.32 + 0.22 * grown}`,
-          '--ck-artifact-blur': `${10 + 22 * grown}px`,
+          '--ck-artifact-blur': `${18 + 18 * grown}px`,
           '--ck-artifact-divider-alpha': `${0.09 * grown}`,
           ...style,
         } as CSSProperties}
