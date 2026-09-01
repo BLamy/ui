@@ -114,7 +114,6 @@ export function ArtifactChatContainer({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultChatOpen);
   const [composing, setComposing] = useState(!working);
   const [minimized, setMinimized] = useState(false);
-  const [settlingClose, setSettlingClose] = useState(false);
   const [contentScrollHidden, setContentScrollHidden] = useState(false);
   /** Live height of the growing chat surface while the cap is being dragged. */
   const [dragReveal, setDragReveal] = useState<number | null>(null);
@@ -256,7 +255,6 @@ export function ArtifactChatContainer({
     setDragReveal(null);
     setDragMinimize(null);
     setMinimized(shouldMinimize);
-    if (!open && !shouldMinimize) setSettlingClose(true);
     if (open && working && !composing) {
       setComposing(true);
       onAdd?.();
@@ -283,7 +281,6 @@ export function ArtifactChatContainer({
     }
     Haptics.selection();
     setMinimized(false);
-    if (chatOpen) setSettlingClose(true);
     if (!chatOpen && working && !composing) {
       setComposing(true);
       onAdd?.();
@@ -364,8 +361,6 @@ export function ArtifactChatContainer({
               data-working={working && !composing ? true : undefined}
               data-minimized={minimized || undefined}
               data-fab-position={fabPosition}
-              data-snapping-closed={settlingClose || undefined}
-              onAnimationEnd={() => setSettlingClose(false)}
             >
               <button
                 type="button"
