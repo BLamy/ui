@@ -2,6 +2,11 @@ import { useMemo } from "react"
 import { DocsRenderer } from "./docs/DocsRenderer"
 import { parseMarkdown, trimPartialInlineToken } from "./gitbook/parse"
 
+// Re-exported so markdown-only consumers of ./streamdown can wire chip
+// click handling without importing the heavy root entry.
+export { CitationSources, DocstreamRefContext, InlineReference } from "./docs/reference"
+export type { DocstreamRefContextValue } from "./docs/reference"
+
 export interface GitbookStreamdownProps {
   children?: string
   className?: string
