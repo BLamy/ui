@@ -6,7 +6,7 @@ import {
   Switch as TKSwitch, TabBar, List as TKList, ListSection as TKSection, ListRow as TKRow,
   type Screen,
 } from '@touchkit/ui';
-import { ArtifactChatContainer, ChatDemo } from '@touchkit/chatkit';
+import { ArtifactChatContainer, ChatDemo, DeliveryTrackingDemo, FloatingSheet, MapChatDemo, ProgressStepper, type FloatingSheetAppearance } from '@touchkit/chatkit';
 import {
   Composer, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
@@ -81,6 +81,60 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
         </ScaledShell>
         <div style={{ textAlign: 'center', marginTop: 8 }}><button type="button" onClick={() => setWorking((value) => !value)} style={{ border: 0, background: 'none', color: 'var(--tk-tint)', font: 'inherit', fontSize: 12, cursor: 'pointer' }}>{working ? 'Show composer state' : 'Preview working state'}</button></div>
       </div>;
+    },
+  },
+  floatingsheet: {
+    title: 'FloatingSheet · glass or docked sheet', theme: 'tk', h: 640,
+    code: 'import { FloatingSheet, ProgressStepper } from "@touchkit/chatkit"\n\nexport default function OrderCard() {\n  return (\n    <div style={{ position: "relative" }}>\n      <Page />\n      <FloatingSheet appearance="sheet" tone="light" gutter={0} peek={300} bodyAlign="start" minimizable={false}>\n        <FloatingSheet.Body>\n          <h2>Preparing your order</h2>\n          <ProgressStepper steps={steps} current={1} labels />\n          …\n        </FloatingSheet.Body>\n        <FloatingSheet.Foot><Button>Continue</Button></FloatingSheet.Foot>\n      </FloatingSheet>\n    </div>\n  )\n}',
+    Render: function FloatingSheetLive() {
+      const [appearance, setAppearance] = useState<FloatingSheetAppearance>('glass');
+      const glass = appearance === 'glass';
+      return <div>
+        <div style={{ width: 260, margin: '0 auto 12px' }}>
+          <Segmented aria-label="Appearance" value={appearance} onChange={(v) => setAppearance(v as FloatingSheetAppearance)} options={[{ id: 'glass', label: 'Glass' }, { id: 'sheet', label: 'Docked sheet' }]} />
+        </div>
+        <ScaledShell width={430} height={560}>
+          <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', background: glass ? 'radial-gradient(circle at 30% 20%, #2b2f4a, #0f1017 60%)' : 'radial-gradient(circle at 30% 20%, #fff4e6, #e8ecf3 60%)', color: glass ? '#f5f5f7' : '#1c1c1e', fontFamily: 'var(--tk-font)' }}>
+            <div style={{ padding: 22 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.08em', opacity: .6 }}>HOST CONTENT</div>
+              <h2 style={{ margin: '8px 0 10px', fontSize: 24 }}>Anything positioned</h2>
+              <p style={{ margin: 0, maxWidth: 300, lineHeight: 1.5, opacity: .75, fontSize: 14 }}>Drag the cap up to grow the sheet into the full page{glass ? ', or down to fold it into a FAB' : ''}.</p>
+            </div>
+            <FloatingSheet key={appearance} appearance={appearance} tone={glass ? 'dark' : 'light'} gutter={glass ? 20 : 0} radius={glass ? 28 : 20} peek={glass ? 120 : 250} bodyAlign="start" minimizable={glass} label="Order">
+              <FloatingSheet.Body>
+                <div style={{ padding: '2px 20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <h3 style={{ margin: 0, fontSize: 21 }}>Preparing your order</h3>
+                  <ProgressStepper current={1} labels steps={[{ id: 'a', label: 'Placed' }, { id: 'b', label: 'Preparing' }, { id: 'c', label: 'Ready' }, { id: 'd', label: 'Picked up' }]} />
+                  {Array.from({ length: 5 }, (_, i) => <div key={i} style={{ height: 64, borderRadius: 14, background: 'rgba(120,120,128,.14)' }} />)}
+                </div>
+              </FloatingSheet.Body>
+              <FloatingSheet.Foot>
+                <div style={{ padding: '8px 16px 16px' }}>
+                  <button type="button" style={{ width: '100%', height: 44, border: 0, borderRadius: 999, background: 'var(--tk-tint)', color: '#fff', fontWeight: 700, font: 'inherit', fontSize: 15 }}>Continue</button>
+                </div>
+              </FloatingSheet.Foot>
+            </FloatingSheet>
+          </div>
+        </ScaledShell>
+      </div>;
+    },
+  },
+  mapchat: {
+    title: 'MapChat · always-floating chat with map tools', theme: 'tk', h: 760,
+    code: 'import { ArtifactChatContainer, TileMap } from "@touchkit/chatkit"\n\n<ArtifactChatContainer layout="floating" peek={236} working={busy} hideOnScroll={false}>\n  <ArtifactChatContainer.Content>\n    <TileMap view={view} pins={pins} route={route} controls onPinClick={focusPlace} />\n  </ArtifactChatContainer.Content>\n  <ArtifactChatContainer.Chat><Transcript turns={turns} /></ArtifactChatContainer.Chat>\n  <ArtifactChatContainer.Composer>\n    <Composer wide onSend={send} streaming={busy} onStop={stop} />\n  </ArtifactChatContainer.Composer>\n</ArtifactChatContainer>',
+    Render: function MapChatLive() {
+      return <ScaledShell width={430} height={720}>
+        <MapChatDemo style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }} />
+      </ScaledShell>;
+    },
+  },
+  delivery: {
+    title: 'DeliveryTracking · map under a docked sheet', theme: 'tk', h: 820,
+    code: 'import { FloatingSheet, ProgressStepper, TileMap, cartoVoyagerTiles } from "@touchkit/chatkit"\n\n<div style={{ position: "relative" }}>\n  <TileMap view={route} pins={[store, car]} route={path} tileUrl={cartoVoyagerTiles} scheme="light" />\n  <FloatingSheet appearance="sheet" tone="light" gutter={0} peek={344} bodyAlign="start" minimizable={false} scrim={false}>\n    <FloatingSheet.Body>\n      <h2>Preparing your order</h2>\n      <ProgressStepper steps={steps} current={stage} />\n      …\n    </FloatingSheet.Body>\n  </FloatingSheet>\n</div>',
+    Render: function DeliveryLive() {
+      return <ScaledShell width={430} height={780}>
+        <DeliveryTrackingDemo style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }} />
+      </ScaledShell>;
     },
   },
   chatshell: {
