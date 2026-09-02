@@ -4,7 +4,16 @@ export { WFONT, MONO, EASE } from './lib/util';
 export { workbenchVars, WorkbenchTheme, type WorkbenchThemeProps } from './lib/theme';
 export { vib, tick } from './lib/haptics';
 export { WIcon, IconBtn, type WIconName, type WIconProps, type IconBtnProps } from './lib/icons';
-export { MarkdownView, FbMd, HlPre, hlTokens, type MarkdownViewProps } from './lib/markdown';
+export {
+  MarkdownView,
+  FbMd,
+  HlPre,
+  hlTokens,
+  DocstreamRefContext,
+  type MarkdownViewProps,
+  type DocstreamRefContextValue,
+  type ReferenceNode,
+} from './lib/markdown';
 export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './lib/message-scroller';
 export { SnapSheet, type SnapSheetProps } from './lib/snap-sheet';
 export {

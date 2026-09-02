@@ -16,7 +16,7 @@ interface DemoProps {
 
 function Transcript() {
   return (
-    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '18px 18px 14px', background: K.bg, color: K.label }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto', padding: '18px 18px 14px', background: K.bg, color: K.label }}>
       {[
         ['You', 'Can you compare the conversion rate by region?'],
         ['TouchKit', 'I added the regional breakdown to the artifact. West is leading at 34%.'],
@@ -24,7 +24,7 @@ function Transcript() {
         ['TouchKit', 'Northeast — up 6.1 points. I highlighted it in the chart.'],
         ['You', 'Call out the biggest change from last month.'],
       ].map(([author, copy], index) => (
-        <div key={copy} style={{ marginBottom: 18 }}>
+        <div key={copy} style={{ marginBottom: 18, marginTop: index === 0 ? 'auto' : undefined }}>
           <div style={{ color: index % 2 ? '#68A7FF' : K.mut, fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{author}</div>
           <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>{copy}</div>
         </div>
@@ -114,3 +114,20 @@ export const Split: Story = { args: { width: 1100, height: 680 } };
 export const FloatingComposer: Story = { args: { width: 430, height: 720 } };
 export const FullChatDrawer: Story = { args: { width: 430, height: 720, defaultChatOpen: true } };
 export const Working: Story = { args: { width: 430, height: 720, working: true } };
+/** `layout="floating"` with a `peek` keeps the newest replies visible above the composer even in a wide container. */
+export const AlwaysFloatingWithPeek: Story = {
+  args: { width: 1100, height: 680 },
+  render: (args) => (
+    <div style={{ width: args.width, height: args.height, overflow: 'hidden', fontFamily: KFONT }}>
+      <ArtifactChatContainer layout="floating" peek={180}>
+        <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
+        <ArtifactChatContainer.Composer>
+          <div style={{ padding: 8, background: 'transparent' }}>
+            <Composer wide showOptions={false} showCheckout={false} placeholder="Do anything" onSend={() => undefined} />
+          </div>
+        </ArtifactChatContainer.Composer>
+        <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
+      </ArtifactChatContainer>
+    </div>
+  ),
+};

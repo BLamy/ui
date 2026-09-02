@@ -357,16 +357,15 @@ importers:
       '@touchkit/ui':
         specifier: workspace:*
         version: link:../ui
+      '@touchkit/workbench':
+        specifier: workspace:*
+        version: link:../workbench
       react:
         specifier: ^18 || ^19
         version: 19.0.0
       react-dom:
         specifier: ^18 || ^19
         version: 19.0.0(react@19.0.0)
-    devDependencies:
-      '@touchkit/workbench':
-        specifier: workspace:*
-        version: link:../workbench
 
   packages/pencilkit:
     dependencies:

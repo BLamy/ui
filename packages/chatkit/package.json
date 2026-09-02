@@ -16,7 +16,8 @@
     "./styles.css": "./dist/index.css"
   },
   "dependencies": {
-    "@touchkit/ui": "workspace:*"
+    "@touchkit/ui": "workspace:*",
+    "@touchkit/workbench": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18 || ^19",
@@ -41,8 +42,5 @@
     "react-aria",
     "shadcn",
     "components"
-  ],
-  "devDependencies": {
-    "@touchkit/workbench": "workspace:*"
-  }
+  ]
 }
