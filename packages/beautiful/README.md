@@ -5,7 +5,7 @@ AI-native React interface primitives in TouchKit's dark visual language.
 ## Install
 
 ```sh
-pnpm add @touchkit/beautiful @touchkit/ui react react-dom
+npm i @touchkit/beautiful @brett_lamy/ui react react-dom
 ```
 
 `DiffTable` is a compatibility adapter over Pierre's syntax-highlighted diff renderer. To use the renderer directly:

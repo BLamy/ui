@@ -5,11 +5,11 @@ A compositional team-chat scaffold for React. `ChatShell` provides an adaptive w
 ## Install
 
 ```sh
-pnpm add @touchkit/chatkit @touchkit/ui react react-dom
+npm i @touchkit/chatkit @brett_lamy/ui react react-dom
 ```
 
 ```tsx
-import '@touchkit/ui/styles.css';
+import '@brett_lamy/ui/styles.css';
 import '@touchkit/chatkit/styles.css';
 import { ChatShell, useChatShell } from '@touchkit/chatkit';
 

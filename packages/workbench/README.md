@@ -5,7 +5,7 @@ An adaptive IDE/workbench scaffold for React: thread navigation, chat, a termina
 ## Install
 
 ```sh
-pnpm add @touchkit/workbench @touchkit/ui react react-dom
+npm i @touchkit/workbench @brett_lamy/ui react react-dom
 ```
 
 The built-in Files and Diff surfaces use Pierre's renderers. Install them directly when you compose those primitives yourself:
@@ -17,7 +17,7 @@ pnpm add @pierre/diffs @pierre/trees
 See [Diffs](https://diffs.com/docs) and [Trees](https://trees.software/docs) for their full APIs.
 
 ```tsx
-import '@touchkit/ui/styles.css';
+import '@brett_lamy/ui/styles.css';
 import '@touchkit/workbench/styles.css';
 import { WorkbenchShell, useWorkbenchShell } from '@touchkit/workbench';
 

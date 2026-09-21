@@ -1,18 +1,18 @@
-# @touchkit/ui
+# @brett_lamy/ui
 
 Touch-first React components inspired by UIKit container patterns. The package includes theme tokens, haptics, lists, navigation, adaptive split views, drawers, sheets, and a reusable jump rail.
 
 ## Install
 
 ```sh
-pnpm add @touchkit/ui react react-dom
+npm i @brett_lamy/ui
 ```
 
 Import the stylesheet once, then wrap the part of the app that uses TouchKit tokens:
 
 ```tsx
-import '@touchkit/ui/styles.css';
-import { TouchKitProvider, NavigationStack } from '@touchkit/ui';
+import '@brett_lamy/ui/styles.css';
+import { TouchKitProvider, NavigationStack } from '@brett_lamy/ui';
 
 export function App() {
   return (
@@ -30,7 +30,7 @@ React 18 and 19 are supported peer dependencies.
 `IndexBar` accepts application-defined string or numeric keys. Labels are optional, so dense timelines can render as dots, and `preview` accepts any React node. Hover previews without navigating; pointer drag and keyboard navigation (`ArrowUp`, `ArrowDown`, `Home`, `End`) commit a stop.
 
 ```tsx
-import { IndexBar, type IndexBarItem } from '@touchkit/ui';
+import { IndexBar, type IndexBarItem } from '@brett_lamy/ui';
 
 const stops: IndexBarItem<number>[] = turns.map((turn, index) => ({
   key: turn.sequence,
