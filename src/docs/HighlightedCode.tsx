@@ -1,71 +1,58 @@
-import { useMemo } from "react"
-import { common, createLowlight } from "lowlight"
-import { toHtml } from "hast-util-to-html"
+import { useEffect, useMemo, useState } from "react"
+import { parse } from "gpu-lexer"
 
-const lowlight = createLowlight(common)
-
-const LANGUAGE_ALIASES: Record<string, string> = {
-  js: "javascript",
-  jsx: "javascript",
-  sh: "bash",
-  shell: "bash",
-  ts: "typescript",
-  tsx: "typescript",
-  yml: "yaml",
+type Span = {
+  type: "plain" | "comment" | "string" | "number" | "keyword" | "type" | "function" | "constant" | "operator"
+  start: number
+  end: number
 }
 
-function normalizeLanguage(language: string | null) {
-  if (!language) return null
-  const normalized = language.toLowerCase()
-  return LANGUAGE_ALIASES[normalized] ?? normalized
+const COLORS: Record<Span["type"], string | undefined> = {
+  plain: undefined, comment: "#6B6B78", string: "#A5D6A7", number: "#F78C6C",
+  keyword: "#C792EA", type: "#FFCB6B", function: "#82AAFF", constant: "#F07178", operator: "#89DDFF",
 }
 
-function highlightedHtml(code: string, language: string | null) {
-  const normalized = normalizeLanguage(language)
-  if (normalized && lowlight.registered(normalized)) {
-    try {
-      return toHtml(lowlight.highlight(normalized, code))
-    } catch {
-      /* fall through to plain */
-    }
-  }
-  return null
+function escapeHtml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;")
 }
 
-export function HighlightedCode({
-  code,
-  language,
-  lineNumbers = false,
-}: {
+function spansToHtml(code: string, spans: Span[]) {
+  let cursor = 0
+  return spans.map((span) => {
+    const prefix = escapeHtml(code.slice(cursor, span.start))
+    const text = escapeHtml(code.slice(span.start, span.end))
+    cursor = span.end
+    const color = COLORS[span.type]
+    return `${prefix}${color ? `<span style="color:${color}">${text}</span>` : text}`
+  }).join("") + escapeHtml(code.slice(cursor))
+}
+
+export function HighlightedCode({ code, language: _language, lineNumbers = false }: {
   code: string
   language: string | null
   lineNumbers?: boolean
 }) {
   const lines = useMemo(() => code.split("\n"), [code])
-  const html = useMemo(() => {
-    if (lineNumbers) {
-      return lines.map((line) => highlightedHtml(line || " ", language))
-    }
-    return highlightedHtml(code, language)
-  }, [code, language, lineNumbers, lines])
+  const [spans, setSpans] = useState<Span[] | null>(null)
 
-  if (lineNumbers) {
-    return (
-      <code className="hljs">
-        {(html as Array<string | null>).map((lineHtml, index) => (
-          <span key={index} className="docs-code-line">
-            <span className="docs-code-lineno">{index + 1}</span>
-            {lineHtml === null ? (
-              <span>{lines[index]}</span>
-            ) : (
-              <span dangerouslySetInnerHTML={{ __html: lineHtml }} />
-            )}
-          </span>
-        ))}
-      </code>
-    )
-  }
+  useEffect(() => {
+    let cancelled = false
+    setSpans(null)
+    parse(code).then((result) => { if (!cancelled) setSpans(result) }).catch(() => { if (!cancelled) setSpans([]) })
+    return () => { cancelled = true }
+  }, [code])
 
-  if (html === null) return <code>{code}</code>
-  return <code className="hljs" dangerouslySetInnerHTML={{ __html: html as string }} />
+  const html = useMemo(() => spans && spans.length ? spansToHtml(code, spans) : null, [code, spans])
+  if (!lineNumbers) return html === null ? <code>{code}</code> : <code dangerouslySetInnerHTML={{ __html: html }} />
+
+  return <code>{lines.map((line, index) => {
+    const start = lines.slice(0, index).reduce((total, value) => total + value.length + 1, 0)
+    const lineSpans = spans?.filter((span) => span.start >= start && span.end <= start + line.length)
+      .map((span) => ({ ...span, start: span.start - start, end: span.end - start }))
+    const lineHtml = lineSpans?.length ? spansToHtml(line, lineSpans) : null
+    return <span key={index} className="docs-code-line">
+      <span className="docs-code-lineno">{index + 1}</span>
+      {lineHtml === null ? <span>{line}</span> : <span dangerouslySetInnerHTML={{ __html: lineHtml }} />}
+    </span>
+  })}</code>
 }
