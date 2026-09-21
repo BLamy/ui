@@ -108,9 +108,13 @@ export default function App() {
   const idx = PAGE_ORDER.indexOf(slug);
   const prev = idx > 0 ? PAGE_ORDER[idx - 1] : null;
   const next = idx >= 0 && idx < PAGE_ORDER.length - 1 ? PAGE_ORDER[idx + 1] : null;
-  const segs = parseSegs(slug, page.markdown);
+  // The public distribution is a single package; workspace package names stay internal.
+  const publicMarkdown = page.markdown
+    .replace(/@touchkit\/[\w-]+/g, '@brett_lamy/ui')
+    .replace(/pnpm add @brett_lamy\/ui(?: @brett_lamy\/ui)+ react react-dom/g, 'npm i @brett_lamy/ui');
+  const segs = parseSegs(slug, publicMarkdown);
   const toc: Array<{ text: string; h3: boolean }> = [];
-  page.markdown.split('\n').forEach((l) => {
+  publicMarkdown.split('\n').forEach((l) => {
     const m2 = l.match(/^## (.+)$/);
     const m3 = l.match(/^### (.+)$/);
     if (m2) toc.push({ text: m2[1], h3: false });
