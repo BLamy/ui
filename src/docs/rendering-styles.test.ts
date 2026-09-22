@@ -15,4 +15,13 @@ describe("DocStream markdown defaults", () => {
     expect(styles).toContain("[data-docstream-blocks] > * + *")
     expect(styles).toContain("[data-docstream-blocks] > :is(h1, h2, h3, h4, h5, h6)")
   })
+
+  it("keeps table and card table blocks flush even after a sibling block", () => {
+    const tableRule = styles.match(
+      /:is\(\[data-docstream\], \.docs-article\) \[data-docstream-blocks\] > :is\(\.docs-table, \.docs-cards\)\s*\{([^}]+)\}/
+    )
+
+    expect(tableRule?.[1]).toContain("margin-block-start: 0;")
+    expect(tableRule?.[1]).toContain("margin-block-end: 0;")
+  })
 })
