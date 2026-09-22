@@ -10,7 +10,7 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 - TipTap extensions for common writing flows.
 - Conversion helpers between the Docstream AST and TipTap JSON.
 - Slash menu for inserting supported blocks.
-- Code block support through `lowlight`.
+- Code block syntax highlighting through [`gpu-lexer`](https://gpu-lexer.vercel.app/) (language-agnostic, WebGPU; plain text where WebGPU is unavailable).
 - Table, task list, heading, quote, and inline formatting support.
 - Preserves Docstream/GitBook block semantics when converting back to markdown.
 - Preserves mounted source-file/export provenance and can write edits to the real file through Vite.

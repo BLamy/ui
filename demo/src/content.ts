@@ -47,7 +47,7 @@ The prose on this site is rendered by docstream; the playground pages embed the 
 npm install @brett_lamy/docstream-editor @brett_lamy/docstream react
 \`\`\`
 
-Tiptap packages are peer dependencies: \`@tiptap/core\`, \`@tiptap/react\`, \`@tiptap/starter-kit\`, \`@tiptap/extension-code-block-lowlight\`, \`@tiptap/extension-list\`, \`@tiptap/extension-placeholder\`, \`@tiptap/extension-table\`, \`@tiptap/pm\`, and \`@tiptap/suggestion\` (all ^3.26).
+Tiptap packages are peer dependencies: \`@tiptap/core\`, \`@tiptap/react\`, \`@tiptap/starter-kit\`, \`@tiptap/extension-code-block\`, \`@tiptap/extension-list\`, \`@tiptap/extension-placeholder\`, \`@tiptap/extension-table\`, \`@tiptap/pm\`, and \`@tiptap/suggestion\` (all ^3.26).
 `,
   },
   {
@@ -315,7 +315,7 @@ The array of GitBook node extensions with React node views: \`GbHint\`, \`GbTabs
 
 ## GbCodeBlock
 
-\`CodeBlockLowlight\` extended with GitBook code attributes — \`title\`, \`lineNumbers\`, \`live\`, \`entry\` — plus a React node view with a language selector, and configured with lowlight's common grammar set. Mermaid fences render a live diagram above the editable source. Live JSX/TSX fences render their AlmostNode preview above the source and refresh after a short editing pause. These attributes round-trip to GitBook code tags in markdown.
+\`CodeBlock\` extended with GitBook code attributes — \`title\`, \`lineNumbers\`, \`live\`, \`entry\` — plus a React node view with a language selector, and highlighted by gpu-lexer, a language-agnostic WebGPU lexer. Mermaid fences render a live diagram above the editable source. Live JSX/TSX fences render their AlmostNode preview above the source and refresh after a short editing pause. These attributes round-trip to GitBook code tags in markdown.
 
 ## GbTable
 

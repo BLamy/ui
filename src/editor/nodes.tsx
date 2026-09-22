@@ -1,6 +1,6 @@
 import { Node, mergeAttributes } from "@tiptap/core"
-import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight"
-import { common, createLowlight } from "lowlight"
+import { CodeBlock } from "@tiptap/extension-code-block"
+import { gpuHighlightPlugin } from "./gpu-highlight"
 import { useEffect, useMemo, useState } from "react"
 import {
   NodeViewContent,
@@ -718,7 +718,7 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
   )
 }
 
-export const GbCodeBlock = CodeBlockLowlight.extend({
+export const GbCodeBlock = CodeBlock.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -731,7 +731,10 @@ export const GbCodeBlock = CodeBlockLowlight.extend({
   addNodeView() {
     return ReactNodeViewRenderer(CodeView)
   },
-}).configure({ lowlight: createLowlight(common) })
+  addProseMirrorPlugins() {
+    return [...(this.parent?.() ?? []), gpuHighlightPlugin(this.name)]
+  },
+})
 
 // ---------- Inline image (GitHub badge style) ----------
 
