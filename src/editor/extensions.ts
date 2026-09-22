@@ -6,7 +6,7 @@ import { getSchema, type AnyExtension } from "@tiptap/core"
 import type { Schema } from "@tiptap/pm/model"
 import { GbCodeBlock, gitbookNodes } from "./nodes"
 import { SlashMenu, createSlashMenu, type SlashItem } from "./slash-menu"
-import { createReferenceSuggestion } from "./reference-menu"
+import { createReferenceSuggestion, type ReferenceSource } from "./reference-menu"
 
 // Carries GitBook's data-view (e.g. "cards") through the editor untouched.
 export const GbTable = Table.extend({
@@ -15,15 +15,26 @@ export const GbTable = Table.extend({
   },
 })
 
+export interface ReferenceSources {
+  /** "@" — people, agents, … */
+  mentions?: ReferenceSource
+  /** "#" — channels, tags, … */
+  tags?: ReferenceSource
+  /** "$" — codebases (`$repo` / `$org/repo`). Enables the "$" trigger. */
+  codebases?: ReferenceSource
+}
+
 export interface GitbookExtensionOptions {
   placeholder?: string
   /** Built-in "/" slash menu: true (default), false, or a custom item list. */
   slashMenu?: boolean | { items?: SlashItem[] }
   /**
-   * The "@" / "#" reference chip pickers: true (default), false, or lists of
-   * known ids to offer. Free-form entry always works.
+   * The reference chip pickers: true (default: "@" and "#" with free-form entry),
+   * false, or per-trigger sources — static lists or async `(query) => options`.
+   * "$" (codebases) is only enabled when a `codebases` source is given, so a
+   * dollar sign in ordinary prose never opens a menu.
    */
-  references?: boolean | { mentions?: string[]; tags?: string[] }
+  references?: boolean | ReferenceSources
   /**
    * Disable StarterKit's built-in undo/redo. Required when wiring Yjs
    * Collaboration, which provides its own shared history.
@@ -73,6 +84,7 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
       createReferenceSuggestion({ char: "@", ...(opts.mentions ? { items: opts.mentions } : {}) }),
       createReferenceSuggestion({ char: "#", ...(opts.tags ? { items: opts.tags } : {}) })
     )
+    if (opts.codebases) list.push(createReferenceSuggestion({ char: "$", items: opts.codebases }))
   }
 
   list.push(...extensions)

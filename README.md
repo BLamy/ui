@@ -109,6 +109,29 @@ The editor supports common ProseMirror/TipTap content plus GitBook-flavored bloc
 
 Some blocks are intentionally represented as structured nodes rather than fully bespoke editing controls. They are preserved through parse, edit, and serialize flows so the document can continue to round-trip as GitBook-style markdown.
 
+## Mentions, channels, and codebases
+
+Typing `@`, `#`, or `$` opens a picker and inserts a reference chip that serializes as
+`@id`, `#id`, or `$id` (`$org/repo` works too). Feed each trigger a static list or an
+async `(query) => options` function; options can carry a `label`, `description`, and
+`group` (rendered as section headers). `$` is only enabled when `codebases` is set, so
+dollar signs in ordinary prose never open a menu. Free-form entry is always offered.
+
+```tsx
+<GitbookEditor
+  markdown={md}
+  onChange={setMd}
+  references={{
+    mentions: [
+      ...people.map((p) => ({ id: p.handle, label: p.name, description: p.email, group: "People" })),
+      ...agents.map((a) => ({ id: a.handle, label: a.name, description: a.harness, group: "Agents" })),
+    ],
+    tags: async (query) => searchChannels(query), // [{ id: "general", description: "channel" }]
+    codebases: async (query) => searchRepos(query), // [{ id: "reading-room" }]
+  }}
+/>
+```
+
 ## Edit a referenced source file
 
 `GitbookEditor` edits the Markdown composition, including a structured

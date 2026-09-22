@@ -13,6 +13,7 @@ import {
   AtSign,
   CheckCircle2,
   ChevronDown,
+  FolderGit2,
   Hash,
   Info,
   Link2,
@@ -792,7 +793,13 @@ function ReferenceView({ node }: NodeViewProps) {
         </span>
       ) : (
         <span className={`gb-ref gb-ref-${kind}`}>
-          {kind === "mention" ? <AtSign className="gb-ref-icon" /> : <Hash className="gb-ref-icon" />}
+          {kind === "mention" ? (
+            <AtSign className="gb-ref-icon" />
+          ) : kind === "codebase" ? (
+            <FolderGit2 className="gb-ref-icon" />
+          ) : (
+            <Hash className="gb-ref-icon" />
+          )}
           {id}
         </span>
       )}
@@ -818,7 +825,14 @@ export const GbReference = Node.create({
     return [{ tag: "span[data-gb-ref]" }]
   },
   renderHTML({ HTMLAttributes, node }) {
-    const sigil = node.attrs.kind === "mention" ? "@" : node.attrs.kind === "tag" ? "#" : "^"
+    const sigil =
+      node.attrs.kind === "mention"
+        ? "@"
+        : node.attrs.kind === "tag"
+          ? "#"
+          : node.attrs.kind === "codebase"
+            ? "$"
+            : "^"
     return [
       "span",
       mergeAttributes(HTMLAttributes, { "data-gb-ref": node.attrs.kind, "data-gb-ref-id": node.attrs.id }),

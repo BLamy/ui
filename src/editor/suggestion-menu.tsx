@@ -12,11 +12,15 @@ import type { SuggestionProps } from "@tiptap/suggestion"
 import { ReactRenderer } from "@tiptap/react"
 import type { LucideIcon } from "lucide-react"
 
-// Shared popup used by the "/" slash menu and the "@"/"#" reference menus.
+// Shared popup used by the "/" slash menu and the "@"/"#"/"$" reference menus.
 
 export interface SuggestionMenuItem {
   title: string
   icon: LucideIcon
+  /** Secondary text shown after the title (e.g. a display name or email). */
+  description?: string
+  /** Section header; shown when it differs from the previous item's group. */
+  group?: string
 }
 
 export interface MenuProps<Item extends SuggestionMenuItem> {
@@ -97,21 +101,26 @@ export const SuggestionMenuView = forwardRef<MenuHandle, MenuProps<SuggestionMen
       >
         {items.length === 0 && <div className="slash-empty">{emptyLabel}</div>}
         {items.map((item, i) => (
-          <button
-            key={item.title}
-            ref={(el) => {
-              itemRefs.current[i] = el
-            }}
-            className={`slash-item ${i === index ? "slash-item-active" : ""}`}
-            onMouseEnter={() => setIndex(i)}
-            onMouseDown={(e) => {
-              e.preventDefault()
-              command(item)
-            }}
-          >
-            <item.icon className="size-4" />
-            <span>{item.title}</span>
-          </button>
+          <div key={`${item.group ?? ""}:${item.title}:${i}`} className="slash-row">
+            {item.group && item.group !== items[i - 1]?.group && (
+              <div className="slash-group">{item.group}</div>
+            )}
+            <button
+              ref={(el) => {
+                itemRefs.current[i] = el
+              }}
+              className={`slash-item ${i === index ? "slash-item-active" : ""}`}
+              onMouseEnter={() => setIndex(i)}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                command(item)
+              }}
+            >
+              <item.icon className="size-4" />
+              <span>{item.title}</span>
+              {item.description && <span className="slash-item-description">{item.description}</span>}
+            </button>
+          </div>
         ))}
       </div>
     )

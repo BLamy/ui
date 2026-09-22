@@ -203,7 +203,8 @@ function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
     .map((n): Inline => {
       if (n.type === "gbReference") {
         const a = n.attrs ?? {}
-        const kind = a.kind === "tag" ? "tag" : a.kind === "citation" ? "citation" : "mention"
+        const kind =
+          a.kind === "tag" || a.kind === "codebase" || a.kind === "citation" ? a.kind : "mention"
         return {
           type: "reference",
           kind,

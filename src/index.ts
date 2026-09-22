@@ -6,12 +6,17 @@ export type { PMNode } from "./editor/convert"
 // Building blocks for composing a custom editor (e.g. with Yjs collaboration
 // or a bespoke slash menu) instead of the batteries-included GitbookEditor.
 export { createGitbookExtensions, getGitbookSchema, GbTable } from "./editor/extensions"
-export type { GitbookExtensionOptions } from "./editor/extensions"
+export type { GitbookExtensionOptions, ReferenceSources } from "./editor/extensions"
 export { gitbookNodes, GbCodeBlock, GbReference } from "./editor/nodes"
 export { SlashMenu, createSlashMenu, SLASH_ITEMS } from "./editor/slash-menu"
 export type { SlashItem } from "./editor/slash-menu"
-export { createReferenceSuggestion } from "./editor/reference-menu"
-export type { ReferenceSuggestionOptions, ReferenceTrigger } from "./editor/reference-menu"
+export { createReferenceSuggestion, resolveReferenceOptions } from "./editor/reference-menu"
+export type {
+  ReferenceOption,
+  ReferenceSource,
+  ReferenceSuggestionOptions,
+  ReferenceTrigger,
+} from "./editor/reference-menu"
 export { SuggestionMenuView, createSuggestionRender } from "./editor/suggestion-menu"
 export type { SuggestionMenuItem } from "./editor/suggestion-menu"
 export { ReactDemoEditor } from "./editor/ReactDemoEditor"

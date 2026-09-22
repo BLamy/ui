@@ -3,6 +3,7 @@ import { parseMarkdown, serializeMarkdown } from "@brett_lamy/docstream/gitbook"
 
 import { astToTiptap, tiptapToAst, type PMNode } from "./convert"
 import { getGitbookSchema } from "./extensions"
+import { resolveReferenceOptions } from "./reference-menu"
 
 describe("reference chips in the editor", () => {
   it("round-trips mentions, tags, and citations through PM JSON", () => {
@@ -53,5 +54,34 @@ describe("reference chips in the editor", () => {
     const schema = getGitbookSchema()
     expect(schema.nodes.gbReference).toBeDefined()
     expect(schema.nodes.gbReference.spec.inline).toBe(true)
+  })
+})
+
+describe("codebase chips and reference sources", () => {
+  it("round-trips $codebase chips through PM JSON and markdown", () => {
+    const src = "Deploy $reading-room and $maple/stream-lab with @luna in #general.\n"
+    const doc = parseMarkdown(src)
+    const pm = astToTiptap(doc)
+    expect(pm.content![0].content).toContainEqual({
+      type: "gbReference",
+      attrs: { kind: "codebase", id: "maple/stream-lab", url: "", label: "" },
+    })
+    expect(serializeMarkdown(tiptapToAst(pm))).toBe(src)
+  })
+
+  it("filters static sources by id or label and passes queries to async sources", async () => {
+    const people = ["brett", { id: "luna", label: "Luna", group: "Agents" }]
+    expect((await resolveReferenceOptions(people, "LU")).map((o) => o.id)).toEqual(["luna"])
+    expect((await resolveReferenceOptions(people, "")).map((o) => o.id)).toEqual(["brett", "luna"])
+    const seen: string[] = []
+    const async = async (query: string) => {
+      seen.push(query)
+      return [{ id: `${query}-repo`, description: "codebase" }]
+    }
+    expect(await resolveReferenceOptions(async, "read")).toEqual([
+      { id: "read-repo", description: "codebase" },
+    ])
+    expect(seen).toEqual(["read"])
+    expect(await resolveReferenceOptions(undefined, "x")).toEqual([])
   })
 })

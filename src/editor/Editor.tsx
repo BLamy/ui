@@ -13,7 +13,7 @@ import {
 import { parseMarkdown, serializeMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import { astToTiptap, tiptapToAst, type PMNode } from "./convert"
-import { createGitbookExtensions } from "./extensions"
+import { createGitbookExtensions, type ReferenceSources } from "./extensions"
 import { EditorRuntimeProvider } from "./runtime"
 import type { SlashItem } from "./slash-menu"
 
@@ -26,8 +26,11 @@ export interface GitbookEditorProps {
   toolbar?: boolean
   /** Built-in "/" slash menu: true (default), false, or a custom item list. */
   slashMenu?: boolean | { items?: SlashItem[] }
-  /** The "@" / "#" reference chip pickers: true (default), false, or known id lists. */
-  references?: boolean | { mentions?: string[]; tags?: string[] }
+  /**
+   * Reference chip pickers: true (default "@"/"#"), false, or per-trigger sources —
+   * static lists or async `(query) => options`. A `codebases` source enables "$".
+   */
+  references?: boolean | ReferenceSources
   /** Whether the document is editable (default true). */
   editable?: boolean
   /** Placeholder shown in an empty document. */
