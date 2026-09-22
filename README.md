@@ -32,6 +32,10 @@ Import the package CSS once near your app entrypoint:
 import "@brett_lamy/docstream/styles.css"
 ```
 
+The stylesheet provides heading hierarchy and consistent spacing for the
+`DocsRenderer`, `MarkdownContent`, and streaming render paths. Host CSS can
+override those defaults through the normal cascade.
+
 If your TypeScript app checks CSS side-effect imports, include Vite's standard environment declaration or an equivalent CSS module declaration:
 
 ```ts

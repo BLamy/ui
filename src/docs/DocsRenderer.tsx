@@ -376,7 +376,11 @@ function isReactLanguage(language: string | null): boolean {
 
 function Blocks({ blocks, inline, liveRenderer, sourceRenderer }: { blocks: Block[]; inline?: boolean } & Renderers) {
   return (
-    <div className={inline ? "docs-blocks-inline" : undefined} style={inline ? { display: "inline" } : undefined}>
+    <div
+      data-docstream-blocks=""
+      className={inline ? "docs-blocks-inline" : undefined}
+      style={inline ? { display: "inline" } : undefined}
+    >
       {blocks.map((b, i) => (
         <BlockView key={i} block={b} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       ))}
