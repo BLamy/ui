@@ -1,5 +1,5 @@
 import { createContext, useContext, useId, useState, type ReactNode } from "react"
-import { ArrowUpRight, AtSign, Globe, Hash } from "lucide-react"
+import { ArrowUpRight, AtSign, FolderGit2, Globe, Hash } from "lucide-react"
 
 import type { CitationDef, ReferenceNode } from "../gitbook/ast"
 
@@ -112,7 +112,7 @@ export function InlineReference({ node }: { node: ReferenceNode }) {
     )
   }
 
-  const Icon = node.kind === "mention" ? AtSign : Hash
+  const Icon = node.kind === "mention" ? AtSign : node.kind === "codebase" ? FolderGit2 : Hash
   return (
     <button
       type="button"

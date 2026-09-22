@@ -10,8 +10,13 @@ export const refDefinitions = new Map<string, string>()
 // parseMarkdown and consumed here to resolve [^id] markers.
 export const footnoteDefinitions = new Map<string, { url: string; label?: string }>()
 
-// @mention / #tag body: letter/underscore start, then word chars, dots, dashes.
+// @mention / #tag / $codebase body: letter/underscore start, then word chars, dots,
+// dashes. Codebase ids may also carry `/` (`$org/repo`). A letter start keeps prices
+// like $5 plain text.
 const REFERENCE_BODY_RE = /^[@#]([A-Za-z_][\w.-]*)/
+const CODEBASE_BODY_RE = /^\$([A-Za-z_][\w.\/-]*)/
+const SIGIL_KIND = { "@": "mention", "#": "tag", $: "codebase" } as const
+const KIND_SIGIL = { mention: "@", tag: "#", codebase: "$" } as const
 // Chips are only recognized at start-of-input or after whitespace/open brackets,
 // so brett@replay.io and C# stay plain text.
 const isReferenceBoundary = (prev: string | undefined) =>
@@ -131,14 +136,14 @@ export function parseInline(src: string, marks: Marks = {}): Inline[] {
       continue
     }
 
-    // @mention / #tag chips, only at a word boundary
-    if ((rest[0] === "@" || rest[0] === "#") && isReferenceBoundary(src[i - 1])) {
-      const m = rest.match(REFERENCE_BODY_RE)
+    // @mention / #tag / $codebase chips, only at a word boundary
+    if ((rest[0] === "@" || rest[0] === "#" || rest[0] === "$") && isReferenceBoundary(src[i - 1])) {
+      const m = rest.match(rest[0] === "$" ? CODEBASE_BODY_RE : REFERENCE_BODY_RE)
       if (m) {
-        const id = m[1].replace(/[.-]+$/, "")
+        const id = m[1].replace(/[./-]+$/, "")
         if (id) {
           flush()
-          out.push({ type: "reference", kind: rest[0] === "@" ? "mention" : "tag", id })
+          out.push({ type: "reference", kind: SIGIL_KIND[rest[0] as "@" | "#" | "$"], id })
           i += 1 + id.length
           continue
         }
@@ -200,14 +205,14 @@ export function parseInline(src: string, marks: Marks = {}): Inline[] {
 const escapeText = (t: string) =>
   t
     .replace(/([*_~`[\]\\])/g, "\\$1")
-    // Escape @/# only at a chip boundary so emails/C# survive untouched.
+    // Escape @/#/$ only at a chip boundary so emails/C#/$5 survive untouched.
     // Note: node-local — a boundary formed across adjacent inline nodes
     // (previous node ending in whitespace) is not caught; rare, accepted.
-    .replace(/(^|[\s([{])([@#])(?=[A-Za-z_])/g, "$1\\$2")
+    .replace(/(^|[\s([{])([@#$])(?=[A-Za-z_])/g, "$1\\$2")
 
 export function serializeReference(n: ReferenceNode): string {
   if (n.kind === "citation") return `[^${n.id}]`
-  return `${n.kind === "mention" ? "@" : "#"}${n.id}`
+  return `${KIND_SIGIL[n.kind]}${n.id}`
 }
 
 function serializeImage(n: InlineImageNode): string {

@@ -58,6 +58,30 @@ describe("mention and tag chips", () => {
   })
 })
 
+describe("codebase chips", () => {
+  it("parses $codebase and $org/repo at word boundaries", () => {
+    expect(parseInline("see $reading-room and $maple/stream-lab.")).toEqual([
+      { type: "text", text: "see " },
+      { type: "reference", kind: "codebase", id: "reading-room" },
+      { type: "text", text: " and " },
+      { type: "reference", kind: "codebase", id: "maple/stream-lab" },
+      { type: "text", text: "." },
+    ])
+  })
+
+  it("leaves prices, shell variables mid-word, and bare $ as plain text", () => {
+    expect(parseInline("costs $5 or $ 10")).toEqual([{ type: "text", text: "costs $5 or $ 10" }])
+    expect(parseInline("echo a$HOME")).toEqual([{ type: "text", text: "echo a$HOME" }])
+  })
+
+  it("round-trips through serialize, escaping literal text", () => {
+    const src = "ship $reading-room with @luna in #general"
+    expect(serializeInline(parseInline(src))).toBe(src)
+    expect(serializeInline([{ type: "text", text: "$HOME is literal" }])).toBe("\\$HOME is literal")
+    expect(parseInline("\\$HOME is literal")).toEqual([{ type: "text", text: "$HOME is literal" }])
+  })
+})
+
 describe("footnote citations", () => {
   const doc = parseMarkdown(
     'Pistachio is up 18% [^1], sharpest on weekends [^snd].\n\n[^1]: https://scoopdata.io/q3 "ScoopData Q3"\n[^snd]: https://trends.google.com/ice-cream\n'

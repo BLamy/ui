@@ -23,7 +23,7 @@ export interface InlineImageNode {
   link?: string
 }
 
-export type ReferenceKind = "mention" | "tag" | "citation"
+export type ReferenceKind = "mention" | "tag" | "codebase" | "citation"
 
 /**
  * Inline reference chip: `@mention`, `#tag`, or footnote-style citation `[^id]`.
