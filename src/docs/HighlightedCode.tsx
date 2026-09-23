@@ -7,10 +7,8 @@ type Span = {
   end: number
 }
 
-const COLORS: Record<Span["type"], string | undefined> = {
-  plain: undefined, comment: "#6B6B78", string: "#A5D6A7", number: "#F78C6C",
-  keyword: "#C792EA", type: "#FFCB6B", function: "#82AAFF", constant: "#F07178", operator: "#89DDFF",
-}
+/* Token colors live in styles.css (`.docs-tok-*`) and follow the host's color-scheme, so code reads on
+   light and dark backgrounds alike. Hosts can retheme via the --docs-tok-* custom properties. */
 
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;")
@@ -22,8 +20,7 @@ function spansToHtml(code: string, spans: Span[]) {
     const prefix = escapeHtml(code.slice(cursor, span.start))
     const text = escapeHtml(code.slice(span.start, span.end))
     cursor = span.end
-    const color = COLORS[span.type]
-    return `${prefix}${color ? `<span style="color:${color}">${text}</span>` : text}`
+    return `${prefix}${span.type === "plain" ? text : `<span class="docs-tok docs-tok-${span.type}">${text}</span>`}`
   }).join("") + escapeHtml(code.slice(cursor))
 }
 

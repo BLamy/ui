@@ -311,6 +311,25 @@ The package CSS is intentionally token-driven. It uses normal CSS variables and 
 
 Import the CSS once, then set tokens globally in your app. Components also expose stable classes such as `docs-code`, `docs-tabs`, `docs-hint`, `docs-table`, and `docs-openapi`.
 
+Code highlighting follows the surrounding `color-scheme`: set `color-scheme: dark` on a dark page (or any dark container) and code switches to the dark palette. Each token color is a custom property (`--docs-tok-keyword`, `--docs-tok-string`, `--docs-tok-type`, `--docs-tok-function`, `--docs-tok-number`, `--docs-tok-constant`, `--docs-tok-operator`, `--docs-tok-comment`) if you want your own palette.
+
+### Live demos with in-page components
+
+`ReactDemo` from `@brett_lamy/docstream/playground` boots an almost-node Vite server for self-contained projects. When the components already run on your page, pass `preview` instead: you keep the same frame, header, and collapsible code panel without a runtime.
+
+```tsx
+import { ReactDemo } from "@brett_lamy/docstream/playground"
+
+<ReactDemo
+  title="Counter"
+  status={false}
+  preview={<Counter />}
+  height="auto"
+  code={`import { Counter } from "my-ui"\n\nexport default () => <Counter />`}
+  language="tsx"
+/>
+```
+
 ## Bundler Notes
 
 This release ships TypeScript and TSX source through ESM exports:

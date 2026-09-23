@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState, type CSSProperties } from "react"
+import { useEffect, useId, useMemo, useState, type CSSProperties, type ReactNode } from "react"
 import { HighlightedCode } from "../docs/HighlightedCode"
 import {
   createAlmostNodeWorkspace,
@@ -11,8 +11,21 @@ import {
 } from "./filesystem"
 
 export interface ReactDemoProps {
-  /** Complete project file map. Relative paths are rooted at `/`. */
-  files: AlmostNodeFiles
+  /** Complete project file map. Relative paths are rooted at `/`. Not needed when `preview` is given. */
+  files?: AlmostNodeFiles
+  /**
+   * Render this in place of the almost-node iframe — for hosts that can mount the demo directly
+   * (components already on the page). No runtime starts; the frame, header, and code panel stay the same.
+   */
+  preview?: ReactNode
+  /** Source text for the code panel. Overrides reading `codeFile` from `files`. */
+  code?: string
+  /** Highlighting language for `code` (e.g. "tsx"). Defaults to the extension of `codeFile`. */
+  language?: string
+  /** Header status. Defaults to the runtime state ("ready", "starting"…); pass `false` to hide it. */
+  status?: ReactNode | false
+  /** Extra header content after the status, e.g. controls that switch between demo variants. */
+  actions?: ReactNode
   /** Vite entry file. Defaults to `/src/main.jsx`. */
   entry?: string
   /** Preferred virtual port. almost-node picks the next free port if needed. */
@@ -71,8 +84,15 @@ function sourceText(files: AlmostNodeFiles, requestedPath: string): string | nul
 }
 
 /** Render a multi-file React/JSX/TSX project through almost-node's Vite server. */
+const NO_FILES: AlmostNodeFiles = {}
+
 export function ReactDemo({
-  files,
+  files = NO_FILES,
+  preview,
+  code: codeProp,
+  language,
+  status,
+  actions,
   entry = "/src/main.jsx",
   port = 4173,
   height = 360,
@@ -87,16 +107,17 @@ export function ReactDemo({
   onReady,
   onError,
 }: ReactDemoProps) {
-  const [run, setRun] = useState(autoStart ? 1 : 0)
-  const [state, setState] = useState<PreviewState>(autoStart ? "starting" : "idle")
+  const inline = preview !== undefined
+  const [run, setRun] = useState(autoStart && !inline ? 1 : 0)
+  const [state, setState] = useState<PreviewState>(inline ? "ready" : autoStart ? "starting" : "idle")
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [codeExpanded, setCodeExpanded] = useState(false)
   const codePanelId = useId()
   const displayedCodeFile = codeFile ?? entry
   const code = useMemo(
-    () => sourceText(files, displayedCodeFile),
-    [displayedCodeFile, files],
+    () => codeProp ?? sourceText(files, displayedCodeFile),
+    [codeProp, displayedCodeFile, files],
   )
   const collapsedLines = positiveLineCount(collapsedCodeLines, 3)
   const expandedLines = Math.max(
@@ -105,6 +126,7 @@ export function ReactDemo({
   )
 
   useEffect(() => {
+    if (inline) return
     if (!run) {
       setState("idle")
       setUrl(null)
@@ -162,7 +184,7 @@ export function ReactDemo({
       cancelled = true
       workspace?.dispose()
     }
-  }, [entry, files, onError, onReady, port, run, workspaceOptions])
+  }, [entry, files, inline, onError, onReady, port, run, workspaceOptions])
 
   const wrapperClass = className ? `docs-react-demo ${className}` : "docs-react-demo"
   const running = state === "starting"
@@ -171,10 +193,13 @@ export function ReactDemo({
     <section className={wrapperClass} data-docstream-react-demo="">
       <header className="docs-react-demo-header">
         <span>{title}</span>
-        <span className={`docs-react-demo-status docs-react-demo-status-${state}`}>
-          {state === "ready" ? "ready" : state === "starting" ? "starting" : state}
-        </span>
-        {!autoStart || state === "error" ? (
+        {status === false ? null : (
+          <span className={`docs-react-demo-status docs-react-demo-status-${state}`}>
+            {status ?? (state === "ready" ? "ready" : state === "starting" ? "starting" : state)}
+          </span>
+        )}
+        {actions}
+        {!inline && (!autoStart || state === "error") ? (
           <button
             type="button"
             className="docs-react-demo-run"
@@ -185,7 +210,9 @@ export function ReactDemo({
           </button>
         ) : null}
       </header>
-      {error ? (
+      {inline ? (
+        <div className="docs-react-demo-preview" style={frameHeight(height)}>{preview}</div>
+      ) : error ? (
         <pre className="docs-react-demo-error">{error}</pre>
       ) : url ? (
         <iframe
@@ -211,7 +238,7 @@ export function ReactDemo({
           >
             <HighlightedCode
               code={code}
-              language={sourceLanguage(displayedCodeFile)}
+              language={language ?? sourceLanguage(displayedCodeFile)}
               lineNumbers
             />
           </pre>
