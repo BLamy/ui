@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { Button } from 'react-aria-components';
-import { cn } from '../lib/utils';
+import { Button } from './button';
 
 export interface PillButtonProps {
   label: ReactNode;
@@ -10,13 +9,11 @@ export interface PillButtonProps {
   style?: CSSProperties;
 }
 
-/** Full-width pill action button (prototype `PillBtn`). */
+/** Full-width iOS action pill — `Button` at `size="pill"`. */
 export function PillButton({ label, onPress, tone, className, style }: PillButtonProps) {
   return (
-    <Button data-slot="pill-button" className={cn('bl-btn', className)} onPress={onPress} style={{
-      width: '100%', border: 0, borderRadius: 14, padding: '13px 12px', fontSize: 16, fontWeight: 600,
-      fontFamily: 'inherit', cursor: 'pointer', background: tone === 'soft' ? 'var(--bl-fill)' : 'var(--bl-tint)',
-      color: tone === 'soft' ? 'var(--bl-label)' : '#fff', boxSizing: 'border-box', ...style,
-    }}>{label}</Button>
+    <Button data-slot="pill-button" size="pill" variant={tone === 'soft' ? 'secondary' : 'default'} onPress={onPress} className={className} style={style}>
+      {label}
+    </Button>
   );
 }

@@ -15,7 +15,7 @@ const root = '#storybook-root';
 /** [story, gesture, after-gesture assertion (optional)] */
 const CASES = [
   ['atoms-switch--off', { tap: `${root} label` }],
-  ['atoms-segmented--three-options', { tap: `${root} button >> nth=1` }],
+  ['atoms-segmented--three-options', { tap: `${root} [data-slot=segmented] label >> nth=1` }],
   ['molecules-tabbar--interactive', { tap: `${root} button >> nth=1` }],
   ['organisms-navigationstack--push-pop', { tap: `${root} [data-slot=list-row] >> nth=0` }, (t) => t.includes('Pop with the back button')],
   ['molecules-indexbar--alpha-az', { drag: `${root} [data-slot=index-bar]` }],

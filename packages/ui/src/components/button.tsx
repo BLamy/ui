@@ -1,0 +1,41 @@
+import { Button as AriaButton, type ButtonProps as AriaButtonProps, composeRenderProps } from 'react-aria-components';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '../lib/utils';
+
+/* ══ Button — shadcn's button on react-aria's Button ══
+   Press, hover, and focus-visible come from react-aria as data attributes; variants are cva. */
+export const buttonVariants = cva(
+  'bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-disabled:cursor-default data-disabled:opacity-40',
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground',
+        secondary: 'bg-secondary text-secondary-foreground',
+        ghost: 'bg-transparent text-foreground data-hovered:bg-accent',
+        destructive: 'bg-destructive text-white',
+        link: 'bg-transparent p-0 text-primary',
+      },
+      size: {
+        default: 'h-9 rounded-[10px] px-4 text-[15px] font-semibold',
+        sm: 'h-8 rounded-lg px-3 text-[13px] font-semibold',
+        lg: 'h-11 rounded-xl px-5 text-[16px] font-semibold',
+        /** Full-width iOS action pill. */
+        pill: 'w-full rounded-[14px] px-3 py-[13px] text-[16px] font-semibold',
+        icon: 'size-9 rounded-full p-0',
+      },
+    },
+    defaultVariants: { variant: 'default', size: 'default' },
+  },
+);
+
+export interface ButtonProps extends AriaButtonProps, VariantProps<typeof buttonVariants> {}
+
+export function Button({ className, variant, size, ...props }: ButtonProps) {
+  return (
+    <AriaButton
+      data-slot="button"
+      className={composeRenderProps(className, (cls) => cn(buttonVariants({ variant, size }), cls))}
+      {...props}
+    />
+  );
+}

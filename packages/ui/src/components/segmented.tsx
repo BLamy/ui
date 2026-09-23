@@ -1,4 +1,5 @@
-import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
+import { Radio, RadioGroup } from 'react-aria-components';
 import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 
@@ -16,49 +17,27 @@ export interface SegmentedProps {
   style?: CSSProperties;
 }
 
-/** Segmented control with direct button targets so Safari's haptic click passthrough can replay clicks. */
+/** iOS segmented control on react-aria's RadioGroup: arrows move and select, one tick per change. */
 export function Segmented({ options, value, onChange, className, style, ...rest }: SegmentedProps) {
-  const select = (id: string) => {
-    if (id === value) return;
-    Haptics.selection();
-    onChange(id);
-  };
-  const move = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    let next = index;
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % options.length;
-    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + options.length) % options.length;
-    else if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = options.length - 1;
-    else return;
-    event.preventDefault();
-    const option = options[next];
-    if (!option) return;
-    select(option.id);
-    event.currentTarget.parentElement
-      ?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]
-      ?.focus();
-  };
   return (
-    <div
+    <RadioGroup
       data-slot="segmented"
       aria-label={rest['aria-label'] || 'Segmented control'}
-      aria-orientation="horizontal"
-      role="radiogroup"
-      className={cn(className)}
-      style={{ display: 'flex', gap: 2, background: 'var(--bl-fill,#e4e4ea)', borderRadius: 9, padding: 2, ...style }}
+      orientation="horizontal"
+      value={value}
+      onChange={(id) => { if (id === value) return; Haptics.selection(); onChange(id); }}
+      className={cn('flex gap-0.5 rounded-[9px] bg-bl-fill p-0.5', className)}
+      style={style}
     >
-      {options.map((o, index) => {
-        const on = o.id === value;
-        return (
-          <button key={o.id} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
-            onClick={() => select(o.id)} onKeyDown={(event) => move(event, index)} className="bl-btn" style={{
-            flex: 1, border: 0, padding: '5px 12px', borderRadius: 7, fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
-            cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: on ? 'var(--bl-card,#fff)' : 'transparent', color: 'var(--bl-label,#16161a)',
-            boxShadow: on ? '0 1px 4px rgba(0,0,0,.14)' : 'none', transition: 'background .2s, box-shadow .2s',
-          }}>{o.label}</button>
-        );
-      })}
-    </div>
+      {options.map((o) => (
+        <Radio
+          key={o.id}
+          value={o.id}
+          className="bl-btn flex flex-1 cursor-pointer items-center justify-center rounded-[7px] px-3 py-[5px] text-[13px] font-semibold whitespace-nowrap text-bl-label outline-none transition-[background,box-shadow] duration-200 data-focus-visible:ring-2 data-focus-visible:ring-ring data-selected:bg-bl-card data-selected:shadow-[0_1px_4px_rgba(0,0,0,.14)]"
+        >
+          {o.label}
+        </Radio>
+      ))}
+    </RadioGroup>
   );
 }
