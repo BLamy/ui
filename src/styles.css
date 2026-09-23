@@ -81,16 +81,7 @@
 }
 
 :is([data-docstream], .docs-article) [data-docstream-blocks] > * {
-  margin-block: 0;
-}
-
-:is([data-docstream], .docs-article) [data-docstream-blocks] > * + * {
-  margin-block-start: 0.9em;
-}
-
-:is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-table, .docs-cards) {
-  margin-block-start: 0;
-  margin-block-end: 0;
+  margin-block: 0.75em;
 }
 
 :is([data-docstream], .docs-article) :is(h1, h2, h3, h4, h5, h6) {
@@ -104,11 +95,7 @@
 }
 
 :is([data-docstream], .docs-article) [data-docstream-blocks] > :is(h1, h2, h3, h4, h5, h6) {
-  margin-block-start: 1.6em;
-}
-
-:is([data-docstream], .docs-article) [data-docstream-blocks] > :first-child:is(h1, h2, h3, h4, h5, h6) {
-  margin-block-start: 0;
+  margin-block: 1.6em 0.45em;
 }
 
 :is([data-docstream], .docs-article) h1 {
@@ -145,7 +132,15 @@
 }
 
 :is([data-docstream], .docs-article) p {
+  margin-block: 0.75em;
+}
+
+:is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-table, table) {
   margin-block: 0;
+}
+
+:is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-cards, .docs-code, .docs-math, .docs-hint, .docs-tabs, .docs-expandable, .docs-stepper, .docs-mermaid-preview, .oas, .docs-embed, .docstream-viz, figure, blockquote, ul, ol, hr) {
+  margin-block: 0.75em;
 }
 
 :is([data-docstream], .docs-article) a {
