@@ -5,7 +5,8 @@ import { vib, tick } from './haptics';
 import { WIcon } from './icons';
 import { MarkdownView } from './markdown';
 import { MessageScroller, type MessageScrollerItem } from './message-scroller';
-import { Composer } from './composer';
+import { WorkbenchComposer, stripAttachmentRefs } from './workbench-composer';
+import type { ComposerAttachment } from './composer';
 import type { WorkbenchThread, WorkbenchTrace } from './thread-sidebar';
 
 /* ══ Chat ══ */
@@ -39,14 +40,20 @@ export function SettledBanner({ onUnsettle, className, style }: SettledBannerPro
   );
 }
 
+/** Adapts Composer's onSubmit(markdown, attachments) to the demo's onSend(text, imageSrcs). */
+const toSend = (onSend: (text: string, imgs?: string[]) => void) => (markdown: string, attachments: ComposerAttachment[]) =>
+  onSend(stripAttachmentRefs(markdown), attachments.flatMap((a) => (a.src ? [a.src] : [])));
+
 export interface EmptyThreadProps {
   onSend: (text: string, imgs?: string[]) => void;
   streaming?: boolean;
   onStop?: () => void;
+  /** Replaces the default WorkbenchComposer. */
+  composer?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }
-export function EmptyThread({ onSend, streaming, onStop, className, style }: EmptyThreadProps) {
+export function EmptyThread({ onSend, streaming, onStop, composer, className, style }: EmptyThreadProps) {
   const sug = ['Get the demo servers running', 'Explain the haptics engine', 'Diff my last change'];
   return (
     <div
@@ -62,7 +69,7 @@ export function EmptyThread({ onSend, streaming, onStop, className, style }: Emp
           <div className="mt-3 text-[21px] font-bold tracking-[-.3px]">What are we building?</div>
           <div className="mt-1 text-[13.5px] text-wb-label2">Start a thread — ask anything about this workspace.</div>
         </div>
-        <Composer onSend={onSend} streaming={streaming} onStop={onStop} autoFocus wide />
+        {composer ?? <WorkbenchComposer onSubmit={toSend(onSend)} streaming={streaming} onStop={onStop} autoFocus />}
         <div className="mt-3.5 flex flex-wrap justify-center gap-[7px]">
           {sug.map((s) => (
             <Button
@@ -117,15 +124,17 @@ export interface ChatViewProps {
   onStop?: () => void;
   onUnsettle?: () => void;
   header?: React.ReactNode;
+  /** Replaces the default WorkbenchComposer (compose your own from the Composer parts). */
+  composer?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }
-export function ChatView({ thread, streaming, onSend, onStop, onUnsettle, header, className, style }: ChatViewProps) {
+export function ChatView({ thread, streaming, onSend, onStop, onUnsettle, header, composer, className, style }: ChatViewProps) {
   if (!thread)
     return (
       <div data-slot="chat-view" className={cn('flex min-h-0 flex-1 flex-col', className)} style={style}>
         {header}
-        <EmptyThread onSend={onSend} streaming={false} />
+        <EmptyThread onSend={onSend} streaming={false} composer={composer} />
       </div>
     );
   const items: MessageScrollerItem[] = [];
@@ -175,7 +184,7 @@ export function ChatView({ thread, streaming, onSend, onStop, onUnsettle, header
       <MessageScroller items={items} streaming={streaming} threadKey={thread.id} />
       <div className="mx-auto box-border w-full max-w-[780px] shrink-0 px-[22px] pt-2 pb-3.5">
         {thread.settled && onUnsettle ? <SettledBanner onUnsettle={onUnsettle} /> : null}
-        <Composer onSend={onSend} streaming={streaming} onStop={onStop} />
+        {composer ?? <WorkbenchComposer onSubmit={toSend(onSend)} streaming={streaming} onStop={onStop} />}
       </div>
     </div>
   );

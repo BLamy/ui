@@ -6,12 +6,11 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type RefObject,
 } from 'react';
 import { Button } from 'react-aria-components';
-import { Haptics, useAppearance, useChromeHidden, collectSlots, defineSlot } from '@brett_lamy/ui';
+import { Haptics, useAppearance, useChromeHidden, useSheetDrag, collectSlots, defineSlot } from '@brett_lamy/ui';
 import { cn } from './cn';
 
 export type FloatingSheetFabPosition =
@@ -56,10 +55,6 @@ export function useFloatingSheet(): FloatingSheetContextValue {
 const CAP_HEIGHT = 18;
 /** The surface's top and bottom borders are outside its flex children. */
 const BORDER_HEIGHT = 2;
-/** Pointer travel below which a cap drag counts as a tap. */
-const TAP_SLOP = 4;
-/** Extra downward travel that folds the surface into its FAB. */
-const MINIMIZE_TRAVEL = 96;
 /** Diameter of the minimized FAB. */
 const FAB_SIZE = 52;
 
@@ -171,9 +166,6 @@ export function FloatingSheet({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const [minimized, setMinimized] = useState(false);
   const [scrollHidden, setScrollHidden] = useState(false);
-  /** Live body height while the cap is being dragged. */
-  const [dragReveal, setDragReveal] = useState<number | null>(null);
-  const [dragMinimize, setDragMinimize] = useState<number | null>(null);
   const chromeHidden = useChromeHidden();
   const open = controlledOpen ?? uncontrolledOpen;
   const bodyId = useId();
@@ -224,8 +216,19 @@ export function FloatingSheet({
   const maxReveal = Math.max(0, height - dockHeight - BORDER_HEIGHT);
   // The peek can never take more than three quarters of the host, or there is nothing to grow into.
   const peek = Math.max(0, Math.min(requestedPeek, maxReveal * 0.75));
+  // The cap gesture (grow, snap, fold into the FAB) is the shared sheet drag.
+  const sheetDrag = useSheetDrag({
+    open,
+    onOpenChange: setOpen,
+    peek,
+    maxReveal,
+    minimizable,
+    minimized,
+    onMinimizedChange: setMinimized,
+  });
+
+  const { dragReveal, dragMinimize, dragging } = sheetDrag;
   const reveal = dragReveal ?? (open ? maxReveal : peek);
-  const dragging = dragReveal != null;
   const expanded = reveal > 0;
   // Growth is measured from the resting height, so a peeking sheet keeps its compact shape
   // and only starts turning into the full page once it is dragged past the peek.
@@ -257,72 +260,6 @@ export function FloatingSheet({
 
   const slots = collectSlots(children);
   const hasFoot = slots.foot != null && slots.foot !== false;
-
-  const drag = useRef({ active: false, y: 0, from: 0, moved: false });
-
-  // Travel below the resting height first closes the peek, then folds the surface into its FAB.
-  const minimizeTravel = peek + MINIMIZE_TRAVEL;
-  const minimizeFor = (rawReveal: number) =>
-    minimizable && rawReveal < peek ? Math.min(1, (peek - rawReveal) / minimizeTravel) : 0;
-
-  const onCapDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    drag.current = { active: true, y: event.clientY, from: open ? maxReveal : peek, moved: false };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const onCapMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (!drag.current.active) return;
-    const delta = drag.current.y - event.clientY;
-    if (!drag.current.moved && Math.abs(delta) < TAP_SLOP) return;
-    drag.current.moved = true;
-    // The cap pulls the surface out one-to-one with the pointer.
-    const rawReveal = drag.current.from + delta;
-    setDragReveal(Math.max(minimizable ? 0 : Math.min(peek, maxReveal), Math.min(maxReveal, rawReveal)));
-    setDragMinimize(minimizeFor(rawReveal));
-  };
-
-  const endDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (!drag.current.active) return;
-    const { moved, from } = drag.current;
-    drag.current.active = false;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    if (!moved) {
-      setDragReveal(null);
-      return;
-    }
-    const rawReveal = from + (drag.current.y - event.clientY);
-    const settled = Math.max(0, Math.min(maxReveal, rawReveal));
-    const shouldMinimize = minimizeFor(rawReveal) > 0.5;
-    const nextOpen = !shouldMinimize && settled > peek + (maxReveal - peek) * 0.35;
-    setDragReveal(null);
-    setDragMinimize(null);
-    setMinimized(shouldMinimize);
-    if (nextOpen !== open) {
-      Haptics.selection();
-      setOpen(nextOpen);
-    } else if (shouldMinimize) {
-      Haptics.selection();
-    }
-  };
-
-  const cancelDrag = () => {
-    drag.current.active = false;
-    setDragReveal(null);
-    setDragMinimize(null);
-  };
-
-  const toggle = () => {
-    // Pointer drags settle in endDrag; only real taps should toggle.
-    if (drag.current.moved) {
-      drag.current.moved = false;
-      return;
-    }
-    Haptics.selection();
-    setMinimized(false);
-    setOpen(!open);
-  };
 
   const restore = () => {
     Haptics.selection();
@@ -437,12 +374,8 @@ export function FloatingSheet({
             aria-label={open ? 'Collapse' : 'Expand'}
             aria-expanded={open}
             aria-controls={bodyId}
-            onClick={toggle}
-            onPointerDown={onCapDown}
-            onPointerMove={onCapMove}
-            onPointerUp={endDrag}
-            onPointerCancel={cancelDrag}
-            onLostPointerCapture={cancelDrag}
+            onClick={sheetDrag.toggle}
+            {...sheetDrag.handlers}
           >
             <span
               data-slot="floating-sheet-grip"

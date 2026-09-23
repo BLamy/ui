@@ -107,3 +107,12 @@
   --gb-accent-foreground:currentColor;
   --gb-code-fg:currentColor;
 }
+
+/* Attachment chips: the editor portals the hover card to <body>, outside the --wb-* tokens. While a chip in a dark
+   composer is hovered or focused, the card takes the dark Workbench palette (the editor's defaults are light). */
+.wb-composer-doc.gb .gb-attachment{background:var(--wb-fill);border-color:var(--wb-sep)}
+.wb-composer-doc.gb .gb-attachment:hover{border-color:var(--wb-label3)}
+body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-chat:not([data-tone="light"])) [data-slot="composer-input"]:not(.wb-light *) .gb-attachment:is(:hover,:focus-visible)) .gb-attachment-card{--border:rgba(255,255,255,.12);--card:#1C1C23;--card-foreground:#EDEDF2;--foreground:#EDEDF2;--muted:#101014;--muted-foreground:#9C9CA6;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+/* Compact composer: one row, the editor a single line beside the controls. */
+.wb-composer-doc-compact.gb{max-height:44px;padding-right:4px}
+.wb-composer-doc-compact.gb .ProseMirror{min-height:22px;padding:10px 0 9px}

@@ -70,7 +70,7 @@ The shell measures its own container, not the browser viewport, so it works in r
 - Terminal: `TerminalDock`, `TermHeader`, `TermBody`, `SnapSheet`
 - Markdown: `MarkdownView`, backed by `@brett_lamy/docstream`
 
-`Composer` uses `@brett_lamy/docstream-editor` for structured GitBook-flavored Markdown.
+`Composer` is compositional (like shadcn's InputGroup): `Composer` owns the draft, `ComposerCard` holds `ComposerInput` (the `@brett_lamy/docstream-editor` WYSIWYG editor, pasted images become attachment chips) and addons (`ComposerFooter`, `ComposerSelect`, `ModelPicker`, `ComposerSend`, …), and `ComposerBump`s attach above or below the card — a top bump can be `draggable`, revealing `ComposerBumpContent` like a sheet. `WorkbenchComposer` is the default composition.
 Type `/` for blocks; Enter sends a plain top-level paragraph, structured blocks retain their
 native Enter behavior, and ⌘/Ctrl+Enter always sends. Pasted Markdown becomes rich nodes while
 pasted images keep the Workbench annotation flow.

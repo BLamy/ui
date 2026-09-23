@@ -1,10 +1,38 @@
 import { useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Composer } from '@brett_lamy/workbench';
+import {
+  Composer,
+  ComposerAttach,
+  ComposerAttachments,
+  ComposerCard,
+  ComposerExpand,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSend,
+  ComposerSpacer,
+} from '@brett_lamy/workbench';
 import '@brett_lamy/workbench/styles.css';
 import { FloatingChat, type FloatingChatFabPosition } from './floating-chat';
 import { K, KFONT } from './chat-tokens';
 import '../styles.css';
+
+/* The chat composer: the Workbench Composer parts, trimmed to editor + send. */
+function ChatComposer({ placeholder, onSubmit }: { placeholder: string; onSubmit?: () => void }) {
+  return (
+    <Composer onSubmit={onSubmit}>
+      <ComposerCard>
+        <ComposerExpand />
+        <ComposerAttachments />
+        <ComposerInput placeholder={placeholder} />
+        <ComposerFooter>
+          <ComposerAttach />
+          <ComposerSpacer />
+          <ComposerSend />
+        </ComposerFooter>
+      </ComposerCard>
+    </Composer>
+  );
+}
 
 interface Args {
   width: number;
@@ -51,7 +79,7 @@ function Demo(args: Args) {
         <FloatingChat.Chat><Transcript /></FloatingChat.Chat>
         <FloatingChat.Composer>
           <div style={{ padding: 8 }}>
-            <Composer wide showOptions={false} showCheckout={false} placeholder="Ask about this page" onSend={() => undefined} />
+            <ChatComposer placeholder="Ask about this page" />
           </div>
         </FloatingChat.Composer>
       </FloatingChat>
@@ -74,7 +102,7 @@ const meta: Meta<Args> = {
     docs: {
       description: {
         component:
-          'The standalone floating chat surface: a FloatingSheet whose body is the transcript and whose foot is the composer. Drop it into any positioned host — here a plain scrolling page.',
+          'The standalone floating chat: the host\'s Workbench Composer floats over any positioned host and the transcript hangs off a draggable top bump of that composer (added through a ComposerOutlet). Drag the handle up to open, down past rest to fold into a FAB.',
       },
     },
   },
