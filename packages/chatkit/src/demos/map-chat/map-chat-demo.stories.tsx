@@ -30,5 +30,5 @@ export default meta;
 type Story = StoryObj<Args>;
 
 export const Floating: Story = {};
-export const Seeded: Story = { args: { initialPrompt: 'Plan an afternoon in DUMBO' } };
+export const Seeded: Story = { args: { initialPrompt: 'Plan an afternoon in SoHo' } };
 export const Split: Story = { args: { width: 1100, height: 720, layout: 'split' } };

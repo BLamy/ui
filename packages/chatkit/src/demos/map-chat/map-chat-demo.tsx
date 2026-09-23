@@ -48,7 +48,7 @@ export interface MapChatDemoProps {
   style?: CSSProperties;
 }
 
-const HOME_VIEW: MapView = { center: { lat: 40.6893, lng: -73.9742 }, zoom: 14.7 };
+const HOME_VIEW: MapView = { center: { lat: 40.7300, lng: -73.9985 }, zoom: 14.7 };
 const TOOL_LATENCY: Record<MapToolName, number> = {
   search_places: 760,
   show_on_map: 420,
@@ -59,7 +59,7 @@ const TOOL_LATENCY: Record<MapToolName, number> = {
 /* Keeps framed pins clear of the top banner and the floating chat glass. */
 const FIT_PADDING = { top: 96, right: 44, bottom: 390, left: 44 };
 const DEFAULT_GREETING =
-  "Hey — I'm your guide around **Fort Greene** and the rest of the city. Ask me to find places, get walking directions, or plan a few hours.\n\nTry #coffee, #pizza, or #museum — or tap a suggestion below.";
+  "Hey — I'm your guide around **Greenwich Village** and the rest of the city. Ask me to find places, get walking directions, or plan a few hours.\n\nTry #coffee, #pizza, or #museum — or tap a suggestion below.";
 
 let uidCounter = 0;
 const uid = (prefix: string) => `${prefix}-${(uidCounter++).toString(36)}-${Date.now().toString(36)}`;

@@ -25,7 +25,7 @@ const CASES = [
   ['molecules-listbox--single-selection', { tap: `${root} [role=option] >> nth=1` }],
   ['molecules-dropdownmenu--selectable', { tap: `[role=menuitemradio] >> nth=1` }],
   ['organisms-dialog--closed', { tap: `${root} button >> nth=0` }, (t) => t.includes('Delete this photo?')],
-  ['pages-mapchat--floating', { tap: `${root} button:has-text("Coffee near me")` }, (t) => !t.includes('Plan an afternoon in DUMBO')], // sending hides the suggestions
+  ['pages-mapchat--floating', { tap: `${root} button:has-text("Coffee near me")` }, (t) => !t.includes('Plan an afternoon in SoHo')], // sending hides the suggestions
   ['molecules-indexbar--alpha-az', { drag: `${root} [data-slot=index-bar]` }],
   ['pages-haptics-playground--bare', { tap: `${root} [role=switch], ${root} label >> nth=0` }],
 ];

@@ -166,7 +166,7 @@ export function planTurn(rawInput: string, memory: AgentMemory, userPosition: La
   if (CLEAR_RE.test(text)) {
     return {
       steps: [{ name: 'clear_map', args: {}, run: (host) => { host.clear(); return 'Removed pins and route'; } }],
-      reply: 'Cleared the map. Where to next? Try **coffee nearby**, **plan an afternoon in DUMBO**, or **how far is Barclays Center**.',
+      reply: 'Cleared the map. Where to next? Try **coffee nearby**, **plan an afternoon in SoHo**, or **how far is the Empire State Building**.',
       working: 'Clearing the map…',
       memory: { lastResults: [] },
     };
@@ -210,7 +210,7 @@ export function planTurn(rawInput: string, memory: AgentMemory, userPosition: La
 
   // Multi-stop plans.
   if (PLAN_RE.test(text)) {
-    const key = areaKey ?? memory.lastArea ?? 'fort-greene';
+    const key = areaKey ?? memory.lastArea ?? 'greenwich-village';
     const target = AREAS[key];
     const evening = /\b(evening|night|date|dinner)\b/.test(text);
     const morning = /\b(morning|breakfast|brunch)\b/.test(text);
@@ -250,7 +250,7 @@ export function planTurn(rawInput: string, memory: AgentMemory, userPosition: La
           run: (host) => { host.saveTrip(trip); return `Saved “${trip.name}”`; },
         },
       ],
-      reply: `Here's **${trip.name.toLowerCase()}** — ${formatMinutes(trip.totalMinutes)} of walking${trip.from ? ' starting from where you are' : ''}:\n\n${list}\n\nI saved it as **${trip.name}** and drew the route. Want me to swap a stop or add ${category ? 'something else' : 'a dessert'}? #itinerary`,
+      reply: `Here's **${trip.name.charAt(0).toLowerCase() + trip.name.slice(1)}** — ${formatMinutes(trip.totalMinutes)} of walking${trip.from ? ' starting from where you are' : ''}:\n\n${list}\n\nI saved it as **${trip.name}** and drew the route. Want me to swap a stop or add ${category ? 'something else' : 'a dessert'}? #itinerary`,
       working: 'Planning your trip…',
       memory: { lastResults: stops, lastArea: key, lastTrip: trip },
     };
@@ -263,7 +263,7 @@ export function planTurn(rawInput: string, memory: AgentMemory, userPosition: La
     let where: string;
     if (area) {
       results = pool.filter((p) => p.area === areaKey).sort(byDistance(area.center));
-      where = area.label;
+      where = `in ${area.label}`;
       if (!results.length) results = [...pool].sort(byDistance(area.center)).slice(0, 3);
     } else {
       const near = pool.filter((p) => distanceMeters(userPosition, p.position) < 2600).sort(byDistance(userPosition));
@@ -289,7 +289,7 @@ export function planTurn(rawInput: string, memory: AgentMemory, userPosition: La
       ],
       reply: results.length
         ? `Found **${results.length} ${results.length === 1 ? meta.label : meta.plural}** ${where}. Closest is ${refChip(closest)} (${walkLine(userPosition, closest)}) — ${closest.blurb}${others.length ? `\n\nAlso worth a look: ${others.map(refChip).join(', ')}.` : ''}\n\nTap a pin or ask me for directions to any of them. #${category}`
-        : `I couldn't find any ${meta.plural} ${where}. Try another neighborhood — DUMBO, Williamsburg, or Midtown.`,
+        : `I couldn't find any ${meta.plural} ${where}. Try another neighborhood — SoHo, the Lower East Side, or Midtown.`,
       working: 'Searching nearby…',
       memory: { lastResults: results, lastArea: areaKey ?? memory.lastArea, lastTrip: memory.lastTrip },
     };
@@ -328,7 +328,7 @@ export function planTurn(rawInput: string, memory: AgentMemory, userPosition: La
 
   return {
     steps: [],
-    reply: `I can search the map and plan walks around Brooklyn and Manhattan. Try one of these:\n\n- **coffee near me**\n- **plan an afternoon in DUMBO**\n- **how far is Barclays Center?**\n- **best pizza in Williamsburg**\n\nOr tap a #coffee or #pizza tag to search that category.`,
+    reply: `I can search the map and plan walks around Manhattan. Try one of these:\n\n- **coffee near me**\n- **plan an afternoon in SoHo**\n- **how far is the Empire State Building?**\n- **best pizza in the Village**\n\nOr tap a #coffee or #pizza tag to search that category.`,
     working: 'Thinking…',
     memory,
   };
@@ -336,8 +336,8 @@ export function planTurn(rawInput: string, memory: AgentMemory, userPosition: La
 
 export const SUGGESTIONS = [
   'Coffee near me',
-  'Plan an afternoon in DUMBO',
-  'How far is Barclays Center?',
-  'Best pizza in Williamsburg',
+  'Plan an afternoon in SoHo',
+  'How far is the Empire State Building?',
+  'Best pizza in the Village',
   'Shopping in Midtown',
 ];

@@ -36,70 +36,57 @@ export const CATEGORY_META: Record<PlaceCategory, { label: string; plural: strin
   market: { label: 'market', plural: 'markets', color: '#3ab8a2', icon: 'market' },
 };
 
-/** Where the demo pretends the user is standing: DeKalb & Cumberland, Fort Greene. */
-export const USER_POSITION: LatLng = { lat: 40.6879, lng: -73.9727 };
+/** Where the demo pretends the user is standing: Washington Square Park, Greenwich Village. A public landmark,
+    not anyone's real location — swap in the Geolocation API if a product needs the real one. */
+export const USER_POSITION: LatLng = { lat: 40.7309, lng: -73.9973 };
 
 export const AREAS: Record<string, { label: string; center: LatLng; keywords: string[] }> = {
-  'fort-greene': { label: 'Fort Greene', center: { lat: 40.6882, lng: -73.9742 }, keywords: ['fort greene', 'near me', 'nearby', 'around here', 'close by', 'here', 'clinton hill'] },
-  'prospect-heights': { label: 'Prospect Heights', center: { lat: 40.6765, lng: -73.9685 }, keywords: ['prospect heights', 'prospect park', 'park slope', 'vanderbilt'] },
-  'downtown-brooklyn': { label: 'Downtown Brooklyn', center: { lat: 40.6895, lng: -73.9845 }, keywords: ['downtown brooklyn', 'downtown', 'boerum hill'] },
-  dumbo: { label: 'DUMBO', center: { lat: 40.7033, lng: -73.9918 }, keywords: ['dumbo', 'brooklyn bridge', 'waterfront', 'brooklyn heights'] },
-  'cobble-hill': { label: 'Cobble Hill', center: { lat: 40.6845, lng: -73.9955 }, keywords: ['cobble hill', 'carroll gardens', 'smith street'] },
-  williamsburg: { label: 'Williamsburg', center: { lat: 40.7150, lng: -73.9620 }, keywords: ['williamsburg', 'domino', 'bedford'] },
+  'greenwich-village': { label: 'Greenwich Village', center: { lat: 40.7320, lng: -74.0005 }, keywords: ['greenwich village', 'the village', 'village', 'near me', 'nearby', 'around here', 'close by', 'here', 'washington square'] },
+  soho: { label: 'SoHo', center: { lat: 40.7235, lng: -73.9990 }, keywords: ['soho', 'nolita', 'prince street', 'spring street'] },
+  'lower-east-side': { label: 'Lower East Side', center: { lat: 40.7205, lng: -73.9890 }, keywords: ['lower east side', 'les', 'orchard street', 'delancey'] },
+  'lower-manhattan': { label: 'Lower Manhattan', center: { lat: 40.7075, lng: -74.0090 }, keywords: ['lower manhattan', 'financial district', 'fidi', 'battery', 'downtown'] },
   midtown: { label: 'Midtown Manhattan', center: { lat: 40.7545, lng: -73.9830 }, keywords: ['midtown', 'manhattan', 'times square', 'the city', 'city'] },
   chelsea: { label: 'Chelsea', center: { lat: 40.7440, lng: -74.0050 }, keywords: ['chelsea', 'high line', 'meatpacking', 'west village'] },
 };
 
 export const PLACES: Place[] = [
-  // Fort Greene
-  { id: 'fort-greene-park', name: 'Fort Greene Park', category: 'park', area: 'fort-greene', position: { lat: 40.6913, lng: -73.9749 }, blurb: '30 hilltop acres designed by Olmsted & Vaux, with skyline views from the monument steps.', tags: ['views', 'outdoors'] },
-  { id: 'greenlight-bookstore', name: 'Greenlight Bookstore', category: 'books', area: 'fort-greene', position: { lat: 40.6866, lng: -73.9744 }, blurb: 'Beloved indie on Fulton with a sharp staff-picks table and frequent author nights.', tags: ['indie', 'events'] },
-  { id: 'hungry-ghost', name: 'Hungry Ghost Coffee', category: 'coffee', area: 'fort-greene', position: { lat: 40.6862, lng: -73.9714 }, blurb: 'Stumptown pours and a sunny corner room — the neighborhood laptop cafe.', tags: ['wifi', 'espresso'] },
-  { id: 'romans', name: "Roman's", category: 'food', area: 'fort-greene', position: { lat: 40.6893, lng: -73.9694 }, blurb: 'Seasonal Italian from the Diner crew; the menu changes nightly and the negronis are dangerous.', tags: ['italian', 'dinner'] },
-  { id: 'walters', name: "Walter's", category: 'food', area: 'fort-greene', position: { lat: 40.6899, lng: -73.9725 }, blurb: 'Corner bistro across from the park — brunch eggs, steak frites, sidewalk seats.', tags: ['brunch', 'bistro'] },
-  { id: 'olea', name: 'Olea', category: 'food', area: 'fort-greene', position: { lat: 40.6885, lng: -73.9703 }, blurb: 'Mediterranean mezze in a candlelit room on Lafayette. Great for groups.', tags: ['mediterranean', 'dinner'] },
-  { id: 'bam', name: 'BAM Howard Gilman Opera House', category: 'landmark', area: 'fort-greene', position: { lat: 40.6863, lng: -73.9776 }, blurb: 'Brooklyn Academy of Music’s 1908 opera house — dance, film, and the Next Wave Festival.', tags: ['theater', 'culture'] },
-  { id: 'barclays-center', name: 'Barclays Center', category: 'landmark', area: 'fort-greene', position: { lat: 40.6826, lng: -73.9754 }, blurb: 'Home of the Nets and Liberty. The weathered-steel oculus is the Atlantic Ave landmark.', tags: ['arena', 'sports'] },
-  { id: 'fort-greene-greenmarket', name: 'Fort Greene Greenmarket', category: 'market', area: 'fort-greene', position: { lat: 40.6902, lng: -73.9737 }, blurb: 'Saturday farmers market along the park’s southeast edge — apples, cider, and bread.', tags: ['saturday', 'produce'] },
-  { id: 'dekalb-market-hall', name: 'DeKalb Market Hall', category: 'market', area: 'downtown-brooklyn', position: { lat: 40.6907, lng: -73.9820 }, blurb: 'Forty-vendor food hall under City Point, including the Katz’s outpost.', tags: ['food hall', 'lunch'] },
+  // Greenwich Village
+  { id: 'washington-square-park', name: 'Washington Square Park', category: 'park', area: 'greenwich-village', position: { lat: 40.7308, lng: -73.9973 }, blurb: 'The arch, the fountain, chess tables, and a piano player most afternoons.', tags: ['people watching', 'iconic'] },
+  { id: 'joes-pizza-carmine', name: "Joe's Pizza", category: 'pizza', area: 'greenwich-village', position: { lat: 40.7305, lng: -74.0021 }, blurb: 'The Carmine Street original since 1975 — a plain slice, folded, standing up.', tags: ['slice', 'classic'] },
+  { id: 'stumptown-village', name: 'Stumptown Coffee', category: 'coffee', area: 'greenwich-village', position: { lat: 40.7334, lng: -73.9985 }, blurb: 'Ace-era espresso bar on West 8th with a long bench and a fast line.', tags: ['espresso'] },
+  { id: 'via-carota', name: 'Via Carota', category: 'food', area: 'greenwich-village', position: { lat: 40.7334, lng: -74.0035 }, blurb: 'Rustic Italian on Grove Street — the cacio e pepe and the green salad are the point.', tags: ['italian', 'walk-in'] },
+  { id: 'three-lives', name: 'Three Lives & Company', category: 'books', area: 'greenwich-village', position: { lat: 40.7353, lng: -74.0015 }, blurb: 'Tiny corner bookshop with staff picks that never miss.', tags: ['indie'] },
+  { id: 'blue-note', name: 'Blue Note Jazz Club', category: 'landmark', area: 'greenwich-village', position: { lat: 40.7308, lng: -74.0006 }, blurb: 'West 3rd Street jazz room since 1981; late sets are the locals’ move.', tags: ['music', 'night'] },
+  { id: 'murrays-cheese', name: "Murray's Cheese", category: 'market', area: 'greenwich-village', position: { lat: 40.7308, lng: -74.0031 }, blurb: 'Bleecker Street cheese counter with caves downstairs and samples up front.', tags: ['cheese', 'deli'] },
+  { id: 'magnolia-bakery', name: 'Magnolia Bakery', category: 'dessert', area: 'greenwich-village', position: { lat: 40.7359, lng: -74.0050 }, blurb: 'The Bleecker Street banana pudding. Grab a spoon and walk to Hudson River Park.', tags: ['bakery'] },
+  { id: 'joe-coffee-waverly', name: 'Joe Coffee', category: 'coffee', area: 'greenwich-village', position: { lat: 40.7334, lng: -74.0003 }, blurb: 'Waverly Place corner shop — a cortado and a window seat.', tags: ['espresso'] },
+  { id: 'third-rail-coffee', name: 'Third Rail Coffee', category: 'coffee', area: 'greenwich-village', position: { lat: 40.7300, lng: -73.9994 }, blurb: 'Sullivan Street espresso bar, two blocks from the park.', tags: ['espresso'] },
+  { id: 'bleecker-street-pizza', name: 'Bleecker Street Pizza', category: 'pizza', area: 'greenwich-village', position: { lat: 40.7318, lng: -74.0035 }, blurb: 'The Nonna Maria slice on the corner of Seventh Avenue South.', tags: ['slice'] },
 
-  // Prospect Heights
-  { id: 'brooklyn-museum', name: 'Brooklyn Museum', category: 'museum', area: 'prospect-heights', position: { lat: 40.6712, lng: -73.9636 }, blurb: 'Egyptian galleries, Judy Chicago’s Dinner Party, and First Saturdays.', tags: ['art', 'free saturday'] },
-  { id: 'brooklyn-botanic-garden', name: 'Brooklyn Botanic Garden', category: 'park', area: 'prospect-heights', position: { lat: 40.6676, lng: -73.9630 }, blurb: '52 acres of gardens — the cherry esplanade peaks in late April.', tags: ['gardens', 'outdoors'] },
-  { id: 'grand-army-plaza', name: 'Grand Army Plaza', category: 'landmark', area: 'prospect-heights', position: { lat: 40.6739, lng: -73.9701 }, blurb: 'The Soldiers’ and Sailors’ Arch at the head of Prospect Park; Saturday greenmarket.', tags: ['arch', 'plaza'] },
-  { id: 'prospect-park', name: 'Prospect Park Long Meadow', category: 'park', area: 'prospect-heights', position: { lat: 40.6688, lng: -73.9720 }, blurb: 'A mile-long meadow that feels like the countryside. Best picnic lawn in the borough.', tags: ['picnic', 'outdoors'] },
-  { id: 'olmsted', name: 'Olmsted', category: 'food', area: 'prospect-heights', position: { lat: 40.6779, lng: -73.9684 }, blurb: 'Garden-to-table tasting plates with a backyard where the herbs grow.', tags: ['dinner', 'garden'] },
-  { id: 'ample-hills', name: 'Ample Hills Creamery', category: 'dessert', area: 'prospect-heights', position: { lat: 40.6788, lng: -73.9686 }, blurb: 'The original Vanderbilt Ave scoop shop — get the Ooey Gooey Butter Cake.', tags: ['ice cream'] },
-  { id: 'sit-and-wonder', name: 'Sit & Wonder', category: 'coffee', area: 'prospect-heights', position: { lat: 40.6773, lng: -73.9678 }, blurb: 'Tiny Washington Ave cafe with a big backyard and a solid cortado.', tags: ['backyard'] },
+  // SoHo
+  { id: 'balthazar', name: 'Balthazar', category: 'food', area: 'soho', position: { lat: 40.7226, lng: -73.9981 }, blurb: 'Spring Street brasserie — steak frites, a seafood tower, and the bread basket.', tags: ['french', 'brunch'] },
+  { id: 'prince-street-pizza', name: 'Prince Street Pizza', category: 'pizza', area: 'soho', position: { lat: 40.7231, lng: -73.9945 }, blurb: 'Square pepperoni slices with crispy cups. The line moves.', tags: ['square slice'] },
+  { id: 'mcnally-jackson', name: 'McNally Jackson', category: 'books', area: 'soho', position: { lat: 40.7234, lng: -73.9958 }, blurb: 'Two floors of fiction, design, and a café on Prince Street.', tags: ['indie', 'café'] },
+  { id: 'dominique-ansel', name: 'Dominique Ansel Bakery', category: 'dessert', area: 'soho', position: { lat: 40.7252, lng: -74.0029 }, blurb: 'Home of the Cronut; the DKA is the better call.', tags: ['bakery', 'pastry'] },
+  { id: 'la-colombe-soho', name: 'La Colombe', category: 'coffee', area: 'soho', position: { lat: 40.7240, lng: -73.9967 }, blurb: 'Draft lattes on Lafayette, poured from the tap.', tags: ['draft latte'] },
+  { id: 'drawing-center', name: 'The Drawing Center', category: 'museum', area: 'soho', position: { lat: 40.7227, lng: -74.0033 }, blurb: 'Free-ish Wooster Street galleries devoted entirely to drawing.', tags: ['art'] },
+  { id: 'soho-cast-iron', name: 'Cast-Iron Historic District', category: 'landmark', area: 'soho', position: { lat: 40.7224, lng: -74.0010 }, blurb: 'Greene Street’s cast-iron facades — look up between the shops.', tags: ['architecture', 'walk'] },
+  { id: 'apple-soho', name: 'Apple SoHo', category: 'shopping', area: 'soho', position: { lat: 40.7250, lng: -73.9986 }, blurb: 'The old post office on Prince, with the glass staircase.', tags: ['tech'] },
 
-  // Downtown / Boerum Hill
-  { id: 'devocion-downtown', name: 'Devoción', category: 'coffee', area: 'downtown-brooklyn', position: { lat: 40.6890, lng: -73.9838 }, blurb: 'Farm-direct Colombian beans roasted in Brooklyn; skylit room full of plants.', tags: ['roaster', 'wifi'] },
-  { id: 'blue-bottle-boerum-hill', name: 'Blue Bottle Coffee', category: 'coffee', area: 'downtown-brooklyn', position: { lat: 40.6884, lng: -73.9868 }, blurb: 'Dean Street outpost — New Orleans iced coffee and a quiet back room.', tags: ['iced coffee'] },
+  // Lower East Side
+  { id: 'katzs', name: "Katz's Delicatessen", category: 'food', area: 'lower-east-side', position: { lat: 40.7223, lng: -73.9874 }, blurb: 'Hand-cut pastrami on rye since 1888. Hold on to your ticket.', tags: ['deli', 'classic'] },
+  { id: 'russ-and-daughters', name: 'Russ & Daughters', category: 'market', area: 'lower-east-side', position: { lat: 40.7226, lng: -73.9882 }, blurb: 'Fourth-generation appetizing shop — lox, sable, and a bialy.', tags: ['appetizing'] },
+  { id: 'essex-market', name: 'Essex Market', category: 'market', area: 'lower-east-side', position: { lat: 40.7184, lng: -73.9878 }, blurb: 'The city’s 1940 market hall, now under glass on Delancey.', tags: ['food hall'] },
+  { id: 'tenement-museum', name: 'Tenement Museum', category: 'museum', area: 'lower-east-side', position: { lat: 40.7188, lng: -73.9900 }, blurb: 'Guided tours through restored apartments on Orchard Street.', tags: ['history', 'tours'] },
+  { id: 'economy-candy', name: 'Economy Candy', category: 'dessert', area: 'lower-east-side', position: { lat: 40.7199, lng: -73.9893 }, blurb: 'Floor-to-ceiling candy on Rivington since 1937.', tags: ['candy'] },
+  { id: 'sara-roosevelt-park', name: 'Sara D. Roosevelt Park', category: 'park', area: 'lower-east-side', position: { lat: 40.7208, lng: -73.9923 }, blurb: 'A long green strip with a community garden and courts.', tags: ['outdoors'] },
+  { id: 'ludlow-coffee', name: 'Ludlow Coffee Supply', category: 'coffee', area: 'lower-east-side', position: { lat: 40.7210, lng: -73.9878 }, blurb: 'Neighborhood espresso bar with a barber in the back.', tags: ['espresso'] },
 
-  // Cobble Hill / Carroll Gardens
-  { id: 'lucali', name: 'Lucali', category: 'pizza', area: 'cobble-hill', position: { lat: 40.6807, lng: -73.9990 }, blurb: 'Candlelit thin-crust legend on Henry Street. Cash only, BYOB, plan to wait.', tags: ['byob', 'cash only'] },
-  { id: 'books-are-magic', name: 'Books Are Magic', category: 'books', area: 'cobble-hill', position: { lat: 40.6851, lng: -73.9926 }, blurb: 'Emma Straub’s Smith Street shop with the pink mural and a stellar kids’ nook.', tags: ['indie', 'kids'] },
-  { id: 'brooklyn-farmacy', name: 'Brooklyn Farmacy & Soda Fountain', category: 'dessert', area: 'cobble-hill', position: { lat: 40.6836, lng: -73.9977 }, blurb: 'Restored 1920s apothecary serving egg creams and sundaes.', tags: ['sundaes', 'retro'] },
-
-  // DUMBO / Brooklyn Heights
-  { id: 'brooklyn-bridge-park', name: 'Brooklyn Bridge Park Pier 1', category: 'park', area: 'dumbo', position: { lat: 40.7013, lng: -73.9963 }, blurb: 'Lawns and granite steps straight onto the harbor — the classic Manhattan skyline shot.', tags: ['views', 'waterfront'] },
-  { id: 'time-out-market', name: 'Time Out Market', category: 'food', area: 'dumbo', position: { lat: 40.7033, lng: -73.9908 }, blurb: 'Rooftop food hall in Empire Stores; grab a tray and head upstairs for the bridge view.', tags: ['food hall', 'rooftop'] },
-  { id: 'julianas', name: "Juliana's Pizza", category: 'pizza', area: 'dumbo', position: { lat: 40.7027, lng: -73.9934 }, blurb: 'Patsy Grimaldi’s coal-oven return, under the bridge. Shorter line than next door.', tags: ['coal oven'] },
-  { id: 'brooklyn-bridge', name: 'Brooklyn Bridge', category: 'landmark', area: 'dumbo', position: { lat: 40.7040, lng: -73.9945 }, blurb: 'Walk the 1883 span at golden hour — start from the Brooklyn side to face the skyline.', tags: ['walk', 'views'] },
-  { id: 'janes-carousel', name: "Jane's Carousel", category: 'landmark', area: 'dumbo', position: { lat: 40.7043, lng: -73.9920 }, blurb: 'Restored 1922 carousel in a glass Jean Nouvel pavilion at the water’s edge.', tags: ['kids', 'waterfront'] },
-  { id: 'powerhouse-arena', name: 'POWERHOUSE Arena', category: 'books', area: 'dumbo', position: { lat: 40.7031, lng: -73.9898 }, blurb: 'Art-book publisher’s cavernous shop and event space on Adams Street.', tags: ['art books'] },
-  { id: 'brooklyn-roasting', name: 'Brooklyn Roasting Company', category: 'coffee', area: 'dumbo', position: { lat: 40.7040, lng: -73.9865 }, blurb: 'Warehouse roastery on Jay Street with long communal tables.', tags: ['roaster'] },
-  { id: 'jacques-torres', name: 'Jacques Torres Chocolate', category: 'dessert', area: 'dumbo', position: { lat: 40.7032, lng: -73.9916 }, blurb: 'Wicked hot chocolate and fresh-dipped bonbons from the original Water Street shop.', tags: ['chocolate'] },
-  { id: 'empire-stores', name: 'Empire Stores', category: 'shopping', area: 'dumbo', position: { lat: 40.7035, lng: -73.9905 }, blurb: 'Civil War-era coffee warehouses turned into shops, a rooftop, and the Brooklyn Historical Society annex.', tags: ['boutiques', 'rooftop'] },
-
-  // Williamsburg
-  { id: 'devocion-williamsburg', name: 'Devoción Williamsburg', category: 'coffee', area: 'williamsburg', position: { lat: 40.7160, lng: -73.9640 }, blurb: 'The flagship: a skylight, a living wall, and the freshest beans in the city.', tags: ['roaster', 'flagship'] },
-  { id: 'lindustrie', name: "L'industrie Pizzeria", category: 'pizza', area: 'williamsburg', position: { lat: 40.7124, lng: -73.9584 }, blurb: 'Burrata slice with a swirl of basil oil. Worth the line every time.', tags: ['slice'] },
-  { id: 'domino-park', name: 'Domino Park', category: 'park', area: 'williamsburg', position: { lat: 40.7140, lng: -73.9679 }, blurb: 'Six waterfront acres on the old sugar refinery site, with salvaged cranes and a taco stand.', tags: ['waterfront', 'views'] },
-  { id: 'peter-luger', name: 'Peter Luger Steak House', category: 'food', area: 'williamsburg', position: { lat: 40.7098, lng: -73.9626 }, blurb: 'The 1887 porterhouse institution. Cash or debit, gruff waiters, thick bacon.', tags: ['steak', 'classic'] },
-  { id: 'artists-and-fleas', name: 'Artists & Fleas', category: 'shopping', area: 'williamsburg', position: { lat: 40.7192, lng: -73.9590 }, blurb: 'Weekend maker market on N 7th — vintage, jewelry, prints.', tags: ['market', 'weekend'] },
-  { id: 'spoonbill', name: 'Spoonbill & Sugartown', category: 'books', area: 'williamsburg', position: { lat: 40.7166, lng: -73.9589 }, blurb: 'Bedford Ave books with a deep art, design, and used section.', tags: ['art books', 'used'] },
-  { id: 'oddfellows', name: 'OddFellows Ice Cream', category: 'dessert', area: 'williamsburg', position: { lat: 40.7205, lng: -73.9625 }, blurb: 'Rotating oddball flavors — miso cherry, cornbread — on Kent Ave.', tags: ['ice cream'] },
+  // Lower Manhattan
+  { id: 'brooklyn-bridge-manhattan', name: 'Brooklyn Bridge Walkway', category: 'landmark', area: 'lower-manhattan', position: { lat: 40.7061, lng: -73.9969 }, blurb: 'Start the 1883 span from City Hall — best at golden hour.', tags: ['walk', 'views'] },
+  { id: '911-memorial', name: '9/11 Memorial & Museum', category: 'museum', area: 'lower-manhattan', position: { lat: 40.7115, lng: -74.0134 }, blurb: 'The reflecting pools in the footprints of the towers.', tags: ['memorial'] },
+  { id: 'the-battery', name: 'The Battery', category: 'park', area: 'lower-manhattan', position: { lat: 40.7033, lng: -74.0170 }, blurb: 'Harbor gardens at the tip of the island, with ferries to the statue.', tags: ['waterfront', 'views'] },
+  { id: 'stone-street', name: 'Stone Street', category: 'food', area: 'lower-manhattan', position: { lat: 40.7043, lng: -74.0103 }, blurb: 'Cobbled lane of taverns with picnic tables all summer.', tags: ['outdoor dining'] },
 
   // Midtown Manhattan
   { id: 'empire-state-building', name: 'Empire State Building', category: 'landmark', area: 'midtown', position: { lat: 40.7484, lng: -73.9857 }, blurb: '86th-floor open-air deck; book the first slot of the morning to skip the crush.', tags: ['views', 'iconic'] },
