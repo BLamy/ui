@@ -118,7 +118,7 @@ export {
   type Trip,
 } from './demos/map-chat/map-agent';
 export { MapChatDemo, type MapChatDemoProps } from './demos/map-chat/map-chat-demo';
-export { ProgressStepper, type ProgressStepperProps, type ProgressStep, type ProgressStepState } from './lib/progress-stepper';
+export { ProgressStepper, progressStepperVariants, type ProgressStepperProps, type ProgressStep, type ProgressStepState } from './lib/progress-stepper';
 export {
   DeliveryTrackingDemo,
   DELIVERY_STAGES,

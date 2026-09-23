@@ -3,79 +3,24 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 @source "./";
 
-.ck-row:hover{background:rgba(255,255,255,.035)}
-.ck-row:hover .ck-acts{opacity:1}
-.ck-hl:hover{background:rgba(255,255,255,.06)}
+/* Shared scrollbar for chat transcripts and lists. */
 .ck-scroll{scrollbar-width:thin;scrollbar-color:rgba(140,140,155,.28) transparent}
 .ck-scroll::-webkit-scrollbar{width:8px}
 .ck-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.25);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
 @keyframes ck-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
 /* ── ArtifactChatContainer ─────────────────────────────────────────────────────────────────
-   Docked chat column beside the artifact, or the artifact alone with a FloatingChat over it. */
-.ck-artifact-chat{position:relative;width:100%;height:100%;min-width:0;min-height:0;display:grid;grid-template-columns:minmax(0,var(--ck-artifact-chat-width,400px)) minmax(0,1fr);overflow:hidden;background:var(--bl-bg,#fff);color:var(--bl-label,#111);font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif);isolation:isolate;--wb-bg:#111116;--wb-card:rgba(31,31,39,.86);--wb-sep:rgba(255,255,255,.13);--wb-label:#ededf2;--wb-label2:rgba(235,235,245,.68);--wb-label3:rgba(235,235,245,.4);--wb-fill:rgba(255,255,255,.08);--wb-fill2:rgba(255,255,255,.15);--wb-tint:var(--bl-tint,#0a84ff)}
-.ck-artifact-chat__chat{min-width:0;min-height:0;display:flex;flex-direction:column;border-right:1px solid var(--bl-sep,rgba(60,60,67,.22));background:var(--bl-card,#fff);z-index:2}
-.ck-artifact-chat__content{position:relative;min-width:0;min-height:0;overflow:auto;background:var(--bl-bg,#fff)}
-.ck-artifact-chat__transcript{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-.ck-artifact-chat__composer{flex-shrink:0;min-width:0}
-.ck-artifact-chat[data-layout="compact"]{display:block}
-.ck-artifact-chat[data-layout="compact"] .ck-artifact-chat__content{position:absolute;inset:0;padding-bottom:0}
-.ck-sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+   Layout lives in utilities on the component. This is the --wb-* token map that keeps an embedded
+   Workbench Composer matched to the chat; .ck-artifact-chat, __chat and __content remain as host hooks. */
+.ck-artifact-chat{--wb-bg:#111116;--wb-card:rgba(31,31,39,.86);--wb-sep:rgba(255,255,255,.13);--wb-label:#ededf2;--wb-label2:rgba(235,235,245,.68);--wb-label3:rgba(235,235,245,.4);--wb-fill:rgba(255,255,255,.08);--wb-fill2:rgba(255,255,255,.15);--wb-tint:var(--bl-tint,#0a84ff)}
 
 /* ── FloatingSheet ─────────────────────────────────────────────────────────────────────────
-   A pointer-transparent layer that fills its positioned host. Everything interactive inside
-   re-enables pointer events, so the host (a map, a canvas, an artifact) stays usable around
-   the surface. The host supplies --bl-* tokens; tone="dark|light" overrides them so the sheet
-   can disagree with its host (a light order card over a light map, dark glass over a photo).
+   Geometry and surface styling live in utilities on the component, driven by the --ck-sheet-*
+   variables the gesture writes. What stays here: the tone token maps (tone="dark|light" lets the sheet
+   disagree with its host), the rules for whatever the host puts in the body, and the peek masks.
    --ck-sheet-surface / --ck-sheet-line are RGB triplets the glass mixes its alphas into. */
-.ck-floating-sheet{position:absolute;inset:0;z-index:40;pointer-events:none;color:var(--bl-label,#f5f5f7);font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif);--ck-sheet-surface:18,18,22;--ck-sheet-line:255,255,255}
 .ck-floating-sheet[data-tone="dark"]{--bl-label:#f5f5f7;--bl-label2:rgba(235,235,245,.62);--bl-label3:rgba(235,235,245,.32);--bl-card:#1c1c1e;--bl-card2:#2c2c2e;--bl-sep:rgba(84,84,88,.6);--bl-fill:rgba(120,120,128,.24);--bl-fill2:rgba(120,120,128,.36);color:#f5f5f7;--ck-sheet-surface:18,18,22;--ck-sheet-line:255,255,255}
 .ck-floating-sheet[data-tone="light"]{--bl-label:#1c1c1e;--bl-label2:rgba(60,60,67,.6);--bl-label3:rgba(60,60,67,.3);--bl-card:#fff;--bl-card2:#f2f2f7;--bl-sep:rgba(60,60,67,.24);--bl-fill:rgba(120,120,128,.14);--bl-fill2:rgba(120,120,128,.22);color:#1c1c1e;--ck-sheet-surface:250,250,252;--ck-sheet-line:0,0,0}
-/* The scrim tracks the drag through resolved custom properties, so the host dims only as far
-   as the sheet has actually grown. */
-.ck-floating-sheet__scrim{position:absolute;display:block;inset:0;z-index:0;border:0;padding:0;background:#000;opacity:var(--ck-sheet-scrim-opacity,0);pointer-events:none;transition:opacity .42s cubic-bezier(.32,.72,0,1)}
-.ck-floating-sheet__scrim[data-open]{pointer-events:auto}
-.ck-floating-sheet[data-dragging] .ck-floating-sheet__scrim{transition:none}
-
-/* One surface, inset from the host edges by the gutter. The cap, the growing body and the
-   foot are rows of the same rounded rect, so opening the sheet only makes that rect taller —
-   there is no second card to fade in and no seam under the cap. The backdrop filter itself
-   is inline so the production CSS optimizer cannot rewrite the unprefixed property out of
-   Safari's bundle. */
-.ck-floating-sheet__surface{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;left:50%;width:var(--ck-sheet-width,calc(100% - 40px));height:var(--ck-sheet-height,auto);bottom:var(--ck-sheet-bottom-gutter,20px);z-index:2;min-width:0;overflow:hidden;pointer-events:auto;border:1px solid rgba(var(--ck-sheet-line),var(--ck-sheet-border-alpha,.12));border-radius:var(--ck-sheet-radius,28px) var(--ck-sheet-radius,28px) var(--ck-sheet-radius-bottom,28px) var(--ck-sheet-radius-bottom,28px);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.018) 34%,rgba(255,255,255,.026)),rgba(var(--ck-sheet-surface),var(--ck-sheet-bg-alpha,.28));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(255,255,255,.03),0 2px 10px rgba(0,0,0,.12),0 var(--ck-sheet-shadow-y,14px) var(--ck-sheet-shadow-blur,34px) -12px rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22));transform:translateX(-50%);transition:left .48s cubic-bezier(.22,1,.36,1),right .48s cubic-bezier(.22,1,.36,1),top .48s cubic-bezier(.22,1,.36,1),width .48s cubic-bezier(.22,1,.36,1),height .48s cubic-bezier(.22,1,.36,1),bottom .48s cubic-bezier(.22,1,.36,1),border-radius .44s cubic-bezier(.32,.72,0,1),transform .48s cubic-bezier(.22,1,.36,1),opacity .24s ease,background .34s ease,border-color .34s ease,box-shadow .34s ease,backdrop-filter .34s ease}
-/* The opaque variant reads as a system sheet: card colour, no glass highlights, a soft
-   shadow that deepens as it grows. */
-.ck-floating-sheet[data-appearance="sheet"] .ck-floating-sheet__surface{background:var(--bl-card,#fff);border-color:rgba(var(--ck-sheet-line),calc(var(--ck-sheet-border-alpha,.12) * .5));box-shadow:0 -1px 0 rgba(var(--ck-sheet-line),.04),0 2px 10px rgba(0,0,0,.08),0 var(--ck-sheet-shadow-y,14px) var(--ck-sheet-shadow-blur,34px) -12px rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))}
-.ck-floating-sheet__surface[data-hidden]{transform:translate(-50%,calc(100% + 44px));opacity:0;pointer-events:none}
-.ck-floating-sheet__surface[data-dragging]{transition:none}
-.ck-floating-sheet__surface[data-minimized]{top:auto;right:auto;bottom:var(--ck-sheet-gutter,20px);left:50%;transform:translateX(-50%)}
-.ck-floating-sheet__surface[data-minimized][data-fab-position="top-left"]{top:var(--ck-sheet-gutter,20px);bottom:auto;left:var(--ck-sheet-gutter,20px);transform:none}
-.ck-floating-sheet__surface[data-minimized][data-fab-position="top-center"]{top:var(--ck-sheet-gutter,20px);bottom:auto;left:50%;transform:translateX(-50%)}
-.ck-floating-sheet__surface[data-minimized][data-fab-position="top-right"]{top:var(--ck-sheet-gutter,20px);right:var(--ck-sheet-gutter,20px);bottom:auto;left:auto;transform:none}
-.ck-floating-sheet__surface[data-minimized][data-fab-position="center-left"]{top:50%;bottom:auto;left:var(--ck-sheet-gutter,20px);transform:translateY(-50%)}
-.ck-floating-sheet__surface[data-minimized][data-fab-position="center-right"]{top:50%;right:var(--ck-sheet-gutter,20px);bottom:auto;left:auto;transform:translateY(-50%)}
-.ck-floating-sheet__surface[data-minimized][data-fab-position="bottom-left"]{right:auto;bottom:var(--ck-sheet-gutter,20px);left:var(--ck-sheet-gutter,20px);transform:none}
-.ck-floating-sheet__surface[data-minimized][data-fab-position="bottom-right"]{right:var(--ck-sheet-gutter,20px);bottom:var(--ck-sheet-gutter,20px);left:auto;transform:none}
-/* Docked edge to edge, the FAB still needs room from the host edge. */
-.ck-floating-sheet__surface[data-minimized]{bottom:max(var(--ck-sheet-gutter,20px),20px)}
-/* The cap is the top row of that surface rather than a tab stuck onto it. */
-.ck-floating-sheet__cap{box-sizing:border-box;flex-shrink:0;width:100%;height:18px;display:grid;place-items:center;padding:0;border:0;background:none;color:inherit;cursor:grab;touch-action:none}
-.ck-floating-sheet__cap,.ck-floating-sheet__reveal,.ck-floating-sheet__foot{opacity:calc(1 - var(--ck-sheet-minimize,0));transition:opacity .18s ease}
-.ck-floating-sheet__surface[data-dragging] .ck-floating-sheet__cap{cursor:grabbing}
-.ck-floating-sheet__grip{display:block;width:32px;height:4px;border-radius:999px;background:var(--bl-label3,rgba(235,235,245,.32));transition:width .24s ease,background .24s ease}
-.ck-floating-sheet__cap:hover .ck-floating-sheet__grip,.ck-floating-sheet__cap:focus-visible .ck-floating-sheet__grip,.ck-floating-sheet__cap[data-open] .ck-floating-sheet__grip{width:40px;background:var(--bl-label2,rgba(235,235,245,.62))}
-/* Inset, because the surface clips its own overflow. */
-.ck-floating-sheet__cap:focus-visible{outline:2px solid var(--bl-tint,#0a84ff);outline-offset:-2px}
-
-/* Height is driven by --ck-sheet-reveal, which the cap drag writes one-to-one with the
-   pointer. The body is laid out at its full grown height behind that window; `end`
-   alignment pins it to the foot so a transcript grows upward out of the cap, `start`
-   alignment keeps a card's header against the cap and lets the rest emerge below. */
-.ck-floating-sheet__reveal{position:relative;flex-shrink:0;width:100%;height:var(--ck-sheet-reveal,0px);overflow:hidden;visibility:hidden;transition:height .44s cubic-bezier(.32,.72,0,1),visibility 0s linear .44s}
-.ck-floating-sheet__surface[data-expanded] .ck-floating-sheet__reveal{visibility:visible;transition:height .44s cubic-bezier(.32,.72,0,1),visibility 0s}
-.ck-floating-sheet__surface[data-dragging] .ck-floating-sheet__reveal{transition:visibility 0s}
-.ck-floating-sheet__body{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;min-width:0;overflow:hidden}
-.ck-floating-sheet[data-body-align="end"] .ck-floating-sheet__body{top:auto;bottom:0;justify-content:flex-end}
 .ck-floating-sheet__body>*{box-sizing:border-box;width:100%;min-height:100%;background:transparent!important}
 /* Bottom-anchored bodies let short content sit against the foot so the newest lines peek out. */
 .ck-floating-sheet[data-body-align="end"] .ck-floating-sheet__body>*{min-height:0;max-height:100%}
@@ -84,12 +29,6 @@
 .ck-floating-sheet[data-body-align="end"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 34px);mask-image:linear-gradient(to bottom,transparent,#000 34px)}
 .ck-floating-sheet[data-body-align="start"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:linear-gradient(to top,transparent,#000 28px);mask-image:linear-gradient(to top,transparent,#000 28px)}
 .ck-floating-sheet[data-body-align="start"][data-appearance="sheet"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:none;mask-image:none}
-.ck-floating-sheet__foot{position:relative;flex-shrink:0;min-width:0;border-top:1px solid rgba(var(--ck-sheet-line),var(--ck-sheet-divider-alpha,0))}
-.ck-floating-sheet__foot[data-empty]{border-top:0}
-.ck-floating-sheet__fab{position:absolute;inset:0;display:grid;place-items:center;width:100%;height:100%;padding:0;border:0;border-radius:50%;background:transparent;color:var(--bl-label,#f5f5f7);opacity:var(--ck-sheet-minimize,0);pointer-events:none;cursor:pointer}
-.ck-floating-sheet__surface[data-minimized] .ck-floating-sheet__fab{pointer-events:auto}
-.ck-floating-sheet__fab-dot{display:block;width:10px;height:10px;border-radius:50%;background:var(--bl-tint,#0a84ff)}
-@media (prefers-reduced-motion:reduce){.ck-floating-sheet__scrim,.ck-floating-sheet__surface,.ck-floating-sheet__grip{transition:none;animation:none}.ck-floating-sheet__reveal{transition:visibility 0s}}
 
 /* ── FloatingChat ──────────────────────────────────────────────────────────────────────────
    A FloatingSheet whose body is the transcript and whose foot is the composer, or a tappable
@@ -97,17 +36,10 @@
    Composer matched to the glass. */
 .ck-floating-chat{--wb-bg:#111116;--wb-card:rgba(31,31,39,.86);--wb-sep:rgba(255,255,255,.13);--wb-label:#ededf2;--wb-label2:rgba(235,235,245,.68);--wb-label3:rgba(235,235,245,.4);--wb-fill:rgba(255,255,255,.08);--wb-fill2:rgba(255,255,255,.15);--wb-tint:var(--bl-tint,#0a84ff)}
 .ck-floating-chat[data-tone="light"]{--wb-bg:#fff;--wb-card:rgba(255,255,255,.86);--wb-sep:rgba(0,0,0,.1);--wb-label:#1c1c1e;--wb-label2:rgba(60,60,67,.68);--wb-label3:rgba(60,60,67,.4);--wb-fill:rgba(0,0,0,.05);--wb-fill2:rgba(0,0,0,.1)}
-.ck-floating-chat__composer{min-width:0}
-.ck-floating-chat__composer[data-inactive]{position:absolute;right:0;bottom:0;left:0;visibility:hidden;pointer-events:none}
 .ck-floating-chat__composer [data-slot="composer"]{--wb-card:rgba(20,20,25,.34);--wb-sep:rgba(255,255,255,.1)}
 .ck-floating-chat[data-tone="light"] .ck-floating-chat__composer [data-slot="composer"]{--wb-card:rgba(255,255,255,.5);--wb-sep:rgba(0,0,0,.08)}
 .ck-floating-chat__composer [data-slot="composer"]>div:first-child{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.ck-floating-chat__working{box-sizing:border-box;width:100%;min-height:46px;display:flex;align-items:center;gap:10px;border:0;border-radius:24px;padding:5px 15px 7px;background:transparent;color:var(--bl-label,#f5f5f7);font:inherit;cursor:pointer;text-align:left}
-.ck-floating-chat__working:focus-visible{outline:2px solid var(--bl-tint,#0a84ff);outline-offset:-2px}
-.ck-floating-chat__working-icon{display:grid;place-items:center;color:var(--bl-label2,rgba(235,235,245,.62));animation:ck-floating-working 1.8s ease-in-out infinite}
-.ck-floating-chat__working-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:560;color:var(--bl-label2,rgba(235,235,245,.62))}
 @keyframes ck-floating-working{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}
-@media (prefers-reduced-motion:reduce){.ck-floating-chat__working-icon{animation:none}}
 
 /* ── TileMap ───────────────────────────────────────────────────────────────────────────────
    Dependency-free slippy map: integer-zoom raster tiles scaled to the fractional camera, with
@@ -196,27 +128,10 @@
 .ck-artifact-chat[data-layout="split"] .ck-map-chat__suggestions{padding:10px 14px 0}
 @media (prefers-reduced-motion:reduce){.ck-tile-map__tile,.ck-tile-map__pin-marker{transition:none}.ck-tile-map__pin[data-kind="user"] .ck-tile-map__pin-marker{animation:none}}
 
+
 /* ── ProgressStepper ───────────────────────────────────────────────────────────────────────
-   Milestones with a fill segment under each icon. Steps expose data-state so hosts can
-   restyle done/active/todo independently; the accent follows the host tint. */
-.ck-stepper{display:flex;gap:6px;margin:0;padding:0;list-style:none;--ck-stepper-accent:var(--bl-tint,#0a84ff);--ck-stepper-idle:var(--bl-fill,rgba(120,120,128,.2))}
-.ck-stepper__step{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px}
-.ck-stepper__icon{display:grid;place-items:center;width:28px;height:28px;color:var(--bl-label3,rgba(60,60,67,.3));transition:color .3s ease,transform .3s cubic-bezier(.32,.72,0,1)}
-.ck-stepper__step[data-state="done"] .ck-stepper__icon,.ck-stepper__step[data-state="active"] .ck-stepper__icon{color:var(--ck-stepper-accent)}
-.ck-stepper__step[data-state="active"] .ck-stepper__icon{transform:scale(1.1)}
-.ck-stepper__track{position:relative;width:100%;height:5px;border-radius:999px;background:var(--ck-stepper-idle);overflow:hidden}
-.ck-stepper__fill{position:absolute;inset:0;border-radius:inherit;background:var(--ck-stepper-accent);transform-origin:left center;transform:scaleX(0);transition:transform .5s cubic-bezier(.32,.72,0,1)}
-.ck-stepper__step[data-state="done"] .ck-stepper__fill{transform:scaleX(1)}
-.ck-stepper__step[data-state="active"] .ck-stepper__fill{transform:scaleX(.45)}
-.ck-stepper[data-animated] .ck-stepper__step[data-state="active"] .ck-stepper__fill{transform:none;left:-100%;width:100%;background:linear-gradient(90deg,transparent,var(--ck-stepper-accent) 40%,var(--ck-stepper-accent) 60%,transparent);animation:ck-stepper-sweep 1.6s ease-in-out infinite}
-.ck-stepper[data-variant="line"]{gap:0}
-.ck-stepper[data-variant="line"] .ck-stepper__step{flex-direction:row;gap:0}
-.ck-stepper[data-variant="line"] .ck-stepper__track{height:3px}
-.ck-stepper[data-variant="line"] .ck-stepper__step:last-child .ck-stepper__track{display:none}
-.ck-stepper__label{font-size:11px;font-weight:600;color:var(--bl-label2,rgba(60,60,67,.6));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.ck-stepper__step[data-state="active"] .ck-stepper__label{color:var(--bl-label,#1c1c1e)}
+   Styled with utilities on the component; the active segment's sweep. */
 @keyframes ck-stepper-sweep{0%{transform:translateX(0)}100%{transform:translateX(200%)}}
-@media (prefers-reduced-motion:reduce){.ck-stepper[data-animated] .ck-stepper__step[data-state="active"] .ck-stepper__fill{animation:none;left:0;transform:scaleX(.45);background:var(--ck-stepper-accent)}}
 
 /* ── DeliveryTrackingDemo ──────────────────────────────────────────────────────────────────
    A light TileMap with an opaque, edge-docked FloatingSheet carrying the order status. */

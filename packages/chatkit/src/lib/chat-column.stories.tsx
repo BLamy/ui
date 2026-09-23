@@ -14,7 +14,10 @@ type Story = StoryObj<typeof ChatColumn>;
 
 export const Default: Story = {
   render: () => (
-    <div className="ck-artifact-chat" style={{ width: 400, height: 560, display: 'flex', borderRadius: 18, fontFamily: KFONT }}>
+    <div
+      className="ck-artifact-chat relative isolate min-h-0 min-w-0 overflow-hidden bg-[color:var(--bl-bg,#fff)] text-[color:var(--bl-label,#111)]"
+      style={{ width: 400, height: 560, display: 'flex', borderRadius: 18, fontFamily: KFONT }}
+    >
       <ChatColumn style={{ flex: 1 }}>
         <ChatColumn.Transcript>
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 14, padding: 18, background: K.bg, color: K.label, boxSizing: 'border-box' }}>

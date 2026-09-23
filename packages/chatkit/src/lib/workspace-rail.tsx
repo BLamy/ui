@@ -1,8 +1,9 @@
 import type { CSSProperties } from 'react';
+import { Button } from 'react-aria-components';
 import { ChatIcon, chatIconPaths } from './chat-icon';
-import { K, KFONT } from './chat-tokens';
 import { cn } from './cn';
 import { kvib } from './kvib';
+import { titleRef } from './title-ref';
 
 export interface Workspace {
   id: string;
@@ -41,67 +42,39 @@ export function WorkspaceRail({
   return (
     <div
       data-slot="workspace-rail"
-      className={cn(className)}
-      style={{
-        width: 52,
-        flexShrink: 0,
-        background: K.rail,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 8,
-        padding: '10px 0',
-        borderRight: '1px solid ' + K.sep,
-        boxSizing: 'border-box',
-        ...style,
-      }}
+      className={cn(
+        'box-border flex w-[52px] shrink-0 flex-col items-center gap-[8px] border-r border-[rgba(255,255,255,.07)] bg-[#0D0D11] px-0 py-[10px]',
+        className,
+      )}
+      style={style}
     >
       {ws.map((w) => (
-        <button
+        <Button
           key={w.id}
-          title={w.title ?? w.label}
-          onClick={() => {
+          ref={titleRef(w.title ?? w.label)}
+          onPress={() => {
             kvib([5]);
             onSelect?.(w.id);
           }}
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 11,
-            border: w.active ? '2px solid ' + w.color : '2px solid transparent',
-            background: w.active ? w.color : K.fill2,
-            color: '#fff',
-            fontWeight: 800,
-            fontSize: 14,
-            cursor: 'pointer',
-            fontFamily: KFONT,
-            flexShrink: 0,
-          }}
+          className={cn(
+            'size-[34px] shrink-0 cursor-pointer rounded-[11px] border-2 font-ios text-[14px] font-extrabold text-white',
+            w.active ? 'border-(--ck-ws-color) bg-(--ck-ws-color)' : 'border-transparent bg-[rgba(255,255,255,.1)]',
+          )}
+          style={{ '--ck-ws-color': w.color } as CSSProperties}
         >
           {w.label}
-        </button>
+        </Button>
       ))}
-      <button
+      <Button
         aria-label="Add workspace"
-        onClick={() => {
+        onPress={() => {
           kvib([5]);
           onAdd?.();
         }}
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 11,
-          border: '1px dashed ' + K.sep,
-          background: 'none',
-          color: K.mut3,
-          cursor: 'pointer',
-          display: 'grid',
-          placeItems: 'center',
-          flexShrink: 0,
-        }}
+        className="grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[11px] border border-dashed border-[rgba(255,255,255,.07)] bg-transparent text-[rgba(235,235,245,.35)]"
       >
         <ChatIcon d={chatIconPaths.plus} size={14} />
-      </button>
+      </Button>
     </div>
   );
 }

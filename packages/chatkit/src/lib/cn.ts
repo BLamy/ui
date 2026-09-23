@@ -1,4 +1,2 @@
-/** Minimal className joiner (avoids a hard dep while @brett_lamy/ui is built in parallel). */
-export function cn(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(' ');
-}
+/** clsx + tailwind-merge with the BL palette registered — the same `cn` as @brett_lamy/ui. */
+export { cn } from '@brett_lamy/ui';

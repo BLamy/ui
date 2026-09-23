@@ -19,13 +19,8 @@ export function RichText({ text, users }: RichTextProps) {
           return (
             <span
               key={i}
-              style={{
-                background: 'rgba(10,132,255,.16)',
-                color: '#7EB6FF',
-                borderRadius: 4,
-                padding: '0 3px',
-                fontWeight: 600,
-              }}
+              data-slot="mention"
+              className="rounded-[4px] bg-[rgba(10,132,255,.16)] px-[3px] py-0 font-semibold text-[#7EB6FF]"
             >
               @{map[m[1]].name}
             </span>

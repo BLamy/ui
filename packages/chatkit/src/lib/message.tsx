@@ -1,12 +1,13 @@
 import type { CSSProperties } from 'react';
+import { Button } from 'react-aria-components';
 import { ChatAvatar } from './chat-avatar';
 import { ChatIcon, chatIconPaths } from './chat-icon';
-import { K, KFONT } from './chat-tokens';
 import { useChatUsers, type ChatMessageData, type ChatUsers } from './chat-users';
 import { cn } from './cn';
 import { kvib } from './kvib';
 import { RichText } from './rich-text';
 import { ThreadPreview } from './thread-preview';
+import { titleRef } from './title-ref';
 
 export interface MessageProps {
   m: ChatMessageData;
@@ -35,74 +36,42 @@ export function Message({
   return (
     <div
       data-slot="message"
-      className={cn('ck-row', className)}
-      style={{
-        position: 'relative',
-        display: 'flex',
-        gap: 11,
-        padding: '7px 18px',
-        fontFamily: KFONT,
-        ...style,
-      }}
+      className={cn('relative flex gap-[11px] px-[18px] py-[7px] font-ios [&:hover]:bg-[rgba(255,255,255,.035)]', className)}
+      style={{ '--ck-tint': tint, '--ck-role': usr.role, ...style } as CSSProperties}
     >
       <ChatAvatar user={usr} size={36} square={usr.bot} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
-          <span style={{ fontSize: 13.5, fontWeight: 700, color: usr.role }}>{usr.name}</span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-[7px]">
+          <span className="text-[13.5px] font-bold text-(--ck-role)">{usr.name}</span>
           {usr.bot && (
-            <span
-              style={{
-                fontSize: 9,
-                fontWeight: 800,
-                letterSpacing: '.4px',
-                background: tint,
-                color: '#fff',
-                borderRadius: 4,
-                padding: '1px 5px',
-              }}
-            >
+            <span className="rounded-[4px] bg-(--ck-tint) px-[5px] py-px text-[9px] font-extrabold tracking-[.4px] text-white">
               APP
             </span>
           )}
-          <span style={{ fontSize: 10.5, color: K.mut3 }}>{m.t}</span>
+          <span className="text-[10.5px] text-[rgba(235,235,245,.35)]">{m.t}</span>
         </div>
-        <div
-          style={{
-            fontSize: 13.5,
-            lineHeight: 1.55,
-            color: K.label,
-            marginTop: 1,
-            overflowWrap: 'break-word',
-          }}
-        >
+        <div className="mt-px text-[13.5px] leading-[1.55] wrap-break-word text-[#EDEDF2]">
           <RichText text={m.txt} users={map} />
         </div>
         {m.reacts.length > 0 && (
-          <div style={{ display: 'flex', gap: 5, marginTop: 6 }}>
+          <div className="mt-[6px] flex gap-[5px]">
             {m.reacts.map(([e, n, mine], i) => (
-              <button
+              <Button
                 key={i}
-                onClick={() => {
+                onPress={() => {
                   kvib([5]);
                   onReact(m.id, i);
                 }}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  border: '1px solid ' + (mine ? tint : K.sep),
-                  background: mine ? 'rgba(10,132,255,.14)' : K.fill,
-                  borderRadius: 999,
-                  padding: '2px 8px',
-                  fontSize: 12,
-                  color: K.label,
-                  cursor: 'pointer',
-                  fontFamily: KFONT,
-                }}
+                className={cn(
+                  'inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border px-[8px] py-[2px] font-ios text-[12px] text-[#EDEDF2]',
+                  mine
+                    ? 'border-(--ck-tint) bg-[rgba(10,132,255,.14)]'
+                    : 'border-[rgba(255,255,255,.07)] bg-[rgba(255,255,255,.055)]',
+                )}
               >
                 {e}
-                <span style={{ fontSize: 11, color: mine ? '#7EB6FF' : K.mut }}>{n}</span>
-              </button>
+                <span className={cn('text-[11px]', mine ? 'text-[#7EB6FF]' : 'text-[rgba(235,235,245,.6)]')}>{n}</span>
+              </Button>
             ))}
           </div>
         )}
@@ -110,59 +79,28 @@ export function Message({
           <ThreadPreview th={m.thread} tint={tint} users={map} onOpen={() => onOpenThread(m.id)} />
         )}
       </div>
-      <div
-        className="ck-acts"
-        style={{
-          position: 'absolute',
-          top: -10,
-          right: 16,
-          display: 'flex',
-          gap: 2,
-          opacity: 0,
-          transition: 'opacity .15s',
-          background: K.card,
-          border: '1px solid ' + K.sep,
-          borderRadius: 9,
-          padding: 2,
-        }}
-      >
-        <button
-          onClick={() => {
+      {/* Hover actions. Row hover never revealed them (inline opacity always won over the old .ck-row:hover rule), so they stay transparent; keyboard focus reveals them. */}
+      <div className="absolute -top-[10px] right-[16px] flex gap-[2px] rounded-[9px] border border-[rgba(255,255,255,.07)] bg-[#1B1B22] p-[2px] opacity-0 transition-opacity duration-150 ease-[ease] has-data-focus-visible:opacity-100">
+        <Button
+          onPress={() => {
             kvib([5]);
             onReact(m.id, -1);
           }}
-          title="Add 👍"
-          style={{
-            border: 0,
-            background: 'none',
-            cursor: 'pointer',
-            fontSize: 13,
-            padding: '3px 6px',
-            borderRadius: 7,
-          }}
-          className="ck-hl"
+          ref={titleRef('Add 👍')}
+          className="cursor-pointer rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-[13px]"
         >
           👍
-        </button>
-        <button
-          onClick={() => {
+        </Button>
+        <Button
+          onPress={() => {
             kvib([6]);
             m.thread ? onOpenThread(m.id) : onStartThread(m.id);
           }}
-          title={m.thread ? 'Open thread' : 'Start thread'}
-          style={{
-            border: 0,
-            background: 'none',
-            color: K.mut,
-            cursor: 'pointer',
-            padding: '3px 6px',
-            borderRadius: 7,
-            display: 'grid',
-          }}
-          className="ck-hl"
+          ref={titleRef(m.thread ? 'Open thread' : 'Start thread')}
+          className="grid cursor-pointer rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-[rgba(235,235,245,.6)]"
         >
           <ChatIcon d={chatIconPaths.thread} size={14} />
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
+import { Button, Input } from 'react-aria-components';
 import { ChatIcon, chatIconPaths } from './chat-icon';
-import { K, KFONT } from './chat-tokens';
 import { cn } from './cn';
 import { kvib } from './kvib';
 
@@ -24,55 +24,30 @@ export function Composer({ placeholder, onSend, tint, autoFocus, className, styl
   return (
     <div
       data-slot="composer"
-      className={cn(className)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        background: K.card,
-        border: '1px solid ' + K.sep,
-        borderRadius: 12,
-        padding: '4px 4px 4px 13px',
-        ...style,
-      }}
+      className={cn(
+        'flex items-center gap-[8px] rounded-[12px] border border-[rgba(255,255,255,.07)] bg-[#1B1B22] py-[4px] pr-[4px] pl-[13px]',
+        className,
+      )}
+      style={{ '--ck-tint': tint, ...style } as CSSProperties}
     >
-      <input
+      <Input
         value={v}
         autoFocus={autoFocus}
         onChange={(e) => setV(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && send()}
         placeholder={placeholder}
-        style={{
-          flex: 1,
-          minWidth: 0,
-          border: 0,
-          background: 'none',
-          outline: 'none',
-          color: K.label,
-          fontSize: 13.5,
-          fontFamily: KFONT,
-          padding: '7px 0',
-        }}
+        className="min-w-0 flex-1 border-0 bg-transparent px-0 py-[7px] font-ios text-[13.5px] text-[#EDEDF2] outline-none"
       />
-      <button
-        onClick={send}
+      <Button
+        onPress={send}
         aria-label="Send"
-        style={{
-          border: 0,
-          borderRadius: 9,
-          width: 32,
-          height: 32,
-          background: v.trim() ? tint : K.fill2,
-          color: '#fff',
-          cursor: 'pointer',
-          display: 'grid',
-          placeItems: 'center',
-          transition: 'background .2s',
-          flexShrink: 0,
-        }}
+        className={cn(
+          'grid size-[32px] shrink-0 cursor-pointer place-items-center rounded-[9px] border-0 text-white transition-[background] duration-200 ease-[ease]',
+          v.trim() ? 'bg-(--ck-tint)' : 'bg-[rgba(255,255,255,.1)]',
+        )}
       >
         <ChatIcon d={chatIconPaths.send} size={15} sw={2.2} />
-      </button>
+      </Button>
     </div>
   );
 }

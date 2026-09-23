@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { AdaptivePane, collectSlots, defineSlot, useContainerWidth } from '@brett_lamy/ui';
-import { chatTokenVars, K, KFONT } from './chat-tokens';
+import { chatTokenVars } from './chat-tokens';
 import { cn } from './cn';
 
 export interface ChatShellContextValue {
@@ -26,6 +26,8 @@ export function useChatShell(): ChatShellContextValue {
 }
 
 export type ChatShellSlotChildren = ReactNode;
+
+const columnStyle: CSSProperties = { display: 'flex' };
 
 export interface ChatShellProps {
   breakpoint?: number;
@@ -55,20 +57,12 @@ export function ChatShell({
       <div
         ref={ref}
         data-slot="chat-shell"
-        className={cn(className)}
-        style={{
-          ...chatTokenVars,
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          background: K.bg,
-          color: K.label,
-          overflow: 'hidden',
-          fontFamily: KFONT,
-          colorScheme: 'dark',
-          ...style,
-        }}
+        className={cn(
+          'relative flex h-full w-full overflow-hidden bg-[#131318] font-ios text-[#EDEDF2] [color-scheme:dark]',
+          className,
+        )}
+        // The chat tokens as --ck-* custom properties, for anything rendered inside the shell.
+        style={{ ...chatTokenVars, ...style }}
       >
         <AdaptivePane
           mode={compact ? 'drawer' : 'column'}
@@ -76,13 +70,14 @@ export function ChatShell({
           open={navOpen}
           onClose={() => setNavOpen(false)}
           scrim="rgba(0,0,0,.5)"
-          columnStyle={{ display: 'flex' }}
-          style={{ display: 'flex' }}
+          // AdaptivePane's docked column only takes a style object.
+          columnStyle={columnStyle}
+          className="flex"
         >
           {slots.rail}
           {slots.nav}
         </AdaptivePane>
-        <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex' }}>{slots.main}</div>
+        <div className="flex min-h-0 min-w-0 flex-1">{slots.main}</div>
       </div>
     </ChatShellCtx.Provider>
   );
