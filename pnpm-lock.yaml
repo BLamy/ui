@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   ios-vibrator-pro-max@3.0.3:
-    hash: 03fbf83be1c7b80d8861cc7c33e710a096b8a2b1aad1c3a8d8ab9e17110c506c
+    hash: 11ef27e2b285b276f84c846ee5a5219cb9c8acd662fcbf2a741d3971e0eb5622
     path: patches/ios-vibrator-pro-max@3.0.3.patch
 
 importers:
@@ -365,7 +365,7 @@ importers:
         version: 13.1.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       ios-vibrator-pro-max:
         specifier: 3.0.3
-        version: 3.0.3(patch_hash=03fbf83be1c7b80d8861cc7c33e710a096b8a2b1aad1c3a8d8ab9e17110c506c)
+        version: 3.0.3(patch_hash=11ef27e2b285b276f84c846ee5a5219cb9c8acd662fcbf2a741d3971e0eb5622)
       react:
         specifier: ^18 || ^19
         version: 19.0.0
@@ -15027,7 +15027,7 @@ snapshots:
 
   internmap@2.0.3: {}
 
-  ios-vibrator-pro-max@3.0.3(patch_hash=03fbf83be1c7b80d8861cc7c33e710a096b8a2b1aad1c3a8d8ab9e17110c506c): {}
+  ios-vibrator-pro-max@3.0.3(patch_hash=11ef27e2b285b276f84c846ee5a5219cb9c8acd662fcbf2a741d3971e0eb5622): {}
 
   ip-regex@2.1.0: {}
 

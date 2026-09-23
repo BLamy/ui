@@ -30,3 +30,4 @@ typings/
 tools/vr/__baseline__/
 tools/vr/.results/
 tools/vr/results.json
+.claude/worktrees/

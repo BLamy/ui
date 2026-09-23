@@ -14,6 +14,7 @@ const root = '#storybook-root';
 
 /** [story, gesture, after-gesture assertion (optional)] */
 const CASES = [
+  ['atoms-button--press-counter', { tap: `${root} [data-testid=press]` }, (t) => t.includes('Pressed 1')],
   ['atoms-switch--off', { tap: `${root} label` }],
   ['atoms-segmented--three-options', { tap: `${root} [data-slot=segmented] label >> nth=1` }],
   ['molecules-tabbar--interactive', { tap: `${root} button >> nth=1` }],
