@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { Button } from 'react-aria-components';
 import { ChatAvatar } from './chat-avatar';
 import { ChatIcon, chatIconPaths } from './chat-icon';
-import { K, KFONT } from './chat-tokens';
 import type { ChatChannel, ChatChannels } from './chat-users';
 import { cn } from './cn';
 import { kvib } from './kvib';
@@ -24,21 +24,13 @@ const defaultFooterUser = { name: 'Ada', c: '#0A84FF', role: '#7EB6FF' };
 
 function DefaultFooter() {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '9px 12px',
-        borderTop: '1px solid ' + K.sep,
-      }}
-    >
+    <div className="flex items-center gap-[8px] border-t border-[rgba(255,255,255,.07)] px-[12px] py-[9px]">
       <ChatAvatar user={defaultFooterUser} size={26} />
-      <div style={{ lineHeight: 1.1, flex: 1 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: K.label }}>Ada</div>
-        <div style={{ fontSize: 10, color: K.green, fontWeight: 600 }}>● online</div>
+      <div className="flex-1 leading-[1.1]">
+        <div className="text-[12px] font-bold text-[#EDEDF2]">Ada</div>
+        <div className="text-[10px] font-semibold text-[#32D74B]">● online</div>
       </div>
-      <span style={{ color: K.mut3, display: 'grid' }}>
+      <span className="grid text-[rgba(235,235,245,.35)]">
         <ChatIcon d={chatIconPaths.bell} size={14} />
       </span>
     </div>
@@ -68,71 +60,32 @@ export function ChannelList({
   return (
     <div
       data-slot="channel-list"
-      className={cn(className)}
-      style={{
-        width: 222,
-        flexShrink: 0,
-        background: K.side,
-        borderRight: '1px solid ' + K.sep,
-        display: 'flex',
-        flexDirection: 'column',
-        fontFamily: KFONT,
-        height: '100%',
-        boxSizing: 'border-box',
-        ...style,
-      }}
+      className={cn(
+        'box-border flex h-full w-[222px] shrink-0 flex-col border-r border-[rgba(255,255,255,.07)] bg-[#101015] font-ios',
+        className,
+      )}
+      style={{ '--ck-tint': tint, ...style } as CSSProperties}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '13px 14px 9px',
-          borderBottom: '1px solid ' + K.sep,
-        }}
-      >
-        <span
-          style={{ fontSize: 13.5, fontWeight: 800, color: K.label, letterSpacing: '-.1px', flex: 1 }}
-        >
-          {title}
-        </span>
+      <div className="flex items-center gap-[8px] border-b border-[rgba(255,255,255,.07)] px-[14px] pt-[13px] pb-[9px]">
+        <span className="flex-1 text-[13.5px] font-extrabold tracking-[-.1px] text-[#EDEDF2]">{title}</span>
         {onClose ? (
-          <button
-            onClick={onClose}
+          <Button
+            onPress={onClose}
             aria-label="Close channels"
-            style={{
-              border: 0,
-              background: 'none',
-              color: K.mut3,
-              cursor: 'pointer',
-              padding: 4,
-              display: 'grid',
-            }}
+            className="grid cursor-pointer border-0 bg-transparent p-[4px] text-[rgba(235,235,245,.35)]"
           >
             <ChatIcon d={chatIconPaths.x} size={14} />
-          </button>
+          </Button>
         ) : (
-          <span style={{ color: K.mut3, display: 'grid' }}>
-            <ChatIcon d={chatIconPaths.chev} size={13} style={{ transform: 'rotate(90deg)' }} />
+          <span className="grid text-[rgba(235,235,245,.35)]">
+            <ChatIcon d={chatIconPaths.chev} size={13} className="[transform:rotate(90deg)]" />
           </span>
         )}
       </div>
-      <div
-        className="ck-scroll"
-        style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 8px' }}
-      >
+      <div className="ck-scroll min-h-0 flex-1 overflow-y-auto px-[8px] py-[6px]">
         {secs.map((s) => (
           <div key={s.name}>
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '.7px',
-                textTransform: 'uppercase',
-                color: K.mut3,
-                padding: '11px 8px 4px',
-              }}
-            >
+            <div className="px-[8px] pt-[11px] pb-[4px] text-[10px] font-bold tracking-[.7px] text-[rgba(235,235,245,.35)] uppercase">
               {s.name}
             </div>
             {s.items.map(([id, ch]) => {
@@ -140,83 +93,36 @@ export function ChannelList({
               const threads = ch.msgs.filter((m) => m.thread);
               return (
                 <div key={id}>
-                  <button
-                    className="ck-hl"
-                    onClick={() => {
+                  <Button
+                    onPress={() => {
                       kvib([5]);
                       onPick(id);
                     }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 7,
-                      width: '100%',
-                      border: 0,
-                      borderRadius: 8,
-                      padding: '5px 8px',
-                      cursor: 'pointer',
-                      fontFamily: KFONT,
-                      background: on ? K.fill2 : 'none',
-                      color: on ? K.label : ch.unread ? K.label : K.mut,
-                      fontSize: 13.5,
-                      fontWeight: on || ch.unread ? 650 : 400,
-                      textAlign: 'left',
-                    }}
+                    className={cn(
+                      'flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 px-[8px] py-[5px] text-left font-ios text-[13.5px]',
+                      on ? 'bg-[rgba(255,255,255,.1)]' : 'bg-transparent',
+                      on || ch.unread ? 'font-[650] text-[#EDEDF2]' : 'font-normal text-[rgba(235,235,245,.6)]',
+                    )}
                   >
-                    <span style={{ color: K.mut3, display: 'grid' }}>
+                    <span className="grid text-[rgba(235,235,245,.35)]">
                       <ChatIcon d={chatIconPaths.hash} size={13} sw={2} />
                     </span>
-                    <span
-                      style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    >
-                      {ch.label}
-                    </span>
-                    {ch.unread && !on && (
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: tint }} />
-                    )}
-                  </button>
+                    <span className="flex-1 truncate">{ch.label}</span>
+                    {ch.unread && !on && <span className="size-[7px] rounded-[50%] bg-(--ck-tint)" />}
+                  </Button>
                   {on &&
                     threads.map((m) => (
-                      <button
+                      <Button
                         key={m.id}
-                        className="ck-hl"
-                        onClick={() => {
+                        onPress={() => {
                           kvib([4]);
                           onPick(id, m.id);
                         }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          width: '100%',
-                          border: 0,
-                          borderRadius: 7,
-                          padding: '3px 8px 3px 24px',
-                          cursor: 'pointer',
-                          fontFamily: KFONT,
-                          background: 'none',
-                          color: K.mut3,
-                          fontSize: 12,
-                          textAlign: 'left',
-                        }}
+                        className="flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 bg-transparent py-[3px] pr-[8px] pl-[24px] text-left font-ios text-[12px] text-[rgba(235,235,245,.35)]"
                       >
-                        <span
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderLeft: '1.5px solid ' + K.sep,
-                            borderBottom: '1.5px solid ' + K.sep,
-                            borderRadius: '0 0 0 4px',
-                            marginTop: -6,
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span
-                          style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                        >
-                          {m.thread?.title}
-                        </span>
-                      </button>
+                        <span className="-mt-[6px] size-[8px] shrink-0 rounded-[0_0_0_4px] border-b-[1.5px] border-l-[1.5px] border-[rgba(255,255,255,.07)]" />
+                        <span className="truncate">{m.thread?.title}</span>
+                      </Button>
                     ))}
                 </div>
               );

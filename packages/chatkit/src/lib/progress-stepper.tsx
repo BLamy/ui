@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { cva } from 'class-variance-authority';
 import { cn } from './cn';
 
 export interface ProgressStep {
@@ -23,6 +24,30 @@ export interface ProgressStepperProps {
   style?: CSSProperties;
 }
 
+export const progressStepperVariants = cva(
+  'm-0 flex list-none p-0 [--ck-stepper-accent:var(--bl-tint,#0a84ff)] [--ck-stepper-idle:var(--bl-fill,rgba(120,120,128,.2))]',
+  { variants: { variant: { bars: 'gap-[6px]', line: 'gap-0' } }, defaultVariants: { variant: 'bars' } },
+);
+
+const stepVariants = cva('group/step flex min-w-0 flex-1 items-center', {
+  variants: { variant: { bars: 'flex-col gap-[8px]', line: 'flex-row gap-0' } },
+});
+
+const trackVariants = cva('relative w-full overflow-hidden rounded-[999px] bg-(--ck-stepper-idle)', {
+  variants: { variant: { bars: 'h-[5px]', line: 'h-[3px] group-last/step:hidden' } },
+});
+
+/** The fill segment per state; the animated active segment sweeps a gradient (a still, partial bar under reduced motion). */
+function fillClass(state: ProgressStepState, animated: boolean) {
+  if (state === 'active' && animated) {
+    return 'left-[-100%] w-full bg-[linear-gradient(90deg,transparent,var(--ck-stepper-accent)_40%,var(--ck-stepper-accent)_60%,transparent)] [transform:none] animate-[ck-stepper-sweep_1.6s_ease-in-out_infinite] motion-reduce:left-0 motion-reduce:animate-none motion-reduce:bg-(color:--ck-stepper-accent) motion-reduce:bg-none motion-reduce:[transform:scaleX(.45)]';
+  }
+  return cn(
+    'bg-(color:--ck-stepper-accent)',
+    state === 'done' ? '[transform:scaleX(1)]' : state === 'active' ? '[transform:scaleX(.45)]' : '[transform:scaleX(0)]',
+  );
+}
+
 /**
  * A row of milestones for a multi-step process (an order, a checkout, a deploy). Each step
  * exposes `data-state="done|active|todo"` so hosts can restyle any of the three, and the
@@ -42,7 +67,7 @@ export function ProgressStepper({
       data-slot="progress-stepper"
       data-variant={variant}
       data-animated={animated || undefined}
-      className={cn('ck-stepper', className)}
+      className={cn(progressStepperVariants({ variant }), className)}
       style={style}
       aria-label="Progress"
     >
@@ -51,17 +76,43 @@ export function ProgressStepper({
         return (
           <li
             key={step.id}
-            className="ck-stepper__step"
+            data-slot="progress-step"
+            className={stepVariants({ variant })}
             data-state={state}
             aria-current={state === 'active' ? 'step' : undefined}
           >
-            <span className="ck-stepper__icon" aria-hidden="true">
+            <span
+              data-slot="progress-step-icon"
+              className={cn(
+                'grid size-[28px] place-items-center [transition:color_.3s_ease,transform_.3s_cubic-bezier(.32,.72,0,1)]',
+                state === 'todo' ? 'text-[color:var(--bl-label3,rgba(60,60,67,.3))]' : 'text-(--ck-stepper-accent)',
+                state === 'active' && '[transform:scale(1.1)]',
+              )}
+              aria-hidden="true"
+            >
               {step.icon}
             </span>
-            <span className="ck-stepper__track" aria-hidden="true">
-              <span className="ck-stepper__fill" />
+            <span data-slot="progress-step-track" className={trackVariants({ variant })} aria-hidden="true">
+              <span
+                data-slot="progress-step-fill"
+                className={cn(
+                  'absolute inset-0 origin-[left_center] rounded-[inherit] [transition:transform_.5s_cubic-bezier(.32,.72,0,1)]',
+                  fillClass(state, animated),
+                )}
+              />
             </span>
-            <span className={labels ? 'ck-stepper__label' : 'ck-sr-only'}>{step.label}</span>
+            <span
+              className={
+                labels
+                  ? cn(
+                      'max-w-full truncate text-[11px] font-semibold',
+                      state === 'active' ? 'text-[color:var(--bl-label,#1c1c1e)]' : 'text-[color:var(--bl-label2,rgba(60,60,67,.6))]',
+                    )
+                  : 'sr-only'
+              }
+            >
+              {step.label}
+            </span>
           </li>
         );
       })}

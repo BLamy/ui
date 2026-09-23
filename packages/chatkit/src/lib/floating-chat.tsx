@@ -7,6 +7,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
+import { Button } from 'react-aria-components';
 import { Haptics, collectSlots, defineSlot } from '@brett_lamy/ui';
 import { ChatIcon, chatIconPaths } from './chat-icon';
 import { cn } from './cn';
@@ -170,17 +171,29 @@ export function FloatingChat({
       <FloatingSheet.Foot>
         <ChatContext composing={composing} setComposing={setComposing}>
           {idle ? (
-            <button type="button" className="ck-floating-chat__working" onClick={revealComposer}>
-              <span className="ck-floating-chat__working-icon" aria-hidden="true">
+            <Button
+              data-slot="floating-chat-working"
+              className="box-border flex min-h-[46px] w-full cursor-pointer items-center gap-[10px] rounded-[24px] border-0 bg-transparent px-[15px] pt-[5px] pb-[7px] text-left [font:inherit] text-[color:var(--bl-label,#f5f5f7)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--bl-tint,#0a84ff)]"
+              onPress={revealComposer}
+            >
+              <span
+                className="grid animate-[ck-floating-working_1.8s_ease-in-out_infinite] place-items-center text-[color:var(--bl-label2,rgba(235,235,245,.62))] motion-reduce:animate-none"
+                aria-hidden="true"
+              >
                 <ChatIcon d={chatIconPaths.spark} size={18} />
               </span>
-              <span className="ck-floating-chat__working-label">{workingLabel}</span>
+              <span className="min-w-0 flex-1 truncate text-[15px] font-[560] text-[color:var(--bl-label2,rgba(235,235,245,.62))]">{workingLabel}</span>
               <ChatIcon d={chatIconPaths.plus} size={20} />
-              <span className="ck-sr-only">Add something new</span>
-            </button>
+              <span className="sr-only">Add something new</span>
+            </Button>
           ) : null}
+          {/* ck-floating-chat__composer keys the glass overrides for the embedded Workbench composer (styles.css). */}
           <div
-            className="ck-floating-chat__composer"
+            data-slot="floating-chat-composer"
+            className={cn(
+              'ck-floating-chat__composer min-w-0',
+              idle && 'invisible pointer-events-none absolute right-0 bottom-0 left-0',
+            )}
             data-inactive={idle || undefined}
             aria-hidden={idle}
             inert={idle}

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
+import { Button } from 'react-aria-components';
 import { ChatAvatar } from './chat-avatar';
-import { K, KFONT } from './chat-tokens';
 import { useChatUsers, type ChatThreadData, type ChatUsers } from './chat-users';
 import { cn } from './cn';
 import { kvib } from './kvib';
@@ -19,52 +19,32 @@ export function ThreadPreview({ th, onOpen, tint, users, className, style }: Thr
   const map = users ?? ctxUsers;
   const last = th.msgs[th.msgs.length - 1];
   return (
-    <button
+    <Button
       data-slot="thread-preview"
-      className={cn(className)}
-      onClick={() => {
+      className={cn(
+        'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-[10px] border border-[rgba(255,255,255,.07)] bg-[#1B1B22] px-[11px] py-[8px] text-left font-ios',
+        className,
+      )}
+      onPress={() => {
         kvib([6]);
         onOpen();
       }}
-      style={{
-        display: 'block',
-        width: '100%',
-        maxWidth: 520,
-        textAlign: 'left',
-        marginTop: 7,
-        cursor: 'pointer',
-        background: K.card,
-        border: '1px solid ' + K.sep,
-        borderRadius: 10,
-        padding: '8px 11px',
-        fontFamily: KFONT,
-        ...style,
-      }}
+      style={{ '--ck-tint': tint, ...style } as CSSProperties}
     >
-      <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5 }}>
-        <span style={{ fontWeight: 650, color: K.label }}>{th.title}</span>
-        <span style={{ color: tint, fontWeight: 600, whiteSpace: 'nowrap' }}>
+      <span className="flex items-center gap-[7px] text-[12.5px]">
+        <span className="font-[650] text-[#EDEDF2]">{th.title}</span>
+        <span className="font-semibold whitespace-nowrap text-(--ck-tint)">
           {th.msgs.length} {th.msgs.length === 1 ? 'message' : 'messages'} ›
         </span>
       </span>
       {last && (
-        <span
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            marginTop: 4,
-            fontSize: 12,
-            color: K.mut,
-            minWidth: 0,
-          }}
-        >
+        <span className="mt-[4px] flex min-w-0 items-center gap-[6px] text-[12px] text-[rgba(235,235,245,.6)]">
           <ChatAvatar user={map[last.u]} size={15} />
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span className="truncate">
             {map[last.u].name}: {last.txt}
           </span>
         </span>
       )}
-    </button>
+    </Button>
   );
 }

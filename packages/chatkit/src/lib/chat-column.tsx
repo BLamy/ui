@@ -14,9 +14,18 @@ export interface ChatColumnProps {
 export function ChatColumn({ children, className, style }: ChatColumnProps) {
   const slots = collectSlots(children);
   return (
-    <aside data-slot="chat-column" className={cn('ck-artifact-chat__chat', className)} style={style}>
-      <div className="ck-artifact-chat__transcript">{slots.transcript}</div>
-      <div className="ck-artifact-chat__composer">{slots.composer}</div>
+    <aside
+      data-slot="chat-column"
+      // ck-artifact-chat__chat stays as a hook for hosts that restyle the docked column.
+      className={cn('ck-artifact-chat__chat z-2 flex min-h-0 min-w-0 flex-col border-r border-[color:var(--bl-sep,rgba(60,60,67,.22))] bg-[color:var(--bl-card,#fff)]', className)}
+      style={style}
+    >
+      <div data-slot="chat-column-transcript" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        {slots.transcript}
+      </div>
+      <div data-slot="chat-column-composer" className="min-w-0 shrink-0">
+        {slots.composer}
+      </div>
     </aside>
   );
 }
