@@ -81,6 +81,7 @@
   --color-ck-mine: var(--ck-mine, rgba(10, 132, 255, .14));
   --color-ck-on-fill: var(--ck-on-fill, #fff);
   --color-ck-green: var(--ck-green, #32D74B);
+  --color-ck-red: var(--ck-red, #FF453A);
 
   --font-ios: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;

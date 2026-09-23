@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   AdaptivePane, Avatar, Credenza, EdgeDrawer, Haptics, Icon, IndexBar, SidebarDemo, NavigationStack, Segmented, SideDrawer, SplitView, Spinner,
-  Switch as BLSwitch, TabBar, List as BLList, ListSection as BLSection, ListRow as BLRow,
+  Switch as BLSwitch, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab, List as BLList, ListSection as BLSection, ListRow as BLRow,
   type AdaptivePaneMode, type Screen,
 } from '@brett_lamy/ui';
-import { ArtifactChatContainer, ChatDemo, DeliveryTrackingDemo, FloatingSheet, MapChatDemo, ProgressStepper, type FloatingSheetAppearance } from '@brett_lamy/chatkit';
+import { ArtifactChatContainer, ChatDemo, DeliveryTrackingDemo, FloatingSheet, MapChatDemo, ProgressStepper, WorkspaceRail, type FloatingSheetAppearance } from '@brett_lamy/chatkit';
 import {
   Composer, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
@@ -325,23 +325,55 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   tabs: {
-    title: 'TabBar', theme: 'bl', h: 420,
-    code: 'import { TabBar, Icon } from "./blui.tsx"\n\nexport default function App() {\n  const [tab, setTab] = React.useState("contacts")\n  return (\n    <div style={{ position: "relative", height: 320 }}>\n      <main style={{ position: "absolute", inset: "0 0 62px" }}>{/* per-tab content */}</main>\n      <TabBar selected={tab} onSelect={setTab} items={[\n        { id: "contacts", icon: "person", label: "Contacts" },\n        { id: "recents",  icon: "clock",  label: "Recents" },\n        { id: "settings", icon: "gear",   label: "Settings" },\n      ]}/>\n    </div>\n  )\n}',
+    title: 'TabView · horizontal, vertical, Discord rail', theme: 'bl', h: 420,
+    code: "import {\n  TabView, TabViewBar, TabViewList, TabViewTab, TabViewIndicator,\n  TabViewSeparator, TabViewAction, TabViewPanels, TabViewPanel,\n} from \"@brett_lamy/ui\"\n\n// orientation=\"horizontal\": an iOS bar at the bottom. \"vertical\": a left rail.\nexport function Sections({ orientation = \"horizontal\" }) {\n  return (\n    <TabView orientation={orientation} defaultSelectedKey=\"contacts\">\n      <TabViewBar>\n        <TabViewList aria-label=\"Sections\">\n          <TabViewTab id=\"contacts\" icon=\"person\" title=\"Contacts\" />\n          <TabViewTab id=\"recents\" icon=\"clock\" title=\"Recents\" />\n          <TabViewTab id=\"settings\" icon=\"sliders\" title=\"Settings\" />\n        </TabViewList>\n      </TabViewBar>\n      <TabViewPanels>\n        <TabViewPanel id=\"contacts\"><ContactList /></TabViewPanel>\n        <TabViewPanel id=\"recents\"><Recents /></TabViewPanel>\n        <TabViewPanel id=\"settings\"><Settings /></TabViewPanel>\n      </TabViewPanels>\n    </TabView>\n  )\n}\n\n// A Discord server rail: the same parts, a plain bar, custom tiles.\nexport function ServerRail({ servers, selected, onSelect, onAdd }) {\n  return (\n    <TabView orientation=\"vertical\" selectedKey={selected} onSelectionChange={onSelect}>\n      <TabViewBar variant=\"plain\" className=\"w-[52px] items-center gap-2 py-2.5\">\n        <TabViewList aria-label=\"Servers\" className=\"w-full items-center gap-2\">\n          <TabViewTab id=\"home\" textValue=\"Direct Messages\" className=\"group flex w-full justify-center\">\n            <TabViewIndicator variant=\"pill\" />\n            <Tile icon=\"message\" />\n          </TabViewTab>\n          <TabViewSeparator className=\"h-0.5 w-5 rounded-full\" />\n          {servers.map((s) => (\n            <TabViewTab key={s.id} id={s.id} textValue={s.name} className=\"group flex w-full justify-center\">\n              <TabViewIndicator variant=\"pill\" attention={s.unread} />\n              <Tile label={s.label} color={s.color} mentions={s.mentions} />\n            </TabViewTab>\n          ))}\n        </TabViewList>\n        <TabViewAction aria-label=\"Add a server\" onPress={onAdd}><Tile icon=\"plus\" /></TabViewAction>\n      </TabViewBar>\n    </TabView>\n  )\n}",
     Render: function TabsLive() {
+      const [mode, setMode] = useState<'horizontal' | 'vertical' | 'discord'>('horizontal');
       const [tab, setTab] = useState('contacts');
+      const [server, setServer] = useState('blui');
       const items = [{ id: 'contacts', icon: 'person', title: 'Contacts' }, { id: 'recents', icon: 'clock', title: 'Recents' }, { id: 'settings', icon: 'sliders', title: 'Settings' }];
       const blurb: Record<string, string> = { contacts: 'Each tab keeps its own stack — pushes slide under this bar.', recents: 'Tab state survives switching away and back.', settings: 'Every selection fires Haptics.selection().' };
-      const cur = items.find((i) => i.id === tab)!;
-      return <BLFrame h={330} bg="var(--bl-bg)">
-        <div style={{ position: 'absolute', inset: '0 0 62px', display: 'grid', placeItems: 'center', padding: '0 28px', textAlign: 'center' }}>
+      const servers = [
+        { id: 'blui', label: 'T', color: '#0A84FF', title: 'BL UI HQ' },
+        { id: 'creamery', label: 'C', color: '#BF5AF2', title: 'Creamery', unread: true },
+        { id: 'labs', label: 'L', color: '#32D74B', title: 'Labs', mentions: 4 },
+        { id: 'ops', label: 'O', color: '#FF9F0A', title: 'Ops', unread: true, mentions: 12 },
+      ];
+      const panel = (id: string) => {
+        const cur = items.find((i) => i.id === id)!;
+        return <div style={{ position: 'absolute', inset: mode === 'horizontal' ? '0 0 62px' : 0, display: 'grid', placeItems: 'center', padding: '0 28px', textAlign: 'center' }}>
           <div>
             <span style={{ display: 'inline-grid', placeItems: 'center', width: 46, height: 46, borderRadius: 13, background: 'var(--bl-fill)', color: 'var(--bl-tint)' }}><Icon name={cur.icon as any} size={25} /></span>
             <div style={{ fontSize: 16.5, fontWeight: 650, marginTop: 10 }}>{cur.title}</div>
-            <div style={{ fontSize: 13, color: 'var(--bl-label2)', marginTop: 4, lineHeight: 1.5 }}>{blurb[tab]}</div>
+            <div style={{ fontSize: 13, color: 'var(--bl-label2)', marginTop: 4, lineHeight: 1.5 }}>{blurb[id]}</div>
           </div>
-        </div>
-        <TabBar items={items} selected={tab} onSelect={setTab} />
-      </BLFrame>;
+        </div>;
+      };
+      const serverName = server === 'home' ? 'Direct Messages' : servers.find((s) => s.id === server)?.title;
+      return <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Segmented aria-label="Orientation" options={[{ id: 'horizontal', label: 'Horizontal' }, { id: 'vertical', label: 'Vertical' }, { id: 'discord', label: 'Discord rail' }]}
+          value={mode} onChange={(v) => setMode(v as typeof mode)} />
+        <BLFrame h={330} bg="var(--bl-bg)">
+          {mode === 'discord'
+            ? <div style={{ position: 'absolute', inset: 0, display: 'flex', background: '#131318', color: '#EDEDF2' }}>
+                <WorkspaceRail home={{ title: 'Direct Messages', mentions: 2 }} workspaces={servers} selectedKey={server} onSelect={setServer} />
+                <div style={{ padding: '22px 24px', fontSize: 13, lineHeight: 1.5, color: 'rgba(235,235,245,.6)' }}>
+                  <div style={{ fontSize: 16.5, fontWeight: 650, color: '#EDEDF2', marginBottom: 4 }}>{serverName}</div>
+                  ChatKit's WorkspaceRail is a vertical TabView: tiles are tabs (Up/Down arrows), the pill marks unread / hover / selected, and Add is an action, not a tab.
+                </div>
+              </div>
+            : <TabView key={mode} orientation={mode} selectedKey={tab} onSelectionChange={(k) => setTab(String(k))} style={{ position: 'absolute', inset: 0 }}>
+                <TabViewBar>
+                  <TabViewList aria-label="Sections">
+                    {items.map((it) => <TabViewTab key={it.id} id={it.id} icon={it.icon} title={it.title} />)}
+                  </TabViewList>
+                </TabViewBar>
+                <TabViewPanels>
+                  {items.map((it) => <TabViewPanel key={it.id} id={it.id}>{panel(it.id)}</TabViewPanel>)}
+                </TabViewPanels>
+              </TabView>}
+        </BLFrame>
+      </div>;
     },
   },
   split: {
