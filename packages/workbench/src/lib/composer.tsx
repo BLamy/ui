@@ -6,9 +6,14 @@ import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
 import '@brett_lamy/docstream-editor/styles.css';
 import { Button, ToggleButton } from './press';
 import { cva } from 'class-variance-authority';
+import { Dialog, Modal, ModalOverlay } from 'react-aria-components';
 import { cn } from './util';
 import { vib, tick } from './haptics';
 import { WIcon, type WIconName } from './icons';
+import {
+  InkPicker, PencilActions, PencilCanvas, PencilToolbar, PencilToolbarDivider, ToolPicker, PK_INKS, usePencilHistory,
+  type PencilTool,
+} from '@brett_lamy/pencilkit';
 
 /* ══ Composer ══ */
 const MODELS = ['Claude Opus 4.7', 'Claude Sonnet 4.9', 'Claude Haiku 4.5'];
@@ -77,24 +82,55 @@ function looksLikeMarkdown(text: string): boolean {
   return MARKDOWN_HINTS.some((pattern) => pattern.test(text));
 }
 
-/* AnnotateLightbox — click a pasted image: an annotation canvas overlays it; Save rasterizes image + strokes
-   into one flattened PNG. Pass a drawing surface (e.g. PencilCanvas from @brett_lamy/pencilkit) as `canvas`. */
+/* AnnotateLightbox — click a pasted image: a PencilKit canvas overlays it; Save rasterizes image + strokes into
+   one flattened PNG. Pass `canvas` to supply a different drawing surface (its first <svg> is flattened). */
 export interface AnnotateLightboxProps {
   src: string;
   onClose: () => void;
   onSave: (dataUrl: string) => void;
   canvas?: React.ReactNode;
 }
+
+/* The built-in surface: PencilKit canvas over the image, tools in a bar under it so they never cover the image. */
+function useDefaultAnnotator(enabled: boolean) {
+  const [tool, setTool] = useState<PencilTool>('pen');
+  const [ink, setInk] = useState(5);
+  const history = usePencilHistory();
+  if (!enabled) return { canvas: null, toolbar: null };
+  return {
+    canvas: (
+      <PencilCanvas tool={tool} ink={PK_INKS[ink]} strokes={history.strokes} onStrokesChange={history.onStrokesChange} />
+    ),
+    toolbar: (
+      <PencilToolbar className="relative bottom-auto left-auto mx-auto translate-x-0 shadow-none">
+        <ToolPicker value={tool} onChange={setTool} />
+        <PencilToolbarDivider />
+        <InkPicker value={ink} onChange={setInk} />
+        <PencilToolbarDivider />
+        <PencilActions
+          onUndo={history.undo}
+          onRedo={history.redo}
+          onClear={history.clear}
+          canUndo={history.canUndo}
+          canRedo={history.canRedo}
+        />
+      </PencilToolbar>
+    ),
+  };
+}
+
 export function AnnotateLightbox({ src, onClose, onSave, canvas }: AnnotateLightboxProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const annotator = useDefaultAnnotator(canvas === undefined);
   const save = () => {
     const img = imgRef.current,
       box = boxRef.current;
     if (!img || !box) return onClose();
+    // The box is exactly the image (aspect kept), so strokes map 1:1; export at the image's native resolution.
     const w = img.clientWidth,
       h = img.clientHeight,
-      sc = 2;
+      sc = Math.max(1, img.naturalWidth / w);
     const cv = document.createElement('canvas');
     cv.width = w * sc;
     cv.height = h * sc;
@@ -105,7 +141,7 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas }: AnnotateLight
       vib([12]);
       onSave(cv.toDataURL('image/png'));
     };
-    const svg = box.querySelector('svg');
+    const svg = box.querySelector('[data-slot="pencil-canvas"] > svg') ?? box.querySelector('svg');
     if (!svg) return fin();
     const cl = svg.cloneNode(true) as SVGElement;
     cl.setAttribute('width', String(w));
@@ -132,25 +168,32 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas }: AnnotateLight
     </Button>
   );
   return (
-    // backdrop: a click outside the card closes (a scrim, not a control)
-    <div data-slot="annotate-lightbox" onClick={onClose} className="fixed inset-0 z-400 grid place-items-center bg-[rgba(0,0,0,.74)]">
-      <div role="dialog" aria-label="Annotate image" onClick={(e) => e.stopPropagation()} className="flex max-w-[90vw] flex-col gap-2.5">
-        <div className="flex items-center gap-2">
-          <span className="flex-1 font-ios text-[13px] font-[650] text-[#EDEDF2]">Annotate — PencilKit strokes flatten into the image on save</span>
-          {btn('Cancel', false, onClose)}
-          {btn('Save annotation', true, save)}
-        </div>
-        <div
-          ref={boxRef}
-          className="relative overflow-hidden rounded-[14px] border border-[rgba(255,255,255,.14)] bg-[#0C0C10] [--bl-card:#1C1C23] [--bl-fill2:rgba(255,255,255,.14)] [--bl-fill:rgba(255,255,255,.07)] [--bl-label2:rgba(235,235,245,.6)] [--bl-label3:rgba(235,235,245,.35)] [--bl-label:#EDEDF2] [--bl-sep:rgba(255,255,255,.12)] [--bl-tint:var(--wb-tint,#0A84FF)]"
+    // react-aria modal: portals out of clipping/transformed ancestors, traps focus, Escape or an outside press closes.
+    <ModalOverlay
+      data-slot="annotate-lightbox"
+      isOpen
+      isDismissable
+      onOpenChange={(open) => { if (!open) onClose(); }}
+      className="fixed inset-0 z-400 grid place-items-center bg-[rgba(0,0,0,.74)]"
+    >
+      <Modal className="outline-none">
+        <Dialog
+          aria-label="Annotate image"
+          className="flex max-w-[90vw] flex-col gap-2.5 outline-none [--bl-card:#1C1C23] [--bl-fill2:rgba(255,255,255,.14)] [--bl-fill:rgba(255,255,255,.07)] [--bl-label2:rgba(235,235,245,.6)] [--bl-label3:rgba(235,235,245,.35)] [--bl-label:#EDEDF2] [--bl-sep:rgba(255,255,255,.12)] [--bl-tint:var(--wb-tint,#0A84FF)] scheme-dark"
         >
-          <img ref={imgRef} src={src} alt="" className="block max-h-[68vh] min-h-[240px] max-w-[86vw] min-w-[340px] object-contain" />
-          {canvas ?? (
-            <div className="absolute inset-0 grid place-items-center font-ios text-[12.5px] text-[#9C9CA6]">loading PencilKit…</div>
-          )}
-        </div>
-      </div>
-    </div>
+          <div className="flex items-center gap-2">
+            <span className="flex-1 font-ios text-[13px] font-[650] text-[#EDEDF2]">Annotate — PencilKit strokes flatten into the image on save</span>
+            {btn('Cancel', false, onClose)}
+            {btn('Save annotation', true, save)}
+          </div>
+          <div ref={boxRef} className="relative overflow-hidden rounded-[14px] border border-[rgba(255,255,255,.14)] bg-[#0C0C10]">
+            <img ref={imgRef} src={src} alt="" className="block h-auto max-h-[68vh] w-auto max-w-[86vw] min-w-[min(340px,86vw)]" />
+            {canvas ?? annotator.canvas}
+          </div>
+          {annotator.toolbar}
+        </Dialog>
+      </Modal>
+    </ModalOverlay>
   );
 }
 

@@ -402,6 +402,9 @@ importers:
       '@brett_lamy/docstream-editor':
         specifier: 0.5.8
         version: 0.5.8(0a7ef276b03a292c8e6f326e945be643)
+      '@brett_lamy/pencilkit':
+        specifier: workspace:*
+        version: link:../pencilkit
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../ui

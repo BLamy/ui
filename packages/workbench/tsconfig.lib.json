@@ -32,6 +32,9 @@
   "references": [
     {
       "path": "../ui/tsconfig.lib.json"
+    },
+    {
+      "path": "../pencilkit/tsconfig.lib.json"
     }
   ]
 }

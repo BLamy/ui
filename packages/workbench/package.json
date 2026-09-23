@@ -34,7 +34,8 @@
     "@tiptap/suggestion": "3.30.5",
     "@brett_lamy/ui": "workspace:*",
     "react-aria-components": "^1",
-    "class-variance-authority": "^0.7"
+    "class-variance-authority": "^0.7",
+    "@brett_lamy/pencilkit": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18 || ^19",
