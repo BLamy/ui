@@ -2,23 +2,24 @@
 import { useMemo, useState } from 'react';
 import {
   Avatar, HapticsPlayground, IndexBar, NavigationStack, SearchField, TabBar, BLProvider,
-  List as BLList, ListSection as BLSection, ListRow as BLRow,
+  List as BLList, ListSection as BLSection, ListRow as BLRow, useAppearance,
   type Screen,
 } from '@brett_lamy/ui';
 import { WorkbenchDemo } from '@brett_lamy/workbench';
 import { PencilKitDemo, demoStrokes } from '@brett_lamy/pencilkit';
-import { BLL } from './frame';
+import { BLDK, BLL } from './frame';
 
 const frame = (h: number, maxW?: number | string): React.CSSProperties => ({
-  position: 'relative', height: h, maxWidth: maxW, border: '1px solid rgba(20,20,40,0.1)',
-  borderRadius: 14, overflow: 'hidden', margin: '16px 0', boxShadow: '0 18px 44px -18px rgba(15,15,35,0.3)',
+  position: 'relative', height: h, maxWidth: maxW, border: '1px solid var(--dk-border3)',
+  borderRadius: 14, overflow: 'hidden', margin: '16px 0', boxShadow: '0 18px 44px -18px var(--dk-shadow)',
 });
 
 export function HapticsDemoBlock() {
+  const dark = useAppearance() === 'dark';
   return (
     <div style={{
-      background: '#F2F2F7', border: '1px solid rgba(20,20,40,0.07)', borderRadius: 16,
-      padding: '10px 4px 14px', margin: '16px 0', ...BLL,
+      background: 'var(--dk-demo)', border: '1px solid var(--dk-border2)', borderRadius: 16,
+      padding: '10px 4px 14px', margin: '16px 0', ...(dark ? BLDK : BLL),
     } as any}>
       <HapticsPlayground />
     </div>

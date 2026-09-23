@@ -1,4 +1,70 @@
 /* BL UI Docs shell — ported from project/BL UI Docs.dc.html */
+
+/* Shell palette. Light values are the prototype's; `data-theme="dark"` on <html> flips the shell, and the
+   shadcn tokens below retheme Docstream (which reads --card/--foreground/--border…). */
+:root {
+  color-scheme: light;
+  --dk-bg: #FCFCFD;
+  --dk-fg: #17171C;
+  --dk-side: #F6F6F8;
+  --dk-card: #fff;
+  --dk-border: rgba(20, 20, 40, 0.08);
+  --dk-border2: rgba(20, 20, 40, 0.06);
+  --dk-border3: rgba(20, 20, 40, 0.1);
+  --dk-border4: rgba(20, 20, 40, 0.12);
+  --dk-muted: #8A8A94;
+  --dk-faint: #9A9AA3;
+  --dk-icon: #55555E;
+  --dk-nav: #3A3A42;
+  --dk-toc: #71717C;
+  --dk-accent: #0A84FF;
+  --dk-active: rgba(10, 132, 255, .1);
+  --dk-hover: rgba(120, 120, 128, 0.1);
+  --dk-link: #2E66D0;
+  --dk-link-hover: #1E4AA6;
+  --dk-demo: #F2F2F7;
+  --dk-shadow: rgba(15, 15, 35, 0.3);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --dk-bg: #0E0E11;
+  --dk-fg: #ECECF1;
+  --dk-side: #141418;
+  --dk-card: #17171B;
+  --dk-border: rgba(255, 255, 255, 0.08);
+  --dk-border2: rgba(255, 255, 255, 0.06);
+  --dk-border3: rgba(255, 255, 255, 0.1);
+  --dk-border4: rgba(255, 255, 255, 0.12);
+  --dk-muted: #8E8E99;
+  --dk-faint: #6E6E79;
+  --dk-icon: #A8A8B3;
+  --dk-nav: #C8C8D0;
+  --dk-toc: #9A9AA5;
+  --dk-accent: #3B9BFF;
+  --dk-active: rgba(10, 132, 255, .18);
+  --dk-hover: rgba(120, 120, 128, 0.18);
+  --dk-link: #6EA8FF;
+  --dk-link-hover: #9CC2FF;
+  --dk-demo: #0A0A0C;
+  --dk-shadow: rgba(0, 0, 0, 0.6);
+  --background: #0E0E11;
+  --foreground: #ECECF1;
+  --card: #17171B;
+  --card-foreground: #ECECF1;
+  --muted: #1C1C21;
+  --muted-foreground: #9A9AA5;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #1C1C21;
+  --accent-foreground: #ECECF1;
+  --primary: #3B9BFF;
+  --primary-foreground: #fff;
+  --mdc-code: rgba(255, 255, 255, .09);
+  --mdc-border: rgba(255, 255, 255, .1);
+  --mdc-mut: #9C9CA6;
+}
+:root[data-theme="dark"] .docs-article {
+  --gb-code-bg: rgba(255, 255, 255, 0.05);
+}
 html,
 body,
 #root {
@@ -10,16 +76,16 @@ body {
   overflow: clip;
   margin: 0;
   padding: 0;
-  background: #FCFCFD;
-  color: #17171C;
+  background: var(--dk-bg);
+  color: var(--dk-fg);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 a {
-  color: #2E66D0;
+  color: var(--dk-link);
 }
 a:hover {
-  color: #1E4AA6;
+  color: var(--dk-link-hover);
 }
 *:focus {
   outline: none;
@@ -44,6 +110,11 @@ a:hover {
 }
 .dk-scroll::-webkit-scrollbar-track {
   background: transparent;
+}
+/* Docstream pads each article for standalone pages; here markdown is split around live blocks. */
+.dk-md .docs-article {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 .dk-doc .wb-md {
   font-size: 14.5px;
@@ -79,26 +150,26 @@ a:hover {
   cursor: pointer;
   font-family: inherit;
   font-size: 13.5px;
-  color: #3A3A42;
+  color: var(--dk-nav);
   padding: 6px 10px;
   border-radius: 8px;
   margin: 1px 0;
 }
 .dk-nav:hover {
-  background: rgba(120, 120, 128, 0.1);
+  background: var(--dk-hover);
 }
 .dk-pn {
   flex: 1;
   max-width: 48%;
-  border: 1px solid rgba(20, 20, 40, 0.1);
-  background: #fff;
+  border: 1px solid var(--dk-border3);
+  background: var(--dk-card);
   border-radius: 12px;
   padding: 12px 14px;
   cursor: pointer;
   font-family: inherit;
 }
 .dk-pn:hover {
-  border-color: #0A84FF;
+  border-color: var(--dk-accent);
 }
 .dk-toc {
   display: block;
@@ -110,10 +181,22 @@ a:hover {
   cursor: pointer;
   font-family: inherit;
   font-size: 12.5px;
-  color: #71717C;
+  color: var(--dk-toc);
   padding: 4px 0;
   line-height: 1.4;
 }
 .dk-toc:hover {
-  color: #0A84FF;
+  color: var(--dk-accent);
+}
+.dk-theme {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: grid;
+  color: var(--dk-icon);
+}
+.dk-theme:hover {
+  background: var(--dk-hover);
 }

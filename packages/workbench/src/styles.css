@@ -69,3 +69,15 @@
   content:attr(data-placeholder);float:left;height:0;color:var(--wb-label3);pointer-events:none
 }
 .wb-composer-doc.gb .gb-code{margin:.45em 0}
+
+/* Docstream paints code tokens with inline Palenight colors, which only read on a dark background. Remap them by
+   the surrounding color-scheme: dark keeps Palenight, light gets same-hue colors with AA contrast on the pale
+   code background. */
+.wb-md :where(pre) span[style="color:#C792EA"] { color: light-dark(#8839C4, #C792EA) !important; }
+.wb-md :where(pre) span[style="color:#FFCB6B"] { color: light-dark(#A15C00, #FFCB6B) !important; }
+.wb-md :where(pre) span[style="color:#82AAFF"] { color: light-dark(#2F5BD3, #82AAFF) !important; }
+.wb-md :where(pre) span[style="color:#A5D6A7"] { color: light-dark(#23803A, #A5D6A7) !important; }
+.wb-md :where(pre) span[style="color:#F78C6C"] { color: light-dark(#C2410C, #F78C6C) !important; }
+.wb-md :where(pre) span[style="color:#F07178"] { color: light-dark(#C8283F, #F07178) !important; }
+.wb-md :where(pre) span[style="color:#89DDFF"] { color: light-dark(#0B7285, #89DDFF) !important; }
+.wb-md :where(pre) span[style="color:#6B6B78"] { color: light-dark(#6E6E7A, #8A8A98) !important; font-style: italic; }
