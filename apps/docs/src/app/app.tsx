@@ -114,7 +114,10 @@ export default function App() {
     .replace(/pnpm add @brett_lamy\/ui(?: @brett_lamy\/ui)+ react react-dom/g, 'npm i @brett_lamy/ui');
   const segs = parseSegs(slug, publicMarkdown);
   const toc: Array<{ text: string; h3: boolean }> = [];
+  let fenced = false;
   publicMarkdown.split('\n').forEach((l) => {
+    if (l.startsWith('```')) fenced = !fenced;
+    if (fenced) return;
     const m2 = l.match(/^## (.+)$/);
     const m3 = l.match(/^### (.+)$/);
     if (m2) toc.push({ text: m2[1], h3: false });
@@ -131,15 +134,11 @@ export default function App() {
     setTimeout(() => { const sc = document.getElementById(SCROLL_ID); if (sc) sc.scrollTop = 0; }, 30);
   };
 
-  const jumpHead = (text: string) => {
+  /* Headings come from markdown segments only, so live demos' own headings never shift the TOC index. */
+  const jumpHead = (index: number) => {
     const sc = document.getElementById(SCROLL_ID); if (!sc) return;
-    const hs = sc.querySelectorAll('h2, h3');
-    for (const h of Array.from(hs)) {
-      if ((h.textContent || '').trim() === text) {
-        sc.scrollTop += h.getBoundingClientRect().top - sc.getBoundingClientRect().top - 22;
-        return;
-      }
-    }
+    const h = sc.querySelectorAll('.dk-md h2, .dk-md h3')[index];
+    if (h) sc.scrollTop += h.getBoundingClientRect().top - sc.getBoundingClientRect().top - 22;
   };
 
   /* Internal page links: [Text](#page-id) navigates when the target matches a page id. */
@@ -200,7 +199,7 @@ export default function App() {
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: '#0A84FF', marginBottom: 2 }}>{page.section}</div>
             {segs.map((seg) => (
               <div key={seg.key}>
-                {seg.md ? <MarkdownView markdown={seg.md} /> : null}
+                {seg.md ? <div className="dk-md"><MarkdownView markdown={seg.md} /></div> : null}
                 {seg.demo ? <DemoBlock name={seg.demo} /> : null}
                 {seg.live ? <DocsLive demo={seg.live} /> : null}
               </div>
@@ -215,8 +214,8 @@ export default function App() {
       {hasToc ? (
         <div style={{ width: 198, flexShrink: 0, padding: '36px 20px 20px', borderLeft: '1px solid rgba(20,20,40,0.06)' }}>
           <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: '#8A8A94', marginBottom: 8 }}>On this page</div>
-          {toc.map((t) => (
-            <button key={t.text} className="dk-toc" onClick={() => jumpHead(t.text)} style={t.h3 ? { paddingLeft: 12 } : undefined}>{t.text}</button>
+          {toc.map((t, i) => (
+            <button key={i} className="dk-toc" onClick={() => jumpHead(i)} style={t.h3 ? { paddingLeft: 12 } : undefined}>{t.text}</button>
           ))}
         </div>
       ) : null}
