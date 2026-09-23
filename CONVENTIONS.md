@@ -7,22 +7,31 @@ BL UI is an iOS-flavored React component framework, distributed as workspace pac
 - `@brett_lamy/workbench` — IDE workbench scaffold (WorkbenchShell + slots, chat view, terminal dock, surface panel). Depends on `@brett_lamy/ui`.
 - `@brett_lamy/pencilkit` — freehand drawing canvas (perfect-freehand).
 
-Source of truth for visuals: the prototypes in `../project/*.jsx` (relative to this repo root). **Ports must render pixel-identically** — keep the exact inline styles, CSS custom properties, easing (`cubic-bezier(.32,.72,0,1)`), radii, shadows, font stacks and animation timings from the prototype. Do not "modernize" the visual output.
+Every component is built **shadcn-style on react-aria-components, styled with Tailwind v4**. Visual output must not change while code moves onto that base: the visual-regression suite (below) is the source of truth, at zero pixel tolerance.
 
 ## Tech rules
 
-1. **TypeScript ESM** (`.tsx`), React 19. No `window.*` globals, no `module.exports`, no CDN script injection. `framer-motion` and `perfect-freehand` are npm deps — import directly (replace the prototypes' lazy CDN loaders; `useMotion()` can simply return the imported module to keep call-sites unchanged). The ios-vibrator-pro-max haptics polyfill MAY stay a dynamic CDN import inside `Haptics.boot()` (Safari-only runtime concern), guarded by try/catch.
-2. **react-aria base**: interactive primitives use `react-aria-components` (Button, Switch, RadioGroup/Radio for Segmented, Slider, TextField/SearchField, Dialog/Modal semantics where they don't fight custom animation). Where a component's animation/gesture code needs a raw element (swipe rows, wheels, drag trays), keep the raw element but preserve/extend the ARIA the prototype already has. Never regress keyboard behavior (arrow-key row nav, Esc pops, focus rings).
-3. **shadcn conventions**: every component accepts `className` and `style` and merges them last; use `cn()` from `@brett_lamy/ui` (clsx + tailwind-merge); add `data-slot="<name>"` on each component root; variants via `class-variance-authority` where a component has variants; compound/composable APIs — e.g. `List`, `List.Section`, `List.Row` (also exported flat as `ListSection`, `ListRow`), `ChatShell.Rail/.Nav/.Main`, context + hooks (`useChatShell()`) instead of render props/prop drilling. Children-first: anything that can be a slot/children should be.
-4. **CSS**: framework CSS (keyframes, scrollbar classes, range styling) lives in each package's `src/styles.css`, imported by the package entry (side-effect import) — not injected via `document.createElement`. Tokens are CSS custom properties (`--bl-*`, `--wb-*`) supplied by `BLProvider` from `@brett_lamy/ui` (props: `dark`, `tint`, `safeTop`). Light/dark palettes are the exact var maps from the prototype `App`.
-5. **Demo data & demo compositions** do NOT go in packages — they go in the consuming app (`apps/*`) or in stories. Packages export only reusable primitives. Exception: small self-contained showcase components explicitly named *Demo* may live in the package under `src/demos/` if stories/apps share them (e.g. `HapticsPlayground`).
-6. Every package `src/index.ts` re-exports everything public, named exports only.
+1. **TypeScript ESM** (`.tsx`), React 19. No `window.*` globals, no CDN script injection.
+2. **react-aria base.** Anything interactive is a react-aria-components element: `Button` (ours, `@brett_lamy/ui`), `ToggleButton`, `Switch`, `Checkbox`, `RadioGroup`/`Radio`, `Tabs`, `ListBox`, `GridList`, `Menu`, `Popover`, `Dialog`/`Modal`, `Tooltip`, `Slider`, `TextField`/`SearchField`, `Disclosure`, `Link`. Use `onPress`, not `onClick`. Where gesture code needs a raw element (swipe rows, wheels, drag trays, canvases), keep it raw but keep its ARIA and keyboard behavior. Never regress keyboard behavior (arrow-key navigation, Esc, focus order).
+3. **shadcn conventions.** Every component takes `className` (and `style`) and merges them last with `cn()` from `@brett_lamy/ui`; its root has `data-slot="<name>"`; variants use `cva` (export the `…Variants` function); compound APIs over props (`List.Section`, `ChatShell.Main`), context + hooks over prop drilling. For react-aria elements whose `className` can be a function, wrap with `composeRenderProps`.
+4. **Tailwind, not inline styles.** Style with utility classes. `style={{…}}` is only for values computed at runtime (gesture offsets, measured sizes, animation progress) — prefer feeding those in as CSS variables (`style={{ '--x': px }}` + `translate-x-(--x)`). Colors come from the theme: shadcn names (`bg-background`, `text-foreground`, `text-muted-foreground`, `bg-primary`, `border-border`, `bg-card`, `bg-destructive`) or the palettes they map to (`text-bl-label3`, `bg-bl-fill2`, `bg-wb-card`, `text-wb-label2`). Interaction states use react-aria's data attributes (`data-pressed:`, `data-hovered:`, `data-selected:`, `data-focus-visible:`, `data-disabled:`, `group-data-selected:`).
+5. **Exact metrics.** Tailwind v4's named text sizes also set line-height — use `text-[15px]` when the original only set a font size. Keep the original easing (`ease-ios` = `cubic-bezier(.32,.72,0,1)`), radii, shadows (`shadow-[…]`), and durations. `font-family: inherit` is `[font-family:inherit]`.
+6. **CSS files** hold only what utilities can't express (keyframes, scrollbars, range thumbs, third-party overrides). Each package's `src/styles.css` pulls in the shared theme (`packages/ui/src/theme.css`) and Tailwind's utilities layer — no preflight, so host apps keep their base styles.
+7. **Haptics** go through `Haptics` from `@brett_lamy/ui` (or workbench's `vib`/`tick`). Calling them from `onPress` is fine — the engine holds press-time requests for the following click, which is when Safari's polyfill can play them. Drag surfaces that tick during a drag need `data-haptic-drag`.
+8. **Demo data and compositions** live in apps or stories. Packages export reusable components only; showcase components named `*Demo` may live under `src/demos/`.
+9. Every package `src/index.ts` re-exports everything public, named exports only.
+
+## Checks — run before every commit
+
+- `pnpm vr --project stories` (Storybook on :6006) and `pnpm vr --project docs` (docs dev server on :4417): every screenshot must match its baseline exactly. Inspect a failure with `node tools/vr/zoom.mjs <story-id>` (expected left, actual right). Only re-baseline (`pnpm vr:update`) for an intended visual change, and say why in the commit.
+- `pnpm test:haptics`: taps in iOS-Safari mode must tick once per request, and Chromium must call `navigator.vibrate` per request.
+- `pnpm nx run-many -t typecheck,build`.
 
 ## Storybook (apps/catalog)
 
 Stories live next to components: `packages/<pkg>/src/**/*.stories.tsx`. Use CSF3 with `Meta`/`StoryObj`. Titles follow **atomic design**:
 
-- `Atoms/…` — Icon, Avatar, Switch, Segmented, Spinner, PillButton, Chip, Meter, SearchField…
+- `Atoms/…` — Icon, Avatar, Button, Switch, Segmented, Spinner, PillButton, Chip, Meter, SearchField…
 - `Molecules/…` — ListRow, SectionHeader, IndexBar, TabBar, EditBar, Composer, Message, ThreadPreview…
 - `Organisms/…` — List, NavigationStack, SplitView, Credenza, SideDrawer, Sidebar, ChannelNav, TerminalDock, SurfacePanel, agent tables…
 - `Templates/…` — ChatShell, WorkbenchShell, SplitView layouts…
