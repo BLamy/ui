@@ -8,12 +8,12 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { SideDrawer } from '@brett_lamy/ui';
+import { cn, SideDrawer } from '@brett_lamy/ui';
+import { Button } from 'react-aria-components';
 import { ChannelList } from '../lib/channel-list';
 import { ChatAvatar } from '../lib/chat-avatar';
 import { ChatIcon, chatIconPaths } from '../lib/chat-icon';
 import { ChatShell, useChatShell } from '../lib/chat-shell';
-import { K, KEASE, KFONT } from '../lib/chat-tokens';
 import {
   ChatUsersProvider,
   type ChatChannel,
@@ -27,6 +27,13 @@ import { Message } from '../lib/message';
 import { WorkspaceRail } from '../lib/workspace-rail';
 
 const KP = chatIconPaths;
+
+/* The prototype's literal chat tokens (`K` in lib/chat-tokens) as utilities. */
+const SEP_BORDER = 'border-[rgba(255,255,255,.07)]';
+const SEP_BG = 'bg-[rgba(255,255,255,.07)]';
+const MUT = 'text-[rgba(235,235,245,.6)]';
+const MUT3 = 'text-[rgba(235,235,245,.35)]';
+const ICON_BUTTON = 'grid cursor-pointer border-0 bg-transparent p-1';
 
 export const USERS: ChatUsers = {
   ada: { name: 'Ada', c: '#0A84FF', role: '#7EB6FF' },
@@ -190,47 +197,37 @@ export function ChatDemo({
   const thMsg = thread ? ch.msgs.find((m) => m.id === thread.id) ?? null : null;
   const threadBody = (mode: 'drawer' | 'full'): ReactNode =>
     !thMsg || !thMsg.thread ? null : (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          fontFamily: KFONT,
-          maxWidth: mode === 'full' ? 760 : 'none',
-          width: '100%',
-          margin: '0 auto',
-          boxSizing: 'border-box',
-        }}
-      >
-        <div className="ck-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '4px 0 10px' }}>
+      <div className={cn('mx-auto box-border flex h-full w-full flex-col font-ios', mode === 'full' ? 'max-w-[760px]' : 'max-w-none')}>
+        <div className="ck-scroll min-h-0 flex-1 overflow-y-auto pt-1 pb-2.5">
           {mode === 'drawer' ? (
-            <div style={{ padding: '6px 16px 12px', borderBottom: '1px solid ' + K.sep }}>
-              <div style={{ fontSize: 16, fontWeight: 750, color: K.label, lineHeight: 1.3 }}>{thMsg.thread.title}</div>
-              <div style={{ fontSize: 11.5, color: K.mut3, marginTop: 3 }}>
-                Started by <span style={{ color: USERS[thMsg.u].role, fontWeight: 600 }}>{USERS[thMsg.u].name}</span> in #{ch.label}
+            <div className={cn('border-b px-4 pt-1.5 pb-3', SEP_BORDER)}>
+              <div className="text-[16px] leading-[1.3] font-[750] text-[#EDEDF2]">{thMsg.thread.title}</div>
+              <div className={cn('mt-[3px] text-[11.5px]', MUT3)}>
+                {/* One line: splitting the surrounding text into more nodes shifts its kerning. */}
+                Started by <span className="font-semibold text-[color:var(--ck-role)]" style={{ '--ck-role': USERS[thMsg.u].role } as CSSProperties}>{USERS[thMsg.u].name}</span> in #{ch.label}
               </div>
             </div>
           ) : null}
-          <div style={{ padding: '10px 4px 0' }}>
+          <div className="px-1 pt-2.5">
             <Message m={{ ...thMsg, thread: null }} tint={tint} onReact={react} onOpenThread={() => {}} onStartThread={() => {}} />
             {thMsg.thread.msgs.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 18px', fontSize: 10.5, color: K.mut3 }}>
-                <span style={{ flex: 1, height: 1, background: K.sep }} />
+              <div className={cn('flex items-center gap-2 px-[18px] py-1.5 text-[10.5px]', MUT3)}>
+                <span className={cn('h-px flex-1', SEP_BG)} />
                 {thMsg.thread.msgs.length} {thMsg.thread.msgs.length === 1 ? 'reply' : 'replies'}
-                <span style={{ flex: 1, height: 1, background: K.sep }} />
+                <span className={cn('h-px flex-1', SEP_BG)} />
               </div>
             )}
             {thMsg.thread.msgs.map((m) => (
-              <div key={m.id} style={{ animation: 'ck-in .2s ' + KEASE }}>
+              <div key={m.id} className="animate-[ck-in_.2s_cubic-bezier(.32,.72,0,1)]">
                 <Message m={{ ...m, reacts: [] }} tint={tint} onReact={() => {}} onOpenThread={() => {}} onStartThread={() => {}} />
               </div>
             ))}
             {!thMsg.thread.msgs.length && (
-              <div style={{ padding: '14px 18px', fontSize: 12.5, color: K.mut3 }}>No replies yet — say something.</div>
+              <div className={cn('px-[18px] py-3.5 text-[12.5px]', MUT3)}>No replies yet — say something.</div>
             )}
           </div>
         </div>
-        <div style={{ flexShrink: 0, padding: '0 12px 12px' }}>
+        <div className="shrink-0 px-3 pb-3">
           <Composer placeholder={'Reply in "' + thMsg.thread.title + '"'} onSend={sendThread} tint={tint} autoFocus={mode === 'drawer'} />
         </div>
       </div>
@@ -330,75 +327,79 @@ export function ChannelMain({
   const memberCol = showMembers && w >= 1320 && !drawerOpen && !fullThread;
   return (
     <Fragment>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '0 16px', height: 46, borderBottom: '1px solid ' + K.sep, flexShrink: 0 }}>
+      <div className="flex min-w-0 flex-1 flex-col" style={{ '--ck-tint': tint } as CSSProperties}>
+        <div className={cn('flex h-[46px] shrink-0 items-center gap-[9px] border-b px-4', SEP_BORDER)}>
           {compact && (
-            <button
-              onClick={() => {
+            <Button
+              onPress={() => {
                 kvib([6]);
                 setNavOpen(true);
               }}
               aria-label="Channels"
-              style={{ border: 0, background: 'none', color: K.mut, cursor: 'pointer', padding: 4, display: 'grid' }}
+              className={cn(ICON_BUTTON, MUT)}
             >
               <ChatIcon d={KP.menu} size={17} sw={2} />
-            </button>
+            </Button>
           )}
           {fullThread && thMsg?.thread ? (
             <Fragment>
-              <button
-                onClick={() => {
+              <Button
+                onPress={() => {
                   kvib([5]);
                   setThread(null);
                 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, border: 0, background: 'none', color: tint, fontSize: 13, fontWeight: 650, cursor: 'pointer', fontFamily: KFONT, padding: '4px 6px 4px 0', flexShrink: 0 }}
+                className="flex shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent py-1 pr-1.5 pl-0 font-ios text-[13px] font-[650] text-[color:var(--ck-tint)]"
               >
-                <ChatIcon d={KP.chev} size={13} style={{ transform: 'rotate(180deg)' }} />#{ch.label}
-              </button>
-              <span style={{ color: K.mut3, display: 'grid' }}>
+                <ChatIcon d={KP.chev} size={13} className="rotate-180" />#{ch.label}
+              </Button>
+              <span className={cn('grid', MUT3)}>
                 <ChatIcon d={KP.thread} size={14} />
               </span>
-              <span style={{ fontSize: 14, fontWeight: 750, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{thMsg.thread.title}</span>
-              <button
-                onClick={() => thread && setThread({ id: thread.id, mode: 'drawer' })}
-                style={{ border: '1px solid ' + K.sep, background: 'none', color: K.mut, fontSize: 11.5, fontWeight: 600, borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: KFONT, flexShrink: 0 }}
+              <span className="flex-1 overflow-hidden text-[14px] font-[750] text-ellipsis whitespace-nowrap">{thMsg.thread.title}</span>
+              <Button
+                onPress={() => thread && setThread({ id: thread.id, mode: 'drawer' })}
+                className={cn(
+                  'shrink-0 cursor-pointer rounded-[8px] border bg-transparent px-2.5 py-1 font-ios text-[11.5px] font-semibold',
+                  SEP_BORDER,
+                  MUT,
+                )}
               >
                 Open as drawer
-              </button>
+              </Button>
             </Fragment>
           ) : (
             <Fragment>
-              <span style={{ color: K.mut3, display: 'grid' }}>
+              <span className={cn('grid', MUT3)}>
                 <ChatIcon d={KP.hash} size={15} sw={2.2} />
               </span>
-              <span style={{ fontSize: 14, fontWeight: 750 }}>{ch.label}</span>
-              <span style={{ fontSize: 11.5, color: K.mut3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+              <span className="text-[14px] font-[750]">{ch.label}</span>
+              <span className={cn('flex-1 overflow-hidden text-[11.5px] text-ellipsis whitespace-nowrap', MUT3)}>
                 Sidebar thread → full view · preview card → SideDrawer
               </span>
-              <button
-                onClick={() => kvib([5])}
+              <Button
+                onPress={() => kvib([5])}
                 aria-label="Members"
-                style={{ border: 0, background: 'none', color: memberCol ? tint : K.mut3, cursor: 'pointer', padding: 4, display: 'grid' }}
+                className={cn(ICON_BUTTON, memberCol ? 'text-[color:var(--ck-tint)]' : MUT3)}
               >
                 <ChatIcon d={KP.people} size={16} />
-              </button>
+              </Button>
             </Fragment>
           )}
         </div>
         {fullThread ? (
-          <div style={{ flex: 1, minHeight: 0 }}>{threadBody('full')}</div>
+          <div className="min-h-0 flex-1">{threadBody('full')}</div>
         ) : (
           <Fragment>
-            <div ref={scrollRef} className="ck-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 0', position: 'relative' }}>
-              <div style={{ padding: '0 18px 10px' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: K.fill2, display: 'grid', placeItems: 'center', color: K.mut, marginBottom: 8 }}>
+            <div ref={scrollRef} className="ck-scroll relative min-h-0 flex-1 overflow-y-auto py-3">
+              <div className="px-[18px] pb-2.5">
+                <div className={cn('mb-2 grid size-10 place-items-center rounded-[12px] bg-[rgba(255,255,255,.1)]', MUT)}>
                   <ChatIcon d={KP.hash} size={20} sw={2.2} />
                 </div>
-                <div style={{ fontSize: 15.5, fontWeight: 750 }}>Welcome to #{ch.label}</div>
-                <div style={{ fontSize: 12, color: K.mut3, marginTop: 2 }}>Hover a message to react or start a thread.</div>
+                <div className="text-[15.5px] font-[750]">Welcome to #{ch.label}</div>
+                <div className={cn('mt-0.5 text-[12px]', MUT3)}>Hover a message to react or start a thread.</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 18px 8px', fontSize: 10.5, color: K.mut3, fontWeight: 600 }}>
-                <span style={{ flex: 1, height: 1, background: K.sep }} />August 12, 2026<span style={{ flex: 1, height: 1, background: K.sep }} />
+              <div className={cn('flex items-center gap-2 px-[18px] pt-1 pb-2 text-[10.5px] font-semibold', MUT3)}>
+                <span className={cn('h-px flex-1', SEP_BG)} />August 12, 2026<span className={cn('h-px flex-1', SEP_BG)} />
               </div>
               {ch.msgs.map((m) => (
                 <Message
@@ -414,30 +415,35 @@ export function ChannelMain({
                 />
               ))}
             </div>
-            <div style={{ flexShrink: 0, padding: '0 14px 12px' }}>
+            <div className="shrink-0 px-3.5 pb-3">
               <Composer placeholder={'Message #' + ch.label} onSend={sendMain} tint={tint} />
             </div>
           </Fragment>
         )}
       </div>
       {memberCol ? (
-        <div style={{ width: 168, flexShrink: 0, borderLeft: '1px solid ' + K.sep, background: K.side, padding: '12px 12px', boxSizing: 'border-box' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: K.mut3, marginBottom: 8 }}>
+        <div className={cn('box-border w-[168px] shrink-0 border-l bg-[#101015] p-3', SEP_BORDER)}>
+          <div className={cn('mb-2 text-[10px] font-bold tracking-[.7px] uppercase', MUT3)}>
             Team — {Object.keys(USERS).length}
           </div>
           {Object.entries(USERS).map(([id, u]) => (
-            <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+            <div key={id} className="flex items-center gap-2 py-1">
               <ChatAvatar user={u} size={24} square={u.bot} />
-              <span style={{ fontSize: 12.5, color: u.role, fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</span>
+              <span
+                className="flex-1 overflow-hidden text-[12.5px] font-semibold text-ellipsis whitespace-nowrap text-[color:var(--ck-role)]"
+                style={{ '--ck-role': u.role } as CSSProperties}
+              >
+                {u.name}
+              </span>
               {u.bot && (
-                <span style={{ fontSize: 8.5, fontWeight: 800, background: '#5E5CE6', color: '#fff', borderRadius: 4, padding: '1px 4px' }}>APP</span>
+                <span className="rounded-[4px] bg-[#5E5CE6] px-1 py-px text-[8.5px] font-extrabold text-white">APP</span>
               )}
             </div>
           ))}
         </div>
       ) : null}
       <SideDrawer mode={drawerMode} open={drawerOpen} onClose={() => setThread(null)} title="Thread" width={Math.min(360, w - 60)}>
-        <div style={{ '--bl-label': K.label, '--bl-label2': K.mut, '--bl-sep': K.sep, height: '100%', boxSizing: 'border-box' } as CSSProperties}>
+        <div className="box-border h-full [--bl-label:#EDEDF2] [--bl-label2:rgba(235,235,245,.6)] [--bl-sep:rgba(255,255,255,.07)]">
           {threadBody('drawer')}
         </div>
       </SideDrawer>
