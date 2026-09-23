@@ -1,3 +1,9 @@
+@layer theme, base, components, utilities;
+@import "./theme.css";
+/* Utilities only — no preflight, so a host app's base styles are left alone. */
+@import "tailwindcss/utilities.css" layer(utilities);
+@source "./";
+
 /* BL UI framework CSS — verbatim from the prototype's injected `bl-kf` block. */
 @keyframes blSpin{to{transform:rotate(360deg)}}
 @keyframes blRing{from{transform:scale(.35);opacity:.85}to{transform:scale(2.4);opacity:0}}

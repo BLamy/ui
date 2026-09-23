@@ -1,0 +1,63 @@
+/* BL UI Tailwind theme. Colors resolve to the runtime tokens BLProvider (--bl-*) and WorkbenchShell (--wb-*) set,
+   so every utility follows light/dark and tint changes without a rebuild.
+   shadcn's semantic names map onto the iOS palette; the bl-* / wb-* colors expose the rest of it. */
+@import "tailwindcss/theme.css" layer(theme);
+
+@theme inline {
+  --color-background: var(--bl-bg);
+  --color-foreground: var(--bl-label);
+  --color-card: var(--bl-card);
+  --color-card-foreground: var(--bl-label);
+  --color-popover: var(--bl-card);
+  --color-popover-foreground: var(--bl-label);
+  --color-primary: var(--bl-tint);
+  --color-primary-foreground: #fff;
+  --color-secondary: var(--bl-fill);
+  --color-secondary-foreground: var(--bl-label);
+  --color-muted: var(--bl-bg2);
+  --color-muted-foreground: var(--bl-label2);
+  --color-accent: var(--bl-press);
+  --color-accent-foreground: var(--bl-label);
+  --color-destructive: var(--bl-red);
+  --color-success: var(--bl-green);
+  --color-border: var(--bl-sep);
+  --color-input: var(--bl-fill);
+  --color-ring: var(--bl-tint);
+  --color-overlay: var(--bl-scrim);
+
+  --color-bl-bg: var(--bl-bg);
+  --color-bl-bg2: var(--bl-bg2);
+  --color-bl-card: var(--bl-card);
+  --color-bl-card2: var(--bl-card2);
+  --color-bl-label: var(--bl-label);
+  --color-bl-label2: var(--bl-label2);
+  --color-bl-label3: var(--bl-label3);
+  --color-bl-sep: var(--bl-sep);
+  --color-bl-fill: var(--bl-fill);
+  --color-bl-fill2: var(--bl-fill2);
+  --color-bl-press: var(--bl-press);
+  --color-bl-bar: var(--bl-bar);
+  --color-bl-stick: var(--bl-stick);
+  --color-bl-side: var(--bl-side);
+  --color-bl-scrim: var(--bl-scrim);
+  --color-bl-tint: var(--bl-tint);
+  --color-bl-red: var(--bl-red);
+  --color-bl-green: var(--bl-green);
+
+  --color-wb-bg: var(--wb-bg);
+  --color-wb-side: var(--wb-side);
+  --color-wb-card: var(--wb-card);
+  --color-wb-fill: var(--wb-fill);
+  --color-wb-fill2: var(--wb-fill2);
+  --color-wb-sep: var(--wb-sep);
+  --color-wb-label: var(--wb-label);
+  --color-wb-label2: var(--wb-label2);
+  --color-wb-label3: var(--wb-label3);
+  --color-wb-tint: var(--wb-tint);
+  --color-wb-green: var(--wb-green);
+  --color-wb-red: var(--wb-red);
+
+  --font-ios: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --ease-ios: cubic-bezier(.32, .72, 0, 1);
+}

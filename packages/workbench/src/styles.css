@@ -1,3 +1,8 @@
+@layer theme, base, components, utilities;
+@import "../../ui/src/theme.css";
+@import "tailwindcss/utilities.css" layer(utilities);
+@source "./";
+
 /* BL UI Workbench — framework-owned CSS (scrollbars, caret pulse, spin, markdown). */
 @keyframes wbBlink{0%,55%{opacity:1}56%,100%{opacity:0}}
 @keyframes wbPulse{0%,100%{opacity:1}50%{opacity:.35}}

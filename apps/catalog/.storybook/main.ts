@@ -1,10 +1,12 @@
 import type { StorybookConfig } from '@storybook/react-vite';
 import { defaultClientConditions } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 
 const config: StorybookConfig = {
   stories: ['../../../packages/*/src/**/*.stories.@(ts|tsx)'],
   framework: { name: '@storybook/react-vite', options: {} },
   async viteFinal(cfg) {
+    cfg.plugins = [...(cfg.plugins ?? []), tailwindcss()];
     cfg.resolve = cfg.resolve ?? {};
     // consume package TS source via the workspace custom condition, keeping vite's defaults
     (cfg.resolve as any).conditions = ['@org/source', ...defaultClientConditions];

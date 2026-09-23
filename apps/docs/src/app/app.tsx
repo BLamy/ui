@@ -47,7 +47,7 @@ function NavList({ slug, pick }: { slug: string; pick: (id: string) => void }) {
           {sec.pages.map((p) => {
             const active = p === slug;
             return (
-              <button key={p} className="dk-nav" onClick={() => pick(p)}
+              <button key={p} data-page={p} className="dk-nav" onClick={() => pick(p)}
                 aria-current={active ? 'page' : undefined}
                 style={active ? { background: 'rgba(10,132,255,.1)', color: '#0A84FF', fontWeight: 600 } : undefined}>
                 {PAGES[p]?.title || p}
