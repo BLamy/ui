@@ -40,6 +40,16 @@ export { IndexBar, AL, indexBarVariants } from './components/index-bar';
 export type { IndexBarProps, IndexBarItem, IndexBarKey } from './components/index-bar';
 export { TabBar } from './components/tab-bar';
 export type { TabBarProps, TabBarItem } from './components/tab-bar';
+export {
+  TabView, TabViewBar, TabViewList, TabViewTab, TabViewIndicator, TabViewSeparator, TabViewAction,
+  TabViewHeader, TabViewFooter, TabViewPanels, TabViewPanel, useTabView, useTabViewTab,
+  tabViewVariants, tabViewBarVariants, tabViewListVariants, tabViewTabVariants, tabViewIndicatorVariants,
+  tabViewActionVariants,
+} from './components/tab-view';
+export type {
+  TabViewProps, TabViewBarProps, TabViewTabProps, TabViewIndicatorProps, TabViewActionProps,
+  TabViewPlacement, TabViewOrientation, TabViewBarVariant,
+} from './components/tab-view';
 export { EditBar } from './components/edit-bar';
 export type { EditBarProps } from './components/edit-bar';
 export { NavigationStack, ScreenWrap } from './components/navigation-stack';

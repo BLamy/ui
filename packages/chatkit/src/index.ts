@@ -33,7 +33,7 @@ export { ThreadPreview, type ThreadPreviewProps } from './lib/thread-preview';
 export { Message, type MessageProps } from './lib/message';
 export { Composer, type ComposerProps } from './lib/composer';
 export { ChannelList, type ChannelListProps } from './lib/channel-list';
-export { WorkspaceRail, type WorkspaceRailProps, type Workspace } from './lib/workspace-rail';
+export { WorkspaceRail, type WorkspaceRailProps, type WorkspaceRailHome, type Workspace } from './lib/workspace-rail';
 export {
   ChatShell,
   useChatShell,
