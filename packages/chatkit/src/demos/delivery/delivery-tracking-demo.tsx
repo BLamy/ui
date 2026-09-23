@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Haptics } from '@brett_lamy/ui';
-import { cn } from '../../lib/cn';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { cn, Haptics } from '@brett_lamy/ui';
+import { Button } from 'react-aria-components';
 import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from '../../lib/floating-sheet';
 import { ProgressStepper, type ProgressStep } from '../../lib/progress-stepper';
 import { distanceMeters, type LatLng, type MapTarget } from '../map-chat/geo';
 import { MAP_ICONS, type MapIconName } from '../map-chat/map-icons';
-import { esriLightGrayTiles, TileMap, type MapPin, type MapRoute } from '../map-chat/tile-map';
+import { esriLightGrayTiles, MAP_FONT, TileMap, type MapPin, type MapRoute } from '../map-chat/tile-map';
 
 export interface DeliveryStage {
   id: string;
@@ -71,6 +71,21 @@ const GIFT_CARDS = [
   { id: 'c', label: 'Dinner on me', gradient: 'linear-gradient(135deg,#7f53ac,#647dee)' },
   { id: 'd', label: 'Congrats', gradient: 'linear-gradient(135deg,#f7971e,#ffd200)' },
 ];
+
+/** `font: inherit` for buttons, leaving size and weight to the caller. */
+const FONT_INHERIT = '[font-family:inherit] [font-style:inherit] [font-variant:inherit] [font-stretch:inherit] leading-[inherit]';
+const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bl-tint';
+const MAP_BUTTON = cn(
+  'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-white p-0 text-[15px] font-semibold text-[#191919] shadow-[0_2px_10px_rgba(0,0,0,.14),0_0_0_1px_rgba(0,0,0,.04)] data-hovered:bg-[#f6f6f8]',
+  FONT_INHERIT,
+  FOCUS_RING,
+);
+const ACTION_BUTTON = cn(
+  'inline-flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[999px] border-0 px-3.5 py-0 text-[15px] font-bold [transition:transform_.16s_ease,filter_.16s_ease] data-pressed:[transform:scale(.97)]',
+  FONT_INHERIT,
+  FOCUS_RING,
+);
+const CAROUSEL = '-mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
 function Icon({ name, size = 18 }: { name: MapIconName; size?: number }) {
   return (
@@ -149,6 +164,7 @@ export function DeliveryTrackingDemo({
   const stage = DELIVERY_STAGES[stageIndex];
   const [open, setOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsId = useId();
 
   useEffect(() => {
     if (controlledStage != null || !autoAdvance) return;
@@ -188,11 +204,16 @@ export function DeliveryTrackingDemo({
     <div
       data-slot="delivery-tracking-demo"
       data-stage={stage.id}
-      className={cn('ck-delivery', className)}
+      className={cn(
+        'relative h-full min-h-0 w-full overflow-hidden bg-[#eef0f3] text-[#191919] scheme-light',
+        '[--bl-bg:#f2f2f7] [--bl-card:#fff] [--bl-card2:#f4f4f6] [--bl-label:#191919] [--bl-label2:rgba(60,60,67,.62)] [--bl-label3:rgba(60,60,67,.32)] [--bl-sep:rgba(60,60,67,.16)] [--bl-fill:rgba(120,120,128,.14)] [--bl-tint:var(--ck-delivery-accent,#eb1700)]',
+        MAP_FONT,
+        className,
+      )}
       style={{ '--ck-delivery-accent': accent, ...style } as CSSProperties}
     >
       <TileMap
-        className="ck-delivery__map"
+        className="absolute inset-0"
         view={view}
         pins={pins}
         route={route}
@@ -201,14 +222,14 @@ export function DeliveryTrackingDemo({
         minZoom={12}
         maxZoom={16}
       >
-        <div className="ck-delivery__map-bar" data-map-ui>
-          <button type="button" className="ck-delivery__map-button" aria-label="Close" onClick={onClose}>
+        <div className="pointer-events-none absolute top-3.5 right-3.5 left-3.5 z-4 flex items-center justify-between" data-map-ui>
+          <Button className={MAP_BUTTON} aria-label="Close" onPress={onClose}>
             <Icon name="x" size={20} />
-          </button>
-          <button type="button" className="ck-delivery__map-button ck-delivery__map-button--pill">
+          </Button>
+          <Button className={cn(MAP_BUTTON, 'pr-3.5 pl-3')}>
             <Icon name="help" size={18} />
             Help
-          </button>
+          </Button>
         </div>
       </TileMap>
 
@@ -225,104 +246,121 @@ export function DeliveryTrackingDemo({
         scrim={false}
         hideOnScroll={false}
         label="Order status"
-        className="ck-delivery__sheet"
       >
         <FloatingSheet.Body>
-          <div className="ck-delivery__body ck-scroll">
-            <header className="ck-delivery__header">
-              <h2 className="ck-delivery__title">{stage.title}</h2>
-              <p className="ck-delivery__subtitle">
+          <div className="ck-scroll box-border h-full min-h-0! overflow-x-hidden overflow-y-auto px-5 pt-0.5 pb-8">
+            <header className="mb-[18px]">
+              <h2 className="m-0 text-[24px] leading-[1.2] font-bold tracking-[-.02em]">{stage.title}</h2>
+              <p className="m-0 mt-1.5 text-[15px] text-bl-label2">
                 Pickup at 12:13 PM · {STORE_ADDRESS}
               </p>
             </header>
 
-            <ProgressStepper steps={steps} current={stageIndex} className="ck-delivery__stepper" />
-            <p className="ck-delivery__status">
+            <ProgressStepper steps={steps} current={stageIndex} className="mb-3!" />
+            <p className="m-0 mb-[18px] flex items-center gap-[7px] text-[14px] text-bl-label2">
               <Icon name="clock" size={15} />
               {stage.status}
             </p>
 
-            <section className="ck-delivery__card">
-              <h3 className="ck-delivery__card-title">Pickup instructions</h3>
-              <p className="ck-delivery__card-text">
+            <section className="rounded-[14px] bg-bl-card2 p-4">
+              <h3 className="m-0 mb-1 text-[16px] font-bold">Pickup instructions</h3>
+              <p className="m-0 mb-3.5 text-[14px] leading-[1.4] text-bl-label2">
                 Head to the counter and give your name. Orders are on the shelf to the right of the register.
               </p>
-              <div className="ck-delivery__actions">
-                <button
-                  type="button"
-                  className="ck-delivery__button"
+              <div className="flex gap-2.5">
+                <Button
+                  className={cn(ACTION_BUTTON, 'bg-[color:var(--ck-delivery-accent,#eb1700)] text-white data-hovered:[filter:brightness(1.06)]')}
                   data-variant="primary"
-                  onClick={() => {
+                  onPress={() => {
                     Haptics.selection();
                     if (controlledStage == null) setUncontrolledStage(3);
                   }}
                 >
                   <Icon name="message" size={17} />
                   I'm here
-                </button>
-                <button type="button" className="ck-delivery__button" data-variant="secondary">
+                </Button>
+                <Button className={cn(ACTION_BUTTON, 'bg-[rgba(120,120,128,.16)] text-bl-label')} data-variant="secondary">
                   <Icon name="phone" size={17} />
                   Call store
-                </button>
+                </Button>
               </div>
             </section>
 
-            <button
-              type="button"
-              className="ck-delivery__disclosure"
+            <Button
+              className={cn(
+                'm-0 mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-[999px] border border-bl-sep bg-transparent px-3.5 py-[9px] text-[14px] font-semibold text-bl-label data-hovered:bg-bl-fill',
+                FONT_INHERIT,
+              )}
               aria-expanded={detailsOpen}
-              onClick={() => {
+              aria-controls={detailsOpen ? detailsId : undefined}
+              onPress={() => {
                 Haptics.selection();
                 setDetailsOpen((v) => !v);
               }}
             >
               Order details
-              <span className="ck-delivery__chevron" data-open={detailsOpen || undefined}>
+              <span
+                className={cn('grid place-items-center [transition:transform_.24s_cubic-bezier(.32,.72,0,1)]', detailsOpen && '[transform:rotate(180deg)]')}
+                data-open={detailsOpen || undefined}
+              >
                 <Icon name="chevronDown" size={16} />
               </span>
-            </button>
+            </Button>
             {detailsOpen && (
-              <ul className="ck-delivery__items">
+              <ul id={detailsId} className="m-0 mt-3 list-none border-t border-bl-sep p-0 pt-1">
                 {ORDER_ITEMS.map((item) => (
-                  <li key={item.name} className="ck-delivery__item">
-                    <span className="ck-delivery__item-qty">{item.qty}×</span>
-                    <span className="ck-delivery__item-name">{item.name}</span>
-                    <span className="ck-delivery__item-price">${(item.qty * item.price).toFixed(2)}</span>
+                  <li key={item.name} className="flex gap-2.5 border-b border-bl-sep py-[9px] text-[14px]">
+                    <span className="w-6 text-bl-label2">{item.qty}×</span>
+                    <span className="min-w-0 flex-1">{item.name}</span>
+                    <span className="tabular-nums">${(item.qty * item.price).toFixed(2)}</span>
                   </li>
                 ))}
-                <li className="ck-delivery__item" data-total>
-                  <span className="ck-delivery__item-name">Total</span>
-                  <span className="ck-delivery__item-price">${total.toFixed(2)}</span>
+                <li className="flex gap-2.5 py-[9px] text-[14px] font-bold" data-total>
+                  <span className="min-w-0 flex-1">Total</span>
+                  <span className="tabular-nums">${total.toFixed(2)}</span>
                 </li>
               </ul>
             )}
 
-            <button type="button" className="ck-delivery__promo" onClick={() => setOpen(true)}>
-              <span className="ck-delivery__promo-icon">
+            <Button
+              className={cn(
+                'm-0 mt-[18px] flex w-full cursor-pointer items-center gap-3 rounded-[14px] border-0 bg-bl-card2 px-3.5 py-3 text-left text-[15px] font-semibold text-bl-label data-hovered:bg-[#ededf0]',
+                FONT_INHERIT,
+              )}
+              onPress={() => setOpen(true)}
+            >
+              <span className="grid size-8 place-items-center rounded-[50%] bg-white text-[color:var(--ck-delivery-accent,#eb1700)] shadow-[0_0_0_1px_var(--bl-sep)]">
                 <Icon name="gift" size={18} />
               </span>
-              <span className="ck-delivery__promo-text">Save up to $25 on gift cards</span>
+              <span className="min-w-0 flex-1">Save up to $25 on gift cards</span>
               <Icon name="chevronRight" size={18} />
-            </button>
+            </Button>
 
             <Section title="Gift cards" action="See all">
-              <div className="ck-delivery__carousel ck-scroll">
+              <div className={CAROUSEL}>
                 {GIFT_CARDS.map((card) => (
-                  <button key={card.id} type="button" className="ck-delivery__gift" style={{ background: card.gradient }}>
-                    <span className="ck-delivery__gift-brand">DoorDash</span>
-                    <span className="ck-delivery__gift-label">{card.label}</span>
-                  </button>
+                  <Button
+                    key={card.id}
+                    className="flex h-[104px] w-[168px] shrink-0 cursor-pointer snap-start flex-col justify-between rounded-[14px] border-0 [background:var(--ck-gift-bg)] px-3.5 py-3 text-left [font:inherit] text-white shadow-[0_6px_18px_rgba(0,0,0,.14)]"
+                    style={{ '--ck-gift-bg': card.gradient } as CSSProperties}
+                  >
+                    <span className="text-[11px] font-bold tracking-[.06em] uppercase opacity-85">DoorDash</span>
+                    <span className="text-[17px] font-bold tracking-[-.01em]">{card.label}</span>
+                  </Button>
                 ))}
               </div>
             </Section>
 
             <Section title="From this store" action="Browse menu">
-              <div className="ck-delivery__carousel ck-scroll">
+              <div className={CAROUSEL}>
                 {['Morning bun', 'Baguette', 'Olive focaccia', 'Seeded rye'].map((name, i) => (
-                  <div key={name} className="ck-delivery__tile">
-                    <div className="ck-delivery__tile-image" style={{ background: `hsl(${28 + i * 9} 62% ${66 - i * 4}%)` }} />
-                    <span className="ck-delivery__tile-name">{name}</span>
-                    <span className="ck-delivery__tile-meta">${(4 + i * 1.5).toFixed(2)}</span>
+                  <div key={name} className="flex w-[136px] shrink-0 snap-start flex-col gap-1">
+                    <div
+                      className="aspect-[1.15] w-full rounded-[12px] [background:var(--ck-tile-bg)]"
+                      style={{ '--ck-tile-bg': `hsl(${28 + i * 9} 62% ${66 - i * 4}%)` } as CSSProperties}
+                    />
+                    <span className="mt-1 text-[14px] font-semibold">{name}</span>
+                    <span className="text-[13px] text-bl-label2">${(4 + i * 1.5).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -336,14 +374,14 @@ export function DeliveryTrackingDemo({
 
 function Section({ title, action, children }: { title: string; action?: string; children: ReactNode }) {
   return (
-    <section className="ck-delivery__section">
-      <header className="ck-delivery__section-head">
-        <h3 className="ck-delivery__section-title">{title}</h3>
+    <section className="mt-[26px]">
+      <header className="m-0 mb-3 flex items-center justify-between">
+        <h3 className="m-0 text-[19px] font-bold tracking-[-.015em]">{title}</h3>
         {action && (
-          <button type="button" className="ck-delivery__section-action">
+          <Button className={cn('inline-flex cursor-pointer items-center gap-0.5 border-0 bg-transparent p-0 text-[14px] font-semibold text-bl-label2', FONT_INHERIT)}>
             {action}
             <Icon name="chevronRight" size={15} />
-          </button>
+          </Button>
         )}
       </header>
       {children}

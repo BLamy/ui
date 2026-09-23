@@ -9,7 +9,8 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { cn } from '../../lib/cn';
+import { cn } from '@brett_lamy/ui';
+import { Button } from 'react-aria-components';
 import { MAP_ICONS, type MapIconName } from './map-icons';
 import {
   TILE_SIZE,
@@ -99,6 +100,37 @@ export const cartoDarkTiles: TileUrlFn = (z, x, y) =>
 export const cartoVoyagerTiles: TileUrlFn = (z, x, y) =>
   `https://${'abcd'[(x + y) % 4]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}@2x.png`;
 export const CARTO_ATTRIBUTION = '© OpenStreetMap contributors © CARTO';
+
+/** Host font, falling back to the system stack. */
+export const MAP_FONT = "font-[family-name:var(--bl-font,-apple-system,BlinkMacSystemFont,'SF_Pro_Text',sans-serif)]";
+
+/* Map chrome. Dark and light tile sets flip labels and the glass controls. */
+const SCHEME = {
+  dark: {
+    root: 'bg-[#0d0f14] text-[#f5f5f7]',
+    label: 'text-white [text-shadow:0_0_2px_#000,0_0_4px_#000,0_1px_3px_rgba(0,0,0,.9)]',
+    glass: 'border-[rgba(255,255,255,.12)] bg-[rgba(24,24,30,.78)] shadow-[0_6px_18px_rgba(0,0,0,.35)]',
+    control: 'text-[#f5f5f7]',
+    hover: 'data-hovered:bg-[rgba(48,48,58,.85)]',
+    divider: 'border-t-[rgba(255,255,255,.1)]',
+    attribution: 'bg-[rgba(10,10,14,.55)] text-[rgba(255,255,255,.55)]',
+    halo: 'rgba(255,255,255,.85)',
+  },
+  light: {
+    root: 'bg-[#eef0f3] text-[#1c1c1e]',
+    label: 'text-[#1c1c1e] [text-shadow:0_0_2px_#fff,0_0_4px_#fff,0_1px_3px_rgba(255,255,255,.9)]',
+    glass: 'border-[rgba(0,0,0,.08)] bg-[rgba(255,255,255,.86)] text-[#1c1c1e] shadow-[0_6px_18px_rgba(0,0,0,.14)]',
+    control: 'text-[#1c1c1e]',
+    hover: 'data-hovered:bg-[rgba(245,245,247,.95)]',
+    divider: 'border-t-[rgba(0,0,0,.08)]',
+    attribution: 'bg-[rgba(255,255,255,.7)] text-[rgba(0,0,0,.55)]',
+    halo: 'rgba(255,255,255,.9)',
+  },
+} as const;
+
+const CONTROL =
+  'grid size-10 cursor-pointer place-items-center p-0 transition-[background] duration-160 ease-[ease] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--bl-tint,#0a84ff)]';
+const PIN_SHADOW_RAISED = 'shadow-[0_4px_12px_rgba(0,0,0,.5),0_0_0_1px_rgba(0,0,0,.25)]';
 
 const FLY_MS = 900;
 const TAP_SLOP = 4;
@@ -331,7 +363,7 @@ export function TileMap({
       setDragging(false);
       if (gesture && !gesture.moved && e.type === 'pointerup') {
         const target = e.target as HTMLElement;
-        if (!target.closest('.ck-tile-map__pin')) onMapClick?.();
+        if (!target.closest('[data-slot="tile-map-pin"]')) onMapClick?.();
       }
     } else {
       anchorGesture(gesture?.moved ?? true);
@@ -354,6 +386,8 @@ export function TileMap({
 
   const z = Math.round(cam.zoom);
   const ordered = [...pins].sort((a, b) => Number(a.selected ?? false) - Number(b.selected ?? false));
+  const tone = SCHEME[scheme];
+  const routePoints = route?.points.map((p) => { const s = toScreen(p); return `${s.x},${s.y}`; }).join(' ');
 
   return (
     <div
@@ -361,7 +395,12 @@ export function TileMap({
       data-slot="tile-map"
       data-scheme={scheme}
       data-dragging={dragging || undefined}
-      className={cn('ck-tile-map', className)}
+      className={cn(
+        'relative isolate h-full min-h-0 w-full min-w-0 cursor-grab touch-none overflow-hidden select-none data-dragging:cursor-grabbing',
+        MAP_FONT,
+        tone.root,
+        className,
+      )}
       style={style}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -369,79 +408,127 @@ export function TileMap({
       onPointerCancel={onPointerEnd}
       onDoubleClick={onDoubleClick}
     >
-      <div className="ck-tile-map__tiles" aria-hidden style={tileFilter ? { filter: tileFilter } : undefined}>
+      <div data-slot="tile-map-tiles" className="absolute inset-0 overflow-hidden" aria-hidden style={tileFilter ? { filter: tileFilter } : undefined}>
         {measured && z - 1 >= minZoom && (
           <TileLayer z={z - 1} cam={cam} size={size} tileUrl={tileUrl} fallback />
         )}
         {measured && <TileLayer z={z} cam={cam} size={size} tileUrl={tileUrl} />}
       </div>
       {measured && route && route.points.length > 1 && (
-        <svg className="ck-tile-map__route" width={size.width} height={size.height} aria-hidden>
+        <svg data-slot="tile-map-route" className="pointer-events-none absolute inset-0 overflow-visible" width={size.width} height={size.height} aria-hidden>
+          <polyline fill="none" stroke={tone.halo} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" points={routePoints} />
           <polyline
-            className="ck-tile-map__route-halo"
-            points={route.points.map((p) => { const s = toScreen(p); return `${s.x},${s.y}`; }).join(' ')}
-          />
-          <polyline
-            className="ck-tile-map__route-line"
-            style={{ stroke: route.color }}
-            points={route.points.map((p) => { const s = toScreen(p); return `${s.x},${s.y}`; }).join(' ')}
+            fill="none"
+            strokeWidth={4.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            {...(route.color ? { stroke: route.color } : { className: 'stroke-[color:var(--bl-tint,#0a84ff)]' })}
+            points={routePoints}
           />
         </svg>
       )}
       {measured && (
-        <div className="ck-tile-map__pins">
+        <div data-slot="tile-map-pins" className="pointer-events-none absolute inset-0">
           {ordered.map((pin) => {
             const s = toScreen(pin.position);
             const kind = pin.kind ?? 'place';
+            const user = kind === 'user';
             return (
+              /* Raw button: a press on a pin must still start a map pan, which react-aria's press handling would swallow. */
               <button
                 key={pin.id}
                 type="button"
-                className="ck-tile-map__pin"
+                data-slot="tile-map-pin"
                 data-kind={kind}
                 data-selected={pin.selected || undefined}
-                style={{ transform: `translate3d(${s.x}px, ${s.y}px, 0)`, '--ck-pin-color': pin.color } as CSSProperties}
+                className={cn(
+                  'group/pin pointer-events-none absolute top-0 left-0 flex h-0 w-0 cursor-pointer flex-col items-center gap-[3px] border-0 bg-transparent p-0 [font:inherit] text-white',
+                  pin.selected && 'z-2',
+                )}
+                style={{
+                  transform: `translate3d(${s.x}px, ${s.y}px, 0)`,
+                  '--ck-pin-color': pin.color ?? (kind === 'stop' ? 'var(--bl-tint,#0a84ff)' : '#0a84ff'),
+                } as CSSProperties}
                 aria-label={pin.label ?? pin.id}
                 onClick={(e) => {
                   e.stopPropagation();
                   onPinClick?.(pin);
                 }}
               >
-                {pin.callout != null && <span className="ck-tile-map__pin-callout">{pin.callout}</span>}
-                <span className="ck-tile-map__pin-marker">
-                  {kind === 'user' ? null : pin.badge != null ? (
-                    <span className="ck-tile-map__pin-badge">{pin.badge}</span>
+                {pin.callout != null && (
+                  <span className="pointer-events-auto absolute bottom-[23px] left-1/2 [transform:translateX(-50%)] rounded-[10px] bg-[#1c1c1e] px-2.5 py-[5px] text-[13px] leading-[1.1] font-bold tracking-[-.01em] whitespace-nowrap text-white shadow-[0_4px_12px_rgba(0,0,0,.25)] after:absolute after:-bottom-[5px] after:left-1/2 after:size-2.5 after:[transform:translateX(-50%)_rotate(45deg)] after:rounded-[2px] after:bg-inherit">
+                    {pin.callout}
+                  </span>
+                )}
+                <span
+                  data-slot="tile-map-pin-marker"
+                  className={cn(
+                    'pointer-events-auto grid shrink-0 place-items-center rounded-[50%] border-solid border-white [transition:transform_.22s_cubic-bezier(.32,.72,0,1),box-shadow_.22s_ease] group-[:hover]/pin:[transform:scale(1.18)] motion-reduce:[transition:none]',
+                    user
+                      ? '-mt-[9px] size-[18px] animate-[ck-tile-map-pulse_2.4s_ease-out_infinite] border-3 bg-[#0a84ff] shadow-[0_0_0_6px_rgba(10,132,255,.22),0_2px_6px_rgba(0,0,0,.45)] motion-reduce:animate-none'
+                      : cn(
+                          '-mt-[15px] size-[30px] border-[2.5px] bg-(--ck-pin-color) shadow-[0_2px_6px_rgba(0,0,0,.45),0_0_0_1px_rgba(0,0,0,.25)]',
+                          'group-[:hover]/pin:shadow-[0_4px_12px_rgba(0,0,0,.5),0_0_0_1px_rgba(0,0,0,.25)]',
+                          pin.selected && PIN_SHADOW_RAISED,
+                        ),
+                    pin.selected && '[transform:scale(1.18)]',
+                  )}
+                >
+                  {user ? null : pin.badge != null ? (
+                    <span className="text-[13px] leading-none font-bold tracking-[-.02em]">{pin.badge}</span>
                   ) : (
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <path d={MAP_ICONS[pin.icon ?? 'pin']} />
                     </svg>
                   )}
                 </span>
-                {pin.label && kind !== 'user' && <span className="ck-tile-map__pin-label">{pin.label}</span>}
+                {pin.label && !user && (
+                  <span
+                    className={cn(
+                      'pointer-events-auto max-w-[150px] shrink-0 overflow-hidden px-0.5 text-center text-[12px] leading-[1.15] text-ellipsis whitespace-nowrap',
+                      pin.selected ? 'font-bold' : 'font-semibold',
+                      tone.label,
+                    )}
+                  >
+                    {pin.label}
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
       )}
       {controls && (
-        <div className="ck-tile-map__controls" data-map-ui>
+        <div data-slot="tile-map-controls" className="pointer-events-auto absolute top-3.5 right-3.5 z-3 flex flex-col gap-2.5" data-map-ui>
           {onLocate && (
-            <button type="button" className="ck-tile-map__control" aria-label="Show my location" onClick={onLocate}>
+            <Button
+              aria-label="Show my location"
+              onPress={onLocate}
+              className={cn(CONTROL, 'rounded-[12px] border backdrop-blur-[14px]', tone.glass, tone.control, tone.hover)}
+            >
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={MAP_ICONS.locate} /></svg>
-            </button>
+            </Button>
           )}
-          <div className="ck-tile-map__zoom">
-            <button type="button" className="ck-tile-map__control" aria-label="Zoom in" onClick={() => zoomBy(1)}>
+          <div data-slot="tile-map-zoom" className={cn('flex flex-col overflow-hidden rounded-[12px] border backdrop-blur-[14px]', tone.glass)}>
+            <Button aria-label="Zoom in" onPress={() => zoomBy(1)} className={cn(CONTROL, 'rounded-none border-0 bg-transparent', tone.control, tone.hover)}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d={MAP_ICONS.plus} /></svg>
-            </button>
-            <button type="button" className="ck-tile-map__control" aria-label="Zoom out" onClick={() => zoomBy(-1)}>
+            </Button>
+            <Button aria-label="Zoom out" onPress={() => zoomBy(-1)} className={cn(CONTROL, 'rounded-none border-0 border-t bg-transparent', tone.divider, tone.control, tone.hover)}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d={MAP_ICONS.minus} /></svg>
-            </button>
+            </Button>
           </div>
         </div>
       )}
       {children}
-      {attribution && <div className="ck-tile-map__attribution" data-map-ui>{attribution}</div>}
+      {attribution && (
+        <div
+          data-slot="tile-map-attribution"
+          className={cn('pointer-events-auto absolute bottom-1.5 left-2 z-3 rounded-[6px] px-1.5 py-0.5 text-[10px] leading-[1.3]', tone.attribution)}
+          data-map-ui
+        >
+          {attribution}
+        </div>
+      )}
     </div>
   );
 }
@@ -474,7 +561,10 @@ function TileLayer({ z, cam, size, tileUrl, fallback }: TileLayerProps) {
         tiles.push(
           <img
             key={`${x}/${y}`}
-            className="ck-tile-map__tile"
+            className={cn(
+              'pointer-events-none absolute top-0 left-0 size-[256px] opacity-0 [image-rendering:auto] data-loaded:opacity-100',
+              fallback ? 'transition-none' : 'transition-opacity duration-280 ease-[ease] motion-reduce:transition-none',
+            )}
             src={tileUrl(z, wx, y)}
             alt=""
             draggable={false}
@@ -492,8 +582,9 @@ function TileLayer({ z, cam, size, tileUrl, fallback }: TileLayerProps) {
   }
   return (
     <div
-      className="ck-tile-map__layer"
+      data-slot="tile-map-layer"
       data-fallback={fallback || undefined}
+      className="absolute top-0 left-0 origin-top-left will-change-transform"
       style={{ transform: `translate3d(${ax}px, ${ay}px, 0) scale(${scale})` }}
     >
       {tiles}

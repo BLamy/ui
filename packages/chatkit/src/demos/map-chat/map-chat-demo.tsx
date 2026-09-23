@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Haptics } from '@brett_lamy/ui';
+import { cn, Haptics } from '@brett_lamy/ui';
+import { Button } from 'react-aria-components';
 import { Composer, MarkdownView, type ReferenceNode } from '@brett_lamy/workbench';
 import { ArtifactChatContainer, type ArtifactChatContainerProps } from '../../lib/artifact-chat-container';
-import { cn } from '../../lib/cn';
 import { formatDistance, formatMinutes, type MapTarget, type MapView } from './geo';
 import {
   planTurn,
@@ -85,17 +85,34 @@ function Icon({ name, size = 16, stroke = 2 }: { name: MapIconName; size?: numbe
   );
 }
 
+/** `font: inherit` for buttons, leaving size, weight and line-height to the caller. */
+const FONT_INHERIT = '[font-family:inherit] [font-style:inherit] [font-variant:inherit] [font-stretch:inherit]';
+const SPINNER =
+  'inline-block size-3 animate-[ck-map-chat-spin_.8s_linear_infinite] rounded-[50%] border-2 border-[rgba(255,255,255,.18)] border-t-[#f5f5f7] align-middle';
+
 function ToolRow({ call }: { call: ToolCallState }) {
   const meta = TOOL_META[call.name];
+  const done = call.status === 'done';
   return (
-    <div className="ck-map-chat__tool" data-status={call.status}>
-      <span className="ck-map-chat__tool-icon">
+    <div
+      data-slot="map-chat-tool"
+      data-status={call.status}
+      className="flex min-w-0 animate-[ck-in_.22s_ease] items-center gap-2 rounded-[10px] border border-[rgba(255,255,255,.07)] bg-[rgba(255,255,255,.06)] py-[5px] pr-2.5 pl-2 text-[12.5px] leading-[1.3] text-bl-label2"
+    >
+      <span
+        className={cn(
+          'grid size-5 shrink-0 place-items-center rounded-[6px]',
+          done ? 'bg-[rgba(48,209,88,.16)] text-[#5ad67a]' : 'bg-[rgba(10,132,255,.2)] text-[#7fb6ff]',
+        )}
+      >
         <Icon name={meta.icon} size={14} />
       </span>
-      <span className="ck-map-chat__tool-name">{meta.label}</span>
-      <span className="ck-map-chat__tool-args">{summarizeArgs(call.args)}</span>
-      <span className="ck-map-chat__tool-result">
-        {call.status === 'running' ? <span className="ck-map-chat__spinner" aria-label="Running" /> : call.result}
+      <span className="shrink-0 font-semibold text-bl-label">{meta.label}</span>
+      <span className="min-w-0 flex-1 overflow-hidden font-[family-name:var(--bl-mono,ui-monospace,SFMono-Regular,Menlo,monospace)] text-[11.5px] text-ellipsis whitespace-nowrap">
+        {summarizeArgs(call.args)}
+      </span>
+      <span className="max-w-[40%] shrink-0 overflow-hidden text-ellipsis whitespace-nowrap tabular-nums">
+        {call.status === 'running' ? <span className={SPINNER} aria-label="Running" /> : call.result}
       </span>
     </div>
   );
@@ -292,17 +309,22 @@ export function MapChatDemo({
       if (!place) return null;
       const meta = CATEGORY_META[place.category];
       return (
-        <button
-          type="button"
-          className="ck-map-chat__ref"
+        <Button
+          data-slot="map-chat-ref"
+          className={cn(
+            'mx-px inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border py-px pr-2 pl-1 align-baseline text-[.92em] leading-[1.35] font-semibold text-white',
+            FONT_INHERIT,
+            'border-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_45%,transparent)] bg-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_16%,transparent)]',
+            'transition-[background] duration-160 ease-[ease] data-hovered:bg-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_30%,transparent)]',
+          )}
           style={{ '--ck-ref-color': meta.color } as CSSProperties}
-          onClick={() => focusPlace(place)}
+          onPress={() => focusPlace(place)}
         >
-          <span className="ck-map-chat__ref-icon">
+          <span className="grid size-4 place-items-center rounded-[50%] bg-[color:var(--ck-ref-color,#0a84ff)] text-white">
             <Icon name={meta.icon} size={11} stroke={2.4} />
           </span>
           {place.name}
-        </button>
+        </Button>
       );
     },
     [focusPlace],
@@ -341,12 +363,12 @@ export function MapChatDemo({
       working={working != null}
       workingLabel={working ?? undefined}
       hideOnScroll={false}
-      className={cn('ck-map-chat', className)}
+      className={cn('ck-map-chat group/map-chat', className)}
       style={style}
     >
       <ArtifactChatContainer.Content>
         <TileMap
-          className="ck-map-chat__map"
+          className="absolute inset-0"
           view={view}
           pins={pins}
           route={route}
@@ -364,33 +386,49 @@ export function MapChatDemo({
           onLocate={() => setView({ center: USER_POSITION, zoom: 15.5 })}
         >
           {trip && (
-            <div className="ck-map-chat__banner" data-map-ui>
-              <span className="ck-map-chat__banner-icon">
+            <div
+              data-slot="map-chat-banner"
+              className="pointer-events-auto absolute top-3.5 right-[70px] left-3.5 z-3 flex max-w-[380px] animate-[ck-in_.3s_ease] items-center gap-3 rounded-[16px] border border-[rgba(255,255,255,.12)] bg-[rgba(24,24,30,.82)] py-2.5 pr-3 pl-3.5 shadow-[0_8px_24px_rgba(0,0,0,.35)] backdrop-blur-[14px]"
+              data-map-ui
+            >
+              <span className="grid size-[34px] shrink-0 place-items-center rounded-[50%] bg-bl-tint text-white">
                 <Icon name={savedTrips.some((t) => t.id === trip.id) ? 'bookmark' : 'walk'} size={18} />
               </span>
-              <span className="ck-map-chat__banner-text">
-                <strong>{trip.name}</strong>
-                <span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-[13px] leading-[1.25]">
+                <strong className="overflow-hidden text-[14px] font-[650] text-ellipsis whitespace-nowrap">{trip.name}</strong>
+                <span className="text-bl-label2">
                   {trip.stops.length} {trip.stops.length === 1 ? 'stop' : 'stops'} · {formatMinutes(trip.totalMinutes)} · {formatDistance(trip.totalMeters)}
                 </span>
               </span>
-              <button type="button" className="ck-map-chat__banner-close" aria-label="Clear route" onClick={() => setTrip(null)}>
+              <Button
+                aria-label="Clear route"
+                className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-[50%] border-0 bg-[rgba(255,255,255,.1)] p-0 text-[#f5f5f7] data-hovered:bg-[rgba(255,255,255,.18)]"
+                onPress={() => setTrip(null)}
+              >
                 <Icon name="x" size={14} stroke={2.4} />
-              </button>
+              </Button>
             </div>
           )}
         </TileMap>
       </ArtifactChatContainer.Content>
 
       <ArtifactChatContainer.Chat>
-        <div ref={scrollerRef} className="ck-map-chat__transcript ck-scroll" aria-live="polite">
+        <div
+          ref={scrollerRef}
+          data-slot="map-chat-transcript"
+          className="ck-scroll box-border flex h-full min-h-0! flex-col gap-3 overflow-y-auto overscroll-contain px-3.5 pt-3.5 pb-2.5 text-[14.5px] leading-[1.45] [&>:first-child]:mt-auto"
+          aria-live="polite"
+        >
           {turns.map((turn) =>
             turn.role === 'user' ? (
-              <div key={turn.id} className="ck-map-chat__user">
+              <div
+                key={turn.id}
+                className="max-w-[82%] animate-[ck-in_.24s_ease] self-end rounded-[18px_18px_6px_18px] bg-bl-tint px-[13px] py-2 text-[14.5px] leading-[1.35] [word-break:break-word] whitespace-pre-wrap text-white"
+              >
                 {turn.text}
               </div>
             ) : (
-              <div key={turn.id} className="ck-map-chat__assistant" data-live={turn.live || undefined}>
+              <div key={turn.id} className="flex min-w-0 animate-[ck-in_.24s_ease] flex-col gap-1.5" data-live={turn.live || undefined}>
                 {turn.parts.map((part, idx) =>
                   part.type === 'tool' ? (
                     <ToolRow key={part.call.id} call={part.call} />
@@ -405,7 +443,7 @@ export function MapChatDemo({
                     />
                   ),
                 )}
-                {turn.live && turn.parts.length === 0 && <span className="ck-map-chat__spinner" aria-label="Thinking" />}
+                {turn.live && turn.parts.length === 0 && <span className={SPINNER} aria-label="Thinking" />}
               </div>
             ),
           )}
@@ -413,13 +451,26 @@ export function MapChatDemo({
       </ArtifactChatContainer.Chat>
 
       <ArtifactChatContainer.Composer>
-        <div className="ck-map-chat__composer">
+        <div className="flex min-w-0 flex-col">
           {showSuggestions && (
-            <div className="ck-map-chat__suggestions" role="list">
+            <div
+              data-slot="map-chat-suggestions"
+              role="list"
+              className="flex gap-2 overflow-x-auto px-3 pt-2 pb-0.5 [scrollbar-width:none] [-webkit-mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [&::-webkit-scrollbar]:hidden group-data-[layout=split]/map-chat:px-3.5 group-data-[layout=split]/map-chat:pt-2.5 group-data-[layout=split]/map-chat:pb-0"
+            >
               {SUGGESTIONS.map((s) => (
-                <button key={s} type="button" role="listitem" className="ck-map-chat__suggestion" onClick={() => void send(s)}>
-                  {s}
-                </button>
+                <div key={s} role="listitem" className="contents">
+                  <Button
+                    className={cn(
+                      'shrink-0 cursor-pointer rounded-[999px] border border-[rgba(255,255,255,.14)] bg-[rgba(255,255,255,.08)] px-3 py-1.5 text-[13px] leading-[1.2] font-medium whitespace-nowrap text-bl-label',
+                      FONT_INHERIT,
+                      'transition-[background] duration-160 ease-[ease] data-hovered:bg-[rgba(255,255,255,.16)]',
+                    )}
+                    onPress={() => void send(s)}
+                  >
+                    {s}
+                  </Button>
+                </div>
               ))}
             </div>
           )}
