@@ -7,7 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { collectSlots, defineSlot, useContainerWidth } from '@brett_lamy/ui';
+import { collectSlots, defineSlot, useAppearance, useContainerWidth } from '@brett_lamy/ui';
 import { ChatColumn } from './chat-column';
 import { cn } from './cn';
 import { FloatingChat, type FloatingChatFabPosition, type FloatingChatProps } from './floating-chat';
@@ -70,7 +70,10 @@ export interface ArtifactChatContainerProps {
   peek?: number;
   /** Floating surface style: glass over the content, or an opaque card. */
   appearance?: FloatingChatProps['appearance'];
-  /** Colour scheme of the floating surface; `auto` inherits the host's tokens. */
+  /**
+   * Colour scheme of the chat surfaces (docked column, floating glass, embedded Composer).
+   * Defaults to the ambient `AppearanceProvider` value, else `auto`: inherit the host's --bl-* tokens.
+   */
   tone?: FloatingChatProps['tone'];
   children?: ReactNode;
   className?: string;
@@ -99,6 +102,8 @@ export function ArtifactChatContainer({
   style,
 }: ArtifactChatContainerProps) {
   const [rootRef, width] = useContainerWidth();
+  const ambient = useAppearance();
+  const resolvedTone = tone ?? ambient;
   const contentRef = useRef<HTMLElement>(null);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultChatOpen);
   const [composing, setComposing] = useState(!working);
@@ -134,6 +139,8 @@ export function ArtifactChatContainer({
         ref={rootRef}
         data-slot="artifact-chat-container"
         data-layout={compact ? 'compact' : 'split'}
+        // light/dark key the token maps in styles.css; `auto` leaves the host's tokens alone.
+        data-tone={resolvedTone === 'light' || resolvedTone === 'dark' ? resolvedTone : undefined}
         // ck-artifact-chat carries the --wb-* token map (styles.css) and is a hook for hosts.
         className={cn(
           'ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-[color:var(--bl-bg,#fff)] text-[color:var(--bl-label,#111)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]',
@@ -163,7 +170,7 @@ export function ArtifactChatContainer({
               fabPosition={fabPosition}
               peek={peek}
               appearance={appearance}
-              tone={tone}
+              tone={resolvedTone}
             >
               <FloatingChat.Chat>{slots.chat}</FloatingChat.Chat>
               <FloatingChat.Composer>{slots.composer}</FloatingChat.Composer>

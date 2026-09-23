@@ -56,6 +56,31 @@
   --color-wb-tint: var(--wb-tint);
   --color-wb-green: var(--wb-green);
   --color-wb-red: var(--wb-red);
+  /* Workbench tokens the light palette adds; the fallbacks are the dark literals, so hosts that only set the
+     original --wb-* map (ArtifactChatContainer, FloatingChat) render unchanged. */
+  --color-wb-card2: var(--wb-card2, #26262E);
+  --color-wb-well: var(--wb-well, #101014);
+  --color-wb-term: var(--wb-term, #0C0C10);
+  --color-wb-handle: var(--wb-handle, rgba(255, 255, 255, .22));
+
+  /* ChatKit tokens. ChatShell sets --ck-* for its appearance; the fallbacks are the dark palette, so chat
+     primitives rendered outside a shell keep their original look. */
+  --color-ck-bg: var(--ck-bg, #131318);
+  --color-ck-rail: var(--ck-rail, #0D0D11);
+  --color-ck-side: var(--ck-side, #101015);
+  --color-ck-card: var(--ck-card, #1B1B22);
+  --color-ck-fill: var(--ck-fill, rgba(255, 255, 255, .055));
+  --color-ck-fill2: var(--ck-fill2, rgba(255, 255, 255, .1));
+  --color-ck-hover: var(--ck-hover, rgba(255, 255, 255, .035));
+  --color-ck-sep: var(--ck-sep, rgba(255, 255, 255, .07));
+  --color-ck-label: var(--ck-label, #EDEDF2);
+  --color-ck-mut: var(--ck-mut, rgba(235, 235, 245, .6));
+  --color-ck-mut3: var(--ck-mut3, rgba(235, 235, 245, .35));
+  --color-ck-link: var(--ck-link, #7EB6FF);
+  --color-ck-mention: var(--ck-mention, rgba(10, 132, 255, .16));
+  --color-ck-mine: var(--ck-mine, rgba(10, 132, 255, .14));
+  --color-ck-on-fill: var(--ck-on-fill, #fff);
+  --color-ck-green: var(--ck-green, #32D74B);
 
   --font-ios: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;

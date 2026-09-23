@@ -2,7 +2,8 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { AdaptivePane, collectSlots, defineSlot, useContainerWidth, type AdaptivePaneMode } from '@brett_lamy/ui';
 import { cn } from './util';
-import { workbenchVars } from './theme';
+import type { Appearance } from '@brett_lamy/ui';
+import { workbenchVars, workbenchAppearanceClass, useWorkbenchAppearance, WorkbenchAppearanceProvider } from './theme';
 import { SnapSheet } from './snap-sheet';
 
 /* ══ WorkbenchShell — compositional IDE-scaffold container ══
@@ -46,14 +47,21 @@ export const useWorkbenchShell = (): WorkbenchShellContextValue => {
 
 export interface WorkbenchShellProps {
   tint?: string;
+  /** Light or dark palette. Defaults to the ambient `AppearanceProvider` value, else dark. */
+  appearance?: Appearance;
   /** initial/forced terminal visibility; `false` also disables the auto-open at regular width */
   terminal?: boolean | 'true' | null;
   children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }
+/* Drawers over a light shell: a lighter scrim and a softer shadow than EdgeDrawer's dark defaults. */
+const LIGHT_DRAWER = { scrim: 'rgba(0,0,0,.22)', shadow: '0 0 36px rgba(0,0,0,.14)' };
+
 export function WorkbenchShell(props: WorkbenchShellProps) {
   const [rootRef, width] = useContainerWidth();
+  const appearance = useWorkbenchAppearance(props.appearance);
+  const light = appearance === 'light';
   const wc = workbenchWidthClass(width);
   const [side, setSide] = useState(true);
   const [sideSheet, setSideSheet] = useState(false);
@@ -107,20 +115,23 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
       drawerWidth={280}
       maxWidth="84%"
       zIndex={80}
+      {...(light ? LIGHT_DRAWER : null)}
     >
       {slots.sidebar}
     </AdaptivePane>
   );
   return (
+    <WorkbenchAppearanceProvider value={appearance}>
     <WBShellCtx.Provider value={ctx}>
       <div
         ref={rootRef}
         data-slot="workbench-shell"
         className={cn(
-          'wb-dark relative flex h-full w-full flex-col overflow-hidden bg-wb-bg font-ios text-wb-label antialiased scheme-dark',
+          'relative flex h-full w-full flex-col overflow-hidden bg-wb-bg font-ios text-wb-label antialiased',
+          workbenchAppearanceClass(appearance),
           props.className,
         )}
-        style={{ ...workbenchVars(props.tint), ...props.style }}
+        style={{ ...workbenchVars(props.tint, appearance), ...props.style }}
       >
         <div className="relative flex min-h-0 flex-1">
           {sidebarMode === 'column' ? sidebar : null}
@@ -137,7 +148,8 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
             columnStyle={{ borderLeft: '1px solid var(--wb-sep)' }}
             drawerWidth="min(420px, 94%)"
             zIndex={panelMode === 'cover' ? 60 : 58}
-            shadow="0 0 44px rgba(0,0,0,.55)"
+            shadow={light ? LIGHT_DRAWER.shadow : '0 0 44px rgba(0,0,0,.55)'}
+            {...(light ? { scrim: LIGHT_DRAWER.scrim } : null)}
             className="border-l border-wb-sep"
           >
             {slots.panel}
@@ -146,12 +158,13 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
         {compact ? slots.tabbar : null}
         {sidebarMode === 'drawer' ? sidebar : null}
         {compact && slots.docksheet ? (
-          <SnapSheet open={term} onClose={() => setTermOpen(false)} snaps={[0.52, 0.93]} bg="#0C0C10">
+          <SnapSheet open={term} onClose={() => setTermOpen(false)} snaps={[0.52, 0.93]} bg="var(--wb-term, #0C0C10)" className="wb-term">
             {slots.docksheet}
           </SnapSheet>
         ) : null}
       </div>
     </WBShellCtx.Provider>
+    </WorkbenchAppearanceProvider>
   );
 }
 WorkbenchShell.Context = WBShellCtx;

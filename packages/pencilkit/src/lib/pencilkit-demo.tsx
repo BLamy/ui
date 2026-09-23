@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { cn } from '@brett_lamy/ui';
+import { cn, useAppearance, type Appearance } from '@brett_lamy/ui';
 import { PK_DARK, PK_INKS, PK_LIGHT, PK_W, type PencilStroke, type PencilTool } from './constants';
 import { PencilCanvas } from './pencil-canvas';
 import {
@@ -14,15 +14,19 @@ import {
 import { usePencilHistory } from './use-pencil-history';
 
 export interface PencilKitDemoProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Dark paper. Wins over `appearance`. */
   dark?: boolean | 'true';
+  /** Light or dark paper. Defaults to the ambient `AppearanceProvider` value, else light. */
+  appearance?: Appearance;
   tint?: string;
   /** strokes to pre-seed the canvas with (e.g. the `demoStrokes()` fixture) */
   defaultStrokes?: PencilStroke[];
 }
 
 /** The full PencilKit prototype demo: dotted paper, canvas, and the floating toolbar. */
-export function PencilKitDemo({ dark: darkProp, tint, defaultStrokes, className, style, ...rest }: PencilKitDemoProps) {
-  const dark = darkProp === true || darkProp === 'true';
+export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes, className, style, ...rest }: PencilKitDemoProps) {
+  const ambient = useAppearance();
+  const dark = darkProp != null ? darkProp === true || darkProp === 'true' : (appearance ?? ambient) === 'dark';
   const vars: Record<string, string> = { ...(dark ? PK_DARK : PK_LIGHT) };
   if (tint) vars['--bl-tint'] = tint;
 

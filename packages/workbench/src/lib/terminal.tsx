@@ -65,7 +65,7 @@ export function TermBody({ seed, autoFocus, className, style }: TermBodyProps) {
       ref={sc}
       data-slot="term-body"
       className={cn(
-        'wb-scroll min-h-0 flex-1 cursor-text overflow-y-auto px-3.5 py-2.5 font-mono text-[12.5px] leading-[1.62] text-[#D4D4DE]',
+        'wb-term wb-scroll min-h-0 flex-1 cursor-text overflow-y-auto px-3.5 py-2.5 font-mono text-[12.5px] leading-[1.62] text-[#D4D4DE]',
         className,
       )}
       onClick={() => {
@@ -152,7 +152,7 @@ export function TerminalDock({ h, setH, onClose, seed, className, style }: Termi
   return (
     <div
       data-slot="terminal-dock"
-      className={cn('relative flex h-(--dock-h) shrink-0 flex-col border-t border-wb-sep bg-[#0C0C10]', className)}
+      className={cn('wb-term relative flex h-(--dock-h) shrink-0 flex-col border-t border-wb-sep bg-wb-term', className)}
       // the dock height is user-resized at runtime
       style={{ '--dock-h': h + 'px', ...style } as React.CSSProperties}
     >

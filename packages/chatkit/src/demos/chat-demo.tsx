@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { cn, SideDrawer } from '@brett_lamy/ui';
+import { cn, SideDrawer, type Appearance } from '@brett_lamy/ui';
 import { Button } from 'react-aria-components';
 import { ChannelList } from '../lib/channel-list';
 import { ChatAvatar } from '../lib/chat-avatar';
@@ -28,11 +28,11 @@ import { WorkspaceRail } from '../lib/workspace-rail';
 
 const KP = chatIconPaths;
 
-/* The prototype's literal chat tokens (`K` in lib/chat-tokens) as utilities. */
-const SEP_BORDER = 'border-[rgba(255,255,255,.07)]';
-const SEP_BG = 'bg-[rgba(255,255,255,.07)]';
-const MUT = 'text-[rgba(235,235,245,.6)]';
-const MUT3 = 'text-[rgba(235,235,245,.35)]';
+/* The chat tokens (`K` in lib/chat-tokens; --ck-* on ChatShell) as utilities. */
+const SEP_BORDER = 'border-ck-sep';
+const SEP_BG = 'bg-ck-sep';
+const MUT = 'text-ck-mut';
+const MUT3 = 'text-ck-mut3';
 const ICON_BUTTON = 'grid cursor-pointer border-0 bg-transparent p-1';
 
 export const USERS: ChatUsers = {
@@ -138,6 +138,8 @@ type ThreadState = ChatThreadState;
 
 export interface ChatDemoProps {
   tint?: string;
+  /** Light or dark palette. Defaults to the ambient `AppearanceProvider` value, else dark. */
+  appearance?: Appearance;
   members?: boolean;
   /** thread open at mount — defaults to the prototype's `{id:'d4', mode:'drawer'}`; pass null for none */
   initialThread?: ChatThreadState | null;
@@ -149,6 +151,7 @@ export function ChatDemo({
   tint = '#0A84FF',
   members: showMembers = true,
   initialThread = { id: 'd4', mode: 'drawer' },
+  appearance,
   className,
   style,
 }: ChatDemoProps) {
@@ -201,10 +204,10 @@ export function ChatDemo({
         <div className="ck-scroll min-h-0 flex-1 overflow-y-auto pt-1 pb-2.5">
           {mode === 'drawer' ? (
             <div className={cn('border-b px-4 pt-1.5 pb-3', SEP_BORDER)}>
-              <div className="text-[16px] leading-[1.3] font-[750] text-[#EDEDF2]">{thMsg.thread.title}</div>
+              <div className="text-[16px] leading-[1.3] font-[750] text-ck-label">{thMsg.thread.title}</div>
               <div className={cn('mt-[3px] text-[11.5px]', MUT3)}>
                 {/* One line: splitting the surrounding text into more nodes shifts its kerning. */}
-                Started by <span className="font-semibold text-[color:var(--ck-role)]" style={{ '--ck-role': USERS[thMsg.u].role } as CSSProperties}>{USERS[thMsg.u].name}</span> in #{ch.label}
+                Started by <span className="ck-role font-semibold text-[color:var(--ck-role)]" style={{ '--ck-role': USERS[thMsg.u].role } as CSSProperties}>{USERS[thMsg.u].name}</span> in #{ch.label}
               </div>
             </div>
           ) : null}
@@ -234,7 +237,7 @@ export function ChatDemo({
     );
   return (
     <ChatUsersProvider users={USERS}>
-      <ChatShell breakpoint={880} className={className} style={style}>
+      <ChatShell breakpoint={880} appearance={appearance} className={className} style={style}>
         <ChatShell.Rail>
           <WorkspaceRail tint={tint} />
         </ChatShell.Rail>
@@ -392,7 +395,7 @@ export function ChannelMain({
           <Fragment>
             <div ref={scrollRef} className="ck-scroll relative min-h-0 flex-1 overflow-y-auto py-3">
               <div className="px-[18px] pb-2.5">
-                <div className={cn('mb-2 grid size-10 place-items-center rounded-[12px] bg-[rgba(255,255,255,.1)]', MUT)}>
+                <div className={cn('mb-2 grid size-10 place-items-center rounded-[12px] bg-ck-fill2', MUT)}>
                   <ChatIcon d={KP.hash} size={20} sw={2.2} />
                 </div>
                 <div className="text-[15.5px] font-[750]">Welcome to #{ch.label}</div>
@@ -422,7 +425,7 @@ export function ChannelMain({
         )}
       </div>
       {memberCol ? (
-        <div className={cn('box-border w-[168px] shrink-0 border-l bg-[#101015] p-3', SEP_BORDER)}>
+        <div className={cn('box-border w-[168px] shrink-0 border-l bg-ck-side p-3', SEP_BORDER)}>
           <div className={cn('mb-2 text-[10px] font-bold tracking-[.7px] uppercase', MUT3)}>
             Team — {Object.keys(USERS).length}
           </div>
@@ -430,7 +433,7 @@ export function ChannelMain({
             <div key={id} className="flex items-center gap-2 py-1">
               <ChatAvatar user={u} size={24} square={u.bot} />
               <span
-                className="flex-1 overflow-hidden text-[12.5px] font-semibold text-ellipsis whitespace-nowrap text-[color:var(--ck-role)]"
+                className="ck-role flex-1 overflow-hidden text-[12.5px] font-semibold text-ellipsis whitespace-nowrap text-[color:var(--ck-role)]"
                 style={{ '--ck-role': u.role } as CSSProperties}
               >
                 {u.name}
@@ -443,7 +446,7 @@ export function ChannelMain({
         </div>
       ) : null}
       <SideDrawer mode={drawerMode} open={drawerOpen} onClose={() => setThread(null)} title="Thread" width={Math.min(360, w - 60)}>
-        <div className="box-border h-full [--bl-label:#EDEDF2] [--bl-label2:rgba(235,235,245,.6)] [--bl-sep:rgba(255,255,255,.07)]">
+        <div className="box-border h-full [--bl-label:var(--ck-label,#EDEDF2)] [--bl-label2:var(--ck-mut,rgba(235,235,245,.6))] [--bl-sep:var(--ck-sep,rgba(255,255,255,.07))]">
           {threadBody('drawer')}
         </div>
       </SideDrawer>

@@ -22,7 +22,7 @@
 .wb-md :where(ul,ol){margin:8px 0;padding-left:22px}
 .wb-md :where(li){margin:3px 0}
 .wb-md :where(code){font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.86em;background:var(--mdc-code,rgba(120,120,140,.14));padding:2px 5px;border-radius:5px}
-.wb-md :where(pre){background:var(--mdc-pre,#101014);color:#D8D8E2;border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
+.wb-md :where(pre){background:var(--mdc-pre,#101014);color:var(--mdc-pre-fg,#D8D8E2);border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
 .wb-md :where(pre code){background:none;padding:0;font-size:inherit;color:inherit}
 .wb-md :where(table){border-collapse:collapse;margin:10px 0;width:100%;font-size:13.5px}
 .wb-md :where(th){text-align:left;font-weight:600;color:var(--mdc-mut,#8E8E98);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
@@ -40,6 +40,28 @@
 .wb-md :where(.hljs-operator,.hljs-punctuation){color:#89DDFF}
 .wb-md :where(.hljs-deletion){color:#FF6B6B}
 .wb-md :where(.hljs-addition){color:#69DB7C}
+
+/* ── Light appearance (.wb-light on WorkbenchShell / WorkbenchTheme) ──
+   Code blocks sit on a light well, so syntax colors switch to a One Light-style palette. The HlPre token
+   classes read --wb-hl-* (dark fallbacks inline). */
+.wb-light{--wb-hl-kw:#A626A4;--wb-hl-str:#3E8B3A;--wb-hl-num:#986801;--wb-hl-com:#9A9AA3;--wb-hl-fn:#3563D9;--wb-hl-tag:#D2403A;--wb-hl-attr:#B06A00;--wb-hl-punc:#0B7FA8;--wb-hl-id:#24242B}
+.wb-light .wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name){color:#A626A4}
+.wb-light .wb-md :where(.hljs-string,.hljs-attr,.hljs-symbol,.hljs-bullet){color:#3E8B3A}
+.wb-light .wb-md :where(.hljs-title,.hljs-section,.hljs-function .hljs-title){color:#3563D9}
+.wb-light .wb-md :where(.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable){color:#986801}
+.wb-light .wb-md :where(.hljs-comment,.hljs-quote,.hljs-meta){color:#9A9AA3}
+.wb-light .wb-md :where(.hljs-operator,.hljs-punctuation){color:#0B7FA8}
+.wb-light .wb-md :where(.hljs-deletion){color:#D2403A}
+.wb-light .wb-md :where(.hljs-addition){color:#2F8F46}
+.wb-light .wb-scroll{scrollbar-color:rgba(0,0,0,.2) transparent}
+.wb-light .wb-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.18)}
+.wb-light .wb-btn:hover{filter:brightness(.97)}
+/* The terminal stays dark in the light appearance, like an IDE's integrated terminal: its subtree gets the
+   dark tokens back. */
+.wb-light .wb-term{color-scheme:dark;--wb-fill:rgba(255,255,255,.06);--wb-fill2:rgba(255,255,255,.11);--wb-sep:rgba(255,255,255,.08);--wb-label:#EDEDF2;--wb-label2:#9C9CA6;--wb-label3:#69696F;--wb-handle:rgba(255,255,255,.22);color:#EDEDF2}
+.wb-light .wb-term .wb-btn:hover{filter:brightness(1.12)}
+.wb-light .wb-term .wb-scroll{scrollbar-color:rgba(140,140,155,.3) transparent}
+.wb-light .wb-term .wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28)}
 
 /* Docstream editor compressed into the Workbench composer. The editor package defaults to a
    full document canvas, so this adapter supplies the same narrow, auto-growing surface used by

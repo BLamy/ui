@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { cn, Haptics } from '@brett_lamy/ui';
+import { cn, Haptics, useAppearance, type Appearance } from '@brett_lamy/ui';
 import { Button } from 'react-aria-components';
 import { Composer, MarkdownView, type ReferenceNode } from '@brett_lamy/workbench';
 import { ArtifactChatContainer, type ArtifactChatContainerProps } from '../../lib/artifact-chat-container';
@@ -15,7 +15,7 @@ import {
 } from './map-agent';
 import { MAP_ICONS, type MapIconName } from './map-icons';
 import { AREAS, CATEGORY_META, PLACE_BY_ID, USER_POSITION, type Place, type PlaceCategory } from './places';
-import { TileMap, type MapPin, type MapRoute } from './tile-map';
+import { esriLightGrayTiles, TileMap, type MapPin, type MapRoute } from './tile-map';
 
 interface ToolCallState {
   id: string;
@@ -44,6 +44,8 @@ export interface MapChatDemoProps {
   greeting?: string | null;
   /** Send a message on mount, e.g. to seed a story. */
   initialPrompt?: string;
+  /** Light or dark map and chat. Defaults to the ambient `AppearanceProvider` value, else dark. */
+  appearance?: Appearance;
   className?: string;
   style?: CSSProperties;
 }
@@ -90,19 +92,48 @@ const FONT_INHERIT = '[font-family:inherit] [font-style:inherit] [font-variant:i
 const SPINNER =
   'inline-block size-3 animate-[ck-map-chat-spin_.8s_linear_infinite] rounded-[50%] border-2 border-[rgba(255,255,255,.18)] border-t-[#f5f5f7] align-middle';
 
-function ToolRow({ call }: { call: ToolCallState }) {
+/* The demo's own chrome per appearance; dark is the original look. */
+const CHROME = {
+  dark: {
+    spinner: SPINNER,
+    tool: 'border-[rgba(255,255,255,.07)] bg-[rgba(255,255,255,.06)]',
+    toolDone: 'bg-[rgba(48,209,88,.16)] text-[#5ad67a]',
+    toolRunning: 'bg-[rgba(10,132,255,.2)] text-[#7fb6ff]',
+    banner: 'border-[rgba(255,255,255,.12)] bg-[rgba(24,24,30,.82)] shadow-[0_8px_24px_rgba(0,0,0,.35)]',
+    bannerClose: 'bg-[rgba(255,255,255,.1)] text-[#f5f5f7] data-hovered:bg-[rgba(255,255,255,.18)]',
+    chip: 'border-[rgba(255,255,255,.14)] bg-[rgba(255,255,255,.08)] data-hovered:bg-[rgba(255,255,255,.16)]',
+    ref: 'text-white',
+  },
+  light: {
+    spinner:
+      'inline-block size-3 animate-[ck-map-chat-spin_.8s_linear_infinite] rounded-[50%] border-2 border-[rgba(0,0,0,.12)] border-t-[#1c1c1e] align-middle',
+    tool: 'border-[rgba(0,0,0,.06)] bg-[rgba(0,0,0,.035)]',
+    toolDone: 'bg-[rgba(52,199,89,.16)] text-[#1f8a3c]',
+    toolRunning: 'bg-[rgba(10,132,255,.13)] text-[#0a64d6]',
+    banner: 'border-[rgba(0,0,0,.08)] bg-[rgba(255,255,255,.88)] text-[#1c1c1e] shadow-[0_8px_24px_rgba(0,0,0,.14)]',
+    bannerClose: 'bg-[rgba(0,0,0,.06)] text-[#1c1c1e] data-hovered:bg-[rgba(0,0,0,.1)]',
+    chip: 'border-[rgba(0,0,0,.1)] bg-[rgba(255,255,255,.9)] data-hovered:bg-[rgba(0,0,0,.05)]',
+    ref: 'text-[#1c1c1e]',
+  },
+};
+type Chrome = (typeof CHROME)['dark'];
+
+function ToolRow({ call, chrome }: { call: ToolCallState; chrome: Chrome }) {
   const meta = TOOL_META[call.name];
   const done = call.status === 'done';
   return (
     <div
       data-slot="map-chat-tool"
       data-status={call.status}
-      className="flex min-w-0 animate-[ck-in_.22s_ease] items-center gap-2 rounded-[10px] border border-[rgba(255,255,255,.07)] bg-[rgba(255,255,255,.06)] py-[5px] pr-2.5 pl-2 text-[12.5px] leading-[1.3] text-bl-label2"
+      className={cn(
+        'flex min-w-0 animate-[ck-in_.22s_ease] items-center gap-2 rounded-[10px] border py-[5px] pr-2.5 pl-2 text-[12.5px] leading-[1.3] text-bl-label2',
+        chrome.tool,
+      )}
     >
       <span
         className={cn(
           'grid size-5 shrink-0 place-items-center rounded-[6px]',
-          done ? 'bg-[rgba(48,209,88,.16)] text-[#5ad67a]' : 'bg-[rgba(10,132,255,.2)] text-[#7fb6ff]',
+          done ? chrome.toolDone : chrome.toolRunning,
         )}
       >
         <Icon name={meta.icon} size={14} />
@@ -112,7 +143,7 @@ function ToolRow({ call }: { call: ToolCallState }) {
         {summarizeArgs(call.args)}
       </span>
       <span className="max-w-[40%] shrink-0 overflow-hidden text-ellipsis whitespace-nowrap tabular-nums">
-        {call.status === 'running' ? <span className={SPINNER} aria-label="Running" /> : call.result}
+        {call.status === 'running' ? <span className={chrome.spinner} aria-label="Running" /> : call.result}
       </span>
     </div>
   );
@@ -123,9 +154,13 @@ export function MapChatDemo({
   peek = 236,
   greeting = DEFAULT_GREETING,
   initialPrompt,
+  appearance,
   className,
   style,
 }: MapChatDemoProps) {
+  const ambient = useAppearance();
+  const light = (appearance ?? ambient) === 'light';
+  const chrome = light ? CHROME.light : CHROME.dark;
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -312,7 +347,8 @@ export function MapChatDemo({
         <Button
           data-slot="map-chat-ref"
           className={cn(
-            'mx-px inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border py-px pr-2 pl-1 align-baseline text-[.92em] leading-[1.35] font-semibold text-white',
+            'mx-px inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border py-px pr-2 pl-1 align-baseline text-[.92em] leading-[1.35] font-semibold',
+            chrome.ref,
             FONT_INHERIT,
             'border-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_45%,transparent)] bg-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_16%,transparent)]',
             'transition-[background] duration-160 ease-[ease] data-hovered:bg-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_30%,transparent)]',
@@ -327,7 +363,7 @@ export function MapChatDemo({
         </Button>
       );
     },
-    [focusPlace],
+    [focusPlace, chrome],
   );
 
   const stopIndex = useMemo(() => new Map(trip?.stops.map((s, i) => [s.id, i + 1]) ?? []), [trip]);
@@ -363,6 +399,7 @@ export function MapChatDemo({
       working={working != null}
       workingLabel={working ?? undefined}
       hideOnScroll={false}
+      tone={appearance}
       className={cn('ck-map-chat group/map-chat', className)}
       style={style}
     >
@@ -373,7 +410,7 @@ export function MapChatDemo({
           pins={pins}
           route={route}
           controls
-          tileFilter="brightness(.72) saturate(.85) contrast(1.05)"
+          {...(light ? { tileUrl: esriLightGrayTiles, scheme: 'light' as const } : { tileFilter: 'brightness(.72) saturate(.85) contrast(1.05)' })}
           onViewChange={(cam) => {
             cameraRef.current = cam;
           }}
@@ -388,7 +425,10 @@ export function MapChatDemo({
           {trip && (
             <div
               data-slot="map-chat-banner"
-              className="pointer-events-auto absolute top-3.5 right-[70px] left-3.5 z-3 flex max-w-[380px] animate-[ck-in_.3s_ease] items-center gap-3 rounded-[16px] border border-[rgba(255,255,255,.12)] bg-[rgba(24,24,30,.82)] py-2.5 pr-3 pl-3.5 shadow-[0_8px_24px_rgba(0,0,0,.35)] backdrop-blur-[14px]"
+              className={cn(
+                'pointer-events-auto absolute top-3.5 right-[70px] left-3.5 z-3 flex max-w-[380px] animate-[ck-in_.3s_ease] items-center gap-3 rounded-[16px] border py-2.5 pr-3 pl-3.5 backdrop-blur-[14px]',
+                chrome.banner,
+              )}
               data-map-ui
             >
               <span className="grid size-[34px] shrink-0 place-items-center rounded-[50%] bg-bl-tint text-white">
@@ -402,7 +442,7 @@ export function MapChatDemo({
               </span>
               <Button
                 aria-label="Clear route"
-                className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-[50%] border-0 bg-[rgba(255,255,255,.1)] p-0 text-[#f5f5f7] data-hovered:bg-[rgba(255,255,255,.18)]"
+                className={cn('grid size-7 shrink-0 cursor-pointer place-items-center rounded-[50%] border-0 p-0', chrome.bannerClose)}
                 onPress={() => setTrip(null)}
               >
                 <Icon name="x" size={14} stroke={2.4} />
@@ -431,7 +471,7 @@ export function MapChatDemo({
               <div key={turn.id} className="flex min-w-0 animate-[ck-in_.24s_ease] flex-col gap-1.5" data-live={turn.live || undefined}>
                 {turn.parts.map((part, idx) =>
                   part.type === 'tool' ? (
-                    <ToolRow key={part.call.id} call={part.call} />
+                    <ToolRow key={part.call.id} call={part.call} chrome={chrome} />
                   ) : (
                     <MarkdownView
                       key={`${turn.id}-text-${idx}`}
@@ -443,7 +483,7 @@ export function MapChatDemo({
                     />
                   ),
                 )}
-                {turn.live && turn.parts.length === 0 && <span className={SPINNER} aria-label="Thinking" />}
+                {turn.live && turn.parts.length === 0 && <span className={chrome.spinner} aria-label="Thinking" />}
               </div>
             ),
           )}
@@ -462,9 +502,10 @@ export function MapChatDemo({
                 <div key={s} role="listitem" className="contents">
                   <Button
                     className={cn(
-                      'shrink-0 cursor-pointer rounded-[999px] border border-[rgba(255,255,255,.14)] bg-[rgba(255,255,255,.08)] px-3 py-1.5 text-[13px] leading-[1.2] font-medium whitespace-nowrap text-bl-label',
+                      'shrink-0 cursor-pointer rounded-[999px] border px-3 py-1.5 text-[13px] leading-[1.2] font-medium whitespace-nowrap text-bl-label',
                       FONT_INHERIT,
-                      'transition-[background] duration-160 ease-[ease] data-hovered:bg-[rgba(255,255,255,.16)]',
+                      'transition-[background] duration-160 ease-[ease]',
+                      chrome.chip,
                     )}
                     onPress={() => void send(s)}
                   >

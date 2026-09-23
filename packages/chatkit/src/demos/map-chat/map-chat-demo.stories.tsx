@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import '@brett_lamy/workbench/styles.css';
+import { AppearanceProvider } from '@brett_lamy/ui';
 import { MapChatDemo, type MapChatDemoProps } from './map-chat-demo';
 import '../../styles.css';
 
@@ -32,3 +33,19 @@ type Story = StoryObj<Args>;
 export const Floating: Story = {};
 export const Seeded: Story = { args: { initialPrompt: 'Plan an afternoon in DUMBO' } };
 export const Split: Story = { args: { width: 1100, height: 720, layout: 'split' } };
+
+/** Follows an ambient AppearanceProvider: light basemap and chat on the left, dark on the right. */
+export const Appearance: Story = {
+  render: ({ width, height, ...props }) => (
+    <div style={{ display: 'flex', gap: 16 }}>
+      {(['light', 'dark'] as const).map((a) => (
+        <AppearanceProvider key={a} value={a}>
+          <div style={{ width, height, overflow: 'hidden' }}>
+            <MapChatDemo {...props} />
+          </div>
+        </AppearanceProvider>
+      ))}
+    </div>
+  ),
+};
+export const AppearanceLightSplit: Story = { args: { width: 1100, height: 720, layout: 'split', appearance: 'light' } };

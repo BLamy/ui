@@ -1,11 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { cn, Haptics } from '@brett_lamy/ui';
+import { cn, Haptics, useAppearance } from '@brett_lamy/ui';
 import { Button } from 'react-aria-components';
 import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from '../../lib/floating-sheet';
 import { ProgressStepper, type ProgressStep } from '../../lib/progress-stepper';
 import { distanceMeters, type LatLng, type MapTarget } from '../map-chat/geo';
 import { MAP_ICONS, type MapIconName } from '../map-chat/map-icons';
-import { esriLightGrayTiles, MAP_FONT, TileMap, type MapPin, type MapRoute } from '../map-chat/tile-map';
+import { esriDarkGrayTiles, esriLightGrayTiles, MAP_FONT, TileMap, type MapPin, type MapRoute } from '../map-chat/tile-map';
 
 export interface DeliveryStage {
   id: string;
@@ -34,6 +34,7 @@ export interface DeliveryTrackingDemoProps {
   /** Height of the order card resting over the map. */
   peek?: number;
   appearance?: FloatingSheetAppearance;
+  /** Light or dark map and sheet. Defaults to the ambient `AppearanceProvider` value, else light. */
   tone?: FloatingSheetTone;
   /** Inset of the sheet from the host edges; `0` docks it like a system sheet. */
   gutter?: number;
@@ -77,6 +78,11 @@ const FONT_INHERIT = '[font-family:inherit] [font-style:inherit] [font-variant:i
 const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bl-tint';
 const MAP_BUTTON = cn(
   'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-white p-0 text-[15px] font-semibold text-[#191919] shadow-[0_2px_10px_rgba(0,0,0,.14),0_0_0_1px_rgba(0,0,0,.04)] data-hovered:bg-[#f6f6f8]',
+  FONT_INHERIT,
+  FOCUS_RING,
+);
+const MAP_BUTTON_DARK = cn(
+  'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-[#1c1c1e] p-0 text-[15px] font-semibold text-[#f5f5f7] shadow-[0_2px_10px_rgba(0,0,0,.4),0_0_0_1px_rgba(255,255,255,.08)] data-hovered:bg-[#2c2c2e]',
   FONT_INHERIT,
   FOCUS_RING,
 );
@@ -152,13 +158,17 @@ export function DeliveryTrackingDemo({
   stageMs = 6500,
   peek = 344,
   appearance = 'sheet',
-  tone = 'light',
+  tone: toneProp,
   gutter = 0,
   accent = '#eb1700',
   onClose,
   className,
   style,
 }: DeliveryTrackingDemoProps) {
+  const ambient = useAppearance();
+  const tone: FloatingSheetTone = toneProp ?? ambient ?? 'light';
+  const dark = tone === 'dark';
+  const mapButton = dark ? MAP_BUTTON_DARK : MAP_BUTTON;
   const [uncontrolledStage, setUncontrolledStage] = useState(1);
   const stageIndex = Math.max(0, Math.min(DELIVERY_STAGES.length - 1, controlledStage ?? uncontrolledStage));
   const stage = DELIVERY_STAGES[stageIndex];
@@ -192,9 +202,9 @@ export function DeliveryTrackingDemo({
     { id: 'store', position: STORE, kind: 'place', icon: 'store', color: accent, label: STORE_NAME },
     ...(arrived
       ? []
-      : [{ id: 'car', position: car, kind: 'place' as const, icon: 'car' as const, color: '#1c1c1e', callout: `${etaMinutes} min` }]),
+      : [{ id: 'car', position: car, kind: 'place' as const, icon: 'car' as const, color: dark ? '#3a3a3c' : '#1c1c1e', callout: `${etaMinutes} min` }]),
   ];
-  const route: MapRoute = { points: ROUTE, color: '#1c1c1e' };
+  const route: MapRoute = { points: ROUTE, color: dark ? '#f5f5f7' : '#1c1c1e' };
 
   const steps: ProgressStep[] = DELIVERY_STAGES.map((s, i) => ({ id: s.id, label: s.step, icon: <Icon name={STEP_ICONS[i]} size={16} /> }));
 
@@ -205,8 +215,11 @@ export function DeliveryTrackingDemo({
       data-slot="delivery-tracking-demo"
       data-stage={stage.id}
       className={cn(
-        'relative h-full min-h-0 w-full overflow-hidden bg-[#eef0f3] text-[#191919] scheme-light',
-        '[--bl-bg:#f2f2f7] [--bl-card:#fff] [--bl-card2:#f4f4f6] [--bl-label:#191919] [--bl-label2:rgba(60,60,67,.62)] [--bl-label3:rgba(60,60,67,.32)] [--bl-sep:rgba(60,60,67,.16)] [--bl-fill:rgba(120,120,128,.14)] [--bl-tint:var(--ck-delivery-accent,#eb1700)]',
+        'relative h-full min-h-0 w-full overflow-hidden',
+        dark
+          ? 'bg-[#0d0f14] text-[#f5f5f7] scheme-dark [--bl-bg:#000] [--bl-card:#1c1c1e] [--bl-card2:#2c2c2e] [--bl-label:#f5f5f7] [--bl-label2:rgba(235,235,245,.62)] [--bl-label3:rgba(235,235,245,.32)] [--bl-sep:rgba(84,84,88,.6)] [--bl-fill:rgba(120,120,128,.24)]'
+          : 'bg-[#eef0f3] text-[#191919] scheme-light [--bl-bg:#f2f2f7] [--bl-card:#fff] [--bl-card2:#f4f4f6] [--bl-label:#191919] [--bl-label2:rgba(60,60,67,.62)] [--bl-label3:rgba(60,60,67,.32)] [--bl-sep:rgba(60,60,67,.16)] [--bl-fill:rgba(120,120,128,.14)]',
+        '[--bl-tint:var(--ck-delivery-accent,#eb1700)]',
         MAP_FONT,
         className,
       )}
@@ -217,16 +230,17 @@ export function DeliveryTrackingDemo({
         view={view}
         pins={pins}
         route={route}
-        tileUrl={esriLightGrayTiles}
-        scheme="light"
+        tileUrl={dark ? esriDarkGrayTiles : esriLightGrayTiles}
+        scheme={dark ? 'dark' : 'light'}
+        tileFilter={dark ? 'brightness(.72) saturate(.85) contrast(1.05)' : undefined}
         minZoom={12}
         maxZoom={16}
       >
         <div className="pointer-events-none absolute top-3.5 right-3.5 left-3.5 z-4 flex items-center justify-between" data-map-ui>
-          <Button className={MAP_BUTTON} aria-label="Close" onPress={onClose}>
+          <Button className={mapButton} aria-label="Close" onPress={onClose}>
             <Icon name="x" size={20} />
           </Button>
-          <Button className={cn(MAP_BUTTON, 'pr-3.5 pl-3')}>
+          <Button className={cn(mapButton, 'pr-3.5 pl-3')}>
             <Icon name="help" size={18} />
             Help
           </Button>
@@ -324,12 +338,13 @@ export function DeliveryTrackingDemo({
 
             <Button
               className={cn(
-                'm-0 mt-[18px] flex w-full cursor-pointer items-center gap-3 rounded-[14px] border-0 bg-bl-card2 px-3.5 py-3 text-left text-[15px] font-semibold text-bl-label data-hovered:bg-[#ededf0]',
+                'm-0 mt-[18px] flex w-full cursor-pointer items-center gap-3 rounded-[14px] border-0 bg-bl-card2 px-3.5 py-3 text-left text-[15px] font-semibold text-bl-label',
+                dark ? 'data-hovered:bg-[#3a3a3c]' : 'data-hovered:bg-[#ededf0]',
                 FONT_INHERIT,
               )}
               onPress={() => setOpen(true)}
             >
-              <span className="grid size-8 place-items-center rounded-[50%] bg-white text-[color:var(--ck-delivery-accent,#eb1700)] shadow-[0_0_0_1px_var(--bl-sep)]">
+              <span className={cn('grid size-8 place-items-center rounded-[50%] text-[color:var(--ck-delivery-accent,#eb1700)] shadow-[0_0_0_1px_var(--bl-sep)]', dark ? 'bg-[#1c1c1e]' : 'bg-white')}>
                 <Icon name="gift" size={18} />
               </span>
               <span className="min-w-0 flex-1">Save up to $25 on gift cards</span>

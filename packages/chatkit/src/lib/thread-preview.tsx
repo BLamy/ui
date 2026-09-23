@@ -22,7 +22,7 @@ export function ThreadPreview({ th, onOpen, tint, users, className, style }: Thr
     <Button
       data-slot="thread-preview"
       className={cn(
-        'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-[10px] border border-[rgba(255,255,255,.07)] bg-[#1B1B22] px-[11px] py-[8px] text-left font-ios',
+        'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-[10px] border border-ck-sep bg-ck-card px-[11px] py-[8px] text-left font-ios',
         className,
       )}
       onPress={() => {
@@ -32,13 +32,13 @@ export function ThreadPreview({ th, onOpen, tint, users, className, style }: Thr
       style={{ '--ck-tint': tint, ...style } as CSSProperties}
     >
       <span className="flex items-center gap-[7px] text-[12.5px]">
-        <span className="font-[650] text-[#EDEDF2]">{th.title}</span>
+        <span className="font-[650] text-ck-label">{th.title}</span>
         <span className="font-semibold whitespace-nowrap text-(--ck-tint)">
           {th.msgs.length} {th.msgs.length === 1 ? 'message' : 'messages'} ›
         </span>
       </span>
       {last && (
-        <span className="mt-[4px] flex min-w-0 items-center gap-[6px] text-[12px] text-[rgba(235,235,245,.6)]">
+        <span className="mt-[4px] flex min-w-0 items-center gap-[6px] text-[12px] text-ck-mut">
           <ChatAvatar user={map[last.u]} size={15} />
           <span className="truncate">
             {map[last.u].name}: {last.txt}
