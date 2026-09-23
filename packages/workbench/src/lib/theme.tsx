@@ -24,6 +24,8 @@ const darkVars = (tint: string): Record<string, string> => ({
   '--mdc-pre': '#0C0C10',
   '--mdc-border': 'rgba(255,255,255,.1)',
   '--mdc-mut': '#9C9CA6',
+  '--mdc-card': '#1C1C23',
+  '--mdc-muted': 'rgba(255,255,255,.06)',
 });
 const lightVars = (tint: string): Record<string, string> => ({
   '--wb-bg': '#FFFFFF',
@@ -49,6 +51,8 @@ const lightVars = (tint: string): Record<string, string> => ({
   '--mdc-pre-fg': '#24242B',
   '--mdc-border': 'rgba(0,0,0,.1)',
   '--mdc-mut': '#6B6B76',
+  '--mdc-card': '#FFFFFF',
+  '--mdc-muted': 'rgba(0,0,0,.04)',
 });
 
 export function workbenchVars(tint?: string, appearance: Appearance = 'dark'): React.CSSProperties {
