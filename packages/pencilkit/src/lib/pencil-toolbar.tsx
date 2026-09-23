@@ -1,38 +1,48 @@
 import * as React from 'react';
+import { ToggleButtonGroup, composeRenderProps } from 'react-aria-components';
+import { cva } from 'class-variance-authority';
 import { cn, Haptics } from '@brett_lamy/ui';
 import { PK_INKS, PK_W, type PencilTool, type PKIconName } from './constants';
 import { PKIcon } from './pk-icon';
+import { Button, ToggleButton, type ButtonProps } from './press';
 
 /* ---------------------------------- button ---------------------------------- */
 
-export interface PencilToolButtonProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'name'> {
+/** The 38×34 icon button: tinted while `active` (or selected, inside a picker), dimmed while disabled. */
+export const pencilToolButtonVariants = cva(
+  'grid h-[34px] w-[38px] cursor-pointer place-items-center rounded-[9px] border-0 p-0 data-disabled:cursor-default data-disabled:opacity-[.32]',
+  {
+    variants: {
+      active: {
+        true: 'bg-primary text-white',
+        false: 'bg-transparent text-muted-foreground data-selected:bg-primary data-selected:text-white',
+      },
+    },
+    defaultVariants: { active: false },
+  },
+);
+
+export interface PencilToolButtonProps extends Omit<ButtonProps, 'children'> {
   name: PKIconName;
   active?: boolean;
   label?: string;
+  /** Alias of `isDisabled`. */
+  disabled?: boolean;
 }
 
-/** The 38×34 icon button used across the PencilKit toolbar. */
-export function PencilToolButton({ name, active, label, disabled, className, style, ...rest }: PencilToolButtonProps) {
+/** The 38×34 icon button used across the PencilKit toolbar (react-aria Button; use `onPress`). */
+export function PencilToolButton({ name, active, label, disabled, isDisabled, className, ...rest }: PencilToolButtonProps) {
   return (
-    <button
+    <Button
       data-slot="pencil-tool-button"
-      disabled={disabled}
+      isDisabled={isDisabled ?? disabled}
       aria-label={label || name}
       title={label || name}
-      className={cn(className)}
-      style={{
-        width: 38, height: 34, border: 0, borderRadius: 9, cursor: disabled ? 'default' : 'pointer',
-        display: 'grid', placeItems: 'center',
-        background: active ? 'var(--bl-tint)' : 'transparent',
-        color: active ? '#fff' : 'var(--bl-label2)',
-        opacity: disabled ? 0.32 : 1, padding: 0,
-        ...style,
-      }}
+      className={composeRenderProps(className, (cls) => cn(pencilToolButtonVariants({ active: !!active }), cls))}
       {...rest}
     >
       <PKIcon name={name} />
-    </button>
+    </Button>
   );
 }
 
@@ -46,15 +56,11 @@ export function PencilToolbar({ className, style, children, ...rest }: PencilToo
     <div
       data-slot="pencil-toolbar"
       onPointerDown={(e) => e.stopPropagation()}
-      className={cn(className)}
-      style={{
-        position: 'absolute', left: '50%', bottom: 14, transform: 'translateX(-50%)',
-        maxWidth: 'calc(100% - 20px)', boxSizing: 'border-box',
-        display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center',
-        background: 'var(--bl-card)', border: '1px solid var(--bl-sep)', borderRadius: 16,
-        padding: '9px 12px', boxShadow: '0 10px 34px rgba(0,0,0,.24)', cursor: 'default',
-        ...style,
-      }}
+      className={cn(
+        'absolute bottom-3.5 left-1/2 box-border flex max-w-[calc(100%-20px)] -translate-x-1/2 cursor-default flex-wrap items-center justify-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-[9px] shadow-[0_10px_34px_rgba(0,0,0,.24)]',
+        className,
+      )}
+      style={style}
       {...rest}
     >
       {children}
@@ -64,19 +70,16 @@ export function PencilToolbar({ className, style, children, ...rest }: PencilToo
 
 /** Vertical hairline divider between toolbar groups. */
 export function PencilToolbarDivider({ className, style, ...rest }: React.HTMLAttributes<HTMLSpanElement>) {
-  return (
-    <span
-      data-slot="pencil-toolbar-divider"
-      className={cn(className)}
-      style={{ width: 1, alignSelf: 'stretch', background: 'var(--bl-sep)', ...style }}
-      {...rest}
-    />
-  );
+  return <span data-slot="pencil-toolbar-divider" className={cn('w-px self-stretch bg-border', className)} style={style} {...rest} />;
 }
 
 /* ---------------------------------- pickers ---------------------------------- */
+/* Pickers are single-select react-aria ToggleButtonGroups (radio semantics, arrow keys move focus).
+   Every press reports through onChange with a selection tick — including a press on the current value. */
 
-export interface ToolPickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+type PickerRootProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue' | 'dir'>;
+
+export interface ToolPickerProps extends PickerRootProps {
   value: PencilTool;
   onChange?: (tool: PencilTool) => void;
   tools?: PencilTool[];
@@ -84,24 +87,35 @@ export interface ToolPickerProps extends Omit<React.HTMLAttributes<HTMLDivElemen
 
 export function ToolPicker({ value, onChange, tools = ['pen', 'marker', 'pencil', 'eraser'], className, style, ...rest }: ToolPickerProps) {
   return (
-    <div data-slot="pencil-tool-picker" className={cn(className)} style={{ display: 'flex', gap: 2, ...style }} {...rest}>
+    <ToggleButtonGroup
+      data-slot="pencil-tool-picker"
+      aria-label="Tool"
+      selectionMode="single"
+      selectedKeys={[value]}
+      className={cn('flex gap-0.5', className)}
+      style={style}
+      {...rest}
+    >
       {tools.map((t) => (
-        <PencilToolButton
+        <ToggleButton
           key={t}
-          name={t}
-          active={value === t}
-          label={t}
-          onClick={() => {
+          id={t}
+          aria-label={t}
+          title={t}
+          className={pencilToolButtonVariants()}
+          onPress={() => {
             if (onChange) onChange(t);
             Haptics.selection();
           }}
-        />
+        >
+          <PKIcon name={t} />
+        </ToggleButton>
       ))}
-    </div>
+    </ToggleButtonGroup>
   );
 }
 
-export interface InkPickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+export interface InkPickerProps extends PickerRootProps {
   /** Index into `inks`. */
   value: number;
   onChange?: (index: number) => void;
@@ -110,28 +124,38 @@ export interface InkPickerProps extends Omit<React.HTMLAttributes<HTMLDivElement
 
 export function InkPicker({ value, onChange, inks = PK_INKS, className, style, ...rest }: InkPickerProps) {
   return (
-    <div data-slot="pencil-ink-picker" className={cn(className)} style={{ display: 'flex', gap: 7, alignItems: 'center', ...style }} {...rest}>
+    <ToggleButtonGroup
+      data-slot="pencil-ink-picker"
+      aria-label="Ink"
+      selectionMode="single"
+      selectedKeys={[String(value)]}
+      className={cn('flex items-center gap-[7px]', className)}
+      style={style}
+      {...rest}
+    >
       {inks.map((c, i) => (
-        <button
+        <ToggleButton
           key={c}
-          onClick={() => {
+          id={String(i)}
+          aria-label={'Ink ' + c}
+          title={c}
+          className={cn(
+            'size-[21px] cursor-pointer rounded-[50%] border bg-(color:--ink) p-0 outline-offset-2 outline-none data-selected:outline-[2.5px] data-selected:outline-primary data-selected:outline-solid',
+            c === '#F2F2F7' ? 'border-[rgba(0,0,0,.2)]' : 'border-[rgba(0,0,0,.08)]',
+          )}
+          // the swatch color is data
+          style={{ '--ink': c } as React.CSSProperties}
+          onPress={() => {
             if (onChange) onChange(i);
             Haptics.selection();
           }}
-          aria-label={'Ink ' + c}
-          title={c}
-          style={{
-            width: 21, height: 21, borderRadius: '50%', cursor: 'pointer', background: c, padding: 0,
-            border: '1px solid ' + (c === '#F2F2F7' ? 'rgba(0,0,0,.2)' : 'rgba(0,0,0,.08)'),
-            outline: value === i ? '2.5px solid var(--bl-tint)' : 'none', outlineOffset: 2,
-          }}
         />
       ))}
-    </div>
+    </ToggleButtonGroup>
   );
 }
 
-export interface WidthPickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+export interface WidthPickerProps extends PickerRootProps {
   /** Index into `widths`. */
   value: number;
   onChange?: (index: number) => void;
@@ -140,25 +164,31 @@ export interface WidthPickerProps extends Omit<React.HTMLAttributes<HTMLDivEleme
 
 export function WidthPicker({ value, onChange, widths = PK_W, className, style, ...rest }: WidthPickerProps) {
   return (
-    <div data-slot="pencil-width-picker" className={cn(className)} style={{ display: 'flex', gap: 4, alignItems: 'center', ...style }} {...rest}>
+    <ToggleButtonGroup
+      data-slot="pencil-width-picker"
+      aria-label="Width"
+      selectionMode="single"
+      selectedKeys={[String(value)]}
+      className={cn('flex items-center gap-1', className)}
+      style={style}
+      {...rest}
+    >
       {widths.map((w, i) => (
-        <button
+        <ToggleButton
           key={i}
-          onClick={() => {
+          id={String(i)}
+          aria-label={'Width ' + (i + 1)}
+          className="grid size-7 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 data-selected:bg-bl-fill2"
+          onPress={() => {
             if (onChange) onChange(i);
             Haptics.selection();
           }}
-          aria-label={'Width ' + (i + 1)}
-          style={{
-            width: 28, height: 28, border: 0, borderRadius: 8, cursor: 'pointer',
-            display: 'grid', placeItems: 'center', padding: 0,
-            background: value === i ? 'var(--bl-fill2)' : 'transparent',
-          }}
         >
-          <span style={{ width: w.d, height: w.d, borderRadius: '50%', background: 'var(--bl-label)', display: 'block' }} />
-        </button>
+          {/* the dot diameter is data */}
+          <span className="block size-(--dot) rounded-[50%] bg-foreground" style={{ '--dot': w.d + 'px' } as React.CSSProperties} />
+        </ToggleButton>
       ))}
-    </div>
+    </ToggleButtonGroup>
   );
 }
 
@@ -176,10 +206,10 @@ export interface PencilActionsProps extends React.HTMLAttributes<HTMLDivElement>
 /** Undo / redo / clear button group. */
 export function PencilActions({ onUndo, onRedo, onClear, canUndo, canRedo, canClear, className, style, ...rest }: PencilActionsProps) {
   return (
-    <div data-slot="pencil-actions" className={cn(className)} style={{ display: 'flex', gap: 2, ...style }} {...rest}>
-      <PencilToolButton name="undo" onClick={onUndo} disabled={!canUndo} label="Undo" />
-      <PencilToolButton name="redo" onClick={onRedo} disabled={!canRedo} label="Redo" />
-      <PencilToolButton name="trash" onClick={onClear} disabled={!(canClear ?? canUndo)} label="Clear" />
+    <div data-slot="pencil-actions" role="group" aria-label="History" className={cn('flex gap-0.5', className)} style={style} {...rest}>
+      <PencilToolButton name="undo" onPress={onUndo} disabled={!canUndo} label="Undo" />
+      <PencilToolButton name="redo" onPress={onRedo} disabled={!canRedo} label="Redo" />
+      <PencilToolButton name="trash" onPress={onClear} disabled={!(canClear ?? canUndo)} label="Clear" />
     </div>
   );
 }

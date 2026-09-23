@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { cn, MONO } from './util';
+import { cn } from './util';
 import { tick } from './haptics';
 import { WIcon, IconBtn } from './icons';
 
@@ -49,8 +49,8 @@ export function TermBody({ seed, autoFocus, className, style }: TermBodyProps) {
   }, [hist]);
   const prompt = (
     <span>
-      <span style={{ color: '#7EE0B8' }}>dev@workbench</span> <span style={{ color: '#8AB4FF' }}>cookbook</span>{' '}
-      <span style={{ color: 'var(--wb-label3)' }}>%</span>
+      <span className="text-[#7EE0B8]">dev@workbench</span> <span className="text-[#8AB4FF]">cookbook</span>{' '}
+      <span className="text-wb-label3">%</span>
     </span>
   );
   const run = () => {
@@ -64,19 +64,27 @@ export function TermBody({ seed, autoFocus, className, style }: TermBodyProps) {
     <div
       ref={sc}
       data-slot="term-body"
-      className={cn('wb-scroll', className)}
+      className={cn(
+        'wb-scroll min-h-0 flex-1 cursor-text overflow-y-auto px-3.5 py-2.5 font-mono text-[12.5px] leading-[1.62] text-[#D4D4DE]',
+        className,
+      )}
       onClick={() => {
         if (inp.current) inp.current.focus();
       }}
-      style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 14px', fontFamily: MONO, fontSize: 12.5, lineHeight: 1.62, color: '#D4D4DE', cursor: 'text', ...style }}
+      style={style}
     >
       {hist.map((l, i) => (
-        <div key={i} style={{ whiteSpace: 'pre-wrap', color: l.c || (l.p ? '#D4D4DE' : 'var(--wb-label2)') }}>
+        <div
+          key={i}
+          className={cn('whitespace-pre-wrap', l.c ? 'text-(color:--term-c)' : l.p ? 'text-[#D4D4DE]' : 'text-wb-label2')}
+          // a line's own color comes with the data
+          style={l.c ? ({ '--term-c': l.c } as React.CSSProperties) : undefined}
+        >
           {l.p ? <span>{prompt} </span> : null}
           {l.t}
         </div>
       ))}
-      <div style={{ display: 'flex', gap: 7, alignItems: 'baseline' }}>
+      <div className="flex items-baseline gap-[7px]">
         {prompt}
         <input
           ref={inp}
@@ -90,7 +98,7 @@ export function TermBody({ seed, autoFocus, className, style }: TermBodyProps) {
           spellCheck={false}
           autoCapitalize="none"
           autoComplete="off"
-          style={{ flex: 1, minWidth: 40, border: 0, background: 'none', outline: 'none', color: '#EDEDF2', font: 'inherit', padding: 0 }}
+          className="min-w-10 flex-1 border-0 bg-transparent p-0 [font:inherit] text-[#EDEDF2] outline-none"
         />
       </div>
     </div>
@@ -107,12 +115,12 @@ export function TermHeader({ onClose, title, className, style }: TermHeaderProps
   return (
     <div
       data-slot="term-header"
-      className={className}
-      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 8px 5px 14px', flexShrink: 0, borderBottom: '1px solid var(--wb-sep)', ...style }}
+      className={cn('flex shrink-0 items-center gap-1 border-b border-wb-sep py-[5px] pr-2 pl-3.5', className)}
+      style={style}
     >
-      <WIcon name="term" size={14} sw={1.8} style={{ color: 'var(--wb-label3)' }} />
-      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--wb-label2)', marginLeft: 4 }}>{title || 'zsh — cookbook'}</span>
-      <span style={{ flex: 1 }} />
+      <WIcon name="term" size={14} sw={1.8} className="text-wb-label3" />
+      <span className="ml-1 text-[12px] font-semibold text-wb-label2">{title || 'zsh — cookbook'}</span>
+      <span className="flex-1" />
       <IconBtn name="split" label="Split terminal" size={15} onPress={tick} />
       <IconBtn name="plus" label="New terminal" size={15} onPress={tick} />
       <IconBtn name="trash" label="Close terminal" size={15} onPress={onClose} />
@@ -144,15 +152,17 @@ export function TerminalDock({ h, setH, onClose, seed, className, style }: Termi
   return (
     <div
       data-slot="terminal-dock"
-      className={className}
-      style={{ height: h, flexShrink: 0, position: 'relative', background: '#0C0C10', borderTop: '1px solid var(--wb-sep)', display: 'flex', flexDirection: 'column', ...style }}
+      className={cn('relative flex h-(--dock-h) shrink-0 flex-col border-t border-wb-sep bg-[#0C0C10]', className)}
+      // the dock height is user-resized at runtime
+      style={{ '--dock-h': h + 'px', ...style } as React.CSSProperties}
     >
       <div
+        data-slot="terminal-dock-resize"
         onPointerDown={down}
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={up}
-        style={{ position: 'absolute', top: -3, left: 0, right: 0, height: 7, cursor: 'ns-resize', zIndex: 2, touchAction: 'none' }}
+        className="absolute -top-[3px] right-0 left-0 z-2 h-[7px] cursor-ns-resize touch-none"
       />
       <TermHeader onClose={onClose} />
       <TermBody seed={seed} />

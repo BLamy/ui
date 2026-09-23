@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { AdaptivePane, collectSlots, defineSlot, useContainerWidth, type AdaptivePaneMode } from '@brett_lamy/ui';
-import { cn, WFONT } from './util';
+import { cn } from './util';
 import { workbenchVars } from './theme';
 import { SnapSheet } from './snap-sheet';
 
@@ -116,26 +116,15 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
       <div
         ref={rootRef}
         data-slot="workbench-shell"
-        className={cn('wb-dark', props.className)}
-        style={{
-          ...workbenchVars(props.tint),
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          overflow: 'hidden',
-          background: 'var(--wb-bg)',
-          color: 'var(--wb-label)',
-          fontFamily: WFONT,
-          colorScheme: 'dark',
-          display: 'flex',
-          flexDirection: 'column',
-          WebkitFontSmoothing: 'antialiased',
-          ...props.style,
-        }}
+        className={cn(
+          'wb-dark relative flex h-full w-full flex-col overflow-hidden bg-wb-bg font-ios text-wb-label antialiased scheme-dark',
+          props.className,
+        )}
+        style={{ ...workbenchVars(props.tint), ...props.style }}
       >
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', position: 'relative' }}>
+        <div className="relative flex min-h-0 flex-1">
           {sidebarMode === 'column' ? sidebar : null}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: 'var(--wb-bg)' }}>
+          <div className="flex min-w-0 flex-1 flex-col bg-wb-bg">
             {slots.main}
             {!compact && term ? slots.dock : null}
           </div>
@@ -149,7 +138,7 @@ export function WorkbenchShell(props: WorkbenchShellProps) {
             drawerWidth="min(420px, 94%)"
             zIndex={panelMode === 'cover' ? 60 : 58}
             shadow="0 0 44px rgba(0,0,0,.55)"
-            style={{ borderLeft: '1px solid var(--wb-sep)' }}
+            className="border-l border-wb-sep"
           >
             {slots.panel}
           </AdaptivePane>

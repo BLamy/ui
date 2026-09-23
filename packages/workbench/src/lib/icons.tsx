@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { Button } from './press';
+import { cva } from 'class-variance-authority';
 import { cn } from './util';
 
 /* ══ icons ══ */
@@ -47,9 +49,10 @@ export interface WIconProps {
   name: WIconName;
   size?: number;
   sw?: number;
+  className?: string;
   style?: React.CSSProperties;
 }
-export function WIcon({ name, size, sw, style }: WIconProps) {
+export function WIcon({ name, size, sw, className, style }: WIconProps) {
   const s = size || 20;
   const w = sw || 1.7;
   const els = WIC[name as string] || WIC['doc'];
@@ -64,7 +67,8 @@ export function WIcon({ name, size, sw, style }: WIconProps) {
       strokeWidth={w}
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ display: 'block', flexShrink: 0, ...style }}
+      className={cn('block shrink-0', className)}
+      style={style}
       aria-hidden="true"
     >
       {els.map((e, i) => (
@@ -73,6 +77,17 @@ export function WIcon({ name, size, sw, style }: WIconProps) {
     </svg>
   );
 }
+
+/** Square icon button: transparent until hovered (`wb-hl`), filled while `active`. */
+export const iconBtnVariants = cva('wb-btn wb-hl grid cursor-pointer place-items-center rounded-[7px] border-0 p-[5px]', {
+  variants: {
+    active: {
+      true: 'bg-wb-fill text-wb-label',
+      false: 'bg-transparent text-wb-label2',
+    },
+  },
+  defaultVariants: { active: false },
+});
 
 export interface IconBtnProps {
   name: WIconName;
@@ -85,26 +100,15 @@ export interface IconBtnProps {
 }
 export function IconBtn({ name, label, onPress, size, active, className, style }: IconBtnProps) {
   return (
-    <button
-      type="button"
+    <Button
       data-slot="icon-btn"
-      className={cn('wb-btn wb-hl', className)}
-      onClick={onPress}
+      className={cn(iconBtnVariants({ active: !!active }), className)}
+      onPress={onPress}
       aria-label={label}
       title={label}
-      style={{
-        border: 0,
-        background: active ? 'var(--wb-fill)' : 'none',
-        color: active ? 'var(--wb-label)' : 'var(--wb-label2)',
-        cursor: 'pointer',
-        borderRadius: 7,
-        padding: 5,
-        display: 'grid',
-        placeItems: 'center',
-        ...style,
-      }}
+      style={style}
     >
       <WIcon name={name} size={size || 18} />
-    </button>
+    </Button>
   );
 }

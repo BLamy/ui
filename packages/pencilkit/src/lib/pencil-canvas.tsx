@@ -4,7 +4,6 @@ import { cn, Haptics } from '@brett_lamy/ui';
 import {
   PK_INKS,
   PK_TOOLS,
-  PMONO,
   type PencilDrawTool,
   type PencilPoint,
   type PencilStroke,
@@ -147,29 +146,23 @@ export function PencilCanvas({
       onPointerMove={move}
       onPointerUp={up}
       onPointerCancel={up}
-      className={cn(className)}
-      style={{ position: 'absolute', inset: 0, touchAction: 'none', cursor: 'crosshair', ...style }}
+      className={cn('absolute inset-0 cursor-crosshair touch-none', className)}
+      style={style}
       {...rest}
     >
-      <svg width="100%" height="100%" style={{ display: 'block', position: 'absolute', inset: 0 }}>
+      <svg width="100%" height="100%" className="absolute inset-0 block">
         {strokes.map((s, i) => (
           <MemoStroke key={i} st={s} pf={!plain} />
         ))}
         {live.current ? <StrokePath st={live.current} pf={!plain} /> : null}
       </svg>
       {hint && !strokes.length && !live.current ? (
-        <div
-          data-slot="pencil-canvas-hint"
-          style={{ position: 'absolute', inset: '0 0 90px', display: 'grid', placeItems: 'center', pointerEvents: 'none' }}
-        >
-          <div style={{ textAlign: 'center', color: 'var(--bl-label3)' }}>{hint}</div>
+        <div data-slot="pencil-canvas-hint" className="pointer-events-none absolute inset-x-0 top-0 bottom-[90px] grid place-items-center">
+          <div className="text-center text-bl-label3">{hint}</div>
         </div>
       ) : null}
       {status != null ? (
-        <div
-          data-slot="pencil-canvas-status"
-          style={{ position: 'absolute', top: 10, right: 12, fontFamily: PMONO, fontSize: 10.5, color: 'var(--bl-label3)', pointerEvents: 'none' }}
-        >
+        <div data-slot="pencil-canvas-status" className="pointer-events-none absolute top-2.5 right-3 font-mono text-[10.5px] text-bl-label3">
           {status}
         </div>
       ) : null}

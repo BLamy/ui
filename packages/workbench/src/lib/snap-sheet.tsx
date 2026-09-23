@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { EASE } from './util';
+import { cn } from './util';
 import { vib, tick } from './haptics';
 
 /* ══ SnapSheet — vaul-style bottom drawer (drag handle, snap points, velocity release) ══ */
@@ -96,46 +96,32 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, class
   };
   const visFrac = maxS - (curTy / ch()) * 1;
   return (
-    <div ref={wrap} data-slot="snap-sheet" className={className} style={{ position: 'absolute', inset: 0, zIndex: 70, overflow: 'hidden', ...style }}>
+    <div ref={wrap} data-slot="snap-sheet" className={cn('absolute inset-0 z-70 overflow-hidden', className)} style={style}>
       <div
+        data-slot="snap-sheet-scrim"
         onClick={onClose}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(0,0,0,.45)',
-          opacity: Math.min(1, Math.max(0, visFrac / maxS)),
-          transition: anim ? 'opacity .42s ' + EASE : 'none',
-        }}
+        className={cn('absolute inset-0 bg-[rgba(0,0,0,.45)] opacity-(--sheet-fade)', anim ? 'transition-opacity duration-[.42s] ease-ios' : 'transition-none')}
+        style={{ '--sheet-fade': Math.min(1, Math.max(0, visFrac / maxS)) } as React.CSSProperties}
       />
       <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: maxS * 100 + '%',
-          transform: 'translateY(' + curTy + 'px)',
-          transition: anim ? 'transform .42s ' + EASE : 'none',
-          background: bg || 'var(--wb-card)',
-          borderRadius: '16px 16px 0 0',
-          border: '1px solid var(--wb-sep)',
-          borderBottom: 0,
-          boxShadow: '0 -12px 40px rgba(0,0,0,.5)',
-          display: 'flex',
-          flexDirection: 'column',
-          touchAction: 'none',
-        }}
+        data-slot="snap-sheet-panel"
+        className={cn(
+          'absolute right-0 bottom-0 left-0 flex h-(--sheet-h) translate-y-(--sheet-y) touch-none flex-col rounded-t-2xl border-x border-t border-wb-sep bg-(--sheet-bg) shadow-[0_-12px_40px_rgba(0,0,0,.5)]',
+          anim ? 'transition-transform duration-[.42s] ease-ios' : 'transition-none',
+        )}
+        style={{ '--sheet-h': maxS * 100 + '%', '--sheet-y': curTy + 'px', '--sheet-bg': bg || 'var(--wb-card)' } as React.CSSProperties}
       >
         <div
+          data-slot="snap-sheet-handle"
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
           onPointerCancel={up}
-          style={{ padding: '8px 0 4px', cursor: 'grab', flexShrink: 0, touchAction: 'none' }}
+          className="shrink-0 cursor-grab touch-none pt-2 pb-1"
         >
-          <div style={{ width: 38, height: 5, borderRadius: 3, background: 'rgba(255,255,255,.22)', margin: '0 auto' }} />
+          <div className="mx-auto h-[5px] w-[38px] rounded-[3px] bg-[rgba(255,255,255,.22)]" />
         </div>
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </div>
     </div>
   );

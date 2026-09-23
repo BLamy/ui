@@ -17,7 +17,9 @@
   },
   "dependencies": {
     "@brett_lamy/ui": "workspace:*",
-    "perfect-freehand": "^1.2.2"
+    "perfect-freehand": "^1.2.2",
+    "react-aria-components": "^1",
+    "class-variance-authority": "^0.7"
   },
   "peerDependencies": {
     "react": "^18 || ^19",

@@ -26,6 +26,7 @@ export { PencilCanvas } from './lib/pencil-canvas';
 export type { PencilCanvasProps, PencilStrokesChangeSource } from './lib/pencil-canvas';
 export {
   PencilToolButton,
+  pencilToolButtonVariants,
   PencilToolbar,
   PencilToolbarDivider,
   ToolPicker,

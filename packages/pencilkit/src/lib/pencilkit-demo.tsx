@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { cn } from '@brett_lamy/ui';
-import { PFONT, PK_DARK, PK_INKS, PK_LIGHT, PK_W, type PencilStroke, type PencilTool } from './constants';
+import { PK_DARK, PK_INKS, PK_LIGHT, PK_W, type PencilStroke, type PencilTool } from './constants';
 import { PencilCanvas } from './pencil-canvas';
 import {
   InkPicker,
@@ -34,17 +34,16 @@ export function PencilKitDemo({ dark: darkProp, tint, defaultStrokes, className,
   return (
     <div
       data-slot="pencilkit-demo"
-      className={cn(className)}
-      style={{
-        ...(vars as React.CSSProperties),
-        position: 'relative', width: '100%', height: '100%', overflow: 'hidden',
-        background: 'var(--bl-bg2)', color: 'var(--bl-label)', fontFamily: PFONT,
-        colorScheme: dark ? 'dark' : 'light', WebkitFontSmoothing: 'antialiased',
-        backgroundImage:
-          'radial-gradient(' + (dark ? 'rgba(235,235,245,.13)' : 'rgba(60,60,67,.15)') + ' 1px, transparent 1.2px)',
-        backgroundSize: '22px 22px',
-        ...style,
-      }}
+      className={cn(
+        'relative h-full w-full overflow-hidden bg-muted bg-[length:22px_22px] font-ios text-foreground antialiased',
+        // dotted paper
+        dark
+          ? 'bg-[radial-gradient(rgba(235,235,245,.13)_1px,transparent_1.2px)] scheme-dark'
+          : 'bg-[radial-gradient(rgba(60,60,67,.15)_1px,transparent_1.2px)] scheme-light',
+        className,
+      )}
+      // the light/dark token set (and optional tint) is chosen at runtime
+      style={{ ...(vars as React.CSSProperties), ...style }}
       {...rest}
     >
       <PencilCanvas
@@ -56,8 +55,8 @@ export function PencilKitDemo({ dark: darkProp, tint, defaultStrokes, className,
         status="perfect-freehand@1.2.2"
         hint={
           <>
-            <div style={{ fontSize: 15.5, fontWeight: 600 }}>Draw anywhere</div>
-            <div style={{ fontSize: 12.5, marginTop: 3 }}>
+            <div className="text-[15.5px] font-semibold">Draw anywhere</div>
+            <div className="mt-[3px] text-[12.5px]">
               Apple Pencil pressure is real — mouse and touch are simulated.
             </div>
           </>

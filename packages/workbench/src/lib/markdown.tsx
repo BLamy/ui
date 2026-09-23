@@ -39,7 +39,17 @@ function fbInline(s: string): React.ReactNode[] {
 }
 
 /* tiny JSX/TS highlighter for static code fences */
-const HLC = { kw: '#C792EA', str: '#A5D6A7', num: '#F78C6C', com: '#6B6B78', fn: '#82AAFF', tag: '#F07178', attr: '#FFCB6B', punc: '#89DDFF', id: '#D8D8E2' };
+const HLC = {
+  kw: 'text-[#C792EA]',
+  str: 'text-[#A5D6A7]',
+  num: 'text-[#F78C6C]',
+  com: 'text-[#6B6B78]',
+  fn: 'text-[#82AAFF]',
+  tag: 'text-[#F07178]',
+  attr: 'text-[#FFCB6B]',
+  punc: 'text-[#89DDFF]',
+  id: 'text-[#D8D8E2]',
+};
 const HL_KW = new Set(
   'import export from const let var function return if else for while switch case default new class extends super this typeof instanceof in of try catch finally throw await async yield break continue null undefined true false void delete static get set'.split(' ')
 );
@@ -52,7 +62,7 @@ export function hlTokens(src: string): React.ReactNode[] {
   const push = (txt: string, color?: string) =>
     out.push(
       color ? (
-        <span key={k++} style={{ color }}>
+        <span key={k++} className={color}>
           {txt}
         </span>
       ) : (

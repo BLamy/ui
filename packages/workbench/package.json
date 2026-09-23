@@ -29,7 +29,9 @@
     "@tiptap/react": "3.30.5",
     "@tiptap/starter-kit": "3.30.5",
     "@tiptap/suggestion": "3.30.5",
-    "@brett_lamy/ui": "workspace:*"
+    "@brett_lamy/ui": "workspace:*",
+    "react-aria-components": "^1",
+    "class-variance-authority": "^0.7"
   },
   "peerDependencies": {
     "react": "^18 || ^19",
