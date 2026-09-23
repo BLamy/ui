@@ -4,6 +4,9 @@ export { ChatIcon, chatIconPaths, type ChatIconProps } from './lib/chat-icon';
 export {
   chatTokens,
   chatTokenVars,
+  chatLightTokens,
+  chatLightTokenVars,
+  chatVars,
   K,
   KFONT,
   KMONO,

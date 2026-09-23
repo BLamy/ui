@@ -167,7 +167,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
         <Button
           data-slot="message-scroller-jump"
           className={cn(
-            'wb-btn absolute bottom-3 left-1/2 flex -translate-x-1/2 cursor-pointer items-center gap-[7px] rounded-[99px] border border-wb-sep bg-wb-card text-[12.5px] font-semibold text-wb-label shadow-[0_4px_16px_rgba(0,0,0,.35)]',
+            'wb-btn absolute bottom-3 left-1/2 flex -translate-x-1/2 cursor-pointer items-center gap-[7px] rounded-[99px] border border-wb-sep bg-wb-card text-[12.5px] font-semibold text-wb-label shadow-[0_4px_16px_var(--wb-shadow,rgba(0,0,0,.35))]',
             streaming ? 'px-[13px] py-1.5' : 'p-[7px]',
           )}
           onPress={() => {

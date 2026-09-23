@@ -106,7 +106,7 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, class
       <div
         data-slot="snap-sheet-panel"
         className={cn(
-          'absolute right-0 bottom-0 left-0 flex h-(--sheet-h) translate-y-(--sheet-y) touch-none flex-col rounded-t-2xl border-x border-t border-wb-sep bg-(--sheet-bg) shadow-[0_-12px_40px_rgba(0,0,0,.5)]',
+          'absolute right-0 bottom-0 left-0 flex h-(--sheet-h) translate-y-(--sheet-y) touch-none flex-col rounded-t-2xl border-x border-t border-wb-sep bg-(--sheet-bg) shadow-[0_-12px_40px_var(--wb-shadow,rgba(0,0,0,.5))]',
           anim ? 'transition-transform duration-[.42s] ease-ios' : 'transition-none',
         )}
         style={{ '--sheet-h': maxS * 100 + '%', '--sheet-y': curTy + 'px', '--sheet-bg': bg || 'var(--wb-card)' } as React.CSSProperties}
@@ -119,7 +119,7 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, class
           onPointerCancel={up}
           className="shrink-0 cursor-grab touch-none pt-2 pb-1"
         >
-          <div className="mx-auto h-[5px] w-[38px] rounded-[3px] bg-[rgba(255,255,255,.22)]" />
+          <div className="mx-auto h-[5px] w-[38px] rounded-[3px] bg-wb-handle" />
         </div>
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </div>

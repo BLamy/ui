@@ -7,6 +7,7 @@ import { cn } from './util';
 import { vib, tick } from './haptics';
 import { WIcon, IconBtn, type WIconName } from './icons';
 import { TermBody } from './terminal';
+import { useWorkbenchAppearance } from './theme';
 
 /* ══ Surfaces (right panel) ══ */
 export type SurfaceKind = 'browser' | 'terminal' | 'files' | 'diff' | 'agents';
@@ -66,7 +67,7 @@ export function SurfaceBrowser({ className }: { className?: string }) {
           http://localhost:3000
         </div>
       </div>
-      <div className="grid min-h-0 flex-1 place-items-center bg-[#101014] p-5">
+      <div className="grid min-h-0 flex-1 place-items-center bg-wb-well p-5">
         <div className="text-center">
           <span className="inline-grid size-10 place-items-center rounded-[10px] bg-[linear-gradient(135deg,var(--wb-tint),#5E5CE6)]">
             <WIcon name="spark" size={20} sw={2} className="text-white" />
@@ -130,16 +131,17 @@ const surfaceDiffOptions = {
   diffIndicators: 'bars' as const,
   hunkSeparators: 'line-info' as const,
   overflow: 'scroll' as const,
-  themeType: 'dark' as const,
 };
 export function SurfaceDiff({ className }: { className?: string }) {
+  const appearance = useWorkbenchAppearance();
+  const options = React.useMemo(() => ({ ...surfaceDiffOptions, themeType: appearance }), [appearance]);
   return (
     <div data-slot="surface-diff" data-renderer="pierre-diffs" className={cn('wb-scroll min-h-0 flex-1 overflow-y-auto px-3 py-2.5', className)}>
       <div className="overflow-hidden rounded-[9px] border border-wb-sep">
         <MultiFileDiff
           oldFile={{ name: 'src/haptics.ts', contents: OLD_HAPTICS }}
           newFile={{ name: 'src/haptics.ts', contents: NEW_HAPTICS }}
-          options={surfaceDiffOptions}
+          options={options}
         />
       </div>
     </div>
@@ -218,7 +220,7 @@ export function SurfacePanel({ kind, onOpen, onClose, full, onFull, compact, cla
       {kind === 'browser' ? (
         <SurfaceBrowser />
       ) : kind === 'terminal' ? (
-        <div className="flex min-h-0 flex-1 flex-col bg-[#0C0C10]">
+        <div className="wb-term flex min-h-0 flex-1 flex-col bg-wb-term">
           <TermBody />
         </div>
       ) : kind === 'files' ? (

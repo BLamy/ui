@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import type { Appearance } from '@brett_lamy/ui';
 import { vib } from '../lib/haptics';
 import { WorkbenchShell } from '../lib/workbench-shell';
 import type { WorkbenchThread } from '../lib/thread-sidebar';
@@ -137,6 +138,8 @@ export const TERM_SEED: TermLine[] = [
 /* ══ WorkbenchDemo — the assembled demo composition on WorkbenchShell (prototype's `Workbench` root) ══ */
 export interface WorkbenchDemoProps {
   tint?: string;
+  /** Light or dark palette; defaults to the ambient `AppearanceProvider` value, else dark. */
+  appearance?: Appearance;
   terminal?: boolean | null;
   surface?: SurfaceKind | 'none' | null;
 }
@@ -220,7 +223,7 @@ export function WorkbenchDemo(props: WorkbenchDemoProps) {
   };
   const streaming = !!streamId && !!thread && streamId[0] === thread.id;
   return (
-    <WorkbenchShell tint={props.tint} terminal={props.terminal}>
+    <WorkbenchShell tint={props.tint} appearance={props.appearance} terminal={props.terminal}>
       <WorkbenchShell.Sidebar>
         <WBSidebarSlot threads={threads} cur={cur} setCur={setCur} />
       </WorkbenchShell.Sidebar>

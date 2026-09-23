@@ -5,8 +5,8 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { AdaptivePane, collectSlots, defineSlot, useContainerWidth } from '@brett_lamy/ui';
-import { chatTokenVars } from './chat-tokens';
+import { AdaptivePane, collectSlots, defineSlot, useAppearance, useContainerWidth, type Appearance } from '@brett_lamy/ui';
+import { chatVars } from './chat-tokens';
 import { cn } from './cn';
 
 export interface ChatShellContextValue {
@@ -33,6 +33,8 @@ export interface ChatShellProps {
   breakpoint?: number;
   /** initial state of the compact hamburger drawer (only meaningful below the breakpoint) */
   defaultNavOpen?: boolean;
+  /** Light or dark palette. Defaults to the ambient `AppearanceProvider` value, else dark. */
+  appearance?: Appearance;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -43,12 +45,15 @@ export interface ChatShellProps {
 export function ChatShell({
   breakpoint = 880,
   defaultNavOpen = false,
+  appearance: appearanceProp,
   children,
   className,
   style,
 }: ChatShellProps) {
   const [ref, w] = useContainerWidth();
   const [navOpen, setNavOpen] = useState(defaultNavOpen);
+  const ambient = useAppearance();
+  const appearance = appearanceProp ?? ambient ?? 'dark';
   const compact = w < breakpoint;
   const ctx: ChatShellContextValue = { w, compact, navOpen, setNavOpen };
   const slots = collectSlots(children);
@@ -57,19 +62,21 @@ export function ChatShell({
       <div
         ref={ref}
         data-slot="chat-shell"
+        data-appearance={appearance}
         className={cn(
-          'relative flex h-full w-full overflow-hidden bg-[#131318] font-ios text-[#EDEDF2] [color-scheme:dark]',
+          'relative flex h-full w-full overflow-hidden bg-ck-bg font-ios text-ck-label',
+          appearance === 'light' ? '[color-scheme:light]' : '[color-scheme:dark]',
           className,
         )}
         // The chat tokens as --ck-* custom properties, for anything rendered inside the shell.
-        style={{ ...chatTokenVars, ...style }}
+        style={{ ...chatVars(appearance), ...style }}
       >
         <AdaptivePane
           mode={compact ? 'drawer' : 'column'}
           side="left"
           open={navOpen}
           onClose={() => setNavOpen(false)}
-          scrim="rgba(0,0,0,.5)"
+          scrim="var(--ck-scrim, rgba(0,0,0,.5))"
           // AdaptivePane's docked column only takes a style object.
           columnStyle={columnStyle}
           className="flex"

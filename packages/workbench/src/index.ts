@@ -1,7 +1,13 @@
 import './styles.css';
 
 export { WFONT, MONO, EASE } from './lib/util';
-export { workbenchVars, WorkbenchTheme, type WorkbenchThemeProps } from './lib/theme';
+export {
+  workbenchVars,
+  workbenchAppearanceClass,
+  useWorkbenchAppearance,
+  WorkbenchTheme,
+  type WorkbenchThemeProps,
+} from './lib/theme';
 export { vib, tick } from './lib/haptics';
 export { WIcon, IconBtn, iconBtnVariants, type WIconName, type WIconProps, type IconBtnProps } from './lib/icons';
 export {

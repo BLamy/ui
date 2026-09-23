@@ -38,17 +38,17 @@ function fbInline(s: string): React.ReactNode[] {
   return out;
 }
 
-/* tiny JSX/TS highlighter for static code fences */
+/* tiny JSX/TS highlighter for static code fences; `.wb-light` swaps the palette through --wb-hl-* */
 const HLC = {
-  kw: 'text-[#C792EA]',
-  str: 'text-[#A5D6A7]',
-  num: 'text-[#F78C6C]',
-  com: 'text-[#6B6B78]',
-  fn: 'text-[#82AAFF]',
-  tag: 'text-[#F07178]',
-  attr: 'text-[#FFCB6B]',
-  punc: 'text-[#89DDFF]',
-  id: 'text-[#D8D8E2]',
+  kw: 'text-[color:var(--wb-hl-kw,#C792EA)]',
+  str: 'text-[color:var(--wb-hl-str,#A5D6A7)]',
+  num: 'text-[color:var(--wb-hl-num,#F78C6C)]',
+  com: 'text-[color:var(--wb-hl-com,#6B6B78)]',
+  fn: 'text-[color:var(--wb-hl-fn,#82AAFF)]',
+  tag: 'text-[color:var(--wb-hl-tag,#F07178)]',
+  attr: 'text-[color:var(--wb-hl-attr,#FFCB6B)]',
+  punc: 'text-[color:var(--wb-hl-punc,#89DDFF)]',
+  id: 'text-[color:var(--wb-hl-id,#D8D8E2)]',
 };
 const HL_KW = new Set(
   'import export from const let var function return if else for while switch case default new class extends super this typeof instanceof in of try catch finally throw await async yield break continue null undefined true false void delete static get set'.split(' ')

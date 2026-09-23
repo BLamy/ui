@@ -314,7 +314,7 @@ export function Composer({
   const annoAtt = anno ? atts.find((a) => a.id === anno) : null;
   return (
     <div data-slot="composer" className={cn('box-border w-full', className)} style={style}>
-      <div className="relative rounded-[15px] border border-wb-sep bg-wb-card shadow-[0_6px_24px_rgba(0,0,0,.28)]">
+      <div className="relative rounded-[15px] border border-wb-sep bg-wb-card shadow-[0_6px_24px_var(--wb-shadow,rgba(0,0,0,.28))]">
         <ToggleButton
           data-slot="composer-expand"
           className="wb-btn wb-hl absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-wb-card p-0 text-wb-label2"
@@ -338,7 +338,7 @@ export function Composer({
                     setAnno(a.id);
                   }}
                   title="Annotate with PencilKit"
-                  className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-[#0C0C10] p-0"
+                  className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-wb-term p-0"
                 >
                   <img src={a.src} alt="pasted attachment" className="block h-[58px] max-w-[130px] object-cover" />
                 </Button>
@@ -353,7 +353,7 @@ export function Composer({
                     setAtts((x) => x.filter((y) => y.id !== a.id));
                   }}
                   aria-label="Remove attachment"
-                  className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-wb-sep bg-[#26262E] p-0 text-[10px] leading-none text-wb-label2"
+                  className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-wb-sep bg-wb-card2 p-0 text-[10px] leading-none text-wb-label2"
                 >
                   ✕
                 </Button>

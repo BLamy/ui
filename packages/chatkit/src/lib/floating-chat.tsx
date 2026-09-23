@@ -73,7 +73,10 @@ export interface FloatingChatProps {
   peek?: number;
   /** Glass over the host, or an opaque card. */
   appearance?: FloatingSheetAppearance;
-  /** Colour scheme of the surface; `auto` inherits the host's tokens. */
+  /**
+   * Colour scheme of the surface. Defaults to the ambient `AppearanceProvider` value, else `auto`
+   * (inherit the host's tokens).
+   */
   tone?: FloatingSheetTone;
   /** Accessible name for the revealed transcript region. */
   label?: string;
@@ -104,7 +107,7 @@ export function FloatingChat({
   gutter = 20,
   peek = 0,
   appearance = 'glass',
-  tone = 'auto',
+  tone,
   label = 'Full chat',
   children,
   className,

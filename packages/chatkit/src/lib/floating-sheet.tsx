@@ -11,7 +11,7 @@ import {
   type RefObject,
 } from 'react';
 import { Button } from 'react-aria-components';
-import { Haptics, useChromeHidden, collectSlots, defineSlot } from '@brett_lamy/ui';
+import { Haptics, useAppearance, useChromeHidden, collectSlots, defineSlot } from '@brett_lamy/ui';
 import { cn } from './cn';
 
 export type FloatingSheetFabPosition =
@@ -104,6 +104,10 @@ export interface FloatingSheetProps {
   /** Corner radius while closed. Grows square as the sheet fills the host. */
   radius?: number;
   appearance?: FloatingSheetAppearance;
+  /**
+   * Colour scheme of the surface. Defaults to the ambient `AppearanceProvider` value, else `auto`
+   * (inherit the host's --bl-* tokens).
+   */
   tone?: FloatingSheetTone;
   /**
    * Which edge of the body the visible window is anchored to. `end` pins the body to the
@@ -144,7 +148,7 @@ export function FloatingSheet({
   gutter = 20,
   radius = 28,
   appearance = 'glass',
-  tone = 'auto',
+  tone: toneProp,
   bodyAlign = 'start',
   minimizable = true,
   fabPosition = 'bottom-center',
@@ -157,6 +161,8 @@ export function FloatingSheet({
   className,
   style,
 }: FloatingSheetProps) {
+  const ambient = useAppearance();
+  const tone: FloatingSheetTone = toneProp ?? ambient ?? 'auto';
   const rootRef = useRef<HTMLDivElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(430);

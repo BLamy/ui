@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { AppearanceProvider } from '@brett_lamy/ui';
 import { ChatDemo, type ChatThreadState } from './chat-demo';
 import '../styles.css';
 
@@ -29,6 +30,20 @@ export const Desktop: Story = {
 export const Compact: Story = {
   args: { width: 390, height: 720 },
 };
+
+/** ChatDemo (ChatShell) under an ambient AppearanceProvider. */
+const inAppearance =
+  (appearance: 'light' | 'dark') =>
+  ({ width, height, tint, members, initialThread }: ChatPageArgs) => (
+    <AppearanceProvider value={appearance}>
+      <div style={{ width, height, overflow: 'hidden' }}>
+        <ChatDemo tint={tint} members={members} initialThread={initialThread} />
+      </div>
+    </AppearanceProvider>
+  );
+export const AppearanceLight: Story = { args: { width: 1280, height: 720 }, render: inAppearance('light') };
+export const AppearanceDark: Story = { args: { width: 1280, height: 720 }, render: inAppearance('dark') };
+export const AppearanceLightCompact: Story = { args: { width: 390, height: 720 }, render: inAppearance('light') };
 
 /** ≥1180px container, thread mode 'drawer' → the SideDrawer docks as a FIXED column beside the channel. */
 export const ThreadFixedDrawer: Story = {

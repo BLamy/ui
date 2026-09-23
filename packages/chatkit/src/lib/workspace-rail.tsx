@@ -43,7 +43,7 @@ export function WorkspaceRail({
     <div
       data-slot="workspace-rail"
       className={cn(
-        'box-border flex w-[52px] shrink-0 flex-col items-center gap-[8px] border-r border-[rgba(255,255,255,.07)] bg-[#0D0D11] px-0 py-[10px]',
+        'box-border flex w-[52px] shrink-0 flex-col items-center gap-[8px] border-r border-ck-sep bg-ck-rail px-0 py-[10px]',
         className,
       )}
       style={style}
@@ -57,8 +57,8 @@ export function WorkspaceRail({
             onSelect?.(w.id);
           }}
           className={cn(
-            'size-[34px] shrink-0 cursor-pointer rounded-[11px] border-2 font-ios text-[14px] font-extrabold text-white',
-            w.active ? 'border-(--ck-ws-color) bg-(--ck-ws-color)' : 'border-transparent bg-[rgba(255,255,255,.1)]',
+            'size-[34px] shrink-0 cursor-pointer rounded-[11px] border-2 font-ios text-[14px] font-extrabold',
+            w.active ? 'border-(--ck-ws-color) bg-(--ck-ws-color) text-white' : 'border-transparent bg-ck-fill2 text-ck-on-fill',
           )}
           style={{ '--ck-ws-color': w.color } as CSSProperties}
         >
@@ -71,7 +71,7 @@ export function WorkspaceRail({
           kvib([5]);
           onAdd?.();
         }}
-        className="grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[11px] border border-dashed border-[rgba(255,255,255,.07)] bg-transparent text-[rgba(235,235,245,.35)]"
+        className="grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[11px] border border-dashed border-ck-sep bg-transparent text-ck-mut3"
       >
         <ChatIcon d={chatIconPaths.plus} size={14} />
       </Button>
