@@ -2,46 +2,142 @@
 import { useMemo, useState } from 'react';
 import {
   Avatar, HapticsPlayground, IndexBar, NavigationStack, SearchField, TabBar, BLProvider,
-  List as BLList, ListSection as BLSection, ListRow as BLRow, useAppearance,
+  List, ListSection, ListRow,
   type Screen,
 } from '@brett_lamy/ui';
 import { WorkbenchDemo } from '@brett_lamy/workbench';
 import { PencilKitDemo, demoStrokes } from '@brett_lamy/pencilkit';
-import { BLDK, BLL } from './frame';
+import { LiveCard, LiveStage } from './docs-live';
 
-const frame = (h: number, maxW?: number | string): React.CSSProperties => ({
-  position: 'relative', height: h, maxWidth: maxW, border: '1px solid var(--dk-border3)',
-  borderRadius: 14, overflow: 'hidden', margin: '16px 0', boxShadow: '0 18px 44px -18px var(--dk-shadow)',
+/* A fixed-height, full-bleed host for the big demos: the card supplies the border, so no nested frame. */
+const stage = (h: number, maxW?: number | string): React.CSSProperties => ({
+  position: 'relative', height: h, maxWidth: maxW, margin: maxW ? '0 auto' : undefined, overflow: 'hidden',
 });
 
-export function HapticsDemoBlock() {
-  const dark = useAppearance() === 'dark';
+const HAPTICS_CODE = `import { Button, Haptics } from '@brett_lamy/ui'
+
+// One engine, three calls: the same surface as UIFeedbackGenerator.
+export default function Feedback() {
   return (
-    <div style={{
-      background: 'var(--dk-demo)', border: '1px solid var(--dk-border2)', borderRadius: 16,
-      padding: '10px 4px 14px', margin: '16px 0', ...(dark ? BLDK : BLL),
-    } as any}>
-      <HapticsPlayground />
+    <div style={{ display: 'flex', gap: 8 }}>
+      <Button onPress={() => Haptics.impact('light')}>Light</Button>
+      <Button onPress={() => Haptics.impact('heavy')}>Heavy</Button>
+      <Button onPress={() => Haptics.notification('success')}>Success</Button>
+      <Button onPress={() => Haptics.selection()}>Selection</Button>
     </div>
+  )
+}`;
+
+export function HapticsDemoBlock() {
+  return (
+    <LiveCard title="Haptics playground" code={HAPTICS_CODE}>
+      <LiveStage><HapticsPlayground /></LiveStage>
+    </LiveCard>
   );
 }
+
+const WORKBENCH_CODE = `import { WorkbenchDemo } from '@brett_lamy/ui'
+
+// The full composition: threads, chat, terminal dock, and surface panel.
+// Build your own from WorkbenchShell and its slots.
+export default function App() {
+  return (
+    <div style={{ position: 'relative', height: 600 }}>
+      <WorkbenchDemo />
+    </div>
+  )
+}`;
 
 export function WorkbenchDemoBlock() {
   return (
-    <div style={frame(600)}>
-      <div style={{ position: 'absolute', inset: 0 }}><WorkbenchDemo /></div>
-    </div>
+    <LiveCard title="Workbench" code={WORKBENCH_CODE}>
+      <LiveStage theme="wb" bleed>
+        <div style={stage(600)}><div style={{ position: 'absolute', inset: 0 }}><WorkbenchDemo /></div></div>
+      </LiveStage>
+    </LiveCard>
   );
 }
+
+const PENCIL_CODE = `import { PencilKitDemo, demoStrokes } from '@brett_lamy/ui'
+
+// Canvas, tool picker, inks, widths, undo/redo. Compose your own from
+// PencilCanvas, PencilToolbar, and usePencilHistory.
+export default function Sketch() {
+  return (
+    <div style={{ position: 'relative', height: 540 }}>
+      <PencilKitDemo
+        defaultStrokes={demoStrokes()}
+        style={{ position: 'absolute', inset: 0 }}
+      />
+    </div>
+  )
+}`;
 
 export function PencilDemoBlock() {
   const strokes = useMemo(() => demoStrokes(), []);
   return (
-    <div style={frame(540)}>
-      <PencilKitDemo defaultStrokes={strokes} style={{ position: 'absolute', inset: 0 }} />
-    </div>
+    <LiveCard title="PencilKit" code={PENCIL_CODE}>
+      <LiveStage bleed>
+        <div style={stage(540)}>
+          <PencilKitDemo defaultStrokes={strokes} style={{ position: 'absolute', inset: 0 }} />
+        </div>
+      </LiveStage>
+    </LiveCard>
   );
 }
+
+const APP_CODE = `import { useState } from 'react'
+import {
+  Avatar, BLProvider, List, ListRow, ListSection, NavigationStack, TabBar,
+  type Screen,
+} from '@brett_lamy/ui'
+
+const people = [
+  { f: 'Ada', l: 'Lovelace', role: 'Analytical engines' },
+  { f: 'Bea', l: 'Okafor', role: 'Haptics research' },
+]
+
+export default function Contacts() {
+  const [tab, setTab] = useState('contacts')
+  const [person, setPerson] = useState<(typeof people)[number] | null>(null)
+  const screens: Screen[] = [{
+    key: 'list',
+    title: 'Contacts',
+    largeTitle: true,
+    grouped: true,
+    bottomInset: 62,
+    content: (
+      <List>
+        <ListSection title="People" sticky>
+          {people.map((p) => (
+            <ListRow
+              key={p.l}
+              leading={<Avatar c={p} size={36} />}
+              title={\`\${p.f} \${p.l}\`}
+              subtitle={p.role}
+              accessory="chevron"
+              onPress={() => setPerson(p)}
+            />
+          ))}
+        </ListSection>
+      </List>
+    ),
+  }]
+  if (person) {
+    screens.push({ key: 'detail', title: person.f, content: <p>{person.role}</p> })
+  }
+  return (
+    <div style={{ position: 'relative', height: 560 }}>
+      <BLProvider>
+        <NavigationStack screens={screens} onPop={() => setPerson(null)} />
+        <TabBar selected={tab} onSelect={setTab} items={[
+          { id: 'contacts', icon: 'person', title: 'Contacts' },
+          { id: 'recents', icon: 'clock', title: 'Recents' },
+        ]} />
+      </BLProvider>
+    </div>
+  )
+}`;
 
 /* Compact recreation of the Contacts demo app for the introduction page — demo composition
    lives in the app per the conventions (packages export primitives only). */
@@ -75,19 +171,19 @@ export function AppDemoBlock() {
     overlay: <IndexBar avail={new Set(letters)} top={118} bottom={70}
       onLetter={(L) => { const el = secRefs.current[L]; el?.scrollIntoView({ block: 'start' }); }} />,
     content: (
-      <BLList>
+      <List>
         {letters.map((L) => (
           <div key={L} ref={(el) => { secRefs.current[L] = el; }}>
-            <BLSection title={L} sticky>
+            <ListSection title={L} sticky>
               {byLetter[L].map((p, i) => (
-                <BLRow key={p.f + p.l} leading={<Avatar c={p} size={36} />} title={p.f + ' ' + p.l}
+                <ListRow key={p.f + p.l} leading={<Avatar c={p} size={36} />} title={p.f + ' ' + p.l}
                   subtitle={p.role} accessory="chevron" divider={i < byLetter[L].length - 1}
                   onPress={() => setSel(p)} />
               ))}
-            </BLSection>
+            </ListSection>
           </div>
         ))}
-      </BLList>
+      </List>
     ),
   }];
   if (sel) screens.push({
@@ -103,7 +199,9 @@ export function AppDemoBlock() {
     ),
   });
   return (
-    <div style={frame(560, 920)}>
+    <LiveCard title="Contacts" code={APP_CODE}>
+    <LiveStage bleed>
+    <div style={stage(560)}>
       <div style={{ position: 'absolute', inset: 0 }}>
         <BLProvider>
           <div style={{ position: 'absolute', inset: 0 }}>
@@ -124,5 +222,7 @@ export function AppDemoBlock() {
         </BLProvider>
       </div>
     </div>
+    </LiveStage>
+    </LiveCard>
   );
 }

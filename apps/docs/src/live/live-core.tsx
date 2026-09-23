@@ -1,18 +1,25 @@
 /* Core BL UI / Workbench live blocks — ported from the prototype's DocsLive LIVE registry
-   (project/workbench.jsx), rebuilt on the @brett_lamy/* package public APIs. */
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+   (project/workbench.jsx), rebuilt on the @brett_lamy/* package public APIs.
+   Each `code` is a copy-pasteable sample against the public package (@brett_lamy/ui); DocsLive rewrites any
+   internal workspace package name to it. `variants` render as a switch in the card header. */
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  AdaptivePane, Avatar, Credenza, EdgeDrawer, Haptics, Icon, IndexBar, SidebarDemo, NavigationStack, Segmented, SideDrawer, SplitView, Spinner,
-  Switch as BLSwitch, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab, List as BLList, ListSection as BLSection, ListRow as BLRow,
+  AdaptivePane, Avatar, BLProvider, Button, Credenza, EdgeDrawer, Haptics, Icon, IndexBar, SidebarDemo, NavigationStack, Segmented,
+  SideDrawer, SplitView, Spinner, Switch, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab,
+  List, ListSection, ListRow, useAppearance,
   type AdaptivePaneMode, type Screen,
 } from '@brett_lamy/ui';
-import { ArtifactChatContainer, ChatDemo, DeliveryTrackingDemo, FloatingSheet, MapChatDemo, ProgressStepper, WorkspaceRail, type FloatingSheetAppearance } from '@brett_lamy/chatkit';
+import {
+  ArtifactChatContainer, ChatDemo, DeliveryTrackingDemo, FloatingSheet, MapChatDemo, ProgressStepper, WorkspaceRail, useFloatingSheet,
+  type FloatingSheetAppearance,
+} from '@brett_lamy/chatkit';
 import {
   Composer, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
 } from '@brett_lamy/workbench';
-import { DemoBtn, BLDK, BLFrame, BLL, type LiveSpec } from './frame';
+import { DemoBtn, BLFrame, type LiveSpec } from './frame';
 
+/** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
 function ScaledShell({ width, height, children }: { width: number; height: number; children: ReactNode }) {
   const host = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
@@ -25,24 +32,172 @@ function ScaledShell({ width, height, children }: { width: number; height: numbe
     observer.observe(el);
     return () => observer.disconnect();
   }, [width]);
-  return <div ref={host} style={{ width: '100%', height: height * scale, position: 'relative', overflow: 'hidden' }}>
+  return <div ref={host} style={{ width: '100%', maxWidth: width, margin: '0 auto', height: height * scale, position: 'relative', overflow: 'hidden' }}>
     <div style={{ position: 'absolute', width, height, transform: `scale(${scale})`, transformOrigin: 'top left' }}>{children}</div>
+  </div>;
+}
+
+/* ── FloatingSheet presets (the FloatingSheet page) ── */
+const SHEET_STEPS = [{ id: 'placed', label: 'Placed' }, { id: 'preparing', label: 'Preparing' }, { id: 'ready', label: 'Ready' }, { id: 'picked', label: 'Picked up' }];
+interface SheetPreset { appearance: FloatingSheetAppearance; gutter: number; radius: number; peek: number; minimizable: boolean; foot: boolean; defaultOpen?: boolean; note: string }
+const SHEET_PRESETS: Record<string, SheetPreset> = {
+  glass: { appearance: 'glass', gutter: 20, radius: 28, peek: 0, minimizable: true, foot: true, note: 'Rests on its foot. Drag the cap up to grow it, or down to fold it into a FAB.' },
+  peeking: { appearance: 'glass', gutter: 20, radius: 28, peek: 190, minimizable: true, foot: true, note: 'peek keeps the top of the body visible above the foot while resting.' },
+  card: { appearance: 'sheet', gutter: 14, radius: 26, peek: 150, minimizable: true, foot: true, note: 'An opaque card that floats inside a gutter.' },
+  docked: { appearance: 'sheet', gutter: 0, radius: 20, peek: 250, minimizable: false, foot: false, note: 'gutter={0} docks it edge to edge like a system sheet; it cannot be folded away.' },
+  open: { appearance: 'glass', gutter: 20, radius: 28, peek: 0, minimizable: true, foot: true, defaultOpen: true, note: 'Fully grown: the cap meets the top edge and the host dims behind it.' },
+};
+const sheetCode = (variant: string) => {
+  const p = SHEET_PRESETS[variant] ?? SHEET_PRESETS.glass;
+  const props = [
+    `appearance="${p.appearance}"`,
+    `gutter={${p.gutter}}`,
+    `radius={${p.radius}}`,
+    p.peek ? `peek={${p.peek}}` : null,
+    p.minimizable ? null : 'minimizable={false}',
+    p.defaultOpen ? 'defaultOpen' : null,
+    'label="Order"',
+  ].filter(Boolean).map((l) => '        ' + l).join('\n');
+  const foot = p.foot
+    ? `\n        <FloatingSheet.Foot>\n          <div style={{ padding: '8px 16px 16px' }}>\n            <Button size="pill">Continue</Button>\n          </div>\n        </FloatingSheet.Foot>`
+    : '';
+  return `import { Button, FloatingSheet, ProgressStepper } from '@brett_lamy/ui'
+
+const steps = [
+  { id: 'placed', label: 'Placed' },
+  { id: 'preparing', label: 'Preparing' },
+  { id: 'ready', label: 'Ready' },
+]
+
+export default function OrderSheet() {
+  return (
+    <div style={{ position: 'relative', height: 560, overflow: 'hidden' }}>
+      <p style={{ padding: 22 }}>Any positioned content — a map, a canvas, a page.</p>
+      <FloatingSheet
+${props}
+      >
+        <FloatingSheet.Body>
+          <div style={{ padding: '4px 20px 24px' }}>
+            <h3>Preparing your order</h3>
+            <ProgressStepper steps={steps} current={1} labels />
+          </div>
+        </FloatingSheet.Body>${foot}
+      </FloatingSheet>
+    </div>
+  )
+}`;
+};
+
+/** A host with enough colour and texture that the glass visibly blurs it; follows the docs appearance. */
+function SheetHost({ note, children }: { note: string; children?: ReactNode }) {
+  const dark = useAppearance() === 'dark';
+  return <ScaledShell width={430} height={560}>
+    <div style={{
+      position: 'relative', width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', fontFamily: 'var(--bl-font)',
+      background: dark ? 'radial-gradient(circle at 30% 20%, #2b2f4a, #0f1017 62%)' : 'radial-gradient(circle at 30% 20%, #fff4e6, #e8ecf3 62%)',
+      color: dark ? '#f5f5f7' : '#1c1c1e', boxShadow: 'inset 0 0 0 1px var(--bl-sep)',
+    }}>
+      <div style={{ padding: 22 }}>
+        <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.08em', opacity: 0.6 }}>HOST CONTENT</div>
+        <h2 style={{ margin: '8px 0 10px', fontSize: 24 }}>Anything positioned</h2>
+        <p style={{ margin: 0, maxWidth: 330, lineHeight: 1.5, opacity: 0.78, fontSize: 14 }}>{note}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 20 }}>
+          {['#0A84FF', '#FF9F0A', '#30D158', '#BF5AF2', '#FF375F', '#64D2FF'].map((c) => (
+            <div key={c} style={{ height: 70, borderRadius: 14, background: c, opacity: dark ? 0.75 : 0.6 }} />
+          ))}
+        </div>
+      </div>
+      {children}
+    </div>
+  </ScaledShell>;
+}
+
+function SheetReadout() {
+  const { open, progress, minimized, peek } = useFloatingSheet();
+  const row = (k: string, v: string) => <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid rgba(128,128,128,.18)' }}><span style={{ opacity: 0.7 }}>{k}</span><strong style={{ fontVariantNumeric: 'tabular-nums' }}>{v}</strong></div>;
+  return <div style={{ padding: '2px 20px 20px', fontSize: 13.5 }}>
+    <div style={{ fontSize: 17, fontWeight: 700, margin: '2px 0 8px' }}>useFloatingSheet()</div>
+    {row('open', String(open))}
+    {row('progress', Math.round(progress * 100) + '%')}
+    {row('peek', peek + 'px')}
+    {row('minimized', String(minimized))}
+  </div>;
+}
+
+function SheetActions() {
+  const { open, setOpen, setMinimized } = useFloatingSheet();
+  return <div style={{ display: 'flex', gap: 8, padding: '8px 16px 16px' }}>
+    <Button className="flex-1" onPress={() => setOpen(!open)}>{open ? 'Close' : 'Open'}</Button>
+    <Button className="flex-1" variant="secondary" onPress={() => { setOpen(false); setMinimized(true); }}>Minimize</Button>
   </div>;
 }
 
 export const LIVE_CORE: Record<string, LiveSpec> = {
   sidebar: {
-    title: 'Sidebar · docked, rail, float, overlay', theme: 'wb', h: 420,
-    code: 'import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset } from "@brett_lamy/ui"\n\nexport default function App() {\n  return (\n    <SidebarProvider defaultOpen breakpoint={560}>\n      <Sidebar variant="rail">  {/* docked | rail | float | overlay */}\n        <Sidebar.Header>\n          <Sidebar.Workspace name="Creamery Ops" detail="Production"/>\n        </Sidebar.Header>\n        <Sidebar.Content>\n          <Sidebar.Search/>\n          <Sidebar.Section title="Workspace">\n            <Sidebar.Item icon="home" label="Home" active/>\n            <Sidebar.Item icon="bolt" label="Agent tasks" badge={4}/>\n            <Sidebar.Item icon="inbox" label="Inbox"/>\n          </Sidebar.Section>\n        </Sidebar.Content>\n      </Sidebar>\n      <SidebarInset>\n        <SidebarTrigger/>  {/* hamburger — toggles any variant */}\n        …main content…\n      </SidebarInset>\n    </SidebarProvider>\n  )\n}',
+    title: 'Sidebar · docked, rail, float, overlay', theme: 'wb', h: 420, bleed: true,
+    code: `import {
+  Sidebar, SidebarInset, SidebarProvider, SidebarTrigger,
+} from '@brett_lamy/ui'
+
+export default function App() {
+  return (
+    <SidebarProvider defaultOpen breakpoint={560}>
+      {/* variant: docked | rail | float | overlay */}
+      <Sidebar variant="rail">
+        <Sidebar.Header>
+          <Sidebar.Workspace name="Creamery Ops" detail="Production" />
+        </Sidebar.Header>
+        <Sidebar.Content>
+          <Sidebar.Search />
+          <Sidebar.Section title="Workspace">
+            <Sidebar.Item icon="home" label="Home" active />
+            <Sidebar.Item icon="bolt" label="Agent tasks" badge={4} />
+            <Sidebar.Item icon="inbox" label="Inbox" />
+          </Sidebar.Section>
+        </Sidebar.Content>
+      </Sidebar>
+      <SidebarInset>
+        {/* the hamburger toggles every variant */}
+        <SidebarTrigger />
+        <main>Main content</main>
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}`,
     Render: () => <SidebarDemo />,
   },
   adaptivepane: {
     title: 'AdaptivePane · column, drawer, cover, hidden', theme: 'bl', h: 380,
-    code: 'import { AdaptivePane, useContainerWidth } from "@brett_lamy/ui"\n\nexport default function Shell() {\n  const [ref, width] = useContainerWidth()\n  const [open, setOpen] = useState(false)\n  return (\n    <div ref={ref} style={{ position: "relative", display: "flex" }}>\n      <AdaptivePane mode={width < 760 ? "drawer" : "column"} open={open}\n        onClose={() => setOpen(false)} columnWidth={240} drawerWidth={280}>\n        <Navigation />\n      </AdaptivePane>\n      <main style={{ flex: 1 }}>…</main>\n    </div>\n  )\n}',
-    Render: function AdaptivePaneLive() {
-      const [mode, setMode] = useState<AdaptivePaneMode>('column');
+    variants: ['column', 'drawer', 'cover', 'hidden'].map((m) => ({ id: m, label: m })), variantsWidth: 300,
+    code: `import { useState } from 'react'
+import { AdaptivePane, Button, useContainerWidth } from '@brett_lamy/ui'
+
+export default function Shell() {
+  const [ref, width] = useContainerWidth()
+  const [open, setOpen] = useState(false)
+  const compact = width < 760
+  return (
+    <div ref={ref} style={{ position: 'relative', display: 'flex', height: 360 }}>
+      <AdaptivePane
+        mode={compact ? 'drawer' : 'column'} // or 'cover' | 'hidden'
+        open={open}
+        onClose={() => setOpen(false)}
+        columnWidth={240}
+        drawerWidth={280}
+      >
+        <nav style={{ padding: 16 }}>Navigation</nav>
+      </AdaptivePane>
+      <main style={{ flex: 1, padding: 16 }}>
+        {compact && <Button onPress={() => setOpen(true)}>Menu</Button>}
+      </main>
+    </div>
+  )
+}`,
+    Render: function AdaptivePaneLive({ variant }) {
+      const mode = (variant || 'column') as AdaptivePaneMode;
       const [open, setOpen] = useState(true);
       const [drawer, setDrawer] = useState(false);
+      useEffect(() => { setOpen(true); }, [mode]);
       return (
         <BLFrame h={340}>
           <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
@@ -51,14 +206,14 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
               <div style={{ height: '100%', padding: 16, boxSizing: 'border-box', background: 'var(--bl-card)', fontSize: 13.5 }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Pane</div>
                 <div style={{ color: 'var(--bl-label2)' }}>Same children, mode: {mode}</div>
-                {mode === 'cover' ? <div style={{ marginTop: 14 }}><DemoBtn label="Restore" onPress={() => setMode('column')} /></div> : null}
               </div>
             </AdaptivePane>
             <div style={{ flex: 1, minWidth: 0, padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <Segmented options={['column', 'drawer', 'cover', 'hidden'].map((m) => ({ id: m, label: m }))} value={mode}
-                onChange={(v) => { setMode(v as AdaptivePaneMode); setOpen(true); }} />
-              <div style={{ fontSize: 13, color: 'var(--bl-label2)', lineHeight: 1.5 }}>A shell picks the mode from its measured width; the pane never remounts its children within a mode.</div>
-              <div><DemoBtn label="Open EdgeDrawer" onPress={() => setDrawer(true)} /></div>
+              <div style={{ fontSize: 13, color: 'var(--bl-label2)', lineHeight: 1.5 }}>A shell picks the mode from its measured width; the pane never remounts its children within a mode. Switch modes in the header.</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {mode === 'drawer' ? <DemoBtn label="Open pane" onPress={() => setOpen(true)} /> : null}
+                <DemoBtn label="Open EdgeDrawer" onPress={() => setDrawer(true)} />
+              </div>
             </div>
             <EdgeDrawer side="right" open={drawer} onClose={() => setDrawer(false)} width={240} zIndex={40}>
               <div style={{ height: '100%', padding: 16, boxSizing: 'border-box', background: 'var(--bl-card)', fontSize: 13.5 }}>
@@ -124,44 +279,119 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   floatingsheet: {
-    title: 'FloatingSheet · glass or docked sheet', theme: 'bl', h: 640,
-    code: 'import { FloatingSheet, ProgressStepper } from "@brett_lamy/chatkit"\n\nexport default function OrderCard() {\n  return (\n    <div style={{ position: "relative" }}>\n      <Page />\n      <FloatingSheet appearance="sheet" tone="light" gutter={0} peek={300} bodyAlign="start" minimizable={false}>\n        <FloatingSheet.Body>\n          <h2>Preparing your order</h2>\n          <ProgressStepper steps={steps} current={1} labels />\n          …\n        </FloatingSheet.Body>\n        <FloatingSheet.Foot><Button>Continue</Button></FloatingSheet.Foot>\n      </FloatingSheet>\n    </div>\n  )\n}',
-    Render: function FloatingSheetLive() {
-      const [appearance, setAppearance] = useState<FloatingSheetAppearance>('glass');
-      const glass = appearance === 'glass';
-      return <div>
-        <div style={{ width: 260, margin: '0 auto 12px' }}>
-          <Segmented aria-label="Appearance" value={appearance} onChange={(v) => setAppearance(v as FloatingSheetAppearance)} options={[{ id: 'glass', label: 'Glass' }, { id: 'sheet', label: 'Docked sheet' }]} />
-        </div>
-        <ScaledShell width={430} height={560}>
-          <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', background: glass ? 'radial-gradient(circle at 30% 20%, #2b2f4a, #0f1017 60%)' : 'radial-gradient(circle at 30% 20%, #fff4e6, #e8ecf3 60%)', color: glass ? '#f5f5f7' : '#1c1c1e', fontFamily: 'var(--bl-font)' }}>
-            <div style={{ padding: 22 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.08em', opacity: .6 }}>HOST CONTENT</div>
-              <h2 style={{ margin: '8px 0 10px', fontSize: 24 }}>Anything positioned</h2>
-              <p style={{ margin: 0, maxWidth: 300, lineHeight: 1.5, opacity: .75, fontSize: 14 }}>Drag the cap up to grow the sheet into the full page{glass ? ', or down to fold it into a FAB' : ''}.</p>
+    title: 'FloatingSheet · appearances', theme: 'bl', h: 650,
+    variants: [{ id: 'glass', label: 'Glass' }, { id: 'peeking', label: 'Peeking' }, { id: 'card', label: 'Card' }, { id: 'docked', label: 'Docked' }, { id: 'open', label: 'Open' }],
+    variantsWidth: 370,
+    code: sheetCode('glass'),
+    codeFor: sheetCode,
+    Render: function FloatingSheetLive({ variant }) {
+      const p = SHEET_PRESETS[variant] ?? SHEET_PRESETS.glass;
+      return <SheetHost note={p.note}>
+        <FloatingSheet key={variant} appearance={p.appearance} gutter={p.gutter} radius={p.radius} peek={p.peek}
+          minimizable={p.minimizable} defaultOpen={p.defaultOpen} label="Order" hideOnScroll={false}>
+          <FloatingSheet.Body>
+            <div style={{ padding: '2px 20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <h3 style={{ margin: 0, fontSize: 21 }}>Preparing your order</h3>
+              <ProgressStepper current={1} labels steps={SHEET_STEPS} />
+              {Array.from({ length: 5 }, (_, i) => <div key={i} style={{ height: 64, borderRadius: 14, background: 'rgba(120,120,128,.14)' }} />)}
             </div>
-            <FloatingSheet key={appearance} appearance={appearance} tone={glass ? 'dark' : 'light'} gutter={glass ? 20 : 0} radius={glass ? 28 : 20} peek={glass ? 120 : 250} bodyAlign="start" minimizable={glass} label="Order">
-              <FloatingSheet.Body>
-                <div style={{ padding: '2px 20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <h3 style={{ margin: 0, fontSize: 21 }}>Preparing your order</h3>
-                  <ProgressStepper current={1} labels steps={[{ id: 'a', label: 'Placed' }, { id: 'b', label: 'Preparing' }, { id: 'c', label: 'Ready' }, { id: 'd', label: 'Picked up' }]} />
-                  {Array.from({ length: 5 }, (_, i) => <div key={i} style={{ height: 64, borderRadius: 14, background: 'rgba(120,120,128,.14)' }} />)}
-                </div>
-              </FloatingSheet.Body>
-              <FloatingSheet.Foot>
-                <div style={{ padding: '8px 16px 16px' }}>
-                  <button type="button" style={{ width: '100%', height: 44, border: 0, borderRadius: 999, background: 'var(--bl-tint)', color: '#fff', fontWeight: 700, font: 'inherit', fontSize: 15 }}>Continue</button>
-                </div>
-              </FloatingSheet.Foot>
-            </FloatingSheet>
-          </div>
-        </ScaledShell>
-      </div>;
+          </FloatingSheet.Body>
+          {p.foot ? <FloatingSheet.Foot>
+            <div style={{ padding: '8px 16px 16px' }}><Button size="pill">Continue</Button></div>
+          </FloatingSheet.Foot> : null}
+        </FloatingSheet>
+      </SheetHost>;
+    },
+  },
+  sheetdrag: {
+    title: 'FloatingSheet · drag, snap, minimize', theme: 'bl', h: 650,
+    code: `import { useState } from 'react'
+import { Button, FloatingSheet, useFloatingSheet } from '@brett_lamy/ui'
+
+function Readout() {
+  const { open, progress, minimized } = useFloatingSheet()
+  return (
+    <p style={{ padding: '4px 20px' }}>
+      {open ? 'Open' : 'Resting'} · {Math.round(progress * 100)}% grown
+      {minimized && ' · minimized'}
+    </p>
+  )
+}
+
+function Actions() {
+  const { open, setOpen, setMinimized } = useFloatingSheet()
+  const minimize = () => {
+    setOpen(false)
+    setMinimized(true)
+  }
+  return (
+    <div style={{ display: 'flex', gap: 8, padding: '8px 16px 16px' }}>
+      <Button onPress={() => setOpen(!open)}>{open ? 'Close' : 'Open'}</Button>
+      <Button variant="secondary" onPress={minimize}>Minimize</Button>
+    </div>
+  )
+}
+
+export default function DragDemo() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ position: 'relative', height: 560, overflow: 'hidden' }}>
+      <FloatingSheet open={open} onOpenChange={setOpen} peek={96} label="Status">
+        <FloatingSheet.Body>
+          <Readout />
+        </FloatingSheet.Body>
+        <FloatingSheet.Foot>
+          <Actions />
+        </FloatingSheet.Foot>
+      </FloatingSheet>
+    </div>
+  )
+}`,
+    Render: function SheetDragLive() {
+      const [open, setOpen] = useState(false);
+      const [log, setLog] = useState<string[]>([]);
+      return <SheetHost note={'Drag the cap: it tracks the pointer, then snaps open past 35% of the travel. Drag below the resting height to fold into the FAB. Tap the cap to toggle; Escape or the scrim closes. Last events: ' + (log.length ? log.join(', ') : 'none yet')}>
+        <FloatingSheet open={open} onOpenChange={(next) => { setOpen(next); setLog((l) => [...l.slice(-2), `onOpenChange(${next})`]); }}
+          peek={150} label="Status" hideOnScroll={false}>
+          <FloatingSheet.Body><SheetReadout /></FloatingSheet.Body>
+          <FloatingSheet.Foot><SheetActions /></FloatingSheet.Foot>
+        </FloatingSheet>
+      </SheetHost>;
     },
   },
   mapchat: {
-    title: 'MapChat · always-floating chat with map tools', theme: 'bl', h: 760,
-    code: 'import { ArtifactChatContainer, TileMap } from "@brett_lamy/chatkit"\n\n<ArtifactChatContainer layout="floating" peek={236} working={busy} hideOnScroll={false}>\n  <ArtifactChatContainer.Content>\n    <TileMap view={view} pins={pins} route={route} controls onPinClick={focusPlace} />\n  </ArtifactChatContainer.Content>\n  <ArtifactChatContainer.Chat><Transcript turns={turns} /></ArtifactChatContainer.Chat>\n  <ArtifactChatContainer.Composer>\n    <Composer wide onSend={send} streaming={busy} onStop={stop} />\n  </ArtifactChatContainer.Composer>\n</ArtifactChatContainer>',
+    title: 'MapChat · always-floating chat with map tools', theme: 'bl', h: 760, status: 'needs network',
+    code: `import { useState } from 'react'
+import {
+  ArtifactChatContainer, Composer, MarkdownView, PLACES, TileMap, USER_POSITION,
+  type MapPin,
+} from '@brett_lamy/ui'
+
+const view = { center: USER_POSITION, zoom: 14 }
+const pins: MapPin[] = PLACES.slice(0, 6).map((place) => ({
+  id: place.id,
+  position: place.position,
+  label: place.name,
+}))
+
+export default function MapChat() {
+  const [reply, setReply] = useState('Ask for coffee, pizza, or a walking route.')
+  return (
+    <div style={{ position: 'relative', height: 720 }}>
+      <ArtifactChatContainer layout="floating" peek={120} hideOnScroll={false}>
+        <ArtifactChatContainer.Content>
+          <TileMap view={view} pins={pins} controls />
+        </ArtifactChatContainer.Content>
+        <ArtifactChatContainer.Chat>
+          <MarkdownView markdown={reply} />
+        </ArtifactChatContainer.Chat>
+        <ArtifactChatContainer.Composer>
+          <Composer wide onSend={(text) => setReply(\`Searching for **\${text}**…\`)} />
+        </ArtifactChatContainer.Composer>
+      </ArtifactChatContainer>
+    </div>
+  )
+}`,
     Render: function MapChatLive() {
       return <ScaledShell width={430} height={720}>
         <MapChatDemo style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }} />
@@ -169,8 +399,45 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   delivery: {
-    title: 'DeliveryTracking · map under a docked sheet', theme: 'bl', h: 820,
-    code: 'import { FloatingSheet, ProgressStepper, TileMap, cartoVoyagerTiles } from "@brett_lamy/chatkit"\n\n<div style={{ position: "relative" }}>\n  <TileMap view={route} pins={[store, car]} route={path} tileUrl={cartoVoyagerTiles} scheme="light" />\n  <FloatingSheet appearance="sheet" tone="light" gutter={0} peek={344} bodyAlign="start" minimizable={false} scrim={false}>\n    <FloatingSheet.Body>\n      <h2>Preparing your order</h2>\n      <ProgressStepper steps={steps} current={stage} />\n      …\n    </FloatingSheet.Body>\n  </FloatingSheet>\n</div>',
+    title: 'DeliveryTracking · map under a docked sheet', theme: 'bl', h: 820, status: 'needs network',
+    code: `import {
+  FloatingSheet, ProgressStepper, TileMap, esriLightGrayTiles, type MapPin,
+} from '@brett_lamy/ui'
+
+const store = { lat: 40.7295, lng: -73.9965 }
+const car = { lat: 40.7352, lng: -73.9911 }
+const pins: MapPin[] = [
+  { id: 'store', position: store, label: 'Store' },
+  { id: 'car', position: car, callout: '8 min' },
+]
+const steps = [
+  { id: 'placed', label: 'Placed' },
+  { id: 'preparing', label: 'Preparing' },
+  { id: 'ready', label: 'Ready' },
+]
+
+export default function Delivery() {
+  return (
+    <div style={{ position: 'relative', height: 780 }}>
+      <TileMap
+        view={{ center: store, zoom: 15 }}
+        pins={pins}
+        route={{ points: [car, store] }}
+        tileUrl={esriLightGrayTiles}
+        scheme="light"
+      />
+      <FloatingSheet appearance="sheet" tone="light" gutter={0} radius={20}
+        peek={344} minimizable={false} scrim={false} label="Order">
+        <FloatingSheet.Body>
+          <div style={{ padding: '4px 20px' }}>
+            <h2>Preparing your order</h2>
+            <ProgressStepper steps={steps} current={1} />
+          </div>
+        </FloatingSheet.Body>
+      </FloatingSheet>
+    </div>
+  )
+}`,
     Render: function DeliveryLive() {
       return <ScaledShell width={430} height={780}>
         <DeliveryTrackingDemo style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }} />
@@ -179,15 +446,31 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
   },
   chatshell: {
     title: 'ChatShell · responsive composition', theme: 'bl', h: 580,
-    code: 'import { ChatShell } from "@brett_lamy/chatkit"\n\nexport default function Chat() {\n  return (\n    <ChatShell breakpoint={880}>\n      <ChatShell.Rail><WorkspaceRail /></ChatShell.Rail>\n      <ChatShell.Nav><ChannelNav /></ChatShell.Nav>\n      <ChatShell.Main><ChannelMain /></ChatShell.Main>\n    </ChatShell>\n  )\n}',
-    Render: function ChatShellLive() {
-      const [mode, setMode] = useState('wide');
-      const compact = mode === 'compact';
+    variants: [{ id: 'wide', label: 'Wide' }, { id: 'compact', label: 'Compact' }],
+    code: `import { ChatShell } from '@brett_lamy/ui'
+
+// Below the breakpoint the rail and channel list move into a hamburger drawer.
+export default function Chat() {
+  return (
+    <div style={{ position: 'relative', height: 520 }}>
+      <ChatShell breakpoint={880}>
+        <ChatShell.Rail>
+          <nav>Workspaces</nav>
+        </ChatShell.Rail>
+        <ChatShell.Nav>
+          <nav>Channels</nav>
+        </ChatShell.Nav>
+        <ChatShell.Main>
+          <main>Conversation</main>
+        </ChatShell.Main>
+      </ChatShell>
+    </div>
+  )
+}`,
+    Render: function ChatShellLive({ variant }) {
+      const compact = variant === 'compact';
       const width = compact ? 430 : 1040;
       return <div>
-        <div style={{ width: 260, margin: '0 auto 12px' }}>
-          <Segmented aria-label="ChatShell width" value={mode} onChange={setMode} options={[{ id: 'wide', label: 'Wide' }, { id: 'compact', label: 'Compact' }]} />
-        </div>
         <ScaledShell width={width} height={520}>
           <ChatDemo initialThread={null} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }} />
         </ScaledShell>
@@ -199,15 +482,28 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
   },
   workbenchshell: {
     title: 'WorkbenchShell · responsive composition', theme: 'wb', h: 590,
-    code: 'import { WorkbenchShell } from "@brett_lamy/workbench"\n\nexport default function Workbench() {\n  return (\n    <WorkbenchShell>\n      <WorkbenchShell.Sidebar><ThreadList /></WorkbenchShell.Sidebar>\n      <WorkbenchShell.Main><Conversation /></WorkbenchShell.Main>\n      <WorkbenchShell.Dock><TerminalDock /></WorkbenchShell.Dock>\n      <WorkbenchShell.Panel><SurfacePanel /></WorkbenchShell.Panel>\n      <WorkbenchShell.TabBar><SurfaceTabs /></WorkbenchShell.TabBar>\n    </WorkbenchShell>\n  )\n}',
-    Render: function WorkbenchShellLive() {
-      const [mode, setMode] = useState('regular');
-      const compact = mode === 'compact';
+    variants: [{ id: 'regular', label: 'Regular' }, { id: 'compact', label: 'Compact' }],
+    code: `import { WorkbenchShell } from '@brett_lamy/ui'
+
+// The shell measures itself: compact widths move the sidebar, terminal,
+// and surfaces into sheets and a bottom tab bar.
+export default function Workbench() {
+  return (
+    <div style={{ position: 'relative', height: 560 }}>
+      <WorkbenchShell terminal>
+        <WorkbenchShell.Sidebar><nav>Threads</nav></WorkbenchShell.Sidebar>
+        <WorkbenchShell.Main><main>Conversation</main></WorkbenchShell.Main>
+        <WorkbenchShell.Dock><div>Terminal</div></WorkbenchShell.Dock>
+        <WorkbenchShell.Panel><aside>Surfaces</aside></WorkbenchShell.Panel>
+        <WorkbenchShell.TabBar><div>Surface tabs</div></WorkbenchShell.TabBar>
+      </WorkbenchShell>
+    </div>
+  )
+}`,
+    Render: function WorkbenchShellLive({ variant }) {
+      const compact = variant === 'compact';
       const width = compact ? 430 : 1180;
       return <div>
-        <div style={{ ...BLDK, width: 280, margin: '0 auto 12px' } as CSSProperties}>
-          <Segmented aria-label="WorkbenchShell width" value={mode} onChange={setMode} options={[{ id: 'regular', label: 'Regular' }, { id: 'compact', label: 'Compact' }]} />
-        </div>
         <ScaledShell width={width} height={560}>
           <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 12 }}><WorkbenchDemo terminal /></div>
         </ScaledShell>
@@ -218,28 +514,100 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   row: {
-    title: 'BLList · BLSection · BLRow', theme: 'bl', h: 340,
-    code: 'import { BLList, BLSection, BLRow, Avatar, BLSwitch, Haptics } from "./blui.tsx"\n\nexport default function App() {\n  const [dnd, setDnd] = React.useState(true)\n  const people = [\n    { f: "Maya", l: "Lindqvist", role: "Industrial design" },\n    { f: "Jonas", l: "Ito", role: "Haptics engineering" },\n  ]\n  return (\n    <BLList inset>\n      <BLSection title="Team" footer="Rows are real buttons — arrow keys work too.">\n        {people.map(p => (\n          <BLRow key={p.l} leading={<Avatar c={p} size={36}/>}\n            title={p.f + " " + p.l} subtitle={p.role}\n            accessory="chevron" onPress={() => Haptics.impact("light")}/>\n        ))}\n        <BLRow title="Do Not Disturb" divider={false}\n          trailing={<BLSwitch checked={dnd} onChange={setDnd}/>}/>\n      </BLSection>\n    </BLList>\n  )\n}',
+    title: 'List · ListSection · ListRow', theme: 'bl', h: 340,
+    code: `import { useState } from 'react'
+import { Avatar, Haptics, List, ListRow, ListSection, Switch } from '@brett_lamy/ui'
+
+const people = [
+  { f: 'Maya', l: 'Lindqvist', role: 'Industrial design' },
+  { f: 'Jonas', l: 'Ito', role: 'Haptics engineering' },
+]
+
+export default function Team() {
+  const [dnd, setDnd] = useState(true)
+  return (
+    <List inset>
+      <ListSection title="Team" footer="Rows are real buttons — arrow keys work too.">
+        {people.map((p) => (
+          <ListRow
+            key={p.l}
+            leading={<Avatar c={p} size={36} />}
+            title={\`\${p.f} \${p.l}\`}
+            subtitle={p.role}
+            accessory="chevron"
+            onPress={() => Haptics.impact('light')}
+          />
+        ))}
+        <ListRow
+          title="Do Not Disturb"
+          divider={false}
+          trailing={
+            <Switch aria-label="Do Not Disturb" checked={dnd} onChange={setDnd} />
+          }
+        />
+      </ListSection>
+    </List>
+  )
+}`,
     Render: function RowLive() {
       const [dnd, setDnd] = useState(true);
       const people = [{ f: 'Maya', l: 'Lindqvist', role: 'Industrial design' }, { f: 'Jonas', l: 'Ito', role: 'Haptics engineering' }];
-      return <div style={{ maxWidth: 430, margin: '0 auto' }}><BLList inset>
-        <BLSection title="Team" footer="Rows are real buttons — arrow keys work too.">
-          {people.map((p) => <BLRow key={p.l} leading={<Avatar c={p} size={36} />} title={p.f + ' ' + p.l} subtitle={p.role} accessory="chevron" onPress={() => Haptics.impact('light')} />)}
-          <BLRow title="Do Not Disturb" divider={false} trailing={<BLSwitch aria-label="Do Not Disturb" checked={dnd} onChange={setDnd} />} />
-        </BLSection>
-      </BLList></div>;
+      return <div style={{ maxWidth: 430, margin: '0 auto' }}><List inset>
+        <ListSection title="Team" footer="Rows are real buttons — arrow keys work too.">
+          {people.map((p) => <ListRow key={p.l} leading={<Avatar c={p} size={36} />} title={p.f + ' ' + p.l} subtitle={p.role} accessory="chevron" onPress={() => Haptics.impact('light')} />)}
+          <ListRow title="Do Not Disturb" divider={false} trailing={<Switch aria-label="Do Not Disturb" checked={dnd} onChange={setDnd} />} />
+        </ListSection>
+      </List></div>;
     },
   },
   credenza: {
     title: 'Credenza', theme: 'bl', h: 340,
-    code: 'import { Credenza, BLRow, Icon, Haptics } from "./blui.tsx"\n\nexport default function App() {\n  const [view, setView] = React.useState(null)\n  const done = () => { Haptics.notification("success"); setView("done") }\n  return (\n    <div style={{ display: "grid", placeItems: "center", minHeight: 220 }}>\n      <button onClick={() => { Haptics.impact("light"); setView("menu") }}>\n        Share Contact…\n      </button>\n      <Credenza open={!!view} view={view || "menu"}\n        title={view === "done" ? "Shared" : "Share Contact"}\n        canBack={view === "done"} onBack={() => setView("menu")}\n        onClose={() => setView(null)}>\n        {view === "done"\n          ? <p style={{ textAlign: "center", padding: 24 }}>Contact shared ✓</p>\n          : <div>\n              <BLRow leading={<Icon name="qr" size={20}/>} title="Show QR code" onPress={done}/>\n              <BLRow leading={<Icon name="doc" size={20}/>} title="Copy vCard" divider={false} onPress={done}/>\n            </div>}\n      </Credenza>\n    </div>\n  )\n}',
+    code: `import { useState } from 'react'
+import { Button, Credenza, Haptics, Icon, ListRow } from '@brett_lamy/ui'
+
+export default function ShareContact() {
+  const [view, setView] = useState<'menu' | 'done' | null>(null)
+  const done = () => {
+    Haptics.notification('success')
+    setView('done')
+  }
+  return (
+    <>
+      <Button onPress={() => setView('menu')}>Share Contact…</Button>
+      <Credenza
+        open={view !== null}
+        view={view ?? 'menu'}
+        title={view === 'done' ? 'Shared' : 'Share Contact'}
+        canBack={view === 'done'}
+        onBack={() => setView('menu')}
+        onClose={() => setView(null)}
+      >
+        {view === 'done' ? (
+          <p style={{ textAlign: 'center', padding: 24 }}>Contact shared</p>
+        ) : (
+          <>
+            <ListRow
+              leading={<Icon name="layers" size={20} />}
+              title="Show QR code"
+              onPress={done}
+            />
+            <ListRow
+              leading={<Icon name="mail" size={20} />}
+              title="Copy vCard"
+              divider={false}
+              onPress={done}
+            />
+          </>
+        )}
+      </Credenza>
+    </>
+  )
+}`,
     Render: function CredLive() {
       const [view, setView] = useState<string | null>(null);
       const done = () => { Haptics.notification('success'); setView('done'); };
       return <div style={{ display: 'grid', placeItems: 'center', minHeight: 210 }}>
-        <button onClick={() => { Haptics.impact('light'); setView('menu'); }}
-          style={{ border: 0, borderRadius: 11, background: 'var(--bl-tint)', color: '#fff', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, padding: '11px 20px', cursor: 'pointer' }}>Share Contact…</button>
+        <Button onPress={() => { Haptics.impact('light'); setView('menu'); }}>Share Contact…</Button>
         <Credenza open={!!view} view={view || 'menu'} title={view === 'done' ? 'Shared' : 'Share Contact'}
           canBack={view === 'done'} onBack={() => setView('menu')} onClose={() => setView(null)}>
           {view === 'done'
@@ -249,8 +617,8 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
                 <div style={{ fontSize: 13, color: 'var(--bl-label2)', marginTop: 3 }}>The card spring-morphs its height to each state.</div>
               </div>
             : <div style={{ padding: '4px 6px 8px' }}>
-                <BLRow leading={<Icon name="layers" size={20} />} title="Show QR code" onPress={done} />
-                <BLRow leading={<Icon name="mail" size={20} />} title="Copy vCard" divider={false} onPress={done} />
+                <ListRow leading={<Icon name="layers" size={20} />} title="Show QR code" onPress={done} />
+                <ListRow leading={<Icon name="mail" size={20} />} title="Copy vCard" divider={false} onPress={done} />
               </div>}
         </Credenza>
       </div>;
@@ -270,16 +638,39 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   controls: {
-    title: 'Segmented · BLSwitch · Spinner · Avatar', theme: 'bl', h: 300,
-    code: 'import { Segmented, BLSwitch, Spinner, Avatar, Haptics } from "./blui.tsx"\n\nexport default function App() {\n  const [range, setRange] = React.useState("day")\n  const [on, setOn] = React.useState(true)\n  return (\n    <div style={{ display: "grid", gap: 16, justifyItems: "center" }}>\n      <Segmented value={range} onChange={setRange} options={[\n        { id: "day", label: "Day" }, { id: "week", label: "Week" }, { id: "month", label: "Month" },\n      ]}/>\n      <div style={{ display: "flex", gap: 18, alignItems: "center" }}>\n        <Avatar c={{ f: "Ada", l: "Lovelace" }} size={40}/>\n        <BLSwitch checked={on} onChange={setOn}/>\n        <Spinner/>\n      </div>\n    </div>\n  )\n}',
+    title: 'Segmented · Switch · Spinner · Avatar', theme: 'bl', h: 300,
+    code: `import { useState } from 'react'
+import { Avatar, Segmented, Spinner, Switch } from '@brett_lamy/ui'
+
+const ranges = [
+  { id: 'day', label: 'Day' },
+  { id: 'week', label: 'Week' },
+  { id: 'month', label: 'Month' },
+]
+
+export default function Controls() {
+  const [range, setRange] = useState('day')
+  const [on, setOn] = useState(true)
+  return (
+    <div style={{ display: 'grid', gap: 16, justifyItems: 'center' }}>
+      <Segmented aria-label="Range" options={ranges} value={range}
+        onChange={setRange} />
+      <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+        <Avatar c={{ f: 'Ada', l: 'Lovelace' }} size={40} />
+        <Switch aria-label="Notifications" checked={on} onChange={setOn} />
+        <Spinner />
+      </div>
+    </div>
+  )
+}`,
     Render: function CtlLive() {
       const [range, setRange] = useState('day');
       const [on, setOn] = useState(true);
       return <div style={{ display: 'grid', gap: 16, justifyItems: 'center', maxWidth: 420, margin: '0 auto' }}>
-        <div style={{ width: 280 }}><Segmented value={range} onChange={setRange} options={[{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }]} /></div>
+        <div style={{ width: 280 }}><Segmented aria-label="Range" value={range} onChange={setRange} options={[{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }]} /></div>
         <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
           <Avatar c={{ f: 'Ada', l: 'Lovelace' }} size={40} />
-          <BLSwitch aria-label="Demo switch" checked={on} onChange={setOn} />
+          <Switch aria-label="Demo switch" checked={on} onChange={setOn} />
           <Spinner />
         </div>
         <div style={{ fontSize: 12.5, color: 'var(--bl-label2)' }}>@brett_lamy/ui is live — every control ticks.</div>
@@ -288,34 +679,115 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
   },
   theming: {
     title: 'Theme tokens', theme: 'bl', h: 330,
-    code: 'import { BLList, BLSection, BLRow, BLSwitch, Icon } from "./blui.tsx"\n\nexport default function App() {\n  const [dark, setDark] = React.useState(false)\n  const [tint, setTint] = React.useState("#0A84FF")\n  return (\n    <div style={{ ...(dark ? DARK_TOKENS : LIGHT_TOKENS), "--bl-tint": tint }}>\n      {/* every component reads the nearest --bl-* tokens */}\n      <BLList inset>\n        <BLSection title="Appearance">\n          <BLRow leading={<Icon name="bell" size={20}/>} title="Dark Mode" divider={false}\n            trailing={<BLSwitch checked={dark} onChange={setDark}/>}/>\n        </BLSection>\n      </BLList>\n    </div>\n  )\n}',
+    code: `import { useState } from 'react'
+import { BLProvider, Icon, List, ListRow, ListSection, Switch } from '@brett_lamy/ui'
+
+const tints = ['#0A84FF', '#5E5CE6', '#34C759', '#FF9F0A', '#FF375F']
+
+// BLProvider sets the --bl-* tokens every component below it reads.
+export default function Appearance() {
+  const [dark, setDark] = useState(false)
+  const [tint, setTint] = useState(tints[0])
+  return (
+    <BLProvider dark={dark} tint={tint} style={{ height: 260 }}>
+      <List inset>
+        <ListSection title="Appearance">
+          <ListRow
+            leading={<Icon name="bell" size={20} />}
+            title="Dark Mode"
+            trailing={
+              <Switch aria-label="Dark Mode" checked={dark} onChange={setDark} />
+            }
+          />
+        </ListSection>
+        <ListSection title="Tint">
+          {tints.map((t, i) => (
+            <ListRow
+              key={t}
+              title={t}
+              accessory={t === tint ? 'check' : undefined}
+              divider={i < tints.length - 1}
+              onPress={() => setTint(t)}
+            />
+          ))}
+        </ListSection>
+      </List>
+    </BLProvider>
+  )
+}`,
     Render: function ThemeLive() {
-      const [dark, setDark] = useState(false);
+      const [dark, setDark] = useState(useAppearance() === 'dark');
       const [tint, setTint] = useState('#0A84FF');
-      return <div style={{ ...(dark ? BLDK : BLL), '--bl-tint': tint, background: 'var(--bl-bg2)', borderRadius: 14, padding: 16, colorScheme: dark ? 'dark' : 'light', color: 'var(--bl-label)', maxWidth: 430, margin: '0 auto', transition: 'background .25s' } as any}>
-        <div style={{ display: 'flex', gap: 9, marginBottom: 12, justifyContent: 'center' }}>
-          {['#0A84FF', '#5E5CE6', '#34C759', '#FF9F0A', '#FF375F'].map((c) => <button key={c} onClick={() => { setTint(c); Haptics.selection(); }} aria-label={'Tint ' + c}
-            style={{ width: 23, height: 23, borderRadius: '50%', background: c, cursor: 'pointer', padding: 0, border: '1px solid rgba(0,0,0,.1)', outline: tint === c ? '2.5px solid ' + c : 'none', outlineOffset: 2 }} />)}
-        </div>
-        <BLList inset>
-          <BLSection title="Appearance">
-            <BLRow leading={<Icon name="bell" size={20} />} title="Dark Mode" divider={false} trailing={<BLSwitch aria-label="Dark Mode" checked={dark} onChange={setDark} />} />
-          </BLSection>
-        </BLList>
-        <DemoBtn label="Tinted action" onPress={() => Haptics.impact('light')} style={{ display: 'block', margin: '12px auto 0' }} />
+      return <div style={{ maxWidth: 430, height: 250, margin: '0 auto', borderRadius: 14, overflow: 'hidden', boxShadow: '0 0 0 1px var(--bl-sep)' }}>
+        <BLProvider dark={dark} tint={tint}>
+          <div style={{ padding: 16 }}>
+            <div style={{ display: 'flex', gap: 9, marginBottom: 12, justifyContent: 'center' }}>
+              {['#0A84FF', '#5E5CE6', '#34C759', '#FF9F0A', '#FF375F'].map((c) => <button key={c} onClick={() => { setTint(c); Haptics.selection(); }} aria-label={'Tint ' + c}
+                style={{ width: 23, height: 23, borderRadius: '50%', background: c, cursor: 'pointer', padding: 0, border: '1px solid rgba(0,0,0,.1)', outline: tint === c ? '2.5px solid ' + c : 'none', outlineOffset: 2 }} />)}
+            </div>
+            <List inset>
+              <ListSection title="Appearance">
+                <ListRow leading={<Icon name="bell" size={20} />} title="Dark Mode" divider={false} trailing={<Switch aria-label="Dark Mode" checked={dark} onChange={setDark} />} />
+              </ListSection>
+            </List>
+            <DemoBtn label="Tinted action" onPress={() => Haptics.impact('light')} style={{ display: 'block', margin: '12px auto 0' }} />
+          </div>
+        </BLProvider>
       </div>;
     },
   },
   nav: {
     title: 'NavigationStack', theme: 'bl', h: 420,
-    code: 'import { NavigationStack, BLList, BLSection, BLRow, Icon } from "./blui.tsx"\n\nexport default function App() {\n  const [sel, setSel] = React.useState(null)\n  const screens = [\n    { key: "root", title: "Teams", grouped: true, content:\n      <BLList inset><BLSection>\n        {["Design", "Engineering", "Research"].map((t, i) => (\n          <BLRow key={t} leading={<Icon name="person" size={20}/>} title={t}\n            accessory="chevron" divider={i < 2} onPress={() => setSel(t)}/>\n        ))}\n      </BLSection></BLList> },\n  ]\n  if (sel) screens.push({ key: "detail", title: sel, grouped: true,\n    content: <p style={{ padding: 24 }}>Pushed — back chevron or edge-swipe pops.</p> })\n  return <NavigationStack screens={screens} onPop={() => setSel(null)}/>\n}',
+    code: `import { useState } from 'react'
+import {
+  Icon, List, ListRow, ListSection, NavigationStack, type Screen,
+} from '@brett_lamy/ui'
+
+const teams = ['Design', 'Engineering', 'Research']
+
+export default function Teams() {
+  const [team, setTeam] = useState<string | null>(null)
+  const screens: Screen[] = [{
+    key: 'root',
+    title: 'Teams',
+    grouped: true,
+    content: (
+      <List inset>
+        <ListSection>
+          {teams.map((t, i) => (
+            <ListRow
+              key={t}
+              leading={<Icon name="person" size={20} />}
+              title={t}
+              accessory="chevron"
+              divider={i < teams.length - 1}
+              onPress={() => setTeam(t)}
+            />
+          ))}
+        </ListSection>
+      </List>
+    ),
+  }]
+  // Push by adding a screen; the back chevron or an edge swipe calls onPop.
+  if (team) screens.push({
+    key: 'detail',
+    title: team,
+    grouped: true,
+    content: <p style={{ padding: 24 }}>Pushed screen</p>,
+  })
+  return (
+    <div style={{ position: 'relative', height: 330 }}>
+      <NavigationStack screens={screens} onPop={() => setTeam(null)} />
+    </div>
+  )
+}`,
     Render: function NavLive() {
       const [sel, setSel] = useState<string | null>(null);
       const screens: Screen[] = [{ key: 'root', title: 'Teams', grouped: true, content:
-        <BLList inset><BLSection>
-          {['Design', 'Engineering', 'Research'].map((t, i) => <BLRow key={t} leading={<Icon name="person" size={20} />} title={t}
+        <List inset><ListSection>
+          {['Design', 'Engineering', 'Research'].map((t, i) => <ListRow key={t} leading={<Icon name="person" size={20} />} title={t}
             accessory="chevron" divider={i < 2} onPress={() => { Haptics.impact('light'); setSel(t); }} />)}
-        </BLSection></BLList> }];
+        </ListSection></List> }];
       if (sel) screens.push({ key: 'detail', title: sel, grouped: true, content:
         <div style={{ padding: '28px 22px', textAlign: 'center' }}>
           <div style={{ fontSize: 16, fontWeight: 650 }}>{sel}</div>
@@ -378,20 +850,53 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
   },
   split: {
     title: 'SplitView', theme: 'bl', h: 470,
-    code: 'import { SplitView } from "./blui.tsx"\n\nexport default function App() {\n  const [wc, setWc] = React.useState("regular")  // measure your container for real\n  return (\n    <SplitView wc={wc}\n      sidebar={<Folders/>}\n      master={<NoteList/>}\n      detail={<Note/>}\n      drawerOpen={drawer} onCloseDrawer={() => setDrawer(false)}/>\n  )\n}',
-    Render: function SplitLive() {
-      const [wc, setWc] = useState('regular');
+    variants: [{ id: 'regular', label: 'Regular' }, { id: 'medium', label: 'Medium' }, { id: 'compact', label: 'Compact' }],
+    variantsWidth: 280,
+    code: `import { useState } from 'react'
+import {
+  List, ListRow, ListSection, SplitView, useContainerWidth,
+} from '@brett_lamy/ui'
+
+const column = (title: string, rows: string[]) => (
+  <List>
+    <ListSection title={title}>
+      {rows.map((r, i) => <ListRow key={r} title={r} divider={i < rows.length - 1} />)}
+    </ListSection>
+  </List>
+)
+
+export default function Notes() {
+  const [ref, width] = useContainerWidth()
+  // Below 'regular' the sidebar becomes a drawer: open it with setDrawer(true).
+  const [drawer, setDrawer] = useState(false)
+  const wc = width >= 900 ? 'regular' : width >= 600 ? 'medium' : 'compact'
+  return (
+    <div ref={ref} style={{ position: 'relative', height: 330 }}>
+      <SplitView
+        wc={wc}
+        sidebar={column('Folders', ['All Notes', 'Shared', 'Archive'])}
+        master={column('Notes', ['Springs', 'IndexBar ticks', 'Credenza morph'])}
+        detail={<p style={{ padding: 22 }}>Detail</p>}
+        drawerOpen={drawer}
+        onCloseDrawer={() => setDrawer(false)}
+      />
+    </div>
+  )
+}`,
+    Render: function SplitLive({ variant }) {
+      const wc = variant || 'regular';
       const [drawer, setDrawer] = useState(false);
-      const mini = (name: string, rows: string[]) => <div style={{ height: '100%', overflowY: 'auto' }}><BLList>
-        <BLSection title={name}>{rows.map((t, i) => <BLRow key={t} title={t} divider={i < rows.length - 1} />)}</BLSection>
-      </BLList></div>;
+      useEffect(() => { setDrawer(false); }, [wc]);
+      const mini = (name: string, rows: string[]) => <div style={{ height: '100%', overflowY: 'auto' }}><List>
+        <ListSection title={name}>{rows.map((t, i) => <ListRow key={t} title={t} divider={i < rows.length - 1} />)}</ListSection>
+      </List></div>;
       return <div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
-          <div style={{ width: 290 }}><Segmented value={wc} onChange={(id) => { setWc(id); setDrawer(false); }}
-            options={[{ id: 'regular', label: 'Regular' }, { id: 'medium', label: 'Medium' }, { id: 'compact', label: 'Compact' }]} /></div>
-          {wc !== 'regular' ? <DemoBtn label="Sidebar" onPress={() => setDrawer(true)} style={{ padding: '6px 12px', fontSize: 12.5 }} /> : null}
-        </div>
-        <BLFrame h={330} bg="var(--bl-bg)">
+        {wc !== 'regular' ? <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+          <DemoBtn label="Show sidebar" onPress={() => setDrawer(true)} style={{ padding: '6px 12px', fontSize: 12.5 }} />
+        </div> : null}
+        {/* Laid out at a width that really is regular/medium/compact, scaled to fit. */}
+        <ScaledShell width={wc === 'regular' ? 900 : wc === 'medium' ? 700 : 390} height={wc === 'regular' ? 420 : 380}>
+        <BLFrame h={wc === 'regular' ? 420 : 380} bg="var(--bl-bg)">
           <SplitView wc={wc} drawerOpen={drawer} onCloseDrawer={() => setDrawer(false)}
             sidebar={<div style={{ height: '100%', background: 'var(--bl-side)', overflowY: 'auto' }}>{mini('Folders', ['All Notes', 'Shared', 'Archive'])}</div>}
             master={mini('Notes', ['Springs — stiffness 620', 'IndexBar scrub ticks', 'Credenza height morph'])}
@@ -400,16 +905,20 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
               <div style={{ fontSize: 12.5, color: 'var(--bl-label2)', marginTop: 5, lineHeight: 1.5 }}>regular: 3 columns · medium: sidebar becomes a drawer · compact: collapses into the stack</div></div>
             </div>} />
         </BLFrame>
+        </ScaledShell>
       </div>;
     },
   },
   indexbar: {
     title: 'IndexBar', theme: 'bl', h: 470,
-    code: 'import { IndexBar, BLList, BLSection, BLRow } from "./blui.tsx"\n\nexport default function App() {\n  const sc = React.useRef(null), els = React.useRef({})\n\n  // Any jump points you like — key is yours, preview is what the bubble shows\n  const stops = turns\n    .filter(t => t.role === "user")\n    .map(t => ({ key: t.id, preview: t.text, caption: "You" }))   // no label → a dot on the rail\n\n  return (\n    <div style={{ position: "relative", height: 340 }}>\n      <div ref={sc} style={{ position: "absolute", inset: 0, overflowY: "auto" }}>\n        {turns.map(t => <Turn key={t.id} t={t} ref={el => els.current[t.id] = el}/>)}\n      </div>\n      <IndexBar items={stops} top={8} bottom={8}\n        onJump={(key, stop) => sc.current.scrollTop = els.current[key].offsetTop - 8}/>\n    </div>\n  )\n}\n\n// Pass no items and it falls back to the UIKit A–Z form:\n// <IndexBar avail={new Set(["A","B","C"])} onLetter={L => jumpTo(L)}/>\n\n// Or the wave rail — dashes that swell under the pointer, with a title + preview card:\n// <IndexBar variant="wave" side="left" items={stops} value={turnInView} onJump={jump}/>',
-    Render: function IdxLive() {
+    variants: [{ id: 'stops', label: 'Custom stops' }, { id: 'az', label: 'A–Z' }, { id: 'wave', label: 'Wave' }],
+    variantsWidth: 290,
+    code: indexBarCode('stops'),
+    codeFor: indexBarCode,
+    Render: function IdxLive({ variant }) {
+      const mode = variant || 'stops';
       const sc = useRef<HTMLDivElement | null>(null);
       const els = useRef<Record<string, HTMLElement>>({});
-      const [mode, setMode] = useState('stops');
       const TURNS = [
         { id: 'q1', role: 'user', text: 'Why is the workbench build slow after the docs split?' },
         { id: 'a1', role: 'assistant', text: 'Two things: the docs registry re-transpiles on every nav, and the playground boots almost-node eagerly.' },
@@ -426,20 +935,16 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
       const waveStops = TURNS.map((t) => ({ key: t.id, preview: t.text, caption: t.role === 'user' ? 'You' : 'Assistant' }));
       const jump = (key: string) => { const el = els.current[key]; if (el && sc.current) sc.current.scrollTop = Math.max(0, el.offsetTop - 8); };
       return <div>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-          <div style={{ width: 330 }}><Segmented value={mode} onChange={setMode}
-            options={[{ id: 'stops', label: 'Custom stops' }, { id: 'az', label: 'A–Z fallback' }, { id: 'wave', label: 'Wave' }]} /></div>
-        </div>
         <BLFrame h={340} bg="var(--bl-bg)">
           <div ref={sc} style={mode === 'wave'
             ? { position: 'absolute', inset: 0, overflowY: 'auto', paddingLeft: 40 }
             : { position: 'absolute', inset: 0, overflowY: 'auto', paddingRight: 26 }}>
             {mode === 'az'
-              ? <BLList>
+              ? <List>
                   {letters.map((L) => <div key={L} ref={(el) => { if (el) els.current[L] = el; }}>
-                    <BLSection title={L} sticky>{data[L].map((n, i) => <BLRow key={n} title={n} divider={i < data[L].length - 1} />)}</BLSection>
+                    <ListSection title={L} sticky>{data[L].map((n, i) => <ListRow key={n} title={n} divider={i < data[L].length - 1} />)}</ListSection>
                   </div>)}
-                </BLList>
+                </List>
               : <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {TURNS.map((t) => <div key={t.id} ref={(el) => { if (el) els.current[t.id] = el; }}
                     style={{ display: 'flex', justifyContent: t.role === 'user' ? 'flex-end' : 'flex-start' }}>
@@ -466,38 +971,63 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
   sidedrawer: {
-    title: 'SideDrawer', theme: 'bl', h: 460,
-    code: 'import { SideDrawer } from "./blui.tsx"\n\nexport default function App() {\n  const [mode, setMode] = React.useState("overlay")  // or "fixed"\n  const [open, setOpen] = React.useState(false)\n  return (\n    <div style={{ position: "relative", display: "flex", height: 330 }}>\n      <main style={{ flex: 1 }}>\n        <button onClick={() => setOpen(true)}>Show Activity</button>\n      </main>\n      <SideDrawer mode={mode} open={open} onClose={() => setOpen(false)}\n        title="Activity" width={230}>\n        {/* same children in every presentation */}\n      </SideDrawer>\n    </div>\n  )\n}',
-    Render: function DrawerLive() {
-      const [mode, setMode] = useState<'overlay' | 'fixed'>('overlay');
-      const [open, setOpen] = useState(false);
+    title: 'SideDrawer', theme: 'bl', h: 420,
+    variants: [{ id: 'overlay', label: 'Overlay' }, { id: 'fixed', label: 'Fixed' }],
+    code: sideDrawerCode('overlay'),
+    codeFor: sideDrawerCode,
+    Render: function DrawerLive({ variant }) {
+      const mode = (variant || 'overlay') as 'overlay' | 'fixed';
+      const [open, setOpen] = useState(mode === 'fixed');
+      useEffect(() => { setOpen(mode === 'fixed'); }, [mode]);
       const rows = ['Outgoing call · 2 min', 'iMessage · yesterday', 'FaceTime · Mon', 'Mail · Re: schedule'];
-      return <div>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-          <div style={{ width: 230 }}><Segmented value={mode} onChange={(id) => { setMode(id as any); setOpen(id === 'fixed'); }}
-            options={[{ id: 'overlay', label: 'Overlay' }, { id: 'fixed', label: 'Fixed' }]} /></div>
-        </div>
-        <BLFrame h={330} bg="var(--bl-bg)">
-          <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
-            <div style={{ flex: 1, minWidth: 0, display: 'grid', placeItems: 'center', textAlign: 'center', padding: 20 }}>
-              <div>
-                <div style={{ fontWeight: 650, fontSize: 15.5 }}>Detail view</div>
-                {mode === 'overlay'
-                  ? <DemoBtn label="Show Activity" onPress={() => { Haptics.impact('light'); setOpen(true); }} style={{ marginTop: 12, fontSize: 13, padding: '8px 14px' }} />
-                  : <div style={{ fontSize: 12.5, color: 'var(--bl-label2)', marginTop: 6, lineHeight: 1.5 }}>Docked column — no scrim,<br />part of the layout.</div>}
-              </div>
+      return <BLFrame h={330} bg="var(--bl-bg)">
+        <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'grid', placeItems: 'center', textAlign: 'center', padding: 20 }}>
+            <div>
+              <div style={{ fontWeight: 650, fontSize: 15.5 }}>Detail view</div>
+              {mode === 'overlay'
+                ? <DemoBtn label="Show Activity" onPress={() => { Haptics.impact('light'); setOpen(true); }} style={{ marginTop: 12, fontSize: 13, padding: '8px 14px' }} />
+                : <div style={{ fontSize: 12.5, color: 'var(--bl-label2)', marginTop: 6, lineHeight: 1.5 }}>Docked column — no scrim,<br />part of the layout.</div>}
             </div>
-            <SideDrawer mode={mode} open={open} onClose={() => setOpen(false)} title="Activity" width={230}>
-              {rows.map((t) => <div key={t} style={{ padding: '11px 16px', fontSize: 13, borderBottom: '1px solid var(--bl-sep)', color: 'var(--bl-label2)' }}>{t}</div>)}
-            </SideDrawer>
           </div>
-        </BLFrame>
-      </div>;
+          <SideDrawer mode={mode} open={open} onClose={() => setOpen(false)} title="Activity" width={230}>
+            {rows.map((t) => <div key={t} style={{ padding: '11px 16px', fontSize: 13, borderBottom: '1px solid var(--bl-sep)', color: 'var(--bl-label2)' }}>{t}</div>)}
+          </SideDrawer>
+        </div>
+      </BLFrame>;
     },
   },
   scroller: {
     title: 'MessageScroller', theme: 'wb', h: 440,
-    code: 'import { MessageScroller } from "./workbench.tsx"\n\nexport default function App() {\n  const [msgs, setMsgs] = React.useState(seed)\n  const items = msgs.map(m => ({\n    id: m.id,\n    anchor: m.role === "user",   // rows that start a turn\n    node: <Message m={m}/>,\n  }))\n  return (\n    <div style={{ display: "flex", flexDirection: "column", height: 340 }}>\n      <MessageScroller items={items} streaming={false} threadKey="demo"/>\n      <button onClick={addTurn}>Send a turn</button>\n    </div>\n  )\n}',
+    code: `import { useState, type ReactNode } from 'react'
+import { Button, MessageScroller } from '@brett_lamy/ui'
+
+type Msg = { id: string; role: 'user' | 'assistant'; text: ReactNode }
+
+export default function Thread() {
+  const [msgs, setMsgs] = useState<Msg[]>([
+    { id: 'u1', role: 'user', text: 'How does anchoring work?' },
+  ])
+  const send = () => {
+    const n = msgs.length + 1
+    setMsgs((m) => [
+      ...m,
+      { id: \`u\${n}\`, role: 'user', text: \`Turn \${n}\` },
+      { id: \`a\${n}\`, role: 'assistant', text: 'Replies grow below the anchor.' },
+    ])
+  }
+  const items = msgs.map((m) => ({
+    id: m.id,
+    anchor: m.role === 'user', // a user message starts a turn
+    node: <p style={{ textAlign: m.role === 'user' ? 'right' : 'left' }}>{m.text}</p>,
+  }))
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 340 }}>
+      <MessageScroller items={items} threadKey="demo" />
+      <Button onPress={send}>Send a turn</Button>
+    </div>
+  )
+}`,
     Render: function ScrollLive() {
       const [msgs, setMsgs] = useState([
         { id: 'u1', role: 'user', text: 'How does anchoring work?' },
@@ -523,7 +1053,17 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
   },
   terminal: {
     title: 'TermHeader · TermBody', theme: 'wb', h: 400,
-    code: 'import { TermBody } from "./workbench.tsx"\n\nexport default function App() {\n  return (\n    <div style={{ display: "flex", flexDirection: "column", height: 300, background: "#0C0C10" }}>\n      <TermBody seed={[{ t: "npm run dev", p: true }]}/>\n    </div>\n  )\n}\n// desktop: <TerminalDock h={h} setH={setH}/> · mobile: wrap in <SnapSheet snaps={[0.52, 0.93]}>',
+    code: `import { TermBody, TermHeader } from '@brett_lamy/ui'
+
+// Desktop: <TerminalDock h={h} setH={setH} />. Phones: wrap TermBody in a SnapSheet.
+export default function Terminal() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 300 }}>
+      <TermHeader title="zsh" />
+      <TermBody seed={[{ t: 'help', p: true }]} autoFocus />
+    </div>
+  )
+}`,
     Render: function TermLive() {
       return <div style={{ display: 'flex', flexDirection: 'column', height: 300, borderRadius: 12, overflow: 'hidden', background: '#0C0C10', border: '1px solid var(--wb-sep)' }}>
         <TermHeader onClose={() => undefined} />
@@ -533,7 +1073,23 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
   },
   surfaces: {
     title: 'SurfacePanel', theme: 'wb', h: 480,
-    code: 'import { SurfacePanel } from "./workbench.tsx"\n\nexport default function App() {\n  const [kind, setKind] = React.useState(null)  // null shows the surface picker\n  return (\n    <div style={{ height: 380 }}>\n      <SurfacePanel kind={kind} compact\n        onOpen={k => setKind(k)}\n        onClose={() => setKind(null)}\n        full={false} onFull={() => {}}/>\n    </div>\n  )\n}',
+    code: `import { useState } from 'react'
+import { SurfacePanel, type SurfaceKind } from '@brett_lamy/ui'
+
+export default function Surfaces() {
+  // null shows the surface picker
+  const [kind, setKind] = useState<SurfaceKind | null>(null)
+  return (
+    <div style={{ height: 380 }}>
+      <SurfacePanel
+        kind={kind}
+        compact
+        onOpen={setKind}
+        onClose={() => setKind(null)}
+      />
+    </div>
+  )
+}`,
     Render: function SurfLive() {
       const [kind, setKind] = useState<SurfaceKind | null>(null);
       return <div style={{ height: 380, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--wb-sep)' }}>
@@ -543,17 +1099,53 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
   },
   filetree: {
     title: 'File tree · @pierre/trees', theme: 'wb', h: 430,
-    code: 'import { FileTree, useFileTree } from "@pierre/trees/react"\n\nconst paths = [\n  "src/App.tsx",\n  "src/components/Composer.tsx",\n  "package.json",\n]\n\nexport default function ProjectFiles() {\n  const { model } = useFileTree({ paths, search: true, initialExpansion: "open" })\n  return <FileTree model={model} style={{ height: 320 }}/>\n}',
-    Render: () => <div style={{ height: 330, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--wb-sep)' }}><SurfaceFiles /></div>,
+    code: `import { SurfaceFiles } from '@brett_lamy/ui'
+
+// The Workbench Files surface: a @pierre/trees FileTree with BL UI tokens.
+export default function Files() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 330 }}>
+      <SurfaceFiles />
+    </div>
+  )
+}`,
+    Render: () => <div style={{ height: 330, display: 'flex', flexDirection: 'column', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--wb-sep)' }}><SurfaceFiles /></div>,
   },
   diff: {
     title: 'Code diff · @pierre/diffs', theme: 'wb', h: 430,
-    code: 'import { MultiFileDiff } from "@pierre/diffs/react"\n\nexport default function Change() {\n  return <MultiFileDiff\n    oldFile={{ name: "src/haptics.ts", contents: before }}\n    newFile={{ name: "src/haptics.ts", contents: after }}\n    options={{ diffStyle: "unified", themeType: "dark" }}\n  />\n}',
+    code: `import { SurfaceDiff } from '@brett_lamy/ui'
+
+// The Workbench Diff surface: @pierre/diffs, themed to the current appearance.
+export default function Change() {
+  return (
+    <div style={{ height: 330, overflow: 'auto' }}>
+      <SurfaceDiff />
+    </div>
+  )
+}`,
     Render: () => <div style={{ height: 330, borderRadius: 12, overflow: 'auto', border: '1px solid var(--wb-sep)' }}><SurfaceDiff /></div>,
   },
   stream: {
     title: 'MarkdownView · Docstream renderer', theme: 'bl', h: 480,
-    code: 'import { MarkdownView } from "@brett_lamy/workbench"\n\nexport default function App() {\n  const [text, setText] = React.useState("")\n  const [live, setLive] = React.useState(false)\n  // feed the accumulated string as chunks arrive:\n  //   setText(partial); setLive(true)  …  setLive(false) when done\n  return <MarkdownView markdown={text} streaming={live}/>\n}',
+    code: `import { useEffect, useState } from 'react'
+import { MarkdownView } from '@brett_lamy/ui'
+
+const answer = '## Servers\\n\\nThe **API** runs on \`:3000\`, the docs on \`:4206\`.'
+
+export default function StreamedAnswer() {
+  const [text, setText] = useState('')
+  useEffect(() => {
+    const words = answer.split(' ')
+    let i = 0
+    const timer = setInterval(() => {
+      i += 4
+      setText(words.slice(0, i).join(' '))
+      if (i >= words.length) clearInterval(timer)
+    }, 95)
+    return () => clearInterval(timer)
+  }, [])
+  return <MarkdownView markdown={text} streaming={text !== answer} />
+}`,
     Render: function StreamLive() {
       const [txt, setTxt] = useState(REPLY_SERVERS);
       const [live, setLive] = useState(false);
@@ -578,3 +1170,72 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
     },
   },
 };
+
+function indexBarCode(variant: string) {
+  const rail = variant === 'az'
+    ? `      {/* No items: the UIKit A–Z rail */}
+      <IndexBar avail={new Set(['A', 'B', 'C'])} onLetter={jump} top={8} bottom={8} />`
+    : variant === 'wave'
+    ? `      {/* Dashes that swell under the pointer, with a title + preview card */}
+      <IndexBar variant="wave" side="left" items={stops} onJump={jump} />`
+    : `      {/* No label on a stop: it renders as a dot; preview fills the bubble */}
+      <IndexBar items={stops} onJump={jump} label="Jump to a turn" top={10} bottom={10} />`;
+  return `import { useRef } from 'react'
+import { IndexBar } from '@brett_lamy/ui'
+
+const turns = [
+  { id: 'q1', role: 'user', text: 'Why is the build slow?' },
+  { id: 'a1', role: 'assistant', text: 'The registry re-transpiles on every nav.' },
+  { id: 'q2', role: 'user', text: 'Can we cache it per page?' },
+  { id: 'a2', role: 'assistant', text: 'Yes: key the cache by page id.' },
+]
+const stops = turns
+  .filter((t) => t.role === 'user')
+  .map((t) => ({ key: t.id, preview: t.text, caption: 'You' }))
+
+export default function Transcript() {
+  const scroller = useRef<HTMLDivElement>(null)
+  const rows = useRef<Record<string, HTMLElement | null>>({})
+  const jump = (key: string) => {
+    const row = rows.current[key]
+    if (row && scroller.current) scroller.current.scrollTop = row.offsetTop - 8
+  }
+  return (
+    <div style={{ position: 'relative', height: 340 }}>
+      <div ref={scroller} style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
+        {turns.map((t) => (
+          <p key={t.id} ref={(el) => { rows.current[t.id] = el }}>{t.text}</p>
+        ))}
+      </div>
+${rail}
+    </div>
+  )
+}`;
+}
+
+function sideDrawerCode(variant: string) {
+  const fixed = variant === 'fixed';
+  return `import { useState } from 'react'
+import { Button, SideDrawer } from '@brett_lamy/ui'
+
+export default function Detail() {
+  const [open, setOpen] = useState(${fixed ? 'true' : 'false'})
+  return (
+    <div style={{ position: 'relative', display: 'flex', height: 330 }}>
+      <main style={{ flex: 1, display: 'grid', placeItems: 'center' }}>
+        <Button onPress={() => setOpen(true)}>Show Activity</Button>
+      </main>
+      {/* ${fixed ? '"fixed" docks it as a layout column' : '"overlay" slides it over the detail with a scrim'} */}
+      <SideDrawer
+        mode="${variant === 'fixed' ? 'fixed' : 'overlay'}"
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Activity"
+        width={230}
+      >
+        <p style={{ padding: 16 }}>Outgoing call · 2 min</p>
+      </SideDrawer>
+    </div>
+  )
+}`;
+}

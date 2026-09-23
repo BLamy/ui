@@ -144,7 +144,9 @@ export default function App() {
   // The public distribution is a single package; workspace package names stay internal.
   const publicMarkdown = page.markdown
     .replace(/@brett_lamy\/(?:chatkit|workbench|pencilkit)\b/g, '@brett_lamy/ui')
-    .replace(/pnpm add @brett_lamy\/ui(?: @brett_lamy\/ui)+ react react-dom/g, 'npm i @brett_lamy/ui');
+    .replace(/pnpm add @brett_lamy\/ui(?: @brett_lamy\/ui)+ react react-dom/g, 'npm i @brett_lamy/ui')
+    // the per-package stylesheet imports collapse into one after the rewrite
+    .replace(/^(import '@brett_lamy\/ui\/styles\.css'\n)(?:import '@brett_lamy\/ui\/styles\.css'\n)+/gm, '$1');
   const segs = parseSegs(slug, publicMarkdown);
   const toc: Array<{ text: string; h3: boolean }> = [];
   let fenced = false;
@@ -153,8 +155,8 @@ export default function App() {
     if (fenced) return;
     const m2 = l.match(/^## (.+)$/);
     const m3 = l.match(/^### (.+)$/);
-    if (m2) toc.push({ text: m2[1], h3: false });
-    else if (m3) toc.push({ text: m3[1], h3: true });
+    if (m2) toc.push({ text: m2[1].replace(/`/g, ''), h3: false });
+    else if (m3) toc.push({ text: m3[1].replace(/`/g, ''), h3: true });
   });
 
   const fixedNav = w >= 900;

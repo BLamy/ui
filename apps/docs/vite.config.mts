@@ -47,6 +47,8 @@ export default defineConfig(() => ({
       // docstream pulls CommonJS deps (style-to-js, debug) the browser can't import unbundled; pre-bundle it whole.
       '@brett_lamy/workbench > @brett_lamy/docstream',
       '@brett_lamy/workbench > @brett_lamy/docstream-editor',
+      // The live example card (ReactDemo with an in-page preview).
+      '@brett_lamy/docstream/playground',
     ],
   },
   // Uncomment this if you are using workers.
