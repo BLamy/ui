@@ -328,7 +328,9 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
   const total = rendered.length - 1;
   const inner = (
     <div ref={contRef} data-slot="navigation-stack"
-      onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+      // Capture phase: the edge swipe may start on the back button, whose react-aria press handling stops
+      // pointerdown from bubbling.
+      onPointerDownCapture={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
       className={cn('absolute inset-0 touch-pan-y overflow-hidden', className)} style={style}>
       {rendered.map((r) => (
         <ScreenWrap key={r.sc.key} sc={r.sc} depth={r.i} top={r.ghost ? total : topIdx} ghost={r.ghost}
