@@ -19,6 +19,13 @@ const CASES = [
   ['atoms-segmented--three-options', { tap: `${root} [data-slot=segmented] label >> nth=1` }],
   ['molecules-tabbar--interactive', { tap: `${root} button >> nth=1` }],
   ['organisms-navigationstack--push-pop', { tap: `${root} [data-slot=list-row] >> nth=0` }, (t) => t.includes('Pop with the back button')],
+  ['atoms-toggle--default', { tap: `${root} button >> nth=0` }],
+  ['atoms-checkbox--default', { tap: `${root} label >> nth=0` }],
+  ['molecules-tabs--segmented', { tap: `${root} [role=tab] >> nth=1` }],
+  ['molecules-listbox--single-selection', { tap: `${root} [role=option] >> nth=1` }],
+  ['molecules-dropdownmenu--selectable', { tap: `[role=menuitemradio] >> nth=1` }],
+  ['organisms-dialog--closed', { tap: `${root} button >> nth=0` }, (t) => t.includes('Delete this photo?')],
+  ['pages-mapchat--floating', { tap: `${root} button:has-text("Coffee near me")` }, (t) => !t.includes('Plan an afternoon in DUMBO')], // sending hides the suggestions
   ['molecules-indexbar--alpha-az', { drag: `${root} [data-slot=index-bar]` }],
   ['pages-haptics-playground--bare', { tap: `${root} [role=switch], ${root} label >> nth=0` }],
 ];

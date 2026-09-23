@@ -1,5 +1,5 @@
 diff --git a/dist/methods/click-grant/index.js b/dist/methods/click-grant/index.js
-index b39ecead0655b637c2a216bc59531343039eb686..c767f36546bd6c9fab7c20294f5a3c5e22b52ac1 100644
+index b39ecead0655b637c2a216bc59531343039eb686..4bb2ad3d7221354c25c854650a4942edf81897e9 100644
 --- a/dist/methods/click-grant/index.js
 +++ b/dist/methods/click-grant/index.js
 @@ -6,6 +6,7 @@ export function enableMainThreadBlocking(enabled = true) {
@@ -10,7 +10,7 @@ index b39ecead0655b637c2a216bc59531343039eb686..c767f36546bd6c9fab7c20294f5a3c5e
  const MAGIC_NUMBER = 26.26;
  const GRANT_TIMEOUT = 850;
  // Authorization handler
-@@ -17,7 +18,12 @@ export async function authorizeVibrations({ target, isTrusted }) {
+@@ -17,7 +18,14 @@ export async function authorizeVibrations({ target, isTrusted }) {
          return;
      }
      lastGrant = Date.now();
@@ -19,13 +19,15 @@ index b39ecead0655b637c2a216bc59531343039eb686..c767f36546bd6c9fab7c20294f5a3c5e
 +    // the same pulse, so taps produced several ticks.
 +    if (!grantLoopRunning) {
 +        grantLoopRunning = true;
-+        allowVibrationsDuringGrant();
++        // Start after this click finishes: its label activation toggles a switch and consumes the pulse
++        // first, so the loop only plays pulses no switch could.
++        setTimeout(allowVibrationsDuringGrant);
 +    }
      if (backgroundPopup && !popupConnected) {
          openBackgroundPopup();
      }
 diff --git a/dist/methods/click-passthrough/clickable.js b/dist/methods/click-passthrough/clickable.js
-index cf5c79d4802183bbfd419907ca15a72e7686569b..d67ace179baf1a2575cf829be8eb04be7e1571c0 100644
+index cf5c79d4802183bbfd419907ca15a72e7686569b..c011129fe69602b96f2504f9c2ad047d5491431b 100644
 --- a/dist/methods/click-passthrough/clickable.js
 +++ b/dist/methods/click-passthrough/clickable.js
 @@ -1,6 +1,6 @@
@@ -58,7 +60,7 @@ index cf5c79d4802183bbfd419907ca15a72e7686569b..d67ace179baf1a2575cf829be8eb04be
  let anchorId = 1;
  let ignoreRootClick = false;
  rootTrigger?.label.addEventListener("click", (event) => {
-@@ -56,10 +70,11 @@ rootTrigger?.label.addEventListener("click", (event) => {
+@@ -56,14 +70,32 @@ rootTrigger?.label.addEventListener("click", (event) => {
      }
      event.stopPropagation();
      ignoreRootClick = "prevent";
@@ -67,11 +69,32 @@ index cf5c79d4802183bbfd419907ca15a72e7686569b..d67ace179baf1a2575cf829be8eb04be
      event.target.dispatchEvent(clickEvent);
      ignoreRootClick = false;
      if (shouldVibrate()) {
-+        consumePulse();
++        // Let the label toggle the root switch; the switch's own click listener below plays the pulse.
          return;
      }
      event.preventDefault();
-@@ -91,7 +106,7 @@ export function handleClickable(element, force = false) {
+ });
++/**
++ * The root switch's activation click is the one place every tap through the page-wide label ends up — even
++ * when the app stopped the click's propagation (react-aria's usePress does, after pressing), so the listener
++ * above never ran. Decide here, after all handlers: tick if a pulse is pending (and consume it so the
++ * click-grant loop doesn't replay it), otherwise cancel the toggle so nothing ticks.
++ */
++rootTrigger?.input.addEventListener("click", (event) => {
++    if (!event.isTrusted) {
++        return;
++    }
++    if (shouldVibrate()) {
++        consumePulse();
++    }
++    else {
++        event.preventDefault();
++    }
++});
+ export function handleClickable(element, force = false) {
+     const isInputRange = isInputRangeElement(element);
+     if (!force && !isClickableElement(element)) {
+@@ -91,7 +123,7 @@ export function handleClickable(element, force = false) {
          stopPointerEvents = true;
          updateStyles();
          const touchedElement = document.elementFromPoint(event.clientX, event.clientY);
@@ -80,17 +103,17 @@ index cf5c79d4802183bbfd419907ca15a72e7686569b..d67ace179baf1a2575cf829be8eb04be
              stopPointerEvents = false;
              updateStyles();
          }
-@@ -108,6 +123,9 @@ export function handleClickable(element, force = false) {
+@@ -108,6 +140,9 @@ export function handleClickable(element, force = false) {
          if (!shouldVibrate()) {
              event.preventDefault();
          }
-+        else {
-+            consumePulse();
-+        }
++        // A pending pulse is consumed by the switch's own click (onInputClick), i.e. only once it really
++        // toggled — if this click unmounted the element, our label is detached before its activation runs,
++        // and the click-grant loop this click authorized plays the pulse instead.
      }
      const callbacks = new Set();
      function onSimulateClick(callback) {
-@@ -119,7 +137,11 @@ export function handleClickable(element, force = false) {
+@@ -119,7 +154,11 @@ export function handleClickable(element, force = false) {
      function simulateClick(event) {
          rootTrigger.input.disabled = true;
          ignoreRootClick = true;
@@ -103,7 +126,26 @@ index cf5c79d4802183bbfd419907ca15a72e7686569b..d67ace179baf1a2575cf829be8eb04be
          ignoreRootClick = false;
          rootTrigger.input.disabled = false;
          callbacks.forEach((callback) => callback(event));
-@@ -183,7 +205,7 @@ rootTrigger?.label.addEventListener("click", (event) => {
+@@ -151,11 +190,18 @@ export function handleClickable(element, force = false) {
+     trigger.label.addEventListener("pointerdown", onPointerDown, true);
+     trigger.label.addEventListener("pointerup", onPointerUp, true);
+     trigger.label.addEventListener("click", onClick, true);
++    const onInputClick = (event) => {
++        if (event.isTrusted && shouldVibrate()) {
++            consumePulse();
++        }
++    };
++    trigger.input.addEventListener("click", onInputClick);
+     return () => {
+         disposeStyles();
+         trigger.label.removeEventListener("pointerdown", onPointerDown);
+         trigger.label.removeEventListener("pointerup", onPointerUp);
+         trigger.label.removeEventListener("click", onClick);
++        trigger.input.removeEventListener("click", onInputClick);
+         clickableTriggers.delete(element);
+         trigger.label.remove();
+     };
+@@ -183,7 +229,7 @@ rootTrigger?.label.addEventListener("click", (event) => {
      rects.sort(([d1], [d2]) => d1 - d2);
      const [distance, trigger] = rects[0];
      if (distance && distance <= 15) {
