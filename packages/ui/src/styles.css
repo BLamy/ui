@@ -25,3 +25,41 @@ input::placeholder{color:var(--bl-label3)}
 .bl-range::-moz-range-progress{height:4px;border-radius:2px;background:var(--bl-tint)}
 .bl-range::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28)}
 .bl-sidebar-hl:hover{background:var(--wb-fill,rgba(255,255,255,.06))!important}
+
+/* ── shadcn primitives (badge … form): overlay enter/exit keyframes for react-aria's data-entering /
+   data-exiting, exposed as animate-bl-* utilities. Exit animations must end (react-aria keeps the overlay
+   mounted until `animationend`), so they fill forwards. ── */
+@keyframes bl-fade-in{from{opacity:0}}
+@keyframes bl-fade-out{to{opacity:0}}
+@keyframes bl-pop-in{from{opacity:0;transform:scale(.92)}}
+@keyframes bl-pop-out{to{opacity:0;transform:scale(.96)}}
+@keyframes bl-alert-in{from{opacity:0;transform:scale(1.14)}}
+@keyframes bl-alert-out{to{opacity:0;transform:scale(.98)}}
+@keyframes bl-sheet-in-bottom{from{transform:translateY(100%)}}
+@keyframes bl-sheet-out-bottom{to{transform:translateY(100%)}}
+@keyframes bl-sheet-in-top{from{transform:translateY(-100%)}}
+@keyframes bl-sheet-out-top{to{transform:translateY(-100%)}}
+@keyframes bl-sheet-in-left{from{transform:translateX(-100%)}}
+@keyframes bl-sheet-out-left{to{transform:translateX(-100%)}}
+@keyframes bl-sheet-in-right{from{transform:translateX(100%)}}
+@keyframes bl-sheet-out-right{to{transform:translateX(100%)}}
+@keyframes bl-progress-indeterminate{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+@theme {
+  --animate-bl-fade-in: bl-fade-in .22s cubic-bezier(.32,.72,0,1);
+  --animate-bl-fade-out: bl-fade-out .18s ease-in forwards;
+  /* Scrims outlast their sheet: react-aria unmounts the whole overlay when the scrim's animation ends. */
+  --animate-bl-fade-out-slow: bl-fade-out .3s cubic-bezier(.32,.72,0,1) forwards;
+  --animate-bl-pop-in: bl-pop-in .22s cubic-bezier(.32,.72,0,1);
+  --animate-bl-pop-out: bl-pop-out .14s ease-in forwards;
+  --animate-bl-alert-in: bl-alert-in .3s cubic-bezier(.32,.72,0,1);
+  --animate-bl-alert-out: bl-alert-out .16s ease-in forwards;
+  --animate-bl-sheet-in-bottom: bl-sheet-in-bottom .42s cubic-bezier(.32,.72,0,1);
+  --animate-bl-sheet-out-bottom: bl-sheet-out-bottom .3s cubic-bezier(.32,.72,0,1) forwards;
+  --animate-bl-sheet-in-top: bl-sheet-in-top .42s cubic-bezier(.32,.72,0,1);
+  --animate-bl-sheet-out-top: bl-sheet-out-top .3s cubic-bezier(.32,.72,0,1) forwards;
+  --animate-bl-sheet-in-left: bl-sheet-in-left .42s cubic-bezier(.32,.72,0,1);
+  --animate-bl-sheet-out-left: bl-sheet-out-left .3s cubic-bezier(.32,.72,0,1) forwards;
+  --animate-bl-sheet-in-right: bl-sheet-in-right .42s cubic-bezier(.32,.72,0,1);
+  --animate-bl-sheet-out-right: bl-sheet-out-right .3s cubic-bezier(.32,.72,0,1) forwards;
+  --animate-bl-progress: bl-progress-indeterminate 1.4s cubic-bezier(.65,0,.35,1) infinite;
+}

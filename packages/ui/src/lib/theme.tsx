@@ -1,4 +1,5 @@
-import { createContext, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
 import { cn, FONT, BARH } from './utils';
 
 /* ══ Chrome coordination ══
@@ -58,8 +59,13 @@ export interface BLProviderProps {
 export function BLProvider({ dark, tint = '#0A84FF', safeTop, children, className, style }: BLProviderProps) {
   const safe = safeTop === true ? 59 : typeof safeTop === 'number' ? safeTop : 0;
   const vars = dark ? darkVars(tint) : lightVars(tint);
+  /* react-aria overlays (Popover, Modal, Tooltip) portal into this root instead of document.body, so they
+     inherit the --bl-* tokens, font and color scheme. null until mounted → overlays wait one commit. */
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  const getContainer = useCallback(() => root, [root]);
   return (
     <div
+      ref={setRoot}
       data-slot="bl-provider"
       className={cn(className)}
       style={{
@@ -69,7 +75,9 @@ export function BLProvider({ dark, tint = '#0A84FF', safeTop, children, classNam
         ...vars, '--bl-safe-top': safe + 'px', ...style,
       } as CSSProperties}
     >
-      <BLSafeCtx.Provider value={safe}>{children}</BLSafeCtx.Provider>
+      <UNSAFE_PortalProvider getContainer={getContainer}>
+        <BLSafeCtx.Provider value={safe}>{children}</BLSafeCtx.Provider>
+      </UNSAFE_PortalProvider>
       {safe ? (
         <div
           style={{
