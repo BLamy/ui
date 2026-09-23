@@ -1,4 +1,5 @@
 import { useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { cva } from 'class-variance-authority';
 import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 
@@ -7,7 +8,9 @@ import { cn } from '../lib/utils';
      <IndexBar items={[{key:'m4', label:'●', preview:'Why is the build slow?'}]} onJump={key => …}/>
    …or give it nothing but `avail` and it falls back to the UIKit A–Z form:
      <IndexBar avail={new Set(['A','B'])} onLetter={L => …}/>
-   Hover peeks the stop under the cursor (no tick, no jump); drag commits it. */
+   Hover peeks the stop under the cursor (no tick, no jump); drag commits it.
+   variant="wave" draws one dash per stop that swells around the pointer like the macOS Dock, with a
+   title + preview card beside the rail: <IndexBar variant="wave" side="left" value={current} items={…}/> */
 
 export const AL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -35,6 +38,22 @@ function ibPoints<K extends IndexBarKey>(items: Array<IndexBarItem<K> | K> | und
   return AL.map((L) => ({ key: L, label: L, preview: null, caption: null, dim: !av.has(L) }));
 }
 
+export const indexBarVariants = cva(
+  'absolute z-80 flex cursor-pointer touch-none flex-col justify-center rounded-[8px] outline-offset-2 select-none',
+  {
+    variants: {
+      variant: { default: 'items-center', wave: 'items-stretch' },
+      side: { right: 'right-0', left: 'left-0' },
+    },
+    defaultVariants: { variant: 'default', side: 'right' },
+  },
+);
+
+/* Wave geometry, in px and stops: rest/peak dash length, and how many stops the swell reaches either side. */
+const WAVE_REST = 9, WAVE_PEAK = 28, WAVE_REACH = 3.2;
+/** Raised-cosine falloff: 1 at the pointer, 0 at WAVE_REACH stops away. */
+const swell = (d: number) => (d >= WAVE_REACH ? 0 : (1 + Math.cos(Math.PI * d / WAVE_REACH)) / 2);
+
 export interface IndexBarProps<K extends IndexBarKey = string> {
   items?: Array<IndexBarItem<K> | K>;
   avail?: Set<string>;
@@ -44,21 +63,39 @@ export interface IndexBarProps<K extends IndexBarKey = string> {
   bottom?: number | string;
   width?: number;
   label?: string;
+  /** `default` renders letters/dots with a bubble; `wave` renders dashes that swell around the pointer. */
+  variant?: 'default' | 'wave';
+  /** Edge the rail sits on; the preview appears on the inner side. */
+  side?: 'left' | 'right';
+  /** Key of the current item (e.g. the turn in view); the wave draws it full length in the tint. */
+  value?: K;
   className?: string;
   style?: CSSProperties;
 }
 
-export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump, onLetter, top, bottom, width = 22, label = 'Jump to section', className, style }: IndexBarProps<K>) {
+export function IndexBar<K extends IndexBarKey = string>({
+  items, avail, onJump, onLetter, top, bottom, width: widthProp, label = 'Jump to section',
+  variant = 'default', side = 'right', value, className, style,
+}: IndexBarProps<K>) {
+  const wave = variant === 'wave';
+  const width = widthProp ?? (wave ? 40 : 22);
   const pts = ibPoints(items, avail);
   const optionId = useId();
   const rail = useRef<HTMLDivElement>(null); const track = useRef<HTMLDivElement>(null); const geo = useRef<IndexBarGeometry | null>(null);
   const act = useRef(-1); const ptsRef = useRef(pts); ptsRef.current = pts;
   const [cur, setCur] = useState(-1); const [hov, setHov] = useState(-1); const [on, setOn] = useState(false);
   const [focused, setFocused] = useState(false); const [keyboardIndex, setKeyboardIndex] = useState(-1);
+  // Continuous pointer position along the track, in stops (0 = top edge, n = bottom edge); drives the wave.
+  const [pu, setPu] = useState<number | null>(null);
   const measure = () => {
     const r = rail.current, t = track.current; if (!r || !t) return null;
     const rb = r.getBoundingClientRect(), tb = t.getBoundingClientRect();
     return (geo.current = { rTop: rb.top, tTop: tb.top, tH: tb.height });
+  };
+  const along = (y: number) => {
+    const g = geo.current; if (!wave || !g || !g.tH) return;
+    const n = ptsRef.current.length;
+    setPu(Math.max(0, Math.min(n, (y - g.tTop) / g.tH * n)));
   };
   const at = (y: number) => {
     const g = geo.current || measure(); if (!g || !g.tH) return -1;
@@ -73,13 +110,13 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
   };
   const down = (e: React.PointerEvent) => {
     if (e.button) return;
-    measure(); setOn(true); setHov(-1); fire(at(e.clientY));
+    measure(); setOn(true); setHov(-1); fire(at(e.clientY)); along(e.clientY);
     // No pointer capture here: the vibrator polyfill slides a native <input switch> under the finger during
     // drags, and capture would starve it of events. Window listeners track the scrub instead.
-    const mm = (ev: PointerEvent) => fire(at(ev.clientY));
+    const mm = (ev: PointerEvent) => { fire(at(ev.clientY)); along(ev.clientY); };
     const uu = () => {
       window.removeEventListener('pointermove', mm); window.removeEventListener('pointerup', uu);
-      window.removeEventListener('pointercancel', uu); setOn(false); setCur(-1); act.current = -1;
+      window.removeEventListener('pointercancel', uu); setOn(false); setCur(-1); setPu(null); act.current = -1;
     };
     window.addEventListener('pointermove', mm); window.addEventListener('pointerup', uu); window.addEventListener('pointercancel', uu);
   };
@@ -87,10 +124,12 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
     if (on || e.pointerType === 'touch') return;
     if (!geo.current) measure();
     const i = at(e.clientY); if (i !== hov) setHov(i);
+    along(e.clientY);
   };
   const keyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (!pts.length || !['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
     e.preventDefault();
+    if (!geo.current) measure();
     const from = keyboardIndex >= 0 ? keyboardIndex : e.key === 'ArrowUp' ? pts.length : -1;
     const next = e.key === 'Home' ? 0 : e.key === 'End' ? pts.length - 1
       : Math.max(0, Math.min(pts.length - 1, from + (e.key === 'ArrowUp' ? -1 : 1)));
@@ -107,20 +146,43 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
     'pointer-events-none absolute [transform:translateY(-50%)] bg-card shadow-[0_8px_28px_rgba(0,0,0,.28),0_0_0_1px_var(--bl-sep)] animate-[blBub_.16s_cubic-bezier(.32,.72,0,1)]',
     on ? 'opacity-100' : 'opacity-93',
   );
-  const bubPos: CSSProperties = { right: width + 10, top: cy };
+  const bubPos: CSSProperties = side === 'left' ? { left: width + 10, top: cy } : { right: width + 10, top: cy };
+  const curIdx = value != null ? pts.findIndex((q) => q.key === value) : -1;
+  // The wave centres on the pointer while it's on the rail, else on the keyboard-active stop.
+  const focal = pu != null ? pu : idx >= 0 ? idx + 0.5 : null;
   return (
-    <div ref={rail} data-slot="index-bar" data-haptic-drag onPointerDown={down} onPointerMove={hover} onPointerLeave={() => setHov(-1)}
+    <div ref={rail} data-slot="index-bar" data-variant={variant} data-side={side} data-haptic-drag
+      onPointerDown={down} onPointerEnter={() => { if (!on) measure(); }} onPointerMove={hover}
+      onPointerLeave={() => { setHov(-1); if (!on) setPu(null); }}
       role="listbox" aria-orientation="vertical" aria-label={label} aria-activedescendant={idx >= 0 ? `${optionId}-${idx}` : undefined}
       tabIndex={0} onKeyDown={keyDown} onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setKeyboardIndex(-1); }}
       className={cn(
-        'absolute right-0 z-80 flex cursor-pointer touch-none flex-col items-center justify-center rounded-[8px] outline-offset-2 select-none',
+        indexBarVariants({ variant, side }),
         focused ? '[outline:2px_solid_var(--bl-tint)]' : '[outline:2px_solid_transparent]',
         className,
       )}
       style={{ top, bottom, width, ...style }}
       >
-      <div ref={track} className="flex w-full flex-col items-center">
+      <div ref={track} className={cn('flex w-full flex-col', !wave && 'items-center')}>
         {pts.map((q, i) => {
+          if (wave) {
+            const full = idx === i || curIdx === i;
+            const f = full ? 1 : focal == null ? 0 : swell(Math.abs(i + 0.5 - focal));
+            const len = WAVE_REST + (WAVE_PEAK - WAVE_REST) * f;
+            return (
+              <div key={String(q.key) + i} id={`${optionId}-${i}`} role="option" aria-selected={idx === i}
+                aria-current={curIdx === i ? 'true' : undefined} aria-label={q.caption || q.label || `Stop ${i + 1}`}
+                className={cn('box-border flex h-[10px] w-full items-center px-2', side === 'left' ? 'justify-start' : 'justify-end')}>
+                <span style={{ '--len': `${len}px`, '--f': f } as CSSProperties}
+                  className={cn(
+                    'h-[2px] w-(--len) shrink-0 rounded-full transition-[width,background-color] duration-150 ease-out motion-reduce:transition-none',
+                    idx === i ? 'bg-foreground' : curIdx === i ? 'bg-primary'
+                      : 'bg-[color:color-mix(in_oklab,var(--bl-label)_calc(var(--f)*75%),var(--bl-label3))]',
+                    q.dim && idx !== i && 'opacity-55',
+                  )} />
+              </div>
+            );
+          }
           const hot = idx === i;
           return (
             <div key={String(q.key) + i} id={`${optionId}-${i}`} role="option" aria-selected={idx === i}
@@ -133,7 +195,19 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
           );
         })}
       </div>
-      {p && (p.preview != null)
+      {wave
+        ? p && <div className={cn(
+              'pointer-events-none absolute box-border w-max max-w-[260px] min-w-[160px] -translate-y-1/2 rounded-[14px] bg-card px-[13px] py-[9px]',
+              'shadow-[0_8px_28px_rgba(0,0,0,.28),0_0_0_1px_var(--bl-sep)] transition-[top] duration-150 ease-ios motion-reduce:transition-none',
+              'animate-[blWaveCard_.18s_cubic-bezier(.32,.72,0,1)] motion-reduce:animate-none',
+              side === 'left' ? 'origin-left' : 'origin-right',
+            )} style={side === 'left' ? { left: width + 4, top: cy } : { right: width + 4, top: cy }}>
+            <div className="truncate text-[13px] leading-[18px] font-semibold text-foreground">{p.caption || p.label || `Stop ${idx + 1}`}</div>
+            {p.preview != null
+              ? <div className="mt-[2px] line-clamp-2 text-[12px] leading-[16px] text-pretty text-muted-foreground">{p.preview}</div>
+              : null}
+          </div>
+        : p && (p.preview != null)
         ? <div className={cn(bub, 'box-border max-w-[250px] min-w-[120px] rounded-[14px] px-[13px] py-[9px]')} style={bubPos}>
             {p.caption ? <div className="mb-[3px] text-[9.5px] font-extrabold tracking-[.6px] text-primary uppercase">{p.caption}</div> : null}
             <div className="line-clamp-3 text-[13px] leading-[1.35] font-[550] text-pretty text-foreground">{p.preview}</div>

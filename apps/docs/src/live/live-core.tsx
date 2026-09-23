@@ -373,7 +373,7 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
   },
   indexbar: {
     title: 'IndexBar', theme: 'bl', h: 470,
-    code: 'import { IndexBar, BLList, BLSection, BLRow } from "./blui.tsx"\n\nexport default function App() {\n  const sc = React.useRef(null), els = React.useRef({})\n\n  // Any jump points you like — key is yours, preview is what the bubble shows\n  const stops = turns\n    .filter(t => t.role === "user")\n    .map(t => ({ key: t.id, preview: t.text, caption: "You" }))   // no label → a dot on the rail\n\n  return (\n    <div style={{ position: "relative", height: 340 }}>\n      <div ref={sc} style={{ position: "absolute", inset: 0, overflowY: "auto" }}>\n        {turns.map(t => <Turn key={t.id} t={t} ref={el => els.current[t.id] = el}/>)}\n      </div>\n      <IndexBar items={stops} top={8} bottom={8}\n        onJump={(key, stop) => sc.current.scrollTop = els.current[key].offsetTop - 8}/>\n    </div>\n  )\n}\n\n// Pass no items and it falls back to the UIKit A–Z form:\n// <IndexBar avail={new Set(["A","B","C"])} onLetter={L => jumpTo(L)}/>',
+    code: 'import { IndexBar, BLList, BLSection, BLRow } from "./blui.tsx"\n\nexport default function App() {\n  const sc = React.useRef(null), els = React.useRef({})\n\n  // Any jump points you like — key is yours, preview is what the bubble shows\n  const stops = turns\n    .filter(t => t.role === "user")\n    .map(t => ({ key: t.id, preview: t.text, caption: "You" }))   // no label → a dot on the rail\n\n  return (\n    <div style={{ position: "relative", height: 340 }}>\n      <div ref={sc} style={{ position: "absolute", inset: 0, overflowY: "auto" }}>\n        {turns.map(t => <Turn key={t.id} t={t} ref={el => els.current[t.id] = el}/>)}\n      </div>\n      <IndexBar items={stops} top={8} bottom={8}\n        onJump={(key, stop) => sc.current.scrollTop = els.current[key].offsetTop - 8}/>\n    </div>\n  )\n}\n\n// Pass no items and it falls back to the UIKit A–Z form:\n// <IndexBar avail={new Set(["A","B","C"])} onLetter={L => jumpTo(L)}/>\n\n// Or the wave rail — dashes that swell under the pointer, with a title + preview card:\n// <IndexBar variant="wave" side="left" items={stops} value={turnInView} onJump={jump}/>',
     Render: function IdxLive() {
       const sc = useRef<HTMLDivElement | null>(null);
       const els = useRef<Record<string, HTMLElement>>({});
@@ -391,14 +391,17 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
       const data: Record<string, string[]> = { A: ['Ada', 'Avi'], B: ['Bea', 'Ben'], C: ['Cal', 'Cy'], D: ['Dot', 'Dev'], E: ['Eli', 'Eva'], F: ['Fay'], G: ['Gus', 'Gia'] };
       const letters = Object.keys(data);
       const stops = TURNS.filter((t) => t.role === 'user').map((t) => ({ key: t.id, preview: t.text, caption: 'You' }));
+      const waveStops = TURNS.map((t) => ({ key: t.id, preview: t.text, caption: t.role === 'user' ? 'You' : 'Assistant' }));
       const jump = (key: string) => { const el = els.current[key]; if (el && sc.current) sc.current.scrollTop = Math.max(0, el.offsetTop - 8); };
       return <div>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-          <div style={{ width: 250 }}><Segmented value={mode} onChange={setMode}
-            options={[{ id: 'stops', label: 'Custom stops' }, { id: 'az', label: 'A–Z fallback' }]} /></div>
+          <div style={{ width: 330 }}><Segmented value={mode} onChange={setMode}
+            options={[{ id: 'stops', label: 'Custom stops' }, { id: 'az', label: 'A–Z fallback' }, { id: 'wave', label: 'Wave' }]} /></div>
         </div>
         <BLFrame h={340} bg="var(--bl-bg)">
-          <div ref={sc} style={{ position: 'absolute', inset: 0, overflowY: 'auto', paddingRight: 26 }}>
+          <div ref={sc} style={mode === 'wave'
+            ? { position: 'absolute', inset: 0, overflowY: 'auto', paddingLeft: 40 }
+            : { position: 'absolute', inset: 0, overflowY: 'auto', paddingRight: 26 }}>
             {mode === 'az'
               ? <BLList>
                   {letters.map((L) => <div key={L} ref={(el) => { if (el) els.current[L] = el; }}>
@@ -418,10 +421,14 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
           </div>
           {mode === 'az'
             ? <IndexBar avail={new Set(letters)} top={8} bottom={8} onLetter={jump} />
+            : mode === 'wave'
+            ? <IndexBar variant="wave" side="left" items={waveStops} top={10} bottom={10} onJump={jump} label="Jump to a turn" />
             : <IndexBar items={stops} top={10} bottom={10} onJump={jump} label="Jump to a turn" />}
         </BLFrame>
         <div style={{ fontSize: 12, color: 'var(--bl-label2)', textAlign: 'center', marginTop: 8 }}>
-          {mode === 'stops' ? 'Hover a dot to peek the turn · drag to scrub with a tick per stop' : 'No items → the A–Z rail, unchanged'}
+          {mode === 'stops' ? 'Hover a dot to peek the turn · drag to scrub with a tick per stop'
+            : mode === 'wave' ? 'variant="wave" side="left" · the dashes swell under the pointer, one tick per turn'
+            : 'No items → the A–Z rail, unchanged'}
         </div>
       </div>;
     },
