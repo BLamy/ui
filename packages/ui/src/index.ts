@@ -65,3 +65,70 @@ export { SidebarDemo, sidebarDarkVars } from './demos/sidebar-demo';
 export {
   HapticsPlayground, ShowMagicRow, BrightnessSlider, HapticSlider, SlideToUnlock, WheelDrum, Sun,
 } from './demos/haptics-playground';
+
+// ── shadcn primitives (react-aria-components + Tailwind + cva) ──
+export { Badge, badgeVariants } from './components/badge';
+export type { BadgeProps } from './components/badge';
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, cardVariants } from './components/card';
+export type { CardProps } from './components/card';
+export { Separator, separatorVariants } from './components/separator';
+export type { SeparatorProps } from './components/separator';
+export { Label, labelVariants } from './components/label';
+export type { LabelProps } from './components/label';
+export { Kbd, KbdGroup } from './components/kbd';
+export { Skeleton, skeletonVariants } from './components/skeleton';
+export type { SkeletonProps } from './components/skeleton';
+export { ScrollArea, scrollAreaVariants } from './components/scroll-area';
+export type { ScrollAreaProps } from './components/scroll-area';
+export { Input, inputVariants } from './components/input';
+export type { InputProps } from './components/input';
+export { Textarea, textareaVariants } from './components/textarea';
+export type { TextareaProps } from './components/textarea';
+export { TextField, FieldDescription, FieldError } from './components/text-field';
+export type { TextFieldProps } from './components/text-field';
+export { Checkbox, CheckboxGroup, checkboxVariants } from './components/checkbox';
+export type { CheckboxProps, CheckboxGroupProps } from './components/checkbox';
+export { RadioGroup, Radio, radioGroupVariants, radioVariants } from './components/radio-group';
+export type { RadioGroupProps, RadioProps } from './components/radio-group';
+export { Toggle, toggleVariants } from './components/toggle';
+export type { ToggleProps } from './components/toggle';
+export { ToggleGroup, ToggleGroupItem, toggleGroupVariants } from './components/toggle-group';
+export type { ToggleGroupProps, ToggleGroupItemProps } from './components/toggle-group';
+export { Tabs, TabList, Tab, TabPanel, tabsListVariants, tabVariants } from './components/tabs';
+export type { TabsProps } from './components/tabs';
+export {
+  DialogTrigger, DialogContent, Dialog, DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter,
+  DialogAction, DialogClose, dialogVariants, dialogActionVariants, dialogOverlayClass,
+} from './components/dialog';
+export type { DialogContentProps, DialogFooterProps, DialogActionProps } from './components/dialog';
+export {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter, SheetClose, sheetVariants,
+} from './components/sheet';
+export type { SheetContentProps } from './components/sheet';
+export { Popover, PopoverTrigger, PopoverContent } from './components/popover';
+export type { PopoverProps, PopoverContentProps } from './components/popover';
+export {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSection, DropdownMenuLabel, DropdownMenuSeparator,
+  DropdownMenuShortcut, DropdownMenuSub, dropdownMenuItemVariants,
+} from './components/dropdown-menu';
+export type { DropdownMenuContentProps, DropdownMenuItemProps, DropdownMenuSectionProps } from './components/dropdown-menu';
+export { Tooltip, TooltipTrigger } from './components/tooltip';
+export type { TooltipProps } from './components/tooltip';
+export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectSection, selectTriggerVariants } from './components/select';
+export type { SelectProps, SelectTriggerProps, SelectContentProps } from './components/select';
+export { ComboBox, ComboBoxInput, ComboBoxContent, ComboBoxItem, ComboBoxSection } from './components/combobox';
+export type { ComboBoxProps, ComboBoxInputProps, ComboBoxContentProps } from './components/combobox';
+export { Slider, SliderTrack, SliderThumb } from './components/slider';
+export type { SliderProps } from './components/slider';
+export { ListBox, ListBoxItem, ListBoxSection, ListBoxHeader, listBoxVariants, listBoxItemVariants } from './components/list-box';
+export type { ListBoxProps, ListBoxItemProps, ListBoxSectionProps } from './components/list-box';
+export {
+  Disclosure, DisclosureGroup, DisclosureTrigger, DisclosurePanel, disclosureGroupVariants,
+  Accordion, AccordionItem, AccordionTrigger, AccordionContent,
+} from './components/disclosure';
+export type { DisclosureGroupProps, DisclosureTriggerProps } from './components/disclosure';
+export { Progress, progressVariants, progressIndicatorVariants } from './components/progress';
+export type { ProgressProps } from './components/progress';
+export { Form, FormSection } from './components/form';
+export type { FormSectionProps } from './components/form';
+// ── end shadcn primitives ──
