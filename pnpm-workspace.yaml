@@ -5,7 +5,3 @@ packages:
 patchedDependencies:
   ios-vibrator-pro-max@3.0.3: patches/ios-vibrator-pro-max@3.0.3.patch
 
-# TEMP (local, do not commit): unreleased docstream 0.7.0 / docstream-editor 0.8.0 tarballs.
-overrides:
-  '@brett_lamy/docstream': file:/tmp/pkgs/brett_lamy-docstream-0.7.0.tgz
-  '@brett_lamy/docstream-editor': file:/tmp/pkgs/brett_lamy-docstream-editor-0.8.0.tgz
