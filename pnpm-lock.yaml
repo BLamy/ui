@@ -330,9 +330,15 @@ importers:
       '@brett_lamy/workbench':
         specifier: workspace:*
         version: link:../workbench
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
       react:
         specifier: ^18 || ^19
         version: 19.0.0
+      react-aria-components:
+        specifier: ^1.20.0
+        version: 1.20.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-dom:
         specifier: ^18 || ^19
         version: 19.0.0(react@19.0.0)

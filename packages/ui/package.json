@@ -13,7 +13,10 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./styles.css": "./dist/index.css"
+    "./styles.css": {
+      "@org/source": "./src/styles.css",
+      "default": "./dist/index.css"
+    }
   },
   "dependencies": {
     "react-aria-components": "^1",
@@ -28,7 +31,7 @@
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19"
   },
-  "description": "iOS-flavored React core — containers, lists, haptics, tokens (react-aria base, shadcn conventions)",
+  "description": "iOS-flavored React core \u2014 containers, lists, haptics, tokens (react-aria base, shadcn conventions)",
   "license": "MIT",
   "sideEffects": [
     "*.css"

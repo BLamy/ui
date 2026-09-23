@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
+import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -40,7 +41,12 @@ export default defineConfig(() => ({
     },
     rolldownOptions: {
       // External packages that should not be bundled into your library.
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      // Dependencies stay external so apps share one copy (react-aria's contexts must be shared), except
+      // ios-vibrator-pro-max: we ship it patched, so it is bundled rather than resolved from npm.
+      external: (id: string) =>
+        [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {}), 'react/jsx-runtime']
+          .filter((dep) => dep !== 'ios-vibrator-pro-max')
+          .some((dep) => id === dep || id.startsWith(dep + '/')),
     },
   },
 }));

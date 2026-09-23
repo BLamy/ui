@@ -1,8 +1,12 @@
 @layer theme, base, components, utilities;
 @import "./theme.css";
-/* Utilities only — no preflight, so a host app's base styles are left alone. */
+/* Utilities only — no preflight, so a host app's base styles are left alone. This one sheet carries the
+   utilities for every BL UI package, so their rules share a single, consistently ordered layer. */
 @import "tailwindcss/utilities.css" layer(utilities);
 @source "./";
+@source "../../chatkit/src";
+@source "../../workbench/src";
+@source "../../pencilkit/src";
 
 /* BL UI framework CSS — verbatim from the prototype's injected `bl-kf` block. */
 @keyframes blSpin{to{transform:rotate(360deg)}}

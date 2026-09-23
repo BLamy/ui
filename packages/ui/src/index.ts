@@ -27,6 +27,8 @@ export { HapticIndicator } from './components/haptic-indicator';
 export type { HapticIndicatorProps } from './components/haptic-indicator';
 export { SearchField } from './components/search-field';
 export type { SearchFieldProps } from './components/search-field';
+export { Button, buttonVariants } from './components/button';
+export type { ButtonProps } from './components/button';
 export { PillButton } from './components/pill-button';
 export type { PillButtonProps } from './components/pill-button';
 export { QRSvg } from './components/qr-svg';

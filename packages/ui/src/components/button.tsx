@@ -1,5 +1,6 @@
 import { Button as AriaButton, type ButtonProps as AriaButtonProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
+import type { JSX } from 'react';
 import { cn } from '../lib/utils';
 
 /* ══ Button — shadcn's button on react-aria's Button ══
@@ -28,14 +29,18 @@ export const buttonVariants = cva(
   },
 );
 
-export interface ButtonProps extends AriaButtonProps, VariantProps<typeof buttonVariants> {}
+export interface ButtonProps extends Omit<AriaButtonProps, 'render'>, VariantProps<typeof buttonVariants> {
+  /** Tooltip — react-aria's Button drops `title`, so it is rendered onto the <button> here. */
+  title?: string;
+}
 
-export function Button({ className, variant, size, ...props }: ButtonProps) {
+export function Button({ className, variant, size, title, ...props }: ButtonProps) {
   return (
     <AriaButton
       data-slot="button"
       className={composeRenderProps(className, (cls) => cn(buttonVariants({ variant, size }), cls))}
       {...props}
+      {...(title ? { render: (p: JSX.IntrinsicElements['button']) => <button {...p} title={title} /> } : {})}
     />
   );
 }

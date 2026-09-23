@@ -13,11 +13,16 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./styles.css": "./dist/index.css"
+    "./styles.css": {
+      "@org/source": "./src/styles.css",
+      "default": "./dist/index.css"
+    }
   },
   "dependencies": {
     "@brett_lamy/ui": "workspace:*",
-    "@brett_lamy/workbench": "workspace:*"
+    "@brett_lamy/workbench": "workspace:*",
+    "react-aria-components": "^1.20.0",
+    "class-variance-authority": "^0.7.1"
   },
   "peerDependencies": {
     "react": "^18 || ^19",
