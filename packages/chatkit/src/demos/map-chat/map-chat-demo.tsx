@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn, Haptics, useAppearance, type Appearance } from '@brett_lamy/ui';
 import { Button } from 'react-aria-components';
-import { Composer, MarkdownView, type ReferenceNode } from '@brett_lamy/workbench';
+import {
+  Composer,
+  ComposerAddon,
+  ComposerAttachments,
+  ComposerCard,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSend,
+  ComposerSpacer,
+  MarkdownView,
+  type ReferenceNode,
+} from '@brett_lamy/workbench';
 import { ArtifactChatContainer, type ArtifactChatContainerProps } from '../../lib/artifact-chat-container';
 import { formatDistance, formatMinutes, type MapTarget, type MapView } from './geo';
 import {
@@ -491,40 +502,42 @@ export function MapChatDemo({
       </ArtifactChatContainer.Chat>
 
       <ArtifactChatContainer.Composer>
-        <div className="flex min-w-0 flex-col">
-          {showSuggestions && (
-            <div
-              data-slot="map-chat-suggestions"
-              role="list"
-              className="flex gap-2 overflow-x-auto px-3 pt-2 pb-0.5 [scrollbar-width:none] [-webkit-mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [&::-webkit-scrollbar]:hidden group-data-[layout=split]/map-chat:px-3.5 group-data-[layout=split]/map-chat:pt-2.5 group-data-[layout=split]/map-chat:pb-0"
-            >
-              {SUGGESTIONS.map((s) => (
-                <div key={s} role="listitem" className="contents">
-                  <Button
-                    className={cn(
-                      'shrink-0 cursor-pointer rounded-[999px] border px-3 py-1.5 text-[13px] leading-[1.2] font-medium whitespace-nowrap text-bl-label',
-                      FONT_INHERIT,
-                      'transition-[background] duration-160 ease-[ease]',
-                      chrome.chip,
-                    )}
-                    onPress={() => void send(s)}
-                  >
-                    {s}
-                  </Button>
+        <Composer streaming={busy} onStop={stop} onSubmit={(markdown) => void send(markdown)}>
+          <ComposerCard>
+            {/* Starter prompts ride in the card, above the editor. */}
+            {showSuggestions && (
+              <ComposerAddon align="block-start" className="p-0">
+                <div
+                  data-slot="map-chat-suggestions"
+                  role="list"
+                  className="flex min-w-0 flex-1 gap-2 overflow-x-auto px-3 pt-2.5 pb-0.5 [scrollbar-width:none] [-webkit-mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [mask-image:linear-gradient(to_right,#000_calc(100%_-_28px),transparent)] [&::-webkit-scrollbar]:hidden group-data-[layout=split]/map-chat:px-3.5 group-data-[layout=split]/map-chat:pt-2.5 group-data-[layout=split]/map-chat:pb-0"
+                >
+                  {SUGGESTIONS.map((s) => (
+                    <div key={s} role="listitem" className="contents">
+                      <Button
+                        className={cn(
+                          'shrink-0 cursor-pointer rounded-[999px] border px-3 py-1.5 text-[13px] leading-[1.2] font-medium whitespace-nowrap text-bl-label',
+                          FONT_INHERIT,
+                          'transition-[background] duration-160 ease-[ease]',
+                          chrome.chip,
+                        )}
+                        onPress={() => void send(s)}
+                      >
+                        {s}
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-          <Composer
-            wide
-            showOptions={false}
-            showCheckout={false}
-            placeholder="Find places, get directions, plan a trip…"
-            streaming={busy}
-            onStop={stop}
-            onSend={(text) => void send(text)}
-          />
-        </div>
+              </ComposerAddon>
+            )}
+            <ComposerAttachments />
+            <ComposerInput placeholder="Find places, get directions, plan a trip…" />
+            <ComposerFooter>
+              <ComposerSpacer />
+              <ComposerSend />
+            </ComposerFooter>
+          </ComposerCard>
+        </Composer>
       </ArtifactChatContainer.Composer>
     </ArtifactChatContainer>
   );

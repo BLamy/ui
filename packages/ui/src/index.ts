@@ -11,6 +11,8 @@ export {
 } from './lib/theme';
 export type { BLProviderProps, Appearance } from './lib/theme';
 export { useContainerWidth, defineSlot, collectSlots } from './lib/container';
+export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL, SHEET_OPEN_THRESHOLD } from './lib/sheet-drag';
+export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
 export type { SlotComponent, SlotProps } from './lib/container';
 export { Icon, IC } from './lib/icon';
 export type { IconProps, IconName } from './lib/icon';

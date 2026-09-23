@@ -14,7 +14,9 @@ import {
   type FloatingSheetAppearance,
 } from '@brett_lamy/chatkit';
 import {
-  Composer, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
+  Composer, ComposerAttach, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand,
+  ComposerFooter, ComposerInput, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText,
+  ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
 } from '@brett_lamy/workbench';
 import { DemoBtn, BLFrame, type LiveSpec } from './frame';
@@ -228,9 +230,9 @@ export default function Shell() {
   },
   artifactchat: {
     title: 'ArtifactChatContainer · split to floating chat', theme: 'bl', h: 620,
-    code: 'import { ArtifactChatContainer } from "@brett_lamy/chatkit"\nimport { Composer } from "@brett_lamy/workbench"\n\nexport default function ArtifactWorkspace() {\n  return (\n    <ArtifactChatContainer breakpoint={760} working={isWorking}\n      hideOnScroll fabPosition="bottom-center"\n      onAdd={() => setIsWorking(false)}>\n      <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>\n      <ArtifactChatContainer.Composer>\n        <Composer wide showOptions={false} showCheckout={false}\n          placeholder="Do anything" onSend={send} />\n      </ArtifactChatContainer.Composer>\n      <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>\n    </ArtifactChatContainer>\n  )\n}',
-    Render: function ArtifactChatLive() {
-      const [mode, setMode] = useState('wide');
+    variants: [{ id: 'wide', label: 'Split' }, { id: 'compact', label: 'Floating' }], variantsWidth: 220,
+    code: "import { ArtifactChatContainer, Composer, ComposerCard, ComposerInput, ComposerFooter,\n  ComposerAttach, ComposerSpacer, ComposerSend } from \"@brett_lamy/ui\"\n\nexport default function ArtifactWorkspace() {\n  return (\n    <ArtifactChatContainer breakpoint={760} working={isWorking}\n      hideOnScroll fabPosition=\"bottom-center\"\n      onAdd={() => setIsWorking(false)}>\n      <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>\n      <ArtifactChatContainer.Composer>\n        {/* Floating: the transcript hangs off a draggable top bump of this Composer. */}\n        <Composer onSubmit={send}>\n          <ComposerCard>\n            <ComposerInput placeholder=\"Do anything\" />\n            <ComposerFooter>\n              <ComposerAttach /><ComposerSpacer /><ComposerSend />\n            </ComposerFooter>\n          </ComposerCard>\n        </Composer>\n      </ArtifactChatContainer.Composer>\n      <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>\n    </ArtifactChatContainer>\n  )\n}",
+    Render: function ArtifactChatLive({ variant: mode }) {
       const [working, setWorking] = useState(false);
       const compact = mode === 'compact';
       const width = compact ? 430 : 1040;
@@ -262,14 +264,22 @@ export default function Shell() {
         </div>
       </div>;
       return <div>
-        <div style={{ width: 300, margin: '0 auto 12px' }}>
-          <Segmented aria-label="Artifact chat width" value={mode} onChange={setMode} options={[{ id: 'wide', label: 'Split' }, { id: 'compact', label: 'Floating' }]} />
-        </div>
         <ScaledShell width={width} height={555}>
           <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 12 }}>
             <ArtifactChatContainer breakpoint={760} working={working} workingLabel="Working on the artifact…" onAdd={() => setWorking(false)}>
               <ArtifactChatContainer.Chat>{transcript}</ArtifactChatContainer.Chat>
-              <ArtifactChatContainer.Composer><div style={{ padding: 8, background: 'transparent' }}><Composer wide showOptions={false} showCheckout={false} placeholder="Do anything" onSend={() => setWorking(true)} /></div></ArtifactChatContainer.Composer>
+              <ArtifactChatContainer.Composer>
+                <div style={{ padding: 8, background: 'transparent' }}>
+                  <Composer onSubmit={() => setWorking(true)}>
+                    <ComposerCard>
+                      <ComposerExpand />
+                      <ComposerAttachments />
+                      <ComposerInput placeholder="Do anything" />
+                      <ComposerFooter><ComposerAttach /><ComposerSpacer /><ComposerSend /></ComposerFooter>
+                    </ComposerCard>
+                  </Composer>
+                </div>
+              </ArtifactChatContainer.Composer>
               <ArtifactChatContainer.Content>{artifact}</ArtifactChatContainer.Content>
             </ArtifactChatContainer>
           </div>
@@ -363,8 +373,8 @@ export default function DragDemo() {
     title: 'MapChat · always-floating chat with map tools', theme: 'bl', h: 760, status: 'needs network',
     code: `import { useState } from 'react'
 import {
-  ArtifactChatContainer, Composer, MarkdownView, PLACES, TileMap, USER_POSITION,
-  type MapPin,
+  ArtifactChatContainer, Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer,
+  MarkdownView, PLACES, TileMap, USER_POSITION, type MapPin,
 } from '@brett_lamy/ui'
 
 const view = { center: USER_POSITION, zoom: 14 }
@@ -386,7 +396,12 @@ export default function MapChat() {
           <MarkdownView markdown={reply} />
         </ArtifactChatContainer.Chat>
         <ArtifactChatContainer.Composer>
-          <Composer wide onSend={(text) => setReply(\`Searching for **\${text}**…\`)} />
+          <Composer onSubmit={(text) => setReply(\`Searching for **\${text}**…\`)}>
+            <ComposerCard>
+              <ComposerInput placeholder="Ask about the map" />
+              <ComposerFooter><ComposerSpacer /><ComposerSend /></ComposerFooter>
+            </ComposerCard>
+          </Composer>
         </ArtifactChatContainer.Composer>
       </ArtifactChatContainer>
     </div>
@@ -625,15 +640,52 @@ export default function ShareContact() {
     },
   },
   composer: {
-    title: 'Composer · Docstream editor', theme: 'wb', h: 260,
-    code: 'import { Composer } from "@brett_lamy/workbench"\n\nexport default function App() {\n  const [streaming, setStreaming] = React.useState(false)\n  const send = markdown => {\n    console.log(markdown); setStreaming(true)\n    setTimeout(() => setStreaming(false), 1600)\n  }\n  return (\n    <div style={{ maxWidth: 560, margin: "0 auto" }}>\n      <Composer wide defaultValue={"## Ship checklist\\n\\n- Highlight code\\n- Publish package"}\n        onSend={send} streaming={streaming}\n        onStop={() => setStreaming(false)}/>\n    </div>\n  )\n}',
+    title: 'Composer · compositional parts', theme: 'wb', h: 340,
+    code: "import {\n  Composer, ComposerBump, ComposerBumpHandle, ComposerBumpContent, ComposerCard,\n  ComposerAttachments, ComposerInput, ComposerExpand, ComposerFooter, ComposerSelect,\n  ComposerSeparator, ComposerSpacer, ComposerAttach, ComposerStop, ComposerSend,\n  ComposerText, ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS,\n} from \"@brett_lamy/ui\"\n\nexport default function App() {\n  const [streaming, setStreaming] = React.useState(false)\n  const send = (markdown, attachments) => {\n    console.log(markdown, attachments); setStreaming(true)\n    setTimeout(() => setStreaming(false), 1600)\n  }\n  return (\n    <Composer onSubmit={send} streaming={streaming} onStop={() => setStreaming(false)}\n      defaultValue={\"## Ship checklist\\n\\n- Highlight code\\n- Publish package\"}>\n      <ComposerBump side=\"top\" draggable maxReveal={160}>\n        <ComposerBumpContent><Log /></ComposerBumpContent>\n        <ComposerBumpHandle>\n          <ComposerText className=\"flex-1\">Monitoring \u00b7 pnpm dev</ComposerText>\n        </ComposerBumpHandle>\n      </ComposerBump>\n      <ComposerCard size=\"lg\">\n        <ComposerExpand />\n        <ComposerAttachments />\n        <ComposerInput placeholder=\"Ask anything, paste an image\" />\n        <ComposerFooter>\n          <ModelPicker models={WORKBENCH_MODELS} providers={WORKBENCH_PROVIDERS} />\n          <ComposerSeparator />\n          <ComposerSelect aria-label=\"Effort\" options={efforts} />\n          <ComposerSeparator />\n          <ComposerSelect aria-label=\"Access\" icon=\"lock\" options={access} />\n          <ComposerSpacer />\n          <ComposerAttach />\n          <ComposerStop variant=\"solid\" />\n          <ComposerSend morph={false} />\n        </ComposerFooter>\n      </ComposerCard>\n      <ComposerBump side=\"bottom\">\n        <ComposerBumpHandle>\n          <ComposerText icon=\"folder\" className=\"flex-1\">Local checkout</ComposerText>\n          <ComposerText icon=\"branch\">main</ComposerText>\n        </ComposerBumpHandle>\n      </ComposerBump>\n    </Composer>\n  )\n}",
     Render: function CompLive() {
       const [streaming, setStreaming] = useState(false);
       const t = useRef<any>(null);
       useEffect(() => () => clearTimeout(t.current), []);
-      return <div style={{ maxWidth: 560, margin: '0 auto' }}>
-        <Composer wide defaultValue={'## Ship checklist\n\n- Highlight code\n- Publish package'} onSend={() => { setStreaming(true); clearTimeout(t.current); t.current = setTimeout(() => setStreaming(false), 1600); }}
-          streaming={streaming} onStop={() => { clearTimeout(t.current); setStreaming(false); }} />
+      const efforts = [{ id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' }, { id: 'high', label: 'High' }];
+      const access = [{ id: 'full', label: 'Full access' }, { id: 'read', label: 'Read only' }];
+      return <div style={{ maxWidth: 580, margin: '0 auto', paddingTop: 24 }}>
+        <Composer defaultValue={'## Ship checklist\n\n- Highlight code\n- Publish package'}
+          onSubmit={() => { setStreaming(true); clearTimeout(t.current); t.current = setTimeout(() => setStreaming(false), 1600); }}
+          streaming={streaming} onStop={() => { clearTimeout(t.current); setStreaming(false); }}>
+          <ComposerBump side="top" draggable maxReveal={160}>
+            <ComposerBumpContent label="Dev server log">
+              <div style={{ padding: '10px 14px', fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5, lineHeight: 1.6, opacity: 0.8 }}>
+                <div>✓ ready in 412 ms</div><div>✓ 287 stories indexed</div><div>→ composer.tsx changed, HMR update</div>
+              </div>
+            </ComposerBumpContent>
+            <ComposerBumpHandle>
+              <span style={{ width: 7, height: 7, borderRadius: 99, background: 'var(--wb-green)' }} />
+              <ComposerText className="flex-1">Monitoring · pnpm dev</ComposerText>
+            </ComposerBumpHandle>
+          </ComposerBump>
+          <ComposerCard size="lg">
+            <ComposerExpand />
+            <ComposerAttachments />
+            <ComposerInput placeholder="Ask anything, paste an image" />
+            <ComposerFooter>
+              <ModelPicker models={WORKBENCH_MODELS} providers={WORKBENCH_PROVIDERS} defaultValue="claude-opus-5-5" />
+              <ComposerSeparator />
+              <ComposerSelect aria-label="Effort" options={efforts} defaultValue="medium" />
+              <ComposerSeparator />
+              <ComposerSelect aria-label="Access" icon="lock" options={access} />
+              <ComposerSpacer />
+              <ComposerAttach />
+              <ComposerStop variant="solid" />
+              <ComposerSend morph={false} />
+            </ComposerFooter>
+          </ComposerCard>
+          <ComposerBump side="bottom">
+            <ComposerBumpHandle>
+              <ComposerText icon="folder" className="flex-1">Local checkout</ComposerText>
+              <ComposerText icon="branch">main</ComposerText>
+            </ComposerBumpHandle>
+          </ComposerBump>
+        </Composer>
       </div>;
     },
   },

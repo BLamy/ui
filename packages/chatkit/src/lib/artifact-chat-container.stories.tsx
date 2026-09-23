@@ -1,11 +1,39 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AppearanceProvider, BLProvider, type Appearance } from '@brett_lamy/ui';
-import { Composer } from '@brett_lamy/workbench';
+import {
+  Composer,
+  ComposerAttach,
+  ComposerAttachments,
+  ComposerCard,
+  ComposerExpand,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSend,
+  ComposerSpacer,
+} from '@brett_lamy/workbench';
 import '@brett_lamy/workbench/styles.css';
 import { ArtifactChatContainer, type ArtifactChatFabPosition } from './artifact-chat-container';
 import { K, KFONT } from './chat-tokens';
 import '../styles.css';
+
+/* The chat composer: the Workbench Composer parts, trimmed to editor + send. */
+function ChatComposer({ placeholder, onSubmit }: { placeholder: string; onSubmit?: () => void }) {
+  return (
+    <Composer onSubmit={onSubmit}>
+      <ComposerCard>
+        <ComposerExpand />
+        <ComposerAttachments />
+        <ComposerInput placeholder={placeholder} />
+        <ComposerFooter>
+          <ComposerAttach />
+          <ComposerSpacer />
+          <ComposerSend />
+        </ComposerFooter>
+      </ComposerCard>
+    </Composer>
+  );
+}
 
 interface DemoProps {
   width: number;
@@ -82,7 +110,7 @@ function Demo({ width, height, working = false, defaultChatOpen = false, fabPosi
         <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
         <ArtifactChatContainer.Composer>
           <div style={{ padding: 8, background: 'transparent' }}>
-            <Composer wide showOptions={false} showCheckout={false} placeholder="Do anything" onSend={() => setBusy(true)} />
+            <ChatComposer placeholder="Do anything" onSubmit={() => setBusy(true)} />
           </div>
         </ArtifactChatContainer.Composer>
         <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
@@ -97,7 +125,7 @@ const meta: Meta<DemoProps> = {
   parameters: {
     docs: {
       description: {
-        component: 'Uses the full Docstream-backed Workbench Composer. In compact mode, drag the cap upward to continuously turn the floating glass composer into the full-page chat, then drag it down to collapse it.',
+        component: 'Composes the Workbench Composer parts. In compact mode the transcript hangs off a draggable top bump of the composer: drag its handle up to reveal the full chat, down to collapse it or fold it into a FAB.',
       },
     },
   },
@@ -124,7 +152,7 @@ export const AlwaysFloatingWithPeek: Story = {
         <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
         <ArtifactChatContainer.Composer>
           <div style={{ padding: 8, background: 'transparent' }}>
-            <Composer wide showOptions={false} showCheckout={false} placeholder="Do anything" onSend={() => undefined} />
+            <ChatComposer placeholder="Do anything" />
           </div>
         </ArtifactChatContainer.Composer>
         <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
@@ -186,7 +214,7 @@ function ThemedDemo({ appearance, width, height, layout }: { appearance: Appeara
             <ArtifactChatContainer.Chat><ThemedTranscript /></ArtifactChatContainer.Chat>
             <ArtifactChatContainer.Composer>
               <div style={{ padding: 8, background: 'transparent' }}>
-                <Composer wide showOptions={false} showCheckout={false} placeholder="Do anything" onSend={() => undefined} />
+                <ChatComposer placeholder="Do anything" />
               </div>
             </ArtifactChatContainer.Composer>
             <ArtifactChatContainer.Content><ThemedArtifact /></ArtifactChatContainer.Content>

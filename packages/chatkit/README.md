@@ -51,7 +51,7 @@ The hook throws a clear error when called outside `ChatShell`.
 
 ## Artifact chat
 
-`ArtifactChatContainer` keeps a conversation beside an artifact when space permits. Below its container breakpoint, the artifact keeps the full canvas and the composer becomes a dark translucent overlay floating over it, with the page still visible underneath. A grabber cap fused to the overlay's top edge grows the full conversation upward out of itself — tap to toggle, or drag the cap and the surface follows the pointer.
+`ArtifactChatContainer` keeps a conversation beside an artifact when space permits. Below its container breakpoint, the artifact keeps the full canvas and the composer becomes a dark translucent overlay floating over it, with the page still visible underneath. The conversation hangs off a draggable top bump of the host's Workbench `Composer` (added through a `ComposerOutlet`) — tap its grip to toggle, or drag it and the transcript follows the pointer.
 
 ```tsx
 <ArtifactChatContainer working={isWorking} onAdd={() => setIsWorking(false)}>

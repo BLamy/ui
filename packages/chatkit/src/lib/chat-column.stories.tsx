@@ -1,9 +1,37 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Composer } from '@brett_lamy/workbench';
+import {
+  Composer,
+  ComposerAttach,
+  ComposerAttachments,
+  ComposerCard,
+  ComposerExpand,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSend,
+  ComposerSpacer,
+} from '@brett_lamy/workbench';
 import '@brett_lamy/workbench/styles.css';
 import { ChatColumn } from './chat-column';
 import { K, KFONT } from './chat-tokens';
 import '../styles.css';
+
+/* The chat composer: the Workbench Composer parts, trimmed to editor + send. */
+function ChatComposer({ placeholder, onSubmit }: { placeholder: string; onSubmit?: () => void }) {
+  return (
+    <Composer onSubmit={onSubmit}>
+      <ComposerCard>
+        <ComposerExpand />
+        <ComposerAttachments />
+        <ComposerInput placeholder={placeholder} />
+        <ComposerFooter>
+          <ComposerAttach />
+          <ComposerSpacer />
+          <ComposerSend />
+        </ComposerFooter>
+      </ComposerCard>
+    </Composer>
+  );
+}
 
 const meta: Meta<typeof ChatColumn> = {
   title: 'Organisms/ChatColumn',
@@ -26,7 +54,7 @@ export const Default: Story = {
           </div>
         </ChatColumn.Transcript>
         <ChatColumn.Composer>
-          <Composer wide showOptions={false} showCheckout={false} placeholder="Reply…" onSend={() => undefined} />
+          <ChatComposer placeholder="Reply…" />
         </ChatColumn.Composer>
       </ChatColumn>
     </div>
