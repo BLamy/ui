@@ -108,7 +108,7 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
     pointerEvents: 'none', opacity: on ? 1 : .93,
   };
   return (
-    <div ref={rail} data-slot="index-bar" className={cn(className)} onPointerDown={down} onPointerMove={hover} onPointerLeave={() => setHov(-1)}
+    <div ref={rail} data-slot="index-bar" data-haptic-drag className={cn(className)} onPointerDown={down} onPointerMove={hover} onPointerLeave={() => setHov(-1)}
       role="listbox" aria-orientation="vertical" aria-label={label} aria-activedescendant={idx >= 0 ? `${optionId}-${idx}` : undefined}
       tabIndex={0} onKeyDown={keyDown} onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setKeyboardIndex(-1); }}
       style={{

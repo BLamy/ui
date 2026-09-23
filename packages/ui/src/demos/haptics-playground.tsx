@@ -46,7 +46,7 @@ export function BrightnessSlider() {
     const d = Math.round(nv * 16); if (d !== det.current) { det.current = d; Haptics.selection(); }
   };
   return (
-    <div ref={ref} role="slider" aria-label="Brightness" aria-valuenow={Math.round(v * 100)} tabIndex={0}
+    <div data-haptic-drag ref={ref} role="slider" aria-label="Brightness" aria-valuenow={Math.round(v * 100)} tabIndex={0}
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); move(e); }}
       onPointerMove={(e) => { if (e.buttons) move(e); }}
       onKeyDown={(e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { setV((x) => Math.min(1, Math.max(0, x + (e.key === 'ArrowRight' ? 0.0625 : -0.0625)))); Haptics.selection(); e.preventDefault(); } }}
@@ -104,7 +104,7 @@ export function SlideToUnlock() {
         fontSize: 17, letterSpacing: '.4px', color: done ? 'var(--bl-green)' : undefined, fontWeight: done ? 600 : 400, opacity: done ? 1 : Math.max(0, 1 - x * 1.7),
       }}>
         {done ? 'unlocked' : 'slide to unlock'}</span>
-      <button className="bl-btn" aria-label="Slide to unlock"
+      <button data-haptic-drag className="bl-btn" aria-label="Slide to unlock"
         onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setDrag(true); }}
         onPointerMove={(e) => { if (drag) move(e); }}
         onPointerUp={up} onPointerCancel={up}
@@ -156,7 +156,7 @@ export function WheelDrum({ n, init, label }: { n: number; init?: number; label:
   const idx = -off / H;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 1, minWidth: 0, justifyContent: 'center' }}>
-      <div role="spinbutton" aria-label={label} aria-valuenow={st.current.det} tabIndex={0}
+      <div data-haptic-drag role="spinbutton" aria-label={label} aria-valuenow={st.current.det} tabIndex={0}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
         onWheel={(e) => { e.preventDefault(); const d = e.deltaY > 0 ? 1 : -1; settle(clampHard((Math.round(-off / H) + d) * -H)); }}
         onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { settle(clampHard((Math.round(-off / H) + (e.key === 'ArrowDown' ? 1 : -1)) * -H)); e.preventDefault(); } }}

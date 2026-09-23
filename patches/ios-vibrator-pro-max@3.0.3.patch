@@ -1,8 +1,127 @@
+diff --git a/dist/methods/click-grant/index.js b/dist/methods/click-grant/index.js
+index b39ecead0655b637c2a216bc59531343039eb686..c767f36546bd6c9fab7c20294f5a3c5e22b52ac1 100644
+--- a/dist/methods/click-grant/index.js
++++ b/dist/methods/click-grant/index.js
+@@ -6,6 +6,7 @@ export function enableMainThreadBlocking(enabled = true) {
+     blockMainThread = enabled;
+ }
+ let lastGrant = null;
++let grantLoopRunning = false;
+ const MAGIC_NUMBER = 26.26;
+ const GRANT_TIMEOUT = 850;
+ // Authorization handler
+@@ -17,7 +18,12 @@ export async function authorizeVibrations({ target, isTrusted }) {
+         return;
+     }
+     lastGrant = Date.now();
+-    allowVibrationsDuringGrant();
++    // One loop serves every grant: starting a loop per click stacked them up, and each replayed
++    // the same pulse, so taps produced several ticks.
++    if (!grantLoopRunning) {
++        grantLoopRunning = true;
++        allowVibrationsDuringGrant();
++    }
+     if (backgroundPopup && !popupConnected) {
+         openBackgroundPopup();
+     }
+diff --git a/dist/methods/click-passthrough/clickable.js b/dist/methods/click-passthrough/clickable.js
+index cf5c79d4802183bbfd419907ca15a72e7686569b..3005fcd67341786bfeeb9bb00e2251db557474aa 100644
+--- a/dist/methods/click-passthrough/clickable.js
++++ b/dist/methods/click-passthrough/clickable.js
+@@ -1,5 +1,5 @@
+ import { registerStyleUpdater } from "../../utils";
+-import { createVibrationTrigger, hiddenTrigger, ignoredElements, rootTrigger, shouldVibrate, } from "../../vibration";
++import { consumePulse, createVibrationTrigger, hiddenTrigger, ignoredElements, rootTrigger, shouldVibrate, } from "../../vibration";
+ import { clonePointerEvent } from "./forward-events";
+ import { isInputRangeElement } from "./inputable";
+ import { isMovableElement, isNativeMovableElement } from "./movable";
+@@ -42,6 +42,20 @@ function isClickableElement(element) {
+     }
+     return CLICKABLE_ROLES.has(element.role ?? "") || CLICKABLE.has(tagName);
+ }
++/**
++ * A touch belongs to `element` when it lands on it or on a descendant that isn't clickable itself
++ * (an icon, a label span, a switch thumb). Only a nested clickable keeps its own trigger.
++ */
++function ownsTouch(element, touched) {
++    let node = touched;
++    while (node && node !== element) {
++        if (clickableTriggers.has(node)) {
++            return false;
++        }
++        node = node.parentElement;
++    }
++    return node === element;
++}
+ let anchorId = 1;
+ let ignoreRootClick = false;
+ rootTrigger?.label.addEventListener("click", (event) => {
+@@ -60,6 +74,7 @@ rootTrigger?.label.addEventListener("click", (event) => {
+     event.target.dispatchEvent(clickEvent);
+     ignoreRootClick = false;
+     if (shouldVibrate()) {
++        consumePulse();
+         return;
+     }
+     event.preventDefault();
+@@ -91,7 +106,7 @@ export function handleClickable(element, force = false) {
+         stopPointerEvents = true;
+         updateStyles();
+         const touchedElement = document.elementFromPoint(event.clientX, event.clientY);
+-        if (touchedElement === element) {
++        if (ownsTouch(element, touchedElement)) {
+             stopPointerEvents = false;
+             updateStyles();
+         }
+@@ -108,6 +123,9 @@ export function handleClickable(element, force = false) {
+         if (!shouldVibrate()) {
+             event.preventDefault();
+         }
++        else {
++            consumePulse();
++        }
+     }
+     const callbacks = new Set();
+     function onSimulateClick(callback) {
+@@ -119,7 +137,11 @@ export function handleClickable(element, force = false) {
+     function simulateClick(event) {
+         rootTrigger.input.disabled = true;
+         ignoreRootClick = true;
+-        element.dispatchEvent(clonePointerEvent("click", event));
++        // Our trigger is itself a <label> mid-activation, and browsers skip a nested label's activation
++        // behavior — so a replayed click on a <label> (react-aria Switch/Checkbox/Radio) would never reach
++        // its control. Replay on the control instead.
++        const control = element.tagName === "LABEL" ? element.control : null;
++        (control ?? element).dispatchEvent(clonePointerEvent("click", event));
+         ignoreRootClick = false;
+         rootTrigger.input.disabled = false;
+         callbacks.forEach((callback) => callback(event));
 diff --git a/dist/methods/click-passthrough/movable.js b/dist/methods/click-passthrough/movable.js
-index f061323d6f32f3d43aae8a63303cb036410ac6f9..aa9be69d4bfaca765f8cf2d9a0b4cb560ad6c2b4 100644
+index f061323d6f32f3d43aae8a63303cb036410ac6f9..370b4318f40d41102f768dd7b7c3fc35773ac62a 100644
 --- a/dist/methods/click-passthrough/movable.js
 +++ b/dist/methods/click-passthrough/movable.js
-@@ -50,6 +50,12 @@ export function handleMovable(element) {
+@@ -1,6 +1,6 @@
+ import { debugMode } from ".";
+ import { getTouchActionCandidates, isMovableTouchAction, registerStyleUpdater, } from "../../utils";
+-import { shouldVibrate } from "../../vibration";
++import { consumePulse, shouldVibrate } from "../../vibration";
+ import { clickableTriggers } from "./clickable";
+ import { clonePointerEvent } from "./forward-events";
+ import { isInputRangeElement } from "./inputable";
+@@ -9,6 +9,12 @@ export function isMovableElement(element) {
+     if (isInputRangeElement(element)) {
+         return true;
+     }
++    // Opt-in only: containers use touch-action for their own gestures (a navigation stack's back swipe,
++    // swipeable rows), and treating them as movable laid a full-size switch over every control inside,
++    // swallowing taps and ticking on its own. Drag surfaces that want haptics add data-haptic-drag.
++    if (!element.hasAttribute("data-haptic-drag")) {
++        return false;
++    }
+     if (!cachedIsMovable.has(element)) {
+         if (!getTouchActionCandidates().has(element)) {
+             return false;
+@@ -50,6 +56,12 @@ export function handleMovable(element) {
          const box = element.getBoundingClientRect();
          x = event.clientX - box.x;
          y = event.clientY - box.y;
@@ -15,3 +134,51 @@ index f061323d6f32f3d43aae8a63303cb036410ac6f9..aa9be69d4bfaca765f8cf2d9a0b4cb56
          pointerMove = true;
          flippedDirection = !flippedDirection;
          updateClipStyles();
+@@ -77,6 +89,9 @@ export function handleMovable(element) {
+                     trigger.input.disabled = false;
+                 });
+             }
++            else {
++                consumePulse();
++            }
+         }
+         trigger.input.checked = false;
+         pointerMove = false;
+diff --git a/dist/polyfill.js b/dist/polyfill.js
+index 226eca1aeb9d09244c061dac65157e1461885d8a..d65aea6c4e4b66fee242f96afa08d948aee5b477 100644
+--- a/dist/polyfill.js
++++ b/dist/polyfill.js
+@@ -22,10 +22,10 @@ if (rootTrigger) {
+     rootTrigger.input.name = "ios-vibrator-pro-max";
+ }
+ async function initPolyfill() {
++    // iOS 18.4+ only grants vibration after a click (or key press); touchend grants don't count
++    // and only doubled up with the click that follows.
+     window.addEventListener("click", authorizeVibrations);
+-    window.addEventListener("touchend", authorizeVibrations);
+     window.addEventListener("keyup", authorizeVibrations);
+-    window.addEventListener("keypress", authorizeVibrations);
+     await asyncWait(250);
+     if (!rootTrigger || !style) {
+         return;
+diff --git a/dist/vibration.js b/dist/vibration.js
+index cee0aacd0f15a4c64cd1923c925f7fed3076b1b7..f66db89c32aa1ae4f2f6ee3a5c9a8f73b87f7670 100644
+--- a/dist/vibration.js
++++ b/dist/vibration.js
+@@ -12,6 +12,16 @@ export function getVibration() {
+     setVibration(trimVibrations(Date.now() - vibration[0], vibration[1]));
+     return vibration[1];
+ }
++/**
++ * The click passthrough just played the current pulse by toggling a switch natively. Drop that
++ * pulse so the click-grant loop doesn't replay it; the rest of the pattern (gaps, later pulses) stays.
++ */
++export function consumePulse() {
++    const vibration = getVibration();
++    if (vibration[0] > 0) {
++        setVibration(vibration.length > 1 ? [0, ...vibration.slice(1)] : []);
++    }
++}
+ export function shouldVibrate() {
+     const vibration = getVibration();
+     return vibration[0] > 0;
