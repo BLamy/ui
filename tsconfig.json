@@ -28,12 +28,6 @@
       "path": "./apps/pencil"
     },
     {
-      "path": "./apps/beautiful"
-    },
-    {
-      "path": "./packages/beautiful"
-    },
-    {
       "path": "./apps/docs"
     }
   ]

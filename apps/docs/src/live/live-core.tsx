@@ -2,9 +2,9 @@
    (project/workbench.jsx), rebuilt on the @touchkit/* package public APIs. */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  Avatar, Credenza, Haptics, Icon, IndexBar, NavigationStack, Segmented, SideDrawer, SplitView, Spinner,
+  AdaptivePane, Avatar, Credenza, EdgeDrawer, Haptics, Icon, IndexBar, SidebarDemo, NavigationStack, Segmented, SideDrawer, SplitView, Spinner,
   Switch as TKSwitch, TabBar, List as TKList, ListSection as TKSection, ListRow as TKRow,
-  type Screen,
+  type AdaptivePaneMode, type Screen,
 } from '@touchkit/ui';
 import { ArtifactChatContainer, ChatDemo, DeliveryTrackingDemo, FloatingSheet, MapChatDemo, ProgressStepper, type FloatingSheetAppearance } from '@touchkit/chatkit';
 import {
@@ -31,6 +31,46 @@ function ScaledShell({ width, height, children }: { width: number; height: numbe
 }
 
 export const LIVE_CORE: Record<string, LiveSpec> = {
+  sidebar: {
+    title: 'Sidebar · docked, rail, float, overlay', theme: 'wb', h: 420,
+    code: 'import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset } from "@touchkit/ui"\n\nexport default function App() {\n  return (\n    <SidebarProvider defaultOpen breakpoint={560}>\n      <Sidebar variant="rail">  {/* docked | rail | float | overlay */}\n        <Sidebar.Header>\n          <Sidebar.Workspace name="Creamery Ops" detail="Production"/>\n        </Sidebar.Header>\n        <Sidebar.Content>\n          <Sidebar.Search/>\n          <Sidebar.Section title="Workspace">\n            <Sidebar.Item icon="home" label="Home" active/>\n            <Sidebar.Item icon="bolt" label="Agent tasks" badge={4}/>\n            <Sidebar.Item icon="inbox" label="Inbox"/>\n          </Sidebar.Section>\n        </Sidebar.Content>\n      </Sidebar>\n      <SidebarInset>\n        <SidebarTrigger/>  {/* hamburger — toggles any variant */}\n        …main content…\n      </SidebarInset>\n    </SidebarProvider>\n  )\n}',
+    Render: () => <SidebarDemo />,
+  },
+  adaptivepane: {
+    title: 'AdaptivePane · column, drawer, cover, hidden', theme: 'tk', h: 380,
+    code: 'import { AdaptivePane, useContainerWidth } from "@touchkit/ui"\n\nexport default function Shell() {\n  const [ref, width] = useContainerWidth()\n  const [open, setOpen] = useState(false)\n  return (\n    <div ref={ref} style={{ position: "relative", display: "flex" }}>\n      <AdaptivePane mode={width < 760 ? "drawer" : "column"} open={open}\n        onClose={() => setOpen(false)} columnWidth={240} drawerWidth={280}>\n        <Navigation />\n      </AdaptivePane>\n      <main style={{ flex: 1 }}>…</main>\n    </div>\n  )\n}',
+    Render: function AdaptivePaneLive() {
+      const [mode, setMode] = useState<AdaptivePaneMode>('column');
+      const [open, setOpen] = useState(true);
+      const [drawer, setDrawer] = useState(false);
+      return (
+        <TKFrame h={340}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+            <AdaptivePane mode={mode} open={open} onClose={() => setOpen(false)} columnWidth={200} drawerWidth={240} zIndex={20}
+              columnStyle={{ borderRight: '1px solid var(--tk-sep)' }}>
+              <div style={{ height: '100%', padding: 16, boxSizing: 'border-box', background: 'var(--tk-card)', fontSize: 13.5 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Pane</div>
+                <div style={{ color: 'var(--tk-label2)' }}>Same children, mode: {mode}</div>
+                {mode === 'cover' ? <div style={{ marginTop: 14 }}><DemoBtn label="Restore" onPress={() => setMode('column')} /></div> : null}
+              </div>
+            </AdaptivePane>
+            <div style={{ flex: 1, minWidth: 0, padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <Segmented options={['column', 'drawer', 'cover', 'hidden'].map((m) => ({ id: m, label: m }))} value={mode}
+                onChange={(v) => { setMode(v as AdaptivePaneMode); setOpen(true); }} />
+              <div style={{ fontSize: 13, color: 'var(--tk-label2)', lineHeight: 1.5 }}>A shell picks the mode from its measured width; the pane never remounts its children within a mode.</div>
+              <div><DemoBtn label="Open EdgeDrawer" onPress={() => setDrawer(true)} /></div>
+            </div>
+            <EdgeDrawer side="right" open={drawer} onClose={() => setDrawer(false)} width={240} zIndex={40}>
+              <div style={{ height: '100%', padding: 16, boxSizing: 'border-box', background: 'var(--tk-card)', fontSize: 13.5 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>EdgeDrawer</div>
+                <div style={{ color: 'var(--tk-label2)' }}>Headless scrim + panel. Tap the scrim to close.</div>
+              </div>
+            </EdgeDrawer>
+          </div>
+        </TKFrame>
+      );
+    },
+  },
   artifactchat: {
     title: 'ArtifactChatContainer · split to floating chat', theme: 'tk', h: 620,
     code: 'import { ArtifactChatContainer } from "@touchkit/chatkit"\nimport { Composer } from "@touchkit/workbench"\n\nexport default function ArtifactWorkspace() {\n  return (\n    <ArtifactChatContainer breakpoint={760} working={isWorking}\n      hideOnScroll fabPosition="bottom-center"\n      onAdd={() => setIsWorking(false)}>\n      <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>\n      <ArtifactChatContainer.Composer>\n        <Composer wide showOptions={false} showCheckout={false}\n          placeholder="Do anything" onSend={send} />\n      </ArtifactChatContainer.Composer>\n      <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>\n    </ArtifactChatContainer>\n  )\n}',

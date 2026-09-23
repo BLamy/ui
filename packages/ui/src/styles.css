@@ -18,3 +18,4 @@ input::placeholder{color:var(--tk-label3)}
 .tk-range::-moz-range-track{height:4px;border-radius:2px;background:var(--tk-fill2)}
 .tk-range::-moz-range-progress{height:4px;border-radius:2px;background:var(--tk-tint)}
 .tk-range::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28)}
+.tk-sidebar-hl:hover{background:var(--wb-fill,rgba(255,255,255,.06))!important}

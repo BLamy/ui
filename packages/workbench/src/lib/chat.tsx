@@ -85,9 +85,8 @@ export function EmptyThread({ onSend, streaming, onStop, className, style }: Emp
   );
 }
 
-/* WorkTrace — the "Worked for Ns" row. The prototype expanded it into Beautiful UI's Thinking trace when
-   beautiful.jsx was loaded; here the compact row renders by default, and a rich expandable trace (e.g.
-   Beautiful UI's Thinking) can be passed as children — it renders in the prototype's expanded wrapper. */
+/* WorkTrace — the "Worked for Ns" row. The compact row renders by default, and a rich expandable trace
+   can be passed as children — it renders in the prototype's expanded wrapper. */
 export interface WorkTraceProps {
   meta: string;
   trace?: WorkbenchTrace;

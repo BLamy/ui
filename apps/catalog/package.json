@@ -10,7 +10,6 @@
     "@touchkit/ui": "workspace:*",
     "@touchkit/chatkit": "workspace:*",
     "@touchkit/workbench": "workspace:*",
-    "@touchkit/beautiful": "workspace:*",
     "@touchkit/pencilkit": "workspace:*"
   },
   "devDependencies": {

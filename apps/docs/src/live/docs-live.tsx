@@ -6,9 +6,8 @@ import { Segmented } from '@touchkit/ui';
 import { MarkdownView, MONO, WFONT } from '@touchkit/workbench';
 import { TKL, WBD, type LiveSpec } from './frame';
 import { LIVE_CORE } from './live-core';
-import { LIVE_BUI } from './live-bui';
 
-export const LIVE: Record<string, LiveSpec> = { ...LIVE_CORE, ...LIVE_BUI };
+export const LIVE: Record<string, LiveSpec> = LIVE_CORE;
 
 class ErrB extends Component<{ label: string; children?: ReactNode }, { err: string | null }> {
   override state: { err: string | null } = { err: null };

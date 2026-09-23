@@ -42,7 +42,7 @@ export function seed(): ChatChannels {
       section: 'Team',
       label: 'general',
       msgs: [
-        { id: 'g1', u: 'noor', t: '9:12 AM', txt: 'Morning! Docs site now has every Beautiful UI primitive on its own page.', reacts: [['🎉', 2, false]] },
+        { id: 'g1', u: 'noor', t: '9:12 AM', txt: 'Morning! Docs site is organized by atomic tiers now.', reacts: [['🎉', 2, false]] },
         { id: 'g2', u: 'theo', t: '9:15 AM', txt: 'Saw that — the Sidebar variants demo is really nice.', reacts: [] },
       ],
     },

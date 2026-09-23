@@ -1,10 +1,59 @@
-/* 14 — Sidebar system: one compositional API over every sidebar variant.
-   <SidebarProvider> owns open state + container-width detection; <Sidebar variant="docked|rail|float|overlay">
-   renders the same children in any behavior, and ANY variant becomes a hamburger overlay below the breakpoint. */
+/* ══ Sidebar system — one compositional API over every sidebar variant ══
+   <SidebarProvider> owns open state + container width (useContainerWidth); <Sidebar variant="docked|rail|float|overlay">
+   renders the same children in any behavior, and ANY variant becomes a hamburger overlay (EdgeDrawer) below the
+   breakpoint. Styled in the workbench dark language: every colour reads a --wb-* token with a fallback. */
 import * as React from 'react';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { BEASE, BFONT, BIcon, BMONO, C, P, card, cn, mut, mut3, vib } from './base';
+import { EdgeDrawer } from './edge-drawer';
+import { useContainerWidth } from '../lib/container';
+import { cn, EASE as BEASE } from '../lib/utils';
+
+const BFONT = "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',sans-serif";
+const BMONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace";
+const BLUE = '#0A84FF';
+const mut = 'var(--wb-label2, rgba(235,235,245,.6))';
+const mut3 = 'var(--wb-label3, rgba(235,235,245,.34))';
+const card = (extra?: CSSProperties): CSSProperties => ({
+  background: 'var(--wb-card, #1C1C23)',
+  border: '1px solid var(--wb-sep, rgba(255,255,255,.08))',
+  borderRadius: 14,
+  fontFamily: BFONT,
+  ...extra,
+});
+/** Haptic tap (no-ops where navigator.vibrate is unavailable; the Haptics engine patches it on iOS Safari). */
+const vib = (pattern: number | number[]) => {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* noop */
+  }
+};
+
+/** Sidebar item icons: 24×24 stroke paths, keyed by name. */
+export const SIDEBAR_ICONS: Record<string, string> = {
+  search: 'M10.5 4a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM20 20l-4.2-4.2',
+  plus: 'M12 5v14M5 12h14',
+  home: 'M4 11l8-7 8 7v9h-5v-6h-6v6H4z',
+  inbox: 'M4 13l3-8h10l3 8v6H4zM4 13h5l1.5 2h3L15 13h5',
+  box: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12L4 7.5M12 12v9',
+  bolt: 'M13 2L4 14h6l-1 8 9-12h-6z',
+  bell: 'M6 9a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6M10 20a2 2 0 004 0',
+  cal: 'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4',
+  doc: 'M7 3h7l4 4v14H7zM14 3v4h4',
+  user: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 4-6 8-6s8 2 8 6',
+  code: 'M8 7l-5 5 5 5M16 7l5 5-5 5',
+  globe: 'M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c-2.5 2.6-2.5 15.4 0 18c2.5-2.6 2.5-15.4 0-18',
+};
+const P = SIDEBAR_ICONS;
+
+function BIcon({ d, size = 16, sw = 1.9 }: { d: string; size?: number; sw?: number }) {
+  return (
+    <svg data-slot="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
 
 export interface SidebarContextValue {
   open: boolean;
@@ -28,16 +77,9 @@ export interface SidebarProviderProps {
   className?: string;
 }
 export function SidebarProvider({ defaultOpen = true, breakpoint = 560, children, style, className }: SidebarProviderProps) {
-  const ref = useRef<HTMLDivElement | null>(null);
+  const [ref, width] = useContainerWidth();
   const [open, setOpen] = useState(defaultOpen);
-  const [narrow, setNarrow] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => setNarrow(el.offsetWidth < breakpoint));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [breakpoint]);
+  const narrow = width < breakpoint;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setOpen(narrow ? false : defaultOpen);
@@ -86,38 +128,17 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
   );
   if (overlay)
     return (
-      <React.Fragment>
-        <div
-          onClick={() => c.setOpen(false)}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 20,
-            background: 'rgba(0,0,0,.45)',
-            opacity: c.open ? 1 : 0,
-            pointerEvents: c.open ? 'auto' : 'none',
-            transition: 'opacity .3s',
-          }}
-        />
-        <div
-          data-slot="sidebar"
-          style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: 0,
-            width,
-            zIndex: 21,
-            background: 'var(--wb-side, #101015)',
-            borderRight: '1px solid var(--wb-sep)',
-            transform: c.open ? 'none' : 'translateX(-102%)',
-            transition: 'transform .38s ' + BEASE,
-            boxShadow: c.open ? '0 0 44px rgba(0,0,0,.4)' : 'none',
-          }}
-        >
-          {body}
-        </div>
-      </React.Fragment>
+      <EdgeDrawer
+        side="left"
+        open={c.open}
+        onClose={() => c.setOpen(false)}
+        width={width}
+        zIndex={20}
+        shadow="0 0 44px rgba(0,0,0,.4)"
+        style={{ background: 'var(--wb-side, #101015)', borderRight: '1px solid var(--wb-sep)' }}
+      >
+        <div data-slot="sidebar" style={{ height: '100%' }}>{body}</div>
+      </EdgeDrawer>
     );
   const w = collapsed ? railWidth : c.open ? width : 0;
   const float = variant === 'float';
@@ -160,7 +181,7 @@ export function SidebarContent({ children }: { children?: ReactNode }) {
   return (
     <div
       data-slot="sidebar-content"
-      className="wb-scroll"
+      className="tk-scroll"
       style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: '0 8px' }}
     >
       {children}
@@ -229,7 +250,7 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
     return (
       <button
         data-slot="sidebar-search"
-        className="bui-hl"
+        className="tk-sidebar-hl"
         title={placeholder}
         onClick={onPress}
         style={{
@@ -250,7 +271,7 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
   return (
     <button
       data-slot="sidebar-search"
-      className="bui-hl"
+      className="tk-sidebar-hl"
       onClick={onPress}
       style={{
         display: 'flex',
@@ -332,7 +353,7 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
   return (
     <button
       data-slot="sidebar-item"
-      className="bui-hl"
+      className="tk-sidebar-hl"
       title={label}
       onClick={() => {
         vib([5]);
@@ -366,7 +387,7 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
           style={{
             fontFamily: BMONO,
             fontSize: 10.5,
-            color: C.blue,
+            color: BLUE,
             background: 'rgba(10,132,255,.13)',
             borderRadius: 6,
             padding: '1px 6px',
@@ -442,7 +463,7 @@ export function SidebarNav({ variant = 'docked' }: SidebarNavProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarSearch />
-        <SidebarItem icon="plus" label="New task" tone={C.blue} />
+        <SidebarItem icon="plus" label="New task" tone={BLUE} />
         <SidebarSection title="Workspace">{[it('home', 'Home'), it('bolt', 'Agent tasks', 4), it('inbox', 'Inbox')]}</SidebarSection>
         <SidebarSection title="Objects">{[it('box', 'Suppliers'), it('box', 'Inventory')]}</SidebarSection>
       </SidebarContent>

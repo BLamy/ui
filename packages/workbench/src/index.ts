@@ -62,6 +62,7 @@ export {
 export {
   WorkbenchShell,
   useWorkbenchShell,
+  workbenchWidthClass,
   type WorkbenchShellProps,
   type WorkbenchShellContextValue,
   type WorkbenchWidthClass,

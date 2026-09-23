@@ -1,7 +1,5 @@
 import {
-  Children,
   createContext,
-  isValidElement,
   useContext,
   useEffect,
   useState,
@@ -9,7 +7,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { Haptics } from '@touchkit/ui';
+import { Haptics, collectSlots, defineSlot } from '@touchkit/ui';
 import { ChatIcon, chatIconPaths } from './chat-icon';
 import { cn } from './cn';
 import {
@@ -44,17 +42,6 @@ export function useFloatingChat(): FloatingChatContextValue {
     throw new Error('useFloatingChat must be used within <FloatingChat>');
   }
   return value;
-}
-
-interface SlotComponent {
-  (props: { children?: ReactNode }): null;
-  __floatingChatSlot: string;
-}
-
-function slot(name: string): SlotComponent {
-  const Slot = (() => null) as unknown as SlotComponent;
-  Slot.__floatingChatSlot = name;
-  return Slot;
 }
 
 export interface FloatingChatProps {
@@ -141,12 +128,7 @@ export function FloatingChat({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only resync when work starts or stops
   }, [working]);
 
-  const slots: Record<string, ReactNode> = {};
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child) || typeof child.type !== 'function') return;
-    const name = (child.type as unknown as SlotComponent).__floatingChatSlot;
-    if (name) slots[name] = (child.props as { children?: ReactNode }).children;
-  });
+  const slots = collectSlots(children);
 
   const idle = working && !composing;
 
@@ -234,7 +216,7 @@ function ChatContext({
   return <FloatingChatContext.Provider value={value}>{children}</FloatingChatContext.Provider>;
 }
 
-FloatingChat.Chat = slot('chat');
-FloatingChat.Composer = slot('composer');
+FloatingChat.Chat = defineSlot('chat');
+FloatingChat.Composer = defineSlot('composer');
 FloatingChat.Context = FloatingChatContext;
 FloatingChat.useFloatingChat = useFloatingChat;

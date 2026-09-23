@@ -1,9 +1,0 @@
-{
-  "name": "@touchkit/beautiful-app",
-  "version": "0.0.1",
-  "private": true,
-  "dependencies": {
-    "@touchkit/ui": "workspace:*",
-    "@touchkit/beautiful": "workspace:*"
-  }
-}

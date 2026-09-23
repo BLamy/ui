@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@touchkit/ui": "workspace:*",
-    "@touchkit/workbench": "workspace:*",
-    "@touchkit/beautiful": "workspace:*"
+    "@touchkit/workbench": "workspace:*"
   }
 }

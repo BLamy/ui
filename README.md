@@ -9,7 +9,6 @@ The core package is published as [`@brett_lamy/ui`](https://www.npmjs.com/packag
 - `packages/ui` — core TouchKit components, containers, haptics, and tokens
 - `packages/chatkit` — composable team-chat primitives
 - `packages/workbench` — IDE workbench shell and Docstream-backed markdown
-- `packages/beautiful` — AI-native interface primitives
 - `packages/pencilkit` — freehand drawing components
 - `apps/docs` — the documentation site
 - `apps/catalog` — the Storybook component catalog

@@ -16,6 +16,9 @@ const config: StorybookConfig = {
         'react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime',
         'framer-motion', 'react-aria-components', 'perfect-freehand', 'clsx', 'tailwind-merge', 'class-variance-authority',
         'highlight.js/lib/core', 'use-sync-external-store/shim/index.js', 'use-sync-external-store/shim/with-selector.js',
+        // docstream pulls CommonJS deps (style-to-js, debug) the browser can't import unbundled; pre-bundle it whole.
+        '@touchkit/workbench > @brett_lamy/docstream',
+        '@touchkit/workbench > @brett_lamy/docstream-editor',
       ],
     };
     return cfg;

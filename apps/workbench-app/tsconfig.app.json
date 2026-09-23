@@ -31,9 +31,6 @@
   "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
   "references": [
     {
-      "path": "../../packages/beautiful/tsconfig.lib.json"
-    },
-    {
       "path": "../../packages/workbench/tsconfig.lib.json"
     },
     {

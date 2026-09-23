@@ -9,7 +9,6 @@
     "dev:chat": "vite --config apps/chat/vite.config.mts",
     "dev:pencil": "vite --config apps/pencil/vite.config.mts",
     "dev:workbench": "vite --config apps/workbench-app/vite.config.mts",
-    "dev:beautiful": "vite --config apps/beautiful/vite.config.mts",
     "build": "nx run-many -t build",
     "test:stories": "node tools/smoke-stories.mjs",
     "dev:docs": "vite --config apps/docs/vite.config.mts"

@@ -54,6 +54,7 @@ export {
   type FloatingChatContextValue,
   type FloatingChatFabPosition,
 } from './lib/floating-chat';
+export { ChatColumn, type ChatColumnProps } from './lib/chat-column';
 export {
   ArtifactChatContainer,
   useArtifactChatContainer,

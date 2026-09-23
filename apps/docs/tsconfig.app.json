@@ -33,9 +33,6 @@
       "path": "../../packages/pencilkit/tsconfig.lib.json"
     },
     {
-      "path": "../../packages/beautiful/tsconfig.lib.json"
-    },
-    {
       "path": "../../packages/chatkit/tsconfig.lib.json"
     },
     {

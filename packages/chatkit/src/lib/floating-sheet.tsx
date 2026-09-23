@@ -1,7 +1,5 @@
 import {
-  Children,
   createContext,
-  isValidElement,
   useContext,
   useEffect,
   useId,
@@ -12,7 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { Haptics, useChromeHidden } from '@touchkit/ui';
+import { Haptics, useChromeHidden, collectSlots, defineSlot } from '@touchkit/ui';
 import { cn } from './cn';
 
 export type FloatingSheetFabPosition =
@@ -51,17 +49,6 @@ export function useFloatingSheet(): FloatingSheetContextValue {
     throw new Error('useFloatingSheet must be used within <FloatingSheet>');
   }
   return value;
-}
-
-interface SlotComponent {
-  (props: { children?: ReactNode }): null;
-  __floatingSheetSlot: string;
-}
-
-function slot(name: string): SlotComponent {
-  const Slot = (() => null) as unknown as SlotComponent;
-  Slot.__floatingSheetSlot = name;
-  return Slot;
 }
 
 /** Height of the grabber cap row at the top of the surface. */
@@ -235,12 +222,7 @@ export function FloatingSheet({
     if (open) setMinimized(false);
   }, [open]);
 
-  const slots: Record<string, ReactNode> = {};
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child) || typeof child.type !== 'function') return;
-    const name = (child.type as unknown as SlotComponent).__floatingSheetSlot;
-    if (name) slots[name] = (child.props as { children?: ReactNode }).children;
-  });
+  const slots = collectSlots(children);
   const hasFoot = slots.foot != null && slots.foot !== false;
 
   const drag = useRef({ active: false, y: 0, from: 0, moved: false });
@@ -427,8 +409,8 @@ export function FloatingSheet({
   );
 }
 
-FloatingSheet.Body = slot('body');
-FloatingSheet.Foot = slot('foot');
-FloatingSheet.Fab = slot('fab');
+FloatingSheet.Body = defineSlot('body');
+FloatingSheet.Foot = defineSlot('foot');
+FloatingSheet.Fab = defineSlot('fab');
 FloatingSheet.Context = FloatingSheetContext;
 FloatingSheet.useFloatingSheet = useFloatingSheet;

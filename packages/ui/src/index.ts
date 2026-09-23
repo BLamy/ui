@@ -9,6 +9,8 @@ export {
   TouchKitProvider, TKSafeCtx, TKStickyCtx, chromeStore, useChromeHidden, chromeOffset,
 } from './lib/theme';
 export type { TouchKitProviderProps } from './lib/theme';
+export { useContainerWidth, defineSlot, collectSlots } from './lib/container';
+export type { SlotComponent, SlotProps } from './lib/container';
 export { Icon, IC } from './lib/icon';
 export type { IconProps, IconName } from './lib/icon';
 
@@ -45,8 +47,21 @@ export { Credenza } from './components/credenza';
 export type { CredenzaProps } from './components/credenza';
 export { SideDrawer } from './components/side-drawer';
 export type { SideDrawerProps } from './components/side-drawer';
+export { EdgeDrawer } from './components/edge-drawer';
+export type { EdgeDrawerProps } from './components/edge-drawer';
+export { AdaptivePane } from './components/adaptive-pane';
+export {
+  Sidebar, SidebarProvider, SidebarHeader, SidebarContent, SidebarFooter, SidebarWorkspace, SidebarSearch,
+  SidebarSection, SidebarItem, SidebarTrigger, SidebarInset, SidebarNav, useSidebar, SBCtx, SBCollapsedCtx, SIDEBAR_ICONS,
+} from './components/sidebar';
+export type {
+  SidebarContextValue, SidebarProviderProps, SidebarVariant, SidebarProps, SidebarWorkspaceProps, SidebarSearchProps,
+  SidebarSectionProps, SidebarItemProps, SidebarNavProps,
+} from './components/sidebar';
+export type { AdaptivePaneProps, AdaptivePaneMode } from './components/adaptive-pane';
 
 // demos
+export { SidebarDemo, sidebarDarkVars } from './demos/sidebar-demo';
 export {
   HapticsPlayground, ShowMagicRow, BrightnessSlider, HapticSlider, SlideToUnlock, WheelDrum, Sun,
 } from './demos/haptics-playground';

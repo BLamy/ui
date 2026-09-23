@@ -1,7 +1,5 @@
 import {
-  Children,
   createContext,
-  isValidElement,
   useContext,
   useEffect,
   useRef,
@@ -9,6 +7,8 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
+import { collectSlots, defineSlot, useContainerWidth } from '@touchkit/ui';
+import { ChatColumn } from './chat-column';
 import { cn } from './cn';
 import { FloatingChat, type FloatingChatFabPosition, type FloatingChatProps } from './floating-chat';
 
@@ -38,17 +38,6 @@ export function useArtifactChatContainer(): ArtifactChatContainerContextValue {
 
 export type ArtifactChatContainerSlotChildren = ReactNode;
 export type ArtifactChatFabPosition = FloatingChatFabPosition;
-
-interface SlotComponent {
-  (props: { children?: ArtifactChatContainerSlotChildren }): null;
-  __artifactChatSlot: string;
-}
-
-function slot(name: string): SlotComponent {
-  const Slot = (() => null) as unknown as SlotComponent;
-  Slot.__artifactChatSlot = name;
-  return Slot;
-}
 
 export interface ArtifactChatContainerProps {
   /**
@@ -85,6 +74,8 @@ export interface ArtifactChatContainerProps {
   style?: CSSProperties;
 }
 
+/* Composition: useContainerWidth resolves the layout; split renders ChatColumn beside the content,
+   floating renders the content full-bleed under a FloatingChat. */
 export function ArtifactChatContainer({
   layout: requestedLayout = 'auto',
   breakpoint = 760,
@@ -104,9 +95,8 @@ export function ArtifactChatContainer({
   className,
   style,
 }: ArtifactChatContainerProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [rootRef, width] = useContainerWidth();
   const contentRef = useRef<HTMLElement>(null);
-  const [width, setWidth] = useState(1200);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultChatOpen);
   const [composing, setComposing] = useState(!working);
   const layout: ArtifactChatLayout =
@@ -120,26 +110,10 @@ export function ArtifactChatContainer({
   };
 
   useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const measure = () => setWidth(root.offsetWidth);
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(root);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
     setComposing(!working);
   }, [working]);
 
-  const slots: Record<string, ReactNode> = {};
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child) || typeof child.type !== 'function') return;
-    const name = (child.type as unknown as SlotComponent).__artifactChatSlot;
-    if (name) slots[name] = (child.props as { children?: ReactNode }).children;
-  });
+  const slots = collectSlots(children);
 
   const value: ArtifactChatContainerContextValue = {
     width,
@@ -187,10 +161,10 @@ export function ArtifactChatContainer({
           </>
         ) : (
           <>
-            <aside className="ck-artifact-chat__chat">
-              <div className="ck-artifact-chat__transcript">{slots.chat}</div>
-              <div className="ck-artifact-chat__composer">{slots.composer}</div>
-            </aside>
+            <ChatColumn>
+              <ChatColumn.Transcript>{slots.chat}</ChatColumn.Transcript>
+              <ChatColumn.Composer>{slots.composer}</ChatColumn.Composer>
+            </ChatColumn>
             <main className="ck-artifact-chat__content">{slots.content}</main>
           </>
         )}
@@ -199,8 +173,8 @@ export function ArtifactChatContainer({
   );
 }
 
-ArtifactChatContainer.Chat = slot('chat');
-ArtifactChatContainer.Composer = slot('composer');
-ArtifactChatContainer.Content = slot('content');
+ArtifactChatContainer.Chat = defineSlot('chat');
+ArtifactChatContainer.Composer = defineSlot('composer');
+ArtifactChatContainer.Content = defineSlot('content');
 ArtifactChatContainer.Context = ArtifactChatContainerContext;
 ArtifactChatContainer.useContainer = useArtifactChatContainer;

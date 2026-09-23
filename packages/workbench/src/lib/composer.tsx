@@ -190,7 +190,7 @@ export interface ComposerProps {
   onStop?: () => void;
   autoFocus?: boolean;
   wide?: boolean;
-  /** optional replacement for the fallback model Pill (e.g. Beautiful UI's ModelPicker) */
+  /** optional replacement for the fallback model Pill */
   modelPicker?: React.ReactNode;
   /** optional drawing surface passed through to the AnnotateLightbox */
   annotateCanvas?: React.ReactNode;

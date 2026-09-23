@@ -1,16 +1,12 @@
 import {
-  Children,
   createContext,
-  Fragment,
-  isValidElement,
   useContext,
-  useEffect,
-  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { chatTokenVars, K, KEASE, KFONT } from './chat-tokens';
+import { AdaptivePane, collectSlots, defineSlot, useContainerWidth } from '@touchkit/ui';
+import { chatTokenVars, K, KFONT } from './chat-tokens';
 import { cn } from './cn';
 
 export interface ChatShellContextValue {
@@ -31,17 +27,6 @@ export function useChatShell(): ChatShellContextValue {
 
 export type ChatShellSlotChildren = ReactNode;
 
-interface SlotComponent {
-  (props: { children?: ChatShellSlotChildren }): null;
-  __ckSlot: string;
-}
-
-function ckSlot(name: string): SlotComponent {
-  const S = (() => null) as unknown as SlotComponent;
-  S.__ckSlot = name;
-  return S;
-}
-
 export interface ChatShellProps {
   breakpoint?: number;
   /** initial state of the compact hamburger drawer (only meaningful below the breakpoint) */
@@ -51,6 +36,8 @@ export interface ChatShellProps {
   style?: CSSProperties;
 }
 
+/* Composition: useContainerWidth picks the width class; one AdaptivePane carries Rail + Nav as a docked
+   column when wide and as a left EdgeDrawer when compact. */
 export function ChatShell({
   breakpoint = 880,
   defaultNavOpen = false,
@@ -58,40 +45,11 @@ export function ChatShell({
   className,
   style,
 }: ChatShellProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [w, setW] = useState(1200);
+  const [ref, w] = useContainerWidth();
   const [navOpen, setNavOpen] = useState(defaultNavOpen);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || !window.ResizeObserver) return;
-    const ro = new ResizeObserver(() => setW(el.offsetWidth));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
   const compact = w < breakpoint;
   const ctx: ChatShellContextValue = { w, compact, navOpen, setNavOpen };
-  const slots: Record<string, ChatShellSlotChildren> = {};
-  Children.forEach(children, (c) => {
-    if (
-      isValidElement(c) &&
-      typeof c.type === 'function' &&
-      (c.type as unknown as SlotComponent).__ckSlot
-    ) {
-      slots[(c.type as unknown as SlotComponent).__ckSlot] = (
-        c.props as { children?: ChatShellSlotChildren }
-      ).children;
-    }
-  });
-  const get = (k: string): ReactNode => {
-    const sl = slots[k];
-    return sl == null ? null : sl;
-  };
-  const railNav = (
-    <Fragment>
-      {get('rail')}
-      {get('nav')}
-    </Fragment>
-  );
+  const slots = collectSlots(children);
   return (
     <ChatShellCtx.Provider value={ctx}>
       <div
@@ -112,46 +70,26 @@ export function ChatShell({
           ...style,
         }}
       >
-        {!compact && railNav}
-        <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex' }}>{get('main')}</div>
-        {compact && (
-          <Fragment>
-            <div
-              onClick={() => setNavOpen(false)}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 30,
-                background: 'rgba(0,0,0,.5)',
-                opacity: navOpen ? 1 : 0,
-                pointerEvents: navOpen ? 'auto' : 'none',
-                transition: 'opacity .3s',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                left: 0,
-                zIndex: 31,
-                display: 'flex',
-                transform: navOpen ? 'none' : 'translateX(-102%)',
-                transition: 'transform .38s ' + KEASE,
-                boxShadow: navOpen ? '0 0 44px rgba(0,0,0,.5)' : 'none',
-              }}
-            >
-              {railNav}
-            </div>
-          </Fragment>
-        )}
+        <AdaptivePane
+          mode={compact ? 'drawer' : 'column'}
+          side="left"
+          open={navOpen}
+          onClose={() => setNavOpen(false)}
+          scrim="rgba(0,0,0,.5)"
+          columnStyle={{ display: 'flex' }}
+          style={{ display: 'flex' }}
+        >
+          {slots.rail}
+          {slots.nav}
+        </AdaptivePane>
+        <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex' }}>{slots.main}</div>
       </div>
     </ChatShellCtx.Provider>
   );
 }
 
-ChatShell.Rail = ckSlot('rail');
-ChatShell.Nav = ckSlot('nav');
-ChatShell.Main = ckSlot('main');
+ChatShell.Rail = defineSlot('rail');
+ChatShell.Nav = defineSlot('nav');
+ChatShell.Main = defineSlot('main');
 ChatShell.Context = ChatShellCtx;
 ChatShell.useShell = useChatShell;

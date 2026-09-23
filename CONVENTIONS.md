@@ -5,7 +5,6 @@ TouchKit is an iOS-flavored React component framework, distributed as workspace 
 - `@touchkit/ui` — core: theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar).
 - `@touchkit/chatkit` — team-chat scaffold (ChatShell + slots, message primitives). Depends on `@touchkit/ui`.
 - `@touchkit/workbench` — IDE workbench scaffold (WorkbenchShell + slots, chat view, terminal dock, surface panel). Depends on `@touchkit/ui`.
-- `@touchkit/beautiful` — AI-native primitives (loading, thinking, approvals, agent tables, sidebar system) in the workbench dark language.
 - `@touchkit/pencilkit` — freehand drawing canvas (perfect-freehand).
 
 Source of truth for visuals: the prototypes in `../project/*.jsx` (relative to this repo root). **Ports must render pixel-identically** — keep the exact inline styles, CSS custom properties, easing (`cubic-bezier(.32,.72,0,1)`), radii, shadows, font stacks and animation timings from the prototype. Do not "modernize" the visual output.
@@ -27,9 +26,9 @@ Stories live next to components: `packages/<pkg>/src/**/*.stories.tsx`. Use CSF3
 - `Molecules/…` — ListRow, SectionHeader, IndexBar, TabBar, EditBar, Composer, Message, ThreadPreview…
 - `Organisms/…` — List, NavigationStack, SplitView, Credenza, SideDrawer, Sidebar, ChannelNav, TerminalDock, SurfacePanel, agent tables…
 - `Templates/…` — ChatShell, WorkbenchShell, SplitView layouts…
-- `Pages/…` — full demo apps (Contacts, Chat, Workbench, PencilKit, Beautiful catalog).
+- `Pages/…` — full demo apps (Contacts, Chat, Workbench, PencilKit).
 
-Wrap every story in `TouchKitProvider` (use a decorator; dark for chatkit/workbench/beautiful). Give container stories an explicit sized frame (e.g. 390×720 phone frame or 100%×640 panel) since TouchKit containers are absolutely-positioned within their host. Include a story per meaningful prop/composition variant, with `args` wired so controls work.
+Wrap every story in `TouchKitProvider` (use a decorator; dark for chatkit/workbench). Give container stories an explicit sized frame (e.g. 390×720 phone frame or 100%×640 panel) since TouchKit containers are absolutely-positioned within their host. Include a story per meaningful prop/composition variant, with `args` wired so controls work.
 
 ## Apps
 
