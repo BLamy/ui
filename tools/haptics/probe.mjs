@@ -27,6 +27,7 @@ const CASES = [
   ['organisms-dialog--closed', { tap: `${root} button >> nth=0` }, (t) => t.includes('Delete this photo?')],
   ['pages-mapchat--floating', { tap: `${root} button:has-text("Coffee near me")` }, (t) => !t.includes('Plan an afternoon in DUMBO')], // sending hides the suggestions
   ['molecules-indexbar--alpha-az', { drag: `${root} [data-slot=index-bar]` }],
+  ['molecules-indexbar--wave', { drag: `${root} [data-slot=index-bar]` }],
   ['pages-haptics-playground--bare', { tap: `${root} [role=switch], ${root} label >> nth=0` }],
 ];
 

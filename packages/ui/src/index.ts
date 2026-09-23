@@ -36,7 +36,7 @@ export { QRSvg } from './components/qr-svg';
 export type { QRSvgProps } from './components/qr-svg';
 export { List, ListSection, ListRow } from './components/list';
 export type { ListProps, ListSectionProps, ListRowProps } from './components/list';
-export { IndexBar, AL } from './components/index-bar';
+export { IndexBar, AL, indexBarVariants } from './components/index-bar';
 export type { IndexBarProps, IndexBarItem, IndexBarKey } from './components/index-bar';
 export { TabBar } from './components/tab-bar';
 export type { TabBarProps, TabBarItem } from './components/tab-bar';

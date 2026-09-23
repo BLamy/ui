@@ -13,6 +13,7 @@
 @keyframes blRing{from{transform:scale(.35);opacity:.85}to{transform:scale(2.4);opacity:0}}
 @keyframes blHapIn{0%{opacity:0;transform:translateY(8px)}10%{opacity:1;transform:none}72%{opacity:1}100%{opacity:0;transform:translateY(-4px)}}
 @keyframes blBub{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes blWaveCard{from{scale:.94;opacity:0}}
 .bl-scroll{scrollbar-width:thin;scrollbar-color:rgba(128,128,140,.35) transparent}
 .bl-scroll::-webkit-scrollbar{width:3px}
 .bl-scroll::-webkit-scrollbar-thumb{background:rgba(128,128,140,.35);border-radius:2px}

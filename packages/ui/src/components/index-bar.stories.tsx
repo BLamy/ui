@@ -49,3 +49,64 @@ function CustomItemsExample() {
 export const CustomItemsWithPreviews: Story = {
   render: () => <CustomItemsExample />,
 };
+
+const THREAD = [
+  ['Flaky CI on the index-bar test', 'Why does the index-bar test only fail on CI and never on my machine?'],
+  ['Pointer capture vs. the polyfill', 'Capturing the pointer starves the vibrator polyfill of move events during a scrub.'],
+  ['Window listeners for scrubbing', 'Track the drag with window listeners instead, and clean them up on pointercancel.'],
+  ['Haptic tick per stop', 'Only tick when the stop actually changes, otherwise a slow drag buzzes constantly.'],
+  ['Reduced motion', 'Keep the active state visible but drop the width transitions when motion is reduced.'],
+  ['Rail spacing', 'Ten pixels per stop reads as a calm column of dashes, even with forty turns.'],
+  ['Dock-style falloff', 'A raised cosine over three stops feels closer to the Dock than a gaussian did.'],
+  ['Preview card sizing', 'Cap the card at 260px and clamp the preview to two lines so it never covers the thread.'],
+  ['Left or right rail', 'Chat threads want the rail on the left; contact lists keep the classic right edge.'],
+  ['Keyboard access', 'Arrow keys move one stop, Home and End jump to the ends, and each one commits.'],
+  ['Current turn marker', 'Pass value to paint the turn in view in the tint, full length, at rest.'],
+  ['Dark mode surface', 'The card uses bg-card with the separator ring, so it holds up on both themes.'],
+  ['Touch scrubbing', 'On touch the swell follows the finger while it scrubs, and the card rides along.'],
+  ['Docs live example', 'Add a third Wave option next to Custom stops and the A–Z fallback.'],
+  ['Visual regression', 'Default IndexBar stories must stay pixel-identical after the refactor.'],
+  ['Storybook stories', 'Twenty turns is enough to show the wave without crowding the frame.'],
+  ['Release notes', 'Mention the new variant, side, and value props in the lists page table.'],
+  ['Naming the variant', 'Wave says what it does; magnify sounded like a zoom control.'],
+  ['Follow-ups', 'Maybe animate the card between stops with a spring instead of a tween.'],
+  ['Wrap-up', 'Ship it behind nothing — the default rendering is unchanged.'],
+] as const;
+
+const waveStops = THREAD.map(([caption, preview], i) => ({ key: `t${i + 1}`, caption, preview }));
+
+function WaveExample({ side }: { side: 'left' | 'right' }) {
+  const [current, setCurrent] = useState('t6');
+  const title = waveStops.find((s) => s.key === current)?.caption;
+  return (
+    <>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 60, textAlign: 'center', fontSize: 15, color: 'var(--bl-label2)' }}>
+        {title}
+      </div>
+      <IndexBar variant="wave" side={side} items={waveStops} value={current} onJump={(key) => setCurrent(key)}
+        top={12} bottom={12} label="Jump to a turn" />
+    </>
+  );
+}
+
+export const Wave: Story = {
+  render: () => <WaveExample side="right" />,
+};
+
+export const WaveLeft: Story = {
+  render: () => <WaveExample side="left" />,
+};
+
+/** Hovered state captured statically: a mouse hover is synthesized over the 9th stop. */
+export const WaveHovered: Story = {
+  render: () => <WaveExample side="left" />,
+  play: async ({ canvasElement }) => {
+    const rail = canvasElement.querySelector<HTMLElement>('[data-slot=index-bar]');
+    const stop = rail?.querySelectorAll<HTMLElement>('[role=option]')[8];
+    if (!rail || !stop) return;
+    const r = stop.getBoundingClientRect();
+    const init = { bubbles: true, pointerType: 'mouse', clientX: r.left + 10, clientY: r.top + r.height * 0.7 };
+    rail.dispatchEvent(new PointerEvent('pointerover', init));
+    rail.dispatchEvent(new PointerEvent('pointermove', init));
+  },
+};
