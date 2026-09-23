@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { cn } from './util';
 import { vib, tick } from './haptics';
 import { WIcon, IconBtn } from './icons';
 import { useWorkbenchShell } from './workbench-shell';
@@ -21,8 +22,8 @@ export function WBHeader({ thread, setCur, project = 'cookbook', className, styl
   return (
     <div
       data-slot="wb-header"
-      className={className}
-      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px', height: 44, borderBottom: '1px solid var(--wb-sep)', flexShrink: 0, boxSizing: 'border-box', ...style }}
+      className={cn('box-border flex h-11 shrink-0 items-center gap-1 border-b border-wb-sep px-2.5', className)}
+      style={style}
     >
       {compact ? (
         <IconBtn
@@ -44,11 +45,11 @@ export function WBHeader({ thread, setCur, project = 'cookbook', className, styl
           }}
         />
       )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1, marginLeft: 4 }}>
-        <WIcon name="folder" size={14} sw={1.9} style={{ color: 'var(--wb-label3)' }} />
-        <span style={{ fontSize: 12.5, color: 'var(--wb-label3)', flexShrink: 0 }}>{project}</span>
-        <span style={{ fontSize: 12.5, color: 'var(--wb-label3)' }}>/</span>
-        <span style={{ fontSize: 13, fontWeight: 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{thread ? thread.title : 'new thread'}</span>
+      <div className="ml-1 flex min-w-0 flex-1 items-center gap-1.5">
+        <WIcon name="folder" size={14} sw={1.9} className="text-wb-label3" />
+        <span className="shrink-0 text-[12.5px] text-wb-label3">{project}</span>
+        <span className="text-[12.5px] text-wb-label3">/</span>
+        <span className="truncate text-[13px] font-[650]">{thread ? thread.title : 'new thread'}</span>
       </div>
       <IconBtn
         name="plus"

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
+import { Button } from './press';
 import { cn } from './util';
 import { vib, tick } from './haptics';
 import { WIcon, IconBtn } from './icons';
@@ -27,6 +28,9 @@ export interface WorkbenchMessage {
   trace?: WorkbenchTrace;
 }
 
+/* Sidebar row chrome shared by threads, "All projects", "Show more" and Settings. */
+const rowBtn = 'wb-btn wb-hl flex cursor-pointer items-center gap-2 rounded-lg border-0 text-left';
+
 export interface ThreadSidebarProps {
   threads: WorkbenchThread[];
   cur?: string | null;
@@ -46,67 +50,38 @@ export function ThreadSidebar({ threads, cur, onSelect, onNew, onClose, compact,
     settled = list.filter((t) => t.settled);
   const shownSettled = showAll ? settled : settled.slice(0, 7);
   const row = (t: WorkbenchThread) => (
-    <button
+    <Button
       key={t.id}
-      type="button"
-      className="wb-btn wb-hl"
-      onClick={() => {
+      data-slot="thread-row"
+      className={cn(rowBtn, 'box-border w-full px-2 py-1.5 text-[13px] text-wb-label', cur === t.id ? 'bg-wb-fill2' : 'bg-transparent')}
+      onPress={() => {
         tick();
         onSelect(t.id);
       }}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        width: '100%',
-        padding: '6px 8px',
-        border: 0,
-        borderRadius: 8,
-        background: cur === t.id ? 'var(--wb-fill2)' : 'transparent',
-        color: 'var(--wb-label)',
-        fontSize: 13,
-        cursor: 'pointer',
-        textAlign: 'left',
-        boxSizing: 'border-box',
-      }}
     >
-      <WIcon name="msg" size={15} sw={1.8} style={{ color: 'var(--wb-label3)' }} />
-      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
-      <span style={{ fontSize: 11.5, color: 'var(--wb-label3)', flexShrink: 0 }}>{t.age}</span>
-    </button>
+      <WIcon name="msg" size={15} sw={1.8} className="text-wb-label3" />
+      <span className="min-w-0 flex-1 truncate">{t.title}</span>
+      <span className="shrink-0 text-[11.5px] text-wb-label3">{t.age}</span>
+    </Button>
   );
   return (
-    <div
-      data-slot="thread-sidebar"
-      className={cn(className)}
-      style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', background: 'var(--wb-side)', ...style }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 12px 8px' }}>
-        <span
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 6,
-            background: 'linear-gradient(135deg, var(--wb-tint), #5E5CE6)',
-            display: 'grid',
-            placeItems: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <WIcon name="spark" size={13} sw={2.2} style={{ color: '#fff' }} />
+    <div data-slot="thread-sidebar" className={cn('box-border flex h-full w-full flex-col bg-wb-side', className)} style={style}>
+      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
+        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-[linear-gradient(135deg,var(--wb-tint),#5E5CE6)]">
+          <WIcon name="spark" size={13} sw={2.2} className="text-white" />
         </span>
-        <span style={{ fontSize: 13.5, fontWeight: 700, letterSpacing: '-.1px' }}>Workbench</span>
-        {compact ? <IconBtn name="x" label="Close sidebar" onPress={onClose} style={{ marginLeft: 'auto' }} /> : null}
+        <span className="text-[13.5px] font-bold tracking-[-.1px]">Workbench</span>
+        {compact ? <IconBtn name="x" label="Close sidebar" onPress={onClose} className="ml-auto" /> : null}
       </div>
-      <div style={{ display: 'flex', gap: 6, padding: '0 12px 6px' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--wb-fill)', borderRadius: 8, padding: '5px 8px' }}>
-          <WIcon name="search" size={14} sw={2} style={{ color: 'var(--wb-label3)' }} />
+      <div className="flex gap-1.5 px-3 pb-1.5">
+        <div className="flex flex-1 items-center gap-1.5 rounded-lg bg-wb-fill px-2 py-[5px]">
+          <WIcon name="search" size={14} sw={2} className="text-wb-label3" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search"
             aria-label="Search threads"
-            style={{ flex: 1, minWidth: 0, border: 0, background: 'none', outline: 'none', color: 'var(--wb-label)', fontSize: 12.5, fontFamily: 'inherit' }}
+            className="min-w-0 flex-1 border-0 bg-transparent text-[12.5px] [font-family:inherit] text-wb-label outline-none"
           />
         </div>
         <IconBtn
@@ -119,113 +94,62 @@ export function ThreadSidebar({ threads, cur, onSelect, onNew, onClose, compact,
           size={17}
         />
       </div>
-      <button
-        type="button"
-        className="wb-btn wb-hl"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          margin: '0 8px',
-          padding: '6px 8px',
-          border: 0,
-          borderRadius: 8,
-          background: 'transparent',
-          color: 'var(--wb-label2)',
-          fontSize: 12.5,
-          fontWeight: 600,
-          cursor: 'pointer',
-          textAlign: 'left',
-        }}
-      >
+      <Button className={cn(rowBtn, 'mx-2 bg-transparent px-2 py-1.5 text-[12.5px] font-semibold text-wb-label2')}>
         <WIcon name="folder" size={15} sw={1.8} />
-        <span style={{ flex: 1 }}>All projects</span>
+        <span className="flex-1">All projects</span>
         <WIcon name="chevD" size={13} sw={2.2} />
-        <WIcon name="folderP" size={15} sw={1.8} style={{ color: 'var(--wb-label3)' }} />
-      </button>
-      <div className="wb-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '4px 8px 8px' }}>
+        <WIcon name="folderP" size={15} sw={1.8} className="text-wb-label3" />
+      </Button>
+      <div className="wb-scroll min-h-0 flex-1 overflow-y-auto px-2 pt-1 pb-2">
         {active.length ? (
           <React.Fragment>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 8px 4px' }}>
-              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.4px', color: 'var(--wb-label3)' }}>Active</span>
-              <span style={{ flex: 1, height: 1, background: 'var(--wb-sep)' }} />
+            <div className="flex items-center gap-2 px-2 pt-2.5 pb-1">
+              <span className="text-[11px] font-semibold tracking-[.4px] text-wb-label3">Active</span>
+              <span className="h-px flex-1 bg-wb-sep" />
             </div>
             {active.map(row)}
           </React.Fragment>
         ) : null}
-        <button
-          type="button"
-          className="wb-btn"
-          onClick={() => {
+        <Button
+          aria-expanded={openSec}
+          className="wb-btn box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1"
+          onPress={() => {
             setOpenSec((o) => !o);
             tick();
           }}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 8px 4px', border: 0, background: 'none', cursor: 'pointer', boxSizing: 'border-box' }}
         >
-          <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.4px', color: 'var(--wb-label3)' }}>Settled</span>
-          <span style={{ flex: 1, height: 1, background: 'var(--wb-sep)' }} />
-          <WIcon name={openSec ? 'chevU' : 'chevD'} size={12} sw={2.2} style={{ color: 'var(--wb-label3)' }} />
-        </button>
+          <span className="text-[11px] font-semibold tracking-[.4px] text-wb-label3">Settled</span>
+          <span className="h-px flex-1 bg-wb-sep" />
+          <WIcon name={openSec ? 'chevU' : 'chevD'} size={12} sw={2.2} className="text-wb-label3" />
+        </Button>
         {openSec ? (
           <React.Fragment>
             {shownSettled.map(row)}
             {settled.length > shownSettled.length ? (
-              <button
-                type="button"
-                className="wb-btn wb-hl"
-                onClick={() => {
+              <Button
+                className={cn(rowBtn, 'w-full bg-transparent px-2 py-1.5 text-[12.5px] text-wb-label3')}
+                onPress={() => {
                   setShowAll(true);
                   tick();
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  width: '100%',
-                  padding: '6px 8px',
-                  border: 0,
-                  borderRadius: 8,
-                  background: 'none',
-                  color: 'var(--wb-label3)',
-                  fontSize: 12.5,
-                  cursor: 'pointer',
-                  textAlign: 'left',
                 }}
               >
                 <WIcon name="plus" size={13} sw={2} />
                 <span>Show {settled.length - shownSettled.length} more</span>
-              </button>
+              </Button>
             ) : null}
           </React.Fragment>
         ) : null}
       </div>
-      <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--wb-sep)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 9, background: 'rgba(10,132,255,.12)', marginBottom: 6 }}>
-          <WIcon name="dl" size={14} sw={2} style={{ color: 'var(--wb-tint)' }} />
-          <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: 'var(--wb-tint)' }}>Update available</span>
-          <WIcon name="x" size={13} sw={2} style={{ color: 'var(--wb-label3)' }} />
+      <div className="border-t border-wb-sep px-2.5 pt-2 pb-2.5">
+        <div className="mb-1.5 flex items-center gap-2 rounded-[9px] bg-[rgba(10,132,255,.12)] px-2.5 py-[7px]">
+          <WIcon name="dl" size={14} sw={2} className="text-wb-tint" />
+          <span className="flex-1 text-[12.5px] font-semibold text-wb-tint">Update available</span>
+          <WIcon name="x" size={13} sw={2} className="text-wb-label3" />
         </div>
-        <button
-          type="button"
-          className="wb-btn wb-hl"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            width: '100%',
-            padding: '7px 8px',
-            border: 0,
-            borderRadius: 8,
-            background: 'none',
-            color: 'var(--wb-label2)',
-            fontSize: 13,
-            cursor: 'pointer',
-            textAlign: 'left',
-          }}
-        >
+        <Button className={cn(rowBtn, 'w-full bg-transparent px-2 py-[7px] text-[13px] text-wb-label2')}>
           <WIcon name="gear" size={16} sw={1.7} />
           <span>Settings</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

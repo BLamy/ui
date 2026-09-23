@@ -1,7 +1,9 @@
 import * as React from 'react';
+import { ToggleButtonGroup } from 'react-aria-components';
+import { Button, ToggleButton } from './press';
 import { MultiFileDiff } from '@pierre/diffs/react';
 import { FileTree, useFileTree } from '@pierre/trees/react';
-import { cn, MONO } from './util';
+import { cn } from './util';
 import { vib, tick } from './haptics';
 import { WIcon, IconBtn, type WIconName } from './icons';
 import { TermBody } from './terminal';
@@ -22,60 +24,58 @@ export const SURFACES: SurfaceMeta[] = [
   { k: 'agents', icon: 'bot', name: 'Agents', blurb: 'Watch subagents and workflows run.' },
 ];
 
-export function SurfaceEmpty({ onOpen }: { onOpen: (k: SurfaceKind) => void }) {
+export function SurfaceEmpty({ onOpen, className }: { onOpen: (k: SurfaceKind) => void; className?: string }) {
   return (
     <div
       data-slot="surface-empty"
-      className="wb-scroll"
-      style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '26px 20px' }}
+      className={cn('wb-scroll flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-5 py-[26px]', className)}
     >
-      <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <div style={{ fontSize: 16.5, fontWeight: 650 }}>Open a surface</div>
-        <div style={{ fontSize: 12.5, color: 'var(--wb-label2)', marginTop: 3 }}>Choose what to show in the right panel.</div>
+      <div className="mb-5 text-center">
+        <div className="text-[16.5px] font-[650]">Open a surface</div>
+        <div className="mt-[3px] text-[12.5px] text-wb-label2">Choose what to show in the right panel.</div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, maxWidth: 420, width: '100%', margin: '0 auto' }}>
+      <div className="mx-auto grid w-full max-w-[420px] grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5">
         {SURFACES.map((s) => (
-          <button
+          <Button
             key={s.k}
-            type="button"
-            className="wb-btn wb-hl"
-            onClick={() => {
+            data-slot="surface-card"
+            className="wb-btn wb-hl cursor-pointer rounded-[13px] border border-wb-sep bg-wb-card px-3.5 py-[15px] text-left text-wb-label"
+            onPress={() => {
               vib([8]);
               onOpen(s.k);
             }}
-            style={{ border: '1px solid var(--wb-sep)', background: 'var(--wb-card)', borderRadius: 13, padding: '15px 14px', cursor: 'pointer', textAlign: 'left', color: 'var(--wb-label)' }}
           >
-            <WIcon name={s.icon} size={21} sw={1.6} style={{ color: 'var(--wb-label2)' }} />
-            <div style={{ fontSize: 13.5, fontWeight: 650, marginTop: 10 }}>{s.name}</div>
-            <div style={{ fontSize: 11.5, color: 'var(--wb-label2)', marginTop: 3, lineHeight: 1.45 }}>{s.blurb}</div>
-          </button>
+            <WIcon name={s.icon} size={21} sw={1.6} className="text-wb-label2" />
+            <div className="mt-2.5 text-[13.5px] font-[650]">{s.name}</div>
+            <div className="mt-[3px] text-[11.5px] leading-[1.45] text-wb-label2">{s.blurb}</div>
+          </Button>
         ))}
       </div>
     </div>
   );
 }
 
-export function SurfaceBrowser() {
+export function SurfaceBrowser({ className }: { className?: string }) {
   return (
-    <div data-slot="surface-browser" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', borderBottom: '1px solid var(--wb-sep)', flexShrink: 0 }}>
-        <WIcon name="chevR" size={14} sw={2} style={{ color: 'var(--wb-label3)', transform: 'scaleX(-1)' }} />
-        <WIcon name="chevR" size={14} sw={2} style={{ color: 'var(--wb-label3)', opacity: 0.4 }} />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--wb-fill)', borderRadius: 7, padding: '4px 9px', fontSize: 12, fontFamily: MONO, color: 'var(--wb-label2)' }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--wb-green)' }} />
+    <div data-slot="surface-browser" className={cn('flex min-h-0 flex-1 flex-col', className)}>
+      <div className="flex shrink-0 items-center gap-1.5 border-b border-wb-sep px-2.5 py-[7px]">
+        <WIcon name="chevR" size={14} sw={2} className="-scale-x-100 text-wb-label3" />
+        <WIcon name="chevR" size={14} sw={2} className="text-wb-label3 opacity-40" />
+        <div className="flex flex-1 items-center gap-1.5 rounded-[7px] bg-wb-fill px-[9px] py-1 font-mono text-[12px] text-wb-label2">
+          <span className="size-1.5 rounded-[50%] bg-wb-green" />
           http://localhost:3000
         </div>
       </div>
-      <div style={{ flex: 1, minHeight: 0, background: '#101014', display: 'grid', placeItems: 'center', padding: 20 }}>
-        <div style={{ textAlign: 'center' }}>
-          <span style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, var(--wb-tint), #5E5CE6)', display: 'inline-grid', placeItems: 'center' }}>
-            <WIcon name="spark" size={20} sw={2} style={{ color: '#fff' }} />
+      <div className="grid min-h-0 flex-1 place-items-center bg-[#101014] p-5">
+        <div className="text-center">
+          <span className="inline-grid size-10 place-items-center rounded-[10px] bg-[linear-gradient(135deg,var(--wb-tint),#5E5CE6)]">
+            <WIcon name="spark" size={20} sw={2} className="text-white" />
           </span>
-          <div style={{ fontSize: 13.5, fontWeight: 650, marginTop: 12 }}>app-builder</div>
-          <div style={{ fontSize: 12, color: 'var(--wb-label3)', marginTop: 3, fontFamily: MONO }}>serving on :3000 · pid 5229</div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 16, justifyContent: 'center' }}>
-            {[52, 76, 40].map((w, i) => (
-              <span key={i} style={{ width: w, height: 8, borderRadius: 4, background: 'var(--wb-fill2)' }} />
+          <div className="mt-3 text-[13.5px] font-[650]">app-builder</div>
+          <div className="mt-[3px] font-mono text-[12px] text-wb-label3">serving on :3000 · pid 5229</div>
+          <div className="mt-4 flex justify-center gap-1.5">
+            {['w-[52px]', 'w-[76px]', 'w-[40px]'].map((w, i) => (
+              <span key={i} className={cn('h-2 rounded-sm bg-wb-fill2', w)} />
             ))}
           </div>
         </div>
@@ -95,7 +95,13 @@ const FILE_PATHS = [
   'cookbook/package.json',
   'cookbook/vite.config.js',
 ];
-export function SurfaceFiles() {
+/* @pierre/trees reads its colors from these custom properties on the tree host. */
+const TREE_VARS = {
+  '--trees-fg-override': 'var(--wb-label)',
+  '--trees-border-color-override': 'var(--wb-sep)',
+  '--trees-selected-bg-override': 'var(--wb-fill2)',
+} as React.CSSProperties;
+export function SurfaceFiles({ className }: { className?: string }) {
   const { model } = useFileTree({
     paths: FILE_PATHS,
     initialExpansion: 'open',
@@ -104,18 +110,8 @@ export function SurfaceFiles() {
     search: true,
   });
   return (
-    <div data-slot="surface-files" data-renderer="pierre-trees" style={{ flex: 1, minHeight: 0, padding: '8px 10px' }}>
-      <FileTree
-        model={model}
-        header={<strong style={{ fontSize: 12.5 }}>Project files</strong>}
-        style={{
-          height: '100%',
-          minHeight: 220,
-          '--trees-fg-override': 'var(--wb-label)',
-          '--trees-border-color-override': 'var(--wb-sep)',
-          '--trees-selected-bg-override': 'var(--wb-fill2)',
-        } as React.CSSProperties}
-      />
+    <div data-slot="surface-files" data-renderer="pierre-trees" className={cn('min-h-0 flex-1 px-2.5 py-2', className)}>
+      <FileTree model={model} header={<strong className="text-[12.5px]">Project files</strong>} className="h-full min-h-[220px]" style={TREE_VARS} />
     </div>
   );
 }
@@ -136,10 +132,10 @@ const surfaceDiffOptions = {
   overflow: 'scroll' as const,
   themeType: 'dark' as const,
 };
-export function SurfaceDiff() {
+export function SurfaceDiff({ className }: { className?: string }) {
   return (
-    <div data-slot="surface-diff" data-renderer="pierre-diffs" className="wb-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 12px' }}>
-      <div style={{ border: '1px solid var(--wb-sep)', borderRadius: 9, overflow: 'hidden' }}>
+    <div data-slot="surface-diff" data-renderer="pierre-diffs" className={cn('wb-scroll min-h-0 flex-1 overflow-y-auto px-3 py-2.5', className)}>
+      <div className="overflow-hidden rounded-[9px] border border-wb-sep">
         <MultiFileDiff
           oldFile={{ name: 'src/haptics.ts', contents: OLD_HAPTICS }}
           newFile={{ name: 'src/haptics.ts', contents: NEW_HAPTICS }}
@@ -156,36 +152,20 @@ const AGENTS = [
   { n: 'lint', s: 'passed', m: 'no issues · 4s' },
   { n: 'bundle-size', s: 'queued', m: 'waiting on test-runner' },
 ];
-export function SurfaceAgents() {
+/* status → dot background / label color */
+const AGENT_DOT: Record<string, string> = { running: 'bg-wb-tint animate-[wbPulse_1.2s_infinite]', passed: 'bg-wb-green' };
+const AGENT_TEXT: Record<string, string> = { running: 'text-wb-tint', passed: 'text-wb-green' };
+export function SurfaceAgents({ className }: { className?: string }) {
   return (
-    <div data-slot="surface-agents" className="wb-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px 12px' }}>
+    <div data-slot="surface-agents" className={cn('wb-scroll min-h-0 flex-1 overflow-y-auto px-3 py-2.5', className)}>
       {AGENTS.map((a) => (
-        <div key={a.n} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 10px', borderRadius: 10, marginBottom: 4, background: 'var(--wb-card)', border: '1px solid var(--wb-sep)' }}>
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              flexShrink: 0,
-              background: a.s === 'running' ? 'var(--wb-tint)' : a.s === 'passed' ? 'var(--wb-green)' : 'var(--wb-label3)',
-              animation: a.s === 'running' ? 'wbPulse 1.2s infinite' : 'none',
-            }}
-          />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 650, fontFamily: MONO }}>{a.n}</div>
-            <div style={{ fontSize: 11.5, color: 'var(--wb-label2)', marginTop: 1 }}>{a.m}</div>
+        <div key={a.n} className="mb-1 flex items-center gap-2.5 rounded-[10px] border border-wb-sep bg-wb-card px-2.5 py-[9px]">
+          <span className={cn('size-2 shrink-0 rounded-[50%]', AGENT_DOT[a.s] ?? 'bg-wb-label3')} />
+          <div className="min-w-0 flex-1">
+            <div className="font-mono text-[12.5px] font-[650]">{a.n}</div>
+            <div className="mt-px text-[11.5px] text-wb-label2">{a.m}</div>
           </div>
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: '.5px',
-              textTransform: 'uppercase',
-              color: a.s === 'running' ? 'var(--wb-tint)' : a.s === 'passed' ? 'var(--wb-green)' : 'var(--wb-label3)',
-            }}
-          >
-            {a.s}
-          </span>
+          <span className={cn('text-[10.5px] font-bold tracking-[.5px] uppercase', AGENT_TEXT[a.s] ?? 'text-wb-label3')}>{a.s}</span>
         </div>
       ))}
     </div>
@@ -205,15 +185,11 @@ export interface SurfacePanelProps {
 export function SurfacePanel({ kind, onOpen, onClose, full, onFull, compact, className, style }: SurfacePanelProps) {
   const meta = SURFACES.find((s) => s.k === kind);
   return (
-    <div
-      data-slot="surface-panel"
-      className={cn(className)}
-      style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--wb-side)', boxSizing: 'border-box', ...style }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '6px 8px 6px 14px', borderBottom: '1px solid var(--wb-sep)', flexShrink: 0, minHeight: 40, boxSizing: 'border-box' }}>
-        {meta ? <WIcon name={meta.icon} size={15} sw={1.8} style={{ color: 'var(--wb-label2)' }} /> : null}
-        <span style={{ fontSize: 13, fontWeight: 650, marginLeft: meta ? 6 : 0 }}>{meta ? meta.name : 'Surfaces'}</span>
-        <span style={{ flex: 1 }} />
+    <div data-slot="surface-panel" className={cn('box-border flex h-full w-full flex-col bg-wb-side', className)} style={style}>
+      <div className="box-border flex min-h-10 shrink-0 items-center gap-0.5 border-b border-wb-sep py-1.5 pr-2 pl-3.5">
+        {meta ? <WIcon name={meta.icon} size={15} sw={1.8} className="text-wb-label2" /> : null}
+        <span className={cn('text-[13px] font-[650]', meta && 'ml-1.5')}>{meta ? meta.name : 'Surfaces'}</span>
+        <span className="flex-1" />
         {meta ? (
           <IconBtn
             name="chevD"
@@ -242,7 +218,7 @@ export function SurfacePanel({ kind, onOpen, onClose, full, onFull, compact, cla
       {kind === 'browser' ? (
         <SurfaceBrowser />
       ) : kind === 'terminal' ? (
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#0C0C10' }}>
+        <div className="flex min-h-0 flex-1 flex-col bg-[#0C0C10]">
           <TermBody />
         </div>
       ) : kind === 'files' ? (
@@ -264,44 +240,30 @@ export interface SurfaceTabBarProps {
   className?: string;
   style?: React.CSSProperties;
 }
+/** Compact-width surface switcher: a single-select react-aria ToggleButtonGroup (arrow keys move focus).
+    Every press reports through `onPick`, including a press on the current surface. */
 export function SurfaceTabBar({ active, onPick, className, style }: SurfaceTabBarProps) {
   const tabs = [{ k: 'chat', icon: 'msg' as WIconName, name: 'Chat' }, ...SURFACES.map((s) => ({ k: s.k as string, icon: s.icon, name: s.name }))];
   return (
-    <div
+    <ToggleButtonGroup
       data-slot="surface-tab-bar"
-      role="tablist"
       aria-label="Surfaces"
-      className={className}
-      style={{ display: 'flex', flexShrink: 0, borderTop: '1px solid var(--wb-sep)', background: 'var(--wb-side)', ...style }}
+      selectionMode="single"
+      selectedKeys={active ? [active] : []}
+      className={cn('flex shrink-0 border-t border-wb-sep bg-wb-side', className)}
+      style={style}
     >
       {tabs.map((t) => (
-        <button
+        <ToggleButton
           key={t.k}
-          type="button"
-          className="wb-btn"
-          role="tab"
-          aria-selected={active === t.k}
-          onClick={() => onPick(t.k)}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            minHeight: 50,
-            border: 0,
-            background: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 3,
-            padding: '7px 0 6px',
-            color: active === t.k ? 'var(--wb-tint)' : 'var(--wb-label3)',
-          }}
+          id={t.k}
+          className="wb-btn flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-wb-label3 data-selected:text-wb-tint"
+          onPress={() => onPick(t.k)}
         >
           <WIcon name={t.icon} size={20} sw={1.8} />
-          <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '.2px' }}>{t.name}</span>
-        </button>
+          <span className="text-[9.5px] font-semibold tracking-[.2px]">{t.name}</span>
+        </ToggleButton>
       ))}
-    </div>
+    </ToggleButtonGroup>
   );
 }

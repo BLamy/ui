@@ -4,7 +4,9 @@ import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-ed
 import { astToTiptap } from '@brett_lamy/docstream-editor/convert';
 import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
 import '@brett_lamy/docstream-editor/styles.css';
-import { cn, MONO, WFONT } from './util';
+import { Button, ToggleButton } from './press';
+import { cva } from 'class-variance-authority';
+import { cn } from './util';
 import { vib, tick } from './haptics';
 import { WIcon, type WIconName } from './icons';
 
@@ -21,33 +23,28 @@ export interface PillProps {
   className?: string;
   style?: React.CSSProperties;
 }
+/** Composer option pill (model / effort / access); `tint` colors it with the accent. */
+export const pillVariants = cva(
+  'wb-btn wb-hl flex cursor-pointer items-center gap-[5px] rounded-[7px] border-0 bg-transparent px-[7px] py-[5px] text-[12.5px] font-semibold',
+  {
+    variants: { tint: { true: 'text-wb-tint', false: 'text-wb-label2' } },
+    defaultVariants: { tint: false },
+  },
+);
+
 export function Pill({ icon, label, onPress, tint, className, style }: PillProps) {
   return (
-    <button
-      type="button"
-      className={cn('wb-btn wb-hl', className)}
-      onClick={onPress}
-      title={label}
+    <Button
       data-slot="composer-pill"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 5,
-        border: 0,
-        background: 'none',
-        color: tint ? 'var(--wb-tint)' : 'var(--wb-label2)',
-        fontSize: 12.5,
-        fontWeight: 600,
-        cursor: 'pointer',
-        borderRadius: 7,
-        padding: '5px 7px',
-        ...style,
-      }}
+      className={cn(pillVariants({ tint: !!tint }), className)}
+      onPress={onPress}
+      title={label}
+      style={style}
     >
       {icon ? <WIcon name={icon} size={13.5} sw={2} /> : null}
-      <span style={{ whiteSpace: 'nowrap' }}>{label}</span>
-      <WIcon name="chevD" size={11} sw={2.4} style={{ opacity: 0.6 }} />
-    </button>
+      <span className="whitespace-nowrap">{label}</span>
+      <WIcon name="chevD" size={11} sw={2.4} className="opacity-60" />
+    </Button>
   );
 }
 
@@ -124,59 +121,32 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas }: AnnotateLight
     im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(cl));
   };
   const btn = (label: string, primary: boolean, onPress: () => void) => (
-    <button
-      type="button"
-      onClick={onPress}
-      style={{
-        border: primary ? 0 : '1px solid rgba(255,255,255,.2)',
-        borderRadius: 9,
-        background: primary ? 'var(--wb-tint, #0A84FF)' : 'none',
-        color: '#fff',
-        fontSize: 12.5,
-        fontWeight: 650,
-        padding: '7px 14px',
-        cursor: 'pointer',
-        fontFamily: WFONT,
-      }}
+    <Button
+      onPress={onPress}
+      className={cn(
+        'cursor-pointer rounded-[9px] px-3.5 py-[7px] font-ios text-[12.5px] font-[650] text-white',
+        primary ? 'border-0 bg-[var(--wb-tint,#0A84FF)]' : 'border border-[rgba(255,255,255,.2)] bg-transparent',
+      )}
     >
       {label}
-    </button>
+    </Button>
   );
   return (
-    <div data-slot="annotate-lightbox" onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,.74)', display: 'grid', placeItems: 'center' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: '90vw' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 650, color: '#EDEDF2', flex: 1, fontFamily: WFONT }}>
-            Annotate — PencilKit strokes flatten into the image on save
-          </span>
+    // backdrop: a click outside the card closes (a scrim, not a control)
+    <div data-slot="annotate-lightbox" onClick={onClose} className="fixed inset-0 z-400 grid place-items-center bg-[rgba(0,0,0,.74)]">
+      <div role="dialog" aria-label="Annotate image" onClick={(e) => e.stopPropagation()} className="flex max-w-[90vw] flex-col gap-2.5">
+        <div className="flex items-center gap-2">
+          <span className="flex-1 font-ios text-[13px] font-[650] text-[#EDEDF2]">Annotate — PencilKit strokes flatten into the image on save</span>
           {btn('Cancel', false, onClose)}
           {btn('Save annotation', true, save)}
         </div>
         <div
           ref={boxRef}
-          style={
-            {
-              position: 'relative',
-              borderRadius: 14,
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,.14)',
-              background: '#0C0C10',
-              '--bl-card': '#1C1C23',
-              '--bl-sep': 'rgba(255,255,255,.12)',
-              '--bl-label': '#EDEDF2',
-              '--bl-label2': 'rgba(235,235,245,.6)',
-              '--bl-label3': 'rgba(235,235,245,.35)',
-              '--bl-fill': 'rgba(255,255,255,.07)',
-              '--bl-fill2': 'rgba(255,255,255,.14)',
-              '--bl-tint': 'var(--wb-tint, #0A84FF)',
-            } as React.CSSProperties
-          }
+          className="relative overflow-hidden rounded-[14px] border border-[rgba(255,255,255,.14)] bg-[#0C0C10] [--bl-card:#1C1C23] [--bl-fill2:rgba(255,255,255,.14)] [--bl-fill:rgba(255,255,255,.07)] [--bl-label2:rgba(235,235,245,.6)] [--bl-label3:rgba(235,235,245,.35)] [--bl-label:#EDEDF2] [--bl-sep:rgba(255,255,255,.12)] [--bl-tint:var(--wb-tint,#0A84FF)]"
         >
-          <img ref={imgRef} src={src} alt="" style={{ display: 'block', maxWidth: '86vw', maxHeight: '68vh', minWidth: 340, minHeight: 240, objectFit: 'contain' }} />
+          <img ref={imgRef} src={src} alt="" className="block max-h-[68vh] min-h-[240px] max-w-[86vw] min-w-[340px] object-contain" />
           {canvas ?? (
-            <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#9C9CA6', fontSize: 12.5, fontFamily: WFONT }}>
-              loading PencilKit…
-            </div>
+            <div className="absolute inset-0 grid place-items-center font-ios text-[12.5px] text-[#9C9CA6]">loading PencilKit…</div>
           )}
         </div>
       </div>
@@ -300,86 +270,50 @@ export function Composer({
   };
   const annoAtt = anno ? atts.find((a) => a.id === anno) : null;
   return (
-    <div data-slot="composer" className={cn(className)} style={{ width: '100%', boxSizing: 'border-box', ...style }}>
-      <div style={{ position: 'relative', background: 'var(--wb-card)', border: '1px solid var(--wb-sep)', borderRadius: 15, boxShadow: '0 6px 24px rgba(0,0,0,.28)' }}>
-        <button
-          type="button"
-          className="wb-btn wb-hl"
+    <div data-slot="composer" className={cn('box-border w-full', className)} style={style}>
+      <div className="relative rounded-[15px] border border-wb-sep bg-wb-card shadow-[0_6px_24px_rgba(0,0,0,.28)]">
+        <ToggleButton
+          data-slot="composer-expand"
+          className="wb-btn wb-hl absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-wb-card p-0 text-wb-label2"
           aria-label={isExpanded ? 'Collapse composer' : 'Expand composer'}
-          aria-pressed={isExpanded}
-          title={isExpanded ? 'Collapse composer' : 'Expand composer'}
-          onClick={() => {
+          isSelected={isExpanded}
+          onPress={() => {
             tick();
             setExpanded(!isExpanded);
           }}
-          style={{
-            position: 'absolute',
-            zIndex: 2,
-            top: 7,
-            right: 8,
-            width: 28,
-            height: 28,
-            display: 'grid',
-            placeItems: 'center',
-            padding: 0,
-            border: 0,
-            borderRadius: 7,
-            background: 'var(--wb-card)',
-            color: 'var(--wb-label2)',
-            cursor: 'pointer',
-          }}
+          title={isExpanded ? 'Collapse composer' : 'Expand composer'}
         >
           <WIcon name={isExpanded ? 'restore' : 'expand'} size={14} sw={2} />
-        </button>
+        </ToggleButton>
         {atts.length ? (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '10px 12px 0' }}>
+          <div className="flex flex-wrap gap-2 px-3 pt-2.5">
             {atts.map((a) => (
-              <div key={a.id} style={{ position: 'relative' }}>
-                <button
-                  type="button"
-                  onClick={() => {
+              <div key={a.id} className="relative">
+                <Button
+                  onPress={() => {
                     tick();
                     setAnno(a.id);
                   }}
                   title="Annotate with PencilKit"
-                  style={{ display: 'block', padding: 0, border: '1px solid var(--wb-sep)', borderRadius: 10, overflow: 'hidden', cursor: 'pointer', background: '#0C0C10' }}
+                  className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-[#0C0C10] p-0"
                 >
-                  <img src={a.src} alt="pasted attachment" style={{ display: 'block', height: 58, maxWidth: 130, objectFit: 'cover' }} />
-                </button>
-                <span
-                  style={{ position: 'absolute', left: 4, bottom: 4, display: 'grid', placeItems: 'center', width: 18, height: 18, borderRadius: 6, background: 'rgba(0,0,0,.55)', color: '#fff', pointerEvents: 'none' }}
-                >
+                  <img src={a.src} alt="pasted attachment" className="block h-[58px] max-w-[130px] object-cover" />
+                </Button>
+                <span className="pointer-events-none absolute bottom-1 left-1 grid size-[18px] place-items-center rounded-md bg-[rgba(0,0,0,.55)] text-white">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 4l6 6-10 10H4v-6z" />
                   </svg>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => {
+                <Button
+                  onPress={() => {
                     tick();
                     setAtts((x) => x.filter((y) => y.id !== a.id));
                   }}
                   aria-label="Remove attachment"
-                  style={{
-                    position: 'absolute',
-                    top: -6,
-                    right: -6,
-                    width: 18,
-                    height: 18,
-                    borderRadius: '50%',
-                    border: '1px solid var(--wb-sep)',
-                    background: '#26262E',
-                    color: 'var(--wb-label2)',
-                    cursor: 'pointer',
-                    display: 'grid',
-                    placeItems: 'center',
-                    padding: 0,
-                    fontSize: 10,
-                    lineHeight: 1,
-                  }}
+                  className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-wb-sep bg-[#26262E] p-0 text-[10px] leading-none text-wb-label2"
                 >
                   ✕
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -401,7 +335,7 @@ export function Composer({
             editorRef.current = editor;
           }}
         />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px 8px 8px', flexWrap: 'wrap' }}>
+        <div className="flex flex-wrap items-center gap-[5px] px-2 pt-1 pb-2">
           {showOptions ? (
             <>
               {modelPicker ?? (
@@ -432,56 +366,40 @@ export function Composer({
               />
             </>
           ) : null}
-          <span style={{ flex: 1 }} />
+          <span className="flex-1" />
           {streaming ? (
-            <button
-              type="button"
-              className="wb-btn"
-              onClick={onStop}
+            <Button
+              data-slot="composer-stop"
+              className="wb-btn relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-wb-label"
+              onPress={onStop}
               aria-label="Stop"
-              style={{ position: 'relative', width: 30, height: 30, border: 0, background: 'none', cursor: 'pointer', display: 'grid', placeItems: 'center', color: 'var(--wb-label)' }}
             >
-              <svg width="30" height="30" viewBox="0 0 30 30" style={{ position: 'absolute', inset: 0, animation: 'wbSpin 1s linear infinite' }}>
+              <svg width="30" height="30" viewBox="0 0 30 30" className="absolute inset-0 animate-[wbSpin_1s_linear_infinite]">
                 <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--wb-fill2)" strokeWidth="2.5" />
                 <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--wb-tint)" strokeWidth="2.5" strokeDasharray="24 55" strokeLinecap="round" />
               </svg>
               <WIcon name="stop" size={12} sw={2.4} />
-            </button>
+            </Button>
           ) : (
-            <button
-              type="button"
-              className="wb-btn"
-              onClick={send}
+            <Button
+              data-slot="composer-send"
+              className="wb-btn grid size-[30px] cursor-pointer place-items-center rounded-[50%] border-0 bg-wb-tint text-white transition-opacity duration-150 ease-[ease] data-disabled:cursor-default data-disabled:opacity-35"
+              onPress={send}
               aria-label="Send"
-              disabled={!can}
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: '50%',
-                border: 0,
-                background: 'var(--wb-tint)',
-                color: '#fff',
-                cursor: can ? 'pointer' : 'default',
-                display: 'grid',
-                placeItems: 'center',
-                opacity: can ? 1 : 0.35,
-                transition: 'opacity .15s',
-              }}
+              isDisabled={!can}
             >
               <WIcon name="up" size={16} sw={2.4} />
-            </button>
+            </Button>
           )}
         </div>
       </div>
       {showCheckout ? (
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--wb-fill)', borderRadius: 9, padding: '6px 11px', margin: '6px 8px 0', fontSize: 12, color: 'var(--wb-label2)' }}
-        >
+        <div className="mx-2 mt-1.5 flex items-center gap-[7px] rounded-[9px] bg-wb-fill px-[11px] py-1.5 text-[12px] text-wb-label2">
           <WIcon name="folder" size={13.5} sw={1.9} />
-          <span style={{ flex: 1 }}>Local checkout</span>
+          <span className="flex-1">Local checkout</span>
           <WIcon name="branch" size={13.5} sw={1.9} />
-          <span style={{ fontFamily: MONO, fontSize: 11.5 }}>main</span>
-          <WIcon name="chevD" size={11} sw={2.4} style={{ opacity: 0.6 }} />
+          <span className="font-mono text-[11.5px]">main</span>
+          <WIcon name="chevD" size={11} sw={2.4} className="opacity-60" />
         </div>
       ) : null}
       {annoAtt ? (

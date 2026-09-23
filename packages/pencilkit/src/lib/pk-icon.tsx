@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { cn } from '@brett_lamy/ui';
 import { PKI, type PKIconName } from './constants';
 
 export interface PKIconProps extends React.SVGAttributes<SVGSVGElement> {
@@ -6,7 +7,7 @@ export interface PKIconProps extends React.SVGAttributes<SVGSVGElement> {
   size?: number;
 }
 
-export function PKIcon({ name, size, style, ...rest }: PKIconProps) {
+export function PKIcon({ name, size, className, ...rest }: PKIconProps) {
   return (
     <svg
       data-slot="pk-icon"
@@ -18,7 +19,7 @@ export function PKIcon({ name, size, style, ...rest }: PKIconProps) {
       strokeWidth="1.7"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ display: 'block', ...style }}
+      className={cn('block', className)}
       aria-hidden="true"
       {...rest}
     >

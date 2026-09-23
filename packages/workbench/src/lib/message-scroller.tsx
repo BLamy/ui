@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { Button } from './press';
 import { cn } from './util';
 import { tick } from './haptics';
 import { WIcon } from './icons';
@@ -126,10 +127,10 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
   };
   const showBtn = canDown || (streaming && !st.current.follow);
   return (
-    <div data-slot="message-scroller" className={className} style={{ position: 'relative', flex: 1, minHeight: 0, ...style }}>
+    <div data-slot="message-scroller" className={cn('relative min-h-0 flex-1', className)} style={style}>
       <div
         ref={vp}
-        className="wb-scroll"
+        className="wb-scroll absolute inset-0 overflow-y-auto overscroll-contain outline-none"
         role="region"
         aria-label="Messages"
         tabIndex={0}
@@ -141,21 +142,20 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
         onKeyDown={(e) => {
           if (e.key === 'ArrowUp' || e.key === 'PageUp' || e.key === 'Home') intent();
         }}
-        style={{ position: 'absolute', inset: 0, overflowY: 'auto', overscrollBehavior: 'contain', outline: 'none' }}
       >
         <div
           ref={ct}
           role="log"
           aria-relevant="additions"
           aria-busy={!!streaming}
-          style={{ maxWidth: 780, margin: '0 auto', padding: '16px 22px 4px', boxSizing: 'border-box' }}
+          className="mx-auto box-border max-w-[780px] px-[22px] pt-4 pb-1"
         >
           {items.map((it) => (
             <div
               key={it.id}
               data-mid={it.id}
               data-anchor={it.anchor ? '1' : undefined}
-              style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 48px' } as React.CSSProperties}
+              className="[contain-intrinsic-size:auto_48px] [content-visibility:auto]"
             >
               {it.node}
             </div>
@@ -164,39 +164,22 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
         </div>
       </div>
       {showBtn ? (
-        <button
-          type="button"
-          className={cn('wb-btn')}
-          onClick={() => {
+        <Button
+          data-slot="message-scroller-jump"
+          className={cn(
+            'wb-btn absolute bottom-3 left-1/2 flex -translate-x-1/2 cursor-pointer items-center gap-[7px] rounded-[99px] border border-wb-sep bg-wb-card text-[12.5px] font-semibold text-wb-label shadow-[0_4px_16px_rgba(0,0,0,.35)]',
+            streaming ? 'px-[13px] py-1.5' : 'p-[7px]',
+          )}
+          onPress={() => {
             toEnd(true);
             tick();
           }}
           aria-label="Jump to latest"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            bottom: 12,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 7,
-            border: '1px solid var(--wb-sep)',
-            background: 'var(--wb-card)',
-            color: 'var(--wb-label)',
-            cursor: 'pointer',
-            borderRadius: 99,
-            padding: streaming ? '6px 13px' : 7,
-            boxShadow: '0 4px 16px rgba(0,0,0,.35)',
-            fontSize: 12.5,
-            fontWeight: 600,
-          }}
         >
-          {streaming ? (
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--wb-tint)', animation: 'wbPulse 1.1s infinite' }} />
-          ) : null}
+          {streaming ? <span className="size-[7px] animate-[wbPulse_1.1s_infinite] rounded-[50%] bg-wb-tint" /> : null}
           {streaming ? 'Streaming' : null}
           <WIcon name="chevD" size={15} sw={2.2} />
-        </button>
+        </Button>
       ) : null}
     </div>
   );

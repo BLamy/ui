@@ -3,7 +3,7 @@ import './styles.css';
 export { WFONT, MONO, EASE } from './lib/util';
 export { workbenchVars, WorkbenchTheme, type WorkbenchThemeProps } from './lib/theme';
 export { vib, tick } from './lib/haptics';
-export { WIcon, IconBtn, type WIconName, type WIconProps, type IconBtnProps } from './lib/icons';
+export { WIcon, IconBtn, iconBtnVariants, type WIconName, type WIconProps, type IconBtnProps } from './lib/icons';
 export {
   MarkdownView,
   FbMd,
@@ -48,7 +48,7 @@ export {
   type SurfacePanelProps,
   type SurfaceTabBarProps,
 } from './lib/surfaces';
-export { Composer, Pill, AnnotateLightbox, type ComposerProps, type PillProps, type AnnotateLightboxProps } from './lib/composer';
+export { Composer, Pill, pillVariants, AnnotateLightbox, type ComposerProps, type PillProps, type AnnotateLightboxProps } from './lib/composer';
 export {
   ChatView,
   EmptyThread,
