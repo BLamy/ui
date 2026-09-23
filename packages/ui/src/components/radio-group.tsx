@@ -50,7 +50,7 @@ export function Radio({ className, children, ...props }: RadioProps) {
     <AriaRadio
       data-slot="radio"
       className={composeRenderProps(className, (cls) =>
-        cn('group inline-flex cursor-pointer items-center gap-3 text-[17px] text-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40', cls))}
+        cn('group relative inline-flex cursor-pointer items-center gap-3 text-[17px] text-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40', cls))}
       {...props}
     >
       {composeRenderProps(children, (kids) => (

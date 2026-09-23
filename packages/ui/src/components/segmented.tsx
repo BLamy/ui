@@ -33,7 +33,7 @@ export function Segmented({ options, value, onChange, className, style, ...rest 
         <Radio
           key={o.id}
           value={o.id}
-          className="bl-btn flex flex-1 cursor-pointer items-center justify-center rounded-[7px] px-3 py-[5px] text-[13px] font-semibold whitespace-nowrap text-bl-label outline-none transition-[background,box-shadow] duration-200 data-focus-visible:ring-2 data-focus-visible:ring-ring data-selected:bg-bl-card data-selected:shadow-[0_1px_4px_rgba(0,0,0,.14)]"
+          className="bl-btn relative flex flex-1 cursor-pointer items-center justify-center rounded-[7px] px-3 py-[5px] text-[13px] font-semibold whitespace-nowrap text-bl-label outline-none transition-[background,box-shadow] duration-200 data-focus-visible:ring-2 data-focus-visible:ring-ring data-selected:bg-bl-card data-selected:shadow-[0_1px_4px_rgba(0,0,0,.14)]"
         >
           {o.label}
         </Radio>

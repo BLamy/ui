@@ -7,8 +7,9 @@ export type { HapticEvent, HapticImpactStyle, HapticNotificationKind } from './l
 export { loadMotion, useMotion } from './lib/motion';
 export {
   BLProvider, BLSafeCtx, BLStickyCtx, chromeStore, useChromeHidden, chromeOffset,
+  AppearanceContext, AppearanceProvider, useAppearance, darkVars as blDarkVars, lightVars as blLightVars,
 } from './lib/theme';
-export type { BLProviderProps } from './lib/theme';
+export type { BLProviderProps, Appearance } from './lib/theme';
 export { useContainerWidth, defineSlot, collectSlots } from './lib/container';
 export type { SlotComponent, SlotProps } from './lib/container';
 export { Icon, IC } from './lib/icon';

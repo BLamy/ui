@@ -37,7 +37,7 @@ export function Checkbox({ className, shape, children, onChange, ...props }: Che
       data-slot="checkbox"
       onChange={(v) => { Haptics.selection(); onChange?.(v); }}
       className={composeRenderProps(className, (cls) =>
-        cn('group inline-flex cursor-pointer items-center gap-3 text-[17px] text-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40', cls))}
+        cn('group relative inline-flex cursor-pointer items-center gap-3 text-[17px] text-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40', cls))}
       {...props}
     >
       {composeRenderProps(children, (kids, { isSelected, isIndeterminate }) => (

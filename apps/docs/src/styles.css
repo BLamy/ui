@@ -6,6 +6,8 @@ body,
 }
 html,
 body {
+  /* The shell owns scrolling; `clip` also stops scrollIntoView from shifting the page. */
+  overflow: clip;
   margin: 0;
   padding: 0;
   background: #FCFCFD;
