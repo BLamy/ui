@@ -5,22 +5,18 @@
 import * as React from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
 import { EdgeDrawer } from './edge-drawer';
 import { useContainerWidth } from '../lib/container';
-import { cn, EASE as BEASE } from '../lib/utils';
+import { cn } from '../lib/utils';
 
-const BFONT = "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',sans-serif";
-const BMONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace";
 const BLUE = '#0A84FF';
-const mut = 'var(--wb-label2, rgba(235,235,245,.6))';
-const mut3 = 'var(--wb-label3, rgba(235,235,245,.34))';
-const card = (extra?: CSSProperties): CSSProperties => ({
-  background: 'var(--wb-card, #1C1C23)',
-  border: '1px solid var(--wb-sep, rgba(255,255,255,.08))',
-  borderRadius: 14,
-  fontFamily: BFONT,
-  ...extra,
-});
+/* Muted label colours with the workbench-dark fallbacks the sidebar has always carried. */
+const mut = 'text-[color:var(--wb-label2,rgba(235,235,245,.6))]';
+const mut3 = 'text-[color:var(--wb-label3,rgba(235,235,245,.34))]';
+/* --wb-sep has no fallback: when unset the whole border drops, as the original `1px solid var(--wb-sep)` did. */
+const sepR = '[border-right:1px_solid_var(--wb-sep)]';
+const sideBg = 'bg-[var(--wb-side,#101015)]';
 /** Haptic tap (no-ops where navigator.vibrate is unavailable; the Haptics engine patches it on iOS Safari). */
 const vib = (pattern: number | number[]) => {
   try {
@@ -93,16 +89,8 @@ export function SidebarProvider({ defaultOpen = true, breakpoint = 560, children
       <div
         ref={ref}
         data-slot="sidebar-provider"
-        className={cn(className)}
-        style={{
-          display: 'flex',
-          height: '100%',
-          position: 'relative',
-          overflow: 'hidden',
-          fontFamily: BFONT,
-          background: 'var(--wb-bg, #141419)',
-          ...style,
-        }}
+        className={cn('relative flex h-full overflow-hidden bg-[var(--wb-bg,#141419)] font-ios', className)}
+        style={style}
       >
         {children}
       </div>
@@ -123,7 +111,7 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
   const collapsed = !overlay && variant === 'rail' && !c.open;
   const body = (
     <SBCollapsedCtx.Provider value={collapsed}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>{children}</div>
+      <div className="flex h-full flex-col overflow-hidden">{children}</div>
     </SBCollapsedCtx.Provider>
   );
   if (overlay)
@@ -135,9 +123,9 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
         width={width}
         zIndex={20}
         shadow="0 0 44px rgba(0,0,0,.4)"
-        style={{ background: 'var(--wb-side, #101015)', borderRight: '1px solid var(--wb-sep)' }}
+        className={cn(sideBg, sepR)}
       >
-        <div data-slot="sidebar" style={{ height: '100%' }}>{body}</div>
+        <div data-slot="sidebar" className="h-full">{body}</div>
       </EdgeDrawer>
     );
   const w = collapsed ? railWidth : c.open ? width : 0;
@@ -145,24 +133,19 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
   return (
     <div
       data-slot="sidebar"
-      style={{
-        width: w,
-        flexShrink: 0,
-        overflow: 'hidden',
-        transition: 'width .32s ' + BEASE,
-        boxSizing: 'border-box',
-        background: float ? 'transparent' : 'var(--wb-side, #101015)',
-        borderRight: float ? 'none' : '1px solid var(--wb-sep)',
-        padding: float ? 10 : 0,
-      }}
+      className={cn(
+        'box-border shrink-0 overflow-hidden transition-[width] duration-320 ease-ios',
+        float ? 'bg-transparent p-2.5' : cn(sideBg, sepR, 'p-0'),
+      )}
+      // Width follows open/collapsed state and the width props.
+      style={{ width: w }}
     >
       <div
-        style={{
-          width: (collapsed ? railWidth : width) - (float ? 20 : 0),
-          height: '100%',
-          boxSizing: 'border-box',
-          ...(float ? card({ background: 'var(--wb-side, #101015)', borderRadius: 14, overflow: 'hidden' }) : {}),
-        }}
+        className={cn(
+          'box-border h-full',
+          float && cn(sideBg, 'overflow-hidden rounded-[14px] [border:1px_solid_var(--wb-sep,rgba(255,255,255,.08))] font-ios'),
+        )}
+        style={{ width: (collapsed ? railWidth : width) - (float ? 20 : 0) }}
       >
         {body}
       </div>
@@ -172,7 +155,7 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
 
 export function SidebarHeader({ children }: { children?: ReactNode }) {
   return (
-    <div data-slot="sidebar-header" style={{ padding: '12px 10px 6px', flexShrink: 0 }}>
+    <div data-slot="sidebar-header" className="shrink-0 px-2.5 pt-3 pb-1.5">
       {children}
     </div>
   );
@@ -181,8 +164,7 @@ export function SidebarContent({ children }: { children?: ReactNode }) {
   return (
     <div
       data-slot="sidebar-content"
-      className="bl-scroll"
-      style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: '0 8px' }}
+      className="bl-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2 py-0"
     >
       {children}
     </div>
@@ -190,7 +172,7 @@ export function SidebarContent({ children }: { children?: ReactNode }) {
 }
 export function SidebarFooter({ children }: { children?: ReactNode }) {
   return (
-    <div data-slot="sidebar-footer" style={{ padding: 8, borderTop: '1px solid var(--wb-sep)', flexShrink: 0 }}>
+    <div data-slot="sidebar-footer" className="shrink-0 p-2 [border-top:1px_solid_var(--wb-sep)]">
       {children}
     </div>
   );
@@ -206,34 +188,15 @@ export function SidebarWorkspace({ name, detail, initial }: SidebarWorkspaceProp
   return (
     <div
       data-slot="sidebar-workspace"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '0 2px 4px',
-        justifyContent: collapsed ? 'center' : 'flex-start',
-      }}
+      className={cn('flex items-center gap-2 px-0.5 pt-0 pb-1', collapsed ? 'justify-center' : 'justify-start')}
     >
-      <span
-        style={{
-          width: 26,
-          height: 26,
-          borderRadius: 8,
-          background: 'linear-gradient(135deg, #0A84FF, #5E5CE6)',
-          display: 'grid',
-          placeItems: 'center',
-          fontSize: 12,
-          fontWeight: 800,
-          color: '#fff',
-          flexShrink: 0,
-        }}
-      >
+      <span className="grid size-[26px] shrink-0 place-items-center rounded-[8px] bg-[linear-gradient(135deg,#0A84FF,#5E5CE6)] text-[12px] font-extrabold text-white">
         {initial || (name || 'W')[0]}
       </span>
       {!collapsed && (
-        <div style={{ lineHeight: 1.15, minWidth: 0 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--wb-label)', whiteSpace: 'nowrap' }}>{name}</div>
-          {detail && <div style={{ fontSize: 10.5, color: mut3, whiteSpace: 'nowrap' }}>{detail}</div>}
+        <div className="min-w-0 leading-[1.15]">
+          <div className="text-[12.5px] font-bold whitespace-nowrap text-wb-label">{name}</div>
+          {detail && <div className={cn('text-[10.5px] whitespace-nowrap', mut3)}>{detail}</div>}
         </div>
       )}
     </div>
@@ -248,62 +211,29 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
   const collapsed = useContext(SBCollapsedCtx);
   if (collapsed)
     return (
-      <button
+      <AriaButton
         data-slot="sidebar-search"
-        className="bl-sidebar-hl"
-        title={placeholder}
-        onClick={onPress}
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          width: '100%',
-          border: 0,
-          borderRadius: 8,
-          padding: '8px 0',
-          background: 'none',
-          color: mut3,
-          cursor: 'pointer',
-        }}
+        className={cn('bl-sidebar-hl grid w-full cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent px-0 py-2', mut3)}
+        render={(props) => <button {...props} title={placeholder} />}
+        onPress={onPress}
       >
         <BIcon d={P['search']} size={14} />
-      </button>
+      </AriaButton>
     );
   return (
-    <button
+    <AriaButton
       data-slot="sidebar-search"
-      className="bl-sidebar-hl"
-      onClick={onPress}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7,
-        width: '100%',
-        border: 0,
-        background: 'var(--wb-fill)',
-        borderRadius: 8,
-        padding: '6px 9px',
-        margin: '2px 0 4px',
-        cursor: 'pointer',
-        fontFamily: BFONT,
-      }}
+      className="bl-sidebar-hl mx-0 mt-0.5 mb-1 flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 bg-wb-fill px-[9px] py-1.5 font-ios"
+      onPress={onPress}
     >
-      <span style={{ color: mut3, display: 'grid' }}>
+      <span className={cn('grid', mut3)}>
         <BIcon d={P['search']} size={13} />
       </span>
-      <span style={{ fontSize: 12, color: mut3, flex: 1, textAlign: 'left' }}>{placeholder}</span>
-      <span
-        style={{
-          fontFamily: BMONO,
-          fontSize: 10,
-          color: mut3,
-          border: '1px solid var(--wb-sep)',
-          borderRadius: 4,
-          padding: '0 4px',
-        }}
-      >
+      <span className={cn('flex-1 text-left text-[12px]', mut3)}>{placeholder}</span>
+      <span className={cn('rounded-[4px] px-1 py-0 font-mono text-[10px] [border:1px_solid_var(--wb-sep)]', mut3)}>
         /
       </span>
-    </button>
+    </AriaButton>
   );
 }
 
@@ -317,19 +247,9 @@ export function SidebarSection({ title, children }: SidebarSectionProps) {
     <div data-slot="sidebar-section">
       {title ? (
         collapsed ? (
-          <div style={{ height: 1, background: 'var(--wb-sep)', margin: '8px 6px' }} />
+          <div className="mx-1.5 my-2 h-px bg-wb-sep" />
         ) : (
-          <div
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '.6px',
-              textTransform: 'uppercase',
-              color: mut3,
-              padding: '10px 9px 4px',
-              whiteSpace: 'nowrap',
-            }}
-          >
+          <div className={cn('px-[9px] pt-2.5 pb-1 text-[10px] font-bold tracking-[.6px] whitespace-nowrap uppercase', mut3)}>
             {title}
           </div>
         )
@@ -351,52 +271,33 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
   const collapsed = useContext(SBCollapsedCtx);
   const ic = typeof icon === 'string' ? <BIcon d={P[icon] || P['box']} size={15} sw={1.8} /> : icon;
   return (
-    <button
+    <AriaButton
       data-slot="sidebar-item"
-      className="bl-sidebar-hl"
-      title={label}
-      onClick={() => {
+      className={cn(
+        'bl-sidebar-hl mx-0 my-px flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] border-0 text-left font-ios text-[13px]',
+        collapsed ? 'justify-center px-0 py-2' : 'justify-start px-[9px] py-1.5',
+        active ? 'bg-wb-fill2' : 'bg-transparent',
+        !tone && (active ? 'text-wb-label' : mut),
+        tone ? 'font-semibold' : 'font-normal',
+      )}
+      render={(props) => <button {...props} title={label} />}
+      onPress={() => {
         vib([5]);
         onPress && onPress();
       }}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: collapsed ? 'center' : 'flex-start',
-        gap: 9,
-        width: '100%',
-        border: 0,
-        borderRadius: 8,
-        padding: collapsed ? '8px 0' : '6px 9px',
-        cursor: 'pointer',
-        fontFamily: BFONT,
-        textAlign: 'left',
-        margin: '1px 0',
-        background: active ? 'var(--wb-fill2)' : 'none',
-        color: tone || (active ? 'var(--wb-label)' : mut),
-        fontSize: 13,
-        fontWeight: tone ? 600 : 400,
-      }}
+      // A caller-chosen tone colour.
+      style={tone ? { color: tone } : undefined}
     >
-      <span style={{ display: 'grid', flexShrink: 0 }}>{ic}</span>
+      <span className="grid shrink-0">{ic}</span>
       {!collapsed && (
-        <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+        <span className="flex-1 truncate">{label}</span>
       )}
       {!collapsed && badge != null && (
-        <span
-          style={{
-            fontFamily: BMONO,
-            fontSize: 10.5,
-            color: BLUE,
-            background: 'rgba(10,132,255,.13)',
-            borderRadius: 6,
-            padding: '1px 6px',
-          }}
-        >
+        <span className="rounded-[6px] bg-[rgba(10,132,255,.13)] px-1.5 py-px font-mono text-[10.5px] text-[#0A84FF]">
           {badge}
         </span>
       )}
-    </button>
+    </AriaButton>
   );
 }
 
@@ -411,27 +312,17 @@ Sidebar.Item = SidebarItem;
 export function SidebarTrigger({ style, className }: { style?: CSSProperties; className?: string }) {
   const c = useSidebar();
   return (
-    <button
+    <AriaButton
       data-slot="sidebar-trigger"
-      className={cn('bui-hl', className)}
-      onClick={c.toggle}
+      className={cn('bui-hl grid cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent p-1.5', mut, className)}
+      onPress={c.toggle}
       aria-label="Toggle sidebar"
-      style={{
-        border: 0,
-        background: 'none',
-        color: mut,
-        cursor: 'pointer',
-        padding: 6,
-        borderRadius: 8,
-        display: 'grid',
-        placeItems: 'center',
-        ...style,
-      }}
+      style={style}
     >
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
         <path d="M4 6.5h16M4 12h16M4 17.5h16" />
       </svg>
-    </button>
+    </AriaButton>
   );
 }
 
@@ -439,8 +330,8 @@ export function SidebarInset({ children, style, className }: { children?: ReactN
   return (
     <div
       data-slot="sidebar-inset"
-      className={cn(className)}
-      style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', ...style }}
+      className={cn('flex min-w-0 flex-1 flex-col overflow-hidden', className)}
+      style={style}
     >
       {children}
     </div>

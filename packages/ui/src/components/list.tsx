@@ -2,10 +2,11 @@ import {
   use, useEffect, useLayoutEffect, useRef, useState,
   type CSSProperties, type ReactNode,
 } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { chromeOffset, BLStickyCtx, useChromeHidden } from '../lib/theme';
-import { cn, EASE } from '../lib/utils';
+import { cn } from '../lib/utils';
 
 /* ══ List primitives (prototype BLList / BLSection / BLRow) ══
    A list works out its own sticky offset: whatever chrome sits above it (nav bar, none, …) plus its own
@@ -36,12 +37,10 @@ function ListBase({ children, inset, header, stickyTop, className, style }: List
   const top = stickyTop != null ? stickyTop : above + (header ? hh : 0);
   return (
     <BLStickyCtx.Provider value={top}>
-      <div data-slot="list" className={cn(className)} style={{ padding: inset ? '0 16px' : 0, ...style }}>
+      <div data-slot="list" className={cn(inset ? 'px-4 py-0' : 'p-0', className)} style={style}>
         {header ? (
-          <div ref={hRef} style={{
-            position: 'sticky', top: chromeOffset(above, chromeHid), zIndex: 24, background: 'var(--bl-stick)',
-            backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', transition: 'top .28s ' + EASE,
-          }}>{header}</div>
+          <div ref={hRef} className="sticky z-24 bg-bl-stick backdrop-blur-[10px] transition-[top] duration-280 ease-ios"
+            style={{ top: chromeOffset(above, chromeHid) }}>{header}</div>
         ) : null}
         {children}
       </div>
@@ -66,14 +65,12 @@ export function ListSection({ title, footer, children, sticky, innerRef, stickyT
   return (
     <div ref={innerRef} data-slot="list-section" className={cn(className)} style={style}>
       {title != null ? (sticky
-        ? <div style={{
-            position: 'sticky', top, zIndex: 20, padding: '3px 16px', fontSize: 13.5, fontWeight: 600, color: 'var(--bl-label)',
-            background: 'var(--bl-stick)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', transition: 'top .28s ' + EASE,
-          }}>{title}</div>
-        : <div style={{ padding: '4px 16px 7px', fontSize: 12.5, fontWeight: 500, letterSpacing: '.4px', textTransform: 'uppercase', color: 'var(--bl-label2)' }}>{title}</div>) : null}
-      <div style={{ borderRadius: sticky ? 0 : 12, overflow: 'hidden' }}>{children}</div>
-      {footer ? <div style={{ padding: '7px 16px 0', fontSize: 12.8, lineHeight: 1.45, color: 'var(--bl-label2)' }}>{footer}</div> : null}
-      <div style={{ height: sticky ? 0 : 22 }} />
+        ? <div className="sticky z-20 bg-bl-stick px-4 py-[3px] text-[13.5px] font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-280 ease-ios"
+            style={{ top }}>{title}</div>
+        : <div className="px-4 pt-1 pb-[7px] text-[12.5px] font-medium tracking-[.4px] text-muted-foreground uppercase">{title}</div>) : null}
+      <div className={cn('overflow-hidden', sticky ? 'rounded-none' : 'rounded-[12px]')}>{children}</div>
+      {footer ? <div className="px-4 pt-[7px] pb-0 text-[12.8px] leading-[1.45] text-muted-foreground">{footer}</div> : null}
+      <div className={sticky ? 'h-0' : 'h-[22px]'} />
     </div>
   );
 }
@@ -149,51 +146,55 @@ export function ListRow(p: ListRowProps) {
   };
   const inEdit = p.edit !== undefined && p.edit !== null;
   return (
-    <div data-slot="list-row" className={cn(p.className)} style={{ position: 'relative', overflow: 'hidden', maxHeight: dead ? 0 : 200, opacity: dead ? 0 : 1, transition: 'max-height .32s ease, opacity .28s', ...p.style }}>
+    <div data-slot="list-row"
+      className={cn('relative overflow-hidden [transition:max-height_.32s_ease,opacity_.28s]', dead ? 'max-h-0 opacity-0' : 'max-h-[200px] opacity-100', p.className)}
+      style={p.style}>
       {p.onDelete && px < 0 ? (
-        <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: -px, display: 'flex', overflow: 'hidden' }}>
-          <button className="bl-btn" onClick={del} style={{
-            flex: 1, border: 0, background: 'var(--bl-red)', color: '#fff', fontSize: 15, fontWeight: 600,
-            fontFamily: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: Math.max(14, (-px - 88) / 2 + 14),
-          }}>Delete</button>
+        // The action strip and its label track the swipe offset.
+        <div className="absolute inset-y-0 right-0 flex overflow-hidden" style={{ width: -px }}>
+          <AriaButton onPress={del}
+            className="bl-btn flex flex-1 cursor-pointer items-center justify-start border-0 bg-destructive [font-family:inherit] text-[15px] font-semibold text-white"
+            style={{ paddingLeft: Math.max(14, (-px - 88) / 2 + 14) }}>Delete</AriaButton>
         </div>
       ) : null}
       <button ref={el} data-tkrow type="button" role={p.rowRole as any} aria-selected={p.rowRole ? (p.selected || p.checked || false) : undefined}
-        className={'bl-btn' + (p.onPress ? ' bl-hl' : '')}
+        className={cn(
+          'bl-btn relative box-border flex min-h-[46px] w-full touch-pan-y items-center gap-3 border-0 px-4 py-0 text-left [font-family:inherit] text-[17px]',
+          p.onPress && 'bl-hl',
+          p.destructive ? 'text-destructive' : 'text-foreground',
+          p.selected ? 'bg-accent' : 'bg-card',
+          (p.onPress || p.onDelete) ? 'cursor-pointer' : 'cursor-default',
+          anim ? '[transition:transform_.3s_cubic-bezier(.32,.72,0,1),background_.15s]' : '[transition:background_.15s]',
+        )}
         onPointerDown={start} onPointerMove={mv} onPointerUp={end} onPointerCancel={end} onClick={press}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 46, padding: '0 16px', border: 0, textAlign: 'left',
-          fontFamily: 'inherit', fontSize: 17, color: p.destructive ? 'var(--bl-red)' : 'var(--bl-label)',
-          background: p.selected ? 'var(--bl-press)' : 'var(--bl-card)', cursor: (p.onPress || p.onDelete) ? 'pointer' : 'default',
-          transform: `translateX(${px}px)`, transition: (anim ? 'transform .3s ' + EASE + ', ' : '') + 'background .15s',
-          touchAction: 'pan-y', position: 'relative', boxSizing: 'border-box',
-        }}>
+        // Swipe offset, driven by the gesture above.
+        style={{ transform: `translateX(${px}px)` }}>
         {inEdit ? (
-          <span aria-hidden="true" style={{
-            width: p.edit ? 30 : 0, marginRight: p.edit ? 0 : -12, opacity: p.edit ? 1 : 0, overflow: 'hidden',
-            display: 'flex', alignItems: 'center', flexShrink: 0, transition: 'width .25s ' + EASE + ', opacity .2s, margin-right .25s',
-          }}>
-            <span style={{
-              width: 22, height: 22, borderRadius: '50%', boxSizing: 'border-box', flexShrink: 0,
-              border: p.checked ? 'none' : '1.6px solid var(--bl-label3)', background: p.checked ? 'var(--bl-tint)' : 'transparent',
-              display: 'grid', placeItems: 'center', transition: 'background .15s',
-            }}>
-              {p.checked ? <Icon name="check" size={13} sw={3} style={{ color: '#fff' }} /> : null}
+          <span aria-hidden="true" className={cn(
+            'flex shrink-0 items-center overflow-hidden [transition:width_.25s_cubic-bezier(.32,.72,0,1),opacity_.2s,margin-right_.25s]',
+            p.edit ? 'mr-0 w-[30px] opacity-100' : '-mr-3 w-0 opacity-0',
+          )}>
+            <span className={cn(
+              'box-border grid size-[22px] shrink-0 place-items-center rounded-[50%] [transition:background_.15s]',
+              p.checked ? 'border-none bg-primary' : '[border:1.6px_solid_var(--bl-label3)] bg-transparent',
+            )}>
+              {p.checked ? <Icon name="check" size={13} sw={3} className="text-white" /> : null}
             </span>
           </span>
         ) : null}
         {p.leading || null}
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, minHeight: 46, padding: '7px 0',
-          boxShadow: p.divider === false ? 'none' : 'inset 0 -1px 0 var(--bl-sep)', justifyContent: p.center ? 'center' : 'flex-start',
-        }}>
-          <div style={{ flex: p.center ? 'none' : 1, minWidth: 0 }}>
-            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>{p.title}</div>
-            {p.subtitle ? <div style={{ fontSize: 13, color: 'var(--bl-label2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{p.subtitle}</div> : null}
+        <div className={cn(
+          'flex min-h-[46px] min-w-0 flex-1 items-center gap-2.5 px-0 py-[7px]',
+          p.divider !== false && '[box-shadow:inset_0_-1px_0_var(--bl-sep)]',
+          p.center ? 'justify-center' : 'justify-start',
+        )}>
+          <div className={cn('min-w-0', p.center ? 'flex-none' : 'flex-1')}>
+            <div className="truncate leading-[1.3]">{p.title}</div>
+            {p.subtitle ? <div className="mt-px truncate text-[13px] text-muted-foreground">{p.subtitle}</div> : null}
           </div>
           {p.trailing || null}
-          {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} style={{ color: 'var(--bl-label3)' }} />
-            : p.accessory === 'check' ? <span style={{ width: 22, flexShrink: 0 }}>{p.checked ? <Icon name="check" size={20} sw={2.4} style={{ color: 'var(--bl-tint)' }} /> : null}</span>
+          {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} className="text-bl-label3" />
+            : p.accessory === 'check' ? <span className="w-[22px] shrink-0">{p.checked ? <Icon name="check" size={20} sw={2.4} className="text-primary" /> : null}</span>
             : null}
         </div>
       </button>

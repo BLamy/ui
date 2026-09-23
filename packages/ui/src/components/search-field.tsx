@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { Button as AriaButton, Input, SearchField as AriaSearchField } from 'react-aria-components';
 import { Icon } from '../lib/icon';
 import { cn } from '../lib/utils';
 
@@ -11,22 +12,19 @@ export interface SearchFieldProps {
   style?: CSSProperties;
 }
 
+/** iOS search field on react-aria's SearchField (Esc clears a non-empty query). */
 export function SearchField({ q, setQ, placeholder = 'Search', className, style, ...rest }: SearchFieldProps) {
   return (
-    <div data-slot="search-field" className={cn(className)}
-      style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--bl-fill)', borderRadius: 11, padding: '7px 9px', ...style }}>
-      <Icon name="search" size={17} sw={2.2} style={{ color: 'var(--bl-label2)' }} />
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder} aria-label={rest['aria-label'] || 'Search'}
-        style={{
-          flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 17,
-          color: 'var(--bl-label)', padding: 0, minWidth: 0, userSelect: 'text', WebkitUserSelect: 'text',
-        }} />
+    <AriaSearchField data-slot="search-field" value={q} onChange={setQ} aria-label={rest['aria-label'] || 'Search'}
+      className={cn('flex items-center gap-[7px] rounded-[11px] bg-secondary px-[9px] py-[7px]', className)} style={style}>
+      <Icon name="search" size={17} sw={2.2} className="text-muted-foreground" />
+      <Input placeholder={placeholder}
+        className="min-w-0 flex-1 appearance-none border-none bg-transparent p-0 [font-family:inherit] text-[17px] text-foreground outline-none select-text [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none" />
       {q ? (
-        <button className="bl-btn" onClick={() => setQ('')} aria-label="Clear search"
-          style={{ border: 0, background: 'none', padding: 0, cursor: 'pointer', color: 'var(--bl-label3)', display: 'grid' }}>
+        <AriaButton aria-label="Clear search" className="bl-btn grid cursor-pointer border-0 bg-transparent p-0 text-bl-label3">
           <Icon name="xcirc" size={18} />
-        </button>
+        </AriaButton>
       ) : null}
-    </div>
+    </AriaSearchField>
   );
 }

@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
 import { cn } from '../lib/utils';
 
 export interface EditBarProps {
@@ -10,17 +11,19 @@ export interface EditBarProps {
   style?: CSSProperties;
 }
 
+const action = 'bl-btn cursor-pointer border-0 bg-transparent px-1 py-2 [font-family:inherit] text-[16.5px] data-disabled:opacity-35';
+
 export function EditBar({ count, allFav, onFav, onDelete, className, style }: EditBarProps) {
-  const b: CSSProperties = { border: 0, background: 'none', fontFamily: 'inherit', fontSize: 16.5, cursor: 'pointer', padding: '8px 4px' };
   return (
-    <div data-slot="edit-bar" className={cn(className)} style={{
-      position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 130, display: 'flex', alignItems: 'center', height: 62,
-      padding: '0 16px 4px', boxSizing: 'border-box', background: 'var(--bl-bar)', backdropFilter: 'blur(20px) saturate(1.7)',
-      WebkitBackdropFilter: 'blur(20px) saturate(1.7)', borderTop: '1px solid var(--bl-sep)', ...style,
-    }}>
-      <button className="bl-btn" disabled={!count} onClick={onFav} style={{ ...b, color: 'var(--bl-tint)', opacity: count ? 1 : .35 }}>{allFav ? 'Unfavorite' : 'Favorite'}</button>
-      <span style={{ flex: 1, textAlign: 'center', fontSize: 13, color: 'var(--bl-label2)' }}>{count ? count + ' selected' : 'Select items'}</span>
-      <button className="bl-btn" disabled={!count} onClick={onDelete} style={{ ...b, color: 'var(--bl-red)', opacity: count ? 1 : .35 }}>Delete</button>
+    <div data-slot="edit-bar"
+      className={cn(
+        'absolute inset-x-0 bottom-0 z-130 box-border flex h-[62px] items-center [border-top:1px_solid_var(--bl-sep)] bg-bl-bar px-4 pt-0 pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7]',
+        className,
+      )}
+      style={style}>
+      <AriaButton className={cn(action, 'text-primary')} isDisabled={!count} onPress={onFav}>{allFav ? 'Unfavorite' : 'Favorite'}</AriaButton>
+      <span className="flex-1 text-center text-[13px] text-muted-foreground">{count ? count + ' selected' : 'Select items'}</span>
+      <AriaButton className={cn(action, 'text-destructive')} isDisabled={!count} onPress={onDelete}>Delete</AriaButton>
     </div>
   );
 }

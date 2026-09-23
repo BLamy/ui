@@ -14,10 +14,10 @@ export interface AvatarProps {
 export function Avatar({ c, size, className, style }: AvatarProps) {
   size = size || 40; const h = hue(c.f + c.l);
   return (
-    <span data-slot="avatar" className={cn(className)} style={{
-      width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center',
-      background: `linear-gradient(180deg, hsl(${h} 62% 64%), hsl(${h} 55% 47%))`, color: '#fff',
-      fontSize: size * 0.38, fontWeight: 600, letterSpacing: '.5px', userSelect: 'none', ...style,
-    }}>{c.f[0]}{c.l[0]}</span>
+    <span data-slot="avatar"
+      className={cn('grid shrink-0 place-items-center rounded-full font-semibold tracking-[.5px] text-white select-none', className)}
+      // Size and the name-hashed gradient are computed per render.
+      style={{ width: size, height: size, fontSize: size * 0.38, background: `linear-gradient(180deg, hsl(${h} 62% 64%), hsl(${h} 55% 47%))`, ...style }}
+    >{c.f[0]}{c.l[0]}</span>
   );
 }

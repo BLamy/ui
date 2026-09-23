@@ -16,19 +16,20 @@ export function HapticIndicator({ visible, bottom, className, style }: HapticInd
   if (!visible || !ev) return null;
   const eng = Haptics.engine;
   return (
-    <div key={ev.n} data-slot="haptic-indicator" className={cn(className)} style={{
-      position: 'absolute', left: 12, bottom, zIndex: 900, pointerEvents: 'none',
-      display: 'flex', alignItems: 'center', gap: 9, padding: '6px 12px 6px 8px', borderRadius: 99,
-      background: 'var(--bl-card)', boxShadow: '0 6px 24px rgba(0,0,0,.22), 0 0 0 1px var(--bl-sep)',
-      animation: 'blHapIn 1.1s ease forwards', ...style,
-    }}>
-      <span style={{ position: 'relative', width: 22, height: 22, display: 'grid', placeItems: 'center' }}>
-        <span style={{ width: 8 + ev.w * 2, height: 8 + ev.w * 2, borderRadius: '50%', background: 'var(--bl-tint)' }} />
-        <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid var(--bl-tint)', animation: 'blRing .6s ease-out forwards' }} />
+    <div key={ev.n} data-slot="haptic-indicator"
+      className={cn(
+        'pointer-events-none absolute left-3 z-900 flex items-center gap-[9px] rounded-[99px] bg-card py-1.5 pr-3 pl-2 shadow-[0_6px_24px_rgba(0,0,0,.22),0_0_0_1px_var(--bl-sep)] animate-[blHapIn_1.1s_ease_forwards]',
+        className,
+      )}
+      style={{ bottom, ...style }}>
+      <span className="relative grid size-[22px] place-items-center">
+        {/* Dot size tracks the haptic's weight. */}
+        <span className="rounded-full bg-primary" style={{ width: 8 + ev.w * 2, height: 8 + ev.w * 2 }} />
+        <span className="absolute inset-0 rounded-full [border:2px_solid_var(--bl-tint)] animate-[blRing_.6s_ease-out_forwards]" />
       </span>
       <span>
-        <span style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--bl-label)', fontFamily: 'ui-monospace,Menlo,monospace' }}>{ev.label}</span>
-        <span style={{ display: 'block', fontSize: 9.5, color: 'var(--bl-label3)', fontFamily: 'ui-monospace,Menlo,monospace' }}>{eng}</span>
+        <span className="block [font-family:ui-monospace,Menlo,monospace] text-[11.5px] font-bold text-foreground">{ev.label}</span>
+        <span className="block [font-family:ui-monospace,Menlo,monospace] text-[9.5px] text-bl-label3">{eng}</span>
       </span>
     </div>
   );

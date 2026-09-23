@@ -22,13 +22,13 @@ export interface AdaptivePaneProps extends Omit<EdgeDrawerProps, 'open' | 'width
 export function AdaptivePane({ mode, open = false, columnWidth, drawerWidth, columnStyle, side = 'left', children, ...drawer }: AdaptivePaneProps) {
   if (mode === 'hidden') return null;
   if (mode === 'cover') {
-    return <div data-slot="adaptive-pane" data-mode="cover" style={{ position: 'absolute', inset: 0, zIndex: drawer.zIndex }}>{children}</div>;
+    return <div data-slot="adaptive-pane" data-mode="cover" className="absolute inset-0" style={{ zIndex: drawer.zIndex }}>{children}</div>;
   }
   if (mode === 'drawer') {
     return <EdgeDrawer {...drawer} side={side} open={open} width={drawerWidth}>{children}</EdgeDrawer>;
   }
   return (
-    <div data-slot="adaptive-pane" data-mode="column" data-side={side} style={{ width: columnWidth, flexShrink: 0, minHeight: 0, ...columnStyle }}>
+    <div data-slot="adaptive-pane" data-mode="column" data-side={side} className="min-h-0 shrink-0" style={{ width: columnWidth, ...columnStyle }}>
       {children}
     </div>
   );

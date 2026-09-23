@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { cn, EASE } from '../lib/utils';
+import { cn } from '../lib/utils';
 
 /* ══ EdgeDrawer — headless scrim + panel that slides in from one edge of a positioned host ══
    No chrome of its own: the children are the whole panel. Tapping the scrim calls onClose. */
@@ -29,23 +29,21 @@ export function EdgeDrawer({
       <div
         data-slot="edge-drawer-scrim"
         onClick={onClose}
-        style={{
-          position: 'absolute', inset: 0, zIndex, background: scrim,
-          opacity: open ? 1 : 0, pointerEvents: open ? 'auto' : 'none', transition: 'opacity .32s ' + EASE,
-        }}
+        className={cn('absolute inset-0 transition-opacity duration-320 ease-ios', open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0')}
+        style={{ zIndex, background: scrim }}
       />
       <div
         data-slot="edge-drawer"
         data-side={side}
         data-open={open}
         aria-hidden={!open}
-        className={cn(className)}
-        style={{
-          position: 'absolute', top: 0, bottom: 0, [side]: 0, zIndex: zIndex + 1, width, maxWidth,
-          transform: open ? 'none' : `translateX(${side === 'left' ? '-' : ''}103%)`,
-          transition: 'transform .38s ' + EASE, boxShadow: open ? shadow : 'none',
-          ...style,
-        }}
+        className={cn(
+          'absolute inset-y-0 transition-transform duration-380 ease-ios',
+          side === 'left' ? 'left-0' : 'right-0',
+          !open && (side === 'left' ? '-translate-x-[103%]' : 'translate-x-[103%]'),
+          className,
+        )}
+        style={{ zIndex: zIndex + 1, width, maxWidth, boxShadow: open ? shadow : 'none', ...style }}
       >
         {children}
       </div>
