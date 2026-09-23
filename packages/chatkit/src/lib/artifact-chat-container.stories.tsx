@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Composer } from '@touchkit/workbench';
-import '@touchkit/workbench/styles.css';
+import { Composer } from '@brett_lamy/workbench';
+import '@brett_lamy/workbench/styles.css';
 import { ArtifactChatContainer, type ArtifactChatFabPosition } from './artifact-chat-container';
 import { K, KFONT } from './chat-tokens';
 import '../styles.css';
@@ -19,9 +19,9 @@ function Transcript() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto', padding: '18px 18px 14px', background: K.bg, color: K.label }}>
       {[
         ['You', 'Can you compare the conversion rate by region?'],
-        ['TouchKit', 'I added the regional breakdown to the artifact. West is leading at 34%.'],
+        ['BL UI', 'I added the regional breakdown to the artifact. West is leading at 34%.'],
         ['You', 'Which region moved the most against last month?'],
-        ['TouchKit', 'Northeast — up 6.1 points. I highlighted it in the chart.'],
+        ['BL UI', 'Northeast — up 6.1 points. I highlighted it in the chart.'],
         ['You', 'Call out the biggest change from last month.'],
       ].map(([author, copy], index) => (
         <div key={copy} style={{ marginBottom: 18, marginTop: index === 0 ? 'auto' : undefined }}>

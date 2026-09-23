@@ -5,7 +5,7 @@ import { Pad } from '../stories/frame';
 const meta: Meta<typeof Spinner> = {
   title: 'Atoms/Spinner',
   component: Spinner,
-  decorators: [(Story) => <Pad><div style={{ color: 'var(--tk-label2)' }}><Story /></div></Pad>],
+  decorators: [(Story) => <Pad><div style={{ color: 'var(--bl-label2)' }}><Story /></div></Pad>],
 };
 export default meta;
 type Story = StoryObj<typeof Spinner>;

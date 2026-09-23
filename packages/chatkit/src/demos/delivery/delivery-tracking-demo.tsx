@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Haptics } from '@touchkit/ui';
+import { Haptics } from '@brett_lamy/ui';
 import { cn } from '../../lib/cn';
 import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from '../../lib/floating-sheet';
 import { ProgressStepper, type ProgressStep } from '../../lib/progress-stepper';

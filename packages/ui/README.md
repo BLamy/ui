@@ -8,17 +8,17 @@ Touch-first React components inspired by UIKit container patterns. The package i
 npm i @brett_lamy/ui
 ```
 
-Import the stylesheet once, then wrap the part of the app that uses TouchKit tokens:
+Import the stylesheet once, then wrap the part of the app that uses BL UI tokens:
 
 ```tsx
 import '@brett_lamy/ui/styles.css';
-import { TouchKitProvider, NavigationStack } from '@brett_lamy/ui';
+import { BLProvider, NavigationStack } from '@brett_lamy/ui';
 
 export function App() {
   return (
-    <TouchKitProvider tint="#0a84ff">
+    <BLProvider tint="#0a84ff">
       <NavigationStack screens={screens} onPop={handlePop} />
-    </TouchKitProvider>
+    </BLProvider>
   );
 }
 ```
@@ -60,13 +60,13 @@ If `items` is omitted or empty, the component retains its A-Z form:
 - Containers: `NavigationStack`, `SplitView`, `Credenza`, `SideDrawer`
 - Lists and navigation: `List`, `List.Section`, `List.Row`, `IndexBar`, `TabBar`, `EditBar`
 - Inputs and feedback: `SearchField`, `Switch`, `Segmented`, `Haptics`, `HapticIndicator`
-- Foundations: `TouchKitProvider`, `Icon`, `Avatar`, `Spinner`, token helpers
+- Foundations: `BLProvider`, `Icon`, `Avatar`, `Spinner`, token helpers
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.
 
 ## Workspace development
 
 ```sh
-pnpm nx build @touchkit/ui
-pnpm nx lint @touchkit/ui
+pnpm nx build @brett_lamy/ui
+pnpm nx lint @brett_lamy/ui
 ```

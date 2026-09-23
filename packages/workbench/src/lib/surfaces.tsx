@@ -90,7 +90,7 @@ const FILE_PATHS = [
   'cookbook/src/components/MessageScroller.tsx',
   'cookbook/src/haptics.ts',
   'cookbook/src/App.tsx',
-  'cookbook/touchkit.jsx',
+  'cookbook/blui.jsx',
   'cookbook/workbench.jsx',
   'cookbook/package.json',
   'cookbook/vite.config.js',
@@ -127,7 +127,7 @@ const OLD_HAPTICS = `export async function bootHaptics() {
 const NEW_HAPTICS = `export async function bootHaptics() {
   if (isBlockingStub(navigator.vibrate)) delete navigator.vibrate
   await import('https://esm.sh/ios-vibrator-pro-max@3.0.3')
-  window.addEventListener('tk-vib', reportHaptic)
+  window.addEventListener('bl-vib', reportHaptic)
 }`;
 const surfaceDiffOptions = {
   diffStyle: 'unified' as const,

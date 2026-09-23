@@ -1,4 +1,4 @@
-/* TouchKit PencilKit — a PencilKit-style drawing surface on perfect-freehand (steveruizok/perfect-freehand).
+/* BL UI PencilKit — a PencilKit-style drawing surface on perfect-freehand (steveruizok/perfect-freehand).
    Pointer samples [x, y, pressure] → getStroke outline polygon → one filled SVG path per stroke.
    Tools: pen / marker / pencil / stroke eraser · 6 inks · 4 widths · undo / redo / clear. */
 import type { StrokeOptions } from 'perfect-freehand';
@@ -68,31 +68,31 @@ export const PKI: Record<PKIconName, { d: string }[]> = {
 };
 
 export const PK_LIGHT: Record<string, string> = {
-  '--tk-bg': '#fff',
-  '--tk-bg2': '#F4F4F7',
-  '--tk-card': '#FFFFFF',
-  '--tk-label': '#0B0B0F',
-  '--tk-label2': 'rgba(60,60,67,.6)',
-  '--tk-label3': 'rgba(60,60,67,.38)',
-  '--tk-sep': 'rgba(60,60,67,.2)',
-  '--tk-fill': 'rgba(120,120,128,.13)',
-  '--tk-fill2': 'rgba(120,120,128,.26)',
-  '--tk-tint': '#0A84FF',
-  '--tk-green': '#34C759',
-  '--tk-red': '#FF3B30',
+  '--bl-bg': '#fff',
+  '--bl-bg2': '#F4F4F7',
+  '--bl-card': '#FFFFFF',
+  '--bl-label': '#0B0B0F',
+  '--bl-label2': 'rgba(60,60,67,.6)',
+  '--bl-label3': 'rgba(60,60,67,.38)',
+  '--bl-sep': 'rgba(60,60,67,.2)',
+  '--bl-fill': 'rgba(120,120,128,.13)',
+  '--bl-fill2': 'rgba(120,120,128,.26)',
+  '--bl-tint': '#0A84FF',
+  '--bl-green': '#34C759',
+  '--bl-red': '#FF3B30',
 };
 
 export const PK_DARK: Record<string, string> = {
-  '--tk-bg': '#000',
-  '--tk-bg2': '#101013',
-  '--tk-card': '#1C1C1E',
-  '--tk-label': '#F5F5F7',
-  '--tk-label2': 'rgba(235,235,245,.62)',
-  '--tk-label3': 'rgba(235,235,245,.34)',
-  '--tk-sep': 'rgba(84,84,88,.52)',
-  '--tk-fill': 'rgba(120,120,128,.22)',
-  '--tk-fill2': 'rgba(120,120,128,.36)',
-  '--tk-tint': '#0A84FF',
-  '--tk-green': '#30D158',
-  '--tk-red': '#FF453A',
+  '--bl-bg': '#000',
+  '--bl-bg2': '#101013',
+  '--bl-card': '#1C1C1E',
+  '--bl-label': '#F5F5F7',
+  '--bl-label2': 'rgba(235,235,245,.62)',
+  '--bl-label3': 'rgba(235,235,245,.34)',
+  '--bl-sep': 'rgba(84,84,88,.52)',
+  '--bl-fill': 'rgba(120,120,128,.22)',
+  '--bl-fill2': 'rgba(120,120,128,.36)',
+  '--bl-tint': '#0A84FF',
+  '--bl-green': '#30D158',
+  '--bl-red': '#FF453A',
 };

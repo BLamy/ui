@@ -37,9 +37,9 @@ function Master({ onPick, sel }: { onPick: (i: number) => void; sel: number | nu
 function Sidebar() {
   return (
     <div style={{ padding: '14px 12px', fontSize: 15 }}>
-      <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-.2px', marginBottom: 12 }}>TouchKit</div>
+      <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-.2px', marginBottom: 12 }}>BL UI</div>
       {['All Contacts', 'Favorites', 'Recents'].map((t, i) => (
-        <div key={t} style={{ padding: '8px 10px', borderRadius: 9, background: i === 0 ? 'var(--tk-press)' : 'transparent' }}>{t}</div>
+        <div key={t} style={{ padding: '8px 10px', borderRadius: 9, background: i === 0 ? 'var(--bl-press)' : 'transparent' }}>{t}</div>
       ))}
     </div>
   );
@@ -52,7 +52,7 @@ export const Regular: Story = {
       <Phone w={1024} h={600}>
         <SplitView wc="regular" sidebar={<Sidebar />} master={<Master sel={sel} onPick={setSel} />}
           detail={sel == null
-            ? <div style={{ height: '100%', display: 'grid', placeItems: 'center', color: 'var(--tk-label2)' }}>No Contact Selected</div>
+            ? <div style={{ height: '100%', display: 'grid', placeItems: 'center', color: 'var(--bl-label2)' }}>No Contact Selected</div>
             : (
               <NavigationStack onPop={() => setSel(null)} screens={[{
                 key: 'detail-' + sel, title: PEOPLE[sel][0] + ' ' + PEOPLE[sel][1], titleOnScroll: true, grouped: true, maxW: 640,

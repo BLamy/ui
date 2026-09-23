@@ -1,6 +1,6 @@
-/* TouchKit documentation content — markdown per page, rendered by @brett_lamy/docstream.
+/* BL UI documentation content — markdown per page, rendered by @brett_lamy/docstream.
    %%demo:<name>%% on its own line mounts a live demo between markdown segments. */
-window.TKDocs = {
+window.BLDocs = {
   nav: [
     {section: 'Getting started', pages: ['introduction', 'installation', 'theming']},
     {section: 'Haptics', pages: ['haptics']},
@@ -16,15 +16,15 @@ window.TKDocs = {
     {section: 'BUI · Primitives', pages: ['bui-popover', 'bui-toast', 'bui-skeleton', 'bui-kbd']}
   ],
   pages: {
-    'introduction': {title: 'Introduction', md: `# TouchKit
+    'introduction': {title: 'Introduction', md: `# BL UI
 
-TouchKit ports Cocoa Touch's **container controllers** to JSX. The tree is the behavior — nest containers differently and navigation changes, with no mode flags. One haptics engine drives every interaction, on iPhone, Android, and macOS trackpads.
+BL UI ports Cocoa Touch's **container controllers** to JSX. The tree is the behavior — nest containers differently and navigation changes, with no mode flags. One haptics engine drives every interaction, on iPhone, Android, and macOS trackpads.
 
 Two composed demos ship with the kit, plus a drawing surface:
 
 | Demo | What it shows |
 | --- | --- |
-| [Contacts demo](TouchKit%20Demo.dc.html) | Phone/tablet app — NavigationStack, TabView, SplitView, swipe rows, A–Z index, Credenza, SideDrawer |
+| [Contacts demo](BL UI%20Demo.dc.html) | Phone/tablet app — NavigationStack, TabView, SplitView, swipe rows, A–Z index, Credenza, SideDrawer |
 | [Workbench demo](Workbench.dc.html) | IDE scaffold — thread sidebar, chat with MessageScroller, terminal dock, right-side surface panel |
 | [PencilKit demo](PencilKit%20Demo.dc.html) | Drawing canvas — perfect-freehand ink, PencilKit-style tool palette |
 
@@ -34,7 +34,7 @@ Here is the Contacts demo, live — resize classes, swipe rows, the A–Z index,
 
 ## The dictionary
 
-| UIKit | TouchKit |
+| UIKit | BL UI |
 | --- | --- |
 | UINavigationController | \`<NavigationStack>\` — push, pop, edge-swipe back |
 | UISplitViewController | \`<SplitView>\` — collapses columns into the stack |
@@ -54,13 +54,13 @@ The Workbench layer adds desktop scaffold parts: \`WorkbenchShell\`, \`WBSidebar
 2. **Controlled components** — state in, events out; the demos own all state.
 3. **Real interaction physics** — springs, momentum, rubber-banding, and haptics on the gestures that deserve them.`},
 
-    'installation': {title: 'Installation', md: "# Installation\n\nTouchKit is a handful of plain JSX modules with no build step. Each one ships a `.tsx` facade next to it, so in an app you import components by name:\n\n```tsx\nimport { NavigationStack, TKList, IndexBar } from \"./touchkit.tsx\"\nimport { Workbench, WorkbenchShell } from \"./workbench.tsx\"\nimport { ChatShell, useChatShell } from \"./chatkit.tsx\"\n```\n\n| Module | Import from | Contents |\n| --- | --- | --- |\n| `touchkit.jsx` | `./touchkit.tsx` | Phone containers, lists, haptics, IndexBar, Credenza, SideDrawer |\n| `workbench.jsx` | `./workbench.tsx` | IDE scaffold, MessageScroller, terminal, surfaces, docstream bridge |\n| `chatkit.jsx` | `./chatkit.tsx` | ChatShell + the chat demo |\n| `pencilkit.jsx` | `./pencilkit.tsx` | PencilKit-style drawing canvas on perfect-freehand |\n\nThe facade is three lines — it imports the runtime module (which registers its global for the no-build demos) and re-exports the names:\n\n```tsx\nimport \"./chatkit.jsx\"\nconst NS = (window as any).TouchKitChat\nexport const ChatShell = NS.ChatShell, useChatShell = NS.useChatShell\nexport default NS\n```\n\n## Mounting without a bundler\n\nScript-tag / `<x-import>` setups read the globals directly — `window.TouchKit`, `window.TouchKitWB`, `window.TouchKitChat`, `window.TouchKitPencil`:\n\n```html\n<x-import component=\"App\" from=\"./touchkit.jsx\"\n  tint=\"#0A84FF\" hint-size=\"100%,700px\"></x-import>\n\n<x-import component=\"Workbench\" from=\"./workbench.jsx\"\n  terminal=\"true\" hint-size=\"100%,640px\"></x-import>\n```\n\nEvery module also exports via `module.exports` for CommonJS bundles:\n\n```js\nconst { App, Segmented, TouchKit } = require('./touchkit.jsx');\nconst { Workbench, MessageScroller, MdView } = require('./workbench.jsx');\n```\n\n## Peer expectations\n\n- React 18 or 19 on `window.React` (the demos load it for you). The kit exports `use` — React 19's `use()` when present, `useContext` on 18 — so shell context reads are identical on both.\n- No CSS files — every component is inline-styled; each module injects one small style tag for keyframes and scrollbars\n- Haptics need no setup: the engine boots itself on import (see [Haptics](#))\n\n## Live check\n\nIf the import worked, these are interactive:\n\n%%live:controls%%"},
+    'installation': {title: 'Installation', md: "# Installation\n\nBL UI is a handful of plain JSX modules with no build step. Each one ships a `.tsx` facade next to it, so in an app you import components by name:\n\n```tsx\nimport { NavigationStack, BLList, IndexBar } from \"./blui.tsx\"\nimport { Workbench, WorkbenchShell } from \"./workbench.tsx\"\nimport { ChatShell, useChatShell } from \"./chatkit.tsx\"\n```\n\n| Module | Import from | Contents |\n| --- | --- | --- |\n| `blui.jsx` | `./blui.tsx` | Phone containers, lists, haptics, IndexBar, Credenza, SideDrawer |\n| `workbench.jsx` | `./workbench.tsx` | IDE scaffold, MessageScroller, terminal, surfaces, docstream bridge |\n| `chatkit.jsx` | `./chatkit.tsx` | ChatShell + the chat demo |\n| `pencilkit.jsx` | `./pencilkit.tsx` | PencilKit-style drawing canvas on perfect-freehand |\n\nThe facade is three lines — it imports the runtime module (which registers its global for the no-build demos) and re-exports the names:\n\n```tsx\nimport \"./chatkit.jsx\"\nconst NS = (window as any).BLChat\nexport const ChatShell = NS.ChatShell, useChatShell = NS.useChatShell\nexport default NS\n```\n\n## Mounting without a bundler\n\nScript-tag / `<x-import>` setups read the globals directly — `window.BLUI`, `window.BLWorkbench`, `window.BLChat`, `window.BLPencil`:\n\n```html\n<x-import component=\"App\" from=\"./blui.jsx\"\n  tint=\"#0A84FF\" hint-size=\"100%,700px\"></x-import>\n\n<x-import component=\"Workbench\" from=\"./workbench.jsx\"\n  terminal=\"true\" hint-size=\"100%,640px\"></x-import>\n```\n\nEvery module also exports via `module.exports` for CommonJS bundles:\n\n```js\nconst { App, Segmented, BLUI } = require('./blui.jsx');\nconst { Workbench, MessageScroller, MdView } = require('./workbench.jsx');\n```\n\n## Peer expectations\n\n- React 18 or 19 on `window.React` (the demos load it for you). The kit exports `use` — React 19's `use()` when present, `useContext` on 18 — so shell context reads are identical on both.\n- No CSS files — every component is inline-styled; each module injects one small style tag for keyframes and scrollbars\n- Haptics need no setup: the engine boots itself on import (see [Haptics](#))\n\n## Live check\n\nIf the import worked, these are interactive:\n\n%%live:controls%%"},
 
     'theming': {title: 'Theming', md: `# Theming
 
 Every component reads CSS custom properties from its nearest themed ancestor, so theming is one style object on the root.
 
-## Phone components — \`--tk-*\`
+## Phone components — \`--bl-*\`
 
 \`\`\`jsx
 <App dark tint="#FF375F"/>   // the demo app sets these for you
@@ -68,12 +68,12 @@ Every component reads CSS custom properties from its nearest themed ancestor, so
 
 | Token | Light | Dark |
 | --- | --- | --- |
-| \`--tk-bg\` / \`--tk-bg2\` | #fff / #F2F2F7 | #000 / #0A0A0C |
-| \`--tk-card\` | #fff | #1C1C1E |
-| \`--tk-label\` / \`--tk-label2\` | #0B0B0F / 60% | #F5F5F7 / 62% |
-| \`--tk-sep\` | rgba(60,60,67,.22) | rgba(84,84,88,.48) |
-| \`--tk-fill\` / \`--tk-fill2\` | 13% / 24% gray | 22% / 34% gray |
-| \`--tk-tint\` | your accent | your accent |
+| \`--bl-bg\` / \`--bl-bg2\` | #fff / #F2F2F7 | #000 / #0A0A0C |
+| \`--bl-card\` | #fff | #1C1C1E |
+| \`--bl-label\` / \`--bl-label2\` | #0B0B0F / 60% | #F5F5F7 / 62% |
+| \`--bl-sep\` | rgba(60,60,67,.22) | rgba(84,84,88,.48) |
+| \`--bl-fill\` / \`--bl-fill2\` | 13% / 24% gray | 22% / 34% gray |
+| \`--bl-tint\` | your accent | your accent |
 
 ## Workbench components — \`--wb-*\`
 
@@ -83,7 +83,7 @@ The Workbench ships dark-first: \`--wb-bg\`, \`--wb-side\`, \`--wb-card\`, \`--w
 
 ## Live example
 
-Swap tokens and tint on the fly — the components just re-read their nearest \`--tk-*\` values:
+Swap tokens and tint on the fly — the components just re-read their nearest \`--bl-*\` values:
 
 %%live:theming%%`},
 
@@ -113,7 +113,7 @@ The polyfill boots **at import time** so it can wrap the DOM before your first t
 
 - Only a real **click** grants vibration, and the grant lasts about a second.
 - Drags don't grant — so mid-gesture ticks ride an overlay switch that flips under your finger.
-- Patterns longer than 1s would need main-thread blocking; TouchKit's longest pattern is ~150ms.
+- Patterns longer than 1s would need main-thread blocking; BL UI's longest pattern is ~150ms.
 
 ## Playground
 
@@ -168,16 +168,16 @@ The two are coordinated through the kit's chrome state, so a tab bar mounted thr
 
 ## Dynamic Island
 
-The bar collapses **to a floor, never to nothing**: set \`--tk-safe-top\` (or pass \`safeTop\` to \`<App>\`) and that many pixels of opaque bar stay behind, so content never scrolls under the camera island.
+The bar collapses **to a floor, never to nothing**: set \`--bl-safe-top\` (or pass \`safeTop\` to \`<App>\`) and that many pixels of opaque bar stay behind, so content never scrolls under the camera island.
 
 \`\`\`jsx
 // device frame
-<div style={{'--tk-safe-top': '59px'}}>     // env(safe-area-inset-top) on real hardware
+<div style={{'--bl-safe-top': '59px'}}>     // env(safe-area-inset-top) on real hardware
   <App safeTop={59}/>
 </div>
 \`\`\`
 
-Bar height becomes \`safeTop + 52\`; on hide it translates up by exactly 52, leaving the island strip in place. Large titles, the pull-to-refresh spinner, sticky headers, and the IndexBar rail all offset from the same number. In the [Contacts demo](TouchKit%20Demo.dc.html), switch the frame to **Phone 390** to see it — the island is drawn, and the bar stops under it.
+Bar height becomes \`safeTop + 52\`; on hide it translates up by exactly 52, leaving the island strip in place. Large titles, the pull-to-refresh spinner, sticky headers, and the IndexBar rail all offset from the same number. In the [Contacts demo](BL UI%20Demo.dc.html), switch the frame to **Phone 390** to see it — the island is drawn, and the bar stops under it.
 
 ## Live example
 %%live:nav%%`},
@@ -265,40 +265,40 @@ The real component, driven by a width-class switch instead of a ResizeObserver:
 UITableView's vocabulary: plain or inset-grouped lists, sticky section headers, swipe actions, edit mode with multi-select.
 
 \`\`\`jsx
-<TKList inset>
-  <TKSection title="A" sticky footer="42 contacts">
-    <TKRow
+<BLList inset>
+  <BLSection title="A" sticky footer="42 contacts">
+    <BLRow
       leading={<Avatar c={c}/>}
       title={c.name} subtitle={c.role}
       accessory="chevron"          // or "check"
       onPress={open} onDelete={del}
       edit={editing} checked={picked}
     />
-  </TKSection>
-</TKList>
+  </BLSection>
+</BLList>
 \`\`\`
 
 ## Headers: the list works out its own offset
 
-A sticky section header has to stop below whatever chrome is above it. \`TKList\` figures that out instead of you passing pixels:
+A sticky section header has to stop below whatever chrome is above it. \`BLList\` figures that out instead of you passing pixels:
 
 \`\`\`jsx
 // In a NavigationStack screen: sections stick below the nav bar — and follow it up when it hides
-<TKList><TKSection title="A" sticky>…</TKSection></TKList>
+<BLList><BLSection title="A" sticky>…</BLSection></BLList>
 
 // In a bare scroller: no chrome above, so sections stick at the very top
-<TKList><TKSection title="A" sticky>…</TKSection></TKList>
+<BLList><BLSection title="A" sticky>…</BLSection></BLList>
 
 // The list has its own header: sections stick below it, whatever height it measures
-<TKList header={<SearchField/>}>
-  <TKSection title="A" sticky>…</TKSection>
-</TKList>
+<BLList header={<SearchField/>}>
+  <BLSection title="A" sticky>…</BLSection>
+</BLList>
 
 // Or state it yourself
-<TKList stickyTop={72}>…</TKList>   // also available per-section: <TKSection stickyTop={…}>
+<BLList stickyTop={72}>…</BLList>   // also available per-section: <BLSection stickyTop={…}>
 \`\`\`
 
-A \`header\` passed to \`TKList\` sticks to the top of the list itself and is measured with a ResizeObserver, so a header that grows (a search field turning into a scope bar) keeps the section offsets honest. Nothing needs to know the value of \`BARH\`.
+A \`header\` passed to \`BLList\` sticks to the top of the list itself and is measured with a ResizeObserver, so a header that grows (a search field turning into a scope bar) keeps the section offsets honest. Nothing needs to know the value of \`BARH\`.
 
 ## Row behaviors
 
@@ -316,10 +316,10 @@ A \`header\` passed to \`TKList\` sticks to the top of the list itself and is me
 
     'index-bar': {title: 'IndexBar', md: `# IndexBar
 
-A jump rail with a **selection tick per stop** — the canonical TouchKit haptic. It started as the A–Z scrubber from Contacts, but the stops are yours: give it any jump points and each one can carry the text you want to see while hovering or dragging.
+A jump rail with a **selection tick per stop** — the canonical BL UI haptic. It started as the A–Z scrubber from Contacts, but the stops are yours: give it any jump points and each one can carry the text you want to see while hovering or dragging.
 
 \`\`\`jsx
-import { IndexBar } from "./touchkit.tsx"
+import { IndexBar } from "./blui.tsx"
 
 // Custom jump points — one dot per user turn, its message as the preview
 const stops = turns.filter(t => t.role === 'user').map(t => ({
@@ -428,7 +428,7 @@ The content component doesn't know which presentation it's in — the Contacts d
 
     'workbench': {title: 'Workbench shell', md: `# Workbench shell
 
-An IDE-style scaffold in TouchKit's language: **thread sidebar · chat · terminal · surface panel**, adapting per width class.
+An IDE-style scaffold in BL UI's language: **thread sidebar · chat · terminal · surface panel**, adapting per width class.
 
 %%demo:workbench%%
 
@@ -617,9 +617,9 @@ import { ReactDemo } from "@brett_lamy/docstream"
 
 <ReactDemo entry="/src/main.jsx" files={{
   "/src/main.jsx": '…createRoot(…).render(<App/>)',
-  "/src/App.jsx":  'import { IndexBar } from "./touchkit.tsx" …',
-  "/src/touchkit.tsx": facadeSource,
-  "/src/touchkit.jsx": touchkitSource,
+  "/src/App.jsx":  'import { IndexBar } from "./blui.tsx" …',
+  "/src/blui.tsx": facadeSource,
+  "/src/blui.jsx": bluiSource,
 }}/>
 \`\`\`
 
@@ -637,7 +637,7 @@ Replay a captured stream through \`GitbookStreamdown\` — watch the table and c
 
     'pencilkit': {title: 'PencilKit', md: `# PencilKit
 
-PencilKit's drawing surface in TouchKit's language, built on **[perfect-freehand](https://github.com/steveruizok/perfect-freehand)** by Steve Ruiz — the pressure-to-outline ink engine behind tldraw.
+PencilKit's drawing surface in BL UI's language, built on **[perfect-freehand](https://github.com/steveruizok/perfect-freehand)** by Steve Ruiz — the pressure-to-outline ink engine behind tldraw.
 
 %%demo:pencil%%
 
@@ -674,9 +674,9 @@ Every palette pick ticks with \`Haptics.selection()\`; undo and redo thump light
   dark="false" hint-size="100%,540px"></x-import>
 \`\`\`
 
-\`PencilCanvas\` is the raw surface — mount it inside any \`--tk-*\` themed container. \`PencilKitDemo\` wraps it with tokens and the dotted paper. Full page: [PencilKit demo](PencilKit%20Demo.dc.html).`},
+\`PencilCanvas\` is the raw surface — mount it inside any \`--bl-*\` themed container. \`PencilKitDemo\` wraps it with tokens and the dotted paper. Full page: [PencilKit demo](PencilKit%20Demo.dc.html).`},
 
-    'bui-overview': {title: 'Beautiful UI', md: "# Beautiful UI\n\nThe **Beautiful UI** layer (`beautiful.jsx` → `window.BUI`) ports the beautifului.dev catalog of AI-native primitives into TouchKit Workbench's dark language — reimplemented from scratch on `--wb-*` tokens, all controlled components, no build step.\n\n| Component | What it does |\n| --- | --- |\n| [LoadingState](#) | Pixel-grid loader, shimmer label, elapsed time |\n| [Thinking](#) | Compositional expandable reasoning trace |\n| [StreamingText](#) | Streamed answer with sources + follow-ups |\n| [ToolChips](#) | Tool calls as expandable chips |\n| [TaskRows](#) | Live agent task status |\n| [CodeBlockStream](#) | Agent-written code streaming in |\n| [SearchPalette](#) | Command search with live filtering |\n| [Sidebar system](#) | One compositional API over every sidebar variant |\n| [SelectionActions](#) | Highlight-to-agent action bar |\n| [ApprovalCard](#) | Human-in-the-loop question |\n| [RecommendationCard](#) | Suggestion + confidence + accept |\n| [ContextCards](#) | Retrieved knowledge chunks |\n| [InsightCards](#) | Paged insights with sparklines |\n| [DiffTable](#) | AI edits sweeping through rows |\n| [RecordsTable](#) | CRM grid with tags + strength |\n| [FilterTable](#) | Status chips reorganizing data |\n| [FineTuneCard](#) | Design-property inspector |\n\nEvery page in this section documents one component: a live demo, the usage source under its **Code** tab, and the API below it. Pick a page from the sidebar."},
+    'bui-overview': {title: 'Beautiful UI', md: "# Beautiful UI\n\nThe **Beautiful UI** layer (`beautiful.jsx` → `window.BUI`) ports the beautifului.dev catalog of AI-native primitives into BL UI Workbench's dark language — reimplemented from scratch on `--wb-*` tokens, all controlled components, no build step.\n\n| Component | What it does |\n| --- | --- |\n| [LoadingState](#) | Pixel-grid loader, shimmer label, elapsed time |\n| [Thinking](#) | Compositional expandable reasoning trace |\n| [StreamingText](#) | Streamed answer with sources + follow-ups |\n| [ToolChips](#) | Tool calls as expandable chips |\n| [TaskRows](#) | Live agent task status |\n| [CodeBlockStream](#) | Agent-written code streaming in |\n| [SearchPalette](#) | Command search with live filtering |\n| [Sidebar system](#) | One compositional API over every sidebar variant |\n| [SelectionActions](#) | Highlight-to-agent action bar |\n| [ApprovalCard](#) | Human-in-the-loop question |\n| [RecommendationCard](#) | Suggestion + confidence + accept |\n| [ContextCards](#) | Retrieved knowledge chunks |\n| [InsightCards](#) | Paged insights with sparklines |\n| [DiffTable](#) | AI edits sweeping through rows |\n| [RecordsTable](#) | CRM grid with tags + strength |\n| [FilterTable](#) | Status chips reorganizing data |\n| [FineTuneCard](#) | Design-property inspector |\n\nEvery page in this section documents one component: a live demo, the usage source under its **Code** tab, and the API below it. Pick a page from the sidebar."},
 
     'bui-loading': {title: 'LoadingState', md: "# LoadingState\n\nA compact \"the agent is working\" pill — a pixel-grid loader, a shimmering label, and an elapsed-time counter so waits never feel dead.\n\n%%live:buiLoading%%\n\n## API\n\n| Prop | Type | Default | Notes |\n| --- | --- | --- | --- |\n| `variant` | `\"grid\" \\| \"dots\" \\| \"orbit\"` | `\"grid\"` | Loader graphic |\n| `label` | string | `\"Churning\"` | Shimmer text |\n\nThe elapsed timer starts on mount — remount to reset it."},
 
@@ -736,8 +736,8 @@ Every palette pick ticks with \`Haptics.selection()\`; undo and redo thump light
 
     'bui-kbd': {title: 'Kbd', md: "# Kbd\n\nKeyboard hints — a tiny primitive the palette, menus, and shortcut lists all share.\n\n%%live:buiKbd%%\n\n## API\n\n`<Kbd>⌘K</Kbd>` — mono, bordered, bottom-weighted like a real keycap. Used by `CommandMenu.Item` and `Dropdown.Item` via their `kbd` prop."},
 
-    'workbench-shell': {title: 'WorkbenchShell', md: "# WorkbenchShell\n\nThe Workbench scaffold as a **compositional container**. The shell owns the width class and every region's open state; you compose the regions as slots, and each slot child reads that state through context — no render props, no prop drilling.\n\n```tsx\nimport { WorkbenchShell, useWorkbenchShell } from \"./workbench.tsx\"\n\nfunction App() {\n  return (\n    <WorkbenchShell tint=\"#0A84FF\">\n      <WorkbenchShell.Sidebar><ThreadList/></WorkbenchShell.Sidebar>\n      <WorkbenchShell.Main><Chat/></WorkbenchShell.Main>\n      <WorkbenchShell.Dock><TerminalDock/></WorkbenchShell.Dock>\n      <WorkbenchShell.DockSheet><TermBody/></WorkbenchShell.DockSheet>\n      <WorkbenchShell.Panel><SurfacePanel/></WorkbenchShell.Panel>\n      <WorkbenchShell.TabBar><SurfaceTabBar/></WorkbenchShell.TabBar>\n    </WorkbenchShell>\n  )\n}\n\n// Any child, at any depth, asks the shell what it needs:\nfunction TerminalDock() {\n  const { termH, setTermH, setTerm } = useWorkbenchShell()\n  return <Dock h={termH} onResize={setTermH} onClose={() => setTerm(false)}/>\n}\n```\n\n## Reading the shell\n\n`useWorkbenchShell()` is one line over the context — `use(WorkbenchShell.Context)`. React 19's `use()` reads context in a component body, and on React 18 `useContext` has the identical call shape, so the kit exports `use` and both work:\n\n```tsx\nimport { use } from \"./touchkit.tsx\"     // React.use ?? React.useContext\nconst { compact, panel, setPanel } = use(WorkbenchShell.Context)\n```\n\nWhy this and not `{ctx => …}`: slot children stay ordinary components — they can be moved, memoized, or reused outside the shell — and only the components that actually read a region re-render when it changes.\n\n## Slots\n\n| Slot | Regular / medium | Compact |\n| --- | --- | --- |\n| `Sidebar` | 242px column, toggleable | Overlay sheet (`sideSheet`) |\n| `Main` | Center column | Center column |\n| `Dock` | Inline resizable dock under Main | — |\n| `DockSheet` | — | Content inside a SnapSheet |\n| `Panel` | Right column (regular) / right drawer (medium) / fullscreen (`full`) | Full-screen tab |\n| `TabBar` | — | Bottom tab bar |\n\n## ctx\n\n`{wc, compact, side, setSide, sideSheet, setSideSheet, term, setTerm, termH, setTermH, panel, setPanel, tab, setTab, full, setFull}`\n\nThe [Workbench demo](Workbench.dc.html) root is literally this composition — its header, sidebar, terminal, and surface panel are ordinary slot children that each call `useWorkbenchShell()`.\n\n## Composer attachments\n\nThe Workbench Composer takes pasted images: thumbnails appear above the input; click one to open a lightbox with a **PencilKit** canvas over the image; **Save annotation** flattens the markup into the PNG that gets sent."},
+    'workbench-shell': {title: 'WorkbenchShell', md: "# WorkbenchShell\n\nThe Workbench scaffold as a **compositional container**. The shell owns the width class and every region's open state; you compose the regions as slots, and each slot child reads that state through context — no render props, no prop drilling.\n\n```tsx\nimport { WorkbenchShell, useWorkbenchShell } from \"./workbench.tsx\"\n\nfunction App() {\n  return (\n    <WorkbenchShell tint=\"#0A84FF\">\n      <WorkbenchShell.Sidebar><ThreadList/></WorkbenchShell.Sidebar>\n      <WorkbenchShell.Main><Chat/></WorkbenchShell.Main>\n      <WorkbenchShell.Dock><TerminalDock/></WorkbenchShell.Dock>\n      <WorkbenchShell.DockSheet><TermBody/></WorkbenchShell.DockSheet>\n      <WorkbenchShell.Panel><SurfacePanel/></WorkbenchShell.Panel>\n      <WorkbenchShell.TabBar><SurfaceTabBar/></WorkbenchShell.TabBar>\n    </WorkbenchShell>\n  )\n}\n\n// Any child, at any depth, asks the shell what it needs:\nfunction TerminalDock() {\n  const { termH, setTermH, setTerm } = useWorkbenchShell()\n  return <Dock h={termH} onResize={setTermH} onClose={() => setTerm(false)}/>\n}\n```\n\n## Reading the shell\n\n`useWorkbenchShell()` is one line over the context — `use(WorkbenchShell.Context)`. React 19's `use()` reads context in a component body, and on React 18 `useContext` has the identical call shape, so the kit exports `use` and both work:\n\n```tsx\nimport { use } from \"./blui.tsx\"     // React.use ?? React.useContext\nconst { compact, panel, setPanel } = use(WorkbenchShell.Context)\n```\n\nWhy this and not `{ctx => …}`: slot children stay ordinary components — they can be moved, memoized, or reused outside the shell — and only the components that actually read a region re-render when it changes.\n\n## Slots\n\n| Slot | Regular / medium | Compact |\n| --- | --- | --- |\n| `Sidebar` | 242px column, toggleable | Overlay sheet (`sideSheet`) |\n| `Main` | Center column | Center column |\n| `Dock` | Inline resizable dock under Main | — |\n| `DockSheet` | — | Content inside a SnapSheet |\n| `Panel` | Right column (regular) / right drawer (medium) / fullscreen (`full`) | Full-screen tab |\n| `TabBar` | — | Bottom tab bar |\n\n## ctx\n\n`{wc, compact, side, setSide, sideSheet, setSideSheet, term, setTerm, termH, setTermH, panel, setPanel, tab, setTab, full, setFull}`\n\nThe [Workbench demo](Workbench.dc.html) root is literally this composition — its header, sidebar, terminal, and surface panel are ordinary slot children that each call `useWorkbenchShell()`.\n\n## Composer attachments\n\nThe Workbench Composer takes pasted images: thumbnails appear above the input; click one to open a lightbox with a **PencilKit** canvas over the image; **Save annotation** flattens the markup into the PNG that gets sent."},
 
-    'chat-shell': {title: 'ChatShell', md: "# ChatShell\n\nThe chat demo's scaffold as a compositional container. Rail and channel column render as columns when wide and collapse into a single hamburger drawer below the breakpoint.\n\n```tsx\nimport { ChatShell, useChatShell } from \"./chatkit.tsx\"\n\nfunction App() {\n  return (\n    <ChatShell breakpoint={880}>\n      <ChatShell.Rail><WorkspaceRail/></ChatShell.Rail>\n      <ChatShell.Nav><ChannelNav/></ChatShell.Nav>\n      <ChatShell.Main><ChannelMain/></ChatShell.Main>\n    </ChatShell>\n  )\n}\n\nfunction ChannelNav() {\n  const { compact, setNavOpen } = useChatShell()   // = use(ChatShell.Context)\n  return <ChannelCol onClose={compact ? () => setNavOpen(false) : null}\n    onPick={() => setNavOpen(false)}/>\n}\n```\n\nSlot children are plain elements. Anything that needs the shell calls `useChatShell()` — a one-liner over `use(ChatShell.Context)` (React 19 `use()`, `useContext` on 18). The old `{ctx => …}` render-prop form still renders, but nothing in the kit uses it anymore.\n\n## Slots & ctx\n\n| Slot | Wide | Compact |\n| --- | --- | --- |\n| `Rail` | Left workspace rail | Inside the hamburger drawer |\n| `Nav` | Channel column | Inside the hamburger drawer |\n| `Main` | Everything else — header, messages, thread SideDrawer | Same, with a hamburger button |\n\nctx: `{w, compact, navOpen, setNavOpen}` — `w` is the **container** width, so the shell works inside any frame.\n\n## Thread behavior\n\nIn the [Chat demo](Chat Demo.dc.html): picking a thread in the **channel column** opens it **full-view** in the main column (with an \"Open as drawer\" action); clicking a **thread preview card** under a message opens it in a TouchKit **SideDrawer** (docked ≥1180px, overlay below)."}
+    'chat-shell': {title: 'ChatShell', md: "# ChatShell\n\nThe chat demo's scaffold as a compositional container. Rail and channel column render as columns when wide and collapse into a single hamburger drawer below the breakpoint.\n\n```tsx\nimport { ChatShell, useChatShell } from \"./chatkit.tsx\"\n\nfunction App() {\n  return (\n    <ChatShell breakpoint={880}>\n      <ChatShell.Rail><WorkspaceRail/></ChatShell.Rail>\n      <ChatShell.Nav><ChannelNav/></ChatShell.Nav>\n      <ChatShell.Main><ChannelMain/></ChatShell.Main>\n    </ChatShell>\n  )\n}\n\nfunction ChannelNav() {\n  const { compact, setNavOpen } = useChatShell()   // = use(ChatShell.Context)\n  return <ChannelCol onClose={compact ? () => setNavOpen(false) : null}\n    onPick={() => setNavOpen(false)}/>\n}\n```\n\nSlot children are plain elements. Anything that needs the shell calls `useChatShell()` — a one-liner over `use(ChatShell.Context)` (React 19 `use()`, `useContext` on 18). The old `{ctx => …}` render-prop form still renders, but nothing in the kit uses it anymore.\n\n## Slots & ctx\n\n| Slot | Wide | Compact |\n| --- | --- | --- |\n| `Rail` | Left workspace rail | Inside the hamburger drawer |\n| `Nav` | Channel column | Inside the hamburger drawer |\n| `Main` | Everything else — header, messages, thread SideDrawer | Same, with a hamburger button |\n\nctx: `{w, compact, navOpen, setNavOpen}` — `w` is the **container** width, so the shell works inside any frame.\n\n## Thread behavior\n\nIn the [Chat demo](Chat Demo.dc.html): picking a thread in the **channel column** opens it **full-view** in the main column (with an \"Open as drawer\" action); clicking a **thread preview card** under a message opens it in a BL UI **SideDrawer** (docked ≥1180px, overlay below)."}
   }
 };

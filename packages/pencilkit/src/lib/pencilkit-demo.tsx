@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { cn } from '@touchkit/ui';
+import { cn } from '@brett_lamy/ui';
 import { PFONT, PK_DARK, PK_INKS, PK_LIGHT, PK_W, type PencilStroke, type PencilTool } from './constants';
 import { PencilCanvas } from './pencil-canvas';
 import {
@@ -24,7 +24,7 @@ export interface PencilKitDemoProps extends React.HTMLAttributes<HTMLDivElement>
 export function PencilKitDemo({ dark: darkProp, tint, defaultStrokes, className, style, ...rest }: PencilKitDemoProps) {
   const dark = darkProp === true || darkProp === 'true';
   const vars: Record<string, string> = { ...(dark ? PK_DARK : PK_LIGHT) };
-  if (tint) vars['--tk-tint'] = tint;
+  if (tint) vars['--bl-tint'] = tint;
 
   const [tool, setTool] = useState<PencilTool>('pen');
   const [ink, setInk] = useState(dark ? 1 : 0);
@@ -38,7 +38,7 @@ export function PencilKitDemo({ dark: darkProp, tint, defaultStrokes, className,
       style={{
         ...(vars as React.CSSProperties),
         position: 'relative', width: '100%', height: '100%', overflow: 'hidden',
-        background: 'var(--tk-bg2)', color: 'var(--tk-label)', fontFamily: PFONT,
+        background: 'var(--bl-bg2)', color: 'var(--bl-label)', fontFamily: PFONT,
         colorScheme: dark ? 'dark' : 'light', WebkitFontSmoothing: 'antialiased',
         backgroundImage:
           'radial-gradient(' + (dark ? 'rgba(235,235,245,.13)' : 'rgba(60,60,67,.15)') + ' 1px, transparent 1.2px)',

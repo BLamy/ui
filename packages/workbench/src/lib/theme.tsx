@@ -16,7 +16,7 @@ export function workbenchVars(tint?: string): React.CSSProperties {
     '--wb-tint': tint || '#0A84FF',
     '--wb-green': '#30D158',
     '--wb-red': '#FF453A',
-    '--tk-tint': tint || '#0A84FF',
+    '--bl-tint': tint || '#0A84FF',
     '--mdc-code': 'rgba(255,255,255,.09)',
     '--mdc-pre': '#0C0C10',
     '--mdc-border': 'rgba(255,255,255,.1)',

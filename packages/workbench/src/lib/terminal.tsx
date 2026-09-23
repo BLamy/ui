@@ -30,7 +30,7 @@ export function fakeShell(cmd: string, files: string[]): TermLine[] | 'CLEAR' {
   if (c === 'clear') return 'CLEAR';
   return [{ t: 'zsh: command not found: ' + c.split(' ')[0], c: '#FF8A80' }];
 }
-export const TERM_FILES = ['package.json', 'src', 'touchkit.jsx', 'workbench.jsx', 'vite.config.js'];
+export const TERM_FILES = ['package.json', 'src', 'blui.jsx', 'workbench.jsx', 'vite.config.js'];
 
 export interface TermBodyProps {
   seed?: TermLine[];

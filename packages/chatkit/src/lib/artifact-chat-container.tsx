@@ -7,7 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { collectSlots, defineSlot, useContainerWidth } from '@touchkit/ui';
+import { collectSlots, defineSlot, useContainerWidth } from '@brett_lamy/ui';
 import { ChatColumn } from './chat-column';
 import { cn } from './cn';
 import { FloatingChat, type FloatingChatFabPosition, type FloatingChatProps } from './floating-chat';

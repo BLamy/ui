@@ -14,9 +14,9 @@ export const Gallery: Story = {
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
       {Object.keys(IC).map((name) => (
-        <div key={name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: 'var(--tk-label)' }}>
+        <div key={name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: 'var(--bl-label)' }}>
           <Icon name={name} size={24} />
-          <span style={{ fontSize: 10.5, fontFamily: 'ui-monospace,Menlo,monospace', color: 'var(--tk-label2)' }}>{name}</span>
+          <span style={{ fontSize: 10.5, fontFamily: 'ui-monospace,Menlo,monospace', color: 'var(--bl-label2)' }}>{name}</span>
         </div>
       ))}
     </div>
@@ -25,7 +25,7 @@ export const Gallery: Story = {
 
 export const Sizes: Story = {
   render: () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: 'var(--tk-tint)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: 'var(--bl-tint)' }}>
       {[14, 18, 22, 28, 36, 48].map((s) => <Icon key={s} name="star" size={s} />)}
     </div>
   ),

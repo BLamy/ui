@@ -33,15 +33,15 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
   }, [open]);
   const circle = (icon: string, fn: (() => void) | undefined, label: string) => (
-    <button className="tk-btn" onClick={fn} aria-label={label}
+    <button className="bl-btn" onClick={fn} aria-label={label}
       style={{
-        width: 30, height: 30, borderRadius: '50%', border: 0, background: 'var(--tk-fill)', color: 'var(--tk-label2)',
+        width: 30, height: 30, borderRadius: '50%', border: 0, background: 'var(--bl-fill)', color: 'var(--bl-label2)',
         display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0, padding: 0,
       }}><Icon name={icon} size={15} sw={2.6} /></button>
   );
   const card: CSSProperties = {
-    background: 'var(--tk-card)', color: 'var(--tk-label)', overflow: 'hidden', boxSizing: 'border-box',
-    boxShadow: '0 24px 80px rgba(0,0,0,.34), 0 0 0 1px var(--tk-sep)', ...style,
+    background: 'var(--bl-card)', color: 'var(--bl-label)', overflow: 'hidden', boxSizing: 'border-box',
+    boxShadow: '0 24px 80px rgba(0,0,0,.34), 0 0 0 1px var(--bl-sep)', ...style,
   };
   const trayPos: CSSProperties = { position: 'absolute', left: 10, right: 10, bottom: 10, borderRadius: 28, zIndex: 401 };
   const dlgPos: CSSProperties = { position: 'absolute', left: '50%', top: '50%', width: 400, maxWidth: 'calc(100% - 44px)', borderRadius: 24, zIndex: 401 };
@@ -76,13 +76,13 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
   return (
     <AP>
       {open ? <m.div key="scrim" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .24 }}
-        style={{ position: 'absolute', inset: 0, background: 'var(--tk-scrim)', zIndex: 400 }} /> : null}
+        style={{ position: 'absolute', inset: 0, background: 'var(--bl-scrim)', zIndex: 400 }} /> : null}
       {open ? (compact
         ? <m.div key="tray" data-slot="credenza" className={cn(className)} initial={{ y: '112%' }} animate={{ y: '0%' }} exit={{ y: '118%' }} transition={spring}
             drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: .02, bottom: .55 }}
             onDragEnd={(_ev: unknown, inf: any) => { if (inf.offset.y > 120 || inf.velocity.y > 500) { Haptics.impact('light'); closeRef.current(); } }}
             style={{ ...card, ...trayPos, touchAction: 'none' }}>
-            <div aria-hidden="true" style={{ position: 'absolute', top: 7, left: '50%', transform: 'translateX(-50%)', width: 38, height: 5, borderRadius: 3, background: 'var(--tk-fill2)', zIndex: 3 }} />
+            <div aria-hidden="true" style={{ position: 'absolute', top: 7, left: '50%', transform: 'translateX(-50%)', width: 38, height: 5, borderRadius: 3, background: 'var(--bl-fill2)', zIndex: 3 }} />
             {header}{body}
           </m.div>
         : <m.div key="dlg" data-slot="credenza" className={cn(className)} initial={{ x: '-50%', y: '-45%', opacity: 0, scale: .95 }} animate={{ x: '-50%', y: '-50%', opacity: 1, scale: 1 }}

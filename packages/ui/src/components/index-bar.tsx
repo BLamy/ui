@@ -103,8 +103,8 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
   const g = geo.current;
   const cy = g && p ? (g.tTop - g.rTop) + (idx + 0.5) * (g.tH / pts.length) : 0;
   const bub: CSSProperties = {
-    position: 'absolute', right: width + 10, top: cy, transform: 'translateY(-50%)', background: 'var(--tk-card)',
-    boxShadow: '0 8px 28px rgba(0,0,0,.28), 0 0 0 1px var(--tk-sep)', animation: 'tkBub .16s ' + EASE,
+    position: 'absolute', right: width + 10, top: cy, transform: 'translateY(-50%)', background: 'var(--bl-card)',
+    boxShadow: '0 8px 28px rgba(0,0,0,.28), 0 0 0 1px var(--bl-sep)', animation: 'blBub .16s ' + EASE,
     pointerEvents: 'none', opacity: on ? 1 : .93,
   };
   return (
@@ -114,7 +114,7 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
       style={{
         position: 'absolute', right: 0, top, bottom, width, zIndex: 80, display: 'flex', flexDirection: 'column',
         justifyContent: 'center', alignItems: 'center', touchAction: 'none', cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none',
-        outline: focused ? '2px solid var(--tk-tint)' : '2px solid transparent', outlineOffset: 2, borderRadius: 8, ...style,
+        outline: focused ? '2px solid var(--bl-tint)' : '2px solid transparent', outlineOffset: 2, borderRadius: 8, ...style,
       }}
       >
       <div ref={track} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
@@ -127,9 +127,9 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
               transform: hot ? 'scale(1.5)' : 'none', transition: 'transform .12s',
             }}>
               {q.label
-                ? <span style={{ fontSize: 10.5, fontWeight: 700, lineHeight: '13.5px', color: q.dim ? 'var(--tk-label3)' : 'var(--tk-tint)' }}>{q.label}</span>
+                ? <span style={{ fontSize: 10.5, fontWeight: 700, lineHeight: '13.5px', color: q.dim ? 'var(--bl-label3)' : 'var(--bl-tint)' }}>{q.label}</span>
                 : <span style={{
-                    width: hot ? 6 : 5, height: hot ? 6 : 5, borderRadius: '50%', background: q.dim ? 'var(--tk-label3)' : 'var(--tk-tint)',
+                    width: hot ? 6 : 5, height: hot ? 6 : 5, borderRadius: '50%', background: q.dim ? 'var(--bl-label3)' : 'var(--bl-tint)',
                     opacity: q.dim ? .55 : 1,
                   }} />}
             </div>
@@ -140,16 +140,16 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
         ? <div style={{ ...bub, maxWidth: 250, minWidth: 120, borderRadius: 14, padding: '9px 13px', boxSizing: 'border-box' }}>
             {p.caption ? <div style={{
               fontSize: 9.5, fontWeight: 800, letterSpacing: '.6px', textTransform: 'uppercase',
-              color: 'var(--tk-tint)', marginBottom: 3,
+              color: 'var(--bl-tint)', marginBottom: 3,
             }}>{p.caption}</div> : null}
             <div style={{
-              fontSize: 13, lineHeight: 1.35, color: 'var(--tk-label)', fontWeight: 550, display: '-webkit-box',
+              fontSize: 13, lineHeight: 1.35, color: 'var(--bl-label)', fontWeight: 550, display: '-webkit-box',
               WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', textWrap: 'pretty',
             } as CSSProperties}>{p.preview}</div>
           </div>
         : p ? <div style={{
             ...bub, width: 54, height: 54, borderRadius: 27, display: 'grid', placeItems: 'center',
-            fontSize: 25, fontWeight: 800, color: 'var(--tk-tint)',
+            fontSize: 25, fontWeight: 800, color: 'var(--bl-tint)',
           }}>{p.label}</div> : null}
     </div>
   );

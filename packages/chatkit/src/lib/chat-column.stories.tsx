@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Composer } from '@touchkit/workbench';
-import '@touchkit/workbench/styles.css';
+import { Composer } from '@brett_lamy/workbench';
+import '@brett_lamy/workbench/styles.css';
 import { ChatColumn } from './chat-column';
 import { K, KFONT } from './chat-tokens';
 import '../styles.css';

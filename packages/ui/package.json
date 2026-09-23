@@ -1,5 +1,5 @@
 {
-  "name": "@touchkit/ui",
+  "name": "@brett_lamy/ui",
   "version": "0.0.3",
   "type": "module",
   "main": "./dist/index.js",
@@ -41,7 +41,7 @@
   },
   "keywords": [
     "react",
-    "touchkit",
+    "blui",
     "ios",
     "react-aria",
     "shadcn",

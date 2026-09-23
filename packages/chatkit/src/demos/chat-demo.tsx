@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { SideDrawer } from '@touchkit/ui';
+import { SideDrawer } from '@brett_lamy/ui';
 import { ChannelList } from '../lib/channel-list';
 import { ChatAvatar } from '../lib/chat-avatar';
 import { ChatIcon, chatIconPaths } from '../lib/chat-icon';
@@ -116,7 +116,7 @@ export function seed(): ChatChannels {
       section: 'Bots',
       label: 'bot-alerts',
       msgs: [
-        { id: 'b1', u: 'stitch', t: '7:02 AM', txt: 'Deploy touchkit-docs@4f21c9 → prod. 34s, all checks green.', reacts: [] },
+        { id: 'b1', u: 'stitch', t: '7:02 AM', txt: 'Deploy blui-docs@4f21c9 → prod. 34s, all checks green.', reacts: [] },
       ],
     },
   };
@@ -437,7 +437,7 @@ export function ChannelMain({
         </div>
       ) : null}
       <SideDrawer mode={drawerMode} open={drawerOpen} onClose={() => setThread(null)} title="Thread" width={Math.min(360, w - 60)}>
-        <div style={{ '--tk-label': K.label, '--tk-label2': K.mut, '--tk-sep': K.sep, height: '100%', boxSizing: 'border-box' } as CSSProperties}>
+        <div style={{ '--bl-label': K.label, '--bl-label2': K.mut, '--bl-sep': K.sep, height: '100%', boxSizing: 'border-box' } as CSSProperties}>
           {threadBody('drawer')}
         </div>
       </SideDrawer>

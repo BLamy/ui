@@ -1,4 +1,4 @@
-/* TouchKit — Cocoa Touch container controllers, ported to JSX.
+/* BL UI — Cocoa Touch container controllers, ported to JSX.
    NavigationStack · SplitView · TabBar (composable — nest it anywhere) · List/Section/Row · IndexBar · Haptics.
    Interaction semantics follow react-aria listbox patterns: arrow-key nav, aria-selected, Esc pops, focus rings.
    Haptics: navigator.vibrate() where real; ios-vibrator-pro-max polyfill (vibrator.dev) on iOS/macOS Safari.
@@ -13,7 +13,7 @@ const use = React.use || React.useContext;   /* React 19 use(); useContext on 18
 /* ══ Chrome coordination ══
    Nav bar and tab bar hide together on scroll-down and come back on scroll-up. The scrolling screen
    publishes here so a <TabBar> anywhere in the tree follows without prop drilling.
-   Dynamic Island: --tk-safe-top (px, set by the device frame — env(safe-area-inset-top) on real hardware)
+   Dynamic Island: --bl-safe-top (px, set by the device frame — env(safe-area-inset-top) on real hardware)
    is the floor. The bar collapses to exactly that height and no further, so the opaque strip that pushes
    content out from under the camera island never goes away. */
 const chromeStore = {hidden:false, subs:new Set(),
@@ -25,36 +25,36 @@ function useChromeHidden() {
   return h;
 }
 /* Safe-area top inset (Dynamic Island) threaded down from the app frame, so it survives frame changes
-   without remounting. --tk-safe-top is still set for CSS that wants it. */
-const TKSafeCtx = React.createContext(0);
+   without remounting. --bl-safe-top is still set for CSS that wants it. */
+const BLSafeCtx = React.createContext(0);
 
 /* How far down sticky list headers must stop — whatever chrome is above the list (0 when the list is in a
    bare scroller, so it never needs to know where it lives). While the chrome is hidden every offset moves
    up by one bar height, floored at the safe-area strip — that's how headers ride along with the bar. */
-const TKStickyCtx = React.createContext(0);
+const BLStickyCtx = React.createContext(0);
 const chromeOffset = (top, hidden) => hidden ? Math.max(0, top - BARH) : top;
 
 /* ══ injected keyframes (framework-owned) ══ */
-(function(){ if (document.getElementById('tk-kf')) return; const s = document.createElement('style'); s.id = 'tk-kf'; s.textContent = `
-@keyframes tkSpin{to{transform:rotate(360deg)}}
-@keyframes tkRing{from{transform:scale(.35);opacity:.85}to{transform:scale(2.4);opacity:0}}
-@keyframes tkHapIn{0%{opacity:0;transform:translateY(8px)}10%{opacity:1;transform:none}72%{opacity:1}100%{opacity:0;transform:translateY(-4px)}}
-@keyframes tkBub{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
-.tk-scroll{scrollbar-width:thin;scrollbar-color:rgba(128,128,140,.35) transparent}
-.tk-scroll::-webkit-scrollbar{width:3px}
-.tk-scroll::-webkit-scrollbar-thumb{background:rgba(128,128,140,.35);border-radius:2px}
-.tk-scroll::-webkit-scrollbar-track{background:transparent}
-.tk-btn{-webkit-tap-highlight-color:transparent}
-.tk-hl:active{background:var(--tk-press)!important}
-input::placeholder{color:var(--tk-label3)}
-@keyframes tkShimmer{from{background-position:200% 0}to{background-position:0% 0}}
-.tk-shimmer{background:linear-gradient(90deg,var(--tk-label3) 40%,var(--tk-label) 50%,var(--tk-label3) 60%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:tkShimmer 2.4s linear infinite}
-.tk-range{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
-.tk-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(var(--tk-tint),var(--tk-tint)) 0/var(--tk-range-fill,50%) 100% no-repeat,var(--tk-fill2)}
-.tk-range::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28),0 0 1px rgba(0,0,0,.22);margin-top:-11px}
-.tk-range::-moz-range-track{height:4px;border-radius:2px;background:var(--tk-fill2)}
-.tk-range::-moz-range-progress{height:4px;border-radius:2px;background:var(--tk-tint)}
-.tk-range::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28)}
+(function(){ if (document.getElementById('bl-kf')) return; const s = document.createElement('style'); s.id = 'bl-kf'; s.textContent = `
+@keyframes blSpin{to{transform:rotate(360deg)}}
+@keyframes blRing{from{transform:scale(.35);opacity:.85}to{transform:scale(2.4);opacity:0}}
+@keyframes blHapIn{0%{opacity:0;transform:translateY(8px)}10%{opacity:1;transform:none}72%{opacity:1}100%{opacity:0;transform:translateY(-4px)}}
+@keyframes blBub{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.bl-scroll{scrollbar-width:thin;scrollbar-color:rgba(128,128,140,.35) transparent}
+.bl-scroll::-webkit-scrollbar{width:3px}
+.bl-scroll::-webkit-scrollbar-thumb{background:rgba(128,128,140,.35);border-radius:2px}
+.bl-scroll::-webkit-scrollbar-track{background:transparent}
+.bl-btn{-webkit-tap-highlight-color:transparent}
+.bl-hl:active{background:var(--bl-press)!important}
+input::placeholder{color:var(--bl-label3)}
+@keyframes blShimmer{from{background-position:200% 0}to{background-position:0% 0}}
+.bl-shimmer{background:linear-gradient(90deg,var(--bl-label3) 40%,var(--bl-label) 50%,var(--bl-label3) 60%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:blShimmer 2.4s linear infinite}
+.bl-range{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
+.bl-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(var(--bl-tint),var(--bl-tint)) 0/var(--bl-range-fill,50%) 100% no-repeat,var(--bl-fill2)}
+.bl-range::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28),0 0 1px rgba(0,0,0,.22);margin-top:-11px}
+.bl-range::-moz-range-track{height:4px;border-radius:2px;background:var(--bl-fill2)}
+.bl-range::-moz-range-progress{height:4px;border-radius:2px;background:var(--bl-tint)}
+.bl-range::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28)}
 `; document.head.appendChild(s); })();
 
 /* ══ Haptics engine ══
@@ -77,14 +77,14 @@ const Haptics = {
     if (navigator.vibrate) { try { delete navigator.vibrate; } catch(e){} this.info.clearedStub = !navigator.vibrate; }
     if (navigator.vibrate) { this.engine = 'navigator.vibrate() · pre-defined stub (unclearable)'; return; }
     const watch = setTimeout(()=>{ if (!navigator.vibrate) Haptics.engine = '<input switch> fallback · polyfill timed out'; }, 8000);
-    window.addEventListener('tk-vib', e=>{ clearTimeout(watch);
+    window.addEventListener('bl-vib', e=>{ clearTimeout(watch);
       Haptics.engine = e.detail !== 'ok' ? '<input switch> fallback · import failed: ' + e.detail
         : navigator.vibrate ? 'vibrate() · ios-vibrator-pro-max@3.0.3'
         : '<input switch> fallback · polyfill declined install (Safari <18?)';
     }, {once:true});
     try {
       const s = document.createElement('script'); s.type = 'module';
-      s.textContent = 'try{await import("https://cdn.jsdelivr.net/npm/ios-vibrator-pro-max@3.0.3/+esm");window.dispatchEvent(new CustomEvent("tk-vib",{detail:"ok"}))}catch(e){try{await import("https://esm.sh/ios-vibrator-pro-max@3.0.3");window.dispatchEvent(new CustomEvent("tk-vib",{detail:"ok"}))}catch(f){window.dispatchEvent(new CustomEvent("tk-vib",{detail:String(f&&f.message||f)}))}}';
+      s.textContent = 'try{await import("https://cdn.jsdelivr.net/npm/ios-vibrator-pro-max@3.0.3/+esm");window.dispatchEvent(new CustomEvent("bl-vib",{detail:"ok"}))}catch(e){try{await import("https://esm.sh/ios-vibrator-pro-max@3.0.3");window.dispatchEvent(new CustomEvent("bl-vib",{detail:"ok"}))}catch(f){window.dispatchEvent(new CustomEvent("bl-vib",{detail:String(f&&f.message||f)}))}}';
       document.head.appendChild(s);
     } catch(e) { clearTimeout(watch); this.engine = '<input switch> fallback'; }
   },
@@ -116,13 +116,13 @@ if (typeof window !== 'undefined') Haptics.boot();
 /* framer-motion — lazy CDN load (UMD → window.Motion); consumers re-render on arrival */
 function loadMotion(){ if (window.Motion || window.__tkFM) return; window.__tkFM = 1;
   const add = (src, onFail) => { const s = document.createElement('script'); s.src = src;
-    s.onload = ()=>window.dispatchEvent(new Event('tk-fm')); s.onerror = onFail || null; document.head.appendChild(s); };
+    s.onload = ()=>window.dispatchEvent(new Event('bl-fm')); s.onerror = onFail || null; document.head.appendChild(s); };
   add('https://unpkg.com/framer-motion@10.18.0/dist/framer-motion.js',
     ()=>add('https://cdn.jsdelivr.net/npm/framer-motion@10.18.0/dist/framer-motion.js'));
 }
 function useMotion(){ const [, bump] = useState(0);
   useEffect(()=>{ loadMotion(); if (window.Motion) return;
-    const h = ()=>bump(x=>x+1); window.addEventListener('tk-fm', h); return ()=>window.removeEventListener('tk-fm', h); }, []);
+    const h = ()=>bump(x=>x+1); window.addEventListener('bl-fm', h); return ()=>window.removeEventListener('bl-fm', h); }, []);
   return window.Motion || null;
 }
 function MeasureH({onH, children}) {
@@ -167,7 +167,7 @@ function Icon({name, size, sw, style}) {
   return <svg width={size} height={size} viewBox="0 0 24 24" style={{display:'block', flexShrink:0, ...style}} aria-hidden="true">
     {els.map((e,i)=> e.c
       ? <circle key={i} cx={e.c[0]} cy={e.c[1]} r={e.c[2]} fill={e.f?'currentColor':'none'} stroke={e.f?'none':'currentColor'} strokeWidth={sw}/>
-      : <path key={i} d={e.d} fill={e.f?'currentColor':'none'} stroke={e.f?'none':(e.bg?'var(--tk-bg,#fff)':'currentColor')} strokeWidth={e.bg?2:sw} strokeLinecap="round" strokeLinejoin="round"/>)}
+      : <path key={i} d={e.d} fill={e.f?'currentColor':'none'} stroke={e.f?'none':(e.bg?'var(--bl-bg,#fff)':'currentColor')} strokeWidth={e.bg?2:sw} strokeLinecap="round" strokeLinejoin="round"/>)}
   </svg>;
 }
 
@@ -179,27 +179,27 @@ function Avatar({c, size}) {
     background:`linear-gradient(180deg, hsl(${h} 62% 64%), hsl(${h} 55% 47%))`, color:'#fff',
     fontSize:size*0.38, fontWeight:600, letterSpacing:'.5px', userSelect:'none'}}>{c.f[0]}{c.l[0]}</span>;
 }
-function TKSwitch({checked, onChange}) {
+function BLSwitch({checked, onChange}) {
   return <label style={{position:'relative', display:'inline-block', width:51, height:31, flexShrink:0}}>
     <input type="checkbox" checked={checked} onChange={e=>{Haptics.impact('light'); onChange(e.target.checked);}}
       style={{position:'absolute', inset:0, opacity:0, margin:0, cursor:'pointer', width:'100%', height:'100%'}}/>
-    <span style={{position:'absolute', inset:0, borderRadius:16, background:checked?'var(--tk-green)':'var(--tk-fill2)', transition:'background .25s'}}/>
+    <span style={{position:'absolute', inset:0, borderRadius:16, background:checked?'var(--bl-green)':'var(--bl-fill2)', transition:'background .25s'}}/>
     <span style={{position:'absolute', top:2, left:checked?22:2, width:27, height:27, borderRadius:'50%', background:'#fff',
       boxShadow:'0 3px 8px rgba(0,0,0,.22), 0 1px 1px rgba(0,0,0,.14)', transition:'left .25s cubic-bezier(.3,.9,.4,1.05)', pointerEvents:'none'}}/>
   </label>;
 }
 function Segmented({options, value, onChange}) {
-  return <div role="radiogroup" style={{display:'flex', gap:2, background:'var(--tk-fill,#e4e4ea)', borderRadius:9, padding:2}}>
+  return <div role="radiogroup" style={{display:'flex', gap:2, background:'var(--bl-fill,#e4e4ea)', borderRadius:9, padding:2}}>
     {options.map(o=>{ const on = o.id===value;
-      return <button key={o.id} className="tk-btn" role="radio" aria-checked={on} onClick={()=>{ if(!on){Haptics.selection(); onChange(o.id);} }}
+      return <button key={o.id} className="bl-btn" role="radio" aria-checked={on} onClick={()=>{ if(!on){Haptics.selection(); onChange(o.id);} }}
         style={{flex:1, border:0, padding:'5px 12px', borderRadius:7, fontSize:13, fontWeight:600, fontFamily:'inherit', cursor:'pointer', whiteSpace:'nowrap',
-          background:on?'var(--tk-card,#fff)':'transparent', color:'var(--tk-label,#16161a)',
+          background:on?'var(--bl-card,#fff)':'transparent', color:'var(--bl-label,#16161a)',
           boxShadow:on?'0 1px 4px rgba(0,0,0,.14)':'none', transition:'background .2s, box-shadow .2s'}}>{o.label}</button>;})}
   </div>;
 }
 function Spinner({spin, size}) {
   size = size||22;
-  return <svg width={size} height={size} viewBox="0 0 24 24" style={{display:'block', animation:spin?'tkSpin .75s steps(8) infinite':'none'}} aria-hidden="true">
+  return <svg width={size} height={size} viewBox="0 0 24 24" style={{display:'block', animation:spin?'blSpin .75s steps(8) infinite':'none'}} aria-hidden="true">
     {[0,1,2,3,4,5,6,7].map(i=><rect key={i} x="11.1" y="2.8" width="1.8" height="5.2" rx="0.9" fill="currentColor" opacity={(i+1)/8} transform={`rotate(${i*45} 12 12)`}/>)}
   </svg>;
 }
@@ -210,15 +210,15 @@ function HapticIndicator({visible, bottom}) {
   const eng = Haptics.engine;
   return <div key={ev.n} style={{position:'absolute', left:12, bottom, zIndex:900, pointerEvents:'none',
       display:'flex', alignItems:'center', gap:9, padding:'6px 12px 6px 8px', borderRadius:99,
-      background:'var(--tk-card)', boxShadow:'0 6px 24px rgba(0,0,0,.22), 0 0 0 1px var(--tk-sep)',
-      animation:'tkHapIn 1.1s ease forwards'}}>
+      background:'var(--bl-card)', boxShadow:'0 6px 24px rgba(0,0,0,.22), 0 0 0 1px var(--bl-sep)',
+      animation:'blHapIn 1.1s ease forwards'}}>
     <span style={{position:'relative', width:22, height:22, display:'grid', placeItems:'center'}}>
-      <span style={{width:8+ev.w*2, height:8+ev.w*2, borderRadius:'50%', background:'var(--tk-tint)'}}/>
-      <span style={{position:'absolute', inset:0, borderRadius:'50%', border:'2px solid var(--tk-tint)', animation:'tkRing .6s ease-out forwards'}}/>
+      <span style={{width:8+ev.w*2, height:8+ev.w*2, borderRadius:'50%', background:'var(--bl-tint)'}}/>
+      <span style={{position:'absolute', inset:0, borderRadius:'50%', border:'2px solid var(--bl-tint)', animation:'blRing .6s ease-out forwards'}}/>
     </span>
     <span>
-      <span style={{display:'block', fontSize:11.5, fontWeight:700, color:'var(--tk-label)', fontFamily:'ui-monospace,Menlo,monospace'}}>{ev.label}</span>
-      <span style={{display:'block', fontSize:9.5, color:'var(--tk-label3)', fontFamily:'ui-monospace,Menlo,monospace'}}>{eng}</span>
+      <span style={{display:'block', fontSize:11.5, fontWeight:700, color:'var(--bl-label)', fontFamily:'ui-monospace,Menlo,monospace'}}>{ev.label}</span>
+      <span style={{display:'block', fontSize:9.5, color:'var(--bl-label3)', fontFamily:'ui-monospace,Menlo,monospace'}}>{eng}</span>
     </span>
   </div>;
 }
@@ -226,10 +226,10 @@ function HapticIndicator({visible, bottom}) {
 /* ══ List primitives ══ */
 /* A list works out its own sticky offset: whatever chrome sits above it (nav bar, none, …) plus its own
    header if it has one. `stickyTop` overrides both. */
-function TKList({children, inset, header, stickyTop, style}) {
+function BLList({children, inset, header, stickyTop, style}) {
   const hRef = useRef(null);
   const [hh, setHh] = useState(0);
-  const above = use(TKStickyCtx);
+  const above = use(BLStickyCtx);
   const chromeHid = useChromeHidden();
   useLayoutEffect(()=>{ const el = hRef.current;
     if (!el) { setHh(0); return; }
@@ -237,29 +237,29 @@ function TKList({children, inset, header, stickyTop, style}) {
     if (typeof ResizeObserver !== 'undefined') { const ro = new ResizeObserver(m); ro.observe(el); return ()=>ro.disconnect(); }
   }, [header]);
   const top = stickyTop != null ? stickyTop : above + (header ? hh : 0);
-  return <TKStickyCtx.Provider value={top}>
+  return <BLStickyCtx.Provider value={top}>
     <div style={{padding:inset?'0 16px':0, ...style}}>
-      {header ? <div ref={hRef} style={{position:'sticky', top:chromeOffset(above, chromeHid), zIndex:24, background:'var(--tk-stick)',
+      {header ? <div ref={hRef} style={{position:'sticky', top:chromeOffset(above, chromeHid), zIndex:24, background:'var(--bl-stick)',
         backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', transition:'top .28s ' + EASE}}>{header}</div> : null}
       {children}
     </div>
-  </TKStickyCtx.Provider>;
+  </BLStickyCtx.Provider>;
 }
-function TKSection({title, footer, children, sticky, innerRef, stickyTop}) {
-  const ctxTop = use(TKStickyCtx);
+function BLSection({title, footer, children, sticky, innerRef, stickyTop}) {
+  const ctxTop = use(BLStickyCtx);
   const top = chromeOffset(stickyTop != null ? stickyTop : ctxTop, useChromeHidden());
   return <div ref={innerRef}>
     {title != null ? (sticky
-      ? <div style={{position:'sticky', top, zIndex:20, padding:'3px 16px', fontSize:13.5, fontWeight:600, color:'var(--tk-label)',
-          background:'var(--tk-stick)', backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', transition:'top .28s ' + EASE}}>{title}</div>
-      : <div style={{padding:'4px 16px 7px', fontSize:12.5, fontWeight:500, letterSpacing:'.4px', textTransform:'uppercase', color:'var(--tk-label2)'}}>{title}</div>) : null}
+      ? <div style={{position:'sticky', top, zIndex:20, padding:'3px 16px', fontSize:13.5, fontWeight:600, color:'var(--bl-label)',
+          background:'var(--bl-stick)', backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', transition:'top .28s ' + EASE}}>{title}</div>
+      : <div style={{padding:'4px 16px 7px', fontSize:12.5, fontWeight:500, letterSpacing:'.4px', textTransform:'uppercase', color:'var(--bl-label2)'}}>{title}</div>) : null}
     <div style={{borderRadius:sticky?0:12, overflow:'hidden'}}>{children}</div>
-    {footer ? <div style={{padding:'7px 16px 0', fontSize:12.8, lineHeight:1.45, color:'var(--tk-label2)'}}>{footer}</div> : null}
+    {footer ? <div style={{padding:'7px 16px 0', fontSize:12.8, lineHeight:1.45, color:'var(--bl-label2)'}}>{footer}</div> : null}
     <div style={{height:sticky?0:22}}/>
   </div>;
 }
 const openRows = new Set();
-function TKRow(p) {
+function BLRow(p) {
   const [px, setPx] = useState(0);
   const [anim, setAnim] = useState(true);
   const [dead, setDead] = useState(false);
@@ -296,35 +296,35 @@ function TKRow(p) {
   const inEdit = p.edit !== undefined && p.edit !== null;
   return <div style={{position:'relative', overflow:'hidden', maxHeight:dead?0:200, opacity:dead?0:1, transition:'max-height .32s ease, opacity .28s'}}>
     {p.onDelete && px < 0 ? <div style={{position:'absolute', top:0, bottom:0, right:0, width:-px, display:'flex', overflow:'hidden'}}>
-      <button className="tk-btn" onClick={del} style={{flex:1, border:0, background:'var(--tk-red)', color:'#fff', fontSize:15, fontWeight:600,
+      <button className="bl-btn" onClick={del} style={{flex:1, border:0, background:'var(--bl-red)', color:'#fff', fontSize:15, fontWeight:600,
         fontFamily:'inherit', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'flex-start', paddingLeft:Math.max(14,(-px-88)/2+14)}}>Delete</button>
     </div> : null}
     <button ref={el} data-tkrow type="button" role={p.rowRole} aria-selected={p.rowRole ? (p.selected || p.checked || false) : undefined}
-      className={'tk-btn' + (p.onPress ? ' tk-hl' : '')}
+      className={'bl-btn' + (p.onPress ? ' bl-hl' : '')}
       onPointerDown={start} onPointerMove={mv} onPointerUp={end} onPointerCancel={end} onClick={press}
       style={{display:'flex', alignItems:'center', gap:12, width:'100%', minHeight:46, padding:'0 16px', border:0, textAlign:'left',
-        fontFamily:'inherit', fontSize:17, color:p.destructive?'var(--tk-red)':'var(--tk-label)',
-        background:p.selected?'var(--tk-press)':'var(--tk-card)', cursor:(p.onPress||p.onDelete)?'pointer':'default',
+        fontFamily:'inherit', fontSize:17, color:p.destructive?'var(--bl-red)':'var(--bl-label)',
+        background:p.selected?'var(--bl-press)':'var(--bl-card)', cursor:(p.onPress||p.onDelete)?'pointer':'default',
         transform:`translateX(${px}px)`, transition:(anim?'transform .3s '+EASE+', ':'')+'background .15s',
         touchAction:'pan-y', position:'relative', boxSizing:'border-box'}}>
       {inEdit ? <span aria-hidden="true" style={{width:p.edit?30:0, marginRight:p.edit?0:-12, opacity:p.edit?1:0, overflow:'hidden',
           display:'flex', alignItems:'center', flexShrink:0, transition:'width .25s '+EASE+', opacity .2s, margin-right .25s'}}>
         <span style={{width:22, height:22, borderRadius:'50%', boxSizing:'border-box', flexShrink:0,
-          border:p.checked?'none':'1.6px solid var(--tk-label3)', background:p.checked?'var(--tk-tint)':'transparent',
+          border:p.checked?'none':'1.6px solid var(--bl-label3)', background:p.checked?'var(--bl-tint)':'transparent',
           display:'grid', placeItems:'center', transition:'background .15s'}}>
           {p.checked ? <Icon name="check" size={13} sw={3} style={{color:'#fff'}}/> : null}
         </span>
       </span> : null}
       {p.leading || null}
       <div style={{flex:1, display:'flex', alignItems:'center', gap:10, minWidth:0, minHeight:46, padding:'7px 0',
-          boxShadow:p.divider===false?'none':'inset 0 -1px 0 var(--tk-sep)', justifyContent:p.center?'center':'flex-start'}}>
+          boxShadow:p.divider===false?'none':'inset 0 -1px 0 var(--bl-sep)', justifyContent:p.center?'center':'flex-start'}}>
         <div style={{flex:p.center?'none':1, minWidth:0}}>
           <div style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', lineHeight:1.3}}>{p.title}</div>
-          {p.subtitle ? <div style={{fontSize:13, color:'var(--tk-label2)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', marginTop:1}}>{p.subtitle}</div> : null}
+          {p.subtitle ? <div style={{fontSize:13, color:'var(--bl-label2)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', marginTop:1}}>{p.subtitle}</div> : null}
         </div>
         {p.trailing || null}
-        {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} style={{color:'var(--tk-label3)'}}/>
-          : p.accessory === 'check' ? <span style={{width:22, flexShrink:0}}>{p.checked ? <Icon name="check" size={20} sw={2.4} style={{color:'var(--tk-tint)'}}/> : null}</span>
+        {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} style={{color:'var(--bl-label3)'}}/>
+          : p.accessory === 'check' ? <span style={{width:22, flexShrink:0}}>{p.checked ? <Icon name="check" size={20} sw={2.4} style={{color:'var(--bl-tint)'}}/> : null}</span>
           : null}
       </div>
     </button>
@@ -377,8 +377,8 @@ function IndexBar({items, avail, onJump, onLetter, top, bottom, width = 22, labe
   const p = idx >= 0 ? pts[idx] : null;
   const g = geo.current;
   const cy = g && p ? (g.tTop - g.rTop) + (idx + 0.5) * (g.tH / pts.length) : 0;
-  const bub = {position:'absolute', right:width + 10, top:cy, transform:'translateY(-50%)', background:'var(--tk-card)',
-    boxShadow:'0 8px 28px rgba(0,0,0,.28), 0 0 0 1px var(--tk-sep)', animation:'tkBub .16s ' + EASE,
+  const bub = {position:'absolute', right:width + 10, top:cy, transform:'translateY(-50%)', background:'var(--bl-card)',
+    boxShadow:'0 8px 28px rgba(0,0,0,.28), 0 0 0 1px var(--bl-sep)', animation:'blBub .16s ' + EASE,
     pointerEvents:'none', opacity:on ? 1 : .93};
   return <div ref={rail} onPointerDown={down} onPointerMove={hover} onPointerLeave={()=>setHov(-1)}
       style={{position:'absolute', right:0, top, bottom, width, zIndex:80, display:'flex', flexDirection:'column',
@@ -389,20 +389,20 @@ function IndexBar({items, avail, onJump, onLetter, top, bottom, width = 22, labe
         return <div key={q.key + i} style={{display:'flex', alignItems:'center', justifyContent:'center', height:13.5, width:'100%',
           transform:hot ? 'scale(1.5)' : 'none', transition:'transform .12s'}}>
           {q.label
-            ? <span style={{fontSize:10.5, fontWeight:700, lineHeight:'13.5px', color:q.dim ? 'var(--tk-label3)' : 'var(--tk-tint)'}}>{q.label}</span>
-            : <span style={{width:hot ? 6 : 5, height:hot ? 6 : 5, borderRadius:'50%', background:q.dim ? 'var(--tk-label3)' : 'var(--tk-tint)',
+            ? <span style={{fontSize:10.5, fontWeight:700, lineHeight:'13.5px', color:q.dim ? 'var(--bl-label3)' : 'var(--bl-tint)'}}>{q.label}</span>
+            : <span style={{width:hot ? 6 : 5, height:hot ? 6 : 5, borderRadius:'50%', background:q.dim ? 'var(--bl-label3)' : 'var(--bl-tint)',
                 opacity:q.dim ? .55 : 1}}/>}
         </div>; })}
     </div>
     {p && (p.preview != null)
       ? <div style={{...bub, maxWidth:250, minWidth:120, borderRadius:14, padding:'9px 13px', boxSizing:'border-box'}}>
           {p.caption ? <div style={{fontSize:9.5, fontWeight:800, letterSpacing:'.6px', textTransform:'uppercase',
-            color:'var(--tk-tint)', marginBottom:3}}>{p.caption}</div> : null}
-          <div style={{fontSize:13, lineHeight:1.35, color:'var(--tk-label)', fontWeight:550, display:'-webkit-box',
+            color:'var(--bl-tint)', marginBottom:3}}>{p.caption}</div> : null}
+          <div style={{fontSize:13, lineHeight:1.35, color:'var(--bl-label)', fontWeight:550, display:'-webkit-box',
             WebkitLineClamp:3, WebkitBoxOrient:'vertical', overflow:'hidden', textWrap:'pretty'}}>{p.preview}</div>
         </div>
       : p ? <div style={{...bub, width:54, height:54, borderRadius:27, display:'grid', placeItems:'center',
-          fontSize:25, fontWeight:800, color:'var(--tk-tint)'}}>{p.label}</div> : null}
+          fontSize:25, fontWeight:800, color:'var(--bl-tint)'}}>{p.label}</div> : null}
   </div>;
 }
 
@@ -410,13 +410,13 @@ function IndexBar({items, avail, onJump, onLetter, top, bottom, width = 22, labe
 function TabBar({items, selected, onSelect, hideOnScroll = true}) {
   const hid = useChromeHidden() && hideOnScroll;
   return <div style={{position:'absolute', left:0, right:0, bottom:0, zIndex:120, display:'flex', height:62,
-      background:'var(--tk-bar)', backdropFilter:'blur(20px) saturate(1.7)', WebkitBackdropFilter:'blur(20px) saturate(1.7)',
-      borderTop:'1px solid var(--tk-sep)', paddingBottom:4, boxSizing:'border-box',
+      background:'var(--bl-bar)', backdropFilter:'blur(20px) saturate(1.7)', WebkitBackdropFilter:'blur(20px) saturate(1.7)',
+      borderTop:'1px solid var(--bl-sep)', paddingBottom:4, boxSizing:'border-box',
       transform:hid ? 'translateY(100%)' : 'none', transition:'transform .3s ' + EASE}}>
     {items.map(it=>{ const onT = it.id === selected;
-      return <button key={it.id} className="tk-btn" onClick={()=>{ if(!onT) Haptics.selection(); onSelect(it.id); }} aria-current={onT?'page':undefined}
+      return <button key={it.id} className="bl-btn" onClick={()=>{ if(!onT) Haptics.selection(); onSelect(it.id); }} aria-current={onT?'page':undefined}
         style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3, border:0,
-          background:'none', cursor:'pointer', color:onT?'var(--tk-tint)':'var(--tk-label3)', fontFamily:'inherit', padding:0, transition:'color .15s'}}>
+          background:'none', cursor:'pointer', color:onT?'var(--bl-tint)':'var(--bl-label3)', fontFamily:'inherit', padding:0, transition:'color .15s'}}>
         <Icon name={it.icon} size={25} sw={onT?2.1:1.8}/>
         <span style={{fontSize:10, fontWeight:600, letterSpacing:'.1px'}}>{it.title}</span>
       </button>;})}
@@ -425,11 +425,11 @@ function TabBar({items, selected, onSelect, hideOnScroll = true}) {
 function EditBar({count, allFav, onFav, onDelete}) {
   const b = {border:0, background:'none', fontFamily:'inherit', fontSize:16.5, cursor:'pointer', padding:'8px 4px'};
   return <div style={{position:'absolute', left:0, right:0, bottom:0, zIndex:130, display:'flex', alignItems:'center', height:62,
-      padding:'0 16px 4px', boxSizing:'border-box', background:'var(--tk-bar)', backdropFilter:'blur(20px) saturate(1.7)',
-      WebkitBackdropFilter:'blur(20px) saturate(1.7)', borderTop:'1px solid var(--tk-sep)'}}>
-    <button className="tk-btn" disabled={!count} onClick={onFav} style={{...b, color:'var(--tk-tint)', opacity:count?1:.35}}>{allFav?'Unfavorite':'Favorite'}</button>
-    <span style={{flex:1, textAlign:'center', fontSize:13, color:'var(--tk-label2)'}}>{count?count+' selected':'Select items'}</span>
-    <button className="tk-btn" disabled={!count} onClick={onDelete} style={{...b, color:'var(--tk-red)', opacity:count?1:.35}}>Delete</button>
+      padding:'0 16px 4px', boxSizing:'border-box', background:'var(--bl-bar)', backdropFilter:'blur(20px) saturate(1.7)',
+      WebkitBackdropFilter:'blur(20px) saturate(1.7)', borderTop:'1px solid var(--bl-sep)'}}>
+    <button className="bl-btn" disabled={!count} onClick={onFav} style={{...b, color:'var(--bl-tint)', opacity:count?1:.35}}>{allFav?'Unfavorite':'Favorite'}</button>
+    <span style={{flex:1, textAlign:'center', fontSize:13, color:'var(--bl-label2)'}}>{count?count+' selected':'Select items'}</span>
+    <button className="bl-btn" disabled={!count} onClick={onDelete} style={{...b, color:'var(--bl-red)', opacity:count?1:.35}}>Delete</button>
   </div>;
 }
 
@@ -440,7 +440,7 @@ function ScreenWrap({sc, depth, top, ghost, entering, nav, backTitle, reg, defIn
   const [out, setOut] = useState(false);
   const [scr, setScr] = useState(false);
   const [hid, setHid] = useState(false);
-  const safeTop = use(TKSafeCtx);
+  const safeTop = use(BLSafeCtx);
   const lastY = useRef(0);
   const scroller = useRef(null); const inner = useRef(null); const spin = useRef(null);
   const pl = useRef(null); const [refr, setRefr] = useState(false);
@@ -507,10 +507,10 @@ function ScreenWrap({sc, depth, top, ghost, entering, nav, backTitle, reg, defIn
       if (sp) sp.style.opacity = '0';
     } };
   return <div ref={el=>reg(sc.key, {el})} data-screen-label={typeof sc.title === 'string' ? sc.title : sc.key}
-      style={{position:'absolute', inset:0, zIndex:10+z, background:sc.grouped?'var(--tk-bg2)':'var(--tk-bg)',
+      style={{position:'absolute', inset:0, zIndex:10+z, background:sc.grouped?'var(--bl-bg2)':'var(--bl-bg)',
         transform:`translateX(${tx})`, transition:`transform .42s ${EASE}`, willChange:'transform', overflow:'hidden',
         boxShadow:depth>0?'-10px 0 30px rgba(0,0,0,.16)':'none', pointerEvents:ghost?'none':'auto'}}>
-    <div ref={scroller} className="tk-scroll" onScroll={onScroll} onKeyDown={onKey}
+    <div ref={scroller} className="bl-scroll" onScroll={onScroll} onKeyDown={onKey}
         onPointerDown={pDown} onPointerMove={pMove} onPointerUp={pEnd} onPointerCancel={pEnd}
         style={{position:'absolute', inset:0, overflowY:'auto', overflowX:'hidden', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch'}}>
       <div ref={inner} style={{maxWidth:sc.maxW||'none', margin:'0 auto', width:'100%', boxSizing:'border-box'}}>
@@ -520,32 +520,32 @@ function ScreenWrap({sc, depth, top, ghost, entering, nav, backTitle, reg, defIn
               {sc.subheader ? <div style={{marginTop:10}}>{sc.subheader}</div> : null}
             </div>
           : <div style={{height:barH}}/>}
-        <TKStickyCtx.Provider value={barH}>{sc.content}</TKStickyCtx.Provider>
+        <BLStickyCtx.Provider value={barH}>{sc.content}</BLStickyCtx.Provider>
         <div style={{height:ins+28}}/>
       </div>
     </div>
     {sc.onRefresh ? <div ref={spin} style={{position:'absolute', top:barH+8, left:'50%', transform:'translateX(-50%)', opacity:0,
-        color:'var(--tk-label2)', zIndex:5, pointerEvents:'none', transition:'opacity .2s'}}><Spinner spin={refr}/></div> : null}
+        color:'var(--bl-label2)', zIndex:5, pointerEvents:'none', transition:'opacity .2s'}}><Spinner spin={refr}/></div> : null}
     <div style={{position:'absolute', top:0, left:0, right:0, height:barH, zIndex:30, display:'flex', alignItems:'flex-end', padding:'0 6px', boxSizing:'border-box',
         paddingTop:safeTop, transform:hid ? 'translateY(' + (-(barH - safeTop)) + 'px)' : 'none', transition:'transform .3s ' + EASE}}>
-      <div style={{position:'absolute', inset:0, background:'var(--tk-bar)', backdropFilter:'blur(18px) saturate(1.7)',
-        WebkitBackdropFilter:'blur(18px) saturate(1.7)', borderBottom:'1px solid var(--tk-sep)', opacity:scr?1:0, transition:'opacity .25s'}}/>
+      <div style={{position:'absolute', inset:0, background:'var(--bl-bar)', backdropFilter:'blur(18px) saturate(1.7)',
+        WebkitBackdropFilter:'blur(18px) saturate(1.7)', borderBottom:'1px solid var(--bl-sep)', opacity:scr?1:0, transition:'opacity .25s'}}/>
       {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
-      {safeTop ? <div style={{position:'absolute', left:0, right:0, top:0, height:safeTop, background:'var(--tk-bar)',
+      {safeTop ? <div style={{position:'absolute', left:0, right:0, top:0, height:safeTop, background:'var(--bl-bar)',
         backdropFilter:'blur(18px) saturate(1.7)', WebkitBackdropFilter:'blur(18px) saturate(1.7)',
         transform:hid ? 'translateY(' + (barH - safeTop) + 'px)' : 'none', transition:'transform .3s ' + EASE, opacity:scr || hid ? 1 : 0}}/> : null}
       <div style={{display:'flex', alignItems:'center', width:'100%', height:BARH, opacity:hid ? 0 : 1, transition:'opacity .2s'}}>
       <div style={{position:'relative', display:'flex', alignItems:'center', minWidth:44, zIndex:1}}>
         {(depth > 0 || ghost)
-          ? <button className="tk-btn" onClick={nav.canPop?nav.pop:undefined} style={{display:'flex', alignItems:'center', border:0, background:'none',
-              color:'var(--tk-tint)', fontSize:17, fontFamily:'inherit', padding:'6px 8px 6px 0', cursor:'pointer', maxWidth:160}}>
+          ? <button className="bl-btn" onClick={nav.canPop?nav.pop:undefined} style={{display:'flex', alignItems:'center', border:0, background:'none',
+              color:'var(--bl-tint)', fontSize:17, fontFamily:'inherit', padding:'6px 8px 6px 0', cursor:'pointer', maxWidth:160}}>
               <Icon name="chevL" size={24} sw={2.4}/>
               <span style={{overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{backTitle && backTitle.length <= 12 ? backTitle : 'Back'}</span>
             </button>
           : (sc.leading || null)}
       </div>
       <div style={{position:'absolute', left:'50%', transform:'translateX(-50%)', maxWidth:'52%', fontSize:17, fontWeight:600,
-        whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', opacity:showTitle?1:0, transition:'opacity .2s', pointerEvents:'none', color:'var(--tk-label)'}}>{sc.title}</div>
+        whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', opacity:showTitle?1:0, transition:'opacity .2s', pointerEvents:'none', color:'var(--bl-label)'}}>{sc.title}</div>
       <div style={{position:'relative', marginLeft:'auto', display:'flex', alignItems:'center', zIndex:1}}>{sc.trailing || null}</div>
       </div>
     </div>
@@ -559,12 +559,12 @@ function ScreenWrap({sc, depth, top, ghost, entering, nav, backTitle, reg, defIn
    (blank screen). While any stack can pop we keep one history sentinel armed; the system gesture then lands
    as popstate and pops OUR stack instead of the page. */
 const NavPops = new Set();
-let tkArmed = false;
-let tkCoarse = typeof matchMedia !== 'undefined' && matchMedia('(any-pointer: coarse)').matches;
-function armHistory(){ if (!tkCoarse || tkArmed) return;
-  try { history.pushState({tkNav:1}, ''); tkArmed = true; } catch(e) { tkCoarse = false; } }
+let blArmed = false;
+let blCoarse = typeof matchMedia !== 'undefined' && matchMedia('(any-pointer: coarse)').matches;
+function armHistory(){ if (!blCoarse || blArmed) return;
+  try { history.pushState({blNav:1}, ''); blArmed = true; } catch(e) { blCoarse = false; } }
 if (typeof window !== 'undefined' && !window.__tkPopstate) { window.__tkPopstate = 1;
-  window.addEventListener('popstate', ()=>{ if (!tkArmed) return; tkArmed = false;
+  window.addEventListener('popstate', ()=>{ if (!blArmed) return; blArmed = false;
     let best = null; NavPops.forEach(g=>{ const s = g(); if (s.depth > 1) best = s; });
     if (best) { best.pop();
       setTimeout(()=>{ let can = false; NavPops.forEach(g=>{ if (g().depth > 1) can = true; }); if (can) armHistory(); }, 80); } }); }
@@ -658,23 +658,23 @@ function NavigationStack({screens, onPop, defIns, safeTop}) {
       backTitle={r.i > 0 ? (r.ghost ? (screens[screens.length-1] && screens[screens.length-1].title) : screens[r.i-1].title) : null}
       reg={reg} defIns={defIns} z={r.i}/>)}
   </div>;
-  return safeTop != null ? <TKSafeCtx.Provider value={parseFloat(safeTop) || 0}>{inner}</TKSafeCtx.Provider> : inner;
+  return safeTop != null ? <BLSafeCtx.Provider value={parseFloat(safeTop) || 0}>{inner}</BLSafeCtx.Provider> : inner;
 }
 
 /* ══ SplitView ══ */
 function SplitView({wc, sidebar, master, detail, drawerOpen, onCloseDrawer}) {
   if (wc === 'regular') {
     return <div style={{display:'flex', height:'100%'}}>
-      <div style={{width:264, flexShrink:0, borderRight:'1px solid var(--tk-sep)', background:'var(--tk-side)', transition:'background .25s'}}>{sidebar}</div>
-      <div style={{width:370, flexShrink:0, borderRight:'1px solid var(--tk-sep)', position:'relative', background:'var(--tk-bg)'}}>{master}</div>
-      <div style={{flex:1, position:'relative', background:'var(--tk-bg2)', minWidth:0}}>{detail}</div>
+      <div style={{width:264, flexShrink:0, borderRight:'1px solid var(--bl-sep)', background:'var(--bl-side)', transition:'background .25s'}}>{sidebar}</div>
+      <div style={{width:370, flexShrink:0, borderRight:'1px solid var(--bl-sep)', position:'relative', background:'var(--bl-bg)'}}>{master}</div>
+      <div style={{flex:1, position:'relative', background:'var(--bl-bg2)', minWidth:0}}>{detail}</div>
     </div>;
   }
   return <div style={{position:'absolute', inset:0, overflow:'hidden'}}>
     <div style={{position:'absolute', inset:0}}>{master}</div>
-    <div onClick={onCloseDrawer} style={{position:'absolute', inset:0, background:'var(--tk-scrim)', opacity:drawerOpen?1:0,
+    <div onClick={onCloseDrawer} style={{position:'absolute', inset:0, background:'var(--bl-scrim)', opacity:drawerOpen?1:0,
       pointerEvents:drawerOpen?'auto':'none', transition:'opacity .3s', zIndex:300}}/>
-    <div style={{position:'absolute', top:0, bottom:0, left:0, width:300, background:'var(--tk-card)', zIndex:301,
+    <div style={{position:'absolute', top:0, bottom:0, left:0, width:300, background:'var(--bl-card)', zIndex:301,
       transform:drawerOpen?'translateX(0)':'translateX(-105%)', transition:'transform .34s '+EASE,
       boxShadow:drawerOpen?'12px 0 40px rgba(0,0,0,.22)':'none'}}>{sidebar}</div>
   </div>;
@@ -689,16 +689,16 @@ function Credenza({open, onClose, onBack, canBack, view, title, compact, childre
   const closeRef = useRef(onClose); closeRef.current = onClose;
   useEffect(()=>{ if (!open) return; const k = e => { if (e.key === 'Escape') closeRef.current(); };
     window.addEventListener('keydown', k); return ()=>window.removeEventListener('keydown', k); }, [open]);
-  const circle = (icon, fn, label) => <button className="tk-btn" onClick={fn} aria-label={label}
-    style={{width:30, height:30, borderRadius:'50%', border:0, background:'var(--tk-fill)', color:'var(--tk-label2)',
+  const circle = (icon, fn, label) => <button className="bl-btn" onClick={fn} aria-label={label}
+    style={{width:30, height:30, borderRadius:'50%', border:0, background:'var(--bl-fill)', color:'var(--bl-label2)',
       display:'grid', placeItems:'center', cursor:'pointer', flexShrink:0, padding:0}}><Icon name={icon} size={15} sw={2.6}/></button>;
-  const card = {background:'var(--tk-card)', color:'var(--tk-label)', overflow:'hidden', boxSizing:'border-box',
-    boxShadow:'0 24px 80px rgba(0,0,0,.34), 0 0 0 1px var(--tk-sep)'};
+  const card = {background:'var(--bl-card)', color:'var(--bl-label)', overflow:'hidden', boxSizing:'border-box',
+    boxShadow:'0 24px 80px rgba(0,0,0,.34), 0 0 0 1px var(--bl-sep)'};
   const trayPos = {position:'absolute', left:10, right:10, bottom:10, borderRadius:28, zIndex:401};
   const dlgPos = {position:'absolute', left:'50%', top:'50%', width:400, maxWidth:'calc(100% - 44px)', borderRadius:24, zIndex:401};
   if (!FM) { if (!open) return null;
     return <div style={{position:'absolute', inset:0, zIndex:400}}>
-      <div onClick={onClose} style={{position:'absolute', inset:0, background:'var(--tk-scrim)'}}/>
+      <div onClick={onClose} style={{position:'absolute', inset:0, background:'var(--bl-scrim)'}}/>
       <div style={{...card, ...(compact ? trayPos : {...dlgPos, transform:'translate(-50%,-50%)'})}}>
         <div style={{display:'flex', alignItems:'center', gap:10, padding:'14px 14px 6px'}}>
           {canBack ? circle('chevL', onBack, 'Back') : null}
@@ -732,13 +732,13 @@ function Credenza({open, onClose, onBack, canBack, view, title, compact, childre
   </m.div>;
   return <AP>
     {open ? <m.div key="scrim" onClick={onClose} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.24}}
-      style={{position:'absolute', inset:0, background:'var(--tk-scrim)', zIndex:400}}/> : null}
+      style={{position:'absolute', inset:0, background:'var(--bl-scrim)', zIndex:400}}/> : null}
     {open ? (compact
       ? <m.div key="tray" initial={{y:'112%'}} animate={{y:'0%'}} exit={{y:'118%'}} transition={spring}
           drag="y" dragConstraints={{top:0, bottom:0}} dragElastic={{top:.02, bottom:.55}}
           onDragEnd={(ev, inf)=>{ if (inf.offset.y > 120 || inf.velocity.y > 500) { Haptics.impact('light'); closeRef.current(); } }}
           style={{...card, ...trayPos, touchAction:'none'}}>
-          <div aria-hidden="true" style={{position:'absolute', top:7, left:'50%', transform:'translateX(-50%)', width:38, height:5, borderRadius:3, background:'var(--tk-fill2)', zIndex:3}}/>
+          <div aria-hidden="true" style={{position:'absolute', top:7, left:'50%', transform:'translateX(-50%)', width:38, height:5, borderRadius:3, background:'var(--bl-fill2)', zIndex:3}}/>
           {header}{body}
         </m.div>
       : <m.div key="dlg" initial={{x:'-50%', y:'-45%', opacity:0, scale:.95}} animate={{x:'-50%', y:'-50%', opacity:1, scale:1}}
@@ -755,20 +755,20 @@ function SideDrawer({mode, open, onClose, title, width, children}) {
   width = width || 320;
   const head = <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 14px 6px', flexShrink:0}}>
     <span style={{fontSize:16.5, fontWeight:700, letterSpacing:'-.2px', whiteSpace:'nowrap'}}>{title}</span>
-    <button className="tk-btn" onClick={onClose} aria-label={'Close ' + title} style={{border:0, background:'var(--tk-fill)', width:28, height:28,
-      borderRadius:'50%', display:'grid', placeItems:'center', cursor:'pointer', color:'var(--tk-label2)', padding:0}}><Icon name="x" size={14} sw={2.6}/></button>
+    <button className="bl-btn" onClick={onClose} aria-label={'Close ' + title} style={{border:0, background:'var(--bl-fill)', width:28, height:28,
+      borderRadius:'50%', display:'grid', placeItems:'center', cursor:'pointer', color:'var(--bl-label2)', padding:0}}><Icon name="x" size={14} sw={2.6}/></button>
   </div>;
-  const col = <React.Fragment>{head}<div className="tk-scroll" style={{flex:1, overflowY:'auto', minHeight:0}}>{children}</div></React.Fragment>;
+  const col = <React.Fragment>{head}<div className="bl-scroll" style={{flex:1, overflowY:'auto', minHeight:0}}>{children}</div></React.Fragment>;
   if (mode === 'fixed') {
     return <div aria-hidden={!open} style={{width:open ? width : 0, flexShrink:0, overflow:'hidden', transition:'width .34s ' + EASE,
-        borderLeft:open ? '1px solid var(--tk-sep)' : 'none', background:'var(--tk-bg)'}}>
+        borderLeft:open ? '1px solid var(--bl-sep)' : 'none', background:'var(--bl-bg)'}}>
       <div style={{width, height:'100%', display:'flex', flexDirection:'column', boxSizing:'border-box'}}>{col}</div>
     </div>;
   }
   return <div aria-hidden={!open} style={{position:'absolute', inset:0, zIndex:350, pointerEvents:open ? 'auto' : 'none'}}>
-    <div onClick={onClose} style={{position:'absolute', inset:0, background:'var(--tk-scrim)', opacity:open ? 1 : 0, transition:'opacity .3s'}}/>
+    <div onClick={onClose} style={{position:'absolute', inset:0, background:'var(--bl-scrim)', opacity:open ? 1 : 0, transition:'opacity .3s'}}/>
     <div style={{position:'absolute', top:0, bottom:0, right:0, width:'min(' + width + 'px, 88%)', display:'flex', flexDirection:'column',
-      background:'var(--tk-bg)', borderLeft:'1px solid var(--tk-sep)', boxShadow:open ? '-16px 0 48px rgba(0,0,0,.25)' : 'none',
+      background:'var(--bl-bg)', borderLeft:'1px solid var(--bl-sep)', boxShadow:open ? '-16px 0 48px rgba(0,0,0,.25)' : 'none',
       transform:open ? 'none' : 'translateX(106%)', transition:'transform .34s ' + EASE}}>{col}</div>
   </div>;
 }
@@ -786,23 +786,23 @@ function ActivityView({c}) {
       <Avatar c={c} size={34}/>
       <div>
         <div style={{fontSize:15, fontWeight:700}}>{c.f} {c.l}</div>
-        <div style={{fontSize:12, color:'var(--tk-label2)'}}>Last 30 days</div>
+        <div style={{fontSize:12, color:'var(--bl-label2)'}}>Last 30 days</div>
       </div>
     </div>
-    <div style={{background:'var(--tk-card)', borderRadius:12, overflow:'hidden', boxShadow:'0 0 0 1px var(--tk-sep)'}}>
-      {rows.map((r, i)=><div key={i} style={{display:'flex', alignItems:'center', gap:11, padding:'9px 12px', boxShadow:i < rows.length - 1 ? 'inset 0 -1px 0 var(--tk-sep)' : 'none'}}>
-        <span style={{width:30, height:30, borderRadius:8, background:'var(--tk-fill)', display:'grid', placeItems:'center', color:'var(--tk-tint)', flexShrink:0}}><Icon name={r[0]} size={16} sw={2}/></span>
+    <div style={{background:'var(--bl-card)', borderRadius:12, overflow:'hidden', boxShadow:'0 0 0 1px var(--bl-sep)'}}>
+      {rows.map((r, i)=><div key={i} style={{display:'flex', alignItems:'center', gap:11, padding:'9px 12px', boxShadow:i < rows.length - 1 ? 'inset 0 -1px 0 var(--bl-sep)' : 'none'}}>
+        <span style={{width:30, height:30, borderRadius:8, background:'var(--bl-fill)', display:'grid', placeItems:'center', color:'var(--bl-tint)', flexShrink:0}}><Icon name={r[0]} size={16} sw={2}/></span>
         <span style={{flex:1, minWidth:0}}>
           <span style={{display:'block', fontSize:14.5, fontWeight:600}}>{r[1]}</span>
-          <span style={{display:'block', fontSize:12, color:'var(--tk-label2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{r[2]}</span>
+          <span style={{display:'block', fontSize:12, color:'var(--bl-label2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{r[2]}</span>
         </span>
       </div>)}
     </div>
-    {NOTES[c.id] ? <div style={{marginTop:14, background:'var(--tk-card)', borderRadius:12, padding:'10px 13px', boxShadow:'0 0 0 1px var(--tk-sep)'}}>
-      <div style={{fontSize:11.5, fontWeight:700, letterSpacing:'.4px', textTransform:'uppercase', color:'var(--tk-label2)', marginBottom:4}}>Notes</div>
+    {NOTES[c.id] ? <div style={{marginTop:14, background:'var(--bl-card)', borderRadius:12, padding:'10px 13px', boxShadow:'0 0 0 1px var(--bl-sep)'}}>
+      <div style={{fontSize:11.5, fontWeight:700, letterSpacing:'.4px', textTransform:'uppercase', color:'var(--bl-label2)', marginBottom:4}}>Notes</div>
       <div style={{fontSize:13.5, lineHeight:1.5}}>{NOTES[c.id]}</div>
     </div> : null}
-    <div style={{marginTop:14, fontSize:11.5, color:'var(--tk-label3)', lineHeight:1.5, padding:'0 2px'}}>Same panel, three hosts — fixed column at 1280px+, overlay sheet on desktop &amp; tablet, pushed page on phone.</div>
+    <div style={{marginTop:14, fontSize:11.5, color:'var(--bl-label3)', lineHeight:1.5, padding:'0 2px'}}>Same panel, three hosts — fixed column at 1280px+, overlay sheet on desktop &amp; tablet, pushed page on phone.</div>
   </div>;
 }
 function QRSvg({seed, size}) {
@@ -823,52 +823,52 @@ function QRSvg({seed, size}) {
   </svg>;
 }
 function PillBtn({label, onPress, tone}) {
-  return <button className="tk-btn" onClick={onPress} style={{width:'100%', border:0, borderRadius:14, padding:'13px 12px', fontSize:16, fontWeight:600,
-    fontFamily:'inherit', cursor:'pointer', background:tone === 'soft' ? 'var(--tk-fill)' : 'var(--tk-tint)',
-    color:tone === 'soft' ? 'var(--tk-label)' : '#fff', boxSizing:'border-box'}}>{label}</button>;
+  return <button className="bl-btn" onClick={onPress} style={{width:'100%', border:0, borderRadius:14, padding:'13px 12px', fontSize:16, fontWeight:600,
+    fontFamily:'inherit', cursor:'pointer', background:tone === 'soft' ? 'var(--bl-fill)' : 'var(--bl-tint)',
+    color:tone === 'soft' ? 'var(--bl-label)' : '#fff', boxSizing:'border-box'}}>{label}</button>;
 }
 const SHARE_T = {menu:'Share Contact', qr:'QR Code', vcard:'Export vCard', done:'Shared'};
 function ShareViews({c, view, go, onClose}) {
-  const opt = (icon, t, d, fn) => <button key={t} className="tk-btn tk-hl" onClick={fn}
-    style={{display:'flex', alignItems:'center', gap:12, width:'100%', border:0, textAlign:'left', background:'var(--tk-fill)',
-      borderRadius:14, padding:'11px 12px', marginBottom:8, cursor:'pointer', fontFamily:'inherit', color:'var(--tk-label)', boxSizing:'border-box'}}>
-    <span style={{width:34, height:34, borderRadius:10, background:'var(--tk-card)', display:'grid', placeItems:'center', color:'var(--tk-tint)', boxShadow:'0 0 0 1px var(--tk-sep)', flexShrink:0}}><Icon name={icon} size={18} sw={2}/></span>
+  const opt = (icon, t, d, fn) => <button key={t} className="bl-btn bl-hl" onClick={fn}
+    style={{display:'flex', alignItems:'center', gap:12, width:'100%', border:0, textAlign:'left', background:'var(--bl-fill)',
+      borderRadius:14, padding:'11px 12px', marginBottom:8, cursor:'pointer', fontFamily:'inherit', color:'var(--bl-label)', boxSizing:'border-box'}}>
+    <span style={{width:34, height:34, borderRadius:10, background:'var(--bl-card)', display:'grid', placeItems:'center', color:'var(--bl-tint)', boxShadow:'0 0 0 1px var(--bl-sep)', flexShrink:0}}><Icon name={icon} size={18} sw={2}/></span>
     <span style={{flex:1, minWidth:0}}>
       <span style={{display:'block', fontSize:15.5, fontWeight:600}}>{t}</span>
-      <span style={{display:'block', fontSize:12.5, color:'var(--tk-label2)', marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{d}</span></span>
-    <Icon name="chev" size={14} sw={2.6} style={{color:'var(--tk-label3)'}}/>
+      <span style={{display:'block', fontSize:12.5, color:'var(--bl-label2)', marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{d}</span></span>
+    <Icon name="chev" size={14} sw={2.6} style={{color:'var(--bl-label3)'}}/>
   </button>;
   if (view === 'qr') return <div style={{padding:'12px 20px 20px', textAlign:'center'}}>
-    <div style={{display:'inline-grid', placeItems:'center', padding:16, borderRadius:20, background:'#fff', color:'#111', boxShadow:'0 0 0 1px var(--tk-sep)'}}>
+    <div style={{display:'inline-grid', placeItems:'center', padding:16, borderRadius:20, background:'#fff', color:'#111', boxShadow:'0 0 0 1px var(--bl-sep)'}}>
       <QRSvg seed={c.id}/></div>
-    <div style={{fontSize:13, color:'var(--tk-label2)', margin:'12px 0 14px', lineHeight:1.45}}>Scanning adds {c.f} {c.l} — name, {c.ph}, and email.</div>
+    <div style={{fontSize:13, color:'var(--bl-label2)', margin:'12px 0 14px', lineHeight:1.45}}>Scanning adds {c.f} {c.l} — name, {c.ph}, and email.</div>
     <PillBtn label="Save to Photos" onPress={()=>go('done')}/>
   </div>;
   if (view === 'vcard') return <div style={{padding:'12px 16px 16px'}}>
-    <div style={{borderRadius:14, background:'var(--tk-fill)', padding:'2px 0', marginBottom:12}}>
+    <div style={{borderRadius:14, background:'var(--bl-fill)', padding:'2px 0', marginBottom:12}}>
       {[['Name', c.f + ' ' + c.l], ['Mobile', c.ph], ['Email', c.em], ['Group', c.g || '—']].map((f, i)=>
-        <div key={f[0]} style={{display:'flex', justifyContent:'space-between', gap:12, padding:'8px 14px', boxShadow:i < 3 ? 'inset 0 -1px 0 var(--tk-sep)' : 'none'}}>
-          <span style={{fontSize:13.5, color:'var(--tk-label2)', flexShrink:0}}>{f[0]}</span>
+        <div key={f[0]} style={{display:'flex', justifyContent:'space-between', gap:12, padding:'8px 14px', boxShadow:i < 3 ? 'inset 0 -1px 0 var(--bl-sep)' : 'none'}}>
+          <span style={{fontSize:13.5, color:'var(--bl-label2)', flexShrink:0}}>{f[0]}</span>
           <span style={{fontSize:13.5, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{f[1]}</span></div>)}
     </div>
-    <div style={{fontSize:12.5, color:'var(--tk-label2)', margin:'0 2px 12px'}}>Everything on the card ships in one .vcf file.</div>
+    <div style={{fontSize:12.5, color:'var(--bl-label2)', margin:'0 2px 12px'}}>Everything on the card ships in one .vcf file.</div>
     <PillBtn label={'Export ' + c.f + '.vcf'} onPress={()=>go('done')}/>
   </div>;
   if (view === 'done') return <div style={{padding:'18px 20px 22px', textAlign:'center'}}>
-    <span style={{display:'inline-grid', placeItems:'center', width:54, height:54, borderRadius:'50%', background:'var(--tk-green)', color:'#fff', marginBottom:10}}><Icon name="check" size={26} sw={3}/></span>
+    <span style={{display:'inline-grid', placeItems:'center', width:54, height:54, borderRadius:'50%', background:'var(--bl-green)', color:'#fff', marginBottom:10}}><Icon name="check" size={26} sw={3}/></span>
     <div style={{fontSize:17, fontWeight:700}}>Card shared</div>
-    <div style={{fontSize:13, color:'var(--tk-label2)', margin:'4px 0 16px'}}>{c.f} {c.l} is on the way.</div>
+    <div style={{fontSize:13, color:'var(--bl-label2)', margin:'4px 0 16px'}}>{c.f} {c.l} is on the way.</div>
     <PillBtn label="Done" onPress={onClose}/>
   </div>;
   return <div style={{padding:'10px 16px 14px'}}>
-    <div style={{fontSize:13, color:'var(--tk-label2)', margin:'0 2px 10px'}}>Pick how to share {c.f}’s card.</div>
+    <div style={{fontSize:13, color:'var(--bl-label2)', margin:'0 2px 10px'}}>Pick how to share {c.f}’s card.</div>
     {opt('pulse', 'QR Code', 'Scan in person', ()=>go('qr'))}
     {opt('mail', 'Export vCard', 'Send the .vcf anywhere', ()=>go('vcard'))}
-    {opt('message', 'Copy Link', 'touchkit.app/c/' + c.id, ()=>go('done'))}
+    {opt('message', 'Copy Link', 'blui.app/c/' + c.id, ()=>go('done'))}
   </div>;
 }
 
-/* ══════════ Demo app — composed from TouchKit ══════════ */
+/* ══════════ Demo app — composed from BL UI ══════════ */
 const GROUPS = [
   {name:'Work', color:'#0A84FF'}, {name:'Family', color:'#34C759'},
   {name:'Friends', color:'#FF9F0A'}, {name:'Climbing', color:'#FF375F'}
@@ -951,22 +951,22 @@ function sq(color, icon) {
     <Icon name={icon} size={17} sw={2} style={{color:'#fff'}}/></span>;
 }
 function Card({children, mb}) {
-  return <div style={{background:'var(--tk-card)', borderRadius:12, overflow:'hidden', marginBottom:mb==null?18:mb}}>{children}</div>;
+  return <div style={{background:'var(--bl-card)', borderRadius:12, overflow:'hidden', marginBottom:mb==null?18:mb}}>{children}</div>;
 }
 function Field({k, v, tint, last}) {
-  return <div style={{padding:'9px 16px', boxShadow:last?'none':'inset 0 -1px 0 var(--tk-sep)'}}>
-    <div style={{fontSize:12.5, color:'var(--tk-label2)'}}>{k}</div>
-    <div style={{fontSize:16.5, color:tint?'var(--tk-tint)':'var(--tk-label)', marginTop:1, overflow:'hidden', textOverflow:'ellipsis'}}>{v}</div>
+  return <div style={{padding:'9px 16px', boxShadow:last?'none':'inset 0 -1px 0 var(--bl-sep)'}}>
+    <div style={{fontSize:12.5, color:'var(--bl-label2)'}}>{k}</div>
+    <div style={{fontSize:16.5, color:tint?'var(--bl-tint)':'var(--bl-label)', marginTop:1, overflow:'hidden', textOverflow:'ellipsis'}}>{v}</div>
   </div>;
 }
 function SearchField({q, setQ}) {
-  return <div style={{display:'flex', alignItems:'center', gap:7, background:'var(--tk-fill)', borderRadius:11, padding:'7px 9px'}}>
-    <Icon name="search" size={17} sw={2.2} style={{color:'var(--tk-label2)'}}/>
+  return <div style={{display:'flex', alignItems:'center', gap:7, background:'var(--bl-fill)', borderRadius:11, padding:'7px 9px'}}>
+    <Icon name="search" size={17} sw={2.2} style={{color:'var(--bl-label2)'}}/>
     <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search" aria-label="Search contacts"
       style={{flex:1, border:'none', outline:'none', background:'transparent', fontFamily:'inherit', fontSize:17,
-        color:'var(--tk-label)', padding:0, minWidth:0, userSelect:'text', WebkitUserSelect:'text'}}/>
-    {q ? <button className="tk-btn" onClick={()=>setQ('')} aria-label="Clear search"
-      style={{border:0, background:'none', padding:0, cursor:'pointer', color:'var(--tk-label3)', display:'grid'}}><Icon name="xcirc" size={18}/></button> : null}
+        color:'var(--bl-label)', padding:0, minWidth:0, userSelect:'text', WebkitUserSelect:'text'}}/>
+    {q ? <button className="bl-btn" onClick={()=>setQ('')} aria-label="Clear search"
+      style={{border:0, background:'none', padding:0, cursor:'pointer', color:'var(--bl-label3)', display:'grid'}}><Icon name="xcirc" size={18}/></button> : null}
   </div>;
 }
 function DetailView({c, fav, onFav, ringtone, onRing, onDelete, onShare}) {
@@ -975,12 +975,12 @@ function DetailView({c, fav, onFav, ringtone, onRing, onDelete, onShare}) {
     <div style={{display:'flex', flexDirection:'column', alignItems:'center', padding:'14px 0 18px'}}>
       <Avatar c={c} size={92}/>
       <div style={{fontSize:26, fontWeight:700, marginTop:12, letterSpacing:'-.3px'}}>{c.f} {c.l}</div>
-      <div style={{fontSize:14.5, color:'var(--tk-label2)', marginTop:3}}>{c.role}{c.com?' · '+c.com:''}</div>
+      <div style={{fontSize:14.5, color:'var(--bl-label2)', marginTop:3}}>{c.role}{c.com?' · '+c.com:''}</div>
       <div style={{display:'flex', gap:10, marginTop:18, width:'100%', maxWidth:430}}>
         {[['message','Message'],['phone','Call'],['video','Video'],['mail','Mail']].map(a=>
-          <button key={a[0]} className="tk-btn tk-hl" onClick={()=>Haptics.impact('light')}
+          <button key={a[0]} className="bl-btn bl-hl" onClick={()=>Haptics.impact('light')}
             style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:5, padding:'11px 0 9px', border:0,
-              borderRadius:12, background:'var(--tk-card)', color:'var(--tk-tint)', cursor:'pointer', fontFamily:'inherit'}}>
+              borderRadius:12, background:'var(--bl-card)', color:'var(--bl-tint)', cursor:'pointer', fontFamily:'inherit'}}>
             <Icon name={a[0]} size={20}/><span style={{fontSize:11.5}}>{a[1]}</span>
           </button>)}
       </div>
@@ -990,24 +990,24 @@ function DetailView({c, fav, onFav, ringtone, onRing, onDelete, onShare}) {
       <Field k="email" v={c.em} tint last={!c.g}/>
       {c.g ? <Field k="group" v={c.g} last/> : null}
     </Card>
-    <Card><TKRow title="Ringtone" accessory="chevron" onPress={onRing}
-      trailing={<span style={{fontSize:16, color:'var(--tk-label2)'}}>{ringtone}</span>}/>
-    <TKRow title="Share Contact" accessory="chevron" onPress={onShare} divider={false}
-      trailing={<span style={{fontSize:13, color:'var(--tk-label3)'}}>Credenza</span>}/></Card>
+    <Card><BLRow title="Ringtone" accessory="chevron" onPress={onRing}
+      trailing={<span style={{fontSize:16, color:'var(--bl-label2)'}}>{ringtone}</span>}/>
+    <BLRow title="Share Contact" accessory="chevron" onPress={onShare} divider={false}
+      trailing={<span style={{fontSize:13, color:'var(--bl-label3)'}}>Credenza</span>}/></Card>
     {NOTES[c.id] ? <Card><div style={{padding:'10px 16px 12px'}}>
-      <div style={{fontSize:12.5, color:'var(--tk-label2)', marginBottom:3}}>Notes</div>
+      <div style={{fontSize:12.5, color:'var(--bl-label2)', marginBottom:3}}>Notes</div>
       <div style={{fontSize:15.5, lineHeight:1.45}}>{NOTES[c.id]}</div></div></Card> : null}
-    <Card><TKRow title="Favorite" divider={false}
-      leading={<Icon name={fav?'starF':'star'} size={21} style={{color:fav?'#FF9F0A':'var(--tk-label3)'}}/>}
-      trailing={<TKSwitch checked={fav} onChange={onFav}/>}/></Card>
-    <Card><TKRow title="Delete Contact" center destructive onPress={onDelete} divider={false}/></Card>
+    <Card><BLRow title="Favorite" divider={false}
+      leading={<Icon name={fav?'starF':'star'} size={21} style={{color:fav?'#FF9F0A':'var(--bl-label3)'}}/>}
+      trailing={<BLSwitch checked={fav} onChange={onFav}/>}/></Card>
+    <Card><BLRow title="Delete Contact" center destructive onPress={onDelete} divider={false}/></Card>
   </div>;
 }
 function RingtonePick({value, onPick}) {
-  return <TKList inset><TKSection footer="Selection ticks fire through Haptics.selection() — the same call the A–Z index uses.">
-    {RINGTONES.map((r,i)=><TKRow key={r} title={r} accessory="check" checked={value===r} rowRole="option"
+  return <BLList inset><BLSection footer="Selection ticks fire through Haptics.selection() — the same call the A–Z index uses.">
+    {RINGTONES.map((r,i)=><BLRow key={r} title={r} accessory="check" checked={value===r} rowRole="option"
       onPress={()=>{onPick(r); Haptics.selection();}} divider={i<RINGTONES.length-1}/>)}
-  </TKSection></TKList>;
+  </BLSection></BLList>;
 }
 function AboutView() {
   const map = [
@@ -1020,20 +1020,20 @@ function AboutView() {
     ['Inspector column','<SideDrawer> — fixed · overlay · pushed page'],
     ['UIFeedbackGenerator','Haptics.impact / .selection / .notification']
   ];
-  return <TKList inset>
-    <div style={{padding:'2px 4px 18px', fontSize:15.5, lineHeight:1.5, color:'var(--tk-label2)'}}>
-      TouchKit ports Cocoa Touch's container controllers to JSX. Like Android XML views, the tree is the behavior —
+  return <BLList inset>
+    <div style={{padding:'2px 4px 18px', fontSize:15.5, lineHeight:1.5, color:'var(--bl-label2)'}}>
+      BL UI ports Cocoa Touch's container controllers to JSX. Like Android XML views, the tree is the behavior —
       nest containers differently and navigation changes, no mode flags. One haptics engine drives every interaction.</div>
-    <TKSection title="Dictionary">
-      {map.map((m,i)=><div key={m[0]} style={{padding:'9px 16px', background:'var(--tk-card)', boxShadow:i<map.length-1?'inset 0 -1px 0 var(--tk-sep)':'none'}}>
-        <div style={{fontSize:12.5, color:'var(--tk-label2)'}}>{m[0]}</div>
-        <div style={{fontFamily:'ui-monospace,Menlo,monospace', fontSize:13.5, color:'var(--tk-tint)', marginTop:2}}>{m[1]}</div>
+    <BLSection title="Dictionary">
+      {map.map((m,i)=><div key={m[0]} style={{padding:'9px 16px', background:'var(--bl-card)', boxShadow:i<map.length-1?'inset 0 -1px 0 var(--bl-sep)':'none'}}>
+        <div style={{fontSize:12.5, color:'var(--bl-label2)'}}>{m[0]}</div>
+        <div style={{fontFamily:'ui-monospace,Menlo,monospace', fontSize:13.5, color:'var(--bl-tint)', marginTop:2}}>{m[1]}</div>
       </div>)}
-    </TKSection>
-    <TKSection title="Semantics" footer="Rows are real buttons with listbox roles, arrow-key navigation, Esc pops the stack, visible focus rings — the react-aria interaction model, swap-in ready.">
-      <TKRow title="Version" trailing={<span style={{color:'var(--tk-label2)', fontSize:16}}>0.1.0</span>} divider={false}/>
-    </TKSection>
-  </TKList>;
+    </BLSection>
+    <BLSection title="Semantics" footer="Rows are real buttons with listbox roles, arrow-key navigation, Esc pops the stack, visible focus rings — the react-aria interaction model, swap-in ready.">
+      <BLRow title="Version" trailing={<span style={{color:'var(--bl-label2)', fontSize:16}}>0.1.0</span>} divider={false}/>
+    </BLSection>
+  </BLList>;
 }
 /* ══ Haptics Playground — the vibrator.dev homepage set: magic toggle, brightness, haptic slider,
    slide-to-unlock, timer wheels. Every surface calls Haptics/navigator.vibrate inside the live gesture. ══ */
@@ -1052,9 +1052,9 @@ function ShowMagicRow() {
       else setNote('debug API missing in this build');
     } catch(e) { setNote('polyfill only loads in Safari'); }
   };
-  return <TKRow leading={sq('#BF5AF2','wave')} title="Show the magic!" divider={false}
+  return <BLRow leading={sq('#BF5AF2','wave')} title="Show the magic!" divider={false}
     subtitle={note || 'Reveal the hidden switch overlays the polyfill drives'}
-    trailing={<TKSwitch checked={on} onChange={toggle}/>}/>;
+    trailing={<BLSwitch checked={on} onChange={toggle}/>}/>;
 }
 function BrightnessSlider() {
   const [v, setV] = useState(0.55);
@@ -1068,7 +1068,7 @@ function BrightnessSlider() {
     onPointerDown={e=>{ e.currentTarget.setPointerCapture(e.pointerId); move(e); }}
     onPointerMove={e=>{ if (e.buttons) move(e); }}
     onKeyDown={e=>{ if (e.key==='ArrowLeft'||e.key==='ArrowRight'){ setV(x=>Math.min(1,Math.max(0,x+(e.key==='ArrowRight'?0.0625:-0.0625)))); Haptics.selection(); e.preventDefault(); } }}
-    style={{position:'relative', height:64, borderRadius:18, background:'var(--tk-fill2)', overflow:'hidden', touchAction:'none', cursor:'ew-resize'}}>
+    style={{position:'relative', height:64, borderRadius:18, background:'var(--bl-fill2)', overflow:'hidden', touchAction:'none', cursor:'ew-resize'}}>
     <div style={{position:'absolute', top:0, bottom:0, left:0, width:(v*100)+'%', background:'rgba(255,255,255,.94)'}}/>
     <span style={{position:'absolute', left:16, top:'50%', transform:'translateY(-50%)', color:'rgba(60,60,67,.62)', display:'grid'}}><Sun size={22}/></span>
   </div>;
@@ -1077,11 +1077,11 @@ function HapticSlider() {
   const [v, setV] = useState(0.5);
   const last = useRef(0);
   return <div style={{display:'flex', alignItems:'center', gap:14}}>
-    <input type="range" className="tk-range" min="0" max="1" step="0.01" value={v} aria-label="Haptic slider"
-      style={{flex:1, '--tk-range-fill':(v*100)+'%'}}
+    <input type="range" className="bl-range" min="0" max="1" step="0.01" value={v} aria-label="Haptic slider"
+      style={{flex:1, '--bl-range-fill':(v*100)+'%'}}
       onChange={e=>{ setV(+e.target.value);
         const now = performance.now(); if (now - last.current > 16) { last.current = now; Haptics.selection(); } }}/>
-    <span style={{fontFamily:'ui-monospace,Menlo,monospace', fontSize:14.5, color:'var(--tk-label2)', width:36, textAlign:'right', flexShrink:0}}>{v.toFixed(2)}</span>
+    <span style={{fontFamily:'ui-monospace,Menlo,monospace', fontSize:14.5, color:'var(--bl-label2)', width:36, textAlign:'right', flexShrink:0}}>{v.toFixed(2)}</span>
   </div>;
 }
 function SlideToUnlock() {
@@ -1105,18 +1105,18 @@ function SlideToUnlock() {
       setTimeout(()=>{ setDone(false); xr.current = 0; setX(0); det.current = 0; }, 1500);
     } else { xr.current = 0; setX(0); det.current = 0; }
   };
-  return <div ref={ref} style={{position:'relative', height:56, borderRadius:28, background:'var(--tk-fill)',
+  return <div ref={ref} style={{position:'relative', height:56, borderRadius:28, background:'var(--bl-fill)',
       boxShadow:'inset 0 1px 3px rgba(0,0,0,.12)', overflow:'hidden'}}>
-    <span aria-hidden="true" className={done?'':'tk-shimmer'} style={{position:'absolute', inset:0, display:'grid', placeItems:'center',
-      fontSize:17, letterSpacing:'.4px', color:done?'var(--tk-green)':undefined, fontWeight:done?600:400, opacity:done?1:Math.max(0, 1 - x*1.7)}}>
+    <span aria-hidden="true" className={done?'':'bl-shimmer'} style={{position:'absolute', inset:0, display:'grid', placeItems:'center',
+      fontSize:17, letterSpacing:'.4px', color:done?'var(--bl-green)':undefined, fontWeight:done?600:400, opacity:done?1:Math.max(0, 1 - x*1.7)}}>
       {done ? 'unlocked' : 'slide to unlock'}</span>
-    <button className="tk-btn" aria-label="Slide to unlock"
+    <button className="bl-btn" aria-label="Slide to unlock"
       onPointerDown={e=>{ e.currentTarget.setPointerCapture(e.pointerId); setDrag(true); }}
       onPointerMove={e=>{ if (drag) move(e); }}
       onPointerUp={up} onPointerCancel={up}
       style={{position:'absolute', top:4, left:4 + x*travel(), width:48, height:48, borderRadius:24, border:0, padding:0,
-        background:'var(--tk-card)', boxShadow:'0 2px 6px rgba(0,0,0,.22)', cursor:'grab', touchAction:'none',
-        display:'grid', placeItems:'center', color:done?'var(--tk-green)':'var(--tk-label2)',
+        background:'var(--bl-card)', boxShadow:'0 2px 6px rgba(0,0,0,.22)', cursor:'grab', touchAction:'none',
+        display:'grid', placeItems:'center', color:done?'var(--bl-green)':'var(--bl-label2)',
         transition:drag?'none':'left .38s '+EASE}}>
       <Icon name={done?'check':'chev'} size={22} sw={2.4}/></button>
   </div>;
@@ -1162,52 +1162,52 @@ function WheelDrum({n, init, label}) {
       onWheel={e=>{ e.preventDefault(); const d = e.deltaY > 0 ? 1 : -1; settle(clampHard((Math.round(-off/H)+d)*-H)); }}
       onKeyDown={e=>{ if (e.key==='ArrowUp'||e.key==='ArrowDown'){ settle(clampHard((Math.round(-off/H)+(e.key==='ArrowDown'?1:-1))*-H)); e.preventDefault(); } }}
       style={{position:'relative', height:H*VIS, width:52, overflow:'hidden', touchAction:'none', cursor:'ns-resize', flexShrink:0}}>
-      <div style={{position:'absolute', left:-4, right:-4, top:(VIS-1)/2*H, height:H, borderRadius:9, background:'var(--tk-fill)'}}/>
+      <div style={{position:'absolute', left:-4, right:-4, top:(VIS-1)/2*H, height:H, borderRadius:9, background:'var(--bl-fill)'}}/>
       <div style={{position:'absolute', left:0, right:0, top:(VIS-1)/2*H, transform:'translateY('+off+'px)',
           transition:anim?'transform .3s cubic-bezier(.25,.8,.25,1)':'none'}}>
         {Array.from({length:n}, (_,i)=>{
           const dist = Math.min(2.6, Math.abs(i - idx));
           return <div key={i} style={{height:H, display:'grid', placeItems:'center', fontSize:21,
-            color:'var(--tk-label)', opacity:Math.max(0.16, 1 - dist*0.34), fontVariantNumeric:'tabular-nums'}}>{i}</div>;
+            color:'var(--bl-label)', opacity:Math.max(0.16, 1 - dist*0.34), fontVariantNumeric:'tabular-nums'}}>{i}</div>;
         })}
       </div>
-      <div style={{position:'absolute', left:0, right:0, top:0, height:H*1.4, background:'linear-gradient(var(--tk-card), transparent)', pointerEvents:'none'}}/>
-      <div style={{position:'absolute', left:0, right:0, bottom:0, height:H*1.4, background:'linear-gradient(transparent, var(--tk-card))', pointerEvents:'none'}}/>
+      <div style={{position:'absolute', left:0, right:0, top:0, height:H*1.4, background:'linear-gradient(var(--bl-card), transparent)', pointerEvents:'none'}}/>
+      <div style={{position:'absolute', left:0, right:0, bottom:0, height:H*1.4, background:'linear-gradient(transparent, var(--bl-card))', pointerEvents:'none'}}/>
     </div>
-    <span style={{fontSize:13, fontWeight:600, color:'var(--tk-label2)'}}>{label}</span>
+    <span style={{fontSize:13, fontWeight:600, color:'var(--bl-label2)'}}>{label}</span>
   </div>;
 }
 function HapticsPlayground() {
   const [, bump] = useState(0);
   useEffect(()=>{
     const h = ()=>setTimeout(()=>bump(x=>x+1), 40);
-    window.addEventListener('tk-vib', h);
+    window.addEventListener('bl-vib', h);
     const t = setInterval(()=>bump(x=>x+1), 1200);
     const stop = setTimeout(()=>clearInterval(t), 10000);
-    return ()=>{ window.removeEventListener('tk-vib', h); clearInterval(t); clearTimeout(stop); };
+    return ()=>{ window.removeEventListener('bl-vib', h); clearInterval(t); clearTimeout(stop); };
   }, []);
-  return <TKList inset>
-    <div style={{padding:'2px 4px 14px', fontSize:15, lineHeight:1.5, color:'var(--tk-label2)'}}>
-      The playground from <span style={{fontFamily:'ui-monospace,Menlo,monospace', fontSize:13.5}}>vibrator.dev</span> — on an iPhone or MacBook, in Safari, you'll feel haptic feedback as you slide these elements. <span style={{color:'var(--tk-label3)'}}>(If you don't feel anything, drag slower.)</span></div>
-    <div style={{padding:'0 4px 16px', fontFamily:'ui-monospace,Menlo,monospace', fontSize:12, color:'var(--tk-label3)'}}>engine: {Haptics.engine}</div>
-    <TKSection><ShowMagicRow/></TKSection>
-    <TKSection title="Brightness">
-      <div style={{background:'var(--tk-card)', borderRadius:12, padding:14}}><BrightnessSlider/></div>
-    </TKSection>
-    <TKSection title="Haptic slider">
-      <div style={{background:'var(--tk-card)', borderRadius:12, padding:'10px 14px'}}><HapticSlider/></div>
-    </TKSection>
-    <TKSection title="Slide to unlock">
-      <div style={{background:'var(--tk-card)', borderRadius:12, padding:10}}><SlideToUnlock/></div>
-    </TKSection>
-    <TKSection title="Timer" footer="A selection tick per detent — Haptics.selection(), the same call the A–Z index scrubber makes. Flick a wheel: ticks ride the momentum. Playground set recreated from vibrator.dev — ios-vibrator-pro-max by @samdenty (MIT).">
-      <div style={{background:'var(--tk-card)', borderRadius:12, padding:'8px 10px', display:'flex', gap:2}}>
+  return <BLList inset>
+    <div style={{padding:'2px 4px 14px', fontSize:15, lineHeight:1.5, color:'var(--bl-label2)'}}>
+      The playground from <span style={{fontFamily:'ui-monospace,Menlo,monospace', fontSize:13.5}}>vibrator.dev</span> — on an iPhone or MacBook, in Safari, you'll feel haptic feedback as you slide these elements. <span style={{color:'var(--bl-label3)'}}>(If you don't feel anything, drag slower.)</span></div>
+    <div style={{padding:'0 4px 16px', fontFamily:'ui-monospace,Menlo,monospace', fontSize:12, color:'var(--bl-label3)'}}>engine: {Haptics.engine}</div>
+    <BLSection><ShowMagicRow/></BLSection>
+    <BLSection title="Brightness">
+      <div style={{background:'var(--bl-card)', borderRadius:12, padding:14}}><BrightnessSlider/></div>
+    </BLSection>
+    <BLSection title="Haptic slider">
+      <div style={{background:'var(--bl-card)', borderRadius:12, padding:'10px 14px'}}><HapticSlider/></div>
+    </BLSection>
+    <BLSection title="Slide to unlock">
+      <div style={{background:'var(--bl-card)', borderRadius:12, padding:10}}><SlideToUnlock/></div>
+    </BLSection>
+    <BLSection title="Timer" footer="A selection tick per detent — Haptics.selection(), the same call the A–Z index scrubber makes. Flick a wheel: ticks ride the momentum. Playground set recreated from vibrator.dev — ios-vibrator-pro-max by @samdenty (MIT).">
+      <div style={{background:'var(--bl-card)', borderRadius:12, padding:'8px 10px', display:'flex', gap:2}}>
         <WheelDrum n={24} init={1} label="hours"/>
         <WheelDrum n={60} init={30} label="min"/>
         <WheelDrum n={60} init={15} label="sec"/>
       </div>
-    </TKSection>
-  </TKList>;
+    </BLSection>
+  </BLList>;
 }
 function SettingsView({s}) {
   const tests = [
@@ -1219,65 +1219,65 @@ function SettingsView({s}) {
     ['Notification · Warning', ()=>Haptics.notification('warning')],
     ['Notification · Error', ()=>Haptics.notification('error')]
   ];
-  return <TKList inset>
-    <TKSection title="Composition" footer="TouchKit has no tab-bar mode flag — behavior falls out of how containers nest in JSX. This switch remounts the demo with the other tree; state survives.">
-      <TKRow leading={sq('#5E5CE6','layers')} title="NavigationStack inside TabView" subtitle="Bar persists — each tab keeps its stack"
+  return <BLList inset>
+    <BLSection title="Composition" footer="BL UI has no tab-bar mode flag — behavior falls out of how containers nest in JSX. This switch remounts the demo with the other tree; state survives.">
+      <BLRow leading={sq('#5E5CE6','layers')} title="NavigationStack inside TabView" subtitle="Bar persists — each tab keeps its stack"
         accessory="check" checked={s.comp==='nav-in-tabs'} onPress={()=>{s.setComp('nav-in-tabs'); Haptics.impact('light');}}/>
-      <TKRow leading={sq('#0A84FF','layers')} title="TabView inside NavigationStack" subtitle="Bar rides the root view — pushes cover it"
+      <BLRow leading={sq('#0A84FF','layers')} title="TabView inside NavigationStack" subtitle="Bar rides the root view — pushes cover it"
         accessory="check" checked={s.comp==='tabs-in-nav'} onPress={()=>{s.setComp('tabs-in-nav'); Haptics.impact('light');}} divider={false}/>
-    </TKSection>
-    <TKSection title="Contacts table view" footer="UITableView styles: .plain keeps sticky letter headers; .insetGrouped floats each letter section as a card.">
-      <TKRow leading={sq('#30B0C7','layers')} title="Plain" subtitle="Edge-to-edge rows, sticky headers"
+    </BLSection>
+    <BLSection title="Contacts table view" footer="UITableView styles: .plain keeps sticky letter headers; .insetGrouped floats each letter section as a card.">
+      <BLRow leading={sq('#30B0C7','layers')} title="Plain" subtitle="Edge-to-edge rows, sticky headers"
         accessory="check" checked={s.listStyle==='plain'} onPress={()=>{s.setListStyle('plain'); Haptics.selection();}}/>
-      <TKRow leading={sq('#34C759','layers')} title="Grouped" subtitle="Inset card sections"
+      <BLRow leading={sq('#34C759','layers')} title="Grouped" subtitle="Inset card sections"
         accessory="check" checked={s.listStyle==='grouped'} onPress={()=>{s.setListStyle('grouped'); Haptics.selection();}} divider={false}/>
-    </TKSection>
-    <TKSection title="Haptics">
-      <TKRow leading={sq('#FF9F0A','wave')} title="Haptics" trailing={<TKSwitch checked={s.hap} onChange={s.setHap}/>}/>
-      <TKRow leading={sq('#8E8E93','pulse')} title="Pulse indicator" subtitle="Visualize haptic events on-screen"
-        trailing={<TKSwitch checked={s.ind} onChange={s.setInd}/>}/>
-      <TKRow leading={sq('#BF5AF2','wave')} title="Haptics Playground" subtitle="Sliders · slide to unlock · timer wheels"
+    </BLSection>
+    <BLSection title="Haptics">
+      <BLRow leading={sq('#FF9F0A','wave')} title="Haptics" trailing={<BLSwitch checked={s.hap} onChange={s.setHap}/>}/>
+      <BLRow leading={sq('#8E8E93','pulse')} title="Pulse indicator" subtitle="Visualize haptic events on-screen"
+        trailing={<BLSwitch checked={s.ind} onChange={s.setInd}/>}/>
+      <BLRow leading={sq('#BF5AF2','wave')} title="Haptics Playground" subtitle="Sliders · slide to unlock · timer wheels"
         accessory="chevron" onPress={()=>{ s.openPlay(); Haptics.impact('light'); }} divider={false}/>
-    </TKSection>
-    <TKSection title="Test patterns" footer={'Engine here: ' + Haptics.engine + '. Pulses appear on-screen while the indicator is on.'}>
-      {tests.map((t,i)=><TKRow key={t[0]} title={t[0]} onPress={t[1]} divider={i<tests.length-1}
-        trailing={<Icon name="wave" size={19} sw={2} style={{color:'var(--tk-tint)'}}/>}/>)}
-    </TKSection>
-    <TKSection title="Appearance">
-      <TKRow leading={sq('#3A3A3C','moon')} title="Dark Mode" trailing={<TKSwitch checked={s.dark} onChange={s.setDark}/>}/>
-      <TKRow leading={sq(s.tint,'drop')} title="Tint" divider={false} trailing={
+    </BLSection>
+    <BLSection title="Test patterns" footer={'Engine here: ' + Haptics.engine + '. Pulses appear on-screen while the indicator is on.'}>
+      {tests.map((t,i)=><BLRow key={t[0]} title={t[0]} onPress={t[1]} divider={i<tests.length-1}
+        trailing={<Icon name="wave" size={19} sw={2} style={{color:'var(--bl-tint)'}}/>}/>)}
+    </BLSection>
+    <BLSection title="Appearance">
+      <BLRow leading={sq('#3A3A3C','moon')} title="Dark Mode" trailing={<BLSwitch checked={s.dark} onChange={s.setDark}/>}/>
+      <BLRow leading={sq(s.tint,'drop')} title="Tint" divider={false} trailing={
         <span style={{display:'flex', gap:8}}>{TINTS.map(c=>
-          <button key={c} className="tk-btn" onClick={()=>{s.setTint(c); Haptics.selection();}} aria-label={'Tint '+c}
+          <button key={c} className="bl-btn" onClick={()=>{s.setTint(c); Haptics.selection();}} aria-label={'Tint '+c}
             style={{width:24, height:24, borderRadius:'50%', border:0, cursor:'pointer', background:c, padding:0,
-              boxShadow:s.tint===c?('0 0 0 2px var(--tk-card), 0 0 0 4px '+c):'none', transition:'box-shadow .15s'}}/>)}</span>}/>
-    </TKSection>
-    <TKSection title="About">
-      <TKRow leading={sq('#0A84FF','info')} title="About TouchKit" accessory="chevron" onPress={s.openAbout} divider={false}/>
-    </TKSection>
-  </TKList>;
+              boxShadow:s.tint===c?('0 0 0 2px var(--bl-card), 0 0 0 4px '+c):'none', transition:'box-shadow .15s'}}/>)}</span>}/>
+    </BLSection>
+    <BLSection title="About">
+      <BLRow leading={sq('#0A84FF','info')} title="About BL UI" accessory="chevron" onPress={s.openAbout} divider={false}/>
+    </BLSection>
+  </BLList>;
 }
 function Sidebar({wc, tab, onTab, filter, onFilter, counts, drawer, onClose}) {
   const row = (id, icon, label, count, selected, onClick, dot) =>
-    <button key={id} className="tk-btn" onClick={onClick}
+    <button key={id} className="bl-btn" onClick={onClick}
       style={{display:'flex', alignItems:'center', gap:10, width:'100%', padding:'8px 10px', border:0, borderRadius:9,
-        background:selected?'var(--tk-press)':'transparent', color:'var(--tk-label)', fontFamily:'inherit', fontSize:15.5,
+        background:selected?'var(--bl-press)':'transparent', color:'var(--bl-label)', fontFamily:'inherit', fontSize:15.5,
         cursor:'pointer', textAlign:'left', boxSizing:'border-box'}}>
       {dot ? <span style={{width:11, height:11, borderRadius:'50%', background:dot, flexShrink:0, margin:'0 4px'}}/>
-           : <Icon name={icon} size={19} sw={2} style={{color:'var(--tk-tint)'}}/>}
+           : <Icon name={icon} size={19} sw={2} style={{color:'var(--bl-tint)'}}/>}
       <span style={{flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{label}</span>
-      {count != null ? <span style={{fontSize:13.5, color:'var(--tk-label3)'}}>{count}</span> : null}
+      {count != null ? <span style={{fontSize:13.5, color:'var(--bl-label3)'}}>{count}</span> : null}
     </button>;
-  const sec = t => <div style={{padding:'16px 10px 5px', fontSize:11.5, fontWeight:600, letterSpacing:'.5px', textTransform:'uppercase', color:'var(--tk-label2)'}}>{t}</div>;
+  const sec = t => <div style={{padding:'16px 10px 5px', fontSize:11.5, fontWeight:600, letterSpacing:'.5px', textTransform:'uppercase', color:'var(--bl-label2)'}}>{t}</div>;
   return <div style={{width:'100%', height:'100%', display:'flex', flexDirection:'column', boxSizing:'border-box'}}>
     <div style={{padding:'14px 14px 2px', display:'flex', alignItems:'center', gap:8}}>
-      <span style={{width:24, height:24, borderRadius:6, background:'linear-gradient(135deg, var(--tk-tint), #5E5CE6)', display:'grid', placeItems:'center', flexShrink:0}}>
+      <span style={{width:24, height:24, borderRadius:6, background:'linear-gradient(135deg, var(--bl-tint), #5E5CE6)', display:'grid', placeItems:'center', flexShrink:0}}>
         <Icon name="wave" size={14} sw={2.2} style={{color:'#fff'}}/></span>
-      <span style={{fontSize:16, fontWeight:800, letterSpacing:'-.2px'}}>TouchKit</span>
-      {drawer ? <button className="tk-btn" onClick={onClose} aria-label="Close sidebar"
-        style={{marginLeft:'auto', border:0, background:'none', cursor:'pointer', color:'var(--tk-label3)', display:'grid', padding:4}}>
+      <span style={{fontSize:16, fontWeight:800, letterSpacing:'-.2px'}}>BL UI</span>
+      {drawer ? <button className="bl-btn" onClick={onClose} aria-label="Close sidebar"
+        style={{marginLeft:'auto', border:0, background:'none', cursor:'pointer', color:'var(--bl-label3)', display:'grid', padding:4}}>
         <Icon name="xcirc" size={22}/></button> : null}
     </div>
-    <div className="tk-scroll" style={{flex:1, overflowY:'auto', padding:'0 10px 12px'}}>
+    <div className="bl-scroll" style={{flex:1, overflowY:'auto', padding:'0 10px 12px'}}>
       {wc === 'regular' ? <React.Fragment>
         {sec('App')}
         {row('t1','person','Contacts',null,tab==='contacts',()=>{Haptics.selection(); onTab('contacts');})}
@@ -1290,7 +1290,7 @@ function Sidebar({wc, tab, onTab, filter, onFilter, counts, drawer, onClose}) {
       {sec('Groups')}
       {GROUPS.map(g=>row('g'+g.name,null,g.name,counts.groups[g.name]||0,tab==='contacts'&&filter.type==='group'&&filter.g===g.name,()=>onFilter({type:'group',g:g.name}),g.color))}
     </div>
-    <div style={{padding:'10px 16px', fontSize:11.5, color:'var(--tk-label3)', borderTop:'1px solid var(--tk-sep)'}}>TouchKit 0.1 · demo data</div>
+    <div style={{padding:'10px 16px', fontSize:11.5, color:'var(--bl-label3)', borderTop:'1px solid var(--bl-sep)'}}>BL UI 0.1 · demo data</div>
   </div>;
 }
 
@@ -1350,7 +1350,7 @@ function App(props) {
     for (let j = i; j >= 0; j--) if (avail.has(AL[j])) { t = AL[j]; break; }
     if (!t) for (let j = i+1; j < AL.length; j++) if (avail.has(AL[j])) { t = AL[j]; break; }
     const el = t && secEls.current[t]; if (!el) return;
-    const s = el.closest('.tk-scroll'); if (!s) return;
+    const s = el.closest('.bl-scroll'); if (!s) return;
     s.scrollTop = s.scrollTop + el.getBoundingClientRect().top - s.getBoundingClientRect().top - BARH - safeIns + 1;
   };
   const togglePick = id => { const n = new Set(pick); n.has(id) ? n.delete(id) : n.add(id); setPick(n); Haptics.selection(); };
@@ -1360,9 +1360,9 @@ function App(props) {
   const popActive = () => { if (tab === 'contacts') popContacts(); else setSub(null); };
   const grouped = listStyle === 'grouped';
   const listContent = <div style={{padding:grouped ? '0 16px' : 0}}>
-    {sections.length === 0 ? <div style={{padding:'60px 24px', textAlign:'center', color:'var(--tk-label2)', fontSize:15}}>No results{ql?' for \u201c'+q+'\u201d':''}</div> : null}
-    {sections.map(s=><TKSection key={s.L} sticky={!grouped} title={s.L} innerRef={el=>{ if (el) secEls.current[s.L] = el; }}>
-      {s.items.map((c,i)=><TKRow key={c.id} rowRole="option"
+    {sections.length === 0 ? <div style={{padding:'60px 24px', textAlign:'center', color:'var(--bl-label2)', fontSize:15}}>No results{ql?' for \u201c'+q+'\u201d':''}</div> : null}
+    {sections.map(s=><BLSection key={s.L} sticky={!grouped} title={s.L} innerRef={el=>{ if (el) secEls.current[s.L] = el; }}>
+      {s.items.map((c,i)=><BLRow key={c.id} rowRole="option"
         title={<span>{c.f} <span style={{fontWeight:600}}>{c.l}</span></span>}
         subtitle={c.role + (c.com ? ' · ' + c.com : '')}
         leading={<Avatar c={c}/>}
@@ -1372,18 +1372,18 @@ function App(props) {
         onPress={()=>{ if (edit) togglePick(c.id); else { Haptics.selection(); setSel(c.id); setRing(false); } }}
         onDelete={edit ? undefined : ()=>delOne(c.id)}
         divider={i < s.items.length-1}/>)}
-    </TKSection>)}
-    {sections.length ? <div style={{padding:'16px 0 4px', textAlign:'center', fontSize:14.5, color:'var(--tk-label2)'}}>
+    </BLSection>)}
+    {sections.length ? <div style={{padding:'16px 0 4px', textAlign:'center', fontSize:14.5, color:'var(--bl-label2)'}}>
       {visible.length} Contact{visible.length===1?'':'s'}{gone.size ? ' · pull down to restore ' + gone.size + ' deleted' : ''}</div> : null}
   </div>;
   const listScreen = {
     key:'list', title:edit ? (selN ? selN + ' Selected' : 'Select Contacts') : listTitle, largeTitle:true, grouped:grouped,
     subheader:<SearchField q={q} setQ={setQ}/>,
-    leading:collapsed ? <button className="tk-btn" onClick={()=>{setDrawer(true); Haptics.impact('light');}} aria-label="Show sidebar"
-      style={{border:0, background:'none', cursor:'pointer', color:'var(--tk-tint)', display:'grid', padding:'8px 10px'}}>
+    leading:collapsed ? <button className="bl-btn" onClick={()=>{setDrawer(true); Haptics.impact('light');}} aria-label="Show sidebar"
+      style={{border:0, background:'none', cursor:'pointer', color:'var(--bl-tint)', display:'grid', padding:'8px 10px'}}>
       <Icon name="sidebar" size={22} sw={1.9}/></button> : null,
-    trailing:<button className="tk-btn" onClick={()=>{ edit ? exitEdit() : setEdit(true); Haptics.impact('light'); }}
-      style={{border:0, background:'none', cursor:'pointer', color:'var(--tk-tint)', fontFamily:'inherit', fontSize:17,
+    trailing:<button className="bl-btn" onClick={()=>{ edit ? exitEdit() : setEdit(true); Haptics.impact('light'); }}
+      style={{border:0, background:'none', cursor:'pointer', color:'var(--bl-tint)', fontFamily:'inherit', fontSize:17,
         fontWeight:edit?700:400, padding:'8px 10px'}}>{edit?'Done':'Select'}</button>,
     content:listContent,
     overlay:<IndexBar avail={avail} onLetter={jump} top={BARH+4+safeIns} bottom={collapsed?74:10}/>,
@@ -1391,8 +1391,8 @@ function App(props) {
   };
   const detailScreen = selC ? {
     key:'detail', title:selC.f + ' ' + selC.l, titleOnScroll:true, grouped:true, maxW:640,
-    trailing:<button className="tk-btn" aria-label="Contact activity" onClick={()=>{ Haptics.impact('light'); setAct(a=>!a); }}
-      style={{border:0, background:'none', cursor:'pointer', color:'var(--tk-tint)', display:'grid', padding:'8px 10px'}}>
+    trailing:<button className="bl-btn" aria-label="Contact activity" onClick={()=>{ Haptics.impact('light'); setAct(a=>!a); }}
+      style={{border:0, background:'none', cursor:'pointer', color:'var(--bl-tint)', display:'grid', padding:'8px 10px'}}>
       <Icon name="clock" size={22} sw={2}/></button>,
     content:<DetailView c={selC} fav={favs.has(selC.id)} ringtone={tones[selC.id] || 'Reflection'}
       onFav={v=>{ const n = new Set(favs); v ? n.add(selC.id) : n.delete(selC.id); setFavs(n); }}
@@ -1413,7 +1413,7 @@ function App(props) {
     key:'settings', title:'Settings', largeTitle:true, grouped:true, maxW:660,
     content:<SettingsView s={{comp, setComp, listStyle, setListStyle, hap, setHap, ind, setInd, dark, setDark, tint, setTint, openAbout:()=>setSub('about'), openPlay:()=>setSub('play')}}/>
   };
-  const aboutScreen = sub === 'about' ? {key:'about', title:'About TouchKit', grouped:true, maxW:660, content:<AboutView/>} : null;
+  const aboutScreen = sub === 'about' ? {key:'about', title:'About BL UI', grouped:true, maxW:660, content:<AboutView/>} : null;
   const playScreen = sub === 'play' ? {key:'play', title:'Haptics Playground', grouped:true, maxW:660, content:<HapticsPlayground/>} : null;
   const contactsScreens = [listScreen, ...(collapsed && detailScreen ? [detailScreen] : []), ...(collapsed && activityScreen ? [activityScreen] : []), ...(collapsed && ringScreen ? [ringScreen] : [])];
   const settingsScreens = [settingsScreen, ...(playScreen ? [playScreen] : []), ...(aboutScreen ? [aboutScreen] : [])];
@@ -1440,9 +1440,9 @@ function App(props) {
                 ? <NavigationStack screens={[detailScreen, ...(ringScreen ? [ringScreen] : [])]} onPop={()=>setRing(false)}/>
                 : <div style={{height:'100%', display:'grid', placeItems:'center'}}>
                     <div style={{textAlign:'center'}}>
-                      <div style={{display:'grid', placeItems:'center', color:'var(--tk-label3)', marginBottom:10}}><Icon name="person" size={52} sw={1.2}/></div>
-                      <div style={{fontSize:16, color:'var(--tk-label2)'}}>No Contact Selected</div>
-                      <div style={{fontSize:13, color:'var(--tk-label3)', marginTop:4}}>Choose a contact from the list</div>
+                      <div style={{display:'grid', placeItems:'center', color:'var(--bl-label3)', marginBottom:10}}><Icon name="person" size={52} sw={1.2}/></div>
+                      <div style={{fontSize:16, color:'var(--bl-label2)'}}>No Contact Selected</div>
+                      <div style={{fontSize:13, color:'var(--bl-label3)', marginTop:4}}>Choose a contact from the list</div>
                     </div>
                   </div>}
             </div>
@@ -1451,8 +1451,8 @@ function App(props) {
             </SideDrawer>
           </div>}/>
       : <div style={{display:'flex', height:'100%'}}>
-          <div style={{width:264, flexShrink:0, borderRight:'1px solid var(--tk-sep)', background:'var(--tk-side)', transition:'background .25s'}}>{sidebarEl}</div>
-          <div style={{flex:1, position:'relative', background:'var(--tk-bg2)', minWidth:0}}>
+          <div style={{width:264, flexShrink:0, borderRight:'1px solid var(--bl-sep)', background:'var(--bl-side)', transition:'background .25s'}}>{sidebarEl}</div>
+          <div style={{flex:1, position:'relative', background:'var(--bl-bg2)', minWidth:0}}>
             <NavigationStack screens={settingsScreens} onPop={popActive}/>
           </div>
         </div>;
@@ -1471,23 +1471,23 @@ function App(props) {
       master={<NavigationStack screens={[root, ...stack.slice(1)]} onPop={popActive}/>}/>;
   }
   const vars = dark ? {
-    '--tk-bg':'#000', '--tk-bg2':'#0A0A0C', '--tk-card':'#1C1C1E', '--tk-label':'#F5F5F7',
-    '--tk-label2':'rgba(235,235,245,.62)', '--tk-label3':'rgba(235,235,245,.3)', '--tk-sep':'rgba(84,84,88,.48)',
-    '--tk-fill':'rgba(120,120,128,.22)', '--tk-fill2':'rgba(120,120,128,.34)', '--tk-bar':'rgba(16,16,18,.82)',
-    '--tk-press':'rgba(120,120,128,.22)', '--tk-stick':'rgba(18,18,20,.9)', '--tk-side':'#111114',
-    '--tk-red':'#FF453A', '--tk-green':'#30D158', '--tk-scrim':'rgba(0,0,0,.5)', '--tk-tint':tint
+    '--bl-bg':'#000', '--bl-bg2':'#0A0A0C', '--bl-card':'#1C1C1E', '--bl-label':'#F5F5F7',
+    '--bl-label2':'rgba(235,235,245,.62)', '--bl-label3':'rgba(235,235,245,.3)', '--bl-sep':'rgba(84,84,88,.48)',
+    '--bl-fill':'rgba(120,120,128,.22)', '--bl-fill2':'rgba(120,120,128,.34)', '--bl-bar':'rgba(16,16,18,.82)',
+    '--bl-press':'rgba(120,120,128,.22)', '--bl-stick':'rgba(18,18,20,.9)', '--bl-side':'#111114',
+    '--bl-red':'#FF453A', '--bl-green':'#30D158', '--bl-scrim':'rgba(0,0,0,.5)', '--bl-tint':tint
   } : {
-    '--tk-bg':'#fff', '--tk-bg2':'#F2F2F7', '--tk-card':'#fff', '--tk-label':'#0B0B0F',
-    '--tk-label2':'rgba(60,60,67,.6)', '--tk-label3':'rgba(60,60,67,.33)', '--tk-sep':'rgba(60,60,67,.22)',
-    '--tk-fill':'rgba(120,120,128,.13)', '--tk-fill2':'rgba(120,120,128,.24)', '--tk-bar':'rgba(250,250,252,.85)',
-    '--tk-press':'rgba(120,120,128,.16)', '--tk-stick':'rgba(244,244,248,.92)', '--tk-side':'#ECECF1',
-    '--tk-red':'#FF3B30', '--tk-green':'#34C759', '--tk-scrim':'rgba(0,0,0,.38)', '--tk-tint':tint
+    '--bl-bg':'#fff', '--bl-bg2':'#F2F2F7', '--bl-card':'#fff', '--bl-label':'#0B0B0F',
+    '--bl-label2':'rgba(60,60,67,.6)', '--bl-label3':'rgba(60,60,67,.33)', '--bl-sep':'rgba(60,60,67,.22)',
+    '--bl-fill':'rgba(120,120,128,.13)', '--bl-fill2':'rgba(120,120,128,.24)', '--bl-bar':'rgba(250,250,252,.85)',
+    '--bl-press':'rgba(120,120,128,.16)', '--bl-stick':'rgba(244,244,248,.92)', '--bl-side':'#ECECF1',
+    '--bl-red':'#FF3B30', '--bl-green':'#34C759', '--bl-scrim':'rgba(0,0,0,.38)', '--bl-tint':tint
   };
   const safe = safeIns;
   return <div ref={rootRef} style={{position:'relative', width:'100%', height:'100%', overflow:'hidden', fontFamily:FONT,
-      background:'var(--tk-bg2)', color:'var(--tk-label)', colorScheme:dark?'dark':'light', userSelect:'none', WebkitUserSelect:'none',
-      transition:'background .25s', ...vars, '--tk-safe-top':safe + 'px'}}>
-    {<TKSafeCtx.Provider value={safe}>{body}</TKSafeCtx.Provider>}
+      background:'var(--bl-bg2)', color:'var(--bl-label)', colorScheme:dark?'dark':'light', userSelect:'none', WebkitUserSelect:'none',
+      transition:'background .25s', ...vars, '--bl-safe-top':safe + 'px'}}>
+    {<BLSafeCtx.Provider value={safe}>{body}</BLSafeCtx.Provider>}
     {safe ? <div style={{position:'absolute', top:Math.max(8, safe / 5), left:'50%', transform:'translateX(-50%)', width:118, height:35,
       borderRadius:18, background:'#000', zIndex:400, pointerEvents:'none'}} aria-hidden="true"/> : null}
     {!xw && tab === 'contacts' ? <SideDrawer mode="overlay" open={!!(act && selC && wc !== 'compact')} onClose={()=>setAct(false)} title="Activity" width={340}>
@@ -1501,6 +1501,6 @@ function App(props) {
   </div>;
 }
 
-const TouchKit = {use, useChromeHidden, Haptics, Icon, Avatar, TKSwitch, Segmented, Spinner, TKList, TKSection, TKRow, IndexBar, TabBar, NavigationStack, SplitView, Sidebar, Credenza, SideDrawer, ActivityView, HapticsPlayground, App};
-window.TouchKit = TouchKit;
-if (typeof module !== 'undefined') module.exports = {App, Segmented, HapticsPlayground, Icon, TouchKit};
+const BLUI = {use, useChromeHidden, Haptics, Icon, Avatar, BLSwitch, Segmented, Spinner, BLList, BLSection, BLRow, IndexBar, TabBar, NavigationStack, SplitView, Sidebar, Credenza, SideDrawer, ActivityView, HapticsPlayground, App};
+window.BLUI = BLUI;
+if (typeof module !== 'undefined') module.exports = {App, Segmented, HapticsPlayground, Icon, BLUI};

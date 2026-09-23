@@ -1,12 +1,12 @@
 /* workbench.tsx — ESM facade over workbench.jsx.
-   The runtime module is plain JSX with no build step and registers window.TouchKitWB;
+   The runtime module is plain JSX with no build step and registers window.BLWorkbench;
    this file turns that namespace into real named exports:
      import { Workbench, WorkbenchShell, useWorkbenchShell } from "./workbench.tsx"
    Types are intentionally loose — the kit is inline-styled JSX, not a typed API surface. */
 import "./workbench.jsx";
 
-const NS: any = (window as any).TouchKitWB;
-if (!NS) throw new Error("workbench.jsx did not register window.TouchKitWB");
+const NS: any = (window as any).BLWorkbench;
+if (!NS) throw new Error("workbench.jsx did not register window.BLWorkbench");
 
 export const Workbench = NS.Workbench;
 export const WorkbenchShell = NS.WorkbenchShell;

@@ -212,16 +212,16 @@ importers:
 
   apps/catalog:
     dependencies:
-      '@touchkit/chatkit':
+      '@brett_lamy/chatkit':
         specifier: workspace:*
         version: link:../../packages/chatkit
-      '@touchkit/pencilkit':
+      '@brett_lamy/pencilkit':
         specifier: workspace:*
         version: link:../../packages/pencilkit
-      '@touchkit/ui':
+      '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@touchkit/workbench':
+      '@brett_lamy/workbench':
         specifier: workspace:*
         version: link:../../packages/workbench
     devDependencies:
@@ -234,24 +234,36 @@ importers:
 
   apps/chat:
     dependencies:
-      '@touchkit/chatkit':
+      '@brett_lamy/chatkit':
         specifier: workspace:*
         version: link:../../packages/chatkit
-      '@touchkit/ui':
+      '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
 
   apps/contacts:
     dependencies:
-      '@touchkit/ui':
+      '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
 
   apps/docs:
     dependencies:
+      '@brett_lamy/chatkit':
+        specifier: workspace:*
+        version: link:../../packages/chatkit
       '@brett_lamy/docstream-editor':
         specifier: 0.5.8
         version: 0.5.8(6143cf0e76e47a3b7212af63b3b36e31)
+      '@brett_lamy/pencilkit':
+        specifier: workspace:*
+        version: link:../../packages/pencilkit
+      '@brett_lamy/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@brett_lamy/workbench':
+        specifier: workspace:*
+        version: link:../../packages/workbench
       '@tiptap/core':
         specifier: 3.30.5
         version: 3.30.5(@tiptap/pm@3.30.5)
@@ -279,18 +291,6 @@ importers:
       '@tiptap/suggestion':
         specifier: 3.30.5
         version: 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
-      '@touchkit/chatkit':
-        specifier: workspace:*
-        version: link:../../packages/chatkit
-      '@touchkit/pencilkit':
-        specifier: workspace:*
-        version: link:../../packages/pencilkit
-      '@touchkit/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-      '@touchkit/workbench':
-        specifier: workspace:*
-        version: link:../../packages/workbench
       highlight.js:
         specifier: 11.11.2
         version: 11.11.2
@@ -300,28 +300,28 @@ importers:
 
   apps/pencil:
     dependencies:
-      '@touchkit/pencilkit':
+      '@brett_lamy/pencilkit':
         specifier: workspace:*
         version: link:../../packages/pencilkit
-      '@touchkit/ui':
+      '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
 
   apps/workbench-app:
     dependencies:
-      '@touchkit/ui':
+      '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@touchkit/workbench':
+      '@brett_lamy/workbench':
         specifier: workspace:*
         version: link:../../packages/workbench
 
   packages/chatkit:
     dependencies:
-      '@touchkit/ui':
+      '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../ui
-      '@touchkit/workbench':
+      '@brett_lamy/workbench':
         specifier: workspace:*
         version: link:../workbench
       react:
@@ -333,7 +333,7 @@ importers:
 
   packages/pencilkit:
     dependencies:
-      '@touchkit/ui':
+      '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../ui
       perfect-freehand:
@@ -381,6 +381,9 @@ importers:
       '@brett_lamy/docstream-editor':
         specifier: 0.5.8
         version: 0.5.8(6143cf0e76e47a3b7212af63b3b36e31)
+      '@brett_lamy/ui':
+        specifier: workspace:*
+        version: link:../ui
       '@pierre/diffs':
         specifier: ^1.3.6
         version: 1.3.6(@shikijs/themes@4.4.3)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -414,9 +417,6 @@ importers:
       '@tiptap/suggestion':
         specifier: 3.30.5
         version: 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
-      '@touchkit/ui':
-        specifier: workspace:*
-        version: link:../ui
       react:
         specifier: ^18 || ^19
         version: 19.0.0

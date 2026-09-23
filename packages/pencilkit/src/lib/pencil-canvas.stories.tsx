@@ -14,8 +14,8 @@ function Frame({ dark, children }: { dark?: boolean; children: React.ReactNode }
         height: 420,
         overflow: 'hidden',
         borderRadius: 12,
-        background: 'var(--tk-bg2)',
-        color: 'var(--tk-label)',
+        background: 'var(--bl-bg2)',
+        color: 'var(--bl-label)',
         fontFamily: PFONT,
         colorScheme: dark ? 'dark' : 'light',
       }}

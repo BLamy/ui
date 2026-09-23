@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn, Haptics } from '@touchkit/ui';
+import { cn, Haptics } from '@brett_lamy/ui';
 import { PK_INKS, PK_W, type PencilTool, type PKIconName } from './constants';
 import { PKIcon } from './pk-icon';
 
@@ -24,8 +24,8 @@ export function PencilToolButton({ name, active, label, disabled, className, sty
       style={{
         width: 38, height: 34, border: 0, borderRadius: 9, cursor: disabled ? 'default' : 'pointer',
         display: 'grid', placeItems: 'center',
-        background: active ? 'var(--tk-tint)' : 'transparent',
-        color: active ? '#fff' : 'var(--tk-label2)',
+        background: active ? 'var(--bl-tint)' : 'transparent',
+        color: active ? '#fff' : 'var(--bl-label2)',
         opacity: disabled ? 0.32 : 1, padding: 0,
         ...style,
       }}
@@ -51,7 +51,7 @@ export function PencilToolbar({ className, style, children, ...rest }: PencilToo
         position: 'absolute', left: '50%', bottom: 14, transform: 'translateX(-50%)',
         maxWidth: 'calc(100% - 20px)', boxSizing: 'border-box',
         display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'center',
-        background: 'var(--tk-card)', border: '1px solid var(--tk-sep)', borderRadius: 16,
+        background: 'var(--bl-card)', border: '1px solid var(--bl-sep)', borderRadius: 16,
         padding: '9px 12px', boxShadow: '0 10px 34px rgba(0,0,0,.24)', cursor: 'default',
         ...style,
       }}
@@ -68,7 +68,7 @@ export function PencilToolbarDivider({ className, style, ...rest }: React.HTMLAt
     <span
       data-slot="pencil-toolbar-divider"
       className={cn(className)}
-      style={{ width: 1, alignSelf: 'stretch', background: 'var(--tk-sep)', ...style }}
+      style={{ width: 1, alignSelf: 'stretch', background: 'var(--bl-sep)', ...style }}
       {...rest}
     />
   );
@@ -123,7 +123,7 @@ export function InkPicker({ value, onChange, inks = PK_INKS, className, style, .
           style={{
             width: 21, height: 21, borderRadius: '50%', cursor: 'pointer', background: c, padding: 0,
             border: '1px solid ' + (c === '#F2F2F7' ? 'rgba(0,0,0,.2)' : 'rgba(0,0,0,.08)'),
-            outline: value === i ? '2.5px solid var(--tk-tint)' : 'none', outlineOffset: 2,
+            outline: value === i ? '2.5px solid var(--bl-tint)' : 'none', outlineOffset: 2,
           }}
         />
       ))}
@@ -152,10 +152,10 @@ export function WidthPicker({ value, onChange, widths = PK_W, className, style, 
           style={{
             width: 28, height: 28, border: 0, borderRadius: 8, cursor: 'pointer',
             display: 'grid', placeItems: 'center', padding: 0,
-            background: value === i ? 'var(--tk-fill2)' : 'transparent',
+            background: value === i ? 'var(--bl-fill2)' : 'transparent',
           }}
         >
-          <span style={{ width: w.d, height: w.d, borderRadius: '50%', background: 'var(--tk-label)', display: 'block' }} />
+          <span style={{ width: w.d, height: w.d, borderRadius: '50%', background: 'var(--bl-label)', display: 'block' }} />
         </button>
       ))}
     </div>

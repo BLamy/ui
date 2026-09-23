@@ -24,7 +24,7 @@ export const InNavigationStack: Story = {
 export const Bare: Story = {
   render: () => (
     <Phone w={420} h={720}>
-      <div className="tk-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--tk-bg2)', paddingTop: 12 }}>
+      <div className="bl-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--bl-bg2)', paddingTop: 12 }}>
         <HapticsPlayground />
       </div>
     </Phone>

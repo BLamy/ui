@@ -181,7 +181,7 @@ export function SidebarContent({ children }: { children?: ReactNode }) {
   return (
     <div
       data-slot="sidebar-content"
-      className="tk-scroll"
+      className="bl-scroll"
       style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: '0 8px' }}
     >
       {children}
@@ -250,7 +250,7 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
     return (
       <button
         data-slot="sidebar-search"
-        className="tk-sidebar-hl"
+        className="bl-sidebar-hl"
         title={placeholder}
         onClick={onPress}
         style={{
@@ -271,7 +271,7 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
   return (
     <button
       data-slot="sidebar-search"
-      className="tk-sidebar-hl"
+      className="bl-sidebar-hl"
       onClick={onPress}
       style={{
         display: 'flex',
@@ -353,7 +353,7 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
   return (
     <button
       data-slot="sidebar-item"
-      className="tk-sidebar-hl"
+      className="bl-sidebar-hl"
       title={label}
       onClick={() => {
         vib([5]);

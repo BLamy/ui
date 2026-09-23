@@ -22,18 +22,18 @@ export function SideDrawer({ mode, open, onClose, title, width, children, classN
   const head = (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px 6px', flexShrink: 0 }}>
       <span style={{ fontSize: 16.5, fontWeight: 700, letterSpacing: '-.2px', whiteSpace: 'nowrap' }}>{title}</span>
-      <button className="tk-btn" onClick={onClose} aria-label={'Close ' + title} style={{
-        border: 0, background: 'var(--tk-fill)', width: 28, height: 28,
-        borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--tk-label2)', padding: 0,
+      <button className="bl-btn" onClick={onClose} aria-label={'Close ' + title} style={{
+        border: 0, background: 'var(--bl-fill)', width: 28, height: 28,
+        borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--bl-label2)', padding: 0,
       }}><Icon name="x" size={14} sw={2.6} /></button>
     </div>
   );
-  const col = <>{head}<div className="tk-scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>{children}</div></>;
+  const col = <>{head}<div className="bl-scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>{children}</div></>;
   if (mode === 'fixed') {
     return (
       <div data-slot="side-drawer" className={cn(className)} aria-hidden={!open} style={{
         width: open ? width : 0, flexShrink: 0, overflow: 'hidden', transition: 'width .34s ' + EASE,
-        borderLeft: open ? '1px solid var(--tk-sep)' : 'none', background: 'var(--tk-bg)', ...style,
+        borderLeft: open ? '1px solid var(--bl-sep)' : 'none', background: 'var(--bl-bg)', ...style,
       }}>
         <div style={{ width, height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>{col}</div>
       </div>
@@ -41,10 +41,10 @@ export function SideDrawer({ mode, open, onClose, title, width, children, classN
   }
   return (
     <div data-slot="side-drawer" className={cn(className)} aria-hidden={!open} style={{ position: 'absolute', inset: 0, zIndex: 350, pointerEvents: open ? 'auto' : 'none', ...style }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'var(--tk-scrim)', opacity: open ? 1 : 0, transition: 'opacity .3s' }} />
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'var(--bl-scrim)', opacity: open ? 1 : 0, transition: 'opacity .3s' }} />
       <div style={{
         position: 'absolute', top: 0, bottom: 0, right: 0, width: 'min(' + width + 'px, 88%)', display: 'flex', flexDirection: 'column',
-        background: 'var(--tk-bg)', borderLeft: '1px solid var(--tk-sep)', boxShadow: open ? '-16px 0 48px rgba(0,0,0,.25)' : 'none',
+        background: 'var(--bl-bg)', borderLeft: '1px solid var(--bl-sep)', boxShadow: open ? '-16px 0 48px rgba(0,0,0,.25)' : 'none',
         transform: open ? 'none' : 'translateX(106%)', transition: 'transform .34s ' + EASE,
       }}>{col}</div>
     </div>

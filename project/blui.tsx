@@ -1,23 +1,23 @@
-/* touchkit.tsx — ESM facade over touchkit.jsx.
-   The runtime module is plain JSX with no build step and registers window.TouchKit;
+/* blui.tsx — ESM facade over blui.jsx.
+   The runtime module is plain JSX with no build step and registers window.BLUI;
    this file turns that namespace into real named exports:
-     import { use, Haptics, Icon } from "./touchkit.tsx"
+     import { use, Haptics, Icon } from "./blui.tsx"
    Types are intentionally loose — the kit is inline-styled JSX, not a typed API surface. */
-import "./touchkit.jsx";
+import "./blui.jsx";
 
-const NS: any = (window as any).TouchKit;
-if (!NS) throw new Error("touchkit.jsx did not register window.TouchKit");
+const NS: any = (window as any).BLUI;
+if (!NS) throw new Error("blui.jsx did not register window.BLUI");
 
 export const use = NS.use;
 export const Haptics = NS.Haptics;
 export const Icon = NS.Icon;
 export const Avatar = NS.Avatar;
-export const TKSwitch = NS.TKSwitch;
+export const BLSwitch = NS.BLSwitch;
 export const Segmented = NS.Segmented;
 export const Spinner = NS.Spinner;
-export const TKList = NS.TKList;
-export const TKSection = NS.TKSection;
-export const TKRow = NS.TKRow;
+export const BLList = NS.BLList;
+export const BLSection = NS.BLSection;
+export const BLRow = NS.BLRow;
 export const IndexBar = NS.IndexBar;
 export const TabBar = NS.TabBar;
 export const NavigationStack = NS.NavigationStack;

@@ -13,7 +13,7 @@ type Story = StoryObj<typeof QRSvg>;
 /** Deterministic decorative QR-look SVG (seed-stable, not scannable). */
 export const Default: Story = {
   render: () => (
-    <div style={{ display: 'inline-grid', placeItems: 'center', padding: 16, borderRadius: 20, background: '#fff', color: '#111', boxShadow: '0 0 0 1px var(--tk-sep)' }}>
+    <div style={{ display: 'inline-grid', placeItems: 'center', padding: 16, borderRadius: 20, background: '#fff', color: '#111', boxShadow: '0 0 0 1px var(--bl-sep)' }}>
       <QRSvg seed="weichen" />
     </div>
   ),
@@ -23,7 +23,7 @@ export const Seeds: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 16 }}>
       {['ameliaadler', 'hanasato', 'linyang'].map((s) => (
-        <div key={s} style={{ padding: 10, borderRadius: 14, background: '#fff', color: '#111', boxShadow: '0 0 0 1px var(--tk-sep)' }}>
+        <div key={s} style={{ padding: 10, borderRadius: 14, background: '#fff', color: '#111', boxShadow: '0 0 0 1px var(--bl-sep)' }}>
           <QRSvg seed={s} size={88} />
         </div>
       ))}

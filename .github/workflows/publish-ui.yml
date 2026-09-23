@@ -1,4 +1,4 @@
-name: Publish TouchKit UI
+name: Publish BL UI
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build UI package
-        run: pnpm nx build @touchkit/ui
+        run: pnpm nx build @brett_lamy/ui
 
       - name: Publish if version is new
         shell: bash
@@ -53,7 +53,7 @@ jobs:
           fi
 
           npm install --global npm@latest
-          cp -R packages/ui "$RUNNER_TEMP/touchkit-ui"
-          cd "$RUNNER_TEMP/touchkit-ui"
+          cp -R packages/ui "$RUNNER_TEMP/bl-ui"
+          cd "$RUNNER_TEMP/bl-ui"
           npm pkg set name="$PACKAGE_NAME"
           npm publish --access public

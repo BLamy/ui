@@ -1,6 +1,6 @@
-/* Beautiful UI layer — AI-native interface primitives in TouchKit Workbench's dark language.
+/* Beautiful UI layer — AI-native interface primitives in BL UI Workbench's dark language.
    Inspired by the beautifului.dev catalog (loading, thinking, approvals, agent tables…), reimplemented
-   from scratch on TouchKit tokens. Registers window.BUI + docs demos in window.__buiLIVE. */
+   from scratch on BL UI tokens. Registers window.BUI + docs demos in window.__buiLIVE. */
 const {useState, useEffect, useRef, useMemo} = React;
 const BFONT = "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',sans-serif";
 const BMONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace";
@@ -580,7 +580,7 @@ function CodeBlockStream() {
     const t = setTimeout(() => setN(x => x + 1), 260);
     return () => clearTimeout(t);
   }, [n]);
-  const MdView = window.TouchKitWB && window.TouchKitWB.MdView;
+  const MdView = window.BLWorkbench && window.BLWorkbench.MdView;
   const shown = lines.slice(0, n).join('\n');
   return <div style={{...card({maxWidth:520, overflow:'hidden'}), '--mdc-pre':'#101014'}}>
     <div style={{display:'flex', alignItems:'center', gap:9, padding:'9px 13px', borderBottom:'1px solid var(--wb-sep)'}}>

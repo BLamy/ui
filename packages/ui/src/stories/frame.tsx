@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { TouchKitProvider } from '../lib/theme';
+import { BLProvider } from '../lib/theme';
 
-/** Story-only helpers: sized frames wrapping TouchKitProvider (TouchKit containers are absolutely positioned). */
+/** Story-only helpers: sized frames wrapping BLProvider (BL UI containers are absolutely positioned). */
 
 const frameStyle = {
   position: 'relative' as const,
@@ -15,7 +15,7 @@ export function Phone({ children, w = 390, h = 720, dark, tint, safeTop }: {
 }) {
   return (
     <div style={{ ...frameStyle, width: w, height: h }}>
-      <TouchKitProvider dark={dark} tint={tint} safeTop={safeTop}>{children}</TouchKitProvider>
+      <BLProvider dark={dark} tint={tint} safeTop={safeTop}>{children}</BLProvider>
     </div>
   );
 }
@@ -23,9 +23,9 @@ export function Phone({ children, w = 390, h = 720, dark, tint, safeTop }: {
 export function Pad({ children, w = 360, dark, tint }: { children?: ReactNode; w?: number; dark?: boolean; tint?: string }) {
   return (
     <div style={{ ...frameStyle, width: w }}>
-      <TouchKitProvider dark={dark} tint={tint}>
+      <BLProvider dark={dark} tint={tint}>
         <div style={{ padding: 20 }}>{children}</div>
-      </TouchKitProvider>
+      </BLProvider>
     </div>
   );
 }

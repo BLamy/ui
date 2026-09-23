@@ -1,6 +1,6 @@
-import { Haptics } from '@touchkit/ui';
+import { Haptics } from '@brett_lamy/ui';
 
-/* Standalone haptic helpers — cooperate with @touchkit/ui's Haptics engine,
+/* Standalone haptic helpers — cooperate with @brett_lamy/ui's Haptics engine,
    falling back to navigator.vibrate when it is unavailable. */
 export const vib = (p: number[]) => {
   try {

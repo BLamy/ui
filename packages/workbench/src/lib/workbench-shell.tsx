@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { AdaptivePane, collectSlots, defineSlot, useContainerWidth, type AdaptivePaneMode } from '@touchkit/ui';
+import { AdaptivePane, collectSlots, defineSlot, useContainerWidth, type AdaptivePaneMode } from '@brett_lamy/ui';
 import { cn, WFONT } from './util';
 import { workbenchVars } from './theme';
 import { SnapSheet } from './snap-sheet';

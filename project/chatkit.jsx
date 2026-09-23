@@ -1,7 +1,7 @@
-/* ChatKit — an original team-chat demo in TouchKit's dark language (NOT a Discord skin):
+/* ChatKit — an original team-chat demo in BL UI's dark language (NOT a Discord skin):
    workspace rail · channel column · message view with reactions + inline thread previews ·
-   full threads opened in a real TouchKit <SideDrawer> (docked ≥1180px, overlay below, per its own modes).
-   Exposes window.TouchKitChat = { ChatDemo, ChatShell, useChatShell }; consumers written as ESM use
+   full threads opened in a real BL UI <SideDrawer> (docked ≥1180px, overlay below, per its own modes).
+   Exposes window.BLChat = { ChatDemo, ChatShell, useChatShell }; consumers written as ESM use
    import { ChatShell } from "./chatkit.tsx" (the .tsx facade re-exports these names). */
 const {useState, useEffect, useRef} = React;
 const KFONT = "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',sans-serif";
@@ -76,7 +76,7 @@ function seed() {
       {id:'w1', u:'stitch', t:'Tue', txt:'Nightly link check: 0 broken anchors across 26 pages.', reacts:[]}
     ]},
     'bot-alerts': {section:'Bots', label:'bot-alerts', msgs:[
-      {id:'b1', u:'stitch', t:'7:02 AM', txt:'Deploy touchkit-docs@4f21c9 → prod. 34s, all checks green.', reacts:[]}
+      {id:'b1', u:'stitch', t:'7:02 AM', txt:'Deploy blui-docs@4f21c9 → prod. 34s, all checks green.', reacts:[]}
     ]}
   };
 }
@@ -145,7 +145,7 @@ function ChannelCol({chans, cur, onPick, tint, onClose}) {
   });
   return <div style={{width:222, flexShrink:0, background:K.side, borderRight:'1px solid ' + K.sep, display:'flex', flexDirection:'column', fontFamily:KFONT, height:'100%', boxSizing:'border-box'}}>
     <div style={{display:'flex', alignItems:'center', gap:8, padding:'13px 14px 9px', borderBottom:'1px solid ' + K.sep}}>
-      <span style={{fontSize:13.5, fontWeight:800, color:K.label, letterSpacing:'-.1px', flex:1}}>TouchKit HQ</span>
+      <span style={{fontSize:13.5, fontWeight:800, color:K.label, letterSpacing:'-.1px', flex:1}}>BL UI HQ</span>
       {onClose ? <button onClick={onClose} aria-label="Close channels" style={{border:0, background:'none', color:K.mut3, cursor:'pointer', padding:4, display:'grid'}}><KIcon d={KP.x} size={14}/></button>
         : <span style={{color:K.mut3, display:'grid'}}><KIcon d={KP.chev} size={13} style={{transform:'rotate(90deg)'}}/></span>}
     </div>
@@ -222,8 +222,8 @@ ChatShell.useShell = useChatShell;
 function ChatDemo({tint = '#0A84FF', members: showMembers = true}) {
   const [, bumpTk] = useState(0);
   useEffect(() => {
-    if (window.TouchKit) return;
-    const i = setInterval(() => { if (window.TouchKit) { clearInterval(i); bumpTk(x => x + 1); } }, 150);
+    if (window.BLUI) return;
+    const i = setInterval(() => { if (window.BLUI) { clearInterval(i); bumpTk(x => x + 1); } }, 150);
     return () => clearInterval(i);
   }, []);
   const [chans, setChans] = useState(seed);
@@ -275,7 +275,7 @@ function ChatDemo({tint = '#0A84FF', members: showMembers = true}) {
 /* ── Slot children read the shell with use(ChatShell.Context) — no render props, no prop drilling ── */
 function WorkspaceRail({tint}) {
   return <div style={{width:52, flexShrink:0, background:K.rail, display:'flex', flexDirection:'column', alignItems:'center', gap:8, padding:'10px 0', borderRight:'1px solid ' + K.sep, boxSizing:'border-box'}}>
-    {[['T', tint, true], ['C', '#BF5AF2', false]].map(([l, c, on]) => <button key={l} title={l === 'T' ? 'TouchKit HQ' : 'Creamery'} onClick={() => kvib([5])}
+    {[['T', tint, true], ['C', '#BF5AF2', false]].map(([l, c, on]) => <button key={l} title={l === 'T' ? 'BL UI HQ' : 'Creamery'} onClick={() => kvib([5])}
       style={{width:34, height:34, borderRadius:11, border:on ? '2px solid ' + c : '2px solid transparent', background:on ? c : K.fill2, color:'#fff',
         fontWeight:800, fontSize:14, cursor:'pointer', fontFamily:KFONT, flexShrink:0}}>{l}</button>)}
     <button aria-label="Add workspace" onClick={() => kvib([5])} style={{width:34, height:34, borderRadius:11, border:'1px dashed ' + K.sep, background:'none', color:K.mut3, cursor:'pointer', display:'grid', placeItems:'center', flexShrink:0}}><KIcon d={KP.plus} size={14}/></button>
@@ -290,7 +290,7 @@ function ChannelNav({chans, cur, tint, onPick}) {
 
 function ChannelMain({ch, tint, members: showMembers, thread, setThread, thMsg, react, startThread, sendMain, scrollRef, threadBody}) {
   const {w, compact, setNavOpen} = useChatShell();
-  const TK = window.TouchKit;
+  const BL = window.BLUI;
   const fullThread = !!thMsg && thread.mode === 'full';
   const drawerOpen = !!thMsg && thread.mode === 'drawer';
   const drawerMode = w >= 1180 ? 'fixed' : 'overlay';
@@ -339,14 +339,14 @@ function ChannelMain({ch, tint, members: showMembers, thread, setThread, thMsg, 
         {u.bot && <span style={{fontSize:8.5, fontWeight:800, background:'#5E5CE6', color:'#fff', borderRadius:4, padding:'1px 4px'}}>APP</span>}
       </div>)}
     </div> : null}
-    {TK && TK.SideDrawer
-      ? <TK.SideDrawer mode={drawerMode} open={drawerOpen} onClose={() => setThread(null)} title="Thread" width={Math.min(360, w - 60)}>
-          <div style={{'--tk-label':K.label, '--tk-label2':K.mut, '--tk-sep':K.sep, height:'100%', boxSizing:'border-box'}}>{threadBody('drawer')}</div>
-        </TK.SideDrawer>
+    {BL && BL.SideDrawer
+      ? <BL.SideDrawer mode={drawerMode} open={drawerOpen} onClose={() => setThread(null)} title="Thread" width={Math.min(360, w - 60)}>
+          <div style={{'--bl-label':K.label, '--bl-label2':K.mut, '--bl-sep':K.sep, height:'100%', boxSizing:'border-box'}}>{threadBody('drawer')}</div>
+        </BL.SideDrawer>
       : (drawerOpen ? <div style={{width:340, flexShrink:0, borderLeft:'1px solid ' + K.sep, background:K.side}}>{threadBody('drawer')}</div> : null)}
   </React.Fragment>;
 }
 
-const TouchKitChat = {ChatDemo, ChatShell, useChatShell, use};
-window.TouchKitChat = TouchKitChat;
-if (typeof module !== 'undefined') module.exports = {ChatDemo, ChatShell, useChatShell, TouchKitChat};
+const BLChat = {ChatDemo, ChatShell, useChatShell, use};
+window.BLChat = BLChat;
+if (typeof module !== 'undefined') module.exports = {ChatDemo, ChatShell, useChatShell, BLChat};

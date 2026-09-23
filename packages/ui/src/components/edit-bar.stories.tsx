@@ -21,8 +21,8 @@ export const Interactive: Story = {
     const [allFav, setAllFav] = useState(false);
     return (
       <>
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 14, color: 'var(--tk-label2)' }}>
-          <button onClick={() => setCount((c) => (c + 1) % 5)} style={{ fontFamily: 'inherit', fontSize: 14, padding: '6px 14px', borderRadius: 9, border: '1px solid var(--tk-sep)', background: 'var(--tk-card)', color: 'var(--tk-label)', cursor: 'pointer' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 14, color: 'var(--bl-label2)' }}>
+          <button onClick={() => setCount((c) => (c + 1) % 5)} style={{ fontFamily: 'inherit', fontSize: 14, padding: '6px 14px', borderRadius: 9, border: '1px solid var(--bl-sep)', background: 'var(--bl-card)', color: 'var(--bl-label)', cursor: 'pointer' }}>
             selected: {count} (click to cycle)
           </button>
         </div>

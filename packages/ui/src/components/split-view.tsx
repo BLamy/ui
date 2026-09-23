@@ -17,9 +17,9 @@ export function SplitView({ wc, sidebar, master, detail, drawerOpen, onCloseDraw
   if (wc === 'regular') {
     return (
       <div data-slot="split-view" className={cn(className)} style={{ display: 'flex', height: '100%', ...style }}>
-        <div style={{ width: 264, flexShrink: 0, borderRight: '1px solid var(--tk-sep)', background: 'var(--tk-side)', transition: 'background .25s' }}>{sidebar}</div>
-        <div style={{ width: 370, flexShrink: 0, borderRight: '1px solid var(--tk-sep)', position: 'relative', background: 'var(--tk-bg)' }}>{master}</div>
-        <div style={{ flex: 1, position: 'relative', background: 'var(--tk-bg2)', minWidth: 0 }}>{detail}</div>
+        <div style={{ width: 264, flexShrink: 0, borderRight: '1px solid var(--bl-sep)', background: 'var(--bl-side)', transition: 'background .25s' }}>{sidebar}</div>
+        <div style={{ width: 370, flexShrink: 0, borderRight: '1px solid var(--bl-sep)', position: 'relative', background: 'var(--bl-bg)' }}>{master}</div>
+        <div style={{ flex: 1, position: 'relative', background: 'var(--bl-bg2)', minWidth: 0 }}>{detail}</div>
       </div>
     );
   }
@@ -27,11 +27,11 @@ export function SplitView({ wc, sidebar, master, detail, drawerOpen, onCloseDraw
     <div data-slot="split-view" className={cn(className)} style={{ position: 'absolute', inset: 0, overflow: 'hidden', ...style }}>
       <div style={{ position: 'absolute', inset: 0 }}>{master}</div>
       <div onClick={onCloseDrawer} style={{
-        position: 'absolute', inset: 0, background: 'var(--tk-scrim)', opacity: drawerOpen ? 1 : 0,
+        position: 'absolute', inset: 0, background: 'var(--bl-scrim)', opacity: drawerOpen ? 1 : 0,
         pointerEvents: drawerOpen ? 'auto' : 'none', transition: 'opacity .3s', zIndex: 300,
       }} />
       <div style={{
-        position: 'absolute', top: 0, bottom: 0, left: 0, width: 300, background: 'var(--tk-card)', zIndex: 301,
+        position: 'absolute', top: 0, bottom: 0, left: 0, width: 300, background: 'var(--bl-card)', zIndex: 301,
         transform: drawerOpen ? 'translateX(0)' : 'translateX(-105%)', transition: 'transform .34s ' + EASE,
         boxShadow: drawerOpen ? '12px 0 40px rgba(0,0,0,.22)' : 'none',
       }}>{sidebar}</div>

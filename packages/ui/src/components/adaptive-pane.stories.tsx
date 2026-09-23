@@ -26,17 +26,17 @@ function Demo() {
           columnWidth={220}
           drawerWidth={260}
           zIndex={20}
-          columnStyle={{ borderRight: '1px solid var(--tk-sep)' }}
+          columnStyle={{ borderRight: '1px solid var(--bl-sep)' }}
         >
-          <div style={{ height: '100%', padding: 16, boxSizing: 'border-box', background: 'var(--tk-card)' }}>
+          <div style={{ height: '100%', padding: 16, boxSizing: 'border-box', background: 'var(--bl-card)' }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Pane</div>
-            <div style={{ fontSize: 13, color: 'var(--tk-label2)' }}>Same children in every mode: {mode}</div>
+            <div style={{ fontSize: 13, color: 'var(--bl-label2)' }}>Same children in every mode: {mode}</div>
             {mode === 'cover' ? <button onClick={() => setMode('column')} style={{ marginTop: 12 }}>Restore</button> : null}
           </div>
         </AdaptivePane>
         <div style={{ flex: 1, minWidth: 0, padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Segmented options={MODES.map((m) => ({ id: m, label: m }))} value={mode} onChange={(v) => { setMode(v as AdaptivePaneMode); setOpen(true); }} />
-          <div style={{ fontSize: 14, color: 'var(--tk-label2)', lineHeight: 1.5 }}>The host picks the mode from its width; this story lets you pick it directly.</div>
+          <div style={{ fontSize: 14, color: 'var(--bl-label2)', lineHeight: 1.5 }}>The host picks the mode from its width; this story lets you pick it directly.</div>
         </div>
       </div>
     </Phone>

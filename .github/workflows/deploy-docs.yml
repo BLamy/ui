@@ -1,4 +1,4 @@
-name: Deploy TouchKit docs
+name: Deploy BL UI docs
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build docs
-        run: pnpm nx build @touchkit/docs-app
+        run: pnpm nx build @brett_lamy/docs-app
 
       - name: Add SPA fallback
         run: cp apps/docs/dist/index.html apps/docs/dist/404.html

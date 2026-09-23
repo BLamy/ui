@@ -50,7 +50,7 @@ export function Icon({ name, size, sw, className, style }: IconProps) {
       style={{ display: 'block', flexShrink: 0, ...style }} aria-hidden="true">
       {els.map((e, i) => e.c
         ? <circle key={i} cx={e.c[0]} cy={e.c[1]} r={e.c[2]} fill={e.f ? 'currentColor' : 'none'} stroke={e.f ? 'none' : 'currentColor'} strokeWidth={sw} />
-        : <path key={i} d={e.d} fill={e.f ? 'currentColor' : 'none'} stroke={e.f ? 'none' : (e.bg ? 'var(--tk-bg,#fff)' : 'currentColor')} strokeWidth={e.bg ? 2 : sw} strokeLinecap="round" strokeLinejoin="round" />)}
+        : <path key={i} d={e.d} fill={e.f ? 'currentColor' : 'none'} stroke={e.f ? 'none' : (e.bg ? 'var(--bl-bg,#fff)' : 'currentColor')} strokeWidth={e.bg ? 2 : sw} strokeLinecap="round" strokeLinejoin="round" />)}
     </svg>
   );
 }

@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { PencilKitDemo } from '@touchkit/pencilkit';
+import { PencilKitDemo } from '@brett_lamy/pencilkit';
 import './styles.css';
 
 createRoot(document.getElementById('root') as HTMLElement).render(

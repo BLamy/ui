@@ -1,4 +1,4 @@
-/* Demo data for the Contacts app — verbatim from the TouchKit prototype. */
+/* Demo data for the Contacts app — verbatim from the BL UI prototype. */
 export const GROUPS = [
   { name: 'Work', color: '#0A84FF' },
   { name: 'Family', color: '#34C759' },

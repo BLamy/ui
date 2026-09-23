@@ -83,7 +83,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
     for (let j = i; j >= 0; j--) if (avail.has(AL[j])) { t = AL[j]; break; }
     if (!t) for (let j = i + 1; j < AL.length; j++) if (avail.has(AL[j])) { t = AL[j]; break; }
     const el = t && secEls.current[t]; if (!el) return;
-    const s = el.closest('.tk-scroll'); if (!s) return;
+    const s = el.closest('.bl-scroll'); if (!s) return;
     s.scrollTop = s.scrollTop + el.getBoundingClientRect().top - s.getBoundingClientRect().top - BARH + 1;
   };
   const togglePick = (id: string) => {
@@ -94,7 +94,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
   const content = (
     <div style={{ padding: grouped ? '0 16px' : 0 }}>
       {sections.length === 0 ? (
-        <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--tk-label2)', fontSize: 15 }}>
+        <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--bl-label2)', fontSize: 15 }}>
           No results{ql ? ' for “' + q + '”' : ''}
         </div>
       ) : null}
@@ -115,7 +115,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
         </List.Section>
       ))}
       {sections.length ? (
-        <div style={{ padding: '16px 0 4px', textAlign: 'center', fontSize: 14.5, color: 'var(--tk-label2)' }}>
+        <div style={{ padding: '16px 0 4px', textAlign: 'center', fontSize: 14.5, color: 'var(--bl-label2)' }}>
           {visible.length} Contact{visible.length === 1 ? '' : 's'}{gone.size ? ' · pull down to restore ' + gone.size + ' deleted' : ''}
         </div>
       ) : null}
@@ -129,9 +129,9 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
         largeTitle: true, grouped,
         subheader: <SearchField q={q} setQ={setQ} aria-label="Search contacts" />,
         trailing: (
-          <button className="tk-btn" onClick={() => { edit ? exitEdit() : setEdit(true); Haptics.impact('light'); }}
+          <button className="bl-btn" onClick={() => { edit ? exitEdit() : setEdit(true); Haptics.impact('light'); }}
             style={{
-              border: 0, background: 'none', cursor: 'pointer', color: 'var(--tk-tint)', fontFamily: 'inherit', fontSize: 17,
+              border: 0, background: 'none', cursor: 'pointer', color: 'var(--bl-tint)', fontFamily: 'inherit', fontSize: 17,
               fontWeight: edit ? 700 : 400, padding: '8px 10px',
             }}>{edit ? 'Done' : 'Select'}</button>
         ),
@@ -177,7 +177,7 @@ export const StickySearchHeader: Story = {
     const sections = AL.map((L) => ({ L, items: visible.filter((c) => c.l[0].toUpperCase() === L) })).filter((s) => s.items.length);
     return (
       <Phone>
-        <div className="tk-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--tk-bg)' }}>
+        <div className="bl-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--bl-bg)' }}>
           <List header={<div style={{ padding: '10px 16px' }}><SearchField q={q} setQ={setQ} /></div>}>
             {sections.map((s) => (
               <List.Section key={s.L} sticky title={s.L}>
@@ -259,7 +259,7 @@ export const EmptyState: Story = {
         key: 'empty', title: 'Contacts', largeTitle: true,
         subheader: <SearchField q="zzzz" setQ={() => undefined} />,
         content: (
-          <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--tk-label2)', fontSize: 15 }}>
+          <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--bl-label2)', fontSize: 15 }}>
             No results for &ldquo;zzzz&rdquo;
           </div>
         ),

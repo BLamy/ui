@@ -1,5 +1,5 @@
 {
-  "name": "@touchkit/chatkit",
+  "name": "@brett_lamy/chatkit",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -16,14 +16,14 @@
     "./styles.css": "./dist/index.css"
   },
   "dependencies": {
-    "@touchkit/ui": "workspace:*",
-    "@touchkit/workbench": "workspace:*"
+    "@brett_lamy/ui": "workspace:*",
+    "@brett_lamy/workbench": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19"
   },
-  "description": "Composable team-chat scaffold for TouchKit",
+  "description": "Composable team-chat scaffold for BL UI",
   "license": "MIT",
   "sideEffects": [
     "*.css"
@@ -37,7 +37,7 @@
   },
   "keywords": [
     "react",
-    "touchkit",
+    "blui",
     "ios",
     "react-aria",
     "shadcn",

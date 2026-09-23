@@ -1,4 +1,4 @@
-import { cn } from '@touchkit/ui';
+import { cn } from '@brett_lamy/ui';
 
 export { cn };
 

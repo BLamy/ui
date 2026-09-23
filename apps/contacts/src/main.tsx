@@ -1,6 +1,6 @@
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Segmented } from '@touchkit/ui';
+import { Segmented } from '@brett_lamy/ui';
 import { ContactsApp } from './app/app';
 import './styles.css';
 
@@ -17,8 +17,8 @@ function DemoPage() {
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#EEEEF1', fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif" }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 20px', flexShrink: 0 }}>
-        <strong style={{ fontSize: 16, letterSpacing: '-.2px' }}>TouchKit · Contacts</strong>
-        <span style={{ fontSize: 12.5, color: 'rgba(60,60,67,.6)' }}>Cocoa Touch containers, composed from @touchkit/ui</span>
+        <strong style={{ fontSize: 16, letterSpacing: '-.2px' }}>BL UI · Contacts</strong>
+        <span style={{ fontSize: 12.5, color: 'rgba(60,60,67,.6)' }}>Cocoa Touch containers, composed from @brett_lamy/ui</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
           <label style={{ fontSize: 13, display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
             <input type="checkbox" checked={dark} onChange={e => setDark(e.target.checked)} /> Dark

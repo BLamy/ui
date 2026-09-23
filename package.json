@@ -1,17 +1,19 @@
 {
-  "name": "@touchkit/source",
+  "name": "@brett_lamy/source",
   "version": "0.0.0",
   "license": "MIT",
   "packageManager": "pnpm@10.15.0",
   "scripts": {
-    "storybook": "pnpm --filter @touchkit/catalog storybook",
+    "storybook": "pnpm --filter @brett_lamy/catalog storybook",
     "dev:contacts": "vite --config apps/contacts/vite.config.mts",
     "dev:chat": "vite --config apps/chat/vite.config.mts",
     "dev:pencil": "vite --config apps/pencil/vite.config.mts",
     "dev:workbench": "vite --config apps/workbench-app/vite.config.mts",
     "build": "nx run-many -t build",
     "test:stories": "node tools/smoke-stories.mjs",
-    "dev:docs": "vite --config apps/docs/vite.config.mts"
+    "dev:docs": "vite --config apps/docs/vite.config.mts",
+    "vr": "playwright test -c tools/vr/playwright.config.mjs",
+    "vr:update": "playwright test -c tools/vr/playwright.config.mjs --update-snapshots"
   },
   "private": false,
   "dependencies": {

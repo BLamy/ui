@@ -45,16 +45,16 @@ export function Segmented({ options, value, onChange, className, style, ...rest 
       aria-orientation="horizontal"
       role="radiogroup"
       className={cn(className)}
-      style={{ display: 'flex', gap: 2, background: 'var(--tk-fill,#e4e4ea)', borderRadius: 9, padding: 2, ...style }}
+      style={{ display: 'flex', gap: 2, background: 'var(--bl-fill,#e4e4ea)', borderRadius: 9, padding: 2, ...style }}
     >
       {options.map((o, index) => {
         const on = o.id === value;
         return (
           <button key={o.id} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
-            onClick={() => select(o.id)} onKeyDown={(event) => move(event, index)} className="tk-btn" style={{
+            onClick={() => select(o.id)} onKeyDown={(event) => move(event, index)} className="bl-btn" style={{
             flex: 1, border: 0, padding: '5px 12px', borderRadius: 7, fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
             cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: on ? 'var(--tk-card,#fff)' : 'transparent', color: 'var(--tk-label,#16161a)',
+            background: on ? 'var(--bl-card,#fff)' : 'transparent', color: 'var(--bl-label,#16161a)',
             boxShadow: on ? '0 1px 4px rgba(0,0,0,.14)' : 'none', transition: 'background .2s, box-shadow .2s',
           }}>{o.label}</button>
         );

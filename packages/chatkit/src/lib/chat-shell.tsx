@@ -5,7 +5,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { AdaptivePane, collectSlots, defineSlot, useContainerWidth } from '@touchkit/ui';
+import { AdaptivePane, collectSlots, defineSlot, useContainerWidth } from '@brett_lamy/ui';
 import { chatTokenVars, K, KFONT } from './chat-tokens';
 import { cn } from './cn';
 

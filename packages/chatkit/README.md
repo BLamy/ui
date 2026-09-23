@@ -1,17 +1,17 @@
-# @touchkit/chatkit
+# @brett_lamy/chatkit
 
 A compositional team-chat scaffold for React. `ChatShell` provides an adaptive workspace rail, channel navigation, and main-content region without prescribing application data or routing.
 
 ## Install
 
 ```sh
-npm i @touchkit/chatkit @brett_lamy/ui react react-dom
+npm i @brett_lamy/chatkit @brett_lamy/ui react react-dom
 ```
 
 ```tsx
 import '@brett_lamy/ui/styles.css';
-import '@touchkit/chatkit/styles.css';
-import { ChatShell, useChatShell } from '@touchkit/chatkit';
+import '@brett_lamy/chatkit/styles.css';
+import { ChatShell, useChatShell } from '@brett_lamy/chatkit';
 
 function ChannelNav() {
   const { compact, setNavOpen } = useChatShell();
@@ -61,7 +61,7 @@ The hook throws a clear error when called outside `ChatShell`.
 </ArtifactChatContainer>
 ```
 
-The compact working state is tappable to reveal the composer for another request. By default the collapsed overlay subscribes to TouchKit's shared scroll-chrome state, so it hides and returns with a `NavigationStack` header and `TabBar`.
+The compact working state is tappable to reveal the composer for another request. By default the collapsed overlay subscribes to BL UI's shared scroll-chrome state, so it hides and returns with a `NavigationStack` header and `TabBar`.
 
 ## Other exports
 
@@ -70,6 +70,6 @@ The package also includes `ArtifactChatContainer`, `WorkspaceRail`, `ChannelList
 ## Workspace development
 
 ```sh
-pnpm nx build @touchkit/chatkit
-pnpm nx lint @touchkit/chatkit
+pnpm nx build @brett_lamy/chatkit
+pnpm nx lint @brett_lamy/chatkit
 ```

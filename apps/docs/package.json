@@ -1,5 +1,5 @@
 {
-  "name": "@touchkit/docs-app",
+  "name": "@brett_lamy/docs-app",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
@@ -13,10 +13,10 @@
     "@tiptap/react": "3.30.5",
     "@tiptap/starter-kit": "3.30.5",
     "@tiptap/suggestion": "3.30.5",
-    "@touchkit/chatkit": "workspace:*",
-    "@touchkit/pencilkit": "workspace:*",
-    "@touchkit/ui": "workspace:*",
-    "@touchkit/workbench": "workspace:*",
+    "@brett_lamy/chatkit": "workspace:*",
+    "@brett_lamy/pencilkit": "workspace:*",
+    "@brett_lamy/ui": "workspace:*",
+    "@brett_lamy/workbench": "workspace:*",
     "highlight.js": "11.11.2",
     "lowlight": "3.3.0"
   }

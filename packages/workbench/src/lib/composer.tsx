@@ -81,7 +81,7 @@ function looksLikeMarkdown(text: string): boolean {
 }
 
 /* AnnotateLightbox — click a pasted image: an annotation canvas overlays it; Save rasterizes image + strokes
-   into one flattened PNG. Pass a drawing surface (e.g. PencilCanvas from @touchkit/pencilkit) as `canvas`. */
+   into one flattened PNG. Pass a drawing surface (e.g. PencilCanvas from @brett_lamy/pencilkit) as `canvas`. */
 export interface AnnotateLightboxProps {
   src: string;
   onClose: () => void;
@@ -161,14 +161,14 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas }: AnnotateLight
               overflow: 'hidden',
               border: '1px solid rgba(255,255,255,.14)',
               background: '#0C0C10',
-              '--tk-card': '#1C1C23',
-              '--tk-sep': 'rgba(255,255,255,.12)',
-              '--tk-label': '#EDEDF2',
-              '--tk-label2': 'rgba(235,235,245,.6)',
-              '--tk-label3': 'rgba(235,235,245,.35)',
-              '--tk-fill': 'rgba(255,255,255,.07)',
-              '--tk-fill2': 'rgba(255,255,255,.14)',
-              '--tk-tint': 'var(--wb-tint, #0A84FF)',
+              '--bl-card': '#1C1C23',
+              '--bl-sep': 'rgba(255,255,255,.12)',
+              '--bl-label': '#EDEDF2',
+              '--bl-label2': 'rgba(235,235,245,.6)',
+              '--bl-label3': 'rgba(235,235,245,.35)',
+              '--bl-fill': 'rgba(255,255,255,.07)',
+              '--bl-fill2': 'rgba(255,255,255,.14)',
+              '--bl-tint': 'var(--wb-tint, #0A84FF)',
             } as React.CSSProperties
           }
         >

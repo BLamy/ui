@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Haptics } from '@touchkit/ui';
-import { Composer, MarkdownView, type ReferenceNode } from '@touchkit/workbench';
+import { Haptics } from '@brett_lamy/ui';
+import { Composer, MarkdownView, type ReferenceNode } from '@brett_lamy/workbench';
 import { ArtifactChatContainer, type ArtifactChatContainerProps } from '../../lib/artifact-chat-container';
 import { cn } from '../../lib/cn';
 import { formatDistance, formatMinutes, type MapTarget, type MapView } from './geo';

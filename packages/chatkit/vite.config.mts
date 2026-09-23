@@ -30,7 +30,7 @@ export default defineConfig(() => ({
     lib: {
       // Could also be a dictionary or array of multiple entry points.
       entry: 'src/index.ts',
-      name: '@touchkit/chatkit',
+      name: '@brett_lamy/chatkit',
       fileName: 'index',
       // Change this to the formats you want to support.
       // Don't forget to update your package.json as well.
@@ -38,7 +38,7 @@ export default defineConfig(() => ({
     },
     rolldownOptions: {
       // External packages that should not be bundled into your library.
-      external: ['react', 'react-dom', 'react/jsx-runtime', /^@touchkit\/(?:ui|workbench)(?:\/.*)?$/],
+      external: ['react', 'react-dom', 'react/jsx-runtime', /^@brett_lamy\/(?:ui|workbench)(?:\/.*)?$/],
     },
   },
 }));

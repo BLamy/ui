@@ -15,7 +15,7 @@ export interface Workspace {
 }
 
 export interface WorkspaceRailProps {
-  /** defaults to the prototype's TouchKit HQ / Creamery pair */
+  /** defaults to the prototype's BL UI HQ / Creamery pair */
   workspaces?: Workspace[];
   onSelect?: (id: string) => void;
   onAdd?: () => void;
@@ -35,7 +35,7 @@ export function WorkspaceRail({
 }: WorkspaceRailProps) {
   const ws: Workspace[] =
     workspaces ?? [
-      { id: 'touchkit', label: 'T', color: tint, active: true, title: 'TouchKit HQ' },
+      { id: 'blui', label: 'T', color: tint, active: true, title: 'BL UI HQ' },
       { id: 'creamery', label: 'C', color: '#BF5AF2', title: 'Creamery' },
     ];
   return (

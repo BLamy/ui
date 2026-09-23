@@ -1,13 +1,13 @@
 /* %%demo:<name>%% blocks — the big framed demos from the docs prototype shell. */
 import { useMemo, useState } from 'react';
 import {
-  Avatar, HapticsPlayground, IndexBar, NavigationStack, SearchField, TabBar, TouchKitProvider,
-  List as TKList, ListSection as TKSection, ListRow as TKRow,
+  Avatar, HapticsPlayground, IndexBar, NavigationStack, SearchField, TabBar, BLProvider,
+  List as BLList, ListSection as BLSection, ListRow as BLRow,
   type Screen,
-} from '@touchkit/ui';
-import { WorkbenchDemo } from '@touchkit/workbench';
-import { PencilKitDemo, demoStrokes } from '@touchkit/pencilkit';
-import { TKL } from './frame';
+} from '@brett_lamy/ui';
+import { WorkbenchDemo } from '@brett_lamy/workbench';
+import { PencilKitDemo, demoStrokes } from '@brett_lamy/pencilkit';
+import { BLL } from './frame';
 
 const frame = (h: number, maxW?: number | string): React.CSSProperties => ({
   position: 'relative', height: h, maxWidth: maxW, border: '1px solid rgba(20,20,40,0.1)',
@@ -18,7 +18,7 @@ export function HapticsDemoBlock() {
   return (
     <div style={{
       background: '#F2F2F7', border: '1px solid rgba(20,20,40,0.07)', borderRadius: 16,
-      padding: '10px 4px 14px', margin: '16px 0', ...TKL,
+      padding: '10px 4px 14px', margin: '16px 0', ...BLL,
     } as any}>
       <HapticsPlayground />
     </div>
@@ -74,19 +74,19 @@ export function AppDemoBlock() {
     overlay: <IndexBar avail={new Set(letters)} top={118} bottom={70}
       onLetter={(L) => { const el = secRefs.current[L]; el?.scrollIntoView({ block: 'start' }); }} />,
     content: (
-      <TKList>
+      <BLList>
         {letters.map((L) => (
           <div key={L} ref={(el) => { secRefs.current[L] = el; }}>
-            <TKSection title={L} sticky>
+            <BLSection title={L} sticky>
               {byLetter[L].map((p, i) => (
-                <TKRow key={p.f + p.l} leading={<Avatar c={p} size={36} />} title={p.f + ' ' + p.l}
+                <BLRow key={p.f + p.l} leading={<Avatar c={p} size={36} />} title={p.f + ' ' + p.l}
                   subtitle={p.role} accessory="chevron" divider={i < byLetter[L].length - 1}
                   onPress={() => setSel(p)} />
               ))}
-            </TKSection>
+            </BLSection>
           </div>
         ))}
-      </TKList>
+      </BLList>
     ),
   }];
   if (sel) screens.push({
@@ -94,8 +94,8 @@ export function AppDemoBlock() {
       <div style={{ padding: '26px 18px', textAlign: 'center' }}>
         <Avatar c={sel} size={76} style={{ margin: '0 auto' }} />
         <div style={{ fontSize: 21, fontWeight: 700, marginTop: 12 }}>{sel.f} {sel.l}</div>
-        <div style={{ fontSize: 13.5, color: 'var(--tk-label2)', marginTop: 3 }}>{sel.role}</div>
-        <div style={{ fontSize: 12.5, color: 'var(--tk-label2)', marginTop: 22, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 13.5, color: 'var(--bl-label2)', marginTop: 3 }}>{sel.role}</div>
+        <div style={{ fontSize: 12.5, color: 'var(--bl-label2)', marginTop: 22, lineHeight: 1.5 }}>
           Edge-swipe from the left or use the back chevron to pop.
         </div>
       </div>
@@ -104,14 +104,14 @@ export function AppDemoBlock() {
   return (
     <div style={frame(560, 920)}>
       <div style={{ position: 'absolute', inset: 0 }}>
-        <TouchKitProvider>
+        <BLProvider>
           <div style={{ position: 'absolute', inset: 0 }}>
             {tab === 'contacts'
               ? <NavigationStack screens={screens} onPop={() => setSel(null)} />
               : <div style={{ position: 'absolute', inset: '0 0 62px', display: 'grid', placeItems: 'center', textAlign: 'center', padding: 24 }}>
                   <div>
                     <div style={{ fontSize: 16.5, fontWeight: 650 }}>{tab === 'recents' ? 'Recents' : 'Settings'}</div>
-                    <div style={{ fontSize: 13, color: 'var(--tk-label2)', marginTop: 4 }}>Tab state survives switching away and back.</div>
+                    <div style={{ fontSize: 13, color: 'var(--bl-label2)', marginTop: 4 }}>Tab state survives switching away and back.</div>
                   </div>
                 </div>}
             <TabBar selected={tab} onSelect={setTab} items={[
@@ -120,7 +120,7 @@ export function AppDemoBlock() {
               { id: 'settings', icon: 'sliders', title: 'Settings' },
             ]} />
           </div>
-        </TouchKitProvider>
+        </BLProvider>
       </div>
     </div>
   );

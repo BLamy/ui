@@ -1,5 +1,5 @@
 {
-  "name": "@touchkit/workbench",
+  "name": "@brett_lamy/workbench",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,7 +29,7 @@
     "@tiptap/react": "3.30.5",
     "@tiptap/starter-kit": "3.30.5",
     "@tiptap/suggestion": "3.30.5",
-    "@touchkit/ui": "workspace:*"
+    "@brett_lamy/ui": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18 || ^19",
@@ -49,7 +49,7 @@
   },
   "keywords": [
     "react",
-    "touchkit",
+    "blui",
     "ios",
     "react-aria",
     "shadcn",

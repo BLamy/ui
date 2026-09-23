@@ -27,3 +27,6 @@ out-tsc/
 connect.lock
 typings/
 *.tsbuildinfo
+tools/vr/__baseline__/
+tools/vr/.results/
+tools/vr/results.json

@@ -1,11 +1,11 @@
-/* TouchKit documentation shell — pixel-faithful port of project/TouchKit Docs.dc.html. */
+/* BL UI documentation shell — pixel-faithful port of project/BL UI Docs.dc.html. */
 import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
-import { MarkdownView } from '@touchkit/workbench';
+import { MarkdownView } from '@brett_lamy/workbench';
 import { NAV, PAGES, PAGE_ORDER } from '../content';
 import { DocsLive } from '../live/docs-live';
 import { AppDemoBlock, HapticsDemoBlock, PencilDemoBlock, WorkbenchDemoBlock } from '../live/demo-blocks';
 
-const SCROLL_ID = 'tkdocs-scroll';
+const SCROLL_ID = 'bldocs-scroll';
 
 function Logo({ size = 26 }: { size?: number }) {
   return (
@@ -26,7 +26,7 @@ function NavHeader({ onClose }: { onClose?: () => void }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '16px 16px 10px' }}>
       <Logo />
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '-.2px', lineHeight: 1.1 }}>TouchKit</div>
+        <div style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '-.2px', lineHeight: 1.1 }}>BL UI</div>
         <div style={{ fontSize: 10.5, color: '#8A8A94', fontWeight: 600, letterSpacing: '.4px' }}>DOCUMENTATION</div>
       </div>
       {onClose ? (
@@ -110,7 +110,7 @@ export default function App() {
   const next = idx >= 0 && idx < PAGE_ORDER.length - 1 ? PAGE_ORDER[idx + 1] : null;
   // The public distribution is a single package; workspace package names stay internal.
   const publicMarkdown = page.markdown
-    .replace(/@touchkit\/[\w-]+/g, '@brett_lamy/ui')
+    .replace(/@brett_lamy\/(?:chatkit|workbench|pencilkit)\b/g, '@brett_lamy/ui')
     .replace(/pnpm add @brett_lamy\/ui(?: @brett_lamy\/ui)+ react react-dom/g, 'npm i @brett_lamy/ui');
   const segs = parseSegs(slug, publicMarkdown);
   const toc: Array<{ text: string; h3: boolean }> = [];
@@ -190,7 +190,7 @@ export default function App() {
             <button onClick={() => setNavOpen(true)} aria-label="Open navigation" style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, display: 'grid', color: '#55555E' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16" /></svg>
             </button>
-            <span style={{ fontSize: 13.5, fontWeight: 700 }}>TouchKit Docs</span>
+            <span style={{ fontSize: 13.5, fontWeight: 700 }}>BL UI Docs</span>
             <span style={{ fontSize: 12.5, color: '#8A8A94', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>/ {page.title}</span>
           </div>
         ) : null}

@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { collectSlots, defineSlot } from '@touchkit/ui';
+import { collectSlots, defineSlot } from '@brett_lamy/ui';
 import { cn } from './cn';
 
 /* ══ ChatColumn — the docked half of a chat: a transcript that scrolls above a pinned composer ══

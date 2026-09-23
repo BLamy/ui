@@ -50,7 +50,7 @@ export function BrightnessSlider() {
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); move(e); }}
       onPointerMove={(e) => { if (e.buttons) move(e); }}
       onKeyDown={(e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { setV((x) => Math.min(1, Math.max(0, x + (e.key === 'ArrowRight' ? 0.0625 : -0.0625)))); Haptics.selection(); e.preventDefault(); } }}
-      style={{ position: 'relative', height: 64, borderRadius: 18, background: 'var(--tk-fill2)', overflow: 'hidden', touchAction: 'none', cursor: 'ew-resize' }}>
+      style={{ position: 'relative', height: 64, borderRadius: 18, background: 'var(--bl-fill2)', overflow: 'hidden', touchAction: 'none', cursor: 'ew-resize' }}>
       <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: (v * 100) + '%', background: 'rgba(255,255,255,.94)' }} />
       <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(60,60,67,.62)', display: 'grid' }}><Sun size={22} /></span>
     </div>
@@ -62,13 +62,13 @@ export function HapticSlider() {
   const last = useRef(0);
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-      <input type="range" className="tk-range" min="0" max="1" step="0.01" value={v} aria-label="Haptic slider"
-        style={{ flex: 1, '--tk-range-fill': (v * 100) + '%' } as CSSProperties}
+      <input type="range" className="bl-range" min="0" max="1" step="0.01" value={v} aria-label="Haptic slider"
+        style={{ flex: 1, '--bl-range-fill': (v * 100) + '%' } as CSSProperties}
         onChange={(e) => {
           setV(+e.target.value);
           const now = performance.now(); if (now - last.current > 16) { last.current = now; Haptics.selection(); }
         }} />
-      <span style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 14.5, color: 'var(--tk-label2)', width: 36, textAlign: 'right', flexShrink: 0 }}>{v.toFixed(2)}</span>
+      <span style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 14.5, color: 'var(--bl-label2)', width: 36, textAlign: 'right', flexShrink: 0 }}>{v.toFixed(2)}</span>
     </div>
   );
 }
@@ -96,22 +96,22 @@ export function SlideToUnlock() {
   };
   return (
     <div ref={ref} style={{
-      position: 'relative', height: 56, borderRadius: 28, background: 'var(--tk-fill)',
+      position: 'relative', height: 56, borderRadius: 28, background: 'var(--bl-fill)',
       boxShadow: 'inset 0 1px 3px rgba(0,0,0,.12)', overflow: 'hidden',
     }}>
-      <span aria-hidden="true" className={done ? '' : 'tk-shimmer'} style={{
+      <span aria-hidden="true" className={done ? '' : 'bl-shimmer'} style={{
         position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
-        fontSize: 17, letterSpacing: '.4px', color: done ? 'var(--tk-green)' : undefined, fontWeight: done ? 600 : 400, opacity: done ? 1 : Math.max(0, 1 - x * 1.7),
+        fontSize: 17, letterSpacing: '.4px', color: done ? 'var(--bl-green)' : undefined, fontWeight: done ? 600 : 400, opacity: done ? 1 : Math.max(0, 1 - x * 1.7),
       }}>
         {done ? 'unlocked' : 'slide to unlock'}</span>
-      <button className="tk-btn" aria-label="Slide to unlock"
+      <button className="bl-btn" aria-label="Slide to unlock"
         onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setDrag(true); }}
         onPointerMove={(e) => { if (drag) move(e); }}
         onPointerUp={up} onPointerCancel={up}
         style={{
           position: 'absolute', top: 4, left: 4 + x * travel(), width: 48, height: 48, borderRadius: 24, border: 0, padding: 0,
-          background: 'var(--tk-card)', boxShadow: '0 2px 6px rgba(0,0,0,.22)', cursor: 'grab', touchAction: 'none',
-          display: 'grid', placeItems: 'center', color: done ? 'var(--tk-green)' : 'var(--tk-label2)',
+          background: 'var(--bl-card)', boxShadow: '0 2px 6px rgba(0,0,0,.22)', cursor: 'grab', touchAction: 'none',
+          display: 'grid', placeItems: 'center', color: done ? 'var(--bl-green)' : 'var(--bl-label2)',
           transition: drag ? 'none' : 'left .38s ' + EASE,
         }}>
         <Icon name={done ? 'check' : 'chev'} size={22} sw={2.4} /></button>
@@ -161,7 +161,7 @@ export function WheelDrum({ n, init, label }: { n: number; init?: number; label:
         onWheel={(e) => { e.preventDefault(); const d = e.deltaY > 0 ? 1 : -1; settle(clampHard((Math.round(-off / H) + d) * -H)); }}
         onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { settle(clampHard((Math.round(-off / H) + (e.key === 'ArrowDown' ? 1 : -1)) * -H)); e.preventDefault(); } }}
         style={{ position: 'relative', height: H * VIS, width: 52, overflow: 'hidden', touchAction: 'none', cursor: 'ns-resize', flexShrink: 0 }}>
-        <div style={{ position: 'absolute', left: -4, right: -4, top: (VIS - 1) / 2 * H, height: H, borderRadius: 9, background: 'var(--tk-fill)' }} />
+        <div style={{ position: 'absolute', left: -4, right: -4, top: (VIS - 1) / 2 * H, height: H, borderRadius: 9, background: 'var(--bl-fill)' }} />
         <div style={{
           position: 'absolute', left: 0, right: 0, top: (VIS - 1) / 2 * H, transform: 'translateY(' + off + 'px)',
           transition: anim ? 'transform .3s cubic-bezier(.25,.8,.25,1)' : 'none',
@@ -171,15 +171,15 @@ export function WheelDrum({ n, init, label }: { n: number; init?: number; label:
             return (
               <div key={i} style={{
                 height: H, display: 'grid', placeItems: 'center', fontSize: 21,
-                color: 'var(--tk-label)', opacity: Math.max(0.16, 1 - dist * 0.34), fontVariantNumeric: 'tabular-nums',
+                color: 'var(--bl-label)', opacity: Math.max(0.16, 1 - dist * 0.34), fontVariantNumeric: 'tabular-nums',
               }}>{i}</div>
             );
           })}
         </div>
-        <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: H * 1.4, background: 'linear-gradient(var(--tk-card), transparent)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: H * 1.4, background: 'linear-gradient(transparent, var(--tk-card))', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: H * 1.4, background: 'linear-gradient(var(--bl-card), transparent)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: H * 1.4, background: 'linear-gradient(transparent, var(--bl-card))', pointerEvents: 'none' }} />
       </div>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tk-label2)' }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--bl-label2)' }}>{label}</span>
     </div>
   );
 }
@@ -188,28 +188,28 @@ export function HapticsPlayground() {
   const [, bump] = useState(0);
   useEffect(() => {
     const h = () => setTimeout(() => bump((x) => x + 1), 40);
-    window.addEventListener('tk-vib', h);
+    window.addEventListener('bl-vib', h);
     const t = setInterval(() => bump((x) => x + 1), 1200);
     const stop = setTimeout(() => clearInterval(t), 10000);
-    return () => { window.removeEventListener('tk-vib', h); clearInterval(t); clearTimeout(stop); };
+    return () => { window.removeEventListener('bl-vib', h); clearInterval(t); clearTimeout(stop); };
   }, []);
   return (
     <List inset>
-      <div style={{ padding: '2px 4px 14px', fontSize: 15, lineHeight: 1.5, color: 'var(--tk-label2)' }}>
-        The playground from <span style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 13.5 }}>vibrator.dev</span> — on an iPhone or MacBook, in Safari, you'll feel haptic feedback as you slide these elements. <span style={{ color: 'var(--tk-label3)' }}>(If you don't feel anything, drag slower.)</span></div>
-      <div style={{ padding: '0 4px 16px', fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 12, color: 'var(--tk-label3)' }}>engine: {Haptics.engine}</div>
+      <div style={{ padding: '2px 4px 14px', fontSize: 15, lineHeight: 1.5, color: 'var(--bl-label2)' }}>
+        The playground from <span style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 13.5 }}>vibrator.dev</span> — on an iPhone or MacBook, in Safari, you'll feel haptic feedback as you slide these elements. <span style={{ color: 'var(--bl-label3)' }}>(If you don't feel anything, drag slower.)</span></div>
+      <div style={{ padding: '0 4px 16px', fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 12, color: 'var(--bl-label3)' }}>engine: {Haptics.engine}</div>
       <ListSection><ShowMagicRow /></ListSection>
       <ListSection title="Brightness">
-        <div style={{ background: 'var(--tk-card)', borderRadius: 12, padding: 14 }}><BrightnessSlider /></div>
+        <div style={{ background: 'var(--bl-card)', borderRadius: 12, padding: 14 }}><BrightnessSlider /></div>
       </ListSection>
       <ListSection title="Haptic slider">
-        <div style={{ background: 'var(--tk-card)', borderRadius: 12, padding: '10px 14px' }}><HapticSlider /></div>
+        <div style={{ background: 'var(--bl-card)', borderRadius: 12, padding: '10px 14px' }}><HapticSlider /></div>
       </ListSection>
       <ListSection title="Slide to unlock">
-        <div style={{ background: 'var(--tk-card)', borderRadius: 12, padding: 10 }}><SlideToUnlock /></div>
+        <div style={{ background: 'var(--bl-card)', borderRadius: 12, padding: 10 }}><SlideToUnlock /></div>
       </ListSection>
       <ListSection title="Timer" footer="A selection tick per detent — Haptics.selection(), the same call the A–Z index scrubber makes. Flick a wheel: ticks ride the momentum. Playground set recreated from vibrator.dev — ios-vibrator-pro-max by @samdenty (MIT).">
-        <div style={{ background: 'var(--tk-card)', borderRadius: 12, padding: '8px 10px', display: 'flex', gap: 2 }}>
+        <div style={{ background: 'var(--bl-card)', borderRadius: 12, padding: '8px 10px', display: 'flex', gap: 2 }}>
           <WheelDrum n={24} init={1} label="hours" />
           <WheelDrum n={60} init={30} label="min" />
           <WheelDrum n={60} init={15} label="sec" />

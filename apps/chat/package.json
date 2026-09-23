@@ -1,9 +1,9 @@
 {
-  "name": "@touchkit/chat-app",
+  "name": "@brett_lamy/chat-app",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "@touchkit/ui": "workspace:*",
-    "@touchkit/chatkit": "workspace:*"
+    "@brett_lamy/ui": "workspace:*",
+    "@brett_lamy/chatkit": "workspace:*"
   }
 }

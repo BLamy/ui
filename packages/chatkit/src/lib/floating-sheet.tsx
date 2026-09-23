@@ -10,7 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { Haptics, useChromeHidden, collectSlots, defineSlot } from '@touchkit/ui';
+import { Haptics, useChromeHidden, collectSlots, defineSlot } from '@brett_lamy/ui';
 import { cn } from './cn';
 
 export type FloatingSheetFabPosition =
@@ -25,7 +25,7 @@ export type FloatingSheetFabPosition =
 
 /** Translucent glass over dark content, or an opaque card like a system sheet. */
 export type FloatingSheetAppearance = 'glass' | 'sheet';
-/** Colour scheme of the surface; `auto` inherits the host's `--tk-*` tokens. */
+/** Colour scheme of the surface; `auto` inherits the host's `--bl-*` tokens. */
 export type FloatingSheetTone = 'auto' | 'dark' | 'light';
 
 export interface FloatingSheetContextValue {

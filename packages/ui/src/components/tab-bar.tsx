@@ -24,17 +24,17 @@ export function TabBar({ items, selected, onSelect, hideOnScroll = true, classNa
   return (
     <div data-slot="tab-bar" className={cn(className)} style={{
       position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 120, display: 'flex', height: 62,
-      background: 'var(--tk-bar)', backdropFilter: 'blur(20px) saturate(1.7)', WebkitBackdropFilter: 'blur(20px) saturate(1.7)',
-      borderTop: '1px solid var(--tk-sep)', paddingBottom: 4, boxSizing: 'border-box',
+      background: 'var(--bl-bar)', backdropFilter: 'blur(20px) saturate(1.7)', WebkitBackdropFilter: 'blur(20px) saturate(1.7)',
+      borderTop: '1px solid var(--bl-sep)', paddingBottom: 4, boxSizing: 'border-box',
       transform: hid ? 'translateY(100%)' : 'none', transition: 'transform .3s ' + EASE, ...style,
     }}>
       {items.map((it) => {
         const onT = it.id === selected;
         return (
-          <button key={it.id} className="tk-btn" onClick={() => { if (!onT) Haptics.selection(); onSelect(it.id); }} aria-current={onT ? 'page' : undefined}
+          <button key={it.id} className="bl-btn" onClick={() => { if (!onT) Haptics.selection(); onSelect(it.id); }} aria-current={onT ? 'page' : undefined}
             style={{
               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, border: 0,
-              background: 'none', cursor: 'pointer', color: onT ? 'var(--tk-tint)' : 'var(--tk-label3)', fontFamily: 'inherit', padding: 0, transition: 'color .15s',
+              background: 'none', cursor: 'pointer', color: onT ? 'var(--bl-tint)' : 'var(--bl-label3)', fontFamily: 'inherit', padding: 0, transition: 'color .15s',
             }}>
             <Icon name={it.icon} size={25} sw={onT ? 2.1 : 1.8} />
             <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.1px' }}>{it.title}</span>

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import '@touchkit/workbench/styles.css';
+import '@brett_lamy/workbench/styles.css';
 import { MapChatDemo, type MapChatDemoProps } from './map-chat-demo';
 import '../../styles.css';
 

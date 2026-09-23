@@ -1,5 +1,5 @@
 {
-  "name": "@touchkit/catalog",
+  "name": "@brett_lamy/catalog",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -7,10 +7,10 @@
     "build-storybook": "storybook build -c .storybook"
   },
   "dependencies": {
-    "@touchkit/ui": "workspace:*",
-    "@touchkit/chatkit": "workspace:*",
-    "@touchkit/workbench": "workspace:*",
-    "@touchkit/pencilkit": "workspace:*"
+    "@brett_lamy/ui": "workspace:*",
+    "@brett_lamy/chatkit": "workspace:*",
+    "@brett_lamy/workbench": "workspace:*",
+    "@brett_lamy/pencilkit": "workspace:*"
   },
   "devDependencies": {
     "highlight.js": "11.11.2",

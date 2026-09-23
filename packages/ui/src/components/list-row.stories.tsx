@@ -65,7 +65,7 @@ export const SwipeToDelete: Story = {
             onPress={() => undefined}
             divider={i < people.length - 1} />
         ))}
-        <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--tk-label2)', background: 'var(--tk-card)' }}>
+        <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--bl-label2)', background: 'var(--bl-card)' }}>
           Swipe a row left to reveal Delete; past 55% width it commits with a haptic.
         </div>
       </>
@@ -79,7 +79,7 @@ export const EditMode: Story = {
     const [picked, setPicked] = useState<Set<string>>(new Set(['Wei']));
     return (
       <>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 16px', background: 'var(--tk-card)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 16px', background: 'var(--bl-card)' }}>
           <Switch checked={edit} onChange={setEdit} aria-label="Edit mode" />
         </div>
         {[['Amelia', 'Adler'], ['Wei', 'Chen'], ['Anya', 'Kowalski']].map(([f, l], i) => (

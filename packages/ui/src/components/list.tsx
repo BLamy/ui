@@ -4,10 +4,10 @@ import {
 } from 'react';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
-import { chromeOffset, TKStickyCtx, useChromeHidden } from '../lib/theme';
+import { chromeOffset, BLStickyCtx, useChromeHidden } from '../lib/theme';
 import { cn, EASE } from '../lib/utils';
 
-/* ══ List primitives (prototype TKList / TKSection / TKRow) ══
+/* ══ List primitives (prototype BLList / BLSection / BLRow) ══
    A list works out its own sticky offset: whatever chrome sits above it (nav bar, none, …) plus its own
    header if it has one. `stickyTop` overrides both. */
 
@@ -23,7 +23,7 @@ export interface ListProps {
 function ListBase({ children, inset, header, stickyTop, className, style }: ListProps) {
   const hRef = useRef<HTMLDivElement | null>(null);
   const [hh, setHh] = useState(0);
-  const above = use(TKStickyCtx);
+  const above = use(BLStickyCtx);
   const chromeHid = useChromeHidden();
   useLayoutEffect(() => {
     const el = hRef.current;
@@ -35,17 +35,17 @@ function ListBase({ children, inset, header, stickyTop, className, style }: List
   }, [header]);
   const top = stickyTop != null ? stickyTop : above + (header ? hh : 0);
   return (
-    <TKStickyCtx.Provider value={top}>
+    <BLStickyCtx.Provider value={top}>
       <div data-slot="list" className={cn(className)} style={{ padding: inset ? '0 16px' : 0, ...style }}>
         {header ? (
           <div ref={hRef} style={{
-            position: 'sticky', top: chromeOffset(above, chromeHid), zIndex: 24, background: 'var(--tk-stick)',
+            position: 'sticky', top: chromeOffset(above, chromeHid), zIndex: 24, background: 'var(--bl-stick)',
             backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', transition: 'top .28s ' + EASE,
           }}>{header}</div>
         ) : null}
         {children}
       </div>
-    </TKStickyCtx.Provider>
+    </BLStickyCtx.Provider>
   );
 }
 
@@ -61,18 +61,18 @@ export interface ListSectionProps {
 }
 
 export function ListSection({ title, footer, children, sticky, innerRef, stickyTop, className, style }: ListSectionProps) {
-  const ctxTop = use(TKStickyCtx);
+  const ctxTop = use(BLStickyCtx);
   const top = chromeOffset(stickyTop != null ? stickyTop : ctxTop, useChromeHidden());
   return (
     <div ref={innerRef} data-slot="list-section" className={cn(className)} style={style}>
       {title != null ? (sticky
         ? <div style={{
-            position: 'sticky', top, zIndex: 20, padding: '3px 16px', fontSize: 13.5, fontWeight: 600, color: 'var(--tk-label)',
-            background: 'var(--tk-stick)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', transition: 'top .28s ' + EASE,
+            position: 'sticky', top, zIndex: 20, padding: '3px 16px', fontSize: 13.5, fontWeight: 600, color: 'var(--bl-label)',
+            background: 'var(--bl-stick)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', transition: 'top .28s ' + EASE,
           }}>{title}</div>
-        : <div style={{ padding: '4px 16px 7px', fontSize: 12.5, fontWeight: 500, letterSpacing: '.4px', textTransform: 'uppercase', color: 'var(--tk-label2)' }}>{title}</div>) : null}
+        : <div style={{ padding: '4px 16px 7px', fontSize: 12.5, fontWeight: 500, letterSpacing: '.4px', textTransform: 'uppercase', color: 'var(--bl-label2)' }}>{title}</div>) : null}
       <div style={{ borderRadius: sticky ? 0 : 12, overflow: 'hidden' }}>{children}</div>
-      {footer ? <div style={{ padding: '7px 16px 0', fontSize: 12.8, lineHeight: 1.45, color: 'var(--tk-label2)' }}>{footer}</div> : null}
+      {footer ? <div style={{ padding: '7px 16px 0', fontSize: 12.8, lineHeight: 1.45, color: 'var(--bl-label2)' }}>{footer}</div> : null}
       <div style={{ height: sticky ? 0 : 22 }} />
     </div>
   );
@@ -152,19 +152,19 @@ export function ListRow(p: ListRowProps) {
     <div data-slot="list-row" className={cn(p.className)} style={{ position: 'relative', overflow: 'hidden', maxHeight: dead ? 0 : 200, opacity: dead ? 0 : 1, transition: 'max-height .32s ease, opacity .28s', ...p.style }}>
       {p.onDelete && px < 0 ? (
         <div style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: -px, display: 'flex', overflow: 'hidden' }}>
-          <button className="tk-btn" onClick={del} style={{
-            flex: 1, border: 0, background: 'var(--tk-red)', color: '#fff', fontSize: 15, fontWeight: 600,
+          <button className="bl-btn" onClick={del} style={{
+            flex: 1, border: 0, background: 'var(--bl-red)', color: '#fff', fontSize: 15, fontWeight: 600,
             fontFamily: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: Math.max(14, (-px - 88) / 2 + 14),
           }}>Delete</button>
         </div>
       ) : null}
       <button ref={el} data-tkrow type="button" role={p.rowRole as any} aria-selected={p.rowRole ? (p.selected || p.checked || false) : undefined}
-        className={'tk-btn' + (p.onPress ? ' tk-hl' : '')}
+        className={'bl-btn' + (p.onPress ? ' bl-hl' : '')}
         onPointerDown={start} onPointerMove={mv} onPointerUp={end} onPointerCancel={end} onClick={press}
         style={{
           display: 'flex', alignItems: 'center', gap: 12, width: '100%', minHeight: 46, padding: '0 16px', border: 0, textAlign: 'left',
-          fontFamily: 'inherit', fontSize: 17, color: p.destructive ? 'var(--tk-red)' : 'var(--tk-label)',
-          background: p.selected ? 'var(--tk-press)' : 'var(--tk-card)', cursor: (p.onPress || p.onDelete) ? 'pointer' : 'default',
+          fontFamily: 'inherit', fontSize: 17, color: p.destructive ? 'var(--bl-red)' : 'var(--bl-label)',
+          background: p.selected ? 'var(--bl-press)' : 'var(--bl-card)', cursor: (p.onPress || p.onDelete) ? 'pointer' : 'default',
           transform: `translateX(${px}px)`, transition: (anim ? 'transform .3s ' + EASE + ', ' : '') + 'background .15s',
           touchAction: 'pan-y', position: 'relative', boxSizing: 'border-box',
         }}>
@@ -175,7 +175,7 @@ export function ListRow(p: ListRowProps) {
           }}>
             <span style={{
               width: 22, height: 22, borderRadius: '50%', boxSizing: 'border-box', flexShrink: 0,
-              border: p.checked ? 'none' : '1.6px solid var(--tk-label3)', background: p.checked ? 'var(--tk-tint)' : 'transparent',
+              border: p.checked ? 'none' : '1.6px solid var(--bl-label3)', background: p.checked ? 'var(--bl-tint)' : 'transparent',
               display: 'grid', placeItems: 'center', transition: 'background .15s',
             }}>
               {p.checked ? <Icon name="check" size={13} sw={3} style={{ color: '#fff' }} /> : null}
@@ -185,15 +185,15 @@ export function ListRow(p: ListRowProps) {
         {p.leading || null}
         <div style={{
           flex: 1, display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, minHeight: 46, padding: '7px 0',
-          boxShadow: p.divider === false ? 'none' : 'inset 0 -1px 0 var(--tk-sep)', justifyContent: p.center ? 'center' : 'flex-start',
+          boxShadow: p.divider === false ? 'none' : 'inset 0 -1px 0 var(--bl-sep)', justifyContent: p.center ? 'center' : 'flex-start',
         }}>
           <div style={{ flex: p.center ? 'none' : 1, minWidth: 0 }}>
             <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>{p.title}</div>
-            {p.subtitle ? <div style={{ fontSize: 13, color: 'var(--tk-label2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{p.subtitle}</div> : null}
+            {p.subtitle ? <div style={{ fontSize: 13, color: 'var(--bl-label2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{p.subtitle}</div> : null}
           </div>
           {p.trailing || null}
-          {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} style={{ color: 'var(--tk-label3)' }} />
-            : p.accessory === 'check' ? <span style={{ width: 22, flexShrink: 0 }}>{p.checked ? <Icon name="check" size={20} sw={2.4} style={{ color: 'var(--tk-tint)' }} /> : null}</span>
+          {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} style={{ color: 'var(--bl-label3)' }} />
+            : p.accessory === 'check' ? <span style={{ width: 22, flexShrink: 0 }}>{p.checked ? <Icon name="check" size={20} sw={2.4} style={{ color: 'var(--bl-tint)' }} /> : null}</span>
             : null}
         </div>
       </button>

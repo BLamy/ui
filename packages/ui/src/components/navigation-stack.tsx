@@ -4,7 +4,7 @@ import {
 } from 'react';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
-import { chromeStore, TKSafeCtx, TKStickyCtx } from '../lib/theme';
+import { chromeStore, BLSafeCtx, BLStickyCtx } from '../lib/theme';
 import { cn, BARH, EASE } from '../lib/utils';
 import { Spinner } from './spinner';
 
@@ -48,7 +48,7 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
   const [out, setOut] = useState(false);
   const [scr, setScr] = useState(false);
   const [hid, setHid] = useState(false);
-  const safeTop = use(TKSafeCtx);
+  const safeTop = use(BLSafeCtx);
   const lastY = useRef(0);
   const scroller = useRef<any>(null); const inner = useRef<any>(null); const spin = useRef<any>(null);
   const pl = useRef<any>(null); const [refr, setRefr] = useState(false);
@@ -134,11 +134,11 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
   return (
     <div ref={(el) => reg(sc.key, { el })} data-slot="screen" data-screen-label={typeof sc.title === 'string' ? sc.title : sc.key}
       style={{
-        position: 'absolute', inset: 0, zIndex: 10 + z, background: sc.grouped ? 'var(--tk-bg2)' : 'var(--tk-bg)',
+        position: 'absolute', inset: 0, zIndex: 10 + z, background: sc.grouped ? 'var(--bl-bg2)' : 'var(--bl-bg)',
         transform: `translateX(${tx})`, transition: `transform .42s ${EASE}`, willChange: 'transform', overflow: 'hidden',
         boxShadow: depth > 0 ? '-10px 0 30px rgba(0,0,0,.16)' : 'none', pointerEvents: ghost ? 'none' : 'auto',
       }}>
-      <div ref={scroller} className="tk-scroll" onScroll={onScroll} onKeyDown={onKey}
+      <div ref={scroller} className="bl-scroll" onScroll={onScroll} onKeyDown={onKey}
         onPointerDown={pDown} onPointerMove={pMove} onPointerUp={pEnd} onPointerCancel={pEnd}
         style={{ position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' } as CSSProperties}>
         <div ref={inner} style={{ maxWidth: sc.maxW || 'none', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
@@ -148,14 +148,14 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
                 {sc.subheader ? <div style={{ marginTop: 10 }}>{sc.subheader}</div> : null}
               </div>
             : <div style={{ height: barH }} />}
-          <TKStickyCtx.Provider value={barH}>{sc.content}</TKStickyCtx.Provider>
+          <BLStickyCtx.Provider value={barH}>{sc.content}</BLStickyCtx.Provider>
           <div style={{ height: ins + 28 }} />
         </div>
       </div>
       {sc.onRefresh ? (
         <div ref={spin} style={{
           position: 'absolute', top: barH + 8, left: '50%', transform: 'translateX(-50%)', opacity: 0,
-          color: 'var(--tk-label2)', zIndex: 5, pointerEvents: 'none', transition: 'opacity .2s',
+          color: 'var(--bl-label2)', zIndex: 5, pointerEvents: 'none', transition: 'opacity .2s',
         }}><Spinner spin={refr} /></div>
       ) : null}
       <div style={{
@@ -163,13 +163,13 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
         paddingTop: safeTop, transform: hid ? 'translateY(' + (-(barH - safeTop)) + 'px)' : 'none', transition: 'transform .3s ' + EASE,
       }}>
         <div style={{
-          position: 'absolute', inset: 0, background: 'var(--tk-bar)', backdropFilter: 'blur(18px) saturate(1.7)',
-          WebkitBackdropFilter: 'blur(18px) saturate(1.7)', borderBottom: '1px solid var(--tk-sep)', opacity: scr ? 1 : 0, transition: 'opacity .25s',
+          position: 'absolute', inset: 0, background: 'var(--bl-bar)', backdropFilter: 'blur(18px) saturate(1.7)',
+          WebkitBackdropFilter: 'blur(18px) saturate(1.7)', borderBottom: '1px solid var(--bl-sep)', opacity: scr ? 1 : 0, transition: 'opacity .25s',
         }} />
         {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
         {safeTop ? (
           <div style={{
-            position: 'absolute', left: 0, right: 0, top: 0, height: safeTop, background: 'var(--tk-bar)',
+            position: 'absolute', left: 0, right: 0, top: 0, height: safeTop, background: 'var(--bl-bar)',
             backdropFilter: 'blur(18px) saturate(1.7)', WebkitBackdropFilter: 'blur(18px) saturate(1.7)',
             transform: hid ? 'translateY(' + (barH - safeTop) + 'px)' : 'none', transition: 'transform .3s ' + EASE, opacity: scr || hid ? 1 : 0,
           }} />
@@ -177,9 +177,9 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
         <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: BARH, opacity: hid ? 0 : 1, transition: 'opacity .2s' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', minWidth: 44, zIndex: 1 }}>
             {(depth > 0 || ghost)
-              ? <button className="tk-btn" onClick={nav.canPop ? nav.pop : undefined} style={{
+              ? <button className="bl-btn" onClick={nav.canPop ? nav.pop : undefined} style={{
                   display: 'flex', alignItems: 'center', border: 0, background: 'none',
-                  color: 'var(--tk-tint)', fontSize: 17, fontFamily: 'inherit', padding: '6px 8px 6px 0', cursor: 'pointer', maxWidth: 160,
+                  color: 'var(--bl-tint)', fontSize: 17, fontFamily: 'inherit', padding: '6px 8px 6px 0', cursor: 'pointer', maxWidth: 160,
                 }}>
                   <Icon name="chevL" size={24} sw={2.4} />
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{typeof backTitle === 'string' && backTitle.length <= 12 ? backTitle : 'Back'}</span>
@@ -188,7 +188,7 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
           </div>
           <div style={{
             position: 'absolute', left: '50%', transform: 'translateX(-50%)', maxWidth: '52%', fontSize: 17, fontWeight: 600,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: showTitle ? 1 : 0, transition: 'opacity .2s', pointerEvents: 'none', color: 'var(--tk-label)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: showTitle ? 1 : 0, transition: 'opacity .2s', pointerEvents: 'none', color: 'var(--bl-label)',
           }}>{sc.title}</div>
           <div style={{ position: 'relative', marginLeft: 'auto', display: 'flex', alignItems: 'center', zIndex: 1 }}>{sc.trailing || null}</div>
         </div>
@@ -206,16 +206,16 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
    (blank screen). While any stack can pop we keep one history sentinel armed; the system gesture then lands
    as popstate and pops OUR stack instead of the page. */
 const NavPops = new Set<() => { depth: number; pop: () => void }>();
-let tkArmed = false;
-let tkCoarse = typeof matchMedia !== 'undefined' && matchMedia('(any-pointer: coarse)').matches;
+let blArmed = false;
+let blCoarse = typeof matchMedia !== 'undefined' && matchMedia('(any-pointer: coarse)').matches;
 function armHistory() {
-  if (!tkCoarse || tkArmed) return;
-  try { history.pushState({ tkNav: 1 }, ''); tkArmed = true; } catch (e) { tkCoarse = false; }
+  if (!blCoarse || blArmed) return;
+  try { history.pushState({ blNav: 1 }, ''); blArmed = true; } catch (e) { blCoarse = false; }
 }
 if (typeof window !== 'undefined' && !(window as any).__tkPopstate) {
   (window as any).__tkPopstate = 1;
   window.addEventListener('popstate', () => {
-    if (!tkArmed) return; tkArmed = false;
+    if (!blArmed) return; blArmed = false;
     let best: { depth: number; pop: () => void } | null = null;
     NavPops.forEach((g) => { const s = g(); if (s.depth > 1) best = s; });
     if (best) {
@@ -232,7 +232,7 @@ export interface NavigationStackProps {
   onPop?: () => void;
   /** Default bottom inset applied to screens that don't set `bottomInset`. */
   defIns?: number;
-  /** Safe-area top override for this stack (px). Usually inherited from TouchKitProvider instead. */
+  /** Safe-area top override for this stack (px). Usually inherited from BLProvider instead. */
   safeTop?: number | string;
   className?: string;
   style?: CSSProperties;
@@ -344,5 +344,5 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
       ))}
     </div>
   );
-  return safeTop != null ? <TKSafeCtx.Provider value={parseFloat(String(safeTop)) || 0}>{inner}</TKSafeCtx.Provider> : inner;
+  return safeTop != null ? <BLSafeCtx.Provider value={parseFloat(String(safeTop)) || 0}>{inner}</BLSafeCtx.Provider> : inner;
 }

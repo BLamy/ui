@@ -1,11 +1,11 @@
-# @touchkit/workbench
+# @brett_lamy/workbench
 
 An adaptive IDE/workbench scaffold for React: thread navigation, chat, a terminal dock, and pluggable right-side surfaces. The same composition becomes desktop columns, a medium-width drawer, or compact full-screen surfaces and a snap sheet.
 
 ## Install
 
 ```sh
-npm i @touchkit/workbench @brett_lamy/ui react react-dom
+npm i @brett_lamy/workbench @brett_lamy/ui react react-dom
 ```
 
 The built-in Files and Diff surfaces use Pierre's renderers. Install them directly when you compose those primitives yourself:
@@ -18,8 +18,8 @@ See [Diffs](https://diffs.com/docs) and [Trees](https://trees.software/docs) for
 
 ```tsx
 import '@brett_lamy/ui/styles.css';
-import '@touchkit/workbench/styles.css';
-import { WorkbenchShell, useWorkbenchShell } from '@touchkit/workbench';
+import '@brett_lamy/workbench/styles.css';
+import { WorkbenchShell, useWorkbenchShell } from '@brett_lamy/workbench';
 
 function Header() {
   const { compact, setSideSheet, panel, setPanel } = useWorkbenchShell();
@@ -80,6 +80,6 @@ The package ships runnable Storybook examples for every shell width class, empty
 ## Workspace development
 
 ```sh
-pnpm nx build @touchkit/workbench
-pnpm nx lint @touchkit/workbench
+pnpm nx build @brett_lamy/workbench
+pnpm nx lint @brett_lamy/workbench
 ```

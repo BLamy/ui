@@ -12,7 +12,7 @@ export interface ChannelListProps {
   onPick: (id: string, threadId?: string) => void;
   tint: string;
   onClose?: (() => void) | null;
-  /** header title slot — default matches the prototype's "TouchKit HQ" */
+  /** header title slot — default matches the prototype's "BL UI HQ" */
   title?: ReactNode;
   /** footer slot — default matches the prototype's Ada "online" footer */
   footer?: ReactNode;
@@ -51,7 +51,7 @@ export function ChannelList({
   onPick,
   tint,
   onClose,
-  title = 'TouchKit HQ',
+  title = 'BL UI HQ',
   footer,
   className,
   style,

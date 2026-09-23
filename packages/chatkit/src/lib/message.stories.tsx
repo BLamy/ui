@@ -95,7 +95,7 @@ export const BotWithAppBadge: Story = {
       id: 'b1',
       u: 'stitch',
       t: '7:02 AM',
-      txt: 'Deploy touchkit-docs@4f21c9 → prod. 34s, all checks green.',
+      txt: 'Deploy blui-docs@4f21c9 → prod. 34s, all checks green.',
       reacts: [],
     },
   },

@@ -1,9 +1,9 @@
 import { StrictMode, type ReactElement } from 'react';
 import * as ReactDOM from 'react-dom/client';
-import '@touchkit/ui/styles.css';
-import '@touchkit/chatkit/styles.css';
-import '@touchkit/workbench/styles.css';
-import { DeliveryTrackingDemo, MapChatDemo } from '@touchkit/chatkit';
+import '@brett_lamy/ui/styles.css';
+import '@brett_lamy/chatkit/styles.css';
+import '@brett_lamy/workbench/styles.css';
+import { DeliveryTrackingDemo, MapChatDemo } from '@brett_lamy/chatkit';
 import App from './app/app';
 
 const root = ReactDOM.createRoot(

@@ -1,4 +1,4 @@
-/* TouchKit Workbench — IDE-scaffold components in TouchKit's language (dark theme).
+/* BL UI Workbench — IDE-scaffold components in BL UI's language (dark theme).
    Shell regions: ThreadSidebar · ChatView (MessageScroller + Composer) · TerminalDock · SurfacePanel.
    Adaptive: <760px the sidebar becomes a hamburger overlay, the terminal a vaul-style snap drawer,
    and the right panel a full-screen page. The right panel also has an explicit full-screen mode on desktop.
@@ -9,7 +9,7 @@ const WFONT = "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,
 const MONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace";
 const EASE = 'cubic-bezier(.32,.72,0,1)';
 
-/* ══ haptics (standalone; cooperates with touchkit.jsx when both are loaded) ══ */
+/* ══ haptics (standalone; cooperates with blui.jsx when both are loaded) ══ */
 (function(){ if (typeof window === 'undefined' || window.__wbVib) return; window.__wbVib = 1;
   const ua = navigator.userAgent || '';
   const saf = /Safari\//.test(ua) && !/Chrom|CriOS|FxiOS|EdgiOS|Android/.test(ua);
@@ -20,8 +20,8 @@ const EASE = 'cubic-bezier(.32,.72,0,1)';
   s.textContent = 'try{await import("https://cdn.jsdelivr.net/npm/ios-vibrator-pro-max@3.0.3/+esm")}catch(e){try{await import("https://esm.sh/ios-vibrator-pro-max@3.0.3")}catch(f){}}';
   document.head.appendChild(s);
 })();
-const vib = p => { try { if (window.TouchKit && window.TouchKit.Haptics) return p.length > 1 ? window.TouchKit.Haptics.notification('success') : window.TouchKit.Haptics.impact('light'); if (navigator.vibrate) navigator.vibrate(p); } catch(e){} };
-const tick = () => { try { if (window.TouchKit && window.TouchKit.Haptics) return window.TouchKit.Haptics.selection(); if (navigator.vibrate) navigator.vibrate([4]); } catch(e){} };
+const vib = p => { try { if (window.BLUI && window.BLUI.Haptics) return p.length > 1 ? window.BLUI.Haptics.notification('success') : window.BLUI.Haptics.impact('light'); if (navigator.vibrate) navigator.vibrate(p); } catch(e){} };
+const tick = () => { try { if (window.BLUI && window.BLUI.Haptics) return window.BLUI.Haptics.selection(); if (navigator.vibrate) navigator.vibrate([4]); } catch(e){} };
 
 /* ══ injected css (framework-owned: scrollbars, caret pulse, spin) ══ */
 (function(){ if (typeof document === 'undefined' || document.getElementById('wb-kf')) return;
@@ -287,53 +287,53 @@ class ErrB extends React.Component {
     ? React.createElement('div', {style: {padding: 14, fontFamily: MONO, fontSize: 12, color: '#FF453A'}}, this.props.label + ' failed: ' + this.state.err)
     : this.props.children; }
 }
-const TKL = {'--tk-bg':'#fff', '--tk-bg2':'#F2F2F7', '--tk-card':'#fff', '--tk-label':'#0B0B0F', '--tk-label2':'rgba(60,60,67,.6)', '--tk-label3':'rgba(60,60,67,.36)', '--tk-sep':'rgba(60,60,67,.22)', '--tk-fill':'rgba(120,120,128,.13)', '--tk-fill2':'rgba(120,120,128,.24)', '--tk-press':'rgba(120,120,128,.16)', '--tk-tint':'#0A84FF', '--tk-green':'#34C759', '--tk-red':'#FF3B30', '--tk-bar':'rgba(250,250,252,.85)', '--tk-stick':'rgba(244,244,248,.92)', '--tk-side':'#ECECF1', '--tk-scrim':'rgba(0,0,0,.38)'};
-const TKDK = {'--tk-bg':'#000', '--tk-bg2':'#0A0A0C', '--tk-card':'#1C1C1E', '--tk-label':'#F5F5F7', '--tk-label2':'rgba(235,235,245,.62)', '--tk-label3':'rgba(235,235,245,.3)', '--tk-sep':'rgba(84,84,88,.48)', '--tk-fill':'rgba(120,120,128,.22)', '--tk-fill2':'rgba(120,120,128,.34)', '--tk-press':'rgba(120,120,128,.22)', '--tk-tint':'#0A84FF', '--tk-green':'#30D158', '--tk-red':'#FF453A', '--tk-bar':'rgba(16,16,18,.82)', '--tk-stick':'rgba(18,18,20,.9)', '--tk-side':'#111114', '--tk-scrim':'rgba(0,0,0,.5)'};
-const WBD = {'--wb-bg':'#141419', '--wb-side':'#101015', '--wb-card':'#1C1C23', '--wb-fill':'rgba(255,255,255,.06)', '--wb-fill2':'rgba(255,255,255,.11)', '--wb-sep':'rgba(255,255,255,.08)', '--wb-label':'#EDEDF2', '--wb-label2':'#9C9CA6', '--wb-label3':'#69696F', '--wb-tint':'#0A84FF', '--wb-green':'#30D158', '--wb-red':'#FF453A', '--tk-tint':'#0A84FF'};
-function TKFrame({h, bg, children}) {
-  return <div style={{position:'relative', height:h, borderRadius:12, overflow:'hidden', background:bg || 'var(--tk-bg2)', boxShadow:'inset 0 0 0 1px rgba(0,0,0,.05)'}}>{children}</div>;
+const BLL = {'--bl-bg':'#fff', '--bl-bg2':'#F2F2F7', '--bl-card':'#fff', '--bl-label':'#0B0B0F', '--bl-label2':'rgba(60,60,67,.6)', '--bl-label3':'rgba(60,60,67,.36)', '--bl-sep':'rgba(60,60,67,.22)', '--bl-fill':'rgba(120,120,128,.13)', '--bl-fill2':'rgba(120,120,128,.24)', '--bl-press':'rgba(120,120,128,.16)', '--bl-tint':'#0A84FF', '--bl-green':'#34C759', '--bl-red':'#FF3B30', '--bl-bar':'rgba(250,250,252,.85)', '--bl-stick':'rgba(244,244,248,.92)', '--bl-side':'#ECECF1', '--bl-scrim':'rgba(0,0,0,.38)'};
+const BLDK = {'--bl-bg':'#000', '--bl-bg2':'#0A0A0C', '--bl-card':'#1C1C1E', '--bl-label':'#F5F5F7', '--bl-label2':'rgba(235,235,245,.62)', '--bl-label3':'rgba(235,235,245,.3)', '--bl-sep':'rgba(84,84,88,.48)', '--bl-fill':'rgba(120,120,128,.22)', '--bl-fill2':'rgba(120,120,128,.34)', '--bl-press':'rgba(120,120,128,.22)', '--bl-tint':'#0A84FF', '--bl-green':'#30D158', '--bl-red':'#FF453A', '--bl-bar':'rgba(16,16,18,.82)', '--bl-stick':'rgba(18,18,20,.9)', '--bl-side':'#111114', '--bl-scrim':'rgba(0,0,0,.5)'};
+const WBD = {'--wb-bg':'#141419', '--wb-side':'#101015', '--wb-card':'#1C1C23', '--wb-fill':'rgba(255,255,255,.06)', '--wb-fill2':'rgba(255,255,255,.11)', '--wb-sep':'rgba(255,255,255,.08)', '--wb-label':'#EDEDF2', '--wb-label2':'#9C9CA6', '--wb-label3':'#69696F', '--wb-tint':'#0A84FF', '--wb-green':'#30D158', '--wb-red':'#FF453A', '--bl-tint':'#0A84FF'};
+function BLFrame({h, bg, children}) {
+  return <div style={{position:'relative', height:h, borderRadius:12, overflow:'hidden', background:bg || 'var(--bl-bg2)', boxShadow:'inset 0 0 0 1px rgba(0,0,0,.05)'}}>{children}</div>;
 }
 const DemoBtn = ({label, onPress, style}) => <button onClick={onPress}
-  style={{border:0, borderRadius:10, background:'var(--tk-tint, #0A84FF)', color:'#fff', fontFamily:'inherit', fontWeight:600, fontSize:13.5, padding:'9px 16px', cursor:'pointer', ...style}}>{label}</button>;
+  style={{border:0, borderRadius:10, background:'var(--bl-tint, #0A84FF)', color:'#fff', fontFamily:'inherit', fontWeight:600, fontSize:13.5, padding:'9px 16px', cursor:'pointer', ...style}}>{label}</button>;
 const LIVE = {
   row: {
-    title: 'TKList · TKSection · TKRow', dep: 'touchkit.jsx', theme: 'tk', h: 340,
-    code: 'import { TKList, TKSection, TKRow, Avatar, TKSwitch, Haptics } from "./touchkit.tsx"\n\nexport default function App() {\n  const [dnd, setDnd] = React.useState(true)\n  const people = [\n    { f: "Maya", l: "Lindqvist", role: "Industrial design" },\n    { f: "Jonas", l: "Ito", role: "Haptics engineering" },\n  ]\n  return (\n    <TKList inset>\n      <TKSection title="Team" footer="Rows are real buttons — arrow keys work too.">\n        {people.map(p => (\n          <TKRow key={p.l} leading={<Avatar c={p} size={36}/>}\n            title={p.f + " " + p.l} subtitle={p.role}\n            accessory="chevron" onPress={() => Haptics.impact("light")}/>\n        ))}\n        <TKRow title="Do Not Disturb" divider={false}\n          trailing={<TKSwitch checked={dnd} onChange={setDnd}/>}/>\n      </TKSection>\n    </TKList>\n  )\n}',
+    title: 'BLList · BLSection · BLRow', dep: 'blui.jsx', theme: 'bl', h: 340,
+    code: 'import { BLList, BLSection, BLRow, Avatar, BLSwitch, Haptics } from "./blui.tsx"\n\nexport default function App() {\n  const [dnd, setDnd] = React.useState(true)\n  const people = [\n    { f: "Maya", l: "Lindqvist", role: "Industrial design" },\n    { f: "Jonas", l: "Ito", role: "Haptics engineering" },\n  ]\n  return (\n    <BLList inset>\n      <BLSection title="Team" footer="Rows are real buttons — arrow keys work too.">\n        {people.map(p => (\n          <BLRow key={p.l} leading={<Avatar c={p} size={36}/>}\n            title={p.f + " " + p.l} subtitle={p.role}\n            accessory="chevron" onPress={() => Haptics.impact("light")}/>\n        ))}\n        <BLRow title="Do Not Disturb" divider={false}\n          trailing={<BLSwitch checked={dnd} onChange={setDnd}/>}/>\n      </BLSection>\n    </BLList>\n  )\n}',
     Render: function RowLive() {
-      const TK = window.TouchKit; const [dnd, setDnd] = useState(true);
-      if (!TK) return null;
-      const {TKList, TKSection, TKRow, Avatar, TKSwitch, Haptics} = TK;
+      const BL = window.BLUI; const [dnd, setDnd] = useState(true);
+      if (!BL) return null;
+      const {BLList, BLSection, BLRow, Avatar, BLSwitch, Haptics} = BL;
       const people = [{f:'Maya', l:'Lindqvist', role:'Industrial design'}, {f:'Jonas', l:'Ito', role:'Haptics engineering'}];
-      return <div style={{maxWidth:430, margin:'0 auto'}}><TKList inset>
-        <TKSection title="Team" footer="Rows are real buttons — arrow keys work too.">
-          {people.map(p=><TKRow key={p.l} leading={<Avatar c={p} size={36}/>} title={p.f + ' ' + p.l} subtitle={p.role} accessory="chevron" onPress={()=>Haptics.impact('light')}/>)}
-          <TKRow title="Do Not Disturb" divider={false} trailing={<TKSwitch checked={dnd} onChange={setDnd}/>}/>
-        </TKSection>
-      </TKList></div>;
+      return <div style={{maxWidth:430, margin:'0 auto'}}><BLList inset>
+        <BLSection title="Team" footer="Rows are real buttons — arrow keys work too.">
+          {people.map(p=><BLRow key={p.l} leading={<Avatar c={p} size={36}/>} title={p.f + ' ' + p.l} subtitle={p.role} accessory="chevron" onPress={()=>Haptics.impact('light')}/>)}
+          <BLRow title="Do Not Disturb" divider={false} trailing={<BLSwitch checked={dnd} onChange={setDnd}/>}/>
+        </BLSection>
+      </BLList></div>;
     }
   },
   credenza: {
-    title: 'Credenza', dep: 'touchkit.jsx', theme: 'tk', h: 340,
-    code: 'import { Credenza, TKRow, Icon, Haptics } from "./touchkit.tsx"\n\nexport default function App() {\n  const [view, setView] = React.useState(null)\n  const done = () => { Haptics.notification("success"); setView("done") }\n  return (\n    <div style={{ display: "grid", placeItems: "center", minHeight: 220 }}>\n      <button onClick={() => { Haptics.impact("light"); setView("menu") }}>\n        Share Contact…\n      </button>\n      <Credenza open={!!view} view={view || "menu"}\n        title={view === "done" ? "Shared" : "Share Contact"}\n        canBack={view === "done"} onBack={() => setView("menu")}\n        onClose={() => setView(null)}>\n        {view === "done"\n          ? <p style={{ textAlign: "center", padding: 24 }}>Contact shared ✓</p>\n          : <div>\n              <TKRow leading={<Icon name="qr" size={20}/>} title="Show QR code" onPress={done}/>\n              <TKRow leading={<Icon name="doc" size={20}/>} title="Copy vCard" divider={false} onPress={done}/>\n            </div>}\n      </Credenza>\n    </div>\n  )\n}',
+    title: 'Credenza', dep: 'blui.jsx', theme: 'bl', h: 340,
+    code: 'import { Credenza, BLRow, Icon, Haptics } from "./blui.tsx"\n\nexport default function App() {\n  const [view, setView] = React.useState(null)\n  const done = () => { Haptics.notification("success"); setView("done") }\n  return (\n    <div style={{ display: "grid", placeItems: "center", minHeight: 220 }}>\n      <button onClick={() => { Haptics.impact("light"); setView("menu") }}>\n        Share Contact…\n      </button>\n      <Credenza open={!!view} view={view || "menu"}\n        title={view === "done" ? "Shared" : "Share Contact"}\n        canBack={view === "done"} onBack={() => setView("menu")}\n        onClose={() => setView(null)}>\n        {view === "done"\n          ? <p style={{ textAlign: "center", padding: 24 }}>Contact shared ✓</p>\n          : <div>\n              <BLRow leading={<Icon name="qr" size={20}/>} title="Show QR code" onPress={done}/>\n              <BLRow leading={<Icon name="doc" size={20}/>} title="Copy vCard" divider={false} onPress={done}/>\n            </div>}\n      </Credenza>\n    </div>\n  )\n}',
     Render: function CredLive() {
-      const TK = window.TouchKit; const [view, setView] = useState(null);
-      if (!TK) return null;
-      const {Credenza, TKRow, Icon, Haptics} = TK;
+      const BL = window.BLUI; const [view, setView] = useState(null);
+      if (!BL) return null;
+      const {Credenza, BLRow, Icon, Haptics} = BL;
       const done = () => { Haptics.notification('success'); setView('done'); };
       return <div style={{display:'grid', placeItems:'center', minHeight:210}}>
         <button onClick={() => { Haptics.impact('light'); setView('menu'); }}
-          style={{border:0, borderRadius:11, background:'var(--tk-tint)', color:'#fff', fontFamily:'inherit', fontSize:14.5, fontWeight:600, padding:'11px 20px', cursor:'pointer'}}>Share Contact…</button>
+          style={{border:0, borderRadius:11, background:'var(--bl-tint)', color:'#fff', fontFamily:'inherit', fontSize:14.5, fontWeight:600, padding:'11px 20px', cursor:'pointer'}}>Share Contact…</button>
         <Credenza open={!!view} view={view || 'menu'} title={view === 'done' ? 'Shared' : 'Share Contact'}
           canBack={view === 'done'} onBack={() => setView('menu')} onClose={() => setView(null)}>
           {view === 'done'
             ? <div style={{textAlign:'center', padding:'26px 18px'}}>
-                <span style={{width:46, height:46, borderRadius:'50%', background:'rgba(52,199,89,.15)', display:'inline-grid', placeItems:'center', color:'var(--tk-green)'}}><Icon name="check" size={24} sw={2.4}/></span>
+                <span style={{width:46, height:46, borderRadius:'50%', background:'rgba(52,199,89,.15)', display:'inline-grid', placeItems:'center', color:'var(--bl-green)'}}><Icon name="check" size={24} sw={2.4}/></span>
                 <div style={{fontWeight:650, fontSize:16, marginTop:10}}>Contact shared</div>
-                <div style={{fontSize:13, color:'var(--tk-label2)', marginTop:3}}>The card spring-morphs its height to each state.</div>
+                <div style={{fontSize:13, color:'var(--bl-label2)', marginTop:3}}>The card spring-morphs its height to each state.</div>
               </div>
             : <div style={{padding:'4px 6px 8px'}}>
-                <TKRow leading={<Icon name="qr" size={20}/>} title="Show QR code" onPress={done}/>
-                <TKRow leading={<Icon name="doc" size={20}/>} title="Copy vCard" divider={false} onPress={done}/>
+                <BLRow leading={<Icon name="qr" size={20}/>} title="Show QR code" onPress={done}/>
+                <BLRow leading={<Icon name="doc" size={20}/>} title="Copy vCard" divider={false} onPress={done}/>
               </div>}
         </Credenza>
       </div>;
@@ -355,123 +355,123 @@ const LIVE = {
     }
   },
   controls: {
-    title: 'Segmented · TKSwitch · Spinner · Avatar', dep: 'touchkit.jsx', theme: 'tk', h: 300,
-    code: 'import { Segmented, TKSwitch, Spinner, Avatar, Haptics } from "./touchkit.tsx"\n\nexport default function App() {\n  const [range, setRange] = React.useState("day")\n  const [on, setOn] = React.useState(true)\n  return (\n    <div style={{ display: "grid", gap: 16, justifyItems: "center" }}>\n      <Segmented value={range} onChange={setRange} options={[\n        { id: "day", label: "Day" }, { id: "week", label: "Week" }, { id: "month", label: "Month" },\n      ]}/>\n      <div style={{ display: "flex", gap: 18, alignItems: "center" }}>\n        <Avatar c={{ f: "Ada", l: "Lovelace" }} size={40}/>\n        <TKSwitch checked={on} onChange={setOn}/>\n        <Spinner/>\n      </div>\n    </div>\n  )\n}',
+    title: 'Segmented · BLSwitch · Spinner · Avatar', dep: 'blui.jsx', theme: 'bl', h: 300,
+    code: 'import { Segmented, BLSwitch, Spinner, Avatar, Haptics } from "./blui.tsx"\n\nexport default function App() {\n  const [range, setRange] = React.useState("day")\n  const [on, setOn] = React.useState(true)\n  return (\n    <div style={{ display: "grid", gap: 16, justifyItems: "center" }}>\n      <Segmented value={range} onChange={setRange} options={[\n        { id: "day", label: "Day" }, { id: "week", label: "Week" }, { id: "month", label: "Month" },\n      ]}/>\n      <div style={{ display: "flex", gap: 18, alignItems: "center" }}>\n        <Avatar c={{ f: "Ada", l: "Lovelace" }} size={40}/>\n        <BLSwitch checked={on} onChange={setOn}/>\n        <Spinner/>\n      </div>\n    </div>\n  )\n}',
     Render: function CtlLive() {
-      const TK = window.TouchKit; const [range, setRange] = useState('day'); const [on, setOn] = useState(true);
-      if (!TK) return null;
-      const {Segmented, TKSwitch, Spinner, Avatar, Haptics} = TK;
+      const BL = window.BLUI; const [range, setRange] = useState('day'); const [on, setOn] = useState(true);
+      if (!BL) return null;
+      const {Segmented, BLSwitch, Spinner, Avatar, Haptics} = BL;
       return <div style={{display:'grid', gap:16, justifyItems:'center', maxWidth:420, margin:'0 auto'}}>
         <div style={{width:280}}><Segmented value={range} onChange={id=>{setRange(id); Haptics.selection();}} options={[{id:'day',label:'Day'},{id:'week',label:'Week'},{id:'month',label:'Month'}]}/></div>
         <div style={{display:'flex', gap:18, alignItems:'center'}}>
           <Avatar c={{f:'Ada', l:'Lovelace'}} size={40}/>
-          <TKSwitch checked={on} onChange={setOn}/>
+          <BLSwitch checked={on} onChange={setOn}/>
           <Spinner/>
         </div>
-        <div style={{fontSize:12.5, color:'var(--tk-label2)'}}>window.TouchKit is live — every control ticks.</div>
+        <div style={{fontSize:12.5, color:'var(--bl-label2)'}}>window.BLUI is live — every control ticks.</div>
       </div>;
     }
   },
   theming: {
-    title: 'Theme tokens', dep: 'touchkit.jsx', theme: 'tk', h: 330,
-    code: 'import { TKList, TKSection, TKRow, TKSwitch, Icon } from "./touchkit.tsx"\n\nexport default function App() {\n  const [dark, setDark] = React.useState(false)\n  const [tint, setTint] = React.useState("#0A84FF")\n  return (\n    <div style={{ ...(dark ? DARK_TOKENS : LIGHT_TOKENS), "--tk-tint": tint }}>\n      {/* every component reads the nearest --tk-* tokens */}\n      <TKList inset>\n        <TKSection title="Appearance">\n          <TKRow leading={<Icon name="bell" size={20}/>} title="Dark Mode" divider={false}\n            trailing={<TKSwitch checked={dark} onChange={setDark}/>}/>\n        </TKSection>\n      </TKList>\n    </div>\n  )\n}',
+    title: 'Theme tokens', dep: 'blui.jsx', theme: 'bl', h: 330,
+    code: 'import { BLList, BLSection, BLRow, BLSwitch, Icon } from "./blui.tsx"\n\nexport default function App() {\n  const [dark, setDark] = React.useState(false)\n  const [tint, setTint] = React.useState("#0A84FF")\n  return (\n    <div style={{ ...(dark ? DARK_TOKENS : LIGHT_TOKENS), "--bl-tint": tint }}>\n      {/* every component reads the nearest --bl-* tokens */}\n      <BLList inset>\n        <BLSection title="Appearance">\n          <BLRow leading={<Icon name="bell" size={20}/>} title="Dark Mode" divider={false}\n            trailing={<BLSwitch checked={dark} onChange={setDark}/>}/>\n        </BLSection>\n      </BLList>\n    </div>\n  )\n}',
     Render: function ThemeLive() {
-      const TK = window.TouchKit; const [dark, setDark] = useState(false); const [tint, setTint] = useState('#0A84FF');
-      if (!TK) return null;
-      const {TKList, TKSection, TKRow, TKSwitch, Icon, Haptics} = TK;
-      return <div style={{...(dark ? TKDK : TKL), '--tk-tint':tint, background:'var(--tk-bg2)', borderRadius:14, padding:16, colorScheme:dark ? 'dark' : 'light', color:'var(--tk-label)', maxWidth:430, margin:'0 auto', transition:'background .25s'}}>
+      const BL = window.BLUI; const [dark, setDark] = useState(false); const [tint, setTint] = useState('#0A84FF');
+      if (!BL) return null;
+      const {BLList, BLSection, BLRow, BLSwitch, Icon, Haptics} = BL;
+      return <div style={{...(dark ? BLDK : BLL), '--bl-tint':tint, background:'var(--bl-bg2)', borderRadius:14, padding:16, colorScheme:dark ? 'dark' : 'light', color:'var(--bl-label)', maxWidth:430, margin:'0 auto', transition:'background .25s'}}>
         <div style={{display:'flex', gap:9, marginBottom:12, justifyContent:'center'}}>
           {['#0A84FF', '#5E5CE6', '#34C759', '#FF9F0A', '#FF375F'].map(c=><button key={c} onClick={()=>{setTint(c); Haptics.selection();}} aria-label={'Tint ' + c}
             style={{width:23, height:23, borderRadius:'50%', background:c, cursor:'pointer', padding:0, border:'1px solid rgba(0,0,0,.1)', outline:tint === c ? '2.5px solid ' + c : 'none', outlineOffset:2}}/>)}
         </div>
-        <TKList inset>
-          <TKSection title="Appearance">
-            <TKRow leading={<Icon name="bell" size={20}/>} title="Dark Mode" divider={false} trailing={<TKSwitch checked={dark} onChange={setDark}/>}/>
-          </TKSection>
-        </TKList>
+        <BLList inset>
+          <BLSection title="Appearance">
+            <BLRow leading={<Icon name="bell" size={20}/>} title="Dark Mode" divider={false} trailing={<BLSwitch checked={dark} onChange={setDark}/>}/>
+          </BLSection>
+        </BLList>
         <DemoBtn label="Tinted action" onPress={()=>Haptics.impact('light')} style={{display:'block', margin:'12px auto 0'}}/>
       </div>;
     }
   },
   nav: {
-    title: 'NavigationStack', dep: 'touchkit.jsx', theme: 'tk', h: 420,
-    code: 'import { NavigationStack, TKList, TKSection, TKRow, Icon } from "./touchkit.tsx"\n\nexport default function App() {\n  const [sel, setSel] = React.useState(null)\n  const screens = [\n    { key: "root", title: "Teams", grouped: true, content:\n      <TKList inset><TKSection>\n        {["Design", "Engineering", "Research"].map((t, i) => (\n          <TKRow key={t} leading={<Icon name="person" size={20}/>} title={t}\n            accessory="chevron" divider={i < 2} onPress={() => setSel(t)}/>\n        ))}\n      </TKSection></TKList> },\n  ]\n  if (sel) screens.push({ key: "detail", title: sel, grouped: true,\n    content: <p style={{ padding: 24 }}>Pushed — back chevron or edge-swipe pops.</p> })\n  return <NavigationStack screens={screens} onPop={() => setSel(null)}/>\n}',
+    title: 'NavigationStack', dep: 'blui.jsx', theme: 'bl', h: 420,
+    code: 'import { NavigationStack, BLList, BLSection, BLRow, Icon } from "./blui.tsx"\n\nexport default function App() {\n  const [sel, setSel] = React.useState(null)\n  const screens = [\n    { key: "root", title: "Teams", grouped: true, content:\n      <BLList inset><BLSection>\n        {["Design", "Engineering", "Research"].map((t, i) => (\n          <BLRow key={t} leading={<Icon name="person" size={20}/>} title={t}\n            accessory="chevron" divider={i < 2} onPress={() => setSel(t)}/>\n        ))}\n      </BLSection></BLList> },\n  ]\n  if (sel) screens.push({ key: "detail", title: sel, grouped: true,\n    content: <p style={{ padding: 24 }}>Pushed — back chevron or edge-swipe pops.</p> })\n  return <NavigationStack screens={screens} onPop={() => setSel(null)}/>\n}',
     Render: function NavLive() {
-      const TK = window.TouchKit; const [sel, setSel] = useState(null);
-      if (!TK) return null;
-      const {NavigationStack, TKList, TKSection, TKRow, Icon, Haptics} = TK;
+      const BL = window.BLUI; const [sel, setSel] = useState(null);
+      if (!BL) return null;
+      const {NavigationStack, BLList, BLSection, BLRow, Icon, Haptics} = BL;
       const screens = [{key:'root', title:'Teams', grouped:true, content:
-        <TKList inset><TKSection>
-          {['Design', 'Engineering', 'Research'].map((t, i)=><TKRow key={t} leading={<Icon name="person" size={20}/>} title={t}
+        <BLList inset><BLSection>
+          {['Design', 'Engineering', 'Research'].map((t, i)=><BLRow key={t} leading={<Icon name="person" size={20}/>} title={t}
             accessory="chevron" divider={i < 2} onPress={()=>{ Haptics.impact('light'); setSel(t); }}/>)}
-        </TKSection></TKList>}];
+        </BLSection></BLList>}];
       if (sel) screens.push({key:'detail', title:sel, grouped:true, content:
         <div style={{padding:'28px 22px', textAlign:'center'}}>
           <div style={{fontSize:16, fontWeight:650}}>{sel}</div>
-          <div style={{fontSize:13, color:'var(--tk-label2)', marginTop:5, lineHeight:1.5}}>Pushed screen — use the back chevron, or drag from the left edge to pop interactively.</div>
+          <div style={{fontSize:13, color:'var(--bl-label2)', marginTop:5, lineHeight:1.5}}>Pushed screen — use the back chevron, or drag from the left edge to pop interactively.</div>
         </div>});
-      return <TKFrame h={330}><NavigationStack screens={screens} onPop={()=>setSel(null)}/></TKFrame>;
+      return <BLFrame h={330}><NavigationStack screens={screens} onPop={()=>setSel(null)}/></BLFrame>;
     }
   },
   tabs: {
-    title: 'TabBar', dep: 'touchkit.jsx', theme: 'tk', h: 420,
-    code: 'import { TabBar, Icon } from "./touchkit.tsx"\n\nexport default function App() {\n  const [tab, setTab] = React.useState("contacts")\n  return (\n    <div style={{ position: "relative", height: 320 }}>\n      <main style={{ position: "absolute", inset: "0 0 62px" }}>{/* per-tab content */}</main>\n      <TabBar selected={tab} onSelect={setTab} items={[\n        { id: "contacts", icon: "person", label: "Contacts" },\n        { id: "recents",  icon: "clock",  label: "Recents" },\n        { id: "settings", icon: "gear",   label: "Settings" },\n      ]}/>\n    </div>\n  )\n}',
+    title: 'TabBar', dep: 'blui.jsx', theme: 'bl', h: 420,
+    code: 'import { TabBar, Icon } from "./blui.tsx"\n\nexport default function App() {\n  const [tab, setTab] = React.useState("contacts")\n  return (\n    <div style={{ position: "relative", height: 320 }}>\n      <main style={{ position: "absolute", inset: "0 0 62px" }}>{/* per-tab content */}</main>\n      <TabBar selected={tab} onSelect={setTab} items={[\n        { id: "contacts", icon: "person", label: "Contacts" },\n        { id: "recents",  icon: "clock",  label: "Recents" },\n        { id: "settings", icon: "gear",   label: "Settings" },\n      ]}/>\n    </div>\n  )\n}',
     Render: function TabsLive() {
-      const TK = window.TouchKit; const [tab, setTab] = useState('contacts');
-      if (!TK) return null;
-      const {TabBar, Icon} = TK;
+      const BL = window.BLUI; const [tab, setTab] = useState('contacts');
+      if (!BL) return null;
+      const {TabBar, Icon} = BL;
       const items = [{id:'contacts', icon:'person', label:'Contacts'}, {id:'recents', icon:'clock', label:'Recents'}, {id:'settings', icon:'gear', label:'Settings'}];
       const blurb = {contacts:'Each tab keeps its own stack — pushes slide under this bar.', recents:'Tab state survives switching away and back.', settings:'Every selection fires Haptics.selection().'};
       const cur = items.find(i=>i.id === tab);
-      return <TKFrame h={330} bg="var(--tk-bg)">
+      return <BLFrame h={330} bg="var(--bl-bg)">
         <div style={{position:'absolute', inset:'0 0 62px', display:'grid', placeItems:'center', padding:'0 28px', textAlign:'center'}}>
           <div>
-            <span style={{display:'inline-grid', placeItems:'center', width:46, height:46, borderRadius:13, background:'var(--tk-fill)', color:'var(--tk-tint)'}}><Icon name={cur.icon} size={25}/></span>
+            <span style={{display:'inline-grid', placeItems:'center', width:46, height:46, borderRadius:13, background:'var(--bl-fill)', color:'var(--bl-tint)'}}><Icon name={cur.icon} size={25}/></span>
             <div style={{fontSize:16.5, fontWeight:650, marginTop:10}}>{cur.label}</div>
-            <div style={{fontSize:13, color:'var(--tk-label2)', marginTop:4, lineHeight:1.5}}>{blurb[tab]}</div>
+            <div style={{fontSize:13, color:'var(--bl-label2)', marginTop:4, lineHeight:1.5}}>{blurb[tab]}</div>
           </div>
         </div>
         <TabBar items={items} selected={tab} onSelect={setTab}/>
-      </TKFrame>;
+      </BLFrame>;
     }
   },
   split: {
-    title: 'SplitView', dep: 'touchkit.jsx', theme: 'tk', h: 470,
-    code: 'import { SplitView } from "./touchkit.tsx"\n\nexport default function App() {\n  const [wc, setWc] = React.useState("regular")  // measure your container for real\n  return (\n    <SplitView wc={wc}\n      sidebar={<Folders/>}\n      master={<NoteList/>}\n      detail={<Note/>}\n      drawerOpen={drawer} onCloseDrawer={() => setDrawer(false)}/>\n  )\n}',
+    title: 'SplitView', dep: 'blui.jsx', theme: 'bl', h: 470,
+    code: 'import { SplitView } from "./blui.tsx"\n\nexport default function App() {\n  const [wc, setWc] = React.useState("regular")  // measure your container for real\n  return (\n    <SplitView wc={wc}\n      sidebar={<Folders/>}\n      master={<NoteList/>}\n      detail={<Note/>}\n      drawerOpen={drawer} onCloseDrawer={() => setDrawer(false)}/>\n  )\n}',
     Render: function SplitLive() {
-      const TK = window.TouchKit; const [wc, setWc] = useState('regular'); const [drawer, setDrawer] = useState(false);
-      if (!TK) return null;
-      const {SplitView, Segmented, TKList, TKSection, TKRow, Haptics} = TK;
-      const mini = (name, rows) => <div style={{height:'100%', overflowY:'auto'}}><TKList>
-        <TKSection title={name}>{rows.map((t, i)=><TKRow key={t} title={t} divider={i < rows.length - 1}/>)}</TKSection>
-      </TKList></div>;
+      const BL = window.BLUI; const [wc, setWc] = useState('regular'); const [drawer, setDrawer] = useState(false);
+      if (!BL) return null;
+      const {SplitView, Segmented, BLList, BLSection, BLRow, Haptics} = BL;
+      const mini = (name, rows) => <div style={{height:'100%', overflowY:'auto'}}><BLList>
+        <BLSection title={name}>{rows.map((t, i)=><BLRow key={t} title={t} divider={i < rows.length - 1}/>)}</BLSection>
+      </BLList></div>;
       return <div>
         <div style={{display:'flex', gap:10, alignItems:'center', justifyContent:'center', marginBottom:10, flexWrap:'wrap'}}>
           <div style={{width:290}}><Segmented value={wc} onChange={id=>{ setWc(id); setDrawer(false); Haptics.selection(); }}
             options={[{id:'regular', label:'Regular'}, {id:'medium', label:'Medium'}, {id:'compact', label:'Compact'}]}/></div>
           {wc !== 'regular' ? <DemoBtn label="Sidebar" onPress={()=>setDrawer(true)} style={{padding:'6px 12px', fontSize:12.5}}/> : null}
         </div>
-        <TKFrame h={330} bg="var(--tk-bg)">
+        <BLFrame h={330} bg="var(--bl-bg)">
           <SplitView wc={wc} drawerOpen={drawer} onCloseDrawer={()=>setDrawer(false)}
-            sidebar={<div style={{height:'100%', background:'var(--tk-side)', overflowY:'auto'}}>{mini('Folders', ['All Notes', 'Shared', 'Archive'])}</div>}
+            sidebar={<div style={{height:'100%', background:'var(--bl-side)', overflowY:'auto'}}>{mini('Folders', ['All Notes', 'Shared', 'Archive'])}</div>}
             master={mini('Notes', ['Springs — stiffness 620', 'IndexBar scrub ticks', 'Credenza height morph'])}
-            detail={<div style={{height:'100%', display:'grid', placeItems:'center', background:'var(--tk-bg2)', textAlign:'center', padding:22}}>
+            detail={<div style={{height:'100%', display:'grid', placeItems:'center', background:'var(--bl-bg2)', textAlign:'center', padding:22}}>
               <div><div style={{fontWeight:650}}>Detail</div>
-              <div style={{fontSize:12.5, color:'var(--tk-label2)', marginTop:5, lineHeight:1.5}}>regular: 3 columns · medium: sidebar becomes a drawer · compact: collapses into the stack</div></div>
+              <div style={{fontSize:12.5, color:'var(--bl-label2)', marginTop:5, lineHeight:1.5}}>regular: 3 columns · medium: sidebar becomes a drawer · compact: collapses into the stack</div></div>
             </div>}/>
-        </TKFrame>
+        </BLFrame>
       </div>;
     }
   },
   indexbar: {
-    title: 'IndexBar', dep: 'touchkit.jsx', theme: 'tk', h: 470,
-    code: "import { IndexBar, TKList, TKSection, TKRow } from \"./touchkit.tsx\"\n\nexport default function App() {\n  const sc = React.useRef(null), els = React.useRef({})\n\n  // Any jump points you like — key is yours, preview is what the bubble shows\n  const stops = turns\n    .filter(t => t.role === \"user\")\n    .map(t => ({ key: t.id, preview: t.text, caption: \"You\" }))   // no label → a dot on the rail\n\n  return (\n    <div style={{ position: \"relative\", height: 340 }}>\n      <div ref={sc} style={{ position: \"absolute\", inset: 0, overflowY: \"auto\" }}>\n        {turns.map(t => <Turn key={t.id} t={t} ref={el => els.current[t.id] = el}/>)}\n      </div>\n      <IndexBar items={stops} top={8} bottom={8}\n        onJump={(key, stop) => sc.current.scrollTop = els.current[key].offsetTop - 8}/>\n    </div>\n  )\n}\n\n// Pass no items and it falls back to the UIKit A–Z form:\n// <IndexBar avail={new Set([\"A\",\"B\",\"C\"])} onLetter={L => jumpTo(L)}/>",
+    title: 'IndexBar', dep: 'blui.jsx', theme: 'bl', h: 470,
+    code: "import { IndexBar, BLList, BLSection, BLRow } from \"./blui.tsx\"\n\nexport default function App() {\n  const sc = React.useRef(null), els = React.useRef({})\n\n  // Any jump points you like — key is yours, preview is what the bubble shows\n  const stops = turns\n    .filter(t => t.role === \"user\")\n    .map(t => ({ key: t.id, preview: t.text, caption: \"You\" }))   // no label → a dot on the rail\n\n  return (\n    <div style={{ position: \"relative\", height: 340 }}>\n      <div ref={sc} style={{ position: \"absolute\", inset: 0, overflowY: \"auto\" }}>\n        {turns.map(t => <Turn key={t.id} t={t} ref={el => els.current[t.id] = el}/>)}\n      </div>\n      <IndexBar items={stops} top={8} bottom={8}\n        onJump={(key, stop) => sc.current.scrollTop = els.current[key].offsetTop - 8}/>\n    </div>\n  )\n}\n\n// Pass no items and it falls back to the UIKit A–Z form:\n// <IndexBar avail={new Set([\"A\",\"B\",\"C\"])} onLetter={L => jumpTo(L)}/>",
     Render: function IdxLive() {
-      const TK = window.TouchKit;
+      const BL = window.BLUI;
       const sc = useRef(null); const els = useRef({});
       const [mode, setMode] = useState('stops');
-      if (!TK) return null;
-      const {IndexBar, TKList, TKSection, TKRow, Segmented, Haptics} = TK;
+      if (!BL) return null;
+      const {IndexBar, BLList, BLSection, BLRow, Segmented, Haptics} = BL;
       const TURNS = [
         {id:'q1', role:'user', text:'Why is the workbench build slow after the docs split?'},
         {id:'a1', role:'assistant', text:'Two things: the docs registry re-transpiles on every nav, and the playground boots almost-node eagerly.'},
@@ -491,21 +491,21 @@ const LIVE = {
           <div style={{width:250}}><Segmented value={mode} onChange={id=>{ setMode(id); Haptics.selection(); }}
             options={[{id:'stops', label:'Custom stops'}, {id:'az', label:'A–Z fallback'}]}/></div>
         </div>
-        <TKFrame h={340} bg="var(--tk-bg)">
+        <BLFrame h={340} bg="var(--bl-bg)">
           <div ref={sc} style={{position:'absolute', inset:0, overflowY:'auto', paddingRight:26}}>
             {mode === 'az'
-              ? <TKList>
+              ? <BLList>
                   {letters.map(L=><div key={L} ref={el=>{ if (el) els.current[L] = el; }}>
-                    <TKSection title={L} sticky>{data[L].map((n, i)=><TKRow key={n} title={n} divider={i < data[L].length - 1}/>)}</TKSection>
+                    <BLSection title={L} sticky>{data[L].map((n, i)=><BLRow key={n} title={n} divider={i < data[L].length - 1}/>)}</BLSection>
                   </div>)}
-                </TKList>
+                </BLList>
               : <div style={{padding:'10px 14px', display:'flex', flexDirection:'column', gap:10}}>
                   {TURNS.map(t=><div key={t.id} ref={el=>{ if (el) els.current[t.id] = el; }}
                     style={{display:'flex', justifyContent:t.role === 'user' ? 'flex-end' : 'flex-start'}}>
                     <div style={{maxWidth:'80%', padding:'9px 13px', borderRadius:16, fontSize:13.5, lineHeight:1.4, textWrap:'pretty',
-                      background:t.role === 'user' ? 'var(--tk-tint)' : 'var(--tk-card)',
-                      color:t.role === 'user' ? '#fff' : 'var(--tk-label)',
-                      boxShadow:t.role === 'user' ? 'none' : '0 0 0 1px var(--tk-sep)'}}>{t.text}</div>
+                      background:t.role === 'user' ? 'var(--bl-tint)' : 'var(--bl-card)',
+                      color:t.role === 'user' ? '#fff' : 'var(--bl-label)',
+                      boxShadow:t.role === 'user' ? 'none' : '0 0 0 1px var(--bl-sep)'}}>{t.text}</div>
                   </div>)}
                   <div style={{height:120}}/>
                 </div>}
@@ -513,41 +513,41 @@ const LIVE = {
           {mode === 'az'
             ? <IndexBar avail={new Set(letters)} top={8} bottom={8} onLetter={jump}/>
             : <IndexBar items={stops} top={10} bottom={10} onJump={jump} label="Jump to a turn"/>}
-        </TKFrame>
-        <div style={{fontSize:12, color:'var(--tk-label2)', textAlign:'center', marginTop:8}}>
+        </BLFrame>
+        <div style={{fontSize:12, color:'var(--bl-label2)', textAlign:'center', marginTop:8}}>
           {mode === 'stops' ? 'Hover a dot to peek the turn · drag to scrub with a tick per stop' : 'No items → the A–Z rail, unchanged'}
         </div>
       </div>;
     }
   },
   sidedrawer: {
-    title: 'SideDrawer', dep: 'touchkit.jsx', theme: 'tk', h: 460,
-    code: 'import { SideDrawer } from "./touchkit.tsx"\n\nexport default function App() {\n  const [mode, setMode] = React.useState("overlay")  // or "fixed"\n  const [open, setOpen] = React.useState(false)\n  return (\n    <div style={{ position: "relative", display: "flex", height: 330 }}>\n      <main style={{ flex: 1 }}>\n        <button onClick={() => setOpen(true)}>Show Activity</button>\n      </main>\n      <SideDrawer mode={mode} open={open} onClose={() => setOpen(false)}\n        title="Activity" width={230}>\n        {/* same children in every presentation */}\n      </SideDrawer>\n    </div>\n  )\n}',
+    title: 'SideDrawer', dep: 'blui.jsx', theme: 'bl', h: 460,
+    code: 'import { SideDrawer } from "./blui.tsx"\n\nexport default function App() {\n  const [mode, setMode] = React.useState("overlay")  // or "fixed"\n  const [open, setOpen] = React.useState(false)\n  return (\n    <div style={{ position: "relative", display: "flex", height: 330 }}>\n      <main style={{ flex: 1 }}>\n        <button onClick={() => setOpen(true)}>Show Activity</button>\n      </main>\n      <SideDrawer mode={mode} open={open} onClose={() => setOpen(false)}\n        title="Activity" width={230}>\n        {/* same children in every presentation */}\n      </SideDrawer>\n    </div>\n  )\n}',
     Render: function DrawerLive() {
-      const TK = window.TouchKit; const [mode, setMode] = useState('overlay'); const [open, setOpen] = useState(false);
-      if (!TK) return null;
-      const {SideDrawer, Segmented, Haptics} = TK;
+      const BL = window.BLUI; const [mode, setMode] = useState('overlay'); const [open, setOpen] = useState(false);
+      if (!BL) return null;
+      const {SideDrawer, Segmented, Haptics} = BL;
       const rows = ['Outgoing call · 2 min', 'iMessage · yesterday', 'FaceTime · Mon', 'Mail · Re: schedule'];
       return <div>
         <div style={{display:'flex', justifyContent:'center', marginBottom:10}}>
           <div style={{width:230}}><Segmented value={mode} onChange={id=>{ setMode(id); setOpen(id === 'fixed'); Haptics.selection(); }}
             options={[{id:'overlay', label:'Overlay'}, {id:'fixed', label:'Fixed'}]}/></div>
         </div>
-        <TKFrame h={330} bg="var(--tk-bg)">
+        <BLFrame h={330} bg="var(--bl-bg)">
           <div style={{position:'absolute', inset:0, display:'flex'}}>
             <div style={{flex:1, minWidth:0, display:'grid', placeItems:'center', textAlign:'center', padding:20}}>
               <div>
                 <div style={{fontWeight:650, fontSize:15.5}}>Detail view</div>
                 {mode === 'overlay'
                   ? <DemoBtn label="Show Activity" onPress={()=>{ Haptics.impact('light'); setOpen(true); }} style={{marginTop:12, fontSize:13, padding:'8px 14px'}}/>
-                  : <div style={{fontSize:12.5, color:'var(--tk-label2)', marginTop:6, lineHeight:1.5}}>Docked column — no scrim,<br/>part of the layout.</div>}
+                  : <div style={{fontSize:12.5, color:'var(--bl-label2)', marginTop:6, lineHeight:1.5}}>Docked column — no scrim,<br/>part of the layout.</div>}
               </div>
             </div>
             <SideDrawer mode={mode} open={open} onClose={()=>setOpen(false)} title="Activity" width={230}>
-              {rows.map(t=><div key={t} style={{padding:'11px 16px', fontSize:13, borderBottom:'1px solid var(--tk-sep)', color:'var(--tk-label2)'}}>{t}</div>)}
+              {rows.map(t=><div key={t} style={{padding:'11px 16px', fontSize:13, borderBottom:'1px solid var(--bl-sep)', color:'var(--bl-label2)'}}>{t}</div>)}
             </SideDrawer>
           </div>
-        </TKFrame>
+        </BLFrame>
       </div>;
     }
   },
@@ -598,7 +598,7 @@ const LIVE = {
     }
   },
   stream: {
-    title: 'MdView · GitbookStreamdown', dep: 'workbench.jsx', theme: 'tk', h: 480,
+    title: 'MdView · GitbookStreamdown', dep: 'workbench.jsx', theme: 'bl', h: 480,
     code: 'import { MdView } from "./workbench.tsx"\n\nexport default function App() {\n  const [text, setText] = React.useState("")\n  const [live, setLive] = React.useState(false)\n  // feed chunks in as they arrive from your stream:\n  //   setText(partial); setLive(true)  …  setLive(false) when done\n  return <MdView markdown={text} streaming={live}/>\n}',
     Render: function StreamLive() {
       const [txt, setTxt] = useState(REPLY_SERVERS);
@@ -626,9 +626,9 @@ const LIVE = {
 };
 /* The runtime modules register a global; the .tsx facade next to each one turns that global into real
    named ESM exports, so docs samples read `import { ChatShell } from "./chatkit.tsx"`. */
-const DEP_GLOBAL = {'touchkit.jsx':'TouchKit', 'workbench.jsx':'TouchKitWB', 'chatkit.jsx':'TouchKitChat', 'pencilkit.jsx':'TouchKitPencil', 'beautiful.jsx':'BUI'};
+const DEP_GLOBAL = {'blui.jsx':'BL UI', 'workbench.jsx':'BLWorkbench', 'chatkit.jsx':'BLChat', 'pencilkit.jsx':'BLPencil', 'beautiful.jsx':'BUI'};
 function tsxFacade(dep) {
-  const g = DEP_GLOBAL[dep] || 'TouchKit';
+  const g = DEP_GLOBAL[dep] || 'BL UI';
   const ns = window[g] || {};
   const names = Object.keys(ns).filter(k => /^[A-Za-z_$][\w$]*$/.test(k));
   return 'import "./' + dep + '"\n'
@@ -649,8 +649,8 @@ function DocsLive({demo}) {
     return () => window.removeEventListener('bui-ready', h);
   }, [demo]);   /* React reuses this component across page navs — reset per demo */
   useEffect(() => {
-    if (!spec || spec.theme !== 'tk' || window.TouchKit) return;
-    const t = setInterval(() => { if (window.TouchKit) { clearInterval(t); bump(x => x + 1); } }, 150);
+    if (!spec || spec.theme !== 'bl' || window.BLUI) return;
+    const t = setInterval(() => { if (window.BLUI) { clearInterval(t); bump(x => x + 1); } }, 150);
     const stop = setTimeout(() => clearInterval(t), 12000);
     return () => { clearInterval(t); clearTimeout(stop); };
   }, []);
@@ -675,8 +675,8 @@ function DocsLive({demo}) {
     return () => window.removeEventListener('wb-dspg', h);
   }, [tab, demo]);
   if (!spec) return null;
-  const ready = spec.theme !== 'tk' || !!window.TouchKit;
-  const Seg = window.TouchKit && window.TouchKit.Segmented;
+  const ready = spec.theme !== 'bl' || !!window.BLUI;
+  const Seg = window.BLUI && window.BLUI.Segmented;
   const pg = window.__wbDSPG;
   const Render = spec.Render;
   const tabs = [{id:'preview', label:'Preview'}, {id:'code', label:'Code'}, {id:'node', label:'almost-node'}];
@@ -684,18 +684,18 @@ function DocsLive({demo}) {
     <div style={{display:'flex', alignItems:'center', gap:10, padding:'8px 8px 8px 14px', borderBottom:'1px solid rgba(20,20,40,.08)', flexWrap:'wrap'}}>
       <span style={{fontSize:12, fontWeight:650, fontFamily:MONO, color:'#55555E'}}>{spec.title}</span>
       <span style={{flex:1}}/>
-      <div style={{...TKL, width:268, fontFamily:WFONT}}>
+      <div style={{...BLL, width:268, fontFamily:WFONT}}>
         {Seg ? <Seg options={tabs} value={tab} onChange={id => { setTab(id); tick(); }}/>
           : <div style={{display:'flex', gap:4}}>{tabs.map(t => <button key={t.id} className="wb-btn" onClick={() => setTab(t.id)}
               style={{border:0, borderRadius:7, padding:'5px 10px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
                 background:tab === t.id ? 'rgba(10,132,255,.12)' : 'none', color:tab === t.id ? '#0A84FF' : '#71717C'}}>{t.label}</button>)}</div>}
       </div>
     </div>
-    {tab === 'preview' ? <div style={{...(spec.theme === 'wb' ? WBD : TKL), background:spec.theme === 'wb' ? '#141419' : '#F2F2F7',
+    {tab === 'preview' ? <div style={{...(spec.theme === 'wb' ? WBD : BLL), background:spec.theme === 'wb' ? '#141419' : '#F2F2F7',
         colorScheme:spec.theme === 'wb' ? 'dark' : 'light', padding:18, minHeight:spec.h - 90,
         fontFamily:WFONT, color:spec.theme === 'wb' ? '#EDEDF2' : '#0B0B0F', boxSizing:'border-box'}}>
       {ready ? <ErrB label="preview"><Render/></ErrB>
-        : <div style={{fontFamily:MONO, fontSize:12, color:'#8A8A94'}}>loading touchkit.jsx…</div>}
+        : <div style={{fontFamily:MONO, fontSize:12, color:'#8A8A94'}}>loading blui.jsx…</div>}
     </div> : null}
     {tab === 'code' ? <div style={{padding:'4px 16px 10px'}}><MdView markdown={'```jsx\n' + spec.code + '\n```'}/></div> : null}
     {tab === 'node' ? <div style={{padding:14}}>
@@ -934,7 +934,7 @@ function fakeShell(cmd, files) {
   if (c === 'clear') return 'CLEAR';
   return [{t:'zsh: command not found: ' + c.split(' ')[0], c:'#FF8A80'}];
 }
-const TERM_FILES = ['package.json', 'src', 'touchkit.jsx', 'workbench.jsx', 'vite.config.js'];
+const TERM_FILES = ['package.json', 'src', 'blui.jsx', 'workbench.jsx', 'vite.config.js'];
 function TermBody({seed, autoFocus}) {
   const [hist, setHist] = useState(seed || []);
   const [val, setVal] = useState('');
@@ -1034,7 +1034,7 @@ const FILE_TREE = [
   ['components', 2, 'folder', 1],
   ['Credenza.tsx', 3, 'doc'], ['SideDrawer.tsx', 3, 'doc'], ['MessageScroller.tsx', 3, 'doc'],
   ['haptics.ts', 2, 'doc'], ['App.tsx', 2, 'doc'],
-  ['touchkit.jsx', 1, 'doc'], ['workbench.jsx', 1, 'doc'], ['package.json', 1, 'doc'], ['vite.config.js', 1, 'doc']
+  ['blui.jsx', 1, 'doc'], ['workbench.jsx', 1, 'doc'], ['package.json', 1, 'doc'], ['vite.config.js', 1, 'doc']
 ];
 function SurfaceFiles() {
   const [sel, setSel] = useState('App.tsx');
@@ -1054,14 +1054,14 @@ const DIFF_LINES = [
   ['-', '  import("https://esm.run/ios-vibrator-pro-max");'],
   ['+', '  if (stub) delete navigator.vibrate;     // clear blockers first'],
   ['+', '  import("…/ios-vibrator-pro-max@3.0.3/+esm");  // pinned'],
-  ['+', '  window.addEventListener("tk-vib", report);'],
+  ['+', '  window.addEventListener("bl-vib", report);'],
   [' ', '}']
 ];
 function SurfaceDiff() {
   return <div className="wb-scroll" style={{flex:1, minHeight:0, overflowY:'auto', padding:'10px 12px'}}>
     <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
       <WIcon name="doc" size={15} sw={1.8} style={{color:'var(--wb-label3)'}}/>
-      <span style={{fontSize:12.5, fontFamily:MONO}}>touchkit.jsx</span>
+      <span style={{fontSize:12.5, fontFamily:MONO}}>blui.jsx</span>
       <span style={{fontSize:11.5, fontFamily:MONO, color:'var(--wb-green)'}}>+3</span>
       <span style={{fontSize:11.5, fontFamily:MONO, color:'var(--wb-red)'}}>−2</span>
     </div>
@@ -1151,11 +1151,11 @@ function AnnotateLightbox({src, onClose, onSave}) {
   const imgRef = useRef(null);
   const [, bump] = useState(0);
   useEffect(() => {
-    if (window.TouchKitPencil) return;
-    const i = setInterval(() => { if (window.TouchKitPencil) { clearInterval(i); bump(x => x + 1); } }, 150);
+    if (window.BLPencil) return;
+    const i = setInterval(() => { if (window.BLPencil) { clearInterval(i); bump(x => x + 1); } }, 150);
     return () => clearInterval(i);
   }, []);
-  const PK = window.TouchKitPencil;
+  const PK = window.BLPencil;
   const save = () => {
     const img = imgRef.current, box = boxRef.current;
     if (!img || !box) return onClose();
@@ -1185,8 +1185,8 @@ function AnnotateLightbox({src, onClose, onSave}) {
         {btn('Save annotation', true, save)}
       </div>
       <div ref={boxRef} style={{position:'relative', borderRadius:14, overflow:'hidden', border:'1px solid rgba(255,255,255,.14)', background:'#0C0C10',
-          '--tk-card':'#1C1C23', '--tk-sep':'rgba(255,255,255,.12)', '--tk-label':'#EDEDF2', '--tk-label2':'rgba(235,235,245,.6)',
-          '--tk-label3':'rgba(235,235,245,.35)', '--tk-fill':'rgba(255,255,255,.07)', '--tk-fill2':'rgba(255,255,255,.14)', '--tk-tint':'var(--wb-tint, #0A84FF)'}}>
+          '--bl-card':'#1C1C23', '--bl-sep':'rgba(255,255,255,.12)', '--bl-label':'#EDEDF2', '--bl-label2':'rgba(235,235,245,.6)',
+          '--bl-label3':'rgba(235,235,245,.35)', '--bl-fill':'rgba(255,255,255,.07)', '--bl-fill2':'rgba(255,255,255,.14)', '--bl-tint':'var(--wb-tint, #0A84FF)'}}>
         <img ref={imgRef} src={src} alt="" style={{display:'block', maxWidth:'86vw', maxHeight:'68vh', minWidth:340, minHeight:240, objectFit:'contain'}}/>
         {PK && PK.PencilCanvas ? <PK.PencilCanvas dark/> : <div style={{position:'absolute', inset:0, display:'grid', placeItems:'center', color:'#9C9CA6', fontSize:12.5, fontFamily:WFONT}}>loading PencilKit…</div>}
       </div>
@@ -1507,7 +1507,7 @@ function WorkbenchShell(props) {
     '--wb-bg':'#141419', '--wb-side':'#101015', '--wb-card':'#1C1C23', '--wb-fill':'rgba(255,255,255,.06)',
     '--wb-fill2':'rgba(255,255,255,.11)', '--wb-sep':'rgba(255,255,255,.08)', '--wb-label':'#EDEDF2',
     '--wb-label2':'#9C9CA6', '--wb-label3':'#69696F', '--wb-tint':props.tint || '#0A84FF',
-    '--wb-green':'#30D158', '--wb-red':'#FF453A', '--tk-tint':props.tint || '#0A84FF',
+    '--wb-green':'#30D158', '--wb-red':'#FF453A', '--bl-tint':props.tint || '#0A84FF',
     '--mdc-code':'rgba(255,255,255,.09)', '--mdc-pre':'#0C0C10', '--mdc-border':'rgba(255,255,255,.1)', '--mdc-mut':'#9C9CA6'
   };
   return <WBShellCtx.Provider value={ctx}>
@@ -1660,6 +1660,6 @@ function WBTabsSlot({kind, onOpen}) {
     onPick={k=>{ tick(); if (k === 'chat') setTab('chat'); else { onOpen(k); setTab('surface'); } }}/>;
 }
 
-const TouchKitWB = {Workbench, WorkbenchShell, useWorkbenchShell, WBSidebar, MessageScroller, MdView, FbMd, DocsLive, Composer, EmptyThread, TerminalDock, TermBody, SnapSheet, SurfacePanel, SurfaceTabBar, WIcon, dsLoad, dsPlayground};
-window.TouchKitWB = TouchKitWB;
-if (typeof module !== 'undefined') module.exports = {Workbench, WorkbenchShell, MdView, MessageScroller, SnapSheet, DocsLive, TouchKitWB};
+const BLWorkbench = {Workbench, WorkbenchShell, useWorkbenchShell, WBSidebar, MessageScroller, MdView, FbMd, DocsLive, Composer, EmptyThread, TerminalDock, TermBody, SnapSheet, SurfacePanel, SurfaceTabBar, WIcon, dsLoad, dsPlayground};
+window.BLWorkbench = BLWorkbench;
+if (typeof module !== 'undefined') module.exports = {Workbench, WorkbenchShell, MdView, MessageScroller, SnapSheet, DocsLive, BLWorkbench};

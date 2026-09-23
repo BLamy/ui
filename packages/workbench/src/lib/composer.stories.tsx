@@ -59,7 +59,7 @@ export const Interactive: Story = {
 };
 
 /* the annotate lightbox that opens when a pasted attachment is clicked — pass a drawing
-   surface (e.g. PencilCanvas from @touchkit/pencilkit) as `canvas`; without one it shows
+   surface (e.g. PencilCanvas from @brett_lamy/pencilkit) as `canvas`; without one it shows
    the loading placeholder the prototype rendered before PencilKit arrived. */
 const SAMPLE_IMG =
   'data:image/svg+xml;charset=utf-8,' +

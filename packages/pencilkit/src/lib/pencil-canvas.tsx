@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { cn, Haptics } from '@touchkit/ui';
+import { cn, Haptics } from '@brett_lamy/ui';
 import {
   PK_INKS,
   PK_TOOLS,
@@ -162,13 +162,13 @@ export function PencilCanvas({
           data-slot="pencil-canvas-hint"
           style={{ position: 'absolute', inset: '0 0 90px', display: 'grid', placeItems: 'center', pointerEvents: 'none' }}
         >
-          <div style={{ textAlign: 'center', color: 'var(--tk-label3)' }}>{hint}</div>
+          <div style={{ textAlign: 'center', color: 'var(--bl-label3)' }}>{hint}</div>
         </div>
       ) : null}
       {status != null ? (
         <div
           data-slot="pencil-canvas-status"
-          style={{ position: 'absolute', top: 10, right: 12, fontFamily: PMONO, fontSize: 10.5, color: 'var(--tk-label3)', pointerEvents: 'none' }}
+          style={{ position: 'absolute', top: 10, right: 12, fontFamily: PMONO, fontSize: 10.5, color: 'var(--bl-label3)', pointerEvents: 'none' }}
         >
           {status}
         </div>

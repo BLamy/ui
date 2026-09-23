@@ -1,5 +1,5 @@
 {
-  "name": "@touchkit/pencilkit",
+  "name": "@brett_lamy/pencilkit",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -16,7 +16,7 @@
     "./styles.css": "./dist/index.css"
   },
   "dependencies": {
-    "@touchkit/ui": "workspace:*",
+    "@brett_lamy/ui": "workspace:*",
     "perfect-freehand": "^1.2.2"
   },
   "peerDependencies": {
@@ -37,7 +37,7 @@
   },
   "keywords": [
     "react",
-    "touchkit",
+    "blui",
     "ios",
     "react-aria",
     "shadcn",

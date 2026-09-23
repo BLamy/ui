@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Haptics } from '@touchkit/ui';
+import { Haptics } from '@brett_lamy/ui';
 import type { PencilStroke } from './constants';
 import type { PencilStrokesChangeSource } from './pencil-canvas';
 

@@ -1,9 +1,9 @@
 {
-  "name": "@touchkit/workbench-demo",
+  "name": "@brett_lamy/workbench-demo",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "@touchkit/ui": "workspace:*",
-    "@touchkit/workbench": "workspace:*"
+    "@brett_lamy/ui": "workspace:*",
+    "@brett_lamy/workbench": "workspace:*"
   }
 }

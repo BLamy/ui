@@ -1,11 +1,11 @@
-/* Contacts — the TouchKit demo app, recomposed from the distributable @touchkit/ui package.
+/* Contacts — the BL UI demo app, recomposed from the distributable @brett_lamy/ui package.
    Same tree as the prototype: SplitView / NavigationStack / TabBar nest to produce behavior. */
 import React from 'react';
 import {
-  TouchKitProvider, Haptics, Icon, Avatar, SearchField, ListSection, ListRow,
+  BLProvider, Haptics, Icon, Avatar, SearchField, ListSection, ListRow,
   IndexBar, TabBar, EditBar, NavigationStack, SplitView, Credenza, SideDrawer,
   HapticIndicator, HapticsPlayground, BARH,
-} from '@touchkit/ui';
+} from '@brett_lamy/ui';
 import {
   AL, CONTACTS, GROUPS, RECENTS, Contact,
 } from './data';
@@ -82,7 +82,7 @@ export function ContactsApp(props: ContactsAppProps) {
     for (let j = i; j >= 0; j--) if (avail.has(AL[j])) { t = AL[j]; break; }
     if (!t) for (let j = i + 1; j < AL.length; j++) if (avail.has(AL[j])) { t = AL[j]; break; }
     const el = t && secEls.current[t]; if (!el) return;
-    const s = el.closest('.tk-scroll'); if (!s) return;
+    const s = el.closest('.bl-scroll'); if (!s) return;
     s.scrollTop = s.scrollTop + el.getBoundingClientRect().top - s.getBoundingClientRect().top - BARH - safeIns + 1;
   };
   const togglePick = (id: string) => { const n = new Set(pick); n.has(id) ? n.delete(id) : n.add(id); setPick(n); Haptics.selection(); };
@@ -92,7 +92,7 @@ export function ContactsApp(props: ContactsAppProps) {
   const popActive = () => { if (tab === 'contacts') popContacts(); else setSub(null); };
   const grouped = listStyle === 'grouped';
   const listContent = <div style={{ padding: grouped ? '0 16px' : 0 }}>
-    {sections.length === 0 ? <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--tk-label2)', fontSize: 15 }}>No results{ql ? ' for “' + q + '”' : ''}</div> : null}
+    {sections.length === 0 ? <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--bl-label2)', fontSize: 15 }}>No results{ql ? ' for “' + q + '”' : ''}</div> : null}
     {sections.map(s => <ListSection key={s.L} sticky={!grouped} title={s.L} innerRef={(el: HTMLElement | null) => { if (el) secEls.current[s.L] = el; }}>
       {s.items.map((c, i) => <ListRow key={c.id} rowRole="option"
         title={<span>{c.f} <span style={{ fontWeight: 600 }}>{c.l}</span></span>}
@@ -105,25 +105,25 @@ export function ContactsApp(props: ContactsAppProps) {
         onDelete={edit ? undefined : () => delOne(c.id)}
         divider={i < s.items.length - 1} />)}
     </ListSection>)}
-    {sections.length ? <div style={{ padding: '16px 0 4px', textAlign: 'center', fontSize: 14.5, color: 'var(--tk-label2)' }}>
+    {sections.length ? <div style={{ padding: '16px 0 4px', textAlign: 'center', fontSize: 14.5, color: 'var(--bl-label2)' }}>
       {visible.length} Contact{visible.length === 1 ? '' : 's'}{gone.size ? ' · pull down to restore ' + gone.size + ' deleted' : ''}</div> : null}
   </div>;
   const listScreen: any = {
     key: 'list', title: edit ? (selN ? selN + ' Selected' : 'Select Contacts') : listTitle, largeTitle: true, grouped,
     subheader: <SearchField q={q} setQ={setQ} />,
-    leading: collapsed ? <button className="tk-btn" onClick={() => { setDrawer(true); Haptics.impact('light'); }} aria-label="Show sidebar"
-      style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--tk-tint)', display: 'grid', padding: '8px 10px' }}>
+    leading: collapsed ? <button className="bl-btn" onClick={() => { setDrawer(true); Haptics.impact('light'); }} aria-label="Show sidebar"
+      style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--bl-tint)', display: 'grid', padding: '8px 10px' }}>
       <Icon name="sidebar" size={22} sw={1.9} /></button> : null,
-    trailing: <button className="tk-btn" onClick={() => { edit ? exitEdit() : setEdit(true); Haptics.impact('light'); }}
-      style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--tk-tint)', fontFamily: 'inherit', fontSize: 17, fontWeight: edit ? 700 : 400, padding: '8px 10px' }}>{edit ? 'Done' : 'Select'}</button>,
+    trailing: <button className="bl-btn" onClick={() => { edit ? exitEdit() : setEdit(true); Haptics.impact('light'); }}
+      style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--bl-tint)', fontFamily: 'inherit', fontSize: 17, fontWeight: edit ? 700 : 400, padding: '8px 10px' }}>{edit ? 'Done' : 'Select'}</button>,
     content: listContent,
     overlay: <IndexBar avail={avail} onLetter={jump} top={BARH + 4 + safeIns} bottom={collapsed ? 74 : 10} />,
     onRefresh: () => { if (gone.size) { setGone(new Set()); Haptics.notification('success'); } },
   };
   const detailScreen: any = selC ? {
     key: 'detail', title: selC.f + ' ' + selC.l, titleOnScroll: true, grouped: true, maxW: 640,
-    trailing: <button className="tk-btn" aria-label="Contact activity" onClick={() => { Haptics.impact('light'); setAct(a => !a); }}
-      style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--tk-tint)', display: 'grid', padding: '8px 10px' }}>
+    trailing: <button className="bl-btn" aria-label="Contact activity" onClick={() => { Haptics.impact('light'); setAct(a => !a); }}
+      style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--bl-tint)', display: 'grid', padding: '8px 10px' }}>
       <Icon name="clock" size={22} sw={2} /></button>,
     content: <DetailView c={selC} fav={favs.has(selC.id)} ringtone={tones[selC.id] || 'Reflection'}
       onFav={v => { const n = new Set(favs); v ? n.add(selC.id) : n.delete(selC.id); setFavs(n); }}
@@ -143,7 +143,7 @@ export function ContactsApp(props: ContactsAppProps) {
     key: 'settings', title: 'Settings', largeTitle: true, grouped: true, maxW: 660,
     content: <SettingsView s={{ comp, setComp, listStyle, setListStyle, hap, setHap, ind, setInd, dark, setDark, tint, setTint, openAbout: () => setSub('about'), openPlay: () => setSub('play') }} />,
   };
-  const aboutScreen: any = sub === 'about' ? { key: 'about', title: 'About TouchKit', grouped: true, maxW: 660, content: <AboutView /> } : null;
+  const aboutScreen: any = sub === 'about' ? { key: 'about', title: 'About BL UI', grouped: true, maxW: 660, content: <AboutView /> } : null;
   const playScreen: any = sub === 'play' ? { key: 'play', title: 'Haptics Playground', grouped: true, maxW: 660, content: <HapticsPlayground /> } : null;
   const contactsScreens = [listScreen, ...(collapsed && detailScreen ? [detailScreen] : []), ...(collapsed && activityScreen ? [activityScreen] : []), ...(collapsed && ringScreen ? [ringScreen] : [])];
   const settingsScreens = [settingsScreen, ...(playScreen ? [playScreen] : []), ...(aboutScreen ? [aboutScreen] : [])];
@@ -172,9 +172,9 @@ export function ContactsApp(props: ContactsAppProps) {
               ? <NavigationStack screens={[detailScreen, ...(ringScreen ? [ringScreen] : [])]} onPop={() => setRing(false)} />
               : <div style={{ height: '100%', display: 'grid', placeItems: 'center' }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ display: 'grid', placeItems: 'center', color: 'var(--tk-label3)', marginBottom: 10 }}><Icon name="person" size={52} sw={1.2} /></div>
-                  <div style={{ fontSize: 16, color: 'var(--tk-label2)' }}>No Contact Selected</div>
-                  <div style={{ fontSize: 13, color: 'var(--tk-label3)', marginTop: 4 }}>Choose a contact from the list</div>
+                  <div style={{ display: 'grid', placeItems: 'center', color: 'var(--bl-label3)', marginBottom: 10 }}><Icon name="person" size={52} sw={1.2} /></div>
+                  <div style={{ fontSize: 16, color: 'var(--bl-label2)' }}>No Contact Selected</div>
+                  <div style={{ fontSize: 13, color: 'var(--bl-label3)', marginTop: 4 }}>Choose a contact from the list</div>
                 </div>
               </div>}
           </div>
@@ -183,8 +183,8 @@ export function ContactsApp(props: ContactsAppProps) {
           </SideDrawer>
         </div>} />
       : <div style={{ display: 'flex', height: '100%' }}>
-        <div style={{ width: 264, flexShrink: 0, borderRight: '1px solid var(--tk-sep)', background: 'var(--tk-side)', transition: 'background .25s' }}>{sidebarEl}</div>
-        <div style={{ flex: 1, position: 'relative', background: 'var(--tk-bg2)', minWidth: 0 }}>
+        <div style={{ width: 264, flexShrink: 0, borderRight: '1px solid var(--bl-sep)', background: 'var(--bl-side)', transition: 'background .25s' }}>{sidebarEl}</div>
+        <div style={{ flex: 1, position: 'relative', background: 'var(--bl-bg2)', minWidth: 0 }}>
           <NavigationStack screens={settingsScreens} onPop={popActive} />
         </div>
       </div>;
@@ -205,7 +205,7 @@ export function ContactsApp(props: ContactsAppProps) {
       master={<NavigationStack screens={[root, ...stack.slice(1)]} onPop={popActive} />} />;
   }
   return <div ref={rootRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-    <TouchKitProvider dark={dark} tint={tint} safeTop={safeIns}>
+    <BLProvider dark={dark} tint={tint} safeTop={safeIns}>
       {body}
       {!xw && tab === 'contacts' ? <SideDrawer mode="overlay" open={!!(act && selC && wc !== 'compact')} onClose={() => setAct(false)} title="Activity" width={340}>
         {selC ? <ActivityView c={selC} /> : null}
@@ -215,7 +215,7 @@ export function ContactsApp(props: ContactsAppProps) {
         {selC ? <ShareViews c={selC} view={share || 'menu'} go={goShare} onClose={() => setShare(null)} /> : null}
       </Credenza>
       <HapticIndicator visible={ind} bottom={collapsed ? 74 : 14} />
-    </TouchKitProvider>
+    </BLProvider>
   </div>;
 }
 

@@ -44,8 +44,8 @@ export default defineConfig(() => ({
       'lowlight',
       'lowlight > highlight.js',
       // docstream pulls CommonJS deps (style-to-js, debug) the browser can't import unbundled; pre-bundle it whole.
-      '@touchkit/workbench > @brett_lamy/docstream',
-      '@touchkit/workbench > @brett_lamy/docstream-editor',
+      '@brett_lamy/workbench > @brett_lamy/docstream',
+      '@brett_lamy/workbench > @brett_lamy/docstream-editor',
     ],
   },
   // Uncomment this if you are using workers.

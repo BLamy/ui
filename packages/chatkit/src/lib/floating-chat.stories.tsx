@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Composer } from '@touchkit/workbench';
-import '@touchkit/workbench/styles.css';
+import { Composer } from '@brett_lamy/workbench';
+import '@brett_lamy/workbench/styles.css';
 import { FloatingChat, type FloatingChatFabPosition } from './floating-chat';
 import { K, KFONT } from './chat-tokens';
 import '../styles.css';
@@ -17,9 +17,9 @@ interface Args {
 
 const LINES = [
   ['You', 'Summarise what changed in the last release.'],
-  ['TouchKit', 'Three things: the new floating chat surface, a tile map, and the docs restructure.'],
+  ['BL UI', 'Three things: the new floating chat surface, a tile map, and the docs restructure.'],
   ['You', 'Which one needs a follow-up?'],
-  ['TouchKit', 'The map — attribution and a light tile set are still open.'],
+  ['BL UI', 'The map — attribution and a light tile set are still open.'],
 ];
 
 function Transcript() {
@@ -28,7 +28,7 @@ function Transcript() {
       {LINES.map(([author, copy], index) => (
         // The newest lines hug the composer so they are what peeks out of the closed chat.
         <div key={copy} style={{ marginBottom: 16, marginTop: index === 0 ? 'auto' : undefined }}>
-          <div style={{ color: index % 2 ? '#68A7FF' : 'var(--tk-label2)', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{author}</div>
+          <div style={{ color: index % 2 ? '#68A7FF' : 'var(--bl-label2)', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{author}</div>
           <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>{copy}</div>
         </div>
       ))}

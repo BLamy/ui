@@ -7,7 +7,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { Haptics, collectSlots, defineSlot } from '@touchkit/ui';
+import { Haptics, collectSlots, defineSlot } from '@brett_lamy/ui';
 import { ChatIcon, chatIconPaths } from './chat-icon';
 import { cn } from './cn';
 import {
