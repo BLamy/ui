@@ -24,6 +24,8 @@
   --dk-link-hover: #1E4AA6;
   --dk-demo: #F2F2F7;
   --dk-shadow: rgba(15, 15, 35, 0.3);
+  --dk-code: rgba(20, 20, 40, 0.035);
+  --dk-success: #1E9E48;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -47,6 +49,8 @@
   --dk-link-hover: #9CC2FF;
   --dk-demo: #0A0A0C;
   --dk-shadow: rgba(0, 0, 0, 0.6);
+  --dk-code: rgba(255, 255, 255, 0.035);
+  --dk-success: #32D74B;
   --background: #0E0E11;
   --foreground: #ECECF1;
   --card: #17171B;
@@ -199,4 +203,67 @@ a:hover {
 }
 .dk-theme:hover {
   background: var(--dk-hover);
+}
+
+/* Live example cards — Docstream's ReactDemo (.docs-react-demo) themed with the shell palette, so the
+   header, code panel, fade, and View Code pill follow light/dark. The preview itself is a BL/Workbench stage. */
+.bl-live.docs-react-demo {
+  --gb-panel: var(--dk-card);
+  --gb-panel-foreground: var(--dk-fg);
+  --gb-muted-foreground: var(--dk-muted);
+  --gb-border: var(--dk-border4);
+  --gb-accent: var(--dk-hover);
+  --gb-primary: var(--dk-accent);
+  --gb-code-bg: var(--dk-code);
+  --gb-success: var(--dk-success);
+  margin: 18px 0;
+  border-radius: 14px;
+  color: var(--dk-fg);
+}
+.bl-live .docs-react-demo-header {
+  flex-wrap: wrap;
+  min-height: 46px;
+  padding: 7px 8px 7px 14px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.bl-live .docs-react-demo-status {
+  font-weight: 650;
+  font-size: 10.5px;
+}
+.bl-live .bl-live-switch {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.bl-live .docs-react-demo-status ~ .bl-live-switch {
+  margin-left: 4px;
+}
+.bl-live .docs-react-demo-code-body,
+.bl-live .docs-react-demo-code-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.bl-live .docs-react-demo-code-body {
+  --docs-react-demo-code-line-height: 20px;
+  font-size: 12.5px;
+  color: var(--dk-fg);
+  padding: 14px 16px 44px;
+}
+.bl-live .docs-code-lineno {
+  color: var(--dk-faint);
+}
+.bl-live .docs-react-demo-code-toggle {
+  bottom: 10px;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 12px;
+  box-shadow: 0 1px 3px var(--dk-shadow);
+}
+
+/* @pierre/trees declares `color-scheme: light dark` on its host, so it follows the OS rather than the
+   Workbench appearance around it; pin it to the surrounding scheme. */
+.wb-dark [data-renderer='pierre-trees'] > * {
+  color-scheme: dark;
+}
+.wb-light [data-renderer='pierre-trees'] > * {
+  color-scheme: light;
 }

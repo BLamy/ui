@@ -41,10 +41,25 @@ export const DemoBtn = ({ label, onPress, style }: { label: string; onPress?: ()
   }}>{label}</button>
 );
 
+export interface LiveVariant { id: string; label: string }
+
 export interface LiveSpec {
   title: string;
+  /** Token family the preview surface sets: BL UI (`--bl-*`) or Workbench (`--wb-*`). Both follow the docs' appearance. */
   theme: 'bl' | 'wb';
+  /** Approximate preview height (informational; the card sizes to its content). */
   h: number;
+  /** Copy-pasteable TSX shown in the code panel. */
   code: string;
-  Render: () => ReactNode;
+  /** Per-variant code, when the header switch changes what the sample should show. */
+  codeFor?: (variant: string) => string;
+  /** Header switch between demo variants — rendered in the card header, handed to `Render` as `variant`. */
+  variants?: LiveVariant[];
+  /** Width of the header switch. */
+  variantsWidth?: number;
+  /** Small header label (e.g. "needs network"); defaults to "live". */
+  status?: string | false;
+  /** Drop the padded preview surface (for demos that bring their own full-bleed frame). */
+  bleed?: boolean;
+  Render: (props: { variant: string }) => ReactNode;
 }
