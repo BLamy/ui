@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from "react"
 
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
+import type { EditorAttachment } from "./attachments"
 
 export interface EditorRuntimeOptions {
   sourceClient?: SourceReferenceClient
@@ -8,6 +9,8 @@ export interface EditorRuntimeOptions {
   sourceAutoSave?: boolean | number
   onSourceSaved?: (snapshot: SourceFileSnapshot) => void
   onSourceError?: (error: Error) => void
+  attachments?: EditorAttachment[]
+  onAttachmentOpen?: (attachment: EditorAttachment) => void
 }
 
 const EditorRuntimeContext = createContext<EditorRuntimeOptions>({})

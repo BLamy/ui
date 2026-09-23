@@ -1,4 +1,19 @@
-import { plainText, type Block, type DocumentNode, type Inline, type ListItemNode } from "@brett_lamy/docstream/gitbook"
+import {
+  plainText,
+  serializeMarkdown,
+  type Block,
+  type DocumentNode,
+  type Inline,
+  type ListItemNode,
+} from "@brett_lamy/docstream/gitbook"
+
+// Attachment chips live in markdown as images with an `attachment:<id>` URL.
+const ATTACHMENT_SCHEME = "attachment:"
+const isAttachmentSrc = (src: string | undefined) => !!src && src.startsWith(ATTACHMENT_SCHEME)
+const attachmentPM = (src: string, alt: string | undefined): PMNode => ({
+  type: "gbAttachment",
+  attrs: { id: src.slice(ATTACHMENT_SCHEME.length), name: alt ?? "" },
+})
 
 // TipTap/ProseMirror JSON shape (loosely typed on purpose)
 export interface PMNode {
@@ -23,6 +38,7 @@ function inlineToPM(nodes: Inline[]): PMNode[] {
           attrs: { kind: n.kind, id: n.id, url: n.url ?? "", label: n.label ?? "" },
         }
       }
+      if (n.type === "image" && isAttachmentSrc(n.src)) return attachmentPM(n.src, n.alt)
       if (n.type === "image") {
         return {
           type: "gbInlineImage",
@@ -135,6 +151,8 @@ function blockToPM(b: Block): PMNode {
         content: b.columns.map((c) => ({ type: "gbColumn", content: blocksPM(c.children) })),
       }
     case "figure":
+      // A chip alone on its line parses as a figure; it is still a chip.
+      if (isAttachmentSrc(b.src)) return { type: "paragraph", content: [attachmentPM(b.src, b.alt)] }
       return { type: "gbFigure", attrs: { src: b.src, alt: b.alt, caption: b.caption } }
     case "list":
       return {
@@ -199,8 +217,22 @@ export function astToTiptap(doc: DocumentNode): PMNode {
 function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
   if (!nodes) return []
   return nodes
-    .filter((n) => (n.type === "text" && n.text) || n.type === "gbInlineImage" || n.type === "gbReference")
+    .filter(
+      (n) =>
+        (n.type === "text" && n.text) ||
+        n.type === "gbInlineImage" ||
+        n.type === "gbReference" ||
+        n.type === "gbAttachment"
+    )
     .map((n): Inline => {
+      if (n.type === "gbAttachment") {
+        const a = n.attrs ?? {}
+        return {
+          type: "image",
+          src: `${ATTACHMENT_SCHEME}${String(a.id ?? "")}`,
+          ...(a.name ? { alt: String(a.name) } : {}),
+        }
+      }
       if (n.type === "gbReference") {
         const a = n.attrs ?? {}
         const kind =
@@ -397,4 +429,20 @@ function pmToBlocks(nodes: PMNode[] | undefined): Block[] {
 
 export function tiptapToAst(doc: PMNode): DocumentNode {
   return { type: "doc", children: pmToBlocks(doc.content) }
+}
+
+// docstream writes inline images as `<img src alt />`; attachment chips read
+// better (and diff better) as plain markdown images.
+const ATTACHMENT_IMG = /<img src="(attachment:[^"\s]+)"(?: alt="([^"]*)")? \/>/g
+
+/**
+ * Serialize an editor AST to GitBook markdown, writing attachment chips as
+ * `![name](attachment:<id>)`. Use this instead of `serializeMarkdown` for
+ * editor output.
+ */
+export function serializeEditorMarkdown(doc: DocumentNode): string {
+  return serializeMarkdown(doc).replace(ATTACHMENT_IMG, (img: string, src: string, alt = "") =>
+    // `]` can't be escaped in `![alt]`; such names keep the <img> form.
+    alt.includes("]") ? img : `![${alt}](${src})`
+  )
 }

@@ -10,12 +10,22 @@ import {
   Strikethrough,
 } from "lucide-react"
 
-import { parseMarkdown, serializeMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
+import { parseMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
-import { astToTiptap, tiptapToAst, type PMNode } from "./convert"
+import {
+  attachmentName,
+  collectAttachmentIds,
+  imageFilesFrom,
+  newAttachmentId,
+  readFileAsDataURL,
+  type EditorAttachment,
+} from "./attachments"
+import { astToTiptap, serializeEditorMarkdown, tiptapToAst, type PMNode } from "./convert"
 import { createGitbookExtensions, type ReferenceSources } from "./extensions"
 import { EditorRuntimeProvider } from "./runtime"
 import type { SlashItem } from "./slash-menu"
+
+export type { EditorAttachment } from "./attachments"
 
 export interface GitbookEditorProps {
   /** Markdown source. When provided, the editor stays in sync with it (controlled). */
@@ -50,6 +60,20 @@ export interface GitbookEditorProps {
   onKeyDown?: (event: KeyboardEvent) => boolean
   /** Handle clipboard content before the editor's built-in paste behavior. Return true when handled. */
   onPaste?: (event: ClipboardEvent) => boolean
+  /**
+   * How pasted or dropped image files enter the document.
+   * "inline" (default) — an image block with the file as a data URL, as it will render.
+   * "chip" — a compact attachment chip at the caret; the host owns the file via `attachments`.
+   */
+  imagePaste?: "inline" | "chip"
+  /** Chip mode: the host's attachment store. Chips look up their thumbnail, full image and size here by id. */
+  attachments?: EditorAttachment[]
+  /** Chip mode: fired once per pasted/dropped image with a fresh id and the file read as a data URL. Add it to `attachments`. */
+  onAttachmentAdd?: (attachment: EditorAttachment & { file: File }) => void
+  /** Chip mode: fired when chips disappear from the document (deleted, cut, cleared) with their ids. */
+  onAttachmentRemove?: (ids: string[]) => void
+  /** Chip mode: clicking (or Enter/Space on a focused) chip. Omit to open the built-in image viewer. */
+  onAttachmentOpen?: (attachment: EditorAttachment) => void
   /** Receive the underlying TipTap editor instance (and null on teardown). */
   onEditorReady?: (editor: TiptapEditor | null) => void
   /** Client used to edit and preview `{% source-ref %}` files. */
@@ -138,6 +162,11 @@ export function GitbookEditor({
   extensions,
   onKeyDown,
   onPaste,
+  imagePaste = "inline",
+  attachments,
+  onAttachmentAdd,
+  onAttachmentRemove,
+  onAttachmentOpen,
   onEditorReady,
   sourceClient,
   sourcePreview = true,
@@ -152,6 +181,56 @@ export function GitbookEditor({
   // ones from the last applied markdown and reattach them on serialize.
   const citationsRef = useRef<CitationDef[] | undefined>(undefined)
   const controlled = markdown !== undefined
+  // Ids of the attachment chips in the document, to report removals.
+  const attachmentIds = useRef<Set<string>>(new Set())
+  // Latest callbacks for handlers the editor captured at creation.
+  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove })
+  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove }
+  const editorRef = useRef<TiptapEditor | null>(null)
+
+  // Pasted/dropped image files: image blocks ("inline") or attachment chips ("chip").
+  const insertImageFiles = (files: File[], at?: number) => {
+    const ed = editorRef.current
+    if (!ed) return
+    const insert = (content: PMNode[]) => {
+      const chain = ed.chain().focus()
+      const pos = at === undefined ? undefined : Math.min(at, ed.state.doc.content.size)
+      ;(pos === undefined ? chain.insertContent(content) : chain.insertContentAt(pos, content)).run()
+    }
+    if (latest.current.imagePaste === "chip") {
+      const items = files.map((file) => ({ file, id: newAttachmentId(), name: attachmentName(file) }))
+      // Keep chips off the preceding word: "done.[chip]" → "done. [chip]".
+      const $at = at === undefined ? ed.state.selection.$from : ed.state.doc.resolve(Math.min(at, ed.state.doc.content.size))
+      const before = $at.parent.isTextblock ? $at.parent.textBetween(Math.max(0, $at.parentOffset - 1), $at.parentOffset, "", "\uFFFC") : ""
+      const lead: PMNode[] = before && !/\s/.test(before) ? [{ type: "text", text: " " }] : []
+      insert([
+        ...lead,
+        ...items.flatMap(({ id, name }): PMNode[] => [
+          { type: "gbAttachment", attrs: { id, name } },
+          { type: "text", text: " " },
+        ]),
+      ])
+      for (const { file, id, name } of items) {
+        const base = { id, name, size: file.size, type: file.type, file }
+        readFileAsDataURL(file).then(
+          (src) => latest.current.onAttachmentAdd?.({ ...base, src }),
+          () => latest.current.onAttachmentAdd?.(base)
+        )
+      }
+      return
+    }
+    void Promise.all(
+      files.map((file) =>
+        readFileAsDataURL(file).then(
+          (src): PMNode => ({ type: "gbFigure", attrs: { src, alt: attachmentName(file), caption: "" } }),
+          () => null
+        )
+      )
+    ).then((figures) => {
+      const content = figures.filter((f): f is PMNode => f !== null)
+      if (content.length && !ed.isDestroyed) insert(content)
+    })
+  }
 
   const parseAndTrack = (md: string) => {
     const doc = parseMarkdown(md)
@@ -171,18 +250,43 @@ export function GitbookEditor({
     }),
     editorProps: {
       handleKeyDown: (_view, event) => onKeyDown?.(event) ?? false,
-      handlePaste: (_view, event) => onPaste?.(event) ?? false,
+      handlePaste: (view, event) => {
+        if (latest.current.onPaste?.(event)) return true
+        if (!view.editable || view.state.selection.$from.parent.type.spec.code) return false
+        const files = imageFilesFrom(event.clipboardData, { ignoreWithText: true })
+        if (!files.length) return false
+        event.preventDefault()
+        insertImageFiles(files)
+        return true
+      },
+      handleDrop: (view, event, _slice, moved) => {
+        if (moved || !view.editable) return false
+        const files = imageFilesFrom(event.dataTransfer)
+        if (!files.length) return false
+        event.preventDefault()
+        insertImageFiles(files, view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos)
+        return true
+      },
     },
     ...(controlled ? { content: astToTiptap(parseAndTrack(markdown as string)) } : {}),
+    onCreate({ editor }) {
+      attachmentIds.current = collectAttachmentIds(editor.state.doc)
+    },
     onUpdate({ editor }) {
+      const ids = collectAttachmentIds(editor.state.doc)
+      const removed = [...attachmentIds.current].filter((id) => !ids.has(id))
+      attachmentIds.current = ids
+      if (removed.length) latest.current.onAttachmentRemove?.(removed)
       if (!onChange) return
       const ast = tiptapToAst(editor.getJSON() as PMNode)
       if (citationsRef.current?.length) ast.citations = citationsRef.current
-      const md = serializeMarkdown(ast)
+      const md = serializeEditorMarkdown(ast)
       lastEmitted.current = md
       onChange(md)
     },
   })
+
+  editorRef.current = editor ?? null
 
   // Surface the editor instance to the host (for awareness, commands, etc.).
   useEffect(() => {
@@ -197,6 +301,8 @@ export function GitbookEditor({
     const doc = parseMarkdown(markdown as string)
     citationsRef.current = doc.citations
     editor.commands.setContent(astToTiptap(doc), { emitUpdate: false })
+    // Chips replaced by the host's own markdown aren't "removed" by the user.
+    attachmentIds.current = collectAttachmentIds(editor.state.doc)
   }, [editor, controlled, markdown])
 
   const runtime = useMemo(() => ({
@@ -205,7 +311,9 @@ export function GitbookEditor({
     sourceAutoSave,
     ...(onSourceSaved ? { onSourceSaved } : {}),
     ...(onSourceError ? { onSourceError } : {}),
-  }), [onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
+    ...(attachments ? { attachments } : {}),
+    ...(onAttachmentOpen ? { onAttachmentOpen } : {}),
+  }), [attachments, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
 
   if (!editor) return null
 

@@ -859,3 +859,163 @@
   outline: 2px solid var(--gb-primary);
   outline-offset: 1px;
 }
+
+/* ---- Attachment chips (pasted images in imagePaste="chip" mode) ---- */
+
+.gb-attachment-wrap {
+  display: inline;
+}
+
+.gb-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 1px 7px 1px 3px;
+  border: 1px solid var(--gb-border);
+  border-radius: 7px;
+  background: var(--gb-muted);
+  color: var(--gb-text);
+  font-size: 0.85em;
+  line-height: 1.5;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+.gb-attachment:hover {
+  border-color: var(--gb-muted-foreground);
+}
+.gb-attachment:focus {
+  outline: none;
+}
+.gb-attachment:focus-visible,
+.ProseMirror-selectednode .gb-attachment {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: 1px;
+}
+
+.gb-attachment-thumb {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 16px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--gb-border);
+  color: var(--gb-muted-foreground);
+}
+.gb-attachment-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gb-attachment-thumb-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.gb-attachment-name {
+  overflow: hidden;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 22ch;
+}
+.gb-attachment-size {
+  flex-shrink: 0;
+  color: var(--gb-muted-foreground);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Portaled to <body>, outside .gb — tokens resolve from the host directly. */
+.gb-attachment-card {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  max-width: calc(100vw - 16px);
+  padding: 6px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--card, #ffffff);
+  color: var(--card-foreground, var(--foreground, #111827));
+  font-family: var(--font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  animation: gb-attachment-in 120ms ease-out;
+}
+.gb-attachment-card-img {
+  display: block;
+  max-width: 360px;
+  max-height: 280px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 7px;
+  background: var(--muted, #f4f4f5);
+}
+.gb-attachment-card-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 100px;
+  border-radius: 7px;
+  background: var(--muted, #f4f4f5);
+  color: var(--muted-foreground, #6b7280);
+}
+.gb-attachment-card-meta {
+  max-width: 360px;
+  padding: 6px 4px 1px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.gb-attachment-card-name { font-weight: 500; }
+.gb-attachment-card-size { color: var(--muted-foreground, #6b7280); }
+
+.gb-attachment-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  cursor: zoom-out;
+  animation: gb-attachment-fade 140ms ease-out;
+}
+.gb-attachment-viewer-img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+.gb-attachment-viewer-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+@keyframes gb-attachment-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gb-attachment-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gb-attachment-card,
+  .gb-attachment-viewer { animation: none; }
+}

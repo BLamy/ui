@@ -2,7 +2,7 @@ import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MarkdownContent } from '@brett_lamy/docstream';
 import type { SourceFileSnapshot, SourceReferenceClient } from '@brett_lamy/docstream/source';
-import { GitbookEditor } from '@brett_lamy/docstream-editor';
+import { GitbookEditor, type EditorAttachment } from '@brett_lamy/docstream-editor';
 import '@brett_lamy/docstream/styles.css';
 import '@brett_lamy/docstream-editor/styles.css';
 import { PAGES } from './content';
@@ -63,11 +63,26 @@ graph LR
 function Playground() {
   const [md, setMd] = useState(SEED);
   const [savedFile, setSavedFile] = useState<SourceFileSnapshot | null>(null);
+  const [imagePaste, setImagePaste] = useState<'inline' | 'chip'>('inline');
+  const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
   return (
     <div style={{ display: 'flex', gap: 16, alignItems: 'stretch', margin: '18px 0', minHeight: 420 }}>
       <div style={{ flex: 1, minWidth: 0, border: '1px solid #e2e2ea', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ padding: '8px 14px', borderBottom: '1px solid #eee', fontSize: 12, fontWeight: 700, color: '#77777f' }}>GitbookEditor</div>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '8px 14px', borderBottom: '1px solid #eee', fontSize: 12, fontWeight: 700, color: '#77777f' }}>
+          GitbookEditor
+          <label data-demo-image-paste="" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+            Pasted images
+            <select value={imagePaste} onChange={(e) => setImagePaste(e.target.value as 'inline' | 'chip')} style={{ font: 'inherit' }}>
+              <option value="inline">inline</option>
+              <option value="chip">chip</option>
+            </select>
+          </label>
+        </div>
         <GitbookEditor
+          imagePaste={imagePaste}
+          attachments={attachments}
+          onAttachmentAdd={({ file: _file, ...a }) => setAttachments((prev) => [...prev, a])}
+          onAttachmentRemove={(ids) => setAttachments((prev) => prev.filter((a) => !ids.includes(a.id)))}
           markdown={SEED}
           onChange={setMd}
           placeholder="Write something…"

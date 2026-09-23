@@ -75,6 +75,11 @@ export interface GitbookEditorProps {
   onChange: (markdown: string) => void
   onKeyDown?: (event: KeyboardEvent) => boolean
   onPaste?: (event: ClipboardEvent) => boolean
+  imagePaste?: "inline" | "chip"
+  attachments?: EditorAttachment[]
+  onAttachmentAdd?: (attachment: EditorAttachment & { file: File }) => void
+  onAttachmentRemove?: (ids: string[]) => void
+  onAttachmentOpen?: (attachment: EditorAttachment) => void
 }
 ```
 
@@ -82,6 +87,8 @@ export interface GitbookEditorProps {
 - `onChange`: Called with serialized markdown whenever TipTap content changes.
 - `onKeyDown` / `onPaste`: Optional host hooks that run before the built-in editor behavior;
   return `true` when the application handled the event.
+- `imagePaste`, `attachments`, `onAttachmentAdd`, `onAttachmentRemove`, `onAttachmentOpen`:
+  how pasted/dropped images are handled — see [Pasted and dropped images](#pasted-and-dropped-images).
 
 The editor tracks the last markdown it emitted so normal controlled updates do not continuously reset the TipTap document. Passing a different external `markdown` value replaces the editor content.
 
@@ -131,6 +138,42 @@ dollar signs in ordinary prose never open a menu. Free-form entry is always offe
   }}
 />
 ```
+
+## Pasted and dropped images
+
+`imagePaste` controls how pasted or dropped image files enter the document. It runs after
+your `onPaste` (return `true` there to take over). Clipboard data that also carries plain
+text, such as a Word or Excel selection, still pastes as text.
+
+- `"inline"` (default): an image block with the file as a data URL, the way it will render.
+- `"chip"`: a compact attachment chip at the caret. The host stores the file. The chip
+  serializes as `![image.png](attachment:att-xyz)`, shows a thumbnail and size, previews the
+  full image on hover, and opens it on click.
+
+```tsx
+const [markdown, setMarkdown] = useState("")
+const [attachments, setAttachments] = useState<EditorAttachment[]>([])
+
+<GitbookEditor
+  markdown={markdown}
+  onChange={setMarkdown}
+  imagePaste="chip"
+  attachments={attachments}
+  // once per image: { id, name, src (data URL), size, type, file }
+  onAttachmentAdd={({ file, ...attachment }) => setAttachments((all) => [...all, attachment])}
+  // chips deleted, cut or cleared by the user
+  onAttachmentRemove={(ids) => setAttachments((all) => all.filter((a) => !ids.includes(a.id)))}
+  // optional; omit it to use the built-in full-screen viewer
+  onAttachmentOpen={(attachment) => openLightbox(attachment)}
+/>
+```
+
+`EditorAttachment` is `{ id, name, src?, size?, type? }`. Chips find their image in
+`attachments` by id, so `src` can be a data URL or an uploaded URL. To remove a chip
+from outside the editor, call `editor.commands.removeAttachment(id)` (get the instance
+from `onEditorReady`). Markdown images with an `attachment:` URL always load as chips,
+whatever the mode. `serializeEditorMarkdown(ast)` is the serializer that writes them in
+this form.
 
 ## Edit a referenced source file
 
@@ -182,6 +225,8 @@ Exports:
 - `astToTiptap`
 - `tiptapToAst`
 - `PMNode`
+- `EditorAttachment`
+- `serializeEditorMarkdown`
 - `SourceFileEditor`
 - `SourceFileEditorProps`
 

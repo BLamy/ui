@@ -32,6 +32,7 @@ import { ReplayPreview, isReplayQaUrl } from "@brett_lamy/docstream/replay"
 import { VideoEmbed } from "@brett_lamy/docstream/video"
 import { SourceFileEditor } from "./SourceFileEditor"
 import { useEditorRuntime } from "./runtime"
+import { GbAttachment } from "./attachments"
 
 function useDebouncedValue<T>(value: T, delay = 350): T {
   const [debounced, setDebounced] = useState(value)
@@ -983,4 +984,5 @@ export const gitbookNodes = [
   GbOpenapi,
   GbInlineImage,
   GbReference,
+  GbAttachment,
 ]
