@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { useMotion } from '../lib/motion';
@@ -33,41 +34,35 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
   }, [open]);
   const circle = (icon: string, fn: (() => void) | undefined, label: string) => (
-    <button className="bl-btn" onClick={fn} aria-label={label}
-      style={{
-        width: 30, height: 30, borderRadius: '50%', border: 0, background: 'var(--bl-fill)', color: 'var(--bl-label2)',
-        display: 'grid', placeItems: 'center', cursor: 'pointer', flexShrink: 0, padding: 0,
-      }}><Icon name={icon} size={15} sw={2.6} /></button>
+    <AriaButton onPress={fn} aria-label={label}
+      className="bl-btn grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground">
+      <Icon name={icon} size={15} sw={2.6} />
+    </AriaButton>
   );
-  const card: CSSProperties = {
-    background: 'var(--bl-card)', color: 'var(--bl-label)', overflow: 'hidden', boxSizing: 'border-box',
-    boxShadow: '0 24px 80px rgba(0,0,0,.34), 0 0 0 1px var(--bl-sep)', ...style,
-  };
-  const trayPos: CSSProperties = { position: 'absolute', left: 10, right: 10, bottom: 10, borderRadius: 28, zIndex: 401 };
-  const dlgPos: CSSProperties = { position: 'absolute', left: '50%', top: '50%', width: 400, maxWidth: 'calc(100% - 44px)', borderRadius: 24, zIndex: 401 };
+  const card = 'box-border overflow-hidden bg-card text-foreground shadow-[0_24px_80px_rgba(0,0,0,.34),0_0_0_1px_var(--bl-sep)]';
   const m = FM.motion as any, AP = FM.AnimatePresence;
   const spring = { type: 'spring', stiffness: 520, damping: 44, mass: 1 } as const;
   const header = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 14px 6px', position: 'relative', zIndex: 2 }}>
+    <div className="relative z-2 flex items-center gap-2.5 px-[14px] pt-[14px] pb-1.5">
       <AP initial={false}>{canBack ? (
         <m.div key="bk" initial={{ opacity: 0, scale: .4, width: 0, marginRight: -10 }}
           animate={{ opacity: 1, scale: 1, width: 30, marginRight: 0 }} exit={{ opacity: 0, scale: .4, width: 0, marginRight: -10 }}
-          transition={{ duration: .2 }} style={{ display: 'grid', placeItems: 'center', overflow: 'hidden', flexShrink: 0 }}>{circle('chevL', onBack, 'Back')}</m.div>
+          transition={{ duration: .2 }} className="grid shrink-0 place-items-center overflow-hidden">{circle('chevL', onBack, 'Back')}</m.div>
       ) : null}</AP>
-      <div style={{ position: 'relative', flex: 1, height: 26, minWidth: 0 }}>
+      <div className="relative h-[26px] min-w-0 flex-1">
         <AP initial={false}>
           <m.div key={String(title)} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: .17 }}
-            style={{ position: 'absolute', left: 0, top: 0, fontSize: 18, fontWeight: 700, letterSpacing: '-.2px', whiteSpace: 'nowrap', lineHeight: '26px' }}>{title}</m.div>
+            className="absolute top-0 left-0 text-[18px] leading-[26px] font-bold tracking-[-.2px] whitespace-nowrap">{title}</m.div>
         </AP>
       </div>
       {circle('x', onClose, 'Close')}
     </div>
   );
   const body = (
-    <m.div initial={false} animate={h == null ? {} : { height: h }} transition={spring} style={{ overflow: 'hidden', position: 'relative' }}>
+    <m.div initial={false} animate={h == null ? {} : { height: h }} transition={spring} className="relative overflow-hidden">
       <AP initial={false} mode="popLayout">
         <m.div key={String(view)} initial={{ opacity: 0, scale: .97, filter: 'blur(6px)' }} animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, scale: .97, filter: 'blur(6px)' }} transition={{ duration: .21, ease: 'easeOut' }} style={{ width: '100%' }}>
+          exit={{ opacity: 0, scale: .97, filter: 'blur(6px)' }} transition={{ duration: .21, ease: 'easeOut' }} className="w-full">
           <MeasureH onH={setH}>{children}</MeasureH>
         </m.div>
       </AP>
@@ -76,17 +71,18 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
   return (
     <AP>
       {open ? <m.div key="scrim" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .24 }}
-        style={{ position: 'absolute', inset: 0, background: 'var(--bl-scrim)', zIndex: 400 }} /> : null}
+        className="absolute inset-0 z-400 bg-overlay" /> : null}
       {open ? (compact
-        ? <m.div key="tray" data-slot="credenza" className={cn(className)} initial={{ y: '112%' }} animate={{ y: '0%' }} exit={{ y: '118%' }} transition={spring}
+        ? <m.div key="tray" data-slot="credenza" className={cn(card, 'absolute inset-x-2.5 bottom-2.5 z-401 touch-none rounded-[28px]', className)} initial={{ y: '112%' }} animate={{ y: '0%' }} exit={{ y: '118%' }} transition={spring}
             drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: .02, bottom: .55 }}
             onDragEnd={(_ev: unknown, inf: any) => { if (inf.offset.y > 120 || inf.velocity.y > 500) { Haptics.impact('light'); closeRef.current(); } }}
-            style={{ ...card, ...trayPos, touchAction: 'none' }}>
-            <div aria-hidden="true" style={{ position: 'absolute', top: 7, left: '50%', transform: 'translateX(-50%)', width: 38, height: 5, borderRadius: 3, background: 'var(--bl-fill2)', zIndex: 3 }} />
+            style={style}>
+            <div aria-hidden="true" className="absolute top-[7px] left-1/2 z-3 h-[5px] w-[38px] -translate-x-1/2 rounded-[3px] bg-bl-fill2" />
             {header}{body}
           </m.div>
-        : <m.div key="dlg" data-slot="credenza" className={cn(className)} initial={{ x: '-50%', y: '-45%', opacity: 0, scale: .95 }} animate={{ x: '-50%', y: '-50%', opacity: 1, scale: 1 }}
-            exit={{ x: '-50%', y: '-48%', opacity: 0, scale: .97 }} transition={spring} style={{ ...card, ...dlgPos }}>
+        : <m.div key="dlg" data-slot="credenza"
+            className={cn(card, 'absolute top-1/2 left-1/2 z-401 w-[400px] max-w-[calc(100%-44px)] rounded-[24px]', className)} initial={{ x: '-50%', y: '-45%', opacity: 0, scale: .95 }} animate={{ x: '-50%', y: '-50%', opacity: 1, scale: 1 }}
+            exit={{ x: '-50%', y: '-48%', opacity: 0, scale: .97 }} transition={spring} style={style}>
             {header}{body}
           </m.div>) : null}
     </AP>

@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { cn, FONT, BARH } from './utils';
+import { cn, BARH } from './utils';
 
 /* ══ Chrome coordination ══
    Nav bar and tab bar hide together on scroll-down and come back on scroll-up. The scrolling screen
@@ -61,21 +61,19 @@ export function BLProvider({ dark, tint = '#0A84FF', safeTop, children, classNam
   return (
     <div
       data-slot="bl-provider"
-      className={cn(className)}
-      style={{
-        position: 'relative', width: '100%', height: '100%', overflow: 'hidden', fontFamily: FONT,
-        background: 'var(--bl-bg2)', color: 'var(--bl-label)', colorScheme: dark ? 'dark' : 'light',
-        userSelect: 'none', WebkitUserSelect: 'none', transition: 'background .25s',
-        ...vars, '--bl-safe-top': safe + 'px', ...style,
-      } as CSSProperties}
+      className={cn(
+        'relative h-full w-full overflow-hidden bg-muted font-ios text-foreground select-none transition-[background] duration-250',
+        dark ? 'scheme-dark' : 'scheme-light',
+        className,
+      )}
+      // The palette depends on `dark` and `tint`, so the tokens are set per render.
+      style={{ ...vars, '--bl-safe-top': safe + 'px', ...style } as CSSProperties}
     >
       <BLSafeCtx.Provider value={safe}>{children}</BLSafeCtx.Provider>
       {safe ? (
         <div
-          style={{
-            position: 'absolute', top: Math.max(8, safe / 5), left: '50%', transform: 'translateX(-50%)',
-            width: 118, height: 35, borderRadius: 18, background: '#000', zIndex: 400, pointerEvents: 'none',
-          }}
+          className="pointer-events-none absolute left-1/2 z-400 h-[35px] w-[118px] -translate-x-1/2 rounded-[18px] bg-black"
+          style={{ top: Math.max(8, safe / 5) }}
           aria-hidden="true"
         />
       ) : null}

@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react';
-import { EASE } from '../lib/utils';
+import { Button as AriaButton } from 'react-aria-components';
+import { cn } from '../lib/utils';
 import { SidebarInset, SidebarNav, SidebarProvider, SidebarTrigger, type SidebarVariant } from '../components/sidebar';
 
 /** The workbench dark palette the Sidebar's --wb-* tokens read. */
@@ -17,19 +18,17 @@ export const sidebarDarkVars = {
 } as CSSProperties;
 
 const VARIANTS: SidebarVariant[] = ['docked', 'rail', 'float', 'overlay'];
-const FONT = "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',sans-serif";
-
 function Chip({ active, onPress, children }: { active: boolean; onPress: () => void; children: string }) {
   return (
-    <button
-      onClick={onPress}
-      style={{
-        border: 0, borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: 'pointer',
-        background: active ? 'var(--wb-tint)' : 'var(--wb-fill2)', color: active ? '#fff' : 'var(--wb-label)',
-      }}
+    <AriaButton
+      onPress={onPress}
+      className={cn(
+        'cursor-pointer rounded-[999px] border-0 px-[11px] py-[5px] font-ios text-[12px] font-semibold',
+        active ? 'bg-wb-tint text-white' : 'bg-wb-fill2 text-wb-label',
+      )}
     >
       {children}
-    </button>
+    </AriaButton>
   );
 }
 
@@ -38,20 +37,23 @@ export function SidebarDemo({ variant: initial = 'docked' }: { variant?: Sidebar
   const [variant, setVariant] = useState<SidebarVariant>(initial);
   const [narrow, setNarrow] = useState(false);
   return (
-    <div style={{ ...sidebarDarkVars, display: 'grid', gap: 12, justifyItems: 'center', padding: 16, background: 'var(--wb-bg)', fontFamily: FONT }}>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+    <div className="grid justify-items-center gap-3 bg-wb-bg p-4 font-ios" style={sidebarDarkVars}>
+      <div className="flex flex-wrap justify-center gap-1.5">
         {VARIANTS.map((v) => <Chip key={v} active={variant === v} onPress={() => setVariant(v)}>{v}</Chip>)}
         <Chip active={narrow} onPress={() => setNarrow((n) => !n)}>narrow container</Chip>
       </div>
-      <div style={{ width: narrow ? 380 : '100%', maxWidth: 640, height: 330, border: '1px solid var(--wb-sep)', borderRadius: 14, overflow: 'hidden', transition: 'width .35s ' + EASE }}>
+      <div className={cn(
+        'h-[330px] max-w-[640px] overflow-hidden rounded-[14px] border border-wb-sep transition-[width] duration-350 ease-ios',
+        narrow ? 'w-[380px]' : 'w-full',
+      )}>
         <SidebarProvider key={variant + narrow} defaultOpen={variant !== 'overlay'} breakpoint={430}>
           <SidebarNav variant={variant} />
           <SidebarInset>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderBottom: '1px solid var(--wb-sep)' }}>
+            <div className="flex items-center gap-2 border-b border-wb-sep px-3 py-[9px]">
               <SidebarTrigger />
-              <span style={{ fontSize: 12.5, fontWeight: 650, color: 'var(--wb-label)' }}>Home</span>
+              <span className="text-[12.5px] font-[650] text-wb-label">Home</span>
             </div>
-            <div style={{ padding: 16, fontSize: 12.5, color: 'var(--wb-label2)', lineHeight: 1.6 }}>
+            <div className="p-4 text-[12.5px] leading-[1.6] text-wb-label2">
               One API, four behaviors — the trigger toggles whichever variant is mounted, and every variant becomes a hamburger
               overlay when the container is narrower than the breakpoint. Try “narrow container”.
             </div>

@@ -2,6 +2,7 @@ import {
   use, useEffect, useLayoutEffect, useRef, useState,
   type CSSProperties, type ReactNode,
 } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { chromeStore, BLSafeCtx, BLStickyCtx } from '../lib/theme';
@@ -132,20 +133,23 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
     }
   };
   return (
+    // Slide position, depth, and bar geometry are per-render values; the edge-swipe writes transform/transition
+    // inline during a drag and clears them back to these classes.
     <div ref={(el) => reg(sc.key, { el })} data-slot="screen" data-screen-label={typeof sc.title === 'string' ? sc.title : sc.key}
-      style={{
-        position: 'absolute', inset: 0, zIndex: 10 + z, background: sc.grouped ? 'var(--bl-bg2)' : 'var(--bl-bg)',
-        transform: `translateX(${tx})`, transition: `transform .42s ${EASE}`, willChange: 'transform', overflow: 'hidden',
-        boxShadow: depth > 0 ? '-10px 0 30px rgba(0,0,0,.16)' : 'none', pointerEvents: ghost ? 'none' : 'auto',
-      }}>
-      <div ref={scroller} className="bl-scroll" onScroll={onScroll} onKeyDown={onKey}
-        onPointerDown={pDown} onPointerMove={pMove} onPointerUp={pEnd} onPointerCancel={pEnd}
-        style={{ position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' } as CSSProperties}>
-        <div ref={inner} style={{ maxWidth: sc.maxW || 'none', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      className={cn(
+        'absolute inset-0 overflow-hidden will-change-transform [transform:translateX(var(--screen-x))] [transition:transform_.42s_cubic-bezier(.32,.72,0,1)]',
+        sc.grouped ? 'bg-muted' : 'bg-background',
+        depth > 0 && 'shadow-[-10px_0_30px_rgba(0,0,0,.16)]',
+        ghost ? 'pointer-events-none' : 'pointer-events-auto',
+      )}
+      style={{ zIndex: 10 + z, '--screen-x': tx } as CSSProperties}>
+      <div ref={scroller} className="bl-scroll absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" onScroll={onScroll} onKeyDown={onKey}
+        onPointerDown={pDown} onPointerMove={pMove} onPointerUp={pEnd} onPointerCancel={pEnd}>
+        <div ref={inner} className="mx-auto box-border w-full" style={{ maxWidth: sc.maxW || 'none' }}>
           {sc.largeTitle
-            ? <div style={{ padding: (barH + 2) + 'px 16px 6px' }}>
-                <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-.5px', lineHeight: 1.15 }}>{sc.title}</div>
-                {sc.subheader ? <div style={{ marginTop: 10 }}>{sc.subheader}</div> : null}
+            ? <div className="px-4 pb-1.5" style={{ paddingTop: barH + 2 }}>
+                <div className="text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]">{sc.title}</div>
+                {sc.subheader ? <div className="mt-2.5">{sc.subheader}</div> : null}
               </div>
             : <div style={{ height: barH }} />}
           <BLStickyCtx.Provider value={barH}>{sc.content}</BLStickyCtx.Provider>
@@ -153,51 +157,42 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
         </div>
       </div>
       {sc.onRefresh ? (
-        <div ref={spin} style={{
-          position: 'absolute', top: barH + 8, left: '50%', transform: 'translateX(-50%)', opacity: 0,
-          color: 'var(--bl-label2)', zIndex: 5, pointerEvents: 'none', transition: 'opacity .2s',
-        }}><Spinner spin={refr} /></div>
+        <div ref={spin} style={{ top: barH + 8 }}
+          className="pointer-events-none absolute left-1/2 z-5 [transform:translateX(-50%)] text-muted-foreground opacity-0 transition-opacity duration-200"><Spinner spin={refr} /></div>
       ) : null}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: barH, zIndex: 30, display: 'flex', alignItems: 'flex-end', padding: '0 6px', boxSizing: 'border-box',
-        paddingTop: safeTop, transform: hid ? 'translateY(' + (-(barH - safeTop)) + 'px)' : 'none', transition: 'transform .3s ' + EASE,
-      }}>
-        <div style={{
-          position: 'absolute', inset: 0, background: 'var(--bl-bar)', backdropFilter: 'blur(18px) saturate(1.7)',
-          WebkitBackdropFilter: 'blur(18px) saturate(1.7)', borderBottom: '1px solid var(--bl-sep)', opacity: scr ? 1 : 0, transition: 'opacity .25s',
-        }} />
+      <div className="absolute inset-x-0 top-0 z-30 box-border flex items-end px-1.5 transition-transform duration-300 ease-ios"
+        style={{ height: barH, paddingTop: safeTop, transform: hid ? 'translateY(' + (-(barH - safeTop)) + 'px)' : 'none' }}>
+        <div className={cn(
+          'absolute inset-0 [border-bottom:1px_solid_var(--bl-sep)] bg-bl-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-opacity duration-250',
+          scr ? 'opacity-100' : 'opacity-0',
+        )} />
         {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
         {safeTop ? (
-          <div style={{
-            position: 'absolute', left: 0, right: 0, top: 0, height: safeTop, background: 'var(--bl-bar)',
-            backdropFilter: 'blur(18px) saturate(1.7)', WebkitBackdropFilter: 'blur(18px) saturate(1.7)',
-            transform: hid ? 'translateY(' + (barH - safeTop) + 'px)' : 'none', transition: 'transform .3s ' + EASE, opacity: scr || hid ? 1 : 0,
-          }} />
+          <div className={cn(
+            'absolute inset-x-0 top-0 bg-bl-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-300 ease-ios',
+            scr || hid ? 'opacity-100' : 'opacity-0',
+          )} style={{ height: safeTop, transform: hid ? 'translateY(' + (barH - safeTop) + 'px)' : 'none' }} />
         ) : null}
-        <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: BARH, opacity: hid ? 0 : 1, transition: 'opacity .2s' }}>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', minWidth: 44, zIndex: 1 }}>
+        <div className={cn('flex h-[52px] w-full items-center transition-opacity duration-200', hid ? 'opacity-0' : 'opacity-100')}>
+          <div className="relative z-1 flex min-w-[44px] items-center">
             {(depth > 0 || ghost)
-              ? <button className="bl-btn" onClick={nav.canPop ? nav.pop : undefined} style={{
-                  display: 'flex', alignItems: 'center', border: 0, background: 'none',
-                  color: 'var(--bl-tint)', fontSize: 17, fontFamily: 'inherit', padding: '6px 8px 6px 0', cursor: 'pointer', maxWidth: 160,
-                }}>
+              ? <AriaButton className="bl-btn flex max-w-[160px] cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary"
+                  onPress={nav.canPop ? nav.pop : undefined}>
                   <Icon name="chevL" size={24} sw={2.4} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{typeof backTitle === 'string' && backTitle.length <= 12 ? backTitle : 'Back'}</span>
-                </button>
+                  <span className="truncate">{typeof backTitle === 'string' && backTitle.length <= 12 ? backTitle : 'Back'}</span>
+                </AriaButton>
               : (sc.leading || null)}
           </div>
-          <div style={{
-            position: 'absolute', left: '50%', transform: 'translateX(-50%)', maxWidth: '52%', fontSize: 17, fontWeight: 600,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: showTitle ? 1 : 0, transition: 'opacity .2s', pointerEvents: 'none', color: 'var(--bl-label)',
-          }}>{sc.title}</div>
-          <div style={{ position: 'relative', marginLeft: 'auto', display: 'flex', alignItems: 'center', zIndex: 1 }}>{sc.trailing || null}</div>
+          <div className={cn(
+            'pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-[17px] font-semibold text-foreground transition-opacity duration-200',
+            showTitle ? 'opacity-100' : 'opacity-0',
+          )}>{sc.title}</div>
+          <div className="relative z-1 ml-auto flex items-center">{sc.trailing || null}</div>
         </div>
       </div>
       {sc.overlay || null}
-      <div ref={(el) => reg(sc.key, { dim: el })} style={{
-        position: 'absolute', inset: 0, background: '#000', opacity: isUnder ? .12 : 0,
-        transition: 'opacity .42s', pointerEvents: 'none', zIndex: 200,
-      }} />
+      <div ref={(el) => reg(sc.key, { dim: el })}
+        className={cn('pointer-events-none absolute inset-0 z-200 bg-black transition-opacity duration-420', isUnder ? 'opacity-12' : 'opacity-0')} />
     </div>
   );
 }
@@ -332,9 +327,9 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
   ];
   const total = rendered.length - 1;
   const inner = (
-    <div ref={contRef} data-slot="navigation-stack" className={cn(className)}
+    <div ref={contRef} data-slot="navigation-stack"
       onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
-      style={{ position: 'absolute', inset: 0, overflow: 'hidden', touchAction: 'pan-y', ...style }}>
+      className={cn('absolute inset-0 touch-pan-y overflow-hidden', className)} style={style}>
       {rendered.map((r) => (
         <ScreenWrap key={r.sc.key} sc={r.sc} depth={r.i} top={r.ghost ? total : topIdx} ghost={r.ghost}
           entering={!r.ghost && anim.enter === r.sc.key && r.i === topIdx}

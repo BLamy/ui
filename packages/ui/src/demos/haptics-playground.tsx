@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { enableDebugMode } from 'ios-vibrator-pro-max';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
-import { EASE } from '../lib/utils';
+import { cn } from '../lib/utils';
 import { List, ListRow, ListSection } from '../components/list';
 import { Switch } from '../components/switch';
 
@@ -10,8 +10,8 @@ import { Switch } from '../components/switch';
    slide-to-unlock, timer wheels. Every surface calls Haptics/navigator.vibrate inside the live gesture. ══ */
 
 const sq = (color: string, icon: string) => (
-  <span style={{ width: 29, height: 29, borderRadius: 7, background: color, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-    <Icon name={icon} size={17} sw={2} style={{ color: '#fff' }} />
+  <span className="grid size-[29px] shrink-0 place-items-center rounded-[7px]" style={{ background: color }}>
+    <Icon name={icon} size={17} sw={2} className="text-white" />
   </span>
 );
 
@@ -50,9 +50,9 @@ export function BrightnessSlider() {
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); move(e); }}
       onPointerMove={(e) => { if (e.buttons) move(e); }}
       onKeyDown={(e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { setV((x) => Math.min(1, Math.max(0, x + (e.key === 'ArrowRight' ? 0.0625 : -0.0625)))); Haptics.selection(); e.preventDefault(); } }}
-      style={{ position: 'relative', height: 64, borderRadius: 18, background: 'var(--bl-fill2)', overflow: 'hidden', touchAction: 'none', cursor: 'ew-resize' }}>
-      <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: (v * 100) + '%', background: 'rgba(255,255,255,.94)' }} />
-      <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'rgba(60,60,67,.62)', display: 'grid' }}><Sun size={22} /></span>
+      className="relative h-[64px] cursor-ew-resize touch-none overflow-hidden rounded-[18px] bg-bl-fill2">
+      <div className="absolute inset-y-0 left-0 bg-[rgba(255,255,255,.94)]" style={{ width: (v * 100) + '%' }} />
+      <span className="absolute top-1/2 left-4 grid -translate-y-1/2 text-[rgba(60,60,67,.62)]"><Sun size={22} /></span>
     </div>
   );
 }
@@ -61,14 +61,14 @@ export function HapticSlider() {
   const [v, setV] = useState(0.5);
   const last = useRef(0);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-      <input type="range" className="bl-range" min="0" max="1" step="0.01" value={v} aria-label="Haptic slider"
-        style={{ flex: 1, '--bl-range-fill': (v * 100) + '%' } as CSSProperties}
+    <div className="flex items-center gap-3.5">
+      <input type="range" className="bl-range flex-1" min="0" max="1" step="0.01" value={v} aria-label="Haptic slider"
+        style={{ '--bl-range-fill': (v * 100) + '%' } as CSSProperties}
         onChange={(e) => {
           setV(+e.target.value);
           const now = performance.now(); if (now - last.current > 16) { last.current = now; Haptics.selection(); }
         }} />
-      <span style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 14.5, color: 'var(--bl-label2)', width: 36, textAlign: 'right', flexShrink: 0 }}>{v.toFixed(2)}</span>
+      <span className="w-[36px] shrink-0 text-right [font-family:ui-monospace,Menlo,monospace] text-[14.5px] text-muted-foreground">{v.toFixed(2)}</span>
     </div>
   );
 }
@@ -95,32 +95,30 @@ export function SlideToUnlock() {
     } else { xr.current = 0; setX(0); det.current = 0; }
   };
   return (
-    <div ref={ref} style={{
-      position: 'relative', height: 56, borderRadius: 28, background: 'var(--bl-fill)',
-      boxShadow: 'inset 0 1px 3px rgba(0,0,0,.12)', overflow: 'hidden',
-    }}>
-      <span aria-hidden="true" className={done ? '' : 'bl-shimmer'} style={{
-        position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
-        fontSize: 17, letterSpacing: '.4px', color: done ? 'var(--bl-green)' : undefined, fontWeight: done ? 600 : 400, opacity: done ? 1 : Math.max(0, 1 - x * 1.7),
-      }}>
+    <div ref={ref} className="relative h-[56px] overflow-hidden rounded-[28px] bg-secondary shadow-[inset_0_1px_3px_rgba(0,0,0,.12)]">
+      <span aria-hidden="true"
+        className={cn('absolute inset-0 grid place-items-center text-[17px] tracking-[.4px]', done ? 'font-semibold text-success' : 'bl-shimmer font-normal')}
+        // The hint fades as the knob travels.
+        style={{ opacity: done ? 1 : Math.max(0, 1 - x * 1.7) }}>
         {done ? 'unlocked' : 'slide to unlock'}</span>
-      <button data-haptic-drag className="bl-btn" aria-label="Slide to unlock"
+      <button data-haptic-drag aria-label="Slide to unlock"
         onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setDrag(true); }}
         onPointerMove={(e) => { if (drag) move(e); }}
         onPointerUp={up} onPointerCancel={up}
-        style={{
-          position: 'absolute', top: 4, left: 4 + x * travel(), width: 48, height: 48, borderRadius: 24, border: 0, padding: 0,
-          background: 'var(--bl-card)', boxShadow: '0 2px 6px rgba(0,0,0,.22)', cursor: 'grab', touchAction: 'none',
-          display: 'grid', placeItems: 'center', color: done ? 'var(--bl-green)' : 'var(--bl-label2)',
-          transition: drag ? 'none' : 'left .38s ' + EASE,
-        }}>
+        className={cn(
+          'bl-btn absolute top-1 grid size-[48px] cursor-grab touch-none place-items-center rounded-[24px] border-0 bg-card p-0 shadow-[0_2px_6px_rgba(0,0,0,.22)]',
+          done ? 'text-success' : 'text-muted-foreground',
+          !drag && '[transition:left_.38s_cubic-bezier(.32,.72,0,1)]',
+        )}
+        // Knob position follows the drag.
+        style={{ left: 4 + x * travel() }}>
         <Icon name={done ? 'check' : 'chev'} size={22} sw={2.4} /></button>
     </div>
   );
 }
 
 export function WheelDrum({ n, init, label }: { n: number; init?: number; label: string }) {
-  const H = 34, VIS = 5;
+  const H = 34; // row height; the drum shows 5 rows (170px) with the selection band at 68px
   const [off, setOff] = useState(-(init || 0) * H);
   const [anim, setAnim] = useState(false);
   const st = useRef<any>({ drag: false, y0: 0, off0: 0, y: 0, t: 0, v: 0, raf: 0, det: init || 0 });
@@ -155,31 +153,28 @@ export function WheelDrum({ n, init, label }: { n: number; init?: number; label:
   };
   const idx = -off / H;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 1, minWidth: 0, justifyContent: 'center' }}>
+    <div className="flex min-w-0 flex-1 items-center justify-center gap-[7px]">
       <div data-haptic-drag role="spinbutton" aria-label={label} aria-valuenow={st.current.det} tabIndex={0}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
         onWheel={(e) => { e.preventDefault(); const d = e.deltaY > 0 ? 1 : -1; settle(clampHard((Math.round(-off / H) + d) * -H)); }}
         onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { settle(clampHard((Math.round(-off / H) + (e.key === 'ArrowDown' ? 1 : -1)) * -H)); e.preventDefault(); } }}
-        style={{ position: 'relative', height: H * VIS, width: 52, overflow: 'hidden', touchAction: 'none', cursor: 'ns-resize', flexShrink: 0 }}>
-        <div style={{ position: 'absolute', left: -4, right: -4, top: (VIS - 1) / 2 * H, height: H, borderRadius: 9, background: 'var(--bl-fill)' }} />
-        <div style={{
-          position: 'absolute', left: 0, right: 0, top: (VIS - 1) / 2 * H, transform: 'translateY(' + off + 'px)',
-          transition: anim ? 'transform .3s cubic-bezier(.25,.8,.25,1)' : 'none',
-        }}>
+        className="relative h-[170px] w-[52px] shrink-0 cursor-ns-resize touch-none overflow-hidden">
+        <div className="absolute -inset-x-1 top-[68px] h-[34px] rounded-[9px] bg-secondary" />
+        <div className={cn('absolute inset-x-0 top-[68px]', anim && '[transition:transform_.3s_cubic-bezier(.25,.8,.25,1)]')}
+          // Drum offset follows the drag / momentum.
+          style={{ transform: 'translateY(' + off + 'px)' }}>
           {Array.from({ length: n }, (_, i) => {
             const dist = Math.min(2.6, Math.abs(i - idx));
             return (
-              <div key={i} style={{
-                height: H, display: 'grid', placeItems: 'center', fontSize: 21,
-                color: 'var(--bl-label)', opacity: Math.max(0.16, 1 - dist * 0.34), fontVariantNumeric: 'tabular-nums',
-              }}>{i}</div>
+              <div key={i} className="grid h-[34px] place-items-center text-[21px] text-foreground tabular-nums"
+                style={{ opacity: Math.max(0.16, 1 - dist * 0.34) }}>{i}</div>
             );
           })}
         </div>
-        <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: H * 1.4, background: 'linear-gradient(var(--bl-card), transparent)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: H * 1.4, background: 'linear-gradient(transparent, var(--bl-card))', pointerEvents: 'none' }} />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[47.6px] bg-[linear-gradient(var(--bl-card),transparent)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[47.6px] bg-[linear-gradient(transparent,var(--bl-card))]" />
       </div>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--bl-label2)' }}>{label}</span>
+      <span className="text-[13px] font-semibold text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -195,21 +190,21 @@ export function HapticsPlayground() {
   }, []);
   return (
     <List inset>
-      <div style={{ padding: '2px 4px 14px', fontSize: 15, lineHeight: 1.5, color: 'var(--bl-label2)' }}>
-        The playground from <span style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 13.5 }}>vibrator.dev</span> — on an iPhone or MacBook, in Safari, you'll feel haptic feedback as you slide these elements. <span style={{ color: 'var(--bl-label3)' }}>(If you don't feel anything, drag slower.)</span></div>
-      <div style={{ padding: '0 4px 16px', fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 12, color: 'var(--bl-label3)' }}>engine: {Haptics.engine}</div>
+      <div className="px-1 pt-0.5 pb-3.5 text-[15px] leading-[1.5] text-muted-foreground">
+        The playground from <span className="[font-family:ui-monospace,Menlo,monospace] text-[13.5px]">vibrator.dev</span> — on an iPhone or MacBook, in Safari, you'll feel haptic feedback as you slide these elements. <span className="text-bl-label3">(If you don't feel anything, drag slower.)</span></div>
+      <div className="px-1 pt-0 pb-4 [font-family:ui-monospace,Menlo,monospace] text-[12px] text-bl-label3">engine: {Haptics.engine}</div>
       <ListSection><ShowMagicRow /></ListSection>
       <ListSection title="Brightness">
-        <div style={{ background: 'var(--bl-card)', borderRadius: 12, padding: 14 }}><BrightnessSlider /></div>
+        <div className="rounded-[12px] bg-card p-3.5"><BrightnessSlider /></div>
       </ListSection>
       <ListSection title="Haptic slider">
-        <div style={{ background: 'var(--bl-card)', borderRadius: 12, padding: '10px 14px' }}><HapticSlider /></div>
+        <div className="rounded-[12px] bg-card px-3.5 py-2.5"><HapticSlider /></div>
       </ListSection>
       <ListSection title="Slide to unlock">
-        <div style={{ background: 'var(--bl-card)', borderRadius: 12, padding: 10 }}><SlideToUnlock /></div>
+        <div className="rounded-[12px] bg-card p-2.5"><SlideToUnlock /></div>
       </ListSection>
       <ListSection title="Timer" footer="A selection tick per detent — Haptics.selection(), the same call the A–Z index scrubber makes. Flick a wheel: ticks ride the momentum. Playground set recreated from vibrator.dev — ios-vibrator-pro-max by @samdenty (MIT).">
-        <div style={{ background: 'var(--bl-card)', borderRadius: 12, padding: '8px 10px', display: 'flex', gap: 2 }}>
+        <div className="flex gap-0.5 rounded-[12px] bg-card px-2.5 py-2">
           <WheelDrum n={24} init={1} label="hours" />
           <WheelDrum n={60} init={30} label="min" />
           <WheelDrum n={60} init={15} label="sec" />

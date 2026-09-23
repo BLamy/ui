@@ -25,8 +25,8 @@ export function QRSvg({ seed, size, className, style }: QRSvgProps) {
     </g>
   );
   return (
-    <svg data-slot="qr-svg" className={cn(className)} width={size} height={size} viewBox={'0 0 ' + size + ' ' + size}
-      style={{ display: 'block', ...style }} aria-hidden="true">
+    <svg data-slot="qr-svg" className={cn('block', className)} width={size} height={size} viewBox={'0 0 ' + size + ' ' + size}
+      style={style} aria-hidden="true">
       {cells}{eye(0, 0)}{eye((N - 7) * u, 0)}{eye(0, (N - 7) * u)}
     </svg>
   );

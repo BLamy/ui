@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { Haptics } from '../lib/haptics';
-import { cn, EASE } from '../lib/utils';
+import { cn } from '../lib/utils';
 
 /* ══ IndexBar — generic jump rail (haptic tick per stop) ══
    Give it jump points of your own:
@@ -102,55 +102,43 @@ export function IndexBar<K extends IndexBarKey = string>({ items, avail, onJump,
   const p = idx >= 0 ? pts[idx] : null;
   const g = geo.current;
   const cy = g && p ? (g.tTop - g.rTop) + (idx + 0.5) * (g.tH / pts.length) : 0;
-  const bub: CSSProperties = {
-    position: 'absolute', right: width + 10, top: cy, transform: 'translateY(-50%)', background: 'var(--bl-card)',
-    boxShadow: '0 8px 28px rgba(0,0,0,.28), 0 0 0 1px var(--bl-sep)', animation: 'blBub .16s ' + EASE,
-    pointerEvents: 'none', opacity: on ? 1 : .93,
-  };
+  // Bubble floats beside the rail at the active stop; both come from measured geometry.
+  const bub = cn(
+    'pointer-events-none absolute [transform:translateY(-50%)] bg-card shadow-[0_8px_28px_rgba(0,0,0,.28),0_0_0_1px_var(--bl-sep)] animate-[blBub_.16s_cubic-bezier(.32,.72,0,1)]',
+    on ? 'opacity-100' : 'opacity-93',
+  );
+  const bubPos: CSSProperties = { right: width + 10, top: cy };
   return (
-    <div ref={rail} data-slot="index-bar" data-haptic-drag className={cn(className)} onPointerDown={down} onPointerMove={hover} onPointerLeave={() => setHov(-1)}
+    <div ref={rail} data-slot="index-bar" data-haptic-drag onPointerDown={down} onPointerMove={hover} onPointerLeave={() => setHov(-1)}
       role="listbox" aria-orientation="vertical" aria-label={label} aria-activedescendant={idx >= 0 ? `${optionId}-${idx}` : undefined}
       tabIndex={0} onKeyDown={keyDown} onFocus={() => setFocused(true)} onBlur={() => { setFocused(false); setKeyboardIndex(-1); }}
-      style={{
-        position: 'absolute', right: 0, top, bottom, width, zIndex: 80, display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', alignItems: 'center', touchAction: 'none', cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none',
-        outline: focused ? '2px solid var(--bl-tint)' : '2px solid transparent', outlineOffset: 2, borderRadius: 8, ...style,
-      }}
+      className={cn(
+        'absolute right-0 z-80 flex cursor-pointer touch-none flex-col items-center justify-center rounded-[8px] outline-offset-2 select-none',
+        focused ? '[outline:2px_solid_var(--bl-tint)]' : '[outline:2px_solid_transparent]',
+        className,
+      )}
+      style={{ top, bottom, width, ...style }}
       >
-      <div ref={track} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+      <div ref={track} className="flex w-full flex-col items-center">
         {pts.map((q, i) => {
           const hot = idx === i;
           return (
             <div key={String(q.key) + i} id={`${optionId}-${i}`} role="option" aria-selected={idx === i}
-              aria-label={q.caption || q.label || `Stop ${i + 1}`} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', height: 13.5, width: '100%',
-              transform: hot ? 'scale(1.5)' : 'none', transition: 'transform .12s',
-            }}>
+              aria-label={q.caption || q.label || `Stop ${i + 1}`}
+              className={cn('flex h-[13.5px] w-full items-center justify-center transition-[transform] duration-120', hot && '[transform:scale(1.5)]')}>
               {q.label
-                ? <span style={{ fontSize: 10.5, fontWeight: 700, lineHeight: '13.5px', color: q.dim ? 'var(--bl-label3)' : 'var(--bl-tint)' }}>{q.label}</span>
-                : <span style={{
-                    width: hot ? 6 : 5, height: hot ? 6 : 5, borderRadius: '50%', background: q.dim ? 'var(--bl-label3)' : 'var(--bl-tint)',
-                    opacity: q.dim ? .55 : 1,
-                  }} />}
+                ? <span className={cn('text-[10.5px] leading-[13.5px] font-bold', q.dim ? 'text-bl-label3' : 'text-primary')}>{q.label}</span>
+                : <span className={cn('rounded-full', hot ? 'size-1.5' : 'size-[5px]', q.dim ? 'bg-bl-label3 opacity-55' : 'bg-primary')} />}
             </div>
           );
         })}
       </div>
       {p && (p.preview != null)
-        ? <div style={{ ...bub, maxWidth: 250, minWidth: 120, borderRadius: 14, padding: '9px 13px', boxSizing: 'border-box' }}>
-            {p.caption ? <div style={{
-              fontSize: 9.5, fontWeight: 800, letterSpacing: '.6px', textTransform: 'uppercase',
-              color: 'var(--bl-tint)', marginBottom: 3,
-            }}>{p.caption}</div> : null}
-            <div style={{
-              fontSize: 13, lineHeight: 1.35, color: 'var(--bl-label)', fontWeight: 550, display: '-webkit-box',
-              WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', textWrap: 'pretty',
-            } as CSSProperties}>{p.preview}</div>
+        ? <div className={cn(bub, 'box-border max-w-[250px] min-w-[120px] rounded-[14px] px-[13px] py-[9px]')} style={bubPos}>
+            {p.caption ? <div className="mb-[3px] text-[9.5px] font-extrabold tracking-[.6px] text-primary uppercase">{p.caption}</div> : null}
+            <div className="line-clamp-3 text-[13px] leading-[1.35] font-[550] text-pretty text-foreground">{p.preview}</div>
           </div>
-        : p ? <div style={{
-            ...bub, width: 54, height: 54, borderRadius: 27, display: 'grid', placeItems: 'center',
-            fontSize: 25, fontWeight: 800, color: 'var(--bl-tint)',
-          }}>{p.label}</div> : null}
+        : p ? <div className={cn(bub, 'grid size-[54px] place-items-center rounded-[27px] text-[25px] font-extrabold text-primary')} style={bubPos}>{p.label}</div> : null}
     </div>
   );
 }

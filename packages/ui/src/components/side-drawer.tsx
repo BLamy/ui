@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
 import { Icon } from '../lib/icon';
-import { cn, EASE } from '../lib/utils';
+import { cn } from '../lib/utils';
 
 /* ══ SideDrawer — one panel, three hosts ══
    mode="fixed": docks as a column beside the detail view (extra-wide). mode="overlay": shadcn-style sheet from
@@ -20,33 +21,32 @@ export interface SideDrawerProps {
 export function SideDrawer({ mode, open, onClose, title, width, children, className, style }: SideDrawerProps) {
   width = width || 320;
   const head = (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px 6px', flexShrink: 0 }}>
-      <span style={{ fontSize: 16.5, fontWeight: 700, letterSpacing: '-.2px', whiteSpace: 'nowrap' }}>{title}</span>
-      <button className="bl-btn" onClick={onClose} aria-label={'Close ' + title} style={{
-        border: 0, background: 'var(--bl-fill)', width: 28, height: 28,
-        borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', color: 'var(--bl-label2)', padding: 0,
-      }}><Icon name="x" size={14} sw={2.6} /></button>
+    <div className="flex shrink-0 items-center justify-between px-[14px] pt-[13px] pb-1.5">
+      <span className="text-[16.5px] font-bold tracking-[-.2px] whitespace-nowrap">{title}</span>
+      <AriaButton onPress={onClose} aria-label={'Close ' + title}
+        className="bl-btn grid size-7 cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground">
+        <Icon name="x" size={14} sw={2.6} />
+      </AriaButton>
     </div>
   );
-  const col = <>{head}<div className="bl-scroll" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>{children}</div></>;
+  const col = <>{head}<div className="bl-scroll min-h-0 flex-1 overflow-y-auto">{children}</div></>;
   if (mode === 'fixed') {
     return (
-      <div data-slot="side-drawer" className={cn(className)} aria-hidden={!open} style={{
-        width: open ? width : 0, flexShrink: 0, overflow: 'hidden', transition: 'width .34s ' + EASE,
-        borderLeft: open ? '1px solid var(--bl-sep)' : 'none', background: 'var(--bl-bg)', ...style,
-      }}>
-        <div style={{ width, height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>{col}</div>
+      <div data-slot="side-drawer" aria-hidden={!open}
+        className={cn('shrink-0 overflow-hidden bg-background transition-[width] duration-340 ease-ios', open && '[border-left:1px_solid_var(--bl-sep)]', className)}
+        style={{ width: open ? width : 0, ...style }}>
+        <div className="box-border flex h-full flex-col" style={{ width }}>{col}</div>
       </div>
     );
   }
   return (
-    <div data-slot="side-drawer" className={cn(className)} aria-hidden={!open} style={{ position: 'absolute', inset: 0, zIndex: 350, pointerEvents: open ? 'auto' : 'none', ...style }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'var(--bl-scrim)', opacity: open ? 1 : 0, transition: 'opacity .3s' }} />
-      <div style={{
-        position: 'absolute', top: 0, bottom: 0, right: 0, width: 'min(' + width + 'px, 88%)', display: 'flex', flexDirection: 'column',
-        background: 'var(--bl-bg)', borderLeft: '1px solid var(--bl-sep)', boxShadow: open ? '-16px 0 48px rgba(0,0,0,.25)' : 'none',
-        transform: open ? 'none' : 'translateX(106%)', transition: 'transform .34s ' + EASE,
-      }}>{col}</div>
+    <div data-slot="side-drawer" aria-hidden={!open}
+      className={cn('absolute inset-0 z-350', open ? 'pointer-events-auto' : 'pointer-events-none', className)} style={style}>
+      <div onClick={onClose} className={cn('absolute inset-0 bg-overlay transition-opacity duration-300', open ? 'opacity-100' : 'opacity-0')} />
+      <div className={cn(
+        'absolute inset-y-0 right-0 flex flex-col [border-left:1px_solid_var(--bl-sep)] bg-background transition-transform duration-340 ease-ios',
+        open ? 'shadow-[-16px_0_48px_rgba(0,0,0,.25)]' : 'translate-x-[106%]',
+      )} style={{ width: 'min(' + width + 'px, 88%)' }}>{col}</div>
     </div>
   );
 }
