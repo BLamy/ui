@@ -539,7 +539,7 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
       };
       return <div style={{ fontFamily: WFONT }}>
         <DemoBtn label={live ? 'Streaming…' : 'Replay stream'} onPress={replay} style={{ marginBottom: 10, background: '#0A84FF' }} />
-        <div style={{ border: '1px solid rgba(20,20,40,.1)', borderRadius: 12, padding: '6px 16px', minHeight: 280, background: '#fff' }}>
+        <div style={{ border: '1px solid var(--bl-sep)', borderRadius: 12, padding: '6px 16px', minHeight: 280, background: 'var(--bl-card)', color: 'var(--bl-label)' }}>
           <MarkdownView markdown={txt} streaming={live} />
         </div>
       </div>;
