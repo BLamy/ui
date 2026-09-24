@@ -15,7 +15,7 @@ import {
 } from '@brett_lamy/chatkit';
 import {
   Composer, ComposerAttach, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand,
-  ComposerFooter, ComposerInput, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText,
+  ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText,
   ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
   type SurfaceKind,
 } from '@brett_lamy/workbench';
@@ -49,6 +49,56 @@ const SHEET_PRESETS: Record<string, SheetPreset> = {
   docked: { appearance: 'sheet', gutter: 0, radius: 20, peek: 250, minimizable: false, foot: false, note: 'gutter={0} docks it edge to edge like a system sheet; it cannot be folded away.' },
   open: { appearance: 'glass', gutter: 20, radius: 28, peek: 0, minimizable: true, foot: true, defaultOpen: true, note: 'Fully grown: the cap meets the top edge and the host dims behind it.' },
 };
+const composerCode = (variant: string) => {
+  const collapse = variant === 'compact' ? ' defaultCollapsed="compact"' : variant === 'scroll' ? ' collapseOnScroll={scrollerRef} collapseTo="fab"' : '';
+  const top = variant === 'full' ? `
+      <ComposerBump side="top" draggable maxReveal={160}>
+        <ComposerBumpContent><Log /></ComposerBumpContent>
+        <ComposerBumpHandle>
+          <ComposerText className="flex-1">Monitoring · pnpm dev</ComposerText>
+        </ComposerBumpHandle>
+      </ComposerBump>` : '';
+  return `import {
+  Composer, ComposerBump, ComposerBumpHandle, ComposerBumpContent, ComposerCard,
+  ComposerAttachments, ComposerInput, ComposerFooter, ComposerOptions, ComposerOptionsOutlet,
+  ComposerSelect, ComposerSeparator, ComposerSpacer, ComposerAttach, ComposerStop, ComposerSend,
+  ComposerText, ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS,
+} from "@brett_lamy/ui"
+
+// Options live in the footer; when the composer is compact they move into the bottom bump's outlet.
+export default function App() {
+  return (
+    <Composer onSubmit={send} streaming={streaming} onStop={stop}${collapse}>${top}
+      <ComposerCard size="lg">
+        <ComposerAttachments />
+        <ComposerInput placeholder="Ask anything, paste an image" />
+        <ComposerFooter>
+          <ComposerOptions>
+            <ModelPicker models={WORKBENCH_MODELS} providers={WORKBENCH_PROVIDERS} />
+            <ComposerSeparator />
+            <ComposerSelect aria-label="Effort" options={efforts} />
+            <ComposerSeparator />
+            <ComposerSelect aria-label="Access" icon="lock" options={access} />
+          </ComposerOptions>
+          <ComposerSpacer />
+          <ComposerAttach />
+          <ComposerStop variant="solid" />
+          <ComposerSend morph={false} />
+        </ComposerFooter>
+      </ComposerCard>
+      <ComposerBump side="bottom">
+        <ComposerBumpHandle>
+          <ComposerText icon="folder">Local checkout</ComposerText>
+          <ComposerOptionsOutlet />
+          <ComposerSpacer />
+          <ComposerText icon="branch">main</ComposerText>
+        </ComposerBumpHandle>
+      </ComposerBump>
+    </Composer>
+  )
+}`;
+};
+
 const sheetCode = (variant: string) => {
   const p = SHEET_PRESETS[variant] ?? SHEET_PRESETS.glass;
   const props = [
@@ -640,52 +690,71 @@ export default function ShareContact() {
     },
   },
   composer: {
-    title: 'Composer · compositional parts', theme: 'wb', h: 340,
-    code: "import {\n  Composer, ComposerBump, ComposerBumpHandle, ComposerBumpContent, ComposerCard,\n  ComposerAttachments, ComposerInput, ComposerExpand, ComposerFooter, ComposerSelect,\n  ComposerSeparator, ComposerSpacer, ComposerAttach, ComposerStop, ComposerSend,\n  ComposerText, ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS,\n} from \"@brett_lamy/ui\"\n\nexport default function App() {\n  const [streaming, setStreaming] = React.useState(false)\n  const send = (markdown, attachments) => {\n    console.log(markdown, attachments); setStreaming(true)\n    setTimeout(() => setStreaming(false), 1600)\n  }\n  return (\n    <Composer onSubmit={send} streaming={streaming} onStop={() => setStreaming(false)}\n      defaultValue={\"## Ship checklist\\n\\n- Highlight code\\n- Publish package\"}>\n      <ComposerBump side=\"top\" draggable maxReveal={160}>\n        <ComposerBumpContent><Log /></ComposerBumpContent>\n        <ComposerBumpHandle>\n          <ComposerText className=\"flex-1\">Monitoring \u00b7 pnpm dev</ComposerText>\n        </ComposerBumpHandle>\n      </ComposerBump>\n      <ComposerCard size=\"lg\">\n        <ComposerExpand />\n        <ComposerAttachments />\n        <ComposerInput placeholder=\"Ask anything, paste an image\" />\n        <ComposerFooter>\n          <ModelPicker models={WORKBENCH_MODELS} providers={WORKBENCH_PROVIDERS} />\n          <ComposerSeparator />\n          <ComposerSelect aria-label=\"Effort\" options={efforts} />\n          <ComposerSeparator />\n          <ComposerSelect aria-label=\"Access\" icon=\"lock\" options={access} />\n          <ComposerSpacer />\n          <ComposerAttach />\n          <ComposerStop variant=\"solid\" />\n          <ComposerSend morph={false} />\n        </ComposerFooter>\n      </ComposerCard>\n      <ComposerBump side=\"bottom\">\n        <ComposerBumpHandle>\n          <ComposerText icon=\"folder\" className=\"flex-1\">Local checkout</ComposerText>\n          <ComposerText icon=\"branch\">main</ComposerText>\n        </ComposerBumpHandle>\n      </ComposerBump>\n    </Composer>\n  )\n}",
-    Render: function CompLive() {
+    title: 'Composer · compositional parts', theme: 'wb', h: 380,
+    variants: [{ id: 'full', label: 'Full' }, { id: 'compact', label: 'Compact' }, { id: 'scroll', label: 'Scroll → FAB' }], variantsWidth: 300,
+    code: composerCode('full'), codeFor: composerCode,
+    Render: function CompLive({ variant = 'full' }) {
       const [streaming, setStreaming] = useState(false);
       const t = useRef<any>(null);
+      const scroller = useRef<HTMLDivElement>(null);
       useEffect(() => () => clearTimeout(t.current), []);
       const efforts = [{ id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' }, { id: 'high', label: 'High' }];
       const access = [{ id: 'full', label: 'Full access' }, { id: 'read', label: 'Read only' }];
-      return <div style={{ maxWidth: 580, margin: '0 auto', paddingTop: 24 }}>
-        <Composer defaultValue={'## Ship checklist\n\n- Highlight code\n- Publish package'}
-          onSubmit={() => { setStreaming(true); clearTimeout(t.current); t.current = setTimeout(() => setStreaming(false), 1600); }}
-          streaming={streaming} onStop={() => { clearTimeout(t.current); setStreaming(false); }}>
-          <ComposerBump side="top" draggable maxReveal={160}>
-            <ComposerBumpContent label="Dev server log">
-              <div style={{ padding: '10px 14px', fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5, lineHeight: 1.6, opacity: 0.8 }}>
-                <div>✓ ready in 412 ms</div><div>✓ 287 stories indexed</div><div>→ composer.tsx changed, HMR update</div>
-              </div>
-            </ComposerBumpContent>
-            <ComposerBumpHandle>
-              <span style={{ width: 7, height: 7, borderRadius: 99, background: 'var(--wb-green)' }} />
-              <ComposerText className="flex-1">Monitoring · pnpm dev</ComposerText>
-            </ComposerBumpHandle>
-          </ComposerBump>
-          <ComposerCard size="lg">
-            <ComposerExpand />
-            <ComposerAttachments />
-            <ComposerInput placeholder="Ask anything, paste an image" />
-            <ComposerFooter>
+      const full = variant === 'full';
+      const composer = <Composer key={variant} defaultValue={full ? '## Ship checklist\n\n- Highlight code\n- Publish package' : ''}
+        defaultCollapsed={variant === 'compact' ? 'compact' : undefined}
+        collapseOnScroll={variant === 'scroll' ? scroller : undefined} collapseTo="fab"
+        onSubmit={() => { setStreaming(true); clearTimeout(t.current); t.current = setTimeout(() => setStreaming(false), 1600); }}
+        streaming={streaming} onStop={() => { clearTimeout(t.current); setStreaming(false); }}>
+        {full ? <ComposerBump side="top" draggable maxReveal={160}>
+          <ComposerBumpContent label="Dev server log">
+            <div style={{ padding: '10px 14px', fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 11.5, lineHeight: 1.6, opacity: 0.8 }}>
+              <div>✓ ready in 412 ms</div><div>✓ 287 stories indexed</div><div>→ composer.tsx changed, HMR update</div>
+            </div>
+          </ComposerBumpContent>
+          <ComposerBumpHandle>
+            <span style={{ width: 7, height: 7, borderRadius: 99, background: 'var(--wb-green)' }} />
+            <ComposerText className="flex-1">Monitoring · pnpm dev</ComposerText>
+          </ComposerBumpHandle>
+        </ComposerBump> : null}
+        <ComposerCard size="lg">
+          {full ? <ComposerExpand /> : null}
+          <ComposerAttachments />
+          <ComposerInput placeholder="Ask anything, paste an image" />
+          <ComposerFooter>
+            <ComposerOptions>
               <ModelPicker models={WORKBENCH_MODELS} providers={WORKBENCH_PROVIDERS} defaultValue="claude-opus-5-5" />
               <ComposerSeparator />
               <ComposerSelect aria-label="Effort" options={efforts} defaultValue="medium" />
               <ComposerSeparator />
               <ComposerSelect aria-label="Access" icon="lock" options={access} />
-              <ComposerSpacer />
-              <ComposerAttach />
-              <ComposerStop variant="solid" />
-              <ComposerSend morph={false} />
-            </ComposerFooter>
-          </ComposerCard>
-          <ComposerBump side="bottom">
-            <ComposerBumpHandle>
-              <ComposerText icon="folder" className="flex-1">Local checkout</ComposerText>
-              <ComposerText icon="branch">main</ComposerText>
-            </ComposerBumpHandle>
-          </ComposerBump>
-        </Composer>
+            </ComposerOptions>
+            <ComposerSpacer />
+            <ComposerAttach />
+            <ComposerStop variant="solid" />
+            <ComposerSend morph={false} />
+          </ComposerFooter>
+        </ComposerCard>
+        <ComposerBump side="bottom">
+          <ComposerBumpHandle>
+            <ComposerText icon="folder" className="shrink-0">Local checkout</ComposerText>
+            <ComposerOptionsOutlet />
+            <ComposerSpacer />
+            <ComposerText icon="branch">main</ComposerText>
+          </ComposerBumpHandle>
+        </ComposerBump>
+      </Composer>;
+      if (variant !== 'scroll') return <div style={{ maxWidth: variant === 'compact' ? 720 : 580, margin: '0 auto', paddingTop: full ? 24 : 120 }}>{composer}</div>;
+      return <div style={{ position: 'relative', height: 380, margin: '-16px' }}>
+        <div ref={scroller} style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '20px 20px 180px' }}>
+          <div style={{ maxWidth: 620, margin: '0 auto', display: 'grid', gap: 10 }}>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>Thread · Fix the header overlap</div>
+            {Array.from({ length: 14 }, (_, i) => <div key={i} style={{ padding: 14, borderRadius: 12, border: '1px solid var(--wb-sep)', background: 'var(--wb-card)', fontSize: 13, lineHeight: 1.55, color: 'var(--wb-label2)' }}>
+              {i % 2 ? 'The sticky header sits at z-index 20 while the drawer uses 30, so the drawer wins on narrow widths.' : 'Scroll down: the composer folds to one row, then to a button. Scroll back up and it returns.'}
+            </div>)}
+          </div>
+        </div>
+        <div style={{ position: 'absolute', left: 20, right: 20, bottom: 14 }}><div style={{ maxWidth: 620, margin: '0 auto' }}>{composer}</div></div>
       </div>;
     },
   },
