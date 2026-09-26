@@ -20,6 +20,7 @@ import {
   type SurfaceKind,
 } from '@brett_lamy/workbench';
 import { DemoBtn, BLFrame, type LiveSpec } from './frame';
+import { MOTION_LIVE } from './examples/motion';
 
 /** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
 function ScaledShell({ width, height, children }: { width: number; height: number; children: ReactNode }) {
@@ -185,6 +186,7 @@ function SheetActions() {
 }
 
 export const LIVE_CORE: Record<string, LiveSpec> = {
+  ...MOTION_LIVE,
   sidebar: {
     title: 'Sidebar · docked, rail, float, overlay', theme: 'wb', h: 420, bleed: true,
     code: `import {
