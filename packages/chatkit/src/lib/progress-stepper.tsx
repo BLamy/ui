@@ -84,7 +84,7 @@ export function ProgressStepper({
             <span
               data-slot="progress-step-icon"
               className={cn(
-                'grid size-[28px] place-items-center [transition:color_.3s_ease,transform_.3s_cubic-bezier(.32,.72,0,1)]',
+                'grid size-[28px] place-items-center [transition:color_var(--duration-spring-smooth)_var(--ease-spring-smooth),transform_var(--duration-spring-bouncy)_var(--ease-spring-bouncy)] motion-reduce:transition-none',
                 state === 'todo' ? 'text-[color:var(--bl-label3,rgba(60,60,67,.3))]' : 'text-(--ck-stepper-accent)',
                 state === 'active' && '[transform:scale(1.1)]',
               )}
@@ -96,7 +96,7 @@ export function ProgressStepper({
               <span
                 data-slot="progress-step-fill"
                 className={cn(
-                  'absolute inset-0 origin-[left_center] rounded-[inherit] [transition:transform_.5s_cubic-bezier(.32,.72,0,1)]',
+                  'absolute inset-0 origin-[left_center] rounded-[inherit] [transition:transform_var(--duration-spring-smooth)_var(--ease-spring-smooth),background-color_var(--duration-spring-smooth)_var(--ease-spring-smooth)] motion-reduce:transition-none',
                   fillClass(state, animated),
                 )}
               />

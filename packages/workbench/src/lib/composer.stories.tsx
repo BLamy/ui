@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useRef, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { userEvent, within, expect, waitFor, screen } from 'storybook/test';
@@ -197,22 +198,61 @@ export const Compact: Story = { render: () => <Frame height={420} width={720}><T
 export const CompactLight: Story = { render: () => <Frame appearance="light" height={420} width={720}><T3Composer collapsed="compact" topBump={false} attachments={false} /></Frame> };
 export const Fab: Story = { render: () => <Frame height={420} width={720}><T3Composer collapsed="fab" topBump={false} attachments={false} streaming={false} /></Frame> };
 
-/** A long page scrolling under a pinned composer: scroll down → compact → FAB; scroll up restores. */
+/* A chat transcript under a pinned composer. It opens at the newest message (the bottom); scrolling up to read
+   back folds the composer to one row, a flick (or a long scroll) folds it into the FAB, and scrolling back down
+   — or tapping the FAB — brings it back. */
+const THREAD: { who: 'me' | 'agent'; text: string }[] = [
+  { who: 'me', text: 'Morning! Can you look at the shell layout before the release?' },
+  { who: 'agent', text: 'Sure. I opened the shell in Storybook at 1400, 1024 and 390 px wide and read through the layout code first.' },
+  { who: 'agent', text: 'Two things stand out: the sidebar drawer and the sticky header are siblings with competing z-indexes, and the drawer’s scrim is inside the main column.' },
+  { who: 'me', text: 'Which one bites first?' },
+  { who: 'agent', text: 'The z-index one. On narrow widths the header can paint over the open drawer. Want me to reproduce it?' },
+  { who: 'me', text: 'Yes please, with a screenshot.' },
+  { who: 'agent', text: 'Reproduced at 390 px: open the drawer and scroll the page a little — the header’s bottom edge slides over the drawer’s first row.' },
+  { who: 'me', text: 'The sticky header overlaps the sidebar drawer on narrow widths.' },
+  { who: 'agent', text: 'The header sits at z-index 20 and the drawer at 30, so the drawer should win — unless the header creates its own stacking context.' },
+  { who: 'me', text: 'It has a backdrop-filter.' },
+  { who: 'agent', text: 'That is it: backdrop-filter creates a stacking context, so the drawer is compared against the header’s parent. Moving the drawer out to the shell fixes it.' },
+  { who: 'me', text: 'Do that, and keep the scrim under the header.' },
+  { who: 'agent', text: 'Done — the drawer now portals into the shell and the scrim sits at 25. Storybook and the docs both look right.' },
+  { who: 'me', text: 'Nice. Can you check the compact breakpoint as well?' },
+  { who: 'agent', text: 'Checked 360, 390 and 430 px: the drawer covers the header and the hamburger stays reachable.' },
+  { who: 'me', text: 'And the light appearance?' },
+  { who: 'agent', text: 'Same result in light. The scrim is a touch lighter there, which matches the system sheets.' },
+  { who: 'me', text: 'Ship it.' },
+  { who: 'agent', text: 'Committed as “fix(shell): drawer above sticky header”. Anything else?' },
+];
+
+function ChatThread({ scroller, bottomPad = 170 }: { scroller: React.RefObject<HTMLDivElement | null>; bottomPad?: number }) {
+  // Chats open at the newest message.
+  React.useLayoutEffect(() => {
+    const el = scroller.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [scroller]);
+  return (
+    <div ref={scroller} data-testid="scroller" className="wb-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: `24px 24px ${bottomPad}px` }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', display: 'grid', gap: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--wb-label3)', textAlign: 'center', padding: '4px 0 8px' }}>Thread · Fix the header overlap</div>
+        {THREAD.map((m, i) =>
+          m.who === 'me' ? (
+            <div key={i} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div className="rounded-[14px_14px_4px_14px] bg-wb-fill2" style={{ padding: '9px 13px', fontSize: 14, lineHeight: 1.5, maxWidth: '78%' }}>{m.text}</div>
+            </div>
+          ) : (
+            <div key={i} style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--wb-label)', padding: '2px 2px 6px' }}>{m.text}</div>
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ScrollPage({ appearance = 'dark' }: { appearance?: Appearance }) {
   const scroller = useRef<HTMLDivElement>(null);
   return (
     <AppearanceProvider value={appearance}>
       <WorkbenchTheme style={{ position: 'relative', height: 640, overflow: 'hidden' }}>
-        <div ref={scroller} data-testid="scroller" className="wb-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '24px 24px 200px' }}>
-          <div style={{ maxWidth: 720, margin: '0 auto', display: 'grid', gap: 12 }}>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>Thread · Fix the header overlap</div>
-            {Array.from({ length: 18 }, (_, i) => (
-              <div key={i} className="rounded-xl border border-wb-sep bg-wb-card" style={{ padding: 16, fontSize: 13.5, lineHeight: 1.55, color: 'var(--wb-label2)' }}>
-                {i % 2 ? 'The sticky header sits at z-index 20 while the sidebar drawer uses 30, so the drawer wins on narrow widths.' : 'Scroll down: the composer folds to one row, then to a button. Scroll up and it comes back.'}
-              </div>
-            ))}
-          </div>
-        </div>
+        <ChatThread scroller={scroller} />
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 16, padding: '0 24px' }}>
           <div style={{ maxWidth: 720, margin: '0 auto' }}>
             <T3Composer collapseOnScroll={scroller} collapseTo="fab" topBump={false} attachments={false} streaming={false} />

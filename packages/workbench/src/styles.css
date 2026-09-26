@@ -7,6 +7,9 @@
 @keyframes wbBlink{0%,55%{opacity:1}56%,100%{opacity:0}}
 @keyframes wbPulse{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes wbSpin{to{transform:rotate(360deg)}}
+/* Popovers grow out of their trigger (transform-origin: the anchor point) on the snappy spring. */
+@keyframes wb-pop-in{from{opacity:0;transform:scale(.88);filter:blur(2px)}}
+@keyframes wb-pop-out{to{opacity:0;transform:scale(.96)}}
 .wb-scroll{scrollbar-width:thin;scrollbar-color:rgba(140,140,155,.3) transparent}
 .wb-scroll::-webkit-scrollbar{width:8px;height:8px}
 .wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
@@ -118,3 +121,23 @@ body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-ch
 /* Compact composer: one row, the editor a single line beside the controls. */
 .wb-composer-doc-compact.gb{max-height:44px;padding-right:4px}
 .wb-composer-doc-compact.gb .ProseMirror{min-height:22px;padding:10px 0 9px}
+
+/* ── Composer shape states (motion: one shape, after "Family Values") ──
+   The card is the same element in every state; composer.tsx springs its size between them (FLIP) and these
+   rules give each state its look. Folded (`fab`): the card is the round button, its content faded and inert,
+   the bumps folded away. Corners, shadows and colours cross on the spring curves. */
+@layer components{
+  [data-slot="composer-card"]{transition:border-radius var(--duration-spring-smooth) var(--ease-spring-smooth),box-shadow var(--duration-spring-smooth) var(--ease-spring-smooth),background-color var(--duration-spring-smooth) var(--ease-spring-smooth),border-color var(--duration-spring-smooth) var(--ease-spring-smooth)}
+  /* Unfolding, the content waits for the card to grow most of the way (no reflow on show); folding, it goes at once. */
+  [data-slot="composer-card-body"]>:not([data-slot$="-presence"]){transition:opacity .2s ease .16s,filter .2s ease .16s}
+  [data-slot="composer-stack"]>[data-slot="composer-bump"]{transition:opacity .22s ease .12s}
+}
+[data-slot="composer-card"]>[data-slot="composer-fab"]{opacity:0;pointer-events:none;transform:scale(.6);transition:opacity .12s ease,transform var(--duration-spring-snappy) var(--ease-spring-snappy)}
+[data-slot="composer"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{width:52px;height:52px;border-radius:26px;overflow:hidden;flex-wrap:nowrap;box-shadow:0 10px 30px -8px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.14)}
+[data-slot="composer"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]>[data-slot="composer-card-body"]>*{opacity:0!important;filter:blur(4px);pointer-events:none;transition:opacity .1s ease,filter .1s ease}
+[data-slot="composer"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]>[data-slot="composer-fab"]{opacity:1;pointer-events:auto;transform:none;transition:opacity .2s ease .14s,transform var(--duration-spring-bouncy) var(--ease-spring-bouncy) .1s}
+[data-slot="composer"][data-fab-position="end"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{align-self:flex-end}
+[data-slot="composer"][data-fab-position="center"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{align-self:center}
+[data-slot="composer"][data-fab-position="start"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{align-self:flex-start}
+[data-slot="composer"][data-collapsed="fab"]:has([data-folded])>[data-slot="composer-stack"]>[data-slot="composer-bump"]{height:0;min-height:0;margin-block:0;padding-block:0;border-width:0;opacity:0;overflow:hidden;pointer-events:none;transition:opacity .1s ease}
+@media (prefers-reduced-motion:reduce){[data-slot="composer-card"],[data-slot="composer-card-body"]>*,[data-slot="composer-card"]>[data-slot="composer-fab"],[data-slot="composer-stack"]>[data-slot="composer-bump"]{transition:none!important}}

@@ -52,8 +52,10 @@ export interface WorkspaceRailProps {
    between them, one selection tick per change), the pill on the leading edge shows unread / hover /
    selected, and "Add workspace" is a TabViewAction — a button in the bar that isn't a tab. */
 
+/* Discord's rail: a tile is a circle at rest and morphs to a rounded square when hovered or selected, while the
+   pill on the leading edge grows (nub → half → full). Corners, colours and the pill ride springs; a press dips. */
 const tileClass =
-  'relative box-border grid size-[34px] shrink-0 place-items-center rounded-[11px] border-2 font-ios text-[14px] leading-[normal] font-extrabold transition-transform duration-100 group-data-pressed:translate-y-px group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-ck-link';
+  'relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 font-ios text-[14px] leading-[normal] font-extrabold [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-ck-link';
 
 function MentionBadge({ n }: { n?: number }) {
   if (!n) return null;
@@ -67,7 +69,7 @@ function MentionBadge({ n }: { n?: number }) {
 function RailTab({ id, title, attention, children }: { id: string; title: string; attention?: boolean; children: ReactNode }) {
   return (
     <TabViewTab id={id} textValue={title} ref={titleRef(title)} className="group flex w-full justify-center">
-      <TabViewIndicator variant="pill" attention={attention} className="bg-ck-label" />
+      <TabViewIndicator variant="pill" attention={attention} className="bg-ck-label duration-(--duration-spring-bouncy) ease-(--ease-spring-bouncy)" />
       {children}
     </TabViewTab>
   );
@@ -145,7 +147,7 @@ export function WorkspaceRail({
             kvib([5]);
             onAdd?.();
           }}
-          className="grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[11px] border border-dashed border-ck-sep bg-transparent text-ck-mut3 data-hovered:text-ck-mut"
+          className="grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[17px] border border-dashed border-ck-sep bg-transparent text-ck-mut3 [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:rounded-[11px] data-hovered:text-ck-mut data-pressed:scale-[.94] motion-reduce:transition-none"
         >
           <ChatIcon d={chatIconPaths.plus} size={14} />
         </TabViewAction>

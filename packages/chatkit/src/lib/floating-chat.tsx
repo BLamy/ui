@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -10,11 +11,12 @@ import {
   type RefObject,
 } from 'react';
 import { Button } from 'react-aria-components';
-import { Haptics, collectSlots, defineSlot, useAppearance, useChromeHidden } from '@brett_lamy/ui';
+import { Haptics, collectSlots, defineSlot, springCss, useAppearance, useChromeHidden } from '@brett_lamy/ui';
 import { ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerFab, ComposerOutlet, type ComposerBumpProgress } from '@brett_lamy/workbench';
 import { ChatIcon, chatIconPaths } from './chat-icon';
 import { cn } from './cn';
 import type { FloatingSheetAppearance, FloatingSheetFabPosition, FloatingSheetTone } from './floating-sheet';
+import { ChatHostContext } from './persistent-host';
 
 export type FloatingChatFabPosition = FloatingSheetFabPosition;
 
@@ -153,7 +155,10 @@ export function FloatingChat({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const [uncontrolledComposing, setUncontrolledComposing] = useState(!working);
   const [minimized, setMinimized] = useState(false);
-  const [bump, setBump] = useState<ComposerBumpProgress>({ progress: 0, reveal: 0, minimize: 0, dragging: false });
+  const [bump, setBump] = useState<ComposerBumpProgress>({ progress: 0, reveal: 0, minimize: 0, dragging: false, settling: false });
+  // Inside ArtifactChatContainer the composer and transcript are shared with the docked layout: this chat
+  // gives them docks and reports its outlet instead of rendering its own copies.
+  const shared = useContext(ChatHostContext);
   const open = controlledOpen ?? uncontrolledOpen;
   const composing = controlledComposing ?? uncontrolledComposing;
 
@@ -200,7 +205,8 @@ export function FloatingChat({
         <div data-slot="floating-chat-card" className="relative z-1 min-w-0">
           <Button
             data-slot="floating-chat-working"
-            className="box-border flex min-h-[46px] w-full cursor-pointer items-center gap-[10px] rounded-[15px] border border-wb-sep bg-wb-card px-[15px] py-1.5 text-left [font:inherit] text-wb-label shadow-[0_6px_24px_var(--wb-shadow,rgba(0,0,0,.28))] outline-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60"
+            // Swaps in for the card with a soft rise; the real card waits, mounted, underneath.
+            className="box-border flex min-h-[46px] w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-wb-sep bg-wb-card px-[15px] py-1.5 text-left [font:inherit] text-wb-label shadow-[0_6px_24px_var(--wb-shadow,rgba(0,0,0,.28))] outline-none motion-reduce:animate-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60"
             onPress={() => revealRef.current()}
           >
             <span className="grid animate-[ck-floating-working_1.8s_ease-in-out_infinite] place-items-center text-wb-label2 motion-reduce:animate-none" aria-hidden="true">
@@ -249,10 +255,22 @@ export function FloatingChat({
           : 'border-[color:rgba(var(--ck-sheet-line),.1)] bg-[color:var(--bl-card,#fff)]',
       )}
     >
-      <ComposerBumpContent label={label}>{slots.chat}</ComposerBumpContent>
+      <ComposerBumpContent label={label}>
+        {shared ? <div ref={shared.chatDock} data-slot="floating-chat-transcript" className="flex h-full min-h-0 min-w-0 flex-col" /> : slots.chat}
+      </ComposerBumpContent>
       <ComposerBumpHandle label={open ? 'Collapse chat' : 'Expand chat'} className="pt-px" />
     </ComposerBump>
   );
+
+  // Report the outlet every render (the bump's props follow this chat's state).
+  useLayoutEffect(() => {
+    shared?.outlet.set({ parts, renderCard, className: 'ck-floating-chat__composer' });
+  });
+  useLayoutEffect(() => () => shared?.outlet.set(null), [shared]);
+
+  const driving = bump.dragging || bump.settling;
+  // Folding into the FAB, the dock shrinks toward where the FAB sits while the FAB grows out of it.
+  const foldOrigin = fabPosition.endsWith('left') ? 'bottom left' : fabPosition.endsWith('right') ? 'bottom right' : 'bottom center';
 
   const value: FloatingChatContextValue = {
     open,
@@ -295,43 +313,54 @@ export function FloatingChat({
           className={cn(
             'absolute inset-0 z-0 block border-0 bg-[#000] p-0 motion-reduce:[transition:none]',
             open ? 'pointer-events-auto' : 'pointer-events-none',
-            bump.dragging ? '[transition:none]' : '[transition:opacity_.42s_cubic-bezier(.32,.72,0,1)]',
           )}
-          style={{ opacity: 0.16 * bump.progress }}
+          // The bump's spring writes progress every frame; only other changes transition.
+          style={{ opacity: 0.16 * bump.progress, transition: driving ? 'none' : springCss('opacity', 'smooth') }}
           onClick={() => setOpen(false)}
         />
         ) : null}
         <div
           data-slot="floating-chat-dock"
           className={cn(
-            'ck-floating-chat__dock absolute inset-x-(--ck-chat-gutter) bottom-(--ck-chat-gutter) z-2 min-w-0 origin-bottom [transition:transform_.48s_cubic-bezier(.22,1,.36,1),opacity_.24s_ease] motion-reduce:[transition:none]',
+            'ck-floating-chat__dock absolute inset-x-(--ck-chat-gutter) bottom-(--ck-chat-gutter) z-2 min-w-0 motion-reduce:[transition:none]!',
             minimized || hidden ? 'pointer-events-none' : 'pointer-events-auto',
             hidden ? 'translate-y-[calc(100%_+_44px)] opacity-0' : '',
-            bump.dragging && '[transition:none]',
           )}
-          style={
-            !hidden
-              ? { opacity: 1 - fold, transform: fold ? `translateY(${fold * 28}px) scale(${1 - fold * 0.12})` : undefined }
-              : undefined
-          }
+          style={{
+            transformOrigin: foldOrigin,
+            transition: driving ? 'none' : springCss(['transform', 'opacity'], 'smooth'),
+            ...(!hidden
+              ? { opacity: Math.max(0, 1 - fold * 1.4), transform: fold ? `translateY(${fold * 10}px) scale(${1 - fold * 0.72}, ${1 - fold * 0.5})` : undefined }
+              : null),
+          }}
           aria-hidden={minimized || undefined}
           inert={minimized || undefined}
         >
-          <ComposerOutlet parts={parts} renderCard={renderCard} className="ck-floating-chat__composer">
-            {slots.composer}
-          </ComposerOutlet>
+          {shared ? (
+            <div ref={shared.composerDock} data-slot="floating-chat-composer" className="min-w-0" />
+          ) : (
+            <ComposerOutlet parts={parts} renderCard={renderCard} className="ck-floating-chat__composer">
+              {slots.composer}
+            </ComposerOutlet>
+          )}
         </div>
         {/* The same FAB a Composer folds into, placed and glazed for the floating layer. */}
         <ComposerFab
           data-slot="floating-chat-fab"
           aria-label="Open chat"
           className={cn(
-            'absolute border-[color:rgba(var(--ck-sheet-line),.14)] text-[color:var(--bl-label,#f5f5f7)] [transition:opacity_.24s_ease]',
+            'absolute border-[color:rgba(var(--ck-sheet-line),.14)] text-[color:var(--bl-label,#f5f5f7)]',
             glass ? 'bg-[color:rgba(var(--ck-sheet-surface),.62)]' : 'bg-[color:var(--bl-card,#fff)]',
             fabPlacement[fabPosition],
             minimized ? 'pointer-events-auto' : 'pointer-events-none',
           )}
-          style={{ opacity: fold, ...(glass ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } : null) }}
+          style={{
+            opacity: fold,
+            // Grows out of the folding dock.
+            scale: 0.6 + 0.4 * fold,
+            transition: driving ? 'none' : springCss(['opacity', 'scale'], 'snappy'),
+            ...(glass ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } : null),
+          }}
           onPress={() => {
             Haptics.selection();
             setOpen(false);

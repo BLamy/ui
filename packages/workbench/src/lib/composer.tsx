@@ -6,7 +6,6 @@ import type { EditorAttachment } from '@brett_lamy/docstream-editor';
 import { astToTiptap } from '@brett_lamy/docstream-editor/convert';
 import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
 import '@brett_lamy/docstream-editor/styles.css';
-import { useSheetDrag } from '@brett_lamy/ui';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
   Dialog,
@@ -24,6 +23,8 @@ import { cn } from './util';
 import { vib, tick } from './haptics';
 import { WIcon, type WIconName } from './icons';
 import { WbPopover } from './wb-popover';
+import { animate, AnimatePresence, motion } from 'framer-motion';
+import { MorphText, flipPlay, flipSnapshot, prefersReducedMotion, springs, useSpringSheetDrag, type FlipSnapshot, type SpringSheetDragState } from './motion';
 import {
   InkPicker, PencilActions, PencilCanvas, PencilToolbar, PencilToolbarDivider, ToolPicker, PK_INKS, usePencilHistory,
   type PencilTool,
@@ -87,6 +88,8 @@ export interface ComposerContextValue {
   optionsOutlet: HTMLElement | null;
   /** @internal */
   setOptionsOutlet: (el: HTMLElement | null) => void;
+  /** @internal the FAB the card folds into, when this composer can fold. */
+  fab: { icon?: React.ReactNode; restore: () => void } | null;
 }
 
 /** `none`: the full card · `compact`: one row, options in the bottom bump · `fab`: a floating button. */
@@ -150,13 +153,20 @@ export interface ComposerProps {
   defaultCollapsed?: ComposerCollapse;
   onCollapsedChange?: (collapsed: ComposerCollapse) => void;
   /**
-   * A scroller beneath the composer: scrolling it down collapses the composer (to `compact`, then — with
-   * `collapseTo="fab"` — to a FAB); scrolling up or reaching the top restores it. Never collapses while the
-   * composer has focus, an attachment, or the annotator open, and never folds a draft or a reply into the FAB.
+   * A scroller beside the composer (a chat transcript). Scrolling away from its anchor (up, away from the
+   * newest message, by default) collapses the composer to `compact`; with `collapseTo="fab"` a flick or a long
+   * scroll away folds it into a FAB — the card morphing into the button as one shape. Scrolling back near the
+   * anchor, or tapping the FAB, restores it. Never collapses while the composer has focus, an attachment, or the
+   * annotator open, and never folds a draft or a reply into the FAB.
    */
   collapseOnScroll?: React.RefObject<HTMLElement | null>;
   /** How far scrolling collapses the composer (default `compact`). */
   collapseTo?: 'compact' | 'fab';
+  /**
+   * Which end of the scroller is "home". `bottom` (default, chats): the transcript rests at its newest
+   * message, scrolling up collapses and scrolling back down restores. `top` (documents): the reverse.
+   */
+  collapseAnchor?: 'bottom' | 'top';
   /** Where the FAB sits in the composer's box. */
   fabPosition?: 'start' | 'center' | 'end';
   /** The FAB's icon (defaults to a compose glyph). */
@@ -214,6 +224,7 @@ export function Composer({
   onCollapsedChange,
   collapseOnScroll,
   collapseTo = 'compact',
+  collapseAnchor = 'bottom',
   fabPosition = 'end',
   fabIcon,
   children,
@@ -282,6 +293,9 @@ export function Composer({
   };
 
   // ── scroll-linked collapse ──
+  // Chat-style by default: the transcript rests at its newest message (the bottom). Scrolling away from it
+  // folds the composer to one row; a long or fast scroll away folds it to the FAB; coming back near the
+  // anchor restores it. `collapseAnchor="top"` flips this for documents that start at the top.
   const scrollState = useRef({ collapsed, collapseTo, streaming, draft: false, blocked: () => false as boolean, set: setCollapsed });
   scrollState.current = {
     collapsed,
@@ -297,62 +311,92 @@ export function Composer({
   React.useEffect(() => {
     const scroller = collapseOnScroll?.current;
     if (!scroller) return;
-    let previous = scroller.scrollTop;
+    // Distance from the anchor edge (the newest message, for chats).
+    const away = () =>
+      collapseAnchor === 'top' ? scroller.scrollTop : scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+    let previous = away();
     let travel = 0;
+    // Recent positions, for the speed over the last ~100ms (a flick) — robust to coalesced or jumpy events.
+    const samples: { t: number; d: number }[] = [{ t: performance.now(), d: previous }];
     const onScroll = () => {
-      const y = scroller.scrollTop;
-      const delta = y - previous;
-      previous = y;
+      const now = performance.now();
+      const d = away();
+      const delta = d - previous; // > 0: moving away from the anchor
+      previous = d;
+      while (samples.length > 1 && now - samples[0].t > COLLAPSE_FLICK_WINDOW) samples.shift();
+      const base = samples[0];
+      const speed = (d - base.d) / Math.max(COLLAPSE_FLICK_WINDOW, now - base.t);
+      samples.push({ t: now, d });
       const st = scrollState.current;
-      if (y < 4 || delta < -6) {
+      // At (or near) the anchor: the full composer.
+      if (d < COLLAPSE_NEAR_ANCHOR) {
         travel = 0;
         if (st.collapsed !== 'none') st.set('none');
         return;
       }
-      if (delta <= 0) return;
+      if (delta < 0) {
+        // Heading back: a FAB opens up to the row on the way, so there is something to type into.
+        travel = Math.min(0, travel) + delta;
+        if (st.collapsed === 'fab' && travel < -160) st.set('compact');
+        return;
+      }
+      if (delta === 0) return;
       if (st.blocked()) {
         travel = 0;
         return;
       }
-      travel += delta;
-      if (st.collapsed === 'none' && travel > 24) st.set('compact');
-      else if (st.collapseTo === 'fab' && st.collapsed === 'compact' && travel > 260 && !st.streaming && !st.draft) st.set('fab');
+      travel = Math.max(0, travel) + delta;
+      // Drafts and replies never fold into the FAB.
+      const canFab = st.collapseTo === 'fab' && !st.streaming && !st.draft;
+      // A flick (fast) or a long read away folds all the way to the FAB.
+      if (canFab && st.collapsed !== 'fab' && (speed > COLLAPSE_FLICK_SPEED || travel > COLLAPSE_FAB_TRAVEL)) st.set('fab');
+      else if (st.collapsed === 'none' && travel > 24) st.set('compact');
     };
     scroller.addEventListener('scroll', onScroll, { passive: true });
     return () => scroller.removeEventListener('scroll', onScroll);
-  }, [collapseOnScroll]);
+  }, [collapseOnScroll, collapseAnchor]);
 
-  // ── the card eases between its full and compact heights (FLIP on the card's height) ──
-  const cardHeight = useRef<number | null>(null);
+  // ── one shape, many states ──
+  // Full ↔ compact ↔ FAB ↔ tall are the same card changing shape: its size springs from the old to the new,
+  // the controls that moved (options into the bump, send into the row) fly from where they were, and the
+  // bumps fold away or come back. The DOM is read during render (before React commits) and played back in a
+  // layout effect, so a change arriving mid-flight starts from wherever things are.
+  const shapeKey = `${collapsed}|${expanded}`;
+  const committedShape = useRef(shapeKey);
+  const shapeSnap = useRef<ShapeSnapshot | null>(null);
+  if (shapeKey !== committedShape.current && !shapeSnap.current && typeof window !== 'undefined') {
+    shapeSnap.current = snapshotShape(rootRef.current);
+  }
   React.useLayoutEffect(() => {
-    const card = rootRef.current?.querySelector<HTMLElement>('[data-slot="composer-card"]');
-    if (!card) return;
-    const next = card.offsetHeight;
-    const prev = cardHeight.current;
-    cardHeight.current = next;
-    const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prev == null || prev === next || collapsed === 'fab' || reduce || !card.animate) return;
-    card.animate([{ height: `${prev}px`, overflow: 'hidden' }, { height: `${next}px`, overflow: 'hidden' }], {
-      duration: 420,
-      easing: 'cubic-bezier(.32,.72,0,1)',
-    });
-  }, [collapsed]);
-  React.useEffect(() => {
-    const card = rootRef.current?.querySelector<HTMLElement>('[data-slot="composer-card"]');
-    if (!card || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => {
-      if (!card.getAnimations?.().length) cardHeight.current = card.offsetHeight;
-    });
-    ro.observe(card);
-    return () => ro.disconnect();
-  }, []);
+    committedShape.current = shapeKey;
+    const snap = shapeSnap.current;
+    shapeSnap.current = null;
+    if (snap && !prefersReducedMotion()) playShape(rootRef.current, snap);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shapeKey]);
 
   const restore = () => {
     tick();
     setCollapsed('none');
     requestAnimationFrame(() => editor?.commands.focus('end'));
   };
-  const fab = collapsed === 'fab';
+  const fabEnabled = !!collapseOnScroll || collapsedProp !== undefined || defaultCollapsed === 'fab' || collapseTo === 'fab';
+  const origin = useRef<(() => HTMLElement | null) | undefined>(undefined);
+  const pressedAttachment = useRef<Element | null>(null);
+  const openAnnotator = (id: string) => {
+    // The lightbox zooms out of the thumbnail (or the inline chip) and lands back in it.
+    const esc = typeof CSS !== 'undefined' ? CSS.escape(id) : id;
+    const pressed = pressedAttachment.current;
+    origin.current = () => {
+      // The thing that was pressed (a strip thumbnail or an inline chip), else the strip thumbnail.
+      const el =
+        pressed?.isConnected && pressed.getAttribute('data-attachment-id') === id
+          ? pressed
+          : rootRef.current?.querySelector(`[data-slot="composer-attachment"][data-attachment-id="${esc}"]`);
+      return (el?.querySelector('img') ?? el ?? null) as HTMLElement | null;
+    };
+    setAnnotating(id);
+  };
 
   const ctx: ComposerContextValue = {
     value,
@@ -368,7 +412,7 @@ export function Composer({
     canSend,
     send,
     stop,
-    annotate: setAnnotating,
+    annotate: openAnnotator,
     editor,
     setEditor,
     rootRef,
@@ -377,6 +421,7 @@ export function Composer({
     setCollapsed,
     optionsOutlet,
     setOptionsOutlet,
+    fab: fabEnabled ? { icon: fabIcon, restore } : null,
   };
   const annotated = annotating ? attachments.find((a) => a.id === annotating) : undefined;
 
@@ -394,52 +439,25 @@ export function Composer({
           data-streaming={streaming || undefined}
           data-expanded={expanded || undefined}
           data-collapsed={collapsed}
-          className={cn(
-            'group/composer relative box-border grid w-full min-w-0 [transition:grid-template-rows_.42s_cubic-bezier(.32,.72,0,1),min-height_.42s_cubic-bezier(.32,.72,0,1)] motion-reduce:transition-none',
-            fab ? 'min-h-[52px] grid-rows-[0fr]' : 'grid-rows-[1fr]',
-            outlet?.className,
-            className,
-          )}
+          data-fab-position={fabPosition}
+          onPointerDownCapture={(event) => {
+            pressedAttachment.current = (event.target as Element).closest?.('[data-attachment-id]') ?? null;
+          }}
+          className={cn('group/composer relative box-border flex w-full min-w-0 flex-col', outlet?.className, className)}
           style={style}
         >
-          {/* The stack folds to nothing (grid rows 1fr → 0fr) while the FAB stands in. */}
-          <div
-            data-slot="composer-stack"
-            aria-hidden={fab || undefined}
-            inert={fab || undefined}
-            className={cn(
-              'flex min-h-0 min-w-0 flex-col [transition:opacity_.28s_ease,transform_.42s_cubic-bezier(.32,.72,0,1)] motion-reduce:transition-none',
-              fab && 'pointer-events-none translate-y-3 scale-[.96] overflow-hidden opacity-0',
-            )}
-          >
+          {/* In `fab` the bumps fold away and the card itself becomes the round button — one shape throughout. */}
+          <div data-slot="composer-stack" className="flex min-w-0 flex-col">
             {outlet?.parts}
             {children}
           </div>
-          {collapseOnScroll || collapsedProp !== undefined || defaultCollapsed === 'fab' || collapseTo === 'fab' ? (
-            <div
-              aria-hidden={!fab || undefined}
-              inert={!fab || undefined}
-              className={cn(
-                'absolute bottom-0',
-                fabPosition === 'start' ? 'left-0' : fabPosition === 'center' ? 'left-1/2 -translate-x-1/2' : 'right-0',
-              )}
-            >
-              <ComposerFab
-                onPress={restore}
-                className={cn(
-                  '[transition:opacity_.24s_ease,transform_.42s_cubic-bezier(.32,.72,0,1)] motion-reduce:transition-none',
-                  fab ? 'opacity-100' : 'pointer-events-none scale-75 opacity-0',
-                )}
-              >
-                {fabIcon}
-              </ComposerFab>
-            </div>
-          ) : null}
         </div>
         {annotated?.src ? (
           <AnnotateLightbox
+            key={annotated.id}
             src={annotated.src}
             canvas={annotateCanvas}
+            origin={origin.current}
             onClose={() => setAnnotating(null)}
             onSave={(src) => {
               updateAttachment(annotated.id, { src, type: 'image/png' });
@@ -450,6 +468,107 @@ export function Composer({
       </ComposerOutletContext.Provider>
     </ComposerContext.Provider>
   );
+}
+
+/* ── Shape morph (FLIP) ── */
+/** Distance from the anchor (px) inside which scrolling restores the full composer. */
+const COLLAPSE_NEAR_ANCHOR = 72;
+/** Scroll speed away from the anchor (px/ms) that counts as a flick straight to the FAB. */
+const COLLAPSE_FLICK_SPEED = 2;
+/** The window (ms) a flick's speed is measured over. */
+const COLLAPSE_FLICK_WINDOW = 100;
+/** Distance away from the anchor (px) that folds to the FAB without a flick. */
+const COLLAPSE_FAB_TRAVEL = 420;
+
+/** Controls that fly to their new place when the composer changes shape. */
+const FLIP_CONTROLS =
+  '[data-slot="composer-footer"] > :not([data-slot="composer-spacer"]):not([data-slot="composer-options-home"]), [data-slot="composer-options"] > *, [data-slot="composer-expand"]';
+
+interface ShapeSnapshot {
+  card: DOMRect;
+  controls: FlipSnapshot;
+  bumps: Map<HTMLElement, number>;
+}
+
+const morphToken = new WeakMap<Element, number>();
+
+function stackBumps(root: HTMLElement | null) {
+  return Array.from(root?.querySelectorAll<HTMLElement>(':scope > [data-slot="composer-stack"] > [data-slot="composer-bump"]') ?? []);
+}
+
+function snapshotShape(root: HTMLElement | null): ShapeSnapshot | null {
+  const card = root?.querySelector<HTMLElement>('[data-slot="composer-card"]');
+  if (!root || !card) return null;
+  return {
+    card: card.getBoundingClientRect(),
+    controls: flipSnapshot(root.querySelectorAll(FLIP_CONTROLS)),
+    bumps: new Map(stackBumps(root).map((b) => [b, b.getBoundingClientRect().height] as const)),
+  };
+}
+
+function playShape(root: HTMLElement | null, snap: ShapeSnapshot) {
+  const card = root?.querySelector<HTMLElement>('[data-slot="composer-card"]');
+  if (!root || !card) return;
+  const spring = springs.smooth;
+  // Bumps first (their final heights settle the card's final place).
+  const bumpAfter = new Map<HTMLElement, number>();
+  snap.bumps.forEach((_, bump) => {
+    if (!bump.isConnected) return;
+    bump.style.height = '';
+    bumpAfter.set(bump, bump.getBoundingClientRect().height);
+  });
+  card.style.width = '';
+  card.style.height = '';
+  card.style.transform = '';
+  const after = card.getBoundingClientRect();
+  const from = snap.card;
+  // Where the card's box sits while it still has its old size (a FAB anchors to its end, a row to its top).
+  card.style.width = `${from.width}px`;
+  card.style.height = `${from.height}px`;
+  snap.bumps.forEach((before, bump) => bump.isConnected && (bump.style.height = `${before}px`));
+  const held = card.getBoundingClientRect();
+  const token = (morphToken.get(card) ?? 0) + 1;
+  morphToken.set(card, token);
+  animate(
+    card,
+    { width: [from.width, after.width], height: [from.height, after.height], x: [from.left - held.left, 0], y: [from.top - held.top, 0] },
+    {
+      ...spring,
+      onComplete: () => {
+        // A newer morph owns the card now.
+        if (morphToken.get(card) !== token) return;
+        card.style.width = '';
+        card.style.height = '';
+        card.style.transform = '';
+      },
+    },
+  );
+  snap.bumps.forEach((before, bump) => {
+    const to = bumpAfter.get(bump);
+    if (to == null) return;
+    if (Math.abs(to - before) < 1) {
+      bump.style.height = '';
+      return;
+    }
+    morphToken.set(bump, token);
+    animate(bump, { height: [before, to] }, { ...spring, onComplete: () => morphToken.get(bump) === token && (bump.style.height = '') });
+  });
+  // Controls inside the card move relative to it; options that changed parents fly in page space.
+  const inCard: FlipSnapshot = new Map();
+  const moved: FlipSnapshot = new Map();
+  snap.controls.forEach((rect, el) => {
+    const option = el.parentElement?.getAttribute('data-slot') === 'composer-options';
+    const wasInCard = rect.top >= from.top - 1 && rect.bottom <= from.bottom + 1;
+    const nowInCard = card.contains(el);
+    (option && wasInCard !== nowInCard ? moved : inCard).set(el, rect);
+  });
+  // Measure the controls against the card at its final size, then let the card spring from its old one.
+  card.style.width = '';
+  card.style.height = '';
+  flipPlay(inCard, { relativeTo: [from, after] });
+  flipPlay(moved, { lift: true });
+  card.style.width = `${from.width}px`;
+  card.style.height = `${from.height}px`;
 }
 
 /* ── FAB ── */
@@ -536,9 +655,29 @@ export interface ComposerCardProps extends React.HTMLAttributes<HTMLDivElement>,
 }
 
 /** The bordered surface. Holds the input and its addons; an outlet may wrap it. */
-export function ComposerCard({ size, className, ref, ...props }: ComposerCardProps) {
-  const { renderCard } = useComposer();
-  const card = <div ref={ref} data-slot="composer-card" className={cn(composerCardVariants({ size }), className)} {...props} />;
+export function ComposerCard({ size, className, ref, children, ...props }: ComposerCardProps) {
+  const { renderCard, collapsed, fab } = useComposer();
+  const folded = collapsed === 'fab' && !!fab;
+  const card = (
+    <div ref={ref} data-slot="composer-card" data-folded={folded || undefined} className={cn(composerCardVariants({ size }), className)} {...props}>
+      {/* Folded into the FAB, the card keeps its content (faded, inert) and shows the button face over it. */}
+      <div data-slot="composer-card-body" className="contents" inert={folded || undefined} aria-hidden={folded || undefined}>
+        {children}
+      </div>
+      {fab ? (
+        <Button
+          data-slot="composer-fab"
+          aria-label="Open composer"
+          aria-hidden={!folded || undefined}
+          excludeFromTabOrder={!folded}
+          onPress={fab.restore}
+          className="wb-btn absolute inset-0 z-3 grid cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-wb-label outline-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60"
+        >
+          {fab.icon ?? <WIcon name="compose" size={21} sw={1.9} />}
+        </Button>
+      ) : null}
+    </div>
+  );
   return <>{renderCard ? renderCard(card) : card}</>;
 }
 
@@ -624,7 +763,7 @@ export const composerButtonVariants = cva(
         /** Option pill: label + chevron (model, effort, access). */
         pill: 'wb-hl gap-[5px] rounded-[7px] bg-transparent px-[7px] py-[5px] text-[12.5px] font-semibold text-wb-label2',
         /** Filled accent circle (send). */
-        primary: 'rounded-[50%] bg-wb-tint text-white transition-opacity duration-150 ease-[ease]',
+        primary: 'rounded-[50%] bg-wb-tint text-white [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
         /** Filled red circle (stop). */
         destructive: 'rounded-[50%] bg-wb-red text-white',
       },
@@ -662,7 +801,8 @@ export function ComposerPillLabel({ icon, children }: { icon?: React.ReactNode; 
   return (
     <>
       {typeof icon === 'string' ? <WIcon name={icon} size={13.5} sw={2} /> : icon}
-      <span className="whitespace-nowrap">{children}</span>
+      {/* A changed choice morphs its label by the letters the two share. */}
+      {typeof children === 'string' ? <MorphText className="whitespace-nowrap">{children}</MorphText> : <span className="whitespace-nowrap">{children}</span>}
       <WIcon name="chevD" size={11} sw={2.4} className="opacity-60" />
     </>
   );
@@ -701,7 +841,22 @@ export function ComposerMenuItem({ className, children, ...props }: MenuItemProp
       {composeRenderProps(children, (kids, { isSelected, selectionMode }) => (
         <>
           {selectionMode !== 'none' ? (
-            <span className="grid w-3.5 shrink-0 place-items-center text-wb-tint">{isSelected ? <WIcon name="check" size={13} sw={2.6} /> : null}</span>
+            <span className="grid w-3.5 shrink-0 place-items-center text-wb-tint">
+              <AnimatePresence initial={false}>
+                {isSelected ? (
+                  <motion.span
+                    key="tick"
+                    className="grid place-items-center"
+                    initial={{ scale: 0.3, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.3, opacity: 0 }}
+                    transition={springs.bouncy}
+                  >
+                    <WIcon name="check" size={13} sw={2.6} />
+                  </motion.span>
+                ) : null}
+              </AnimatePresence>
+            </span>
           ) : null}
           {kids}
         </>
@@ -765,30 +920,71 @@ export interface ComposerStopProps extends Omit<ComposerButtonProps, 'variant'> 
   forceMount?: boolean;
 }
 
-/** Stops the reply. Renders only while streaming. */
+/** The spinning progress ring around the stop square. */
+function StopRing() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 30 30" className="absolute inset-0 animate-[wbSpin_1s_linear_infinite] motion-reduce:animate-none">
+      <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--wb-fill2)" strokeWidth="2.5" />
+      <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--wb-tint)" strokeWidth="2.5" strokeDasharray="24 55" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** A glyph that swaps in place: the old one shrinks and blurs out as the new one grows in (a micro-morph). */
+function GlyphSwap({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.span
+        key={id}
+        className="relative grid size-full place-items-center"
+        initial={{ opacity: 0, scale: 0.4, filter: 'blur(3px)' }}
+        animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+        exit={{ opacity: 0, scale: 0.4, filter: 'blur(3px)' }}
+        transition={springs.snappy}
+      >
+        {children}
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
+/** Stops the reply. Renders only while streaming; pops in and out beside its neighbours. */
 export function ComposerStop({ variant = 'ring', forceMount, className, ...props }: ComposerStopProps) {
   const { streaming, stop } = useComposer();
-  if (!streaming && !forceMount) return null;
-  if (variant === 'solid')
-    return (
+  const shown = streaming || !!forceMount;
+  const button =
+    variant === 'solid' ? (
       <ComposerButton data-slot="composer-stop" variant="destructive" aria-label="Stop" onPress={stop} className={className} {...props}>
         <span className="block size-[9px] rounded-[2px] bg-current" />
       </ComposerButton>
+    ) : (
+      <Button
+        data-slot="composer-stop"
+        className={cn('wb-btn relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-wb-label', className)}
+        onPress={stop}
+        aria-label="Stop"
+        {...props}
+      >
+        <StopRing />
+        <WIcon name="stop" size={12} sw={2.4} />
+      </Button>
     );
   return (
-    <Button
-      data-slot="composer-stop"
-      className={cn('wb-btn relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-wb-label', className)}
-      onPress={stop}
-      aria-label="Stop"
-      {...props}
-    >
-      <svg width="30" height="30" viewBox="0 0 30 30" className="absolute inset-0 animate-[wbSpin_1s_linear_infinite]">
-        <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--wb-fill2)" strokeWidth="2.5" />
-        <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--wb-tint)" strokeWidth="2.5" strokeDasharray="24 55" strokeLinecap="round" />
-      </svg>
-      <WIcon name="stop" size={12} sw={2.4} />
-    </Button>
+    <AnimatePresence initial={false}>
+      {shown ? (
+        <motion.span
+          key="stop"
+          data-slot="composer-stop-presence"
+          className="flex shrink-0 items-center justify-center overflow-visible"
+          initial={{ width: 0, opacity: 0, scale: 0.5 }}
+          animate={{ width: 'auto', opacity: 1, scale: 1 }}
+          exit={{ width: 0, opacity: 0, scale: 0.5 }}
+          transition={springs.snappy}
+        >
+          {button}
+        </motion.span>
+      ) : null}
+    </AnimatePresence>
   );
 }
 
@@ -799,22 +995,41 @@ export interface ComposerSendProps extends Omit<ComposerButtonProps, 'variant'> 
   stopVariant?: ComposerStopProps['variant'];
 }
 
-/** The send circle; disabled while there is nothing to send. Morphs into ComposerStop while streaming. */
+/**
+ * The send circle; disabled while there is nothing to send. While streaming it morphs into the stop control —
+ * the same button: the fill drains (ring) or turns red (solid) and the arrow turns into the stop square.
+ */
 export function ComposerSend({ morph = true, stopVariant = 'ring', className, ...props }: ComposerSendProps) {
-  const { streaming, canSend, send } = useComposer();
-  if (streaming && morph) return <ComposerStop variant={stopVariant} />;
+  const { streaming, canSend, send, stop } = useComposer();
+  const stopping = streaming && morph;
   return (
-    <ComposerButton
-      data-slot="composer-send"
-      variant="primary"
-      aria-label="Send"
-      isDisabled={!canSend || streaming}
-      onPress={send}
-      className={className}
+    <Button
+      data-slot={stopping ? 'composer-stop' : 'composer-send'}
+      data-state={stopping ? 'stop' : 'send'}
+      aria-label={stopping ? 'Stop' : 'Send'}
+      isDisabled={stopping ? false : !canSend || streaming}
+      onPress={stopping ? stop : send}
+      className={cn(
+        'wb-btn relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-ios text-white outline-none data-disabled:cursor-default data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60',
+        '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
+        !stopping ? 'bg-wb-tint data-disabled:opacity-35' : stopVariant === 'solid' ? 'bg-wb-red' : 'bg-transparent text-wb-label',
+        className,
+      )}
       {...props}
     >
-      <WIcon name="up" size={16} sw={2.4} />
-    </ComposerButton>
+      <GlyphSwap id={stopping ? `stop-${stopVariant}` : 'send'}>
+        {!stopping ? (
+          <WIcon name="up" size={16} sw={2.4} />
+        ) : stopVariant === 'solid' ? (
+          <span className="block size-[9px] rounded-[2px] bg-current" />
+        ) : (
+          <>
+            <StopRing />
+            <WIcon name="stop" size={12} sw={2.4} />
+          </>
+        )}
+      </GlyphSwap>
+    </Button>
   );
 }
 
@@ -863,7 +1078,9 @@ export function ComposerExpand({ className }: { className?: string }) {
     <ToggleButton
       data-slot="composer-expand"
       className={cn(
-        'wb-btn wb-hl absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-wb-label2 group-data-[collapsed=compact]/composer:hidden',
+        'wb-btn wb-hl absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-wb-label2',
+        // Compact: fades out of the way rather than vanishing.
+        'group-data-[collapsed=compact]/composer:pointer-events-none group-data-[collapsed=compact]/composer:scale-75 group-data-[collapsed=compact]/composer:opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
         className,
       )}
       aria-label={label}
@@ -874,57 +1091,89 @@ export function ComposerExpand({ className }: { className?: string }) {
       }}
       title={label}
     >
-      <WIcon name={expanded ? 'restore' : 'expand'} size={14} sw={2} />
+      <GlyphSwap id={expanded ? 'restore' : 'expand'}>
+        <WIcon name={expanded ? 'restore' : 'expand'} size={14} sw={2} />
+      </GlyphSwap>
     </ToggleButton>
   );
 }
 
 /* ── Attachments strip ── */
-/** Thumbnails of the attachments: click to annotate, ✕ to remove (its chip goes too). A block-start addon. */
+/**
+ * Thumbnails of the attachments: click to annotate, ✕ to remove (its chip goes too). A block-start addon.
+ * The strip opens and closes as a height morph, and thumbnails pop in and out while their neighbours slide.
+ */
 export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonProps, 'align'>) {
   const { attachments, annotate, removeAttachment } = useComposer();
-  if (!attachments.length) return null;
   return (
-    <ComposerAddon data-slot="composer-attachments" align="block-start" className={cn('flex-wrap gap-2 group-data-[collapsed=compact]/composer:hidden', className)} {...props}>
-      {attachments.map((a) => (
-        <div key={a.id} data-slot="composer-attachment" data-attachment-id={a.id} className="relative">
-          <Button
-            onPress={() => {
-              tick();
-              annotate(a.id);
-            }}
-            title={`Annotate ${a.name}`}
-            aria-label={`Annotate ${a.name}`}
-            className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-wb-term p-0"
-          >
-            {a.src ? (
-              <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
-            ) : (
-              <span className="grid h-[58px] w-[72px] place-items-center text-wb-label3">
-                <WIcon name="doc" size={18} />
-              </span>
-            )}
-          </Button>
-          <span className="pointer-events-none absolute bottom-1 left-1 grid size-[18px] place-items-center rounded-md bg-[rgba(0,0,0,.55)] text-white">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 4l6 6-10 10H4v-6z" />
-            </svg>
-          </span>
-          <Button
-            onPress={() => {
-              tick();
-              removeAttachment(a.id);
-            }}
-            aria-label={`Remove ${a.name}`}
-            className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-wb-sep bg-wb-card2 p-0 text-[10px] leading-none text-wb-label2"
-          >
-            ✕
-          </Button>
-        </div>
-      ))}
-    </ComposerAddon>
+    <AnimatePresence initial={false}>
+      {attachments.length ? (
+        <motion.div
+          key="strip"
+          data-slot="composer-attachments-presence"
+          className="order-[-2] w-full min-w-0 overflow-hidden group-data-[collapsed=compact]/composer:hidden"
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={springs.smooth}
+        >
+          <ComposerAddon data-slot="composer-attachments" align="block-start" className={cn('flex-wrap gap-2', className)} {...props}>
+            <AnimatePresence mode="popLayout" initial={false}>
+              {attachments.map((a) => (
+                <motion.div
+                  key={a.id}
+                  layout="position"
+                  layoutDependency={attachments.map((x) => x.id).join()}
+                  data-slot="composer-attachment"
+                  data-attachment-id={a.id}
+                  className="relative"
+                  initial={{ opacity: 0, scale: 0.6, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, scale: 0.6, filter: 'blur(4px)' }}
+                  transition={springs.snappy}
+                >
+                  <Button
+                    onPress={() => {
+                      tick();
+                      annotate(a.id);
+                    }}
+                    title={`Annotate ${a.name}`}
+                    aria-label={`Annotate ${a.name}`}
+                    className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-wb-term p-0"
+                  >
+                    {a.src ? (
+                      <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
+                    ) : (
+                      <span className="grid h-[58px] w-[72px] place-items-center text-wb-label3">
+                        <WIcon name="doc" size={18} />
+                      </span>
+                    )}
+                  </Button>
+                  <span className="pointer-events-none absolute bottom-1 left-1 grid size-[18px] place-items-center rounded-md bg-[rgba(0,0,0,.55)] text-white">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 4l6 6-10 10H4v-6z" />
+                    </svg>
+                  </span>
+                  <Button
+                    onPress={() => {
+                      tick();
+                      removeAttachment(a.id);
+                    }}
+                    aria-label={`Remove ${a.name}`}
+                    className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-wb-sep bg-wb-card2 p-0 text-[10px] leading-none text-wb-label2"
+                  >
+                    ✕
+                  </Button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </ComposerAddon>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
+
 
 /* ── Input ── */
 function caretOnPlainLine(editor: ComposerEditor): boolean {
@@ -1059,8 +1308,9 @@ export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-c
   },
   compoundVariants: [
     // The top bump slides 12px under the card; its content sits above the tuck.
-    { side: 'top', variant: 'attached', className: 'z-0 mx-(--bump-inset) -mb-3 rounded-t-[14px] border-b-0 pb-3' },
-    { side: 'bottom', variant: 'attached', className: 'z-0 mx-(--bump-inset) -mt-3 rounded-b-[14px] border-t-0 pt-3' },
+    // No z-index of their own (not a stacking context), so a control flying in can cross over the card.
+    { side: 'top', variant: 'attached', className: 'mx-(--bump-inset) -mb-3 rounded-t-[14px] border-b-0 pb-3' },
+    { side: 'bottom', variant: 'attached', className: 'mx-(--bump-inset) -mt-3 rounded-b-[14px] border-t-0 pt-3' },
     { side: 'top', variant: 'detached', className: 'mx-2 mb-1.5' },
     { side: 'bottom', variant: 'detached', className: 'mx-2 mt-1.5' },
     { side: 'top', variant: 'flush', className: 'mb-1.5' },
@@ -1082,7 +1332,7 @@ export interface ComposerBumpContextValue {
   maxReveal: number;
   dragging: boolean;
   /** @internal */
-  handleProps: ReturnType<typeof useSheetDrag>['handlers'] | null;
+  handleProps: SpringSheetDragState['handlers'] | null;
   /** @internal */
   toggle: () => void;
   /** @internal */
@@ -1105,6 +1355,8 @@ export interface ComposerBumpProgress {
   /** 0–1 fold towards a FAB while dragging below rest (minimizable bumps). */
   minimize: number;
   dragging: boolean;
+  /** The spring is carrying the bump to rest (hosts driving CSS from progress should not transition then). */
+  settling: boolean;
 }
 
 export interface ComposerBumpProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onDrag'>, VariantProps<typeof composerBumpVariants> {
@@ -1187,7 +1439,7 @@ export function ComposerBump({
 
   const maxReveal = bounds ? (measured ?? maxRevealProp) : maxRevealProp;
   const peek = Math.max(0, Math.min(requestedPeek, maxReveal * 0.75));
-  const drag = useSheetDrag({
+  const drag = useSpringSheetDrag({
     open,
     onOpenChange: setOpen,
     peek,
@@ -1196,15 +1448,16 @@ export function ComposerBump({
     minimized,
     onMinimizedChange,
   });
-  const reveal = draggable ? (drag.dragReveal ?? (open ? maxReveal : peek)) : 0;
+  // Follows the finger, then springs to rest carrying the release velocity.
+  const reveal = draggable ? drag.reveal : 0;
   const progress = maxReveal > peek ? Math.max(0, (reveal - peek) / (maxReveal - peek)) : 0;
-  const minimize = drag.dragMinimize ?? (minimized ? 1 : 0);
+  const minimize = drag.minimize;
 
   const report = useRef(onProgressChange);
   report.current = onProgressChange;
   React.useEffect(() => {
-    report.current?.({ progress, reveal, minimize, dragging: drag.dragging });
-  }, [progress, reveal, minimize, drag.dragging]);
+    report.current?.({ progress, reveal, minimize, dragging: drag.dragging, settling: drag.settling });
+  }, [progress, reveal, minimize, drag.dragging, drag.settling]);
 
   const closeRef = useRef(() => setOpen(false));
   closeRef.current = () => setOpen(false);
@@ -1246,7 +1499,6 @@ export function ComposerBump({
         data-peeking={(draggable && peek > 0 && !open) || undefined}
         className={cn(
           composerBumpVariants({ side, variant }),
-          draggable && !drag.dragging && '[transition:margin_.44s_cubic-bezier(.32,.72,0,1)]',
           className,
         )}
         style={
@@ -1327,7 +1579,7 @@ export function ComposerBumpHandle({ grip = true, label, className, children, ..
         >
           <span
             className={cn(
-              'block h-1 rounded-[999px] [transition:width_.24s_ease,background_.24s_ease]',
+              'block h-1 rounded-[999px] [transition:width_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
               bump.open ? 'w-10 bg-wb-label2' : 'w-8 bg-wb-handle group-hover/handle:w-10 group-hover/handle:bg-wb-label3',
             )}
           />
@@ -1362,12 +1614,8 @@ export function ComposerBumpContent({ label = 'Details', className, children, ..
       data-peeking={(bump.peek > 0 && !bump.open) || undefined}
       className={cn(
         'relative order-first h-(--bump-reveal) w-full shrink-0 overflow-hidden',
+        // The height is written every frame by the drag and its settling spring, so it never CSS-transitions.
         expanded ? 'visible' : 'invisible',
-        bump.dragging
-          ? '[transition:visibility_0s]'
-          : expanded
-            ? '[transition:height_.44s_cubic-bezier(.32,.72,0,1),visibility_0s]'
-            : '[transition:height_.44s_cubic-bezier(.32,.72,0,1),visibility_0s_linear_.44s] motion-reduce:[transition:visibility_0s]',
         // A peeking body fades its cut top edge.
         'data-peeking:[mask-image:linear-gradient(to_bottom,transparent,#000_34px)]',
         className,
@@ -1388,6 +1636,8 @@ export interface AnnotateLightboxProps {
   onClose: () => void;
   onSave: (dataUrl: string) => void;
   canvas?: React.ReactNode;
+  /** The element the image zooms out of on open and back into on close (a thumbnail); else it scales in. */
+  origin?: () => HTMLElement | null;
 }
 
 /* The built-in surface: PencilKit canvas over the image, tools in a bar under it so they never cover the image. */
@@ -1418,14 +1668,105 @@ function useDefaultAnnotator(enabled: boolean) {
   };
 }
 
-export function AnnotateLightbox({ src, onClose, onSave, canvas }: AnnotateLightboxProps) {
+export function AnnotateLightbox({ src, onClose, onSave, canvas, origin }: AnnotateLightboxProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const chromeRef = useRef<HTMLDivElement>(null);
+  const toolsRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const annotator = useDefaultAnnotator(canvas === undefined);
+  const closing = useRef(false);
+  const hidden = useRef<HTMLElement | null>(null);
+
+  // Where the thumbnail is, as the box's transform: scaled to cover it, clipped to its shape and corners.
+  const zoomFrom = () => {
+    const box = boxRef.current;
+    const el = origin?.() ?? null;
+    if (!box || !el) return null;
+    const s = el.getBoundingClientRect();
+    const f = box.getBoundingClientRect();
+    if (!s.width || !f.width) return null;
+    const scale = Math.max(s.width / f.width, s.height / f.height);
+    const vw = s.width / scale,
+      vh = s.height / scale;
+    const ix = (f.width - vw) / 2,
+      iy = (f.height - vh) / 2;
+    const radius = parseFloat(getComputedStyle(el.closest('button') ?? el).borderRadius) || 10;
+    return {
+      el,
+      x: s.left + s.width / 2 - (f.left + f.width / 2),
+      y: s.top + s.height / 2 - (f.top + f.height / 2),
+      scale,
+      clip: `inset(${iy}px ${ix}px ${iy}px ${ix}px round ${radius / scale}px)`,
+    };
+  };
+
+  // Open: the image flies out of the thumbnail it was pressed on; the chrome follows it in.
+  React.useLayoutEffect(() => {
+    const box = boxRef.current,
+      img = imgRef.current;
+    if (!box || !img) return;
+    const reduce = prefersReducedMotion();
+    const fadeIn = (el: HTMLElement | null, delay = 0) =>
+      el && animate(el, { opacity: [0, 1], y: [reduce ? 0 : 10, 0] }, reduce ? { duration: 0.15 } : { ...springs.smooth, delay });
+    const run = () => {
+      animate(backdropRef.current!, { opacity: [0, 1] }, { duration: reduce ? 0.15 : 0.28 });
+      fadeIn(chromeRef.current, 0.08);
+      fadeIn(toolsRef.current, 0.12);
+      const from = reduce ? null : zoomFrom();
+      if (!from) {
+        animate(box, { opacity: [0, 1], scale: [reduce ? 1 : 0.94, 1] }, reduce ? { duration: 0.15 } : springs.smooth);
+        return;
+      }
+      hidden.current = from.el;
+      from.el.style.visibility = 'hidden';
+      box.style.opacity = '1';
+      animate(
+        box,
+        { x: [from.x, 0], y: [from.y, 0], scale: [from.scale, 1], clipPath: [from.clip, 'inset(0px 0px 0px 0px round 14px)'] },
+        springs.smooth,
+      );
+    };
+    box.style.opacity = '0';
+    if (img.complete && img.naturalWidth) run();
+    else {
+      img.addEventListener('load', run, { once: true });
+      img.addEventListener('error', run, { once: true });
+    }
+    return () => {
+      if (hidden.current) hidden.current.style.visibility = '';
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Close (cancel, Escape, outside press, save): the image lands back in the thumbnail before unmounting.
+  const close = (then: () => void) => {
+    if (closing.current) return;
+    closing.current = true;
+    const box = boxRef.current;
+    const reduce = prefersReducedMotion();
+    for (const el of [chromeRef.current, toolsRef.current]) if (el) animate(el, { opacity: 0 }, { duration: 0.12 });
+    if (backdropRef.current) animate(backdropRef.current, { opacity: 0 }, { duration: reduce ? 0.12 : 0.3 });
+    if (hidden.current) hidden.current.style.visibility = '';
+    const to = !reduce && box ? zoomFrom() : null;
+    if (hidden.current) hidden.current.style.visibility = 'hidden';
+    const finish = () => {
+      if (hidden.current) hidden.current.style.visibility = '';
+      hidden.current = null;
+      then();
+    };
+    if (!box) return finish();
+    if (!to) {
+      animate(box, { opacity: 0, scale: reduce ? 1 : 0.96 }, { duration: 0.14 }).then(finish);
+      return;
+    }
+    animate(box, { x: to.x, y: to.y, scale: to.scale, clipPath: to.clip }, { ...springs.smooth, restDelta: 0.5, restSpeed: 20 }).then(finish);
+  };
+
   const save = () => {
     const img = imgRef.current,
       box = boxRef.current;
-    if (!img || !box) return onClose();
+    if (!img || !box) return close(onClose);
     // The box is exactly the image (aspect kept), so strokes map 1:1; export at the image's native resolution.
     const w = img.clientWidth,
       h = img.clientHeight,
@@ -1434,11 +1775,12 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas }: AnnotateLight
     cv.width = w * sc;
     cv.height = h * sc;
     const ctx = cv.getContext('2d');
-    if (!ctx) return onClose();
+    if (!ctx) return close(onClose);
     ctx.drawImage(img, 0, 0, cv.width, cv.height);
     const fin = () => {
       vib([12]);
-      onSave(cv.toDataURL('image/png'));
+      const url = cv.toDataURL('image/png');
+      close(() => onSave(url));
     };
     const svg = box.querySelector('[data-slot="pencil-canvas"] > svg') ?? box.querySelector('svg');
     if (!svg) return fin();
@@ -1472,24 +1814,31 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas }: AnnotateLight
       data-slot="annotate-lightbox"
       isOpen
       isDismissable
-      onOpenChange={(open) => { if (!open) onClose(); }}
-      className="fixed inset-0 z-400 grid place-items-center bg-[rgba(0,0,0,.74)]"
+      onOpenChange={(open) => {
+        if (!open) close(onClose);
+      }}
+      className="fixed inset-0 z-400 grid place-items-center"
     >
-      <Modal className="outline-none">
+      <div ref={backdropRef} data-slot="annotate-lightbox-backdrop" aria-hidden="true" className="absolute inset-0 bg-[rgba(0,0,0,.74)]" />
+      <Modal className="relative outline-none">
         <Dialog
           aria-label="Annotate image"
           className="flex max-w-[90vw] flex-col gap-2.5 outline-none [--bl-card:#1C1C23] [--bl-fill2:rgba(255,255,255,.14)] [--bl-fill:rgba(255,255,255,.07)] [--bl-label2:rgba(235,235,245,.6)] [--bl-label3:rgba(235,235,245,.35)] [--bl-label:#EDEDF2] [--bl-sep:rgba(255,255,255,.12)] [--bl-tint:var(--wb-tint,#0A84FF)] scheme-dark"
         >
-          <div className="flex items-center gap-2">
+          <div ref={chromeRef} className="flex items-center gap-2">
             <span className="flex-1 font-ios text-[13px] font-[650] text-[#EDEDF2]">Annotate — PencilKit strokes flatten into the image on save</span>
-            {btn('Cancel', false, onClose)}
+            {btn('Cancel', false, () => close(onClose))}
             {btn('Save annotation', true, save)}
           </div>
-          <div ref={boxRef} className="relative overflow-hidden rounded-[14px] border border-[rgba(255,255,255,.14)] bg-[#0C0C10]">
+          <div
+            ref={boxRef}
+            data-slot="annotate-lightbox-image"
+            className="relative origin-center self-center overflow-hidden rounded-[14px] border border-[rgba(255,255,255,.14)] bg-[#0C0C10] will-change-transform"
+          >
             <img ref={imgRef} src={src} alt="" className="block h-auto max-h-[68vh] w-auto max-w-[86vw] min-w-[min(340px,86vw)]" />
             {canvas ?? annotator.canvas}
           </div>
-          {annotator.toolbar}
+          {annotator.toolbar ? <div ref={toolsRef}>{annotator.toolbar}</div> : null}
         </Dialog>
       </Modal>
     </ModalOverlay>

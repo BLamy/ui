@@ -42,7 +42,7 @@ export function Composer({ placeholder, onSend, tint, autoFocus, className, styl
         onPress={send}
         aria-label="Send"
         className={cn(
-          'grid size-[32px] shrink-0 cursor-pointer place-items-center rounded-[9px] border-0 transition-[background] duration-200 ease-[ease]',
+          'grid size-[32px] shrink-0 cursor-pointer place-items-center rounded-[9px] border-0 [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
           v.trim() ? 'bg-(--ck-tint) text-white' : 'bg-ck-fill2 text-ck-on-fill',
         )}
       >

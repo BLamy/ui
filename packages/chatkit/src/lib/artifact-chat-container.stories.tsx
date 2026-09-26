@@ -143,6 +143,30 @@ export const Split: Story = { args: { width: 1100, height: 680 } };
 export const FloatingComposer: Story = { args: { width: 430, height: 720 } };
 export const FullChatDrawer: Story = { args: { width: 430, height: 720, defaultChatOpen: true } };
 export const Working: Story = { args: { width: 430, height: 720, working: true } };
+/** Resize across the breakpoint: the chat column becomes the floating chat and back, as the same composer and
+    transcript (type a draft first — it survives the switch). */
+function ResponsiveDemo() {
+  const [wide, setWide] = useState(true);
+  return (
+    <div style={{ fontFamily: KFONT }}>
+      <button data-testid="toggle-width" onClick={() => setWide((w) => !w)} style={{ margin: 8, padding: '6px 12px' }}>
+        {wide ? 'Narrow (floating)' : 'Wide (split)'}
+      </button>
+      <div style={{ width: wide ? 1100 : 560, height: 640, overflow: 'hidden' }}>
+        <ArtifactChatContainer breakpoint={760}>
+          <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
+          <ArtifactChatContainer.Composer>
+            <div style={{ padding: 8, background: 'transparent' }}>
+              <ChatComposer placeholder="Do anything" />
+            </div>
+          </ArtifactChatContainer.Composer>
+          <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
+        </ArtifactChatContainer>
+      </div>
+    </div>
+  );
+}
+export const SplitToFloating: Story = { render: () => <ResponsiveDemo /> };
 /** `layout="floating"` with a `peek` keeps the newest replies visible above the composer even in a wide container. */
 export const AlwaysFloatingWithPeek: Story = {
   args: { width: 1100, height: 680 },

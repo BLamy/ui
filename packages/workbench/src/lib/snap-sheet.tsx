@@ -1,9 +1,14 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
+import { animate, motion, useMotionValue, useTransform, type AnimationPlaybackControls } from 'framer-motion';
 import { cn } from './util';
 import { vib, tick } from './haptics';
+import { prefersReducedMotion, springs } from './motion';
 
-/* ══ SnapSheet — vaul-style bottom drawer (drag handle, snap points, velocity release) ══ */
+/* ══ SnapSheet — vaul-style bottom drawer (drag handle, snap points, velocity release) ══
+   The panel's offset is a spring-driven motion value: it rises in on open, follows the finger one-to-one
+   (rubber-banding past the top snap), and on release the finger's velocity is projected to pick a snap —
+   or dismiss — and carried into the spring, so a flick keeps its momentum. Grabbing mid-flight catches it. */
 export interface SnapSheetProps {
   open: boolean;
   onClose: () => void;
@@ -18,62 +23,71 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, class
   const maxS = Math.max(...snaps);
   const [vis, setVis] = useState(false);
   const [snap, setSnap] = useState(0);
-  const [ty, setTy] = useState<number | null>(null); // px translate while dragging; null = settled on snap
-  const [anim, setAnim] = useState(true);
   const wrap = useRef<HTMLDivElement>(null);
-  const st = useRef({ drag: false, y0: 0, ty0: 0, y: 0, t: 0, v: 0 });
+  const y = useMotionValue(10000); // px the panel is pushed down from its tallest snap
+  const anim = useRef<AnimationPlaybackControls | null>(null);
+  const st = useRef({ drag: false, y0: 0, ty0: 0, samples: [] as { t: number; y: number }[] });
   const ch = () => (wrap.current ? wrap.current.offsetHeight : 700);
   const restTy = (idx: number) => ch() * (maxS - snaps[idx]);
+  // The scrim follows the panel: fully dim at the tallest snap, clear when it is gone.
+  const fade = useTransform(y, (v) => {
+    const h = ch();
+    return Math.min(1, Math.max(0, (maxS - v / h) / maxS));
+  });
+
+  const springTo = (to: number, velocity = 0, done?: () => void) => {
+    anim.current?.stop();
+    if (prefersReducedMotion()) {
+      y.set(to);
+      done?.();
+      return;
+    }
+    anim.current = animate(y, to, { ...springs.tray, velocity, onComplete: done });
+  };
+
   useEffect(() => {
     if (open) {
       setVis(true);
       setSnap(0);
-      setAnim(false);
-      setTy(ch() * maxS);
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          setAnim(true);
-          setTy(null);
-        })
-      );
     } else if (vis) {
-      setAnim(true);
-      setTy(ch() * maxS);
-      const t = setTimeout(() => {
-        setVis(false);
-        setTy(null);
-      }, 430);
-      return () => clearTimeout(t);
+      springTo(ch() * maxS, 0, () => setVis(false));
     }
-    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+  // Once mounted, rise from below the edge to the first snap.
+  React.useLayoutEffect(() => {
+    if (!vis || !open) return;
+    y.set(ch() * maxS);
+    springTo(restTy(0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vis]);
+  useEffect(() => () => anim.current?.stop(), []);
+
   if (!open && !vis) return null;
-  const curTy = ty != null ? ty : restTy(snap);
   const down = (e: React.PointerEvent<HTMLDivElement>) => {
-    st.current = { drag: true, y0: e.clientY, ty0: curTy, y: e.clientY, t: performance.now(), v: 0 };
+    anim.current?.stop();
+    st.current = { drag: true, y0: e.clientY, ty0: y.get(), samples: [{ t: e.timeStamp, y: e.clientY }] };
     e.currentTarget.setPointerCapture(e.pointerId);
-    setAnim(false);
   };
   const move = (e: React.PointerEvent<HTMLDivElement>) => {
     const s = st.current;
     if (!s.drag) return;
-    const now = performance.now();
-    if (now - s.t > 4) {
-      s.v = (e.clientY - s.y) / (now - s.t);
-      s.y = e.clientY;
-      s.t = now;
-    }
+    s.samples.push({ t: e.timeStamp, y: e.clientY });
+    if (s.samples.length > 6) s.samples.shift();
     let t = s.ty0 + (e.clientY - s.y0);
     const top = restTy(snaps.indexOf(maxS));
     if (t < top) t = top - Math.pow(top - t, 0.72);
-    setTy(Math.max(0, t));
+    y.set(Math.max(0, t));
   };
-  const up = () => {
+  const up = (e: React.PointerEvent<HTMLDivElement>) => {
     const s = st.current;
     if (!s.drag) return;
     s.drag = false;
-    const proj = curTy + s.v * 200;
+    const recent = s.samples.filter((p) => e.timeStamp - p.t < 90);
+    const first = recent[0] ?? s.samples[0];
+    const v = first ? (e.clientY - first.y) / Math.max(1, e.timeStamp - first.t) : 0; // px/ms, down = +
+    const cur = y.get();
+    const proj = cur + v * 200;
     const H = ch();
     let best = -1,
       bd = Infinity;
@@ -86,30 +100,21 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, class
     });
     if (Math.abs(proj - H * maxS) < bd || proj > H * (maxS - Math.min(...snaps)) + H * 0.12) {
       vib([6]);
+      springTo(H * maxS, v * 1000);
       onClose();
       return;
     }
-    setAnim(true);
+    if (best !== snap) tick();
     setSnap(best);
-    setTy(null);
-    tick();
+    springTo(restTy(best), v * 1000);
   };
-  const visFrac = maxS - (curTy / ch()) * 1;
   return (
     <div ref={wrap} data-slot="snap-sheet" className={cn('absolute inset-0 z-70 overflow-hidden', className)} style={style}>
-      <div
-        data-slot="snap-sheet-scrim"
-        onClick={onClose}
-        className={cn('absolute inset-0 bg-[rgba(0,0,0,.45)] opacity-(--sheet-fade)', anim ? 'transition-opacity duration-[.42s] ease-ios' : 'transition-none')}
-        style={{ '--sheet-fade': Math.min(1, Math.max(0, visFrac / maxS)) } as React.CSSProperties}
-      />
-      <div
+      <motion.div data-slot="snap-sheet-scrim" onClick={onClose} className="absolute inset-0 bg-[rgba(0,0,0,.45)]" style={{ opacity: fade }} />
+      <motion.div
         data-slot="snap-sheet-panel"
-        className={cn(
-          'absolute right-0 bottom-0 left-0 flex h-(--sheet-h) translate-y-(--sheet-y) touch-none flex-col rounded-t-2xl border-x border-t border-wb-sep bg-(--sheet-bg) shadow-[0_-12px_40px_var(--wb-shadow,rgba(0,0,0,.5))]',
-          anim ? 'transition-transform duration-[.42s] ease-ios' : 'transition-none',
-        )}
-        style={{ '--sheet-h': maxS * 100 + '%', '--sheet-y': curTy + 'px', '--sheet-bg': bg || 'var(--wb-card)' } as React.CSSProperties}
+        className="absolute right-0 bottom-0 left-0 flex h-(--sheet-h) touch-none flex-col rounded-t-2xl border-x border-t border-wb-sep bg-(--sheet-bg) shadow-[0_-12px_40px_var(--wb-shadow,rgba(0,0,0,.5))]"
+        style={{ y, '--sheet-h': maxS * 100 + '%', '--sheet-bg': bg || 'var(--wb-card)' } as never}
       >
         <div
           data-slot="snap-sheet-handle"
@@ -122,7 +127,7 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, class
           <div className="mx-auto h-[5px] w-[38px] rounded-[3px] bg-wb-handle" />
         </div>
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-      </div>
+      </motion.div>
     </div>
   );
 }
