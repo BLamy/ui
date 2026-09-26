@@ -2,15 +2,20 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { collectSlots, defineSlot, useAppearance, useContainerWidth } from '@brett_lamy/ui';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, animate, motion } from 'framer-motion';
+import { collectSlots, defineSlot, springs, useAppearance, useContainerWidth } from '@brett_lamy/ui';
 import { ChatColumn } from './chat-column';
 import { cn } from './cn';
 import { FloatingChat, type FloatingChatFabPosition, type FloatingChatProps } from './floating-chat';
+import { ChatHostContext, ComposerPortal, createOutletStore, useAttachHost, usePersistentHost } from './persistent-host';
 
 export type ArtifactChatLayout = 'split' | 'floating';
 
@@ -123,6 +128,70 @@ export function ArtifactChatContainer({
 
   const slots = collectSlots(children);
 
+  // ── one chat, two layouts ──
+  // The composer and the transcript are rendered once and re-attached to the column or the floating sheet
+  // (see persistent-host.tsx), so switching layouts keeps the draft, the caret and a streaming reply. The
+  // composer then flies from its old place to its new one, and the artifact pane springs to its new edge.
+  const composerHost = usePersistentHost('artifact-chat-composer');
+  const chatHost = usePersistentHost('artifact-chat-transcript');
+  const outlet = useMemo(createOutletStore, []);
+  const [composerDock, setComposerDock] = useState<HTMLElement | null>(null);
+  const [chatDock, setChatDock] = useState<HTMLElement | null>(null);
+  const hostCtx = useMemo(() => ({ outlet, composerDock: setComposerDock, chatDock: setChatDock }), [outlet]);
+  useAttachHost(composerHost, composerDock);
+  useAttachHost(chatHost, chatDock);
+
+  const contentRef2 = useRef<HTMLElement | null>(null);
+  const shift = useRef<{ layout: boolean; composer: DOMRect | null; content: DOMRect | null } | null>(null);
+  const lastCompact = useRef(compact);
+  // The column slides in only when the layout switches to it, not on first paint.
+  const [switched, setSwitched] = useState(false);
+  if (lastCompact.current !== compact && !shift.current && typeof window !== 'undefined') {
+    const composerEl = composerHost?.querySelector('[data-slot="composer"]');
+    shift.current = {
+      layout: compact,
+      composer: composerEl?.isConnected ? composerEl.getBoundingClientRect() : null,
+      content: contentRef2.current?.getBoundingClientRect() ?? null,
+    };
+  }
+  useLayoutEffect(() => {
+    if (lastCompact.current !== compact) setSwitched(true);
+    lastCompact.current = compact;
+    const snap = shift.current;
+    // Wait until the new layout's composer dock has been attached.
+    if (!snap || snap.layout !== compact || !composerDock?.isConnected || composerHost?.parentNode !== composerDock) return;
+    shift.current = null;
+    if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const composerEl = composerHost?.querySelector<HTMLElement>('[data-slot="composer"]');
+    if (snap.composer && composerEl) {
+      const to = composerEl.getBoundingClientRect();
+      const from = snap.composer;
+      composerEl.style.width = `${from.width}px`;
+      const held = composerEl.getBoundingClientRect();
+      animate(
+        composerEl,
+        { x: [from.left - held.left, 0], y: [from.top - held.top, 0], width: [from.width, to.width] },
+        {
+          ...springs.smooth,
+          onComplete: () => {
+            composerEl.style.width = '';
+            composerEl.style.transform = '';
+          },
+        },
+      );
+    }
+    const content = contentRef2.current;
+    if (snap.content && content) {
+      // The artifact pane's new box is revealed from the old one's edges.
+      const to = content.getBoundingClientRect();
+      const f = snap.content;
+      const inset = `inset(${Math.max(0, f.top - to.top)}px ${Math.max(0, to.right - f.right)}px ${Math.max(0, to.bottom - f.bottom)}px ${Math.max(0, f.left - to.left)}px)`;
+      if (inset !== 'inset(0px 0px 0px 0px)') {
+        animate(content, { clipPath: [inset, 'inset(0px 0px 0px 0px)'] }, { ...springs.smooth, onComplete: () => (content.style.clipPath = '') });
+      }
+    }
+  }, [compact, composerDock]);
+
   const value: ArtifactChatContainerContextValue = {
     width,
     layout,
@@ -152,11 +221,42 @@ export function ArtifactChatContainer({
           ...style,
         } as CSSProperties}
       >
+        {/* The column (split) — its composer and transcript are docks for the shared ones. */}
+        <AnimatePresence mode="popLayout" initial={false}>
+          {!compact ? (
+            <motion.div
+              key="column"
+              data-slot="artifact-chat-column"
+              className="z-2 flex min-h-0 min-w-0"
+              initial={switched ? { x: -32, opacity: 0 } : false}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -48, opacity: 0 }}
+              transition={springs.smooth}
+            >
+              <ChatColumn className="flex-1">
+                <ChatColumn.Transcript>
+                  <div ref={setChatDock} data-slot="artifact-chat-transcript-dock" className="flex h-full min-h-0 min-w-0 flex-col" />
+                </ChatColumn.Transcript>
+                <ChatColumn.Composer>
+                  <div ref={setComposerDock} data-slot="artifact-chat-composer-dock" className="min-w-0" />
+                </ChatColumn.Composer>
+              </ChatColumn>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+        {/* The artifact stays mounted across layouts (same position in the tree). */}
+        <main
+          ref={(el) => {
+            contentRef.current = el;
+            contentRef2.current = el;
+          }}
+          data-slot="artifact-chat-content"
+          className={cn(contentClass, compact ? 'absolute inset-0 pb-0' : 'relative')}
+        >
+          {slots.content}
+        </main>
         {compact ? (
-          <>
-            <main ref={contentRef} data-slot="artifact-chat-content" className={cn(contentClass, 'absolute inset-0 pb-0')}>
-              {slots.content}
-            </main>
+          <ChatHostContext.Provider value={hostCtx}>
             <FloatingChat
               open={chatOpen}
               onOpenChange={setChatOpen}
@@ -171,22 +271,14 @@ export function ArtifactChatContainer({
               peek={peek}
               appearance={appearance}
               tone={resolvedTone}
-            >
-              <FloatingChat.Chat>{slots.chat}</FloatingChat.Chat>
-              <FloatingChat.Composer>{slots.composer}</FloatingChat.Composer>
-            </FloatingChat>
-          </>
-        ) : (
-          <>
-            <ChatColumn>
-              <ChatColumn.Transcript>{slots.chat}</ChatColumn.Transcript>
-              <ChatColumn.Composer>{slots.composer}</ChatColumn.Composer>
-            </ChatColumn>
-            <main data-slot="artifact-chat-content" className={cn(contentClass, 'relative')}>
-              {slots.content}
-            </main>
-          </>
-        )}
+            />
+          </ChatHostContext.Provider>
+        ) : null}
+        {/* Rendered once; they live in whichever dock the layout provides. */}
+        <ComposerPortal store={outlet} host={composerHost}>
+          {slots.composer}
+        </ComposerPortal>
+        {chatHost ? createPortal(slots.chat, chatHost) : null}
       </div>
     </ArtifactChatContainerContext.Provider>
   );

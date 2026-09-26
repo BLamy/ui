@@ -22,6 +22,7 @@ export {
 } from './lib/markdown';
 export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './lib/message-scroller';
 export { SnapSheet, type SnapSheetProps } from './lib/snap-sheet';
+export { useSpringSheetDrag, type SpringSheetDragOptions, type SpringSheetDragState } from './lib/motion';
 export {
   ThreadSidebar,
   type ThreadSidebarProps,
