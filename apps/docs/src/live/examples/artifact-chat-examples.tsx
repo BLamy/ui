@@ -64,7 +64,7 @@ const resizeCode = `import { ArtifactChatContainer, Composer, ComposerCard, Comp
 // place while the column slides away and the artifact grows into the room.
 export default function Workspace() {
   return (
-    <ArtifactChatContainer breakpoint={760}>
+    <ArtifactChatContainer breakpoint={620}>
       <ArtifactChatContainer.Chat><Conversation /></ArtifactChatContainer.Chat>
       <ArtifactChatContainer.Composer>
         <Composer onSubmit={send}>
@@ -99,16 +99,16 @@ export const ARTIFACT_CHAT_EXAMPLES: Record<string, LiveSpec> = {
     title: 'ArtifactChatContainer · resize across the breakpoint', theme: 'bl', h: 560,
     code: resizeCode,
     Render: function ResizeLive() {
-      const [width, setWidth] = useState(900);
+      const [width, setWidth] = useState(670);
       return (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', margin: '0 0 10px', fontSize: 12.5, color: 'var(--bl-label2)' }}>
             <span>Width</span>
-            <input aria-label="Container width" type="range" min={420} max={900} step={10} value={width} onChange={(e) => setWidth(Number(e.currentTarget.value))} style={{ width: 220 }} />
-            <span style={{ fontVariantNumeric: 'tabular-nums', width: 88 }}>{width}px · {width < 760 ? 'floating' : 'split'}</span>
+            <input aria-label="Container width" type="range" min={380} max={670} step={10} value={width} onChange={(e) => setWidth(Number(e.currentTarget.value))} style={{ width: 220 }} />
+            <span style={{ fontVariantNumeric: 'tabular-nums', width: 120, whiteSpace: 'nowrap' }}>{width}px · {width < 620 ? "floating" : "split"}</span>
           </div>
           <Frame width={width}>
-            <ArtifactChatContainer breakpoint={760} chatWidth={320}>
+            <ArtifactChatContainer breakpoint={620} chatWidth={280}>
               <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
               <ArtifactChatContainer.Composer><ChatComposer placeholder="Type a draft, then drag the slider" /></ArtifactChatContainer.Composer>
               <ArtifactChatContainer.Content><Artifact /></ArtifactChatContainer.Content>
