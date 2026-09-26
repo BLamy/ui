@@ -4,7 +4,7 @@ import './styles.css';
 export { cn, FONT, EASE, BARH } from './lib/utils';
 export { Haptics, PAT } from './lib/haptics';
 export type { HapticEvent, HapticImpactStyle, HapticNotificationKind } from './lib/haptics';
-export { loadMotion, useMotion } from './lib/motion';
+export { loadMotion, useMotion, springs, springCss, direction, useReducedMotion, type SpringName } from './lib/motion';
 export {
   BLProvider, BLSafeCtx, BLStickyCtx, chromeStore, useChromeHidden, chromeOffset,
   AppearanceContext, AppearanceProvider, useAppearance, darkVars as blDarkVars, lightVars as blLightVars,
