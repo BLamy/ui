@@ -221,7 +221,7 @@ export function ChatDemo({
               </div>
             )}
             {thMsg.thread.msgs.map((m) => (
-              <div key={m.id} className="animate-[ck-in_.2s_cubic-bezier(.32,.72,0,1)]">
+              <div key={m.id} className="animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none">
                 <Message m={{ ...m, reacts: [] }} tint={tint} onReact={() => {}} onOpenThread={() => {}} onStartThread={() => {}} />
               </div>
             ))}

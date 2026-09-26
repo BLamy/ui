@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { cn, Haptics, useAppearance } from '@brett_lamy/ui';
+import { cn, Haptics, springs, useAppearance } from '@brett_lamy/ui';
 import { Button } from 'react-aria-components';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from '../../lib/floating-sheet';
 import { ProgressStepper, type ProgressStep } from '../../lib/progress-stepper';
 import { distanceMeters, type LatLng, type MapTarget } from '../map-chat/geo';
@@ -87,7 +88,7 @@ const MAP_BUTTON_DARK = cn(
   FOCUS_RING,
 );
 const ACTION_BUTTON = cn(
-  'inline-flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[999px] border-0 px-3.5 py-0 text-[15px] font-bold [transition:transform_.16s_ease,filter_.16s_ease] data-pressed:[transform:scale(.97)]',
+  'inline-flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[999px] border-0 px-3.5 py-0 text-[15px] font-bold [transition:transform_var(--duration-spring-snappy)_var(--ease-spring-snappy),filter_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-pressed:[transform:scale(.97)]',
   FONT_INHERIT,
   FOCUS_RING,
 );
@@ -264,7 +265,22 @@ export function DeliveryTrackingDemo({
         <FloatingSheet.Body>
           <div className="ck-scroll box-border h-full min-h-0! overflow-x-hidden overflow-y-auto px-5 pt-0.5 pb-8">
             <header className="mb-[18px]">
-              <h2 className="m-0 text-[24px] leading-[1.2] font-bold tracking-[-.02em]">{stage.title}</h2>
+              {/* A new stage moves forward: the old title leaves up, the new one rises in (and the header's
+                  height follows). */}
+              <h2 className="relative m-0 text-[24px] leading-[1.2] font-bold tracking-[-.02em]">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={stage.title}
+                    className="block"
+                    initial={{ y: 18, opacity: 0, filter: 'blur(3px)' }}
+                    animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+                    exit={{ y: -18, opacity: 0, filter: 'blur(3px)' }}
+                    transition={springs.smooth}
+                  >
+                    {stage.title}
+                  </motion.span>
+                </AnimatePresence>
+              </h2>
               <p className="m-0 mt-1.5 text-[15px] text-bl-label2">
                 Pickup at 12:13 PM · {STORE_ADDRESS}
               </p>
@@ -273,7 +289,21 @@ export function DeliveryTrackingDemo({
             <ProgressStepper steps={steps} current={stageIndex} className="mb-3!" />
             <p className="m-0 mb-[18px] flex items-center gap-[7px] text-[14px] text-bl-label2">
               <Icon name="clock" size={15} />
-              {stage.status}
+              {/* The status moves forward with the stepper: the old line leaves up, the new one rises. */}
+              <span className="relative min-w-0 flex-1 overflow-hidden">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={stage.status}
+                    className="block"
+                    initial={{ y: 14, opacity: 0, filter: 'blur(2px)' }}
+                    animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+                    exit={{ y: -14, opacity: 0, filter: 'blur(2px)' }}
+                    transition={springs.smooth}
+                  >
+                    {stage.status}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
             </p>
 
             <section className="rounded-[14px] bg-bl-card2 p-4">
@@ -314,14 +344,24 @@ export function DeliveryTrackingDemo({
             >
               Order details
               <span
-                className={cn('grid place-items-center [transition:transform_.24s_cubic-bezier(.32,.72,0,1)]', detailsOpen && '[transform:rotate(180deg)]')}
+                className={cn('grid place-items-center [transition:transform_var(--duration-spring-bouncy)_var(--ease-spring-bouncy)] motion-reduce:transition-none', detailsOpen && '[transform:rotate(180deg)]')}
                 data-open={detailsOpen || undefined}
               >
                 <Icon name="chevronDown" size={16} />
               </span>
             </Button>
+            {/* The details open as a height morph (the sheet's body grows with them). */}
+            <AnimatePresence initial={false}>
             {detailsOpen && (
-              <ul id={detailsId} className="m-0 mt-3 list-none border-t border-bl-sep p-0 pt-1">
+              <motion.ul
+                key="details"
+                id={detailsId}
+                className="m-0 mt-3 list-none overflow-hidden border-t border-bl-sep p-0 pt-1"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={springs.tray}
+              >
                 {ORDER_ITEMS.map((item) => (
                   <li key={item.name} className="flex gap-2.5 border-b border-bl-sep py-[9px] text-[14px]">
                     <span className="w-6 text-bl-label2">{item.qty}×</span>
@@ -333,8 +373,9 @@ export function DeliveryTrackingDemo({
                   <span className="min-w-0 flex-1">Total</span>
                   <span className="tabular-nums">${total.toFixed(2)}</span>
                 </li>
-              </ul>
+              </motion.ul>
             )}
+            </AnimatePresence>
 
             <Button
               className={cn(

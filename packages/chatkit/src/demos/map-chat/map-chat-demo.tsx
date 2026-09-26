@@ -137,7 +137,7 @@ function ToolRow({ call, chrome }: { call: ToolCallState; chrome: Chrome }) {
       data-slot="map-chat-tool"
       data-status={call.status}
       className={cn(
-        'flex min-w-0 animate-[ck-in_.22s_ease] items-center gap-2 rounded-[10px] border py-[5px] pr-2.5 pl-2 text-[12.5px] leading-[1.3] text-bl-label2',
+        'flex min-w-0 animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none items-center gap-2 rounded-[10px] border py-[5px] pr-2.5 pl-2 text-[12.5px] leading-[1.3] text-bl-label2',
         chrome.tool,
       )}
     >
@@ -362,7 +362,7 @@ export function MapChatDemo({
             chrome.ref,
             FONT_INHERIT,
             'border-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_45%,transparent)] bg-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_16%,transparent)]',
-            'transition-[background] duration-160 ease-[ease] data-hovered:bg-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_30%,transparent)]',
+            '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:bg-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_30%,transparent)]',
           )}
           style={{ '--ck-ref-color': meta.color } as CSSProperties}
           onPress={() => focusPlace(place)}
@@ -437,7 +437,7 @@ export function MapChatDemo({
             <div
               data-slot="map-chat-banner"
               className={cn(
-                'pointer-events-auto absolute top-3.5 right-[70px] left-3.5 z-3 flex max-w-[380px] animate-[ck-in_.3s_ease] items-center gap-3 rounded-[16px] border py-2.5 pr-3 pl-3.5 backdrop-blur-[14px]',
+                'pointer-events-auto absolute top-3.5 right-[70px] left-3.5 z-3 flex max-w-[380px] animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none items-center gap-3 rounded-[16px] border py-2.5 pr-3 pl-3.5 backdrop-blur-[14px]',
                 chrome.banner,
               )}
               data-map-ui
@@ -474,12 +474,12 @@ export function MapChatDemo({
             turn.role === 'user' ? (
               <div
                 key={turn.id}
-                className="max-w-[82%] animate-[ck-in_.24s_ease] self-end rounded-[18px_18px_6px_18px] bg-bl-tint px-[13px] py-2 text-[14.5px] leading-[1.35] [word-break:break-word] whitespace-pre-wrap text-white"
+                className="max-w-[82%] animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none self-end rounded-[18px_18px_6px_18px] bg-bl-tint px-[13px] py-2 text-[14.5px] leading-[1.35] [word-break:break-word] whitespace-pre-wrap text-white"
               >
                 {turn.text}
               </div>
             ) : (
-              <div key={turn.id} className="flex min-w-0 animate-[ck-in_.24s_ease] flex-col gap-1.5" data-live={turn.live || undefined}>
+              <div key={turn.id} className="flex min-w-0 animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none flex-col gap-1.5" data-live={turn.live || undefined}>
                 {turn.parts.map((part, idx) =>
                   part.type === 'tool' ? (
                     <ToolRow key={part.call.id} call={part.call} chrome={chrome} />
@@ -518,7 +518,7 @@ export function MapChatDemo({
                         className={cn(
                           'shrink-0 cursor-pointer rounded-[999px] border px-3 py-1.5 text-[13px] leading-[1.2] font-medium whitespace-nowrap text-bl-label',
                           FONT_INHERIT,
-                          'transition-[background] duration-160 ease-[ease]',
+                          '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
                           chrome.chip,
                         )}
                         onPress={() => void send(s)}

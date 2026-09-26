@@ -205,7 +205,8 @@ export function FloatingChat({
         <div data-slot="floating-chat-card" className="relative z-1 min-w-0">
           <Button
             data-slot="floating-chat-working"
-            className="box-border flex min-h-[46px] w-full cursor-pointer items-center gap-[10px] rounded-[15px] border border-wb-sep bg-wb-card px-[15px] py-1.5 text-left [font:inherit] text-wb-label shadow-[0_6px_24px_var(--wb-shadow,rgba(0,0,0,.28))] outline-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60"
+            // Swaps in for the card with a soft rise; the real card waits, mounted, underneath.
+            className="box-border flex min-h-[46px] w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-wb-sep bg-wb-card px-[15px] py-1.5 text-left [font:inherit] text-wb-label shadow-[0_6px_24px_var(--wb-shadow,rgba(0,0,0,.28))] outline-none motion-reduce:animate-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60"
             onPress={() => revealRef.current()}
           >
             <span className="grid animate-[ck-floating-working_1.8s_ease-in-out_infinite] place-items-center text-wb-label2 motion-reduce:animate-none" aria-hidden="true">

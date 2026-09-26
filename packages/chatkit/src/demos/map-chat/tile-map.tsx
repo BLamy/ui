@@ -129,7 +129,7 @@ const SCHEME = {
 } as const;
 
 const CONTROL =
-  'grid size-10 cursor-pointer place-items-center p-0 transition-[background] duration-160 ease-[ease] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--bl-tint,#0a84ff)]';
+  'grid size-10 cursor-pointer place-items-center p-0 [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--bl-tint,#0a84ff)]';
 const PIN_SHADOW_RAISED = 'shadow-[0_4px_12px_rgba(0,0,0,.5),0_0_0_1px_rgba(0,0,0,.25)]';
 
 const FLY_MS = 900;
@@ -463,7 +463,7 @@ export function TileMap({
                 <span
                   data-slot="tile-map-pin-marker"
                   className={cn(
-                    'pointer-events-auto grid shrink-0 place-items-center rounded-[50%] border-solid border-white [transition:transform_.22s_cubic-bezier(.32,.72,0,1),box-shadow_.22s_ease] group-[:hover]/pin:[transform:scale(1.18)] motion-reduce:[transition:none]',
+                    'pointer-events-auto grid shrink-0 place-items-center rounded-[50%] border-solid border-white [transition:transform_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),box-shadow_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-[:hover]/pin:[transform:scale(1.18)] motion-reduce:[transition:none]',
                     user
                       ? '-mt-[9px] size-[18px] animate-[ck-tile-map-pulse_2.4s_ease-out_infinite] border-3 bg-[#0a84ff] shadow-[0_0_0_6px_rgba(10,132,255,.22),0_2px_6px_rgba(0,0,0,.45)] motion-reduce:animate-none'
                       : cn(
@@ -563,7 +563,7 @@ function TileLayer({ z, cam, size, tileUrl, fallback }: TileLayerProps) {
             key={`${x}/${y}`}
             className={cn(
               'pointer-events-none absolute top-0 left-0 size-[256px] opacity-0 [image-rendering:auto] data-loaded:opacity-100',
-              fallback ? 'transition-none' : 'transition-opacity duration-280 ease-[ease] motion-reduce:transition-none',
+              fallback ? 'transition-none' : '[transition:opacity_var(--duration-spring-smooth)_var(--ease-spring-smooth)] motion-reduce:transition-none',
             )}
             src={tileUrl(z, wx, y)}
             alt=""

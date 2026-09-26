@@ -80,7 +80,7 @@ export function Message({
         )}
       </div>
       {/* Hover actions. Row hover never revealed them (inline opacity always won over the old .ck-row:hover rule), so they stay transparent; keyboard focus reveals them. */}
-      <div className="absolute -top-[10px] right-[16px] flex gap-[2px] rounded-[9px] border border-ck-sep bg-ck-card p-[2px] opacity-0 transition-opacity duration-150 ease-[ease] has-data-focus-visible:opacity-100">
+      <div className="absolute -top-[10px] right-[16px] flex gap-[2px] rounded-[9px] border border-ck-sep bg-ck-card p-[2px] opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)] has-data-focus-visible:opacity-100">
         <Button
           onPress={() => {
             kvib([5]);
