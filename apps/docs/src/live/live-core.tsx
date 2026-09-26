@@ -20,6 +20,7 @@ import {
   type SurfaceKind,
 } from '@brett_lamy/workbench';
 import { DemoBtn, BLFrame, type LiveSpec } from './frame';
+import { EXAMPLES_LIVE } from './examples';
 
 /** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
 function ScaledShell({ width, height, children }: { width: number; height: number; children: ReactNode }) {
@@ -1289,6 +1290,7 @@ export default function StreamedAnswer() {
       </div>;
     },
   },
+  ...EXAMPLES_LIVE,
 };
 
 function indexBarCode(variant: string) {
