@@ -3,6 +3,8 @@ import { Button } from './press';
 import { cn } from './util';
 import { vib, tick } from './haptics';
 import { WIcon } from './icons';
+import { AnimatePresence, animate, motion } from 'framer-motion';
+import { prefersReducedMotion, springs } from './motion';
 import { MarkdownView } from './markdown';
 import { MessageScroller, type MessageScrollerItem } from './message-scroller';
 import { WorkbenchComposer, stripAttachmentRefs } from './workbench-composer';
@@ -44,6 +46,41 @@ export function SettledBanner({ onUnsettle, className, style }: SettledBannerPro
 const toSend = (onSend: (text: string, imgs?: string[]) => void) => (markdown: string, attachments: ComposerAttachment[]) =>
   onSend(stripAttachmentRefs(markdown), attachments.flatMap((a) => (a.src ? [a.src] : [])));
 
+const SUGGESTIONS = ['Get the demo servers running', 'Explain the haptics engine', 'Diff my last change'];
+
+/** The empty thread's greeting (above the composer). */
+function EmptyThreadHero() {
+  return (
+    <div data-slot="empty-thread-hero" className="mb-[18px] text-center">
+      <span className="inline-grid size-10 place-items-center rounded-[11px] bg-[linear-gradient(135deg,var(--wb-tint),#5E5CE6)]">
+        <WIcon name="spark" size={21} sw={2.1} className="text-white" />
+      </span>
+      <div className="mt-3 text-[21px] font-bold tracking-[-.3px]">What are we building?</div>
+      <div className="mt-1 text-[13.5px] text-wb-label2">Start a thread — ask anything about this workspace.</div>
+    </div>
+  );
+}
+
+/** The empty thread's suggestion chips (below the composer). */
+function EmptyThreadSuggestions({ onSend }: { onSend: (text: string) => void }) {
+  return (
+    <div data-slot="empty-thread-suggestions" className="mt-3.5 flex flex-wrap justify-center gap-[7px]">
+      {SUGGESTIONS.map((s) => (
+        <Button
+          key={s}
+          className="wb-btn wb-hl cursor-pointer rounded-[99px] border border-wb-sep bg-transparent px-[13px] py-1.5 text-[12.5px] text-wb-label2"
+          onPress={() => {
+            vib([8]);
+            onSend(s);
+          }}
+        >
+          {s}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 export interface EmptyThreadProps {
   onSend: (text: string, imgs?: string[]) => void;
   streaming?: boolean;
@@ -54,7 +91,6 @@ export interface EmptyThreadProps {
   style?: React.CSSProperties;
 }
 export function EmptyThread({ onSend, streaming, onStop, composer, className, style }: EmptyThreadProps) {
-  const sug = ['Get the demo servers running', 'Explain the haptics engine', 'Diff my last change'];
   return (
     <div
       data-slot="empty-thread"
@@ -62,28 +98,9 @@ export function EmptyThread({ onSend, streaming, onStop, composer, className, st
       style={style}
     >
       <div className="w-full max-w-[620px]">
-        <div className="mb-[18px] text-center">
-          <span className="inline-grid size-10 place-items-center rounded-[11px] bg-[linear-gradient(135deg,var(--wb-tint),#5E5CE6)]">
-            <WIcon name="spark" size={21} sw={2.1} className="text-white" />
-          </span>
-          <div className="mt-3 text-[21px] font-bold tracking-[-.3px]">What are we building?</div>
-          <div className="mt-1 text-[13.5px] text-wb-label2">Start a thread — ask anything about this workspace.</div>
-        </div>
+        <EmptyThreadHero />
         {composer ?? <WorkbenchComposer onSubmit={toSend(onSend)} streaming={streaming} onStop={onStop} autoFocus />}
-        <div className="mt-3.5 flex flex-wrap justify-center gap-[7px]">
-          {sug.map((s) => (
-            <Button
-              key={s}
-              className="wb-btn wb-hl cursor-pointer rounded-[99px] border border-wb-sep bg-transparent px-[13px] py-1.5 text-[12.5px] text-wb-label2"
-              onPress={() => {
-                vib([8]);
-                onSend(s);
-              }}
-            >
-              {s}
-            </Button>
-          ))}
-        </div>
+        <EmptyThreadSuggestions onSend={onSend} />
       </div>
     </div>
   );
@@ -114,7 +131,7 @@ export function WorkTrace({ meta, children, className }: WorkTraceProps) {
   );
 }
 
-/* The three typing dots, staggered by .18s. */
+/* The three typing dots: a soft wave, staggered by .18s. */
 const DOT_ANIM = ['animate-[wbPulse_1s_0s_infinite]', 'animate-[wbPulse_1s_0.18s_infinite]', 'animate-[wbPulse_1s_0.36s_infinite]'];
 
 export interface ChatViewProps {
@@ -129,16 +146,35 @@ export interface ChatViewProps {
   className?: string;
   style?: React.CSSProperties;
 }
+
+/**
+ * A thread: messages in a MessageScroller over the composer. With no thread it is the empty state — a greeting,
+ * the composer centred, suggestions under it — and sending the first message turns it into the thread *around
+ * the same composer*: the greeting leaves, the composer travels down to its dock, the first messages rise in.
+ */
 export function ChatView({ thread, streaming, onSend, onStop, onUnsettle, header, composer, className, style }: ChatViewProps) {
-  if (!thread)
-    return (
-      <div data-slot="chat-view" className={cn('flex min-h-0 flex-1 flex-col', className)} style={style}>
-        {header}
-        <EmptyThread onSend={onSend} streaming={false} composer={composer} />
-      </div>
+  const empty = !thread;
+  const dock = React.useRef<HTMLDivElement>(null);
+  // The composer is one element in both states; FLIP it from where it was when the state flips.
+  const before = React.useRef<DOMRect | null>(null);
+  const last = React.useRef(empty);
+  if (last.current !== empty && !before.current && dock.current) before.current = dock.current.getBoundingClientRect();
+  React.useLayoutEffect(() => {
+    last.current = empty;
+    const from = before.current;
+    before.current = null;
+    const el = dock.current;
+    if (!from || !el || prefersReducedMotion()) return;
+    const to = el.getBoundingClientRect();
+    animate(
+      el,
+      { x: [from.left - to.left, 0], y: [from.top - to.top, 0], width: [from.width, to.width] },
+      { ...springs.smooth, onComplete: () => ((el.style.width = ''), (el.style.transform = '')) },
     );
+  }, [empty]);
+
   const items: MessageScrollerItem[] = [];
-  thread.msgs.forEach((m) => {
+  thread?.msgs.forEach((m) => {
     if (m.role === 'user')
       items.push({
         id: m.id,
@@ -170,7 +206,7 @@ export function ChatView({ thread, streaming, onSend, onStop, onUnsettle, header
             {m.live && !m.md ? (
               <div className="flex gap-[5px] py-1.5">
                 {DOT_ANIM.map((anim, j) => (
-                  <span key={j} className={cn('size-1.5 rounded-[50%] bg-wb-label3', anim)} />
+                  <span key={j} className={cn('size-1.5 rounded-[50%] bg-wb-label3 motion-reduce:animate-none', anim)} />
                 ))}
               </div>
             ) : null}
@@ -178,13 +214,65 @@ export function ChatView({ thread, streaming, onSend, onStop, onUnsettle, header
         ),
       });
   });
+  const composerNode = composer ?? (
+    <WorkbenchComposer onSubmit={toSend(onSend)} streaming={empty ? false : streaming} onStop={onStop} autoFocus={empty} />
+  );
   return (
-    <div data-slot="chat-view" className={cn('flex min-h-0 flex-1 flex-col', className)} style={style}>
+    <div data-slot="chat-view" data-empty={empty || undefined} className={cn('flex min-h-0 flex-1 flex-col', className)} style={style}>
       {header}
-      <MessageScroller items={items} streaming={streaming} threadKey={thread.id} />
-      <div className="mx-auto box-border w-full max-w-[780px] shrink-0 px-[22px] pt-2 pb-3.5">
-        {thread.settled && onUnsettle ? <SettledBanner onUnsettle={onUnsettle} /> : null}
-        {composer ?? <WorkbenchComposer onSubmit={toSend(onSend)} streaming={streaming} onStop={onStop} />}
+      {/* Keyed children keep the composer dock the same element whether the thread is empty or not. */}
+      <div className={cn('relative flex min-h-0 flex-1 flex-col', empty && 'wb-scroll overflow-y-auto px-5 py-7')}>
+        <div key="top" className={cn('relative flex min-h-0 flex-1 flex-col', empty && 'justify-end')}>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {empty ? (
+              <motion.div
+                key="hero"
+                className="mx-auto w-full max-w-[620px]"
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -24, scale: 0.97, filter: 'blur(4px)' }}
+                transition={springs.smooth}
+              >
+                <EmptyThreadHero />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="thread"
+                className="flex min-h-0 flex-1 flex-col"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MessageScroller items={items} streaming={streaming} threadKey={thread.id} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <div
+          key="dock"
+          ref={dock}
+          data-slot="chat-view-composer"
+          className={cn('mx-auto box-border w-full shrink-0', empty ? 'max-w-[620px]' : 'max-w-[780px] px-[22px] pt-2 pb-3.5')}
+        >
+          {!empty && thread.settled && onUnsettle ? <SettledBanner onUnsettle={onUnsettle} /> : null}
+          {composerNode}
+        </div>
+        <div key="bottom" className={cn('relative min-h-0', empty ? 'flex-1' : 'flex-none')}>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {empty ? (
+              <motion.div
+                key="suggestions"
+                className="mx-auto w-full max-w-[620px]"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
+                transition={springs.snappy}
+              >
+                <EmptyThreadSuggestions onSend={onSend} />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

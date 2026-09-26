@@ -24,7 +24,7 @@ import { vib, tick } from './haptics';
 import { WIcon, type WIconName } from './icons';
 import { WbPopover } from './wb-popover';
 import { animate, AnimatePresence, motion } from 'framer-motion';
-import { flipPlay, flipSnapshot, prefersReducedMotion, springs, useSpringSheetDrag, type FlipSnapshot, type SpringSheetDragState } from './motion';
+import { MorphText, flipPlay, flipSnapshot, prefersReducedMotion, springs, useSpringSheetDrag, type FlipSnapshot, type SpringSheetDragState } from './motion';
 import {
   InkPicker, PencilActions, PencilCanvas, PencilToolbar, PencilToolbarDivider, ToolPicker, PK_INKS, usePencilHistory,
   type PencilTool,
@@ -801,7 +801,8 @@ export function ComposerPillLabel({ icon, children }: { icon?: React.ReactNode; 
   return (
     <>
       {typeof icon === 'string' ? <WIcon name={icon} size={13.5} sw={2} /> : icon}
-      <span className="whitespace-nowrap">{children}</span>
+      {/* A changed choice morphs its label by the letters the two share. */}
+      {typeof children === 'string' ? <MorphText className="whitespace-nowrap">{children}</MorphText> : <span className="whitespace-nowrap">{children}</span>}
       <WIcon name="chevD" size={11} sw={2.4} className="opacity-60" />
     </>
   );
@@ -840,7 +841,22 @@ export function ComposerMenuItem({ className, children, ...props }: MenuItemProp
       {composeRenderProps(children, (kids, { isSelected, selectionMode }) => (
         <>
           {selectionMode !== 'none' ? (
-            <span className="grid w-3.5 shrink-0 place-items-center text-wb-tint">{isSelected ? <WIcon name="check" size={13} sw={2.6} /> : null}</span>
+            <span className="grid w-3.5 shrink-0 place-items-center text-wb-tint">
+              <AnimatePresence initial={false}>
+                {isSelected ? (
+                  <motion.span
+                    key="tick"
+                    className="grid place-items-center"
+                    initial={{ scale: 0.3, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.3, opacity: 0 }}
+                    transition={springs.bouncy}
+                  >
+                    <WIcon name="check" size={13} sw={2.6} />
+                  </motion.span>
+                ) : null}
+              </AnimatePresence>
+            </span>
           ) : null}
           {kids}
         </>
@@ -1106,7 +1122,8 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
               {attachments.map((a) => (
                 <motion.div
                   key={a.id}
-                  layout
+                  layout="position"
+                  layoutDependency={attachments.map((x) => x.id).join()}
                   data-slot="composer-attachment"
                   data-attachment-id={a.id}
                   className="relative"

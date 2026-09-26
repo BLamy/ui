@@ -39,28 +39,22 @@ export function isLightSurface(el: Element | null | undefined): boolean {
 
 export const wbPopoverSurface =
   'box-border rounded-[12px] border border-wb-sep bg-wb-card font-ios text-wb-label shadow-[0_14px_44px_rgba(0,0,0,.34),0_2px_8px_rgba(0,0,0,.12)] outline-none backdrop-blur-[18px] ' +
-  'origin-(--trigger-anchor-point) data-entering:animate-bl-pop-in data-exiting:animate-bl-pop-out';
+  'origin-(--trigger-anchor-point) data-entering:animate-[wb-pop-in_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-exiting:animate-[wb-pop-out_.14s_ease-in_forwards] motion-reduce:animate-none';
 
 export interface WbPopoverProps extends AriaPopoverProps {}
 
 export function WbPopover({ className, style, offset = 8, triggerRef, ...props }: WbPopoverProps) {
-  const [tokens, setTokens] = React.useState<React.CSSProperties>({});
-  const [light, setLight] = React.useState(false);
-  // Measure when it mounts (a popover mounts as it opens), off the trigger MenuTrigger/DialogTrigger provides.
+  // Read off the trigger MenuTrigger/DialogTrigger provides, each time the popover renders open — not once at
+  // mount, when a host may not have applied its tokens yet.
   const ctx = useSlottedContext(PopoverContext);
   const ref = triggerRef ?? ctx?.triggerRef;
-  React.useLayoutEffect(() => {
-    const el = ref?.current;
-    setTokens(readWbTokens(el));
-    setLight(isLightSurface(el));
-  }, [ref]);
   return (
     <AriaPopover
       data-slot="wb-popover"
       offset={offset}
       triggerRef={triggerRef}
-      className={composeRenderProps(className, (cls) => cn(wbPopoverSurface, light ? 'wb-light' : 'wb-dark', 'z-500', cls))}
-      style={composeRenderProps(style, (s) => ({ ...tokens, ...s }))}
+      className={composeRenderProps(className, (cls) => cn(wbPopoverSurface, isLightSurface(ref?.current) ? 'wb-light' : 'wb-dark', 'z-500', cls))}
+      style={composeRenderProps(style, (s) => ({ ...readWbTokens(ref?.current), ...s }))}
       {...props}
     />
   );

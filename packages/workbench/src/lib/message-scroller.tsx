@@ -4,6 +4,8 @@ import { Button } from './press';
 import { cn } from './util';
 import { tick } from './haptics';
 import { WIcon } from './icons';
+import { AnimatePresence, animate, motion, type AnimationPlaybackControls } from 'framer-motion';
+import { prefersReducedMotion, springs } from './motion';
 
 /* ══ MessageScroller — shadcn message-scroller semantics ══
    Anchors new turns near the top (peek of the previous item), follows the live edge only while the
@@ -33,6 +35,30 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
     thread: undefined,
   });
   const [canDown, setCanDown] = useState(false);
+  // Messages that arrive while the thread is open rise in; the ones it opened with are just there.
+  const known = useRef<{ thread: string | null | undefined; ids: Set<string> }>({ thread: undefined, ids: new Set() });
+  if (known.current.thread !== threadKey) known.current = { thread: threadKey, ids: new Set(items.map((i) => i.id)) };
+  useEffect(() => {
+    for (const i of items) known.current.ids.add(i.id);
+  }, [items]);
+  const scrollAnim = useRef<AnimationPlaybackControls | null>(null);
+  /** Scrolls on a spring (interruptible: any scroll intent from the reader stops it). */
+  const glide = (top: number) => {
+    const el = vp.current;
+    if (!el) return;
+    scrollAnim.current?.stop();
+    if (prefersReducedMotion()) {
+      el.scrollTop = top;
+      return;
+    }
+    scrollAnim.current = animate(el.scrollTop, top, {
+      ...springs.smooth,
+      restDelta: 0.5,
+      onUpdate: (v) => {
+        el.scrollTop = v;
+      },
+    });
+  };
   const gap = (el: HTMLElement) => el.scrollHeight - el.scrollTop - el.clientHeight;
   const markProg = (ms: number) => {
     st.current.prog = performance.now() + ms;
@@ -56,7 +82,8 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
     if (!el) return;
     st.current.follow = true;
     markProg(smooth ? 800 : 90);
-    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    if (smooth) glide(el.scrollHeight - el.clientHeight);
+    else el.scrollTop = el.scrollHeight;
   };
   const anchorTop = (id: string, smooth?: boolean) => {
     const el = vp.current;
@@ -64,7 +91,9 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
     const row = el.querySelector<HTMLElement>('[data-mid="' + CSS.escape(id) + '"]');
     if (!row) return false;
     markProg(smooth ? 800 : 90);
-    el.scrollTo({ top: Math.max(0, row.offsetTop - peek), behavior: smooth ? 'smooth' : 'auto' });
+    const top = Math.max(0, row.offsetTop - peek);
+    if (smooth) glide(top);
+    else el.scrollTop = top;
     return true;
   };
   useLayoutEffect(() => {
@@ -116,6 +145,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const intent = () => {
+    scrollAnim.current?.stop();
     const el = vp.current;
     if (el && gap(el) > 40) st.current.follow = false;
   };
@@ -150,37 +180,70 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
           aria-busy={!!streaming}
           className="mx-auto box-border max-w-[780px] px-[22px] pt-4 pb-1"
         >
-          {items.map((it) => (
-            <div
-              key={it.id}
-              data-mid={it.id}
-              data-anchor={it.anchor ? '1' : undefined}
-              className="[contain-intrinsic-size:auto_48px] [content-visibility:auto]"
-            >
-              {it.node}
-            </div>
-          ))}
+          {items.map((it) => {
+            const arriving = !known.current.ids.has(it.id);
+            return (
+              <div
+                key={it.id}
+                data-mid={it.id}
+                data-anchor={it.anchor ? '1' : undefined}
+                className="[contain-intrinsic-size:auto_48px] [content-visibility:auto]"
+              >
+                {/* A new turn rises into place (a sent message up from the composer, a reply under it). */}
+                <motion.div
+                  initial={arriving ? { opacity: 0, y: it.anchor ? 18 : 10, scale: it.anchor ? 0.98 : 1 } : false}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ ...springs.smooth, opacity: { duration: 0.22 } }}
+                  style={{ transformOrigin: it.anchor ? '100% 100%' : '0 0' }}
+                >
+                  {it.node}
+                </motion.div>
+              </div>
+            );
+          })}
           <div ref={sp} aria-hidden="true" />
         </div>
       </div>
-      {showBtn ? (
-        <Button
-          data-slot="message-scroller-jump"
-          className={cn(
-            'wb-btn absolute bottom-3 left-1/2 flex -translate-x-1/2 cursor-pointer items-center gap-[7px] rounded-[99px] border border-wb-sep bg-wb-card text-[12.5px] font-semibold text-wb-label shadow-[0_4px_16px_var(--wb-shadow,rgba(0,0,0,.35))]',
-            streaming ? 'px-[13px] py-1.5' : 'p-[7px]',
-          )}
-          onPress={() => {
-            toEnd(true);
-            tick();
-          }}
-          aria-label="Jump to latest"
-        >
-          {streaming ? <span className="size-[7px] animate-[wbPulse_1.1s_infinite] rounded-[50%] bg-wb-tint" /> : null}
-          {streaming ? 'Streaming' : null}
-          <WIcon name="chevD" size={15} sw={2.2} />
-        </Button>
-      ) : null}
+      {/* The jump pill rises in when the reader is away from the latest, and widens to say a reply is streaming. */}
+      <AnimatePresence initial={false}>
+        {showBtn ? (
+          <motion.div
+            key="jump"
+            className="absolute bottom-3 left-1/2 z-2"
+            initial={{ opacity: 0, y: 14, scale: 0.85, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+            exit={{ opacity: 0, y: 10, scale: 0.9, x: '-50%' }}
+            transition={springs.snappy}
+          >
+            <Button
+              data-slot="message-scroller-jump"
+              className="wb-btn flex cursor-pointer items-center overflow-hidden rounded-[99px] border border-wb-sep bg-wb-card p-[7px] text-[12.5px] font-semibold text-wb-label shadow-[0_4px_16px_var(--wb-shadow,rgba(0,0,0,.35))]"
+              onPress={() => {
+                toEnd(true);
+                tick();
+              }}
+              aria-label="Jump to latest"
+            >
+              <AnimatePresence initial={false}>
+                {streaming ? (
+                  <motion.span
+                    key="streaming"
+                    className="flex items-center gap-[7px] overflow-hidden whitespace-nowrap"
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 'auto', opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={springs.snappy}
+                  >
+                    <span className="ml-1.5 size-[7px] shrink-0 animate-[wbPulse_1.1s_infinite] rounded-[50%] bg-wb-tint motion-reduce:animate-none" />
+                    <span className="pr-[7px]">Streaming</span>
+                  </motion.span>
+                ) : null}
+              </AnimatePresence>
+              <WIcon name="chevD" size={15} sw={2.2} />
+            </Button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { animate, AnimatePresence, motion, type AnimationPlaybackControls } from 'framer-motion';
-import { Haptics, springs, type SpringName } from '@brett_lamy/ui';
+import { Haptics, cn, springs, type SpringName } from '@brett_lamy/ui';
 
 /* ══ Motion helpers for the Workbench and ChatKit surfaces ══
    The kit's shared vocabulary (`springs`, `springCss`, --ease-spring-* / --duration-spring-*) lives in
@@ -312,6 +312,19 @@ export interface MorphTextProps {
 export function MorphText({ children, className }: MorphTextProps) {
   const text = String(children ?? '');
   const reduce = prefersReducedMotion();
+  const box = useRef<HTMLSpanElement>(null);
+  const width = useRef<number | null>(null);
+  // The label's width springs to the new text, so its neighbours glide instead of jumping.
+  useIsoLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    el.style.width = '';
+    const next = el.getBoundingClientRect().width;
+    const prev = width.current;
+    width.current = next;
+    if (prev == null || Math.abs(prev - next) < 0.5 || prefersReducedMotion()) return;
+    animate(el, { width: [prev, next] }, { ...springs.snappy, onComplete: () => (el.style.width = '') });
+  }, [text]);
   const seen: Record<string, number> = {};
   const letters = Array.from(text).map((ch) => {
     const n = (seen[ch] = (seen[ch] ?? 0) + 1);
@@ -319,13 +332,15 @@ export function MorphText({ children, className }: MorphTextProps) {
   });
   if (reduce) return <span className={className}>{text}</span>;
   return (
-    <span className={className} aria-label={text} data-slot="morph-text">
-      <span aria-hidden="true" className="inline-flex whitespace-pre">
+    <span ref={box} className={cn('inline-flex', className)} data-slot="morph-text">
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true" className="relative inline-flex whitespace-pre">
         <AnimatePresence mode="popLayout" initial={false}>
           {letters.map(({ ch, key }) => (
             <motion.span
               key={key}
               layout="position"
+              layoutDependency={text}
               className="inline-block"
               initial={{ opacity: 0, filter: 'blur(3px)', y: 3 }}
               animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}

@@ -17,6 +17,8 @@ import {
   type Key,
 } from 'react-aria-components';
 import { cva } from 'class-variance-authority';
+import { AnimatePresence, motion } from 'framer-motion';
+import { direction, springs } from '@brett_lamy/ui';
 import { Button } from './press';
 import { cn } from './util';
 import { tick } from './haptics';
@@ -72,7 +74,29 @@ export const modelRowVariants = cva(
 );
 
 const railTab =
-  "relative grid size-8 cursor-pointer place-items-center rounded-[9px] text-[16px] text-wb-label2 outline-none data-hovered:bg-wb-fill data-hovered:text-wb-label data-selected:bg-wb-fill data-selected:text-wb-label data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/50 before:absolute before:top-1/2 before:-left-[7px] before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-r-[3px] before:bg-wb-tint before:opacity-0 before:content-[''] data-selected:before:opacity-100";
+  'relative grid size-8 cursor-pointer place-items-center rounded-[9px] text-[16px] text-wb-label2 outline-none [transition:color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:bg-wb-fill data-hovered:text-wb-label data-selected:text-wb-label data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/50';
+
+/** The selected rail tab's fill and accent bar: one element that slides between tabs (a shared layout). */
+function RailIndicator({ group, selected }: { group: string; selected: boolean }) {
+  if (!selected) return null;
+  return (
+    <motion.span
+      layoutId={`${group}-rail`}
+      aria-hidden="true"
+      data-slot="model-picker-rail-indicator"
+      className="absolute inset-0 -z-1 rounded-[9px] bg-wb-fill"
+      transition={springs.snappy}
+    >
+      <span className="absolute top-1/2 -left-[7px] h-4 w-[3px] -translate-y-1/2 rounded-r-[3px] bg-wb-tint" />
+    </motion.span>
+  );
+}
+
+const listSlide = {
+  enter: (dir: number) => ({ y: dir * 28, opacity: 0 }),
+  center: { y: 0, opacity: 1 },
+  exit: (dir: number) => ({ y: dir * -28, opacity: 0, transition: { ...springs.snappy, opacity: { duration: 0.12 } } }),
+};
 
 export function ModelPicker({
   models,
@@ -100,6 +124,10 @@ export function ModelPicker({
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<string>(() => current?.provider ?? providers[0]?.id ?? FAVORITES);
   const gridRef = useRef<HTMLDivElement>(null);
+  const group = React.useId();
+  // The list slides the way the rail moved: a provider lower in the rail brings its models up from below.
+  const railOrder = [FAVORITES, ...providers.map((p) => p.id)];
+  const [travel, setTravel] = useState(0);
 
   const choose = (id: string) => {
     tick();
@@ -175,23 +203,44 @@ export function ModelPicker({
             selectedKey={tab}
             onSelectionChange={(k) => {
               tick();
+              setTravel(direction(railOrder.indexOf(tab), railOrder.indexOf(String(k))));
               setTab(String(k));
               setQuery('');
             }}
             className="flex h-[292px] min-h-0"
           >
             <TabList aria-label="Providers" data-slot="model-picker-rail" className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-wb-sep py-2">
-              <Tab id={FAVORITES} aria-label="Favorites" className={cn(railTab, 'mb-1.5 after:absolute after:-bottom-[5px] after:h-px after:w-6 after:bg-wb-sep after:content-[""]')}>
-                <WIcon name="star" size={15} sw={2} />
+              <Tab id={FAVORITES} aria-label="Favorites" className={cn(railTab, 'isolate mb-1.5 after:absolute after:-bottom-[5px] after:h-px after:w-6 after:bg-wb-sep after:content-[""]')}>
+                {({ isSelected }) => (
+                  <>
+                    <RailIndicator group={group} selected={isSelected} />
+                    <WIcon name="star" size={15} sw={2} />
+                  </>
+                )}
               </Tab>
               {providers.map((p) => (
-                <Tab key={p.id} id={p.id} aria-label={p.name} className={railTab}>
-                  {p.icon}
+                <Tab key={p.id} id={p.id} aria-label={p.name} className={cn(railTab, 'isolate')}>
+                  {({ isSelected }) => (
+                    <>
+                      <RailIndicator group={group} selected={isSelected} />
+                      {p.icon}
+                    </>
+                  )}
                 </Tab>
               ))}
             </TabList>
-            <TabPanel id={tab} className="wb-scroll min-w-0 flex-1 overflow-y-auto py-1.5 outline-none">
+            <TabPanel id={tab} className="wb-scroll relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-1.5 outline-none">
               {q ? <div className="px-4 pt-1 pb-1.5 text-[11px] font-semibold tracking-[.04em] text-wb-label3 uppercase">Results</div> : null}
+              <AnimatePresence mode="popLayout" initial={false} custom={travel}>
+              <motion.div
+                key={q ? 'search' : tab}
+                custom={travel}
+                variants={listSlide}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={springs.smooth}
+              >
               <GridList
                 ref={gridRef}
                 aria-label={q ? 'Matching models' : tab === FAVORITES ? 'Favorite models' : `${providers.find((p) => p.id === tab)?.name ?? ''} models`}
@@ -250,6 +299,8 @@ export function ModelPicker({
                   );
                 }}
               </GridList>
+              </motion.div>
+              </AnimatePresence>
             </TabPanel>
           </Tabs>
           {legacy.length ? (
