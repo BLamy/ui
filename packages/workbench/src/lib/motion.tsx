@@ -74,6 +74,8 @@ export const SHEET_TAP_SLOP = 4;
 export const SHEET_MINIMIZE_TRAVEL = 96;
 /** How far (ms of travel at release velocity) a flick is projected before picking the nearest stop. */
 const PROJECT_MS = 200;
+/** Release speed (px/ms) above which a drag counts as a flick toward the next stop. */
+const FLICK_SPEED = 0.4;
 
 export interface SpringSheetDragOptions {
   open: boolean;
@@ -247,7 +249,13 @@ export function useSpringSheetDrag({
     const shouldMinimize = minimizable && minimizeFor(projected) > 0.5 && minimizeFor(raw) > 0.08;
     const stops = [peek, ...detents.filter((x) => x > peek && x < maxReveal), maxReveal];
     const clamped = Math.max(0, Math.min(maxReveal, projected));
-    const nearest = stops.reduce((best, s) => (Math.abs(s - clamped) < Math.abs(best - clamped) ? s : best), stops[0]);
+    // A decided flick goes to the next stop the way it was thrown; a gentle release, to the nearest one.
+    const ahead = Math.abs(v) > FLICK_SPEED ? stops.filter((s) => (v > 0 ? s > raw + 1 : s < raw - 1)) : [];
+    const nearest = ahead.length
+      ? v > 0
+        ? Math.min(...ahead)
+        : Math.max(...ahead)
+      : stops.reduce((best, s) => (Math.abs(s - clamped) < Math.abs(best - clamped) ? s : best), stops[0]);
     const nextOpen = !shouldMinimize && nearest === maxReveal && maxReveal > peek;
     const nextDetent = !shouldMinimize && nearest !== peek && nearest !== maxReveal ? nearest : null;
     velocity.current = {
