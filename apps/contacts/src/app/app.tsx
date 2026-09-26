@@ -3,7 +3,8 @@
 import React from 'react';
 import {
   BLProvider, Haptics, Icon, Avatar, SearchField, ListSection, ListRow,
-  IndexBar, TabBar, EditBar, NavigationStack, SplitView, Credenza, SideDrawer,
+  IndexBar, TabBar, EditBar, NavigationStack, SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail,
+  Credenza, SideDrawer, EdgeDrawer,
   HapticIndicator, HapticsPlayground, BARH,
 } from '@brett_lamy/ui';
 import {
@@ -22,6 +23,15 @@ export interface ContactsAppProps {
   tint?: string;
   indicator?: boolean;
   safeTop?: number | boolean;
+}
+
+/** Below regular width the app runs as one NavigationStack with the sidebar in a drawer. */
+function Collapsed({ sidebar, drawer, onCloseDrawer, children }: { sidebar: React.ReactNode; drawer: boolean; onCloseDrawer: () => void; children: React.ReactNode }) {
+  return <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', inset: 0 }}>{children}</div>
+    <EdgeDrawer side="left" open={drawer} onClose={onCloseDrawer} width={300} zIndex={300} scrim="var(--bl-scrim)"
+      shadow="12px 0 40px rgba(0,0,0,.22)" style={{ background: 'var(--bl-card)' }}>{sidebar}</EdgeDrawer>
+  </div>;
 }
 
 export function ContactsApp(props: ContactsAppProps) {
@@ -161,12 +171,13 @@ export function ContactsApp(props: ContactsAppProps) {
   let body: React.ReactNode;
   if (!collapsed) {
     body = tab === 'contacts'
-      ? <SplitView wc={wc} sidebar={sidebarEl}
-        master={<React.Fragment>
+      ? <SplitView widthClass="regular" aria-label="Contacts">
+        <SplitViewSidebar width={264} resizable={false} aria-label="Lists">{sidebarEl}</SplitViewSidebar>
+        <SplitViewSupplementary width={370} resizable={false} aria-label="Contacts">
           <NavigationStack screens={[listScreen]} onPop={() => { }} />
           {edit ? editBarEl : null}
-        </React.Fragment>}
-        detail={<div style={{ display: 'flex', height: '100%', minWidth: 0 }}>
+        </SplitViewSupplementary>
+        <SplitViewDetail className="bg-muted" aria-label="Contact"><div style={{ display: 'flex', height: '100%', minWidth: 0 }}>
           <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
             {detailScreen
               ? <NavigationStack screens={[detailScreen, ...(ringScreen ? [ringScreen] : [])]} onPop={() => setRing(false)} />
@@ -181,7 +192,8 @@ export function ContactsApp(props: ContactsAppProps) {
           <SideDrawer mode="fixed" open={!!(xw && act && selC)} onClose={() => setAct(false)} title="Activity" width={318}>
             {selC ? <ActivityView c={selC} /> : null}
           </SideDrawer>
-        </div>} />
+        </div></SplitViewDetail>
+      </SplitView>
       : <div style={{ display: 'flex', height: '100%' }}>
         <div style={{ width: 264, flexShrink: 0, borderRight: '1px solid var(--bl-sep)', background: 'var(--bl-side)', transition: 'background .25s' }}>{sidebarEl}</div>
         <div style={{ flex: 1, position: 'relative', background: 'var(--bl-bg2)', minWidth: 0 }}>
@@ -191,8 +203,9 @@ export function ContactsApp(props: ContactsAppProps) {
   } else if (comp === 'nav-in-tabs') {
     const screens = (tab === 'contacts' ? contactsScreens : settingsScreens).map(s => ({ ...s, bottomInset: 66 }));
     body = <React.Fragment>
-      <SplitView wc={wc} sidebar={sidebarEl} drawerOpen={drawer} onCloseDrawer={() => setDrawer(false)}
-        master={<NavigationStack screens={screens} onPop={popActive} />} />
+      <Collapsed sidebar={sidebarEl} drawer={drawer} onCloseDrawer={() => setDrawer(false)}>
+        <NavigationStack screens={screens} onPop={popActive} />
+      </Collapsed>
       {edit && tab === 'contacts' ? editBarEl : <TabBar items={barItems} selected={tab} onSelect={switchTab} />}
     </React.Fragment>;
   } else {
@@ -201,8 +214,9 @@ export function ContactsApp(props: ContactsAppProps) {
       ...stack[0], key: 'tabroot', bottomInset: 66,
       overlay: <React.Fragment>{stack[0].overlay || null}{edit && tab === 'contacts' ? editBarEl : <TabBar items={barItems} selected={tab} onSelect={switchTab} />}</React.Fragment>,
     };
-    body = <SplitView wc={wc} sidebar={sidebarEl} drawerOpen={drawer} onCloseDrawer={() => setDrawer(false)}
-      master={<NavigationStack screens={[root, ...stack.slice(1)]} onPop={popActive} />} />;
+    body = <Collapsed sidebar={sidebarEl} drawer={drawer} onCloseDrawer={() => setDrawer(false)}>
+      <NavigationStack screens={[root, ...stack.slice(1)]} onPop={popActive} />
+    </Collapsed>;
   }
   return <div ref={rootRef} style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
     <BLProvider dark={dark} tint={tint} safeTop={safeIns}>

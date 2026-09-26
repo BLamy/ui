@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   AdaptivePane, Avatar, BLProvider, Button, Credenza, EdgeDrawer, Haptics, Icon, IndexBar, SidebarDemo, NavigationStack, Segmented,
-  SideDrawer, SplitView, Spinner, Switch, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab,
+  SideDrawer, Spinner, Switch, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab,
   List, ListSection, ListRow, useAppearance,
   type AdaptivePaneMode, type Screen,
 } from '@brett_lamy/ui';
@@ -20,6 +20,7 @@ import {
   type SurfaceKind,
 } from '@brett_lamy/workbench';
 import { DemoBtn, BLFrame, type LiveSpec } from './frame';
+import { SPLIT_VIEW_LIVE } from './examples/split-view';
 
 /** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
 function ScaledShell({ width, height, children }: { width: number; height: number; children: ReactNode }) {
@@ -968,67 +969,7 @@ export default function Teams() {
       </div>;
     },
   },
-  split: {
-    title: 'SplitView', theme: 'bl', h: 470,
-    variants: [{ id: 'regular', label: 'Regular' }, { id: 'medium', label: 'Medium' }, { id: 'compact', label: 'Compact' }],
-    variantsWidth: 280,
-    code: `import { useState } from 'react'
-import {
-  List, ListRow, ListSection, SplitView, useContainerWidth,
-} from '@brett_lamy/ui'
-
-const column = (title: string, rows: string[]) => (
-  <List>
-    <ListSection title={title}>
-      {rows.map((r, i) => <ListRow key={r} title={r} divider={i < rows.length - 1} />)}
-    </ListSection>
-  </List>
-)
-
-export default function Notes() {
-  const [ref, width] = useContainerWidth()
-  // Below 'regular' the sidebar becomes a drawer: open it with setDrawer(true).
-  const [drawer, setDrawer] = useState(false)
-  const wc = width >= 900 ? 'regular' : width >= 600 ? 'medium' : 'compact'
-  return (
-    <div ref={ref} style={{ position: 'relative', height: 330 }}>
-      <SplitView
-        wc={wc}
-        sidebar={column('Folders', ['All Notes', 'Shared', 'Archive'])}
-        master={column('Notes', ['Springs', 'IndexBar ticks', 'Credenza morph'])}
-        detail={<p style={{ padding: 22 }}>Detail</p>}
-        drawerOpen={drawer}
-        onCloseDrawer={() => setDrawer(false)}
-      />
-    </div>
-  )
-}`,
-    Render: function SplitLive({ variant }) {
-      const wc = variant || 'regular';
-      const [drawer, setDrawer] = useState(false);
-      useEffect(() => { setDrawer(false); }, [wc]);
-      const mini = (name: string, rows: string[]) => <div style={{ height: '100%', overflowY: 'auto' }}><List>
-        <ListSection title={name}>{rows.map((t, i) => <ListRow key={t} title={t} divider={i < rows.length - 1} />)}</ListSection>
-      </List></div>;
-      return <div>
-        {wc !== 'regular' ? <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-          <DemoBtn label="Show sidebar" onPress={() => setDrawer(true)} style={{ padding: '6px 12px', fontSize: 12.5 }} />
-        </div> : null}
-        {/* Laid out at a width that really is regular/medium/compact, scaled to fit. */}
-        <ScaledShell width={wc === 'regular' ? 900 : wc === 'medium' ? 700 : 390} height={wc === 'regular' ? 420 : 380}>
-        <BLFrame h={wc === 'regular' ? 420 : 380} bg="var(--bl-bg)">
-          <SplitView wc={wc} drawerOpen={drawer} onCloseDrawer={() => setDrawer(false)}
-            sidebar={<div style={{ height: '100%', background: 'var(--bl-side)', overflowY: 'auto' }}>{mini('Folders', ['All Notes', 'Shared', 'Archive'])}</div>}
-            master={mini('Notes', ['Springs — stiffness 620', 'IndexBar scrub ticks', 'Credenza height morph'])}
-            detail={<div style={{ height: '100%', display: 'grid', placeItems: 'center', background: 'var(--bl-bg2)', textAlign: 'center', padding: 22 }}>
-              <div><div style={{ fontWeight: 650 }}>Detail</div>
-              <div style={{ fontSize: 12.5, color: 'var(--bl-label2)', marginTop: 5, lineHeight: 1.5 }}>regular: 3 columns · medium: sidebar becomes a drawer · compact: collapses into the stack</div></div>
-            </div>} />
-        </BLFrame>
-        </ScaledShell>
-      </div>;
-    },
-  },
+  ...SPLIT_VIEW_LIVE,
   indexbar: {
     title: 'IndexBar', theme: 'bl', h: 470,
     variants: [{ id: 'stops', label: 'Custom stops' }, { id: 'az', label: 'A–Z' }, { id: 'wave', label: 'Wave' }],

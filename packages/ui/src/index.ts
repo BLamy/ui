@@ -56,8 +56,14 @@ export { EditBar } from './components/edit-bar';
 export type { EditBarProps } from './components/edit-bar';
 export { NavigationStack, ScreenWrap } from './components/navigation-stack';
 export type { NavigationStackProps, Screen, ScreenWrapProps } from './components/navigation-stack';
-export { SplitView } from './components/split-view';
-export type { SplitViewProps } from './components/split-view';
+export {
+  SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail, SplitViewHeader, SplitViewContent, SplitViewToggle,
+  SplitViewItem, SplitViewEmpty, useSplitView, useSplitViewColumn,
+} from './components/split-view';
+export type {
+  SplitViewProps, SplitViewColumnProps, SplitViewHeaderProps, SplitViewToggleProps, SplitViewItemProps, SplitViewEmptyProps,
+  SplitViewState, SplitViewColumn, SplitViewWidthClass, SplitViewSidebarBehavior, SplitViewSelection,
+} from './components/split-view';
 export { Credenza } from './components/credenza';
 export type { CredenzaProps } from './components/credenza';
 export { SideDrawer } from './components/side-drawer';
@@ -77,6 +83,10 @@ export type { AdaptivePaneProps, AdaptivePaneMode } from './components/adaptive-
 
 // demos
 export { SidebarDemo, sidebarDarkVars } from './demos/sidebar-demo';
+export {
+  SplitViewMailDemo, SplitViewNotesDemo, SplitViewSettingsDemo, SplitViewResizableDemo, DemoGlyph,
+} from './demos/split-view-demos';
+export type { SplitViewResizableDemoProps } from './demos/split-view-demos';
 export {
   HapticsPlayground, ShowMagicRow, BrightnessSlider, HapticSlider, SlideToUnlock, WheelDrum, Sun,
 } from './demos/haptics-playground';
