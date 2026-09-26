@@ -13,7 +13,8 @@ import { cn } from '../lib/utils';
 
 /* ══ Disclosure / Accordion — react-aria's Disclosure, DisclosureGroup and DisclosurePanel (button + region
    wiring, Enter/Space, `hidden="until-found"` so find-in-page opens panels). The panel animates its height
-   from react-aria's --disclosure-panel-height.
+   from react-aria's --disclosure-panel-height on the tray spring while its content fades down into place, and
+   the chevron turns rather than swapping.
    <Accordion>
      <AccordionItem id="a"><AccordionTrigger>Title</AccordionTrigger><AccordionContent>…</AccordionContent></AccordionItem>
    </Accordion> ══ */
@@ -77,7 +78,7 @@ export function DisclosureTrigger({ className, children, level = 3 }: Disclosure
           name="chev"
           size={17}
           sw={2.4}
-          className="shrink-0 text-bl-label3 transition-transform duration-300 ease-ios group-data-expanded/disclosure:rotate-90"
+          className="shrink-0 text-bl-label3 transition-transform duration-spring-snappy ease-spring-snappy group-data-expanded/disclosure:rotate-90 motion-reduce:transition-none"
         />
       </Button>
     </Heading>
@@ -89,12 +90,12 @@ export function DisclosurePanel({ className, children, ...props }: AriaDisclosur
     <AriaDisclosurePanel
       data-slot="disclosure-panel"
       className={composeRenderProps(className, (cls) => cn(
-        'h-(--disclosure-panel-height) overflow-clip text-[15px] leading-[20px] text-muted-foreground transition-[height] duration-300 ease-ios motion-reduce:transition-none',
+        'h-(--disclosure-panel-height) overflow-clip text-[15px] leading-[20px] text-muted-foreground transition-[height] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
         cls,
       ))}
       {...props}
     >
-      <div className="pb-3.5">{children}</div>
+      <div className="pb-3.5 transition-[opacity,translate] duration-spring-tray ease-spring-tray group-not-data-expanded/disclosure:-translate-y-1 group-not-data-expanded/disclosure:opacity-0 group-not-data-expanded/disclosure:duration-exit group-not-data-expanded/disclosure:ease-exit motion-reduce:transition-none">{children}</div>
     </AriaDisclosurePanel>
   );
 }

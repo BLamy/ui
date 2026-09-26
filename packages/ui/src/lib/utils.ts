@@ -20,5 +20,6 @@ export function cn(...inputs: ClassValue[]) {
 
 export const FONT =
   "-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',sans-serif";
+/** @deprecated Legacy iOS curve. New motion uses the spring tokens (lib/motion.ts `springs`, CSS `--ease-spring-*`). */
 export const EASE = 'cubic-bezier(.32,.72,0,1)';
 export const BARH = 52;

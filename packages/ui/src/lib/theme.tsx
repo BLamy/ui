@@ -82,7 +82,7 @@ export function BLProvider({ dark: darkProp, tint = '#0A84FF', safeTop, children
       ref={setRoot}
       data-slot="bl-provider"
       className={cn(
-        'relative h-full w-full overflow-hidden bg-muted font-ios text-foreground select-none transition-[background] duration-250',
+        'relative h-full w-full overflow-hidden bg-muted font-ios text-foreground select-none transition-[background] duration-spring-smooth ease-spring-smooth',
         dark ? 'scheme-dark' : 'scheme-light',
         className,
       )}

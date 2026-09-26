@@ -32,9 +32,9 @@ export const dialogVariants = cva(
   {
     variants: {
       size: {
-        alert: 'w-[270px] rounded-[14px] data-entering:animate-bl-alert-in data-exiting:animate-bl-alert-out',
-        default: 'w-full max-w-[400px] rounded-[20px] data-entering:animate-bl-pop-in data-exiting:animate-bl-pop-out',
-        lg: 'w-full max-w-[560px] rounded-[20px] data-entering:animate-bl-pop-in data-exiting:animate-bl-pop-out',
+        alert: 'w-[270px] rounded-[14px] data-entering:animate-bl-alert-in data-exiting:animate-bl-alert-out motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
+        default: 'w-full max-w-[400px] rounded-[20px] data-entering:animate-bl-pop-in data-exiting:animate-bl-pop-out motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
+        lg: 'w-full max-w-[560px] rounded-[20px] data-entering:animate-bl-pop-in data-exiting:animate-bl-pop-out motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
       },
     },
     defaultVariants: { size: 'default' },
@@ -156,7 +156,7 @@ export function DialogFooter({ className, orientation = 'horizontal', ...props }
 }
 
 export const dialogActionVariants = cva(
-  cn('bl-btn box-border flex h-11 cursor-pointer items-center justify-center border-0 bg-transparent px-3 [font-family:inherit] text-[17px] whitespace-nowrap text-primary transition-[background-color] duration-100 data-pressed:bg-accent data-disabled:cursor-default data-disabled:opacity-40', focusRing, 'data-focus-visible:ring-inset'),
+  cn('bl-btn box-border flex h-11 cursor-pointer items-center justify-center border-0 bg-transparent px-3 [font-family:inherit] text-[17px] whitespace-nowrap text-primary transition-[background-color] duration-exit data-pressed:bg-accent data-disabled:cursor-default data-disabled:opacity-40', focusRing, 'data-focus-visible:ring-inset'),
   {
     variants: {
       variant: {

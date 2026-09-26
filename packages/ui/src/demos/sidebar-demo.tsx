@@ -43,7 +43,7 @@ export function SidebarDemo({ variant: initial = 'docked' }: { variant?: Sidebar
         <Chip active={narrow} onPress={() => setNarrow((n) => !n)}>narrow container</Chip>
       </div>
       <div className={cn(
-        'h-[330px] max-w-[640px] overflow-hidden rounded-[14px] border border-wb-sep transition-[width] duration-350 ease-ios',
+        'h-[330px] max-w-[640px] overflow-hidden rounded-[14px] border border-wb-sep transition-[width] duration-spring-smooth ease-spring-smooth',
         narrow ? 'w-[380px]' : 'w-full',
       )}>
         <SidebarProvider key={variant + narrow} defaultOpen={variant !== 'overlay'} breakpoint={430}>

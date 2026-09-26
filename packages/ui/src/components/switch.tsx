@@ -11,7 +11,8 @@ export interface SwitchProps {
   style?: CSSProperties;
 }
 
-/** iOS switch — shadcn's Switch shape on react-aria's Switch. */
+/** iOS switch — shadcn's Switch shape on react-aria's Switch. The thumb springs across, and stretches toward
+    the far side while pressed (as on iOS), so a press already hints where it will go. */
 export function Switch({ checked, onChange, className, style, ...rest }: SwitchProps) {
   return (
     <AriaSwitch
@@ -24,11 +25,11 @@ export function Switch({ checked, onChange, className, style, ...rest }: SwitchP
     >
       <span
         data-slot="switch-track"
-        className="absolute inset-0 rounded-2xl bg-bl-fill2 transition-[background] duration-250 group-data-selected:bg-bl-green"
+        className="absolute inset-0 rounded-2xl bg-bl-fill2 transition-[background-color] duration-spring-smooth ease-spring-smooth group-data-selected:bg-bl-green"
       />
       <span
         data-slot="switch-thumb"
-        className="pointer-events-none absolute top-0.5 left-0.5 size-[27px] rounded-full bg-white shadow-[0_3px_8px_rgba(0,0,0,.22),0_1px_1px_rgba(0,0,0,.14)] transition-[left] duration-250 ease-[cubic-bezier(.3,.9,.4,1.05)] group-data-selected:left-[22px]"
+        className="pointer-events-none absolute top-0.5 left-0.5 h-[27px] w-[27px] rounded-full bg-white shadow-[0_3px_8px_rgba(0,0,0,.22),0_1px_1px_rgba(0,0,0,.14)] transition-[translate,width] duration-spring-snappy ease-spring-snappy group-data-pressed:w-[33px] group-data-selected:translate-x-5 group-data-selected:group-data-pressed:translate-x-[14px] motion-reduce:transition-none"
       />
     </AriaSwitch>
   );

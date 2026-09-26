@@ -29,7 +29,7 @@ export function EdgeDrawer({
       <div
         data-slot="edge-drawer-scrim"
         onClick={onClose}
-        className={cn('absolute inset-0 transition-opacity duration-320 ease-ios', open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0')}
+        className={cn('absolute inset-0 transition-opacity duration-spring-smooth ease-spring-smooth', open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0')}
         style={{ zIndex, background: scrim }}
       />
       <div
@@ -38,7 +38,7 @@ export function EdgeDrawer({
         data-open={open}
         aria-hidden={!open}
         className={cn(
-          'absolute inset-y-0 transition-transform duration-380 ease-ios',
+          'absolute inset-y-0 transition-[translate] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
           side === 'left' ? 'left-0' : 'right-0',
           !open && (side === 'left' ? '-translate-x-[103%]' : 'translate-x-[103%]'),
           className,

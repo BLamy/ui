@@ -4,7 +4,19 @@ import './styles.css';
 export { cn, FONT, EASE, BARH } from './lib/utils';
 export { Haptics, PAT } from './lib/haptics';
 export type { HapticEvent, HapticImpactStyle, HapticNotificationKind } from './lib/haptics';
-export { loadMotion, useMotion, springs, springCss, direction, useReducedMotion, type SpringName } from './lib/motion';
+export {
+  loadMotion, useMotion, springs, springCss, direction, useDirection, fades, useSpringTransition, useReducedMotion, type SpringName,
+} from './lib/motion';
+export { TextMorph } from './components/text-morph';
+export type { TextMorphProps } from './components/text-morph';
+export { NumberMorph } from './components/number-morph';
+export type { NumberMorphProps } from './components/number-morph';
+export { IconSwap, Chevron } from './components/icon-swap';
+export type { IconSwapProps, ChevronProps, ChevronDirection } from './components/icon-swap';
+export { AnimatedHeight, ContentSwap } from './components/animated-height';
+export type { AnimatedHeightProps, ContentSwapProps } from './components/animated-height';
+export { Celebrate } from './components/celebrate';
+export type { CelebrateProps } from './components/celebrate';
 export {
   BLProvider, BLSafeCtx, BLStickyCtx, chromeStore, useChromeHidden, chromeOffset,
   AppearanceContext, AppearanceProvider, useAppearance, darkVars as blDarkVars, lightVars as blLightVars,

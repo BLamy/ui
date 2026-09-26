@@ -2,9 +2,11 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Label, ProgressBar, type ProgressBarProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../lib/utils';
+import { NumberMorph } from './number-morph';
 
 /* ══ Progress — react-aria's ProgressBar (role=progressbar, aria-valuenow / valuetext), iOS progress view look.
-   Omit `value` or pass `isIndeterminate` for the sliding bar. ══ */
+   Omit `value` or pass `isIndeterminate` for the sliding bar. The fill springs to each new value and the
+   default percentage label rolls its digits (NumberMorph). ══ */
 export const progressVariants = cva('relative w-full overflow-hidden rounded-full bg-bl-fill2', {
   variants: {
     size: {
@@ -34,6 +36,8 @@ export interface ProgressProps extends ProgressBarProps, VariantProps<typeof pro
 }
 
 export function Progress({ className, size, tone, label, showValue, ...props }: ProgressProps) {
+  // A custom label or format gets react-aria's text as is; the default percentage rolls.
+  const plainPercent = props.valueLabel == null && props.formatOptions == null;
   return (
     <ProgressBar
       data-slot="progress"
@@ -43,13 +47,17 @@ export function Progress({ className, size, tone, label, showValue, ...props }: 
       {({ percentage, valueText, isIndeterminate }) => (
         <>
           {label ? <Label className="text-[15px] font-medium text-foreground">{label}</Label> : null}
-          {showValue && !isIndeterminate ? <span className="col-start-2 text-[15px] text-muted-foreground tabular-nums">{valueText}</span> : null}
+          {showValue && !isIndeterminate ? (
+            <span className="col-start-2 text-[15px] text-muted-foreground tabular-nums">
+              {plainPercent ? <NumberMorph value={(percentage ?? 0) / 100} format={{ style: 'percent' }} /> : valueText}
+            </span>
+          ) : null}
           <div data-slot="progress-track" className={cn(progressVariants({ size }), 'col-span-2')}>
             <div
               data-slot="progress-indicator"
               className={cn(
                 progressIndicatorVariants({ tone }),
-                isIndeterminate ? 'w-2/5 animate-bl-progress' : 'w-(--pct) transition-[width] duration-300 ease-ios',
+                isIndeterminate ? 'w-2/5 animate-bl-progress motion-reduce:animate-none' : 'w-(--pct) transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
               )}
               style={isIndeterminate ? undefined : ({ '--pct': `${percentage ?? 0}%` } as CSSProperties)}
             />

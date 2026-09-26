@@ -95,7 +95,7 @@ export function SliderThumb({ className, ...props }: SliderThumbProps) {
       data-slot="slider-thumb"
       className={composeRenderProps(className, (cls) => cn(
         'top-1/2 size-[26px] rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,.28),0_0_1px_rgba(0,0,0,.22)] outline-none',
-        'transition-[scale,box-shadow] duration-150 ease-ios data-dragging:scale-110',
+        'transition-[scale,box-shadow] duration-spring-snappy ease-spring-snappy data-dragging:scale-110 motion-reduce:transition-none',
         'data-focus-visible:shadow-[0_1px_4px_rgba(0,0,0,.28),0_0_0_4px_color-mix(in_oklab,var(--bl-tint)_45%,transparent)]',
         cls,
       ))}

@@ -134,7 +134,7 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
     <div
       data-slot="sidebar"
       className={cn(
-        'box-border shrink-0 overflow-hidden transition-[width] duration-320 ease-ios',
+        'box-border shrink-0 overflow-hidden transition-[width] duration-spring-smooth ease-spring-smooth',
         float ? 'bg-transparent p-2.5' : cn(sideBg, sepR, 'p-0'),
       )}
       // Width follows open/collapsed state and the width props.

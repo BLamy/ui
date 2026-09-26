@@ -36,7 +36,7 @@ input::placeholder{color:var(--bl-label3)}
    mounted until `animationend`), so they fill forwards. ── */
 @keyframes bl-fade-in{from{opacity:0}}
 @keyframes bl-fade-out{to{opacity:0}}
-@keyframes bl-pop-in{from{opacity:0;transform:scale(.92)}}
+@keyframes bl-pop-in{from{opacity:0;transform:translate(var(--bl-pop-x,0),var(--bl-pop-y,0)) scale(.9)}}
 @keyframes bl-pop-out{to{opacity:0;transform:scale(.96)}}
 @keyframes bl-alert-in{from{opacity:0;transform:scale(1.14)}}
 @keyframes bl-alert-out{to{opacity:0;transform:scale(.98)}}
@@ -48,23 +48,33 @@ input::placeholder{color:var(--bl-label3)}
 @keyframes bl-sheet-out-left{to{transform:translateX(-100%)}}
 @keyframes bl-sheet-in-right{from{transform:translateX(100%)}}
 @keyframes bl-sheet-out-right{to{transform:translateX(100%)}}
+@keyframes bl-shimmer{from{background-position:150% 0}to{background-position:-50% 0}}
+/* Directional panels: --bl-dx / --bl-dy are -1, 0 or 1 (set from the tab index), so content arrives from the
+   side you moved toward and leaves the other way. */
+@keyframes bl-panel-in{from{opacity:0;translate:calc(var(--bl-dx,0)*28px) calc(var(--bl-dy,0)*28px)}}
+@keyframes bl-panel-out{to{opacity:0;translate:calc(var(--bl-dx,0)*-28px) calc(var(--bl-dy,0)*-28px)}}
 @keyframes bl-progress-indeterminate{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
 @theme {
-  --animate-bl-fade-in: bl-fade-in .22s cubic-bezier(.32,.72,0,1);
-  --animate-bl-fade-out: bl-fade-out .18s ease-in forwards;
+  /* Entrances spring (theme.css --ease-spring-*); exits are a quick ease-in (--ease-exit) — what leaves gets
+     out of the way. Exit animations must end (react-aria unmounts on animationend), so they fill forwards. */
+  --animate-bl-fade-in: bl-fade-in var(--duration-spring-smooth) var(--ease-spring-smooth);
+  --animate-bl-fade-out: bl-fade-out var(--duration-exit) var(--ease-exit) forwards;
   /* Scrims outlast their sheet: react-aria unmounts the whole overlay when the scrim's animation ends. */
-  --animate-bl-fade-out-slow: bl-fade-out .3s cubic-bezier(.32,.72,0,1) forwards;
-  --animate-bl-pop-in: bl-pop-in .22s cubic-bezier(.32,.72,0,1);
-  --animate-bl-pop-out: bl-pop-out .14s ease-in forwards;
-  --animate-bl-alert-in: bl-alert-in .3s cubic-bezier(.32,.72,0,1);
-  --animate-bl-alert-out: bl-alert-out .16s ease-in forwards;
-  --animate-bl-sheet-in-bottom: bl-sheet-in-bottom .42s cubic-bezier(.32,.72,0,1);
-  --animate-bl-sheet-out-bottom: bl-sheet-out-bottom .3s cubic-bezier(.32,.72,0,1) forwards;
-  --animate-bl-sheet-in-top: bl-sheet-in-top .42s cubic-bezier(.32,.72,0,1);
-  --animate-bl-sheet-out-top: bl-sheet-out-top .3s cubic-bezier(.32,.72,0,1) forwards;
-  --animate-bl-sheet-in-left: bl-sheet-in-left .42s cubic-bezier(.32,.72,0,1);
-  --animate-bl-sheet-out-left: bl-sheet-out-left .3s cubic-bezier(.32,.72,0,1) forwards;
-  --animate-bl-sheet-in-right: bl-sheet-in-right .42s cubic-bezier(.32,.72,0,1);
-  --animate-bl-sheet-out-right: bl-sheet-out-right .3s cubic-bezier(.32,.72,0,1) forwards;
+  --animate-bl-fade-out-slow: bl-fade-out var(--duration-exit-slow) var(--ease-exit) forwards;
+  --animate-bl-pop-in: bl-pop-in var(--duration-spring-snappy) var(--ease-spring-snappy);
+  --animate-bl-pop-out: bl-pop-out var(--duration-exit) var(--ease-exit) forwards;
+  --animate-bl-alert-in: bl-alert-in var(--duration-spring-smooth) var(--ease-spring-smooth);
+  --animate-bl-alert-out: bl-alert-out var(--duration-exit) var(--ease-exit) forwards;
+  --animate-bl-sheet-in-bottom: bl-sheet-in-bottom var(--duration-spring-tray) var(--ease-spring-tray);
+  --animate-bl-sheet-out-bottom: bl-sheet-out-bottom var(--duration-exit-tray) var(--ease-exit) forwards;
+  --animate-bl-sheet-in-top: bl-sheet-in-top var(--duration-spring-tray) var(--ease-spring-tray);
+  --animate-bl-sheet-out-top: bl-sheet-out-top var(--duration-exit-tray) var(--ease-exit) forwards;
+  --animate-bl-sheet-in-left: bl-sheet-in-left var(--duration-spring-tray) var(--ease-spring-tray);
+  --animate-bl-sheet-out-left: bl-sheet-out-left var(--duration-exit-tray) var(--ease-exit) forwards;
+  --animate-bl-sheet-in-right: bl-sheet-in-right var(--duration-spring-tray) var(--ease-spring-tray);
+  --animate-bl-sheet-out-right: bl-sheet-out-right var(--duration-exit-tray) var(--ease-exit) forwards;
+  --animate-bl-panel-in: bl-panel-in var(--duration-spring-smooth) var(--ease-spring-smooth);
+  --animate-bl-panel-out: bl-panel-out var(--duration-exit-tray) var(--ease-exit) forwards;
   --animate-bl-progress: bl-progress-indeterminate 1.4s cubic-bezier(.65,0,.35,1) infinite;
+  --animate-bl-shimmer: bl-shimmer 1.6s linear infinite;
 }

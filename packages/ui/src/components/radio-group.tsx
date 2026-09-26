@@ -36,7 +36,7 @@ export function RadioGroup({ className, orientation = 'vertical', onChange, ...p
 export const radioVariants = cva(
   [
     'box-border size-[22px] shrink-0 rounded-full border-[1.5px] border-bl-label3 bg-transparent',
-    'transition-[border-width,border-color,transform] duration-200 ease-ios',
+    'transition-[border-width,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
     'group-data-selected:border-[7px] group-data-selected:border-primary group-data-selected:bg-white',
     'group-data-pressed:scale-90 group-data-focus-visible:ring-[3px] group-data-focus-visible:ring-ring/45',
     'group-data-invalid:border-destructive',

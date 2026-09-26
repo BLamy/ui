@@ -39,7 +39,7 @@ function ListBase({ children, inset, header, stickyTop, className, style }: List
     <BLStickyCtx.Provider value={top}>
       <div data-slot="list" className={cn(inset ? 'px-4 py-0' : 'p-0', className)} style={style}>
         {header ? (
-          <div ref={hRef} className="sticky z-24 bg-bl-stick backdrop-blur-[10px] transition-[top] duration-280 ease-ios"
+          <div ref={hRef} className="sticky z-24 bg-bl-stick backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
             style={{ top: chromeOffset(above, chromeHid) }}>{header}</div>
         ) : null}
         {children}
@@ -65,7 +65,7 @@ export function ListSection({ title, footer, children, sticky, innerRef, stickyT
   return (
     <div ref={innerRef} data-slot="list-section" className={cn(className)} style={style}>
       {title != null ? (sticky
-        ? <div className="sticky z-20 bg-bl-stick px-4 py-[3px] text-[13.5px] font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-280 ease-ios"
+        ? <div className="sticky z-20 bg-bl-stick px-4 py-[3px] text-[13.5px] font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
             style={{ top }}>{title}</div>
         : <div className="px-4 pt-1 pb-[7px] text-[12.5px] font-medium tracking-[.4px] text-muted-foreground uppercase">{title}</div>) : null}
       <div className={cn('overflow-hidden', sticky ? 'rounded-none' : 'rounded-[12px]')}>{children}</div>
@@ -103,12 +103,15 @@ export function ListRow(p: ListRowProps) {
   const [px, setPx] = useState(0);
   const [anim, setAnim] = useState(true);
   const [dead, setDead] = useState(false);
-  const el = useRef<any>(null); const g = useRef<any>(null); const me = useRef<any>(null);
+  const [closing, setClosing] = useState<number | null>(null);
+  const el = useRef<any>(null); const g = useRef<any>(null); const me = useRef<any>(null); const wrap = useRef<HTMLDivElement | null>(null);
   useEffect(() => { const close = () => setPx(0); me.current = close; openRows.add(close); return () => { openRows.delete(close); }; }, []);
   const closeOthers = () => openRows.forEach((f) => { if (f !== me.current) f(); });
   const del = () => {
-    setAnim(true); setPx(-(el.current ? el.current.offsetWidth : 300)); setDead(true);
-    Haptics.notification('warning'); setTimeout(() => p.onDelete && p.onDelete(), 300);
+    setAnim(true); setPx(-(el.current ? el.current.offsetWidth : 300));
+    setClosing(wrap.current ? wrap.current.offsetHeight : null);
+    requestAnimationFrame(() => requestAnimationFrame(() => setDead(true)));
+    Haptics.notification('warning'); setTimeout(() => p.onDelete && p.onDelete(), 460);
   };
   const start = (e: React.PointerEvent) => {
     if (!p.onDelete || p.edit || e.button) return;
@@ -147,8 +150,10 @@ export function ListRow(p: ListRowProps) {
   const inEdit = p.edit !== undefined && p.edit !== null;
   return (
     <div data-slot="list-row"
-      className={cn('relative overflow-hidden [transition:max-height_.32s_ease,opacity_.28s]', dead ? 'max-h-0 opacity-0' : 'max-h-[200px] opacity-100', p.className)}
-      style={p.style}>
+      ref={wrap}
+      className={cn('relative overflow-hidden transition-[height,opacity] duration-spring-tray ease-spring-tray motion-reduce:transition-none', dead ? 'opacity-0' : 'opacity-100', p.className)}
+      // Removal collapses from the measured height to 0 on the tray spring.
+      style={{ ...p.style, height: dead ? 0 : closing ?? undefined }}>
       {p.onDelete && px < 0 ? (
         // The action strip and its label track the swipe offset.
         <div className="absolute inset-y-0 right-0 flex overflow-hidden" style={{ width: -px }}>
@@ -164,21 +169,21 @@ export function ListRow(p: ListRowProps) {
           p.destructive ? 'text-destructive' : 'text-foreground',
           p.selected ? 'bg-accent' : 'bg-card',
           (p.onPress || p.onDelete) ? 'cursor-pointer' : 'cursor-default',
-          anim ? '[transition:transform_.3s_cubic-bezier(.32,.72,0,1),background_.15s]' : '[transition:background_.15s]',
+          anim ? 'transition-[transform,background-color] duration-spring-snappy ease-spring-snappy' : 'transition-[background-color] duration-exit',
         )}
         onPointerDown={start} onPointerMove={mv} onPointerUp={end} onPointerCancel={end} onClick={press}
         // Swipe offset, driven by the gesture above.
         style={{ transform: `translateX(${px}px)` }}>
         {inEdit ? (
           <span aria-hidden="true" className={cn(
-            'flex shrink-0 items-center overflow-hidden [transition:width_.25s_cubic-bezier(.32,.72,0,1),opacity_.2s,margin-right_.25s]',
+            'flex shrink-0 items-center overflow-hidden transition-[width,opacity,margin-right] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
             p.edit ? 'mr-0 w-[30px] opacity-100' : '-mr-3 w-0 opacity-0',
           )}>
             <span className={cn(
-              'box-border grid size-[22px] shrink-0 place-items-center rounded-[50%] [transition:background_.15s]',
+              'box-border grid size-[22px] shrink-0 place-items-center rounded-[50%] transition-[background-color,scale] duration-spring-snappy ease-spring-bouncy',
               p.checked ? 'border-none bg-primary' : '[border:1.6px_solid_var(--bl-label3)] bg-transparent',
             )}>
-              {p.checked ? <Icon name="check" size={13} sw={3} className="text-white" /> : null}
+              {p.checked ? <Icon name="check" size={13} sw={3} className="text-white transition-[scale,opacity] duration-spring-snappy ease-spring-bouncy starting:scale-50 starting:opacity-0" /> : null}
             </span>
           </span>
         ) : null}
