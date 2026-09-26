@@ -2,7 +2,7 @@
    (project/workbench.jsx), rebuilt on the @brett_lamy/* package public APIs.
    Each `code` is a copy-pasteable sample against the public package (@brett_lamy/ui); DocsLive rewrites any
    internal workspace package name to it. `variants` render as a switch in the card header. */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import {
   AdaptivePane, Avatar, BLProvider, Button, Credenza, EdgeDrawer, Haptics, Icon, IndexBar, SidebarDemo, NavigationStack, Segmented,
   SideDrawer, SplitView, Spinner, Switch, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab,
@@ -20,6 +20,12 @@ import {
   type SurfaceKind,
 } from '@brett_lamy/workbench';
 import { DemoBtn, BLFrame, type LiveSpec } from './frame';
+import { COMPOSER_EXAMPLES } from './examples/composer-examples';
+import { FLOATING_SHEET_EXAMPLES } from './examples/floating-sheet-examples';
+import { ARTIFACT_CHAT_EXAMPLES } from './examples/artifact-chat-examples';
+import { CHAT_SHELL_EXAMPLES } from './examples/chat-shell-examples';
+import { WORKBENCH_SHELL_EXAMPLES } from './examples/workbench-shell-examples';
+import { MESSAGE_SCROLLER_EXAMPLES } from './examples/message-scroller-examples';
 
 /** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
 function ScaledShell({ width, height, children }: { width: number; height: number; children: ReactNode }) {
@@ -50,7 +56,7 @@ const SHEET_PRESETS: Record<string, SheetPreset> = {
   open: { appearance: 'glass', gutter: 20, radius: 28, peek: 0, minimizable: true, foot: true, defaultOpen: true, note: 'Fully grown: the cap meets the top edge and the host dims behind it.' },
 };
 const composerCode = (variant: string) => {
-  const collapse = variant === 'compact' ? ' defaultCollapsed="compact"' : variant === 'scroll' ? ' collapseOnScroll={scrollerRef} collapseTo="fab"' : '';
+  const collapse = variant === 'compact' ? ' defaultCollapsed="compact"' : variant === 'scroll' ? ' collapseOnScroll={transcriptRef} collapseTo="fab"' : '';
   const top = variant === 'full' ? `
       <ComposerBump side="top" draggable maxReveal={160}>
         <ComposerBumpContent><Log /></ComposerBumpContent>
@@ -65,7 +71,9 @@ const composerCode = (variant: string) => {
   ComposerText, ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS,
 } from "@brett_lamy/ui"
 
-// Options live in the footer; when the composer is compact they move into the bottom bump's outlet.
+// Options live in the footer; when the composer is compact they move into the bottom bump's outlet.${variant === 'scroll' ? `
+// collapseOnScroll: the transcript opens at its newest message; scrolling up (away from it) folds the composer
+// to one row, a flick or a long read folds it into a FAB; scrolling back down — or tapping the FAB — restores it.` : ''}
 export default function App() {
   return (
     <Composer onSubmit={send} streaming={streaming} onStop={stop}${collapse}>${top}
@@ -184,7 +192,44 @@ function SheetActions() {
   </div>;
 }
 
+/* A chat transcript for the scroll-linked composer: it opens at the newest message (the bottom). */
+const CHAT_THREAD: [who: 'me' | 'agent', text: string][] = [
+  ['me', 'Morning! Can you look at the shell layout before the release?'],
+  ['agent', 'Sure. I opened the shell at 1400, 1024 and 390 px and read through the layout code first.'],
+  ['agent', 'Two things stand out: the sidebar drawer and the sticky header compete on z-index, and the scrim lives inside the main column.'],
+  ['me', 'Which one bites first?'],
+  ['agent', 'The z-index one. At 390 px the header paints over the open drawer’s first row.'],
+  ['me', 'The header has a backdrop-filter.'],
+  ['agent', 'That’s it: backdrop-filter makes a stacking context, so the drawer is compared against the header’s parent. Portaling the drawer into the shell fixes it.'],
+  ['me', 'Do that, and keep the scrim under the header.'],
+  ['agent', 'Done — the drawer portals into the shell and the scrim sits at 25. Storybook and the docs both look right.'],
+  ['me', 'Check the light appearance too?'],
+  ['agent', 'Same result in light; the scrim is a touch lighter there, matching the system sheets.'],
+  ['me', 'Ship it.'],
+  ['agent', 'Committed as “fix(shell): drawer above sticky header”. Scroll up to read back — the composer folds out of the way.'],
+];
+function ChatTranscript({ scroller }: { scroller: RefObject<HTMLDivElement | null> }) {
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [scroller]);
+  return <div ref={scroller} className="wb-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '20px 20px 190px' }}>
+    <div style={{ maxWidth: 620, margin: '0 auto', display: 'grid', gap: 10 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--wb-label3)', textAlign: 'center', padding: '2px 0 6px' }}>Thread · Fix the header overlap</div>
+      {CHAT_THREAD.map(([who, text], i) => who === 'me'
+        ? <div key={i} style={{ display: 'flex', justifyContent: 'flex-end' }}><div style={{ maxWidth: '78%', padding: '8px 12px', borderRadius: '14px 14px 4px 14px', background: 'var(--wb-fill2)', fontSize: 13.5, lineHeight: 1.5 }}>{text}</div></div>
+        : <div key={i} style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--wb-label)', padding: '2px 2px 4px' }}>{text}</div>)}
+    </div>
+  </div>;
+}
+
 export const LIVE_CORE: Record<string, LiveSpec> = {
+  ...COMPOSER_EXAMPLES,
+  ...FLOATING_SHEET_EXAMPLES,
+  ...ARTIFACT_CHAT_EXAMPLES,
+  ...CHAT_SHELL_EXAMPLES,
+  ...WORKBENCH_SHELL_EXAMPLES,
+  ...MESSAGE_SCROLLER_EXAMPLES,
   sidebar: {
     title: 'Sidebar · docked, rail, float, overlay', theme: 'wb', h: 420, bleed: true,
     code: `import {
@@ -410,7 +455,7 @@ export default function DragDemo() {
     Render: function SheetDragLive() {
       const [open, setOpen] = useState(false);
       const [log, setLog] = useState<string[]>([]);
-      return <SheetHost note={'Drag the cap: it tracks the pointer, then snaps open past 35% of the travel. Drag below the resting height to fold into the FAB. Tap the cap to toggle; Escape or the scrim closes. Last events: ' + (log.length ? log.join(', ') : 'none yet')}>
+      return <SheetHost note={'Drag the cap: it tracks the pointer, and on release its velocity carries it — a flick opens or closes it, a slow drag settles at the nearest stop. Drag below the resting height to fold into the FAB. Tap the cap to toggle; Escape or the scrim closes. Last events: ' + (log.length ? log.join(', ') : 'none yet')}>
         <FloatingSheet open={open} onOpenChange={(next) => { setOpen(next); setLog((l) => [...l.slice(-2), `onOpenChange(${next})`]); }}
           peek={150} label="Status" hideOnScroll={false}>
           <FloatingSheet.Body><SheetReadout /></FloatingSheet.Body>
@@ -745,15 +790,8 @@ export default function ShareContact() {
         </ComposerBump>
       </Composer>;
       if (variant !== 'scroll') return <div style={{ maxWidth: variant === 'compact' ? 720 : 580, margin: '0 auto', paddingTop: full ? 24 : 120 }}>{composer}</div>;
-      return <div style={{ position: 'relative', height: 380, margin: '-16px' }}>
-        <div ref={scroller} style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '20px 20px 180px' }}>
-          <div style={{ maxWidth: 620, margin: '0 auto', display: 'grid', gap: 10 }}>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>Thread · Fix the header overlap</div>
-            {Array.from({ length: 14 }, (_, i) => <div key={i} style={{ padding: 14, borderRadius: 12, border: '1px solid var(--wb-sep)', background: 'var(--wb-card)', fontSize: 13, lineHeight: 1.55, color: 'var(--wb-label2)' }}>
-              {i % 2 ? 'The sticky header sits at z-index 20 while the drawer uses 30, so the drawer wins on narrow widths.' : 'Scroll down: the composer folds to one row, then to a button. Scroll back up and it returns.'}
-            </div>)}
-          </div>
-        </div>
+      return <div style={{ position: 'relative', height: 420, margin: '-16px' }}>
+        <ChatTranscript scroller={scroller} />
         <div style={{ position: 'absolute', left: 20, right: 20, bottom: 14 }}><div style={{ maxWidth: 620, margin: '0 auto' }}>{composer}</div></div>
       </div>;
     },
