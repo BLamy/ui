@@ -120,6 +120,13 @@ a:hover {
   padding-top: 0;
   padding-bottom: 0;
 }
+/* MarkdownView drops Docstream's page padding and measure (it usually sits in a chat bubble or card); the
+   docs page markdown keeps them. */
+.dk-md .wb-md .docs-article {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
 .dk-doc .wb-md {
   font-size: 14.5px;
   line-height: 1.65;

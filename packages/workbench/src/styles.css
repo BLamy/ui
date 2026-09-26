@@ -97,6 +97,8 @@
    the surrounding surface: Workbench's --mdc-* tokens, else a BL surface's --bl-* tokens, else the host's shadcn tokens, else
    Docstream's defaults. Text always inherits, so markdown reads on any background. */
 .wb-md{--foreground:currentColor}
+/* Docstream pads its article for standalone pages; a MarkdownView flows inside the host's own layout. */
+.wb-md .docs-article{max-width:none;margin:0;padding:0}
 .wb-md :is([data-docstream],.docs-article){
   --gb-panel:var(--mdc-card,var(--bl-card,var(--card,#fff)));
   --gb-panel-foreground:currentColor;

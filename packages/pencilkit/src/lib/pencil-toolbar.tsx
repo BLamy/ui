@@ -57,7 +57,7 @@ export function PencilToolbar({ className, style, children, ...rest }: PencilToo
       data-slot="pencil-toolbar"
       onPointerDown={(e) => e.stopPropagation()}
       className={cn(
-        'absolute bottom-3.5 left-1/2 box-border flex max-w-[calc(100%-20px)] -translate-x-1/2 cursor-default flex-wrap items-center justify-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-[9px] shadow-[0_10px_34px_rgba(0,0,0,.24)]',
+        'absolute inset-x-2.5 bottom-3.5 mx-auto box-border flex w-fit max-w-[calc(100%-20px)] cursor-default flex-wrap items-center justify-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-[9px] shadow-[0_10px_34px_rgba(0,0,0,.24)]',
         className,
       )}
       style={style}
