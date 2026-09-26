@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/pencilkit",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@brett_lamy/ui": "workspace:*",
+    "class-variance-authority": "^0.7",
     "perfect-freehand": "^1.2.2",
-    "react-aria-components": "^1",
-    "class-variance-authority": "^0.7"
+    "react-aria-components": "^1"
   },
   "peerDependencies": {
     "react": "^18 || ^19",

@@ -259,11 +259,11 @@ importers:
         specifier: workspace:*
         version: link:../../packages/chatkit
       '@brett_lamy/docstream':
-        specifier: 0.7.0
-        version: 0.7.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
+        specifier: 1.0.0
+        version: 1.0.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@brett_lamy/docstream-editor':
-        specifier: 0.8.0
-        version: 0.8.0(29d692e8b82919e3a9eeae4d10ed8bbc)
+        specifier: 1.0.0
+        version: 1.0.0(29d692e8b82919e3a9eeae4d10ed8bbc)
       '@brett_lamy/pencilkit':
         specifier: workspace:*
         version: link:../../packages/pencilkit
@@ -403,11 +403,11 @@ importers:
   packages/workbench:
     dependencies:
       '@brett_lamy/docstream':
-        specifier: 0.7.0
-        version: 0.7.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
+        specifier: 1.0.0
+        version: 1.0.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@brett_lamy/docstream-editor':
-        specifier: 0.8.0
-        version: 0.8.0(29d692e8b82919e3a9eeae4d10ed8bbc)
+        specifier: 1.0.0
+        version: 1.0.0(29d692e8b82919e3a9eeae4d10ed8bbc)
       '@brett_lamy/pencilkit':
         specifier: workspace:*
         version: link:../pencilkit
@@ -1238,8 +1238,8 @@ packages:
   '@braintree/sanitize-url@7.1.2':
     resolution: {integrity: sha512-jigsZK+sMF/cuiB7sERuo9V7N9jx+dhmHHnQyDSVdpZwVutaBu7WvNYqMDLSgFgfB30n452TP3vjDAvFC973mA==}
 
-  '@brett_lamy/docstream-editor@0.8.0':
-    resolution: {integrity: sha512-BfyJTSjF/2UFMlV43HD7ClcVWxBMYZGI+Pe9IPR6C0L+syPuXbto502Ca3SeZ3IEuPxQjy4JMPMDQk3oD1bkeQ==}
+  '@brett_lamy/docstream-editor@1.0.0':
+    resolution: {integrity: sha512-B5GRkJcE9YB8q3pQB6jUNEqpLmcjWtHVOb9Bu/l54Fhyjos7KDJ1MTS8afKJTz5KW5YFALz/3xmz7Dljh+/7DQ==}
     peerDependencies:
       '@tiptap/core': ^3.26.1
       '@tiptap/extension-code-block': ^3.26.1
@@ -1252,8 +1252,8 @@ packages:
       '@tiptap/suggestion': ^3.26.1
       react: '>=18'
 
-  '@brett_lamy/docstream@0.7.0':
-    resolution: {integrity: sha512-CGUUKGwnibqsijSgJriJL6Sds5ekbI7Yp1huogZbILEmJ1aNI26WVQcyaOw9S1UDqUCjolKOhdFQ3+VXGAVp3Q==}
+  '@brett_lamy/docstream@1.0.0':
+    resolution: {integrity: sha512-DUtiAeBzZkWKWenSR1oB4+UOBicUkJV/JQvEIFpzamB5amQJ+GDAChRpI+q8WCrCVb2fcBXBEoJa09r7MPVtPg==}
     peerDependencies:
       '@agent-wasm/core': '>=0.4.0'
       '@brett_lamy/viz-engine': '>=0.2.0'
@@ -9822,9 +9822,9 @@ snapshots:
 
   '@braintree/sanitize-url@7.1.2': {}
 
-  '@brett_lamy/docstream-editor@0.8.0(29d692e8b82919e3a9eeae4d10ed8bbc)':
+  '@brett_lamy/docstream-editor@1.0.0(29d692e8b82919e3a9eeae4d10ed8bbc)':
     dependencies:
-      '@brett_lamy/docstream': 0.7.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
+      '@brett_lamy/docstream': 1.0.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
       '@tiptap/extension-code-block': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
       '@tiptap/extension-list': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
@@ -9844,7 +9844,7 @@ snapshots:
       - supports-color
       - vite
 
-  '@brett_lamy/docstream@0.7.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))':
+  '@brett_lamy/docstream@1.0.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))':
     dependencies:
       '@agent-wasm/core': 0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@brett_lamy/viz-engine': 0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)

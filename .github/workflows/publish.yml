@@ -1,0 +1,62 @@
+name: Publish packages
+
+# Publishes every @brett_lamy/* library whose package.json version isn't on npm yet, in dependency order.
+# `pnpm pack` rewrites `workspace:*` to the real versions; `npm publish` then uploads the tarball using
+# npm trusted publishing (OIDC — configure this workflow, publish.yml, as the trusted publisher for each
+# package on npmjs.com) or, if set, the NPM_TOKEN repository secret.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'nx.json'
+      - 'tsconfig*.json'
+      - '.github/workflows/publish.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build libraries
+        run: pnpm nx run-many -t build -p @brett_lamy/ui @brett_lamy/pencilkit @brett_lamy/workbench @brett_lamy/chatkit
+
+      - name: Publish new versions
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm install --global npm@latest
+          mkdir -p "$RUNNER_TEMP/pkgs"
+          for pkg in ui pencilkit workbench chatkit; do
+            NAME=$(node -p "require('./packages/$pkg/package.json').name")
+            VERSION=$(node -p "require('./packages/$pkg/package.json').version")
+            if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+              echo "$NAME@$VERSION already on npm — skipping"
+              continue
+            fi
+            TARBALL=$(cd "packages/$pkg" && pnpm pack --pack-destination "$RUNNER_TEMP/pkgs" | tail -1)
+            echo "Publishing $NAME@$VERSION ($TARBALL)"
+            npm publish "$TARBALL" --access public
+          done
