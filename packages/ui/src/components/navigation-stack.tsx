@@ -6,7 +6,8 @@ import { Button as AriaButton } from 'react-aria-components';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { chromeStore, BLSafeCtx, BLStickyCtx } from '../lib/theme';
-import { cn, BARH, EASE } from '../lib/utils';
+import { cn, BARH } from '../lib/utils';
+import { springCss } from '../lib/motion';
 import { Spinner } from './spinner';
 
 /** Screen descriptor consumed by NavigationStack. */
@@ -115,19 +116,19 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
     const c = inner.current, sp = spin.current;
     if (d.armed) {
       setRefr(true); Haptics.impact('medium');
-      if (c) { c.style.transition = 'transform .25s ease'; c.style.transform = 'translateY(52px)'; }
+      if (c) { c.style.transition = springCss('transform', 'snappy'); c.style.transform = 'translateY(52px)'; }
       if (sp) { sp.style.opacity = '1'; sp.style.transform = 'translateX(-50%)'; }
       setTimeout(() => {
         setRefr(false);
-        if (c) { c.style.transition = 'transform .4s ' + EASE; c.style.transform = 'translateY(0)'; }
+        if (c) { c.style.transition = springCss('transform', 'smooth'); c.style.transform = 'translateY(0)'; }
         if (sp) sp.style.opacity = '0';
         sc.onRefresh && sc.onRefresh();
-        setTimeout(() => { if (c) { c.style.transition = ''; c.style.transform = ''; } }, 420);
+        setTimeout(() => { if (c) { c.style.transition = ''; c.style.transform = ''; } }, 560);
       }, 1100);
     } else {
       if (c) {
-        c.style.transition = 'transform .3s ' + EASE; c.style.transform = 'translateY(0)';
-        setTimeout(() => { if (c) { c.style.transition = ''; c.style.transform = ''; } }, 320);
+        c.style.transition = springCss('transform', 'snappy'); c.style.transform = 'translateY(0)';
+        setTimeout(() => { if (c) { c.style.transition = ''; c.style.transform = ''; } }, 400);
       }
       if (sp) sp.style.opacity = '0';
     }
@@ -137,7 +138,7 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
     // inline during a drag and clears them back to these classes.
     <div ref={(el) => reg(sc.key, { el })} data-slot="screen" data-screen-label={typeof sc.title === 'string' ? sc.title : sc.key}
       className={cn(
-        'absolute inset-0 overflow-hidden will-change-transform [transform:translateX(var(--screen-x))] [transition:transform_.42s_cubic-bezier(.32,.72,0,1)]',
+        'absolute inset-0 overflow-hidden will-change-transform [transform:translateX(var(--screen-x))] transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
         sc.grouped ? 'bg-muted' : 'bg-background',
         depth > 0 && 'shadow-[-10px_0_30px_rgba(0,0,0,.16)]',
         ghost ? 'pointer-events-none' : 'pointer-events-auto',
@@ -158,22 +159,22 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
       </div>
       {sc.onRefresh ? (
         <div ref={spin} style={{ top: barH + 8 }}
-          className="pointer-events-none absolute left-1/2 z-5 [transform:translateX(-50%)] text-muted-foreground opacity-0 transition-opacity duration-200"><Spinner spin={refr} /></div>
+          className="pointer-events-none absolute left-1/2 z-5 [transform:translateX(-50%)] text-muted-foreground opacity-0 transition-opacity duration-spring-snappy ease-spring-snappy"><Spinner spin={refr} /></div>
       ) : null}
-      <div className="absolute inset-x-0 top-0 z-30 box-border flex items-end px-1.5 transition-transform duration-300 ease-ios"
+      <div className="absolute inset-x-0 top-0 z-30 box-border flex items-end px-1.5 transition-transform duration-spring-smooth ease-spring-smooth"
         style={{ height: barH, paddingTop: safeTop, transform: hid ? 'translateY(' + (-(barH - safeTop)) + 'px)' : 'none' }}>
         <div className={cn(
-          'absolute inset-0 [border-bottom:1px_solid_var(--bl-sep)] bg-bl-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-opacity duration-250',
+          'absolute inset-0 [border-bottom:1px_solid_var(--bl-sep)] bg-bl-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-opacity duration-spring-snappy ease-spring-snappy',
           scr ? 'opacity-100' : 'opacity-0',
         )} />
         {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
         {safeTop ? (
           <div className={cn(
-            'absolute inset-x-0 top-0 bg-bl-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-300 ease-ios',
+            'absolute inset-x-0 top-0 bg-bl-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
             scr || hid ? 'opacity-100' : 'opacity-0',
           )} style={{ height: safeTop, transform: hid ? 'translateY(' + (barH - safeTop) + 'px)' : 'none' }} />
         ) : null}
-        <div className={cn('flex h-[52px] w-full items-center transition-opacity duration-200', hid ? 'opacity-0' : 'opacity-100')}>
+        <div className={cn('flex h-[52px] w-full items-center transition-opacity duration-spring-snappy ease-spring-snappy', hid ? 'opacity-0' : 'opacity-100')}>
           <div className="relative z-1 flex min-w-[44px] items-center">
             {(depth > 0 || ghost)
               ? <AriaButton className="bl-btn flex max-w-[160px] cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary"
@@ -184,7 +185,7 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
               : (sc.leading || null)}
           </div>
           <div className={cn(
-            'pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-[17px] font-semibold text-foreground transition-opacity duration-200',
+            'pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-[17px] font-semibold text-foreground transition-opacity duration-spring-snappy ease-spring-snappy',
             showTitle ? 'opacity-100' : 'opacity-0',
           )}>{sc.title}</div>
           <div className="relative z-1 ml-auto flex items-center">{sc.trailing || null}</div>
@@ -192,10 +193,13 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
       </div>
       {sc.overlay || null}
       <div ref={(el) => reg(sc.key, { dim: el })}
-        className={cn('pointer-events-none absolute inset-0 z-200 bg-black transition-opacity duration-420', isUnder ? 'opacity-12' : 'opacity-0')} />
+        className={cn('pointer-events-none absolute inset-0 z-200 bg-black transition-opacity duration-spring-smooth ease-spring-smooth', isUnder ? 'opacity-12' : 'opacity-0')} />
     </div>
   );
 }
+
+/** Push/pop settle time: the smooth spring (--duration-spring-smooth) plus a frame. */
+const SETTLE_MS = 580;
 
 /* Back-gesture history bridge: on touch devices the system edge-swipe would navigate the page itself away
    (blank screen). While any stack can pop we keep one history sentinel armed; the system gesture then lands
@@ -253,11 +257,11 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
     if (nk.length > ok.length && pref(ok, nk)) {
       setAnim({ enter: nk[nk.length - 1], exit: null });
       armHistory();
-      tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), 460);
+      tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), SETTLE_MS);
     } else if (nk.length < ok.length && pref(nk, ok)) {
       if (skipRef.current) { skipRef.current = false; setAnim({ enter: null, exit: null }); return; }
       setAnim({ enter: null, exit: old.slice(nk.length) });
-      tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), 460);
+      tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), SETTLE_MS);
     } else setAnim({ enter: null, exit: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keysJ]);
@@ -299,19 +303,20 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
     if (!d.moved || !d.on) { clean(d); return; }
     const p = (d.dx || 0) / d.w;
     const commit = p > .32 || d.vel > .55;
-    const ease = 'transform .26s ease-out';
+    // Release continues on the tray spring from wherever the finger let go (the CSS spring retargets).
+    const ease = springCss('transform', 'tray');
     if (commit) {
       Haptics.impact('light');
       d.topR.el.style.transition = ease; d.topR.el.style.transform = 'translateX(104%)';
       d.undR.el.style.transition = ease; d.undR.el.style.transform = 'translateX(0%)';
-      if (d.undR.dim) { d.undR.dim.style.transition = 'opacity .26s'; d.undR.dim.style.opacity = '0'; }
+      if (d.undR.dim) { d.undR.dim.style.transition = springCss('opacity', 'tray'); d.undR.dim.style.opacity = '0'; }
       skipRef.current = true;
-      setTimeout(() => { onPopRef.current && onPopRef.current(); requestAnimationFrame(() => clean(d)); }, 250);
+      setTimeout(() => { onPopRef.current && onPopRef.current(); requestAnimationFrame(() => clean(d)); }, 380);
     } else {
       d.topR.el.style.transition = ease; d.topR.el.style.transform = 'translateX(0px)';
       d.undR.el.style.transition = ease; d.undR.el.style.transform = 'translateX(-28%)';
-      if (d.undR.dim) { d.undR.dim.style.transition = 'opacity .26s'; d.undR.dim.style.opacity = '.12'; }
-      setTimeout(() => clean(d), 290);
+      if (d.undR.dim) { d.undR.dim.style.transition = springCss('opacity', 'tray'); d.undR.dim.style.opacity = '.12'; }
+      setTimeout(() => clean(d), 430);
     }
   };
   const clean = (d: any) => [d.topR, d.undR].forEach((r) => {

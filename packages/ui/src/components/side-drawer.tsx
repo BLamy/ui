@@ -33,7 +33,7 @@ export function SideDrawer({ mode, open, onClose, title, width, children, classN
   if (mode === 'fixed') {
     return (
       <div data-slot="side-drawer" aria-hidden={!open}
-        className={cn('shrink-0 overflow-hidden bg-background transition-[width] duration-340 ease-ios', open && '[border-left:1px_solid_var(--bl-sep)]', className)}
+        className={cn('shrink-0 overflow-hidden bg-background transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none', open && '[border-left:1px_solid_var(--bl-sep)]', className)}
         style={{ width: open ? width : 0, ...style }}>
         <div className="box-border flex h-full flex-col" style={{ width }}>{col}</div>
       </div>
@@ -42,9 +42,9 @@ export function SideDrawer({ mode, open, onClose, title, width, children, classN
   return (
     <div data-slot="side-drawer" aria-hidden={!open}
       className={cn('absolute inset-0 z-350', open ? 'pointer-events-auto' : 'pointer-events-none', className)} style={style}>
-      <div onClick={onClose} className={cn('absolute inset-0 bg-overlay transition-opacity duration-300', open ? 'opacity-100' : 'opacity-0')} />
+      <div onClick={onClose} className={cn('absolute inset-0 bg-overlay transition-opacity duration-spring-smooth ease-spring-smooth', open ? 'opacity-100' : 'opacity-0')} />
       <div className={cn(
-        'absolute inset-y-0 right-0 flex flex-col [border-left:1px_solid_var(--bl-sep)] bg-background transition-transform duration-340 ease-ios',
+        'absolute inset-y-0 right-0 flex flex-col [border-left:1px_solid_var(--bl-sep)] bg-background transition-[translate,box-shadow] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
         open ? 'shadow-[-16px_0_48px_rgba(0,0,0,.25)]' : 'translate-x-[106%]',
       )} style={{ width: 'min(' + width + 'px, 88%)' }}>{col}</div>
     </div>

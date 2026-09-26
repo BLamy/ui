@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 export const toggleVariants = cva(
   [
     'bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-1.5 border-0 [font-family:inherit] font-semibold whitespace-nowrap text-foreground outline-none',
-    'transition-[background-color,color,box-shadow] duration-150 ease-ios [&_svg]:shrink-0',
+    'transition-[background-color,color,box-shadow,scale] duration-spring-snappy ease-spring-snappy data-pressed:not-aria-expanded:scale-[.96] motion-reduce:transition-none [&_svg]:shrink-0',
     'data-hovered:bg-accent data-pressed:bg-bl-fill2',
     'data-selected:bg-primary/15 data-selected:text-primary data-selected:data-pressed:bg-primary/25',
     'data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',

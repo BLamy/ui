@@ -97,4 +97,15 @@
   --duration-spring-bouncy: 597ms;
   --ease-spring-tray: linear(0.0014, 0.0348, 0.0976, 0.1763, 0.2617, 0.3476, 0.4434, 0.5192, 0.5879, 0.6493, 0.7032, 0.7574, 0.7969, 0.8307, 0.8594, 0.8836, 0.907, 0.9236, 0.9374, 0.9488, 0.9582, 0.9672, 0.9733, 0.9784, 0.9826, 0.9859, 0.9891, 0.9912, 0.993, 0.9944, 0.9955, 0.9966, 0.9973, 0.9978, 0.9983, 0.9986, 0.999, 0.9992, 0.9994, 0.9995, 1);
   --duration-spring-tray: 413ms;
+  /* Exits: quicker than entries, a plain ease-in (matches `fades.out` in lib/motion.ts). */
+  --ease-exit: cubic-bezier(.4, 0, 1, 1);
+  --duration-exit: 140ms;
+  --duration-exit-tray: 240ms;
+  --duration-exit-slow: 280ms;
+  --transition-duration-exit: 140ms;
+  /* The same durations as Tailwind utilities: `duration-spring-smooth ease-spring-smooth`. */
+  --transition-duration-spring-snappy: 383ms;
+  --transition-duration-spring-smooth: 550ms;
+  --transition-duration-spring-bouncy: 597ms;
+  --transition-duration-spring-tray: 413ms;
 }

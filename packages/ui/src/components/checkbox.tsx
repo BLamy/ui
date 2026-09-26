@@ -12,7 +12,7 @@ import { cn } from '../lib/utils';
 export const checkboxVariants = cva(
   [
     'box-border grid size-[22px] shrink-0 place-items-center border-[1.5px] border-bl-label3 text-white',
-    'transition-[background-color,border-color,transform] duration-200 ease-ios',
+    'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
     'group-data-selected:border-primary group-data-selected:bg-primary',
     'group-data-indeterminate:border-primary group-data-indeterminate:bg-primary',
     'group-data-pressed:scale-90 group-data-focus-visible:ring-[3px] group-data-focus-visible:ring-ring/45',
@@ -43,11 +43,17 @@ export function Checkbox({ className, shape, children, onChange, ...props }: Che
       {composeRenderProps(children, (kids, { isSelected, isIndeterminate }) => (
         <>
           <span data-slot="checkbox-indicator" className={checkboxVariants({ shape })}>
-            {isIndeterminate ? (
-              <svg viewBox="0 0 24 24" className="size-3.5" aria-hidden="true"><path d="M6 12h12" stroke="currentColor" strokeWidth={3} strokeLinecap="round" /></svg>
-            ) : isSelected ? (
-              <svg viewBox="0 0 24 24" className="size-3.5" aria-hidden="true"><path d="M5.5 12.6l4.3 4.3 8.7-9.3" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" /></svg>
-            ) : null}
+            <svg viewBox="0 0 24 24" className="size-3.5" aria-hidden="true">
+              {/* The tick draws itself on (stroke-dashoffset); the dash morphs from/to the tick's middle. */}
+              <path d={isIndeterminate ? 'M6 12h12' : 'M5.5 12.6l4.3 4.3 8.7-9.3'} pathLength={1} fill="none" stroke="currentColor" strokeWidth={3}
+                strokeLinecap="round" strokeLinejoin="round"
+                className={cn(
+                  '[stroke-dasharray:1] transition-[stroke-dashoffset,opacity] motion-reduce:transition-none',
+                  isSelected || isIndeterminate
+                    ? '[stroke-dashoffset:0] opacity-100 duration-spring-smooth ease-spring-smooth'
+                    : '[stroke-dashoffset:1] opacity-0 duration-exit ease-exit',
+                )} />
+            </svg>
           </span>
           {kids}
         </>

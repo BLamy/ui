@@ -5,7 +5,7 @@ import {
   TooltipTrigger as AriaTooltipTrigger, type TooltipTriggerComponentProps,
   composeRenderProps,
 } from 'react-aria-components';
-import { overlayZ } from '../lib/primitives';
+import { overlayZ, popoverMotion } from '../lib/primitives';
 import { cn } from '../lib/utils';
 
 /* ══ Tooltip — react-aria's TooltipTrigger / Tooltip: hover (with warm-up delay) and keyboard focus open it,
@@ -29,7 +29,7 @@ export function Tooltip({ className, offset = 8, arrow = true, children, ...prop
       offset={offset}
       className={composeRenderProps(className, (cls) => cn(
         'box-border max-w-60 rounded-[9px] bg-foreground px-2.5 py-1.5 text-[13px] leading-[17px] font-medium text-background shadow-[0_4px_14px_rgba(0,0,0,.18)]',
-        'origin-(--trigger-anchor-point) data-entering:animate-bl-pop-in data-exiting:animate-bl-pop-out',
+        popoverMotion,
         overlayZ, cls,
       ))}
       {...props}

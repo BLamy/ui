@@ -108,7 +108,7 @@ export function SlideToUnlock() {
         className={cn(
           'bl-btn absolute top-1 grid size-[48px] cursor-grab touch-none place-items-center rounded-[24px] border-0 bg-card p-0 shadow-[0_2px_6px_rgba(0,0,0,.22)]',
           done ? 'text-success' : 'text-muted-foreground',
-          !drag && '[transition:left_.38s_cubic-bezier(.32,.72,0,1)]',
+          !drag && 'transition-[left] duration-spring-smooth ease-spring-smooth',
         )}
         // Knob position follows the drag.
         style={{ left: 4 + x * travel() }}>
@@ -160,7 +160,7 @@ export function WheelDrum({ n, init, label }: { n: number; init?: number; label:
         onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { settle(clampHard((Math.round(-off / H) + (e.key === 'ArrowDown' ? 1 : -1)) * -H)); e.preventDefault(); } }}
         className="relative h-[170px] w-[52px] shrink-0 cursor-ns-resize touch-none overflow-hidden">
         <div className="absolute -inset-x-1 top-[68px] h-[34px] rounded-[9px] bg-secondary" />
-        <div className={cn('absolute inset-x-0 top-[68px]', anim && '[transition:transform_.3s_cubic-bezier(.25,.8,.25,1)]')}
+        <div className={cn('absolute inset-x-0 top-[68px]', anim && 'transition-transform duration-spring-snappy ease-spring-snappy')}
           // Drum offset follows the drag / momentum.
           style={{ transform: 'translateY(' + off + 'px)' }}>
           {Array.from({ length: n }, (_, i) => {

@@ -7,6 +7,7 @@ import {
 import { cva, type VariantProps } from 'class-variance-authority';
 import { overlayZ } from '../lib/primitives';
 import { cn } from '../lib/utils';
+import { AnimatedHeight } from './animated-height';
 import { DialogBody, DialogClose, DialogDescription, DialogHeader, DialogTitle } from './dialog';
 
 /* ══ Sheet — a react-aria Modal pinned to an edge (shadcn's Sheet). Bottom is the iOS card sheet with a grabber;
@@ -21,7 +22,7 @@ import { DialogBody, DialogClose, DialogDescription, DialogHeader, DialogTitle }
 export const Sheet = DialogTrigger;
 
 export const sheetVariants = cva(
-  'absolute box-border flex flex-col bg-card text-card-foreground shadow-[0_0_40px_rgba(0,0,0,.22)] outline-none',
+  'absolute box-border flex flex-col bg-card text-card-foreground shadow-[0_0_40px_rgba(0,0,0,.22)] outline-none motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
   {
     variants: {
       side: {
@@ -42,10 +43,13 @@ export interface SheetContentProps extends Omit<ModalOverlayProps, 'children' | 
   'aria-label'?: string;
   /** Show the grabber on bottom sheets (default true). */
   grabber?: boolean;
+  /** Spring the sheet's height when its content changes (a tray stepping through a flow). Use for short,
+      content-sized trays; a sheet that scrolls its body should leave this off. */
+  animateHeight?: boolean;
 }
 
 export function SheetContent({
-  className, overlayClassName, side = 'bottom', children, grabber = true, isDismissable = true, 'aria-label': ariaLabel, ...props
+  className, overlayClassName, side = 'bottom', children, grabber = true, animateHeight, isDismissable = true, 'aria-label': ariaLabel, ...props
 }: SheetContentProps) {
   const s = side ?? 'bottom';
   return (
@@ -60,7 +64,9 @@ export function SheetContent({
           <span data-slot="sheet-grabber" aria-hidden="true" className="mx-auto mt-[5px] mb-px block h-[5px] w-9 shrink-0 rounded-full bg-bl-fill2" />
         ) : null}
         <AriaDialog data-slot="sheet-content" aria-label={ariaLabel} className="relative flex min-h-0 flex-1 flex-col outline-none">
-          {children}
+          {animateHeight
+            ? (renderProps) => <AnimatedHeight>{typeof children === 'function' ? children(renderProps) : children}</AnimatedHeight>
+            : children}
         </AriaDialog>
       </Modal>
     </ModalOverlay>

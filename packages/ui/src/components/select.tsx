@@ -34,7 +34,7 @@ export function Select<T extends object, M extends 'single' | 'multiple' = 'sing
 export const selectTriggerVariants = cva(
   [
     'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 px-3 text-left [font-family:inherit] text-foreground outline-none',
-    'transition-[background-color,box-shadow] duration-150 ease-ios data-pressed:bg-bl-fill2',
+    'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy data-pressed:bg-bl-fill2',
     'data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 group-data-open:shadow-[inset_0_0_0_1.5px_var(--bl-tint)]',
     'group-data-invalid:shadow-[inset_0_0_0_1.5px_var(--bl-red)] data-disabled:cursor-default data-disabled:opacity-50',
   ],

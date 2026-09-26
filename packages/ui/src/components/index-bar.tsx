@@ -143,7 +143,7 @@ export function IndexBar<K extends IndexBarKey = string>({
   const cy = g && p ? (g.tTop - g.rTop) + (idx + 0.5) * (g.tH / pts.length) : 0;
   // Bubble floats beside the rail at the active stop; both come from measured geometry.
   const bub = cn(
-    'pointer-events-none absolute [transform:translateY(-50%)] bg-card shadow-[0_8px_28px_rgba(0,0,0,.28),0_0_0_1px_var(--bl-sep)] animate-[blBub_.16s_cubic-bezier(.32,.72,0,1)]',
+    'pointer-events-none absolute [transform:translateY(-50%)] bg-card shadow-[0_8px_28px_rgba(0,0,0,.28),0_0_0_1px_var(--bl-sep)] animate-[blBub_var(--duration-spring-snappy)_var(--ease-spring-bouncy)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:animate-none motion-reduce:transition-none',
     on ? 'opacity-100' : 'opacity-93',
   );
   const bubPos: CSSProperties = side === 'left' ? { left: width + 10, top: cy } : { right: width + 10, top: cy };
@@ -175,7 +175,7 @@ export function IndexBar<K extends IndexBarKey = string>({
                 className={cn('box-border flex h-[10px] w-full items-center px-2', side === 'left' ? 'justify-start' : 'justify-end')}>
                 <span style={{ '--len': `${len}px`, '--f': f } as CSSProperties}
                   className={cn(
-                    'h-[2px] w-(--len) shrink-0 rounded-full transition-[width,background-color] duration-150 ease-out motion-reduce:transition-none',
+                    'h-[2px] w-(--len) shrink-0 rounded-full transition-[width,background-color] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
                     idx === i ? 'bg-foreground' : curIdx === i ? 'bg-primary'
                       : 'bg-[color:color-mix(in_oklab,var(--bl-label)_calc(var(--f)*75%),var(--bl-label3))]',
                     q.dim && idx !== i && 'opacity-55',
@@ -187,7 +187,7 @@ export function IndexBar<K extends IndexBarKey = string>({
           return (
             <div key={String(q.key) + i} id={`${optionId}-${i}`} role="option" aria-selected={idx === i}
               aria-label={q.caption || q.label || `Stop ${i + 1}`}
-              className={cn('flex h-[13.5px] w-full items-center justify-center transition-[transform] duration-120', hot && '[transform:scale(1.5)]')}>
+              className={cn('flex h-[13.5px] w-full items-center justify-center transition-[scale] duration-spring-snappy ease-spring-bouncy motion-reduce:transition-none', hot && 'scale-150')}>
               {q.label
                 ? <span className={cn('text-[10.5px] leading-[13.5px] font-bold', q.dim ? 'text-bl-label3' : 'text-primary')}>{q.label}</span>
                 : <span className={cn('rounded-full', hot ? 'size-1.5' : 'size-[5px]', q.dim ? 'bg-bl-label3 opacity-55' : 'bg-primary')} />}
@@ -198,8 +198,8 @@ export function IndexBar<K extends IndexBarKey = string>({
       {wave
         ? p && <div className={cn(
               'pointer-events-none absolute box-border w-max max-w-[260px] min-w-[160px] -translate-y-1/2 rounded-[14px] bg-card px-[13px] py-[9px]',
-              'shadow-[0_8px_28px_rgba(0,0,0,.28),0_0_0_1px_var(--bl-sep)] transition-[top] duration-150 ease-ios motion-reduce:transition-none',
-              'animate-[blWaveCard_.18s_cubic-bezier(.32,.72,0,1)] motion-reduce:animate-none',
+              'shadow-[0_8px_28px_rgba(0,0,0,.28),0_0_0_1px_var(--bl-sep)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+              'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
               side === 'left' ? 'origin-left' : 'origin-right',
             )} style={side === 'left' ? { left: width + 4, top: cy } : { right: width + 4, top: cy }}>
             <div className="truncate text-[13px] leading-[18px] font-semibold text-foreground">{p.caption || p.label || `Stop ${idx + 1}`}</div>

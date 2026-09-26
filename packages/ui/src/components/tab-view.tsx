@@ -15,6 +15,7 @@ import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { useChromeHidden } from '../lib/theme';
 import { cn } from '../lib/utils';
+import { TabDirection, useTabPanelDirection } from './tabs';
 
 /* ══ TabView — a compositional tab container on react-aria's Tabs.
 
@@ -89,7 +90,7 @@ export function TabView({ placement, orientation, className, onSelectionChange, 
         className={composeRenderProps(className, (cls) => cn(tabViewVariants({ placement: place }), cls))}
         {...props}
       >
-        {children}
+        {composeRenderProps(children, (kids) => <TabDirection>{kids}</TabDirection>)}
       </AriaTabs>
     </TabViewCtx.Provider>
   );
@@ -100,7 +101,7 @@ export const tabViewBarVariants = cva('box-border', {
   variants: {
     variant: {
       /** iOS bottom tab bar — translucent, pinned over the content, hides with the scroll. */
-      bar: 'absolute inset-x-0 bottom-0 z-120 flex h-[62px] [border-top:1px_solid_var(--bl-sep)] bg-bl-bar pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7] transition-transform duration-300 ease-ios',
+      bar: 'absolute inset-x-0 bottom-0 z-120 flex h-[62px] [border-top:1px_solid_var(--bl-sep)] bg-bl-bar pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
       /** Vertical side rail — icons over labels. */
       rail: 'relative flex w-[76px] shrink-0 flex-col gap-1 bg-bl-bar py-2 data-[placement=end]:[border-left:1px_solid_var(--bl-sep)] data-[placement=start]:[border-right:1px_solid_var(--bl-sep)]',
       /** No chrome: the host styles the bar (see the Discord-style rail). */
@@ -158,8 +159,8 @@ export function TabViewList<T extends object>({ className, ...props }: AriaTabLi
 export const tabViewTabVariants = cva('relative cursor-pointer outline-none', {
   variants: {
     variant: {
-      bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 text-center leading-[normal] [font-family:inherit] text-bl-label3 transition-[color] duration-150 data-selected:text-primary data-focus-visible:rounded-[12px] data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset',
-      rail: 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-[12px] px-1 pt-[7px] pb-1.5 text-center leading-[normal] text-bl-label3 transition-[color,background-color] duration-150 ease-ios data-hovered:bg-bl-fill/60 data-hovered:text-bl-label2 data-pressed:bg-bl-fill data-selected:bg-primary/12 data-selected:text-primary data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
+      bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 text-center leading-[normal] [font-family:inherit] text-bl-label3 transition-[color] duration-spring-snappy ease-spring-snappy data-selected:text-primary data-focus-visible:rounded-[12px] data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset',
+      rail: 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-[12px] px-1 pt-[7px] pb-1.5 text-center leading-[normal] text-bl-label3 transition-[color,background-color] duration-spring-snappy ease-spring-snappy data-hovered:bg-bl-fill/60 data-hovered:text-bl-label2 data-pressed:bg-bl-fill data-selected:bg-primary/12 data-selected:text-primary data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
       plain: 'data-disabled:cursor-default',
     },
   },
@@ -220,8 +221,8 @@ function TabViewTabContent({ icon, title, selected }: { icon?: string; title?: R
 export const tabViewIndicatorVariants = cva('pointer-events-none absolute', {
   variants: {
     variant: {
-      bar: 'bg-primary transition-[translate,width,height] duration-300 ease-ios motion-reduce:transition-none',
-      pill: 'start-0 top-1/2 h-0 w-1 -translate-y-1/2 rounded-e-[4px] bg-foreground opacity-0 transition-[height,opacity] duration-200 ease-ios data-attention:h-1.5 data-attention:opacity-100 data-hovered:h-3.5 data-hovered:opacity-100 data-selected:h-7 data-selected:opacity-100',
+      bar: 'bg-primary transition-[translate,width,height] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+      pill: 'start-0 top-1/2 h-0 w-1 -translate-y-1/2 rounded-e-[4px] bg-foreground opacity-0 transition-[height,opacity] duration-spring-snappy ease-spring-snappy data-attention:h-1.5 data-attention:opacity-100 data-hovered:h-3.5 data-hovered:opacity-100 data-selected:h-7 data-selected:opacity-100',
     },
     orientation: {
       horizontal: '',
@@ -327,12 +328,21 @@ export function TabViewPanels<T extends object>({ className, ...props }: AriaTab
   return <AriaTabPanels data-slot="tab-view-panels" className={cn('relative min-h-0 min-w-0 flex-1', className)} {...props} />;
 }
 
-export function TabViewPanel({ className, ...props }: AriaTabPanelProps) {
+/** Panels move with the selection: the new one arrives from the side (or, vertically, the end) of the tab you
+    picked while the old one leaves the other way, both on the tab-change spring. */
+export function TabViewPanel({ className, style, ...props }: AriaTabPanelProps) {
+  const { orientation } = useContext(TabViewCtx);
+  const dir = useTabPanelDirection(orientation);
   return (
     <AriaTabPanel
       data-slot="tab-view-panel"
       className={composeRenderProps(className, (cls) =>
-        cn('absolute inset-0 overflow-auto outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset data-inert:hidden', cls))}
+        cn(
+          'absolute inset-0 overflow-auto outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset data-inert:not-data-exiting:hidden',
+          'data-entering:animate-bl-panel-in data-exiting:pointer-events-none data-exiting:animate-bl-panel-out motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
+          cls,
+        ))}
+      style={composeRenderProps(style, (st) => ({ ...dir, ...st }))}
       {...props}
     />
   );
