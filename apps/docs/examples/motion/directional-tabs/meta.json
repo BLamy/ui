@@ -1,7 +1,9 @@
 {
   "title": "Tabs · directional panels",
+  "status": "Live",
   "variants": [
     { "id": "segmented", "label": "Segmented" },
     { "id": "underline", "label": "Underline" }
-  ]
+  ],
+  "variantsWidth": 220
 }

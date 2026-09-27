@@ -2,9 +2,7 @@
 
 BL UI is published as one typed ESM package, [`@brett_lamy/ui`](https://www.npmjs.com/package/@brett_lamy/ui):
 
-```sh
-npm i @brett_lamy/ui
-```
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
 Import its stylesheet once near your application entry, then use named imports from the package root:
 
@@ -27,9 +25,7 @@ import {
 
 Every component page and block is also an item in BL UI's [shadcn registry](https://ui.shadcn.com/docs/registry). Adding one installs `@brett_lamy/ui`, writes a thin re-export to `components/ui/<name>.tsx` (blocks land in `components/blocks/<name>/`), and — through the `bl-ui` base item every entry depends on — imports the package stylesheet and adds the BL token utilities (`bg-bl-card`, `text-bl-label`, `border-bl-sep`, …) to your Tailwind theme. Your own shadcn palette is left alone.
 
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/composer.json
-```
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/composer.json{% endcommand %}
 
 ```tsx
 import { Composer, ComposerCard, ComposerInput } from '@/components/ui/composer'

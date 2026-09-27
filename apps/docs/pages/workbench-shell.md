@@ -2,36 +2,13 @@
 
 An IDE-style agent workspace, built from parts. `WorkbenchShell` is a thin layout root: it measures itself, owns the region state, and provides it through context. Every region is a part you place yourself — the sidebar, main column, header, bottom dock, right panel, and compact tab bar — and each part picks its own presentation from the shell's width class. Nothing is configured through props or slot functions; leave a part out and its region simply isn't there.
 
-## Installation
-
-{% tabs sync="install" %}
+{% tabs title="Installation" sync="install" %}
 {% tab title="npm" %}
-{% tabs sync="pm" %}
-{% tab title="pnpm" %}
-```sh
-pnpm add @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="yarn" %}
-```sh
-yarn add @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="bun" %}
-```sh
-bun add @brett_lamy/ui
-```
-{% endtab %}
-{% endtabs %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx
+```tsx lineNumbers="false"
 import '@brett_lamy/ui/styles.css'
 
 import {
@@ -41,32 +18,11 @@ import {
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
-{% tabs sync="pm" %}
-{% tab title="pnpm" %}
-```sh
-pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json
-```
-{% endtab %}
-{% tab title="npm" %}
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json
-```
-{% endtab %}
-{% tab title="yarn" %}
-```sh
-yarn dlx shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json
-```
-{% endtab %}
-{% tab title="bun" %}
-```sh
-bunx --bun shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json
-```
-{% endtab %}
-{% endtabs %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json{% endcommand %}
 
 Adds `@/components/ui/workbench-shell.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx
+```tsx lineNumbers="false"
 import {
   WorkbenchShell, WorkbenchSidebar, WorkbenchMain,
   WorkbenchHeader, ThreadList, ThreadItem, Conversation,
@@ -246,9 +202,7 @@ A `WorkbenchPanel` works outside a shell too. The picker, then any surface — t
 
 Every workspace file tree in BL UI is rendered by **[Pierre Trees](https://trees.software/)** (`@pierre/trees`). `SurfaceFiles` supplies BL UI tokens and haptics while Pierre owns path-first selection, expansion, search, keyboard navigation, and virtualization.
 
-```sh
-pnpm add @pierre/trees
-```
+{% command %}npm install @pierre/trees{% endcommand %}
 
 {% demo src="workbench-shell/file-tree" %}
 
@@ -258,9 +212,7 @@ See the full [Trees documentation](https://trees.software/docs).
 
 Every source diff in BL UI is rendered by **[Pierre Diffs](https://diffs.com/)** (`@pierre/diffs`), including `SurfaceDiff`. Pierre supplies Shiki syntax highlighting, unified and split layouts, selection, and scalable rendering.
 
-```sh
-pnpm add @pierre/diffs
-```
+{% command %}npm install @pierre/diffs{% endcommand %}
 
 {% demo src="workbench-shell/code-diff" %}
 

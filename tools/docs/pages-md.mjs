@@ -2,11 +2,12 @@
 /* Writes every docs page as Markdown to apps/docs/public/md/<page>.md (served at /ui/md/<page>.md — "View as
  * Markdown" and the ChatGPT / Claude links point there), plus apps/docs/public/llms.txt indexing them.
  *
- * Each page is its Markdown file (apps/docs/pages/<id>.md) with every `{% demo %}` replaced by the demo's real files —
- * docstream's resolveDemosToMarkdown over the docs' own resolver (apps/docs/src/demos.ts), loaded through Vite's SSR
- * module loader so its import.meta.glob config applies — the exact Markdown "Copy page" produces. Fails if a demo is
- * missing, a registry block is not on the Blocks page, a page doesn't round-trip through docstream's
- * parse → serialize → parse, or an Installation section is stale. */
+ * Each page is its Markdown file (apps/docs/pages/<id>.md) with every `{% demo %}` carrying the demo's real files
+ * inline — docstream's resolveDemosToMarkdown over the docs' own resolver (apps/docs/src/demos.ts), loaded through
+ * Vite's SSR module loader so its import.meta.glob config applies — the exact renderable Markdown "Copy page"
+ * produces. Fails if a demo is missing, a registry block is not on the Blocks page, a page doesn't round-trip through
+ * docstream's parse → serialize → parse, an export doesn't parse to the page's block structure plus its demos' files
+ * (exportMismatches), or an Installation section is stale. */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -28,7 +29,7 @@ const server = await createServer({
 });
 let failed = false;
 try {
-  const { exportPage, missingDemos, unstablePages, PAGE_LIST } = await server.ssrLoadModule('/src/page-export.ts');
+  const { exportPage, exportMismatches, missingDemos, unstablePages, PAGE_LIST } = await server.ssrLoadModule('/src/page-export.ts');
 
   const missing = await missingDemos();
   const blocksMd = readFileSync(join(DOCS, 'pages/blocks.md'), 'utf8');
@@ -40,6 +41,8 @@ try {
   if (missing.length) throw new Error(`missing demos\n  ${missing.join('\n  ')}`);
   const unstable = unstablePages();
   if (unstable.length) throw new Error(`pages that don't round-trip through docstream's parse → serialize: ${unstable.join(', ')}`);
+  const mismatched = await exportMismatches();
+  if (mismatched.length) throw new Error(`Copy page exports that aren't the page plus its demos' files\n  ${mismatched.join('\n  ')}`);
 
   rmSync(MD_OUT, { recursive: true, force: true });
   mkdirSync(MD_OUT, { recursive: true });

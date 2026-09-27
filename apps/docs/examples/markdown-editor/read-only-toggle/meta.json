@@ -1,8 +1,10 @@
 {
   "title": "Editable, read-only, rendered",
+  "status": "Live",
   "variants": [
     { "id": "edit", "label": "Edit" },
     { "id": "readonly", "label": "Read-only" },
     { "id": "rendered", "label": "Rendered" }
-  ]
+  ],
+  "variantsWidth": 270
 }

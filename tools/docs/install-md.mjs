@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /* Writes each component page's `## Installation` section into apps/docs/pages/<page>.md as plain docstream
- * Markdown from the page's registry entry (registry/components/<name>.json, `page` field): GitBook tabs for the npm
- * package and the shadcn CLI, each with synced pnpm / npm / yarn / bun command tabs and the import line.
+ * Markdown from the page's registry entry (registry/components/<name>.json, `page` field): a titled tab set — the
+ * "Installation" heading with the npm | shadcn CLI switch on its right — whose tabs each hold a `{% command %}` box
+ * (docstream derives the pnpm / yarn / bun forms), a line of prose and the import code.
  *
  *   node tools/docs/install-md.mjs           → rewrite the sections in place
  *   node tools/docs/install-md.mjs --check   → exit 1 if any page's section is stale (pages-md runs this)
  *
- * The section is `## Installation`, a blank line, then one (nested) `{% tabs %}` set; everything else in the page is
- * left alone. A page without one gets it after its lead (the H1 and the paragraph under it). */
+ * The section is the one `{% tabs title="Installation" %}` set; everything else in the page is left alone. A page without one gets it after its lead (the H1 and the paragraph under it). */
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,53 +39,49 @@ function importLine(names, from) {
   return `import {\n${lines.map((l) => '  ' + l).join('\n')}\n} from '${from}'`;
 }
 
-/* The site default is pnpm (first tab); `sync="pm"` keeps the reader's choice across every command on the site. */
-const PMS = [
-  ['pnpm', (p) => `pnpm add ${p}`, (c) => `pnpm dlx ${c}`],
-  ['npm', (p) => `npm install ${p}`, (c) => `npx ${c}`],
-  ['yarn', (p) => `yarn add ${p}`, (c) => `yarn dlx ${c}`],
-  ['bun', (p) => `bun add ${p}`, (c) => `bunx --bun ${c}`],
-];
+/** One npm / npx command: docstream derives the pnpm / yarn / bun forms (pnpm first) and syncs the reader's choice
+ *  across the site (key `pm`). */
+const command = (cmd) => `{% command %}${cmd}{% endcommand %}`;
 
-/** One command per package manager — tabs whose bodies are single code blocks render as one command block. */
-const commandTabs = (cmd) => [
-  '{% tabs sync="pm" %}',
-  ...PMS.flatMap(([pm, add, dlx]) => [`{% tab title="${pm}" %}`, '```sh', cmd(add, dlx), '```', '{% endtab %}']),
-  '{% endtabs %}',
-];
+/** The import snippet: an untitled block (no header bar, floating copy) without line numbers. */
+const IMPORT_FENCE = '```tsx lineNumbers="false"';
 
 export function installSection(entry) {
   const from = entry.from || '@brett_lamy/ui';
   const names = importNames(entry);
   const pkgs = [...new Set(['@brett_lamy/ui', from])].join(' ');
   return [
-    '## Installation',
-    '',
-    '{% tabs sync="install" %}',
+    '{% tabs title="Installation" sync="install" %}',
     '{% tab title="npm" %}',
-    ...commandTabs((add) => add(pkgs)),
+    command(`npm install ${pkgs}`),
     '',
     "Import the stylesheet once at your app's entry, then the parts from the package root:",
     '',
-    '```tsx', `import '@brett_lamy/ui/styles.css'`, '', importLine(names, from), '```',
+    IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, '', importLine(names, from), '```',
     '{% endtab %}',
     '{% tab title="shadcn CLI" %}',
-    ...commandTabs((_, dlx) => dlx(`shadcn@latest add ${REGISTRY_URL}/${entry.name}.json`)),
+    command(`npx shadcn@latest add ${REGISTRY_URL}/${entry.name}.json`),
     '',
     `Adds \`@/components/ui/${entry.name}.tsx\`, installs \`@brett_lamy/ui\`, and wires its stylesheet and tokens into your CSS. Import from your alias:`,
     '',
-    '```tsx', importLine(names, `@/components/ui/${entry.name}`), '```',
+    IMPORT_FENCE, importLine(names, `@/components/ui/${entry.name}`), '```',
     '{% endtab %}',
     '{% endtabs %}',
   ].join('\n');
 }
 
-/** [start, end) lines of an existing section: `## Installation`, a blank line, then one (nested) tab set. */
+/** [start, end) lines of an existing section: the `{% tabs title="Installation" %}` set, or the pre-1.2 form
+ *  (`## Installation`, a blank line, then one nested tab set). */
 function sectionRange(lines) {
-  const start = lines.findIndex((l, i) => l === '## Installation' && lines[i + 1] === '' && /^\{% tabs\b/.test(lines[i + 2] ?? ''));
+  let start = lines.findIndex((l) => /^\{% tabs title="Installation"/.test(l));
+  let from = start;
+  if (start < 0) {
+    start = lines.findIndex((l, i) => l === '## Installation' && lines[i + 1] === '' && /^\{% tabs\b/.test(lines[i + 2] ?? ''));
+    from = start + 2;
+  }
   if (start < 0) return null;
   let depth = 0;
-  for (let i = start + 2; i < lines.length; i++) {
+  for (let i = from; i < lines.length; i++) {
     if (/^\{% tabs\b/.test(lines[i])) depth++;
     else if (/^\{% endtabs %\}$/.test(lines[i]) && --depth === 0) return [start, i + 1];
   }

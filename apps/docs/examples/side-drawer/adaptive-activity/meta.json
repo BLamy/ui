@@ -1,8 +1,10 @@
 {
   "title": "One content, three presentations",
+  "status": "Live",
   "variants": [
     { "id": "wide", "label": "Wide" },
     { "id": "tablet", "label": "Tablet" },
     { "id": "phone", "label": "Phone" }
-  ]
+  ],
+  "variantsWidth": 260
 }

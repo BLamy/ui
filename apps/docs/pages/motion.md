@@ -2,36 +2,13 @@
 
 Every animation in BL UI follows one vocabulary, borrowed from Benji Taylor's [Family Values](https://benji.org/family-values) — the design principles behind the Family wallet. Read the original; it is short and every point in it is visible in the app. This page is how those principles become components.
 
-## Installation
-
-{% tabs sync="install" %}
+{% tabs title="Installation" sync="install" %}
 {% tab title="npm" %}
-{% tabs sync="pm" %}
-{% tab title="pnpm" %}
-```sh
-pnpm add @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="yarn" %}
-```sh
-yarn add @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="bun" %}
-```sh
-bun add @brett_lamy/ui
-```
-{% endtab %}
-{% endtabs %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx
+```tsx lineNumbers="false"
 import '@brett_lamy/ui/styles.css'
 
 import {
@@ -40,32 +17,11 @@ import {
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
-{% tabs sync="pm" %}
-{% tab title="pnpm" %}
-```sh
-pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/motion.json
-```
-{% endtab %}
-{% tab title="npm" %}
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/motion.json
-```
-{% endtab %}
-{% tab title="yarn" %}
-```sh
-yarn dlx shadcn@latest add https://blamy.github.io/ui/r/motion.json
-```
-{% endtab %}
-{% tab title="bun" %}
-```sh
-bunx --bun shadcn@latest add https://blamy.github.io/ui/r/motion.json
-```
-{% endtab %}
-{% endtabs %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/motion.json{% endcommand %}
 
 Adds `@/components/ui/motion.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx
+```tsx lineNumbers="false"
 import {
   springs, TextMorph, NumberMorph, IconSwap,
 } from '@/components/ui/motion'
