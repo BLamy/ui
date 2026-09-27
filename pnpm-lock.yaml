@@ -312,6 +312,9 @@ importers:
       '@brett_lamy/pencilkit':
         specifier: workspace:*
         version: link:../../packages/pencilkit
+      '@brett_lamy/registry':
+        specifier: workspace:*
+        version: link:../../registry
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui

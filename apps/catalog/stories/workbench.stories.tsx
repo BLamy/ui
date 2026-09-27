@@ -1,19 +1,20 @@
+import type { ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AppearanceProvider } from '../lib/theme';
-import { WorkbenchDemo } from './workbench-demo';
-import '../styles.css';
+import { AppearanceProvider } from '@brett_lamy/ui';
+import T3Clone from '@brett_lamy/registry/blocks/t3-clone/page';
 
-const meta: Meta<typeof WorkbenchDemo> = {
+/* The t3-clone registry block (registry/blocks/t3-clone), composed from the WorkbenchShell primitives. */
+const meta: Meta<typeof T3Clone> = {
   title: 'Pages/Workbench',
-  component: WorkbenchDemo,
+  component: T3Clone,
   parameters: { layout: 'fullscreen' },
 };
 export default meta;
-type Story = StoryObj<typeof WorkbenchDemo>;
+type Story = StoryObj<typeof T3Clone>;
 
-const frame = (w: number, h: number) => (args: React.ComponentProps<typeof WorkbenchDemo>) => (
+const frame = (w: number, h: number) => (args: ComponentProps<typeof T3Clone>) => (
   <div style={{ width: w, height: h, margin: '0 auto', overflow: 'hidden', border: '1px solid rgba(255,255,255,.1)' }}>
-    <WorkbenchDemo {...args} />
+    <T3Clone {...args} />
   </div>
 );
 
@@ -22,13 +23,13 @@ export const Medium: Story = { render: frame(900, 700) };
 export const Phone: Story = { render: frame(390, 720) };
 export const WithBrowserSurface: Story = { args: { surface: 'browser' }, render: frame(1280, 760) };
 
-/* Appearance: the demo follows an ambient AppearanceProvider (the docs site's light/dark toggle). */
+/* Appearance: the block follows an ambient AppearanceProvider (the docs site's light/dark toggle). */
 const inAppearance =
   (appearance: 'light' | 'dark', w = 1280, h = 760) =>
-  (args: React.ComponentProps<typeof WorkbenchDemo>) => (
+  (args: ComponentProps<typeof T3Clone>) => (
     <AppearanceProvider value={appearance}>
       <div style={{ width: w, height: h, margin: '0 auto', overflow: 'hidden' }}>
-        <WorkbenchDemo {...args} />
+        <T3Clone {...args} />
       </div>
     </AppearanceProvider>
   );

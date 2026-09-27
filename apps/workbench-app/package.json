@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@brett_lamy/ui": "workspace:*",
-    "@brett_lamy/pencilkit": "workspace:*"
+    "@brett_lamy/pencilkit": "workspace:*",
+    "@brett_lamy/registry": "workspace:*"
   }
 }

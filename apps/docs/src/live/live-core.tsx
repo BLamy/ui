@@ -10,9 +10,8 @@ import {
   MapChatDemo, ProgressStepper, WorkspaceRail, useFloatingSheet, Composer, ComposerAttach, ComposerAttachments,
   ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput,
   ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop,
-  ComposerText, ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS, MarkdownView, MessageScroller, REPLY_SERVERS,
-  SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo, type AdaptivePaneMode,
-  type Screen, type FloatingSheetAppearance, type SurfaceKind,
+  ComposerText, ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS, MarkdownView, MessageScroller,
+  WFONT, type AdaptivePaneMode, type Screen, type FloatingSheetAppearance,
 } from '@brett_lamy/ui';
 import { DemoBtn, BLFrame, type LiveSpec } from './frame';
 import { SPLIT_VIEW_LIVE } from './examples/split-view';
@@ -22,8 +21,25 @@ import { COMPOSER_EXAMPLES } from './examples/composer-examples';
 import { FLOATING_SHEET_EXAMPLES } from './examples/floating-sheet-examples';
 import { ARTIFACT_CHAT_EXAMPLES } from './examples/artifact-chat-examples';
 import { CHAT_SHELL_EXAMPLES } from './examples/chat-shell-examples';
-import { WORKBENCH_SHELL_EXAMPLES } from './examples/workbench-shell-examples';
+import { WORKBENCH_SHELL_LIVE } from './examples/workbench-shell';
 import { MESSAGE_SCROLLER_EXAMPLES } from './examples/message-scroller-examples';
+
+const REPLY_SERVERS = `Both servers are now running detached and won't be killed by the tool's session limits.
+
+| App | URL | PID | Log |
+| --- | --- | --- | --- |
+| app-builder | http://localhost:3000 | 5229 | app-builder.log |
+| agent-kanban | http://localhost:3001 | 7099 | agent-kanban.log |
+
+To stop them later:
+
+\`\`\`bash
+kill 5229 7099
+# or
+lsof -ti :3000 :3001 | xargs kill
+\`\`\`
+
+Both apps hot-reload — edit \`src/\` and the browser surface refreshes on save.`;
 
 /** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
 function ScaledShell({ width, height, children }: { width: number; height: number; children: ReactNode }) {
@@ -227,7 +243,7 @@ export const LIVE_CORE: Record<string, LiveSpec> = {
   ...FLOATING_SHEET_EXAMPLES,
   ...ARTIFACT_CHAT_EXAMPLES,
   ...CHAT_SHELL_EXAMPLES,
-  ...WORKBENCH_SHELL_EXAMPLES,
+  ...WORKBENCH_SHELL_LIVE,
   ...MESSAGE_SCROLLER_EXAMPLES,
   sidebar: {
     title: 'Sidebar · docked, rail, float, overlay', theme: 'wb', h: 420, bleed: true,
@@ -585,39 +601,6 @@ export default function Chat() {
         </ScaledShell>
         <div style={{ fontSize: 12, color: 'var(--bl-label2)', textAlign: 'center', marginTop: 8 }}>
           {compact ? 'Compact: open the hamburger to reveal the rail and channels.' : 'Wide: the workspace rail and channel navigation stay docked.'}
-        </div>
-      </div>;
-    },
-  },
-  workbenchshell: {
-    title: 'WorkbenchShell · responsive composition', theme: 'wb', h: 590,
-    variants: [{ id: 'regular', label: 'Regular' }, { id: 'compact', label: 'Compact' }],
-    code: `import { WorkbenchShell } from '@brett_lamy/ui'
-
-// The shell measures itself: compact widths move the sidebar, terminal,
-// and surfaces into sheets and a bottom tab bar.
-export default function Workbench() {
-  return (
-    <div style={{ position: 'relative', height: 560 }}>
-      <WorkbenchShell terminal>
-        <WorkbenchShell.Sidebar><nav>Threads</nav></WorkbenchShell.Sidebar>
-        <WorkbenchShell.Main><main>Conversation</main></WorkbenchShell.Main>
-        <WorkbenchShell.Dock><div>Terminal</div></WorkbenchShell.Dock>
-        <WorkbenchShell.Panel><aside>Surfaces</aside></WorkbenchShell.Panel>
-        <WorkbenchShell.TabBar><div>Surface tabs</div></WorkbenchShell.TabBar>
-      </WorkbenchShell>
-    </div>
-  )
-}`,
-    Render: function WorkbenchShellLive({ variant }) {
-      const compact = variant === 'compact';
-      const width = compact ? 430 : 1180;
-      return <div>
-        <ScaledShell width={width} height={560}>
-          <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 12 }}><WorkbenchDemo terminal /></div>
-        </ScaledShell>
-        <div style={{ fontSize: 12, color: 'var(--wb-label2)', textAlign: 'center', marginTop: 8 }}>
-          {compact ? 'Compact: sidebar, terminal, and surfaces move into sheets and tabs.' : 'Regular: sidebar, terminal dock, and surface panel share the workspace.'}
         </div>
       </div>;
     },
@@ -1147,80 +1130,6 @@ export default function Thread() {
         </div>
       </div>;
     },
-  },
-  terminal: {
-    title: 'TermHeader · TermBody', theme: 'wb', h: 400,
-    code: `import { TermBody, TermHeader } from '@brett_lamy/ui'
-
-// Desktop: <TerminalDock h={h} setH={setH} />. Phones: wrap TermBody in a SnapSheet.
-export default function Terminal() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 300 }}>
-      <TermHeader title="zsh" />
-      <TermBody seed={[{ t: 'help', p: true }]} autoFocus />
-    </div>
-  )
-}`,
-    Render: function TermLive() {
-      return <div style={{ display: 'flex', flexDirection: 'column', height: 300, borderRadius: 12, overflow: 'hidden', background: '#0C0C10', border: '1px solid var(--wb-sep)' }}>
-        <TermHeader onClose={() => undefined} />
-        <TermBody seed={[{ t: 'help', p: true }, { t: 'available: ls, pwd, echo, whoami, npm run dev, clear' }]} />
-      </div>;
-    },
-  },
-  surfaces: {
-    title: 'SurfacePanel', theme: 'wb', h: 480,
-    code: `import { useState } from 'react'
-import { SurfacePanel, type SurfaceKind } from '@brett_lamy/ui'
-
-export default function Surfaces() {
-  // null shows the surface picker
-  const [kind, setKind] = useState<SurfaceKind | null>(null)
-  return (
-    <div style={{ height: 380 }}>
-      <SurfacePanel
-        kind={kind}
-        compact
-        onOpen={setKind}
-        onClose={() => setKind(null)}
-      />
-    </div>
-  )
-}`,
-    Render: function SurfLive() {
-      const [kind, setKind] = useState<SurfaceKind | null>(null);
-      return <div style={{ height: 380, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--wb-sep)' }}>
-        <SurfacePanel kind={kind} compact onOpen={(k) => setKind(k)} onClose={() => setKind(null)} full={false} onFull={() => undefined} />
-      </div>;
-    },
-  },
-  filetree: {
-    title: 'File tree · @pierre/trees', theme: 'wb', h: 430,
-    code: `import { SurfaceFiles } from '@brett_lamy/ui'
-
-// The Workbench Files surface: a @pierre/trees FileTree with BL UI tokens.
-export default function Files() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 330 }}>
-      <SurfaceFiles />
-    </div>
-  )
-}`,
-    Render: () => <div style={{ height: 330, display: 'flex', flexDirection: 'column', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--wb-sep)' }}><SurfaceFiles /></div>,
-  },
-  diff: {
-    title: 'Code diff · @pierre/diffs', theme: 'wb', h: 430,
-    code: `import { SurfaceDiff } from '@brett_lamy/ui'
-
-// The Workbench Diff surface: @pierre/diffs, themed to the current appearance.
-export default function Change() {
-  return (
-    <div style={{ height: 330, overflow: 'auto' }}>
-      <SurfaceDiff />
-    </div>
-  )
-}`,
-    Render: () => <div style={{ height: 330, borderRadius: 12, overflow: 'auto', border: '1px solid var(--wb-sep)' }}><SurfaceDiff /></div>,
   },
   stream: {
     title: 'MarkdownView · Docstream renderer', theme: 'bl', h: 480,

@@ -2,8 +2,10 @@
 import { useMemo, useState } from 'react';
 import {
   Avatar, HapticsPlayground, IndexBar, NavigationStack, SearchField, TabBar, BLProvider, List, ListSection, ListRow,
-  WorkbenchDemo, type Screen,
+  type Screen,
 } from '@brett_lamy/ui';
+import T3Clone from '@brett_lamy/registry/blocks/t3-clone/page';
+import t3Source from '@brett_lamy/registry/blocks/t3-clone/page.tsx?raw';
 import { PencilKitDemo, demoStrokes } from '@brett_lamy/pencilkit';
 import { LiveCard, LiveStage } from './docs-live';
 
@@ -34,23 +36,11 @@ export function HapticsDemoBlock() {
   );
 }
 
-const WORKBENCH_CODE = `import { WorkbenchDemo } from '@brett_lamy/ui'
-
-// The full composition: threads, chat, terminal dock, and surface panel.
-// Build your own from WorkbenchShell and its slots.
-export default function App() {
-  return (
-    <div style={{ position: 'relative', height: 600 }}>
-      <WorkbenchDemo />
-    </div>
-  )
-}`;
-
 export function WorkbenchDemoBlock() {
   return (
-    <LiveCard title="Workbench" code={WORKBENCH_CODE}>
+    <LiveCard title="Workbench · the t3-clone block" code={t3Source}>
       <LiveStage theme="wb" bleed>
-        <div style={stage(600)}><div style={{ position: 'absolute', inset: 0 }}><WorkbenchDemo /></div></div>
+        <div style={stage(600)}><div style={{ position: 'absolute', inset: 0 }}><T3Clone /></div></div>
       </LiveStage>
     </LiveCard>
   );

@@ -5,6 +5,7 @@
   "type": "module",
   "description": "shadcn-style registry source: blocks and component entries that consumers copy with `npx shadcn add`. Files here import only from the public packages.",
   "exports": {
+    "./blocks/*/page": "./blocks/*/page.tsx",
     "./blocks/*": "./blocks/*"
   },
   "dependencies": {
