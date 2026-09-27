@@ -122,7 +122,7 @@ export function DocPageActions(props: DocPageActionsProps) {
   }
 
   const onMenuKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const entries = [...event.currentTarget.querySelectorAll<HTMLElement>("[role=menuitem]")]
+    const entries = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("[role=menuitem]"))
     const index = entries.indexOf(document.activeElement as HTMLElement)
     let next = -1
     if (event.key === "ArrowDown") next = (index + 1) % entries.length
