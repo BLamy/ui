@@ -1,7 +1,10 @@
 /* Small GitHub-flavoured pieces the page composes: the palette, octicon-style glyphs, label chips, state icons,
-   underline tabs, a line-numbered code view, a unified diff view and a file tree. */
-import { useState, type CSSProperties, type ReactNode } from 'react';
-import { Avatar, TabViewIndicator, TabViewPanel, TabViewTab, cn, hlTokens } from '@brett_lamy/ui';
+   underline tabs, a line-numbered code view, a unified diff view and a file tree. Code is highlighted by the
+   library's SyntaxHighlighting (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  Avatar, SyntaxHighlighting, SyntaxTokens, TabViewIndicator, TabViewPanel, TabViewTab, cn, languageFromPath, useSyntaxTokens,
+} from '@brett_lamy/ui';
 import type { FileNode, Label, PullRequest, User } from './data';
 
 /* ── Palette ──
@@ -30,6 +33,14 @@ export function githubVars(dark: boolean): CSSProperties {
     '--wb-hl-kw': dark ? '#ff7b72' : '#cf222e', '--wb-hl-str': dark ? '#a5d6ff' : '#0a3069', '--wb-hl-num': dark ? '#79c0ff' : '#0550ae',
     '--wb-hl-com': dark ? '#9198a1' : '#59636e', '--wb-hl-fn': dark ? '#d2a8ff' : '#8250df', '--wb-hl-tag': dark ? '#7ee787' : '#116329',
     '--wb-hl-attr': dark ? '#ffa657' : '#953800', '--wb-hl-punc': c.label, '--wb-hl-id': c.label,
+    /* SyntaxHighlighting tokens → Primer's prettylights palette. */
+    '--bl-syntax-keyword': dark ? '#ff7b72' : '#cf222e', '--bl-syntax-operator': c.label,
+    '--bl-syntax-string': dark ? '#a5d6ff' : '#0a3069', '--bl-syntax-number': dark ? '#79c0ff' : '#0550ae',
+    '--bl-syntax-constant': dark ? '#79c0ff' : '#0550ae', '--bl-syntax-comment': dark ? '#9198a1' : '#59636e',
+    '--bl-syntax-comment-style': 'normal', '--bl-syntax-function': dark ? '#d2a8ff' : '#8250df',
+    '--bl-syntax-type': dark ? '#ffa657' : '#953800', '--bl-syntax-fg': c.label, '--bl-syntax-surface': c.bg,
+    '--bl-syntax-line-number': c.label3,
+    '--bl-syntax-highlight': dark ? 'rgba(187,128,9,.15)' : '#fff8c5', '--bl-syntax-highlight-bar': dark ? '#9e6a03' : '#d4a72c',
     /* Docstream (MarkdownView) draws h2 rules with the shadcn --border token directly. */
     '--border': c.sep,
     '--gh-inset': c.inset,
@@ -230,24 +241,11 @@ export const githubMarkdown = cn(
   '[&_li]:my-1! [&_pre]:rounded-md!',
 );
 
-/* ── Code view ── line numbers + the library's JSX/TS highlighter (hlTokens) for script files. */
-const SCRIPT = /\.(tsx?|jsx?|mjs|cjs)$/;
+/* ── Code view ── GitHub's blob view: 12px mono, 20px lines, a line-number gutter (SyntaxHighlighting, ghost). */
 export function CodeView({ path, code }: { path: string; code: string }) {
-  const lines = code.replace(/\n$/, '').split('\n');
-  const hl = SCRIPT.test(path);
   return (
-    <div className="overflow-x-auto py-2 font-mono text-[12px] leading-5">
-      <table className="border-collapse">
-        <tbody>
-          {lines.map((line, i) => (
-            <tr key={i}>
-              <td className="w-[1%] min-w-[50px] pr-2.5 pl-4 text-right align-top text-bl-label3 select-none">{i + 1}</td>
-              <td className="pr-6 pl-2.5 whitespace-pre text-bl-label">{hl ? hlTokens(line) : line || ' '}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <SyntaxHighlighting variant="ghost" code={code} language={languageFromPath(path)} lineNumbers aria-label={path}
+      className="[--bl-syntax-font-size:12px] [--bl-syntax-line-height:20px] [--bl-syntax-padding-y:8px]" />
   );
 }
 
@@ -292,7 +290,12 @@ const ROW_BG = { add: 'bg-[var(--gh-add)]', del: 'bg-[var(--gh-del)]', hunk: 'bg
 const NUM_BG = { add: 'bg-[var(--gh-add-num)]', del: 'bg-[var(--gh-del-num)]', hunk: 'bg-[var(--gh-hunk)]', ctx: '' };
 export function DiffView({ path, patch, add, del }: { path: string; patch: string; add: number; del: number }) {
   const [open, setOpen] = useState(true);
-  const hl = SCRIPT.test(path);
+  const rows = useMemo(() => parsePatch(patch), [patch]);
+  /* The diff's code lines are lexed as one source (hunk headers left out), so strings and comments that span
+     lines keep their context; each row then shows its own line's tokens inside the +/- backgrounds. */
+  const source = useMemo(() => rows.filter((r) => r.t !== 'hunk').map((r) => r.text).join('\n'), [rows]);
+  const { lines, highlighter } = useSyntaxTokens(source, { language: languageFromPath(path) });
+  let k = 0;
   return (
     <div id={'diff-' + path} className="overflow-hidden rounded-md border border-bl-sep">
       <div className="sticky top-0 z-2 flex min-h-11 items-center gap-2 border-b border-bl-sep bg-bl-bg2 px-2 py-1.5">
@@ -306,9 +309,9 @@ export function DiffView({ path, patch, add, del }: { path: string; patch: strin
       </div>
       {open ? (
         <div className="overflow-x-auto font-mono text-[12px] leading-5">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse" data-highlighter={highlighter} data-language={languageFromPath(path)}>
             <tbody>
-              {parsePatch(patch).map((r, i) => (
+              {rows.map((r, i) => (
                 <tr key={i} className={ROW_BG[r.t]}>
                   {r.t === 'hunk' ? (
                     <td colSpan={3} className="px-3 py-1 whitespace-pre text-[var(--gh-hunk-fg)]">{r.text}</td>
@@ -318,7 +321,7 @@ export function DiffView({ path, patch, add, del }: { path: string; patch: strin
                       <td className={cn('w-[1%] min-w-[44px] px-2 text-right align-top text-bl-label3 select-none', NUM_BG[r.t])}>{r.n ?? ''}</td>
                       <td className="pr-6 pl-2 whitespace-pre text-bl-label">
                         <span className="inline-block w-4 text-bl-label2 select-none">{r.t === 'add' ? '+' : r.t === 'del' ? '−' : ' '}</span>
-                        {hl ? hlTokens(r.text) : r.text}
+                        <SyntaxTokens tokens={lines[k++] ?? [{ type: 'plain', text: r.text }]} />
                       </td>
                     </>
                   )}

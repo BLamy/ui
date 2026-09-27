@@ -1,6 +1,6 @@
 /* Code tab: branch toolbar, file table, README and About sidebar; folders and files with GitHub's file-tree sidebar. */
 import { useState, type ReactNode } from 'react';
-import { Avatar, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, MarkdownView, Segmented, cn } from '@brett_lamy/ui';
+import { Avatar, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, MarkdownView, Segmented, SyntaxHighlightingCopyButton, cn } from '@brett_lamy/ui';
 import { README_MD, REPO, TREE, findNode, type FileNode } from './data';
 import { Box, CodeView, Counter, FileTree, Oct, ghButton, githubMarkdown, type OctName, type Layout, type Nav } from './parts';
 
@@ -216,7 +216,7 @@ export function FileViewer({ ui, node }: { ui: Layout; node: FileNode }) {
         {!ui.phone ? <span className="text-[12px] text-bl-label2">{lines} lines · {(code.length / 1024).toFixed(1)} KB</span> : null}
         <span className="flex-1" />
         <Button className={cn(ghButton(), 'h-7 px-2.5 text-[12px]')}>Raw</Button>
-        <Button aria-label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')}><Oct name="copy" size={14} /></Button>
+        <SyntaxHighlightingCopyButton value={code} label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')} />
       </div>
     }>
       {view === 'preview' ? <Readme markdown={code} phone={ui.phone} /> : <CodeView path={node.path} code={code} />}

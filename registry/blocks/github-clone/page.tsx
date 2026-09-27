@@ -12,7 +12,7 @@ import { ActionsView } from './actions-tab';
 import { CodeHome, PathView } from './code-tab';
 import { CloneDialog, LabelFilter } from './dialogs';
 import { IssueList } from './issues-tab';
-import { PullRequestView } from './pull-request';
+import { PullRequestView, type PullRequestTab } from './pull-request';
 import { PullList } from './pulls-tab';
 import { GlobalHeader, RepoHeader } from './repo-header';
 
@@ -25,9 +25,11 @@ export interface GithubCloneProps {
   initialPullRequest?: number;
   /** Open a file or folder in the Code tab (e.g. 'src/queue.ts'). */
   initialPath?: string;
+  /** The pull request's sub-tab to open on (with `initialPullRequest`), e.g. 'files' for Files changed. */
+  initialPullRequestTab?: PullRequestTab;
 }
 
-export default function GithubClone({ initialTab, initialPullRequest, initialPath = '' }: GithubCloneProps) {
+export default function GithubClone({ initialTab, initialPullRequest, initialPath = '', initialPullRequestTab }: GithubCloneProps) {
   const dark = useAppearance() === 'dark';
   const [ref, width] = useContainerWidth<HTMLDivElement>(1200);
   const ui: Layout = { phone: width < 640, wide: width >= 1012, dark };
@@ -45,7 +47,7 @@ export default function GithubClone({ initialTab, initialPullRequest, initialPat
     labels: () => setLabelsOpen(true),
   };
   const page = (
-    <RepoPage ui={ui} tab={tab} onTab={setTab} path={ui.phone ? '' : path} pr={ui.phone ? null : pr} nav={nav} labelFilter={labelFilter} />
+    <RepoPage ui={ui} tab={tab} onTab={setTab} path={ui.phone ? '' : path} pr={ui.phone ? null : pr} nav={nav} labelFilter={labelFilter} prTab={initialPullRequestTab} />
   );
 
   /* Phone: the repo page is the root screen; each folder level, the open file and the PR push on top. */
@@ -61,7 +63,7 @@ export default function GithubClone({ initialTab, initialPullRequest, initialPat
           return { key: 'path:' + p, title: parts[i], content: <PathView ui={ui} path={p} nav={nav} />, hideChromeOnScroll: false };
         })
       : []),
-    ...(tab === 'pulls' && pr ? [{ key: 'pr', title: '#' + pr, content: <PullRequestView ui={ui} number={pr} nav={nav} />, hideChromeOnScroll: false }] : []),
+    ...(tab === 'pulls' && pr ? [{ key: 'pr', title: '#' + pr, content: <PullRequestView ui={ui} number={pr} nav={nav} initialTab={initialPullRequestTab} />, hideChromeOnScroll: false }] : []),
   ];
   const pop = () => (pr && tab === 'pulls' ? setPr(null) : setPath(path.split('/').slice(0, -1).join('/')));
 
@@ -87,8 +89,8 @@ export default function GithubClone({ initialTab, initialPullRequest, initialPat
 }
 
 /** Repo header + tabs; each tab shows its screen (on wide layouts the open folder / file / PR shows in place). */
-function RepoPage({ ui, tab, onTab, path, pr, nav, labelFilter }: {
-  ui: Layout; tab: GithubTab; onTab: (t: GithubTab) => void; path: string; pr: number | null; nav: Nav; labelFilter: string[];
+function RepoPage({ ui, tab, onTab, path, pr, nav, labelFilter, prTab }: {
+  ui: Layout; tab: GithubTab; onTab: (t: GithubTab) => void; path: string; pr: number | null; nav: Nav; labelFilter: string[]; prTab?: PullRequestTab;
 }) {
   return (
     <TabView placement="top" selectedKey={tab} onSelectionChange={(k) => { onTab(k as GithubTab); if (k === 'pulls') nav.openPr(null); }}>
@@ -108,7 +110,7 @@ function RepoPage({ ui, tab, onTab, path, pr, nav, labelFilter }: {
       <TabViewPanels className="mx-auto w-full max-w-[1280px] px-4 py-6 md:px-6">
         <FlowPanel id="code">{path ? <PathView ui={ui} path={path} nav={nav} /> : <CodeHome ui={ui} nav={nav} />}</FlowPanel>
         <FlowPanel id="issues"><IssueList ui={ui} nav={nav} labelFilter={labelFilter} /></FlowPanel>
-        <FlowPanel id="pulls">{pr ? <PullRequestView ui={ui} number={pr} nav={nav} /> : <PullList ui={ui} nav={nav} />}</FlowPanel>
+        <FlowPanel id="pulls">{pr ? <PullRequestView ui={ui} number={pr} nav={nav} initialTab={prTab} /> : <PullList ui={ui} nav={nav} />}</FlowPanel>
         <FlowPanel id="actions"><ActionsView ui={ui} /></FlowPanel>
         <FlowPanel id="insights"><Placeholder icon="pulse" title="Insights" text="Pulse, contributors, traffic and dependency graphs." /></FlowPanel>
         <FlowPanel id="settings"><Placeholder icon="gear" title="Settings" text="Only repository admins can change settings." /></FlowPanel>
