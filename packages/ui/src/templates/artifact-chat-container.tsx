@@ -14,7 +14,7 @@ import { AnimatePresence, animate, motion } from 'framer-motion';
 import { collectSlots, defineSlot, useContainerWidth } from '../lib/container';
 import { springs } from '../lib/motion';
 import { useAppearance } from '../lib/theme';
-import { ChatColumn } from '../components/chat/chat-column';
+import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from '../components/chat/chat-column';
 import { cn } from '../lib/utils';
 import { FloatingChat, type FloatingChatFabPosition, type FloatingChatProps } from '../components/chat/floating-chat';
 import { ChatHostContext, ComposerPortal, createOutletStore, useAttachHost, usePersistentHost } from '../lib/chat/persistent-host';
@@ -236,12 +236,12 @@ export function ArtifactChatContainer({
               transition={springs.smooth}
             >
               <ChatColumn className="flex-1">
-                <ChatColumn.Transcript>
+                <ChatColumnTranscript>
                   <div ref={setChatDock} data-slot="artifact-chat-transcript-dock" className="flex h-full min-h-0 min-w-0 flex-col" />
-                </ChatColumn.Transcript>
-                <ChatColumn.Composer>
+                </ChatColumnTranscript>
+                <ChatColumnComposer>
                   <div ref={setComposerDock} data-slot="artifact-chat-composer-dock" className="min-w-0" />
-                </ChatColumn.Composer>
+                </ChatColumnComposer>
               </ChatColumn>
             </motion.div>
           ) : null}

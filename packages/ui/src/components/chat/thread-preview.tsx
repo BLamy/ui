@@ -1,50 +1,79 @@
-import type { CSSProperties } from 'react';
-import { Button } from 'react-aria-components';
+import type { ComponentProps, ReactNode } from 'react';
+import { Button, composeRenderProps } from 'react-aria-components';
 import { ChatAvatar } from './chat-avatar';
-import { useChatUsers, type ChatThreadData, type ChatUsers } from '../../lib/chat/chat-users';
+import type { ChatUser } from '../../lib/chat/chat-users';
+import { Haptics } from '../../lib/haptics';
 import { cn } from '../../lib/utils';
-import { kvib } from '../../lib/chat/kvib';
 
-export interface ThreadPreviewProps {
-  th: ChatThreadData;
-  onOpen: () => void;
-  tint: string;
-  users?: ChatUsers;
-  className?: string;
-  style?: CSSProperties;
+/* ══ ThreadPreview — the card under a message that opens its thread ══
+   <ThreadPreview title="More relevant bugs" count={2} onPress={open}>
+     <ThreadPreviewReply user={ada}>Testing and Network are getting results too.</ThreadPreviewReply>
+   </ThreadPreview> */
+
+export interface ThreadPreviewProps extends Omit<ComponentProps<typeof Button>, 'children'> {
+  title: ReactNode;
+  /** number of replies */
+  count: number;
+  /** the latest reply (a ThreadPreviewReply) */
+  children?: ReactNode;
 }
 
-export function ThreadPreview({ th, onOpen, tint, users, className, style }: ThreadPreviewProps) {
-  const ctxUsers = useChatUsers();
-  const map = users ?? ctxUsers;
-  const last = th.msgs[th.msgs.length - 1];
+export function ThreadPreview({ title, count, className, children, onPress, ...props }: ThreadPreviewProps) {
   return (
     <Button
       data-slot="thread-preview"
-      className={cn(
-        'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-[10px] border border-ck-sep bg-ck-card px-[11px] py-[8px] text-left font-ios',
-        className,
-      )}
-      onPress={() => {
-        kvib([6]);
-        onOpen();
+      onPress={(e) => {
+        Haptics.impact('light');
+        onPress?.(e);
       }}
-      style={{ '--ck-tint': tint, ...style } as CSSProperties}
+      className={composeRenderProps(className, (c) =>
+        cn(
+          'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-[10px] border border-ck-sep bg-ck-card px-[11px] py-[8px] text-left font-ios [transition:border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:border-ck-fill2 motion-reduce:transition-none',
+          c,
+        ),
+      )}
+      {...props}
     >
       <span className="flex items-center gap-[7px] text-[12.5px]">
-        <span className="font-[650] text-ck-label">{th.title}</span>
-        <span className="font-semibold whitespace-nowrap text-(--ck-tint)">
-          {th.msgs.length} {th.msgs.length === 1 ? 'message' : 'messages'} ›
+        <span className="font-[650] text-ck-label">{title}</span>
+        <span className="font-semibold whitespace-nowrap text-ck-tint">
+          {count} {count === 1 ? 'message' : 'messages'} ›
         </span>
       </span>
-      {last && (
-        <span className="mt-[4px] flex min-w-0 items-center gap-[6px] text-[12px] text-ck-mut">
-          <ChatAvatar user={map[last.u]} size={15} />
-          <span className="truncate">
-            {map[last.u].name}: {last.txt}
-          </span>
-        </span>
-      )}
+      {children}
     </Button>
+  );
+}
+
+export interface ThreadPreviewReplyProps {
+  user: ChatUser;
+  children?: ReactNode;
+  className?: string;
+}
+
+export function ThreadPreviewReply({ user, children, className }: ThreadPreviewReplyProps) {
+  return (
+    <span data-slot="thread-preview-reply" className={cn('mt-[4px] flex min-w-0 items-center gap-[6px] text-[12px] text-ck-mut', className)}>
+      <ChatAvatar user={user} size={15} />
+      <span className="truncate">
+        {user.name}: {children}
+      </span>
+    </span>
+  );
+}
+
+export interface ThreadHeaderProps extends Omit<ComponentProps<'div'>, 'title'> {
+  title: ReactNode;
+  /** a line under the title ("Started by Ada in #dev") */
+  description?: ReactNode;
+}
+
+/** Title block at the top of an open thread. */
+export function ThreadHeader({ title, description, className, ...props }: ThreadHeaderProps) {
+  return (
+    <div data-slot="thread-header" className={cn('border-b border-ck-sep px-4 pt-1.5 pb-3', className)} {...props}>
+      <div className="text-[16px] leading-[1.3] font-[750] text-ck-label">{title}</div>
+      {description != null && <div className="mt-[3px] text-[11.5px] text-ck-mut3">{description}</div>}
+    </div>
   );
 }

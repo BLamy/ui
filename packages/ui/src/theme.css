@@ -82,6 +82,9 @@
   --color-ck-on-fill: var(--ck-on-fill, #fff);
   --color-ck-green: var(--ck-green, #32D74B);
   --color-ck-red: var(--ck-red, #FF453A);
+  --color-ck-orange: var(--ck-orange, #FF9F0A);
+  /* The accent: ChatShell's `tint` prop sets --ck-tint. */
+  --color-ck-tint: var(--ck-tint, #0A84FF);
 
   --font-ios: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;

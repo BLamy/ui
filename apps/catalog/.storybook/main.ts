@@ -3,7 +3,8 @@ import { defaultClientConditions } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 
 const config: StorybookConfig = {
-  stories: ['../../../packages/*/src/**/*.stories.@(ts|tsx)'],
+  // Package stories, plus the catalog's own (pages built from registry blocks).
+  stories: ['../../../packages/*/src/**/*.stories.@(ts|tsx)', '../stories/**/*.stories.@(ts|tsx)'],
   framework: { name: '@storybook/react-vite', options: {} },
   async viteFinal(cfg) {
     cfg.plugins = [...(cfg.plugins ?? []), tailwindcss()];

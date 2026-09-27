@@ -62,30 +62,46 @@ If `items` is omitted or empty, the component retains its A-Z form:
 - Inputs and feedback: `SearchField`, `Switch`, `Segmented`, `Haptics`, `HapticIndicator`, plus shadcn-style primitives (`Button`, `Dialog`, `Sheet`, `Select`, `ComboBox`, `Tabs`, …)
 - Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `ContentSwap`, `Celebrate`
 - Foundations: `BLProvider`, `Icon`, `Avatar`, `Spinner`, token helpers
-- Team chat: `ChatShell`, `WorkspaceRail`, `ChannelList`, `Message`, `ChatComposer`, `ThreadPreview`, `RichText`, `ChatUsersProvider`, `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer`
+- Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `WorkspaceRail` parts, `ServerHeader`, `ChannelList` / `ChannelGroup` / `ChannelItem`, `UserPanel`, `MessageList`, `Message` parts, `ThreadPreview`, `MemberList`, `TypingIndicator`, `ChatComposer`, `RichText`, `ChatUsersProvider`, `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer`
 - Workbench: `WorkbenchShell`, `Composer` and its parts, `ModelPicker`, `MessageScroller`, `ChatView`, `ThreadSidebar`, `TerminalDock`, `SnapSheet`, `SurfacePanel`, `MarkdownView`
-- Demo apps: `ChatDemo`, `WorkbenchDemo`, `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo`, `HapticsPlayground`
+- Demo apps: `WorkbenchDemo`, `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo`, `HapticsPlayground`
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.
 
 ## Team chat
 
-`ChatShell` provides an adaptive workspace rail, channel navigation, and main-content region without prescribing application data or routing. Slots take ordinary React elements; a component inside the shell reads layout state (`w`, `compact`, `navOpen`, `setNavOpen`) through `useChatShell()`.
+`ChatShell` is a thin layout root: it measures its own width, owns the compact navigation drawer and applies the chat palette. Everything inside is a part you place yourself — leave out what a layout doesn't need. Parts read shell state (`width`, `compact`, `navOpen`, `setNavOpen`) through `useChatShell()`. A full Discord-style app built from these parts ships as the `discord-clone` registry block.
 
 ```tsx
-import { ChatShell, useChatShell } from '@brett_lamy/ui';
-
-function ChannelNav() {
-  const { compact, setNavOpen } = useChatShell();
-  return <MyChannelList onClose={compact ? () => setNavOpen(false) : undefined} onPick={() => setNavOpen(false)} />;
-}
+import {
+  ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader, ChatShellNavTrigger, ChatShellTitle,
+  ChatShellFooter, WorkspaceRail, WorkspaceRailList, WorkspaceRailItem, ServerHeader, ChannelList, ChannelGroup,
+  ChannelItem, MessageList, ChatComposer,
+} from '@brett_lamy/ui';
 
 export function Chat() {
+  const [channel, setChannel] = useState('general');
   return (
     <ChatShell breakpoint={880}>
-      <ChatShell.Rail><MyWorkspaceRail /></ChatShell.Rail>
-      <ChatShell.Nav><ChannelNav /></ChatShell.Nav>
-      <ChatShell.Main><Conversation /></ChatShell.Main>
+      <ChatShellNav>
+        <WorkspaceRail defaultSelectedKey="hq">
+          <WorkspaceRailList><WorkspaceRailItem id="hq" label="H" title="HQ" /></WorkspaceRailList>
+        </WorkspaceRail>
+        <ChatShellSidebar>
+          <ServerHeader>HQ</ServerHeader>
+          <ChannelList selectedKey={channel} onSelectionChange={setChannel}>
+            <ChannelGroup label="Team">
+              <ChannelItem id="general">general</ChannelItem>
+              <ChannelItem id="dev" unread mentions={2}>dev</ChannelItem>
+            </ChannelGroup>
+          </ChannelList>
+        </ChatShellSidebar>
+      </ChatShellNav>
+      <ChatShellMain>
+        <ChatShellHeader><ChatShellNavTrigger /><ChatShellTitle>{channel}</ChatShellTitle></ChatShellHeader>
+        <MessageList scrollKey={channel}>{/* Message parts */}</MessageList>
+        <ChatShellFooter><ChatComposer placeholder={'Message #' + channel} onSend={send} /></ChatShellFooter>
+      </ChatShellMain>
     </ChatShell>
   );
 }

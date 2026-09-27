@@ -6,8 +6,9 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefO
 import {
   AdaptivePane, Avatar, BLProvider, Button, Credenza, EdgeDrawer, Haptics, Icon, IndexBar, SidebarDemo, NavigationStack,
   Segmented, SideDrawer, Spinner, Switch, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab,
-  List, ListSection, ListRow, useAppearance, ArtifactChatContainer, ChatDemo, DeliveryTrackingDemo, FloatingSheet,
-  MapChatDemo, ProgressStepper, WorkspaceRail, useFloatingSheet, Composer, ComposerAttach, ComposerAttachments,
+  List, ListSection, ListRow, useAppearance, ArtifactChatContainer, DeliveryTrackingDemo, FloatingSheet,
+  MapChatDemo, ProgressStepper, WorkspaceRail, WorkspaceRailAction, WorkspaceRailHome, WorkspaceRailItem,
+  WorkspaceRailList, WorkspaceRailSeparator, useFloatingSheet, Composer, ComposerAttach, ComposerAttachments,
   ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput,
   ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop,
   ComposerText, ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS, MarkdownView, MessageScroller, REPLY_SERVERS,
@@ -21,7 +22,7 @@ import { MOTION_LIVE } from './examples/motion';
 import { COMPOSER_EXAMPLES } from './examples/composer-examples';
 import { FLOATING_SHEET_EXAMPLES } from './examples/floating-sheet-examples';
 import { ARTIFACT_CHAT_EXAMPLES } from './examples/artifact-chat-examples';
-import { CHAT_SHELL_EXAMPLES } from './examples/chat-shell-examples';
+import { CHAT_SHELL_EXAMPLES } from './examples/chat-shell-compositions';
 import { WORKBENCH_SHELL_EXAMPLES } from './examples/workbench-shell-examples';
 import { MESSAGE_SCROLLER_EXAMPLES } from './examples/message-scroller-examples';
 
@@ -553,42 +554,6 @@ export default function Delivery() {
       </ScaledShell>;
     },
   },
-  chatshell: {
-    title: 'ChatShell · responsive composition', theme: 'bl', h: 580,
-    variants: [{ id: 'wide', label: 'Wide' }, { id: 'compact', label: 'Compact' }],
-    code: `import { ChatShell } from '@brett_lamy/ui'
-
-// Below the breakpoint the rail and channel list move into a hamburger drawer.
-export default function Chat() {
-  return (
-    <div style={{ position: 'relative', height: 520 }}>
-      <ChatShell breakpoint={880}>
-        <ChatShell.Rail>
-          <nav>Workspaces</nav>
-        </ChatShell.Rail>
-        <ChatShell.Nav>
-          <nav>Channels</nav>
-        </ChatShell.Nav>
-        <ChatShell.Main>
-          <main>Conversation</main>
-        </ChatShell.Main>
-      </ChatShell>
-    </div>
-  )
-}`,
-    Render: function ChatShellLive({ variant }) {
-      const compact = variant === 'compact';
-      const width = compact ? 430 : 1040;
-      return <div>
-        <ScaledShell width={width} height={520}>
-          <ChatDemo initialThread={null} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }} />
-        </ScaledShell>
-        <div style={{ fontSize: 12, color: 'var(--bl-label2)', textAlign: 'center', marginTop: 8 }}>
-          {compact ? 'Compact: open the hamburger to reveal the rail and channels.' : 'Wide: the workspace rail and channel navigation stay docked.'}
-        </div>
-      </div>;
-    },
-  },
   workbenchshell: {
     title: 'WorkbenchShell · responsive composition', theme: 'wb', h: 590,
     variants: [{ id: 'regular', label: 'Regular' }, { id: 'compact', label: 'Compact' }],
@@ -985,7 +950,14 @@ export default function Teams() {
         <BLFrame h={330} bg="var(--bl-bg)">
           {mode === 'discord'
             ? <div style={{ position: 'absolute', inset: 0, display: 'flex', background: '#131318', color: '#EDEDF2' }}>
-                <WorkspaceRail home={{ title: 'Direct Messages', mentions: 2 }} workspaces={servers} selectedKey={server} onSelect={setServer} />
+                <WorkspaceRail selectedKey={server} onSelectionChange={setServer}>
+                  <WorkspaceRailList>
+                    <WorkspaceRailHome mentions={2} />
+                    <WorkspaceRailSeparator />
+                    {servers.map((s) => <WorkspaceRailItem key={s.id} {...s} />)}
+                  </WorkspaceRailList>
+                  <WorkspaceRailAction />
+                </WorkspaceRail>
                 <div style={{ padding: '22px 24px', fontSize: 13, lineHeight: 1.5, color: 'rgba(235,235,245,.6)' }}>
                   <div style={{ fontSize: 16.5, fontWeight: 650, color: '#EDEDF2', marginBottom: 4 }}>{serverName}</div>
                   ChatKit's WorkspaceRail is a vertical TabView: tiles are tabs (Up/Down arrows), the pill marks unread / hover / selected, and Add is an action, not a tab.

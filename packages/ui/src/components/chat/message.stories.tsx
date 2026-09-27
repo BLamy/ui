@@ -1,24 +1,97 @@
+import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chatTokens } from '../../lib/chat/chat-tokens';
+import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
 import { ChatUsersProvider } from '../../lib/chat/chat-users';
-import { Message } from './message';
-import { USERS } from '../../demos/chat-demo';
+import {
+  Message,
+  MessageAction,
+  MessageActions,
+  MessageAuthor,
+  MessageAvatar,
+  MessageBadge,
+  MessageBody,
+  MessageContent,
+  MessageHeader,
+  MessageReaction,
+  MessageReactions,
+  MessageTimestamp,
+} from './message';
+import { MessageGroup } from './message-list';
+import { ThreadPreview, ThreadPreviewReply } from './thread-preview';
+import { USERS } from './chat.fixtures';
 import '../../styles.css';
 
-const noop = () => {};
+interface Reaction {
+  emoji: string;
+  count: number;
+  mine: boolean;
+}
+interface Args {
+  user: keyof typeof USERS & string;
+  time: string;
+  text: string;
+  reactions: Reaction[];
+  thread?: { title: string; replies: { user: string; text: string }[] };
+}
 
-const meta: Meta<typeof Message> = {
+/** A data-driven row, composed from the parts — what an app writes once. */
+function Row({ user, time, text, reactions: initial, thread }: Args) {
+  const [reactions, setReactions] = useState(initial);
+  const u = USERS[user];
+  const toggle = (emoji: string) =>
+    setReactions((rs) => {
+      const list = rs.some((r) => r.emoji === emoji) ? rs : [...rs, { emoji, count: 0, mine: false }];
+      return list.map((r) => (r.emoji === emoji ? { ...r, mine: !r.mine, count: r.count + (r.mine ? -1 : 1) } : r)).filter((r) => r.count > 0);
+    });
+  const last = thread?.replies[thread.replies.length - 1];
+  return (
+    <Message user={u}>
+      <MessageAvatar />
+      <MessageBody>
+        <MessageHeader>
+          <MessageAuthor />
+          {u.bot && <MessageBadge>APP</MessageBadge>}
+          <MessageTimestamp>{time}</MessageTimestamp>
+        </MessageHeader>
+        <MessageContent>{text}</MessageContent>
+        {reactions.length > 0 && (
+          <MessageReactions>
+            {reactions.map((r) => (
+              <MessageReaction key={r.emoji} emoji={r.emoji} count={r.count} mine={r.mine} onChange={() => toggle(r.emoji)} />
+            ))}
+          </MessageReactions>
+        )}
+        {thread && (
+          <ThreadPreview title={thread.title} count={thread.replies.length}>
+            {last && <ThreadPreviewReply user={USERS[last.user]}>{last.text}</ThreadPreviewReply>}
+          </ThreadPreview>
+        )}
+      </MessageBody>
+      <MessageActions>
+        <MessageAction label="Add 👍" onPress={() => toggle('👍')}>
+          👍
+        </MessageAction>
+        <MessageAction label={thread ? 'Open thread' : 'Start thread'}>
+          <ChatIcon d={chatIconPaths.thread} size={14} />
+        </MessageAction>
+      </MessageActions>
+    </Message>
+  );
+}
+
+const meta: Meta<Args> = {
   title: 'Molecules/Message',
-  component: Message,
+  render: (args) => <Row {...args} />,
   parameters: {
     docs: {
       description: {
         component:
-          'Hover a message to reveal its floating action bar (top-right): 👍 quick-react, and start/open thread. Reactions toggle on click (own reaction highlighted in tint; count drops to 0 removes the pill).',
+          'Message › MessageAvatar · MessageBody (MessageHeader › MessageAuthor · MessageBadge · MessageTimestamp, MessageContent, MessageReactions › MessageReaction, ThreadPreview) · MessageActions › MessageAction. Hover a row for its action bar; reactions are toggles.',
       },
     },
   },
-  args: { tint: '#0A84FF', onReact: noop, onOpenThread: noop, onStartThread: noop },
+  args: { reactions: [] },
   decorators: [
     (Story) => (
       <ChatUsersProvider users={USERS}>
@@ -39,64 +112,69 @@ const meta: Meta<typeof Message> = {
   ],
 };
 export default meta;
-type Story = StoryObj<typeof Message>;
+type Story = StoryObj<Args>;
 
 export const Default: Story = {
-  parameters: {
-    docs: {
-      description: {
-        story:
-          'Hover the row to reveal the action bar: 👍 adds/toggles a thumbs-up reaction; the thread button starts a thread (or opens it if one exists).',
-      },
-    },
-  },
-  args: {
-    m: { id: 'g2', u: 'theo', t: '9:15 AM', txt: 'Saw that — the Sidebar variants demo is really nice.', reacts: [] },
-  },
+  args: { user: 'theo', time: '9:15 AM', text: 'Saw that — the Sidebar variants demo is really nice.' },
 };
 
 export const WithReactions: Story = {
   args: {
-    m: {
-      id: 'd3',
-      u: 'ada',
-      t: '11:45 AM',
-      txt: '@theo anecdotally I\'ve been seeing much better bugs — things like "I clicked this button and no sidebar opened".',
-      reacts: [
-        ['🎉', 1, false],
-        ['👍', 1, true],
-      ],
-    },
+    user: 'ada',
+    time: '11:45 AM',
+    text: '@theo anecdotally I\'ve been seeing much better bugs — things like "I clicked this button and no sidebar opened".',
+    reactions: [
+      { emoji: '🎉', count: 1, mine: false },
+      { emoji: '👍', count: 1, mine: true },
+    ],
   },
 };
 
 export const WithThreadPreview: Story = {
   args: {
-    m: {
-      id: 'd4',
-      u: 'theo',
-      t: '11:49 AM',
-      txt: "Added an issue for the thing from GTM planning — hub/RQI-108. fyi @ada, assigned to you.",
-      reacts: [],
-      thread: {
-        title: 'Repo connect spawning new project',
-        msgs: [
-          { id: 't1', u: 'theo', t: '11:49 AM', txt: "Has the link to the customer's post in #general." },
-          { id: 't2', u: 'ada', t: '12:33 PM', txt: 'I do now 🙂' },
-        ],
-      },
+    user: 'theo',
+    time: '11:49 AM',
+    text: 'Added an issue for the thing from GTM planning — hub/RQI-108. fyi @ada, assigned to you.',
+    thread: {
+      title: 'Repo connect spawning new project',
+      replies: [
+        { user: 'theo', text: "Has the link to the customer's post in #general." },
+        { user: 'ada', text: 'I do now 🙂' },
+      ],
     },
   },
 };
 
 export const BotWithAppBadge: Story = {
-  args: {
-    m: {
-      id: 'b1',
-      u: 'stitch',
-      t: '7:02 AM',
-      txt: 'Deploy blui-docs@4f21c9 → prod. 34s, all checks green.',
-      reacts: [],
-    },
-  },
+  args: { user: 'stitch', time: '7:02 AM', text: 'Deploy blui-docs@4f21c9 → prod. 34s, all checks green.' },
+};
+
+/** A MessageGroup: the first row full, follow-ups `variant="continued"` (no avatar or header). */
+export const Grouped: Story = {
+  render: () => (
+    <MessageGroup>
+      <Message user={USERS.noor}>
+        <MessageAvatar />
+        <MessageBody>
+          <MessageHeader>
+            <MessageAuthor />
+            <MessageTimestamp>9:12 AM</MessageTimestamp>
+          </MessageHeader>
+          <MessageContent>Morning! Docs site is organized by atomic tiers now.</MessageContent>
+        </MessageBody>
+      </Message>
+      <Message user={USERS.noor} variant="continued">
+        <MessageAvatar />
+        <MessageBody>
+          <MessageContent>Atoms, molecules, organisms, templates, pages.</MessageContent>
+        </MessageBody>
+      </Message>
+      <Message user={USERS.noor} variant="continued">
+        <MessageAvatar />
+        <MessageBody>
+          <MessageContent>@theo the Sidebar page moved under Organisms.</MessageContent>
+        </MessageBody>
+      </Message>
+    </MessageGroup>
+  ),
 };

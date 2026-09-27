@@ -237,6 +237,9 @@ importers:
 
   apps/chat:
     dependencies:
+      '@brett_lamy/registry':
+        specifier: workspace:*
+        version: link:../../registry
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
