@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PencilKitDemo } from './pencilkit-demo';
-import { demoStrokes } from '../demos/demo-strokes';
+import { demoStrokes } from './demo-strokes';
 
 const meta: Meta<typeof PencilKitDemo> = {
   title: 'Pages/PencilKit',

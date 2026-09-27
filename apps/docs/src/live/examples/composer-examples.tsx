@@ -6,7 +6,6 @@ import {
   Composer, ComposerAddon, ComposerAttach, ComposerAttachments, ComposerButton, ComposerCard, ComposerExpand,
   ComposerFooter, ComposerInput, ComposerSelect, ComposerSend, ComposerSpacer, WIcon, type ComposerAttachment,
 } from '@brett_lamy/ui';
-import { PencilKitAnnotator } from '@brett_lamy/pencilkit';
 import type { LiveSpec } from '../frame';
 
 /** Replies for a few seconds after each send, so the send ↔ stop morph can be seen. */
@@ -61,14 +60,13 @@ const chipCode = `import {
   Composer, ComposerCard, ComposerAttachments, ComposerInput, ComposerExpand,
   ComposerFooter, ComposerAttach, ComposerSpacer, ComposerSend,
 } from '@brett_lamy/ui'
-import { PencilKitAnnotator } from '@brett_lamy/pencilkit'
 
 // Paste or attach an image: a chip lands at the caret and a thumbnail pops into the strip.
-// Press either — the PencilKit annotator zooms out of it; Save flattens the strokes and lands back in it.
-// (Or plug it in once for every Composer: <ComposerAnnotatorProvider annotator={PencilKitAnnotator}>.)
+// Press either — the PencilKit annotator (the default) zooms out of it; Save flattens the strokes and lands back in it.
+// (Swap it with <Composer annotator={MyAnnotator}> or a <ComposerAnnotatorProvider>; annotator={null} opts out.)
 export default function ImageChips() {
   return (
-    <Composer annotator={PencilKitAnnotator} defaultAttachments={seed} defaultValue="Fix this overlap ![header.png](attachment:shot-1)">
+    <Composer defaultAttachments={seed} defaultValue="Fix this overlap ![header.png](attachment:shot-1)">
       <ComposerCard>
         <ComposerExpand />
         <ComposerAttachments />
@@ -140,7 +138,7 @@ export const COMPOSER_EXAMPLES: Record<string, LiveSpec> = {
     Render: function ChipsLive() {
       return (
         <div style={{ maxWidth: 560, margin: '0 auto', padding: '20px 0' }}>
-          <Composer annotator={PencilKitAnnotator} defaultAttachments={SEED} defaultValue="The header overlaps the sidebar here ![header.png](attachment:shot-1) — can you fix the z-index?">
+          <Composer defaultAttachments={SEED} defaultValue="The header overlaps the sidebar here ![header.png](attachment:shot-1) — can you fix the z-index?">
             <ComposerCard>
               <ComposerExpand />
               <ComposerAttachments />

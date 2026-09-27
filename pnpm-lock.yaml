@@ -221,9 +221,6 @@ importers:
 
   apps/catalog:
     dependencies:
-      '@brett_lamy/pencilkit':
-        specifier: workspace:*
-        version: link:../../packages/pencilkit
       '@brett_lamy/registry':
         specifier: workspace:*
         version: link:../../registry
@@ -261,9 +258,6 @@ importers:
       '@brett_lamy/docstream-editor':
         specifier: 1.0.1
         version: 1.0.1(29d692e8b82919e3a9eeae4d10ed8bbc)
-      '@brett_lamy/pencilkit':
-        specifier: workspace:*
-        version: link:../../packages/pencilkit
       '@brett_lamy/registry':
         specifier: workspace:*
         version: link:../../registry
@@ -306,45 +300,18 @@ importers:
 
   apps/pencil:
     dependencies:
-      '@brett_lamy/pencilkit':
-        specifier: workspace:*
-        version: link:../../packages/pencilkit
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
 
   apps/workbench-app:
     dependencies:
-      '@brett_lamy/pencilkit':
-        specifier: workspace:*
-        version: link:../../packages/pencilkit
       '@brett_lamy/registry':
         specifier: workspace:*
         version: link:../../registry
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-
-  packages/pencilkit:
-    dependencies:
-      '@brett_lamy/ui':
-        specifier: workspace:*
-        version: link:../ui
-      class-variance-authority:
-        specifier: ^0.7
-        version: 0.7.1
-      perfect-freehand:
-        specifier: ^1.2.2
-        version: 1.2.3
-      react:
-        specifier: ^18 || ^19
-        version: 19.0.0
-      react-aria-components:
-        specifier: ^1
-        version: 1.20.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      react-dom:
-        specifier: ^18 || ^19
-        version: 19.0.0(react@19.0.0)
 
   packages/ui:
     dependencies:
@@ -402,6 +369,9 @@ importers:
       ios-vibrator-pro-max:
         specifier: 3.0.3
         version: 3.0.3(patch_hash=e43d2878b5e2ba68c9d237f645b7f0fdfab51333167973112a5713dd44deaff2)
+      perfect-freehand:
+        specifier: ^1.2.2
+        version: 1.2.3
       react:
         specifier: ^18 || ^19
         version: 19.0.0
@@ -420,9 +390,6 @@ importers:
 
   registry:
     dependencies:
-      '@brett_lamy/pencilkit':
-        specifier: workspace:*
-        version: link:../packages/pencilkit
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../packages/ui

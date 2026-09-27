@@ -596,3 +596,53 @@ export {
   type DeliveryTrackingDemoProps,
   type DeliveryStage,
 } from './demos/delivery/delivery-tracking-demo';
+
+// PencilKit — freehand drawing on perfect-freehand (formerly @brett_lamy/pencilkit)
+export {
+  PFONT,
+  PMONO,
+  PK_TOOLS,
+  PK_INKS,
+  PK_W,
+  PKI,
+  PK_LIGHT,
+  PK_DARK,
+} from './lib/pencilkit/constants';
+export type {
+  PencilTool,
+  PencilDrawTool,
+  PencilToolDef,
+  PencilPoint,
+  PencilStroke,
+  PKIconName,
+} from './lib/pencilkit/constants';
+export { PKIcon } from './components/pencilkit/pk-icon';
+export type { PKIconProps } from './components/pencilkit/pk-icon';
+export { outlinePath, StrokePath, MemoStroke } from './components/pencilkit/stroke-path';
+export type { StrokePathProps } from './components/pencilkit/stroke-path';
+export { PencilCanvas } from './components/pencilkit/pencil-canvas';
+export type { PencilCanvasProps, PencilStrokesChangeSource } from './components/pencilkit/pencil-canvas';
+export {
+  PencilToolButton,
+  pencilToolButtonVariants,
+  PencilToolbar,
+  PencilToolbarDivider,
+  ToolPicker,
+  InkPicker,
+  WidthPicker,
+  PencilActions,
+} from './components/pencilkit/pencil-toolbar';
+export type {
+  PencilToolButtonProps,
+  PencilToolbarProps,
+  ToolPickerProps,
+  InkPickerProps,
+  WidthPickerProps,
+  PencilActionsProps,
+} from './components/pencilkit/pencil-toolbar';
+export { usePencilHistory } from './components/pencilkit/use-pencil-history';
+export type { PencilHistory } from './components/pencilkit/use-pencil-history';
+export { PencilKitAnnotator } from './components/pencilkit/pencilkit-annotator';
+export { demoStrokes } from './demos/pencilkit/demo-strokes';
+export { PencilKitDemo } from './demos/pencilkit/pencilkit-demo';
+export type { PencilKitDemoProps } from './demos/pencilkit/pencilkit-demo';

@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { cn, useAppearance, type Appearance } from '@brett_lamy/ui';
-import { PK_DARK, PK_INKS, PK_LIGHT, PK_W, type PencilStroke, type PencilTool } from './constants';
-import { PencilCanvas } from './pencil-canvas';
+import { cn } from '../../lib/utils';
+import { useAppearance, type Appearance } from '../../lib/theme';
+import { PK_DARK, PK_INKS, PK_LIGHT, PK_W, type PencilStroke, type PencilTool } from '../../lib/pencilkit/constants';
+import { PencilCanvas } from '../../components/pencilkit/pencil-canvas';
 import {
   InkPicker,
   PencilActions,
@@ -10,8 +11,8 @@ import {
   PencilToolbarDivider,
   ToolPicker,
   WidthPicker,
-} from './pencil-toolbar';
-import { usePencilHistory } from './use-pencil-history';
+} from '../../components/pencilkit/pencil-toolbar';
+import { usePencilHistory } from '../../components/pencilkit/use-pencil-history';
 
 export interface PencilKitDemoProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Dark paper. Wins over `appearance`. */

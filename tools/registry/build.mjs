@@ -60,10 +60,6 @@ function publicExports(indexPath) {
 
 const PACKAGES = {
   '@brett_lamy/ui': { ...publicExports('packages/ui/src/index.ts'), version: readJson('packages/ui/package.json').version },
-  '@brett_lamy/pencilkit': {
-    ...publicExports('packages/pencilkit/src/index.ts'),
-    version: readJson('packages/pencilkit/package.json').version,
-  },
 };
 const dep = (pkg) => `${pkg}@^${PACKAGES[pkg].version}`;
 const BASE_ITEM = `${URL_BASE}/bl-ui.json`;
@@ -182,20 +178,19 @@ const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
         // Real import specifiers only (TypeScript's scanner), not strings inside sample data.
         for (const { fileName: spec } of ts.preProcessFile(src, true, true).importedFiles) {
           if (!(spec === 'react' || spec.startsWith('react/') || isOwnFile(slug, f, spec) || spec in PACKAGES || (meta.dependencies || []).some((d) => spec === d || spec.startsWith(d + '/')))) {
-            errors.push(`${path}: imports "${spec}" — blocks may import only react, @brett_lamy/ui, @brett_lamy/pencilkit, their own files and meta.dependencies`);
+            errors.push(`${path}: imports "${spec}" — blocks may import only react, @brett_lamy/ui, their own files and meta.dependencies`);
           }
         }
       }
       return { path, type: 'registry:component', target: `components/blocks/${slug}/${f}` };
     });
-    const usesPencil = meta.files.some((f) => existsSync(join(ROOT, BLOCKS_DIR, slug, f)) && read(`${BLOCKS_DIR}/${slug}/${f}`).includes('@brett_lamy/pencilkit'));
     return {
       name: slug,
       type: 'registry:block',
       title: meta.title,
       description: meta.description,
       categories: meta.categories,
-      dependencies: [dep('@brett_lamy/ui'), ...(usesPencil ? [dep('@brett_lamy/pencilkit')] : []), ...(meta.dependencies || [])],
+      dependencies: [dep('@brett_lamy/ui'), ...(meta.dependencies || [])],
       registryDependencies: [BASE_ITEM],
       files,
       meta: { entry: `components/blocks/${slug}/page.tsx` },

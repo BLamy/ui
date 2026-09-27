@@ -1,7 +1,7 @@
 /* PencilKit page examples. Each `// #region` is shown verbatim as the example's code. */
 import { useState } from 'react'
-import { Button } from '@brett_lamy/ui'
 import {
+  Button,
   InkPicker,
   PencilActions,
   PencilCanvas,
@@ -13,7 +13,7 @@ import {
   usePencilHistory,
   type PencilStroke,
   type PencilTool,
-} from '@brett_lamy/pencilkit'
+} from '@brett_lamy/ui'
 import raw from './pencilkit.tsx?raw'
 import { examples } from './chrome'
 

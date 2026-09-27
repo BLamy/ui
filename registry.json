@@ -568,8 +568,7 @@
       "title": "PencilKit",
       "description": "Pressure-aware drawing (perfect-freehand) with the PencilKit tool picker, and the Composer image annotator.",
       "dependencies": [
-        "@brett_lamy/ui@^1.0.0",
-        "@brett_lamy/pencilkit@^1.0.0"
+        "@brett_lamy/ui@^1.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"

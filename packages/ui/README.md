@@ -1,6 +1,6 @@
 # @brett_lamy/ui
 
-Touch-first React components inspired by UIKit container patterns. The package includes theme tokens, haptics, lists, navigation, adaptive split views, drawers, sheets, and a reusable jump rail — plus a team-chat scaffold (`ChatShell`, `ArtifactChatContainer`, `FloatingSheet`) and an IDE workbench (`WorkbenchShell`, `Composer`, `MessageScroller`, terminal dock, surfaces, `MarkdownView`). Drawing lives in the companion package `@brett_lamy/pencilkit`.
+Touch-first React components inspired by UIKit container patterns. The package includes theme tokens, haptics, lists, navigation, adaptive split views, drawers, sheets, and a reusable jump rail — plus a team-chat scaffold (`ChatShell`, `ArtifactChatContainer`, `FloatingSheet`), an IDE workbench (`WorkbenchShell`, `Composer`, `MessageScroller`, terminal dock, surfaces, `MarkdownView`) and PencilKit drawing (`PencilCanvas`, pickers, `usePencilHistory`, on perfect-freehand).
 
 ## Install
 
@@ -157,19 +157,30 @@ Descendants read and drive the shell with `useWorkbenchShell()` (`sidebarOpen`, 
 
 ### Image annotation
 
-Pressing an attachment opens `AnnotateLightbox`. The drawing surface is pluggable, so this package doesn't depend on a drawing library: without an annotator the lightbox is a plain preview. `@brett_lamy/pencilkit` ships `PencilKitAnnotator`:
+Pressing an attachment opens `AnnotateLightbox`, which draws on the image with `PencilKitAnnotator` by default; Save flattens the strokes into the image. The annotator is pluggable — swap it for every Composer below a `ComposerAnnotatorProvider`, or per composer with the `annotator` prop (`annotator={null}` opts out to a plain preview):
 
 ```tsx
 import { ComposerAnnotatorProvider } from '@brett_lamy/ui';
-import { PencilKitAnnotator } from '@brett_lamy/pencilkit';
 
-<ComposerAnnotatorProvider annotator={PencilKitAnnotator}>
+<ComposerAnnotatorProvider annotator={MyAnnotator}>
   <App />
 </ComposerAnnotatorProvider>;
-// or per composer: <Composer annotator={PencilKitAnnotator}> (annotator={null} opts out)
+// or per composer: <Composer annotator={MyAnnotator}> (annotator={null} opts out)
 ```
 
 An annotator is a component that calls its `children` with `{ canvas, toolbar?, title? }`: the canvas is laid over the image (its first `<svg>` is flattened into the image on save), the toolbar sits under it.
+
+## PencilKit
+
+PencilKit's drawing surface in BL UI's language, on [perfect-freehand](https://github.com/steveruizok/perfect-freehand): `PencilCanvas`, the tool / ink / width pickers and undo bar, `usePencilHistory`, and `StrokePath` for rendering saved strokes.
+
+```tsx
+import { PencilKitDemo, demoStrokes } from '@brett_lamy/ui';
+
+<div style={{ position: 'relative', height: 540 }}>
+  <PencilKitDemo defaultStrokes={demoStrokes()} style={{ position: 'absolute', inset: 0 }} />
+</div>;
+```
 
 ## Workspace development
 

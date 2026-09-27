@@ -1,15 +1,14 @@
 import { useState } from 'react';
-import type { ComposerAnnotatorProps } from '@brett_lamy/ui';
-import { PK_INKS, type PencilTool } from './constants';
+import type { ComposerAnnotatorProps } from '../workbench/annotator';
+import { PK_INKS, type PencilTool } from '../../lib/pencilkit/constants';
 import { PencilCanvas } from './pencil-canvas';
 import { InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker } from './pencil-toolbar';
 import { usePencilHistory } from './use-pencil-history';
 
 /**
- * The Composer's image annotator, on PencilKit: a canvas over the image, and the tool / ink / undo bar under it
- * so it never covers the image. Save flattens the strokes into the image. Plug it in with
- * `<ComposerAnnotatorProvider annotator={PencilKitAnnotator}>` or `<Composer annotator={PencilKitAnnotator}>`
- * (both from @brett_lamy/ui), or pass it to `AnnotateLightbox`.
+ * The Composer's default image annotator, on PencilKit: a canvas over the image, and the tool / ink / undo bar
+ * under it so it never covers the image. Save flattens the strokes into the image. Every Composer and
+ * AnnotateLightbox uses it unless a `ComposerAnnotatorProvider` or `annotator` prop says otherwise.
  */
 export function PencilKitAnnotator({ children }: ComposerAnnotatorProps) {
   const [tool, setTool] = useState<PencilTool>('pen');

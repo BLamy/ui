@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { ToggleButtonGroup, composeRenderProps } from 'react-aria-components';
 import { cva } from 'class-variance-authority';
-import { cn, Haptics } from '@brett_lamy/ui';
-import { PK_INKS, PK_W, type PencilTool, type PKIconName } from './constants';
+import { cn } from '../../lib/utils';
+import { Haptics } from '../../lib/haptics';
+import { PK_INKS, PK_W, type PencilTool, type PKIconName } from '../../lib/pencilkit/constants';
 import { PKIcon } from './pk-icon';
-import { Button, ToggleButton, type ButtonProps } from './press';
+import { Button, ToggleButton, type ButtonProps } from '../../lib/workbench/press';
 
 /* ---------------------------------- button ---------------------------------- */
 

@@ -12,7 +12,6 @@
     "./styles.css": "./styles.css"
   },
   "dependencies": {
-    "@brett_lamy/pencilkit": "workspace:*",
     "@brett_lamy/ui": "workspace:*"
   },
   "scripts": {
@@ -27,7 +26,6 @@
           "{workspaceRoot}/tools/registry/**/*",
           "{workspaceRoot}/packages/ui/src/index.ts",
           "{workspaceRoot}/packages/ui/src/theme.css",
-          "{workspaceRoot}/packages/pencilkit/src/index.ts",
           "{workspaceRoot}/packages/*/package.json"
         ],
         "outputs": [

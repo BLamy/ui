@@ -11,7 +11,7 @@ export {
   PencilActions,
   usePencilHistory,
   PencilKitAnnotator,
-} from '@brett_lamy/pencilkit';
+} from '@brett_lamy/ui';
 export type {
   InkPickerProps,
   PencilActionsProps,
@@ -22,4 +22,4 @@ export type {
   PencilToolbarProps,
   ToolPickerProps,
   WidthPickerProps,
-} from '@brett_lamy/pencilkit';
+} from '@brett_lamy/ui';

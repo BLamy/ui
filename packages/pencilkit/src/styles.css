@@ -1,8 +1,0 @@
-/* Tailwind utilities for this package are generated into @brett_lamy/ui's stylesheet, which scans every package:
-   one utilities layer keeps rule order consistent (separate per-package layers let a later sheet's `p-0` beat
-   an earlier sheet's `px-4`). Load @brett_lamy/ui/styles.css alongside this file. */
-@layer theme, base, components, utilities;
-
-/* @brett_lamy/pencilkit — framework CSS.
-   The PencilKit prototype defines no keyframes or global classes; this file is the
-   designated home for any future package-level CSS (imported as a side effect by src/index.ts). */

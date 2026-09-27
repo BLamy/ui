@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { cn, Haptics } from '@brett_lamy/ui';
+import { cn } from '../../lib/utils';
+import { Haptics } from '../../lib/haptics';
 import {
   PK_INKS,
   PK_TOOLS,
@@ -8,7 +9,7 @@ import {
   type PencilPoint,
   type PencilStroke,
   type PencilTool,
-} from './constants';
+} from '../../lib/pencilkit/constants';
 import { MemoStroke, StrokePath } from './stroke-path';
 
 export type PencilStrokesChangeSource = 'draw' | 'erase';

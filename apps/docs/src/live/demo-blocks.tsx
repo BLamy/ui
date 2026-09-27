@@ -2,11 +2,10 @@
 import { useMemo, useState } from 'react';
 import {
   Avatar, HapticsPlayground, IndexBar, NavigationStack, SearchField, TabBar, BLProvider, List, ListSection, ListRow,
-  type Screen,
+  PencilKitDemo, demoStrokes, type Screen,
 } from '@brett_lamy/ui';
 import T3Clone from '@brett_lamy/registry/blocks/t3-clone/page';
 import t3Source from '@brett_lamy/registry/blocks/t3-clone/page.tsx?raw';
-import { PencilKitDemo, demoStrokes } from '@brett_lamy/pencilkit';
 import { LiveCard, LiveStage } from './docs-live';
 
 /* A fixed-height, full-bleed host for the big demos: the card supplies the border, so no nested frame. */
@@ -46,7 +45,7 @@ export function WorkbenchDemoBlock() {
   );
 }
 
-const PENCIL_CODE = `import { PencilKitDemo, demoStrokes } from '@brett_lamy/pencilkit'
+const PENCIL_CODE = `import { PencilKitDemo, demoStrokes } from '@brett_lamy/ui'
 
 // Canvas, tool picker, inks, widths, undo/redo. Compose your own from
 // PencilCanvas, PencilToolbar, and usePencilHistory.

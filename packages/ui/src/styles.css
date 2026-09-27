@@ -1,10 +1,8 @@
 @layer theme, base, components, utilities;
 @import "./theme.css";
-/* Utilities only — no preflight, so a host app's base styles are left alone. This one sheet also carries the
-   utilities for @brett_lamy/pencilkit, so their rules share a single, consistently ordered layer. */
+/* Utilities only — no preflight, so a host app's base styles are left alone. */
 @import "tailwindcss/utilities.css" layer(utilities);
 @source "./";
-@source "../../pencilkit/src";
 
 /* BL UI framework CSS — verbatim from the prototype's injected `bl-kf` block. */
 @keyframes blSpin{to{transform:rotate(360deg)}}

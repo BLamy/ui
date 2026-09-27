@@ -7,9 +7,6 @@
       "path": "./packages/ui"
     },
     {
-      "path": "./packages/pencilkit"
-    },
-    {
       "path": "./apps/contacts"
     },
     {

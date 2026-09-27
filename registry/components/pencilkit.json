@@ -23,6 +23,5 @@
   "types": [
     "PencilTool",
     "PencilStroke"
-  ],
-  "from": "@brett_lamy/pencilkit"
+  ]
 }

@@ -68,9 +68,9 @@ export interface ComposerContextValue {
   canSend: boolean;
   send: () => void;
   stop: () => void;
-  /** Opens the annotator for an attachment (a plain preview when no annotator is plugged in). */
+  /** Opens the annotator for an attachment (a plain preview when the annotator is opted out). */
   annotate: (id: string) => void;
-  /** An annotator is available (the `annotator` prop, a ComposerAnnotatorProvider, or `annotateCanvas`). */
+  /** An annotator is in effect (PencilKit by default, the `annotator` prop, a ComposerAnnotatorProvider, or `annotateCanvas`). */
   canAnnotate: boolean;
   editor: ComposerEditor | null;
   /** @internal ComposerInput registers its editor here. */
@@ -145,9 +145,9 @@ export interface ComposerProps {
   /** Called with the trimmed Markdown (attachment chips as `attachment:` refs) and the attachments. */
   onSubmit?: (markdown: string, attachments: ComposerAttachment[]) => void;
   /**
-   * The image annotator the AnnotateLightbox runs when an attachment is pressed — e.g. `PencilKitAnnotator` from
-   * @brett_lamy/pencilkit. Defaults to the nearest ComposerAnnotatorProvider's; `null` opts out. Without one,
-   * pressing an attachment opens a plain preview.
+   * The image annotator the AnnotateLightbox runs when an attachment is pressed. Defaults to the nearest
+   * ComposerAnnotatorProvider's, else `PencilKitAnnotator`; `null` opts out (pressing an attachment then opens a
+   * plain preview).
    */
   annotator?: ComposerAnnotator | null;
   /** A fixed drawing surface for the AnnotateLightbox instead of an `annotator` (its first <svg> is flattened). */
@@ -1627,7 +1627,7 @@ export interface AnnotateLightboxProps {
   onSave: (dataUrl: string) => void;
   /** A fixed drawing surface (its first <svg> is flattened), instead of an annotator. */
   canvas?: React.ReactNode;
-  /** The annotator to run; defaults to the nearest ComposerAnnotatorProvider's. `null` forces the preview. */
+  /** The annotator to run; defaults to the nearest ComposerAnnotatorProvider's, else PencilKit. `null` forces the preview. */
   annotator?: ComposerAnnotator | null;
   /** The element the image zooms out of on open and back into on close (a thumbnail); else it scales in. */
   origin?: () => HTMLElement | null;

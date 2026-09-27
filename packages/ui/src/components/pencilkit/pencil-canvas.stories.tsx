@@ -1,8 +1,8 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PFONT, PK_DARK, PK_INKS, PK_LIGHT } from './constants';
+import { PFONT, PK_DARK, PK_INKS, PK_LIGHT } from '../../lib/pencilkit/constants';
 import { PencilCanvas } from './pencil-canvas';
-import { demoStrokes } from '../demos/demo-strokes';
+import { demoStrokes } from '../../demos/pencilkit/demo-strokes';
 
 function Frame({ dark, children }: { dark?: boolean; children: React.ReactNode }) {
   return (

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PFONT, PK_DARK, PK_LIGHT, type PencilTool } from './constants';
+import { PFONT, PK_DARK, PK_LIGHT, type PencilTool } from '../../lib/pencilkit/constants';
 import {
   InkPicker,
   PencilActions,

@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { cn } from '@brett_lamy/ui';
-import { PKI, type PKIconName } from './constants';
+import { cn } from '../../lib/utils';
+import { PKI, type PKIconName } from '../../lib/pencilkit/constants';
 
 export interface PKIconProps extends React.SVGAttributes<SVGSVGElement> {
   name: PKIconName;

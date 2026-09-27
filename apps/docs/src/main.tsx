@@ -3,8 +3,7 @@ import * as ReactDOM from 'react-dom/client';
 import '@brett_lamy/ui/styles.css';
 // ui's sheet compiled with the registry blocks' Tailwind classes (loaded last, so it's the superset that wins).
 import '@brett_lamy/registry/styles.css';
-import { AppearanceProvider, ComposerAnnotatorProvider, DeliveryTrackingDemo, MapChatDemo } from '@brett_lamy/ui';
-import { PencilKitAnnotator } from '@brett_lamy/pencilkit';
+import { AppearanceProvider, DeliveryTrackingDemo, MapChatDemo } from '@brett_lamy/ui';
 import App from './app/app';
 import { BlockFullscreen } from './app/blocks';
 
@@ -26,13 +25,10 @@ const fullscreen: Record<string, () => ReactElement> = {
 };
 const Fullscreen = demo ? fullscreen[demo] : undefined;
 
-// Every Composer in the docs annotates pasted images with PencilKit.
 root.render(
   <StrictMode>
-    <ComposerAnnotatorProvider annotator={PencilKitAnnotator}>
-      {block ? (
-        <AppearanceProvider value={appearance}><BlockFullscreen slug={block} /></AppearanceProvider>
-      ) : Fullscreen ? <Fullscreen /> : <App />}
-    </ComposerAnnotatorProvider>
+    {block ? (
+      <AppearanceProvider value={appearance}><BlockFullscreen slug={block} /></AppearanceProvider>
+    ) : Fullscreen ? <Fullscreen /> : <App />}
   </StrictMode>,
 );

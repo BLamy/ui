@@ -1,7 +1,7 @@
 /* Small pre-seeded stroke fixture so stories can demonstrate each tool and the
    stroke eraser without drawing first. Generated point paths (pressure 0.5,
    simulatePressure kicks in since pen:false). */
-import { PK_INKS, type PencilPoint, type PencilStroke } from '../lib/constants';
+import { PK_INKS, type PencilPoint, type PencilStroke } from '../../lib/pencilkit/constants';
 
 function wave(x0: number, y0: number, len: number, amp: number, cycles: number, n = 48): PencilPoint[] {
   const pts: PencilPoint[] = [];

@@ -37,6 +37,7 @@
     "clsx": "^2",
     "framer-motion": "^12 || ^13",
     "ios-vibrator-pro-max": "3.0.3",
+    "perfect-freehand": "^1.2.2",
     "react-aria": "^3.51.0",
     "react-aria-components": "^1",
     "tailwind-merge": "^3"
@@ -45,7 +46,7 @@
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19"
   },
-  "description": "iOS-flavored React components — containers, lists, haptics, tokens, plus the workbench (composer, chat, terminal, surfaces) and team-chat shells (react-aria base, shadcn conventions)",
+  "description": "iOS-flavored React components — containers, lists, haptics, tokens, plus the workbench (composer, chat, terminal, surfaces), team-chat shells and PencilKit drawing (react-aria base, shadcn conventions)",
   "license": "MIT",
   "sideEffects": [
     "*.css"

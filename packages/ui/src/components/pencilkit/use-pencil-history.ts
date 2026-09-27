@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Haptics } from '@brett_lamy/ui';
-import type { PencilStroke } from './constants';
+import { Haptics } from '../../lib/haptics';
+import type { PencilStroke } from '../../lib/pencilkit/constants';
 import type { PencilStrokesChangeSource } from './pencil-canvas';
 
 export interface PencilHistory {

@@ -5,7 +5,7 @@ Source for the shadcn registry (`registry.json` at the repo root, built into the
 
 - `blocks/<slug>/` — full-app blocks (e.g. `github-clone`, `discord-clone`, `t3-clone`). Each has
   `meta.json` (`{ name, title, description, categories, files }`, see `blocks/types.ts`) and a `page.tsx` whose
-  default export is the whole block. Files import only from `react`, `@brett_lamy/ui` / `@brett_lamy/pencilkit` and
+  default export is the whole block. Files import only from `react`, `@brett_lamy/ui` and
   their sibling files (they are installed together into `components/blocks/<slug>/`). An optional
   `<slug>.stories.tsx` is picked up by Storybook (not listed in `files`). The docs Blocks page discovers blocks by
   glob — nothing else to register.

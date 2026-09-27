@@ -1,9 +1,8 @@
 # BL UI monorepo conventions
 
-BL UI is an iOS-flavored React component framework, distributed as two workspace packages:
+BL UI is an iOS-flavored React component framework, distributed as one workspace package:
 
-- `@brett_lamy/ui` — everything but drawing: theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar), the team-chat parts and ChatShell (`src/components/chat`, `src/templates`), and the IDE workbench parts and WorkbenchShell (`src/components/workbench`, `src/templates`). Demo apps live in `src/demos`.
-- `@brett_lamy/pencilkit` — freehand drawing canvas (perfect-freehand). Depends on `@brett_lamy/ui`; `PencilKitAnnotator` plugs into the Composer's image annotator. `@brett_lamy/ui` never depends on it.
+- `@brett_lamy/ui` — theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar), the team-chat parts and ChatShell (`src/components/chat`, `src/templates`), the IDE workbench parts and WorkbenchShell (`src/components/workbench`, `src/templates`), and PencilKit freehand drawing on perfect-freehand (`src/components/pencilkit`, `src/lib/pencilkit`; `PencilKitAnnotator` is the Composer's default image annotator). Demo apps live in `src/demos`.
 
 Every component is built **shadcn-style on react-aria-components, styled with Tailwind v4**. Visual output must not change while code moves onto that base: the visual-regression suite (below) is the source of truth, at zero pixel tolerance.
 
@@ -14,10 +13,10 @@ Every component is built **shadcn-style on react-aria-components, styled with Ta
 3. **shadcn conventions.** Every component takes `className` (and `style`) and merges them last with `cn()` from `@brett_lamy/ui`; its root has `data-slot="<name>"`; variants use `cva` (export the `…Variants` function); compound APIs over props (`List.Section`, `ChatShellMain`), context + hooks over prop drilling. For react-aria elements whose `className` can be a function, wrap with `composeRenderProps`.
 4. **Tailwind, not inline styles.** Style with utility classes. `style={{…}}` is only for values computed at runtime (gesture offsets, measured sizes, animation progress) — prefer feeding those in as CSS variables (`style={{ '--x': px }}` + `translate-x-(--x)`). Colors come from the theme: shadcn names (`bg-background`, `text-foreground`, `text-muted-foreground`, `bg-primary`, `border-border`, `bg-card`, `bg-destructive`) or the palettes they map to (`text-bl-label3`, `bg-bl-fill2`, `bg-wb-card`, `text-wb-label2`). Interaction states use react-aria's data attributes (`data-pressed:`, `data-hovered:`, `data-selected:`, `data-focus-visible:`, `data-disabled:`, `group-data-selected:`).
 5. **Exact metrics.** Tailwind v4's named text sizes also set line-height — use `text-[15px]` when the original only set a font size. Keep the original easing (`ease-ios` = `cubic-bezier(.32,.72,0,1)`), radii, shadows (`shadow-[…]`), and durations. `font-family: inherit` is `[font-family:inherit]`.
-6. **CSS files** hold only what utilities can't express (keyframes, scrollbars, range thumbs, third-party overrides). Each package's `src/styles.css` pulls in the shared theme (`packages/ui/src/theme.css`) and Tailwind's utilities layer — no preflight, so host apps keep their base styles.
+6. **CSS files** hold only what utilities can't express (keyframes, scrollbars, range thumbs, third-party overrides). The package's `src/styles.css` pulls in the shared theme (`packages/ui/src/theme.css`) and Tailwind's utilities layer — no preflight, so host apps keep their base styles.
 7. **Haptics** go through `Haptics` from `@brett_lamy/ui` (or workbench's `vib`/`tick`). Calling them from `onPress` is fine — the engine holds press-time requests for the following click, which is when Safari's polyfill can play them. Drag surfaces that tick during a drag need `data-haptic-drag`.
 8. **Demo data and compositions** live in apps or stories. Packages export reusable components only; showcase components named `*Demo` may live under `src/demos/`.
-9. Every package `src/index.ts` re-exports everything public, named exports only.
+9. The package `src/index.ts` re-exports everything public, named exports only.
 
 ## Checks — run before every commit
 

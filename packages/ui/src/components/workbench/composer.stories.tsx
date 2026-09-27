@@ -395,7 +395,7 @@ const openPicker: Story['play'] = async ({ canvasElement }) => {
 export const ModelPickerOpen: Story = { render: () => <PickerFrame appearance="dark" />, play: openPicker };
 export const ModelPickerOpenLight: Story = { render: () => <PickerFrame appearance="light" />, play: openPicker };
 
-/* the annotate lightbox that opens when an attachment is clicked (the catalog plugs PencilKitAnnotator in — see .storybook/preview.tsx) */
+/* the annotate lightbox that opens when an attachment is clicked (PencilKitAnnotator, the default) */
 export const Annotate: Story = {
   render: () => <Frame><AnnotateLightbox src={SAMPLE_IMG} onClose={() => {}} onSave={() => {}} /></Frame>,
 };
