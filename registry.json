@@ -889,6 +889,165 @@
       }
     },
     {
+      "name": "apple-mail",
+      "type": "registry:block",
+      "title": "Apple Mail clone",
+      "description": "Apple Mail: Favorites, Smart Mailboxes and iCloud sections with rolling unread counts; a message list with unread dots, flags, attachments, previews and relative times; swipe actions, edit mode, search and an unread filter; a message view with a quoted thread and reply, flag, move, archive and trash; and a compose sheet. Three tiled columns on desktop, an overlay sidebar on iPad, a NavigationStack with large titles on iPhone. Composed from SplitView, NavigationStack, List, SheetContent, MarkdownEditor and DropdownMenu.",
+      "categories": [
+        "email",
+        "productivity",
+        "application"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/apple-mail/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/page.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/columns.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/columns.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/mailboxes.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/mailboxes.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/message-list.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/message-list.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/message-view.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/message-view.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/compose.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/compose.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/phone.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/phone.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/parts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/swipe-row.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/swipe-row.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/glyphs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/glyphs.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-mail/use-mail.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/use-mail.ts"
+        },
+        {
+          "path": "registry/blocks/apple-mail/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-mail/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/apple-mail/page.tsx"
+      }
+    },
+    {
+      "name": "apple-notes",
+      "type": "registry:block",
+      "title": "Apple Notes clone",
+      "description": "Apple Notes: iCloud and On My Mac folders with All iCloud, Recently Deleted and tags; notes grouped Pinned · Today · Previous 7 Days… with snippets, or a gallery of thumbnails; a Markdown note editor with checklists and tables; pin, lock, share, move, delete, search, swipe actions and new notes that spring into place. Three tiled columns on desktop, an overlay sidebar on iPad, a NavigationStack with large titles on iPhone. Composed from SplitView, NavigationStack, List, MarkdownEditor, Segmented and DropdownMenu.",
+      "categories": [
+        "notes",
+        "productivity",
+        "application"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/apple-notes/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/page.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/columns.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/columns.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/folders.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/folders.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/note-list.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/note-list.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/note-editor.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/note-editor.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/phone.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/phone.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/parts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/swipe-row.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/swipe-row.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/glyphs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/glyphs.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/use-notes.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/use-notes.ts"
+        },
+        {
+          "path": "registry/blocks/apple-notes/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/apple-notes/page.tsx"
+      }
+    },
+    {
       "name": "discord-clone",
       "type": "registry:block",
       "title": "Discord clone",
