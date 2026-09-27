@@ -33,7 +33,7 @@
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
-    "@brett_lamy/docstream": "1.1.0",
+    "@brett_lamy/docstream": "1.1.1",
     "gpu-lexer": "0.0.2",
     "lucide-react": "^1.17.0"
   },
