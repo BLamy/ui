@@ -9,3 +9,14 @@ export { VideoEmbed } from '../../src/video';
 export { parseMarkdown, trimPartialInlineToken } from '../../src/gitbook/parse';
 export { CitationSources, DocstreamRefContext, InlineReference } from '../../src/docs/reference';
 export type { CitationPreview, CitationPreviewResolver, DocstreamRefContextValue } from '../../src/docs/reference';
+export { DocPageActions } from '../../src/docs/PageActions';
+export {
+  DemoFullscreen,
+  DemoViewer,
+  DocstreamDemoContext,
+  createGlobDemoResolver,
+  demoFromSearch,
+  demoHref,
+  resolveDemosToMarkdown,
+} from '../../src/demo';
+export type { DemoMeta, DemoResolver } from '../../src/demo';

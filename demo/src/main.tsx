@@ -1,14 +1,15 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DocstreamRefContext, GitbookStreamdown, MarkdownContent, SourcePreview, createBundledSourceClient, createViteSourceClient, type CitationPreviewResolver, type SourceReferenceRenderer } from '@brett_lamy/docstream';
+import { DemoFullscreen, DocstreamRefContext, GitbookStreamdown, MarkdownContent, SourcePreview, createBundledSourceClient, createViteSourceClient, demoFromSearch, type CitationPreviewResolver, type SourceReferenceRenderer } from '@brett_lamy/docstream';
 import '@brett_lamy/docstream/styles.css';
+import './site.css';
+import { demoResolver } from './demos';
 import { PAGES } from './content';
 import * as ButtonModule from './examples/Button';
 import * as ButtonStoriesModule from './examples/Button.stories';
 import { liveRenderer } from './live-renderer';
 import { ReactDemoLive } from './react-demo-live';
 
-const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif";
 const bundledSourceClient = createBundledSourceClient({
   'Button.tsx': ButtonModule,
   'Button.stories.tsx': ButtonStoriesModule,
@@ -70,13 +71,45 @@ function StreamDemo() {
   const md = words.slice(0, Math.min(n, words.length)).join('');
   const streaming = n < words.length;
   return (
-    <div style={{ border: '1px solid #e2e2ea', borderRadius: 12, padding: '4px 20px 12px', margin: '16px 0', minHeight: 320 }}>
-      <GitbookStreamdown markdown={md} isStreaming={streaming} isAnimating={streaming} />
+    <div className="site-stream">
+      <GitbookStreamdown markdown={md} isStreaming={streaming} isAnimating={streaming} demoResolver={demoResolver} />
     </div>
   );
 }
 
+type Theme = 'light' | 'dark';
+
+function initialTheme(): Theme {
+  const fromUrl = new URLSearchParams(location.search).get('theme');
+  if (fromUrl === 'light' || fromUrl === 'dark') return fromUrl;
+  const saved = localStorage.getItem('docstream-demo-theme');
+  if (saved === 'light' || saved === 'dark') return saved;
+  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(initialTheme);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+  const toggle = () => setTheme((t) => {
+    const next = t === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('docstream-demo-theme', next);
+    return next;
+  });
+  return [theme, toggle];
+}
+
+const SunMoon = ({ theme }: { theme: Theme }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {theme === 'dark'
+      ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>
+      : <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />}
+  </svg>
+);
+
 function App() {
+  const [theme, toggleTheme] = useTheme();
   // Hash routing keeps the current page across the one-time reload the
   // almost-node service worker triggers when it first installs.
   const [page, setPage] = useState(() => window.location.hash.slice(1) || PAGES[0].id);
@@ -90,50 +123,54 @@ function App() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+  const i = PAGES.indexOf(cur);
+  const prev = PAGES[i - 1];
+  const next = PAGES[i + 1];
+  const pagerButton = (p: typeof cur, label: string) => (
+    <button onClick={() => setPage(p.id)}>
+      <small>{label}</small>
+      <strong>{p.title}</strong>
+    </button>
+  );
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: FONT, color: '#16161d' }}>
-      <nav style={{ width: 240, flexShrink: 0, borderRight: '1px solid #e6e6ee', padding: '20px 12px', position: 'sticky', top: 0, height: '100vh', boxSizing: 'border-box', background: '#fafafc' }}>
-        <div style={{ fontWeight: 800, fontSize: 17, padding: '0 10px 4px', letterSpacing: '-0.2px' }}>docstream</div>
-        <div style={{ fontSize: 11.5, color: '#77777f', padding: '0 10px 14px' }}>GitBook-aware markdown & AI stream renderer</div>
+    <div className="site">
+      <nav className="site-nav" aria-label="Pages">
+        <div className="site-brand">
+          docstream
+          <button type="button" className="site-theme" onClick={toggleTheme} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
+            <SunMoon theme={theme} />
+          </button>
+        </div>
+        <div className="site-tagline">GitBook-aware markdown & AI stream renderer</div>
         {PAGES.map((p) => (
-          <button key={p.id} onClick={() => setPage(p.id)}
-            style={{
-              display: 'block', width: '100%', textAlign: 'left', border: 0, borderRadius: 8, padding: '7px 10px',
-              fontSize: 13.5, fontFamily: 'inherit', cursor: 'pointer', marginBottom: 2,
-              background: p.id === page ? '#e8e8f2' : 'transparent', fontWeight: p.id === page ? 650 : 450, color: 'inherit',
-            }}>
+          <button key={p.id} className="site-link" aria-current={p.id === page ? 'page' : undefined} onClick={() => setPage(p.id)}>
             {p.title}
           </button>
         ))}
-        <div style={{ position: 'absolute', bottom: 16, left: 22, right: 12, fontSize: 11, color: '#9a9aa2' }}>
-          <a href="https://www.npmjs.com/package/@brett_lamy/docstream" style={{ color: '#5b5bd6' }}>npm</a>
+        <div className="site-foot">
+          <a href="https://www.npmjs.com/package/@brett_lamy/docstream">npm</a>
           {' · '}
-          <a href="https://github.com/BLamy/docstream" style={{ color: '#5b5bd6' }}>GitHub</a>
+          <a href="https://github.com/BLamy/docstream">GitHub</a>
           <div style={{ marginTop: 4 }}>rendered with docstream</div>
         </div>
       </nav>
-      <main style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 760, padding: '28px 32px 80px', boxSizing: 'border-box' }}>
+      <main className="site-main">
+        <div className="site-page">
           <DocstreamRefContext.Provider value={{ resolveCitationPreview: citationPreviews }}>
-            <MarkdownContent markdown={cur.markdown} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+            <MarkdownContent
+              key={cur.id}
+              markdown={cur.markdown}
+              liveRenderer={liveRenderer}
+              sourceRenderer={sourceRenderer}
+              demoResolver={demoResolver}
+              pageActions={{ transform: (md) => `${md.trim()}\n\n---\n\nSource: https://blamy.github.io/docstream/#${cur.id}\n` }}
+            />
             {cur.id === 'streaming' ? <StreamDemo /> : null}
           </DocstreamRefContext.Provider>
           {cur.id === 'live-demos' ? <ReactDemoLive /> : null}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 48, borderTop: '1px solid #e6e6ee', paddingTop: 16 }}>
-            {(() => {
-              const i = PAGES.indexOf(cur);
-              const prev = PAGES[i - 1]; const next = PAGES[i + 1];
-              const btn = (p: typeof cur, label: string) => (
-                <button onClick={() => setPage(p.id)} style={{ border: '1px solid #e2e2ea', background: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 13, fontFamily: 'inherit', cursor: 'pointer' }}>
-                  <span style={{ color: '#9a9aa2', display: 'block', fontSize: 11 }}>{label}</span>
-                  <span style={{ fontWeight: 650 }}>{p.title}</span>
-                </button>
-              );
-              return (<>
-                <span>{prev ? btn(prev, '← Previous') : null}</span>
-                <span>{next ? btn(next, 'Next →') : null}</span>
-              </>);
-            })()}
+          <div className="site-pager">
+            <span>{prev ? pagerButton(prev, '← Previous') : null}</span>
+            <span>{next ? pagerButton(next, 'Next →') : null}</span>
           </div>
         </div>
       </main>
@@ -141,6 +178,17 @@ function App() {
   );
 }
 
+/** `?demo=<page>/<example>` renders one demo alone (the viewer's "Open in new tab"). */
+function Fullscreen({ src, variant }: { src: string; variant?: string }) {
+  useTheme();
+  return <div data-docstream=""><DemoFullscreen src={src} variant={variant} resolver={demoResolver} /></div>;
+}
+
+function Root() {
+  const deepLink = demoFromSearch();
+  return deepLink ? <Fullscreen src={deepLink.src} variant={deepLink.variant} /> : <App />;
+}
+
 createRoot(document.getElementById('root') as HTMLElement).render(
-  <StrictMode><App /></StrictMode>
+  <StrictMode><Root /></StrictMode>
 );

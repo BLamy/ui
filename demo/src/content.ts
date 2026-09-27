@@ -360,6 +360,152 @@ During development, \`createViteSourceClient().read(reference)\` reads the autho
 `,
   },
   {
+    id: 'demos',
+    title: 'Demos',
+    markdown: `# Demos
+
+A docs page should be **one Markdown document**. \`{% demo %}\` puts a live, file-backed example into it: the component renders in-page, and the code the reader sees is the real file on disk — never a copy pasted into the Markdown.
+
+{% hint style="info" %}
+Everything below is ordinary docstream Markdown. Use **Copy page** (top right) and paste it somewhere: each demo arrives as its real source files, so the copied page stands on its own.
+{% endhint %}
+
+## Single-file demo
+
+A folder with one source file gets the compact card: the preview, then a collapsible, line-numbered code panel. The switch in the header passes a \`variant\` prop to the component.
+
+{% demo src="demos/badges" %}
+
+## Multi-file demo
+
+More than one file switches to the gallery viewer: **Preview | Code**, viewport widths, a draggable resize handle with a width readout, a fullscreen overlay and an "open in new tab" deep link. The Code view lists the files entry first, each with its own copy button.
+
+{% demo src="demos/pricing" viewport="desktop" %}
+
+Frames are size containers, so a demo written with container queries responds to the preview width exactly as it would to a phone. This one is full-bleed (\`"bleed": true\` in its \`meta.json\`) and keeps its parts in a nested folder:
+
+{% demo src="demos/inbox" viewport="tablet" %}
+
+## Syntax
+
+\`\`\`md
+{% demo src="<page>/<example>" title="…" description="…" height="420" layout="auto" variants="full:Full,compact:Compact" viewport="desktop" %}
+\`\`\`
+
+| Attribute | Default | Meaning |
+| --- | --- | --- |
+| \`src\` | — | The \`<page>/<example>\` folder, resolved by the host. |
+| \`title\`, \`description\` | from \`meta.json\` | Header text. |
+| \`height\` | \`meta.height\`, else 480 (multi) / auto (single) | Pixels or any CSS length. |
+| \`layout\` | \`auto\` | \`auto\` picks \`multi\` for 2+ files, else \`single\`. |
+| \`variants\` | \`meta.variants\` | \`id:Label\` pairs; the chosen id is the component's \`variant\` prop. |
+| \`viewport\` | \`desktop\` | Initial width: \`desktop\`, \`tablet\` (768px) or \`phone\` (390px). |
+
+An example folder holds an entry (\`index.tsx\`, default export = the component), any other source files, and an optional \`meta.json\`:
+
+\`\`\`txt
+examples/
+  demos/
+    pricing/
+      index.tsx        ← entry, receives { variant }
+      PricingCard.tsx
+      plans.ts
+      pricing.css
+      meta.json        ← { title, description, height, variants, entry, layout, bleed }
+\`\`\`
+
+## Wiring a resolver
+
+The host tells docstream where demos live. With Vite, three \`import.meta.glob\` calls cover modules, raw sources and metadata:
+
+\`\`\`tsx title="demos.ts"
+import { createGlobDemoResolver, demoHref } from "@brett_lamy/docstream"
+
+export const demoResolver = createGlobDemoResolver({
+  root: "./examples",
+  modules: import.meta.glob("./examples/*/*/index.tsx"),
+  sources: import.meta.glob("./examples/*/*/**/*.{ts,tsx,css,json}", { query: "?raw", import: "default" }),
+  metas: import.meta.glob("./examples/*/*/meta.json", { eager: true, import: "default" }),
+  href: (src) => demoHref(src), // optional: "?demo=<src>" deep links
+})
+\`\`\`
+
+\`\`\`tsx title="page.tsx"
+<MarkdownContent markdown={page} demoResolver={demoResolver} pageActions />
+\`\`\`
+
+The resolver travels through context, so demos inside tabs, hints or nested renderers resolve too. Route \`?demo=<src>\` to \`<DemoFullscreen src={src} />\` to support the deep link.
+
+## Install instructions in Markdown
+
+Tabs whose every tab is a single code block render as one code block with the tabs in its header. Add \`sync="pm"\` and every tab set with that key follows the reader's choice — across the page and across visits:
+
+{% tabs sync="pm" %}
+{% tab title="npm" %}
+\`\`\`sh
+npm install @brett_lamy/docstream react
+\`\`\`
+{% endtab %}
+
+{% tab title="pnpm" %}
+\`\`\`sh
+pnpm add @brett_lamy/docstream react
+\`\`\`
+{% endtab %}
+
+{% tab title="yarn" %}
+\`\`\`sh
+yarn add @brett_lamy/docstream react
+\`\`\`
+{% endtab %}
+
+{% tab title="bun" %}
+\`\`\`sh
+bun add @brett_lamy/docstream react
+\`\`\`
+{% endtab %}
+{% endtabs %}
+
+Pick a package manager above, and this second block follows:
+
+{% tabs sync="pm" %}
+{% tab title="npm" %}
+\`\`\`sh
+npx docstream-demo add pricing
+\`\`\`
+{% endtab %}
+
+{% tab title="pnpm" %}
+\`\`\`sh
+pnpm dlx docstream-demo add pricing
+\`\`\`
+{% endtab %}
+
+{% tab title="yarn" %}
+\`\`\`sh
+yarn dlx docstream-demo add pricing
+\`\`\`
+{% endtab %}
+
+{% tab title="bun" %}
+\`\`\`sh
+bunx docstream-demo add pricing
+\`\`\`
+{% endtab %}
+{% endtabs %}
+
+## Page actions
+
+\`pageActions\` on \`MarkdownContent\`, \`DocsRenderer\` or \`GitbookStreamdown\` renders **Copy page ▾**: Copy as Markdown, View as Markdown, Open in ChatGPT and Open in Claude. Or place \`<DocPageActions markdown={page} />\` yourself. For build-time \`.md\` files and \`llms.txt\`, the same resolution is a pure function:
+
+\`\`\`ts
+import { resolveDemosToMarkdown } from "@brett_lamy/docstream/demo"
+
+const md = await resolveDemosToMarkdown(page, demoResolver) // {% demo %} → titled fences of the real files
+\`\`\`
+`,
+  },
+  {
     id: 'gitbook-syntax',
     title: 'GitBook syntax',
     markdown: `# GitBook syntax

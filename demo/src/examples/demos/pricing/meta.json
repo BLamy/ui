@@ -1,0 +1,9 @@
+{
+  "title": "Pricing table",
+  "description": "Four files — the entry, a card component, the plan data and a stylesheet. Drag the handle or pick a viewport to watch the grid reflow.",
+  "height": 500,
+  "variants": [
+    { "id": "monthly", "label": "Monthly" },
+    { "id": "yearly", "label": "Yearly" }
+  ]
+}

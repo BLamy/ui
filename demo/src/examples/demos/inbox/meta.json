@@ -1,0 +1,6 @@
+{
+  "title": "Inbox",
+  "description": "A full-bleed app block with nested files. It adapts to its container, not the window — try the phone width.",
+  "height": 440,
+  "bleed": true
+}
