@@ -18,6 +18,9 @@ for (const id of pages) {
     const h = await page.evaluate(() => document.getElementById('bldocs-scroll')?.scrollHeight ?? 900);
     await page.setViewportSize({ width: 1400, height: Math.min(h, 16000) });
     await page.waitForTimeout(1500);
+    await expect(page.locator('[data-highlighter="pending"]')).toHaveCount(0, { timeout: 30000 });
+    if (test.info().project.name.endsWith('-gpu'))
+      await expect(page.locator('[data-highlighter="fallback"]:not([data-engine="fallback"])')).toHaveCount(0);
     await expect(page).toHaveScreenshot(`docs-${id}.png`, { timeout: 15000 });
   });
 }
