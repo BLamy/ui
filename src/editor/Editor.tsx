@@ -295,7 +295,8 @@ export function GitbookEditor({
   }, [editor, onEditorReady])
 
   useEffect(() => {
-    if (!editor || !controlled) return
+    // StrictMode (and <Activity>) re-run effects against an editor useEditor has already destroyed.
+    if (!editor || editor.isDestroyed || !controlled) return
     if (markdown === lastEmitted.current) return
     lastEmitted.current = markdown as string
     const doc = parseMarkdown(markdown as string)
