@@ -1,5 +1,5 @@
-import { useEffect, useId, useMemo, useState, type CSSProperties, type ReactNode } from "react"
-import { HighlightedCode } from "../docs/HighlightedCode"
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react"
+import { CollapsibleCode } from "../docs/CollapsibleCode"
 import {
   createAlmostNodeWorkspace,
   createReactDemoFiles,
@@ -65,10 +65,6 @@ function frameHeight(height: number | string): CSSProperties {
   return { height: typeof height === "number" ? `${height}px` : height }
 }
 
-function positiveLineCount(value: number, fallback: number): number {
-  return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback
-}
-
 function sourceLanguage(path: string): string | null {
   const extension = path.split(".").pop()?.toLowerCase()
   return extension && extension !== path ? extension : null
@@ -112,17 +108,10 @@ export function ReactDemo({
   const [state, setState] = useState<PreviewState>(inline ? "ready" : autoStart ? "starting" : "idle")
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [codeExpanded, setCodeExpanded] = useState(false)
-  const codePanelId = useId()
   const displayedCodeFile = codeFile ?? entry
   const code = useMemo(
     () => codeProp ?? sourceText(files, displayedCodeFile),
     [codeProp, displayedCodeFile, files],
-  )
-  const collapsedLines = positiveLineCount(collapsedCodeLines, 3)
-  const expandedLines = Math.max(
-    collapsedLines,
-    positiveLineCount(expandedCodeLines, 30),
   )
 
   useEffect(() => {
@@ -228,30 +217,12 @@ export function ReactDemo({
         </div>
       )}
       {code !== null ? (
-        <div className="docs-react-demo-code">
-          <pre
-            id={codePanelId}
-            className={codeExpanded ? "docs-react-demo-code-body docs-react-demo-code-body-expanded" : "docs-react-demo-code-body"}
-            style={{
-              "--docs-react-demo-code-lines": codeExpanded ? expandedLines : collapsedLines,
-            } as CSSProperties}
-          >
-            <HighlightedCode
-              code={code}
-              language={language ?? sourceLanguage(displayedCodeFile)}
-              lineNumbers
-            />
-          </pre>
-          <button
-            type="button"
-            className="docs-react-demo-code-toggle"
-            aria-controls={codePanelId}
-            aria-expanded={codeExpanded}
-            onClick={() => setCodeExpanded((value) => !value)}
-          >
-            {codeExpanded ? "Hide Code" : "View Code"}
-          </button>
-        </div>
+        <CollapsibleCode
+          code={code}
+          language={language ?? sourceLanguage(displayedCodeFile)}
+          collapsedLines={collapsedCodeLines}
+          expandedLines={expandedCodeLines}
+        />
       ) : null}
     </section>
   )

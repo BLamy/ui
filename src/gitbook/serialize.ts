@@ -50,7 +50,7 @@ function serializeBlock(b: Block): string {
       return `{% hint style="${b.style}" %}\n${serializeBlocks(b.children)}\n{% endhint %}`
 
     case "tabs":
-      return `{% tabs %}\n${b.tabs
+      return `{% tabs${b.sync ? ` sync="${b.sync}"` : ""} %}\n${b.tabs
         .map((t) => `{% tab title="${t.title}" %}\n${serializeBlocks(t.children)}\n{% endtab %}`)
         .join("\n\n")}\n{% endtabs %}`
 
@@ -90,6 +90,21 @@ function serializeBlock(b: Block): string {
         b.title ? ` title="${b.title}"` : "",
       ].join("")
       return `{% source-ref${attrs} %}`
+    }
+
+    case "demo": {
+      const attrs = [
+        ` src="${b.src}"`,
+        b.title ? ` title="${b.title}"` : "",
+        b.description ? ` description="${b.description}"` : "",
+        b.height ? ` height="${b.height}"` : "",
+        b.layout ? ` layout="${b.layout}"` : "",
+        b.variants?.length
+          ? ` variants="${b.variants.map((v) => (v.label === v.id ? v.id : `${v.id}:${v.label}`)).join(",")}"`
+          : "",
+        b.viewport ? ` viewport="${b.viewport}"` : "",
+      ].join("")
+      return `{% demo${attrs} %}`
     }
 
     case "columns":

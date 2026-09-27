@@ -89,6 +89,11 @@ export interface TabNode {
 export interface TabsNode {
   type: "tabs"
   tabs: TabNode[]
+  /**
+   * Sync group (`{% tabs sync="pm" %}`). Every tab set with the same key follows
+   * the reader's last choice (matched by tab title), remembered across pages.
+   */
+  sync?: string
 }
 
 export interface ExpandableNode {
@@ -141,6 +146,35 @@ export interface SourceRefNode {
   exportName: string
   kind: SourceReferenceKind
   title?: string
+}
+
+export type DemoLayout = "auto" | "single" | "multi"
+export type DemoViewport = "desktop" | "tablet" | "phone"
+
+export interface DemoVariantOption {
+  id: string
+  label: string
+}
+
+/**
+ * A file-backed live demo: `{% demo src="<page>/<example>" %}`. The example
+ * folder (resolved by the host's `DemoResolver`) is the authority for the
+ * component, its source files, and its defaults; attributes here override the
+ * folder's `meta.json`.
+ */
+export interface DemoNode {
+  type: "demo"
+  /** `<page>/<example>` folder id understood by the host's resolver. */
+  src: string
+  title?: string
+  description?: string
+  /** Preview height, kept verbatim (`"420"`, `"60vh"`, `"auto"`). */
+  height?: string
+  layout?: DemoLayout
+  /** `variants="full:Full,compact:Compact"`. */
+  variants?: DemoVariantOption[]
+  /** Initial preview viewport for the multi-file viewer. */
+  viewport?: DemoViewport
 }
 
 export interface ColumnNode {
@@ -227,6 +261,7 @@ export type Block =
   | EmbedNode
   | ContentRefNode
   | SourceRefNode
+  | DemoNode
   | ColumnsNode
   | FigureNode
   | ListNode

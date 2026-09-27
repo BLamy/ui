@@ -1,11 +1,12 @@
 import { useMemo } from "react"
 
-import { DocsRenderer, type LivePreviewRenderer } from "../docs/DocsRenderer"
+import { DocsRenderer, type DocRenderOptions, type LivePreviewRenderer, type SourceReferenceRenderer } from "../docs/DocsRenderer"
 import { parseMarkdown, trimPartialInlineToken } from "../gitbook/parse"
 import { ReactCodePreview } from "./ReactCodePreview"
 
-export interface PlaygroundStreamdownProps {
+export interface PlaygroundStreamdownProps extends DocRenderOptions {
   children?: string
+  sourceRenderer?: SourceReferenceRenderer
   className?: string
   isAnimating?: boolean
   isStreaming?: boolean
@@ -23,6 +24,9 @@ export function PlaygroundStreamdown({
   isAnimating,
   isStreaming = false,
   markdown,
+  sourceRenderer,
+  demoResolver,
+  pageActions,
 }: PlaygroundStreamdownProps) {
   const content = markdown ?? children ?? ""
   const doc = useMemo(
@@ -46,7 +50,14 @@ export function PlaygroundStreamdown({
       data-docstream=""
       data-streaming={isStreaming ? "" : undefined}
     >
-      <DocsRenderer doc={doc} liveRenderer={liveRenderer} />
+      <DocsRenderer
+        doc={doc}
+        markdown={content}
+        liveRenderer={liveRenderer}
+        sourceRenderer={sourceRenderer}
+        demoResolver={demoResolver}
+        pageActions={isStreaming ? false : pageActions}
+      />
     </div>
   )
 }

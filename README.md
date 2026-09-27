@@ -255,6 +255,104 @@ const client = createBundledSourceClient({
 Entries may also be lazy import functions. Keys can be `mount:path` (recommended)
 or just `path` when names cannot collide.
 
+### File-backed live demos
+
+`{% demo %}` puts a live example into a page while the page stays **one Markdown
+document**. The example is a folder of real files. The component renders in-page
+(same React tree, lazily loaded near the viewport), and the Code view shows the
+actual file contents.
+
+```md
+{% demo src="button/sizes" %}
+
+{% demo src="blocks/inbox" title="Inbox" description="…" height="420" layout="auto" variants="full:Full,compact:Compact" viewport="tablet" %}
+```
+
+Only `src` (`<page>/<example>`) is required. `title`, `description`, `height`
+and `variants` default to the folder's `meta.json`. `layout="auto"` (the default)
+uses the **multi-file viewer** for two or more source files: Preview | Code,
+desktop/tablet/phone widths, a draggable resize handle with a width readout,
+variants, copy, a fullscreen overlay and an optional deep link. Code view has a
+file tree (entry first) with a copy button per file. A single file gets the
+**single-file card**: the preview with a collapsible code panel underneath.
+`variant` is passed to the component as a prop. Frames are CSS size containers,
+so a demo's `@container` queries respond to the preview width. The tag
+round-trips through `parseMarkdown`/`serializeMarkdown`, and while streaming, a
+half-arrived tag is hidden rather than shown as text.
+
+```txt
+examples/button/sizes/
+  index.tsx     ← default export: ({ variant }) => …
+  Sizes.css
+  meta.json     ← { title, description, height, variants: [{ id, label }], entry, layout, bleed }
+```
+
+Tell docstream where demos live with a `DemoResolver`. With Vite, three
+`import.meta.glob` maps are enough:
+
+```tsx
+import { MarkdownContent, createGlobDemoResolver, demoHref } from "@brett_lamy/docstream"
+
+const demoResolver = createGlobDemoResolver({
+  root: "./examples", // ids are <page>/<example> below this prefix
+  modules: import.meta.glob("./examples/*/*/index.tsx"),
+  sources: import.meta.glob("./examples/*/*/**/*.{ts,tsx,css,json}", { query: "?raw", import: "default" }),
+  metas: import.meta.glob("./examples/*/*/meta.json", { eager: true, import: "default" }),
+  href: (src) => demoHref(src), // optional "?demo=<src>" deep link → route it to <DemoFullscreen src={src} />
+})
+
+<MarkdownContent markdown={page} demoResolver={demoResolver} pageActions />
+```
+
+`demoResolver` is accepted by `DocsRenderer`, `MarkdownContent`,
+`GitbookStreamdown` and the playground renderer, and it's provided through
+`DocstreamDemoContext`, so nested renderers inherit it. You can also write a
+resolver by hand:
+`{ list?(), meta(src), files(src), load(src), href?(src, { variant }) }`.
+`createGlobDemoResolver` is plain TypeScript, so it's exported from the package
+root and from `@brett_lamy/docstream/demo`, not from the Node-only `./vite` entry.
+
+### Page actions
+
+`pageActions` renders a shadcn-style **Copy page ▾** above the content, with
+Copy as Markdown, View as Markdown, Open in ChatGPT and Open in Claude. Pass
+`true`, or pass options such as `{ markdownUrl, pageUrl, prompt, actions, transform }`.
+You can also place `<DocPageActions markdown={page} />` yourself. Copying
+resolves every `{% demo %}` into its real files as titled fences, so the copied
+page is self-contained. The same resolution is available as a pure helper for
+build-time `.md` or `llms.txt` generation:
+
+```ts
+import { resolveDemosToMarkdown } from "@brett_lamy/docstream/demo"
+
+const md = await resolveDemosToMarkdown(page, demoResolver)
+```
+
+### Synced tabs (install instructions)
+
+When every tab in a tab set is a single code block, the tabs render as one code
+block, with pill tabs, a terminal glyph for shell code, and a copy button in its
+header. Add `sync="<key>"` and every tab set with the same key follows the
+reader's choice. The choice is matched by tab title and is remembered in
+`localStorage` across the page and across visits:
+
+````md
+{% tabs sync="pm" %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/docstream
+```
+{% endtab %}
+{% tab title="pnpm" %}
+```sh
+pnpm add @brett_lamy/docstream
+```
+{% endtab %}
+{% endtabs %}
+````
+
+Every code block now also has a copy button.
+
 ## Assets and OpenAPI Specs
 
 Relative image and OpenAPI spec paths can be resolved against an asset base:
@@ -278,6 +376,10 @@ You can also resolve paths yourself with `resolveAsset`.
 - `SourcePreview`: Imports and renders a mounted component or CSF story export.
 - `createViteSourceClient`: Reads, writes, and imports files exposed by the Vite plugin.
 - `createBundledSourceClient`: Imports bundled source modules in read-only production builds.
+- `DemoViewer` / `DemoFullscreen`: The `{% demo %}` viewer, and one demo filling the viewport (for `?demo=` deep links).
+- `createGlobDemoResolver`, `demoHref`, `demoFromSearch`: Build a `DemoResolver` from `import.meta.glob` maps; deep-link helpers.
+- `resolveDemosToMarkdown(markdown, resolver)`: Inlines each `{% demo %}` as its real files (pure, async).
+- `DocPageActions`: The "Copy page ▾" menu.
 
 ### Parser and Serializer
 

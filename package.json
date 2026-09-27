@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "publishConfig": {
     "access": "public"
@@ -64,6 +64,10 @@
     "./source": {
       "types": "./src/source/index.ts",
       "import": "./src/source/index.ts"
+    },
+    "./demo": {
+      "types": "./src/demo/index.ts",
+      "import": "./src/demo/index.ts"
     },
     "./vite": {
       "types": "./src/vite/index.ts",

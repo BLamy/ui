@@ -1,14 +1,21 @@
 import { useMemo } from "react"
-import { DocsRenderer } from "./docs/DocsRenderer"
+import { DocsRenderer, type DocRenderOptions, type LivePreviewRenderer, type SourceReferenceRenderer } from "./docs/DocsRenderer"
 import { parseMarkdown, trimPartialInlineToken } from "./gitbook/parse"
 
 // Re-exported so markdown-only consumers of ./streamdown can wire chip
 // click handling without importing the heavy root entry.
 export { CitationSources, DocstreamRefContext, InlineReference } from "./docs/reference"
+export { DocPageActions } from "./docs/PageActions"
+export type { DocPageAction, DocPageActionsOptions, DocPageActionsProps } from "./docs/PageActions"
+export type { DocRenderOptions } from "./docs/DocsRenderer"
+export { DocstreamDemoContext, DemoFullscreen, DemoViewer } from "./demo"
+export type { DemoFile, DemoMeta, DemoResolver, DemoVariant } from "./demo"
 export type { CitationPreview, CitationPreviewResolver, DocstreamRefContextValue } from "./docs/reference"
 
-export interface GitbookStreamdownProps {
+export interface GitbookStreamdownProps extends DocRenderOptions {
   children?: string
+  liveRenderer?: LivePreviewRenderer
+  sourceRenderer?: SourceReferenceRenderer
   className?: string
   isAnimating?: boolean
   isStreaming?: boolean
@@ -21,6 +28,10 @@ export function GitbookStreamdown({
   isAnimating,
   isStreaming = false,
   markdown,
+  liveRenderer,
+  sourceRenderer,
+  demoResolver,
+  pageActions,
 }: GitbookStreamdownProps) {
   const content = markdown ?? children ?? ""
   const gitbookDoc = useMemo(
@@ -35,7 +46,14 @@ export function GitbookStreamdown({
       data-docstream=""
       data-streaming={isStreaming ? "" : undefined}
     >
-      <DocsRenderer doc={gitbookDoc} />
+      <DocsRenderer
+        doc={gitbookDoc}
+        markdown={content}
+        liveRenderer={liveRenderer}
+        sourceRenderer={sourceRenderer}
+        demoResolver={demoResolver}
+        pageActions={isStreaming ? false : pageActions}
+      />
     </div>
   )
 }

@@ -1,6 +1,10 @@
 import type {
   Block,
   ColumnNode,
+  DemoLayout,
+  DemoNode,
+  DemoVariantOption,
+  DemoViewport,
   DocumentNode,
   HintStyle,
   Inline,
@@ -155,6 +159,39 @@ export function parseMarkdown(src: string): DocumentNode {
   return doc
 }
 
+const DEMO_LAYOUTS: DemoLayout[] = ["auto", "single", "multi"]
+const DEMO_VIEWPORTS: DemoViewport[] = ["desktop", "tablet", "phone"]
+
+/** `"full:Full,compact:Compact"` → `[{ id: "full", label: "Full" }, …]`. A bare id is its own label. */
+export function parseDemoVariants(raw: string): DemoVariantOption[] {
+  return raw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const colon = part.indexOf(":")
+      if (colon < 0) return { id: part, label: part }
+      const id = part.slice(0, colon).trim()
+      const label = part.slice(colon + 1).trim()
+      return { id, label: label || id }
+    })
+    .filter((v) => v.id)
+}
+
+function parseDemoTag(attrs: Record<string, string>): DemoNode {
+  const variants = attrs.variants ? parseDemoVariants(attrs.variants) : []
+  return {
+    type: "demo",
+    src: (attrs.src ?? "").trim(),
+    ...(attrs.title ? { title: attrs.title } : {}),
+    ...(attrs.description ? { description: attrs.description } : {}),
+    ...(attrs.height ? { height: attrs.height } : {}),
+    ...((DEMO_LAYOUTS as string[]).includes(attrs.layout) ? { layout: attrs.layout as DemoLayout } : {}),
+    ...(variants.length ? { variants } : {}),
+    ...((DEMO_VIEWPORTS as string[]).includes(attrs.viewport) ? { viewport: attrs.viewport as DemoViewport } : {}),
+  }
+}
+
 // Strips an in-progress inline token (`[^1`, `@bre`, a lone `#`, a trailing
 // `\`) from the end of a partially streamed document so chips don't flash as
 // plain text mid-stream. No-op inside an unterminated code fence.
@@ -162,6 +199,8 @@ export function trimPartialInlineToken(md: string): string {
   const fences = md.match(/^\s*(?:```|~~~)/gm)
   if (fences && fences.length % 2 === 1) return md
   return md
+    // A block tag still arriving (`{% demo src="butt`) would flash as a paragraph.
+    .replace(/(^|\n)[ \t]*\{(?:%(?:(?!%\})[^\n])*)?$/, "$1")
     .replace(/\[\^[^\]]*$/, "")
     .replace(/(^|[\s([{])[@#][\w.-]*$/, "$1")
     .replace(/\\$/, "")
@@ -206,7 +245,7 @@ export function parseBlocks(lines: string[]): Block[] {
 
       if (tag.name === "tabs") {
         const { body, next } = collectUntil(lines, i + 1, "tabs")
-        blocks.push({ type: "tabs", tabs: parseTabs(body) })
+        blocks.push({ type: "tabs", tabs: parseTabs(body), ...(tag.attrs.sync ? { sync: tag.attrs.sync } : {}) })
         i = next
         continue
       }
@@ -285,6 +324,14 @@ export function parseBlocks(lines: string[]): Block[] {
         })
         i++
         if (i < lines.length && templateTag(lines[i])?.name === `end${tag.name}`) i++
+        continue
+      }
+
+      if (tag.name === "demo") {
+        blocks.push(parseDemoTag(tag.attrs))
+        i++
+        // tolerate an optional {% enddemo %}
+        if (i < lines.length && templateTag(lines[i])?.name === "enddemo") i++
         continue
       }
 

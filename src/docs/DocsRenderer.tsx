@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react"
-import { LayoutGroup, motion } from "framer-motion"
+import { useId, useMemo, useState, type ReactNode } from "react"
+import { motion, useReducedMotion } from "framer-motion"
 import "katex/dist/katex.min.css"
 import {
   AlertTriangle,
@@ -7,12 +7,21 @@ import {
   ChevronRight,
   File,
   Info,
+  Terminal,
   XCircle,
 } from "lucide-react"
 
-import type { Block, DocumentNode, Inline, SourceRefNode } from "../gitbook/ast"
+import type { Block, CodeBlockNode, DocumentNode, Inline, SourceRefNode } from "../gitbook/ast"
 import { resolveAsset } from "../assets"
 import { parseMarkdown } from "../gitbook/parse"
+import { serializeMarkdown } from "../gitbook/serialize"
+import { DocstreamDemoContext } from "../demo/context"
+import { DemoBlock } from "../demo/DemoViewer"
+import type { DemoResolver } from "../demo/types"
+import { CopyButton } from "./copy"
+import { rovingKeyDown } from "./controls"
+import { DocPageActions, type DocPageActionsOptions } from "./PageActions"
+import { useSyncedTab } from "./tabs-sync"
 import { ReplayPreview, isReplayQaUrl } from "../replay"
 import { VideoEmbed } from "../video"
 import { OpenApiOperation } from "../openapi/OpenApiOperation"
@@ -97,34 +106,96 @@ interface Renderers {
   sourceRenderer?: SourceReferenceRenderer
 }
 
+const SHELL_LANGUAGES = new Set(["sh", "bash", "shell", "zsh", "console", "shellsession", "powershell", "ps1", "bat", "cmd"])
+
+/** A tab set whose every tab is exactly one code block renders as one code block with tabs in its header. */
+function codeOnlyTabs(block: Extract<Block, { type: "tabs" }>): CodeBlockNode[] | null {
+  if (!block.tabs.length) return null
+  const codes: CodeBlockNode[] = []
+  for (const tab of block.tabs) {
+    const only = tab.children.length === 1 ? tab.children[0] : null
+    if (!only || only.type !== "code" || only.live || only.language === "mermaid") return null
+    codes.push(only)
+  }
+  return codes
+}
+
 function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, { type: "tabs" }> } & Renderers) {
-  const [active, setActive] = useState(0)
-  return (
-    <div className="docs-tabs">
-      <LayoutGroup>
-        <div className="docs-tabs-header" role="tablist" aria-label="Content tabs">
-          {block.tabs.map((t, i) => (
-            <button
-              key={i}
-              type="button"
-              role="tab"
-              aria-selected={i === active}
-              className={i === active ? "docs-tab-active" : ""}
-              onClick={() => setActive(i)}
-            >
-              {i === active ? (
-                <motion.span
-                  className="docs-tab-indicator"
-                  layoutId="docs-tab-indicator"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              ) : null}
-              <span className="docs-tab-label">{t.title}</span>
-            </button>
-          ))}
+  const [local, setLocal] = useState(0)
+  const [synced, setSynced] = useSyncedTab(block.sync)
+  const syncedIndex = synced === null ? -1 : block.tabs.findIndex((t) => t.title === synced)
+  const active = Math.min(syncedIndex >= 0 ? syncedIndex : local, Math.max(0, block.tabs.length - 1))
+  const baseId = useId()
+  const reduced = useReducedMotion()
+  const codes = useMemo(() => codeOnlyTabs(block), [block])
+  const select = (index: number) => {
+    setLocal(index)
+    const title = block.tabs[index]?.title
+    if (block.sync && title !== undefined) setSynced(title)
+  }
+  const ids = block.tabs.map((_, i) => String(i))
+  const header = (
+    <div
+      className="docs-tabs-header"
+      role="tablist"
+      aria-label={block.sync ? `${block.sync} options` : "Content tabs"}
+      onKeyDown={(event) => rovingKeyDown(event, ids, String(active), (id) => select(Number(id)))}
+    >
+      {block.tabs.map((t, i) => (
+        <button
+          key={i}
+          id={`${baseId}-tab-${i}`}
+          type="button"
+          role="tab"
+          data-roving=""
+          aria-selected={i === active}
+          aria-controls={`${baseId}-panel`}
+          tabIndex={i === active ? 0 : -1}
+          className={i === active ? "docs-tab-active" : ""}
+          onClick={() => select(i)}
+        >
+          {i === active ? (
+            <motion.span
+              className="docs-tab-indicator"
+              layoutId={`docs-tab-indicator-${baseId}`}
+              transition={reduced ? { duration: 0 } : { type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+          ) : null}
+          <span className="docs-tab-label">{t.title}</span>
+        </button>
+      ))}
+    </div>
+  )
+
+  if (codes) {
+    const code = codes[active]
+    const shell = codes.every((c) => c.language && SHELL_LANGUAGES.has(c.language.toLowerCase()))
+    const numbered = code.lineNumbers && code.code.includes("\n") && !shell
+    return (
+      <div className="docs-tabs docs-tabs-code" data-sync={block.sync}>
+        <div className="docs-tabs-code-head">
+          {shell ? (
+            <span className="docs-tabs-code-term" aria-hidden="true">
+              <Terminal width={12} height={12} strokeWidth={2.4} />
+            </span>
+          ) : null}
+          {header}
+          <span className="docs-tabs-code-title">{code.title}</span>
+          <CopyButton text={code.code} label={`Copy ${block.tabs[active]?.title ?? "code"}`} />
         </div>
-      </LayoutGroup>
-      <div className="docs-tabs-body" role="tabpanel">
+        <div className="docs-tabs-code-body" role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${active}`}>
+          <pre className={numbered ? "docs-code-numbered" : ""}>
+            <HighlightedCode code={code.code} language={code.language} lineNumbers={numbered} />
+          </pre>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="docs-tabs" data-sync={block.sync}>
+      {header}
+      <div className="docs-tabs-body" role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${active}`}>
         <Blocks blocks={block.tabs[active]?.children ?? []} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       </div>
     </div>
@@ -173,8 +244,10 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
             <div className="docs-code-header">
               <span>{block.title}</span>
               <span className="docs-code-lang">{block.language}</span>
+              <CopyButton text={block.code} label={block.title ? `Copy ${block.title}` : "Copy code"} />
             </div>
           )}
+          {!block.title && !block.language ? <CopyButton text={block.code} className="docs-code-copy-float" /> : null}
           <pre className={block.lineNumbers ? "docs-code-numbered" : ""}>
             <HighlightedCode
               code={block.code}
@@ -265,6 +338,8 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
           <code>{block.mount}:{block.path}</code>
         </div>
       )
+    case "demo":
+      return <DemoBlock node={block} />
     case "columns":
       return (
         <div className="docs-columns">
@@ -388,28 +463,64 @@ function Blocks({ blocks, inline, liveRenderer, sourceRenderer }: { blocks: Bloc
   )
 }
 
+export interface DocRenderOptions {
+  /** Resolves `{% demo %}` blocks. Provided through context, so nested renderers inherit it. */
+  demoResolver?: DemoResolver
+  /**
+   * Render "Copy page ▾" (Copy / View as Markdown, Open in ChatGPT / Claude) above the content.
+   * `true` uses the defaults; an object passes options to `DocPageActions`.
+   */
+  pageActions?: boolean | DocPageActionsOptions
+}
+
+function withDemoResolver(resolver: DemoResolver | undefined, children: ReactNode) {
+  return resolver ? <DocstreamDemoContext.Provider value={resolver}>{children}</DocstreamDemoContext.Provider> : children
+}
+
+export function PageActionsBar({ markdown, options }: { markdown: string | (() => string); options: boolean | DocPageActionsOptions | undefined }) {
+  if (!options) return null
+  return (
+    <div className="docs-page-actions-bar">
+      <DocPageActions markdown={markdown} {...(options === true ? {} : options)} />
+    </div>
+  )
+}
+
 // Renders a markdown string inline — used for embedded markdown like
 // OpenAPI descriptions, which can themselves contain GitBook blocks.
 export function MarkdownContent({
   markdown,
   liveRenderer,
   sourceRenderer,
+  demoResolver,
+  pageActions,
   className,
-}: { markdown: string; className?: string } & Renderers) {
-  const doc = parseMarkdown(markdown)
-  return (
+}: { markdown: string; className?: string } & Renderers & DocRenderOptions) {
+  const doc = useMemo(() => parseMarkdown(markdown), [markdown])
+  return withDemoResolver(
+    demoResolver,
     <div data-docstream="" className={className}>
+      <PageActionsBar markdown={markdown} options={pageActions} />
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       <CitationSources citations={doc.citations} />
-    </div>
+    </div>,
   )
 }
 
-export function DocsRenderer({ doc, liveRenderer, sourceRenderer }: { doc: DocumentNode } & Renderers) {
-  return (
+export function DocsRenderer({
+  doc,
+  liveRenderer,
+  sourceRenderer,
+  demoResolver,
+  pageActions,
+  markdown,
+}: { doc: DocumentNode; /** Source for page actions; defaults to `serializeMarkdown(doc)`. */ markdown?: string } & Renderers & DocRenderOptions) {
+  return withDemoResolver(
+    demoResolver,
     <article className="docs-article">
+      <PageActionsBar markdown={markdown ?? (() => serializeMarkdown(doc))} options={pageActions} />
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       <CitationSources citations={doc.citations} />
-    </article>
+    </article>,
   )
 }
