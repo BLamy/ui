@@ -4,8 +4,22 @@ import { AppearanceProvider, MarkdownView, type Appearance } from '@brett_lamy/u
 import { NAV, PAGES, PAGE_ORDER } from '../content';
 import { DocsLive } from '../live/docs-live';
 import { AppDemoBlock, HapticsDemoBlock, PencilDemoBlock, WorkbenchDemoBlock } from '../live/demo-blocks';
+import './registry-ui.css';
+import { BlocksPage } from './blocks';
+import { CopyPage } from './copy-page';
+import { InstallSection } from './install-section';
+import { splitLead } from './page-markdown';
+import { BLOCKS, installFor } from './registry';
 
 const SCROLL_ID = 'bldocs-scroll';
+const BLOCKS_ID = 'blocks';
+
+/* Routes live in the hash — `#/composer`, `#/blocks` — so every page has a link and GitHub Pages needs no rewrites. */
+function slugFromHash(): string {
+  if (typeof window === 'undefined') return 'introduction';
+  const id = window.location.hash.replace(/^#\/?/, '');
+  return id === BLOCKS_ID || PAGES[id] ? id : 'introduction';
+}
 const THEME_KEY = 'bldocs-theme';
 
 /* `?theme=` wins (handy for links and screenshots), then the saved choice, then the OS preference. */
@@ -63,8 +77,20 @@ function NavHeader({ onClose, theme }: { onClose?: () => void; theme: ReactNode 
 }
 
 function NavList({ slug, pick }: { slug: string; pick: (id: string) => void }) {
+  const onBlocks = slug === BLOCKS_ID;
   return (
     <div className="dk-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 10px 10px' }}>
+      <div className="dk-topnav">
+        <button className="dk-topnav-item" data-page="docs" aria-current={!onBlocks ? 'page' : undefined} onClick={() => pick(onBlocks ? 'introduction' : slug)}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5" /></svg>
+          Docs
+        </button>
+        <button className="dk-topnav-item" data-page={BLOCKS_ID} aria-current={onBlocks ? 'page' : undefined} onClick={() => pick(BLOCKS_ID)}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" /></svg>
+          Blocks
+          <span className="dk-topnav-count">{BLOCKS.length}</span>
+        </button>
+      </div>
       {NAV.map((sec) => (
         <div key={sec.section}>
           <div style={{ padding: '16px 10px 5px', fontSize: 10.5, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-muted)' }}>{sec.section}</div>
@@ -94,10 +120,17 @@ function NavFooter() {
   );
 }
 
-interface Seg { key: string; md?: string; demo?: string; live?: string }
+interface Seg { key: string; md?: string; demo?: string; live?: string; install?: boolean }
 
+/** Markdown segments between live blocks; a page with a registry entry gets its Installation after the lead. */
 function parseSegs(slug: string, md: string): Seg[] {
   const segs: Seg[] = [];
+  if (installFor(slug)) {
+    const [lead, rest] = splitLead(md || '');
+    if (lead) segs.push({ key: slug + '-lead', md: lead });
+    segs.push({ key: slug + '-install', install: true });
+    md = rest;
+  }
   const parts = (md || '').split(/^%%(demo|live):(\w+)%%$/m);
   for (let i = 0; i < parts.length; i += 3) {
     const text = parts[i];
@@ -119,7 +152,12 @@ function DemoBlock({ name }: { name: string }) {
 }
 
 export default function App() {
-  const [slug, setSlug] = useState('introduction');
+  const [slug, setSlug] = useState(slugFromHash);
+  useEffect(() => {
+    const onHash = () => { setSlug(slugFromHash()); setNavOpen(false); };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
   const [navOpen, setNavOpen] = useState(false);
   const [appearance, setAppearance] = useState<Appearance>(initialAppearance);
   useEffect(() => { document.documentElement.dataset.theme = appearance; }, [appearance]);
@@ -136,14 +174,16 @@ export default function App() {
     return () => window.removeEventListener('resize', onR);
   }, []);
 
+  const blocks = slug === BLOCKS_ID;
   const page = PAGES[slug] || { id: slug, section: '', title: '', markdown: '' };
+  useEffect(() => { document.title = blocks ? 'Blocks — BL UI' : page.title ? `${page.title} — BL UI` : 'BL UI'; }, [blocks, page.title]);
   const idx = PAGE_ORDER.indexOf(slug);
   const prev = idx > 0 ? PAGE_ORDER[idx - 1] : null;
   const next = idx >= 0 && idx < PAGE_ORDER.length - 1 ? PAGE_ORDER[idx + 1] : null;
   const segs = parseSegs(slug, page.markdown);
   const toc: Array<{ text: string; h3: boolean }> = [];
   let fenced = false;
-  page.markdown.split('\n').forEach((l) => {
+  segs.flatMap((sg) => (sg.install ? ['## Installation'] : (sg.md ?? '').split('\n'))).forEach((l) => {
     if (l.startsWith('```')) fenced = !fenced;
     if (fenced) return;
     const m2 = l.match(/^## (.+)$/);
@@ -154,10 +194,11 @@ export default function App() {
 
   const fixedNav = w >= 900;
   const overlayNav = w < 900;
-  const hasToc = toc.length > 0 && w >= 1220;
+  const hasToc = !blocks && toc.length > 0 && w >= 1220;
 
   const pick = (id: string) => {
-    if (!PAGES[id]) return;
+    if (!PAGES[id] && id !== BLOCKS_ID) return;
+    if (window.location.hash !== '#/' + id) window.history.pushState(null, '', '#/' + id);
     setSlug(id); setNavOpen(false);
     setTimeout(() => { const sc = document.getElementById(SCROLL_ID); if (sc) sc.scrollTop = 0; }, 30);
   };
@@ -176,7 +217,7 @@ export default function App() {
     const href = a.getAttribute('href') || '';
     if (!href.startsWith('#')) return;
     const target = href.slice(1);
-    if (PAGES[target]) { e.preventDefault(); pick(target); }
+    if (PAGES[target] || target === BLOCKS_ID) { e.preventDefault(); pick(target); }
     else e.preventDefault(); /* the prototype's dead '#' links — don't jump the scroller */
   };
 
@@ -220,15 +261,24 @@ export default function App() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16" /></svg>
             </button>
             <span style={{ fontSize: 13.5, fontWeight: 700 }}>BL UI Docs</span>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--dk-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>/ {page.title}</span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--dk-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>/ {blocks ? 'Blocks' : page.title}</span>
             {theme}
           </div>
         ) : null}
         <div id={SCROLL_ID} className="dk-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          {blocks ? (
+            <div className="dk-doc dk-doc-wide" style={{ maxWidth: 1240, margin: '0 auto', padding: w < 600 ? '26px 14px 90px' : '34px 34px 90px', boxSizing: 'border-box' }}>
+              <BlocksPage />
+            </div>
+          ) : (
           <div className="dk-doc" onClick={onDocClick} style={{ maxWidth: 780, margin: '0 auto', padding: '34px 34px 90px', boxSizing: 'border-box' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-accent)', marginBottom: 2 }}>{page.section}</div>
+            <div className="dk-pagehead">
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-accent)' }}>{page.section}</div>
+              <CopyPage page={slug} />
+            </div>
             {segs.map((seg) => (
               <div key={seg.key}>
+                {seg.install ? <div className="dk-md"><InstallSection entry={installFor(slug)!} /></div> : null}
                 {seg.md ? <div className="dk-md"><MarkdownView markdown={seg.md} /></div> : null}
                 {seg.demo ? <DemoBlock name={seg.demo} /> : null}
                 {seg.live ? <DocsLive demo={seg.live} /> : null}
@@ -239,6 +289,7 @@ export default function App() {
               {pn(next, 'next')}
             </div>
           </div>
+          )}
         </div>
       </div>
       {hasToc ? (

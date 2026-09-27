@@ -19,5 +19,36 @@
     "highlight.js": "11.11.2",
     "lowlight": "3.3.0",
     "@brett_lamy/registry": "workspace:*"
+  },
+  "nx": {
+    "targets": {
+      "pages-md": {
+        "cache": true,
+        "inputs": [
+          "production",
+          "^production",
+          "{workspaceRoot}/tools/docs/**/*"
+        ],
+        "outputs": [
+          "{projectRoot}/public/md",
+          "{projectRoot}/public/llms.txt"
+        ]
+      },
+      "build": {
+        "dependsOn": [
+          "^build",
+          {
+            "projects": [
+              "@brett_lamy/registry"
+            ],
+            "target": "registry"
+          },
+          "pages-md"
+        ]
+      }
+    }
+  },
+  "scripts": {
+    "pages-md": "node ../../tools/docs/pages-md.mjs"
   }
 }
