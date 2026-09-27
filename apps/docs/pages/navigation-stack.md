@@ -2,68 +2,24 @@
 
 A controlled stack of screens: push by adding to the array, pop by removing. Edge-swipe back, large titles, sticky subheaders, and the pop is reported — never performed — by the component.
 
-## Installation
-
-{% tabs sync="install" %}
+{% tabs title="Installation" sync="install" %}
 {% tab title="npm" %}
-{% tabs sync="pm" %}
-{% tab title="pnpm" %}
-```sh
-pnpm add @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="yarn" %}
-```sh
-yarn add @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="bun" %}
-```sh
-bun add @brett_lamy/ui
-```
-{% endtab %}
-{% endtabs %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx
+```tsx lineNumbers="false"
 import '@brett_lamy/ui/styles.css'
 
 import { NavigationStack, ScreenWrap } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
-{% tabs sync="pm" %}
-{% tab title="pnpm" %}
-```sh
-pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json
-```
-{% endtab %}
-{% tab title="npm" %}
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json
-```
-{% endtab %}
-{% tab title="yarn" %}
-```sh
-yarn dlx shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json
-```
-{% endtab %}
-{% tab title="bun" %}
-```sh
-bunx --bun shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json
-```
-{% endtab %}
-{% endtabs %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json{% endcommand %}
 
 Adds `@/components/ui/navigation-stack.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx
+```tsx lineNumbers="false"
 import {
   NavigationStack, ScreenWrap,
 } from '@/components/ui/navigation-stack'

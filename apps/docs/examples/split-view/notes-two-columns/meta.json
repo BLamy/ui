@@ -1,7 +1,9 @@
 {
   "title": "SplitView · Notes, two columns",
+  "status": "Live",
   "variants": [
     { "id": "regular", "label": "Regular" },
     { "id": "compact", "label": "Compact" }
-  ]
+  ],
+  "variantsWidth": 200
 }

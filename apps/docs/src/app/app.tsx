@@ -164,7 +164,8 @@ export default function App() {
   markdown.split('\n').forEach((l) => {
     if (l.startsWith('```')) fenced = !fenced;
     if (fenced) return;
-    const m2 = l.match(/^## (.+)$/);
+    // A titled tab set (`{% tabs title="Installation" %}`) renders as an h2 section heading.
+    const m2 = l.match(/^## (.+)$/) ?? l.match(/^\{% tabs title="([^"]+)"/);
     const m3 = l.match(/^### (.+)$/);
     if (m2) toc.push({ text: m2[1].replace(/`/g, ''), h3: false });
     else if (m3) toc.push({ text: m3[1].replace(/`/g, ''), h3: true });

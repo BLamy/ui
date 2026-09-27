@@ -1,8 +1,10 @@
 {
   "title": "TabView · horizontal, vertical, Discord rail",
+  "status": "Live",
   "variants": [
     { "id": "horizontal", "label": "Horizontal" },
     { "id": "vertical", "label": "Vertical" },
     { "id": "discord", "label": "Discord rail" }
-  ]
+  ],
+  "variantsWidth": 300
 }

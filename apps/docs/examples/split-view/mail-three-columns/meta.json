@@ -1,8 +1,10 @@
 {
   "title": "SplitView · Mail, three columns",
+  "status": "Live",
   "variants": [
     { "id": "regular", "label": "Regular" },
     { "id": "medium", "label": "Medium" },
     { "id": "compact", "label": "Compact" }
-  ]
+  ],
+  "variantsWidth": 280
 }

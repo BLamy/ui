@@ -6,6 +6,7 @@ import '@brett_lamy/registry/styles.css';
 import { DemoFullscreen, demoFromSearch } from '@brett_lamy/docstream';
 import { AppearanceProvider } from '@brett_lamy/ui';
 import App from './app/app';
+import RenderPage from './app/render-page';
 import { demoResolver } from './demos';
 
 const root = ReactDOM.createRoot(
@@ -15,15 +16,22 @@ const root = ReactDOM.createRoot(
 /* `?demo=<page>/<example>` (or `blocks/<slug>`, with `&variant=`) renders one demo full screen — the demo viewer's
    "Open in new tab" link. `&theme=dark|light`, else the docs' saved / OS appearance. */
 const demo = demoFromSearch();
-const theme = new URLSearchParams(window.location.search).get('theme') ?? window.localStorage.getItem('bldocs-theme');
+const search = new URLSearchParams(window.location.search);
+/* `?render[&resolver=0]` renders arbitrary docstream Markdown like a page (the Copy page round-trip check). */
+const render = search.has('render');
+const theme = search.get('theme') ?? window.localStorage.getItem('bldocs-theme');
 const appearance = theme === 'dark' || theme === 'light' ? theme : window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-if (demo) document.documentElement.dataset.theme = appearance;
+if (demo || render) document.documentElement.dataset.theme = appearance;
 
 root.render(
   <StrictMode>
     {demo ? (
       <AppearanceProvider value={appearance}>
         <DemoFullscreen src={demo.src} variant={demo.variant} resolver={demoResolver} style={{ width: '100vw', height: '100dvh' }} />
+      </AppearanceProvider>
+    ) : render ? (
+      <AppearanceProvider value={appearance}>
+        <RenderPage resolver={search.get('resolver') !== '0'} />
       </AppearanceProvider>
     ) : <App />}
   </StrictMode>,

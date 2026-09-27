@@ -1,8 +1,10 @@
 {
   "title": "Theming with --bl-syntax-* properties",
+  "status": "Live",
   "variants": [
     { "id": "default", "label": "Default" },
     { "id": "github", "label": "GitHub" },
     { "id": "midnight", "label": "Midnight" }
-  ]
+  ],
+  "variantsWidth": 250
 }

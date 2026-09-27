@@ -228,6 +228,23 @@ a:hover {
   --gb-pill: var(--dk-pill);
   --gb-pill-shadow: var(--dk-pill-shadow);
   --gb-hover: var(--dk-hover);
+  /* The command box's terminal glyph: an inverted chip (foreground square, page-colored glyph). */
+  --gb-term-bg: color-mix(in srgb, var(--dk-fg) 85%, transparent);
+  --gb-term-fg: var(--dk-bg);
+}
+
+/* Titled tab sections (Installation): one 10px rhythm between the command box, the note and the import code.
+   docstream 1.2.0 means the same (`.docs-tabs-section-body > … > *`), but its generic block margin
+   (`:is([data-docstream], .docs-article) [data-docstream-blocks] > .docs-code`) outranks it. */
+.dk-md .wb-md .docs-tabs-section-body > [data-docstream-blocks] > * {
+  margin-block: 0 10px;
+}
+.dk-md .wb-md .docs-tabs-section-body > [data-docstream-blocks] > :last-child {
+  margin-bottom: 0;
+}
+/* The section heading sits centred on the switch's row (the page's h2 rhythm adds padding above other h2s). */
+.dk-doc .wb-md .docs-tabs-section-title {
+  padding-top: 0;
 }
 
 /* "Copy page" sits on the section kicker's row, at the column's right edge. */
@@ -265,7 +282,6 @@ a:hover {
   font-weight: 650;
 }
 .dk-md .docs-demo-single-preview {
-  min-height: 0;
   background: none;
 }
 .dk-md .docs-react-demo-code-body,
@@ -274,6 +290,9 @@ a:hover {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 .dk-md .docs-react-demo-code-body {
+  /* The panel paints the code background; without this the page's `.wb-md pre` (MarkdownView's dark code
+     block) shows through as a near-black strip in light mode. */
+  background: transparent;
   --docs-react-demo-code-line-height: 20px;
   font-size: 12.5px;
   color: var(--dk-fg);
@@ -299,8 +318,9 @@ a:hover {
   --bl-tint: #0A84FF; --bl-green: #34C759; --bl-red: #FF3B30;
   --bl-bar: rgba(250,250,252,.85); --bl-stick: rgba(244,244,248,.92); --bl-side: #ECECF1;
   --bl-scrim: rgba(0,0,0,.38);
+  /* Block flow, not docstream 1.2's grid: in a grid, roots centred with `margin: 0 auto` shrink to fit-content
+     instead of filling up to their max-width. */
   display: block;
-  place-items: normal;
   position: relative;
   overflow: hidden;
   padding: 18px;
@@ -317,9 +337,6 @@ a:hover {
   --bl-bar: rgba(16,16,18,.82); --bl-stick: rgba(18,18,20,.9); --bl-side: #111114;
   --bl-scrim: rgba(0,0,0,.5);
   color-scheme: dark;
-}
-:root .docs-demo-canvas > * {
-  max-width: none;
 }
 :root .docs-demo-canvas.docs-demo-canvas-bleed {
   padding: 0;

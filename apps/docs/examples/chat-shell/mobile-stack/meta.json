@@ -1,5 +1,6 @@
 {
   "title": "Compact stack · SplitView",
+  "status": "Live",
   "variants": [
     { "id": "phone", "label": "Phone" },
     { "id": "tablet", "label": "Tablet" }

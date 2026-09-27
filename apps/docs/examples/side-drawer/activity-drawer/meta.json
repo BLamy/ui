@@ -1,5 +1,6 @@
 {
   "title": "SideDrawer",
+  "status": "Live",
   "variants": [
     { "id": "overlay", "label": "Overlay" },
     { "id": "fixed", "label": "Fixed" }

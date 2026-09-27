@@ -2,68 +2,24 @@
 
 A responsive dialog that renders as a **centered dialog** on desktop and a **floating bottom tray** on phones — with Family-style morphing between stacked states.
 
-## Installation
-
-{% tabs sync="install" %}
+{% tabs title="Installation" sync="install" %}
 {% tab title="npm" %}
-{% tabs sync="pm" %}
-{% tab title="pnpm" %}
-```sh
-pnpm add @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="yarn" %}
-```sh
-yarn add @brett_lamy/ui
-```
-{% endtab %}
-{% tab title="bun" %}
-```sh
-bun add @brett_lamy/ui
-```
-{% endtab %}
-{% endtabs %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx
+```tsx lineNumbers="false"
 import '@brett_lamy/ui/styles.css'
 
 import { Credenza } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
-{% tabs sync="pm" %}
-{% tab title="pnpm" %}
-```sh
-pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/credenza.json
-```
-{% endtab %}
-{% tab title="npm" %}
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/credenza.json
-```
-{% endtab %}
-{% tab title="yarn" %}
-```sh
-yarn dlx shadcn@latest add https://blamy.github.io/ui/r/credenza.json
-```
-{% endtab %}
-{% tab title="bun" %}
-```sh
-bunx --bun shadcn@latest add https://blamy.github.io/ui/r/credenza.json
-```
-{% endtab %}
-{% endtabs %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/credenza.json{% endcommand %}
 
 Adds `@/components/ui/credenza.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx
+```tsx lineNumbers="false"
 import { Credenza } from '@/components/ui/credenza'
 ```
 {% endtab %}

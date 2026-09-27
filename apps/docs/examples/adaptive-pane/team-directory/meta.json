@@ -1,7 +1,9 @@
 {
   "title": "List and detail · column or cover",
+  "status": "Live",
   "variants": [
     { "id": "wide", "label": "Wide" },
     { "id": "narrow", "label": "Narrow" }
-  ]
+  ],
+  "variantsWidth": 190
 }

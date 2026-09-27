@@ -1,10 +1,12 @@
 {
   "title": "FloatingSheet · appearances",
+  "status": "Live",
   "variants": [
     { "id": "glass", "label": "Glass" },
     { "id": "peeking", "label": "Peeking" },
     { "id": "card", "label": "Card" },
     { "id": "docked", "label": "Docked" },
     { "id": "open", "label": "Open" }
-  ]
+  ],
+  "variantsWidth": 370
 }

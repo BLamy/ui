@@ -1,9 +1,11 @@
 {
   "title": "Composer · compositional parts",
+  "status": "Live",
   "variants": [
     { "id": "full", "label": "Full" },
     { "id": "compact", "label": "Compact" },
     { "id": "scroll", "label": "Scroll → FAB" }
   ],
+  "variantsWidth": 300,
   "bleed": true
 }
