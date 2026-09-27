@@ -1,0 +1,7 @@
+{
+  "name": "apple-settings",
+  "title": "Apple Settings",
+  "description": "iOS, iPadOS and macOS Settings in one block: search, an Apple Account header, inset groups with colored icon tiles, and drill-down panes with switches, sliders, pickers and segmented controls. macOS System Settings at desktop, an iPad split on tablets, and a large-title navigation stack on phones. Display & Brightness switches light and dark live.",
+  "categories": ["application", "settings"],
+  "files": ["page.tsx", "sidebar.tsx", "detail.tsx", "phone.tsx", "rows.tsx", "state.ts", "glyphs.tsx", "data.ts"]
+}
