@@ -1,0 +1,19 @@
+{
+  "name": "github-clone",
+  "title": "GitHub clone",
+  "description": "A GitHub repository page: file browser with README and code viewer, issue and pull request lists with labels, a pull request conversation with review timeline, merge box and comment composer, a unified diff for Files changed, and Actions runs. Primer colors in light and dark; collapses to a phone layout with pushed screens.",
+  "categories": ["application", "dashboard"],
+  "files": [
+    "page.tsx",
+    "repo-header.tsx",
+    "code-tab.tsx",
+    "issues-tab.tsx",
+    "pulls-tab.tsx",
+    "lists.tsx",
+    "pull-request.tsx",
+    "actions-tab.tsx",
+    "dialogs.tsx",
+    "parts.tsx",
+    "data.ts"
+  ]
+}
