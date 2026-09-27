@@ -121,6 +121,10 @@ export { Input, inputVariants } from './components/input';
 export type { InputProps } from './components/input';
 export { Textarea, textareaVariants } from './components/textarea';
 export type { TextareaProps } from './components/textarea';
+export { MarkdownEditor, markdownEditorVariants, looksLikeMarkdown, insertMarkdown } from './components/markdown-editor';
+export type {
+  MarkdownEditorProps, MarkdownEditorHandle, MarkdownEditorInstance, MarkdownEditorAttachment,
+} from './components/markdown-editor';
 export { TextField, FieldDescription, FieldError } from './components/text-field';
 export type { TextFieldProps } from './components/text-field';
 export { Checkbox, CheckboxGroup, checkboxVariants } from './components/checkbox';

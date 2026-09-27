@@ -3,8 +3,6 @@ import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
 import type { EditorAttachment } from '@brett_lamy/docstream-editor';
-import { astToTiptap } from '@brett_lamy/docstream-editor/convert';
-import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
 import '@brett_lamy/docstream-editor/styles.css';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
@@ -23,6 +21,7 @@ import { cn } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
 import { WIcon, type WIconName } from '../../lib/workbench/icons';
 import { WbPopover } from './wb-popover';
+import { looksLikeMarkdown, insertMarkdown } from '../markdown-editor';
 import { useComposerAnnotator, type ComposerAnnotator, type ComposerAnnotatorSurface } from './annotator';
 import { animate, AnimatePresence, motion } from 'framer-motion';
 import { MorphText, flipPlay, flipSnapshot, prefersReducedMotion, springs, useSpringSheetDrag, type FlipSnapshot, type SpringSheetDragState } from '../../lib/workbench/motion';
@@ -1191,23 +1190,6 @@ function caretOnPlainLine(editor: ComposerEditor): boolean {
   return empty && $from.depth === 1 && $from.parent.type.name === 'paragraph';
 }
 
-const MARKDOWN_HINTS = [
-  /^\s{0,3}#{1,6}\s/m,
-  /^\s*(?:[-*+]|\d+[.)])\s/m,
-  /^\s*>\s/m,
-  /```/,
-  /\{%\s*[a-z-]+/,
-  /\*\*[^*\n]+\*\*|__[^_\n]+__/,
-  /`[^`\n]+`/,
-  /\[[^\]\n]+\]\([^)\s]+\)/,
-  /^\s*\|.+\|\s*$/m,
-  /^\s*(?:---|\*\*\*)\s*$/m,
-];
-
-function looksLikeMarkdown(text: string): boolean {
-  return MARKDOWN_HINTS.some((pattern) => pattern.test(text));
-}
-
 export interface ComposerInputProps {
   placeholder?: string;
   autoFocus?: boolean;
@@ -1255,10 +1237,7 @@ export function ComposerInput({
     if (data && Array.from(data.files ?? []).some((f) => f.type.startsWith('image/'))) return false;
     const text = data?.getData('text/plain') ?? '';
     if (!looksLikeMarkdown(text) || !editorRef.current) return false;
-    const doc = astToTiptap(parseMarkdown(text));
-    if (!doc.content?.length) return false;
-    editorRef.current.commands.insertContent(doc.content);
-    return true;
+    return insertMarkdown(editorRef.current, text);
   };
   const onEditorReady = React.useCallback(
     (editor: ComposerEditor | null) => {

@@ -271,6 +271,60 @@ body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-ch
 .wb-composer-doc-compact.gb{max-height:44px;padding-right:4px}
 .wb-composer-doc-compact.gb .ProseMirror{min-height:22px;padding:10px 0 9px}
 
+/* ── MarkdownEditor (markdown-editor.tsx) ──
+   The Docstream editor as a field. The wrapper maps the --bl-* tokens onto the shadcn names the editor's
+   stylesheet reads (BL light literals when there is no BLProvider above), so the editor follows light/dark; the
+   same resolved values are copied onto the popovers it portals to <body>. The editor itself is a flex column:
+   the toolbar stays put, the writing area scrolls. */
+.bl-mde{
+  --card:var(--bl-card,#fff);--popover:var(--bl-card,#fff);--background:var(--bl-card,#fff);
+  --foreground:var(--bl-label,#0B0B0F);--card-foreground:var(--bl-label,#0B0B0F);--popover-foreground:var(--bl-label,#0B0B0F);
+  --muted:var(--bl-fill,rgba(120,120,128,.13));--muted-foreground:var(--bl-label2,rgba(60,60,67,.6));
+  --border:var(--bl-sep,rgba(60,60,67,.22));--accent:var(--bl-press,rgba(120,120,128,.16));
+  --accent-foreground:var(--bl-label,#0B0B0F);--primary:var(--bl-tint,#0A84FF);
+  --mde-px:12px;--mde-py:10px
+}
+.bl-mde-sm{--mde-fs:14px;--mde-lh:1.5;--mde-min-h-d:64px;--mde-px:10px;--mde-py:8px}
+.bl-mde-md{--mde-fs:15px;--mde-lh:1.55;--mde-min-h-d:96px}
+.bl-mde-lg{--mde-fs:17px;--mde-lh:1.55;--mde-min-h-d:144px}
+.bl-mde[data-variant="card"]{--mde-px:16px;--mde-py:14px}
+.bl-mde[data-variant="ghost"]{--mde-px:0px;--mde-py:0px}
+.bl-mde .bl-mde-doc.gb{
+  display:flex;flex-direction:column;flex:1 1 auto;width:100%;max-width:none;margin:0;padding:0;box-sizing:border-box;
+  min-height:var(--mde-min-h,var(--mde-min-h-d));max-height:var(--mde-max-h,none);
+  color:inherit;font-size:var(--mde-fs);line-height:var(--mde-lh);--gb-radius:10px
+}
+.bl-mde .bl-mde-doc>.gb-content{display:flex;flex:1 1 auto;flex-direction:column;min-height:0;overflow-y:auto;padding:var(--mde-py) var(--mde-px);scrollbar-width:thin;scrollbar-color:var(--bl-fill2,rgba(128,128,140,.35)) transparent}
+.bl-mde .bl-mde-doc .ProseMirror{flex:1 0 auto;min-height:0;font-size:inherit;line-height:inherit;color:inherit;caret-color:var(--bl-tint,#0A84FF)}
+.bl-mde:is([data-readonly],[data-disabled]) .bl-mde-doc .ProseMirror{caret-color:transparent}
+.bl-mde[data-disabled] .bl-mde-doc{pointer-events:none}
+.bl-mde .bl-mde-doc .ProseMirror>*+*{margin-top:.6em}
+.bl-mde .bl-mde-doc .ProseMirror p{margin:0}
+.bl-mde .bl-mde-doc .ProseMirror :where(blockquote,ul,ol,figure){margin-inline:0;margin-bottom:0}
+.bl-mde .bl-mde-doc .ProseMirror :where(h1,h2,h3,h4,h5,h6){color:inherit;letter-spacing:-.01em}
+.bl-mde .bl-mde-doc .ProseMirror h1{font-size:1.5em;line-height:1.25;font-weight:700;margin-top:.8em}
+.bl-mde .bl-mde-doc .ProseMirror h2{font-size:1.25em;line-height:1.3;font-weight:650;margin-top:.9em;padding-bottom:0;border-bottom:0}
+.bl-mde .bl-mde-doc .ProseMirror h3{font-size:1.08em;line-height:1.35;font-weight:650;margin-top:.8em}
+.bl-mde .bl-mde-doc .ProseMirror>:first-child{margin-top:0}
+.bl-mde .bl-mde-doc .ProseMirror a{color:var(--bl-tint,#0A84FF);text-decoration:none}
+.bl-mde .bl-mde-doc .ProseMirror a:hover{text-decoration:underline}
+.bl-mde .bl-mde-doc .ProseMirror hr{margin:1.2em 0}
+.bl-mde .bl-mde-doc .ProseMirror :not(pre)>code{background:var(--bl-fill,rgba(120,120,128,.13));border-radius:5px;font-size:.86em;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+.bl-mde .bl-mde-doc .ProseMirror p:is(.is-empty,.is-editor-empty):first-child::before{color:var(--bl-label3,rgba(60,60,67,.33))}
+.bl-mde .bl-mde-doc .ProseMirror ul[data-type="taskList"] input{accent-color:var(--bl-tint,#0A84FF)}
+/* Toolbar: a quiet strip above the writing area, divided by a hairline. */
+.bl-mde .bl-mde-doc .gb-toolbar{position:static;flex:none;margin:0;padding:5px 6px;gap:2px;border:0;border-bottom:1px solid var(--bl-sep,rgba(60,60,67,.22));border-radius:0;background:transparent;box-shadow:none}
+.bl-mde .bl-mde-doc .gb-tool{width:28px;height:28px;border-radius:7px;color:var(--bl-label2,rgba(60,60,67,.6));transition:background-color .12s ease,color .12s ease}
+.bl-mde .bl-mde-doc .gb-tool:hover{background:var(--bl-press,rgba(120,120,128,.16));color:var(--bl-label,#0B0B0F)}
+.bl-mde .bl-mde-doc .gb-tool-active{background:var(--bl-fill2,rgba(120,120,128,.24));color:var(--bl-label,#0B0B0F)}
+.bl-mde .bl-mde-doc .gb-toolbar-hint{font-size:12px;color:var(--bl-label3,rgba(60,60,67,.33))}
+.bl-mde .bl-mde-doc .gb-toolbar-hint kbd{border-color:var(--bl-sep,rgba(60,60,67,.22));background:transparent;font-family:inherit;color:var(--bl-label2,rgba(60,60,67,.6))}
+.bl-mde[data-variant="ghost"] .bl-mde-doc .gb-toolbar{padding-left:0;padding-right:0;margin-bottom:8px}
+/* The editor's popovers, dressed by the editor that opened them (tokens copied when they open). */
+[data-markdown-editor-portal] .slash-menu{border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.06)}
+[data-markdown-editor-portal] .slash-item{border-radius:8px}
+[data-markdown-editor-portal][data-scheme="dark"] .slash-menu,.gb-attachment-card[data-markdown-editor-portal][data-scheme="dark"]{box-shadow:0 14px 40px rgba(0,0,0,.5)}
+
 /* ── Composer shape states (motion: one shape, after "Family Values") ──
    The card is the same element in every state; composer.tsx springs its size between them (FLIP) and these
    rules give each state its look. Folded (`fab`): the card is the round button, its content faded and inert,
