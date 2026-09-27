@@ -1,0 +1,7 @@
+{
+  "name": "apple-music",
+  "title": "Apple Music",
+  "description": "Apple Music: Listen Now, Browse, Radio, Search and a Library (Recently Added, Artists, Albums, Songs, playlists) with generated album artwork, album, artist and playlist pages that tint from their artwork, and a mini player that springs open into the full Now Playing screen — scrubber, transport, volume, lyrics and up next — as one morphing element. A SplitView sidebar on desktop and tablet; the iOS tab bar with the mini player above it on phones; light and dark.",
+  "categories": ["application", "media"],
+  "files": ["page.tsx", "now-playing.tsx", "screens.tsx", "sidebar.tsx", "artwork.tsx", "glyphs.tsx", "player.ts", "data.ts"]
+}

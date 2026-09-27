@@ -1,0 +1,7 @@
+{
+  "name": "apple-passwords",
+  "title": "Apple Passwords",
+  "description": "Apple's Passwords app: category tiles with counts (All, Passkeys, Codes, Wi-Fi, Security, Deleted) and shared groups, a searchable item list, and a detail with copy buttons, a password that morphs into view, verification codes with a countdown ring, edit mode, security recommendations by severity, and Wi-Fi networks with a QR code. Three columns on desktop, two on tablet, a pushed stack on phones; light and dark.",
+  "categories": ["application", "security"],
+  "files": ["page.tsx", "sidebar.tsx", "item-list.tsx", "detail.tsx", "parts.tsx", "glyphs.tsx", "vault.ts", "data.ts"]
+}

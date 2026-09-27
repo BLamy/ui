@@ -889,6 +889,128 @@
       }
     },
     {
+      "name": "apple-music",
+      "type": "registry:block",
+      "title": "Apple Music",
+      "description": "Apple Music: Listen Now, Browse, Radio, Search and a Library (Recently Added, Artists, Albums, Songs, playlists) with generated album artwork, album, artist and playlist pages that tint from their artwork, and a mini player that springs open into the full Now Playing screen — scrubber, transport, volume, lyrics and up next — as one morphing element. A SplitView sidebar on desktop and tablet; the iOS tab bar with the mini player above it on phones; light and dark.",
+      "categories": [
+        "application",
+        "media"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/apple-music/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/page.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-music/now-playing.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/now-playing.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-music/screens.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/screens.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-music/sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/sidebar.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-music/artwork.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/artwork.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-music/glyphs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/glyphs.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-music/player.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/player.ts"
+        },
+        {
+          "path": "registry/blocks/apple-music/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/apple-music/page.tsx"
+      }
+    },
+    {
+      "name": "apple-passwords",
+      "type": "registry:block",
+      "title": "Apple Passwords",
+      "description": "Apple's Passwords app: category tiles with counts (All, Passkeys, Codes, Wi-Fi, Security, Deleted) and shared groups, a searchable item list, and a detail with copy buttons, a password that morphs into view, verification codes with a countdown ring, edit mode, security recommendations by severity, and Wi-Fi networks with a QR code. Three columns on desktop, two on tablet, a pushed stack on phones; light and dark.",
+      "categories": [
+        "application",
+        "security"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/apple-passwords/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/page.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-passwords/sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/sidebar.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-passwords/item-list.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/item-list.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-passwords/detail.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/detail.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-passwords/parts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-passwords/glyphs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/glyphs.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-passwords/vault.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/vault.ts"
+        },
+        {
+          "path": "registry/blocks/apple-passwords/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/apple-passwords/page.tsx"
+      }
+    },
+    {
       "name": "discord-clone",
       "type": "registry:block",
       "title": "Discord clone",

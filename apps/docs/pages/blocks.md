@@ -23,3 +23,15 @@ npx shadcn@latest add https://blamy.github.io/ui/r/t3-clone.json
 {% hint style="info" %}
 **Blocks land in `components/blocks/<name>/`.** Render the default export from `page.tsx` in a sized container — blocks fill their parent and adapt to its width, not the window's.
 {% endhint %}
+
+{% demo src="blocks/apple-passwords" layout="multi" %}
+
+```sh
+npx shadcn@latest add https://blamy.github.io/ui/r/apple-passwords.json
+```
+
+{% demo src="blocks/apple-music" layout="multi" %}
+
+```sh
+npx shadcn@latest add https://blamy.github.io/ui/r/apple-music.json
+```
