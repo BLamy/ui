@@ -229,27 +229,54 @@ function serializeImage(n: InlineImageNode): string {
   return n.link ? `<a href="${n.link}">${img}</a>` : img
 }
 
-// Serializes inline nodes back to markdown.
+// Serializes inline nodes back to markdown. Emphasis (bold / italic / strike) is kept open across
+// adjacent runs that share it, so `**bold [link](url) inside**` — three runs under one bold — comes back
+// as written instead of `**bold ****[link](url)**** inside**`.
+type Emphasis = "strike" | "italic" | "bold"
+const EMPHASIS: Emphasis[] = ["strike", "italic", "bold"] // outermost → innermost
+const MARKER: Record<Emphasis, string> = { strike: "~~", italic: "_", bold: "**" }
+
+function textBody(n: TextNode): string {
+  const s = n.code ? n.text : escapeText(n.text)
+  return n.code ? `\`${s}\`` : s
+}
+
 export function serializeInline(nodes: Inline[]): string {
-  return nodes
-    .map((n) => {
-      if (n.type === "image") return serializeImage(n)
-      if (n.type === "reference") return serializeReference(n)
-      // bare autolink: text identical to the URL, no other marks
-      if (n.link && n.text === n.link && !n.bold && !n.italic && !n.strike && !n.code) {
-        return n.link
-      }
-      let s = n.code ? n.text : escapeText(n.text)
-      if (n.code) s = `\`${s}\``
-      const linkInner = n.link && n.linkInner && (n.bold || n.italic || n.strike)
-      if (linkInner) s = `[${s}](${n.link})`
-      if (n.bold) s = `**${s}**`
-      if (n.italic) s = `_${s}_`
-      if (n.strike) s = `~~${s}~~`
-      if (n.link && !linkInner) s = `[${s}](${n.link})`
-      return s
-    })
-    .join("")
+  let out = ""
+  const open: Emphasis[] = []
+  const closeTo = (depth: number) => {
+    while (open.length > depth) out += MARKER[open.pop()!]
+  }
+  for (const n of nodes) {
+    if (n.type !== "text") {
+      closeTo(0)
+      out += n.type === "image" ? serializeImage(n) : serializeReference(n)
+      continue
+    }
+    // bare autolink: text identical to the URL, no other marks
+    if (n.link && n.text === n.link && !n.bold && !n.italic && !n.strike && !n.code) {
+      closeTo(0)
+      out += n.link
+      continue
+    }
+    const wanted = EMPHASIS.filter((m) => n[m])
+    // A link around its emphasis (`[**x**](url)`) is self-contained: close everything, wrap this run alone.
+    if (n.link && !(n.linkInner && wanted.length)) {
+      closeTo(0)
+      let s = textBody(n)
+      for (const m of [...wanted].reverse()) s = `${MARKER[m]}${s}${MARKER[m]}`
+      out += `[${s}](${n.link})`
+      continue
+    }
+    // Keep the longest prefix of open marks this run still wants, close the rest, open what's missing.
+    let keep = 0
+    while (keep < open.length && wanted.includes(open[keep])) keep++
+    closeTo(keep)
+    for (const m of wanted) if (!open.includes(m)) { open.push(m); out += MARKER[m] }
+    out += n.link ? `[${textBody(n)}](${n.link})` : textBody(n)
+  }
+  closeTo(0)
+  return out
 }
 
 export function plainText(nodes: Inline[]): string {
