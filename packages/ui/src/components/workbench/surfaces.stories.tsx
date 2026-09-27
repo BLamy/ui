@@ -1,16 +1,38 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SurfacePanel, SurfaceTabBar, type SurfaceKind } from './surfaces';
+import {
+  SURFACES,
+  SurfacePicker,
+  SurfaceBrowser,
+  SurfaceAppPreview,
+  SurfaceFiles,
+  SurfaceDiff,
+  SurfaceAgents,
+  SurfaceTerminal,
+  type SurfaceKind,
+} from './surfaces';
+import { TerminalBody } from './terminal';
+import {
+  WorkbenchPanel,
+  WorkbenchPanelHeader,
+  WorkbenchPanelTitle,
+  WorkbenchPanelFullscreen,
+  WorkbenchPanelClose,
+  WorkbenchTabBar,
+  WorkbenchTab,
+} from '../../templates/workbench-shell';
+import { IconBtn } from '../../lib/workbench/icons';
 import { WorkbenchTheme } from '../../lib/workbench/theme';
+import { AGENTS, DIFF, FILES } from './fixtures';
 import '../../styles.css';
 
-const meta: Meta<typeof SurfacePanel> = {
+const meta: Meta<typeof WorkbenchPanel> = {
   title: 'Organisms/SurfacePanel',
-  component: SurfacePanel,
+  component: WorkbenchPanel,
   parameters: { layout: 'fullscreen' },
 };
 export default meta;
-type Story = StoryObj<typeof SurfacePanel>;
+type Story = StoryObj<typeof WorkbenchPanel>;
 
 function Frame({ children }: { children: React.ReactNode }) {
   return (
@@ -20,10 +42,38 @@ function Frame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PanelDemo({ initial }: { initial: SurfaceKind | null }) {
+/* A WorkbenchPanel on its own (outside a shell): header parts + one surface body. */
+function PanelDemo({ initial, full: initialFull = false, compact }: { initial: SurfaceKind | null; full?: boolean; compact?: boolean }) {
   const [kind, setKind] = useState<SurfaceKind | null>(initial);
-  const [full, setFull] = useState(false);
-  return <SurfacePanel kind={kind} onOpen={setKind} onClose={() => setKind(null)} full={full} onFull={setFull} />;
+  const [full, setFull] = useState(initialFull);
+  const meta = SURFACES.find((s) => s.k === kind);
+  return (
+    <WorkbenchPanel>
+      <WorkbenchPanelHeader>
+        <WorkbenchPanelTitle icon={meta?.icon}>{meta ? meta.name : 'Surfaces'}</WorkbenchPanelTitle>
+        {meta ? <IconBtn name="chevD" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
+        {!compact ? <WorkbenchPanelFullscreen active={full} onPress={() => setFull(!full)} /> : null}
+        <WorkbenchPanelClose onPress={() => setKind(null)} />
+      </WorkbenchPanelHeader>
+      {kind === 'browser' ? (
+        <SurfaceBrowser url="http://localhost:3000">
+          <SurfaceAppPreview name="app-builder" detail="serving on :3000 · pid 5229" />
+        </SurfaceBrowser>
+      ) : kind === 'terminal' ? (
+        <SurfaceTerminal>
+          <TerminalBody />
+        </SurfaceTerminal>
+      ) : kind === 'files' ? (
+        <SurfaceFiles paths={FILES} selected={['cookbook/src/App.tsx']} />
+      ) : kind === 'diff' ? (
+        <SurfaceDiff oldFile={DIFF.before} newFile={DIFF.after} />
+      ) : kind === 'agents' ? (
+        <SurfaceAgents agents={AGENTS} />
+      ) : (
+        <SurfacePicker onPick={setKind} />
+      )}
+    </WorkbenchPanel>
+  );
 }
 
 export const EmptyPicker: Story = { render: () => <Frame><PanelDemo initial={null} /></Frame> };
@@ -34,26 +84,27 @@ export const Diff: Story = { render: () => <Frame><PanelDemo initial="diff" /></
 export const Agents: Story = { render: () => <Frame><PanelDemo initial="agents" /></Frame> };
 
 /* fullscreen mode toggled on — the expand button becomes "restore" and highlights */
-function FullDemo() {
-  const [kind, setKind] = useState<SurfaceKind | null>('browser');
-  const [full, setFull] = useState(true);
-  return <SurfacePanel kind={kind} onOpen={setKind} onClose={() => setKind(null)} full={full} onFull={setFull} />;
-}
-export const Fullscreen: Story = { render: () => <Frame><FullDemo /></Frame> };
+export const Fullscreen: Story = { render: () => <Frame><PanelDemo initial="browser" full /></Frame> };
 
-/* compact presentation — the fullscreen toggle is hidden; close returns to the Chat tab */
-function CompactDemo() {
-  const [kind, setKind] = useState<SurfaceKind | null>('diff');
-  return <SurfacePanel kind={kind} compact onOpen={setKind} onClose={() => setKind(null)} />;
-}
-export const Compact: Story = { render: () => <Frame><CompactDemo /></Frame> };
+/* compact presentation — no fullscreen toggle (a shell hides it at compact width by itself) */
+export const Compact: Story = { render: () => <Frame><PanelDemo initial="diff" compact /></Frame> };
 
+/* WorkbenchTabBar on its own: every tab reports through onValueChange */
 function TabBarDemo() {
   const [active, setActive] = useState('chat');
   return (
     <WorkbenchTheme style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
       <div style={{ width: 390, border: '1px solid var(--wb-sep)', borderRadius: 12, overflow: 'hidden' }}>
-        <SurfaceTabBar active={active} onPick={setActive} />
+        <WorkbenchTabBar value={active} onValueChange={setActive}>
+          <WorkbenchTab id="chat" icon="msg">
+            Chat
+          </WorkbenchTab>
+          {SURFACES.map((s) => (
+            <WorkbenchTab key={s.k} id={s.k} icon={s.icon}>
+              {s.name}
+            </WorkbenchTab>
+          ))}
+        </WorkbenchTabBar>
       </div>
     </WorkbenchTheme>
   );

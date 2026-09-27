@@ -2,14 +2,21 @@ import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '../../lib/workbench/util';
 import { tick } from '../../lib/workbench/haptics';
-import { WIcon, IconBtn } from '../../lib/workbench/icons';
+import { WIcon, IconBtn, type WIconName } from '../../lib/workbench/icons';
 
-/* ══ Terminal ══ */
+/* ══ Terminal parts ══
+   <TerminalHeader title="zsh — cookbook"><TerminalAction icon="split"/><WorkbenchDockClose/></TerminalHeader>
+   <TerminalBody seed={lines}/>
+   Put them in a WorkbenchDock (inline dock ⇄ compact SnapSheet) or a SurfaceTerminal (panel). */
 export interface TermLine {
+  /** text */
   t: string;
+  /** a prompt line (the command the user typed) */
   p?: boolean;
+  /** color */
   c?: string;
 }
+/** The demo echo shell: ls, pwd, echo, whoami, npm run dev, clear, help. */
 export function fakeShell(cmd: string, files: string[]): TermLine[] | 'CLEAR' {
   const c = cmd.trim();
   if (!c) return [];
@@ -32,13 +39,20 @@ export function fakeShell(cmd: string, files: string[]): TermLine[] | 'CLEAR' {
 }
 export const TERM_FILES = ['package.json', 'src', 'blui.jsx', 'workbench.jsx', 'vite.config.js'];
 
-export interface TermBodyProps {
+export interface TerminalBodyProps {
+  /** lines already in the scrollback */
   seed?: TermLine[];
+  /** runs a command; return lines to print, or `'CLEAR'`. Defaults to the demo `fakeShell`. */
+  run?: (cmd: string) => TermLine[] | 'CLEAR';
+  /** prompt: `user cwd %` */
+  user?: string;
+  cwd?: string;
   autoFocus?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
-export function TermBody({ seed, autoFocus, className, style }: TermBodyProps) {
+/** A tiny interactive shell: scrollback, prompt, input. */
+export function TerminalBody({ seed, run: runProp, user = 'dev@workbench', cwd = 'cookbook', autoFocus, className, style }: TerminalBodyProps) {
   const [hist, setHist] = useState<TermLine[]>(seed || []);
   const [val, setVal] = useState('');
   const sc = useRef<HTMLDivElement>(null),
@@ -49,12 +63,11 @@ export function TermBody({ seed, autoFocus, className, style }: TermBodyProps) {
   }, [hist]);
   const prompt = (
     <span>
-      <span className="text-[#7EE0B8]">dev@workbench</span> <span className="text-[#8AB4FF]">cookbook</span>{' '}
-      <span className="text-wb-label3">%</span>
+      <span className="text-[#7EE0B8]">{user}</span> <span className="text-[#8AB4FF]">{cwd}</span> <span className="text-wb-label3">%</span>
     </span>
   );
   const run = () => {
-    const out = fakeShell(val, TERM_FILES);
+    const out = runProp ? runProp(val) : fakeShell(val, TERM_FILES);
     if (out === 'CLEAR') setHist([]);
     else setHist((h) => [...h, { t: val, p: true }, ...out]);
     setVal('');
@@ -63,7 +76,7 @@ export function TermBody({ seed, autoFocus, className, style }: TermBodyProps) {
   return (
     <div
       ref={sc}
-      data-slot="term-body"
+      data-slot="terminal-body"
       className={cn(
         'wb-term wb-scroll min-h-0 flex-1 cursor-text overflow-y-auto px-3.5 py-2.5 font-mono text-[12.5px] leading-[1.62] text-[#D4D4DE]',
         className,
@@ -105,67 +118,36 @@ export function TermBody({ seed, autoFocus, className, style }: TermBodyProps) {
   );
 }
 
-export interface TermHeaderProps {
-  onClose?: () => void;
-  title?: string;
+export interface TerminalHeaderProps {
+  title?: React.ReactNode;
+  /** TerminalAction buttons (and a WorkbenchDockClose), at the end */
+  children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }
-export function TermHeader({ onClose, title, className, style }: TermHeaderProps) {
+/** Session title bar: icon, title, actions. */
+export function TerminalHeader({ title = 'zsh', children, className, style }: TerminalHeaderProps) {
   return (
-    <div
-      data-slot="term-header"
-      className={cn('flex shrink-0 items-center gap-1 border-b border-wb-sep py-[5px] pr-2 pl-3.5', className)}
-      style={style}
-    >
+    <div data-slot="terminal-header" className={cn('flex shrink-0 items-center gap-1 border-b border-wb-sep py-[5px] pr-2 pl-3.5', className)} style={style}>
       <WIcon name="term" size={14} sw={1.8} className="text-wb-label3" />
-      <span className="ml-1 text-[12px] font-semibold text-wb-label2">{title || 'zsh — cookbook'}</span>
+      <span className="ml-1 text-[12px] font-semibold text-wb-label2">{title}</span>
       <span className="flex-1" />
-      <IconBtn name="split" label="Split terminal" size={15} onPress={tick} />
-      <IconBtn name="plus" label="New terminal" size={15} onPress={tick} />
-      <IconBtn name="trash" label="Close terminal" size={15} onPress={onClose} />
+      {children}
     </div>
   );
 }
 
-export interface TerminalDockProps {
-  h: number;
-  setH: (h: number) => void;
-  onClose?: () => void;
-  seed?: TermLine[];
-  className?: string;
-  style?: React.CSSProperties;
-}
-export function TerminalDock({ h, setH, onClose, seed, className, style }: TerminalDockProps) {
-  const st = useRef<{ y0: number; h0: number } | null>(null);
-  const down = (e: React.PointerEvent<HTMLDivElement>) => {
-    st.current = { y0: e.clientY, h0: h };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const move = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!st.current) return;
-    setH(Math.min(520, Math.max(110, st.current.h0 - (e.clientY - st.current.y0))));
-  };
-  const up = () => {
-    st.current = null;
-  };
+export function TerminalAction({ icon, label, onPress, className }: { icon: WIconName; label: string; onPress?: () => void; className?: string }) {
   return (
-    <div
-      data-slot="terminal-dock"
-      className={cn('wb-term relative flex h-(--dock-h) shrink-0 flex-col border-t border-wb-sep bg-wb-term', className)}
-      // the dock height is user-resized at runtime
-      style={{ '--dock-h': h + 'px', ...style } as React.CSSProperties}
-    >
-      <div
-        data-slot="terminal-dock-resize"
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={up}
-        className="absolute -top-[3px] right-0 left-0 z-2 h-[7px] cursor-ns-resize touch-none"
-      />
-      <TermHeader onClose={onClose} />
-      <TermBody seed={seed} />
-    </div>
+    <IconBtn
+      name={icon}
+      label={label}
+      size={15}
+      className={className}
+      onPress={() => {
+        tick();
+        onPress?.();
+      }}
+    />
   );
 }

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SnapSheet } from './snap-sheet';
-import { TermHeader, TermBody } from './terminal';
+import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
 import { WorkbenchTheme } from '../../lib/workbench/theme';
-import { TERM_SEED } from '../../demos/workbench-demo';
+import { TERMINAL_SEED } from './fixtures';
 import '../../styles.css';
 
 const meta: Meta<typeof SnapSheet> = {
@@ -34,8 +34,12 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
           </div>
         </div>
         <SnapSheet open={open} onClose={() => setOpen(false)} snaps={[0.52, 0.93]} bg="#0C0C10">
-          <TermHeader onClose={() => setOpen(false)} />
-          <TermBody seed={TERM_SEED} />
+          <TerminalHeader title="zsh — cookbook">
+            <TerminalAction icon="split" label="Split terminal" />
+            <TerminalAction icon="plus" label="New terminal" />
+            <TerminalAction icon="trash" label="Close terminal" onPress={() => setOpen(false)} />
+          </TerminalHeader>
+          <TerminalBody seed={TERMINAL_SEED} />
         </SnapSheet>
       </div>
     </WorkbenchTheme>
