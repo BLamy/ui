@@ -63,8 +63,8 @@ If `items` is omitted or empty, the component retains its A-Z form:
 - Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `ContentSwap`, `Celebrate`
 - Foundations: `BLProvider`, `Icon`, `Avatar`, `Spinner`, token helpers
 - Team chat: `ChatShell`, `WorkspaceRail`, `ChannelList`, `Message`, `ChatComposer`, `ThreadPreview`, `RichText`, `ChatUsersProvider`, `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer`
-- Workbench: `WorkbenchShell`, `Composer` and its parts, `ModelPicker`, `MessageScroller`, `ChatView`, `ThreadSidebar`, `TerminalDock`, `SnapSheet`, `SurfacePanel`, `MarkdownView`
-- Demo apps: `ChatDemo`, `WorkbenchDemo`, `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo`, `HapticsPlayground`
+- Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), thread sidebar parts (`ThreadSidebar`, `ThreadList`, `ThreadGroup`, `ThreadItem`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `SnapSheet`, `MarkdownView`
+- Demo apps: `ChatDemo`, `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo`, `HapticsPlayground`
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.
 
@@ -103,29 +103,39 @@ export function Chat() {
 
 ## Workbench
 
-An adaptive IDE scaffold: thread navigation, chat, a terminal dock, and pluggable right-side surfaces. The same composition becomes desktop columns (1120px and wider), a right-edge drawer (760–1119px), or compact full-screen surfaces with a snap sheet — measured from the shell's own container, not the viewport.
+An adaptive IDE scaffold built from parts: a thin `WorkbenchShell` root that measures itself and owns region state, and parts you place yourself. Each part picks its presentation from the shell's width class — desktop columns (1120px and wider), a right-edge panel drawer (760–1119px), or a hamburger sidebar, compact panel page, bottom tab bar, and snap-sheet dock below that — measured from the shell's own container, not the viewport. The full T3 Code-style app is the `t3-clone` registry block.
 
 ```tsx
-import { WorkbenchShell, useWorkbenchShell } from '@brett_lamy/ui';
-
-function Header() {
-  const { compact, setSideSheet, panel, setPanel } = useWorkbenchShell();
-  return <MyHeader onOpenNavigation={compact ? () => setSideSheet(true) : undefined} panelOpen={panel} onTogglePanel={() => setPanel((open) => !open)} />;
-}
+import {
+  WorkbenchShell, WorkbenchSidebar, WorkbenchMain, WorkbenchHeader, WorkbenchSidebarTrigger, WorkbenchTitle,
+  WorkbenchActions, WorkbenchDockTrigger, WorkbenchPanelTrigger, WorkbenchDock, WorkbenchPanel,
+  WorkbenchTabBar, WorkbenchTab,
+} from '@brett_lamy/ui';
 
 export function Workbench() {
   return (
     <WorkbenchShell tint="#0a84ff">
-      <WorkbenchShell.Sidebar><ThreadList /></WorkbenchShell.Sidebar>
-      <WorkbenchShell.Main><><Header /><Conversation /></></WorkbenchShell.Main>
-      <WorkbenchShell.Dock><TerminalDock /></WorkbenchShell.Dock>
-      <WorkbenchShell.DockSheet><TerminalBody /></WorkbenchShell.DockSheet>
-      <WorkbenchShell.Panel><ProjectSurface /></WorkbenchShell.Panel>
-      <WorkbenchShell.TabBar><MobileSurfaceTabs /></WorkbenchShell.TabBar>
+      <WorkbenchSidebar><Threads /></WorkbenchSidebar>
+      <WorkbenchMain>
+        <WorkbenchHeader>
+          <WorkbenchSidebarTrigger />
+          <WorkbenchTitle project="cookbook">{thread.title}</WorkbenchTitle>
+          <WorkbenchActions><WorkbenchDockTrigger /><WorkbenchPanelTrigger /></WorkbenchActions>
+        </WorkbenchHeader>
+        <Chat />
+        <WorkbenchDock><Terminal /></WorkbenchDock>
+      </WorkbenchMain>
+      <WorkbenchPanel><Surfaces /></WorkbenchPanel>
+      <WorkbenchTabBar value={surface} onValueChange={setSurface}>
+        <WorkbenchTab id="chat" icon="msg">Chat</WorkbenchTab>
+        <WorkbenchTab id="diff" icon="diff">Diff</WorkbenchTab>
+      </WorkbenchTabBar>
     </WorkbenchShell>
   );
 }
 ```
+
+Descendants read and drive the shell with `useWorkbenchShell()` (`sidebarOpen`, `dockOpen`, `panelOpen`, `panelFullscreen`, their setters and toggles, `widthClass`, `compact`).
 
 `Composer` is compositional (like shadcn's InputGroup): `Composer` owns the draft, `ComposerCard` holds `ComposerInput` (the `@brett_lamy/docstream-editor` WYSIWYG editor; pasted images become attachment chips) and addons (`ComposerFooter`, `ComposerSelect`, `ModelPicker`, `ComposerSend`, …), and `ComposerBump`s attach above or below the card. `WorkbenchComposer` is the default composition. `MarkdownView` renders replies with `@brett_lamy/docstream`; `SurfaceFiles` and `SurfaceDiff` use `@pierre/trees` and `@pierre/diffs`.
 
