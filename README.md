@@ -284,8 +284,78 @@ half-arrived tag is hidden rather than shown as text.
 examples/button/sizes/
   index.tsx     ← default export: ({ variant }) => …
   Sizes.css
-  meta.json     ← { title, description, height, variants: [{ id, label }], entry, layout, bleed }
+  meta.json     ← { title, description, height, variants: [{ id, label }], entry, layout, bleed,
+                    className, surface, status, variantsWidth }
 ```
+
+`meta.height` is a minimum for single-file previews (in-page components may grow
+past it) and the stage height for the multi-file viewer. `className` / `surface`
+(a style object, CSS custom properties welcome) style the preview canvas,
+`status` shows a small label in the header ("Live", "Needs network"), and
+`variantsWidth` sizes the variant switch. Block-level demo roots fill the canvas
+width; intrinsically sized ones (a button, an image) are centred.
+
+#### Demos that carry their files (block form)
+
+A `{% demo %}` can carry its files inline, one titled fence per file (entry
+first, or `entry="App.tsx"`), closed by `{% enddemo %}`. A file that contains
+fences gets a longer fence. This is what **Copy page** produces, so a copied page
+renders back as the same page anywhere:
+
+`````md
+{% demo src="composer/scroll-fab" title="Scroll → FAB" height="380" variants="full:Full,compact:Compact" %}
+```tsx title="index.tsx"
+import { items } from "./data"
+export default function ScrollFab({ variant }) { … }
+```
+```ts title="data.ts"
+export const items = ["a", "b"]
+```
+````md title="README.md"
+```sh
+npm start
+```
+````
+{% enddemo %}
+`````
+
+The self-closing tag (`{% demo … %}` or `{% demo … /%}`) keeps working. A tag
+followed by a blank line and an ordinary code block (no `{% enddemo %}`) means
+what it did before 1.2: a demo, then a code block. While streaming, a block whose
+`{% enddemo %}` hasn't arrived is `open`: its code shows, its preview waits.
+
+| The block has… | and there is… | Preview | Code view |
+| --- | --- | --- | --- |
+| `src` only | a resolver that knows `src` | the component, in-page | the resolver's files |
+| inline files | a resolver that knows `src` (its `list()` includes it, and it loads) | the component, in-page | the resolver's files (they win) |
+| inline files | no resolver, or one that doesn't know `src` | the files, run by the `demoRuntime` | the inline files |
+| inline files | no runtime (e.g. the `/streamdown` entry) | a one-line note; the viewer opens on Code | the inline files |
+| `src` only | no resolver | a placeholder chip | — |
+
+The package root's `GitbookStreamdown` (`PlaygroundStreamdown`) runs inline demos
+in almost-node by default. Elsewhere pass `demoRuntime`:
+
+```tsx
+import { createAlmostNodeDemoRuntime } from "@brett_lamy/docstream/playground"
+
+const demoRuntime = createAlmostNodeDemoRuntime({ workspaceOptions: { basePath: "/docs" } })
+
+<MarkdownContent markdown={page} demoResolver={demoResolver} demoRuntime={demoRuntime}
+  demoDependencies={{ "@brett_lamy/ui": "^1.2.0" }} />
+```
+
+How it runs (`createInlineDemoProject`): the files go under `/src/demo/`; a tiny
+wrapper entry imports the entry file's default export (or first exported
+function) and renders it with `variant` from the iframe's `?variant=` query, so
+switching variants reloads the iframe, not Vite. An entry that mounts itself
+(`createRoot(…)`) is used directly and gets no `variant`. npm imports: `react`
+and `react-dom` are provided; `demoDependencies` (or a `package.json` among the
+files) declares others. Limits: almost-node resolves bare imports from esm.sh at
+the declared major version, so packages must work as browser ESM there; CSS
+imported from packages may not load (import the CSS file from the demo instead,
+or inline it); each inline demo boots its own container (the fullscreen overlay
+boots a second one). `preloadDemos(resolver, srcs)` settles resolver demos before
+the first render (server rendering, static export).
 
 Tell docstream where demos live with a `DemoResolver`. With Vite, three
 `import.meta.glob` maps are enough:
@@ -317,15 +387,21 @@ root and from `@brett_lamy/docstream/demo`, not from the Node-only `./vite` entr
 `pageActions` renders a shadcn-style **Copy page ▾** above the content, with
 Copy as Markdown, View as Markdown, Open in ChatGPT and Open in Claude. Pass
 `true`, or pass options such as `{ markdownUrl, pageUrl, prompt, actions, transform }`.
-You can also place `<DocPageActions markdown={page} />` yourself. Copying
-resolves every `{% demo %}` into its real files as titled fences, so the copied
-page is self-contained. The same resolution is available as a pure helper for
-build-time `.md` or `llms.txt` generation:
+You can also place `<DocPageActions markdown={page} />` yourself. Copy and View
+give **renderable docstream Markdown**: every `{% demo %}` keeps its tag (with its
+`meta.json` defaults folded in as attributes) and gains its files inline, and
+everything else is returned byte-for-byte, so pasting the copy into docstream
+renders the same page — with or without the resolver. Open in ChatGPT / Claude
+send the page URL. The same resolution is a pure helper for build-time `.md` or
+`llms.txt` generation; the plain form is only produced when you ask for it:
 
 ```ts
 import { resolveDemosToMarkdown } from "@brett_lamy/docstream/demo"
 
-const md = await resolveDemosToMarkdown(page, demoResolver)
+const md = await resolveDemosToMarkdown(page, demoResolver) // renderable (default)
+const prompt = await resolveDemosToMarkdown(page, demoResolver, { format: "plain" })
+// plain: "**Example — Title**" + fences per demo, commands as npm `sh` fences,
+// titled tab sets as a heading + a bold label per tab — for LLM prompts only.
 ```
 
 ### Synced tabs (install instructions)
@@ -351,7 +427,61 @@ pnpm add @brett_lamy/docstream
 {% endtabs %}
 ````
 
-Every code block now also has a copy button.
+Every code block has a copy button. Untitled blocks show just the code with the
+button floating top-right; a header bar appears only when the block has a
+`title` (file name).
+
+### Installation sections and command boxes
+
+`{% command %}` holds **one** npm / npx command. docstream derives the pnpm,
+yarn and bun forms and shows them as tabs (pnpm first) with a terminal glyph and
+a copy button; the reader's manager is synced page-wide and across visits (key
+`pm`, shared with `{% tabs sync="pm" %}`). Derivations: `npm install|i x` → `pnpm
+add x` / `yarn add x` / `bun add x` (`-D`, `-E`, `-O`, `-g` mapped), `npm install`
+→ `<pm> install`, `npm uninstall x` → `<pm> remove x`, `npx x` / `npm exec x` →
+`pnpm dlx x` / `yarn dlx x` / `bunx x`, `npm run s` → `pnpm s` / `yarn s` / `bun
+run s`, `npm test|start` → `pnpm test` / `bun run test`, `npm create x` → `<pm>
+create x`; other lines (comments, `cd`) are kept, `a && b` is converted per part.
+Override a manager verbatim with `pnpm="…"`, `yarn="…"` or `bun="…"`; use another
+sync group with `sync="…"`. Multi-line commands use the block form:
+
+```md
+{% command %}npm install @brett_lamy/ui{% endcommand %}
+
+{% command bun="bun add -d vitest" %}
+npm install -D vitest
+npm run test -- --watch
+{% endcommand %}
+```
+
+A tab set with a `title` renders as a section: the title is a real heading
+(`h2`, or `level="3"`/`"4"`) with an anchor id, the tab switch sits as pill tabs
+on the right of the heading row, and the active tab's blocks follow in the page
+flow (no card around them). `documentOutline(doc)` lists these titles with the
+page's headings for a table of contents.
+
+`````md
+{% tabs title="Installation" sync="install-method" %}
+{% tab title="npm" %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
+
+Import the stylesheet once at your app's entry, then the parts:
+
+```tsx
+import '@brett_lamy/ui/styles.css'
+import { Composer } from '@brett_lamy/ui'
+```
+{% endtab %}
+
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/composer.json{% endcommand %}
+{% endtab %}
+{% endtabs %}
+`````
+
+Both round-trip through `parseMarkdown`/`serializeMarkdown`, are kept as they are
+by Copy page, and a half-streamed one-line `{% command %}` is held back until it
+closes.
 
 ## Assets and OpenAPI Specs
 
@@ -378,7 +508,10 @@ You can also resolve paths yourself with `resolveAsset`.
 - `createBundledSourceClient`: Imports bundled source modules in read-only production builds.
 - `DemoViewer` / `DemoFullscreen`: The `{% demo %}` viewer, and one demo filling the viewport (for `?demo=` deep links).
 - `createGlobDemoResolver`, `demoHref`, `demoFromSearch`: Build a `DemoResolver` from `import.meta.glob` maps; deep-link helpers.
-- `resolveDemosToMarkdown(markdown, resolver)`: Inlines each `{% demo %}` as its real files (pure, async).
+- `resolveDemosToMarkdown(markdown, resolver, { format })`: Gives each `{% demo %}` its real files inline — renderable docstream by default, `format: "plain"` for LLM prompts (pure, async).
+- `inlineDemoMarkdown(node, files, meta)`: One demo as a pasteable block-form `{% demo %}`.
+- `preloadDemos(resolver, srcs)`: Settle resolver demos before the first render (SSR, static export).
+- `createAlmostNodeDemoRuntime(options)` / `InlineDemoPreview` / `createInlineDemoProject(files, { entry, dependencies })` (`/playground`): Run inline demo files in almost-node.
 - `DocPageActions`: The "Copy page ▾" menu.
 
 ### Parser and Serializer
@@ -391,6 +524,9 @@ You can also resolve paths yourself with `resolveAsset`.
 - `serializeInline(nodes)`: Serializes inline nodes.
 - `plainText(nodes)`: Extracts plain text from inline nodes.
 - `refDefinitions(markdown)`: Reads reference-style link definitions.
+- `packageManagerCommands(npmCommand, overrides)`: The npm / pnpm / yarn / bun forms of a command.
+- `documentOutline(doc)` / `slugify(text)`: Headings (incl. titled tab sets) with anchor ids, for a TOC.
+- `flattenForPlainMarkdown(doc)`: docstream-only blocks (commands, titled tabs) as plain Markdown.
 
 ### Types
 
@@ -411,7 +547,9 @@ The package CSS is intentionally token-driven. It uses normal CSS variables and 
 }
 ```
 
-Import the CSS once, then set tokens globally in your app. Components also expose stable classes such as `docs-code`, `docs-tabs`, `docs-hint`, `docs-table`, and `docs-openapi`.
+Import the CSS once, then set tokens globally in your app. The command box's
+terminal glyph has its own tokens (`--gb-term-bg`, `--gb-term-fg`), so setting
+panel colors to `currentColor` doesn't blank it. Components also expose stable classes such as `docs-code`, `docs-tabs`, `docs-hint`, `docs-table`, and `docs-openapi`.
 
 Code highlighting follows the surrounding `color-scheme`: set `color-scheme: dark` on a dark page (or any dark container) and code switches to the dark palette. Each token color is a custom property (`--docs-tok-keyword`, `--docs-tok-string`, `--docs-tok-type`, `--docs-tok-function`, `--docs-tok-number`, `--docs-tok-constant`, `--docs-tok-operator`, `--docs-tok-comment`) if you want your own palette.
 

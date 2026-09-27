@@ -1,6 +1,6 @@
 /* Small accessible controls shared by the demo viewer, tabs and page actions: a pill tab strip
    (tabs semantics, roving focus) and a segmented radio group. */
-import { useId, type KeyboardEvent, type ReactNode } from "react"
+import { useId, type CSSProperties, type KeyboardEvent, type ReactNode } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 
 export interface PillOption<T extends string> {
@@ -96,18 +96,21 @@ export function Segmented<T extends string>({
   onChange,
   label,
   className,
+  style,
 }: {
   options: readonly PillOption<T>[]
   value: T
   onChange: (id: T) => void
   label: string
   className?: string
+  style?: CSSProperties
 }) {
   const layoutId = useId()
   const reduced = useReducedMotion()
   return (
     <div
       className={className ? `docs-pills docs-segmented ${className}` : "docs-pills docs-segmented"}
+      style={style}
       role="radiogroup"
       aria-label={label}
       onKeyDown={(event) => rovingKeyDown(event, options.map((o) => o.id), value, onChange)}

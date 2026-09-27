@@ -11,6 +11,11 @@ export interface TextNode {
   strike?: boolean
   code?: boolean
   link?: string
+  /**
+   * The link sits inside the emphasis (`**[x](url)**`) rather than around it
+   * (`[**x**](url)`, the default). Kept so the source round-trips byte-for-byte.
+   */
+  linkInner?: true
 }
 
 /** Inline HTML image, optionally wrapped in a link — GitHub README badge style. */
@@ -93,6 +98,33 @@ export interface TabsNode {
    * Sync group (`{% tabs sync="pm" %}`). Every tab set with the same key follows
    * the reader's last choice (matched by tab title), remembered across pages.
    */
+  sync?: string
+  /**
+   * Section title (`{% tabs title="Installation" %}`). The tab set renders as a
+   * section: this title as a heading (with an anchor id), the tab switch as pill
+   * tabs right-aligned in that header, and the active tab's blocks below.
+   */
+  title?: string
+  /** Heading level of `title` (`level="3"`). Defaults to 2. */
+  level?: 2 | 3 | 4
+}
+
+export type PackageManager = "npm" | "pnpm" | "yarn" | "bun"
+
+/**
+ * A package-manager command box: `{% command %}npm install x{% endcommand %}`.
+ * The author writes one canonical npm / npx command; renderers derive the pnpm,
+ * yarn and bun forms (see `packageManagerCommands`), unless overridden per
+ * manager (`pnpm="…"`). The reader's manager is synced page-wide (and across
+ * pages) under `sync` — `"pm"` by default, the same key install `{% tabs %}` use.
+ */
+export interface CommandNode {
+  type: "command"
+  /** The npm / npx command (may span lines). */
+  command: string
+  /** Explicit commands for other managers, used verbatim instead of the derived ones. */
+  overrides?: Partial<Record<Exclude<PackageManager, "npm">, string>>
+  /** Sync key. Omitted means `"pm"`. */
   sync?: string
 }
 
@@ -282,6 +314,7 @@ export type Block =
   | CodeBlockNode
   | HintNode
   | TabsNode
+  | CommandNode
   | ExpandableNode
   | StepperNode
   | EmbedNode

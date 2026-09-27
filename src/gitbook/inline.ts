@@ -155,7 +155,8 @@ export function parseInline(src: string, marks: Marks = {}): Inline[] {
       const m = rest.match(/^\[([^\]]*)\]\(([^)\s]+)\)/)
       if (m) {
         flush()
-        out.push(...parseInline(m[1], { ...marks, link: m[2] }))
+        const inner = marks.bold || marks.italic || marks.strike ? { linkInner: true as const } : {}
+        out.push(...parseInline(m[1], { ...marks, link: m[2], ...inner }))
         i += m[0].length
         continue
       }
@@ -240,10 +241,12 @@ export function serializeInline(nodes: Inline[]): string {
       }
       let s = n.code ? n.text : escapeText(n.text)
       if (n.code) s = `\`${s}\``
+      const linkInner = n.link && n.linkInner && (n.bold || n.italic || n.strike)
+      if (linkInner) s = `[${s}](${n.link})`
       if (n.bold) s = `**${s}**`
       if (n.italic) s = `_${s}_`
       if (n.strike) s = `~~${s}~~`
-      if (n.link) s = `[${s}](${n.link})`
+      if (n.link && !linkInner) s = `[${s}](${n.link})`
       return s
     })
     .join("")

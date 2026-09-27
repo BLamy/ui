@@ -44,7 +44,7 @@ describe("a full docs page", () => {
     // …and the AST survives a second trip unchanged.
     expect(parseMarkdown(serializeMarkdown(doc))).toEqual(doc)
     expect(doc.children.map((b) => b.type)).toEqual(expect.arrayContaining([
-      "heading", "paragraph", "tabs", "hint", "code", "demo", "table", "source-ref", "stepper", "columns",
+      "heading", "paragraph", "tabs", "command", "hint", "code", "demo", "table", "source-ref", "stepper", "columns",
       "expandable", "list", "blockquote", "divider", "math", "figure", "embed", "content-ref", "updates", "openapi-operation",
     ]))
     expect(doc.citations).toEqual([{ id: "1", url: "https://example.com/buttons", label: "Button guidelines" }])

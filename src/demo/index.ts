@@ -1,5 +1,5 @@
 export { DocstreamDemoContext, DocstreamDemoRuntimeContext, useDemoResolver, useDemoRuntime } from "./context"
-export { DemoBlock, DemoFullscreen, DemoViewer } from "./DemoViewer"
+export { DemoBlock, DemoFullscreen, DemoViewer, preloadDemos } from "./DemoViewer"
 export type { DemoFullscreenProps, DemoViewerProps } from "./DemoViewer"
 export {
   createGlobDemoResolver,

@@ -227,3 +227,21 @@ describe("resolveDemosToMarkdown { format: 'plain' }", () => {
     expect(out).toBe("basic: index.tsx")
   })
 })
+
+describe("createGlobDemoResolver typing", () => {
+  it("accepts import.meta.glob maps without explicit generics", async () => {
+    // What `import.meta.glob(…, { query: "?raw", import: "default" })` and an eager meta glob
+    // return when no generic is given.
+    const sources: Record<string, () => Promise<unknown>> = { "./x/a/b/index.tsx": async () => "code" }
+    const rawModules: Record<string, () => Promise<unknown>> = { "./x/a/b/extra.ts": async () => ({ default: "raw" }) }
+    const metas: Record<string, unknown> = { "./x/a/b/meta.json": { title: "T" } }
+    const resolver = createGlobDemoResolver({
+      root: "./x",
+      modules: { "./x/a/b/index.tsx": async () => ({ default: Index }) },
+      sources: { ...sources, ...rawModules },
+      metas,
+    })
+    expect((await resolver.files("a/b")).map((f) => f.content)).toEqual(["code", "raw"])
+    await expect(resolver.meta("a/b")).resolves.toEqual({ title: "T" })
+  })
+})

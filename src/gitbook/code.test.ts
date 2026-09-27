@@ -54,3 +54,15 @@ describe("fenced code metadata", () => {
     expect(serializeMarkdown(parseMarkdown(markdown))).toBe(markdown + "\n")
   })
 })
+
+describe("inline link / emphasis nesting", () => {
+  it("round-trips **[x](url)** and [**x**](url) as written", () => {
+    for (const md of [
+      "See **[the guide](https://example.com)** first.\n",
+      "See [**the guide**](https://example.com) first.\n",
+      "An _[italic link](https://example.com)_ and ~~[gone](https://example.com)~~.\n",
+    ]) {
+      expect(serializeMarkdown(parseMarkdown(md))).toBe(md)
+    }
+  })
+})

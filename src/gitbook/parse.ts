@@ -1,6 +1,7 @@
 import type {
   Block,
   ColumnNode,
+  CommandNode,
   DemoInlineFile,
   DemoLayout,
   DemoNode,
@@ -222,6 +223,20 @@ export function parseDemoVariants(raw: string): DemoVariantOption[] {
     .filter((v) => v.id)
 }
 
+/** `{% command %}npm install x{% endcommand %}` on one line. */
+const COMMAND_ONE_LINE_RE = /^\s*\{%\s*command(\s[^%]*?)?\s*%\}(.*?)\{%\s*endcommand\s*%\}\s*$/
+
+function commandNode(attrs: Record<string, string>, raw: string): CommandNode {
+  const overrides: NonNullable<CommandNode["overrides"]> = {}
+  for (const pm of ["pnpm", "yarn", "bun"] as const) if (attrs[pm]) overrides[pm] = attrs[pm]
+  return {
+    type: "command",
+    command: raw.replace(/^(?:[ \t]*\n)+/, "").replace(/(?:\n[ \t]*)+$/, "").trim(),
+    ...(Object.keys(overrides).length ? { overrides } : {}),
+    ...(attrs.sync && attrs.sync !== "pm" ? { sync: attrs.sync } : {}),
+  }
+}
+
 const ENDDEMO_RE = /^\s*\{%\s*enddemo\s*%\}\s*$/
 
 interface DemoBody {
@@ -323,6 +338,10 @@ export function trimPartialInlineToken(md: string): string {
   return md
     // A block tag still arriving (`{% demo src="butt`) would flash as a paragraph.
     .replace(/(^|\n)[ \t]*\{(?:%(?:(?!%\})[^\n])*)?$/, "$1")
+    // A one-line command still arriving (`{% command %}npm i x{% endcomm`): hold the line back
+    // until it closes. (The multi-line form, `{% command %}` alone on its line, renders as it grows.)
+    .replace(/(^|\n)[ \t]*\{%\s*command\b[^\n]*?%\}[ \t]*\S[^\n]*$/, (line: string, lead: string) =>
+      /\{%\s*endcommand\s*%\}\s*$/.test(line) ? line : lead)
     // A fence still arriving (a lone ` or ``) would end a demo block and flash as text.
     .replace(/(^|\n)[ \t]*(?:`{1,2}|~{1,2})$/, "$1")
     .replace(/\[\^[^\]]*$/, "")
@@ -353,6 +372,14 @@ export function parseBlocks(lines: string[]): Block[] {
       continue
     }
 
+    const oneLine = line.match(COMMAND_ONE_LINE_RE)
+    if (oneLine) {
+      flushParagraph()
+      blocks.push(commandNode(parseAttrs(oneLine[1]), oneLine[2]))
+      i++
+      continue
+    }
+
     const tag = templateTag(line)
     if (tag) {
       flushParagraph()
@@ -369,7 +396,21 @@ export function parseBlocks(lines: string[]): Block[] {
 
       if (tag.name === "tabs") {
         const { body, next } = collectUntil(lines, i + 1, "tabs")
-        blocks.push({ type: "tabs", tabs: parseTabs(body), ...(tag.attrs.sync ? { sync: tag.attrs.sync } : {}) })
+        const level = Number(tag.attrs.level)
+        blocks.push({
+          type: "tabs",
+          tabs: parseTabs(body),
+          ...(tag.attrs.sync ? { sync: tag.attrs.sync } : {}),
+          ...(tag.attrs.title ? { title: tag.attrs.title } : {}),
+          ...(tag.attrs.title && (level === 3 || level === 4) ? { level: level as 3 | 4 } : {}),
+        })
+        i = next
+        continue
+      }
+
+      if (tag.name === "command") {
+        const { body, next } = collectUntil(lines, i + 1, "command")
+        blocks.push(commandNode(tag.attrs, body.join("\n")))
         i = next
         continue
       }

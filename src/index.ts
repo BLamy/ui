@@ -21,6 +21,7 @@ export {
   demoComponentFrom,
   demoFromSearch,
   demoHref,
+  preloadDemos,
   resolveDemosToMarkdown,
   sortDemoFiles,
   toInlineFiles,
@@ -108,3 +109,7 @@ export {
 export { Streamdown } from "streamdown"
 export type { StreamdownProps } from "streamdown"
 export type * from "./gitbook/ast"
+export { PACKAGE_MANAGERS, packageManagerCommands } from "./gitbook/package-managers"
+export { flattenBlocks, flattenForPlainMarkdown } from "./gitbook/flatten"
+export { documentOutline, slugify } from "./gitbook/outline"
+export type { OutlineEntry } from "./gitbook/outline"

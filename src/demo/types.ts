@@ -7,7 +7,11 @@ export type DemoVariant = DemoVariantOption
 export interface DemoMeta {
   title?: string
   description?: string
-  /** Preview height: pixels, or any CSS length (`"60vh"`, `"auto"`). */
+  /**
+   * Preview height: pixels, or any CSS length (`"60vh"`, `"auto"`). Single-file previews
+   * treat it as a **minimum** (the card grows with its content); the multi-file viewer's
+   * resizable stage and inline-demo iframes use it as the height.
+   */
   height?: number | string
   variants?: DemoVariant[]
   /** Entry file, relative to the demo folder. Defaults to `index.tsx`. */
@@ -15,6 +19,17 @@ export interface DemoMeta {
   layout?: DemoLayout
   /** Drop the padded preview surface for demos that bring their own full-bleed frame. */
   bleed?: boolean
+  /** Extra class on the preview canvas (the surface the component renders on). */
+  className?: string
+  /**
+   * Inline style for the preview canvas: CSS custom properties or plain properties,
+   * e.g. `{ "background": "var(--brand-50)", "--demo-gap": "12px" }`.
+   */
+  surface?: Record<string, string | number>
+  /** A short status shown in the demo header, e.g. `"Live"` or `"Needs network"`. */
+  status?: string
+  /** Width of the variant switch (px number or CSS length); its options share it equally. */
+  variantsWidth?: number | string
 }
 
 export interface DemoFile {

@@ -80,6 +80,29 @@ function cacheFor(resolver: DemoResolver) {
   return cache
 }
 
+/**
+ * Resolve demos ahead of rendering (meta, files and component), so the first render — including
+ * server rendering and static export — shows them resolved instead of loading. Failures are
+ * remembered too, so inline-file fallbacks apply immediately.
+ */
+export async function preloadDemos(resolver: DemoResolver, srcs: string[]): Promise<void> {
+  const cache = cacheFor(resolver)
+  const settle = async (key: string, run: () => Promise<unknown>) => {
+    try {
+      cache.set(key, { status: "ready", value: await run() })
+    } catch (cause) {
+      cache.set(key, { status: "error", error: cause instanceof Error ? cause : new Error(String(cause)) })
+    }
+  }
+  await Promise.all(
+    srcs.flatMap((src) => [
+      settle(`meta:${src}`, () => resolver.meta(src)),
+      settle(`files:${src}`, () => resolver.files(src)),
+      settle(`load:${src}`, () => resolver.load(src)),
+    ]),
+  )
+}
+
 /** Resolves `run()` once `active`, remembering settled values so remounts don't flash. */
 function useResolved<T>(resolver: DemoResolver | undefined, key: string, active: boolean, run: () => Promise<T>): Loaded<T> {
   const cached = resolver ? (cacheFor(resolver).get(key) as Loaded<T> | undefined) : undefined
@@ -204,11 +227,18 @@ type PreviewSource =
 export const NO_RUNTIME_NOTE = "Live preview needs the playground runtime. The code is shown instead."
 
 /** The rendered demo on its canvas. */
-function DemoCanvas({ src, preview, variant, bleed }: {
+/** The canvas's class and inline style from `meta.className` / `meta.surface`. */
+interface CanvasLook {
+  className?: string
+  surface?: Record<string, string | number>
+}
+
+function DemoCanvas({ src, preview, variant, bleed, look }: {
   src: string
   preview: PreviewSource
   variant: string | undefined
   bleed?: boolean
+  look?: CanvasLook
 }) {
   if (preview.kind === "unavailable" || preview.kind === "streaming") {
     return (
@@ -226,7 +256,11 @@ function DemoCanvas({ src, preview, variant, bleed }: {
   }
   const { component } = preview
   return (
-    <div className={bleed ? "docs-demo-canvas docs-demo-canvas-bleed" : "docs-demo-canvas"} data-variant={variant}>
+    <div
+      className={["docs-demo-canvas", bleed ? "docs-demo-canvas-bleed" : "", look?.className ?? ""].filter(Boolean).join(" ")}
+      style={look?.surface as CSSProperties | undefined}
+      data-variant={variant}
+    >
       {component.status === "ready" ? (
         <DemoErrorBoundary src={src}>
           {createElement(component.value, variant === undefined ? {} : { variant })}
@@ -449,18 +483,32 @@ function NewTabLink({ href, title }: { href: string | undefined; title: string }
   )
 }
 
-function VariantSwitch({ variants, value, onChange, title }: {
+function VariantSwitch({ variants, value, onChange, title, width }: {
   variants: DemoVariant[] | undefined
   value: string | undefined
   onChange: (id: string) => void
   title: string
+  width?: number | string
 }) {
   if (!variants?.length || value === undefined) return null
-  return <Segmented options={variants} value={value} onChange={onChange} label={`${title} variant`} className="docs-demo-variants" />
+  return (
+    <Segmented
+      options={variants}
+      value={value}
+      onChange={onChange}
+      label={`${title} variant`}
+      className={width === undefined ? "docs-demo-variants" : "docs-demo-variants docs-demo-variants-sized"}
+      style={width === undefined ? undefined : { width: typeof width === "number" ? `${width}px` : width }}
+    />
+  )
+}
+
+function StatusBadge({ status }: { status: string | undefined }) {
+  return status ? <span className="docs-demo-status">{status}</span> : null
 }
 
 /** A full-viewport overlay (native modal dialog: top layer, focus trap, Esc to close). */
-function FullscreenDialog({ open, onClose, title, src, variants, variant, onVariant, preview, bleed, href }: {
+function FullscreenDialog({ open, onClose, title, src, variants, variant, onVariant, preview, bleed, look, variantsWidth, href }: {
   open: boolean
   onClose: () => void
   title: string
@@ -470,6 +518,8 @@ function FullscreenDialog({ open, onClose, title, src, variants, variant, onVari
   onVariant: (id: string) => void
   preview: PreviewSource
   bleed?: boolean
+  look?: CanvasLook
+  variantsWidth?: number | string
   href?: string
 }) {
   const ref = useRef<HTMLDialogElement | null>(null)
@@ -492,14 +542,14 @@ function FullscreenDialog({ open, onClose, title, src, variants, variant, onVari
             <span id={titleId} className="docs-demo-title">{title}</span>
             <span className="docs-demo-dialog-src">{src}</span>
             <span className="docs-demo-spacer" />
-            <VariantSwitch variants={variants} value={variant} onChange={onVariant} title={title} />
+            <VariantSwitch variants={variants} value={variant} onChange={onVariant} title={title} width={variantsWidth} />
             <NewTabLink href={href} title={title} />
             <button type="button" className="docs-demo-icon-btn" onClick={onClose} aria-label="Close fullscreen" title="Close (Esc)" autoFocus>
               <X width={16} height={16} aria-hidden="true" />
             </button>
           </div>
           <div className="docs-demo-dialog-stage">
-            <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} />
+            <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} look={look} />
           </div>
         </div>
       ) : null}
@@ -551,6 +601,9 @@ export function DemoViewer(props: DemoViewerProps) {
     layoutPref !== "auto" ? layoutPref : fileList ? (fileList.length > 1 ? "multi" : "single") : null
   const heightValue = props.height ?? metaValue?.height
   const bleed = metaValue?.bleed
+  const look: CanvasLook | undefined = metaValue
+  const variantsWidth = metaValue?.variantsWidth
+  const status = metaValue?.status
   const [fullscreen, setFullscreen] = useState(false)
   const href = mode === "resolver" ? resolver?.href?.(src, variant ? { variant } : undefined) : undefined
   const baseId = useId()
@@ -598,6 +651,8 @@ export function DemoViewer(props: DemoViewerProps) {
       onVariant={setVariant}
       preview={preview}
       bleed={bleed}
+      look={look}
+      variantsWidth={variantsWidth}
       href={href}
     />
   )
@@ -614,15 +669,17 @@ export function DemoViewer(props: DemoViewerProps) {
               {description ? <span className="docs-demo-desc"><InlineMarkdown text={description} /></span> : null}
             </span>
             <span className="docs-demo-spacer" />
-            <VariantSwitch variants={variants} value={variant} onChange={setVariant} title={title} />
+            <StatusBadge status={status} />
+            <VariantSwitch variants={variants} value={variant} onChange={setVariant} title={title} width={variantsWidth} />
             {runnable ? <FullscreenButton onOpen={() => setFullscreen(true)} title={title} /> : null}
           </header>
           {runnable ? (
             <div
               className="docs-react-demo-preview docs-demo-single-preview"
-              style={{ height: cssLength(heightValue, preview.kind === "runtime" ? "360px" : "auto") }}
+              // A hint, not a cap: in-page components may grow past it. An iframe needs a real height.
+              style={preview.kind === "runtime" ? { height: cssLength(heightValue, "360px") } : { minHeight: cssLength(heightValue, "120px") }}
             >
-              {near ? <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} /> : <Spinner />}
+              {near ? <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} look={look} /> : <Spinner />}
             </div>
           ) : (
             <DemoCanvas src={src} preview={preview} variant={variant} />
@@ -659,6 +716,9 @@ export function DemoViewer(props: DemoViewerProps) {
       height={cssLength(heightValue, "480px")}
       viewport={props.viewport}
       bleed={bleed}
+      look={look}
+      status={status}
+      variantsWidth={variantsWidth}
       href={href}
       onFullscreen={() => setFullscreen(true)}
       copyDemo={fileList?.length ? copyDemo : undefined}
@@ -667,7 +727,7 @@ export function DemoViewer(props: DemoViewerProps) {
   )
 }
 
-function MultiFileViewer({ rootRef, className, baseId, mode, src, title, description, variants, variant, onVariant, files, preview, near, height, viewport, bleed, href, onFullscreen, copyDemo, dialog }: {
+function MultiFileViewer({ rootRef, className, baseId, mode, src, title, description, variants, variant, onVariant, files, preview, near, height, viewport, bleed, look, status, variantsWidth, href, onFullscreen, copyDemo, dialog }: {
   rootRef: MutableRefObject<HTMLElement | null>
   className: string
   baseId: string
@@ -684,6 +744,9 @@ function MultiFileViewer({ rootRef, className, baseId, mode, src, title, descrip
   height: string
   viewport: DemoViewport | undefined
   bleed: boolean | undefined
+  look: CanvasLook | undefined
+  status: string | undefined
+  variantsWidth: number | string | undefined
   href: string | undefined
   onFullscreen: () => void
   copyDemo: (() => string) | undefined
@@ -715,7 +778,8 @@ function MultiFileViewer({ rootRef, className, baseId, mode, src, title, descrip
             tabId={(id) => `${baseId}-tab-${id}`}
             panelId={(id) => `${baseId}-panel-${id}`}
           />
-          <VariantSwitch variants={variants} value={variant} onChange={onVariant} title={title} />
+          <StatusBadge status={status} />
+          <VariantSwitch variants={variants} value={variant} onChange={onVariant} title={title} width={variantsWidth} />
           {tab === "preview" && runnable ? (
             <div className="docs-demo-viewports" role="group" aria-label="Preview width">
               {VIEWPORTS.map(({ id, label, width: w, Icon }) => (
@@ -742,7 +806,7 @@ function MultiFileViewer({ rootRef, className, baseId, mode, src, title, descrip
         <div id={`${baseId}-panel-preview`} role="tabpanel" aria-labelledby={`${baseId}-tab-preview`} hidden={tab !== "preview"}>
           {runnable ? (
             <PreviewStage width={width} onResize={setWidth} height={height}>
-              {near ? <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} /> : <Spinner />}
+              {near ? <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} look={look} /> : <Spinner />}
             </PreviewStage>
           ) : (
             <DemoCanvas src={src} preview={preview} variant={variant} />
@@ -802,7 +866,7 @@ export function DemoFullscreen({ src, resolver: override, variant, className, st
   if (!resolver) return <DemoError message={`No demo resolver for ${src}`} />
   return (
     <div className={className ? `docs-demo-fullscreen ${className}` : "docs-demo-fullscreen"} style={style} data-demo-src={src}>
-      <DemoCanvas src={src} preview={{ kind: "component", component }} variant={chosen} bleed={metaValue?.bleed} />
+      <DemoCanvas src={src} preview={{ kind: "component", component }} variant={chosen} bleed={metaValue?.bleed} look={metaValue} />
     </div>
   )
 }

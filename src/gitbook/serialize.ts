@@ -49,10 +49,26 @@ function serializeBlock(b: Block): string {
     case "hint":
       return `{% hint style="${b.style}" %}\n${serializeBlocks(b.children)}\n{% endhint %}`
 
-    case "tabs":
-      return `{% tabs${b.sync ? ` sync="${b.sync}"` : ""} %}\n${b.tabs
+    case "tabs": {
+      const attrs = [
+        b.title ? ` title="${b.title}"` : "",
+        b.title && b.level && b.level !== 2 ? ` level="${b.level}"` : "",
+        b.sync ? ` sync="${b.sync}"` : "",
+      ].join("")
+      return `{% tabs${attrs} %}\n${b.tabs
         .map((t) => `{% tab title="${t.title}" %}\n${serializeBlocks(t.children)}\n{% endtab %}`)
         .join("\n\n")}\n{% endtabs %}`
+    }
+
+    case "command": {
+      const attrs = [
+        ...(["pnpm", "yarn", "bun"] as const).map((pm) => (b.overrides?.[pm] ? ` ${pm}="${b.overrides[pm]}"` : "")),
+        b.sync && b.sync !== "pm" ? ` sync="${b.sync}"` : "",
+      ].join("")
+      return b.command.includes("\n")
+        ? `{% command${attrs} %}\n${b.command}\n{% endcommand %}`
+        : `{% command${attrs} %}${b.command}{% endcommand %}`
+    }
 
     case "expandable":
       return `<details>\n\n<summary>${b.summary}</summary>\n\n${serializeBlocks(b.children)}\n\n</details>`

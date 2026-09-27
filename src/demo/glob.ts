@@ -12,13 +12,15 @@ export interface GlobDemoResolverOptions {
   /**
    * Raw file contents, e.g.
    * `import.meta.glob("./examples/**\/*.{ts,tsx,css,json}", { query: "?raw", import: "default" })`.
+   * Values are file text (or loaders of it); no `<string>` generic is needed. A module
+   * object with a string `default` (a `?raw` glob without `import: "default"`) also works.
    */
-  sources: Record<string, MaybeLazy<string>>
+  sources: Record<string, MaybeLazy<unknown>>
   /**
    * Folder metadata, e.g.
    * `import.meta.glob("./examples/*\/*\/meta.json", { eager: true, import: "default" })`.
    */
-  metas?: Record<string, MaybeLazy<DemoMeta | { default: DemoMeta }>>
+  metas?: Record<string, MaybeLazy<unknown>>
   /**
    * The glob prefix the `<page>/<example>` ids are relative to, e.g. `"./examples"`.
    * When omitted, a demo's id is the last two folders of its entry path.
@@ -135,11 +137,17 @@ export function createGlobDemoResolver(options: GlobDemoResolverOptions): DemoRe
           const entry = await entryFor(src)
           const found = Object.entries(options.sources)
             .map(([key, value]) => ({ path: inFolder(src, key), value }))
-            .filter((f): f is { path: string; value: MaybeLazy<string> } =>
+            .filter((f): f is { path: string; value: MaybeLazy<unknown> } =>
               !!f.path && f.path !== "meta.json" && !options.exclude?.(f.path, src))
           const files = await Promise.all(found.map(async ({ path, value }) => {
             const content = await unwrap(value)
-            return { path, content: typeof content === "string" ? content : String(content), language: languageForPath(path) }
+            const text =
+              typeof content === "string"
+                ? content
+                : content && typeof content === "object" && typeof (content as { default?: unknown }).default === "string"
+                  ? (content as { default: string }).default
+                  : String(content)
+            return { path, content: text, language: languageForPath(path) }
           }))
           return sortDemoFiles(files, entry)
         })()

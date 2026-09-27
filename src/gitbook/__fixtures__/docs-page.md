@@ -25,6 +25,28 @@ Buttons need a **label**.
 - use `aria-label`
 {% endhint %}
 
+{% tabs title="Installation" sync="install-method" %}
+{% tab title="npm" %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
+
+Import the stylesheet once, then the parts:
+
+```tsx
+import '@brett_lamy/ui/styles.css'
+import { Button } from '@brett_lamy/ui'
+```
+{% endtab %}
+
+{% tab title="shadcn CLI" %}
+{% command pnpm="pnpm dlx shadcn@latest add button" %}npx shadcn@latest add https://example.com/r/button.json{% endcommand %}
+{% endtab %}
+{% endtabs %}
+
+{% command %}
+npm install -D vitest
+npm run test -- --watch
+{% endcommand %}
+
 ## Usage
 
 ```tsx title="App.tsx"

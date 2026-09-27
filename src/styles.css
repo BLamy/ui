@@ -24,6 +24,10 @@
   --gb-pill-shadow: 0 1px 2px rgba(15, 15, 35, 0.14), 0 0 0 0.5px rgba(15, 15, 35, 0.1);
   --gb-hover: rgba(128, 128, 128, 0.12);
   --gb-menu-shadow: 0 14px 34px -10px rgba(15, 15, 35, 0.28), 0 2px 6px rgba(15, 15, 35, 0.08);
+  /* The terminal glyph in command boxes. Its own tokens (not --gb-panel-foreground), so a host
+     that sets panel colors to currentColor still gets a visible glyph. */
+  --gb-term-bg: rgba(128, 128, 128, 0.2);
+  --gb-term-fg: var(--gb-muted-foreground);
 
   /* Semantic hint palette — solid color plus precomputed tints. Matches the
      editor palette in @brett_lamy/docstream-editor/styles.css. */
@@ -146,6 +150,10 @@
 
 :is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-cards, .docs-code, .docs-math, .docs-hint, .docs-tabs, .docs-demo, .docs-expandable, .docs-stepper, .docs-mermaid-preview, .oas, .docs-embed, .docstream-viz, figure, blockquote, ul, ol, hr) {
   margin-block: 0.75em;
+}
+
+:is([data-docstream], .docs-article) [data-docstream-blocks] > .docs-tabs-section {
+  margin-block: 1.6em 0.9em;
 }
 
 :is([data-docstream], .docs-article) a {
@@ -1370,13 +1378,14 @@
   margin: -3px 0;
 }
 
+/* Untitled code blocks: no header bar, just the code and a copy button in its top-right corner. */
 .docs-code-copy-float {
   position: absolute;
-  top: 7px;
-  right: 7px;
+  top: 9px;
+  right: 9px;
   z-index: 1;
-  background: var(--gb-panel);
-  opacity: 0;
+  background: transparent;
+  opacity: 0.75;
 }
 
 .docs-code:hover .docs-code-copy-float,
@@ -1506,9 +1515,45 @@
   width: 20px;
   height: 20px;
   border-radius: 5px;
-  background: var(--gb-panel-foreground);
-  color: var(--gb-panel);
-  opacity: 0.85;
+  background: var(--gb-term-bg, rgba(128, 128, 128, 0.2));
+  color: var(--gb-term-fg, #71717a);
+}
+
+/* ---- Titled tabs (`{% tabs title="Installation" %}`): heading + pill switch, then the tab ---- */
+
+.docs-tabs-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+:is([data-docstream], .docs-article) .docs-tabs-section-head .docs-tabs-section-title {
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+  scroll-margin-top: 80px;
+}
+
+.docs-tabs-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.docs-tabs-section-body > [data-docstream-blocks] > * {
+  margin-block: 0 10px;
+}
+
+.docs-tabs-section-body > [data-docstream-blocks] > :last-child {
+  margin-bottom: 0;
+}
+
+.docs-tabs-section-body > [data-docstream-blocks] > p {
+  color: var(--gb-muted-foreground);
+  font-size: 0.93em;
 }
 
 .docs-tabs-code-title {
@@ -1900,9 +1945,12 @@
   opacity: 1;
 }
 
+/* Block-level demo roots fill the width (place-items: center would shrink them to their
+   content); content is centred vertically, and intrinsically sized roots horizontally. */
 .docs-demo-canvas {
   display: grid;
-  place-items: center;
+  align-content: center;
+  justify-items: stretch;
   box-sizing: border-box;
   min-height: 100%;
   padding: 28px 24px;
@@ -1910,7 +1958,12 @@
 }
 
 .docs-demo-canvas > * {
+  min-width: 0;
   max-width: 100%;
+}
+
+.docs-demo-canvas > :where(button, a, img, svg, video, canvas, input, select, textarea, label, span, code) {
+  justify-self: center;
 }
 
 .docs-demo-canvas-bleed {
@@ -2189,8 +2242,25 @@
 }
 
 .docs-demo-single-preview {
+  display: grid;
   min-height: 120px;
   background: var(--background, var(--gb-panel));
+}
+
+.docs-demo-status {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--gb-pill-track);
+  color: var(--gb-muted-foreground);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.docs-demo-variants-sized .docs-pill {
+  flex: 1 1 0;
 }
 
 /* Fullscreen overlay + deep link */

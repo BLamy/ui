@@ -11,7 +11,9 @@ import {
   XCircle,
 } from "lucide-react"
 
-import type { Block, CodeBlockNode, DocumentNode, Inline, SourceRefNode } from "../gitbook/ast"
+import type { Block, CodeBlockNode, CommandNode, DocumentNode, Inline, PackageManager, SourceRefNode } from "../gitbook/ast"
+import { PACKAGE_MANAGERS, packageManagerCommands } from "../gitbook/package-managers"
+import { slugify } from "../gitbook/outline"
 import { resolveAsset } from "../assets"
 import { parseMarkdown } from "../gitbook/parse"
 import { serializeMarkdown } from "../gitbook/serialize"
@@ -19,7 +21,7 @@ import { DocstreamDemoContext, DocstreamDemoRuntimeContext } from "../demo/conte
 import { DemoBlock } from "../demo/DemoViewer"
 import type { DemoResolver, InlineDemoRuntime } from "../demo/types"
 import { CopyButton } from "./copy"
-import { rovingKeyDown } from "./controls"
+import { PillTabs, rovingKeyDown } from "./controls"
 import { DocPageActions, type DocPageActionsOptions } from "./PageActions"
 import { useSyncedTab } from "./tabs-sync"
 import { ReplayPreview, isReplayQaUrl } from "../replay"
@@ -120,28 +122,24 @@ function codeOnlyTabs(block: Extract<Block, { type: "tabs" }>): CodeBlockNode[] 
   return codes
 }
 
-function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, { type: "tabs" }> } & Renderers) {
-  const [local, setLocal] = useState(0)
-  const [synced, setSynced] = useSyncedTab(block.sync)
-  const syncedIndex = synced === null ? -1 : block.tabs.findIndex((t) => t.title === synced)
-  const active = Math.min(syncedIndex >= 0 ? syncedIndex : local, Math.max(0, block.tabs.length - 1))
-  const baseId = useId()
+/** The underline tab strip shared by tab sets and command boxes. */
+function TabStrip({ titles, active, onSelect, label, baseId }: {
+  titles: string[]
+  active: number
+  onSelect: (index: number) => void
+  label: string
+  baseId: string
+}) {
   const reduced = useReducedMotion()
-  const codes = useMemo(() => codeOnlyTabs(block), [block])
-  const select = (index: number) => {
-    setLocal(index)
-    const title = block.tabs[index]?.title
-    if (block.sync && title !== undefined) setSynced(title)
-  }
-  const ids = block.tabs.map((_, i) => String(i))
-  const header = (
+  const ids = titles.map((_, i) => String(i))
+  return (
     <div
       className="docs-tabs-header"
       role="tablist"
-      aria-label={block.sync ? `${block.sync} options` : "Content tabs"}
-      onKeyDown={(event) => rovingKeyDown(event, ids, String(active), (id) => select(Number(id)))}
+      aria-label={label}
+      onKeyDown={(event) => rovingKeyDown(event, ids, String(active), (id) => onSelect(Number(id)))}
     >
-      {block.tabs.map((t, i) => (
+      {titles.map((title, i) => (
         <button
           key={i}
           id={`${baseId}-tab-${i}`}
@@ -152,7 +150,7 @@ function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, {
           aria-controls={`${baseId}-panel`}
           tabIndex={i === active ? 0 : -1}
           className={i === active ? "docs-tab-active" : ""}
-          onClick={() => select(i)}
+          onClick={() => onSelect(i)}
         >
           {i === active ? (
             <motion.span
@@ -161,11 +159,89 @@ function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, {
               transition={reduced ? { duration: 0 } : { type: "spring", bounce: 0.2, duration: 0.6 }}
             />
           ) : null}
-          <span className="docs-tab-label">{t.title}</span>
+          <span className="docs-tab-label">{title}</span>
         </button>
       ))}
     </div>
   )
+}
+
+/** `{% command %}`: one npm command, shown for the reader's package manager (synced page-wide). */
+function CommandBox({ block }: { block: CommandNode }) {
+  const [synced, setSynced] = useSyncedTab(block.sync ?? "pm")
+  const [local, setLocal] = useState<PackageManager>(PACKAGE_MANAGERS[0])
+  const active: PackageManager = synced && (PACKAGE_MANAGERS as readonly string[]).includes(synced) ? (synced as PackageManager) : local
+  const commands = useMemo(() => packageManagerCommands(block.command, block.overrides), [block.command, block.overrides])
+  const baseId = useId()
+  const index = PACKAGE_MANAGERS.indexOf(active)
+  const select = (i: number) => {
+    const pm = PACKAGE_MANAGERS[i]
+    setLocal(pm)
+    setSynced(pm)
+  }
+  return (
+    <div className="docs-tabs docs-tabs-code docs-command" data-sync={block.sync ?? "pm"} data-pm={active}>
+      <div className="docs-tabs-code-head">
+        <span className="docs-tabs-code-term" aria-hidden="true">
+          <Terminal width={12} height={12} strokeWidth={2.4} />
+        </span>
+        <TabStrip titles={[...PACKAGE_MANAGERS]} active={index} onSelect={select} label="Package manager" baseId={baseId} />
+        <span className="docs-tabs-code-title" />
+        <CopyButton text={commands[active]} label={`Copy ${active} command`} />
+      </div>
+      <div className="docs-tabs-code-body" role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${index}`}>
+        <pre>
+          <HighlightedCode code={commands[active]} language="sh" lineNumbers={false} />
+        </pre>
+      </div>
+    </div>
+  )
+}
+
+function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, { type: "tabs" }> } & Renderers) {
+  const [local, setLocal] = useState(0)
+  const [synced, setSynced] = useSyncedTab(block.sync)
+  const syncedIndex = synced === null ? -1 : block.tabs.findIndex((t) => t.title === synced)
+  const active = Math.min(syncedIndex >= 0 ? syncedIndex : local, Math.max(0, block.tabs.length - 1))
+  const baseId = useId()
+  const codes = useMemo(() => codeOnlyTabs(block), [block])
+  const select = (index: number) => {
+    setLocal(index)
+    const title = block.tabs[index]?.title
+    if (block.sync && title !== undefined) setSynced(title)
+  }
+  const header = (
+    <TabStrip
+      titles={block.tabs.map((t) => t.title)}
+      active={active}
+      onSelect={select}
+      label={block.sync ? `${block.sync} options` : "Content tabs"}
+      baseId={baseId}
+    />
+  )
+
+  if (block.title) {
+    const Heading = `h${block.level ?? 2}` as const
+    const headingId = slugify(block.title)
+    return (
+      <section className="docs-tabs-section" data-sync={block.sync} aria-labelledby={headingId}>
+        <div className="docs-tabs-section-head">
+          <Heading id={headingId} className="docs-tabs-section-title">{block.title}</Heading>
+          <PillTabs
+            options={block.tabs.map((t, i) => ({ id: String(i), label: t.title }))}
+            value={String(active)}
+            onChange={(id) => select(Number(id))}
+            label={`${block.title}: ${block.sync ? `${block.sync} options` : "options"}`}
+            tabId={(id) => `${baseId}-tab-${id}`}
+            panelId={() => `${baseId}-panel`}
+          />
+        </div>
+        <div className="docs-tabs-section-body" role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${active}`}>
+          <Blocks blocks={block.tabs[active]?.children ?? []} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+        </div>
+      </section>
+    )
+  }
 
   if (codes) {
     const code = codes[active]
@@ -239,15 +315,18 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         })
       }
       return (
-        <div className="docs-code">
-          {(block.title || block.language) && (
+        <div className="docs-code" data-language={block.language ?? undefined}>
+          {/* A header bar only when there's a title (file name) to show; otherwise just the code
+              with a floating copy button. */}
+          {block.title ? (
             <div className="docs-code-header">
               <span>{block.title}</span>
               <span className="docs-code-lang">{block.language}</span>
-              <CopyButton text={block.code} label={block.title ? `Copy ${block.title}` : "Copy code"} />
+              <CopyButton text={block.code} label={`Copy ${block.title}`} />
             </div>
+          ) : (
+            <CopyButton text={block.code} className="docs-code-copy-float" />
           )}
-          {!block.title && !block.language ? <CopyButton text={block.code} className="docs-code-copy-float" /> : null}
           <pre className={block.lineNumbers ? "docs-code-numbered" : ""}>
             <HighlightedCode
               code={block.code}
@@ -270,6 +349,8 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
     }
     case "tabs":
       return <Tabs block={block} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+    case "command":
+      return block.command ? <CommandBox block={block} /> : null
     case "expandable":
       return (
         <details className="docs-expandable">

@@ -1,6 +1,7 @@
 import type { DemoInlineFile, DemoNode } from "../gitbook/ast"
-import { demoBody, fenceTracker, parseBlocks } from "../gitbook/parse"
-import { fenceFor, serializeBlocks } from "../gitbook/serialize"
+import { flattenForPlainMarkdown } from "../gitbook/flatten"
+import { demoBody, fenceTracker, parseBlocks, parseMarkdown } from "../gitbook/parse"
+import { fenceFor, serializeBlocks, serializeMarkdown } from "../gitbook/serialize"
 import type { DemoFile, DemoMeta, DemoResolver } from "./types"
 import { languageForPath } from "./glob"
 
@@ -11,9 +12,11 @@ export { fenceFor }
  *   inline fences (`{% demo … %}` + titled fences + `{% enddemo %}`), so the Markdown is
  *   still a docstream page: it renders back identically where the resolver exists and
  *   self-contained everywhere else.
- * - `"plain"`: the pre-1.2 output for LLM prompts and plain Markdown tools — each demo
- *   becomes a bold "Example — Title" line, its description, a variants note and one
- *   titled fence per file. Not renderable as a demo any more.
+ * - `"plain"`: for LLM prompts and plain Markdown tools — each demo becomes a bold
+ *   "Example — Title" line, its description, a variants note and one titled fence per
+ *   file (the pre-1.2 output); `{% command %}` boxes become npm ```` ```sh ```` fences and
+ *   titled tab sets become a heading plus one bold-labelled part per tab
+ *   (`flattenForPlainMarkdown`). Not renderable as docstream any more.
  */
 export type DemoMarkdownFormat = "inline" | "plain"
 
@@ -119,6 +122,10 @@ export async function resolveDemosToMarkdown(
   resolver: DemoResolver | undefined,
   options: ResolveDemosOptions = {},
 ): Promise<string> {
+  // Plain output also flattens docstream-only presentation blocks (command boxes, titled tabs).
+  if (options.format === "plain" && /\{%\s*(?:command\b|tabs\s[^%]*\btitle=)/.test(markdown)) {
+    markdown = serializeMarkdown(flattenForPlainMarkdown(parseMarkdown(markdown)))
+  }
   const lines = markdown.split("\n")
   const jobs: { index: number; end: number; indent: string; promise: Promise<string | null> }[] = []
   const fences = fenceTracker()

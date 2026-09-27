@@ -507,6 +507,62 @@ export const demoResolver = createGlobDemoResolver({
 
 The resolver travels through context, so demos inside tabs, hints or nested renderers resolve too. Route \`?demo=<src>\` to \`<DemoFullscreen src={src} />\` to support the deep link.
 
+## Installation sections
+
+Two blocks make a component page's install box. \`{% command %}\` holds **one** npm / npx command; docstream derives the pnpm, yarn and bun forms (\`npm install x\` → \`pnpm add x\`, \`npx x\` → \`pnpm dlx x\` / \`bunx x\`, \`npm run s\` → \`pnpm s\`, …), shows them as tabs with a terminal glyph and a copy button, and remembers the reader's choice page-wide and across visits. Override one manager with \`pnpm="…"\`, \`yarn="…"\` or \`bun="…"\`. A tab set with a \`title\` renders as a section: the title is a real heading (with an anchor, and in \`documentOutline\`), and the tabs become a pill switch on its right.
+
+{% tabs title="Installation" sync="install-method" %}
+{% tab title="npm" %}
+{% command %}npm install @brett_lamy/docstream react{% endcommand %}
+
+Import the stylesheet once at your app's entry, then the renderer:
+
+\`\`\`tsx lineNumbers="false"
+import '@brett_lamy/docstream/styles.css'
+import { MarkdownContent } from '@brett_lamy/docstream'
+\`\`\`
+{% endtab %}
+
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/composer.json{% endcommand %}
+
+Adds \`@/components/ui/composer.tsx\`, installs \`@brett_lamy/ui\`, and wires its stylesheet and tokens into your CSS. Import from your alias:
+
+\`\`\`tsx lineNumbers="false"
+import { Composer, ComposerInput } from '@/components/ui/composer'
+\`\`\`
+{% endtab %}
+{% endtabs %}
+
+The source:
+
+\`\`\`\`\`md
+{% tabs title="Installation" sync="install-method" %}
+{% tab title="npm" %}
+{% command %}npm install @brett_lamy/docstream react{% endcommand %}
+
+Import the stylesheet once at your app's entry, then the renderer:
+
+\`\`\`tsx lineNumbers="false"
+import '@brett_lamy/docstream/styles.css'
+import { MarkdownContent } from '@brett_lamy/docstream'
+\`\`\`
+{% endtab %}
+
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/composer.json{% endcommand %}
+
+Adds \`@/components/ui/composer.tsx\`, installs \`@brett_lamy/ui\`, and wires its stylesheet and tokens into your CSS. Import from your alias:
+
+\`\`\`tsx lineNumbers="false"
+import { Composer, ComposerInput } from '@/components/ui/composer'
+\`\`\`
+{% endtab %}
+{% endtabs %}
+\`\`\`\`\`
+
+Copy page keeps both blocks as they are. \`resolveDemosToMarkdown(page, resolver, { format: "plain" })\` flattens them for LLM prompts: a \`## Installation\` heading, a bold label per method, and the npm command in a \`sh\` fence.
+
 ## Install instructions in Markdown
 
 Tabs whose every tab is a single code block render as one code block with the tabs in its header. Add \`sync="pm"\` and every tab set with that key follows the reader's choice — across the page and across visits:
