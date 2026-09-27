@@ -1,0 +1,9 @@
+{
+  "name": "adaptive-pane",
+  "title": "AdaptivePane",
+  "description": "One pane presented as a column, sheet or pushed page depending on the room it has.",
+  "page": "adaptive-pane",
+  "exports": [
+    "AdaptivePane"
+  ]
+}

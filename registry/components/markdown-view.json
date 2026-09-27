@@ -1,0 +1,11 @@
+{
+  "name": "markdown-view",
+  "title": "MarkdownView",
+  "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
+  "page": "docstream",
+  "exports": [
+    "MarkdownView",
+    "HlPre",
+    "DocstreamRefContext"
+  ]
+}

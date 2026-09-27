@@ -1,0 +1,13 @@
+{
+  "name": "list",
+  "title": "List",
+  "description": "Inset-grouped and plain lists with rows, sections, swipe actions and an A-Z IndexBar.",
+  "page": "lists",
+  "exports": [
+    "List",
+    "ListSection",
+    "ListRow",
+    "IndexBar",
+    "AL"
+  ]
+}

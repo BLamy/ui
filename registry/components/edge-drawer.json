@@ -1,0 +1,9 @@
+{
+  "name": "edge-drawer",
+  "title": "EdgeDrawer",
+  "description": "A drawer that follows the finger from any edge, with rubber-banding and velocity-aware snapping.",
+  "page": "edge-drawer",
+  "exports": [
+    "EdgeDrawer"
+  ]
+}

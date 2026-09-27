@@ -5,10 +5,34 @@
   "type": "module",
   "description": "shadcn-style registry source: blocks and component entries that consumers copy with `npx shadcn add`. Files here import only from the public packages.",
   "exports": {
-    "./blocks/*": "./blocks/*"
+    "./blocks/*": "./blocks/*",
+    "./styles.css": "./styles.css"
   },
   "dependencies": {
     "@brett_lamy/pencilkit": "workspace:*",
     "@brett_lamy/ui": "workspace:*"
+  },
+  "scripts": {
+    "registry": "node ../tools/registry/build.mjs --static"
+  },
+  "nx": {
+    "targets": {
+      "registry": {
+        "cache": true,
+        "inputs": [
+          "{projectRoot}/**/*",
+          "{workspaceRoot}/tools/registry/**/*",
+          "{workspaceRoot}/packages/ui/src/index.ts",
+          "{workspaceRoot}/packages/ui/src/theme.css",
+          "{workspaceRoot}/packages/pencilkit/src/index.ts",
+          "{workspaceRoot}/packages/*/package.json"
+        ],
+        "outputs": [
+          "{workspaceRoot}/registry.json",
+          "{projectRoot}/components/*.tsx",
+          "{workspaceRoot}/apps/docs/public/r"
+        ]
+      }
+    }
   }
 }

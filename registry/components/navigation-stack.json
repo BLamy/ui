@@ -1,0 +1,13 @@
+{
+  "name": "navigation-stack",
+  "title": "NavigationStack",
+  "description": "A controlled push/pop stack with large titles and edge-swipe back.",
+  "page": "navigation-stack",
+  "exports": [
+    "NavigationStack",
+    "ScreenWrap"
+  ],
+  "types": [
+    "Screen"
+  ]
+}

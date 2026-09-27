@@ -31,3 +31,6 @@ tools/vr/__baseline__/
 tools/vr/.results/
 tools/vr/results.json
 .claude/worktrees/
+apps/docs/public/r/
+apps/docs/public/md/
+apps/docs/public/llms.txt

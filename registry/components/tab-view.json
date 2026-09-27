@@ -1,0 +1,21 @@
+{
+  "name": "tab-view",
+  "title": "TabView",
+  "description": "Tabs as parts: a bar at any edge, sliding indicator, directional panels, swipe between panels.",
+  "page": "tab-view",
+  "exports": [
+    "TabView",
+    "TabViewBar",
+    "TabViewList",
+    "TabViewTab",
+    "TabViewIndicator",
+    "TabViewSeparator",
+    "TabViewAction",
+    "TabViewHeader",
+    "TabViewFooter",
+    "TabViewPanels",
+    "TabViewPanel",
+    "useTabView",
+    "useTabViewTab"
+  ]
+}

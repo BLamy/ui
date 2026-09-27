@@ -1,0 +1,15 @@
+{
+  "name": "haptics",
+  "title": "Haptics",
+  "description": "Named haptic feedback for touch devices, with an on-screen indicator for desktop.",
+  "page": "haptics",
+  "exports": [
+    "Haptics",
+    "PAT",
+    "HapticIndicator"
+  ],
+  "imports": [
+    "Haptics",
+    "HapticIndicator"
+  ]
+}

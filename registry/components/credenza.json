@@ -1,0 +1,9 @@
+{
+  "name": "credenza",
+  "title": "Credenza",
+  "description": "A dialog on wide screens and a draggable tray on phones, from one composition.",
+  "page": "credenza",
+  "exports": [
+    "Credenza"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "workbench-shell",
+  "title": "WorkbenchShell",
+  "description": "An IDE scaffold that owns the width class and region visibility; compose regions into its slots.",
+  "page": "workbench-shell",
+  "exports": [
+    "WorkbenchShell",
+    "useWorkbenchShell",
+    "workbenchWidthClass",
+    "WorkbenchTheme"
+  ],
+  "imports": [
+    "WorkbenchShell",
+    "useWorkbenchShell"
+  ]
+}
