@@ -7,6 +7,7 @@ import { HAPTICS_LIVE } from './haptics'
 import { INTRODUCTION_LIVE } from './introduction'
 import { LIST_LIVE } from './list'
 import { MARKDOWN_VIEW_LIVE } from './markdown-view'
+import { MARKDOWN_EDITOR_LIVE } from './markdown-editor'
 import { NAVIGATION_STACK_LIVE } from './navigation-stack'
 import { PENCILKIT_LIVE } from './pencilkit'
 import { SIDE_DRAWER_LIVE } from './side-drawer'
@@ -19,6 +20,7 @@ export const EXAMPLES_LIVE: Record<string, LiveSpec> = {
   ...THEMING_LIVE,
   ...HAPTICS_LIVE,
   ...MARKDOWN_VIEW_LIVE,
+  ...MARKDOWN_EDITOR_LIVE,
   ...TAB_VIEW_LIVE,
   ...EDGE_DRAWER_LIVE,
   ...NAVIGATION_STACK_LIVE,
