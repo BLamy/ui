@@ -1,8 +1,7 @@
 /* ChatShell page — the Discord-style rail on its own (tiles morph circle → squircle, the pill grows from a
    nub to full), and a hand-rolled compact composition driving the drawer through useChatShell. */
 import { useState } from 'react';
-import { ChatShell, WorkspaceRail, useChatShell, type Workspace } from '@brett_lamy/chatkit';
-import { useAppearance } from '@brett_lamy/ui';
+import { ChatShell, WorkspaceRail, useChatShell, useAppearance, type Workspace } from '@brett_lamy/ui';
 import type { LiveSpec } from '../frame';
 
 const WORKSPACES: Workspace[] = [

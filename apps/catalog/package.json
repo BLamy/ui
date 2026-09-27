@@ -8,8 +8,6 @@
   },
   "dependencies": {
     "@brett_lamy/ui": "workspace:*",
-    "@brett_lamy/chatkit": "workspace:*",
-    "@brett_lamy/workbench": "workspace:*",
     "@brett_lamy/pencilkit": "workspace:*"
   },
   "devDependencies": {

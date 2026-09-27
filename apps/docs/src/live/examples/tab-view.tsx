@@ -19,8 +19,9 @@ import {
   TabViewSeparator,
   TabViewTab,
   useAppearance,
+  WorkspaceRail,
+  chatVars,
 } from '@brett_lamy/ui'
-import { WorkspaceRail, chatVars } from '@brett_lamy/chatkit'
 import raw from './tab-view.tsx?raw'
 import { Window, examples } from './chrome'
 

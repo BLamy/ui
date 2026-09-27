@@ -3,15 +3,11 @@
    area keeps a themed BL UI / Workbench surface that follows the docs' AppearanceProvider. */
 import { Component, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { ReactDemo } from '@brett_lamy/docstream/playground';
-import { Segmented, useAppearance } from '@brett_lamy/ui';
-import { MONO, WFONT, WorkbenchTheme } from '@brett_lamy/workbench';
+import { Segmented, useAppearance, MONO, WFONT, WorkbenchTheme } from '@brett_lamy/ui';
 import { BLDK, BLL, type LiveSpec, type LiveVariant } from './frame';
 import { LIVE_CORE } from './live-core';
 
 export const LIVE: Record<string, LiveSpec> = LIVE_CORE;
-
-/* The docs present one public package; workspace package names stay internal (same rewrite as the markdown). */
-export const publicCode = (code: string) => code.replace(/@brett_lamy\/(?:chatkit|workbench|pencilkit)\b/g, '@brett_lamy/ui');
 
 class ErrB extends Component<{ label: string; children?: ReactNode }, { err: string | null }> {
   override state: { err: string | null } = { err: null };
@@ -66,7 +62,7 @@ export function LiveCard({ title, code, status = 'live', actions, children }: {
       actions={actions}
       preview={children}
       height="auto"
-      code={publicCode(code)}
+      code={code}
       language="tsx"
       collapsedCodeLines={3}
       expandedCodeLines={36}

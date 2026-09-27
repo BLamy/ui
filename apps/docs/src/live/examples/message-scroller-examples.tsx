@@ -1,7 +1,7 @@
 /* MessageScroller page — a reply streaming in (scroll up and the jump pill rises and says so; tap it and the
    view glides back on a spring), and turns that rise into place as they arrive. Registered in live-core. */
 import { useEffect, useRef, useState } from 'react';
-import { MarkdownView, MessageScroller, type MessageScrollerItem } from '@brett_lamy/workbench';
+import { MarkdownView, MessageScroller, type MessageScrollerItem } from '@brett_lamy/ui';
 import type { LiveSpec } from '../frame';
 
 const ANSWER =

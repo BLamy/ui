@@ -45,5 +45,6 @@ export type {
 export { usePencilHistory } from './lib/use-pencil-history';
 export type { PencilHistory } from './lib/use-pencil-history';
 export { demoStrokes } from './demos/demo-strokes';
+export { PencilKitAnnotator } from './lib/pencilkit-annotator';
 export { PencilKitDemo } from './lib/pencilkit-demo';
 export type { PencilKitDemoProps } from './lib/pencilkit-demo';

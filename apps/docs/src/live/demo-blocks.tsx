@@ -1,11 +1,9 @@
 /* %%demo:<name>%% blocks — the big framed demos from the docs prototype shell. */
 import { useMemo, useState } from 'react';
 import {
-  Avatar, HapticsPlayground, IndexBar, NavigationStack, SearchField, TabBar, BLProvider,
-  List, ListSection, ListRow,
-  type Screen,
+  Avatar, HapticsPlayground, IndexBar, NavigationStack, SearchField, TabBar, BLProvider, List, ListSection, ListRow,
+  WorkbenchDemo, type Screen,
 } from '@brett_lamy/ui';
-import { WorkbenchDemo } from '@brett_lamy/workbench';
 import { PencilKitDemo, demoStrokes } from '@brett_lamy/pencilkit';
 import { LiveCard, LiveStage } from './docs-live';
 
@@ -58,7 +56,7 @@ export function WorkbenchDemoBlock() {
   );
 }
 
-const PENCIL_CODE = `import { PencilKitDemo, demoStrokes } from '@brett_lamy/ui'
+const PENCIL_CODE = `import { PencilKitDemo, demoStrokes } from '@brett_lamy/pencilkit'
 
 // Canvas, tool picker, inks, widths, undo/redo. Compose your own from
 // PencilCanvas, PencilToolbar, and usePencilHistory.

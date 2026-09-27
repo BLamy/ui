@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ChatDemo } from '@brett_lamy/chatkit';
+import { ChatDemo } from '@brett_lamy/ui';
 import './styles.css';
 
 createRoot(document.getElementById('root') as HTMLElement).render(

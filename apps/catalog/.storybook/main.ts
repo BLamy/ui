@@ -19,8 +19,8 @@ const config: StorybookConfig = {
         'framer-motion', 'react-aria-components', '@brett_lamy/ui > react-aria/PortalProvider', 'perfect-freehand', 'clsx', 'tailwind-merge', 'class-variance-authority',
         'highlight.js/lib/core', 'use-sync-external-store/shim/index.js', 'use-sync-external-store/shim/with-selector.js',
         // docstream pulls CommonJS deps (style-to-js, debug) the browser can't import unbundled; pre-bundle it whole.
-        '@brett_lamy/workbench > @brett_lamy/docstream',
-        '@brett_lamy/workbench > @brett_lamy/docstream-editor',
+        '@brett_lamy/ui > @brett_lamy/docstream',
+        '@brett_lamy/ui > @brett_lamy/docstream-editor',
       ],
     };
     return cfg;

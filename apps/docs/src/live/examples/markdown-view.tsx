@@ -1,7 +1,6 @@
 /* MarkdownView page examples. Each `// #region` is shown verbatim as the example's code. */
 import { useState } from 'react'
-import { Button } from '@brett_lamy/ui'
-import { MarkdownView, type ReferenceNode } from '@brett_lamy/workbench'
+import { Button, MarkdownView, type ReferenceNode } from '@brett_lamy/ui'
 import raw from './markdown-view.tsx?raw'
 import { examples } from './chrome'
 

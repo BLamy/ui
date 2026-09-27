@@ -1,11 +1,9 @@
 # BL UI monorepo conventions
 
-BL UI is an iOS-flavored React component framework, distributed as workspace packages:
+BL UI is an iOS-flavored React component framework, distributed as two workspace packages:
 
-- `@brett_lamy/ui` — core: theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar).
-- `@brett_lamy/chatkit` — team-chat scaffold (ChatShell + slots, message primitives). Depends on `@brett_lamy/ui`.
-- `@brett_lamy/workbench` — IDE workbench scaffold (WorkbenchShell + slots, chat view, terminal dock, surface panel). Depends on `@brett_lamy/ui`.
-- `@brett_lamy/pencilkit` — freehand drawing canvas (perfect-freehand).
+- `@brett_lamy/ui` — everything but drawing: theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar), the team-chat parts and ChatShell (`src/components/chat`, `src/templates`), and the IDE workbench parts and WorkbenchShell (`src/components/workbench`, `src/templates`). Demo apps live in `src/demos`.
+- `@brett_lamy/pencilkit` — freehand drawing canvas (perfect-freehand). Depends on `@brett_lamy/ui`; `PencilKitAnnotator` plugs into the Composer's image annotator. `@brett_lamy/ui` never depends on it.
 
 Every component is built **shadcn-style on react-aria-components, styled with Tailwind v4**. Visual output must not change while code moves onto that base: the visual-regression suite (below) is the source of truth, at zero pixel tolerance.
 
@@ -37,7 +35,7 @@ Stories live next to components: `packages/<pkg>/src/**/*.stories.tsx`. Use CSF3
 - `Templates/…` — ChatShell, WorkbenchShell, SplitView layouts…
 - `Pages/…` — full demo apps (Contacts, Chat, Workbench, PencilKit).
 
-Wrap every story in `BLProvider` (use a decorator; dark for chatkit/workbench). Give container stories an explicit sized frame (e.g. 390×720 phone frame or 100%×640 panel) since BL UI containers are absolutely-positioned within their host. Include a story per meaningful prop/composition variant, with `args` wired so controls work.
+Wrap every story in `BLProvider` (use a decorator; dark for the chat and workbench parts). Give container stories an explicit sized frame (e.g. 390×720 phone frame or 100%×640 panel) since BL UI containers are absolutely-positioned within their host. Include a story per meaningful prop/composition variant, with `args` wired so controls work.
 
 ## Apps
 

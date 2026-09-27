@@ -1,12 +1,12 @@
 /* Example source extraction. Each examples/<page>.tsx file holds its examples as real components between
    `// #region <id>` and `// #endregion` markers, and imports itself with `?raw`. The code panel shows exactly
    that region, headed by the imports it uses — so the sample can never drift from what the preview renders.
-   Regions are self-contained (their own data and helpers); workspace packages are shown as '@brett_lamy/ui'. */
+   Regions are self-contained (their own data and helpers). */
 
 interface Imported {
   name: string
   type: boolean
-  from: 'react' | 'ui'
+  from: string
 }
 
 function parseImports(raw: string): Imported[] {
@@ -23,7 +23,7 @@ function parseImports(raw: string): Imported[] {
         .split(/\s+as\s+/)
         .pop()!
         .trim()
-      out.push({ name, type, from: m[3] === 'react' ? 'react' : 'ui' })
+      out.push({ name, type, from: m[3] })
     }
   }
   return out
@@ -60,12 +60,11 @@ export function exampleSource(raw: string, id: string): string {
     seen.has(i.from + i.name) ? false : (seen.add(i.from + i.name), true),
   )
   const fmt = (i: Imported) => (i.type ? `type ${i.name}` : i.name)
-  const react = uniq.filter((i) => i.from === 'react').map(fmt)
-  const ui = uniq.filter((i) => i.from === 'ui').map(fmt)
-  const head = [
-    react.length ? importLine(react, 'react') : '',
-    ui.length ? importLine(ui, '@brett_lamy/ui') : '',
-  ]
+  // react first, then each package in the order the file imports it
+  const sources = [...new Set(['react', ...uniq.map((i) => i.from)])]
+  const head = sources
+    .map((from) => uniq.filter((i) => i.from === from).map(fmt))
+    .map((names, k) => (names.length ? importLine(names, sources[k]) : ''))
     .filter(Boolean)
     .join('\n')
   return `${head}\n\n${body.replace(/^export function /m, 'export default function ')}`

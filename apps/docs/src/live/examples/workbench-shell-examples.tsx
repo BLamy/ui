@@ -1,8 +1,9 @@
 /* WorkbenchShell page — the thread's first message (the centred composer travels down to its dock as the
    same element), and the compact terminal sheet (SnapSheet) with snap points and velocity release. */
 import { useRef, useState } from 'react';
-import { ChatView, SnapSheet, TermBody, TermHeader, TERM_SEED, WorkbenchTheme, type WorkbenchThread } from '@brett_lamy/workbench';
-import { useAppearance } from '@brett_lamy/ui';
+import {
+  ChatView, SnapSheet, TermBody, TermHeader, TERM_SEED, WorkbenchTheme, useAppearance, type WorkbenchThread,
+} from '@brett_lamy/ui';
 import type { LiveSpec } from '../frame';
 
 const firstMessageCode = `import { useState } from 'react'

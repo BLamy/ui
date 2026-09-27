@@ -6,9 +6,7 @@ The core package is published as [`@brett_lamy/ui`](https://www.npmjs.com/packag
 
 ## Workspace layout
 
-- `packages/ui` — core BL UI components, containers, haptics, and tokens
-- `packages/chatkit` — composable team-chat primitives
-- `packages/workbench` — IDE workbench shell and Docstream-backed markdown
+- `packages/ui` — BL UI components, containers, haptics and tokens, plus the workbench (composer, chat, terminal, surfaces, Docstream-backed markdown) and team-chat shells
 - `packages/pencilkit` — freehand drawing components
 - `apps/docs` — the documentation site
 - `apps/catalog` — the Storybook component catalog

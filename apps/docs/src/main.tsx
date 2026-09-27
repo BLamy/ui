@@ -1,9 +1,8 @@
 import { StrictMode, type ReactElement } from 'react';
 import * as ReactDOM from 'react-dom/client';
 import '@brett_lamy/ui/styles.css';
-import '@brett_lamy/chatkit/styles.css';
-import '@brett_lamy/workbench/styles.css';
-import { DeliveryTrackingDemo, MapChatDemo } from '@brett_lamy/chatkit';
+import { ComposerAnnotatorProvider, DeliveryTrackingDemo, MapChatDemo } from '@brett_lamy/ui';
+import { PencilKitAnnotator } from '@brett_lamy/pencilkit';
 import App from './app/app';
 
 const root = ReactDOM.createRoot(
@@ -18,8 +17,11 @@ const fullscreen: Record<string, () => ReactElement> = {
 };
 const Fullscreen = demo ? fullscreen[demo] : undefined;
 
+// Every Composer in the docs annotates pasted images with PencilKit.
 root.render(
   <StrictMode>
-    {Fullscreen ? <Fullscreen /> : <App />}
+    <ComposerAnnotatorProvider annotator={PencilKitAnnotator}>
+      {Fullscreen ? <Fullscreen /> : <App />}
+    </ComposerAnnotatorProvider>
   </StrictMode>,
 );

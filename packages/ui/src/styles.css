@@ -1,11 +1,9 @@
 @layer theme, base, components, utilities;
 @import "./theme.css";
-/* Utilities only — no preflight, so a host app's base styles are left alone. This one sheet carries the
-   utilities for every BL UI package, so their rules share a single, consistently ordered layer. */
+/* Utilities only — no preflight, so a host app's base styles are left alone. This one sheet also carries the
+   utilities for @brett_lamy/pencilkit, so their rules share a single, consistently ordered layer. */
 @import "tailwindcss/utilities.css" layer(utilities);
 @source "./";
-@source "../../chatkit/src";
-@source "../../workbench/src";
 @source "../../pencilkit/src";
 
 /* BL UI framework CSS — verbatim from the prototype's injected `bl-kf` block. */
@@ -78,3 +76,217 @@ input::placeholder{color:var(--bl-label3)}
   --animate-bl-progress: bl-progress-indeterminate 1.4s cubic-bezier(.65,0,.35,1) infinite;
   --animate-bl-shimmer: bl-shimmer 1.6s linear infinite;
 }
+
+/* ══ Chat (ChatShell, FloatingSheet, FloatingChat, ArtifactChatContainer, chat demos) — --ck-* tokens ══ */
+/* Light ChatShell: the users' role colors are pastels picked for a dark background, so deepen them. */
+[data-appearance="light"] .ck-role{color:color-mix(in srgb,var(--ck-role) calc(100% - var(--ck-ink-shade,0%)),#000)}
+
+/* Shared scrollbar for chat transcripts and lists. */
+.ck-scroll{scrollbar-width:thin;scrollbar-color:rgba(140,140,155,.28) transparent}
+.ck-scroll::-webkit-scrollbar{width:8px}
+.ck-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.25);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+/* New content rises into place (paired with the smooth spring). */
+@keyframes ck-in{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+
+/* ── ArtifactChatContainer ─────────────────────────────────────────────────────────────────
+   Layout lives in utilities on the component. This is the --wb-* token map that keeps an embedded
+   Workbench Composer matched to the chat; .ck-artifact-chat, __chat and __content remain as host hooks. */
+.ck-artifact-chat{--wb-bg:#111116;--wb-card:rgba(31,31,39,.86);--wb-sep:rgba(255,255,255,.13);--wb-label:#ededf2;--wb-label2:rgba(235,235,245,.68);--wb-label3:rgba(235,235,245,.4);--wb-fill:rgba(255,255,255,.08);--wb-fill2:rgba(255,255,255,.15);--wb-tint:var(--bl-tint,#0a84ff)}
+/* An explicit or ambient appearance (data-tone) also gives the chat surfaces their own --bl-* palette;
+   without one they inherit the host's tokens. --bl-bg and --bl-tint (the artifact's) stay the host's. */
+.ck-artifact-chat[data-tone="dark"]{color-scheme:dark;--bl-card:#16161c;--bl-card2:#1f1f26;--bl-label:#f5f5f7;--bl-label2:rgba(235,235,245,.62);--bl-label3:rgba(235,235,245,.32);--bl-sep:rgba(255,255,255,.1);--bl-fill:rgba(120,120,128,.24);--bl-fill2:rgba(120,120,128,.36)}
+.ck-artifact-chat[data-tone="light"]{color-scheme:light;--bl-card:#fff;--bl-card2:#f2f2f7;--bl-label:#1c1c1e;--bl-label2:rgba(60,60,67,.62);--bl-label3:rgba(60,60,67,.32);--bl-sep:rgba(60,60,67,.18);--bl-fill:rgba(120,120,128,.12);--bl-fill2:rgba(120,120,128,.2);--wb-bg:#fff;--wb-card:#fff;--wb-card2:#f2f2f5;--wb-sep:rgba(0,0,0,.1);--wb-label:#1c1c1e;--wb-label2:rgba(60,60,67,.68);--wb-label3:rgba(60,60,67,.4);--wb-fill:rgba(0,0,0,.05);--wb-fill2:rgba(0,0,0,.09);--wb-shadow:rgba(0,0,0,.07);--wb-handle:rgba(0,0,0,.18);--mdc-code:rgba(0,0,0,.06);--mdc-pre:#f4f4f7;--mdc-pre-fg:#24242b;--mdc-border:rgba(0,0,0,.1);--mdc-mut:#6b6b76}
+
+/* ── FloatingSheet ─────────────────────────────────────────────────────────────────────────
+   Geometry and surface styling live in utilities on the component, driven by the --ck-sheet-*
+   variables the gesture writes. What stays here: the tone token maps (tone="dark|light" lets the sheet
+   disagree with its host), the rules for whatever the host puts in the body, and the peek masks.
+   --ck-sheet-surface / --ck-sheet-line are RGB triplets the glass mixes its alphas into. */
+.ck-floating-sheet[data-tone="dark"]{--bl-label:#f5f5f7;--bl-label2:rgba(235,235,245,.62);--bl-label3:rgba(235,235,245,.32);--bl-card:#1c1c1e;--bl-card2:#2c2c2e;--bl-sep:rgba(84,84,88,.6);--bl-fill:rgba(120,120,128,.24);--bl-fill2:rgba(120,120,128,.36);color:#f5f5f7;--ck-sheet-surface:18,18,22;--ck-sheet-line:255,255,255}
+.ck-floating-sheet[data-tone="light"]{--bl-label:#1c1c1e;--bl-label2:rgba(60,60,67,.6);--bl-label3:rgba(60,60,67,.3);--bl-card:#fff;--bl-card2:#f2f2f7;--bl-sep:rgba(60,60,67,.24);--bl-fill:rgba(120,120,128,.14);--bl-fill2:rgba(120,120,128,.22);color:#1c1c1e;--ck-sheet-surface:250,250,252;--ck-sheet-line:0,0,0}
+.ck-floating-sheet__body>*{box-sizing:border-box;width:100%;min-height:100%;background:transparent!important}
+/* Bottom-anchored bodies let short content sit against the foot so the newest lines peek out. */
+.ck-floating-sheet[data-body-align="end"] .ck-floating-sheet__body>*{min-height:0;max-height:100%}
+/* A peeking body fades its cut edge so clipped lines read as "more here" rather than a hard
+   crop: the top edge for a bottom-pinned transcript, the bottom edge for a top-pinned card. */
+.ck-floating-sheet[data-body-align="end"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 34px);mask-image:linear-gradient(to bottom,transparent,#000 34px)}
+.ck-floating-sheet[data-body-align="start"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:linear-gradient(to top,transparent,#000 28px);mask-image:linear-gradient(to top,transparent,#000 28px)}
+.ck-floating-sheet[data-body-align="start"][data-appearance="sheet"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:none;mask-image:none}
+
+/* ── FloatingChat ──────────────────────────────────────────────────────────────────────────
+   The host's Workbench Composer floating over content, with the transcript on a draggable top bump
+   (utilities on the component). What stays here: the --wb-* / --bl-* token maps that match the composer
+   and the bump to the tone, the glass blur, and the rule that lets a transcript sit on the glass. */
+.ck-floating-chat{--wb-bg:#111116;--wb-card:rgba(31,31,39,.86);--wb-sep:rgba(255,255,255,.13);--wb-label:#ededf2;--wb-label2:rgba(235,235,245,.68);--wb-label3:rgba(235,235,245,.4);--wb-fill:rgba(255,255,255,.08);--wb-fill2:rgba(255,255,255,.15);--wb-tint:var(--bl-tint,#0a84ff)}
+.ck-floating-chat[data-tone="dark"]{--bl-label:#f5f5f7;--bl-label2:rgba(235,235,245,.62);--bl-label3:rgba(235,235,245,.32);--bl-card:#1c1c1e;--bl-card2:#2c2c2e;--bl-sep:rgba(84,84,88,.6);--bl-fill:rgba(120,120,128,.24);--bl-fill2:rgba(120,120,128,.36);color:#f5f5f7;--ck-sheet-surface:18,18,22;--ck-sheet-line:255,255,255}
+.ck-floating-chat[data-tone="light"]{--bl-label:#1c1c1e;--bl-label2:rgba(60,60,67,.6);--bl-label3:rgba(60,60,67,.3);--bl-card:#fff;--bl-card2:#f2f2f7;--bl-sep:rgba(60,60,67,.24);--bl-fill:rgba(120,120,128,.14);--bl-fill2:rgba(120,120,128,.22);color:#1c1c1e;--ck-sheet-surface:250,250,252;--ck-sheet-line:0,0,0;--wb-bg:#fff;--wb-card:rgba(255,255,255,.86);--wb-sep:rgba(0,0,0,.1);--wb-label:#1c1c1e;--wb-label2:rgba(60,60,67,.68);--wb-label3:rgba(60,60,67,.4);--wb-fill:rgba(0,0,0,.05);--wb-fill2:rgba(0,0,0,.1);--wb-shadow:rgba(0,0,0,.07);--wb-card2:#f2f2f5;--wb-handle:rgba(0,0,0,.18)}
+.ck-floating-chat[data-appearance="glass"] :is(.ck-floating-chat__composer [data-slot="composer-card"],[data-slot="floating-chat-working"],.ck-floating-chat__bump){-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.ck-floating-chat[data-appearance="sheet"] .ck-floating-chat__composer{--wb-card:var(--bl-card,#fff)}
+.ck-floating-chat__bump [data-slot="composer-bump-body"]>*,.ck-floating-chat__bump [data-slot="floating-chat-transcript"]>[data-slot="artifact-chat-transcript"]>*{box-sizing:border-box;width:100%;min-height:0;max-height:100%;background:transparent!important}
+@keyframes ck-floating-working{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}
+
+/* ── TileMap ───────────────────────────────────────────────────────────────────────────────
+   Styled with utilities in tile-map.tsx; the user-location pin pulses its box-shadow. */
+@keyframes ck-tile-map-pulse{0%{box-shadow:0 0 0 4px rgba(10,132,255,.32),0 2px 6px rgba(0,0,0,.45)}70%{box-shadow:0 0 0 16px rgba(10,132,255,0),0 2px 6px rgba(0,0,0,.45)}100%{box-shadow:0 0 0 16px rgba(10,132,255,0),0 2px 6px rgba(0,0,0,.45)}}
+
+/* ── MapChatDemo ───────────────────────────────────────────────────────────────────────────
+   The demo's own elements use utilities. These rules theme the ArtifactChatContainer it wraps
+   and restyle the Markdown it streams, so they must outrank those components' own rules. */
+.ck-artifact-chat.ck-map-chat{color-scheme:dark;--bl-bg:#0d0f14;--bl-card:#16161c;--bl-label:#f5f5f7;--bl-label2:rgba(235,235,245,.64);--bl-label3:rgba(235,235,245,.34);--bl-sep:rgba(255,255,255,.12);--bl-tint:#0a84ff;background:#0d0f14;color:#f5f5f7}
+.ck-map-chat .ck-artifact-chat__content{background:#0d0f14;overflow:hidden}
+.ck-map-chat .ck-artifact-chat__chat{background:#101015;border-right-color:rgba(255,255,255,.1)}
+/* Light appearance: light basemap, light chat column (the demo picks the light tiles and chrome). */
+.ck-artifact-chat.ck-map-chat[data-tone="light"]{color-scheme:light;--bl-bg:#f2f2f7;--bl-card:#fff;--bl-label:#1c1c1e;--bl-label2:rgba(60,60,67,.66);--bl-label3:rgba(60,60,67,.38);--bl-sep:rgba(60,60,67,.16);background:#eef0f3;color:#1c1c1e}
+.ck-map-chat[data-tone="light"] .ck-artifact-chat__content{background:#eef0f3}
+.ck-map-chat[data-tone="light"] .ck-artifact-chat__chat{background:#fbfbfd;border-right-color:rgba(60,60,67,.14)}
+.ck-map-chat__md.wb-md{font-size:14.5px;line-height:1.45;color:var(--bl-label,#f5f5f7)}
+.ck-map-chat__md.wb-md p{margin:0 0 8px}
+.ck-map-chat__md.wb-md p:last-child{margin-bottom:0}
+.ck-map-chat__md.wb-md ol,.ck-map-chat__md.wb-md ul{margin:4px 0 8px;padding-left:22px}
+.ck-map-chat__md.wb-md li{margin:3px 0}
+@keyframes ck-map-chat-spin{to{transform:rotate(360deg)}}
+
+
+/* ── ProgressStepper ───────────────────────────────────────────────────────────────────────
+   Styled with utilities on the component; the active segment's sweep. */
+@keyframes ck-stepper-sweep{0%{transform:translateX(0)}100%{transform:translateX(200%)}}
+
+/* ══ Workbench (WorkbenchShell, Composer, MarkdownView, terminal) — --wb-* tokens ══ */
+/* BL UI Workbench — framework-owned CSS (scrollbars, caret pulse, spin, markdown). */
+@keyframes wbBlink{0%,55%{opacity:1}56%,100%{opacity:0}}
+@keyframes wbPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes wbSpin{to{transform:rotate(360deg)}}
+/* Popovers grow out of their trigger (transform-origin: the anchor point) on the snappy spring. */
+@keyframes wb-pop-in{from{opacity:0;transform:scale(.88);filter:blur(2px)}}
+@keyframes wb-pop-out{to{opacity:0;transform:scale(.96)}}
+.wb-scroll{scrollbar-width:thin;scrollbar-color:rgba(140,140,155,.3) transparent}
+.wb-scroll::-webkit-scrollbar{width:8px;height:8px}
+.wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+.wb-scroll::-webkit-scrollbar-track{background:transparent}
+.wb-btn{-webkit-tap-highlight-color:transparent;font-family:inherit}
+.wb-btn:hover{filter:brightness(1.12)}
+.wb-hl:hover{background:var(--wb-fill)!important}
+.wb-md{line-height:1.6;font-size:14px}
+.wb-md :where(h1){font-size:20px;font-weight:700;margin:18px 0 8px;letter-spacing:-.2px}
+.wb-md :where(h2){font-size:16.5px;font-weight:650;margin:18px 0 6px}
+.wb-md :where(h3){font-size:14.5px;font-weight:650;margin:14px 0 4px}
+.wb-md :where(p){margin:8px 0}
+.wb-md :where(ul,ol){margin:8px 0;padding-left:22px}
+.wb-md :where(li){margin:3px 0}
+.wb-md :where(code){font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.86em;background:var(--mdc-code,rgba(120,120,140,.14));padding:2px 5px;border-radius:5px}
+.wb-md :where(pre){background:var(--mdc-pre,#101014);color:var(--mdc-pre-fg,#D8D8E2);border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
+.wb-md :where(pre code){background:none;padding:0;font-size:inherit;color:inherit}
+.wb-md :where(table){border-collapse:collapse;margin:10px 0;width:100%;font-size:13.5px}
+.wb-md :where(th){text-align:left;font-weight:600;color:var(--mdc-mut,#8E8E98);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+.wb-md :where(th,td){padding:7px 12px 7px 0;border-bottom:1px solid var(--mdc-border,rgba(128,128,145,.22))}
+.wb-md :where(blockquote){margin:10px 0;padding:2px 14px;border-left:3px solid var(--mdc-border,rgba(128,128,145,.3));color:var(--mdc-mut,#8E8E98)}
+.wb-md :where(hr){border:0;border-top:1px solid var(--mdc-border,rgba(128,128,145,.22));margin:16px 0}
+.wb-md :where(a){color:var(--wb-tint,#0A84FF);text-decoration:none}
+.wb-md :where(a:hover){text-decoration:underline}
+.wb-md :where(img){max-width:100%;border-radius:8px}
+.wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name){color:#C792EA}
+.wb-md :where(.hljs-string,.hljs-attr,.hljs-symbol,.hljs-bullet){color:#A5D6A7}
+.wb-md :where(.hljs-title,.hljs-section,.hljs-function .hljs-title){color:#82AAFF}
+.wb-md :where(.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable){color:#F78C6C}
+.wb-md :where(.hljs-comment,.hljs-quote,.hljs-meta){color:#777784;font-style:italic}
+.wb-md :where(.hljs-operator,.hljs-punctuation){color:#89DDFF}
+.wb-md :where(.hljs-deletion){color:#FF6B6B}
+.wb-md :where(.hljs-addition){color:#69DB7C}
+
+/* ── Light appearance (.wb-light on WorkbenchShell / WorkbenchTheme) ──
+   Code blocks sit on a light well, so syntax colors switch to a One Light-style palette. The HlPre token
+   classes read --wb-hl-* (dark fallbacks inline). */
+.wb-light{--wb-hl-kw:#A626A4;--wb-hl-str:#3E8B3A;--wb-hl-num:#986801;--wb-hl-com:#9A9AA3;--wb-hl-fn:#3563D9;--wb-hl-tag:#D2403A;--wb-hl-attr:#B06A00;--wb-hl-punc:#0B7FA8;--wb-hl-id:#24242B}
+.wb-light .wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name){color:#A626A4}
+.wb-light .wb-md :where(.hljs-string,.hljs-attr,.hljs-symbol,.hljs-bullet){color:#3E8B3A}
+.wb-light .wb-md :where(.hljs-title,.hljs-section,.hljs-function .hljs-title){color:#3563D9}
+.wb-light .wb-md :where(.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable){color:#986801}
+.wb-light .wb-md :where(.hljs-comment,.hljs-quote,.hljs-meta){color:#9A9AA3}
+.wb-light .wb-md :where(.hljs-operator,.hljs-punctuation){color:#0B7FA8}
+.wb-light .wb-md :where(.hljs-deletion){color:#D2403A}
+.wb-light .wb-md :where(.hljs-addition){color:#2F8F46}
+.wb-light .wb-scroll{scrollbar-color:rgba(0,0,0,.2) transparent}
+.wb-light .wb-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.18)}
+.wb-light .wb-btn:hover{filter:brightness(.97)}
+/* The terminal stays dark in the light appearance, like an IDE's integrated terminal: its subtree gets the
+   dark tokens back. */
+.wb-light .wb-term{color-scheme:dark;--wb-fill:rgba(255,255,255,.06);--wb-fill2:rgba(255,255,255,.11);--wb-sep:rgba(255,255,255,.08);--wb-label:#EDEDF2;--wb-label2:#9C9CA6;--wb-label3:#69696F;--wb-handle:rgba(255,255,255,.22);color:#EDEDF2}
+.wb-light .wb-term .wb-btn:hover{filter:brightness(1.12)}
+.wb-light .wb-term .wb-scroll{scrollbar-color:rgba(140,140,155,.3) transparent}
+.wb-light .wb-term .wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28)}
+
+/* Docstream editor compressed into the Workbench composer. The editor package defaults to a
+   full document canvas, so this adapter supplies the same narrow, auto-growing surface used by
+   the GitHub clone while keeping structured blocks and the slash menu available. */
+.wb-composer-doc.gb{
+  --card:var(--wb-card);
+  --background:var(--wb-card);
+  --foreground:var(--wb-label);
+  --muted:var(--wb-fill);
+  --muted-foreground:var(--wb-label2);
+  --border:var(--wb-sep);
+  --accent:var(--wb-fill2);
+  --accent-foreground:var(--wb-label);
+  --primary:var(--wb-tint);
+  width:100%;max-width:none;max-height:120px;min-height:0;margin:0;padding:0 14px 2px;
+  box-sizing:border-box;overflow-y:auto;color:var(--wb-label);font-family:inherit;font-size:14px;line-height:1.5
+}
+.wb-composer-doc.gb .ProseMirror{min-height:38px;padding:10px 34px 4px 0;outline:none;font-size:14px;line-height:1.5}
+.wb-composer-doc.gb,.wb-composer-doc.gb .ProseMirror{color:var(--wb-label);caret-color:var(--wb-tint)}
+.wb-composer-doc.gb .ProseMirror :where(h1,h2,h3,h4,h5,h6,p,li){color:inherit}
+.wb-composer-doc-wide.gb .ProseMirror{min-height:38px}
+.wb-composer-doc-expanded.gb{max-height:min(58vh,440px)}
+.wb-composer-doc-expanded.gb .ProseMirror{min-height:min(52vh,400px)}
+.wb-composer-doc.gb .ProseMirror>*+*{margin-top:.4em}
+.wb-composer-doc.gb .ProseMirror p{margin:0}
+.wb-composer-doc.gb .ProseMirror p:is(.is-empty,.is-editor-empty):first-child:before{
+  content:attr(data-placeholder);float:left;height:0;color:var(--wb-label3);pointer-events:none
+}
+.wb-composer-doc.gb .gb-code{margin:.45em 0}
+
+
+/* Docstream colors text and chrome from shadcn tokens with light-page fallbacks. Inside MarkdownView they follow
+   the surrounding surface: Workbench's --mdc-* tokens, else a BL surface's --bl-* tokens, else the host's shadcn tokens, else
+   Docstream's defaults. Text always inherits, so markdown reads on any background. */
+.wb-md{--foreground:currentColor}
+/* Docstream pads its article for standalone pages; a MarkdownView flows inside the host's own layout. */
+.wb-md .docs-article{max-width:none;margin:0;padding:0}
+.wb-md :is([data-docstream],.docs-article){
+  --gb-panel:var(--mdc-card,var(--bl-card,var(--card,#fff)));
+  --gb-panel-foreground:currentColor;
+  --gb-muted:var(--mdc-muted,var(--bl-fill,var(--muted,#f4f4f5)));
+  --gb-muted-foreground:var(--mdc-mut,var(--bl-label2,var(--muted-foreground,#71717a)));
+  --gb-border:var(--mdc-border,var(--bl-sep,var(--border,#e4e4e7)));
+  --gb-accent:var(--mdc-muted,var(--bl-fill2,var(--accent,#f4f4f5)));
+  --gb-accent-foreground:currentColor;
+  --gb-code-fg:currentColor;
+}
+
+/* Attachment chips: the editor portals the hover card to <body>, outside the --wb-* tokens. While a chip in a dark
+   composer is hovered or focused, the card takes the dark Workbench palette (the editor's defaults are light). */
+.wb-composer-doc.gb .gb-attachment{background:var(--wb-fill);border-color:var(--wb-sep)}
+.wb-composer-doc.gb .gb-attachment:hover{border-color:var(--wb-label3)}
+body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-chat:not([data-tone="light"])) [data-slot="composer-input"]:not(.wb-light *) .gb-attachment:is(:hover,:focus-visible)) .gb-attachment-card{--border:rgba(255,255,255,.12);--card:#1C1C23;--card-foreground:#EDEDF2;--foreground:#EDEDF2;--muted:#101014;--muted-foreground:#9C9CA6;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+/* Compact composer: one row, the editor a single line beside the controls. */
+.wb-composer-doc-compact.gb{max-height:44px;padding-right:4px}
+.wb-composer-doc-compact.gb .ProseMirror{min-height:22px;padding:10px 0 9px}
+
+/* ── Composer shape states (motion: one shape, after "Family Values") ──
+   The card is the same element in every state; composer.tsx springs its size between them (FLIP) and these
+   rules give each state its look. Folded (`fab`): the card is the round button, its content faded and inert,
+   the bumps folded away. Corners, shadows and colours cross on the spring curves. */
+@layer components{
+  [data-slot="composer-card"]{transition:border-radius var(--duration-spring-smooth) var(--ease-spring-smooth),box-shadow var(--duration-spring-smooth) var(--ease-spring-smooth),background-color var(--duration-spring-smooth) var(--ease-spring-smooth),border-color var(--duration-spring-smooth) var(--ease-spring-smooth)}
+  /* Unfolding, the content waits for the card to grow most of the way (no reflow on show); folding, it goes at once. */
+  [data-slot="composer-card-body"]>:not([data-slot$="-presence"]){transition:opacity .2s ease .16s,filter .2s ease .16s}
+  [data-slot="composer-stack"]>[data-slot="composer-bump"]{transition:opacity .22s ease .12s}
+}
+[data-slot="composer-card"]>[data-slot="composer-fab"]{opacity:0;pointer-events:none;transform:scale(.6);transition:opacity .12s ease,transform var(--duration-spring-snappy) var(--ease-spring-snappy)}
+[data-slot="composer"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{width:52px;height:52px;border-radius:26px;overflow:hidden;flex-wrap:nowrap;box-shadow:0 10px 30px -8px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.14)}
+[data-slot="composer"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]>[data-slot="composer-card-body"]>*{opacity:0!important;filter:blur(4px);pointer-events:none;transition:opacity .1s ease,filter .1s ease}
+[data-slot="composer"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]>[data-slot="composer-fab"]{opacity:1;pointer-events:auto;transform:none;transition:opacity .2s ease .14s,transform var(--duration-spring-bouncy) var(--ease-spring-bouncy) .1s}
+[data-slot="composer"][data-fab-position="end"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{align-self:flex-end}
+[data-slot="composer"][data-fab-position="center"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{align-self:center}
+[data-slot="composer"][data-fab-position="start"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{align-self:flex-start}
+[data-slot="composer"][data-collapsed="fab"]:has([data-folded])>[data-slot="composer-stack"]>[data-slot="composer-bump"]{height:0;min-height:0;margin-block:0;padding-block:0;border-width:0;opacity:0;overflow:hidden;pointer-events:none;transition:opacity .1s ease}
+@media (prefers-reduced-motion:reduce){[data-slot="composer-card"],[data-slot="composer-card-body"]>*,[data-slot="composer-card"]>[data-slot="composer-fab"],[data-slot="composer-stack"]>[data-slot="composer-bump"]{transition:none!important}}

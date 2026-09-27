@@ -3,9 +3,10 @@
    inline-start addon. Registered in live-core.tsx. */
 import { useEffect, useRef, useState } from 'react';
 import {
-  Composer, ComposerAddon, ComposerAttach, ComposerAttachments, ComposerButton, ComposerCard, ComposerExpand, ComposerFooter,
-  ComposerInput, ComposerSelect, ComposerSend, ComposerSpacer, WIcon, type ComposerAttachment,
-} from '@brett_lamy/workbench';
+  Composer, ComposerAddon, ComposerAttach, ComposerAttachments, ComposerButton, ComposerCard, ComposerExpand,
+  ComposerFooter, ComposerInput, ComposerSelect, ComposerSend, ComposerSpacer, WIcon, type ComposerAttachment,
+} from '@brett_lamy/ui';
+import { PencilKitAnnotator } from '@brett_lamy/pencilkit';
 import type { LiveSpec } from '../frame';
 
 /** Replies for a few seconds after each send, so the send ↔ stop morph can be seen. */
@@ -60,12 +61,14 @@ const chipCode = `import {
   Composer, ComposerCard, ComposerAttachments, ComposerInput, ComposerExpand,
   ComposerFooter, ComposerAttach, ComposerSpacer, ComposerSend,
 } from '@brett_lamy/ui'
+import { PencilKitAnnotator } from '@brett_lamy/pencilkit'
 
 // Paste or attach an image: a chip lands at the caret and a thumbnail pops into the strip.
-// Press either — the annotator zooms out of it; Save flattens the strokes and lands back in it.
+// Press either — the PencilKit annotator zooms out of it; Save flattens the strokes and lands back in it.
+// (Or plug it in once for every Composer: <ComposerAnnotatorProvider annotator={PencilKitAnnotator}>.)
 export default function ImageChips() {
   return (
-    <Composer defaultAttachments={seed} defaultValue="Fix this overlap ![header.png](attachment:shot-1)">
+    <Composer annotator={PencilKitAnnotator} defaultAttachments={seed} defaultValue="Fix this overlap ![header.png](attachment:shot-1)">
       <ComposerCard>
         <ComposerExpand />
         <ComposerAttachments />
@@ -137,7 +140,7 @@ export const COMPOSER_EXAMPLES: Record<string, LiveSpec> = {
     Render: function ChipsLive() {
       return (
         <div style={{ maxWidth: 560, margin: '0 auto', padding: '20px 0' }}>
-          <Composer defaultAttachments={SEED} defaultValue="The header overlaps the sidebar here ![header.png](attachment:shot-1) — can you fix the z-index?">
+          <Composer annotator={PencilKitAnnotator} defaultAttachments={SEED} defaultValue="The header overlaps the sidebar here ![header.png](attachment:shot-1) — can you fix the z-index?">
             <ComposerCard>
               <ComposerExpand />
               <ComposerAttachments />

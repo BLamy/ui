@@ -40,7 +40,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build libraries
-        run: pnpm nx run-many -t build -p @brett_lamy/ui @brett_lamy/pencilkit @brett_lamy/workbench @brett_lamy/chatkit
+        run: pnpm nx run-many -t build -p @brett_lamy/ui @brett_lamy/pencilkit
 
       - name: Publish new versions
         shell: bash
@@ -49,7 +49,7 @@ jobs:
         run: |
           npm install --global npm@latest
           mkdir -p "$RUNNER_TEMP/pkgs"
-          for pkg in ui pencilkit workbench chatkit; do
+          for pkg in ui pencilkit; do
             NAME=$(node -p "require('./packages/$pkg/package.json').name")
             VERSION=$(node -p "require('./packages/$pkg/package.json').version")
             if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then

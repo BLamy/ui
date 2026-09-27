@@ -4,21 +4,16 @@
    internal workspace package name to it. `variants` render as a switch in the card header. */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import {
-  AdaptivePane, Avatar, BLProvider, Button, Credenza, EdgeDrawer, Haptics, Icon, IndexBar, SidebarDemo, NavigationStack, Segmented,
-  SideDrawer, Spinner, Switch, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab,
-  List, ListSection, ListRow, useAppearance,
-  type AdaptivePaneMode, type Screen,
+  AdaptivePane, Avatar, BLProvider, Button, Credenza, EdgeDrawer, Haptics, Icon, IndexBar, SidebarDemo, NavigationStack,
+  Segmented, SideDrawer, Spinner, Switch, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab,
+  List, ListSection, ListRow, useAppearance, ArtifactChatContainer, ChatDemo, DeliveryTrackingDemo, FloatingSheet,
+  MapChatDemo, ProgressStepper, WorkspaceRail, useFloatingSheet, Composer, ComposerAttach, ComposerAttachments,
+  ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput,
+  ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop,
+  ComposerText, ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS, MarkdownView, MessageScroller, REPLY_SERVERS,
+  SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo, type AdaptivePaneMode,
+  type Screen, type FloatingSheetAppearance, type SurfaceKind,
 } from '@brett_lamy/ui';
-import {
-  ArtifactChatContainer, ChatDemo, DeliveryTrackingDemo, FloatingSheet, MapChatDemo, ProgressStepper, WorkspaceRail, useFloatingSheet,
-  type FloatingSheetAppearance,
-} from '@brett_lamy/chatkit';
-import {
-  Composer, ComposerAttach, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand,
-  ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText,
-  ModelPicker, WORKBENCH_MODELS, WORKBENCH_PROVIDERS, MarkdownView, MessageScroller, REPLY_SERVERS, SurfaceDiff, SurfaceFiles, SurfacePanel, TermBody, TermHeader, WFONT, WorkbenchDemo,
-  type SurfaceKind,
-} from '@brett_lamy/workbench';
 import { DemoBtn, BLFrame, type LiveSpec } from './frame';
 import { SPLIT_VIEW_LIVE } from './examples/split-view';
 import { EXAMPLES_LIVE } from './examples';

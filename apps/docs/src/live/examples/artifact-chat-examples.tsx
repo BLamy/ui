@@ -1,8 +1,10 @@
 /* ArtifactChatContainer page — resizing across the breakpoint (the chat column becomes the floating sheet
    with the same composer and transcript), and an always-floating chat with a peek. Registered in live-core. */
 import { useState, type ReactNode } from 'react';
-import { ArtifactChatContainer } from '@brett_lamy/chatkit';
-import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@brett_lamy/workbench';
+import {
+  ArtifactChatContainer, Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput,
+  ComposerSend, ComposerSpacer,
+} from '@brett_lamy/ui';
 import type { LiveSpec } from '../frame';
 
 function Transcript() {

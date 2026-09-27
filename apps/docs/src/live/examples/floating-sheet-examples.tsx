@@ -2,8 +2,9 @@
    changes step to step. Registered in live-core.tsx. */
 import { useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button, springs, useAppearance } from '@brett_lamy/ui';
-import { FloatingSheet, ProgressStepper, useFloatingSheet, type FloatingSheetAppearance } from '@brett_lamy/chatkit';
+import {
+  Button, springs, useAppearance, FloatingSheet, ProgressStepper, useFloatingSheet, type FloatingSheetAppearance,
+} from '@brett_lamy/ui';
 import type { LiveSpec } from '../frame';
 
 /** A 430×560 host with colour for the glass to blur; follows the docs appearance. */

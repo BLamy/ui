@@ -169,3 +169,312 @@ export type { ProgressProps } from './components/progress';
 export { Form, FormSection } from './components/form';
 export type { FormSectionProps } from './components/form';
 // ── end shadcn primitives ──
+
+// ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
+// (EASE is the same curve as the core EASE above.)
+export { WFONT, MONO } from './lib/workbench/util';
+export {
+  workbenchVars,
+  workbenchAppearanceClass,
+  useWorkbenchAppearance,
+  WorkbenchTheme,
+  type WorkbenchThemeProps,
+} from './lib/workbench/theme';
+export { vib, tick } from './lib/workbench/haptics';
+export { WIcon, IconBtn, iconBtnVariants, type WIconName, type WIconProps, type IconBtnProps } from './lib/workbench/icons';
+export {
+  MarkdownView,
+  FbMd,
+  HlPre,
+  hlTokens,
+  DocstreamRefContext,
+  type MarkdownViewProps,
+  type DocstreamRefContextValue,
+  type ReferenceNode,
+} from './components/workbench/markdown';
+export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './components/workbench/message-scroller';
+export { SnapSheet, type SnapSheetProps } from './components/workbench/snap-sheet';
+export { useSpringSheetDrag, MorphText, type SpringSheetDragOptions, type SpringSheetDragState, type MorphTextProps } from './lib/workbench/motion';
+export {
+  ThreadSidebar,
+  type ThreadSidebarProps,
+  type WorkbenchThread,
+  type WorkbenchMessage,
+  type WorkbenchTrace,
+} from './components/workbench/thread-sidebar';
+export {
+  TerminalDock,
+  TermHeader,
+  TermBody,
+  fakeShell,
+  TERM_FILES,
+  type TermLine,
+  type TerminalDockProps,
+  type TermHeaderProps,
+  type TermBodyProps,
+} from './components/workbench/terminal';
+export {
+  SURFACES,
+  SurfaceEmpty,
+  SurfaceBrowser,
+  SurfaceFiles,
+  SurfaceDiff,
+  SurfaceAgents,
+  SurfacePanel,
+  SurfaceTabBar,
+  type SurfaceKind,
+  type SurfaceMeta,
+  type SurfacePanelProps,
+  type SurfaceTabBarProps,
+} from './components/workbench/surfaces';
+export {
+  Composer,
+  ComposerOutlet,
+  ComposerCard,
+  ComposerAddon,
+  ComposerFooter,
+  ComposerSpacer,
+  ComposerSeparator,
+  ComposerText,
+  ComposerButton,
+  ComposerPillLabel,
+  ComposerSelect,
+  ComposerMenuItem,
+  ComposerSend,
+  ComposerStop,
+  ComposerAttach,
+  ComposerExpand,
+  ComposerAttachments,
+  ComposerInput,
+  ComposerBump,
+  ComposerBumpHandle,
+  ComposerBumpContent,
+  ComposerFab,
+  ComposerOptions,
+  ComposerOptionsOutlet,
+  composerFabVariants,
+  AnnotateLightbox,
+  useComposer,
+  useComposerBump,
+  composerCardVariants,
+  composerAddonVariants,
+  composerButtonVariants,
+  composerBumpVariants,
+  composerMenuItemVariants,
+  type ComposerProps,
+  type ComposerCollapse,
+  type ComposerFabProps,
+  type ComposerContextValue,
+  type ComposerAttachment,
+  type ComposerOutletProps,
+  type ComposerCardProps,
+  type ComposerAddonProps,
+  type ComposerButtonProps,
+  type ComposerSelectProps,
+  type ComposerSelectOption,
+  type ComposerSendProps,
+  type ComposerStopProps,
+  type ComposerInputProps,
+  type ComposerBumpProps,
+  type ComposerBumpProgress,
+  type ComposerBumpContextValue,
+  type ComposerBumpHandleProps,
+  type ComposerBumpContentProps,
+  type AnnotateLightboxProps,
+} from './components/workbench/composer';
+export {
+  ComposerAnnotatorProvider,
+  useComposerAnnotator,
+  type ComposerAnnotator,
+  type ComposerAnnotatorProps,
+  type ComposerAnnotatorSurface,
+} from './components/workbench/annotator';
+export { ModelPicker, modelRowVariants, type ModelPickerProps } from './components/workbench/model-picker';
+export {
+  AnthropicGlyph,
+  OpenAIGlyph,
+  SparkleGlyph,
+  WORKBENCH_MODELS,
+  WORKBENCH_PROVIDERS,
+  type ModelOption,
+  type ModelProvider,
+} from './components/workbench/models';
+export {
+  WorkbenchComposer,
+  WORKBENCH_EFFORTS,
+  WORKBENCH_ACCESS,
+  stripAttachmentRefs,
+  type WorkbenchComposerProps,
+} from './components/workbench/workbench-composer';
+export { WbPopover, readWbTokens, type WbPopoverProps } from './components/workbench/wb-popover';
+export {
+  ChatView,
+  EmptyThread,
+  SettledBanner,
+  WorkTrace,
+  type ChatViewProps,
+  type EmptyThreadProps,
+  type SettledBannerProps,
+  type WorkTraceProps,
+} from './components/workbench/chat';
+export {
+  WorkbenchShell,
+  useWorkbenchShell,
+  workbenchWidthClass,
+  type WorkbenchShellProps,
+  type WorkbenchShellContextValue,
+  type WorkbenchWidthClass,
+} from './templates/workbench-shell';
+export {
+  WBHeader,
+  WBSidebarSlot,
+  WBMainSlot,
+  WBDockSlot,
+  WBDockSheetSlot,
+  WBPanelSlot,
+  WBTabsSlot,
+  type WBHeaderProps,
+  type WBSidebarSlotProps,
+  type WBMainSlotProps,
+  type WBPanelSlotProps,
+} from './templates/workbench-slots';
+export {
+  WorkbenchDemo,
+  SEED_THREADS,
+  TERM_SEED,
+  REPLIES,
+  REPLY_SERVERS,
+  REPLY_COMPONENT,
+  REPLY_REVIEW,
+  type WorkbenchDemoProps,
+} from './demos/workbench-demo';
+
+// ── Chat: team-chat parts, floating/artifact chat containers, ChatShell, and the chat demos ──
+export { ChatIcon, chatIconPaths, type ChatIconProps } from './lib/chat/chat-icon';
+export {
+  chatTokens,
+  chatTokenVars,
+  chatLightTokens,
+  chatLightTokenVars,
+  chatVars,
+  K,
+  KFONT,
+  KMONO,
+  KEASE,
+  type ChatTokens,
+} from './lib/chat/chat-tokens';
+export { kvib } from './lib/chat/kvib';
+export {
+  ChatUsersProvider,
+  useChatUsers,
+  type ChatUser,
+  type ChatUsers,
+  type ChatUsersProviderProps,
+  type ChatReaction,
+  type ChatThreadReply,
+  type ChatThreadData,
+  type ChatMessageData,
+  type ChatChannel,
+  type ChatChannels,
+} from './lib/chat/chat-users';
+export { ChatAvatar, type ChatAvatarProps } from './components/chat/chat-avatar';
+export { RichText, type RichTextProps } from './components/chat/rich-text';
+export { ThreadPreview, type ThreadPreviewProps } from './components/chat/thread-preview';
+export { Message, type MessageProps } from './components/chat/message';
+export { ChatComposer, type ChatComposerProps } from './components/chat/chat-composer';
+export { ChannelList, type ChannelListProps } from './components/chat/channel-list';
+export { WorkspaceRail, type WorkspaceRailProps, type WorkspaceRailHome, type Workspace } from './components/chat/workspace-rail';
+export {
+  ChatShell,
+  useChatShell,
+  type ChatShellProps,
+  type ChatShellContextValue,
+  type ChatShellSlotChildren,
+} from './templates/chat-shell';
+export {
+  FloatingSheet,
+  useFloatingSheet,
+  type FloatingSheetProps,
+  type FloatingSheetContextValue,
+  type FloatingSheetFabPosition,
+  type FloatingSheetAppearance,
+  type FloatingSheetTone,
+} from './components/chat/floating-sheet';
+export {
+  FloatingChat,
+  useFloatingChat,
+  type FloatingChatProps,
+  type FloatingChatContextValue,
+  type FloatingChatFabPosition,
+} from './components/chat/floating-chat';
+export { ChatColumn, type ChatColumnProps } from './components/chat/chat-column';
+export {
+  ArtifactChatContainer,
+  useArtifactChatContainer,
+  type ArtifactChatContainerProps,
+  type ArtifactChatContainerContextValue,
+  type ArtifactChatContainerSlotChildren,
+  type ArtifactChatFabPosition,
+  type ArtifactChatLayout,
+} from './templates/artifact-chat-container';
+export {
+  ChatDemo,
+  ChannelNav,
+  ChannelMain,
+  seed,
+  USERS,
+  type ChatDemoProps,
+  type ChatThreadState,
+  type ChannelNavProps,
+  type ChannelMainProps,
+} from './demos/chat-demo';
+export {
+  TileMap,
+  esriDarkGrayTiles,
+  esriLightGrayTiles,
+  ESRI_ATTRIBUTION,
+  osmTiles,
+  OSM_ATTRIBUTION,
+  cartoDarkTiles,
+  cartoVoyagerTiles,
+  CARTO_ATTRIBUTION,
+  type TileMapProps,
+  type MapPin,
+  type MapRoute,
+  type TileUrlFn,
+} from './demos/map-chat/tile-map';
+export {
+  project,
+  unproject,
+  resolveView,
+  distanceMeters,
+  walkingMinutes,
+  formatDistance,
+  formatMinutes,
+  type LatLng,
+  type MapView,
+  type MapTarget,
+  type MapBoundsTarget,
+  type MapPadding,
+} from './demos/map-chat/geo';
+export { MAP_ICONS, type MapIconName } from './demos/map-chat/map-icons';
+export { PLACES, PLACE_BY_ID, AREAS, CATEGORY_META, USER_POSITION, type Place, type PlaceCategory } from './demos/map-chat/places';
+export {
+  planTurn,
+  SUGGESTIONS,
+  TOOL_META,
+  type MapToolName,
+  type MapToolHost,
+  type AgentToolStep,
+  type AgentTurnPlan,
+  type AgentMemory,
+  type Trip,
+} from './demos/map-chat/map-agent';
+export { MapChatDemo, type MapChatDemoProps } from './demos/map-chat/map-chat-demo';
+export { ProgressStepper, progressStepperVariants, type ProgressStepperProps, type ProgressStep, type ProgressStepState } from './components/chat/progress-stepper';
+export {
+  DeliveryTrackingDemo,
+  DELIVERY_STAGES,
+  type DeliveryTrackingDemoProps,
+  type DeliveryStage,
+} from './demos/delivery/delivery-tracking-demo';

@@ -1,7 +1,6 @@
 /* BL UI documentation shell — pixel-faithful port of project/BL UI Docs.dc.html. */
 import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
-import { AppearanceProvider, type Appearance } from '@brett_lamy/ui';
-import { MarkdownView } from '@brett_lamy/workbench';
+import { AppearanceProvider, MarkdownView, type Appearance } from '@brett_lamy/ui';
 import { NAV, PAGES, PAGE_ORDER } from '../content';
 import { DocsLive } from '../live/docs-live';
 import { AppDemoBlock, HapticsDemoBlock, PencilDemoBlock, WorkbenchDemoBlock } from '../live/demo-blocks';
@@ -141,16 +140,10 @@ export default function App() {
   const idx = PAGE_ORDER.indexOf(slug);
   const prev = idx > 0 ? PAGE_ORDER[idx - 1] : null;
   const next = idx >= 0 && idx < PAGE_ORDER.length - 1 ? PAGE_ORDER[idx + 1] : null;
-  // The public distribution is a single package; workspace package names stay internal.
-  const publicMarkdown = page.markdown
-    .replace(/@brett_lamy\/(?:chatkit|workbench|pencilkit)\b/g, '@brett_lamy/ui')
-    .replace(/pnpm add @brett_lamy\/ui(?: @brett_lamy\/ui)+ react react-dom/g, 'npm i @brett_lamy/ui')
-    // the per-package stylesheet imports collapse into one after the rewrite
-    .replace(/^(import '@brett_lamy\/ui\/styles\.css'\n)(?:import '@brett_lamy\/ui\/styles\.css'\n)+/gm, '$1');
-  const segs = parseSegs(slug, publicMarkdown);
+  const segs = parseSegs(slug, page.markdown);
   const toc: Array<{ text: string; h3: boolean }> = [];
   let fenced = false;
-  publicMarkdown.split('\n').forEach((l) => {
+  page.markdown.split('\n').forEach((l) => {
     if (l.startsWith('```')) fenced = !fenced;
     if (fenced) return;
     const m2 = l.match(/^## (.+)$/);
