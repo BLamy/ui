@@ -707,6 +707,16 @@ function DemoFilesEditor({ files, entry, onChange }: {
   )
 }
 
+/** A string attribute carried as `data-<name>` in the editor's HTML (clipboard between editors). */
+function dataAttr(key: string, name = key) {
+  return {
+    default: null,
+    parseHTML: (element: HTMLElement) => element.getAttribute(`data-${name}`),
+    renderHTML: (attributes: Record<string, unknown>) =>
+      attributes[key] ? { [`data-${name}`]: String(attributes[key]) } : {},
+  }
+}
+
 function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
   const editable = editor.isEditable
   const { demoResolver, demoRuntime, demoDependencies } = useEditorRuntime()
@@ -769,6 +779,11 @@ function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
             viewport={demo.viewport}
             files={files}
             entry={entry}
+            status={demo.status}
+            bleed={demo.bleed}
+            canvasClassName={demo.className}
+            surface={demo.surface}
+            variantsWidth={demo.variantsWidth}
             {...(demoRuntime ? { runtime: demoRuntime } : {})}
             {...(demoDependencies ? { dependencies: demoDependencies } : {})}
           />
@@ -796,6 +811,21 @@ export const GbDemo = Node.create({
       variants: { default: null, rendered: false },
       viewport: { default: null },
       entry: { default: null },
+      // Look (`status="Live" bleed="true" className="…" surface="…" variantsWidth="220"`),
+      // kept verbatim; the tag's values win over the resolver's meta.json.
+      status: dataAttr("status"),
+      bleed: {
+        default: null,
+        parseHTML: (element: HTMLElement) => {
+          const raw = element.getAttribute("data-bleed")
+          return raw === null ? null : raw !== "false"
+        },
+        renderHTML: (attributes: Record<string, unknown>) =>
+          typeof attributes.bleed === "boolean" ? { "data-bleed": String(attributes.bleed) } : {},
+      },
+      className: dataAttr("className", "canvas-class"),
+      surface: dataAttr("surface"),
+      variantsWidth: dataAttr("variantsWidth", "variants-width"),
       // `{ path, content, language? }[]` — the files between `{% demo %}` and `{% enddemo %}`.
       files: {
         default: null,
@@ -1115,6 +1145,8 @@ export const GbCodeBlock = CodeBlock.extend({
       ...this.parent?.(),
       title: { default: null },
       lineNumbers: { default: false },
+      // The source wrote `lineNumbers="…"` explicitly: kept so the fence round-trips byte-for-byte.
+      lineNumbersExplicit: { default: null, rendered: false },
       live: { default: false },
       entry: { default: null },
       collapsedCodeLines: { default: null, rendered: false },

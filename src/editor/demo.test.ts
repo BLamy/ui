@@ -11,6 +11,8 @@ describe("demo block conversion", () => {
     '{% demo src="button/variants" title="Variants" description="Every visual style" height="420" layout="multi" variants="full:Full,compact:Compact" viewport="tablet" %}\n',
     '{% demo src="card/sizes" height="60vh" layout="single" variants="sm,md:Medium,lg" viewport="phone" %}\n',
     '{% demo src="shell/app" description="Whole app shell" height="auto" layout="auto" viewport="desktop" %}\n',
+    '{% demo src="a/b" title="Say \\"hi\\" C:\\\\x 100%\\}" status="Needs network" bleed="true" className="brand dark" surface="background: var(--brand-50); --demo-gap: 12px" variantsWidth="16rem" %}\n',
+    '{% demo src="a/b" bleed="false" %}\n',
   ])("round-trips %s", (markdown) => {
     expect(roundTrip(markdown)).toBe(markdown)
   })
@@ -35,9 +37,24 @@ describe("demo block conversion", () => {
         ],
         viewport: "tablet",
         entry: null,
+        status: null,
+        bleed: null,
+        className: null,
+        surface: null,
+        variantsWidth: null,
         files: null,
       },
     })
+  })
+
+  it("carries the look attributes through the real schema", async () => {
+    const { getGitbookSchema } = await import("./extensions")
+    const schema = getGitbookSchema()
+    const markdown = '{% demo src="a/b" status="Live" bleed="false" className="c" surface="padding: 8" variantsWidth="220" %}\n'
+    const node = schema.nodeFromJSON(astToTiptap(parseMarkdown(markdown)))
+    node.check()
+    expect(serializeMarkdown(tiptapToAst(node.toJSON()))).toBe(markdown)
+    expect(node.firstChild?.attrs).toMatchObject({ status: "Live", bleed: false, className: "c", surface: "padding: 8", variantsWidth: "220" })
   })
 
   it("round-trips a demo between other blocks", () => {

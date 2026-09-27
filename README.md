@@ -15,7 +15,8 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 - Preserves Docstream/GitBook block semantics when converting back to markdown.
 - Copy a docs page (docstream's "Copy page") and paste it in: the editor shows the same page and
   serializes it back byte-for-byte — demos with their inline files, install command boxes, titled
-  tab sets and all.
+  tab sets and all. Inline code may combine with links, bold, italic and strike
+  (``[`@brett_lamy/ui`](url)``, ``**bold `x` text**``); the editor's `GbCode` mark allows it.
 - Preserves mounted source-file/export provenance and can write edits to the real file through Vite.
 
 ## Installation
@@ -24,7 +25,7 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 npm install @brett_lamy/docstream-editor @brett_lamy/docstream react
 ```
 
-React is a peer dependency. `@brett_lamy/docstream` is a runtime dependency because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers.
+React and the TipTap packages (including `@tiptap/extension-code`) are peer dependencies. `@brett_lamy/docstream` is a runtime dependency because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers.
 
 ## Basic Setup
 

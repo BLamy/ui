@@ -38,7 +38,19 @@ const FILES: Record<string, { path: string; content: string; language?: string }
 
 const resolver: DemoResolver = {
   list: () => Object.keys(FILES),
-  meta: async (src) => (src === "button/ghost" ? { title: "Ghost button", height: 240, variants: [{ id: "a", label: "A" }] } : undefined),
+  meta: async (src) =>
+    src === "button/ghost"
+      ? {
+          title: 'Ghost "outline" button',
+          height: 240,
+          variants: [{ id: "a", label: "A" }],
+          status: "Needs network",
+          bleed: true,
+          className: "ghost-canvas",
+          surface: { background: "var(--brand-50)", "--demo-gap": "12px" },
+          variantsWidth: 180,
+        }
+      : undefined,
   files: async (src) => {
     if (!FILES[src]) throw new Error(`unknown ${src}`)
     return FILES[src]
@@ -70,6 +82,12 @@ describe("a full docs page through the editor", () => {
     const copied = await resolveDemosToMarkdown(page, resolver)
     expect(copied).not.toBe(page)
     expect(copied.match(/\{% enddemo %\}/g)?.length).toBe(3)
+    // The page has quoted titles, linked / emphasised inline code and demo statuses; meta.json's
+    // look is folded into the copied tag. All of it survives the editor byte-for-byte.
+    expect(copied).toContain('title="Sizes \\"S\\" to \\"L\\" (C:\\\\ui, 100%\\})"')
+    expect(copied).toContain('{% demo src="button/ghost" title="Ghost \\"outline\\" button" height="240" variants="a:A" status="Needs network" bleed="true" className="ghost-canvas" surface="background: var(--brand-50); --demo-gap: 12px" variantsWidth="180" %}')
+    expect(copied).toContain("[`@brett_lamy/ui`](https://www.npmjs.com/package/@brett_lamy/ui)")
+    expect(copied).toContain("**bold `x` text**")
     expect(throughEditor(copied)).toBe(copied)
   })
 

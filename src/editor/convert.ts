@@ -99,6 +99,7 @@ function blockToPM(b: Block): PMNode {
           language: b.language,
           title: b.title,
           lineNumbers: b.lineNumbers,
+          lineNumbersExplicit: b.lineNumbersExplicit ? true : null,
           live: !!b.live,
           entry: b.entry ?? null,
           collapsedCodeLines: b.collapsedCodeLines ?? null,
@@ -188,6 +189,11 @@ function blockToPM(b: Block): PMNode {
           variants: b.variants?.length ? b.variants.map((v) => ({ id: v.id, label: v.label })) : null,
           viewport: b.viewport ?? null,
           entry: b.entry ?? null,
+          status: b.status ?? null,
+          bleed: b.bleed ?? null,
+          className: b.className ?? null,
+          surface: b.surface ?? null,
+          variantsWidth: b.variantsWidth ?? null,
           files: b.files?.length ? b.files.map((f) => ({ ...f })) : null,
         },
       }
@@ -344,6 +350,7 @@ function pmToBlock(n: PMNode): Block | null {
         language: (n.attrs?.language as string) || null,
         title: (n.attrs?.title as string) || null,
         lineNumbers: !!n.attrs?.lineNumbers,
+        ...(n.attrs?.lineNumbersExplicit ? { lineNumbersExplicit: true } : {}),
         live: !!n.attrs?.live,
         entry: (n.attrs?.entry as string) || null,
         ...(collapsed ? { collapsedCodeLines: collapsed } : {}),
@@ -504,6 +511,7 @@ export function pmToDemo(a: Record<string, unknown>): DemoNode {
   const layout = String(a.layout ?? "")
   const files = pmDemoFiles(a.files)
   const viewport = String(a.viewport ?? "")
+  const bleed = a.bleed === true || a.bleed === "true" ? true : a.bleed === false || a.bleed === "false" ? false : undefined
   return {
     type: "demo",
     src: String(a.src ?? ""),
@@ -514,6 +522,11 @@ export function pmToDemo(a: Record<string, unknown>): DemoNode {
     ...(variants.length ? { variants } : {}),
     ...(DEMO_VIEWPORTS.includes(viewport) ? { viewport: viewport as DemoViewport } : {}),
     ...(a.entry ? { entry: String(a.entry) } : {}),
+    ...(a.status ? { status: String(a.status) } : {}),
+    ...(bleed === undefined ? {} : { bleed }),
+    ...(a.className ? { className: String(a.className) } : {}),
+    ...(a.surface ? { surface: String(a.surface) } : {}),
+    ...(a.variantsWidth ? { variantsWidth: String(a.variantsWidth) } : {}),
     ...(files.length ? { files } : {}),
   }
 }

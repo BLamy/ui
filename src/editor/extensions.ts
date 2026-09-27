@@ -1,4 +1,5 @@
 import StarterKit from "@tiptap/starter-kit"
+import Code from "@tiptap/extension-code"
 import Placeholder from "@tiptap/extension-placeholder"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
 import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table"
@@ -13,6 +14,18 @@ export const GbTable = Table.extend({
   addAttributes() {
     return { ...this.parent?.(), view: { default: null } }
   },
+})
+
+/**
+ * Inline code that coexists with link, bold, italic and strike. TipTap's code mark
+ * excludes every other mark (`excludes: "_"`), so Markdown such as
+ * ``[`@brett_lamy/ui`](url)`` or ``**bold `x` text**`` — which docstream parses into one
+ * text run with both marks — failed the schema ("Invalid collection of marks for node
+ * text: link,code") and dropped the whole paste. Docstream serializes every combination
+ * back byte-for-byte.
+ */
+export const GbCode = Code.extend({
+  excludes: "",
 })
 
 /**
@@ -84,8 +97,10 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
   const list: AnyExtension[] = [
     StarterKit.configure({
       codeBlock: false,
+      code: false,
       ...(disableHistory ? { undoRedo: false } : {}),
     }),
+    GbCode,
     GbCodeBlock,
     TaskList,
     TaskItem.configure({ nested: true }),
