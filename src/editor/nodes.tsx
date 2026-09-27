@@ -16,6 +16,7 @@ import {
   ChevronDown,
   FolderGit2,
   Hash,
+  Heading,
   Info,
   Link2,
   FileCode2,
@@ -27,12 +28,12 @@ import {
 import { DocsRenderer } from "@brett_lamy/docstream"
 import { resolveAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
-import type { DocumentNode, HintStyle, SourceRefNode } from "@brett_lamy/docstream/gitbook"
+import { packageManagerCommands, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/docstream/gitbook"
 import { ReactCodePreview } from "@brett_lamy/docstream/playground"
 import { ReplayPreview, isReplayQaUrl } from "@brett_lamy/docstream/replay"
 import { VideoEmbed } from "@brett_lamy/docstream/video"
 import { DemoViewer } from "@brett_lamy/docstream/demo"
-import { pmToDemo } from "./convert"
+import { pmToCommand, pmToDemo } from "./convert"
 import { SourceFileEditor } from "./SourceFileEditor"
 import { useEditorRuntime } from "./runtime"
 import { GbAttachment } from "./attachments"
@@ -135,9 +136,14 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
     updateAttributes({ active: Math.max(0, active - (index <= active ? 1 : 0)) })
   }
 
-  return (
-    <NodeViewWrapper className="gb-tabs">
-      <div className="gb-tabs-header" contentEditable={false}>
+  const editable = editor.isEditable
+  const title = typeof node.attrs.title === "string" ? node.attrs.title : ""
+  const level = node.attrs.level === 3 || node.attrs.level === 4 ? node.attrs.level : 2
+  // `{% tabs title="…" %}`: the set renders as a section — heading, then the switch on its row.
+  const section = !!title || node.attrs.titled === true
+
+  const tabStrip = (
+    <>
         {titles.map((t, idx) => (
           <div
             key={idx}
@@ -161,11 +167,67 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
             )}
           </div>
         ))}
-        {editor.isEditable && (
+        {editable && (
           <button className="gb-icon-btn" onClick={addTab} title="Add tab">
             <Plus className="size-3.5" />
           </button>
         )}
+        {editable && !section && (
+          <button
+            className="gb-icon-btn gb-tabs-add-title"
+            onClick={() => updateAttributes({ titled: true })}
+            title="Add a section title (renders the tabs as a titled section)"
+          >
+            <Heading className="size-3.5" />
+          </button>
+        )}
+    </>
+  )
+
+  if (section) {
+    const HeadingTag = `h${level}` as "h2" | "h3" | "h4"
+    return (
+      <NodeViewWrapper className="gb-tabs gb-tabs-section" data-level={level}>
+        <div className="gb-tabs-section-head" contentEditable={false}>
+          <HeadingTag className="gb-tabs-section-title">
+            {editable ? (
+              <input
+                className="gb-inline-input gb-tabs-section-input"
+                value={title}
+                placeholder="Section title…"
+                autoFocus={!title}
+                onChange={(e) => updateAttributes({ title: e.target.value || null })}
+                onBlur={(e) => {
+                  if (!e.target.value) updateAttributes({ title: null, titled: false })
+                }}
+              />
+            ) : (
+              title
+            )}
+          </HeadingTag>
+          {editable && (
+            <select
+              className="gb-tabs-level"
+              value={level}
+              title="Heading level"
+              onChange={(e) => updateAttributes({ level: Number(e.target.value) === 2 ? null : Number(e.target.value) })}
+            >
+              <option value={2}>H2</option>
+              <option value={3}>H3</option>
+              <option value={4}>H4</option>
+            </select>
+          )}
+          <div className="gb-tabs-pills">{tabStrip}</div>
+        </div>
+        <NodeViewContent className="gb-tabs-content" data-active={active} />
+      </NodeViewWrapper>
+    )
+  }
+
+  return (
+    <NodeViewWrapper className="gb-tabs">
+      <div className="gb-tabs-header" contentEditable={false}>
+        {tabStrip}
       </div>
       <NodeViewContent className="gb-tabs-content" data-active={active} />
     </NodeViewWrapper>
@@ -187,6 +249,19 @@ export const GbTabs = Node.create({
         parseHTML: (element) => element.getAttribute("data-sync") || null,
         renderHTML: (attributes) => (attributes.sync ? { "data-sync": attributes.sync } : {}),
       },
+      // `{% tabs title="Installation" level="3" %}` — a titled set renders as a section heading.
+      title: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-title") || null,
+        renderHTML: (attributes) => (attributes.title ? { "data-title": attributes.title } : {}),
+      },
+      level: {
+        default: null,
+        parseHTML: (element) => Number(element.getAttribute("data-level")) || null,
+        renderHTML: (attributes) => (attributes.level ? { "data-level": attributes.level } : {}),
+      },
+      // UI only: a title field is open but still empty.
+      titled: { default: false, rendered: false },
     }
   },
   parseHTML() {
@@ -443,7 +518,8 @@ export const GbContentRef = Node.create({
   group: "block",
   atom: true,
   addAttributes() {
-    return { url: { default: "" }, label: { default: "" } }
+    // `linked`: the label is written as a link to the page (`[Card](card.md)`, GitBook's form).
+    return { url: { default: "" }, label: { default: "" }, linked: { default: true, rendered: false } }
   },
   parseHTML() {
     return [{ tag: "div[data-gb-content-ref]" }]
@@ -528,20 +604,146 @@ export const GbSourceRef = Node.create({
 
 // ---------- Demo ----------
 
+/** Inline demo files editor: a tab per file (path editable), a code area, add / remove. */
+function DemoFilesEditor({ files, entry, onChange }: {
+  files: DemoInlineFile[]
+  entry: string
+  onChange: (files: DemoInlineFile[], entry?: string | null) => void
+}) {
+  const [selected, setSelected] = useState(0)
+  const index = Math.min(selected, Math.max(0, files.length - 1))
+  const file = files[index]
+  const update = (patch: Partial<DemoInlineFile>) => {
+    const next = files.map((f, i) => {
+      if (i !== index) return f
+      const merged = { ...f, ...patch }
+      if (!merged.language) delete merged.language
+      return merged
+    })
+    // Renaming the entry file keeps it the entry.
+    const renamed = patch.path !== undefined && file && entry === file.path ? patch.path : undefined
+    onChange(next, renamed)
+  }
+  const add = () => {
+    const taken = new Set(files.map((f) => f.path))
+    let n = files.length + 1
+    let path = files.length ? `file${n}.tsx` : "index.tsx"
+    while (taken.has(path)) path = `file${++n}.tsx`
+    onChange([...files, { path, content: "", language: "tsx" }])
+    setSelected(files.length)
+  }
+  const remove = (i: number) => {
+    const removed = files[i]
+    onChange(files.filter((_, k) => k !== i), removed && entry === removed.path ? null : undefined)
+    setSelected(Math.max(0, i - 1))
+  }
+  return (
+    <div className="gb-demo-files">
+      <div className="gb-demo-files-tabs" role="tablist" aria-label="Demo files">
+        {files.map((f, i) => (
+          <div key={i} className={i === index ? "gb-demo-file-tab gb-demo-file-tab-active" : "gb-demo-file-tab"} onClick={() => setSelected(i)}>
+            {i === index ? (
+              <input
+                className="gb-demo-file-path"
+                value={f.path}
+                size={Math.max(f.path.length, 6)}
+                placeholder="index.tsx"
+                aria-label="File path"
+                onChange={(e) => update({ path: e.target.value })}
+              />
+            ) : (
+              <span>{f.path || "untitled"}</span>
+            )}
+            {f.path && entry === f.path ? <span className="gb-demo-file-entry">entry</span> : null}
+            <button type="button" className="gb-icon-btn" title={`Remove ${f.path || "file"}`} onClick={(e) => { e.stopPropagation(); remove(i) }}>
+              <X className="size-3" />
+            </button>
+          </div>
+        ))}
+        <button type="button" className="gb-icon-btn" title="Add file" onClick={add}>
+          <Plus className="size-3.5" />
+        </button>
+      </div>
+      {file ? (
+        <div className="gb-demo-file-body">
+          <div className="gb-demo-file-meta">
+            <input
+              className="gb-inline-input gb-demo-file-lang"
+              value={file.language ?? ""}
+              placeholder="lang"
+              aria-label="Language"
+              onChange={(e) => update({ language: e.target.value })}
+            />
+            <label className="gb-demo-file-entry-toggle">
+              <input
+                type="radio"
+                checked={entry ? entry === file.path : index === 0}
+                onChange={() => onChange(files, index === 0 ? null : file.path)}
+              />
+              Entry
+            </label>
+          </div>
+          <textarea
+            className="gb-demo-file-code"
+            value={file.content}
+            spellCheck={false}
+            rows={Math.min(24, Math.max(4, file.content.split("\n").length + 1))}
+            aria-label={`Edit ${file.path}`}
+            onChange={(e) => update({ content: e.target.value })}
+            onKeyDown={(e) => {
+              if (e.key !== "Tab" || e.shiftKey) return
+              e.preventDefault()
+              const el = e.currentTarget
+              const { selectionStart: a, selectionEnd: b } = el
+              update({ content: `${el.value.slice(0, a)}  ${el.value.slice(b)}` })
+              requestAnimationFrame(() => el.setSelectionRange(a + 2, a + 2))
+            }}
+          />
+        </div>
+      ) : (
+        <div className="gb-demo-files-empty">No inline files — the demo resolves from its <code>src</code>.</div>
+      )}
+    </div>
+  )
+}
+
 function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
   const editable = editor.isEditable
-  const { demoResolver } = useEditorRuntime()
+  const { demoResolver, demoRuntime, demoDependencies } = useEditorRuntime()
   const demo = useMemo(() => pmToDemo(node.attrs), [node.attrs])
-  // Typing into `src` would otherwise resolve every intermediate id.
+  const [filesOpen, setFilesOpen] = useState(false)
+  // Typing into `src` or a file would otherwise re-resolve / re-run every keystroke.
   const src = useDebouncedValue(demo.src)
+  const files = useDebouncedValue(demo.files)
+  const entry = useDebouncedValue(demo.entry)
+  const hasFiles = !!demo.files?.length
+  // The resolver is the authority when it knows `src`; inline files stand in otherwise
+  // (DemoViewer falls back to them), so a pasted docs page looks like the page.
+  const preview = (!!demoResolver && !!src) || !!files?.length
+  const setFiles = (next: DemoInlineFile[], nextEntry?: string | null) => {
+    updateAttributes({
+      files: next.length ? next : null,
+      ...(nextEntry !== undefined ? { entry: nextEntry || null } : {}),
+    })
+  }
   return (
-    <NodeViewWrapper className={demoResolver && src ? "gb-demo-block gb-demo-block-preview" : "gb-demo-block"} contentEditable={false}>
+    <NodeViewWrapper className={preview || (editable && filesOpen) ? "gb-demo-block gb-demo-block-preview" : "gb-demo-block"} contentEditable={false}>
       <div className="gb-demo">
         <AppWindow className="size-4 shrink-0" />
         {editable ? (
           <>
             <input className="gb-inline-input gb-demo-src" value={node.attrs.src} placeholder="page/example" onChange={(event) => updateAttributes({ src: event.target.value })} />
             <input className="gb-inline-input gb-demo-title" value={node.attrs.title} placeholder="Title" onChange={(event) => updateAttributes({ title: event.target.value })} />
+            <button
+              type="button"
+              className={filesOpen ? "gb-demo-files-toggle gb-demo-files-toggle-active" : "gb-demo-files-toggle"}
+              title="Edit the files carried inline by this demo"
+              aria-expanded={filesOpen}
+              onClick={() => setFilesOpen((open) => !open)}
+            >
+              <FileCode2 className="size-3.5" />
+              {hasFiles ? `${demo.files!.length} file${demo.files!.length === 1 ? "" : "s"}` : "Files"}
+            </button>
           </>
         ) : (
           <>
@@ -550,11 +752,14 @@ function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
           </>
         )}
       </div>
-      {demoResolver && src ? (
+      {editable && filesOpen ? (
+        <DemoFilesEditor files={demo.files ?? []} entry={demo.entry ?? ""} onChange={setFiles} />
+      ) : null}
+      {preview ? (
         <div className="gb-demo-preview">
           <DemoViewer
             key={src}
-            resolver={demoResolver}
+            {...(demoResolver ? { resolver: demoResolver } : {})}
             src={src}
             title={demo.title}
             description={demo.description}
@@ -562,6 +767,10 @@ function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
             layout={demo.layout}
             variants={demo.variants}
             viewport={demo.viewport}
+            files={files}
+            entry={entry}
+            {...(demoRuntime ? { runtime: demoRuntime } : {})}
+            {...(demoDependencies ? { dependencies: demoDependencies } : {})}
           />
         </div>
       ) : null}
@@ -569,7 +778,10 @@ function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
   )
 }
 
-/** `{% demo %}` — every tag attribute is kept on the node so it round-trips losslessly. */
+/**
+ * `{% demo %}` — every tag attribute is kept on the node, and the block form's inline
+ * files (`files`, in document order) with it, so it round-trips losslessly.
+ */
 export const GbDemo = Node.create({
   name: "gbDemo",
   group: "block",
@@ -583,6 +795,22 @@ export const GbDemo = Node.create({
       layout: { default: null },
       variants: { default: null, rendered: false },
       viewport: { default: null },
+      entry: { default: null },
+      // `{ path, content, language? }[]` — the files between `{% demo %}` and `{% enddemo %}`.
+      files: {
+        default: null,
+        rendered: false,
+        parseHTML: (element) => {
+          const raw = element.getAttribute("data-files")
+          if (!raw) return null
+          try {
+            return JSON.parse(raw)
+          } catch {
+            return null
+          }
+        },
+        renderHTML: (attributes) => (attributes.files ? { "data-files": JSON.stringify(attributes.files) } : {}),
+      },
     }
   },
   parseHTML() {
@@ -593,6 +821,86 @@ export const GbDemo = Node.create({
   },
   addNodeView() {
     return ReactNodeViewRenderer(DemoView)
+  },
+})
+
+// ---------- Command (package-manager install box) ----------
+
+const COMMAND_MANAGERS = ["pnpm", "yarn", "bun"] as const
+
+function CommandView({ node, updateAttributes, editor }: NodeViewProps) {
+  const editable = editor.isEditable
+  const command = useMemo(() => pmToCommand(node.attrs), [node.attrs])
+  const derived = useMemo(() => packageManagerCommands(command.command), [command.command])
+  // docstream's own command box, so the editor shows exactly what readers get.
+  const doc = useMemo<DocumentNode>(() => ({ type: "doc", children: [command] }), [command])
+  const setOverride = (pm: (typeof COMMAND_MANAGERS)[number], value: string) => {
+    const next = { ...(command.overrides ?? {}) }
+    if (value) next[pm] = value
+    else delete next[pm]
+    updateAttributes({ overrides: Object.keys(next).length ? next : null })
+  }
+  return (
+    <NodeViewWrapper className="gb-command" contentEditable={false}>
+      {command.command ? (
+        <div className="gb-command-preview">
+          <DocsRenderer doc={doc} />
+        </div>
+      ) : null}
+      {editable ? (
+        <div className="gb-command-fields">
+          <label className="gb-command-field gb-command-field-npm">
+            <span>npm</span>
+            <textarea
+              className="gb-command-input"
+              value={command.command}
+              placeholder="npm install <package>"
+              spellCheck={false}
+              rows={Math.max(1, command.command.split("\n").length)}
+              onChange={(e) => updateAttributes({ command: e.target.value })}
+            />
+          </label>
+          {COMMAND_MANAGERS.map((pm) => (
+            <label key={pm} className="gb-command-field">
+              <span>{pm}</span>
+              <input
+                className="gb-inline-input gb-command-override"
+                value={command.overrides?.[pm] ?? ""}
+                placeholder={derived[pm] || `${pm} (derived)`}
+                spellCheck={false}
+                title={`Override the derived ${pm} command (leave empty to derive it)`}
+                onChange={(e) => setOverride(pm, e.target.value)}
+              />
+            </label>
+          ))}
+        </div>
+      ) : null}
+    </NodeViewWrapper>
+  )
+}
+
+/** `{% command %}npm install x{% endcommand %}` — one npm command shown for the reader's package manager. */
+export const GbCommand = Node.create({
+  name: "gbCommand",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return {
+      command: { default: "" },
+      // `{ pnpm?, yarn?, bun? }` — verbatim commands replacing the derived ones.
+      overrides: { default: null, rendered: false },
+      // Sync key; null means docstream's default ("pm").
+      sync: { default: null },
+    }
+  },
+  parseHTML() {
+    return [{ tag: "div[data-gb-command]" }]
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    return ["div", mergeAttributes(HTMLAttributes, { "data-gb-command": "" }), node.attrs.command]
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(CommandView)
   },
 })
 
@@ -809,6 +1117,8 @@ export const GbCodeBlock = CodeBlock.extend({
       lineNumbers: { default: false },
       live: { default: false },
       entry: { default: null },
+      collapsedCodeLines: { default: null, rendered: false },
+      expandedCodeLines: { default: null, rendered: false },
     }
   },
   addNodeView() {
@@ -1057,6 +1367,7 @@ export const gitbookNodes = [
   GbContentRef,
   GbSourceRef,
   GbDemo,
+  GbCommand,
   GbColumns,
   GbColumn,
   GbFigure,

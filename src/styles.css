@@ -125,6 +125,89 @@
   margin: 0;
 }
 
+.gb-demo-files-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--gb-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gb-muted-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gb-demo-files-toggle-active { background: var(--gb-bg); color: var(--gb-text); }
+
+/* Inline demo files: a tab per file and a code area. */
+.gb-demo-files {
+  border: 1px solid var(--gb-border);
+  border-top: 0;
+  background: var(--gb-panel);
+}
+.gb-demo-block:not(.gb-demo-block-preview) .gb-demo-files,
+.gb-demo-files:last-child {
+  border-radius: 0 0 var(--gb-radius) var(--gb-radius);
+}
+.gb-demo-files-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid var(--gb-border);
+  background: var(--gb-muted);
+}
+.gb-demo-file-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px 8px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--gb-muted-foreground);
+  cursor: pointer;
+}
+.gb-demo-file-tab-active { background: var(--gb-panel); color: var(--gb-text); }
+.gb-demo-file-path { font: inherit; color: inherit; background: transparent; border: none; outline: none; }
+.gb-demo-file-entry {
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--gb-accent);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.gb-demo-file-body { display: flex; flex-direction: column; }
+.gb-demo-file-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--gb-muted-foreground);
+}
+.gb-demo-file-lang { width: 6rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.gb-demo-file-entry-toggle { display: inline-flex; align-items: center; gap: 4px; }
+.gb-demo-file-code {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px 12px;
+  border: 0;
+  outline: none;
+  resize: vertical;
+  background: transparent;
+  color: var(--gb-code-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  tab-size: 2;
+}
+.gb-demo-files-empty { padding: 10px 12px; font-size: 12.5px; color: var(--gb-muted-foreground); }
+
 .gb-source-file-editor {
   border: 1px solid var(--gb-border);
   border-radius: var(--gb-radius);
@@ -405,6 +488,84 @@
 }
 .gb-tabs-content .gb-tab > :first-child { margin-top: 0; }
 .gb-tabs-content .gb-tab > :last-child { margin-bottom: 0; }
+
+/* ── Titled tabs (mirrors .docs-tabs-section): heading + pill switch on one row ── */
+.gb-tabs-section {
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  margin: 1.6em 0 0.9em;
+}
+.gb-tabs-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.gb-tabs-section-title {
+  flex: 1;
+  min-width: 10rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.gb-tabs-section-input { width: 100%; font-weight: inherit; font-size: inherit; letter-spacing: inherit; }
+.gb-tabs-level {
+  font-size: 12px;
+  color: var(--gb-muted-foreground);
+  background: transparent;
+  border: 1px solid var(--gb-border);
+  border-radius: 6px;
+}
+.gb-tabs-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--gb-muted);
+}
+.gb-tabs-pills .gb-tabs-tab { padding: 4px 12px; border-radius: 999px; font-size: 13px; }
+.gb-tabs-pills .gb-tabs-tab-active { background: var(--gb-bg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.gb-tabs-section > .gb-tabs-content { padding: 0; }
+
+/* ── Command box: docstream's own box, with the editable npm command + overrides below ── */
+.gb-command { margin: 0.85em 0; }
+.gb-command-preview .docs-article { margin: 0; padding: 0; max-width: none; }
+.gb-command-preview .docs-command { margin: 0; }
+.gb-command-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px dashed var(--gb-border);
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+.gb-command-field { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.gb-command-field > span {
+  flex-shrink: 0;
+  width: 2.8rem;
+  color: var(--gb-muted-foreground);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.gb-command-field-npm { grid-column: 1 / -1; }
+.gb-command-input,
+.gb-command-override {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+}
+.gb-command-input {
+  resize: vertical;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+}
 
 /* ── Expandable (mirrors .docs-expandable) ──────────────── */
 .gb-expandable {

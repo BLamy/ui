@@ -23,6 +23,7 @@ import {
   SquareChevronDown,
   Superscript,
   Table as TableIcon,
+  Terminal,
   Webhook,
   Workflow,
   type LucideIcon,
@@ -71,6 +72,12 @@ export const SLASH_ITEMS: SlashItem[] = [
         { type: "gbTab", attrs: { title: "Second tab" }, content: [para()] },
       ],
     }),
+  },
+  {
+    title: "Install command",
+    keywords: "command npm pnpm yarn bun npx package manager install terminal shell",
+    icon: Terminal,
+    run: insertBlock({ type: "gbCommand", attrs: { command: "", overrides: null, sync: null } }),
   },
   {
     title: "Expandable",

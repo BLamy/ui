@@ -1,13 +1,13 @@
 export { GitbookEditor } from "./editor/Editor"
 export type { GitbookEditorProps, EditorAttachment } from "./editor/Editor"
-export { astToTiptap, tiptapToAst, serializeEditorMarkdown } from "./editor/convert"
+export { astToTiptap, tiptapToAst, serializeEditorMarkdown, markdownPasteContent } from "./editor/convert"
 export type { PMNode } from "./editor/convert"
 
 // Building blocks for composing a custom editor (e.g. with Yjs collaboration
 // or a bespoke slash menu) instead of the batteries-included GitbookEditor.
-export { createGitbookExtensions, getGitbookSchema, GbTable } from "./editor/extensions"
+export { createGitbookExtensions, getGitbookSchema, GbTable, GbLinkInner } from "./editor/extensions"
 export type { GitbookExtensionOptions, ReferenceSources } from "./editor/extensions"
-export { gitbookNodes, GbCodeBlock, GbReference } from "./editor/nodes"
+export { gitbookNodes, GbCodeBlock, GbCommand, GbDemo, GbReference } from "./editor/nodes"
 export { GbAttachment, formatBytes } from "./editor/attachments"
 export { SlashMenu, createSlashMenu, SLASH_ITEMS } from "./editor/slash-menu"
 export type { SlashItem } from "./editor/slash-menu"

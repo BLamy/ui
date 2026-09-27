@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 
 import { parseMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
-import type { DemoResolver } from "@brett_lamy/docstream/demo"
+import type { DemoResolver, InlineDemoRuntime } from "@brett_lamy/docstream/demo"
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import {
   attachmentName,
@@ -21,7 +21,7 @@ import {
   readFileAsDataURL,
   type EditorAttachment,
 } from "./attachments"
-import { astToTiptap, serializeEditorMarkdown, tiptapToAst, type PMNode } from "./convert"
+import { astToTiptap, markdownPasteContent, serializeEditorMarkdown, tiptapToAst, type PMNode } from "./convert"
 import { createGitbookExtensions, type ReferenceSources } from "./extensions"
 import { EditorRuntimeProvider } from "./runtime"
 import type { SlashItem } from "./slash-menu"
@@ -87,8 +87,25 @@ export interface GitbookEditorProps {
   onSourceSaved?: (snapshot: SourceFileSnapshot) => void
   /** Called when reading, writing, or previewing a file-backed source fails. */
   onSourceError?: (error: Error) => void
-  /** Resolves `{% demo src %}` ids; when set, demo blocks show a live (read-only) preview under their header. */
+  /**
+   * Resolves `{% demo src %}` ids. Demo blocks show docstream's (read-only) DemoViewer under
+   * their header: from the resolver when it knows `src`, otherwise from the files the block
+   * carries inline (a pasted Copy-page export), so the block looks like the docs page.
+   */
   demoResolver?: DemoResolver
+  /**
+   * Runs the Preview of demos that carry their files inline and have no resolver behind them
+   * (as `DocRenderOptions.demoRuntime`), e.g. `createAlmostNodeDemoRuntime()` from
+   * `@brett_lamy/docstream/playground`. Without one, such demos show their code with a note.
+   */
+  demoRuntime?: InlineDemoRuntime
+  /** Extra npm dependencies inline demos may import (as `DocRenderOptions.demoDependencies`). */
+  demoDependencies?: Record<string, string>
+  /**
+   * Parse pasted plain-text Markdown that contains blocks (a docs page's "Copy page", a
+   * `{% … %}` block, a fence, a list …) into editor blocks instead of literal text (default true).
+   */
+  markdownPaste?: boolean
 }
 
 function ToolbarButton({
@@ -177,6 +194,9 @@ export function GitbookEditor({
   onSourceSaved,
   onSourceError,
   demoResolver,
+  demoRuntime,
+  demoDependencies,
+  markdownPaste = true,
 }: GitbookEditorProps) {
   // Tracks the markdown the editor itself produced, so external updates
   // (file switches) reset content but our own onChange echoes don't.
@@ -188,8 +208,8 @@ export function GitbookEditor({
   // Ids of the attachment chips in the document, to report removals.
   const attachmentIds = useRef<Set<string>>(new Set())
   // Latest callbacks for handlers the editor captured at creation.
-  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove })
-  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove }
+  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste })
+  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste }
   const editorRef = useRef<TiptapEditor | null>(null)
 
   // Pasted/dropped image files: image blocks ("inline") or attachment chips ("chip").
@@ -236,6 +256,27 @@ export function GitbookEditor({
     })
   }
 
+  // Plain-text Markdown (e.g. a docs page's "Copy page") becomes blocks, not literal text.
+  // Rich HTML clipboards keep ProseMirror's own handling; code editors (VS Code) also
+  // put styled HTML there, so their payload still counts as plain text.
+  const pasteMarkdown = (event: ClipboardEvent): boolean => {
+    const data = event.clipboardData
+    const ed = editorRef.current
+    if (!data || !ed) return false
+    const types = Array.from(data.types ?? [])
+    if (types.includes("text/html") && !types.includes("vscode-editor-data")) return false
+    const pasted = markdownPasteContent(data.getData("text/plain"))
+    if (!pasted?.content.length) return false
+    event.preventDefault()
+    if (pasted.citations) {
+      const known = new Map((citationsRef.current ?? []).map((c) => [c.id, c]))
+      for (const c of pasted.citations) known.set(c.id, c)
+      citationsRef.current = [...known.values()]
+    }
+    ed.chain().focus().insertContent(pasted.content).run()
+    return true
+  }
+
   const parseAndTrack = (md: string) => {
     const doc = parseMarkdown(md)
     citationsRef.current = doc.citations
@@ -258,10 +299,12 @@ export function GitbookEditor({
         if (latest.current.onPaste?.(event)) return true
         if (!view.editable || view.state.selection.$from.parent.type.spec.code) return false
         const files = imageFilesFrom(event.clipboardData, { ignoreWithText: true })
-        if (!files.length) return false
-        event.preventDefault()
-        insertImageFiles(files)
-        return true
+        if (files.length) {
+          event.preventDefault()
+          insertImageFiles(files)
+          return true
+        }
+        return latest.current.markdownPaste ? pasteMarkdown(event) : false
       },
       handleDrop: (view, event, _slice, moved) => {
         if (moved || !view.editable) return false
@@ -317,9 +360,11 @@ export function GitbookEditor({
     ...(onSourceSaved ? { onSourceSaved } : {}),
     ...(onSourceError ? { onSourceError } : {}),
     ...(demoResolver ? { demoResolver } : {}),
+    ...(demoRuntime ? { demoRuntime } : {}),
+    ...(demoDependencies ? { demoDependencies } : {}),
     ...(attachments ? { attachments } : {}),
     ...(onAttachmentOpen ? { onAttachmentOpen } : {}),
-  }), [attachments, demoResolver, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
+  }), [attachments, demoDependencies, demoResolver, demoRuntime, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
 
   if (!editor) return null
 

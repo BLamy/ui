@@ -34,6 +34,8 @@ describe("demo block conversion", () => {
           { id: "compact", label: "compact" },
         ],
         viewport: "tablet",
+        entry: null,
+        files: null,
       },
     })
   })
@@ -68,7 +70,7 @@ describe("schema coverage", () => {
     const blockTypes = Object.values(schema.nodes).filter(
       (type) => type.isInGroup("block") && type.name !== "paragraph"
     )
-    expect(blockTypes.map((t) => t.name)).toContain("gbDemo")
+    expect(blockTypes.map((t) => t.name)).toEqual(expect.arrayContaining(["gbDemo", "gbCommand"]))
     for (const type of blockTypes) {
       const node = type.createAndFill()
       expect(node, type.name).toBeTruthy()

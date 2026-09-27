@@ -2,7 +2,7 @@ import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
 import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table"
-import { getSchema, type AnyExtension } from "@tiptap/core"
+import { Extension, getSchema, type AnyExtension } from "@tiptap/core"
 import type { Schema } from "@tiptap/pm/model"
 import { GbCodeBlock, gitbookNodes } from "./nodes"
 import { SlashMenu, createSlashMenu, type SlashItem } from "./slash-menu"
@@ -12,6 +12,29 @@ import { createReferenceSuggestion, type ReferenceSource } from "./reference-men
 export const GbTable = Table.extend({
   addAttributes() {
     return { ...this.parent?.(), view: { default: null } }
+  },
+})
+
+/**
+ * `inner` on the link mark: the link sits inside its emphasis (`**[x](url)**`)
+ * rather than around it (`[**x**](url)`). Kept so pasted Markdown round-trips
+ * byte-for-byte; newly created links default to the outer form.
+ */
+export const GbLinkInner = Extension.create({
+  name: "gbLinkInner",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["link"],
+        attributes: {
+          inner: {
+            default: null,
+            parseHTML: (element) => (element.hasAttribute("data-link-inner") ? true : null),
+            renderHTML: (attributes) => (attributes.inner ? { "data-link-inner": "" } : {}),
+          },
+        },
+      },
+    ]
   },
 })
 
@@ -71,6 +94,7 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
     TableHeader,
     TableCell,
     Placeholder.configure({ placeholder }),
+    GbLinkInner,
     ...gitbookNodes,
   ]
 

@@ -13,6 +13,9 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 - Code block syntax highlighting through [`gpu-lexer`](https://gpu-lexer.vercel.app/) (language-agnostic, WebGPU; plain text where WebGPU is unavailable).
 - Table, task list, heading, quote, and inline formatting support.
 - Preserves Docstream/GitBook block semantics when converting back to markdown.
+- Copy a docs page (docstream's "Copy page") and paste it in: the editor shows the same page and
+  serializes it back byte-for-byte — demos with their inline files, install command boxes, titled
+  tab sets and all.
 - Preserves mounted source-file/export provenance and can write edits to the real file through Vite.
 
 ## Installation
@@ -81,6 +84,9 @@ export interface GitbookEditorProps {
   onAttachmentRemove?: (ids: string[]) => void
   onAttachmentOpen?: (attachment: EditorAttachment) => void
   demoResolver?: DemoResolver
+  demoRuntime?: InlineDemoRuntime
+  demoDependencies?: Record<string, string>
+  markdownPaste?: boolean
 }
 ```
 
@@ -92,6 +98,12 @@ export interface GitbookEditorProps {
   how pasted/dropped images are handled — see [Pasted and dropped images](#pasted-and-dropped-images).
 - `demoResolver`: resolves `{% demo src %}` ids so demo blocks show a live, read-only
   preview — see [Demo blocks](#demo-blocks).
+- `demoRuntime` / `demoDependencies`: run demos that carry their files inline and have no
+  resolver behind them — the same options as Docstream's `DocRenderOptions`.
+- `markdownPaste` (default `true`): plain-text Markdown pasted into the editor that contains
+  blocks (a "Copy page" export, `{% … %}` tags, fences, lists, headings …) is parsed into
+  editor blocks instead of pasted as literal text. Plain prose pastes as usual; HTML clipboards
+  keep TipTap's own handling (except VS Code's, which is treated as plain text).
 
 The editor tracks the last markdown it emitted so normal controlled updates do not continuously reset the TipTap document. Passing a different external `markdown` value replaces the editor content.
 
@@ -101,19 +113,23 @@ The editor supports common ProseMirror/TipTap content plus GitBook-flavored bloc
 
 - Headings
 - Paragraphs
-- Bold, italic, strike, inline code, and links
+- Bold, italic, strike, inline code, and links (a link inside emphasis, `**[x](url)**`, stays
+  distinct from emphasis inside a link, `[**x**](url)`)
 - Bullet, ordered, and task lists
 - Blockquotes
 - Code blocks
 - Tables
 - Hints
-- Tabs (including `{% tabs sync="key" %}` sync groups)
+- Tabs (including `{% tabs sync="key" %}` sync groups, and titled sets
+  `{% tabs title="Installation" level="3" %}` rendered as a section heading with the switch on
+  its row — click the heading icon in the tab strip to add a title)
+- Package-manager command boxes (`{% command %}npm install x{% endcommand %}`, `/install command`)
 - Expandables
 - Steppers
 - Embeds
 - Content references
 - Component and Storybook source references
-- File-backed live demos (`{% demo %}`)
+- Live demos (`{% demo %}`), resolver-backed or carrying their files inline
 - Columns
 - Figures and images
 - OpenAPI operation placeholders
@@ -209,11 +225,22 @@ Docstream README.
 
 `{% demo src="<page>/<example>" %}` becomes a `gbDemo` atom node. Every tag
 attribute — `src`, `title`, `description`, `height`, `layout`, `variants`,
-`viewport` — is kept on the node, so the tag serializes back exactly as written.
+`viewport`, `entry` — is kept on the node, and so are the files the block form
+carries inline (the titled fences between `{% demo … %}` and `{% enddemo %}`, as
+`files: { path, content, language? }[]`), so the block serializes back exactly as
+written. Docstream's "Copy page" writes every demo this way.
+
 The node shows a compact header with editable `src` and `title` inputs (insert
-one with `/demo`). Pass the same `DemoResolver` you give the Docstream renderer
-to also show the live `DemoViewer` preview (read-only) under the header;
-without one, only the header is shown.
+one with `/demo`) and a **Files** toggle that opens a small file editor: a tab
+per file (rename it in place, mark it the entry, remove it), a code area, and
+`+` to add a file. Removing every file gives the one-line tag form again.
+
+Under the header, Docstream's read-only `DemoViewer` renders the demo: from the
+`demoResolver` when it knows `src`, otherwise from the inline files — so a
+pasted docs page looks like the docs page. Inline files run in the Preview
+through `demoRuntime` (e.g. `createAlmostNodeDemoRuntime()` from
+`@brett_lamy/docstream/playground`) with `demoDependencies`; without a runtime
+the viewer shows their code.
 
 ```tsx
 import { createGlobDemoResolver } from "@brett_lamy/docstream/demo"
@@ -223,6 +250,15 @@ const demoResolver = createGlobDemoResolver({ /* see the Docstream README */ })
 
 <GitbookEditor markdown={markdown} onChange={setMarkdown} demoResolver={demoResolver} />
 ```
+
+## Command boxes
+
+`{% command %}npm install @brett_lamy/ui{% endcommand %}` (or the block form, for
+several lines) becomes a `gbCommand` atom node rendered with Docstream's own
+command box: terminal glyph, pnpm / npm / yarn / bun switch (synced page-wide),
+copy button. When editable, the npm command and per-manager overrides
+(`pnpm="…"`, `yarn="…"`, `bun="…"`; the placeholder shows the derived command)
+are edited under the box. `sync` is preserved. Insert one with `/install command`.
 
 ## Slash Menu
 
@@ -250,6 +286,7 @@ Exports:
 - `PMNode`
 - `EditorAttachment`
 - `serializeEditorMarkdown`
+- `markdownPasteContent` (the Markdown-paste parser behind `markdownPaste`)
 - `SourceFileEditor`
 - `SourceFileEditorProps`
 

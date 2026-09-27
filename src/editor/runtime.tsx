@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react"
 
-import type { DemoResolver } from "@brett_lamy/docstream/demo"
+import type { DemoResolver, InlineDemoRuntime } from "@brett_lamy/docstream/demo"
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import type { EditorAttachment } from "./attachments"
 
@@ -11,6 +11,8 @@ export interface EditorRuntimeOptions {
   onSourceSaved?: (snapshot: SourceFileSnapshot) => void
   onSourceError?: (error: Error) => void
   demoResolver?: DemoResolver
+  demoRuntime?: InlineDemoRuntime
+  demoDependencies?: Record<string, string>
   attachments?: EditorAttachment[]
   onAttachmentOpen?: (attachment: EditorAttachment) => void
 }

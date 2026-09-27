@@ -1,8 +1,12 @@
 import {
+  parseMarkdown,
   plainText,
   serializeMarkdown,
   type Block,
+  type CitationDef,
   type DemoLayout,
+  type CommandNode,
+  type DemoInlineFile,
   type DemoNode,
   type DemoViewport,
   type DocumentNode,
@@ -59,7 +63,8 @@ function inlineToPM(nodes: Inline[]): PMNode[] {
       if (n.italic) marks.push({ type: "italic" })
       if (n.strike) marks.push({ type: "strike" })
       if (n.code) marks.push({ type: "code" })
-      if (n.link) marks.push({ type: "link", attrs: { href: n.link } })
+      // `inner` keeps `**[x](url)**` (link inside the emphasis) apart from `[**x**](url)`.
+      if (n.link) marks.push({ type: "link", attrs: { href: n.link, ...(n.linkInner ? { inner: true } : {}) } })
       return { type: "text", text: n.text, ...(marks.length ? { marks } : {}) }
     })
 }
@@ -96,20 +101,37 @@ function blockToPM(b: Block): PMNode {
           lineNumbers: b.lineNumbers,
           live: !!b.live,
           entry: b.entry ?? null,
+          collapsedCodeLines: b.collapsedCodeLines ?? null,
+          expandedCodeLines: b.expandedCodeLines ?? null,
         },
         content: b.code ? [{ type: "text", text: b.code }] : [],
       }
     case "hint":
       return { type: "gbHint", attrs: { style: b.style }, content: blocksPM(b.children) }
-    case "tabs":
+    case "tabs": {
+      const attrs = {
+        ...(b.sync ? { sync: b.sync } : {}),
+        ...(b.title ? { title: b.title } : {}),
+        ...(b.level ? { level: b.level } : {}),
+      }
       return {
         type: "gbTabs",
-        ...(b.sync ? { attrs: { sync: b.sync } } : {}),
+        ...(Object.keys(attrs).length ? { attrs } : {}),
         content: b.tabs.map((t) => ({
           type: "gbTab",
           attrs: { title: t.title },
           content: blocksPM(t.children),
         })),
+      }
+    }
+    case "command":
+      return {
+        type: "gbCommand",
+        attrs: {
+          command: b.command,
+          overrides: b.overrides && Object.keys(b.overrides).length ? { ...b.overrides } : null,
+          sync: b.sync ?? null,
+        },
       }
     case "expandable":
       return {
@@ -136,8 +158,13 @@ function blockToPM(b: Block): PMNode {
       if (b.controls !== undefined) attrs.controls = b.controls
       return { type: "gbEmbed", attrs }
     }
-    case "content-ref":
-      return { type: "gbContentRef", attrs: { url: b.url, label: plainText(b.children) } }
+    case "content-ref": {
+      // GitBook writes the label as a link to the page (`[Card](card.md)`); remember
+      // whether this one was, so a plain label stays plain.
+      const only = b.children.length === 1 ? b.children[0] : undefined
+      const linked = only?.type === "text" && only.link === b.url && !only.bold && !only.italic && !only.strike && !only.code
+      return { type: "gbContentRef", attrs: { url: b.url, label: plainText(b.children), linked } }
+    }
     case "source-ref":
       return {
         type: "gbSourceRef",
@@ -160,6 +187,8 @@ function blockToPM(b: Block): PMNode {
           layout: b.layout ?? null,
           variants: b.variants?.length ? b.variants.map((v) => ({ id: v.id, label: v.label })) : null,
           viewport: b.viewport ?? null,
+          entry: b.entry ?? null,
+          files: b.files?.length ? b.files.map((f) => ({ ...f })) : null,
         },
       }
     case "columns":
@@ -279,8 +308,12 @@ function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
         if (mark.type === "italic") inline.italic = true
         if (mark.type === "strike") inline.strike = true
         if (mark.type === "code") inline.code = true
-        if (mark.type === "link") inline.link = String(mark.attrs?.href ?? "")
+        if (mark.type === "link") {
+          inline.link = String(mark.attrs?.href ?? "")
+          if (mark.attrs?.inner) inline.linkInner = true
+        }
       }
+      if (inline.linkInner && !(inline.bold || inline.italic || inline.strike)) delete inline.linkInner
       return inline
     })
 }
@@ -303,7 +336,9 @@ function pmToBlock(n: PMNode): Block | null {
         level: (Number(n.attrs?.level) || 1) as 1 | 2 | 3 | 4 | 5 | 6,
         children: pmTextToInline(n.content),
       }
-    case "codeBlock":
+    case "codeBlock": {
+      const collapsed = Number(n.attrs?.collapsedCodeLines) || 0
+      const expanded = Number(n.attrs?.expandedCodeLines) || 0
       return {
         type: "code",
         language: (n.attrs?.language as string) || null,
@@ -311,15 +346,19 @@ function pmToBlock(n: PMNode): Block | null {
         lineNumbers: !!n.attrs?.lineNumbers,
         live: !!n.attrs?.live,
         entry: (n.attrs?.entry as string) || null,
+        ...(collapsed ? { collapsedCodeLines: collapsed } : {}),
+        ...(expanded ? { expandedCodeLines: expanded } : {}),
         code: n.content?.map((c) => c.text ?? "").join("") ?? "",
       }
+    }
     case "gbHint":
       return {
         type: "hint",
         style: (n.attrs?.style as never) ?? "info",
         children: pmToBlocks(n.content),
       }
-    case "gbTabs":
+    case "gbTabs": {
+      const level = Number(n.attrs?.level)
       return {
         type: "tabs",
         tabs: (n.content ?? []).map((t) => ({
@@ -328,7 +367,12 @@ function pmToBlock(n: PMNode): Block | null {
           children: pmToBlocks(t.content),
         })),
         ...(n.attrs?.sync ? { sync: String(n.attrs.sync) } : {}),
+        ...(n.attrs?.title ? { title: String(n.attrs.title) } : {}),
+        ...(level === 2 || level === 3 || level === 4 ? { level } : {}),
       }
+    }
+    case "gbCommand":
+      return pmToCommand(n.attrs ?? {})
     case "gbExpandable":
       return {
         type: "expandable",
@@ -357,12 +401,16 @@ function pmToBlock(n: PMNode): Block | null {
       if (typeof n.attrs?.controls === "boolean") embed.controls = n.attrs.controls
       return embed
     }
-    case "gbContentRef":
+    case "gbContentRef": {
+      const url = String(n.attrs?.url ?? "")
+      const label = String(n.attrs?.label ?? "")
+      const linked = n.attrs?.linked !== false && !!url && !!label
       return {
         type: "content-ref",
-        url: String(n.attrs?.url ?? ""),
-        children: [{ type: "text", text: String(n.attrs?.label ?? "") }],
+        url,
+        children: label ? [{ type: "text", text: label, ...(linked ? { link: url } : {}) }] : [],
       }
+    }
     case "gbSourceRef":
       return {
         type: "source-ref",
@@ -454,6 +502,7 @@ export function pmToDemo(a: Record<string, unknown>): DemoNode {
         .map((v) => ({ id: String(v.id), label: String(v.label || v.id) }))
     : []
   const layout = String(a.layout ?? "")
+  const files = pmDemoFiles(a.files)
   const viewport = String(a.viewport ?? "")
   return {
     type: "demo",
@@ -464,6 +513,35 @@ export function pmToDemo(a: Record<string, unknown>): DemoNode {
     ...(DEMO_LAYOUTS.includes(layout) ? { layout: layout as DemoLayout } : {}),
     ...(variants.length ? { variants } : {}),
     ...(DEMO_VIEWPORTS.includes(viewport) ? { viewport: viewport as DemoViewport } : {}),
+    ...(a.entry ? { entry: String(a.entry) } : {}),
+    ...(files.length ? { files } : {}),
+  }
+}
+
+/** `gbDemo`'s `files` attr → inline demo files (malformed entries dropped). */
+export function pmDemoFiles(value: unknown): DemoInlineFile[] {
+  if (!Array.isArray(value)) return []
+  return (value as Array<Record<string, unknown> | null>)
+    .filter((f): f is Record<string, unknown> => !!f && typeof f === "object")
+    .map((f) => ({
+      path: String(f.path ?? ""),
+      content: String(f.content ?? ""),
+      ...(f.language ? { language: String(f.language) } : {}),
+    }))
+}
+
+const COMMAND_OVERRIDES = ["pnpm", "yarn", "bun"] as const
+
+/** `gbCommand` attrs → `CommandNode`; also used by the node view to render the box. */
+export function pmToCommand(a: Record<string, unknown>): CommandNode {
+  const raw = (a.overrides && typeof a.overrides === "object" ? a.overrides : {}) as Record<string, unknown>
+  const overrides: NonNullable<CommandNode["overrides"]> = {}
+  for (const pm of COMMAND_OVERRIDES) if (raw[pm]) overrides[pm] = String(raw[pm])
+  return {
+    type: "command",
+    command: String(a.command ?? ""),
+    ...(Object.keys(overrides).length ? { overrides } : {}),
+    ...(a.sync ? { sync: String(a.sync) } : {}),
   }
 }
 
@@ -489,4 +567,18 @@ export function serializeEditorMarkdown(doc: DocumentNode): string {
     // `]` can't be escaped in `![alt]`; such names keep the <img> form.
     alt.includes("]") ? img : `![${alt}](${src})`
   )
+}
+
+/**
+ * Plain-text Markdown pasted into the editor (a docs page's "Copy page", a `{% … %}`
+ * block, a fence, a list, a heading…) as editor blocks, or null when the text is just
+ * prose — which the editor then pastes as text, as usual.
+ */
+export function markdownPasteContent(text: string): { content: PMNode[]; citations?: CitationDef[] } | null {
+  if (!text.trim()) return null
+  const doc = parseMarkdown(text)
+  const blocks = doc.children.some((b) => b.type !== "paragraph") || /(^|\n)\s*\{%\s*[a-z-]+/.test(text)
+  if (!blocks && !doc.citations?.length) return null
+  const content = astToTiptap(doc).content ?? []
+  return { content, ...(doc.citations?.length ? { citations: doc.citations } : {}) }
 }
