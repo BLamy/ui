@@ -31,6 +31,9 @@
         "outputs": [
           "{projectRoot}/public/md",
           "{projectRoot}/public/llms.txt"
+        ],
+        "dependsOn": [
+          "^build"
         ]
       },
       "build": {

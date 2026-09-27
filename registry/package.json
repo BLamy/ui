@@ -33,6 +33,11 @@
           "{projectRoot}/components/*.tsx",
           "{workspaceRoot}/apps/docs/public/r"
         ]
+      },
+      "typecheck": {
+        "dependsOn": [
+          "^build"
+        ]
       }
     }
   }
