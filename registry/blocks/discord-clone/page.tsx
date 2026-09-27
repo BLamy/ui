@@ -72,7 +72,7 @@ export default function DiscordClone({
   tint = '#0A84FF',
   appearance,
   showMembers = true,
-  defaultThread = { id: 'd4', mode: 'panel' },
+  defaultThread = null,
   className,
   style,
 }: DiscordCloneProps) {

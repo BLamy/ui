@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@brett_lamy/docstream": "1.0.0",
-    "@brett_lamy/docstream-editor": "1.0.0",
+    "@brett_lamy/docstream-editor": "1.0.1",
     "@tiptap/core": "3.30.5",
     "@tiptap/extension-code-block-lowlight": "3.30.5",
     "@tiptap/extension-list": "3.30.5",

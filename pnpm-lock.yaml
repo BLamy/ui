@@ -259,8 +259,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@brett_lamy/docstream-editor':
-        specifier: 1.0.0
-        version: 1.0.0(29d692e8b82919e3a9eeae4d10ed8bbc)
+        specifier: 1.0.1
+        version: 1.0.1(29d692e8b82919e3a9eeae4d10ed8bbc)
       '@brett_lamy/pencilkit':
         specifier: workspace:*
         version: link:../../packages/pencilkit
@@ -352,8 +352,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@brett_lamy/docstream-editor':
-        specifier: 1.0.0
-        version: 1.0.0(29d692e8b82919e3a9eeae4d10ed8bbc)
+        specifier: 1.0.1
+        version: 1.0.1(29d692e8b82919e3a9eeae4d10ed8bbc)
       '@pierre/diffs':
         specifier: ^1.3.6
         version: 1.3.6(@shikijs/themes@4.4.3)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1199,8 +1199,8 @@ packages:
   '@braintree/sanitize-url@7.1.2':
     resolution: {integrity: sha512-jigsZK+sMF/cuiB7sERuo9V7N9jx+dhmHHnQyDSVdpZwVutaBu7WvNYqMDLSgFgfB30n452TP3vjDAvFC973mA==}
 
-  '@brett_lamy/docstream-editor@1.0.0':
-    resolution: {integrity: sha512-B5GRkJcE9YB8q3pQB6jUNEqpLmcjWtHVOb9Bu/l54Fhyjos7KDJ1MTS8afKJTz5KW5YFALz/3xmz7Dljh+/7DQ==}
+  '@brett_lamy/docstream-editor@1.0.1':
+    resolution: {integrity: sha512-ci3Cmk05L6I+RbOoblx0xWYq9OXqOxO7wxxPOFned4/YM3tABLzm7FJ+ViU/RKP8eStb92zjbnOwhujZFNUsLQ==}
     peerDependencies:
       '@tiptap/core': ^3.26.1
       '@tiptap/extension-code-block': ^3.26.1
@@ -10248,7 +10248,7 @@ snapshots:
 
   '@braintree/sanitize-url@7.1.2': {}
 
-  '@brett_lamy/docstream-editor@1.0.0(29d692e8b82919e3a9eeae4d10ed8bbc)':
+  '@brett_lamy/docstream-editor@1.0.1(29d692e8b82919e3a9eeae4d10ed8bbc)':
     dependencies:
       '@brett_lamy/docstream': 1.0.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
