@@ -1,6 +1,7 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - 'registry'
 
 patchedDependencies:
   ios-vibrator-pro-max@3.0.3: patches/ios-vibrator-pro-max@3.0.3.patch

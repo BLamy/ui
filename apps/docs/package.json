@@ -17,6 +17,7 @@
     "@brett_lamy/pencilkit": "workspace:*",
     "@brett_lamy/ui": "workspace:*",
     "highlight.js": "11.11.2",
-    "lowlight": "3.3.0"
+    "lowlight": "3.3.0",
+    "@brett_lamy/registry": "workspace:*"
   }
 }

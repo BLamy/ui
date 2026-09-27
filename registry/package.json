@@ -1,0 +1,14 @@
+{
+  "name": "@brett_lamy/registry",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "shadcn-style registry source: blocks and component entries that consumers copy with `npx shadcn add`. Files here import only from the public packages.",
+  "exports": {
+    "./blocks/*": "./blocks/*"
+  },
+  "dependencies": {
+    "@brett_lamy/pencilkit": "workspace:*",
+    "@brett_lamy/ui": "workspace:*"
+  }
+}

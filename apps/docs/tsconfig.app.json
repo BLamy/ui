@@ -30,10 +30,13 @@
   "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"],
   "references": [
     {
-      "path": "../../packages/pencilkit/tsconfig.lib.json"
+      "path": "../../registry/tsconfig.lib.json"
     },
     {
       "path": "../../packages/ui/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/pencilkit/tsconfig.lib.json"
     }
   ]
 }

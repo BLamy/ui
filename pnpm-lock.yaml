@@ -221,6 +221,9 @@ importers:
       '@brett_lamy/pencilkit':
         specifier: workspace:*
         version: link:../../packages/pencilkit
+      '@brett_lamy/registry':
+        specifier: workspace:*
+        version: link:../../registry
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -255,6 +258,9 @@ importers:
       '@brett_lamy/pencilkit':
         specifier: workspace:*
         version: link:../../packages/pencilkit
+      '@brett_lamy/registry':
+        specifier: workspace:*
+        version: link:../../registry
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -402,6 +408,15 @@ importers:
       tailwind-merge:
         specifier: ^3
         version: 3.6.0
+
+  registry:
+    dependencies:
+      '@brett_lamy/pencilkit':
+        specifier: workspace:*
+        version: link:../packages/pencilkit
+      '@brett_lamy/ui':
+        specifier: workspace:*
+        version: link:../packages/ui
 
 packages:
 
