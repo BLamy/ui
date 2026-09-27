@@ -53,7 +53,7 @@ export interface ReactDemoProps {
 
 export type ReactCodePreviewProps = ReactDemoProps
 
-type PreviewState = "idle" | "starting" | "ready" | "error"
+export type PreviewState = "idle" | "starting" | "ready" | "error"
 
 const DETACHED_SERVER_ENV = { ALMOSTNODE_DETACH_DEV_SERVERS: "1" }
 
@@ -79,43 +79,30 @@ function sourceText(files: AlmostNodeFiles, requestedPath: string): string | nul
   return typeof file.content === "string" ? file.content : new TextDecoder().decode(file.content)
 }
 
-/** Render a multi-file React/JSX/TSX project through almost-node's Vite server. */
-const NO_FILES: AlmostNodeFiles = {}
+export interface AlmostNodeServerOptions {
+  /** The complete project (see `createReactDemoFiles`). Keep its identity stable between renders. */
+  files: AlmostNodeFiles
+  port?: number
+  /** Start when > 0; bump to restart. 0 stops (and disposes) the server. */
+  run: number
+  workspaceOptions?: Partial<AlmostNodeWorkspaceOptions>
+  onReady?: (url: string) => void
+  onError?: (error: Error) => void
+}
 
-export function ReactDemo({
-  files = NO_FILES,
-  preview,
-  code: codeProp,
-  language,
-  status,
-  actions,
-  entry = "/src/main.jsx",
-  port = 4173,
-  height = 360,
-  codeFile,
-  collapsedCodeLines = 3,
-  expandedCodeLines = 30,
-  title = "Live React preview",
-  autoStart = true,
-  sandbox = "allow-scripts allow-same-origin allow-forms allow-modals",
-  workspaceOptions,
-  className,
-  onReady,
-  onError,
-}: ReactDemoProps) {
-  const inline = preview !== undefined
-  const [run, setRun] = useState(autoStart && !inline ? 1 : 0)
-  const [state, setState] = useState<PreviewState>(inline ? "ready" : autoStart ? "starting" : "idle")
+export interface AlmostNodeServerState {
+  state: PreviewState
+  url: string | null
+  error: string | null
+}
+
+/** Boots `vite` for `files` in an almost-node container; disposes it on change/unmount. */
+export function useAlmostNodeServer({ files, port = 4173, run, workspaceOptions, onReady, onError }: AlmostNodeServerOptions): AlmostNodeServerState {
+  const [state, setState] = useState<PreviewState>(run ? "starting" : "idle")
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const displayedCodeFile = codeFile ?? entry
-  const code = useMemo(
-    () => codeProp ?? sourceText(files, displayedCodeFile),
-    [codeProp, displayedCodeFile, files],
-  )
 
   useEffect(() => {
-    if (inline) return
     if (!run) {
       setState("idle")
       setUrl(null)
@@ -132,8 +119,7 @@ export function ReactDemo({
 
     const start = async () => {
       try {
-        const projectFiles = createReactDemoFiles(files, { entry })
-        workspace = await createAlmostNodeWorkspace(projectFiles, {
+        workspace = await createAlmostNodeWorkspace(files, {
           ...workspaceOptions,
           env: { ...DETACHED_SERVER_ENV, ...workspaceOptions?.env },
           onServerReady: (serverPort, serverUrl) => {
@@ -173,7 +159,52 @@ export function ReactDemo({
       cancelled = true
       workspace?.dispose()
     }
-  }, [entry, files, inline, onError, onReady, port, run, workspaceOptions])
+  }, [files, onError, onReady, port, run, workspaceOptions])
+
+  return { state, url, error }
+}
+
+/** Render a multi-file React/JSX/TSX project through almost-node's Vite server. */
+const NO_FILES: AlmostNodeFiles = {}
+
+export function ReactDemo({
+  files = NO_FILES,
+  preview,
+  code: codeProp,
+  language,
+  status,
+  actions,
+  entry = "/src/main.jsx",
+  port = 4173,
+  height = 360,
+  codeFile,
+  collapsedCodeLines = 3,
+  expandedCodeLines = 30,
+  title = "Live React preview",
+  autoStart = true,
+  sandbox = "allow-scripts allow-same-origin allow-forms allow-modals",
+  workspaceOptions,
+  className,
+  onReady,
+  onError,
+}: ReactDemoProps) {
+  const inline = preview !== undefined
+  const [run, setRun] = useState(autoStart && !inline ? 1 : 0)
+  const projectFiles = useMemo(() => createReactDemoFiles(files, { entry }), [files, entry])
+  const { state: serverState, url, error } = useAlmostNodeServer({
+    files: projectFiles,
+    port,
+    run: inline ? 0 : run,
+    workspaceOptions,
+    onReady,
+    onError,
+  })
+  const state: PreviewState = inline ? "ready" : serverState
+  const displayedCodeFile = codeFile ?? entry
+  const code = useMemo(
+    () => codeProp ?? sourceText(files, displayedCodeFile),
+    [codeProp, displayedCodeFile, files],
+  )
 
   const wrapperClass = className ? `docs-react-demo ${className}` : "docs-react-demo"
   const running = state === "starting"

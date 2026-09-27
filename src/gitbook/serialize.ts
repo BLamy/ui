@@ -1,4 +1,4 @@
-import type { Block, DocumentNode, Inline, ListItemNode } from "./ast"
+import type { Block, DemoInlineFile, DemoNode, DocumentNode, Inline, ListItemNode } from "./ast"
 import { serializeInline, serializeReference } from "./inline"
 
 export function serializeMarkdown(doc: DocumentNode): string {
@@ -103,8 +103,9 @@ function serializeBlock(b: Block): string {
           ? ` variants="${b.variants.map((v) => (v.label === v.id ? v.id : `${v.id}:${v.label}`)).join(",")}"`
           : "",
         b.viewport ? ` viewport="${b.viewport}"` : "",
+        b.entry ? ` entry="${b.entry}"` : "",
       ].join("")
-      return `{% demo${attrs} %}`
+      return `{% demo${attrs} %}${serializeDemoFiles(b)}`
     }
 
     case "columns":
@@ -196,4 +197,23 @@ function serializeListItem(item: ListItemNode, ordered: boolean, task: boolean, 
   const firstText = first?.type === "paragraph" ? serializeInline(first.children) : first ? serializeBlock(first) : ""
   const restText = rest.length ? "\n" + indent(serializeBlocks(rest), "  ") : ""
   return `${bullet} ${check}${firstText}${restText}`
+}
+
+/** A fence longer than any backtick run in the content, so nested fences survive. */
+export function fenceFor(content: string): string {
+  let longest = 2
+  for (const m of content.matchAll(/`+/g)) longest = Math.max(longest, m[0].length)
+  return "`".repeat(longest + 1)
+}
+
+/** One inline demo file as a titled fence. */
+export function serializeDemoFile(file: DemoInlineFile): string {
+  const fence = fenceFor(file.content)
+  return `${fence}${file.language ?? ""} title="${file.path}"\n${file.content}\n${fence}`
+}
+
+/** The body of a block-form `{% demo %}`: files as titled fences, then `{% enddemo %}`. Empty without files. */
+function serializeDemoFiles(node: DemoNode): string {
+  if (!node.files?.length) return ""
+  return `\n${node.files.map(serializeDemoFile).join("\n")}\n{% enddemo %}`
 }

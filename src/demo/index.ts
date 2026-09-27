@@ -1,4 +1,4 @@
-export { DocstreamDemoContext, useDemoResolver } from "./context"
+export { DocstreamDemoContext, DocstreamDemoRuntimeContext, useDemoResolver, useDemoRuntime } from "./context"
 export { DemoBlock, DemoFullscreen, DemoViewer } from "./DemoViewer"
 export type { DemoFullscreenProps, DemoViewerProps } from "./DemoViewer"
 export {
@@ -10,6 +10,16 @@ export {
   sortDemoFiles,
 } from "./glob"
 export type { GlobDemoResolverOptions } from "./glob"
-export { defaultDemoMarkdown, resolveDemosToMarkdown } from "./markdown"
-export type { ResolveDemosOptions, ResolvedDemo } from "./markdown"
-export type { DemoComponent, DemoComponentProps, DemoFile, DemoMeta, DemoResolver, DemoVariant } from "./types"
+export { defaultDemoMarkdown, inlineDemoMarkdown, inlineDemoNode, resolveDemosToMarkdown, toInlineFiles } from "./markdown"
+export type { DemoMarkdownFormat, ResolveDemosOptions, ResolvedDemo } from "./markdown"
+export type {
+  DemoComponent,
+  DemoComponentProps,
+  DemoFile,
+  DemoMeta,
+  DemoResolver,
+  DemoRuntimeOptions,
+  DemoVariant,
+  InlineDemoRuntime,
+  InlineDemoRuntimeProps,
+} from "./types"

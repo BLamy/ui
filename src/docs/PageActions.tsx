@@ -1,5 +1,6 @@
-/* "Copy page ▾": copy the page as Markdown (with {% demo %} blocks resolved into their real files),
-   view it as Markdown, or open it in ChatGPT / Claude. */
+/* "Copy page ▾": copy the page as Markdown, view it as Markdown, or open it in ChatGPT / Claude.
+   Copy and View give renderable docstream Markdown: each {% demo %} keeps its tag and carries its
+   real files inline, so pasting the page into docstream renders the same page (demos included). */
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { ArrowUpRight, ChevronDown, FileText } from "lucide-react"
@@ -25,7 +26,10 @@ export interface DocPageActionsOptions {
   actions?: DocPageAction[]
   /** Final touch on the copied Markdown (e.g. append a "Source:" footer). */
   transform?: (markdown: string) => string
-  /** Options for resolving `{% demo %}` blocks. */
+  /**
+   * Options for resolving `{% demo %}` blocks. The default `format: "inline"` keeps the page
+   * renderable by docstream; `{ format: "plain" }` gives the pre-1.2 prose + fences form.
+   */
   demoOptions?: ResolveDemosOptions
   /** Overrides the resolver from context. */
   resolver?: DemoResolver
@@ -62,7 +66,7 @@ interface MenuItem {
   run?: () => void
 }
 
-/** Resolves the page Markdown (demos inlined) for copying or exporting. */
+/** The page as renderable Markdown (demo files inline) for copying or exporting. */
 async function pageMarkdown(props: DocPageActionsProps, resolver: DemoResolver | undefined) {
   const source = typeof props.markdown === "function" ? await props.markdown() : props.markdown
   const resolved = await resolveDemosToMarkdown(source, resolver, props.demoOptions)
@@ -106,7 +110,7 @@ export function DocPageActions(props: DocPageActionsProps) {
   }
 
   const all: MenuItem[] = [
-    { id: "copy", icon: <CopyIcon copied={false} />, label: "Copy as Markdown", hint: "Copy this page for LLMs", run: () => void copyPage() },
+    { id: "copy", icon: <CopyIcon copied={false} />, label: "Copy as Markdown", hint: "Copy this page, demos included", run: () => void copyPage() },
     props.markdownUrl
       ? { id: "view", icon: <FileText width={15} height={15} aria-hidden="true" />, label: "View as Markdown", hint: "Open the page as plain text", href: props.markdownUrl }
       : { id: "view", icon: <FileText width={15} height={15} aria-hidden="true" />, label: "View as Markdown", hint: "Open the page as plain text", run: () => void viewMarkdown() },

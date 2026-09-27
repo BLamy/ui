@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react"
-import type { DemoResolver } from "./types"
+import type { DemoResolver, DemoRuntimeOptions } from "./types"
 
 /**
  * The host's demo resolver. Renderers given a `demoResolver` prop provide it, so
@@ -10,4 +10,20 @@ export const DocstreamDemoContext = createContext<DemoResolver | undefined>(unde
 export function useDemoResolver(override?: DemoResolver): DemoResolver | undefined {
   const inherited = useContext(DocstreamDemoContext)
   return override ?? inherited
+}
+
+/**
+ * How inline-file demos without a resolver run their Preview (`demoRuntime`) and which
+ * extra npm packages they may import (`demoDependencies`). Provided by the renderers.
+ */
+export const DocstreamDemoRuntimeContext = createContext<DemoRuntimeOptions>({})
+
+export function useDemoRuntime(override?: DemoRuntimeOptions): DemoRuntimeOptions {
+  const inherited = useContext(DocstreamDemoRuntimeContext)
+  return {
+    runtime: override?.runtime ?? inherited.runtime,
+    dependencies: override?.dependencies || inherited.dependencies
+      ? { ...inherited.dependencies, ...override?.dependencies }
+      : undefined,
+  }
 }

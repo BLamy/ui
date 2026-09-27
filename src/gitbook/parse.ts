@@ -1,6 +1,7 @@
 import type {
   Block,
   ColumnNode,
+  DemoInlineFile,
   DemoLayout,
   DemoNode,
   DemoVariantOption,
@@ -92,13 +93,57 @@ function templateTag(line: string): TemplateTag | null {
   return { name: m[1], attrs: parseAttrs(m[2]) }
 }
 
+interface Fence {
+  char: "`" | "~"
+  length: number
+}
+
+/** A fence opener (```` ```ts title="x" ```` or `~~~`), or null. Backtick info strings cannot contain backticks. */
+export function fenceOpener(line: string): Fence | null {
+  const m = line.match(/^\s*(`{3,}|~{3,})(.*)$/)
+  if (!m) return null
+  if (m[1][0] === "`" && m[2].includes("`")) return null
+  return { char: m[1][0] as Fence["char"], length: m[1].length }
+}
+
+/** True when `line` closes `fence`: the same character, at least as many, nothing else. */
+export function closesFence(line: string, fence: Fence): boolean {
+  const trimmed = line.trim()
+  return trimmed.length >= fence.length && trimmed === fence.char.repeat(trimmed.length)
+}
+
+/** Tracks whether a line-by-line scan is inside a fenced code block. */
+export function fenceTracker() {
+  let open: Fence | null = null
+  return {
+    /** Feed the next line; returns true if the line is fence content or a fence delimiter. */
+    step(line: string): boolean {
+      if (open) {
+        if (closesFence(line, open)) open = null
+        return true
+      }
+      open = fenceOpener(line)
+      return open !== null
+    },
+    get inside() {
+      return open !== null
+    },
+  }
+}
+
 // Collects the lines between an opening {% name %} and its matching
-// {% endname %}, honoring nesting of the same tag.
+// {% endname %}, honoring nesting of the same tag. Tags inside fenced code
+// (a demo file, a Markdown sample) are content, not structure.
 function collectUntil(lines: string[], start: number, name: string): { body: string[]; next: number } {
   const body: string[] = []
   let depth = 1
   let i = start
+  const fences = fenceTracker()
   for (; i < lines.length; i++) {
+    if (fences.step(lines[i])) {
+      body.push(lines[i])
+      continue
+    }
     const tag = templateTag(lines[i])
     if (tag?.name === name) depth++
     if (tag?.name === `end${name}`) {
@@ -131,11 +176,10 @@ export function parseMarkdown(src: string): DocumentNode {
   refDefinitions.clear()
   footnoteDefinitions.clear()
   const content: string[] = []
-  let inFence = false
+  const fences = fenceTracker()
   for (const line of lines) {
     // Definition lines inside code fences are content, not definitions.
-    if (/^\s*(?:```|~~~)/.test(line)) inFence = !inFence
-    if (!inFence) {
+    if (!fences.step(line)) {
       // Footnote citation definitions first: [^id]: url "Optional Label"
       const foot = line.match(/^\[\^([^\]\s]+)\]:\s*(\S+)(?:\s+"([^"]*)")?\s*$/)
       if (foot) {
@@ -178,6 +222,83 @@ export function parseDemoVariants(raw: string): DemoVariantOption[] {
     .filter((v) => v.id)
 }
 
+const ENDDEMO_RE = /^\s*\{%\s*enddemo\s*%\}\s*$/
+
+interface DemoBody {
+  files: DemoInlineFile[]
+  /** First line after the block. */
+  next: number
+  /** The input ended before `{% enddemo %}` (a block still streaming in). */
+  open: boolean
+}
+
+function fallbackPath(index: number, language: string | undefined): string {
+  const ext = language || "txt"
+  return index === 0 ? `index.${ext}` : `file-${index + 1}.${ext}`
+}
+
+/**
+ * The inline files of a `{% demo %}` block starting at `start` (the line after the tag).
+ *
+ * - `{% enddemo %}` right away: an empty block.
+ * - A fence right away: the block form. Fences (and blank lines) are files until
+ *   `{% enddemo %}`; any other line ends the block too. Reaching the end of input
+ *   first marks the block `open` (still streaming).
+ * - Blank lines, then fences: the block form only if `{% enddemo %}` closes it with
+ *   nothing but fences in between — otherwise the tag is self-closing and the fences
+ *   are ordinary code blocks, exactly as before 1.2.
+ * - Anything else: no body (self-closing tag).
+ */
+export function demoBody(lines: string[], start: number, selfClosing = false): DemoBody | null {
+  let j = start
+  if (j < lines.length && ENDDEMO_RE.test(lines[j])) return { files: [], next: j + 1, open: false }
+  // `{% demo … /%}` takes no files (a directly following `{% enddemo %}` is tolerated above).
+  if (selfClosing) return null
+  const immediate = j < lines.length && fenceOpener(lines[j]) !== null
+  if (!immediate) {
+    while (j < lines.length && !lines[j].trim()) j++
+    if (j >= lines.length) return null
+    if (ENDDEMO_RE.test(lines[j])) return { files: [], next: j + 1, open: false }
+    if (!fenceOpener(lines[j])) return null
+  }
+  const files: DemoInlineFile[] = []
+  while (j < lines.length) {
+    const line = lines[j]
+    if (!line.trim()) {
+      j++
+      continue
+    }
+    if (ENDDEMO_RE.test(line)) return { files, next: j + 1, open: false }
+    const fence = fenceOpener(line)
+    if (!fence) return immediate ? { files, next: j, open: false } : null
+    const info = line.trim().slice(fence.length).trim()
+    // `tsx title="index.tsx"` or just `title="index.tsx"` (no language).
+    const first = info.match(/^[^\s`]*/)?.[0] ?? ""
+    const language = first.includes("=") ? "" : first
+    const rest = language ? info.slice(language.length) : info
+    const attrs = parseAttrs(rest)
+    const content: string[] = []
+    j++
+    let closed = false
+    while (j < lines.length) {
+      if (closesFence(lines[j], fence)) {
+        closed = true
+        j++
+        break
+      }
+      content.push(lines[j])
+      j++
+    }
+    files.push({
+      path: (attrs.title ?? "").trim() || fallbackPath(files.length, language || undefined),
+      content: content.join("\n"),
+      ...(language ? { language } : {}),
+    })
+    if (!closed) break
+  }
+  return immediate ? { files, next: j, open: true } : null
+}
+
 function parseDemoTag(attrs: Record<string, string>): DemoNode {
   const variants = attrs.variants ? parseDemoVariants(attrs.variants) : []
   return {
@@ -189,6 +310,7 @@ function parseDemoTag(attrs: Record<string, string>): DemoNode {
     ...((DEMO_LAYOUTS as string[]).includes(attrs.layout) ? { layout: attrs.layout as DemoLayout } : {}),
     ...(variants.length ? { variants } : {}),
     ...((DEMO_VIEWPORTS as string[]).includes(attrs.viewport) ? { viewport: attrs.viewport as DemoViewport } : {}),
+    ...(attrs.entry ? { entry: attrs.entry } : {}),
   }
 }
 
@@ -201,6 +323,8 @@ export function trimPartialInlineToken(md: string): string {
   return md
     // A block tag still arriving (`{% demo src="butt`) would flash as a paragraph.
     .replace(/(^|\n)[ \t]*\{(?:%(?:(?!%\})[^\n])*)?$/, "$1")
+    // A fence still arriving (a lone ` or ``) would end a demo block and flash as text.
+    .replace(/(^|\n)[ \t]*(?:`{1,2}|~{1,2})$/, "$1")
     .replace(/\[\^[^\]]*$/, "")
     .replace(/(^|[\s([{])[@#][\w.-]*$/, "$1")
     .replace(/\\$/, "")
@@ -328,10 +452,16 @@ export function parseBlocks(lines: string[]): Block[] {
       }
 
       if (tag.name === "demo") {
-        blocks.push(parseDemoTag(tag.attrs))
+        const node = parseDemoTag(tag.attrs)
         i++
-        // tolerate an optional {% enddemo %}
-        if (i < lines.length && templateTag(lines[i])?.name === "enddemo") i++
+        // `{% demo … /%}` never has a body; otherwise look for inline files / {% enddemo %}.
+        const body = demoBody(lines, i, /\/\s*%\}\s*$/.test(line))
+        if (body) {
+          if (body.files.length) node.files = body.files
+          if (body.open) node.open = true
+          i = body.next
+        }
+        blocks.push(node)
         continue
       }
 

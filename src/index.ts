@@ -13,25 +13,34 @@ export {
   DemoFullscreen,
   DemoViewer,
   DocstreamDemoContext,
+  DocstreamDemoRuntimeContext,
   createGlobDemoResolver,
   defaultDemoMarkdown,
+  inlineDemoMarkdown,
+  inlineDemoNode,
   demoComponentFrom,
   demoFromSearch,
   demoHref,
   resolveDemosToMarkdown,
   sortDemoFiles,
+  toInlineFiles,
   useDemoResolver,
+  useDemoRuntime,
 } from "./demo"
 export type {
   DemoComponent,
   DemoComponentProps,
   DemoFile,
   DemoFullscreenProps,
+  DemoMarkdownFormat,
   DemoMeta,
   DemoResolver,
+  DemoRuntimeOptions,
   DemoVariant,
   DemoViewerProps,
   GlobDemoResolverOptions,
+  InlineDemoRuntime,
+  InlineDemoRuntimeProps,
   ResolveDemosOptions,
   ResolvedDemo,
 } from "./demo"
@@ -52,8 +61,12 @@ export { VizEmbed } from "./viz"
 export type { VizEmbedProps } from "./viz"
 export { OpenApiOperation } from "./openapi/OpenApiOperation"
 export {
+  InlineDemoPreview,
   ReactCodePreview,
   ReactDemo,
+  almostNodeDemoRuntime,
+  createAlmostNodeDemoRuntime,
+  createInlineDemoProject,
   createReactDemoFiles,
   createAlmostNodeFilesystem,
   createAlmostNodeWorkspace,
@@ -65,6 +78,10 @@ export type {
   AlmostNodeFilesystemOptions,
   AlmostNodeWorkspace,
   AlmostNodeWorkspaceOptions,
+  AlmostNodeDemoRuntimeOptions,
+  InlineDemoPreviewProps,
+  InlineDemoProject,
+  InlineDemoProjectOptions,
   ReactCodePreviewProps,
   ReactDemoProps,
 } from "./playground"
@@ -79,7 +96,7 @@ export type {
   SourceReferenceClient,
 } from "./source"
 export { parseDemoVariants, parseMarkdown, parseBlocks, trimPartialInlineToken } from "./gitbook/parse"
-export { serializeBlocks, serializeMarkdown } from "./gitbook/serialize"
+export { fenceFor, serializeBlocks, serializeDemoFile, serializeMarkdown } from "./gitbook/serialize"
 export {
   footnoteDefinitions,
   parseInline,

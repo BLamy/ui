@@ -17,6 +17,7 @@ export {
   createGlobDemoResolver,
   demoFromSearch,
   demoHref,
+  inlineDemoMarkdown,
   resolveDemosToMarkdown,
 } from '../../src/demo';
-export type { DemoMeta, DemoResolver } from '../../src/demo';
+export type { DemoMeta, DemoResolver, InlineDemoRuntime, InlineDemoRuntimeProps } from '../../src/demo';

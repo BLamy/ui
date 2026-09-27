@@ -170,10 +170,11 @@ describe("createGlobDemoResolver", () => {
   })
 })
 
-describe("resolveDemosToMarkdown", () => {
+describe("resolveDemosToMarkdown { format: 'plain' }", () => {
+  const plain = { format: "plain" } as const
   it("replaces demo tags with titled fences of the real files, leaving the rest byte-identical", async () => {
     const markdown = "# Button\n\nIntro.\n\n{% demo src=\"button/sizes\" %}\n\n## API\n\n| a | b |\n| --- | --- |\n"
-    const out = await resolveDemosToMarkdown(markdown, fixture())
+    const out = await resolveDemosToMarkdown(markdown, fixture(), plain)
     expect(out.startsWith("# Button\n\nIntro.\n\n**Example — Button sizes**\n\n")).toBe(true)
     expect(out).toContain('Variants (the `variant` prop): `sm` (Small).')
     expect(out).toContain('```tsx title="button/sizes/index.tsx"\nexport default function Sizes() {}\n```')
@@ -185,12 +186,13 @@ describe("resolveDemosToMarkdown", () => {
   })
 
   it("uses the tag's own title and consumes a trailing enddemo", async () => {
-    const out = await resolveDemosToMarkdown('{% demo src="card/basic" title="Basic card" %}\n{% enddemo %}\nafter', fixture())
+    const out = await resolveDemosToMarkdown('{% demo src="card/basic" title="Basic card" %}\n{% enddemo %}\nafter', fixture(), plain)
     expect(out).toBe('**Example — Basic card**\n\n```tsx title="card/basic/index.tsx"\nexport default () => null\n```\nafter')
   })
 
   it("ignores demo tags inside code fences", async () => {
     const markdown = '````md\n{% demo src="button/sizes" %}\n````\n'
+    await expect(resolveDemosToMarkdown(markdown, fixture(), plain)).resolves.toBe(markdown)
     await expect(resolveDemosToMarkdown(markdown, fixture())).resolves.toBe(markdown)
   })
 
@@ -202,8 +204,8 @@ describe("resolveDemosToMarkdown", () => {
       },
       load: async () => Index,
     }
-    await expect(resolveDemosToMarkdown('{% demo src="x/y" %}', failing)).resolves.toBe("> Live demo `x/y` could not be resolved: gone")
-    await expect(resolveDemosToMarkdown('{% demo src="x/y" %}', undefined)).resolves.toBe("> Live demo `x/y` (interactive on the docs site).")
+    await expect(resolveDemosToMarkdown('{% demo src="x/y" %}', failing, plain)).resolves.toBe("> Live demo `x/y` could not be resolved: gone")
+    await expect(resolveDemosToMarkdown('{% demo src="x/y" %}', undefined, plain)).resolves.toBe("> Live demo `x/y` (interactive on the docs site).")
   })
 
   it("lengthens fences around files that contain fences", async () => {
@@ -214,7 +216,7 @@ describe("resolveDemosToMarkdown", () => {
       files: async () => [{ path: "README.md", content: "```sh\nnpm i\n```\n" }],
       load: async () => Index,
     }
-    const out = await resolveDemosToMarkdown('{% demo src="a/b" %}', resolver)
+    const out = await resolveDemosToMarkdown('{% demo src="a/b" %}', resolver, plain)
     expect(out).toContain('````markdown title="a/b/README.md"\n```sh\nnpm i\n```\n````')
   })
 

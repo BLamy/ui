@@ -4,6 +4,7 @@ import { DemoFullscreen, DocstreamRefContext, GitbookStreamdown, MarkdownContent
 import '@brett_lamy/docstream/styles.css';
 import './site.css';
 import { demoResolver } from './demos';
+import { demoRuntime } from './inline-demo-runtime';
 import { PAGES } from './content';
 import * as ButtonModule from './examples/Button';
 import * as ButtonStoriesModule from './examples/Button.stories';
@@ -163,6 +164,7 @@ function App() {
               liveRenderer={liveRenderer}
               sourceRenderer={sourceRenderer}
               demoResolver={demoResolver}
+              demoRuntime={demoRuntime}
               pageActions={{ transform: (md) => `${md.trim()}\n\n---\n\nSource: https://blamy.github.io/docstream/#${cur.id}\n` }}
             />
             {cur.id === 'streaming' ? <StreamDemo /> : null}

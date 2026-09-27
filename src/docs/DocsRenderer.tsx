@@ -1,4 +1,4 @@
-import { useId, useMemo, useState, type ReactNode } from "react"
+import { useContext, useId, useMemo, useState, type ReactNode } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import "katex/dist/katex.min.css"
 import {
@@ -15,9 +15,9 @@ import type { Block, CodeBlockNode, DocumentNode, Inline, SourceRefNode } from "
 import { resolveAsset } from "../assets"
 import { parseMarkdown } from "../gitbook/parse"
 import { serializeMarkdown } from "../gitbook/serialize"
-import { DocstreamDemoContext } from "../demo/context"
+import { DocstreamDemoContext, DocstreamDemoRuntimeContext } from "../demo/context"
 import { DemoBlock } from "../demo/DemoViewer"
-import type { DemoResolver } from "../demo/types"
+import type { DemoResolver, InlineDemoRuntime } from "../demo/types"
 import { CopyButton } from "./copy"
 import { rovingKeyDown } from "./controls"
 import { DocPageActions, type DocPageActionsOptions } from "./PageActions"
@@ -467,14 +467,42 @@ export interface DocRenderOptions {
   /** Resolves `{% demo %}` blocks. Provided through context, so nested renderers inherit it. */
   demoResolver?: DemoResolver
   /**
+   * Runs the Preview of `{% demo %}` blocks that carry their files inline and have no
+   * resolver behind them. `PlaygroundStreamdown` (the package root's `GitbookStreamdown`)
+   * supplies an almost-node runtime by default; see `createAlmostNodeDemoRuntime`.
+   * Without one, such demos show their code with a short note.
+   */
+  demoRuntime?: InlineDemoRuntime
+  /** Extra npm dependencies inline demos may import (`{ "@brett_lamy/ui": "^1.2.0" }`). */
+  demoDependencies?: Record<string, string>
+  /**
    * Render "Copy page ▾" (Copy / View as Markdown, Open in ChatGPT / Claude) above the content.
    * `true` uses the defaults; an object passes options to `DocPageActions`.
    */
   pageActions?: boolean | DocPageActionsOptions
 }
 
-function withDemoResolver(resolver: DemoResolver | undefined, children: ReactNode) {
-  return resolver ? <DocstreamDemoContext.Provider value={resolver}>{children}</DocstreamDemoContext.Provider> : children
+function withDemoContext({ demoResolver, demoRuntime, demoDependencies }: DocRenderOptions, children: ReactNode) {
+  let out = children
+  if (demoRuntime || demoDependencies) {
+    out = <DemoRuntimeProvider runtime={demoRuntime} dependencies={demoDependencies}>{out}</DemoRuntimeProvider>
+  }
+  return demoResolver ? <DocstreamDemoContext.Provider value={demoResolver}>{out}</DocstreamDemoContext.Provider> : out
+}
+
+/** Merges runtime options over the inherited ones, keeping a stable context value. */
+function DemoRuntimeProvider({ runtime, dependencies, children }: { runtime?: InlineDemoRuntime; dependencies?: Record<string, string>; children: ReactNode }) {
+  const inherited = useContext(DocstreamDemoRuntimeContext)
+  const depsKey = dependencies ? JSON.stringify(dependencies) : ""
+  const value = useMemo(
+    () => ({
+      runtime: runtime ?? inherited.runtime,
+      dependencies: dependencies || inherited.dependencies ? { ...inherited.dependencies, ...dependencies } : undefined,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [runtime, inherited, depsKey],
+  )
+  return <DocstreamDemoRuntimeContext.Provider value={value}>{children}</DocstreamDemoRuntimeContext.Provider>
 }
 
 export function PageActionsBar({ markdown, options }: { markdown: string | (() => string); options: boolean | DocPageActionsOptions | undefined }) {
@@ -493,12 +521,14 @@ export function MarkdownContent({
   liveRenderer,
   sourceRenderer,
   demoResolver,
+  demoRuntime,
+  demoDependencies,
   pageActions,
   className,
 }: { markdown: string; className?: string } & Renderers & DocRenderOptions) {
   const doc = useMemo(() => parseMarkdown(markdown), [markdown])
-  return withDemoResolver(
-    demoResolver,
+  return withDemoContext(
+    { demoResolver, demoRuntime, demoDependencies },
     <div data-docstream="" className={className}>
       <PageActionsBar markdown={markdown} options={pageActions} />
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
@@ -512,11 +542,13 @@ export function DocsRenderer({
   liveRenderer,
   sourceRenderer,
   demoResolver,
+  demoRuntime,
+  demoDependencies,
   pageActions,
   markdown,
 }: { doc: DocumentNode; /** Source for page actions; defaults to `serializeMarkdown(doc)`. */ markdown?: string } & Renderers & DocRenderOptions) {
-  return withDemoResolver(
-    demoResolver,
+  return withDemoContext(
+    { demoResolver, demoRuntime, demoDependencies },
     <article className="docs-article">
       <PageActionsBar markdown={markdown ?? (() => serializeMarkdown(doc))} options={pageActions} />
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />

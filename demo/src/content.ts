@@ -367,7 +367,7 @@ During development, \`createViteSourceClient().read(reference)\` reads the autho
 A docs page should be **one Markdown document**. \`{% demo %}\` puts a live, file-backed example into it: the component renders in-page, and the code the reader sees is the real file on disk — never a copy pasted into the Markdown.
 
 {% hint style="info" %}
-Everything below is ordinary docstream Markdown. Use **Copy page** (top right) and paste it somewhere: each demo arrives as its real source files, so the copied page stands on its own.
+Everything below is ordinary docstream Markdown. Use **Copy page** (top right) and paste it into any docstream renderer: each \`{% demo %}\` keeps its tag and carries its real source files inline, so the copy renders back as this same page — demos included — with or without this site's resolver.
 {% endhint %}
 
 ## Single-file demo
@@ -386,11 +386,81 @@ Frames are size containers, so a demo written with container queries responds to
 
 {% demo src="demos/inbox" viewport="tablet" %}
 
+## Pasted, self-contained demo
+
+This block carries its files **inline**. The site's resolver has never heard of \`pasted/counter\`, so docstream renders the files themselves: the Code view shows them, and the Preview runs them in [almost-node](https://www.npmjs.com/package/@agent-wasm/core) — a Vite dev server in your browser. It is exactly what **Copy page** produces for every demo.
+
+{% demo src="pasted/counter" title="Counter (pasted)" description="No resolver behind this one — the files below *are* the demo." height="300" variants="calm:Calm,loud:Loud" %}
+\`\`\`tsx title="index.tsx"
+import { useState } from "react"
+import { Pill } from "./Pill"
+
+export default function Counter({ variant = "calm" }: { variant?: string }) {
+  const [count, setCount] = useState(0)
+  const loud = variant === "loud"
+  return (
+    <div style={{ fontFamily: "system-ui, sans-serif", display: "grid", placeItems: "center", gap: 12, padding: 32 }}>
+      <Pill loud={loud}>{loud ? "COUNT: " + count : "Count: " + count}</Pill>
+      <button onClick={() => setCount((c) => c + 1)} style={{ font: "inherit", padding: "6px 14px", borderRadius: 8 }}>
+        Increment
+      </button>
+    </div>
+  )
+}
+\`\`\`
+\`\`\`tsx title="Pill.tsx"
+import type { ReactNode } from "react"
+
+export function Pill({ loud, children }: { loud?: boolean; children: ReactNode }) {
+  return (
+    <span
+      style={{
+        padding: "4px 12px",
+        borderRadius: 999,
+        fontWeight: 600,
+        background: loud ? "#dc2626" : "#2563eb1f",
+        color: loud ? "#fff" : "#2563eb",
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+\`\`\`
+{% enddemo %}
+
+Where the Preview comes from:
+
+| The block has… | and there is… | Preview | Code view |
+| --- | --- | --- | --- |
+| \`src\` only | a resolver that knows \`src\` | the component, in-page | the resolver's files |
+| inline files | a resolver that knows \`src\` | the component, in-page | the resolver's files (they win) |
+| inline files | no resolver, or one that doesn't know \`src\` | almost-node runs the files (\`demoRuntime\`) | the inline files |
+| inline files | no runtime either (e.g. the \`/streamdown\` entry) | a one-line note | the inline files, shown first |
+| \`src\` only | no resolver | a placeholder chip | — |
+
+\`GitbookStreamdown\` from the package root wires the almost-node runtime in by default; elsewhere pass \`demoRuntime={createAlmostNodeDemoRuntime()}\` (from \`@brett_lamy/docstream/playground\`). Inline demos may import npm packages: pass \`demoDependencies={{ "@brett_lamy/ui": "^1.2.0" }}\`, or include a \`package.json\` among the files.
+
 ## Syntax
 
 \`\`\`md
 {% demo src="<page>/<example>" title="…" description="…" height="420" layout="auto" variants="full:Full,compact:Compact" viewport="desktop" %}
 \`\`\`
+
+The block form carries the files inline — one titled fence per file, entry first (or \`entry="App.tsx"\`), closed by \`{% enddemo %}\`. A file that itself contains fences gets a longer fence:
+
+\`\`\`\`\`md
+{% demo src="composer/scroll-fab" title="Scroll → FAB" variants="full:Full,compact:Compact" height="380" %}
+\`\`\`tsx title="index.tsx"
+export default function ScrollFab({ variant }) { … }
+\`\`\`
+\`\`\`\`md title="README.md"
+\`\`\`sh
+npm start
+\`\`\`
+\`\`\`\`
+{% enddemo %}
+\`\`\`\`\`
 
 | Attribute | Default | Meaning |
 | --- | --- | --- |
@@ -400,6 +470,7 @@ Frames are size containers, so a demo written with container queries responds to
 | \`layout\` | \`auto\` | \`auto\` picks \`multi\` for 2+ files, else \`single\`. |
 | \`variants\` | \`meta.variants\` | \`id:Label\` pairs; the chosen id is the component's \`variant\` prop. |
 | \`viewport\` | \`desktop\` | Initial width: \`desktop\`, \`tablet\` (768px) or \`phone\` (390px). |
+| \`entry\` | first inline file | Entry among the inline files (block form). |
 
 An example folder holds an entry (\`index.tsx\`, default export = the component), any other source files, and an optional \`meta.json\`:
 
@@ -496,12 +567,13 @@ bunx docstream-demo add pricing
 
 ## Page actions
 
-\`pageActions\` on \`MarkdownContent\`, \`DocsRenderer\` or \`GitbookStreamdown\` renders **Copy page ▾**: Copy as Markdown, View as Markdown, Open in ChatGPT and Open in Claude. Or place \`<DocPageActions markdown={page} />\` yourself. For build-time \`.md\` files and \`llms.txt\`, the same resolution is a pure function:
+\`pageActions\` on \`MarkdownContent\`, \`DocsRenderer\` or \`GitbookStreamdown\` renders **Copy page ▾**: Copy as Markdown, View as Markdown, Open in ChatGPT and Open in Claude. Or place \`<DocPageActions markdown={page} />\` yourself. Copy and View give **renderable** docstream Markdown: paste it into docstream and you get this page back. For build-time \`.md\` files and \`llms.txt\`, the same resolution is a pure function:
 
 \`\`\`ts
 import { resolveDemosToMarkdown } from "@brett_lamy/docstream/demo"
 
-const md = await resolveDemosToMarkdown(page, demoResolver) // {% demo %} → titled fences of the real files
+const md = await resolveDemosToMarkdown(page, demoResolver) // each {% demo %} gains its files inline
+const prompt = await resolveDemosToMarkdown(page, demoResolver, { format: "plain" }) // prose + fences, for LLM prompts
 \`\`\`
 `,
   },

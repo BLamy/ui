@@ -1,4 +1,4 @@
-import type { ComponentType } from "react"
+import type { ComponentType, ReactNode } from "react"
 import type { DemoLayout, DemoVariantOption } from "../gitbook/ast"
 
 export type DemoVariant = DemoVariantOption
@@ -50,4 +50,33 @@ export interface DemoResolver {
    * "Open in new tab" link next to its in-page fullscreen button.
    */
   href?(src: string, options?: { variant?: string }): string | undefined
+}
+
+/** What an inline-demo runtime gets: the block's own files, ready to run. */
+export interface InlineDemoRuntimeProps {
+  /** The block's `src` (may be empty); useful as a cache key or label. */
+  src: string
+  title: string
+  /** The inline files, entry first, paths relative to the demo folder. */
+  files: DemoFile[]
+  /** Path of the entry file (its default export is the component). */
+  entry: string
+  /** The selected variant, passed to the component as its `variant` prop. */
+  variant?: string
+  /** Extra npm dependencies (`{ "@brett_lamy/ui": "^1.2.0" }`) the files may import. */
+  dependencies?: Record<string, string>
+}
+
+/**
+ * Renders the Preview of a `{% demo %}` block that carries its files inline and has
+ * no resolver behind it. `@brett_lamy/docstream/playground` provides an almost-node
+ * implementation (`createAlmostNodeDemoRuntime`), which `PlaygroundStreamdown` (the
+ * package root's `GitbookStreamdown`) wires in by default.
+ */
+export type InlineDemoRuntime = (props: InlineDemoRuntimeProps) => ReactNode
+
+export interface DemoRuntimeOptions {
+  runtime?: InlineDemoRuntime
+  /** Extra npm dependencies handed to the runtime for every inline demo. */
+  dependencies?: Record<string, string>
 }

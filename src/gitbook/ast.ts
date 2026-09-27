@@ -156,11 +156,27 @@ export interface DemoVariantOption {
   label: string
 }
 
+/** One source file carried inline by a `{% demo %}` block (a titled fence). */
+export interface DemoInlineFile {
+  /** Path relative to the demo folder, from the fence's `title` (`index.tsx`, `parts/Card.tsx`). */
+  path: string
+  content: string
+  /** The fence's info-string language, when it has one. */
+  language?: string
+}
+
 /**
- * A file-backed live demo: `{% demo src="<page>/<example>" %}`. The example
- * folder (resolved by the host's `DemoResolver`) is the authority for the
- * component, its source files, and its defaults; attributes here override the
- * folder's `meta.json`.
+ * A live demo: `{% demo src="<page>/<example>" %}`. With a host `DemoResolver`
+ * that knows `src`, the example folder is the authority for the component, its
+ * source files and its defaults; attributes here override the folder's
+ * `meta.json`. The block form carries the files inline so the Markdown renders
+ * anywhere, resolver or not:
+ *
+ *     {% demo src="composer/scroll-fab" title="Scroll → FAB" %}
+ *     ```tsx title="index.tsx"
+ *     …
+ *     ```
+ *     {% enddemo %}
  */
 export interface DemoNode {
   type: "demo"
@@ -175,6 +191,16 @@ export interface DemoNode {
   variants?: DemoVariantOption[]
   /** Initial preview viewport for the multi-file viewer. */
   viewport?: DemoViewport
+  /** Entry file among the inline files (`entry="App.tsx"`). Defaults to the first file. */
+  entry?: string
+  /** Files carried inline by the block form, in document order. */
+  files?: DemoInlineFile[]
+  /**
+   * Set while streaming when the block's `{% enddemo %}` has not arrived yet: the
+   * files may still be growing, so renderers show code but hold off running it.
+   * Never serialized.
+   */
+  open?: true
 }
 
 export interface ColumnNode {

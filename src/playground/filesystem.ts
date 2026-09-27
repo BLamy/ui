@@ -154,6 +154,8 @@ export async function createAlmostNodeWorkspace(
 
 export interface ReactDemoFilesOptions {
   entry?: string
+  /** Extra npm dependencies for the generated package.json (ignored when the files bring one). */
+  dependencies?: Record<string, string>
 }
 
 /**
@@ -174,7 +176,7 @@ export function createReactDemoFiles(
         name: "docstream-react-demo",
         private: true,
         type: "module",
-        dependencies: { react: "^19.0.0", "react-dom": "^19.0.0" },
+        dependencies: { react: "^19.0.0", "react-dom": "^19.0.0", ...options.dependencies },
       },
       null,
       2,
@@ -199,4 +201,84 @@ export function createReactDemoFiles(
   }
 
   return map
+}
+
+export interface InlineDemoProjectOptions {
+  /** Entry file among `files` (relative path). Defaults to the first file. */
+  entry?: string
+  /** Extra npm dependencies (merged over a `package.json` among the files, if any). */
+  dependencies?: Record<string, string>
+}
+
+export interface InlineDemoProject {
+  /** Complete almost-node project: the demo under `/src/demo/`, a wrapper entry, package.json, index.html. */
+  files: Record<string, AlmostNodeFileContent>
+  /** The Vite entry to hand to `createReactDemoFiles` / `ReactDemo`. */
+  entry: string
+  /** Whether the entry is wrapped (so `?variant=` reaches the component as its `variant` prop). */
+  wrapped: boolean
+}
+
+/** Folder the inline demo's files are written to inside the almost-node project. */
+export const INLINE_DEMO_DIR = "/src/demo"
+const WRAPPER_ENTRY = "/src/__docstream_demo_entry.js"
+
+function selfMounting(source: string): boolean {
+  return /\bcreateRoot\s*\(|\bReactDOM\.render\s*\(|\bhydrateRoot\s*\(/.test(source)
+}
+
+/**
+ * Turn a `{% demo %}` block's inline files into a runnable almost-node project.
+ *
+ * The files go under `/src/demo/` (relative imports between them keep working). A tiny
+ * wrapper entry imports the entry file, takes its default export (or the first exported
+ * function), and renders it with `variant` read from the page's `?variant=` query — so
+ * switching variants just reloads the iframe, no new Vite server. An entry that mounts
+ * itself (`createRoot(…)`) is used directly instead, and receives no `variant`.
+ *
+ * A `package.json` among the files contributes its `dependencies`; `options.dependencies`
+ * are merged over them. Bare imports resolve through almost-node (installed packages, else
+ * esm.sh at the major version declared here), with `react`/`react-dom` provided.
+ */
+export function createInlineDemoProject(
+  files: readonly { path: string; content: string }[],
+  options: InlineDemoProjectOptions = {},
+): InlineDemoProject {
+  const map: Record<string, AlmostNodeFileContent> = {}
+  let packageDeps: Record<string, string> = {}
+  for (const file of files) {
+    const relative = file.path.replace(/^\.?\/+/, "")
+    if (relative === "package.json") {
+      try {
+        const pkg = JSON.parse(file.content) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }
+        packageDeps = { ...pkg.devDependencies, ...pkg.dependencies }
+      } catch {
+        // Not JSON: keep it as a plain file.
+      }
+    }
+    map[normalizeAlmostNodePath(relative, INLINE_DEMO_DIR)] = file.content
+  }
+  const entryFile = files.find((f) => f.path === options.entry) ?? files[0]
+  if (!entryFile) throw new Error("An inline demo needs at least one file")
+  const entryPath = normalizeAlmostNodePath(entryFile.path.replace(/^\.?\/+/, ""), INLINE_DEMO_DIR)
+  const dependencies = { ...packageDeps, ...options.dependencies }
+  const wrapped = !selfMounting(entryFile.content)
+  if (wrapped) {
+    const specifier = `.${entryPath.slice("/src".length)}`
+    map[WRAPPER_ENTRY] = `import { createElement } from "react"
+import { createRoot } from "react-dom/client"
+import * as demo from ${JSON.stringify(specifier)}
+
+const Component = demo.default ?? Object.values(demo).find((value) => typeof value === "function")
+const variant = new URLSearchParams(location.search).get("variant")
+const props = variant === null ? {} : { variant }
+createRoot(document.getElementById("root")).render(
+  Component
+    ? createElement(Component, props)
+    : createElement("pre", null, ${JSON.stringify(`${entryFile.path} has no default export to render.`)}),
+)
+`
+  }
+  const entry = wrapped ? WRAPPER_ENTRY : entryPath
+  return { files: createReactDemoFiles(map, { entry, dependencies }), entry, wrapped }
 }

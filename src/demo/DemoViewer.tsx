@@ -1,5 +1,12 @@
 /* The demo viewer for `{% demo src="<page>/<example>" %}`.
 
+   Where the files come from:
+   - a host `DemoResolver` that knows `src`: the component renders in-page; the Code view shows
+     the resolver's files (they win over any inline copy);
+   - otherwise the block's inline files (`{% demo %}` + fences + `{% enddemo %}`): the Preview
+     runs them through the `InlineDemoRuntime` in context (almost-node in the playground entry),
+     or, without one, the viewer opens on the Code view with a short note — never an empty box.
+
    Multi-file demos get the gallery viewer: a header (title, description, Preview | Code, variants,
    viewport widths, copy, fullscreen), a resizable preview frame on a dotted stage, and a Code view
    with a file tree and highlighted source. Single-file demos keep the ReactDemo card: the preview,
@@ -28,10 +35,10 @@ import { CollapsibleCode } from "../docs/CollapsibleCode"
 import { HighlightedCode } from "../docs/HighlightedCode"
 import { CopyButton } from "../docs/copy"
 import { PillTabs, Segmented, rovingKeyDown } from "../docs/controls"
-import { useDemoResolver } from "./context"
+import { useDemoResolver, useDemoRuntime } from "./context"
 import { languageForPath } from "./glob"
-import { defaultDemoMarkdown } from "./markdown"
-import type { DemoComponent, DemoFile, DemoMeta, DemoResolver, DemoVariant } from "./types"
+import { inlineDemoMarkdown } from "./markdown"
+import type { DemoComponent, DemoFile, DemoMeta, DemoResolver, DemoVariant, InlineDemoRuntime } from "./types"
 
 export interface DemoViewerProps {
   /** `<page>/<example>` id handed to the resolver. */
@@ -46,6 +53,19 @@ export interface DemoViewerProps {
   variants?: DemoVariant[]
   /** Initial viewport of the multi-file preview. */
   viewport?: DemoViewport
+  /**
+   * Files carried inline by the block (entry first unless `entry` says otherwise). Used when
+   * no resolver knows `src`, or the resolver fails for it.
+   */
+  files?: DemoFile[]
+  /** Entry among `files`. Defaults to the first file. */
+  entry?: string
+  /** The block is still streaming in: show its code, but don't run it yet. */
+  streaming?: boolean
+  /** Runs inline files in the Preview. Defaults to the runtime in context (`demoRuntime`). */
+  runtime?: InlineDemoRuntime
+  /** Extra npm dependencies for the runtime, merged over `demoDependencies` from context. */
+  dependencies?: Record<string, string>
   className?: string
 }
 
@@ -174,13 +194,37 @@ function cssLength(value: number | string | undefined, fallback: string): string
   return /^\d+(?:\.\d+)?$/.test(value.trim()) ? `${value.trim()}px` : value
 }
 
-/** The rendered component on its canvas. */
-function DemoCanvas({ src, component, variant, bleed }: {
+/** What fills the preview: a resolved component, an inline-demo runtime, or a note. */
+type PreviewSource =
+  | { kind: "component"; component: Loaded<DemoComponent> }
+  | { kind: "runtime"; render: (variant: string | undefined) => ReactNode }
+  | { kind: "streaming" }
+  | { kind: "unavailable" }
+
+export const NO_RUNTIME_NOTE = "Live preview needs the playground runtime. The code is shown instead."
+
+/** The rendered demo on its canvas. */
+function DemoCanvas({ src, preview, variant, bleed }: {
   src: string
-  component: Loaded<DemoComponent>
+  preview: PreviewSource
   variant: string | undefined
   bleed?: boolean
 }) {
+  if (preview.kind === "unavailable" || preview.kind === "streaming") {
+    return (
+      <div className="docs-demo-note" role="note" data-variant={variant}>
+        {preview.kind === "streaming" ? "The demo is still arriving; its preview starts once the block is complete." : NO_RUNTIME_NOTE}
+      </div>
+    )
+  }
+  if (preview.kind === "runtime") {
+    return (
+      <div className="docs-demo-canvas docs-demo-canvas-bleed docs-demo-canvas-runtime" data-variant={variant}>
+        <DemoErrorBoundary src={src || "demo"}>{preview.render(variant)}</DemoErrorBoundary>
+      </div>
+    )
+  }
+  const { component } = preview
   return (
     <div className={bleed ? "docs-demo-canvas docs-demo-canvas-bleed" : "docs-demo-canvas"} data-variant={variant}>
       {component.status === "ready" ? (
@@ -371,7 +415,7 @@ function CodeView({ src, files, height, id }: { src: string; files: DemoFile[]; 
       </div>
       <div className="docs-demo-source" role="tabpanel" id={panelId} aria-labelledby={file ? tabId(file.path) : undefined}>
         <div className="docs-demo-source-h">
-          <span className="docs-demo-source-path">{src}/{file?.path}</span>
+          <span className="docs-demo-source-path">{src && file ? `${src}/${file.path}` : file?.path}</span>
           {file ? <CopyButton text={file.content} label={`Copy ${file.path}`} /> : null}
         </div>
         <div className="docs-demo-source-body" tabIndex={0} aria-label={file ? `${file.path} source` : undefined}>
@@ -416,7 +460,7 @@ function VariantSwitch({ variants, value, onChange, title }: {
 }
 
 /** A full-viewport overlay (native modal dialog: top layer, focus trap, Esc to close). */
-function FullscreenDialog({ open, onClose, title, src, variants, variant, onVariant, component, bleed, href }: {
+function FullscreenDialog({ open, onClose, title, src, variants, variant, onVariant, preview, bleed, href }: {
   open: boolean
   onClose: () => void
   title: string
@@ -424,7 +468,7 @@ function FullscreenDialog({ open, onClose, title, src, variants, variant, onVari
   variants: DemoVariant[] | undefined
   variant: string | undefined
   onVariant: (id: string) => void
-  component: Loaded<DemoComponent>
+  preview: PreviewSource
   bleed?: boolean
   href?: string
 }) {
@@ -455,7 +499,7 @@ function FullscreenDialog({ open, onClose, title, src, variants, variant, onVari
             </button>
           </div>
           <div className="docs-demo-dialog-stage">
-            <DemoCanvas src={src} component={component} variant={variant} bleed={bleed} />
+            <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} />
           </div>
         </div>
       ) : null}
@@ -467,16 +511,34 @@ function FullscreenDialog({ open, onClose, title, src, variants, variant, onVari
 
 type ViewTab = "preview" | "code"
 
+/** Inline files, entry first. */
+function orderInline(files: DemoFile[] | undefined, entry: string | undefined): DemoFile[] | undefined {
+  if (!files?.length) return undefined
+  const index = entry ? files.findIndex((f) => f.path === entry) : -1
+  return index > 0 ? [files[index], ...files.slice(0, index), ...files.slice(index + 1)] : files
+}
+
 export function DemoViewer(props: DemoViewerProps) {
   const resolver = useDemoResolver(props.resolver)
+  const runtimeOptions = useDemoRuntime({ runtime: props.runtime, dependencies: props.dependencies })
   const { src } = props
   const [ref, near] = useNearViewport<HTMLElement>()
-  const meta = useMeta(resolver, src)
-  const files = useFiles(resolver, src, near)
-  const component = useComponent(resolver, src, near)
-  const metaValue = meta.status === "ready" ? meta.value : undefined
+  const inlineFiles = useMemo(() => orderInline(props.files, props.entry), [props.files, props.entry])
 
-  const title = props.title ?? metaValue?.title ?? src.split("/").pop() ?? src
+  // A resolver is consulted unless the block brings its own files and the resolver
+  // says (via `list()`) that it does not know this src.
+  const tryResolver = !!resolver && !(inlineFiles && (!src || (resolver.list ? !resolver.list().includes(src) : false)))
+  const hookResolver = tryResolver ? resolver : undefined
+  const meta = useMeta(hookResolver, src)
+  const resolvedFiles = useFiles(hookResolver, src, near)
+  const component = useComponent(hookResolver, src, near)
+  const resolverFailed = meta.status === "error" || resolvedFiles.status === "error" || component.status === "error"
+  const mode: "resolver" | "inline" | "none" =
+    tryResolver && !(inlineFiles && resolverFailed) ? "resolver" : inlineFiles ? "inline" : "none"
+
+  const metaValue = mode === "resolver" && meta.status === "ready" ? meta.value : undefined
+  const files: Loaded<DemoFile[]> = mode === "inline" ? { status: "ready", value: inlineFiles! } : resolvedFiles
+  const title = props.title ?? metaValue?.title ?? (src.split("/").pop() || "Demo")
   const description = props.description ?? metaValue?.description
   const variants = props.variants?.length ? props.variants : metaValue?.variants
   const [chosenVariant, setVariant] = useState<string | undefined>(undefined)
@@ -490,10 +552,20 @@ export function DemoViewer(props: DemoViewerProps) {
   const heightValue = props.height ?? metaValue?.height
   const bleed = metaValue?.bleed
   const [fullscreen, setFullscreen] = useState(false)
-  const href = resolver?.href?.(src, variant ? { variant } : undefined)
+  const href = mode === "resolver" ? resolver?.href?.(src, variant ? { variant } : undefined) : undefined
   const baseId = useId()
 
-  if (!resolver) {
+  const { runtime, dependencies } = runtimeOptions
+  const preview: PreviewSource = useMemo(() => {
+    if (mode !== "inline") return { kind: "component", component }
+    if (props.streaming) return { kind: "streaming" }
+    if (!runtime || !inlineFiles) return { kind: "unavailable" }
+    const entry = inlineFiles[0].path
+    return { kind: "runtime", render: (v) => runtime({ src, title, files: inlineFiles, entry, variant: v, dependencies }) }
+  }, [mode, component, props.streaming, runtime, inlineFiles, src, title, dependencies])
+  const runnable = preview.kind !== "unavailable"
+
+  if (mode === "none") {
     return (
       <div className="docs-source-ref" data-docstream-demo="" data-demo-src={src}>
         <FileCode2 width={16} height={16} aria-hidden="true" />
@@ -502,6 +574,18 @@ export function DemoViewer(props: DemoViewerProps) {
       </div>
     )
   }
+
+  const node: DemoNode = {
+    type: "demo",
+    src,
+    ...(props.title ? { title: props.title } : {}),
+    ...(props.description ? { description: props.description } : {}),
+    ...(props.height !== undefined ? { height: String(props.height) } : {}),
+    ...(props.layout ? { layout: props.layout } : {}),
+    ...(props.variants?.length ? { variants: props.variants } : {}),
+    ...(props.viewport ? { viewport: props.viewport } : {}),
+  }
+  const copyDemo = () => inlineDemoMarkdown(node, fileList ?? [], metaValue)
 
   const dialog = (
     <FullscreenDialog
@@ -512,7 +596,7 @@ export function DemoViewer(props: DemoViewerProps) {
       variants={variants}
       variant={variant}
       onVariant={setVariant}
-      component={component}
+      preview={preview}
       bleed={bleed}
       href={href}
     />
@@ -522,7 +606,7 @@ export function DemoViewer(props: DemoViewerProps) {
   if (layout === "single") {
     const file = fileList?.[0]
     return (
-      <section ref={ref} className={wrapper("single")} data-docstream-demo="" data-demo-src={src} aria-labelledby={`${baseId}-title`}>
+      <section ref={ref} className={wrapper("single")} data-docstream-demo="" data-demo-src={src} data-demo-mode={mode} aria-labelledby={`${baseId}-title`}>
         <div className="docs-react-demo">
           <header className="docs-react-demo-header docs-demo-single-head">
             <span className="docs-demo-heading">
@@ -531,16 +615,24 @@ export function DemoViewer(props: DemoViewerProps) {
             </span>
             <span className="docs-demo-spacer" />
             <VariantSwitch variants={variants} value={variant} onChange={setVariant} title={title} />
-            <FullscreenButton onOpen={() => setFullscreen(true)} title={title} />
+            {runnable ? <FullscreenButton onOpen={() => setFullscreen(true)} title={title} /> : null}
           </header>
-          <div className="docs-react-demo-preview docs-demo-single-preview" style={{ height: cssLength(heightValue, "auto") }}>
-            {near ? <DemoCanvas src={src} component={component} variant={variant} bleed={bleed} /> : <Spinner />}
-          </div>
+          {runnable ? (
+            <div
+              className="docs-react-demo-preview docs-demo-single-preview"
+              style={{ height: cssLength(heightValue, preview.kind === "runtime" ? "360px" : "auto") }}
+            >
+              {near ? <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} /> : <Spinner />}
+            </div>
+          ) : (
+            <DemoCanvas src={src} preview={preview} variant={variant} />
+          )}
           {file ? (
             <CollapsibleCode
               code={file.content.replace(/\n+$/, "")}
               language={file.language ?? languageForPath(file.path) ?? null}
               copyLabel={`Copy ${file.path}`}
+              {...(runnable ? {} : { collapsedLines: 12 })}
             />
           ) : null}
         </div>
@@ -554,6 +646,7 @@ export function DemoViewer(props: DemoViewerProps) {
       rootRef={ref}
       className={wrapper(layout ?? "pending")}
       baseId={baseId}
+      mode={mode}
       src={src}
       title={title}
       description={description}
@@ -561,22 +654,24 @@ export function DemoViewer(props: DemoViewerProps) {
       variant={variant}
       onVariant={setVariant}
       files={files}
-      component={component}
+      preview={preview}
       near={near}
       height={cssLength(heightValue, "480px")}
       viewport={props.viewport}
       bleed={bleed}
       href={href}
       onFullscreen={() => setFullscreen(true)}
+      copyDemo={fileList?.length ? copyDemo : undefined}
       dialog={dialog}
     />
   )
 }
 
-function MultiFileViewer({ rootRef, className, baseId, src, title, description, variants, variant, onVariant, files, component, near, height, viewport, bleed, href, onFullscreen, dialog }: {
+function MultiFileViewer({ rootRef, className, baseId, mode, src, title, description, variants, variant, onVariant, files, preview, near, height, viewport, bleed, href, onFullscreen, copyDemo, dialog }: {
   rootRef: MutableRefObject<HTMLElement | null>
   className: string
   baseId: string
+  mode: "resolver" | "inline"
   src: string
   title: string
   description: string | undefined
@@ -584,28 +679,28 @@ function MultiFileViewer({ rootRef, className, baseId, src, title, description, 
   variant: string | undefined
   onVariant: (id: string) => void
   files: Loaded<DemoFile[]>
-  component: Loaded<DemoComponent>
+  preview: PreviewSource
   near: boolean
   height: string
   viewport: DemoViewport | undefined
   bleed: boolean | undefined
   href: string | undefined
   onFullscreen: () => void
+  copyDemo: (() => string) | undefined
   dialog: ReactNode
 }) {
-  const [tab, setTab] = useState<ViewTab>("preview")
+  const runnable = preview.kind !== "unavailable"
+  // Nothing to preview without a runtime: open on the code rather than an empty frame.
+  const [tab, setTab] = useState<ViewTab>(runnable ? "preview" : "code")
   const [width, setWidth] = useState<number | null>(() => VIEWPORTS.find((v) => v.id === viewport)?.width ?? null)
   const [codeSeen, setCodeSeen] = useState(false)
   useEffect(() => {
     if (tab === "code") setCodeSeen(true)
   }, [tab])
   const activeViewport = width === null ? "desktop" : VIEWPORTS.find((v) => v.width === width)?.id
-  const fileList = files.status === "ready" ? files.value : null
-  const allFiles = () =>
-    defaultDemoMarkdown({ node: { type: "demo", src } as DemoNode, meta: undefined, files: fileList ?? [], title })
 
   return (
-    <section ref={rootRef} className={className} data-docstream-demo="" data-demo-src={src} aria-labelledby={`${baseId}-title`}>
+    <section ref={rootRef} className={className} data-docstream-demo="" data-demo-src={src} data-demo-mode={mode} aria-labelledby={`${baseId}-title`}>
       <div className="docs-demo-head">
         <div className="docs-demo-heading">
           <div id={`${baseId}-title`} className="docs-demo-title">{title}</div>
@@ -621,7 +716,7 @@ function MultiFileViewer({ rootRef, className, baseId, src, title, description, 
             panelId={(id) => `${baseId}-panel-${id}`}
           />
           <VariantSwitch variants={variants} value={variant} onChange={onVariant} title={title} />
-          {tab === "preview" ? (
+          {tab === "preview" && runnable ? (
             <div className="docs-demo-viewports" role="group" aria-label="Preview width">
               {VIEWPORTS.map(({ id, label, width: w, Icon }) => (
                 <button
@@ -638,18 +733,23 @@ function MultiFileViewer({ rootRef, className, baseId, src, title, description, 
               ))}
             </div>
           ) : null}
-          {fileList?.length ? <CopyButton text={allFiles} label="Copy all files as Markdown" className="docs-demo-icon-btn" /> : null}
-          <FullscreenButton onOpen={onFullscreen} title={title} />
+          {copyDemo ? <CopyButton text={copyDemo} label="Copy demo as Markdown" className="docs-demo-icon-btn" /> : null}
+          {runnable ? <FullscreenButton onOpen={onFullscreen} title={title} /> : null}
           <NewTabLink href={href} title={title} />
         </div>
       </div>
       <div className="docs-demo-body">
         <div id={`${baseId}-panel-preview`} role="tabpanel" aria-labelledby={`${baseId}-tab-preview`} hidden={tab !== "preview"}>
-          <PreviewStage width={width} onResize={setWidth} height={height}>
-            {near ? <DemoCanvas src={src} component={component} variant={variant} bleed={bleed} /> : <Spinner />}
-          </PreviewStage>
+          {runnable ? (
+            <PreviewStage width={width} onResize={setWidth} height={height}>
+              {near ? <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} /> : <Spinner />}
+            </PreviewStage>
+          ) : (
+            <DemoCanvas src={src} preview={preview} variant={variant} />
+          )}
         </div>
         <div id={`${baseId}-panel-code`} role="tabpanel" aria-labelledby={`${baseId}-tab-code`} hidden={tab !== "code"}>
+          {!runnable && tab === "code" ? <DemoCanvas src={src} preview={preview} variant={variant} /> : null}
           {codeSeen || tab === "code" ? (
             files.status === "ready" ? (
               <CodeView src={src} files={files.value} height={height} id={baseId} />
@@ -666,7 +766,7 @@ function MultiFileViewer({ rootRef, className, baseId, src, title, description, 
   )
 }
 
-/** Renders a parsed `{% demo %}` block with the resolver from context. */
+/** Renders a parsed `{% demo %}` block with the resolver and runtime from context. */
 export function DemoBlock({ node }: { node: DemoNode }) {
   return (
     <DemoViewer
@@ -677,6 +777,9 @@ export function DemoBlock({ node }: { node: DemoNode }) {
       layout={node.layout}
       variants={node.variants}
       viewport={node.viewport}
+      files={node.files}
+      entry={node.entry}
+      streaming={node.open}
     />
   )
 }
@@ -699,7 +802,7 @@ export function DemoFullscreen({ src, resolver: override, variant, className, st
   if (!resolver) return <DemoError message={`No demo resolver for ${src}`} />
   return (
     <div className={className ? `docs-demo-fullscreen ${className}` : "docs-demo-fullscreen"} style={style} data-demo-src={src}>
-      <DemoCanvas src={src} component={component} variant={chosen} bleed={metaValue?.bleed} />
+      <DemoCanvas src={src} preview={{ kind: "component", component }} variant={chosen} bleed={metaValue?.bleed} />
     </div>
   )
 }
