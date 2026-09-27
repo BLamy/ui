@@ -10,6 +10,7 @@ import {
 } from "@tiptap/react"
 import {
   AlertTriangle,
+  AppWindow,
   AtSign,
   CheckCircle2,
   ChevronDown,
@@ -30,6 +31,8 @@ import type { DocumentNode, HintStyle, SourceRefNode } from "@brett_lamy/docstre
 import { ReactCodePreview } from "@brett_lamy/docstream/playground"
 import { ReplayPreview, isReplayQaUrl } from "@brett_lamy/docstream/replay"
 import { VideoEmbed } from "@brett_lamy/docstream/video"
+import { DemoViewer } from "@brett_lamy/docstream/demo"
+import { pmToDemo } from "./convert"
 import { SourceFileEditor } from "./SourceFileEditor"
 import { useEditorRuntime } from "./runtime"
 import { GbAttachment } from "./attachments"
@@ -176,7 +179,15 @@ export const GbTabs = Node.create({
   defining: true,
   isolating: true,
   addAttributes() {
-    return { active: { default: 0, rendered: false } }
+    return {
+      active: { default: 0, rendered: false },
+      // `{% tabs sync="key" %}` — tab sets sharing a key follow the reader's last choice.
+      sync: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-sync") || null,
+        renderHTML: (attributes) => (attributes.sync ? { "data-sync": attributes.sync } : {}),
+      },
+    }
   },
   parseHTML() {
     return [{ tag: "div[data-gb-tabs]" }]
@@ -512,6 +523,76 @@ export const GbSourceRef = Node.create({
   },
   addNodeView() {
     return ReactNodeViewRenderer(SourceRefView)
+  },
+})
+
+// ---------- Demo ----------
+
+function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
+  const editable = editor.isEditable
+  const { demoResolver } = useEditorRuntime()
+  const demo = useMemo(() => pmToDemo(node.attrs), [node.attrs])
+  // Typing into `src` would otherwise resolve every intermediate id.
+  const src = useDebouncedValue(demo.src)
+  return (
+    <NodeViewWrapper className={demoResolver && src ? "gb-demo-block gb-demo-block-preview" : "gb-demo-block"} contentEditable={false}>
+      <div className="gb-demo">
+        <AppWindow className="size-4 shrink-0" />
+        {editable ? (
+          <>
+            <input className="gb-inline-input gb-demo-src" value={node.attrs.src} placeholder="page/example" onChange={(event) => updateAttributes({ src: event.target.value })} />
+            <input className="gb-inline-input gb-demo-title" value={node.attrs.title} placeholder="Title" onChange={(event) => updateAttributes({ title: event.target.value })} />
+          </>
+        ) : (
+          <>
+            <code className="gb-demo-src">{demo.src || "demo"}</code>
+            {demo.title ? <span className="gb-demo-title">{demo.title}</span> : null}
+          </>
+        )}
+      </div>
+      {demoResolver && src ? (
+        <div className="gb-demo-preview">
+          <DemoViewer
+            key={src}
+            resolver={demoResolver}
+            src={src}
+            title={demo.title}
+            description={demo.description}
+            height={demo.height}
+            layout={demo.layout}
+            variants={demo.variants}
+            viewport={demo.viewport}
+          />
+        </div>
+      ) : null}
+    </NodeViewWrapper>
+  )
+}
+
+/** `{% demo %}` — every tag attribute is kept on the node so it round-trips losslessly. */
+export const GbDemo = Node.create({
+  name: "gbDemo",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return {
+      src: { default: "" },
+      title: { default: "" },
+      description: { default: "" },
+      height: { default: "" },
+      layout: { default: null },
+      variants: { default: null, rendered: false },
+      viewport: { default: null },
+    }
+  },
+  parseHTML() {
+    return [{ tag: "div[data-gb-demo]" }]
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    return ["div", mergeAttributes(HTMLAttributes, { "data-gb-demo": node.attrs.src })]
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(DemoView)
   },
 })
 
@@ -975,6 +1056,7 @@ export const gitbookNodes = [
   GbEmbed,
   GbContentRef,
   GbSourceRef,
+  GbDemo,
   GbColumns,
   GbColumn,
   GbFigure,

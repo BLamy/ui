@@ -88,6 +88,43 @@
   width: 8rem;
 }
 
+.gb-demo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--gb-border);
+  border-radius: var(--gb-radius);
+  padding: 0.65rem 0.8rem;
+  background: var(--gb-muted);
+}
+
+.gb-demo-block {
+  margin: 0.85em 0;
+}
+
+.gb-demo-block-preview > .gb-demo {
+  border-radius: var(--gb-radius) var(--gb-radius) 0 0;
+}
+
+.gb-demo-src {
+  flex: 1;
+}
+
+.gb-demo-title {
+  width: 12rem;
+}
+
+.gb-demo-preview {
+  border: 1px solid var(--gb-border);
+  border-top: 0;
+  border-radius: 0 0 var(--gb-radius) var(--gb-radius);
+  overflow: hidden;
+}
+
+.gb-demo-preview > * {
+  margin: 0;
+}
+
 .gb-source-file-editor {
   border: 1px solid var(--gb-border);
   border-radius: var(--gb-radius);

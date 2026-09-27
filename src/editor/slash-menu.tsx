@@ -1,6 +1,7 @@
 import { Extension, type Editor, type Range } from "@tiptap/core"
 import Suggestion from "@tiptap/suggestion"
 import {
+  AppWindow,
   Columns2,
   FileCode2,
   Heading1,
@@ -100,6 +101,12 @@ export const SLASH_ITEMS: SlashItem[] = [
     keywords: "content-ref reference",
     icon: Link2,
     run: insertBlock({ type: "gbContentRef", attrs: { url: "", label: "Page link" } }),
+  },
+  {
+    title: "Demo",
+    keywords: "example live preview component playground",
+    icon: AppWindow,
+    run: insertBlock({ type: "gbDemo", attrs: { src: "", title: "" } }),
   },
   {
     title: "Columns",

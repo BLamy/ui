@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream-editor",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "TipTap editor for Docstream GitBook-style markdown documents.",
   "type": "module",
   "scripts": {
@@ -33,7 +33,7 @@
     "./styles.css": "./src/styles.css"
   },
   "dependencies": {
-    "@brett_lamy/docstream": "1.0.0",
+    "@brett_lamy/docstream": "1.1.0",
     "gpu-lexer": "0.0.2",
     "lucide-react": "^1.17.0"
   },

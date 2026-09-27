@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 
 import { parseMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
+import type { DemoResolver } from "@brett_lamy/docstream/demo"
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import {
   attachmentName,
@@ -86,6 +87,8 @@ export interface GitbookEditorProps {
   onSourceSaved?: (snapshot: SourceFileSnapshot) => void
   /** Called when reading, writing, or previewing a file-backed source fails. */
   onSourceError?: (error: Error) => void
+  /** Resolves `{% demo src %}` ids; when set, demo blocks show a live (read-only) preview under their header. */
+  demoResolver?: DemoResolver
 }
 
 function ToolbarButton({
@@ -173,6 +176,7 @@ export function GitbookEditor({
   sourceAutoSave = true,
   onSourceSaved,
   onSourceError,
+  demoResolver,
 }: GitbookEditorProps) {
   // Tracks the markdown the editor itself produced, so external updates
   // (file switches) reset content but our own onChange echoes don't.
@@ -312,9 +316,10 @@ export function GitbookEditor({
     sourceAutoSave,
     ...(onSourceSaved ? { onSourceSaved } : {}),
     ...(onSourceError ? { onSourceError } : {}),
+    ...(demoResolver ? { demoResolver } : {}),
     ...(attachments ? { attachments } : {}),
     ...(onAttachmentOpen ? { onAttachmentOpen } : {}),
-  }), [attachments, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
+  }), [attachments, demoResolver, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
 
   if (!editor) return null
 

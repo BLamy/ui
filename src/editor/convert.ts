@@ -2,6 +2,9 @@ import {
   plainText,
   serializeMarkdown,
   type Block,
+  type DemoLayout,
+  type DemoNode,
+  type DemoViewport,
   type DocumentNode,
   type Inline,
   type ListItemNode,
@@ -101,6 +104,7 @@ function blockToPM(b: Block): PMNode {
     case "tabs":
       return {
         type: "gbTabs",
+        ...(b.sync ? { attrs: { sync: b.sync } } : {}),
         content: b.tabs.map((t) => ({
           type: "gbTab",
           attrs: { title: t.title },
@@ -143,6 +147,19 @@ function blockToPM(b: Block): PMNode {
           exportName: b.exportName,
           kind: b.kind,
           title: b.title ?? "",
+        },
+      }
+    case "demo":
+      return {
+        type: "gbDemo",
+        attrs: {
+          src: b.src,
+          title: b.title ?? "",
+          description: b.description ?? "",
+          height: b.height ?? "",
+          layout: b.layout ?? null,
+          variants: b.variants?.length ? b.variants.map((v) => ({ id: v.id, label: v.label })) : null,
+          viewport: b.viewport ?? null,
         },
       }
     case "columns":
@@ -310,6 +327,7 @@ function pmToBlock(n: PMNode): Block | null {
           title: String(t.attrs?.title ?? "Tab"),
           children: pmToBlocks(t.content),
         })),
+        ...(n.attrs?.sync ? { sync: String(n.attrs.sync) } : {}),
       }
     case "gbExpandable":
       return {
@@ -354,6 +372,8 @@ function pmToBlock(n: PMNode): Block | null {
         kind: n.attrs?.kind === "story" ? "story" : "component",
         ...(n.attrs?.title ? { title: String(n.attrs.title) } : {}),
       }
+    case "gbDemo":
+      return pmToDemo(n.attrs ?? {})
     case "gbColumns":
       return {
         type: "columns",
@@ -420,6 +440,30 @@ function pmToBlock(n: PMNode): Block | null {
     }
     default:
       return null
+  }
+}
+
+const DEMO_LAYOUTS: readonly string[] = ["auto", "single", "multi"] satisfies DemoLayout[]
+const DEMO_VIEWPORTS: readonly string[] = ["desktop", "tablet", "phone"] satisfies DemoViewport[]
+
+/** `gbDemo` attrs → `DemoNode`; also used by the node view to build the preview. */
+export function pmToDemo(a: Record<string, unknown>): DemoNode {
+  const variants = Array.isArray(a.variants)
+    ? (a.variants as Array<{ id?: unknown; label?: unknown }>)
+        .filter((v) => v && v.id)
+        .map((v) => ({ id: String(v.id), label: String(v.label || v.id) }))
+    : []
+  const layout = String(a.layout ?? "")
+  const viewport = String(a.viewport ?? "")
+  return {
+    type: "demo",
+    src: String(a.src ?? ""),
+    ...(a.title ? { title: String(a.title) } : {}),
+    ...(a.description ? { description: String(a.description) } : {}),
+    ...(a.height ? { height: String(a.height) } : {}),
+    ...(DEMO_LAYOUTS.includes(layout) ? { layout: layout as DemoLayout } : {}),
+    ...(variants.length ? { variants } : {}),
+    ...(DEMO_VIEWPORTS.includes(viewport) ? { viewport: viewport as DemoViewport } : {}),
   }
 }
 

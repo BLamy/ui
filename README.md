@@ -80,6 +80,7 @@ export interface GitbookEditorProps {
   onAttachmentAdd?: (attachment: EditorAttachment & { file: File }) => void
   onAttachmentRemove?: (ids: string[]) => void
   onAttachmentOpen?: (attachment: EditorAttachment) => void
+  demoResolver?: DemoResolver
 }
 ```
 
@@ -89,6 +90,8 @@ export interface GitbookEditorProps {
   return `true` when the application handled the event.
 - `imagePaste`, `attachments`, `onAttachmentAdd`, `onAttachmentRemove`, `onAttachmentOpen`:
   how pasted/dropped images are handled — see [Pasted and dropped images](#pasted-and-dropped-images).
+- `demoResolver`: resolves `{% demo src %}` ids so demo blocks show a live, read-only
+  preview — see [Demo blocks](#demo-blocks).
 
 The editor tracks the last markdown it emitted so normal controlled updates do not continuously reset the TipTap document. Passing a different external `markdown` value replaces the editor content.
 
@@ -104,12 +107,13 @@ The editor supports common ProseMirror/TipTap content plus GitBook-flavored bloc
 - Code blocks
 - Tables
 - Hints
-- Tabs
+- Tabs (including `{% tabs sync="key" %}` sync groups)
 - Expandables
 - Steppers
 - Embeds
 - Content references
 - Component and Storybook source references
+- File-backed live demos (`{% demo %}`)
 - Columns
 - Figures and images
 - OpenAPI operation placeholders
@@ -200,6 +204,25 @@ Saving calls the Docstream Vite plugin, writes the mounted file, returns its
 provenance, and refreshes the live component/story preview. Configure the mount
 with `docstreamSources()` from `@brett_lamy/docstream/vite` as shown in the
 Docstream README.
+
+## Demo blocks
+
+`{% demo src="<page>/<example>" %}` becomes a `gbDemo` atom node. Every tag
+attribute — `src`, `title`, `description`, `height`, `layout`, `variants`,
+`viewport` — is kept on the node, so the tag serializes back exactly as written.
+The node shows a compact header with editable `src` and `title` inputs (insert
+one with `/demo`). Pass the same `DemoResolver` you give the Docstream renderer
+to also show the live `DemoViewer` preview (read-only) under the header;
+without one, only the header is shown.
+
+```tsx
+import { createGlobDemoResolver } from "@brett_lamy/docstream/demo"
+import { GitbookEditor } from "@brett_lamy/docstream-editor"
+
+const demoResolver = createGlobDemoResolver({ /* see the Docstream README */ })
+
+<GitbookEditor markdown={markdown} onChange={setMarkdown} demoResolver={demoResolver} />
+```
 
 ## Slash Menu
 
