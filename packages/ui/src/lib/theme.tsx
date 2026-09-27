@@ -47,14 +47,14 @@ export const darkVars = (tint: string): Record<string, string> => ({
   '--bl-label2': 'rgba(235,235,245,.62)', '--bl-label3': 'rgba(235,235,245,.3)', '--bl-sep': 'rgba(84,84,88,.48)',
   '--bl-fill': 'rgba(120,120,128,.22)', '--bl-fill2': 'rgba(120,120,128,.34)', '--bl-bar': 'rgba(16,16,18,.82)',
   '--bl-press': 'rgba(120,120,128,.22)', '--bl-stick': 'rgba(18,18,20,.9)', '--bl-side': '#111114',
-  '--bl-red': '#FF453A', '--bl-green': '#30D158', '--bl-scrim': 'rgba(0,0,0,.5)', '--bl-tint': tint,
+  '--bl-red': '#FF453A', '--bl-green': '#30D158', '--bl-scrim': 'rgba(0,0,0,.5)', '--bl-tint': tint, '--bl-on-tint': '#fff',
 });
 export const lightVars = (tint: string): Record<string, string> => ({
   '--bl-bg': '#fff', '--bl-bg2': '#F2F2F7', '--bl-card': '#fff', '--bl-label': '#0B0B0F',
   '--bl-label2': 'rgba(60,60,67,.6)', '--bl-label3': 'rgba(60,60,67,.33)', '--bl-sep': 'rgba(60,60,67,.22)',
   '--bl-fill': 'rgba(120,120,128,.13)', '--bl-fill2': 'rgba(120,120,128,.24)', '--bl-bar': 'rgba(250,250,252,.85)',
   '--bl-press': 'rgba(120,120,128,.16)', '--bl-stick': 'rgba(244,244,248,.92)', '--bl-side': '#ECECF1',
-  '--bl-red': '#FF3B30', '--bl-green': '#34C759', '--bl-scrim': 'rgba(0,0,0,.38)', '--bl-tint': tint,
+  '--bl-red': '#FF3B30', '--bl-green': '#34C759', '--bl-scrim': 'rgba(0,0,0,.38)', '--bl-tint': tint, '--bl-on-tint': '#fff',
 });
 
 export interface BLProviderProps {

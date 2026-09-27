@@ -1,0 +1,52 @@
+{
+  "name": "composer",
+  "title": "Composer",
+  "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
+  "page": "composer",
+  "exports": [
+    "Composer",
+    "ComposerOutlet",
+    "ComposerCard",
+    "ComposerAddon",
+    "ComposerFooter",
+    "ComposerSpacer",
+    "ComposerSeparator",
+    "ComposerText",
+    "ComposerButton",
+    "ComposerPillLabel",
+    "ComposerSelect",
+    "ComposerMenuItem",
+    "ComposerSend",
+    "ComposerStop",
+    "ComposerAttach",
+    "ComposerExpand",
+    "ComposerAttachments",
+    "ComposerInput",
+    "ComposerBump",
+    "ComposerBumpHandle",
+    "ComposerBumpContent",
+    "ComposerFab",
+    "ComposerOptions",
+    "ComposerOptionsOutlet",
+    "AnnotateLightbox",
+    "ComposerAnnotatorProvider",
+    "useComposer",
+    "useComposerBump",
+    "useComposerAnnotator",
+    "ModelPicker",
+    "WORKBENCH_MODELS",
+    "WORKBENCH_PROVIDERS",
+    "WorkbenchTheme"
+  ],
+  "imports": [
+    "Composer",
+    "ComposerCard",
+    "ComposerInput",
+    "ComposerFooter",
+    "ComposerSend"
+  ],
+  "types": [
+    "ModelOption",
+    "ModelProvider"
+  ]
+}

@@ -5,10 +5,6 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 @source "./";
 @source "../../pencilkit/src";
-/* Registry blocks (registry/blocks) are app code built on this package; in this repo the docs, catalog and apps
-   render them straight from source, so their utilities come from this sheet too. (Copied into an app, a block
-   is scanned by that app's own Tailwind.) */
-@source "../../../registry/blocks";
 
 /* BL UI framework CSS — verbatim from the prototype's injected `bl-kf` block. */
 @keyframes blSpin{to{transform:rotate(360deg)}}

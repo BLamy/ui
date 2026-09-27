@@ -1,0 +1,21 @@
+{
+  "name": "sidebar",
+  "title": "Sidebar",
+  "description": "Docked, rail, floating or overlay navigation with workspace, search, sections and items.",
+  "page": "sidebar",
+  "exports": [
+    "Sidebar",
+    "SidebarProvider",
+    "SidebarHeader",
+    "SidebarContent",
+    "SidebarFooter",
+    "SidebarWorkspace",
+    "SidebarSearch",
+    "SidebarSection",
+    "SidebarItem",
+    "SidebarTrigger",
+    "SidebarInset",
+    "SidebarNav",
+    "useSidebar"
+  ]
+}

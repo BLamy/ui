@@ -1,0 +1,21 @@
+{
+  "name": "markdown-editor",
+  "title": "MarkdownEditor",
+  "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
+  "page": "markdown-editor",
+  "exports": [
+    "MarkdownEditor",
+    "markdownEditorVariants",
+    "looksLikeMarkdown",
+    "insertMarkdown"
+  ],
+  "imports": [
+    "MarkdownEditor"
+  ],
+  "types": [
+    "MarkdownEditorProps",
+    "MarkdownEditorHandle",
+    "MarkdownEditorInstance",
+    "MarkdownEditorAttachment"
+  ]
+}

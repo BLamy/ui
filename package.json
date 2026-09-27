@@ -14,7 +14,9 @@
     "dev:docs": "vite --config apps/docs/vite.config.mts",
     "vr": "playwright test -c tools/vr/playwright.config.mjs",
     "vr:update": "playwright test -c tools/vr/playwright.config.mjs --update-snapshots",
-    "test:haptics": "node tools/haptics/probe.mjs && node tools/haptics/probe.mjs --chromium"
+    "test:haptics": "node tools/haptics/probe.mjs && node tools/haptics/probe.mjs --chromium",
+    "registry": "node tools/registry/build.mjs",
+    "registry:static": "node tools/registry/build.mjs --static"
   },
   "private": false,
   "dependencies": {
@@ -77,6 +79,7 @@
     "jsonc-eslint-parser": "^2.1.0",
     "nx": "23.1.1",
     "prettier": "^3.8.1",
+    "shadcn": "4.21.0",
     "storybook": "^10.5.8",
     "supertest": "^7.1.4",
     "tailwindcss": "4.3.3",

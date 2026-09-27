@@ -1,28 +1,31 @@
 /* BL UI Tailwind theme. Colors resolve to the runtime tokens BLProvider (--bl-*) and WorkbenchShell (--wb-*) set,
    so every utility follows light/dark and tint changes without a rebuild.
-   shadcn's semantic names map onto the iOS palette; the bl-* / wb-* colors expose the rest of it. */
+   shadcn's semantic names map onto the iOS palette; the bl-* / wb-* colors expose the rest of it.
+   The semantic names fall back to the host's shadcn variables (--background, --primary, …): this sheet's
+   compiled `bg-background` / `border-border` / `text-primary-foreground` rules ship to apps that also use shadcn,
+   so outside a BLProvider they must resolve to the app's own palette rather than to nothing. */
 @import "tailwindcss/theme.css" layer(theme);
 
 @theme inline {
-  --color-background: var(--bl-bg);
-  --color-foreground: var(--bl-label);
-  --color-card: var(--bl-card);
-  --color-card-foreground: var(--bl-label);
-  --color-popover: var(--bl-card);
-  --color-popover-foreground: var(--bl-label);
-  --color-primary: var(--bl-tint);
-  --color-primary-foreground: #fff;
-  --color-secondary: var(--bl-fill);
-  --color-secondary-foreground: var(--bl-label);
-  --color-muted: var(--bl-bg2);
-  --color-muted-foreground: var(--bl-label2);
-  --color-accent: var(--bl-press);
-  --color-accent-foreground: var(--bl-label);
-  --color-destructive: var(--bl-red);
+  --color-background: var(--bl-bg, var(--background));
+  --color-foreground: var(--bl-label, var(--foreground));
+  --color-card: var(--bl-card, var(--card));
+  --color-card-foreground: var(--bl-label, var(--card-foreground));
+  --color-popover: var(--bl-card, var(--popover));
+  --color-popover-foreground: var(--bl-label, var(--popover-foreground));
+  --color-primary: var(--bl-tint, var(--primary));
+  --color-primary-foreground: var(--bl-on-tint, var(--primary-foreground, #fff));
+  --color-secondary: var(--bl-fill, var(--secondary));
+  --color-secondary-foreground: var(--bl-label, var(--secondary-foreground));
+  --color-muted: var(--bl-bg2, var(--muted));
+  --color-muted-foreground: var(--bl-label2, var(--muted-foreground));
+  --color-accent: var(--bl-press, var(--accent));
+  --color-accent-foreground: var(--bl-label, var(--accent-foreground));
+  --color-destructive: var(--bl-red, var(--destructive));
   --color-success: var(--bl-green);
-  --color-border: var(--bl-sep);
-  --color-input: var(--bl-fill);
-  --color-ring: var(--bl-tint);
+  --color-border: var(--bl-sep, var(--border));
+  --color-input: var(--bl-fill, var(--input));
+  --color-ring: var(--bl-tint, var(--ring));
   --color-overlay: var(--bl-scrim);
 
   --color-bl-bg: var(--bl-bg);

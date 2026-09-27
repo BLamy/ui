@@ -6,7 +6,10 @@
     "lib": ["es2022", "dom", "dom.iterable"],
     "jsx": "react-jsx",
     "types": ["node", "vite/client"],
-    "rootDir": "."
+    "rootDir": ".",
+    // Block files are copied into consumer apps, whose templates (Vite, Next) enable these.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": ["blocks/**/*.ts", "blocks/**/*.tsx", "components/**/*.ts", "components/**/*.tsx"],
   "exclude": ["dist"],

@@ -1,0 +1,20 @@
+{
+  "name": "theme",
+  "title": "Theme",
+  "description": "BLProvider and the appearance context: the iOS light/dark token palette every BL UI component reads.",
+  "page": "theming",
+  "exports": [
+    "BLProvider",
+    "AppearanceProvider",
+    "useAppearance",
+    "WorkbenchTheme",
+    "useWorkbenchAppearance",
+    "blLightVars",
+    "blDarkVars"
+  ],
+  "imports": [
+    "BLProvider",
+    "AppearanceProvider",
+    "useAppearance"
+  ]
+}

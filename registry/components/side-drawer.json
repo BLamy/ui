@@ -1,0 +1,9 @@
+{
+  "name": "side-drawer",
+  "title": "SideDrawer",
+  "description": "An inspector column: docked beside the content, or an overlay sheet with a scrim.",
+  "page": "side-drawer",
+  "exports": [
+    "SideDrawer"
+  ]
+}

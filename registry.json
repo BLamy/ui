@@ -1,0 +1,1026 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "bl-ui",
+  "homepage": "https://blamy.github.io/ui",
+  "items": [
+    {
+      "name": "bl-ui",
+      "type": "registry:style",
+      "title": "BL UI",
+      "description": "Installs @brett_lamy/ui, imports its stylesheet, and adds the BL token utilities (bg-bl-card, text-bl-label, border-bl-sep, …) to your Tailwind theme.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "cssVars": {
+        "theme": {
+          "color-bl-bg": "var(--bl-bg)",
+          "color-bl-bg2": "var(--bl-bg2)",
+          "color-bl-card": "var(--bl-card)",
+          "color-bl-card2": "var(--bl-card2)",
+          "color-bl-label": "var(--bl-label)",
+          "color-bl-label2": "var(--bl-label2)",
+          "color-bl-label3": "var(--bl-label3)",
+          "color-bl-sep": "var(--bl-sep)",
+          "color-bl-fill": "var(--bl-fill)",
+          "color-bl-fill2": "var(--bl-fill2)",
+          "color-bl-press": "var(--bl-press)",
+          "color-bl-bar": "var(--bl-bar)",
+          "color-bl-stick": "var(--bl-stick)",
+          "color-bl-side": "var(--bl-side)",
+          "color-bl-scrim": "var(--bl-scrim)",
+          "color-bl-tint": "var(--bl-tint)",
+          "color-bl-red": "var(--bl-red)",
+          "color-bl-green": "var(--bl-green)",
+          "color-wb-bg": "var(--wb-bg)",
+          "color-wb-side": "var(--wb-side)",
+          "color-wb-card": "var(--wb-card)",
+          "color-wb-fill": "var(--wb-fill)",
+          "color-wb-fill2": "var(--wb-fill2)",
+          "color-wb-sep": "var(--wb-sep)",
+          "color-wb-label": "var(--wb-label)",
+          "color-wb-label2": "var(--wb-label2)",
+          "color-wb-label3": "var(--wb-label3)",
+          "color-wb-tint": "var(--wb-tint)",
+          "color-wb-green": "var(--wb-green)",
+          "color-wb-red": "var(--wb-red)",
+          "color-wb-card2": "var(--wb-card2, #26262E)",
+          "color-wb-well": "var(--wb-well, #101014)",
+          "color-wb-term": "var(--wb-term, #0C0C10)",
+          "color-wb-handle": "var(--wb-handle, rgba(255, 255, 255, .22))",
+          "color-ck-bg": "var(--ck-bg, #131318)",
+          "color-ck-rail": "var(--ck-rail, #0D0D11)",
+          "color-ck-side": "var(--ck-side, #101015)",
+          "color-ck-card": "var(--ck-card, #1B1B22)",
+          "color-ck-fill": "var(--ck-fill, rgba(255, 255, 255, .055))",
+          "color-ck-fill2": "var(--ck-fill2, rgba(255, 255, 255, .1))",
+          "color-ck-hover": "var(--ck-hover, rgba(255, 255, 255, .035))",
+          "color-ck-sep": "var(--ck-sep, rgba(255, 255, 255, .07))",
+          "color-ck-label": "var(--ck-label, #EDEDF2)",
+          "color-ck-mut": "var(--ck-mut, rgba(235, 235, 245, .6))",
+          "color-ck-mut3": "var(--ck-mut3, rgba(235, 235, 245, .35))",
+          "color-ck-link": "var(--ck-link, #7EB6FF)",
+          "color-ck-mention": "var(--ck-mention, rgba(10, 132, 255, .16))",
+          "color-ck-mine": "var(--ck-mine, rgba(10, 132, 255, .14))",
+          "color-ck-on-fill": "var(--ck-on-fill, #fff)",
+          "color-ck-green": "var(--ck-green, #32D74B)",
+          "color-ck-red": "var(--ck-red, #FF453A)",
+          "color-ck-orange": "var(--ck-orange, #FF9F0A)",
+          "color-ck-tint": "var(--ck-tint, #0A84FF)",
+          "font-ios": "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+          "ease-ios": "cubic-bezier(.32, .72, 0, 1)",
+          "ease-spring-snappy": "linear(0.0017, 0.0315, 0.0996, 0.1865, 0.2645, 0.3583, 0.4476, 0.5297, 0.5916, 0.6577, 0.7152, 0.7644, 0.7997, 0.8359, 0.8661, 0.8912, 0.9088, 0.9264, 0.9407, 0.9525, 0.9605, 0.9685, 0.9749, 0.9801, 0.9836, 0.987, 0.9898, 0.992, 0.9934, 0.9948, 0.996, 0.9969, 0.9974, 0.998, 0.9985, 0.9988, 0.999, 0.9993, 0.9994, 0.9996, 1)",
+          "duration-spring-snappy": "383ms",
+          "ease-spring-smooth": "linear(0.0011, 0.0397, 0.1132, 0.2029, 0.2972, 0.4001, 0.4846, 0.5608, 0.6282, 0.6936, 0.7431, 0.7854, 0.8212, 0.8547, 0.8795, 0.9002, 0.9174, 0.9334, 0.945, 0.9547, 0.9626, 0.9699, 0.9753, 0.9796, 0.9832, 0.9865, 0.9889, 0.9909, 0.9927, 0.994, 0.9951, 0.996, 0.9968, 0.9973, 0.9978, 0.9982, 0.9986, 0.9988, 0.999, 0.9992, 1)",
+          "duration-spring-smooth": "550ms",
+          "ease-spring-bouncy": "linear(0.0014, 0.0574, 0.188, 0.355, 0.5301, 0.6935, 0.8331, 0.9431, 1.0225, 1.0736, 1.1007, 1.1091, 1.104, 1.0905, 1.0725, 1.0534, 1.0354, 1.0198, 1.0074, 0.9984, 0.993, 0.9895, 0.9882, 0.9884, 0.9897, 0.9916, 0.9937, 0.9957, 0.9975, 0.9989, 1, 1.0007, 1.0011, 1.0013, 1.0013, 1.0011, 1.0009, 1.0007, 1.0005, 1.0003, 1)",
+          "duration-spring-bouncy": "597ms",
+          "ease-spring-tray": "linear(0.0014, 0.0348, 0.0976, 0.1763, 0.2617, 0.3476, 0.4434, 0.5192, 0.5879, 0.6493, 0.7032, 0.7574, 0.7969, 0.8307, 0.8594, 0.8836, 0.907, 0.9236, 0.9374, 0.9488, 0.9582, 0.9672, 0.9733, 0.9784, 0.9826, 0.9859, 0.9891, 0.9912, 0.993, 0.9944, 0.9955, 0.9966, 0.9973, 0.9978, 0.9983, 0.9986, 0.999, 0.9992, 0.9994, 0.9995, 1)",
+          "duration-spring-tray": "413ms",
+          "ease-exit": "cubic-bezier(.4, 0, 1, 1)",
+          "duration-exit": "140ms",
+          "duration-exit-tray": "240ms",
+          "duration-exit-slow": "280ms",
+          "transition-duration-exit": "140ms",
+          "transition-duration-spring-snappy": "383ms",
+          "transition-duration-spring-smooth": "550ms",
+          "transition-duration-spring-bouncy": "597ms",
+          "transition-duration-spring-tray": "413ms"
+        }
+      },
+      "css": {
+        "@import \"@brett_lamy/ui/styles.css\"": {}
+      },
+      "docs": "BL UI components read their colors from a provider: wrap iOS-style parts in <BLProvider> and Workbench parts (Composer, MessageScroller, WorkbenchShell) in <WorkbenchTheme> — blocks already do. With Vite, pre-bundle the Markdown engine (it ships TypeScript source): optimizeDeps: { include: [\"@brett_lamy/ui > @brett_lamy/docstream\", \"@brett_lamy/ui > @brett_lamy/docstream-editor\"] }.",
+      "files": []
+    },
+    {
+      "name": "adaptive-pane",
+      "type": "registry:ui",
+      "title": "AdaptivePane",
+      "description": "One pane presented as a column, sheet or pushed page depending on the room it has.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/adaptive-pane.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/adaptive-pane.tsx"
+        }
+      ],
+      "meta": {
+        "page": "adaptive-pane",
+        "exports": [
+          "AdaptivePane"
+        ]
+      }
+    },
+    {
+      "name": "artifact-chat-container",
+      "type": "registry:ui",
+      "title": "ArtifactChatContainer",
+      "description": "Chat docked beside an artifact when wide; a floating glass Composer over the artifact when narrow.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/artifact-chat-container.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/artifact-chat-container.tsx"
+        }
+      ],
+      "meta": {
+        "page": "artifact-chat-container",
+        "exports": [
+          "ArtifactChatContainer",
+          "useArtifactChatContainer",
+          "WorkbenchTheme"
+        ]
+      }
+    },
+    {
+      "name": "chat-shell",
+      "type": "registry:ui",
+      "title": "ChatShell",
+      "description": "A team-chat scaffold: workspace rail and channels beside the conversation, one drawer when narrow.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/chat-shell.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/chat-shell.tsx"
+        }
+      ],
+      "meta": {
+        "page": "chat-shell",
+        "exports": [
+          "ChatShell",
+          "ChatShellNav",
+          "ChatShellNavTrigger",
+          "ChatShellSidebar",
+          "ChatShellMain",
+          "ChatShellHeader",
+          "ChatShellHeaderIcon",
+          "ChatShellTitle",
+          "ChatShellDescription",
+          "ChatShellHeaderActions",
+          "chatShellHeaderActionVariants",
+          "ChatShellHeaderAction",
+          "ChatShellBack",
+          "ChatShellFooter",
+          "ChatShellAside",
+          "ChatShellPanel",
+          "WorkspaceRail",
+          "WorkspaceRailList",
+          "WorkspaceRailItem",
+          "WorkspaceRailHome",
+          "WorkspaceRailSeparator",
+          "WorkspaceRailAction",
+          "ChannelList",
+          "ChannelGroup",
+          "ChannelItem",
+          "ChannelThreadItem",
+          "UserPanel",
+          "UserPanelInfo",
+          "UserPanelName",
+          "presenceLabel",
+          "UserPanelStatus",
+          "UserPanelAction",
+          "MessageList",
+          "MessageGroup",
+          "ChannelIntro",
+          "messageDividerVariants",
+          "MessageDivider",
+          "DateDivider",
+          "MessageListEmpty",
+          "TypingIndicator",
+          "messageVariants",
+          "Message",
+          "MessageAvatar",
+          "MessageBody",
+          "MessageHeader",
+          "MessageAuthor",
+          "MessageBadge",
+          "MessageTimestamp",
+          "MessageContent",
+          "MessageReactions",
+          "MessageReaction",
+          "MessageActions",
+          "MessageAction",
+          "ThreadPreview",
+          "ThreadPreviewReply",
+          "ThreadHeader",
+          "ChatComposer",
+          "ChatComposerInput",
+          "ChatComposerSend",
+          "ChatComposerAction"
+        ]
+      }
+    },
+    {
+      "name": "composer",
+      "type": "registry:ui",
+      "title": "Composer",
+      "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/composer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/composer.tsx"
+        }
+      ],
+      "meta": {
+        "page": "composer",
+        "exports": [
+          "Composer",
+          "ComposerOutlet",
+          "ComposerCard",
+          "ComposerAddon",
+          "ComposerFooter",
+          "ComposerSpacer",
+          "ComposerSeparator",
+          "ComposerText",
+          "ComposerButton",
+          "ComposerPillLabel",
+          "ComposerSelect",
+          "ComposerMenuItem",
+          "ComposerSend",
+          "ComposerStop",
+          "ComposerAttach",
+          "ComposerExpand",
+          "ComposerAttachments",
+          "ComposerInput",
+          "ComposerBump",
+          "ComposerBumpHandle",
+          "ComposerBumpContent",
+          "ComposerFab",
+          "ComposerOptions",
+          "ComposerOptionsOutlet",
+          "AnnotateLightbox",
+          "ComposerAnnotatorProvider",
+          "useComposer",
+          "useComposerBump",
+          "useComposerAnnotator",
+          "ModelPicker",
+          "WORKBENCH_MODELS",
+          "WORKBENCH_PROVIDERS",
+          "WorkbenchTheme"
+        ]
+      }
+    },
+    {
+      "name": "credenza",
+      "type": "registry:ui",
+      "title": "Credenza",
+      "description": "A dialog on wide screens and a draggable tray on phones, from one composition.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/credenza.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/credenza.tsx"
+        }
+      ],
+      "meta": {
+        "page": "credenza",
+        "exports": [
+          "Credenza"
+        ]
+      }
+    },
+    {
+      "name": "edge-drawer",
+      "type": "registry:ui",
+      "title": "EdgeDrawer",
+      "description": "A drawer that follows the finger from any edge, with rubber-banding and velocity-aware snapping.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/edge-drawer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/edge-drawer.tsx"
+        }
+      ],
+      "meta": {
+        "page": "edge-drawer",
+        "exports": [
+          "EdgeDrawer"
+        ]
+      }
+    },
+    {
+      "name": "floating-sheet",
+      "type": "registry:ui",
+      "title": "FloatingSheet",
+      "description": "A floating card that grows into the full page along one drag, over a map or canvas.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/floating-sheet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/floating-sheet.tsx"
+        }
+      ],
+      "meta": {
+        "page": "floating-sheet",
+        "exports": [
+          "FloatingSheet",
+          "useFloatingSheet"
+        ]
+      }
+    },
+    {
+      "name": "haptics",
+      "type": "registry:ui",
+      "title": "Haptics",
+      "description": "Named haptic feedback for touch devices, with an on-screen indicator for desktop.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/haptics.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/haptics.tsx"
+        }
+      ],
+      "meta": {
+        "page": "haptics",
+        "exports": [
+          "Haptics",
+          "PAT",
+          "HapticIndicator"
+        ]
+      }
+    },
+    {
+      "name": "list",
+      "type": "registry:ui",
+      "title": "List",
+      "description": "Inset-grouped and plain lists with rows, sections, swipe actions and an A-Z IndexBar.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/list.tsx"
+        }
+      ],
+      "meta": {
+        "page": "lists",
+        "exports": [
+          "List",
+          "ListSection",
+          "ListRow",
+          "IndexBar",
+          "AL"
+        ]
+      }
+    },
+    {
+      "name": "markdown-editor",
+      "type": "registry:ui",
+      "title": "MarkdownEditor",
+      "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/markdown-editor.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/markdown-editor.tsx"
+        }
+      ],
+      "meta": {
+        "page": "markdown-editor",
+        "exports": [
+          "MarkdownEditor",
+          "markdownEditorVariants",
+          "looksLikeMarkdown",
+          "insertMarkdown"
+        ]
+      }
+    },
+    {
+      "name": "markdown-view",
+      "type": "registry:ui",
+      "title": "MarkdownView",
+      "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/markdown-view.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/markdown-view.tsx"
+        }
+      ],
+      "meta": {
+        "page": "docstream",
+        "exports": [
+          "MarkdownView",
+          "HlPre",
+          "DocstreamRefContext"
+        ]
+      }
+    },
+    {
+      "name": "message-scroller",
+      "type": "registry:ui",
+      "title": "MessageScroller",
+      "description": "A chat transcript scroller anchored to the newest message, with streaming-aware autoscroll.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/message-scroller.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/message-scroller.tsx"
+        }
+      ],
+      "meta": {
+        "page": "message-scroller",
+        "exports": [
+          "MessageScroller",
+          "WorkbenchTheme"
+        ]
+      }
+    },
+    {
+      "name": "motion",
+      "type": "registry:ui",
+      "title": "Motion",
+      "description": "Springs and the motion vocabulary: TextMorph, NumberMorph, IconSwap, Chevron, AnimatedHeight, ContentSwap, Celebrate.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/motion.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/motion.tsx"
+        }
+      ],
+      "meta": {
+        "page": "motion",
+        "exports": [
+          "springs",
+          "springCss",
+          "fades",
+          "useMotion",
+          "useReducedMotion",
+          "useSpringTransition",
+          "TextMorph",
+          "NumberMorph",
+          "IconSwap",
+          "Chevron",
+          "AnimatedHeight",
+          "ContentSwap",
+          "Celebrate"
+        ]
+      }
+    },
+    {
+      "name": "navigation-stack",
+      "type": "registry:ui",
+      "title": "NavigationStack",
+      "description": "A controlled push/pop stack with large titles and edge-swipe back.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/navigation-stack.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/navigation-stack.tsx"
+        }
+      ],
+      "meta": {
+        "page": "navigation-stack",
+        "exports": [
+          "NavigationStack",
+          "ScreenWrap"
+        ]
+      }
+    },
+    {
+      "name": "pencilkit",
+      "type": "registry:ui",
+      "title": "PencilKit",
+      "description": "Pressure-aware drawing (perfect-freehand) with the PencilKit tool picker, and the Composer image annotator.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0",
+        "@brett_lamy/pencilkit@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/pencilkit.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/pencilkit.tsx"
+        }
+      ],
+      "meta": {
+        "page": "pencilkit",
+        "exports": [
+          "PencilCanvas",
+          "PencilToolbar",
+          "PencilToolbarDivider",
+          "PencilToolButton",
+          "ToolPicker",
+          "InkPicker",
+          "WidthPicker",
+          "PencilActions",
+          "usePencilHistory",
+          "PencilKitAnnotator"
+        ]
+      }
+    },
+    {
+      "name": "side-drawer",
+      "type": "registry:ui",
+      "title": "SideDrawer",
+      "description": "An inspector column: docked beside the content, or an overlay sheet with a scrim.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/side-drawer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/side-drawer.tsx"
+        }
+      ],
+      "meta": {
+        "page": "side-drawer",
+        "exports": [
+          "SideDrawer"
+        ]
+      }
+    },
+    {
+      "name": "sidebar",
+      "type": "registry:ui",
+      "title": "Sidebar",
+      "description": "Docked, rail, floating or overlay navigation with workspace, search, sections and items.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/sidebar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sidebar.tsx"
+        }
+      ],
+      "meta": {
+        "page": "sidebar",
+        "exports": [
+          "Sidebar",
+          "SidebarProvider",
+          "SidebarHeader",
+          "SidebarContent",
+          "SidebarFooter",
+          "SidebarWorkspace",
+          "SidebarSearch",
+          "SidebarSection",
+          "SidebarItem",
+          "SidebarTrigger",
+          "SidebarInset",
+          "SidebarNav",
+          "useSidebar"
+        ]
+      }
+    },
+    {
+      "name": "split-view",
+      "type": "registry:ui",
+      "title": "SplitView",
+      "description": "An adaptive sidebar / supplementary / detail split that collapses by its own measured width.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/split-view.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/split-view.tsx"
+        }
+      ],
+      "meta": {
+        "page": "split-view",
+        "exports": [
+          "SplitView",
+          "SplitViewSidebar",
+          "SplitViewSupplementary",
+          "SplitViewDetail",
+          "SplitViewHeader",
+          "SplitViewContent",
+          "SplitViewToggle",
+          "SplitViewItem",
+          "SplitViewEmpty",
+          "useSplitView",
+          "useSplitViewColumn"
+        ]
+      }
+    },
+    {
+      "name": "tab-view",
+      "type": "registry:ui",
+      "title": "TabView",
+      "description": "Tabs as parts: a bar at any edge, sliding indicator, directional panels, swipe between panels.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/tab-view.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tab-view.tsx"
+        }
+      ],
+      "meta": {
+        "page": "tab-view",
+        "exports": [
+          "TabView",
+          "TabViewBar",
+          "TabViewList",
+          "TabViewTab",
+          "TabViewIndicator",
+          "TabViewSeparator",
+          "TabViewAction",
+          "TabViewHeader",
+          "TabViewFooter",
+          "TabViewPanels",
+          "TabViewPanel",
+          "useTabView",
+          "useTabViewTab"
+        ]
+      }
+    },
+    {
+      "name": "theme",
+      "type": "registry:ui",
+      "title": "Theme",
+      "description": "BLProvider and the appearance context: the iOS light/dark token palette every BL UI component reads.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/theme.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/theme.tsx"
+        }
+      ],
+      "meta": {
+        "page": "theming",
+        "exports": [
+          "BLProvider",
+          "AppearanceProvider",
+          "useAppearance",
+          "WorkbenchTheme",
+          "useWorkbenchAppearance",
+          "blLightVars",
+          "blDarkVars"
+        ]
+      }
+    },
+    {
+      "name": "workbench-shell",
+      "type": "registry:ui",
+      "title": "WorkbenchShell",
+      "description": "An IDE scaffold that owns the width class and region visibility; compose regions into its slots.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/workbench-shell.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/workbench-shell.tsx"
+        }
+      ],
+      "meta": {
+        "page": "workbench-shell",
+        "exports": [
+          "workbenchWidthClass",
+          "useWorkbenchShell",
+          "useOptionalWorkbenchShell",
+          "WorkbenchShell",
+          "WorkbenchSidebar",
+          "WorkbenchSidebarTrigger",
+          "WorkbenchSidebarClose",
+          "WorkbenchMain",
+          "WorkbenchHeader",
+          "WorkbenchTitle",
+          "WorkbenchActions",
+          "WorkbenchAction",
+          "WorkbenchDock",
+          "WorkbenchDockTrigger",
+          "WorkbenchDockClose",
+          "WorkbenchPanel",
+          "WorkbenchPanelTrigger",
+          "WorkbenchPanelHeader",
+          "WorkbenchPanelTitle",
+          "WorkbenchPanelFullscreen",
+          "WorkbenchPanelClose",
+          "WorkbenchTabBar",
+          "WorkbenchTab",
+          "ThreadSidebar",
+          "ThreadSidebarHeader",
+          "ThreadSidebarBrand",
+          "ThreadSidebarToolbar",
+          "ThreadSearch",
+          "ThreadNewButton",
+          "ProjectSwitcher",
+          "ThreadList",
+          "ThreadGroup",
+          "ThreadItem",
+          "ThreadShowMore",
+          "ThreadSidebarFooter",
+          "SidebarNotice",
+          "SidebarFooterItem",
+          "SidebarUser",
+          "Conversation",
+          "ConversationEmpty",
+          "ConversationGreeting",
+          "ConversationMessages",
+          "ConversationComposer",
+          "ConversationSuggestions",
+          "Suggestion",
+          "UserMessage",
+          "AssistantMessage",
+          "ConversationTyping",
+          "MessageMarkdown",
+          "WorkLog",
+          "ToolCall",
+          "SettledBanner",
+          "fakeShell",
+          "TERM_FILES",
+          "TerminalBody",
+          "TerminalHeader",
+          "TerminalAction",
+          "SURFACES",
+          "SurfacePicker",
+          "SurfaceBrowser",
+          "SurfaceAppPreview",
+          "SurfaceFiles",
+          "SurfaceDiff",
+          "SurfaceAgents",
+          "SurfaceTerminal",
+          "WorkbenchTheme"
+        ]
+      }
+    },
+    {
+      "name": "discord-clone",
+      "type": "registry:block",
+      "title": "Discord clone",
+      "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell and the chat primitives.",
+      "categories": [
+        "chat",
+        "application"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/discord-clone/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/page.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/channel-message.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/channel-message.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/thread-view.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/thread-view.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/discord-clone/page.tsx"
+      }
+    },
+    {
+      "name": "github-clone",
+      "type": "registry:block",
+      "title": "GitHub clone",
+      "description": "A GitHub repository page: file browser with README and code viewer, issue and pull request lists with labels, a pull request conversation with review timeline, merge box and comment composer, a unified diff for Files changed, and Actions runs. Primer colors in light and dark; collapses to a phone layout with pushed screens.",
+      "categories": [
+        "application",
+        "dashboard"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/github-clone/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/page.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/repo-header.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/repo-header.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/code-tab.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/code-tab.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/issues-tab.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/issues-tab.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/pulls-tab.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/pulls-tab.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/lists.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/lists.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/pull-request.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/pull-request.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/actions-tab.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/actions-tab.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/dialogs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/dialogs.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/parts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/github-clone/page.tsx"
+      }
+    },
+    {
+      "name": "t3-clone",
+      "type": "registry:block",
+      "title": "T3 Code clone",
+      "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock, and a surface panel (browser, terminal, files, diff, agents). Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, thread sidebar, conversation, terminal and surface primitives.",
+      "categories": [
+        "ai",
+        "chat",
+        "ide",
+        "application"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/t3-clone/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/page.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/app-sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/app-sidebar.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/thread-view.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/thread-view.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/surface-panel.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/surface-panel.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/lib/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/lib/data.ts"
+        },
+        {
+          "path": "registry/blocks/t3-clone/lib/use-threads.ts",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/lib/use-threads.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/t3-clone/page.tsx"
+      }
+    }
+  ]
+}

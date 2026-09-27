@@ -1,0 +1,19 @@
+{
+  "name": "split-view",
+  "title": "SplitView",
+  "description": "An adaptive sidebar / supplementary / detail split that collapses by its own measured width.",
+  "page": "split-view",
+  "exports": [
+    "SplitView",
+    "SplitViewSidebar",
+    "SplitViewSupplementary",
+    "SplitViewDetail",
+    "SplitViewHeader",
+    "SplitViewContent",
+    "SplitViewToggle",
+    "SplitViewItem",
+    "SplitViewEmpty",
+    "useSplitView",
+    "useSplitViewColumn"
+  ]
+}

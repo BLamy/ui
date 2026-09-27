@@ -1,0 +1,15 @@
+{
+  "name": "artifact-chat-container",
+  "title": "ArtifactChatContainer",
+  "description": "Chat docked beside an artifact when wide; a floating glass Composer over the artifact when narrow.",
+  "page": "artifact-chat-container",
+  "exports": [
+    "ArtifactChatContainer",
+    "useArtifactChatContainer",
+    "WorkbenchTheme"
+  ],
+  "imports": [
+    "ArtifactChatContainer",
+    "useArtifactChatContainer"
+  ]
+}

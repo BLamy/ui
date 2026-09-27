@@ -1,0 +1,28 @@
+{
+  "name": "pencilkit",
+  "title": "PencilKit",
+  "description": "Pressure-aware drawing (perfect-freehand) with the PencilKit tool picker, and the Composer image annotator.",
+  "page": "pencilkit",
+  "exports": [
+    "PencilCanvas",
+    "PencilToolbar",
+    "PencilToolbarDivider",
+    "PencilToolButton",
+    "ToolPicker",
+    "InkPicker",
+    "WidthPicker",
+    "PencilActions",
+    "usePencilHistory",
+    "PencilKitAnnotator"
+  ],
+  "imports": [
+    "PencilCanvas",
+    "PencilToolbar",
+    "usePencilHistory"
+  ],
+  "types": [
+    "PencilTool",
+    "PencilStroke"
+  ],
+  "from": "@brett_lamy/pencilkit"
+}
