@@ -34,4 +34,15 @@ npx shadcn@latest add https://blamy.github.io/ui/r/apple-reminders.json
 
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/apple-settings.json
+
+{% demo src="blocks/apple-mail" layout="multi" %}
+
+```sh
+npx shadcn@latest add https://blamy.github.io/ui/r/apple-mail.json
+```
+
+{% demo src="blocks/apple-notes" layout="multi" %}
+
+```sh
+npx shadcn@latest add https://blamy.github.io/ui/r/apple-notes.json
 ```
