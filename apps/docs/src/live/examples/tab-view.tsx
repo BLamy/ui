@@ -20,6 +20,11 @@ import {
   TabViewTab,
   useAppearance,
   WorkspaceRail,
+  WorkspaceRailAction,
+  WorkspaceRailHome,
+  WorkspaceRailItem,
+  WorkspaceRailList,
+  WorkspaceRailSeparator,
   chatVars,
 } from '@brett_lamy/ui'
 import raw from './tab-view.tsx?raw'
@@ -424,13 +429,16 @@ export function ChatWorkspaces() {
         color: 'var(--ck-label)',
       }}
     >
-      <WorkspaceRail
-        home={{ title: 'Direct Messages', mentions: 1 }}
-        workspaces={servers}
-        selectedKey={server}
-        onSelect={setServer}
-        onAdd={() => {}}
-      />
+      <WorkspaceRail selectedKey={server} onSelectionChange={setServer}>
+        <WorkspaceRailList>
+          <WorkspaceRailHome mentions={1} />
+          <WorkspaceRailSeparator />
+          {servers.map((s) => (
+            <WorkspaceRailItem key={s.id} {...s} />
+          ))}
+        </WorkspaceRailList>
+        <WorkspaceRailAction aria-label="Add workspace" />
+      </WorkspaceRail>
       <nav
         style={{
           width: 190,

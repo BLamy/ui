@@ -1,12 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ChatDemo } from '@brett_lamy/ui';
+import DiscordClone from '@brett_lamy/registry/blocks/discord-clone/page';
 import './styles.css';
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
     <div style={{ position: 'fixed', inset: 0 }}>
-      <ChatDemo />
+      <DiscordClone />
     </div>
   </StrictMode>
 );

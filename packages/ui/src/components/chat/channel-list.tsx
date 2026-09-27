@@ -1,136 +1,147 @@
-import type { CSSProperties, ReactNode } from 'react';
-import { Button } from 'react-aria-components';
-import { ChatAvatar } from './chat-avatar';
+import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
+import { Button, composeRenderProps } from 'react-aria-components';
 import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
-import type { ChatChannel, ChatChannels } from '../../lib/chat/chat-users';
+import { useOptionalChatShell } from '../../lib/chat/chat-shell-context';
+import { Haptics } from '../../lib/haptics';
 import { cn } from '../../lib/utils';
-import { kvib } from '../../lib/chat/kvib';
 
-export interface ChannelListProps {
-  chans: ChatChannels;
-  cur: string;
-  onPick: (id: string, threadId?: string) => void;
-  tint: string;
-  onClose?: (() => void) | null;
-  /** header title slot — default matches the prototype's "BL UI HQ" */
-  title?: ReactNode;
-  /** footer slot — default matches the prototype's Ada "online" footer */
-  footer?: ReactNode;
-  className?: string;
-  style?: CSSProperties;
+/* ══ Channel navigation ══
+   <ChannelList selectedKey onSelectionChange>
+     <ChannelGroup label="Team">
+       <ChannelItem id="general">general</ChannelItem>
+       <ChannelItem id="dev" unread mentions={2}>dev</ChannelItem>
+       <ChannelThreadItem onPress={…}>Repo connect spawning…</ChannelThreadItem>
+   Picking a channel (or a thread row) inside a compact ChatShell also closes its navigation drawer. */
+
+interface ChannelListContextValue {
+  selectedKey?: string | null;
+  onSelectionChange?: (id: string) => void;
+}
+const ChannelListContext = createContext<ChannelListContextValue>({});
+
+export interface ChannelListProps extends Omit<ComponentProps<'nav'>, 'onChange'> {
+  /** the current channel */
+  selectedKey?: string | null;
+  onSelectionChange?: (id: string) => void;
 }
 
-const defaultFooterUser = { name: 'Ada', c: '#0A84FF', role: '#7EB6FF' };
-
-function DefaultFooter() {
+/** The scrolling channel list. Owns the selection its ChannelItems read. */
+export function ChannelList({ selectedKey, onSelectionChange, className, children, ...props }: ChannelListProps) {
   return (
-    <div className="flex items-center gap-[8px] border-t border-ck-sep px-[12px] py-[9px]">
-      <ChatAvatar user={defaultFooterUser} size={26} />
-      <div className="flex-1 leading-[1.1]">
-        <div className="text-[12px] font-bold text-ck-label">Ada</div>
-        <div className="text-[10px] font-semibold text-ck-green">● online</div>
-      </div>
-      <span className="grid text-ck-mut3">
-        <ChatIcon d={chatIconPaths.bell} size={14} />
-      </span>
+    <ChannelListContext.Provider value={{ selectedKey, onSelectionChange }}>
+      <nav
+        data-slot="channel-list"
+        aria-label="Channels"
+        className={cn('ck-scroll min-h-0 flex-1 overflow-y-auto px-[8px] py-[6px]', className)}
+        {...props}
+      >
+        {children}
+      </nav>
+    </ChannelListContext.Provider>
+  );
+}
+
+export interface ChannelGroupProps extends ComponentProps<'div'> {
+  label: ReactNode;
+}
+
+/** A labelled section of channels ("Team", "Direct messages"). */
+export function ChannelGroup({ label, className, children, ...props }: ChannelGroupProps) {
+  return (
+    <div data-slot="channel-group" role="group" aria-label={typeof label === 'string' ? label : undefined} className={className} {...props}>
+      <div className="px-[8px] pt-[11px] pb-[4px] text-[10px] font-bold tracking-[.7px] text-ck-mut3 uppercase">{label}</div>
+      {children}
     </div>
   );
 }
 
-export function ChannelList({
-  chans,
-  cur,
-  onPick,
-  tint,
-  onClose,
-  title = 'BL UI HQ',
-  footer,
-  className,
-  style,
-}: ChannelListProps) {
-  const secs: { name: string; items: [string, ChatChannel][] }[] = [];
-  Object.entries(chans).forEach(([id, ch]) => {
-    let s = secs.find((x) => x.name === ch.section);
-    if (!s) {
-      s = { name: ch.section, items: [] };
-      secs.push(s);
-    }
-    s.items.push([id, ch]);
-  });
+function MentionPill({ n }: { n: number }) {
   return (
-    <div
-      data-slot="channel-list"
-      className={cn(
-        'box-border flex h-full w-[222px] shrink-0 flex-col border-r border-ck-sep bg-ck-side font-ios',
-        className,
-      )}
-      style={{ '--ck-tint': tint, ...style } as CSSProperties}
+    <span
+      data-slot="channel-item-mentions"
+      className="box-border flex h-[16px] min-w-[16px] shrink-0 items-center justify-center rounded-full bg-ck-red px-[4px] text-[10px] leading-none font-bold text-white"
     >
-      <div className="flex items-center gap-[8px] border-b border-ck-sep px-[14px] pt-[13px] pb-[9px]">
-        <span className="flex-1 text-[13.5px] font-extrabold tracking-[-.1px] text-ck-label">{title}</span>
-        {onClose ? (
-          <Button
-            onPress={onClose}
-            aria-label="Close channels"
-            className="grid cursor-pointer border-0 bg-transparent p-[4px] text-ck-mut3"
-          >
-            <ChatIcon d={chatIconPaths.x} size={14} />
-          </Button>
-        ) : (
-          <span className="grid text-ck-mut3">
-            <ChatIcon d={chatIconPaths.chev} size={13} className="[transform:rotate(90deg)]" />
-          </span>
-        )}
-      </div>
-      <div className="ck-scroll min-h-0 flex-1 overflow-y-auto px-[8px] py-[6px]">
-        {secs.map((s) => (
-          <div key={s.name}>
-            <div className="px-[8px] pt-[11px] pb-[4px] text-[10px] font-bold tracking-[.7px] text-ck-mut3 uppercase">
-              {s.name}
-            </div>
-            {s.items.map(([id, ch]) => {
-              const on = id === cur;
-              const threads = ch.msgs.filter((m) => m.thread);
-              return (
-                <div key={id}>
-                  <Button
-                    onPress={() => {
-                      kvib([5]);
-                      onPick(id);
-                    }}
-                    className={cn(
-                      'flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 px-[8px] py-[5px] text-left font-ios text-[13.5px]',
-                      on ? 'bg-ck-fill2' : 'bg-transparent',
-                      on || ch.unread ? 'font-[650] text-ck-label' : 'font-normal text-ck-mut',
-                    )}
-                  >
-                    <span className="grid text-ck-mut3">
-                      <ChatIcon d={chatIconPaths.hash} size={13} sw={2} />
-                    </span>
-                    <span className="flex-1 truncate">{ch.label}</span>
-                    {ch.unread && !on && <span className="size-[7px] rounded-[50%] bg-(--ck-tint)" />}
-                  </Button>
-                  {on &&
-                    threads.map((m) => (
-                      <Button
-                        key={m.id}
-                        onPress={() => {
-                          kvib([4]);
-                          onPick(id, m.id);
-                        }}
-                        className="flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 bg-transparent py-[3px] pr-[8px] pl-[24px] text-left font-ios text-[12px] text-ck-mut3"
-                      >
-                        <span className="-mt-[6px] size-[8px] shrink-0 rounded-[0_0_0_4px] border-b-[1.5px] border-l-[1.5px] border-ck-sep" />
-                        <span className="truncate">{m.thread?.title}</span>
-                      </Button>
-                    ))}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-      {footer === undefined ? <DefaultFooter /> : footer}
-    </div>
+      {n > 99 ? '99+' : n}
+    </span>
+  );
+}
+
+export interface ChannelItemProps extends Omit<ComponentProps<typeof Button>, 'id' | 'children'> {
+  id: string;
+  children?: ReactNode;
+  /** leading glyph; a # by default (pass a ChatAvatar for a DM) */
+  icon?: ReactNode;
+  /** new activity: bold label and a tint dot (hidden while selected) */
+  unread?: boolean;
+  /** mention count: a red pill (replaces the dot) */
+  mentions?: number;
+  /** overrides the list's selection */
+  isActive?: boolean;
+}
+
+export function ChannelItem({ id, icon, unread, mentions, isActive, className, children, onPress, ...props }: ChannelItemProps) {
+  const list = useContext(ChannelListContext);
+  const shell = useOptionalChatShell();
+  const on = isActive ?? list.selectedKey === id;
+  return (
+    <Button
+      data-slot="channel-item"
+      data-active={on || undefined}
+      data-unread={unread || undefined}
+      aria-current={on ? 'page' : undefined}
+      onPress={(e) => {
+        Haptics.selection();
+        list.onSelectionChange?.(id);
+        onPress?.(e);
+        shell?.setNavOpen(false);
+      }}
+      className={composeRenderProps(className, (c) =>
+        cn(
+          'flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 px-[8px] py-[5px] text-left font-ios text-[13.5px] [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
+          on ? 'bg-ck-fill2' : 'bg-transparent data-hovered:bg-ck-hover',
+          on || unread ? 'font-[650] text-ck-label' : 'font-normal text-ck-mut',
+          c,
+        ),
+      )}
+      {...props}
+    >
+      <span className="grid text-ck-mut3">{icon ?? <ChatIcon d={chatIconPaths.hash} size={13} sw={2} />}</span>
+      <span className="flex-1 truncate">{children}</span>
+      {mentions ? <MentionPill n={mentions} /> : unread && !on && <span className="size-[7px] rounded-[50%] bg-ck-tint" />}
+    </Button>
+  );
+}
+
+export interface ChannelThreadItemProps extends Omit<ComponentProps<typeof Button>, 'children'> {
+  children?: ReactNode;
+  /** the thread is open (full view) */
+  isActive?: boolean;
+}
+
+/** An indented thread row under its channel, with an elbow connector. */
+export function ChannelThreadItem({ isActive, className, children, onPress, ...props }: ChannelThreadItemProps) {
+  const shell = useOptionalChatShell();
+  return (
+    <Button
+      data-slot="channel-thread-item"
+      data-active={isActive || undefined}
+      aria-current={isActive ? 'page' : undefined}
+      onPress={(e) => {
+        Haptics.selection();
+        onPress?.(e);
+        shell?.setNavOpen(false);
+      }}
+      className={composeRenderProps(className, (c) =>
+        cn(
+          'flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 py-[3px] pr-[8px] pl-[24px] text-left font-ios text-[12px]',
+          isActive ? 'bg-ck-fill font-semibold text-ck-label' : 'bg-transparent text-ck-mut3 data-hovered:text-ck-mut',
+          c,
+        ),
+      )}
+      {...props}
+    >
+      <span className="-mt-[6px] size-[8px] shrink-0 rounded-[0_0_0_4px] border-b-[1.5px] border-l-[1.5px] border-ck-sep" />
+      <span className="truncate">{children}</span>
+    </Button>
   );
 }

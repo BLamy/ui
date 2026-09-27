@@ -1,5 +1,6 @@
 import { createContext, use, type ReactNode } from 'react';
 
+/** A chat participant, as avatars, author names and @mentions render them. */
 export interface ChatUser {
   name: string;
   /** avatar/base color */
@@ -11,39 +12,7 @@ export interface ChatUser {
 
 export type ChatUsers = Record<string, ChatUser>;
 
-export type ChatReaction = [string, number, boolean];
-
-export interface ChatThreadReply {
-  id: string;
-  u: string;
-  t: string;
-  txt: string;
-  reacts?: ChatReaction[];
-}
-
-export interface ChatThreadData {
-  title: string;
-  msgs: ChatThreadReply[];
-}
-
-export interface ChatMessageData {
-  id: string;
-  u: string;
-  t: string;
-  txt: string;
-  reacts: ChatReaction[];
-  thread?: ChatThreadData | null;
-}
-
-export interface ChatChannel {
-  section: string;
-  label: string;
-  unread?: boolean;
-  msgs: ChatMessageData[];
-}
-
-export type ChatChannels = Record<string, ChatChannel>;
-
+/* RichText resolves `@id` mentions against the users in context. */
 const ChatUsersCtx = createContext<ChatUsers>({});
 
 export interface ChatUsersProviderProps {

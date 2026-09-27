@@ -1,0 +1,7 @@
+{
+  "name": "discord-clone",
+  "title": "Discord clone",
+  "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell and the chat primitives.",
+  "categories": ["chat", "application"],
+  "files": ["page.tsx", "channel-message.tsx", "thread-view.tsx", "data.ts"]
+}

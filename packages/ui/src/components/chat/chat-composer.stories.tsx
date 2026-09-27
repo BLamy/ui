@@ -1,12 +1,20 @@
+import type { CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chatTokens } from '../../lib/chat/chat-tokens';
-import { ChatComposer } from './chat-composer';
+import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { ChatComposer, ChatComposerAction, ChatComposerInput, ChatComposerSend } from './chat-composer';
 import '../../styles.css';
 
-const meta: Meta<typeof ChatComposer> = {
+interface Args {
+  placeholder: string;
+  autoFocus?: boolean;
+  tint: string;
+}
+
+const meta: Meta<Args> = {
   title: 'Molecules/Composer',
-  component: ChatComposer,
-  args: { tint: '#0A84FF', onSend: () => {} },
+  args: { tint: '#0A84FF' },
+  render: ({ tint, ...args }) => <ChatComposer {...args} onSend={() => {}} style={{ '--ck-tint': tint } as CSSProperties} />,
   decorators: [
     (Story) => (
       <div
@@ -25,7 +33,7 @@ const meta: Meta<typeof ChatComposer> = {
   ],
 };
 export default meta;
-type Story = StoryObj<typeof ChatComposer>;
+type Story = StoryObj<Args>;
 
 export const Default: Story = {
   args: { placeholder: 'Message #dev' },
@@ -35,6 +43,20 @@ export const ThreadReply: Story = {
   args: { placeholder: 'Reply in "Repo connect spawning new project"', autoFocus: true },
 };
 
+/** `--ck-tint` (ChatShell's `tint`) colors the send button once there's a draft. */
 export const PurpleTint: Story = {
   args: { placeholder: 'Message #design', tint: '#BF5AF2' },
+};
+
+/** Composed: an attach action before the input. */
+export const WithAction: Story = {
+  render: () => (
+    <ChatComposer onSend={() => {}}>
+      <ChatComposerAction aria-label="Attach">
+        <ChatIcon d={chatIconPaths.plus} size={16} sw={2.2} />
+      </ChatComposerAction>
+      <ChatComposerInput placeholder="Message #dev" />
+      <ChatComposerSend />
+    </ChatComposer>
+  ),
 };

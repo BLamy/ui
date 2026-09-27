@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chatTokens, KFONT } from '../../lib/chat/chat-tokens';
 import { RichText } from './rich-text';
-import { USERS } from '../../demos/chat-demo';
+import { USERS } from './chat.fixtures';
 import '../../styles.css';
 
 const meta: Meta<typeof RichText> = {

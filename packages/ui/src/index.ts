@@ -340,7 +340,7 @@ export {
   UserMessage,
   AssistantMessage,
   MessageMarkdown,
-  TypingIndicator,
+  ConversationTyping,
   WorkLog,
   ToolCall,
   SettledBanner,
@@ -386,7 +386,7 @@ export {
   type WorkbenchTabBarProps,
 } from './templates/workbench-shell';
 
-// ── Chat: team-chat parts, floating/artifact chat containers, ChatShell, and the chat demos ──
+// ── Chat: ChatShell and its team-chat primitives, floating/artifact chat containers ──
 export { ChatIcon, chatIconPaths, type ChatIconProps } from './lib/chat/chat-icon';
 export {
   chatTokens,
@@ -407,27 +407,119 @@ export {
   type ChatUser,
   type ChatUsers,
   type ChatUsersProviderProps,
-  type ChatReaction,
-  type ChatThreadReply,
-  type ChatThreadData,
-  type ChatMessageData,
-  type ChatChannel,
-  type ChatChannels,
 } from './lib/chat/chat-users';
 export { ChatAvatar, type ChatAvatarProps } from './components/chat/chat-avatar';
 export { RichText, type RichTextProps } from './components/chat/rich-text';
-export { ThreadPreview, type ThreadPreviewProps } from './components/chat/thread-preview';
-export { Message, type MessageProps } from './components/chat/message';
-export { ChatComposer, type ChatComposerProps } from './components/chat/chat-composer';
-export { ChannelList, type ChannelListProps } from './components/chat/channel-list';
-export { WorkspaceRail, type WorkspaceRailProps, type WorkspaceRailHome, type Workspace } from './components/chat/workspace-rail';
 export {
   ChatShell,
+  ChatShellNav,
+  ChatShellNavTrigger,
+  ChatShellSidebar,
+  ChatShellMain,
+  ChatShellHeader,
+  ChatShellHeaderIcon,
+  ChatShellTitle,
+  ChatShellDescription,
+  ChatShellHeaderActions,
+  ChatShellHeaderAction,
+  ChatShellBack,
+  ChatShellFooter,
+  ChatShellAside,
+  ChatShellPanel,
+  chatShellHeaderActionVariants,
   useChatShell,
   type ChatShellProps,
   type ChatShellContextValue,
-  type ChatShellSlotChildren,
+  type ChatShellNavProps,
+  type ChatShellNavTriggerProps,
+  type ChatShellHeaderActionProps,
+  type ChatShellBackProps,
+  type ChatShellAsideProps,
+  type ChatShellPanelProps,
 } from './templates/chat-shell';
+export {
+  WorkspaceRail,
+  WorkspaceRailList,
+  WorkspaceRailItem,
+  WorkspaceRailHome,
+  WorkspaceRailSeparator,
+  WorkspaceRailAction,
+  type WorkspaceRailProps,
+  type WorkspaceRailListProps,
+  type WorkspaceRailItemProps,
+  type WorkspaceRailHomeProps,
+  type WorkspaceRailActionProps,
+} from './components/chat/workspace-rail';
+export { ServerHeader, type ServerHeaderProps } from './components/chat/server-header';
+export {
+  ChannelList,
+  ChannelGroup,
+  ChannelItem,
+  ChannelThreadItem,
+  type ChannelListProps,
+  type ChannelGroupProps,
+  type ChannelItemProps,
+  type ChannelThreadItemProps,
+} from './components/chat/channel-list';
+export {
+  UserPanel,
+  UserPanelInfo,
+  UserPanelName,
+  UserPanelStatus,
+  UserPanelAction,
+  presenceLabel,
+  type UserPanelStatusProps,
+  type ChatPresence,
+} from './components/chat/user-panel';
+export {
+  MessageList,
+  MessageGroup,
+  MessageDivider,
+  DateDivider,
+  MessageListEmpty,
+  ChannelIntro,
+  TypingIndicator,
+  messageDividerVariants,
+  type MessageListProps,
+  type MessageDividerProps,
+  type ChannelIntroProps,
+} from './components/chat/message-list';
+export {
+  Message,
+  MessageAvatar,
+  MessageBody,
+  MessageHeader,
+  MessageAuthor,
+  MessageBadge,
+  MessageTimestamp,
+  MessageContent,
+  MessageReactions,
+  MessageReaction,
+  MessageActions,
+  MessageAction,
+  messageVariants,
+  type MessageProps,
+  type MessageAvatarProps,
+  type MessageReactionProps,
+  type MessageActionProps,
+} from './components/chat/message';
+export {
+  ThreadPreview,
+  ThreadPreviewReply,
+  ThreadHeader,
+  type ThreadPreviewProps,
+  type ThreadPreviewReplyProps,
+  type ThreadHeaderProps,
+} from './components/chat/thread-preview';
+export { MemberList, MemberGroup, MemberItem, type MemberGroupProps, type MemberItemProps } from './components/chat/member-list';
+export {
+  ChatComposer,
+  ChatComposerInput,
+  ChatComposerSend,
+  ChatComposerAction,
+  type ChatComposerProps,
+  type ChatComposerSendProps,
+} from './components/chat/chat-composer';
 export {
   FloatingSheet,
   useFloatingSheet,
@@ -444,7 +536,7 @@ export {
   type FloatingChatContextValue,
   type FloatingChatFabPosition,
 } from './components/chat/floating-chat';
-export { ChatColumn, type ChatColumnProps } from './components/chat/chat-column';
+export { ChatColumn, ChatColumnTranscript, ChatColumnComposer, type ChatColumnProps } from './components/chat/chat-column';
 export {
   ArtifactChatContainer,
   useArtifactChatContainer,
@@ -454,17 +546,6 @@ export {
   type ArtifactChatFabPosition,
   type ArtifactChatLayout,
 } from './templates/artifact-chat-container';
-export {
-  ChatDemo,
-  ChannelNav,
-  ChannelMain,
-  seed,
-  USERS,
-  type ChatDemoProps,
-  type ChatThreadState,
-  type ChannelNavProps,
-  type ChannelMainProps,
-} from './demos/chat-demo';
 export {
   TileMap,
   esriDarkGrayTiles,

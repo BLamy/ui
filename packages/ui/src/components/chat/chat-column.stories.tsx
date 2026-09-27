@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '../workbench/composer';
 import '../../styles.css';
-import { ChatColumn } from './chat-column';
+import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from './chat-column';
 import { K, KFONT } from '../../lib/chat/chat-tokens';
 
 /* The chat composer: the Workbench Composer parts, trimmed to editor + send. */
@@ -36,15 +36,15 @@ export const Default: Story = {
       style={{ width: 400, height: 560, display: 'flex', borderRadius: 18, fontFamily: KFONT }}
     >
       <ChatColumn style={{ flex: 1 }}>
-        <ChatColumn.Transcript>
+        <ChatColumnTranscript>
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 14, padding: 18, background: K.bg, color: K.label, boxSizing: 'border-box' }}>
             <div style={{ fontSize: 13.5 }}>Which region moved the most against last month?</div>
             <div style={{ fontSize: 13.5, color: K.mut }}>Northeast — up 6.1 points.</div>
           </div>
-        </ChatColumn.Transcript>
-        <ChatColumn.Composer>
+        </ChatColumnTranscript>
+        <ChatColumnComposer>
           <ChatComposer placeholder="Reply…" />
-        </ChatColumn.Composer>
+        </ChatColumnComposer>
       </ChatColumn>
     </div>
   ),

@@ -230,7 +230,7 @@ export function AssistantMessage({ className, children }: { anchor?: boolean; cl
 
 /* The three typing dots: a soft wave, staggered by .18s. */
 const DOT_ANIM = ['animate-[wbPulse_1s_0s_infinite]', 'animate-[wbPulse_1s_0.18s_infinite]', 'animate-[wbPulse_1s_0.36s_infinite]'];
-export function TypingIndicator({ className }: { className?: string }) {
+export function ConversationTyping({ className }: { className?: string }) {
   return (
     <div data-slot="typing-indicator" role="status" aria-label="Thinking" className={cn('flex gap-[5px] py-1.5', className)}>
       {DOT_ANIM.map((anim, j) => (
@@ -245,7 +245,7 @@ export function MessageMarkdown({ markdown = '', streaming }: { markdown?: strin
   return (
     <>
       <MarkdownView markdown={markdown} streaming={streaming} />
-      {streaming && !markdown ? <TypingIndicator /> : null}
+      {streaming && !markdown ? <ConversationTyping /> : null}
     </>
   );
 }

@@ -5,6 +5,10 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 @source "./";
 @source "../../pencilkit/src";
+/* Registry blocks (registry/blocks) are app code built on this package; in this repo the docs, catalog and apps
+   render them straight from source, so their utilities come from this sheet too. (Copied into an app, a block
+   is scanned by that app's own Tailwind.) */
+@source "../../../registry/blocks";
 
 /* BL UI framework CSS — verbatim from the prototype's injected `bl-kf` block. */
 @keyframes blSpin{to{transform:rotate(360deg)}}
@@ -87,6 +91,8 @@ input::placeholder{color:var(--bl-label3)}
 .ck-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.25);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
 /* New content rises into place (paired with the smooth spring). */
 @keyframes ck-in{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+/* TypingIndicator: three dots take turns lifting. */
+@keyframes ck-typing{0%,60%,100%{opacity:.35;transform:none}30%{opacity:1;transform:translateY(-2px)}}
 
 /* ── ArtifactChatContainer ─────────────────────────────────────────────────────────────────
    Layout lives in utilities on the component. This is the --wb-* token map that keeps an embedded
