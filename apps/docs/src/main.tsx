@@ -1,34 +1,30 @@
-import { StrictMode, type ReactElement } from 'react';
+import { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
 import '@brett_lamy/ui/styles.css';
 // ui's sheet compiled with the registry blocks' Tailwind classes (loaded last, so it's the superset that wins).
 import '@brett_lamy/registry/styles.css';
-import { AppearanceProvider, DeliveryTrackingDemo, MapChatDemo } from '@brett_lamy/ui';
+import { DemoFullscreen, demoFromSearch } from '@brett_lamy/docstream';
+import { AppearanceProvider } from '@brett_lamy/ui';
 import App from './app/app';
-import { DemoFullscreen } from './demo-adapter';
+import { demoResolver } from './demos';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
 );
 
-/* `?demo=map-chat` / `?demo=delivery` render a demo full screen instead of the docs; `?example=<page>/<example>` one
-   docs example and `?block=<slug>` a registry block (with `&theme=dark`, or the docs' saved / OS appearance). */
-const params = new URLSearchParams(window.location.search);
-const demo = params.get('demo');
-const example = params.get('example') ?? (params.get('block') ? `blocks/${params.get('block')}` : null);
-const theme = params.get('theme') ?? window.localStorage.getItem('bldocs-theme');
+/* `?demo=<page>/<example>` (or `blocks/<slug>`, with `&variant=`) renders one demo full screen — the demo viewer's
+   "Open in new tab" link. `&theme=dark|light`, else the docs' saved / OS appearance. */
+const demo = demoFromSearch();
+const theme = new URLSearchParams(window.location.search).get('theme') ?? window.localStorage.getItem('bldocs-theme');
 const appearance = theme === 'dark' || theme === 'light' ? theme : window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-if (example) document.documentElement.dataset.theme = appearance;
-const fullscreen: Record<string, () => ReactElement> = {
-  'map-chat': () => <MapChatDemo style={{ width: '100vw', height: '100dvh' }} />,
-  delivery: () => <DeliveryTrackingDemo style={{ width: '100vw', height: '100dvh' }} />,
-};
-const Fullscreen = demo ? fullscreen[demo] : undefined;
+if (demo) document.documentElement.dataset.theme = appearance;
 
 root.render(
   <StrictMode>
-    {example ? (
-      <AppearanceProvider value={appearance}><DemoFullscreen src={example} /></AppearanceProvider>
-    ) : Fullscreen ? <Fullscreen /> : <App />}
+    {demo ? (
+      <AppearanceProvider value={appearance}>
+        <DemoFullscreen src={demo.src} variant={demo.variant} resolver={demoResolver} style={{ width: '100vw', height: '100dvh' }} />
+      </AppearanceProvider>
+    ) : <App />}
   </StrictMode>,
 );

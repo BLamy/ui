@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /* Writes each component page's `## Installation` section into apps/docs/pages/<page>.md as plain docstream
- * Markdown — GitBook tabs for npm / pnpm / yarn / bun and the shadcn CLI, each with its import line — from the
- * page's registry entry (registry/components/<name>.json, `page` field).
+ * Markdown from the page's registry entry (registry/components/<name>.json, `page` field): GitBook tabs for the npm
+ * package and the shadcn CLI, each with synced pnpm / npm / yarn / bun command tabs and the import line.
  *
  *   node tools/docs/install-md.mjs           → rewrite the sections in place
  *   node tools/docs/install-md.mjs --check   → exit 1 if any page's section is stale (pages-md runs this)
  *
- * The section is `## Installation`, a blank line, then `{% tabs %}` … `{% endtabs %}`; everything else in the page is
+ * The section is `## Installation`, a blank line, then one (nested) `{% tabs %}` set; everything else in the page is
  * left alone. A page without one gets it after its lead (the H1 and the paragraph under it). */
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -39,35 +39,57 @@ function importLine(names, from) {
   return `import {\n${lines.map((l) => '  ' + l).join('\n')}\n} from '${from}'`;
 }
 
+/* The site default is pnpm (first tab); `sync="pm"` keeps the reader's choice across every command on the site. */
 const PMS = [
-  ['npm', (p) => `npm install ${p}`],
-  ['pnpm', (p) => `pnpm add ${p}`],
-  ['yarn', (p) => `yarn add ${p}`],
-  ['bun', (p) => `bun add ${p}`],
+  ['pnpm', (p) => `pnpm add ${p}`, (c) => `pnpm dlx ${c}`],
+  ['npm', (p) => `npm install ${p}`, (c) => `npx ${c}`],
+  ['yarn', (p) => `yarn add ${p}`, (c) => `yarn dlx ${c}`],
+  ['bun', (p) => `bun add ${p}`, (c) => `bunx --bun ${c}`],
+];
+
+/** One command per package manager — tabs whose bodies are single code blocks render as one command block. */
+const commandTabs = (cmd) => [
+  '{% tabs sync="pm" %}',
+  ...PMS.flatMap(([pm, add, dlx]) => [`{% tab title="${pm}" %}`, '```sh', cmd(add, dlx), '```', '{% endtab %}']),
+  '{% endtabs %}',
 ];
 
 export function installSection(entry) {
   const from = entry.from || '@brett_lamy/ui';
   const names = importNames(entry);
   const pkgs = [...new Set(['@brett_lamy/ui', from])].join(' ');
-  const npmImports = ['```tsx', `import '@brett_lamy/ui/styles.css'`, '', importLine(names, from), '```'];
-  const tab = (title, body) => [`{% tab title="${title}" %}`, ...body, '{% endtab %}'];
   return [
     '## Installation',
     '',
-    '{% tabs %}',
-    ...PMS.flatMap(([pm, cmd]) => tab(pm, [
-      '```sh', cmd(pkgs), '```', '',
-      "Import the stylesheet once at your app's entry, then the parts from the package root:", '',
-      ...npmImports,
-    ])),
-    ...tab('shadcn CLI', [
-      '```sh', `npx shadcn@latest add ${REGISTRY_URL}/${entry.name}.json`, '```', '',
-      `Adds \`@/components/ui/${entry.name}.tsx\`, installs \`@brett_lamy/ui\`, and wires its stylesheet and tokens into your CSS. Import from your alias:`, '',
-      '```tsx', importLine(names, `@/components/ui/${entry.name}`), '```',
-    ]),
+    '{% tabs sync="install" %}',
+    '{% tab title="npm" %}',
+    ...commandTabs((add) => add(pkgs)),
+    '',
+    "Import the stylesheet once at your app's entry, then the parts from the package root:",
+    '',
+    '```tsx', `import '@brett_lamy/ui/styles.css'`, '', importLine(names, from), '```',
+    '{% endtab %}',
+    '{% tab title="shadcn CLI" %}',
+    ...commandTabs((_, dlx) => dlx(`shadcn@latest add ${REGISTRY_URL}/${entry.name}.json`)),
+    '',
+    `Adds \`@/components/ui/${entry.name}.tsx\`, installs \`@brett_lamy/ui\`, and wires its stylesheet and tokens into your CSS. Import from your alias:`,
+    '',
+    '```tsx', importLine(names, `@/components/ui/${entry.name}`), '```',
+    '{% endtab %}',
     '{% endtabs %}',
   ].join('\n');
+}
+
+/** [start, end) lines of an existing section: `## Installation`, a blank line, then one (nested) tab set. */
+function sectionRange(lines) {
+  const start = lines.findIndex((l, i) => l === '## Installation' && lines[i + 1] === '' && /^\{% tabs\b/.test(lines[i + 2] ?? ''));
+  if (start < 0) return null;
+  let depth = 0;
+  for (let i = start + 2; i < lines.length; i++) {
+    if (/^\{% tabs\b/.test(lines[i])) depth++;
+    else if (/^\{% endtabs %\}$/.test(lines[i]) && --depth === 0) return [start, i + 1];
+  }
+  return null;
 }
 
 /** Index just past a page's lead: the H1 and, if one follows, a plain paragraph. */
@@ -84,9 +106,9 @@ function leadEnd(lines) {
 
 export function withInstall(md, entry) {
   const section = installSection(entry);
-  const re = /^## Installation\n\n\{% tabs %\}\n[\s\S]*?\n\{% endtabs %\}$/m;
-  if (re.test(md)) return md.replace(re, () => section);
   const lines = md.split('\n');
+  const range = sectionRange(lines);
+  if (range) return [...lines.slice(0, range[0]), section, ...lines.slice(range[1])].join('\n');
   const i = leadEnd(lines);
   const head = lines.slice(0, i).join('\n').trimEnd();
   const rest = lines.slice(i).join('\n').trim();

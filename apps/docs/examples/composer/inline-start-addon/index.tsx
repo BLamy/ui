@@ -8,6 +8,7 @@ import {
   ComposerSelect,
   ComposerSend,
   WIcon,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
 const tones = [
@@ -42,7 +43,7 @@ function useFakeReply(ms = 2200) {
 
 // A one-row messenger: a "+" column before the editor (inline-start), a tone picker and send after
 // it (inline-end). Addons order themselves, so the markup order doesn't matter.
-export default function Messenger() {
+function Messenger() {
   const reply = useFakeReply(1800)
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '36px 0' }}>
@@ -61,5 +62,14 @@ export default function Messenger() {
         </ComposerCard>
       </Composer>
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function MessengerExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <Messenger />
+    </WorkbenchTheme>
   )
 }

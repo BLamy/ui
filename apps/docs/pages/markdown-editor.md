@@ -1,53 +1,33 @@
 # MarkdownEditor
 
-A Markdown field on the `@brett_lamy/docstream-editor` WYSIWYG editor. It reads and writes the same GitBook-flavored Markdown that [MarkdownView](#docstream) renders, so what you type is what readers get. Type `/` for blocks, paste Markdown to get structure, and paste or drop images as inline image blocks or as attachment chips.
+A Markdown field on the `@brett_lamy/docstream-editor` WYSIWYG editor. It reads and writes the same GitBook-flavored Markdown that [MarkdownView](https://blamy.github.io/ui/#/docstream) renders, so what you type is what readers get. Type `/` for blocks, paste Markdown to get structure, and paste or drop images as inline image blocks or as attachment chips.
 
 ## Installation
 
-{% tabs %}
+{% tabs sync="install" %}
 {% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import { MarkdownEditor } from '@brett_lamy/ui'
-```
-{% endtab %}
+{% tabs sync="pm" %}
 {% tab title="pnpm" %}
 ```sh
 pnpm add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import { MarkdownEditor } from '@brett_lamy/ui'
+{% endtab %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="yarn" %}
 ```sh
 yarn add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import { MarkdownEditor } from '@brett_lamy/ui'
-```
 {% endtab %}
 {% tab title="bun" %}
 ```sh
 bun add @brett_lamy/ui
 ```
+{% endtab %}
+{% endtabs %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
@@ -58,9 +38,28 @@ import { MarkdownEditor } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
+{% tabs sync="pm" %}
+{% tab title="pnpm" %}
+```sh
+pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/markdown-editor.json
+```
+{% endtab %}
+{% tab title="npm" %}
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/markdown-editor.json
 ```
+{% endtab %}
+{% tab title="yarn" %}
+```sh
+yarn dlx shadcn@latest add https://blamy.github.io/ui/r/markdown-editor.json
+```
+{% endtab %}
+{% tab title="bun" %}
+```sh
+bunx --bun shadcn@latest add https://blamy.github.io/ui/r/markdown-editor.json
+```
+{% endtab %}
+{% endtabs %}
 
 Adds `@/components/ui/markdown-editor.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 

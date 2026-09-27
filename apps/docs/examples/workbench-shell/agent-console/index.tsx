@@ -24,6 +24,7 @@ import {
   WorkbenchShell,
   WorkbenchTitle,
   WorkLog,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
 const RUNS = [
@@ -66,7 +67,7 @@ function Scaled({ width, height, children }: { width: number; height: number; ch
   )
 }
 
-export default function AgentConsole() {
+function AgentConsole() {
   return (
     <Scaled width={1160} height={540}>
       <WorkbenchShell defaultDockOpen defaultPanelOpen>
@@ -116,5 +117,14 @@ export default function AgentConsole() {
         </WorkbenchPanel>
       </WorkbenchShell>
     </Scaled>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function AgentConsoleExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <AgentConsole />
+    </WorkbenchTheme>
   )
 }

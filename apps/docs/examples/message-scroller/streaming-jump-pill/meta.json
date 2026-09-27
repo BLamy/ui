@@ -1,5 +1,4 @@
 {
   "title": "MessageScroller · streaming and the jump pill",
-  "height": 420,
-  "theme": "wb"
+  "bleed": true
 }

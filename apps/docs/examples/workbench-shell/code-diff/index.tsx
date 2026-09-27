@@ -1,6 +1,6 @@
-import { SurfaceDiff } from '@brett_lamy/ui'
+import { SurfaceDiff, WorkbenchTheme } from '@brett_lamy/ui'
 
-export default function Change() {
+function Change() {
   return (
     // a fixed-height, rounded window
     <div style={{ width: '100%', height: 330, margin: '0 auto', borderRadius: 12, overflow: 'hidden', boxShadow: '0 0 0 1px var(--wb-sep)' }}>
@@ -18,5 +18,14 @@ export default function Change() {
         />
       </div>
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function ChangeExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <Change />
+    </WorkbenchTheme>
   )
 }

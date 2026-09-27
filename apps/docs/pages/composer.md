@@ -4,59 +4,30 @@ The Workbench prompt box is a set of parts, in the spirit of shadcn's `InputGrou
 
 ## Installation
 
-{% tabs %}
+{% tabs sync="install" %}
 {% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  Composer, ComposerCard, ComposerInput, ComposerFooter,
-  ComposerSend,
-} from '@brett_lamy/ui'
-```
-{% endtab %}
+{% tabs sync="pm" %}
 {% tab title="pnpm" %}
 ```sh
 pnpm add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  Composer, ComposerCard, ComposerInput, ComposerFooter,
-  ComposerSend,
-} from '@brett_lamy/ui'
+{% endtab %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="yarn" %}
 ```sh
 yarn add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  Composer, ComposerCard, ComposerInput, ComposerFooter,
-  ComposerSend,
-} from '@brett_lamy/ui'
-```
 {% endtab %}
 {% tab title="bun" %}
 ```sh
 bun add @brett_lamy/ui
 ```
+{% endtab %}
+{% endtabs %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
@@ -70,9 +41,28 @@ import {
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
+{% tabs sync="pm" %}
+{% tab title="pnpm" %}
+```sh
+pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/composer.json
+```
+{% endtab %}
+{% tab title="npm" %}
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/composer.json
 ```
+{% endtab %}
+{% tab title="yarn" %}
+```sh
+yarn dlx shadcn@latest add https://blamy.github.io/ui/r/composer.json
+```
+{% endtab %}
+{% tab title="bun" %}
+```sh
+bunx --bun shadcn@latest add https://blamy.github.io/ui/r/composer.json
+```
+{% endtab %}
+{% endtabs %}
 
 Adds `@/components/ui/composer.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
@@ -126,7 +116,7 @@ import {
 </Composer>
 ```
 
-`WorkbenchComposer` is the Workbench's default composition (card, attachments, expand, model / effort / access pills, send, and the detached checkout strip) — put it in a `ConversationComposer` (see [WorkbenchShell](#workbench-shell)), or compose your own from these parts.
+`WorkbenchComposer` is the Workbench's default composition (card, attachments, expand, model / effort / access pills, send, and the detached checkout strip) — put it in a `ConversationComposer` (see [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell)), or compose your own from these parts.
 
 ## Parts
 
@@ -187,7 +177,7 @@ import {
 
 ## Image annotation
 
-Pressing an attachment annotates it with [PencilKit](#pencilkit) out of the box: `PencilKitAnnotator` lays a canvas over the image with its tool, ink and undo bar underneath, and Save flattens the strokes into it. No setup is needed. The annotator is pluggable — swap it for every Composer below a provider, or for one Composer; `null` opts out, and pressing an attachment then opens a plain preview of the image:
+Pressing an attachment annotates it with [PencilKit](https://blamy.github.io/ui/#/pencilkit) out of the box: `PencilKitAnnotator` lays a canvas over the image with its tool, ink and undo bar underneath, and Save flattens the strokes into it. No setup is needed. The annotator is pluggable — swap it for every Composer below a provider, or for one Composer; `null` opts out, and pressing an attachment then opens a plain preview of the image:
 
 ```tsx
 import { ComposerAnnotatorProvider, Composer } from '@brett_lamy/ui'
@@ -238,7 +228,7 @@ A searchable model menu in the style of T3 Code, and the footer's model pill. Se
 
 ## Empty state
 
-A thread with no messages renders the **centered composer**: glyph, "What are we building?", the composer, and three suggestion chips that send on tap. Press the `+` in any header to get there. Sending the first message keeps the composer: the greeting leaves, and the same composer travels down to its dock as the thread's first turn rises in (see [WorkbenchShell](#workbench-shell)).
+A thread with no messages renders the **centered composer**: glyph, "What are we building?", the composer, and three suggestion chips that send on tap. Press the `+` in any header to get there. Sending the first message keeps the composer: the greeting leaves, and the same composer travels down to its dock as the thread's first turn rises in (see [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell)).
 
 ## Motion
 

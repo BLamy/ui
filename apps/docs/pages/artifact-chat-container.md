@@ -4,56 +4,30 @@ A container-aware chat and artifact composition. At larger widths the full chat 
 
 ## Installation
 
-{% tabs %}
+{% tabs sync="install" %}
 {% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  ArtifactChatContainer, useArtifactChatContainer,
-} from '@brett_lamy/ui'
-```
-{% endtab %}
+{% tabs sync="pm" %}
 {% tab title="pnpm" %}
 ```sh
 pnpm add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  ArtifactChatContainer, useArtifactChatContainer,
-} from '@brett_lamy/ui'
+{% endtab %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="yarn" %}
 ```sh
 yarn add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  ArtifactChatContainer, useArtifactChatContainer,
-} from '@brett_lamy/ui'
-```
 {% endtab %}
 {% tab title="bun" %}
 ```sh
 bun add @brett_lamy/ui
 ```
+{% endtab %}
+{% endtabs %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
@@ -66,9 +40,28 @@ import {
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
+{% tabs sync="pm" %}
+{% tab title="pnpm" %}
+```sh
+pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/artifact-chat-container.json
+```
+{% endtab %}
+{% tab title="npm" %}
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/artifact-chat-container.json
 ```
+{% endtab %}
+{% tab title="yarn" %}
+```sh
+yarn dlx shadcn@latest add https://blamy.github.io/ui/r/artifact-chat-container.json
+```
+{% endtab %}
+{% tab title="bun" %}
+```sh
+bunx --bun shadcn@latest add https://blamy.github.io/ui/r/artifact-chat-container.json
+```
+{% endtab %}
+{% endtabs %}
 
 Adds `@/components/ui/artifact-chat-container.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
@@ -199,7 +192,7 @@ Try: *Coffee near me*, *Plan an afternoon in SoHo*, *How far is the Empire State
 
 #### Live example
 
-Tiles load from Esri, so this block needs network. Open it full screen at [`?demo=map-chat`](?demo=map-chat).
+Tiles load from Esri, so this block needs network. Open it full screen at [`?demo=artifact-chat-container/map-chat`](?demo=artifact-chat-container/map-chat).
 
 {% demo src="artifact-chat-container/map-chat" %}
 
@@ -238,10 +231,10 @@ The sheet body is ordinary content: the stepper, cards, disclosure, and carousel
 
 #### Live example
 
-Open it full screen at [`?demo=delivery`](?demo=delivery).
+Open it full screen at [`?demo=artifact-chat-container/delivery-tracking`](?demo=artifact-chat-container/delivery-tracking).
 
 {% demo src="artifact-chat-container/delivery-tracking" %}
 
 ## FloatingSheet
 
-The map chat and delivery tracker float on `FloatingSheet`: glass or opaque, peeking or docked, with a drag that snaps open and folds into a FAB. The floating chat here shares the same velocity-aware gesture (`useSpringSheetDrag`) through the Composer's top bump. Its appearances, drag behavior, slots, and full props are documented on the [FloatingSheet](#floating-sheet) page.
+The map chat and delivery tracker float on `FloatingSheet`: glass or opaque, peeking or docked, with a drag that snaps open and folds into a FAB. The floating chat here shares the same velocity-aware gesture (`useSpringSheetDrag`) through the Composer's top bump. Its appearances, drag behavior, slots, and full props are documented on the [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) page.

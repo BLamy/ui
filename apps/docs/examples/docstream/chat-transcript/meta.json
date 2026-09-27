@@ -1,5 +1,4 @@
 {
   "title": "Assistant replies in a chat transcript",
-  "height": 360,
-  "theme": "wb"
+  "bleed": true
 }

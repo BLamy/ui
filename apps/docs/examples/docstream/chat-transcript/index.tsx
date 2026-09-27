@@ -1,4 +1,4 @@
-import { MarkdownView } from '@brett_lamy/ui'
+import { MarkdownView, WorkbenchTheme } from '@brett_lamy/ui'
 
 const turns = [
   { role: 'user', text: 'How do I keep a panel’s state while it is hidden?' },
@@ -19,7 +19,7 @@ const turns = [
   },
 ]
 
-export default function ChatTranscript() {
+function ChatTranscript() {
   return (
     <div style={{ display: 'grid', gap: 14, padding: 18, maxWidth: 620, margin: '0 auto' }}>
       {turns.map((t, i) =>
@@ -43,5 +43,14 @@ export default function ChatTranscript() {
         ),
       )}
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function ChatTranscriptExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <ChatTranscript />
+    </WorkbenchTheme>
   )
 }

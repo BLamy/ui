@@ -1,11 +1,9 @@
 {
   "title": "AdaptivePane · column, drawer, cover, hidden",
-  "height": 380,
   "variants": [
     { "id": "column", "label": "column" },
     { "id": "drawer", "label": "drawer" },
     { "id": "cover", "label": "cover" },
     { "id": "hidden", "label": "hidden" }
-  ],
-  "variantsWidth": 300
+  ]
 }

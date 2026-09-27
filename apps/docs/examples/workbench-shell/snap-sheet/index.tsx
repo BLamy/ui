@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { SnapSheet, TerminalAction, TerminalBody, TerminalHeader, useAppearance, WorkbenchTheme } from '@brett_lamy/ui'
 
 // The sheet needs a phone-sized, positioned host; the terminal stays dark in light mode.
-export default function TerminalSheet() {
+function TerminalSheet() {
   const [open, setOpen] = useState(false)
   const light = useAppearance() === 'light'
   return (
@@ -55,6 +55,15 @@ export default function TerminalSheet() {
         </TerminalHeader>
         <TerminalBody seed={[{ t: 'npm run dev', p: true }, { t: '  ➜  Local:   http://localhost:3000/', c: '#8AB4FF' }]} />
       </SnapSheet>
+    </WorkbenchTheme>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function TerminalSheetExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <TerminalSheet />
     </WorkbenchTheme>
   )
 }

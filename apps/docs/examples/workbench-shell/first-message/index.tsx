@@ -12,9 +12,10 @@ import {
   Suggestion,
   UserMessage,
   WorkbenchComposer,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
-export default function NewThread() {
+function NewThread() {
   const [messages, setMessages] = useState<{ id: string; role: string; text: string }[]>([])
   const empty = messages.length === 0
   const send = (text: string) =>
@@ -59,5 +60,14 @@ export default function NewThread() {
         </Conversation>
       </div>
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function NewThreadExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <NewThread />
+    </WorkbenchTheme>
   )
 }

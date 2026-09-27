@@ -1,5 +1,4 @@
 {
   "title": "Docked · CRM with a footer account",
-  "height": 400,
-  "theme": "wb"
+  "bleed": true
 }

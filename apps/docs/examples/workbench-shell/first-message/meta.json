@@ -1,5 +1,4 @@
 {
   "title": "Conversation · the first message",
-  "height": 480,
-  "theme": "wb"
+  "bleed": true
 }

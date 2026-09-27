@@ -1,5 +1,4 @@
 {
   "title": "MessageScroller · turns rise into place",
-  "height": 400,
-  "theme": "wb"
+  "bleed": true
 }

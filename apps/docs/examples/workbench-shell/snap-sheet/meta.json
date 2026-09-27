@@ -1,5 +1,4 @@
 {
   "title": "SnapSheet · the compact terminal",
-  "height": 480,
-  "theme": "wb"
+  "bleed": true
 }

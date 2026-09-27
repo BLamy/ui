@@ -4,56 +4,30 @@ PencilKit's drawing surface in BL UI's language, built on **[perfect-freehand](h
 
 ## Installation
 
-{% tabs %}
+{% tabs sync="install" %}
 {% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  PencilCanvas, PencilToolbar, usePencilHistory,
-} from '@brett_lamy/ui'
-```
-{% endtab %}
+{% tabs sync="pm" %}
 {% tab title="pnpm" %}
 ```sh
 pnpm add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  PencilCanvas, PencilToolbar, usePencilHistory,
-} from '@brett_lamy/ui'
+{% endtab %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="yarn" %}
 ```sh
 yarn add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  PencilCanvas, PencilToolbar, usePencilHistory,
-} from '@brett_lamy/ui'
-```
 {% endtab %}
 {% tab title="bun" %}
 ```sh
 bun add @brett_lamy/ui
 ```
+{% endtab %}
+{% endtabs %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
@@ -66,9 +40,28 @@ import {
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
+{% tabs sync="pm" %}
+{% tab title="pnpm" %}
+```sh
+pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/pencilkit.json
+```
+{% endtab %}
+{% tab title="npm" %}
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/pencilkit.json
 ```
+{% endtab %}
+{% tab title="yarn" %}
+```sh
+yarn dlx shadcn@latest add https://blamy.github.io/ui/r/pencilkit.json
+```
+{% endtab %}
+{% tab title="bun" %}
+```sh
+bunx --bun shadcn@latest add https://blamy.github.io/ui/r/pencilkit.json
+```
+{% endtab %}
+{% endtabs %}
 
 Adds `@/components/ui/pencilkit.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
@@ -136,7 +129,7 @@ The canvas is transparent, so it can sit over any content. This toolbar keeps on
 
 ### The Composer's image annotator
 
-`PencilKitAnnotator` is the Composer's default image annotator: pressing a pasted image opens this canvas and toolbar over it, and Save flattens the strokes into it — no setup needed. To bring it back under a provider that swapped it out, pass it explicitly. See [Composer](#composer).
+`PencilKitAnnotator` is the Composer's default image annotator: pressing a pasted image opens this canvas and toolbar over it, and Save flattens the strokes into it — no setup needed. To bring it back under a provider that swapped it out, pass it explicitly. See [Composer](https://blamy.github.io/ui/#/composer).
 
 ```tsx
 import { Composer, PencilKitAnnotator } from '@brett_lamy/ui'

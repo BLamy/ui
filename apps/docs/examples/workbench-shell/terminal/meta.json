@@ -1,5 +1,4 @@
 {
   "title": "TerminalHeader · TerminalBody",
-  "height": 320,
-  "theme": "wb"
+  "bleed": true
 }

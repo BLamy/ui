@@ -1,5 +1,4 @@
 {
   "title": "Floating card · documentation",
-  "height": 400,
-  "theme": "wb"
+  "bleed": true
 }

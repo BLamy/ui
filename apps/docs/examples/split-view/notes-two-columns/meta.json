@@ -1,15 +1,7 @@
 {
   "title": "SplitView · Notes, two columns",
-  "height": 540,
   "variants": [
-    {
-      "id": "regular",
-      "label": "Regular"
-    },
-    {
-      "id": "compact",
-      "label": "Compact"
-    }
-  ],
-  "variantsWidth": 200
+    { "id": "regular", "label": "Regular" },
+    { "id": "compact", "label": "Compact" }
+  ]
 }

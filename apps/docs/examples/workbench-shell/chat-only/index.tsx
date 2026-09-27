@@ -23,6 +23,7 @@ import {
   WorkbenchSidebarClose,
   WorkbenchSidebarTrigger,
   WorkbenchTitle,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
 const RECENT = ['Onboarding checklist', 'Rename the billing events', 'Why is CI slow?']
@@ -61,7 +62,7 @@ function Scaled({ width, height, children }: { width: number; height: number; ch
   )
 }
 
-export default function ChatOnly() {
+function ChatOnly() {
   const [current, setCurrent] = useState(RECENT[0])
   const [messages, setMessages] = useState([
     { id: 'u1', role: 'user', text: 'Draft an onboarding checklist for new engineers.' },
@@ -124,5 +125,14 @@ export default function ChatOnly() {
         </WorkbenchMain>
       </WorkbenchShell>
     </Scaled>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function ChatOnlyExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <ChatOnly />
+    </WorkbenchTheme>
   )
 }

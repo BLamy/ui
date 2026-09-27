@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from '@brett_lamy/ui'
+import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, WorkbenchTheme } from '@brett_lamy/ui'
 
 function EditorRail() {
   const [panel, setPanel] = useState('Explorer')
@@ -60,7 +60,7 @@ function EditorRail() {
   )
 }
 
-export default function CollapsibleRail() {
+function CollapsibleRail() {
   return (
     <Window>
       <EditorRail />
@@ -82,5 +82,14 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
     >
       {children}
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function CollapsibleRailExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <CollapsibleRail />
+    </WorkbenchTheme>
   )
 }

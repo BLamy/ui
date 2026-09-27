@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import { MessageScroller } from '@brett_lamy/ui'
+import { MessageScroller, WorkbenchTheme } from '@brett_lamy/ui'
 
-export default function TurnAnchoring() {
+function TurnAnchoring() {
   const [msgs, setMsgs] = useState([
     { id: 'u1', role: 'user', text: 'How does anchoring work?' },
     {
@@ -89,5 +89,14 @@ export default function TurnAnchoring() {
         </button>
       </div>
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function TurnAnchoringExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <TurnAnchoring />
+    </WorkbenchTheme>
   )
 }

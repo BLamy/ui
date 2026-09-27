@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from '@brett_lamy/ui'
+import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, WorkbenchTheme } from '@brett_lamy/ui'
 
 const guides = ['Introduction', 'Installation', 'Theming']
 const components = ['Button', 'List', 'NavigationStack', 'Sidebar', 'TabView']
@@ -58,7 +58,7 @@ function DocsSidebar() {
   )
 }
 
-export default function FloatingDocs() {
+function FloatingDocs() {
   return (
     <Window>
       <DocsSidebar />
@@ -80,5 +80,14 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
     >
       {children}
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function FloatingDocsExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <FloatingDocs />
+    </WorkbenchTheme>
   )
 }

@@ -4,56 +4,30 @@ One compositional API over every sidebar behavior — a **higher-level primitive
 
 ## Installation
 
-{% tabs %}
+{% tabs sync="install" %}
 {% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  Sidebar, SidebarProvider, SidebarHeader, SidebarContent,
-} from '@brett_lamy/ui'
-```
-{% endtab %}
+{% tabs sync="pm" %}
 {% tab title="pnpm" %}
 ```sh
 pnpm add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  Sidebar, SidebarProvider, SidebarHeader, SidebarContent,
-} from '@brett_lamy/ui'
+{% endtab %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="yarn" %}
 ```sh
 yarn add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  Sidebar, SidebarProvider, SidebarHeader, SidebarContent,
-} from '@brett_lamy/ui'
-```
 {% endtab %}
 {% tab title="bun" %}
 ```sh
 bun add @brett_lamy/ui
 ```
+{% endtab %}
+{% endtabs %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
@@ -66,9 +40,28 @@ import {
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
+{% tabs sync="pm" %}
+{% tab title="pnpm" %}
+```sh
+pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/sidebar.json
+```
+{% endtab %}
+{% tab title="npm" %}
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/sidebar.json
 ```
+{% endtab %}
+{% tab title="yarn" %}
+```sh
+yarn dlx shadcn@latest add https://blamy.github.io/ui/r/sidebar.json
+```
+{% endtab %}
+{% tab title="bun" %}
+```sh
+bunx --bun shadcn@latest add https://blamy.github.io/ui/r/sidebar.json
+```
+{% endtab %}
+{% endtabs %}
 
 Adds `@/components/ui/sidebar.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
@@ -141,4 +134,4 @@ Every part reads collapsed state from context — compose any content and the ra
 
 ## Built from
 
-`SidebarProvider` measures itself with `useContainerWidth`, and the overlay variant is an [EdgeDrawer](#edge-drawer) — the same drawer the [templates](#artifact-chat-container) use. Colours read the workbench `--wb-*` tokens with dark fallbacks, so it drops into a `WorkbenchShell` unchanged.
+`SidebarProvider` measures itself with `useContainerWidth`, and the overlay variant is an [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer) — the same drawer the [templates](https://blamy.github.io/ui/#/artifact-chat-container) use. Colours read the workbench `--wb-*` tokens with dark fallbacks, so it drops into a `WorkbenchShell` unchanged.

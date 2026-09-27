@@ -1,19 +1,8 @@
 {
   "title": "Editable, read-only, rendered",
-  "height": 320,
   "variants": [
-    {
-      "id": "edit",
-      "label": "Edit"
-    },
-    {
-      "id": "readonly",
-      "label": "Read-only"
-    },
-    {
-      "id": "rendered",
-      "label": "Rendered"
-    }
-  ],
-  "variantsWidth": 270
+    { "id": "edit", "label": "Edit" },
+    { "id": "readonly", "label": "Read-only" },
+    { "id": "rendered", "label": "Rendered" }
+  ]
 }

@@ -1,5 +1,4 @@
 {
   "title": "WorkbenchPanel · surfaces",
-  "height": 400,
-  "theme": "wb"
+  "bleed": true
 }

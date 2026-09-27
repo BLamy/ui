@@ -21,6 +21,7 @@ import {
   WorkbenchShell,
   WorkbenchTitle,
   WorkLog,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
 const BEFORE = `export function total(items) {
@@ -64,7 +65,7 @@ function Scaled({ width, height, children }: { width: number; height: number; ch
   )
 }
 
-export default function ChatWithDiff() {
+function ChatWithDiff() {
   return (
     <Scaled width={1160} height={520}>
       <WorkbenchShell defaultPanelOpen>
@@ -101,5 +102,14 @@ export default function ChatWithDiff() {
         </WorkbenchPanel>
       </WorkbenchShell>
     </Scaled>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function ChatWithDiffExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <ChatWithDiff />
+    </WorkbenchTheme>
   )
 }

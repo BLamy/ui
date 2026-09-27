@@ -4,59 +4,30 @@ Chat layouts, from parts. `ChatShell` is a thin layout root — it measures its 
 
 ## Installation
 
-{% tabs %}
+{% tabs sync="install" %}
 {% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  ChatShell, ChatShellSidebar, ChatShellMain, ChatShellHeader,
-  ChannelList, ChannelItem, MessageList, Message, ChatComposer,
-} from '@brett_lamy/ui'
-```
-{% endtab %}
+{% tabs sync="pm" %}
 {% tab title="pnpm" %}
 ```sh
 pnpm add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  ChatShell, ChatShellSidebar, ChatShellMain, ChatShellHeader,
-  ChannelList, ChannelItem, MessageList, Message, ChatComposer,
-} from '@brett_lamy/ui'
+{% endtab %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="yarn" %}
 ```sh
 yarn add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  ChatShell, ChatShellSidebar, ChatShellMain, ChatShellHeader,
-  ChannelList, ChannelItem, MessageList, Message, ChatComposer,
-} from '@brett_lamy/ui'
-```
 {% endtab %}
 {% tab title="bun" %}
 ```sh
 bun add @brett_lamy/ui
 ```
+{% endtab %}
+{% endtabs %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
@@ -70,9 +41,28 @@ import {
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
+{% tabs sync="pm" %}
+{% tab title="pnpm" %}
+```sh
+pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/chat-shell.json
+```
+{% endtab %}
+{% tab title="npm" %}
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/chat-shell.json
 ```
+{% endtab %}
+{% tab title="yarn" %}
+```sh
+yarn dlx shadcn@latest add https://blamy.github.io/ui/r/chat-shell.json
+```
+{% endtab %}
+{% tab title="bun" %}
+```sh
+bunx --bun shadcn@latest add https://blamy.github.io/ui/r/chat-shell.json
+```
+{% endtab %}
+{% endtabs %}
 
 Adds `@/components/ui/chat-shell.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
@@ -140,7 +130,7 @@ The full Discord layout is a registry block — `npx shadcn add` copies `page.ts
 
 ## Built from
 
-`useContainerWidth` measures the shell. [AdaptivePane](#adaptive-pane) turns `ChatShellNav` into a docked column or a left [EdgeDrawer](#edge-drawer); [SideDrawer](#side-drawer) gives `ChatShellPanel` its docked and overlay modes; the rail is a vertical [TabView](#tab-view). For a phone-style stack, put the sidebar and conversation in a [SplitView](#split-view) (below).
+`useContainerWidth` measures the shell. [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) turns `ChatShellNav` into a docked column or a left [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer); [SideDrawer](https://blamy.github.io/ui/#/side-drawer) gives `ChatShellPanel` its docked and overlay modes; the rail is a vertical [TabView](https://blamy.github.io/ui/#/tab-view). For a phone-style stack, put the sidebar and conversation in a [SplitView](https://blamy.github.io/ui/#/split-view) (below).
 
 ## Parts
 

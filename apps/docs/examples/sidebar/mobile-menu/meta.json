@@ -1,5 +1,4 @@
 {
   "title": "Narrow container · hamburger overlay",
-  "height": 420,
-  "theme": "wb"
+  "bleed": true
 }

@@ -26,6 +26,7 @@ import {
   WorkbenchSidebarClose,
   WorkbenchSidebarTrigger,
   WorkbenchTitle,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
 const BUILD_LOG = [
@@ -54,7 +55,7 @@ function Frame({ width, height, children }: { width?: number; height: number; ch
   )
 }
 
-export default function PhoneWorkbench() {
+function PhoneWorkbench() {
   return (
     <Frame width={390} height={680}>
       <WorkbenchShell defaultDockOpen>
@@ -105,5 +106,14 @@ export default function PhoneWorkbench() {
         </WorkbenchMain>
       </WorkbenchShell>
     </Frame>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function PhoneWorkbenchExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <PhoneWorkbench />
+    </WorkbenchTheme>
   )
 }

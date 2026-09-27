@@ -1,6 +1,5 @@
 {
   "title": "SideDrawer",
-  "height": 420,
   "variants": [
     { "id": "overlay", "label": "Overlay" },
     { "id": "fixed", "label": "Fixed" }

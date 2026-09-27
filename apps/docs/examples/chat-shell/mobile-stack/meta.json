@@ -1,6 +1,5 @@
 {
   "title": "Compact stack · SplitView",
-  "height": 560,
   "variants": [
     { "id": "phone", "label": "Phone" },
     { "id": "tablet", "label": "Tablet" }

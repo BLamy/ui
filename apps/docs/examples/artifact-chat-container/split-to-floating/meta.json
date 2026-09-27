@@ -1,9 +1,7 @@
 {
   "title": "ArtifactChatContainer · split to floating chat",
-  "height": 620,
   "variants": [
     { "id": "wide", "label": "Split" },
     { "id": "compact", "label": "Floating" }
-  ],
-  "variantsWidth": 220
+  ]
 }

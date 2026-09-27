@@ -4,50 +4,30 @@ One inspector, three presentations — chosen by composition, not configuration.
 
 ## Installation
 
-{% tabs %}
+{% tabs sync="install" %}
 {% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import { SideDrawer } from '@brett_lamy/ui'
-```
-{% endtab %}
+{% tabs sync="pm" %}
 {% tab title="pnpm" %}
 ```sh
 pnpm add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import { SideDrawer } from '@brett_lamy/ui'
+{% endtab %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="yarn" %}
 ```sh
 yarn add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import { SideDrawer } from '@brett_lamy/ui'
-```
 {% endtab %}
 {% tab title="bun" %}
 ```sh
 bun add @brett_lamy/ui
 ```
+{% endtab %}
+{% endtabs %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
@@ -58,9 +38,28 @@ import { SideDrawer } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
+{% tabs sync="pm" %}
+{% tab title="pnpm" %}
+```sh
+pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/side-drawer.json
+```
+{% endtab %}
+{% tab title="npm" %}
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/side-drawer.json
 ```
+{% endtab %}
+{% tab title="yarn" %}
+```sh
+yarn dlx shadcn@latest add https://blamy.github.io/ui/r/side-drawer.json
+```
+{% endtab %}
+{% tab title="bun" %}
+```sh
+bunx --bun shadcn@latest add https://blamy.github.io/ui/r/side-drawer.json
+```
+{% endtab %}
+{% endtabs %}
 
 Adds `@/components/ui/side-drawer.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
@@ -91,7 +90,7 @@ import { SideDrawer } from '@/components/ui/side-drawer'
 screens.push({ key: 'activity', title: 'Activity', content: <ActivityView/> })
 ```
 
-The content component doesn't know which presentation it's in — the Contacts demo picks per width class. The Workbench's [WorkbenchPanel](#workbench-shell) follows the same philosophy on desktop scales.
+The content component doesn't know which presentation it's in — the Contacts demo picks per width class. The Workbench's [WorkbenchPanel](https://blamy.github.io/ui/#/workbench-shell) follows the same philosophy on desktop scales.
 
 ## Live example
 

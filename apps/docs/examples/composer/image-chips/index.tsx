@@ -9,6 +9,7 @@ import {
   ComposerSend,
   ComposerSpacer,
   type ComposerAttachment,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
 // A stand-in "pasted screenshot" so the example has an image to start with.
@@ -29,7 +30,7 @@ const seed: ComposerAttachment[] = [
 // Press either — the PencilKit annotator (the default) zooms out of it; Save flattens the strokes and
 // lands back in it. (Swap it with <Composer annotator={MyAnnotator}> or a <ComposerAnnotatorProvider>;
 // annotator={null} opts out.)
-export default function ImageChips() {
+function ImageChips() {
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '20px 0' }}>
       <Composer
@@ -59,5 +60,14 @@ export default function ImageChips() {
         slide over and the strip folds away.
       </p>
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function ImageChipsExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <ImageChips />
+    </WorkbenchTheme>
   )
 }

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from '@brett_lamy/ui'
+import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, useSidebar, WorkbenchTheme } from '@brett_lamy/ui'
 
 interface MenuItemProps {
   icon: string
@@ -81,7 +81,7 @@ function MobileMenu() {
   )
 }
 
-export default function NarrowHamburger() {
+function NarrowHamburger() {
   return (
     <Window width={380}>
       <MobileMenu />
@@ -103,5 +103,14 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
     >
       {children}
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function NarrowHamburgerExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <NarrowHamburger />
+    </WorkbenchTheme>
   )
 }

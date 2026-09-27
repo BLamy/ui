@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { MessageScroller, type MessageScrollerItem } from '@brett_lamy/ui'
+import { MessageScroller, type MessageScrollerItem, WorkbenchTheme } from '@brett_lamy/ui'
 
 function UserBubble({ children }: { children: ReactNode }) {
   return (
@@ -21,7 +21,7 @@ function UserBubble({ children }: { children: ReactNode }) {
 
 // Items that arrive after the thread opened rise into place — the user's turn up from the composer,
 // the reply beneath it. The ones the thread opened with are simply there.
-export default function TurnsRise() {
+function TurnsRise() {
   const [msgs, setMsgs] = useState([
     { id: 'u0', user: true, text: 'Opened with this turn — no animation.' },
     { id: 'a0', user: false, text: 'Messages already in a thread are just there when it opens.' },
@@ -94,5 +94,14 @@ export default function TurnsRise() {
         </button>
       </div>
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function TurnsRiseExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <TurnsRise />
+    </WorkbenchTheme>
   )
 }

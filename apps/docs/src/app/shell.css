@@ -1,0 +1,37 @@
+/* Docs shell chrome around the docstream page: the page header row and the sidebar's Docs / Blocks switch. */
+:root {
+  --dk-codebg: #F7F7F9;
+  --dk-codehead: #F0F0F4;
+  --dk-pill: #fff;
+  --dk-pill-shadow: 0 1px 2px rgba(15, 15, 35, .12), 0 0 0 .5px rgba(15, 15, 35, .08);
+  --dk-menu: #fff;
+  --dk-stage: #EDEDF1;
+}
+:root[data-theme="dark"] {
+  --dk-codebg: #141418;
+  --dk-codehead: #1A1A1F;
+  --dk-pill: #2A2A31;
+  --dk-pill-shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 0 0 .5px rgba(255, 255, 255, .08);
+  --dk-menu: #1E1E23;
+  --dk-stage: #0A0A0C;
+}
+/* Page header: section kicker + Copy page */
+.dk-pagehead {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; margin-bottom: 2px;
+}
+
+/* Sidebar: Docs / Blocks */
+.dk-topnav { display: flex; flex-direction: column; gap: 1px; padding: 4px 0 8px; border-bottom: 1px solid var(--dk-border); margin-bottom: 2px; }
+.dk-topnav-item {
+  display: flex; align-items: center; gap: 9px; width: 100%; box-sizing: border-box; border: 0; background: none;
+  cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 600; line-height: 1; color: var(--dk-nav);
+  padding: 8px 10px; border-radius: 8px;
+}
+.dk-topnav-item svg { color: var(--dk-muted); }
+.dk-topnav-item:hover { background: var(--dk-hover); }
+.dk-topnav-item[aria-current="page"] { color: var(--dk-fg); }
+.dk-topnav-item[aria-current="page"] svg { color: var(--dk-accent); }
+.dk-topnav-count {
+  margin-left: auto; font-size: 11px; font-weight: 650; color: var(--dk-muted); background: var(--dk-hover);
+  border-radius: 999px; padding: 3px 7px;
+}

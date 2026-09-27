@@ -1,9 +1,7 @@
 {
   "title": "List and detail · column or cover",
-  "height": 370,
   "variants": [
     { "id": "wide", "label": "Wide" },
     { "id": "narrow", "label": "Narrow" }
-  ],
-  "variantsWidth": 190
+  ]
 }

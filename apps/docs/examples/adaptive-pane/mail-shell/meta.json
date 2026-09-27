@@ -1,9 +1,7 @@
 {
   "title": "Mail shell · column or drawer by width",
-  "height": 390,
   "variants": [
     { "id": "wide", "label": "Wide" },
     { "id": "narrow", "label": "Narrow" }
-  ],
-  "variantsWidth": 190
+  ]
 }

@@ -1,5 +1,4 @@
 {
   "title": "MessageScroller",
-  "height": 440,
-  "theme": "wb"
+  "bleed": true
 }

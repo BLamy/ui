@@ -4,59 +4,30 @@ An IDE-style agent workspace, built from parts. `WorkbenchShell` is a thin layou
 
 ## Installation
 
-{% tabs %}
+{% tabs sync="install" %}
 {% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  WorkbenchShell, WorkbenchSidebar, WorkbenchMain,
-  WorkbenchHeader, ThreadList, ThreadItem, Conversation,
-} from '@brett_lamy/ui'
-```
-{% endtab %}
+{% tabs sync="pm" %}
 {% tab title="pnpm" %}
 ```sh
 pnpm add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  WorkbenchShell, WorkbenchSidebar, WorkbenchMain,
-  WorkbenchHeader, ThreadList, ThreadItem, Conversation,
-} from '@brett_lamy/ui'
+{% endtab %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="yarn" %}
 ```sh
 yarn add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  WorkbenchShell, WorkbenchSidebar, WorkbenchMain,
-  WorkbenchHeader, ThreadList, ThreadItem, Conversation,
-} from '@brett_lamy/ui'
-```
 {% endtab %}
 {% tab title="bun" %}
 ```sh
 bun add @brett_lamy/ui
 ```
+{% endtab %}
+{% endtabs %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
@@ -70,9 +41,28 @@ import {
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
+{% tabs sync="pm" %}
+{% tab title="pnpm" %}
+```sh
+pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json
+```
+{% endtab %}
+{% tab title="npm" %}
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json
 ```
+{% endtab %}
+{% tab title="yarn" %}
+```sh
+yarn dlx shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json
+```
+{% endtab %}
+{% tab title="bun" %}
+```sh
+bunx --bun shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json
+```
+{% endtab %}
+{% endtabs %}
 
 Adds `@/components/ui/workbench-shell.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
@@ -140,13 +130,13 @@ Triggers take an optional `onPress` that replaces their default action. Every pa
 
 | Region | Regular ≥ 1120px | Medium 760–1119px | Compact < 760px |
 | --- | --- | --- | --- |
-| `WorkbenchSidebar` | Column, toggled | Column, toggled | [EdgeDrawer](#edge-drawer) over the whole shell |
+| `WorkbenchSidebar` | Column, toggled | Column, toggled | [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer) over the whole shell |
 | `WorkbenchDock` | Inline, open by default | Inline, closed by default | `SnapSheet` (52% / 93% snaps) |
 | `WorkbenchPanel` | Column (`clamp(300px, 32%, 420px)`), open by default | Right EdgeDrawer over a scrim | A page covering everything above the tab bar |
 | Panel full screen | Covers the whole shell | Covers the whole shell | — |
 | `WorkbenchTabBar` | Not rendered | Not rendered | Bottom bar |
 
-Widths are measured on the shell's own box (`useContainerWidth` → `workbenchWidthClass`), so nested and resizable workbenches behave. The sidebar and panel are [AdaptivePanes](#adaptive-pane); the shell keeps separate state for the wide and compact presentations, so crossing the breakpoint never pops a drawer open.
+Widths are measured on the shell's own box (`useContainerWidth` → `workbenchWidthClass`), so nested and resizable workbenches behave. The sidebar and panel are [AdaptivePanes](https://blamy.github.io/ui/#/adaptive-pane); the shell keeps separate state for the wide and compact presentations, so crossing the breakpoint never pops a drawer open.
 
 ## Context
 

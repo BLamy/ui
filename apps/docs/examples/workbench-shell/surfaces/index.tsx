@@ -14,9 +14,10 @@ import {
   WorkbenchPanelHeader,
   WorkbenchPanelTitle,
   type SurfaceKind,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
-export default function Surfaces() {
+function Surfaces() {
   // null shows the surface picker
   const [kind, setKind] = useState<SurfaceKind | null>(null)
   const meta = SURFACES.find((s) => s.k === kind)
@@ -47,5 +48,14 @@ export default function Surfaces() {
         )}
       </WorkbenchPanel>
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function SurfacesExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <Surfaces />
+    </WorkbenchTheme>
   )
 }

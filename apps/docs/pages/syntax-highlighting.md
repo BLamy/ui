@@ -4,59 +4,30 @@ Code blocks and inline code highlighted by [gpu-lexer](https://gpu-lexer.vercel.
 
 ## Installation
 
-{% tabs %}
+{% tabs sync="install" %}
 {% tab title="npm" %}
-```sh
-npm install @brett_lamy/ui
-```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  SyntaxHighlighting, SyntaxHighlightingHeader,
-  SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,
-} from '@brett_lamy/ui'
-```
-{% endtab %}
+{% tabs sync="pm" %}
 {% tab title="pnpm" %}
 ```sh
 pnpm add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  SyntaxHighlighting, SyntaxHighlightingHeader,
-  SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,
-} from '@brett_lamy/ui'
+{% endtab %}
+{% tab title="npm" %}
+```sh
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="yarn" %}
 ```sh
 yarn add @brett_lamy/ui
 ```
-
-Import the stylesheet once at your app's entry, then the parts from the package root:
-
-```tsx
-import '@brett_lamy/ui/styles.css'
-
-import {
-  SyntaxHighlighting, SyntaxHighlightingHeader,
-  SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,
-} from '@brett_lamy/ui'
-```
 {% endtab %}
 {% tab title="bun" %}
 ```sh
 bun add @brett_lamy/ui
 ```
+{% endtab %}
+{% endtabs %}
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
@@ -70,9 +41,28 @@ import {
 ```
 {% endtab %}
 {% tab title="shadcn CLI" %}
+{% tabs sync="pm" %}
+{% tab title="pnpm" %}
+```sh
+pnpm dlx shadcn@latest add https://blamy.github.io/ui/r/syntax-highlighting.json
+```
+{% endtab %}
+{% tab title="npm" %}
 ```sh
 npx shadcn@latest add https://blamy.github.io/ui/r/syntax-highlighting.json
 ```
+{% endtab %}
+{% tab title="yarn" %}
+```sh
+yarn dlx shadcn@latest add https://blamy.github.io/ui/r/syntax-highlighting.json
+```
+{% endtab %}
+{% tab title="bun" %}
+```sh
+bunx --bun shadcn@latest add https://blamy.github.io/ui/r/syntax-highlighting.json
+```
+{% endtab %}
+{% endtabs %}
 
 Adds `@/components/ui/syntax-highlighting.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
@@ -107,7 +97,7 @@ A filename header with a copy button, a line-number gutter, and a highlighted ra
 
 ### Showing a change
 
-`addedLines` and `removedLines` tint whole lines and add a `+` / `−` column. The code inside keeps its syntax colors. For a full unified diff with two gutters, lay out rows yourself with `useSyntaxTokens` (the [GitHub clone](#/blocks) block's Files changed tab does this).
+`addedLines` and `removedLines` tint whole lines and add a `+` / `−` column. The code inside keeps its syntax colors. For a full unified diff with two gutters, lay out rows yourself with `useSyntaxTokens` (the [GitHub clone](https://blamy.github.io/ui/#/blocks) block's Files changed tab does this).
 
 {% demo src="syntax-highlighting/diff" %}
 

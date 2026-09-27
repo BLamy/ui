@@ -39,7 +39,7 @@ import { Composer, ComposerCard, ComposerInput } from '@/components/ui/composer'
 | --- | --- |
 | `bl-ui` | The package, its stylesheet, and the token utilities (added automatically) |
 | `composer`, `split-view`, `list`, … | `components/ui/<name>.tsx` — one per component page; each page's **Installation** section has its command |
-| `github-clone`, … | A whole app in `components/blocks/<name>/` — see [Blocks](#blocks) |
+| `github-clone`, … | A whole app in `components/blocks/<name>/` — see [Blocks](https://blamy.github.io/ui/#/blocks) |
 
 The index is [`registry.json`](https://blamy.github.io/ui/r/registry.json). With Vite, pre-bundle the Markdown engine, which ships TypeScript source:
 

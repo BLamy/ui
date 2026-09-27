@@ -5,6 +5,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
   type SidebarVariant,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
 /** The dark Workbench palette the Sidebar's --wb-* tokens read. */
@@ -27,7 +28,7 @@ const font =
 const variants: SidebarVariant[] = ['docked', 'rail', 'float', 'overlay']
 
 /** One Sidebar, four variants, plus a narrow container that turns any of them into the overlay. */
-export default function SidebarVariants() {
+function SidebarVariants() {
   const [variant, setVariant] = useState<SidebarVariant>('docked')
   const [narrow, setNarrow] = useState(false)
   return (
@@ -165,5 +166,14 @@ function Chip({
     >
       {children}
     </button>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function SidebarVariantsExample() {
+  return (
+    <WorkbenchTheme>
+      <SidebarVariants />
+    </WorkbenchTheme>
   )
 }

@@ -1,5 +1,4 @@
 {
   "title": "Agent console · runs, logs, steering",
-  "height": 540,
-  "theme": "wb"
+  "bleed": true
 }

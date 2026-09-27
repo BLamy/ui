@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { MarkdownView, MessageScroller, type MessageScrollerItem } from '@brett_lamy/ui'
+import { MarkdownView, MessageScroller, type MessageScrollerItem, WorkbenchTheme } from '@brett_lamy/ui'
 
 const answer =
   'The scroller anchors each new turn near the top, then **follows the live edge** only while you are there.\n\n' +
@@ -31,7 +31,7 @@ function UserBubble({ children }: { children: ReactNode }) {
 
 // While `streaming`, the scroller follows the live edge. Scroll up and it lets go; the jump pill rises in
 // ("Streaming ↓"), and tapping it springs the view back down.
-export default function StreamingJumpPill() {
+function StreamingJumpPill() {
   const [shown, setShown] = useState(0)
   const [run, setRun] = useState(0)
   useEffect(() => {
@@ -107,5 +107,14 @@ export default function StreamingJumpPill() {
         </button>
       </div>
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function StreamingJumpPillExample() {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <StreamingJumpPill />
+    </WorkbenchTheme>
   )
 }

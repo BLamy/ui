@@ -34,11 +34,11 @@ for (const theme of ['light', 'dark']) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 1400, height: 900 });
     await page.goto(`${BASE}/?theme=${theme}#/blocks`, { waitUntil: 'load' });
-    await page.locator('.dk-block').first().waitFor();
+    await page.locator('[data-docstream-demo]').first().waitFor();
     const h = await page.evaluate(() => document.getElementById('bldocs-scroll')?.scrollHeight ?? 900);
     await page.setViewportSize({ width: 1400, height: Math.min(h, 16000) });
     // Each preview lazy-loads once it is near the viewport; wait until no card is still loading.
-    await expect(page.locator('.dk-block-frame .dk-block-loading')).toHaveCount(0, { timeout: 20000 });
+    await expect(page.locator('[data-docstream-demo] .docs-demo-loading')).toHaveCount(0, { timeout: 20000 });
     await page.waitForTimeout(2500);
     await expect(page).toHaveScreenshot(`${name}.png`, { timeout: 15000 });
   });

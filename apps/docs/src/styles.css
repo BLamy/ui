@@ -115,13 +115,7 @@ a:hover {
 .dk-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-/* Docstream pads each article for standalone pages; here markdown is split around live blocks. */
-.dk-md .docs-article {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-/* MarkdownView drops Docstream's page padding and measure (it usually sits in a chat bubble or card); the
-   docs page markdown keeps them. */
+/* The page article: docstream's measure and side padding; the shell supplies the vertical rhythm. */
 .dk-md .wb-md .docs-article {
   max-width: 760px;
   margin: 0 auto;
@@ -216,58 +210,119 @@ a:hover {
   background: var(--dk-hover);
 }
 
-/* Live example cards — Docstream's ReactDemo (.docs-react-demo) themed with the shell palette, so the
-   header, code panel, fade, and View Code pill follow light/dark. The preview itself is a BL/Workbench stage. */
-.bl-live.docs-react-demo {
+/* Docstream themed with the shell palette: the page's own Markdown, tabs, command blocks, page actions and the
+   demo viewers (single-file card and multi-file viewer) all read --gb-* tokens. */
+.dk-md .wb-md :is([data-docstream], .docs-article) {
   --gb-panel: var(--dk-card);
   --gb-panel-foreground: var(--dk-fg);
+  --gb-muted: var(--dk-hover);
   --gb-muted-foreground: var(--dk-muted);
   --gb-border: var(--dk-border4);
   --gb-accent: var(--dk-hover);
+  --gb-accent-foreground: var(--dk-fg);
   --gb-primary: var(--dk-accent);
   --gb-code-bg: var(--dk-code);
+  --gb-code-fg: var(--dk-fg);
   --gb-success: var(--dk-success);
-  margin: 18px 0;
+  --gb-stage: var(--dk-stage);
+  --gb-pill: var(--dk-pill);
+  --gb-pill-shadow: var(--dk-pill-shadow);
+  --gb-hover: var(--dk-hover);
+}
+
+/* "Copy page" sits on the section kicker's row, at the column's right edge. */
+.dk-doc {
+  position: relative;
+}
+.dk-doc .wb-md .docs-page-actions-bar + [data-docstream-blocks] > h1:first-child {
+  margin-top: 45px;
+}
+.dk-doc .docs-page-actions-bar {
+  position: absolute;
+  top: 34px;
+  right: 34px;
+  margin: 0;
+}
+
+/* Demos use the full column, past the article's text padding (like the page's code blocks' container). */
+.dk-md [data-docstream] [data-docstream-blocks] > .docs-demo {
+  margin: 18px -32px;
+}
+.dk-doc-wide .dk-md [data-docstream] [data-docstream-blocks] > .docs-demo {
+  margin: 0 0 18px;
+}
+/* The single-file demo card (preview, code under it). */
+.dk-md .docs-demo-single .docs-react-demo {
+  margin: 0;
   border-radius: 14px;
   color: var(--dk-fg);
 }
-.bl-live .docs-react-demo-header {
+.dk-md .docs-demo-single .docs-react-demo-header {
   flex-wrap: wrap;
   min-height: 46px;
   padding: 7px 8px 7px 14px;
   font-size: 13px;
   font-weight: 650;
 }
-.bl-live .docs-react-demo-status {
-  font-weight: 650;
-  font-size: 10.5px;
+.dk-md .docs-demo-single-preview {
+  min-height: 0;
+  background: none;
 }
-.bl-live .bl-live-switch {
-  margin-left: auto;
-  flex-shrink: 0;
-}
-.bl-live .docs-react-demo-status ~ .bl-live-switch {
-  margin-left: 4px;
-}
-.bl-live .docs-react-demo-code-body,
-.bl-live .docs-react-demo-code-body code {
+.dk-md .docs-react-demo-code-body,
+.dk-md .docs-react-demo-code-body code {
+  font-size: 12.5px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
-.bl-live .docs-react-demo-code-body {
+.dk-md .docs-react-demo-code-body {
   --docs-react-demo-code-line-height: 20px;
   font-size: 12.5px;
   color: var(--dk-fg);
   padding: 14px 16px 44px;
 }
-.bl-live .docs-code-lineno {
+.dk-md .docs-code-lineno {
   color: var(--dk-faint);
 }
-.bl-live .docs-react-demo-code-toggle {
+.dk-md .docs-react-demo-code-toggle {
   bottom: 10px;
   border-radius: 999px;
   padding: 5px 14px;
   font-size: 12px;
   box-shadow: 0 1px 3px var(--dk-shadow);
+}
+
+/* Every demo renders on a BL UI surface: the --bl-* tokens for the docs' appearance, the system font, and a padded
+   block layout (bleed demos bring their own frame; Workbench demos root themselves in WorkbenchTheme). */
+:root .docs-demo-canvas {
+  --bl-bg: #fff; --bl-bg2: #F2F2F7; --bl-card: #fff; --bl-label: #0B0B0F;
+  --bl-label2: rgba(60,60,67,.6); --bl-label3: rgba(60,60,67,.36); --bl-sep: rgba(60,60,67,.22);
+  --bl-fill: rgba(120,120,128,.13); --bl-fill2: rgba(120,120,128,.24); --bl-press: rgba(120,120,128,.16);
+  --bl-tint: #0A84FF; --bl-green: #34C759; --bl-red: #FF3B30;
+  --bl-bar: rgba(250,250,252,.85); --bl-stick: rgba(244,244,248,.92); --bl-side: #ECECF1;
+  --bl-scrim: rgba(0,0,0,.38);
+  display: block;
+  place-items: normal;
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  background: var(--bl-bg2);
+  color: var(--bl-label);
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+:root[data-theme="dark"] .docs-demo-canvas {
+  --bl-bg: #000; --bl-bg2: #0A0A0C; --bl-card: #1C1C1E; --bl-label: #F5F5F7;
+  --bl-label2: rgba(235,235,245,.62); --bl-label3: rgba(235,235,245,.3); --bl-sep: rgba(84,84,88,.48);
+  --bl-fill: rgba(120,120,128,.22); --bl-fill2: rgba(120,120,128,.34); --bl-press: rgba(120,120,128,.22);
+  --bl-tint: #0A84FF; --bl-green: #30D158; --bl-red: #FF453A;
+  --bl-bar: rgba(16,16,18,.82); --bl-stick: rgba(18,18,20,.9); --bl-side: #111114;
+  --bl-scrim: rgba(0,0,0,.5);
+  color-scheme: dark;
+}
+:root .docs-demo-canvas > * {
+  max-width: none;
+}
+:root .docs-demo-canvas.docs-demo-canvas-bleed {
+  padding: 0;
 }
 
 /* @pierre/trees declares `color-scheme: light dark` on its host, so it follows the OS rather than the

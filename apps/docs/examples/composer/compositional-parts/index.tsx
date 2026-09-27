@@ -21,6 +21,7 @@ import {
   ModelPicker,
   WORKBENCH_MODELS,
   WORKBENCH_PROVIDERS,
+  WorkbenchTheme,
 } from '@brett_lamy/ui'
 
 const efforts = [
@@ -130,7 +131,7 @@ function Transcript({ scroller }: { scroller: RefObject<HTMLDivElement | null> }
 // Scroll → FAB (collapseOnScroll): the transcript opens at its newest message; scrolling up folds the
 // composer to one row, a flick or a long read folds it into a FAB; scrolling back down — or tapping the
 // FAB — restores it.
-export default function CompositionalParts({ variant = 'full' }: { variant?: string }) {
+function CompositionalParts({ variant = 'full' }: { variant?: string }) {
   const [streaming, setStreaming] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const scroller = useRef<HTMLDivElement>(null)
@@ -235,5 +236,14 @@ export default function CompositionalParts({ variant = 'full' }: { variant?: str
         <div style={{ maxWidth: 620, margin: '0 auto' }}>{composer}</div>
       </div>
     </div>
+  )
+}
+
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+export default function CompositionalPartsExample({ variant }: { variant?: string }) {
+  return (
+    <WorkbenchTheme style={{ padding: 18 }}>
+      <CompositionalParts variant={variant} />
+    </WorkbenchTheme>
   )
 }

@@ -1,11 +1,10 @@
 /* BL UI documentation shell — pixel-faithful port of project/BL UI Docs.dc.html. */
 import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { AppearanceProvider, type Appearance } from '@brett_lamy/ui';
-import { DemoDoc } from '../demo-adapter';
-import { BLOCK_SLUGS } from '../demo-resolver';
-import { NAV, PAGES, PAGE_ORDER, pageSource } from '../pages';
-import './registry-ui.css';
-import { CopyPage } from './copy-page';
+import { GitbookStreamdown } from '@brett_lamy/docstream';
+import { BLOCK_COUNT, demoResolver } from '../demos';
+import { NAV, PAGES, PAGE_ORDER, pageMdPath, pageSource, pageUrl, SITE_URL } from '../pages';
+import './shell.css';
 
 const SCROLL_ID = 'bldocs-scroll';
 const BLOCKS_ID = 'blocks';
@@ -84,7 +83,7 @@ function NavList({ slug, pick }: { slug: string; pick: (id: string) => void }) {
         <button className="dk-topnav-item" data-page={BLOCKS_ID} aria-current={onBlocks ? 'page' : undefined} onClick={() => pick(BLOCKS_ID)}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" /></svg>
           Blocks
-          <span className="dk-topnav-count">{BLOCK_SLUGS.length}</span>
+          <span className="dk-topnav-count">{BLOCK_COUNT}</span>
         </button>
       </div>
       {NAV.sections.map((sec) => (
@@ -112,6 +111,21 @@ function NavFooter() {
       <div><a href="https://github.com/BLamy/ui/tree/main/project">Prototype source →</a></div>
       <div><a href="https://github.com/BLamy/ui">GitHub repository →</a></div>
       <div style={{ fontSize: 10.5, color: 'var(--dk-faint)', fontFamily: 'ui-monospace,Menlo,monospace', marginTop: 4 }}>rendered with Docstream</div>
+    </div>
+  );
+}
+
+/** One page: its Markdown file through docstream — demos from the resolver, "Copy page" from page actions. */
+function DocPage({ id, markdown }: { id: string; markdown: string }) {
+  return (
+    <div className="dk-md">
+      <div className="wb-md">
+        <GitbookStreamdown
+          markdown={markdown}
+          demoResolver={demoResolver}
+          pageActions={{ markdownUrl: `${import.meta.env.BASE_URL}${pageMdPath(id)}`, pageUrl: pageUrl(id) }}
+        />
+      </div>
     </div>
   );
 }
@@ -167,22 +181,20 @@ export default function App() {
     setTimeout(() => { const sc = document.getElementById(SCROLL_ID); if (sc) sc.scrollTop = 0; }, 30);
   };
 
-  /* Headings come from markdown segments only, so live demos' own headings never shift the TOC index. */
+  /* Headings come from the page's Markdown only, so demos' own headings never shift the TOC index. */
   const jumpHead = (index: number) => {
     const sc = document.getElementById(SCROLL_ID); if (!sc) return;
-    const h = sc.querySelectorAll('.dk-md h2, .dk-md h3')[index];
+    const h = sc.querySelectorAll('.dk-md :is(h2, h3):not(.docs-demo *)')[index];
     if (h) sc.scrollTop += h.getBoundingClientRect().top - sc.getBoundingClientRect().top - 22;
   };
 
-  /* Internal page links: [Text](#page-id) navigates when the target matches a page id. */
+  /* Links to another docs page (https://blamy.github.io/ui/#/<id> in the Markdown) navigate in place. */
   const onDocClick = (e: MouseEvent) => {
     const a = (e.target as HTMLElement).closest('a');
     if (!a) return;
     const href = a.getAttribute('href') || '';
-    if (!href.startsWith('#')) return;
-    const target = href.slice(1);
-    if (PAGES[target]) { e.preventDefault(); pick(target); }
-    else e.preventDefault(); /* the prototype's dead '#' links — don't jump the scroller */
+    const target = href.startsWith(`${SITE_URL}/#/`) ? href.slice(SITE_URL.length + 3) : null;
+    if (target && PAGES[target]) { e.preventDefault(); pick(target); }
   };
 
   const drawerStyle: CSSProperties = {
@@ -236,9 +248,8 @@ export default function App() {
           }}>
             <div className="dk-pagehead">
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-accent)' }}>{page.section}</div>
-              <CopyPage page={slug} />
             </div>
-            <DemoDoc key={slug} markdown={markdown} />
+            <DocPage key={slug} id={slug} markdown={markdown} />
             <div style={{ display: 'flex', gap: 12, marginTop: 44 }}>
               {pn(prev, 'prev')}
               {pn(next, 'next')}

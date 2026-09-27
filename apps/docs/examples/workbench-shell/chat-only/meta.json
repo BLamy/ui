@@ -1,5 +1,4 @@
 {
   "title": "Chat only · sidebar and conversation",
-  "height": 480,
-  "theme": "wb"
+  "bleed": true
 }
