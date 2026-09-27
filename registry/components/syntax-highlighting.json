@@ -1,0 +1,28 @@
+{
+  "name": "syntax-highlighting",
+  "title": "SyntaxHighlighting",
+  "description": "Code highlighted on the GPU by gpu-lexer: file header, copy button, line numbers, highlighted and diff lines, inline code.",
+  "page": "syntax-highlighting",
+  "exports": [
+    "SyntaxHighlighting",
+    "SyntaxHighlightingHeader",
+    "SyntaxHighlightingTitle",
+    "SyntaxHighlightingCopyButton",
+    "SyntaxHighlightingContent",
+    "SyntaxTokens",
+    "syntaxHighlightingVariants",
+    "useSyntaxTokens",
+    "useSyntaxHighlighting",
+    "lexSyntax",
+    "webgpuSupported",
+    "languageFromPath",
+    "tokenizeLines"
+  ],
+  "types": [
+    "SyntaxToken",
+    "SyntaxTokenType",
+    "SyntaxSpan",
+    "SyntaxHighlighter",
+    "SyntaxResult"
+  ]
+}

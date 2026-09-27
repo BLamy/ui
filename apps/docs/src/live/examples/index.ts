@@ -12,6 +12,7 @@ import { NAVIGATION_STACK_LIVE } from './navigation-stack'
 import { PENCILKIT_LIVE } from './pencilkit'
 import { SIDE_DRAWER_LIVE } from './side-drawer'
 import { SIDEBAR_LIVE } from './sidebar'
+import { SYNTAX_HIGHLIGHTING_LIVE } from './syntax-highlighting'
 import { TAB_VIEW_LIVE } from './tab-view'
 import { THEMING_LIVE } from './theming'
 
@@ -30,4 +31,5 @@ export const EXAMPLES_LIVE: Record<string, LiveSpec> = {
   ...SIDEBAR_LIVE,
   ...ADAPTIVE_PANE_LIVE,
   ...PENCILKIT_LIVE,
+  ...SYNTAX_HIGHLIGHTING_LIVE,
 }

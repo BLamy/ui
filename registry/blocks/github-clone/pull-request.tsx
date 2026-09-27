@@ -7,9 +7,11 @@ import {
 import { ME, PR_CHECKS, PR_COMMITS, PR_FILES, PR_TIMELINE, PULLS, USERS, type FileNode, type PullRequest, type TimelineItem } from './data';
 import { AvatarStack, Box, DiffStat, DiffView, FileTree, FlowPanel, LabelChip, Oct, StatePill, UnderlineTab, ghButton, githubMarkdown, Branch, PR_STATE, type OctName, type Layout, type Nav } from './parts';
 
-export function PullRequestView({ ui, number, nav }: { ui: Layout; number: number; nav: Nav }) {
+export type PullRequestTab = 'conversation' | 'commits' | 'checks' | 'files';
+
+export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }: { ui: Layout; number: number; nav: Nav; initialTab?: PullRequestTab }) {
   const p = PULLS.find((x) => x.number === number) ?? PULLS[0];
-  const [sub, setSub] = useState<string>('conversation');
+  const [sub, setSub] = useState<string>(initialTab);
   return (
     <div className={cn(ui.phone && 'px-4 py-4')}>
       {!ui.phone ? (

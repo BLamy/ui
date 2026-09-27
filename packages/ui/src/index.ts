@@ -172,6 +172,16 @@ export { Progress, progressVariants, progressIndicatorVariants } from './compone
 export type { ProgressProps } from './components/progress';
 export { Form, FormSection } from './components/form';
 export type { FormSectionProps } from './components/form';
+export {
+  SyntaxHighlighting, SyntaxHighlightingHeader, SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,
+  SyntaxHighlightingContent, SyntaxTokens, syntaxHighlightingVariants, useSyntaxTokens, useSyntaxHighlighting,
+} from './components/syntax-highlighting';
+export type {
+  SyntaxHighlightingProps, SyntaxHighlightingContentProps, SyntaxHighlightingCopyButtonProps, SyntaxLineRange,
+  UseSyntaxTokensOptions, SyntaxTokensState,
+} from './components/syntax-highlighting';
+export { lexSyntax, webgpuSupported, languageFromPath, tokenizeLines } from './lib/syntax';
+export type { SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, SyntaxResult } from './lib/syntax';
 // ── end shadcn primitives ──
 
 // ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──

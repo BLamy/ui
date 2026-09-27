@@ -40,3 +40,33 @@ export const PullRequest: Story = {
   args: { initialPullRequest: 488 },
   render: (args) => <Full><GithubClone {...args} /></Full>,
 };
+
+/** The Code tab's file viewer: SyntaxHighlighting with GitHub's gutter and Primer colors. */
+export const FileView: Story = {
+  args: { initialPath: 'src/queue.ts' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+export const FileViewDark: Story = {
+  args: { initialPath: 'src/queue.ts' },
+  render: (args) => (
+    <AppearanceProvider value="dark">
+      <Full><GithubClone {...args} /></Full>
+    </AppearanceProvider>
+  ),
+};
+
+/** Files changed: +/- rows and gutters, syntax colors inside the lines. */
+export const FilesChanged: Story = {
+  args: { initialPullRequest: 488, initialPullRequestTab: 'files' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+export const FilesChangedDark: Story = {
+  args: { initialPullRequest: 488, initialPullRequestTab: 'files' },
+  render: (args) => (
+    <AppearanceProvider value="dark">
+      <Full><GithubClone {...args} /></Full>
+    </AppearanceProvider>
+  ),
+};
