@@ -889,6 +889,133 @@
       }
     },
     {
+      "name": "apple-reminders",
+      "type": "registry:block",
+      "title": "Apple Reminders",
+      "description": "Apple Reminders: smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts, colored lists with sections, circular checkboxes that spring filled with a haptic tick, inline add, a details sheet (notes, date and time, flag, priority, subtasks), show/clear completed, search, and a small burst when a list is cleared. Sidebar and list side by side on wide screens; the lists screen pushes the list on phones. Tints with each list's color, light and dark.",
+      "categories": [
+        "application",
+        "productivity"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/apple-reminders/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/page.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/sidebar.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/list-view.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/list-view.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/reminder-row.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/reminder-row.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/details.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/details.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/views.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/views.ts"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/store.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/store.ts"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/glyphs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/glyphs.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/apple-reminders/page.tsx"
+      }
+    },
+    {
+      "name": "apple-settings",
+      "type": "registry:block",
+      "title": "Apple Settings",
+      "description": "iOS, iPadOS and macOS Settings in one block: search, an Apple Account header, inset groups with colored icon tiles, and drill-down panes with switches, sliders, pickers and segmented controls. macOS System Settings at desktop, an iPad split on tablets, and a large-title navigation stack on phones. Display & Brightness switches light and dark live.",
+      "categories": [
+        "application",
+        "settings"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/apple-settings/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-settings/page.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-settings/sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-settings/sidebar.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-settings/detail.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-settings/detail.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-settings/phone.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-settings/phone.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-settings/rows.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-settings/rows.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-settings/state.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-settings/state.ts"
+        },
+        {
+          "path": "registry/blocks/apple-settings/glyphs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-settings/glyphs.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-settings/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-settings/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/apple-settings/page.tsx"
+      }
+    },
+    {
       "name": "discord-clone",
       "type": "registry:block",
       "title": "Discord clone",
