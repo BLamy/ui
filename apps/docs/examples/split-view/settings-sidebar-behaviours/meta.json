@@ -1,0 +1,19 @@
+{
+  "title": "SplitView · Settings, sidebar behaviours",
+  "height": 560,
+  "variants": [
+    {
+      "id": "tile",
+      "label": "Tile"
+    },
+    {
+      "id": "overlay",
+      "label": "Overlay"
+    },
+    {
+      "id": "displace",
+      "label": "Displace"
+    }
+  ],
+  "variantsWidth": 260
+}

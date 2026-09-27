@@ -1,0 +1,10 @@
+{
+  "title": "One content, three presentations",
+  "height": 370,
+  "variants": [
+    { "id": "wide", "label": "Wide" },
+    { "id": "tablet", "label": "Tablet" },
+    { "id": "phone", "label": "Phone" }
+  ],
+  "variantsWidth": 260
+}

@@ -1,0 +1,19 @@
+{
+  "title": "SplitView · Mail, three columns",
+  "height": 600,
+  "variants": [
+    {
+      "id": "regular",
+      "label": "Regular"
+    },
+    {
+      "id": "medium",
+      "label": "Medium"
+    },
+    {
+      "id": "compact",
+      "label": "Compact"
+    }
+  ],
+  "variantsWidth": 280
+}

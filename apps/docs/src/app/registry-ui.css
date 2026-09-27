@@ -17,12 +17,11 @@
   --dk-stage: #0A0A0C;
 }
 /* HlPre's token colors (it falls back to dark literals) */
-.dk-code,
 .dk-block-source {
   --wb-hl-kw: #A626A4; --wb-hl-str: #3E8B3A; --wb-hl-num: #986801; --wb-hl-com: #9A9AA3; --wb-hl-fn: #3563D9;
   --wb-hl-tag: #D2403A; --wb-hl-attr: #B06A00; --wb-hl-punc: #0B7FA8; --wb-hl-id: #24242B;
 }
-:root[data-theme="dark"] :is(.dk-code, .dk-block-source) {
+:root[data-theme="dark"] .dk-block-source {
   --wb-hl-kw: #C678DD; --wb-hl-str: #98C379; --wb-hl-num: #D19A66; --wb-hl-com: #6E6E79; --wb-hl-fn: #61AFEF;
   --wb-hl-tag: #E06C75; --wb-hl-attr: #E5C07B; --wb-hl-punc: #56B6C2; --wb-hl-id: #DCDCE3;
 }
@@ -60,22 +59,6 @@
 .dk-menu-label svg { color: var(--dk-faint); }
 .dk-menu-hint { font-size: 11.5px; color: var(--dk-muted); }
 
-/* Headings / text outside Markdown */
-.dk-h1 { font-size: 30px; font-weight: 750; letter-spacing: -.6px; margin: 6px 0 10px; }
-.dk-h2 { font-size: 19px; font-weight: 700; letter-spacing: -.2px; margin: 0; }
-.dk-kicker { font-size: 11px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--dk-accent); }
-.dk-lead { font-size: 15px; line-height: 1.65; color: var(--dk-toc); max-width: 720px; margin: 0 0 30px; }
-:is(.dk-lead, .dk-install-note, .dk-block-add) code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86em; padding: 1px 5px; border-radius: 5px;
-  background: var(--dk-code); border: 1px solid var(--dk-border2); color: var(--dk-fg);
-}
-
-/* Installation */
-.dk-install { margin: 22px 0 26px; padding: 6px 32px 0; }
-.dk-install-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-.dk-install-body { display: flex; flex-direction: column; gap: 10px; }
-.dk-install-note { margin: 4px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--dk-toc); }
-
 /* Pill tabs */
 .dk-tabs { display: inline-flex; padding: 2px; gap: 2px; border-radius: 9px; background: var(--dk-hover); }
 .dk-tab {
@@ -86,17 +69,6 @@
 .dk-tab-pill { position: absolute; inset: 0; border-radius: 7px; background: var(--dk-pill); box-shadow: var(--dk-pill-shadow); }
 
 /* Code blocks */
-.dk-code { border: 1px solid var(--dk-border3); border-radius: 12px; background: var(--dk-codebg); overflow: hidden; }
-.dk-code-head {
-  display: flex; align-items: center; gap: 8px; padding: 5px 6px 5px 10px; background: var(--dk-codehead);
-  border-bottom: 1px solid var(--dk-border2);
-}
-.dk-code-head .dk-tabs { background: none; padding: 0; }
-.dk-code-head .dk-tab { padding: 5px 8px; font-size: 12px; font-weight: 500; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-.dk-code-term {
-  display: grid; place-items: center; width: 20px; height: 20px; border-radius: 5px; background: var(--dk-fg); color: var(--dk-bg);
-  opacity: .85; flex-shrink: 0;
-}
 .dk-code-body { position: relative; display: flex; }
 .dk-code-body pre {
   flex: 1; min-width: 0; margin: 0; padding: 13px 16px; overflow-x: auto; background: none; border: 0;
@@ -175,9 +147,6 @@
 }
 .dk-block-source-body { flex: 1; min-height: 0; overflow: auto; }
 .dk-block-source-body pre { overflow: visible; }
-.dk-block-foot { margin-top: 10px; }
-.dk-block-add { font-size: 13px; line-height: 1.6; color: var(--dk-toc); border-top: 1px solid var(--dk-border); padding-top: 18px; }
-.dk-block-add strong { color: var(--dk-fg); font-weight: 650; }
 @media (max-width: 640px) {
   .dk-block-stage, .dk-block-code { height: 640px; }
   .dk-block-files { display: none; }

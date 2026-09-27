@@ -6,7 +6,7 @@ export interface ComponentEntry {
   name: string;
   title: string;
   description: string;
-  /** Docs page id (apps/docs/src/content.ts) that shows this entry's install instructions. */
+  /** Docs page id (apps/docs/pages/<page>.md) whose Installation section tools/docs/install-md.mjs writes from this entry. */
   page: string;
   /** Value exports re-exported by the component file. The first is the one the docs import line leads with. */
   exports: string[];

@@ -1,0 +1,61 @@
+{
+  "sections": [
+    {
+      "section": "Getting started",
+      "pages": [
+        { "id": "introduction", "title": "Introduction" },
+        { "id": "installation", "title": "Installation" },
+        { "id": "theming", "title": "Theming" },
+        { "id": "motion", "title": "Motion" },
+        { "id": "haptics", "title": "Haptics" }
+      ]
+    },
+    {
+      "section": "Atoms",
+      "pages": [
+        { "id": "docstream", "title": "Markdown" },
+        { "id": "markdown-editor", "title": "MarkdownEditor" },
+        { "id": "syntax-highlighting", "title": "SyntaxHighlighting" }
+      ]
+    },
+    {
+      "section": "Molecules",
+      "pages": [
+        { "id": "composer", "title": "Composer" },
+        { "id": "tab-view", "title": "TabView" },
+        { "id": "edge-drawer", "title": "EdgeDrawer" }
+      ]
+    },
+    {
+      "section": "Organisms",
+      "pages": [
+        { "id": "navigation-stack", "title": "NavigationStack" },
+        { "id": "split-view", "title": "SplitView" },
+        { "id": "lists", "title": "Lists" },
+        { "id": "credenza", "title": "Credenza" },
+        { "id": "side-drawer", "title": "SideDrawer" },
+        { "id": "sidebar", "title": "Sidebar" },
+        { "id": "adaptive-pane", "title": "AdaptivePane" },
+        { "id": "message-scroller", "title": "MessageScroller" },
+        { "id": "floating-sheet", "title": "FloatingSheet" },
+        { "id": "pencilkit", "title": "PencilKit" }
+      ]
+    },
+    {
+      "section": "Templates",
+      "pages": [
+        { "id": "artifact-chat-container", "title": "ArtifactChatContainer" },
+        { "id": "chat-shell", "title": "ChatShell" },
+        { "id": "workbench-shell", "title": "WorkbenchShell" }
+      ]
+    }
+  ],
+  "standalone": [
+    {
+      "id": "blocks",
+      "title": "Blocks",
+      "section": "Blocks",
+      "wide": true
+    }
+  ]
+}

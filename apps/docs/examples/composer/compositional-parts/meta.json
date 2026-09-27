@@ -1,0 +1,20 @@
+{
+  "title": "Composer · compositional parts",
+  "height": 380,
+  "variants": [
+    {
+      "id": "full",
+      "label": "Full"
+    },
+    {
+      "id": "compact",
+      "label": "Compact"
+    },
+    {
+      "id": "scroll",
+      "label": "Scroll → FAB"
+    }
+  ],
+  "variantsWidth": 300,
+  "theme": "wb"
+}

@@ -1,0 +1,9 @@
+{
+  "title": "FloatingSheet · glass ↔ card, morphing in place",
+  "height": 640,
+  "variants": [
+    { "id": "glass", "label": "Glass" },
+    { "id": "sheet", "label": "Card" }
+  ],
+  "variantsWidth": 180
+}

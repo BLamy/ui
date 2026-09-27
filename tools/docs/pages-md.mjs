@@ -2,32 +2,66 @@
 /* Writes every docs page as Markdown to apps/docs/public/md/<page>.md (served at /ui/md/<page>.md — "View as
  * Markdown" and the ChatGPT / Claude links point there), plus apps/docs/public/llms.txt indexing them.
  *
- * The Markdown comes from the same pageMarkdown() the "Copy page" button uses (apps/docs/src/app/page-markdown.ts):
- * it reads each live example's code from the example registry, so the docs app is bundled for Node first
- * (a Vite SSR build into apps/docs/node_modules/.md-ssr) and imported here. */
+ * Each page is its Markdown file (apps/docs/pages/<id>.md) with every `{% demo src="…" %}` replaced by the example's
+ * real files, read from disk: apps/docs/examples/<page>/<example>/ (entry first) or, for `blocks/<slug>`, the files
+ * listed in registry/blocks/<slug>/meta.json. The transform is apps/docs/src/page-md.ts — the same one "Copy page"
+ * uses — imported directly (Node strips its types). Fails if a demo is missing or an Installation section is stale. */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { pageList, pageMarkdown, splitDemos } from '../../apps/docs/src/page-md.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const DOCS = join(ROOT, 'apps/docs');
-const SSR_OUT = join(DOCS, 'node_modules/.md-ssr');
 const MD_OUT = join(DOCS, 'public/md');
+const SITE = 'https://blamy.github.io/ui';
 
-execFileSync(
-  join(ROOT, 'node_modules/.bin/vite'),
-  ['build', '--config', 'vite.config.mts', '--ssr', 'src/app/page-markdown.ts', '--outDir', SSR_OUT, '--emptyOutDir', '--logLevel', 'error'],
-  { cwd: DOCS, stdio: ['ignore', 'ignore', 'inherit'] },
-);
+execFileSync(process.execPath, [join(ROOT, 'tools/docs/install-md.mjs'), '--check'], { stdio: 'inherit' });
 
-const { pageMarkdown, PAGE_INDEX } = await import(pathToFileURL(join(SSR_OUT, 'page-markdown.mjs')).href);
+const walk = (dir) => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]));
+
+/** A demo's title and files, entry first — straight from disk. */
+function demo(src) {
+  if (src.startsWith('blocks/')) {
+    const dir = join(ROOT, 'registry/blocks', src.slice('blocks/'.length));
+    if (!existsSync(join(dir, 'meta.json'))) return undefined;
+    const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
+    return { title: meta.title, files: meta.files.map((f) => [f, readFileSync(join(dir, f), 'utf8')]) };
+  }
+  const dir = join(DOCS, 'examples', src);
+  if (!existsSync(join(dir, 'meta.json'))) return undefined;
+  const meta = JSON.parse(readFileSync(join(dir, 'meta.json'), 'utf8'));
+  const entry = meta.entry ?? 'index.tsx';
+  const names = walk(dir)
+    .map((f) => relative(dir, f))
+    .filter((f) => f !== 'meta.json')
+    .sort((a, b) => (a === entry ? -1 : b === entry ? 1 : a.localeCompare(b)));
+  return { title: meta.title, files: names.map((f) => [f, readFileSync(join(dir, f), 'utf8')]) };
+}
+
+const nav = JSON.parse(readFileSync(join(DOCS, 'pages/nav.json'), 'utf8'));
+const pages = pageList(nav);
+const isPage = (id) => pages.some((p) => p.id === id);
+const missing = [];
+
 rmSync(MD_OUT, { recursive: true, force: true });
 mkdirSync(MD_OUT, { recursive: true });
-for (const { id } of PAGE_INDEX) writeFileSync(join(MD_OUT, `${id}.md`), pageMarkdown(id));
+for (const page of pages) {
+  const md = readFileSync(join(DOCS, 'pages', `${page.id}.md`), 'utf8');
+  for (const s of splitDemos(md)) if (s.kind === 'demo' && !demo(s.src)) missing.push(`${page.id}: ${s.src}`);
+  writeFileSync(join(MD_OUT, `${page.id}.md`), pageMarkdown(md, { page, siteUrl: SITE, isPage, demo }));
+}
+const blocksMd = readFileSync(join(DOCS, 'pages/blocks.md'), 'utf8');
+for (const slug of readdirSync(join(ROOT, 'registry/blocks'))) {
+  if (existsSync(join(ROOT, 'registry/blocks', slug, 'meta.json')) && !blocksMd.includes(`src="blocks/${slug}"`)) missing.push(`blocks: blocks/${slug} (registry block not on the Blocks page)`);
+}
+if (missing.length) {
+  console.error(`pages-md: missing examples\n  ${missing.join('\n  ')}`);
+  process.exit(1);
+}
 
-const SITE = 'https://blamy.github.io/ui';
-const sections = [...new Set(PAGE_INDEX.map((p) => p.section))];
+const sections = [...new Set(pages.map((p) => p.section))];
 const llms = [
   '# BL UI',
   '',
@@ -36,7 +70,7 @@ const llms = [
   ...sections.flatMap((s) => [
     `## ${s}`,
     '',
-    ...PAGE_INDEX.filter((p) => p.section === s).map((p) => `- [${p.title}](${SITE}/md/${p.id}.md)`),
+    ...pages.filter((p) => p.section === s).map((p) => `- [${p.title}](${SITE}/md/${p.id}.md)`),
     '',
   ]),
   '## Registry',
@@ -45,6 +79,4 @@ const llms = [
   '',
 ].join('\n');
 writeFileSync(join(DOCS, 'public/llms.txt'), llms);
-console.log(`pages-md: ${PAGE_INDEX.length} pages → apps/docs/public/md, llms.txt`);
-// The bundled app leaves timers running (haptics, motion); nothing else to wait for.
-process.exit(0);
+console.log(`pages-md: ${pages.length} pages → apps/docs/public/md, llms.txt`);

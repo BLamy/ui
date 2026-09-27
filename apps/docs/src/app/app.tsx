@@ -1,15 +1,11 @@
 /* BL UI documentation shell — pixel-faithful port of project/BL UI Docs.dc.html. */
 import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
-import { AppearanceProvider, MarkdownView, type Appearance } from '@brett_lamy/ui';
-import { NAV, PAGES, PAGE_ORDER } from '../content';
-import { DocsLive } from '../live/docs-live';
-import { AppDemoBlock, HapticsDemoBlock, PencilDemoBlock, WorkbenchDemoBlock } from '../live/demo-blocks';
+import { AppearanceProvider, type Appearance } from '@brett_lamy/ui';
+import { DemoDoc } from '../demo-adapter';
+import { BLOCK_SLUGS } from '../demo-resolver';
+import { NAV, PAGES, PAGE_ORDER, pageSource } from '../pages';
 import './registry-ui.css';
-import { BlocksPage } from './blocks';
 import { CopyPage } from './copy-page';
-import { InstallSection } from './install-section';
-import { splitLead } from './page-markdown';
-import { BLOCKS, installFor } from './registry';
 
 const SCROLL_ID = 'bldocs-scroll';
 const BLOCKS_ID = 'blocks';
@@ -18,7 +14,7 @@ const BLOCKS_ID = 'blocks';
 function slugFromHash(): string {
   if (typeof window === 'undefined') return 'introduction';
   const id = window.location.hash.replace(/^#\/?/, '');
-  return id === BLOCKS_ID || PAGES[id] ? id : 'introduction';
+  return PAGES[id] ? id : 'introduction';
 }
 const THEME_KEY = 'bldocs-theme';
 
@@ -88,19 +84,19 @@ function NavList({ slug, pick }: { slug: string; pick: (id: string) => void }) {
         <button className="dk-topnav-item" data-page={BLOCKS_ID} aria-current={onBlocks ? 'page' : undefined} onClick={() => pick(BLOCKS_ID)}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" /></svg>
           Blocks
-          <span className="dk-topnav-count">{BLOCKS.length}</span>
+          <span className="dk-topnav-count">{BLOCK_SLUGS.length}</span>
         </button>
       </div>
-      {NAV.map((sec) => (
+      {NAV.sections.map((sec) => (
         <div key={sec.section}>
           <div style={{ padding: '16px 10px 5px', fontSize: 10.5, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-muted)' }}>{sec.section}</div>
           {sec.pages.map((p) => {
-            const active = p === slug;
+            const active = p.id === slug;
             return (
-              <button key={p} data-page={p} className="dk-nav" onClick={() => pick(p)}
+              <button key={p.id} data-page={p.id} className="dk-nav" onClick={() => pick(p.id)}
                 aria-current={active ? 'page' : undefined}
                 style={active ? { background: 'var(--dk-active)', color: 'var(--dk-accent)', fontWeight: 600 } : undefined}>
-                {PAGES[p]?.title || p}
+                {p.title}
               </button>
             );
           })}
@@ -118,37 +114,6 @@ function NavFooter() {
       <div style={{ fontSize: 10.5, color: 'var(--dk-faint)', fontFamily: 'ui-monospace,Menlo,monospace', marginTop: 4 }}>rendered with Docstream</div>
     </div>
   );
-}
-
-interface Seg { key: string; md?: string; demo?: string; live?: string; install?: boolean }
-
-/** Markdown segments between live blocks; a page with a registry entry gets its Installation after the lead. */
-function parseSegs(slug: string, md: string): Seg[] {
-  const segs: Seg[] = [];
-  if (installFor(slug)) {
-    const [lead, rest] = splitLead(md || '');
-    if (lead) segs.push({ key: slug + '-lead', md: lead });
-    segs.push({ key: slug + '-install', install: true });
-    md = rest;
-  }
-  const parts = (md || '').split(/^%%(demo|live):(\w+)%%$/m);
-  for (let i = 0; i < parts.length; i += 3) {
-    const text = parts[i];
-    if (text && text.trim()) segs.push({ key: slug + '-m' + i, md: text.trim() });
-    const kind = parts[i + 1];
-    const name = parts[i + 2];
-    if (!kind) continue;
-    segs.push({ key: slug + '-x' + i, [kind]: name } as Seg);
-  }
-  return segs;
-}
-
-function DemoBlock({ name }: { name: string }) {
-  if (name === 'haptics') return <HapticsDemoBlock />;
-  if (name === 'workbench') return <WorkbenchDemoBlock />;
-  if (name === 'pencil') return <PencilDemoBlock />;
-  if (name === 'app') return <AppDemoBlock />;
-  return null;
 }
 
 export default function App() {
@@ -174,16 +139,15 @@ export default function App() {
     return () => window.removeEventListener('resize', onR);
   }, []);
 
-  const blocks = slug === BLOCKS_ID;
-  const page = PAGES[slug] || { id: slug, section: '', title: '', markdown: '' };
-  useEffect(() => { document.title = blocks ? 'Blocks — BL UI' : page.title ? `${page.title} — BL UI` : 'BL UI'; }, [blocks, page.title]);
+  const page = PAGES[slug];
+  const markdown = pageSource(slug);
+  useEffect(() => { document.title = `${page.title} — BL UI`; }, [page.title]);
   const idx = PAGE_ORDER.indexOf(slug);
   const prev = idx > 0 ? PAGE_ORDER[idx - 1] : null;
   const next = idx >= 0 && idx < PAGE_ORDER.length - 1 ? PAGE_ORDER[idx + 1] : null;
-  const segs = parseSegs(slug, page.markdown);
   const toc: Array<{ text: string; h3: boolean }> = [];
   let fenced = false;
-  segs.flatMap((sg) => (sg.install ? ['## Installation'] : (sg.md ?? '').split('\n'))).forEach((l) => {
+  markdown.split('\n').forEach((l) => {
     if (l.startsWith('```')) fenced = !fenced;
     if (fenced) return;
     const m2 = l.match(/^## (.+)$/);
@@ -194,10 +158,10 @@ export default function App() {
 
   const fixedNav = w >= 900;
   const overlayNav = w < 900;
-  const hasToc = !blocks && toc.length > 0 && w >= 1220;
+  const hasToc = !page.wide && toc.length > 0 && w >= 1220;
 
   const pick = (id: string) => {
-    if (!PAGES[id] && id !== BLOCKS_ID) return;
+    if (!PAGES[id]) return;
     if (window.location.hash !== '#/' + id) window.history.pushState(null, '', '#/' + id);
     setSlug(id); setNavOpen(false);
     setTimeout(() => { const sc = document.getElementById(SCROLL_ID); if (sc) sc.scrollTop = 0; }, 30);
@@ -217,7 +181,7 @@ export default function App() {
     const href = a.getAttribute('href') || '';
     if (!href.startsWith('#')) return;
     const target = href.slice(1);
-    if (PAGES[target] || target === BLOCKS_ID) { e.preventDefault(); pick(target); }
+    if (PAGES[target]) { e.preventDefault(); pick(target); }
     else e.preventDefault(); /* the prototype's dead '#' links — don't jump the scroller */
   };
 
@@ -261,35 +225,25 @@ export default function App() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16" /></svg>
             </button>
             <span style={{ fontSize: 13.5, fontWeight: 700 }}>BL UI Docs</span>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--dk-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>/ {blocks ? 'Blocks' : page.title}</span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--dk-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>/ {page.title}</span>
             {theme}
           </div>
         ) : null}
         <div id={SCROLL_ID} className="dk-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-          {blocks ? (
-            <div className="dk-doc dk-doc-wide" style={{ maxWidth: 1240, margin: '0 auto', padding: w < 600 ? '26px 14px 90px' : '34px 34px 90px', boxSizing: 'border-box' }}>
-              <BlocksPage />
-            </div>
-          ) : (
-          <div className="dk-doc" onClick={onDocClick} style={{ maxWidth: 780, margin: '0 auto', padding: '34px 34px 90px', boxSizing: 'border-box' }}>
+          <div className={page.wide ? 'dk-doc dk-doc-wide' : 'dk-doc'} onClick={onDocClick} style={{
+            maxWidth: page.wide ? 1240 : 780, margin: '0 auto', boxSizing: 'border-box',
+            padding: page.wide && w < 600 ? '26px 14px 90px' : '34px 34px 90px',
+          }}>
             <div className="dk-pagehead">
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-accent)' }}>{page.section}</div>
               <CopyPage page={slug} />
             </div>
-            {segs.map((seg) => (
-              <div key={seg.key}>
-                {seg.install ? <div className="dk-md"><InstallSection entry={installFor(slug)!} /></div> : null}
-                {seg.md ? <div className="dk-md"><MarkdownView markdown={seg.md} /></div> : null}
-                {seg.demo ? <DemoBlock name={seg.demo} /> : null}
-                {seg.live ? <DocsLive demo={seg.live} /> : null}
-              </div>
-            ))}
+            <DemoDoc key={slug} markdown={markdown} />
             <div style={{ display: 'flex', gap: 12, marginTop: 44 }}>
               {pn(prev, 'prev')}
               {pn(next, 'next')}
             </div>
           </div>
-          )}
         </div>
       </div>
       {hasToc ? (

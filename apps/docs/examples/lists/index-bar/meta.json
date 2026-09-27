@@ -1,0 +1,10 @@
+{
+  "title": "IndexBar",
+  "height": 470,
+  "variants": [
+    { "id": "stops", "label": "Custom stops" },
+    { "id": "az", "label": "A–Z" },
+    { "id": "wave", "label": "Wave" }
+  ],
+  "variantsWidth": 290
+}

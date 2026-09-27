@@ -7,10 +7,11 @@ Source for the shadcn registry (`registry.json` at the repo root, built into the
   `meta.json` (`{ name, title, description, categories, files }`, see `blocks/types.ts`) and a `page.tsx` whose
   default export is the whole block. Files import only from `react`, `@brett_lamy/ui` and
   their sibling files (they are installed together into `components/blocks/<slug>/`). An optional
-  `<slug>.stories.tsx` is picked up by Storybook (not listed in `files`). The docs Blocks page discovers blocks by
-  glob — nothing else to register.
+  `<slug>.stories.tsx` is picked up by Storybook (not listed in `files`). Add it to the docs Blocks page with a
+  `{% demo src="blocks/<slug>" layout="multi" %}` line in `apps/docs/pages/blocks.md` (pages-md fails until you do).
 - `components/<name>.json` — one per documented component (`{ name, title, description, page, exports, imports?,
-  types?, from? }`, see `components/types.ts`). `page` is the docs page id whose Installation section shows it.
+  types?, from? }`, see `components/types.ts`). `page` is the docs page id (`apps/docs/pages/<page>.md`) whose Installation section `tools/docs/install-md.mjs`
+  writes from it.
   `components/<name>.tsx` is generated from it (a thin named re-export, installed as `@/components/ui/<name>`).
 - `styles.css` — `@brett_lamy/ui`'s sheet compiled together with the blocks' Tailwind classes, for the docs and
   Storybook.

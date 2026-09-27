@@ -127,6 +127,10 @@ a:hover {
   margin: 0 auto;
   padding: 0 32px;
 }
+.dk-doc-wide .dk-md .wb-md .docs-article {
+  max-width: none;
+  padding: 0;
+}
 .dk-doc .wb-md {
   font-size: 14.5px;
   line-height: 1.65;

@@ -1,0 +1,115 @@
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { AdaptivePane, EdgeDrawer, type AdaptivePaneMode } from '@brett_lamy/ui'
+
+const panel: CSSProperties = {
+  height: '100%',
+  padding: 16,
+  boxSizing: 'border-box',
+  background: 'var(--bl-card)',
+  fontSize: 13.5,
+}
+
+export default function PaneModes({ variant = 'column' }: { variant?: string }) {
+  // column | drawer | cover | hidden — a real shell picks this from its measured width
+  const mode = variant as AdaptivePaneMode
+  const [open, setOpen] = useState(true)
+  const [drawer, setDrawer] = useState(false)
+  useEffect(() => {
+    setOpen(true)
+  }, [mode])
+  return (
+    <Frame height={340}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+        <AdaptivePane
+          mode={mode}
+          open={open}
+          onClose={() => setOpen(false)}
+          columnWidth={200}
+          drawerWidth={240}
+          zIndex={20}
+          columnStyle={{ borderRight: '1px solid var(--bl-sep)' }}
+        >
+          <div style={panel}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Pane</div>
+            <div style={{ color: 'var(--bl-label2)' }}>Same children, mode: {mode}</div>
+          </div>
+        </AdaptivePane>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: 18,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14,
+          }}
+        >
+          <div style={{ fontSize: 13, color: 'var(--bl-label2)', lineHeight: 1.5 }}>
+            A shell picks the mode from its measured width; the pane never remounts its children
+            within a mode. Switch modes in the header.
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {mode === 'drawer' ? (
+              <TintButton label="Open pane" onPress={() => setOpen(true)} />
+            ) : null}
+            <TintButton label="Open EdgeDrawer" onPress={() => setDrawer(true)} />
+          </div>
+        </div>
+        {/* EdgeDrawer: the headless scrim + panel AdaptivePane uses for its drawer mode */}
+        <EdgeDrawer
+          side="right"
+          open={drawer}
+          onClose={() => setDrawer(false)}
+          width={240}
+          zIndex={40}
+        >
+          <div style={panel}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>EdgeDrawer</div>
+            <div style={{ color: 'var(--bl-label2)' }}>
+              Headless scrim + panel. Tap the scrim to close.
+            </div>
+          </div>
+        </EdgeDrawer>
+      </div>
+    </Frame>
+  )
+}
+
+/** A rounded, fixed-height stage for the pane to live in. */
+function Frame({ height, children }: { height: number; children?: ReactNode }) {
+  return (
+    <div
+      style={{
+        position: 'relative',
+        height,
+        borderRadius: 12,
+        overflow: 'hidden',
+        background: 'var(--bl-bg2)',
+        boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.05)',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function TintButton({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <button
+      onClick={onPress}
+      style={{
+        border: 0,
+        borderRadius: 10,
+        background: 'var(--bl-tint, #0A84FF)',
+        color: '#fff',
+        fontFamily: 'inherit',
+        fontWeight: 600,
+        fontSize: 13.5,
+        padding: '9px 16px',
+        cursor: 'pointer',
+      }}
+    >
+      {label}
+    </button>
+  )
+}

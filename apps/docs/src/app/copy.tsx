@@ -1,8 +1,8 @@
 /* Copy affordances for the docs: a copy button whose glyph swaps to a tick (IconSwap, the ui motion vocabulary),
-   code blocks with that button, and package-manager command tabs in the spirit of shadcn's docs. */
+   and a pill tab strip. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { Haptics, HlPre, IconSwap, springs, useReducedMotion } from '@brett_lamy/ui';
+import { Haptics, IconSwap, springs, useReducedMotion } from '@brett_lamy/ui';
 
 export async function copyText(text: string) {
   try {
@@ -64,20 +64,6 @@ export function CopyButton({ text, label = 'Copy', className = 'dk-copy' }: { te
   );
 }
 
-/** A code block with a copy button (and an optional header, e.g. tabs). */
-export function CodeBlock({ code, lang = 'tsx', header, prompt }: { code: string; lang?: string; header?: ReactNode; prompt?: boolean }) {
-  return (
-    <div className="dk-code">
-      {header ? <div className="dk-code-head">{header}<CopyButton text={code} /></div> : null}
-      <div className="dk-code-body">
-        {prompt ? <span className="dk-code-prompt" aria-hidden="true">$</span> : null}
-        <HlPre code={code} lang={lang} />
-        {header ? null : <CopyButton text={code} />}
-      </div>
-    </div>
-  );
-}
-
 /** A tab strip with a sliding pill (layoutId spring). */
 export function PillTabs<T extends string>({ tabs, value, onChange, id, label }: {
   tabs: readonly { id: T; label: ReactNode }[]; value: T; onChange: (id: T) => void; id: string; label: string;
@@ -95,59 +81,5 @@ export function PillTabs<T extends string>({ tabs, value, onChange, id, label }:
         </button>
       ))}
     </div>
-  );
-}
-
-const PMS = [
-  { id: 'pnpm', label: 'pnpm' },
-  { id: 'npm', label: 'npm' },
-  { id: 'yarn', label: 'yarn' },
-  { id: 'bun', label: 'bun' },
-] as const;
-type PM = (typeof PMS)[number]['id'];
-const PM_KEY = 'bldocs-pm';
-
-/* One package-manager choice for the whole site, remembered across pages. */
-const pmListeners = new Set<(pm: PM) => void>();
-function usePackageManager(): [PM, (pm: PM) => void] {
-  const [pm, setPm] = useState<PM>(() => {
-    const saved = typeof window !== 'undefined' ? window.localStorage.getItem(PM_KEY) : null;
-    return PMS.some((p) => p.id === saved) ? (saved as PM) : 'pnpm';
-  });
-  useEffect(() => {
-    pmListeners.add(setPm);
-    return () => { pmListeners.delete(setPm); };
-  }, []);
-  const set = (next: PM) => {
-    window.localStorage.setItem(PM_KEY, next);
-    pmListeners.forEach((f) => f(next));
-  };
-  return [pm, set];
-}
-
-export type CommandKind = { add: string[] } | { dlx: string };
-export function commandFor(pm: PM, cmd: CommandKind): string {
-  if ('add' in cmd) return `${pm === 'npm' ? 'npm install' : `${pm} add`} ${cmd.add.join(' ')}`;
-  return `${{ pnpm: 'pnpm dlx', npm: 'npx', yarn: 'yarn dlx', bun: 'bunx --bun' }[pm]} ${cmd.dlx}`;
-}
-
-/** A shell command shown per package manager: `pnpm add …` / `npm install …`, or `pnpm dlx …` / `npx …`. */
-export function CommandBlock({ cmd, id }: { cmd: CommandKind; id: string }) {
-  const [pm, setPm] = usePackageManager();
-  const code = commandFor(pm, cmd);
-  return (
-    <CodeBlock
-      code={code}
-      lang="sh"
-      header={
-        <>
-          <span className="dk-code-term" aria-hidden="true">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 7l5 5-5 5M12 18h7" /></svg>
-          </span>
-          <PillTabs id={id} label="Package manager" tabs={PMS} value={pm} onChange={setPm} />
-          <span style={{ flex: 1 }} />
-        </>
-      }
-    />
   );
 }

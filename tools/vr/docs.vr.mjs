@@ -1,9 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
 /* Every docs page, full length, opened from the sidebar; then the Blocks gallery. */
 const BASE = process.env.DOCS_URL || 'http://localhost:4417';
-const { NAV } = await import('../../apps/docs/src/content.ts').catch(() => ({ NAV: null }));
-const pages = NAV ? NAV.flatMap((s) => s.pages) : [];
+const NAV = JSON.parse(readFileSync(new URL('../../apps/docs/pages/nav.json', import.meta.url), 'utf8'));
+const pages = NAV.sections.flatMap((s) => s.pages.map((p) => p.id));
 
 for (const id of pages) {
   test(`docs-${id}`, async ({ page }) => {

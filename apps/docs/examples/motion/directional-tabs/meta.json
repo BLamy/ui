@@ -1,0 +1,15 @@
+{
+  "title": "Tabs · directional panels",
+  "height": 260,
+  "variants": [
+    {
+      "id": "segmented",
+      "label": "Segmented"
+    },
+    {
+      "id": "underline",
+      "label": "Underline"
+    }
+  ],
+  "variantsWidth": 220
+}

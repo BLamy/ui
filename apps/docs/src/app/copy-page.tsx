@@ -34,7 +34,7 @@ export function CopyPage({ page }: { page: string }) {
   useEffect(() => setOpen(false), [page]);
 
   const items = [
-    { id: 'copy', icon: <CopyIcon copied={false} />, label: 'Copy as Markdown', hint: 'Copy this page for LLMs', run: () => copy(pageMarkdown(page)) },
+    { id: 'copy', icon: <CopyIcon copied={false} />, label: 'Copy as Markdown', hint: 'Copy this page for LLMs', run: async () => copy(await pageMarkdown(page)) },
     { id: 'view', icon: <MdGlyph />, label: 'View as Markdown', hint: 'Open the page as plain text', href: mdUrl(page) },
     { id: 'gpt', icon: <OpenAIGlyph size={15} />, label: 'Open in ChatGPT', hint: 'Ask questions about this page', href: `https://chatgpt.com/?hints=search&q=${encodeURIComponent(askPrompt(page))}` },
     { id: 'claude', icon: <AnthropicGlyph size={14} />, label: 'Open in Claude', hint: 'Ask questions about this page', href: `https://claude.ai/new?q=${encodeURIComponent(askPrompt(page))}` },
@@ -42,7 +42,7 @@ export function CopyPage({ page }: { page: string }) {
 
   return (
     <div ref={root} className="dk-copypage">
-      <button type="button" className="dk-copypage-main" onClick={() => copy(pageMarkdown(page))} aria-label="Copy page as Markdown">
+      <button type="button" className="dk-copypage-main" onClick={async () => copy(await pageMarkdown(page))} aria-label="Copy page as Markdown">
         <CopyIcon copied={copied} size={13} />
         <span>{copied ? 'Copied' : 'Copy page'}</span>
       </button>
