@@ -8,7 +8,7 @@ A responsive dialog that renders as a **centered dialog** on desktop and a **flo
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import { Credenza } from '@brett_lamy/ui'
@@ -19,7 +19,7 @@ import { Credenza } from '@brett_lamy/ui'
 
 Adds `@/components/ui/credenza.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import { Credenza } from '@/components/ui/credenza'
 ```
 {% endtab %}

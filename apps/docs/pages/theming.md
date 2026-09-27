@@ -8,7 +8,7 @@ Every component reads CSS custom properties from its nearest themed ancestor, so
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
@@ -21,7 +21,7 @@ import {
 
 Adds `@/components/ui/theme.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import {
   BLProvider, AppearanceProvider, useAppearance,
 } from '@/components/ui/theme'

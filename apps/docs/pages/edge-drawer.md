@@ -8,7 +8,7 @@ A headless scrim and panel that slide in from one edge of a positioned host. It 
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import { EdgeDrawer } from '@brett_lamy/ui'
@@ -19,7 +19,7 @@ import { EdgeDrawer } from '@brett_lamy/ui'
 
 Adds `@/components/ui/edge-drawer.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import { EdgeDrawer } from '@/components/ui/edge-drawer'
 ```
 {% endtab %}

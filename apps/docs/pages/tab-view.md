@@ -8,7 +8,7 @@ A compositional tab container on react-aria's `Tabs`. The same parts make the iO
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
@@ -21,7 +21,7 @@ import {
 
 Adds `@/components/ui/tab-view.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import {
   TabView, TabViewBar, TabViewList, TabViewTab,
 } from '@/components/ui/tab-view'

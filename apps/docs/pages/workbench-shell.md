@@ -8,7 +8,7 @@ An IDE-style agent workspace, built from parts. `WorkbenchShell` is a thin layou
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
@@ -22,7 +22,7 @@ import {
 
 Adds `@/components/ui/workbench-shell.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import {
   WorkbenchShell, WorkbenchSidebar, WorkbenchMain,
   WorkbenchHeader, ThreadList, ThreadItem, Conversation,

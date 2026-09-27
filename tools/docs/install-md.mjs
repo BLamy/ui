@@ -44,7 +44,7 @@ function importLine(names, from) {
 const command = (cmd) => `{% command %}${cmd}{% endcommand %}`;
 
 /** The import snippet: an untitled block (no header bar, floating copy) without line numbers. */
-const IMPORT_FENCE = '```tsx lineNumbers="false"';
+const IMPORT_FENCE = '```tsx';
 
 export function installSection(entry) {
   const from = entry.from || '@brett_lamy/ui';

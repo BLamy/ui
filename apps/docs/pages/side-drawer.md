@@ -8,7 +8,7 @@ One inspector, three presentations — chosen by composition, not configuration.
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import { SideDrawer } from '@brett_lamy/ui'
@@ -19,7 +19,7 @@ import { SideDrawer } from '@brett_lamy/ui'
 
 Adds `@/components/ui/side-drawer.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import { SideDrawer } from '@/components/ui/side-drawer'
 ```
 {% endtab %}

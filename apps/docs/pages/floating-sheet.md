@@ -8,7 +8,7 @@ A floating surface that grows from a resting card into the full page along a sin
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import { FloatingSheet, useFloatingSheet } from '@brett_lamy/ui'
@@ -19,7 +19,7 @@ import { FloatingSheet, useFloatingSheet } from '@brett_lamy/ui'
 
 Adds `@/components/ui/floating-sheet.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import {
   FloatingSheet, useFloatingSheet,
 } from '@/components/ui/floating-sheet'

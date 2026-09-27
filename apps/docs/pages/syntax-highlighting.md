@@ -8,7 +8,7 @@ Code blocks and inline code highlighted by [gpu-lexer](https://gpu-lexer.vercel.
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
@@ -22,7 +22,7 @@ import {
 
 Adds `@/components/ui/syntax-highlighting.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import {
   SyntaxHighlighting, SyntaxHighlightingHeader,
   SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,

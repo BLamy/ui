@@ -8,7 +8,7 @@ One engine, three calls — the same API surface as `UIFeedbackGenerator`:
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import { Haptics, HapticIndicator } from '@brett_lamy/ui'
@@ -19,7 +19,7 @@ import { Haptics, HapticIndicator } from '@brett_lamy/ui'
 
 Adds `@/components/ui/haptics.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import { Haptics, HapticIndicator } from '@/components/ui/haptics'
 ```
 {% endtab %}

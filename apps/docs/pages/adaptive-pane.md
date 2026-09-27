@@ -8,7 +8,7 @@ One region, four presentations. A shell measures itself and picks a mode; the pa
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import { AdaptivePane } from '@brett_lamy/ui'
@@ -19,7 +19,7 @@ import { AdaptivePane } from '@brett_lamy/ui'
 
 Adds `@/components/ui/adaptive-pane.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import { AdaptivePane } from '@/components/ui/adaptive-pane'
 ```
 {% endtab %}

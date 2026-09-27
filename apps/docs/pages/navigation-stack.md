@@ -8,7 +8,7 @@ A controlled stack of screens: push by adding to the array, pop by removing. Edg
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import { NavigationStack, ScreenWrap } from '@brett_lamy/ui'
@@ -19,7 +19,7 @@ import { NavigationStack, ScreenWrap } from '@brett_lamy/ui'
 
 Adds `@/components/ui/navigation-stack.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import {
   NavigationStack, ScreenWrap,
 } from '@/components/ui/navigation-stack'

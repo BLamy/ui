@@ -8,7 +8,7 @@ A chat transcript scroller that ports the shadcn `message-scroller` behaviors: i
 
 Import the stylesheet once at your app's entry, then the parts from the package root:
 
-```tsx lineNumbers="false"
+```tsx
 import '@brett_lamy/ui/styles.css'
 
 import { MessageScroller, WorkbenchTheme } from '@brett_lamy/ui'
@@ -19,7 +19,7 @@ import { MessageScroller, WorkbenchTheme } from '@brett_lamy/ui'
 
 Adds `@/components/ui/message-scroller.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
 
-```tsx lineNumbers="false"
+```tsx
 import {
   MessageScroller, WorkbenchTheme,
 } from '@/components/ui/message-scroller'
