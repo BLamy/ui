@@ -147,7 +147,7 @@ describe("resolveDemosToMarkdown (default: renderable)", () => {
     const markdown = '# Button\n\n{% demo src="button/sizes" viewport="tablet" %}\n\n## API\n\n| a | b |\n| --- | --- |\n'
     const out = await resolveDemosToMarkdown(markdown, resolver())
     expect(out).toBe(
-      '# Button\n\n{% demo src="button/sizes" title="Button sizes" height="320" variants="sm:Small" viewport="tablet" %}\n```tsx title="index.tsx"\nexport default function Sizes() {}\n```\n````markdown title="README.md"\n```sh\nnpm i\n```\n````\n{% enddemo %}\n\n## API\n\n| a | b |\n| --- | --- |\n',
+      '# Button\n\n{% demo src="button/sizes" title="Button sizes" height="320" variants="sm:Small" viewport="tablet" bleed="true" %}\n```tsx title="index.tsx"\nexport default function Sizes() {}\n```\n````markdown title="README.md"\n```sh\nnpm i\n```\n````\n{% enddemo %}\n\n## API\n\n| a | b |\n| --- | --- |\n',
     )
     const node = demoOf(out)!
     expect(node.files?.map((f) => [f.path, f.content])).toEqual([

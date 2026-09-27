@@ -67,7 +67,16 @@ export interface CodeBlockNode {
   type: "code"
   language: string | null
   title: string | null
+  /**
+   * Show line numbers. Defaults (when the fence doesn't say) to on for titled fences and
+   * off for untitled ones; `lineNumbers="true"` / `"false"` overrides.
+   */
   lineNumbers: boolean
+  /**
+   * The source wrote `lineNumbers` (or `showLineNumbers`) explicitly: the serializer keeps
+   * the attribute even when it matches the default, so pages round-trip byte-for-byte.
+   */
+  lineNumbersExplicit?: boolean
   code: string
   /** Run a React/JSX/TSX entry file in the optional almost-node preview. */
   live?: boolean
@@ -201,8 +210,11 @@ export interface DemoInlineFile {
  * A live demo: `{% demo src="<page>/<example>" %}`. With a host `DemoResolver`
  * that knows `src`, the example folder is the authority for the component, its
  * source files and its defaults; attributes here override the folder's
- * `meta.json`. The block form carries the files inline so the Markdown renders
- * anywhere, resolver or not:
+ * `meta.json` field by field (tag attribute first, then `meta.json`, then the built-in
+ * default) — including the look attributes `status`, `bleed`, `className`, `surface` and
+ * `variantsWidth`, which Copy page writes so the block renders the same without the resolver.
+ * The block form carries the files inline so the Markdown renders anywhere, resolver
+ * or not:
  *
  *     {% demo src="composer/scroll-fab" title="Scroll → FAB" %}
  *     ```tsx title="index.tsx"
@@ -225,6 +237,19 @@ export interface DemoNode {
   viewport?: DemoViewport
   /** Entry file among the inline files (`entry="App.tsx"`). Defaults to the first file. */
   entry?: string
+  /** Short status shown in the demo header (`status="Live"`). */
+  status?: string
+  /** Drop the padded preview surface (`bleed="true"`) for demos with their own full-bleed frame. */
+  bleed?: boolean
+  /** Extra class on the preview canvas (`className="brand-surface"`). */
+  className?: string
+  /**
+   * Inline style for the preview canvas as CSS declarations, kept verbatim:
+   * `surface="background: var(--brand-50); --demo-gap: 12px"`.
+   */
+  surface?: string
+  /** Width of the variant switch, kept verbatim (`"240"`, `"16rem"`). */
+  variantsWidth?: string
   /** Files carried inline by the block form, in document order. */
   files?: DemoInlineFile[]
   /**

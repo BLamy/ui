@@ -10,12 +10,46 @@ function codeBlock(markdown: string) {
 }
 
 describe("fenced code metadata", () => {
-  it("shows line numbers by default", () => {
-    expect(codeBlock("```ts\nconst value = 1\n```" )).toMatchObject({
-      language: "ts",
-      title: null,
-      lineNumbers: true,
-    })
+  it("untitled fences have no line numbers by default; titled fences do", () => {
+    expect(codeBlock("```ts\nconst value = 1\n```")).toMatchObject({ language: "ts", title: null, lineNumbers: false })
+    expect(codeBlock("```\nplain\n```")).toMatchObject({ lineNumbers: false })
+    expect(codeBlock("    indented\n    code")).toMatchObject({ lineNumbers: false })
+    expect(codeBlock('```ts title="a.ts"\nconst value = 1\n```')).toMatchObject({ lineNumbers: true })
+    expect(codeBlock("```ts\nconst value = 1\n```").lineNumbersExplicit).toBeUndefined()
+  })
+
+  it('lineNumbers="true" opts an untitled fence in', () => {
+    expect(codeBlock('```ts lineNumbers="true"\nconst value = 1\n```')).toMatchObject({ lineNumbers: true, lineNumbersExplicit: true })
+    expect(codeBlock('```lineNumbers="true"\nx\n```')).toMatchObject({ language: null, lineNumbers: true })
+  })
+
+  it("keeps the line-number attribute byte-stable, including redundant ones", () => {
+    for (const md of [
+      "```ts\nconst value = 1\n```",
+      '```ts lineNumbers="true"\nconst value = 1\n```',
+      '```ts lineNumbers="false"\nconst value = 1\n```',
+      '```lineNumbers="false"\nno language\n```',
+      '```ts title="a.ts"\nconst value = 1\n```',
+      '```ts title="a.ts" lineNumbers="false"\nconst value = 1\n```',
+      '```ts title="a.ts" lineNumbers="true"\nconst value = 1\n```',
+    ]) {
+      expect(serializeMarkdown(parseMarkdown(md))).toBe(md + "\n")
+    }
+  })
+
+  it("serializes programmatic blocks against the default", () => {
+    const doc = (lineNumbers: boolean, title: string | null) =>
+      serializeMarkdown({ type: "doc", children: [{ type: "code", language: "ts", title, lineNumbers, code: "x" }] })
+    expect(doc(false, null)).toBe("```ts\nx\n```\n")
+    expect(doc(true, null)).toBe('```ts lineNumbers="true"\nx\n```\n')
+    expect(doc(true, "a.ts")).toBe('```ts title="a.ts"\nx\n```\n')
+    expect(doc(false, "a.ts")).toBe('```ts title="a.ts" lineNumbers="false"\nx\n```\n')
+  })
+
+  it("escapes quotes and backslashes in fence titles", () => {
+    const md = '```ts title="say \\"hi\\" C:\\\\dir"\nx\n```'
+    expect(codeBlock(md).title).toBe('say "hi" C:\\dir')
+    expect(serializeMarkdown(parseMarkdown(md))).toBe(md + "\n")
   })
 
   it("parses title and line-number opt-out from the info string", () => {

@@ -1,9 +1,11 @@
 import type { DemoInlineFile, DemoNode } from "../gitbook/ast"
+import { TAG_ATTRS } from "../gitbook/attrs"
 import { flattenForPlainMarkdown } from "../gitbook/flatten"
 import { demoBody, fenceTracker, parseBlocks, parseMarkdown } from "../gitbook/parse"
 import { fenceFor, serializeBlocks, serializeMarkdown } from "../gitbook/serialize"
 import type { DemoFile, DemoMeta, DemoResolver } from "./types"
 import { languageForPath } from "./glob"
+import { surfaceToCss } from "./surface"
 
 export { fenceFor }
 
@@ -39,7 +41,7 @@ export interface ResolvedDemo {
   title: string
 }
 
-const TAG_RE = /^(\s*)\{%\s*demo(\s[^%]*?)?\s*\/?%\}\s*$/
+const TAG_RE = new RegExp(String.raw`^(\s*)\{%\s*demo(\s${TAG_ATTRS})?\s*\/?%\}\s*$`)
 
 function titleFor(src: string, node: DemoNode, meta: DemoMeta | undefined) {
   return node.title ?? meta?.title ?? (src.split("/").pop() || src || "Demo")
@@ -77,7 +79,9 @@ export function toInlineFiles(files: DemoFile[]): DemoInlineFile[] {
 /**
  * A demo as a self-contained block-form `{% demo %}`: the node's attributes, with the
  * folder's `meta.json` defaults folded in (so the block renders the same without the
- * resolver), and `files` as inline fences.
+ * resolver) — title, description, height, layout, variants, entry and the look fields
+ * `status`, `bleed`, `className`, `surface` (as CSS declarations) and `variantsWidth` —
+ * and `files` as inline fences. Tag attributes win over `meta.json` where both exist.
  */
 export function inlineDemoNode(node: DemoNode, files: DemoFile[], meta?: DemoMeta): DemoNode {
   const inline = toInlineFiles(files)
@@ -87,6 +91,11 @@ export function inlineDemoNode(node: DemoNode, files: DemoFile[], meta?: DemoMet
   const layout = node.layout ?? meta?.layout
   const variants = node.variants?.length ? node.variants : meta?.variants?.length ? meta.variants : undefined
   const entry = node.entry ?? (meta?.entry && inline[0]?.path !== meta.entry ? meta.entry : undefined)
+  const status = node.status ?? meta?.status
+  const bleed = node.bleed ?? meta?.bleed
+  const className = node.className ?? meta?.className
+  const surface = node.surface ?? (meta?.surface ? surfaceToCss(meta.surface) : undefined)
+  const variantsWidth = node.variantsWidth ?? (meta?.variantsWidth === undefined || meta.variantsWidth === "" ? undefined : String(meta.variantsWidth))
   return {
     type: "demo",
     src: node.src,
@@ -97,6 +106,11 @@ export function inlineDemoNode(node: DemoNode, files: DemoFile[], meta?: DemoMet
     ...(variants ? { variants } : {}),
     ...(node.viewport ? { viewport: node.viewport } : {}),
     ...(entry ? { entry } : {}),
+    ...(status ? { status } : {}),
+    ...(bleed === undefined ? {} : { bleed }),
+    ...(className ? { className } : {}),
+    ...(surface ? { surface } : {}),
+    ...(variantsWidth ? { variantsWidth } : {}),
     ...(inline.length ? { files: inline } : {}),
   }
 }
@@ -123,7 +137,7 @@ export async function resolveDemosToMarkdown(
   options: ResolveDemosOptions = {},
 ): Promise<string> {
   // Plain output also flattens docstream-only presentation blocks (command boxes, titled tabs).
-  if (options.format === "plain" && /\{%\s*(?:command\b|tabs\s[^%]*\btitle=)/.test(markdown)) {
+  if (options.format === "plain" && /\{%\s*(?:command\b|tabs\s(?:[^%\n]|%(?!\}))*\btitle=)/.test(markdown)) {
     markdown = serializeMarkdown(flattenForPlainMarkdown(parseMarkdown(markdown)))
   }
   const lines = markdown.split("\n")

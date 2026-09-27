@@ -56,3 +56,68 @@ describe("DemoViewer sources", () => {
     expect(html).toContain(NO_RUNTIME_NOTE)
   })
 })
+
+describe("DemoViewer look: tag attributes, then meta.json", () => {
+  const ONE = [{ path: "index.tsx", content: "export default function Demo() { return null }", language: "tsx" }]
+  const withMeta = (meta: Record<string, unknown>): DemoResolver => ({
+    list: () => ["look/demo"],
+    meta: async () => meta,
+    files: async () => ONE,
+    load: async () => () => null,
+  })
+
+  it("honours tag attributes with no resolver (status, variantsWidth)", () => {
+    const md = '{% demo src="pasted/demo" title="Say \\"hi\\"" status="Needs network" variants="a:A,b:B" variantsWidth="220" bleed="true" %}\n```tsx title="index.tsx"\nexport default function Demo() { return null }\n```\n{% enddemo %}'
+    const html = renderToString(<MarkdownContent markdown={md} />)
+    expect(html).toContain('<span class="docs-demo-status">Needs network</span>')
+    expect(html).toContain("width:220px")
+    expect(html).toContain("Say &quot;hi&quot;")
+  })
+
+  it("tag attributes override meta.json where both exist; meta fills the rest", async () => {
+    const { preloadDemos } = await import("./DemoViewer")
+    const resolver = withMeta({ status: "From meta", variants: [{ id: "a", label: "A" }], variantsWidth: 100, title: "Meta title" })
+    await preloadDemos(resolver, ["look/demo"])
+    const fromMeta = renderToString(<DemoViewer src="look/demo" resolver={resolver} />)
+    expect(fromMeta).toContain('<span class="docs-demo-status">From meta</span>')
+    expect(fromMeta).toContain("width:100px")
+    const overridden = renderToString(<DemoViewer src="look/demo" resolver={resolver} status="From tag" variantsWidth="12rem" />)
+    expect(overridden).toContain('<span class="docs-demo-status">From tag</span>')
+    expect(overridden).toContain("width:12rem")
+    expect(overridden).toContain("Meta title")
+  })
+
+  it("single-file previews carry no min-height unless a height is given", async () => {
+    const { preloadDemos } = await import("./DemoViewer")
+    const resolver = withMeta({})
+    await preloadDemos(resolver, ["look/demo"])
+    const html = renderToString(<DemoViewer src="look/demo" resolver={resolver} />)
+    expect(html).toContain("docs-demo-single-preview")
+    expect(html).not.toContain("min-height")
+    expect(renderToString(<DemoViewer src="look/demo" resolver={resolver} height={200} />)).toContain("min-height:200px")
+  })
+})
+
+describe("surface: meta.json object ⇄ tag declarations", () => {
+  it("converts both ways", async () => {
+    const { cssToSurface, surfaceToCss } = await import("./surface")
+    expect(surfaceToCss({ background: "var(--brand-50)", "--demo-gap": "12px", padding: 8 })).toBe("background: var(--brand-50); --demo-gap: 12px; padding: 8")
+    expect(cssToSurface('background: url("a;b.png"); --demo-gap: 12px; padding: 8; border-radius: 4px; ')).toEqual({
+      background: 'url("a;b.png")',
+      "--demo-gap": "12px",
+      padding: 8,
+      borderRadius: "4px",
+    })
+  })
+
+  it("inlineDemoMarkdown folds meta.json's look into the tag; the tag's own values win", async () => {
+    const { inlineDemoMarkdown } = await import("./markdown")
+    const meta = { status: "Live", bleed: true, className: "c", surface: { background: "red" }, variantsWidth: 180 }
+    expect(inlineDemoMarkdown({ type: "demo", src: "a/b" }, ONE_FILE, meta)).toBe(
+      '{% demo src="a/b" status="Live" bleed="true" className="c" surface="background: red" variantsWidth="180" %}\n```tsx title="index.tsx"\nx\n```\n{% enddemo %}',
+    )
+    expect(inlineDemoMarkdown({ type: "demo", src: "a/b", status: "Beta", bleed: false }, ONE_FILE, meta)).toContain('status="Beta" bleed="false"')
+  })
+})
+
+const ONE_FILE = [{ path: "index.tsx", content: "x\n", language: "tsx" }]

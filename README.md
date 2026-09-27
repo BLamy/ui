@@ -107,6 +107,18 @@ Helpful context for the reader.
 
 Supported styles are `info`, `success`, `warning`, and `danger`.
 
+### Code fences
+
+````md
+```ts title="client.ts"
+const client = createClient()
+```
+````
+
+Titled (file) fences show line numbers; untitled fences don't. `lineNumbers="true"`
+or `lineNumbers="false"` overrides either way, and an explicit attribute is kept on
+serialize even when it matches the default.
+
 ### Tabs
 
 ````md
@@ -289,11 +301,30 @@ examples/button/sizes/
 ```
 
 `meta.height` is a minimum for single-file previews (in-page components may grow
-past it) and the stage height for the multi-file viewer. `className` / `surface`
-(a style object, CSS custom properties welcome) style the preview canvas,
-`status` shows a small label in the header ("Live", "Needs network"), and
-`variantsWidth` sizes the variant switch. Block-level demo roots fill the canvas
-width; intrinsically sized ones (a button, an image) are centred.
+past it; without a height they size to their content — hosts can set a floor with
+`--docs-demo-preview-min-height`) and the stage height for the multi-file viewer.
+`className` / `surface` (a style object, CSS custom properties welcome) style the
+preview canvas, `bleed` drops its padding, `status` shows a small label in the
+header ("Live", "Needs network"), and `variantsWidth` sizes the variant switch.
+The canvas is block flow: block-level demo roots fill its width and lay out as on a
+page (`max-width: 480px; margin: 0 auto` centres at 480px); intrinsically sized
+(inline-level) ones — a button, a badge, an image — are centred.
+
+Every `meta.json` field has a tag attribute of the same name:
+
+```md
+{% demo src="button/sizes" title="Sizes \"S\" to \"L\"" status="Live" bleed="true" className="brand"
+  surface="background: var(--brand-50); --demo-gap: 12px" variantsWidth="220" %}
+```
+
+(one line in practice). `surface` is written as CSS declarations; `bleed="false"`
+switches off a `meta.json` `bleed: true`. **Precedence:** a tag attribute wins,
+then `meta.json`, then the built-in default — field by field. Copy page folds
+`meta.json` into the tag, so the copied page renders the same without the resolver.
+
+Attribute values are double-quoted; inside them a double quote is written `\"`, a
+backslash `\\`, and `%}` as `%\}`. The serializer escapes, the parser unescapes
+(other backslashes are kept as written).
 
 #### Demos that carry their files (block form)
 

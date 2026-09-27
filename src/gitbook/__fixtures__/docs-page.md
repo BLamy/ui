@@ -2,6 +2,8 @@
 
 A **bold** claim, _emphasis_, `inline code`, ~~struck~~ and a [link](https://example.com). Ask @brett about #buttons [^1].
 
+Install [`@brett_lamy/ui`](https://www.npmjs.com/package/@brett_lamy/ui), then read **bold `x` text**, _italic `y` text_, ~~struck `z` text~~ and **[`Button`](https://example.com/button) docs**.
+
 ## Install
 
 {% tabs sync="pm" %}
@@ -61,9 +63,9 @@ export default function App() {
 const quiet = true
 ```
 
-{% demo src="button/sizes" title="Sizes" height="320" variants="sm:Small,lg:Large" %}
+{% demo src="button/sizes" title="Sizes \"S\" to \"L\" (C:\\ui, 100%\})" height="320" variants="sm:Small,lg:Large" status="Beta" %}
 
-{% demo src="composer/scroll-fab" title="Scroll → FAB" description="Scroll the list; the button **shrinks**." height="380" variants="full:Full,compact:Compact" viewport="tablet" %}
+{% demo src="composer/scroll-fab" title="Scroll → FAB" description="Scroll the list; the button **shrinks**." height="380" variants="full:Full,compact:Compact" viewport="tablet" status="Live" bleed="true" className="fab-canvas" surface="background: var(--brand-50); --demo-gap: 12px" variantsWidth="220" %}
 ```tsx title="index.tsx"
 import { messages } from "./data"
 
@@ -88,7 +90,7 @@ npm start
 {% demo src="button/ghost" %}
 {% endtab %}
 
-{% tab title="Notes" %}
+{% tab title="Notes on \"ghost\"" %}
 Ghost buttons sit on busy surfaces.
 {% endtab %}
 {% endtabs %}

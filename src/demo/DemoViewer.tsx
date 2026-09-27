@@ -38,6 +38,7 @@ import { PillTabs, Segmented, rovingKeyDown } from "../docs/controls"
 import { useDemoResolver, useDemoRuntime } from "./context"
 import { languageForPath } from "./glob"
 import { inlineDemoMarkdown } from "./markdown"
+import { cssToSurface, surfaceStyle, surfaceToCss } from "./surface"
 import type { DemoComponent, DemoFile, DemoMeta, DemoResolver, DemoVariant, InlineDemoRuntime } from "./types"
 
 export interface DemoViewerProps {
@@ -66,7 +67,23 @@ export interface DemoViewerProps {
   runtime?: InlineDemoRuntime
   /** Extra npm dependencies for the runtime, merged over `demoDependencies` from context. */
   dependencies?: Record<string, string>
+  /** Class on the viewer's outer element. (The preview canvas's class is `canvasClassName`.) */
   className?: string
+  /*
+   * Look. Each falls back to the resolver's `meta.json` field of the same name when unset —
+   * props (a `{% demo %}` tag's attributes) win over `meta.json`, which wins over the
+   * defaults — so a copied page renders the same with or without the resolver.
+   */
+  /** Status shown in the header (`meta.status`). */
+  status?: string
+  /** Full-bleed canvas without the padded surface (`meta.bleed`). */
+  bleed?: boolean
+  /** Extra class on the preview canvas (`meta.className`). */
+  canvasClassName?: string
+  /** Canvas inline style: an object like `meta.surface`, or CSS declarations as in the tag's `surface`. */
+  surface?: Record<string, string | number> | string
+  /** Width of the variant switch (`meta.variantsWidth`). */
+  variantsWidth?: number | string
 }
 
 /* ---------- data ---------- */
@@ -249,7 +266,11 @@ function DemoCanvas({ src, preview, variant, bleed, look }: {
   }
   if (preview.kind === "runtime") {
     return (
-      <div className="docs-demo-canvas docs-demo-canvas-bleed docs-demo-canvas-runtime" data-variant={variant}>
+      <div
+        className={["docs-demo-canvas docs-demo-canvas-bleed docs-demo-canvas-runtime", look?.className ?? ""].filter(Boolean).join(" ")}
+        style={surfaceStyle(look?.surface)}
+        data-variant={variant}
+      >
         <DemoErrorBoundary src={src || "demo"}>{preview.render(variant)}</DemoErrorBoundary>
       </div>
     )
@@ -258,7 +279,7 @@ function DemoCanvas({ src, preview, variant, bleed, look }: {
   return (
     <div
       className={["docs-demo-canvas", bleed ? "docs-demo-canvas-bleed" : "", look?.className ?? ""].filter(Boolean).join(" ")}
-      style={look?.surface as CSSProperties | undefined}
+      style={surfaceStyle(look?.surface)}
       data-variant={variant}
     >
       {component.status === "ready" ? (
@@ -498,7 +519,7 @@ function VariantSwitch({ variants, value, onChange, title, width }: {
       onChange={onChange}
       label={`${title} variant`}
       className={width === undefined ? "docs-demo-variants" : "docs-demo-variants docs-demo-variants-sized"}
-      style={width === undefined ? undefined : { width: typeof width === "number" ? `${width}px` : width }}
+      style={width === undefined ? undefined : { width: cssLength(width, "auto") }}
     />
   )
 }
@@ -600,10 +621,15 @@ export function DemoViewer(props: DemoViewerProps) {
   const layout: "single" | "multi" | null =
     layoutPref !== "auto" ? layoutPref : fileList ? (fileList.length > 1 ? "multi" : "single") : null
   const heightValue = props.height ?? metaValue?.height
-  const bleed = metaValue?.bleed
-  const look: CanvasLook | undefined = metaValue
-  const variantsWidth = metaValue?.variantsWidth
-  const status = metaValue?.status
+  // Look: the tag's attributes (props) first, then `meta.json`.
+  const bleed = props.bleed ?? metaValue?.bleed
+  const propSurface = typeof props.surface === "string" ? cssToSurface(props.surface) : props.surface
+  const look: CanvasLook = {
+    className: props.canvasClassName ?? metaValue?.className,
+    surface: propSurface ?? metaValue?.surface,
+  }
+  const variantsWidth = props.variantsWidth ?? metaValue?.variantsWidth
+  const status = props.status ?? metaValue?.status
   const [fullscreen, setFullscreen] = useState(false)
   const href = mode === "resolver" ? resolver?.href?.(src, variant ? { variant } : undefined) : undefined
   const baseId = useId()
@@ -637,6 +663,11 @@ export function DemoViewer(props: DemoViewerProps) {
     ...(props.layout ? { layout: props.layout } : {}),
     ...(props.variants?.length ? { variants: props.variants } : {}),
     ...(props.viewport ? { viewport: props.viewport } : {}),
+    ...(props.status ? { status: props.status } : {}),
+    ...(props.bleed !== undefined ? { bleed: props.bleed } : {}),
+    ...(props.canvasClassName ? { className: props.canvasClassName } : {}),
+    ...(props.surface ? { surface: typeof props.surface === "string" ? props.surface : surfaceToCss(props.surface) } : {}),
+    ...(props.variantsWidth !== undefined && props.variantsWidth !== "" ? { variantsWidth: String(props.variantsWidth) } : {}),
   }
   const copyDemo = () => inlineDemoMarkdown(node, fileList ?? [], metaValue)
 
@@ -676,8 +707,15 @@ export function DemoViewer(props: DemoViewerProps) {
           {runnable ? (
             <div
               className="docs-react-demo-preview docs-demo-single-preview"
-              // A hint, not a cap: in-page components may grow past it. An iframe needs a real height.
-              style={preview.kind === "runtime" ? { height: cssLength(heightValue, "360px") } : { minHeight: cssLength(heightValue, "120px") }}
+              // A hint, not a cap: in-page components may grow past it (no height: size to content;
+              // hosts may set a floor with --docs-demo-preview-min-height). An iframe needs a real height.
+              style={
+                preview.kind === "runtime"
+                  ? { height: cssLength(heightValue, "360px") }
+                  : heightValue === undefined || heightValue === ""
+                    ? undefined
+                    : { minHeight: cssLength(heightValue, "0px") }
+              }
             >
               {near ? <DemoCanvas src={src} preview={preview} variant={variant} bleed={bleed} look={look} /> : <Spinner />}
             </div>
@@ -844,6 +882,11 @@ export function DemoBlock({ node }: { node: DemoNode }) {
       files={node.files}
       entry={node.entry}
       streaming={node.open}
+      status={node.status}
+      bleed={node.bleed}
+      canvasClassName={node.className}
+      surface={node.surface}
+      variantsWidth={node.variantsWidth}
     />
   )
 }

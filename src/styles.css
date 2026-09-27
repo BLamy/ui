@@ -1530,9 +1530,13 @@
   margin-bottom: 12px;
 }
 
-:is([data-docstream], .docs-article) .docs-tabs-section-head .docs-tabs-section-title {
+/* The heading sits centred on the switch's row: no block margin, padding or rule of its own
+   (page heading rules — docstream's and a host's `h2 { padding-top }` — would push it off
+   centre; 0,4,0 outranks them). */
+:is([data-docstream], .docs-article) .docs-tabs-section > .docs-tabs-section-head > .docs-tabs-section-title {
+  align-self: center;
   margin: 0;
-  padding-bottom: 0;
+  padding-block: 0;
   border-bottom: 0;
   scroll-margin-top: 80px;
 }
@@ -1543,15 +1547,18 @@
   gap: 10px;
 }
 
-.docs-tabs-section-body > [data-docstream-blocks] > * {
+/* One 10px rhythm inside a section. These must outrank the generic block spacing
+   (`:is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-code, …)`,
+   headings and demos, specificity 0,3,0), hence the extra `.docs-tabs-section >` (0,4,0). */
+:is([data-docstream], .docs-article) .docs-tabs-section > .docs-tabs-section-body > [data-docstream-blocks] > * {
   margin-block: 0 10px;
 }
 
-.docs-tabs-section-body > [data-docstream-blocks] > :last-child {
+:is([data-docstream], .docs-article) .docs-tabs-section > .docs-tabs-section-body > [data-docstream-blocks] > :last-child {
   margin-bottom: 0;
 }
 
-.docs-tabs-section-body > [data-docstream-blocks] > p {
+:is([data-docstream], .docs-article) .docs-tabs-section > .docs-tabs-section-body > [data-docstream-blocks] > p {
   color: var(--gb-muted-foreground);
   font-size: 0.93em;
 }
@@ -1945,35 +1952,36 @@
   opacity: 1;
 }
 
-/* Block-level demo roots fill the width (place-items: center would shrink them to their
-   content); content is centred vertically, and intrinsically sized roots horizontally. */
+/* The canvas is block flow, so a block-level demo root lays out exactly as it would on a
+   page: it fills the width, and `max-width: 480px; margin: 0 auto` centres it at 480px (a
+   grid or flex canvas would shrink it to its content). Intrinsically sized roots — inline /
+   inline-block / inline-flex elements such as a lone button, badge or image — sit on the
+   canvas's centred line box. Content is centred vertically (`align-content` on a block
+   container). The canvas's `text-align: center` stops at its children: the reset below has
+   zero specificity, so any rule of the demo's own wins. */
 .docs-demo-canvas {
-  display: grid;
+  display: block;
   align-content: center;
-  justify-items: stretch;
   box-sizing: border-box;
   min-height: 100%;
   padding: 28px 24px;
   color: var(--foreground, var(--gb-panel-foreground));
+  text-align: center;
 }
 
-.docs-demo-canvas > * {
-  min-width: 0;
+:where(.docs-demo-canvas) > * {
   max-width: 100%;
-}
-
-.docs-demo-canvas > :where(button, a, img, svg, video, canvas, input, select, textarea, label, span, code) {
-  justify-self: center;
+  text-align: start;
 }
 
 .docs-demo-canvas-bleed {
-  display: block;
-  place-items: normal;
+  align-content: normal;
   height: 100%;
   padding: 0;
+  text-align: start;
 }
 
-.docs-demo-canvas-bleed > * {
+:where(.docs-demo-canvas-bleed) > * {
   max-width: none;
 }
 
@@ -2241,9 +2249,11 @@
   background: var(--gb-hover);
 }
 
+/* Sizes to its content; a `height` in meta or on the tag sets a minimum (inline style), and
+   hosts may set a floor for every single-file preview with --docs-demo-preview-min-height. */
 .docs-demo-single-preview {
   display: grid;
-  min-height: 120px;
+  min-height: var(--docs-demo-preview-min-height, 0px);
   background: var(--background, var(--gb-panel));
 }
 

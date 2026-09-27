@@ -1,5 +1,6 @@
 import type {
   Block,
+  CodeBlockNode,
   ColumnNode,
   CommandNode,
   DemoInlineFile,
@@ -15,6 +16,7 @@ import type {
   TabNode,
   UpdateNode,
 } from "./ast"
+import { TAG_ATTRS, parseAttrs } from "./attrs"
 import { footnoteDefinitions, parseInline, plainText, refDefinitions } from "./inline"
 
 // Minimal HTML-inline → markdown-inline bridge for HTML table cells.
@@ -61,20 +63,21 @@ function splitTableRow(row: string): string[] {
   return cells
 }
 
-const TEMPLATE_RE = /^\s*\{%\s*(\S+?)(\s+[^%]*?)?\s*%\}\s*$/
-
-function parseAttrs(raw: string | undefined): Record<string, string> {
-  const attrs: Record<string, string> = {}
-  if (!raw) return attrs
-  for (const m of raw.matchAll(/([\w-]+)="([^"]*)"/g)) {
-    attrs[m[1]] = m[2]
-  }
-  return attrs
-}
+const TEMPLATE_RE = new RegExp(String.raw`^\s*\{%\s*(\S+?)(\s+${TAG_ATTRS})?\s*%\}\s*$`)
 
 function booleanAttr(attrs: Record<string, string>, key: string): boolean | undefined {
   if (!(key in attrs)) return undefined
   return attrs[key] !== "false"
+}
+
+/**
+ * A fence's line numbers: `lineNumbers` / `showLineNumbers` when written (remembered as
+ * explicit so the attribute round-trips even when it equals the default), otherwise on for
+ * titled (file) fences and off for untitled ones.
+ */
+function lineNumbersFrom(attrs: Record<string, string>, titled: boolean): Pick<CodeBlockNode, "lineNumbers" | "lineNumbersExplicit"> {
+  const written = booleanAttr(attrs, "lineNumbers") ?? booleanAttr(attrs, "showLineNumbers")
+  return written === undefined ? { lineNumbers: titled } : { lineNumbers: written, lineNumbersExplicit: true }
 }
 
 function positiveNumberAttr(attrs: Record<string, string>, key: string): number | undefined {
@@ -224,7 +227,7 @@ export function parseDemoVariants(raw: string): DemoVariantOption[] {
 }
 
 /** `{% command %}npm install x{% endcommand %}` on one line. */
-const COMMAND_ONE_LINE_RE = /^\s*\{%\s*command(\s[^%]*?)?\s*%\}(.*?)\{%\s*endcommand\s*%\}\s*$/
+const COMMAND_ONE_LINE_RE = new RegExp(String.raw`^\s*\{%\s*command(\s${TAG_ATTRS})?\s*%\}(.*?)\{%\s*endcommand\s*%\}\s*$`)
 
 function commandNode(attrs: Record<string, string>, raw: string): CommandNode {
   const overrides: NonNullable<CommandNode["overrides"]> = {}
@@ -326,6 +329,11 @@ function parseDemoTag(attrs: Record<string, string>): DemoNode {
     ...(variants.length ? { variants } : {}),
     ...((DEMO_VIEWPORTS as string[]).includes(attrs.viewport) ? { viewport: attrs.viewport as DemoViewport } : {}),
     ...(attrs.entry ? { entry: attrs.entry } : {}),
+    ...(attrs.status ? { status: attrs.status } : {}),
+    ...(booleanAttr(attrs, "bleed") === undefined ? {} : { bleed: booleanAttr(attrs, "bleed") }),
+    ...(attrs.className ? { className: attrs.className } : {}),
+    ...(attrs.surface?.trim() ? { surface: attrs.surface } : {}),
+    ...(attrs.variantsWidth ? { variantsWidth: attrs.variantsWidth } : {}),
   }
 }
 
@@ -435,7 +443,7 @@ export function parseBlocks(lines: string[]): Block[] {
         const code = inner.find((b) => b.type === "code")
         if (code && code.type === "code") {
           code.title = tag.attrs.title ?? null
-          code.lineNumbers = booleanAttr(tag.attrs, "lineNumbers") ?? booleanAttr(tag.attrs, "showLineNumbers") ?? true
+          Object.assign(code, lineNumbersFrom(tag.attrs, code.title !== null))
           code.live = tag.attrs.live === "true"
           code.entry = tag.attrs.entry ?? null
           blocks.push(code)
@@ -655,7 +663,9 @@ export function parseBlocks(lines: string[]): Block[] {
     const fence = trimmed.match(/^(`{3,}|~{3,})([^\s`]*)?(?:\s+(.*?))?\s*$/)
     if (fence) {
       flushParagraph()
-      const attrs = parseAttrs(fence[3])
+      // ```` ```title="x" ```` (attributes, no language): the first word is not a language.
+      const bareAttrs = !!fence[2]?.includes("=")
+      const attrs = parseAttrs(bareAttrs ? [fence[2], fence[3]].filter(Boolean).join(" ") : fence[3])
       const code: string[] = []
       i++
       while (i < lines.length && !lines[i].trim().startsWith(fence[1])) {
@@ -665,9 +675,9 @@ export function parseBlocks(lines: string[]): Block[] {
       i++
       blocks.push({
         type: "code",
-        language: fence[2] || null,
+        language: (!bareAttrs && fence[2]) || null,
         title: attrs.title ?? null,
-        lineNumbers: booleanAttr(attrs, "lineNumbers") ?? booleanAttr(attrs, "showLineNumbers") ?? true,
+        ...lineNumbersFrom(attrs, attrs.title !== undefined),
         code: code.join("\n"),
         ...(booleanAttr(attrs, "live") === undefined ? {} : { live: booleanAttr(attrs, "live") }),
         ...(attrs.entry ? { entry: attrs.entry } : {}),
@@ -691,7 +701,7 @@ export function parseBlocks(lines: string[]): Block[] {
         code.push(lines[i].slice(4))
         i++
       }
-      blocks.push({ type: "code", language: null, title: null, lineNumbers: true, code: code.join("\n") })
+      blocks.push({ type: "code", language: null, title: null, lineNumbers: false, code: code.join("\n") })
       continue
     }
 

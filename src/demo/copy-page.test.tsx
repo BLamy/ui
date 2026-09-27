@@ -23,7 +23,10 @@ const FILES: Record<string, { path: string; content: string; language?: string }
 function makeResolver(): DemoResolver {
   return {
     list: () => Object.keys(FILES),
-    meta: async (src) => (src === "button/ghost" ? { title: "Ghost button", height: 240, variants: [{ id: "a", label: "A" }] } : undefined),
+    meta: async (src) =>
+      src === "button/ghost"
+        ? { title: 'Ghost "outline" button', height: 240, variants: [{ id: "a", label: "A" }], status: "Needs network", bleed: true, className: "ghost-canvas", surface: { background: "var(--brand-50)" }, variantsWidth: 180 }
+        : undefined,
     files: async (src) => {
       if (!FILES[src]) throw new Error(`unknown ${src}`)
       return FILES[src]
@@ -90,13 +93,17 @@ describe("Copy page → paste into docstream", () => {
   it("renders the same page without any resolver (demos run from their inline files)", async () => {
     const { before, after } = await renderBoth(undefined)
     expect(normalize(after)).toBe(normalize(before))
+    // meta.json's status (and the tag's own) survive without the resolver.
+    for (const status of ["Needs network", "Beta", "Live"]) expect(after).toContain(`<span class="docs-demo-status">${status}</span>`)
+    expect(after).toContain("width:180px")
+    expect(after).toContain('Ghost &quot;outline&quot; button')
     expect(after).toContain('data-demo-mode="inline"')
     expect(after).not.toContain('data-demo-mode="resolver"')
   })
 
   it("would catch a lossy copy (control: the plain/LLM format does not render the same page)", async () => {
     const { before } = await renderBoth(undefined)
-    expect(before).toContain("Ghost button")
+    expect(before).toContain("Ghost &quot;outline&quot; button")
     expect(before).toContain('class="docs-tabs-section-title">Installation</h2>')
     const plain = await resolveDemosToMarkdown(page, makeResolver(), { format: "plain" })
     const rendered = renderToString(<MarkdownContent markdown={plain} demoRuntime={runtime} />)

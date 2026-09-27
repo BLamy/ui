@@ -23,7 +23,10 @@ function demos(blocks: Block[]): DemoNode[] {
 
 const resolver: DemoResolver = {
   list: () => ["button/sizes", "button/ghost"],
-  meta: async (src) => (src === "button/ghost" ? { title: "Ghost button" } : undefined),
+  meta: async (src) =>
+    src === "button/ghost"
+      ? { title: 'Ghost "outline" button', status: "Live", bleed: true, className: "ghost-canvas", surface: { background: "var(--brand-50)", "--demo-gap": "12px", padding: 8 }, variantsWidth: 180 }
+      : undefined,
   files: async (src) => {
     if (src === "button/sizes") {
       return [
@@ -59,9 +62,19 @@ describe("a full docs page", () => {
       ["composer/scroll-fab", ["index.tsx", "data.ts", "README.md"]],
       ["button/ghost", ["index.tsx"]],
     ])
-    expect(found[0]).toMatchObject({ title: "Sizes", height: "320", variants: [{ id: "sm", label: "Small" }, { id: "lg", label: "Large" }] })
+    expect(found[0]).toMatchObject({ title: 'Sizes "S" to "L" (C:\\ui, 100%})', status: "Beta", height: "320", variants: [{ id: "sm", label: "Small" }, { id: "lg", label: "Large" }] })
     expect(found[0].files?.[0].content).toBe('import { Button } from "@brett_lamy/ui"\n\nexport default function Sizes({ variant }: { variant?: string }) {\n  return <Button size={variant}>Save</Button>\n}')
-    expect(found[2]).toMatchObject({ title: "Ghost button" })
+    expect(found[1]).toMatchObject({ status: "Live", bleed: true, className: "fab-canvas", surface: "background: var(--brand-50); --demo-gap: 12px", variantsWidth: "220" })
+    // meta.json's look travels with the copy, so the block renders the same without the resolver.
+    expect(found[2]).toMatchObject({
+      title: 'Ghost "outline" button',
+      status: "Live",
+      bleed: true,
+      className: "ghost-canvas",
+      surface: "background: var(--brand-50); --demo-gap: 12px; padding: 8",
+      variantsWidth: "180",
+    })
+    expect(copied).toContain('{% demo src="button/ghost" title="Ghost \\"outline\\" button" status="Live" bleed="true" className="ghost-canvas" surface="background: var(--brand-50); --demo-gap: 12px; padding: 8" variantsWidth="180" %}')
     expect(found.some((d) => d.open)).toBe(false)
     // Parsing the copy and serializing it again gives the copy back.
     expect(serializeMarkdown(doc)).toBe(copied)

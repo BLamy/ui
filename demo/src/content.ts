@@ -376,6 +376,10 @@ A folder with one source file gets the compact card: the preview, then a collaps
 
 {% demo src="demos/badges" %}
 
+A block-level root lays out exactly as on a page: this one is \`max-width: 480px; margin: 0 auto\`, so it keeps its width and centres. Previews without a \`height\` size to their content.
+
+{% demo src="demos/signup" %}
+
 ## Multi-file demo
 
 More than one file switches to the gallery viewer: **Preview | Code**, viewport widths, a draggable resize handle with a width readout, a fullscreen overlay and an "open in new tab" deep link. The Code view lists the files entry first, each with its own copy button.
@@ -471,6 +475,13 @@ npm start
 | \`variants\` | \`meta.variants\` | \`id:Label\` pairs; the chosen id is the component's \`variant\` prop. |
 | \`viewport\` | \`desktop\` | Initial width: \`desktop\`, \`tablet\` (768px) or \`phone\` (390px). |
 | \`entry\` | first inline file | Entry among the inline files (block form). |
+| \`status\` | \`meta.status\` | A small label in the header ("Live", "Needs network"). |
+| \`bleed\` | \`meta.bleed\`, else \`false\` | \`true\` drops the canvas padding for full-bleed demos. |
+| \`className\` | \`meta.className\` | Extra class on the preview canvas. |
+| \`surface\` | \`meta.surface\` | Canvas inline style as CSS declarations: \`background: var(--brand-50); --demo-gap: 12px\`. |
+| \`variantsWidth\` | \`meta.variantsWidth\` | Width of the variant switch (px or any CSS length). |
+
+A tag attribute wins over \`meta.json\`, which wins over the default — field by field. Copy page folds \`meta.json\` into the tag, so a copied page looks the same without the resolver. In values, write a double quote as \`\\"\`, a backslash as \`\\\\\`, and \`%}\` as \`%\\}\` (the serializer does this for you).
 
 An example folder holds an entry (\`index.tsx\`, default export = the component), any other source files, and an optional \`meta.json\`:
 
@@ -482,7 +493,7 @@ examples/
       PricingCard.tsx
       plans.ts
       pricing.css
-      meta.json        ← { title, description, height, variants, entry, layout, bleed }
+      meta.json        ← { title, description, height, variants, entry, layout, bleed, status, className, surface, variantsWidth }
 \`\`\`
 
 ## Wiring a resolver

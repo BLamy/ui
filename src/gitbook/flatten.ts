@@ -19,7 +19,7 @@ export function flattenBlocks(blocks: Block[]): Block[] {
   return blocks.flatMap((b): Block[] => {
     switch (b.type) {
       case "command":
-        return [{ type: "code", language: "sh", title: null, lineNumbers: true, code: b.command }]
+        return [{ type: "code", language: "sh", title: null, lineNumbers: false, code: b.command }]
       case "tabs":
         if (b.title) {
           return [

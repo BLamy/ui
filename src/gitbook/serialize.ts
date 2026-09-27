@@ -1,4 +1,5 @@
 import type { Block, DemoInlineFile, DemoNode, DocumentNode, Inline, ListItemNode } from "./ast"
+import { attr } from "./attrs"
 import { serializeInline, serializeReference } from "./inline"
 
 export function serializeMarkdown(doc: DocumentNode): string {
@@ -34,36 +35,38 @@ function serializeBlock(b: Block): string {
     }
 
     case "code": {
+      // Line numbers default to on for titled fences, off for untitled ones.
+      const numbersByDefault = b.title !== null && b.title !== undefined && b.title !== ""
       const attrs = [
-        b.title ? `title="${b.title}"` : "",
-        !b.lineNumbers ? `lineNumbers="false"` : "",
-        b.live ? `live="true"` : "",
-        b.entry ? `entry="${b.entry}"` : "",
-        b.collapsedCodeLines ? `collapsedCodeLines="${b.collapsedCodeLines}"` : "",
-        b.expandedCodeLines ? `expandedCodeLines="${b.expandedCodeLines}"` : "",
-      ].filter(Boolean)
-      const info = [b.language ?? "", ...attrs].filter(Boolean).join(" ")
+        b.title ? attr("title", b.title) : "",
+        b.lineNumbers !== numbersByDefault || b.lineNumbersExplicit ? attr("lineNumbers", b.lineNumbers) : "",
+        b.live ? attr("live", true) : "",
+        b.entry ? attr("entry", b.entry) : "",
+        b.collapsedCodeLines ? attr("collapsedCodeLines", b.collapsedCodeLines) : "",
+        b.expandedCodeLines ? attr("expandedCodeLines", b.expandedCodeLines) : "",
+      ].join("")
+      const info = `${b.language ?? ""}${b.language ? attrs : attrs.trimStart()}`
       return `\`\`\`${info}\n${b.code}\n\`\`\``
     }
 
     case "hint":
-      return `{% hint style="${b.style}" %}\n${serializeBlocks(b.children)}\n{% endhint %}`
+      return `{% hint${attr("style", b.style)} %}\n${serializeBlocks(b.children)}\n{% endhint %}`
 
     case "tabs": {
       const attrs = [
-        b.title ? ` title="${b.title}"` : "",
-        b.title && b.level && b.level !== 2 ? ` level="${b.level}"` : "",
-        b.sync ? ` sync="${b.sync}"` : "",
+        b.title ? attr("title", b.title) : "",
+        b.title && b.level && b.level !== 2 ? attr("level", b.level) : "",
+        b.sync ? attr("sync", b.sync) : "",
       ].join("")
       return `{% tabs${attrs} %}\n${b.tabs
-        .map((t) => `{% tab title="${t.title}" %}\n${serializeBlocks(t.children)}\n{% endtab %}`)
+        .map((t) => `{% tab${attr("title", t.title)} %}\n${serializeBlocks(t.children)}\n{% endtab %}`)
         .join("\n\n")}\n{% endtabs %}`
     }
 
     case "command": {
       const attrs = [
-        ...(["pnpm", "yarn", "bun"] as const).map((pm) => (b.overrides?.[pm] ? ` ${pm}="${b.overrides[pm]}"` : "")),
-        b.sync && b.sync !== "pm" ? ` sync="${b.sync}"` : "",
+        ...(["pnpm", "yarn", "bun"] as const).map((pm) => (b.overrides?.[pm] ? attr(pm, b.overrides[pm]) : "")),
+        b.sync && b.sync !== "pm" ? attr("sync", b.sync) : "",
       ].join("")
       return b.command.includes("\n")
         ? `{% command${attrs} %}\n${b.command}\n{% endcommand %}`
@@ -83,43 +86,48 @@ function serializeBlock(b: Block): string {
 
     case "embed": {
       const attrs = [
-        ` url="${b.url}"`,
-        b.title ? ` title="${b.title}"` : "",
-        b.poster ? ` poster="${b.poster}"` : "",
-        b.autoplay === undefined ? "" : ` autoplay="${b.autoplay}"`,
-        b.loop === undefined ? "" : ` loop="${b.loop}"`,
-        b.muted === undefined ? "" : ` muted="${b.muted}"`,
-        b.controls === undefined ? "" : ` controls="${b.controls}"`,
+        attr("url", b.url),
+        b.title ? attr("title", b.title) : "",
+        b.poster ? attr("poster", b.poster) : "",
+        b.autoplay === undefined ? "" : attr("autoplay", b.autoplay),
+        b.loop === undefined ? "" : attr("loop", b.loop),
+        b.muted === undefined ? "" : attr("muted", b.muted),
+        b.controls === undefined ? "" : attr("controls", b.controls),
       ].join("")
       return `{% embed${attrs} %}`
     }
 
     case "content-ref":
-      return `{% content-ref url="${b.url}" %}\n${serializeInline(b.children)}\n{% endcontent-ref %}`
+      return `{% content-ref${attr("url", b.url)} %}\n${serializeInline(b.children)}\n{% endcontent-ref %}`
 
     case "source-ref": {
       const attrs = [
-        ` mount="${b.mount}"`,
-        ` path="${b.path}"`,
-        ` export="${b.exportName}"`,
-        ` kind="${b.kind}"`,
-        b.title ? ` title="${b.title}"` : "",
+        attr("mount", b.mount),
+        attr("path", b.path),
+        attr("export", b.exportName),
+        attr("kind", b.kind),
+        b.title ? attr("title", b.title) : "",
       ].join("")
       return `{% source-ref${attrs} %}`
     }
 
     case "demo": {
       const attrs = [
-        ` src="${b.src}"`,
-        b.title ? ` title="${b.title}"` : "",
-        b.description ? ` description="${b.description}"` : "",
-        b.height ? ` height="${b.height}"` : "",
-        b.layout ? ` layout="${b.layout}"` : "",
+        attr("src", b.src),
+        b.title ? attr("title", b.title) : "",
+        b.description ? attr("description", b.description) : "",
+        b.height ? attr("height", b.height) : "",
+        b.layout ? attr("layout", b.layout) : "",
         b.variants?.length
-          ? ` variants="${b.variants.map((v) => (v.label === v.id ? v.id : `${v.id}:${v.label}`)).join(",")}"`
+          ? attr("variants", b.variants.map((v) => (v.label === v.id ? v.id : `${v.id}:${v.label}`)).join(","))
           : "",
-        b.viewport ? ` viewport="${b.viewport}"` : "",
-        b.entry ? ` entry="${b.entry}"` : "",
+        b.viewport ? attr("viewport", b.viewport) : "",
+        b.entry ? attr("entry", b.entry) : "",
+        b.status ? attr("status", b.status) : "",
+        b.bleed === undefined ? "" : attr("bleed", b.bleed),
+        b.className ? attr("className", b.className) : "",
+        b.surface ? attr("surface", b.surface) : "",
+        b.variantsWidth ? attr("variantsWidth", b.variantsWidth) : "",
       ].join("")
       return `{% demo${attrs} %}${serializeDemoFiles(b)}`
     }
@@ -167,18 +175,18 @@ function serializeBlock(b: Block): string {
       return `$$\n${b.formula}\n$$`
 
     case "updates":
-      return `{% updates${b.format ? ` format="${b.format}"` : ""} %}\n${b.updates
+      return `{% updates${b.format ? attr("format", b.format) : ""} %}\n${b.updates
         .map(
           (u) =>
-            `{% update date="${u.date}" %}\n${serializeBlocks(u.children)}\n{% endupdate %}`
+            `{% update${attr("date", u.date)} %}\n${serializeBlocks(u.children)}\n{% endupdate %}`
         )
         .join("\n\n")}\n{% endupdates %}`
 
     case "openapi-operation": {
       const attrs = [
-        b.spec ? ` spec="${b.spec}"` : "",
-        b.path ? ` path="${b.path}"` : "",
-        b.method ? ` method="${b.method}"` : "",
+        b.spec ? attr("spec", b.spec) : "",
+        b.path ? attr("path", b.path) : "",
+        b.method ? attr("method", b.method) : "",
       ].join("")
       const inner = b.specUrl ? `\n[${b.label || b.spec || "OpenAPI"}](${b.specUrl})` : ""
       return `{% openapi-operation${attrs} %}${inner}\n{% endopenapi-operation %}`
@@ -225,7 +233,7 @@ export function fenceFor(content: string): string {
 /** One inline demo file as a titled fence. */
 export function serializeDemoFile(file: DemoInlineFile): string {
   const fence = fenceFor(file.content)
-  return `${fence}${file.language ?? ""} title="${file.path}"\n${file.content}\n${fence}`
+  return `${fence}${file.language ?? ""}${attr("title", file.path)}\n${file.content}\n${fence}`
 }
 
 /** The body of a block-form `{% demo %}`: files as titled fences, then `{% enddemo %}`. Empty without files. */

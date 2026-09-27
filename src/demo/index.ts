@@ -11,6 +11,7 @@ export {
 } from "./glob"
 export type { GlobDemoResolverOptions } from "./glob"
 export { defaultDemoMarkdown, inlineDemoMarkdown, inlineDemoNode, resolveDemosToMarkdown, toInlineFiles } from "./markdown"
+export { cssToSurface, surfaceToCss } from "./surface"
 export type { DemoMarkdownFormat, ResolveDemosOptions, ResolvedDemo } from "./markdown"
 export type {
   DemoComponent,
