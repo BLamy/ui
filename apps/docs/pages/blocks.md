@@ -16,39 +16,27 @@ Whole apps composed from BL UI parts, in the spirit of shadcn blocks. Each block
 
 {% demo src="blocks/apple-reminders" layout="multi" %}
 
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/apple-reminders.json
-```
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-reminders.json{% endcommand %}
 
 {% demo src="blocks/apple-settings" layout="multi" %}
 
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/apple-settings.json
-```
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-settings.json{% endcommand %}
 
 {% demo src="blocks/apple-mail" layout="multi" %}
 
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/apple-mail.json
-```
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-mail.json{% endcommand %}
 
 {% demo src="blocks/apple-notes" layout="multi" %}
 
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/apple-notes.json
-```
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-notes.json{% endcommand %}
 
 {% demo src="blocks/apple-passwords" layout="multi" %}
 
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/apple-passwords.json
-```
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-passwords.json{% endcommand %}
 
 {% demo src="blocks/apple-music" layout="multi" %}
 
-```sh
-npx shadcn@latest add https://blamy.github.io/ui/r/apple-music.json
-```
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-music.json{% endcommand %}
 
 {% hint style="info" %}
 **Blocks land in `components/blocks/<name>/`.** Render the default export from `page.tsx` in a sized container — blocks fill their parent and adapt to its width, not the window's.
