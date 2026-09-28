@@ -54,6 +54,9 @@ jobs:
       - name: Build docs
         run: pnpm nx build @brett_lamy/docs-app
 
+      - name: Check the entry CSS carries docstream's styles
+        run: grep -lq 'docs-command' apps/docs/dist/assets/index-*.css || { echo "docstream styles missing from the entry CSS"; exit 1; }
+
       - name: Add SPA fallback
         run: cp apps/docs/dist/index.html apps/docs/dist/404.html
 

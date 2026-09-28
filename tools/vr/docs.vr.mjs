@@ -32,6 +32,8 @@ for (const theme of ['light', 'dark']) {
   test(name, async ({ page }) => {
     await page.route(/arcgisonline|openstreetmap|tile\./, (route) => route.abort());
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    // A fixed wall clock for the Blocks page: the Passwords block's verification-code countdown reads Date.now().
+    await page.clock.setFixedTime(new Date('2026-09-28T09:41:00'));
     await page.setViewportSize({ width: 1400, height: 900 });
     await page.goto(`${BASE}/?theme=${theme}#/blocks`, { waitUntil: 'load' });
     await page.locator('[data-docstream-demo]').first().waitFor();
