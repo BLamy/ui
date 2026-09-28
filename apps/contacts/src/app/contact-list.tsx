@@ -36,7 +36,7 @@ export function ContactList({ contacts }: { contacts: ContactsState }) {
         } />
       <SplitViewContent className={editing ? 'pb-[62px]' : undefined}>
         <div className="px-4 pt-2.5 pb-2">
-          <SearchField q={query} setQ={contacts.setQuery} aria-label={`Search ${title}`} />
+          <SearchField value={query} onChange={contacts.setQuery} aria-label={`Search ${title}`} />
         </div>
         {sections.map((sec) => (
           <ListSection key={sec.letter} sticky title={sec.letter} innerRef={(el) => { sectionEls.current[sec.letter] = el; }}>
