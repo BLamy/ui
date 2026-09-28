@@ -13,8 +13,13 @@ type Story = StoryObj<typeof SearchField>;
 
 function Demo({ initial }: { initial?: string }) {
   const [q, setQ] = useState(initial || '');
-  return <SearchField q={q} setQ={setQ} aria-label="Search contacts" />;
+  return <SearchField value={q} onChange={setQ} aria-label="Search contacts" />;
 }
 
 export const Empty: Story = { render: () => <Demo /> };
 export const WithQuery: Story = { render: () => <Demo initial="Chen" /> };
+
+/** Uncontrolled: `defaultValue` seeds the query, `onChange` / `onSubmit` report it. */
+export const Uncontrolled: Story = {
+  render: () => <SearchField defaultValue="Wei" onChange={() => undefined} aria-label="Search contacts" />,
+};

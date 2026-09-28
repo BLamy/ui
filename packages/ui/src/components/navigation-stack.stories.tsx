@@ -9,7 +9,7 @@ import { Phone } from '../stories/frame';
 const meta: Meta<typeof NavigationStack> = {
   title: 'Organisms/NavigationStack',
   component: NavigationStack,
-  decorators: [(Story) => <Phone><Story /></Phone>],
+  decorators: [(Story, ctx) => <Phone dark={!!ctx.parameters.dark}><Story /></Phone>],
 };
 export default meta;
 type Story = StoryObj<typeof NavigationStack>;
@@ -122,4 +122,59 @@ export const ChromeHideWithSafeTop: Story = {
       content: tallRows(60),
     }]} />
   ),
+};
+
+/* ── Back label and header title morph ── */
+
+const settingsRows = (items: string[], open?: (s: string) => void) => (
+  <List inset>
+    <List.Section>
+      {items.map((t, i) => (
+        <List.Row key={t} title={t} accessory={open ? 'chevron' : undefined} onPress={open ? () => open(t) : undefined}
+          divider={i < items.length - 1} />
+      ))}
+    </List.Section>
+  </List>
+);
+
+/** Push Settings → General → About: the large title flies into the next screen's back button, and an inline
+ *  title does the same one level down; popping (button, Esc or edge swipe) flies the label back into place.
+ *  The edge swipe scrubs the morph with the finger. */
+export const HeaderTitleMorph: Story = {
+  render: function HeaderTitleMorphStory() {
+    const [path, setPath] = useState<string[]>([]);
+    const push = (k: string) => setPath((p) => [...p, k]);
+    const screens: Screen[] = [
+      { key: 'settings', title: 'Settings', largeTitle: true, grouped: true,
+        content: settingsRows(['General', 'Accessibility', 'Privacy & Security'], push) },
+      ...path.map((k, i): Screen => ({
+        key: k, title: k, grouped: true,
+        content: settingsRows(i === 0 ? ['About', 'Software Update', 'AirDrop'] : ['Name', 'iOS Version', 'Model Name'],
+          i === 0 ? push : undefined),
+      })),
+    ];
+    return <NavigationStack screens={screens} onPop={() => setPath((p) => p.slice(0, -1))} />;
+  },
+};
+
+function Deep({ prev, title }: { prev: string; title: string }) {
+  return (
+    <NavigationStack onPop={() => undefined} screens={[
+      { key: 'a', title: prev, grouped: true, content: settingsRows(['One']) },
+      { key: 'b', title, grouped: true, content: settingsRows(['Detail']) },
+    ]} />
+  );
+}
+
+/** The back label is the previous screen's title when it fits beside the centered title… */
+export const BackLabelFits: Story = { render: () => <Deep prev="Settings" title="General" /> };
+/** …ellipsized when it doesn't (measured, not a character count)… */
+export const BackLabelTruncated: Story = { render: () => <Deep prev="Notifications and Focus" title="Scheduled Summary" /> };
+/** …"Back" when only a sliver is left, and just the chevron when "Back" doesn't fit either. */
+export const BackLabelFallback: Story = {
+  render: () => <Deep prev="Accessibility Shortcuts" title="Background Sounds While Playing" />,
+};
+export const BackLabelTruncatedDark: Story = {
+  render: () => <Deep prev="Notifications and Focus" title="Scheduled Summary" />,
+  parameters: { dark: true },
 };

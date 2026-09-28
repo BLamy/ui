@@ -22,7 +22,7 @@ export function ListColumn({ mail }: { mail: MailState }) {
         className="shadow-none" />
       <SplitViewContent>
         <MessageList mail={mail} selectable onOpen={(id) => { mail.open(id); s.select('supplementary', id); }}
-          search={<div className="px-4 pb-2"><SearchField q={mail.query} setQ={mail.setQuery} aria-label={`Search ${mail.box.title}`} /></div>} />
+          search={<div className="px-4 pb-2"><SearchField value={mail.query} onChange={mail.setQuery} aria-label={`Search ${mail.box.title}`} /></div>} />
       </SplitViewContent>
       <ListBar mail={mail} />
     </SplitViewSupplementary>

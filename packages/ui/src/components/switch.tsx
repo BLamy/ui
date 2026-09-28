@@ -7,6 +7,8 @@ export interface SwitchProps {
   checked: boolean;
   onChange: (v: boolean) => void;
   'aria-label'?: string;
+  /** Label the switch by another element (ListRow points it at the row title). */
+  'aria-labelledby'?: string;
   className?: string;
   style?: CSSProperties;
 }
@@ -19,7 +21,8 @@ export function Switch({ checked, onChange, className, style, ...rest }: SwitchP
       data-slot="switch"
       isSelected={checked}
       onChange={(v) => { Haptics.impact('light'); onChange(v); }}
-      aria-label={rest['aria-label'] || 'Toggle'}
+      aria-label={rest['aria-label'] || (rest['aria-labelledby'] ? undefined : 'Toggle')}
+      aria-labelledby={rest['aria-labelledby']}
       className={cn('group relative inline-block h-[31px] w-[51px] shrink-0 cursor-pointer', className)}
       style={style}
     >

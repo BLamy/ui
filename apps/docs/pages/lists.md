@@ -33,8 +33,10 @@ import {
     <BLRow
       leading={<Avatar c={c}/>}
       title={c.name} subtitle={c.role}
-      accessory="chevron"          // or "check"
+      accessory="chevron"          // or "check", or a control: <Switch/>, <Slider/>, <Button/>
       onPress={open} onDelete={del}
+      leadingActions={[{ label: 'Pin', icon: 'pin', onAction: pin }]}
+      trailingActions={[{ label: 'Delete', icon: 'trash', destructive: true, onAction: del }]}
       edit={editing} checked={picked}
     />
   </BLSection>
@@ -65,9 +67,46 @@ A `header` passed to `BLList` sticks to the top of the list itself and is measur
 
 ## Row behaviors
 
-- **Swipe left** reveals destructive actions; past the commit point the row springs open with `Haptics.impact('medium')`. Only one row stays open at a time.
+- **Swipe actions**: `leadingActions` are revealed by swiping right, `trailingActions` by swiping left. A release springs open or shut from the finger's velocity; only one row stays open at a time.
+- **Full swipe**: past about half the row the outermost action (index 0) takes the whole strip, with a `Haptics.impact('medium')` detent as you cross the line. Turn it off with `fullSwipe={false}` (or limit it to `'leading'` / `'trailing'`).
 - **Edit mode** slides in radio checks; every toggle ticks with `Haptics.selection()`.
-- Rows are real `<button>`s with listbox roles, arrow-key navigation, and visible focus rings — the react-aria interaction model.
+- **Pressable rows** (`onPress`) are real `<button>`s with arrow-key navigation and visible focus rings. The button sits beneath the row's content, so a control in the row is its sibling — never nested inside it.
+- **Rows without `onPress`** are plain containers. A `Switch` or `Slider` in `accessory` (or `trailing`) is named by the row title, and pressing the row's label flips its switch (`labelToggles={false}` opts out).
+
+## Swipe actions
+
+```tsx
+<ListRow
+  title="Launch checklist"
+  leadingActions={[{ label: 'Unread', icon: 'mail', onAction: markUnread }]}
+  trailingActions={[
+    { label: 'Trash', icon: 'trash', destructive: true, onAction: trash }, // outermost: a full swipe runs it
+    { label: 'Flag', icon: 'starF', tint: '#FF9F0A', onAction: flag },
+  ]}
+/>
+```
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `label` | `string` | Button text and accessible name |
+| `icon` | `string \| ReactNode` | A kit icon name, or any node; drawn above the label |
+| `tint` | `string` | Background; defaults to red when `destructive`, else the tint |
+| `destructive` | `boolean` | The row slides away and collapses before `onAction` runs |
+| `onAction` | `() => void` | Called on tap or full swipe |
+
+`onDelete` is still there: it adds a destructive **Delete** as the outermost trailing action.
+
+**Keyboard and assistive tech.** Focus a row and press → to reveal the trailing actions (← for the leading ones); focus moves to the buttons, Tab walks them, Esc closes. Delete runs the destructive action. The row describes its actions to screen readers and lists the shortcuts in `aria-keyshortcuts`. With reduced motion, rows move without springing.
+
+## Animated sections
+
+`animate` on a section springs keyed rows in on insert, collapses them on remove and slides them when the order changes. `onReorder(from, to)` adds a grip to every row: drag it (a selection tick at each new slot) or focus it and press ↑ / ↓. It is called once per drop; reorder your array to match. Pass it only while reordering is allowed — the grips come and go with it.
+
+```tsx
+<ListSection animate onReorder={editing ? (from, to) => setSongs(move(songs, from, to)) : undefined}>
+  {songs.map((s) => <ListRow key={s.id} title={s.title} />)}
+</ListSection>
+```
 
 ## Styles
 
@@ -91,6 +130,24 @@ A plain list with `sticky` letter headers in a bare scroller, so they stick at t
 
 {% demo src="lists/contacts" %}
 
+### Leading and trailing swipe actions
+
+Swipe right to mark read, left for Trash, Flag and More. A long swipe runs the outermost action; Trash collapses the row and the section closes the gap on a spring. Focus a row and press → or ← to do it from the keyboard.
+
+{% demo src="lists/swipe-actions" %}
+
+### Rows with controls
+
+A `Switch`, `Slider` or `Button` as the `accessory`. Rows without `onPress` are containers, so tapping a label flips its switch; the Field Guide row is pressable *and* holds a button, as siblings.
+
+{% demo src="lists/control-rows" %}
+
+### Insert, remove and reorder
+
+`ListSection animate` with `onReorder` while editing. Add springs a song in at the top, swiping one away collapses it, and the grips drag (or move with ↑ / ↓).
+
+{% demo src="lists/reorder" %}
+
 ### Swipe to delete and edit mode
 
 Give rows `onDelete` and they swipe left to reveal Delete. Pass `edit` to every row to slide in the selection checks, and pair it with `EditBar` for bulk actions.
@@ -108,6 +165,27 @@ Give rows `onDelete` and they swipe left to reveal Delete. Pass `edit` to every 
 `header` pins a search field to the top of the list and keeps section offsets below it. When nothing matches, render an empty state in place of the section.
 
 {% demo src="lists/city-search" %}
+
+## SearchField
+
+The iOS search field: a magnifier, a clear button once there is a query, and Esc to clear. Control it with `value` + `onChange`, or leave it uncontrolled with `defaultValue`.
+
+```tsx
+const [query, setQuery] = useState('')
+
+<SearchField value={query} onChange={setQuery} placeholder="Search cities" />
+<SearchField defaultValue="Lisbon" onSubmit={(q) => search(q)} aria-label="Search cities" />
+```
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `value` / `defaultValue` | `string` | Controlled / initial query |
+| `onChange` | `(value: string) => void` | Every keystroke; `''` when cleared |
+| `onSubmit` | `(value: string) => void` | Enter |
+| `placeholder` | `string` | Defaults to "Search" |
+| `aria-label` | `string` | Defaults to "Search" |
+
+Migrating: the old `q` / `setQ` props are now `value` / `onChange`.
 
 ## IndexBar
 
