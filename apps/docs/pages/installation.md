@@ -130,7 +130,9 @@ Then add what you need and import it from your alias:
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/split-view.json{% endcommand %}
 
 ```tsx
-import { SplitView, SplitViewSidebar, SplitViewDetail } from '@/components/ui/split-view'
+import {
+  SplitView, SplitViewSidebar, SplitViewDetail,
+} from '@/components/ui/split-view'
 ```
 {% endstep %}
 
