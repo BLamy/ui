@@ -2343,6 +2343,97 @@
   }
 }
 
+/* Replay embeds (ReplayPreview / ReplayEmbed). Part of the one package stylesheet so no
+   module imports CSS on the eager path: the root entry stays importable from Node
+   (SSR, vitest) without a CSS loader. */
+.replay-preview {
+  width: 100%;
+  min-width: 0;
+  color: var(--replay-preview-fg, #e5e7eb);
+  background: var(--replay-preview-bg, #0f172a);
+  border: 1px solid var(--replay-preview-border, rgba(148, 163, 184, 0.28));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.replay-preview__frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  background: #0f172a;
+}
+
+.replay-preview__invalid,
+.replay-preview__empty,
+.replay-preview__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  padding: 20px;
+  color: var(--replay-preview-muted, #94a3b8);
+  font: 13px/1.5 ui-sans-serif, system-ui, sans-serif;
+  text-align: center;
+}
+
+.replay-preview__invalid {
+  color: var(--replay-preview-link, #7dd3fc);
+}
+
+.replay-preview__error {
+  color: #fda4af;
+}
+
+.replay-preview__native {
+  width: 100%;
+  background: #0f172a;
+}
+
+.replay-preview__stage {
+  position: relative;
+  width: 100%;
+  min-height: 160px;
+  overflow: hidden;
+  background: #020617;
+}
+
+.replay-preview__scaler {
+  position: absolute;
+  inset: 0 auto auto 0;
+}
+
+.replay-preview__player {
+  position: relative;
+  overflow: hidden;
+}
+
+.replay-preview__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  background: #111827;
+  font: 12px/1.2 ui-sans-serif, system-ui, sans-serif;
+}
+
+.replay-preview__controls button,
+.replay-preview__controls select {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 6px;
+  padding: 5px 8px;
+  color: inherit;
+  background: #1e293b;
+  cursor: pointer;
+}
+
+.replay-preview__controls input[type='range'] {
+  min-width: 60px;
+  flex: 1;
+  accent-color: #38bdf8;
+}
+
 /* Keep every rendered table variant flush, after the shared block spacing rules. */
 :is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-table, table, .docs-cards) {
   margin-block-start: 0;

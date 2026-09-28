@@ -632,21 +632,41 @@ import { ReactDemo } from "@brett_lamy/docstream/playground"
 
 ## Bundler Notes
 
-This release ships TypeScript and TSX source through ESM exports:
+Since 1.4 the package ships compiled ES modules (ES2022, `react-jsx`) with type
+declarations and declaration maps — one file per source module in `dist/`,
+dependencies left as imports, lazy features (Mermaid, KaTeX, rrweb, the
+playground's almost-node) still behind dynamic `import()`:
 
 ```json
 {
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./dist/styles.css"
   }
 }
 ```
 
-It is validated with Vite and modern TypeScript `moduleResolution: "Bundler"`. Plain Node.js, CommonJS, or tooling that does not transpile TypeScript in dependencies may need a future precompiled JS build.
+No bundler configuration is needed: Vite pre-bundles docstream like any other
+dependency (no `optimizeDeps` entries), Next.js and webpack consume it as plain
+ESM, and your type-check reads `.d.ts` files instead of docstream's sources. The
+`@brett_lamy/docstream/vite` entry is a Node-only Vite plugin; import it from
+`vite.config.ts`, never from browser code.
+
+The TypeScript sources are published too, behind a `source` export condition, for
+monorepos that want to compile docstream from source (e.g. Vite
+`resolve.conditions: ["source", ...]` or TypeScript `customConditions`).
+
+## Migrating to 1.4
+
+No API changes. Exports now resolve to `dist/*.js` + `dist/*.d.ts` instead of
+`src/*.ts(x)`; drop any `optimizeDeps.include` / `exclude` or
+`transpilePackages` entries you added for docstream, and any `lib` / `types`
+settings you added only so your type-check could compile docstream's sources.
 
 ## Migrating to 1.3
 

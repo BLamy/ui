@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type CSSProperties } from "react"
+import { useEffect, useId, useState, type CSSProperties } from "react"
 import { HighlightedCode } from "./HighlightedCode"
 
 let seq = 0
@@ -17,7 +17,6 @@ export function Mermaid({ code, collapsedCodeLines = 3, expandedCodeLines = 30 }
   const [svg, setSvg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [codeExpanded, setCodeExpanded] = useState(false)
-  const idRef = useRef(`mermaid-${++seq}`)
   const codePanelId = useId()
   const collapsedLines = positiveLineCount(collapsedCodeLines, 3)
   const expandedLines = Math.max(collapsedLines, positiveLineCount(expandedCodeLines, 30))
@@ -27,7 +26,10 @@ export function Mermaid({ code, collapsedCodeLines = 3, expandedCodeLines = 30 }
     import("mermaid")
       .then(async ({ default: mermaid }) => {
         mermaid.initialize({ startOnLoad: false, securityLevel: "strict" })
-        const { svg } = await mermaid.render(idRef.current, code)
+        // A fresh id per render: mermaid.render removes any element with the id it is given,
+        // so reusing one (StrictMode's double effect, a code change) deleted the diagram an
+        // earlier render had already mounted.
+        const { svg } = await mermaid.render(`mermaid-${++seq}`, code)
         if (!cancelled) setSvg(svg)
       })
       .catch((e) => {

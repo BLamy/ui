@@ -1,7 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import type { eventWithTime } from 'rrweb';
 import { normalizeReplayEmbedUrl } from './url';
-import './styles.css';
 
 export interface ReplayPageSource {
   kind: 'url';
