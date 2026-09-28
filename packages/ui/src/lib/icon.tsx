@@ -131,6 +131,9 @@ const SHAPES = {
   'mic-fill': [{ r: [9, 3.6, 6, 10.4, 3], f: 2 }, { d: 'M6 11.4a6 6 0 0 0 12 0M12 17.4v3' }],
   'music-note': [{ d: 'M12 17.2V4.2l5.6 2v3.2L12 7.4' }, { c: [9.4, 17.2, 2.6], f: 2 }],
   'music-notes': [{ d: 'M9 17.5V5.6l10-2v11.6' }, { c: [6.8, 17.6, 2.3], f: 1 }, { c: [16.8, 15.4, 2.3], f: 1 }],
+  'music-note-list': [{ d: 'M4 6.5h10M4 11h10M4 15.5h6' }, { d: 'M18 5v10.4' }, { c: [15.8, 15.6, 2.2], f: 2 }],
+  'books-vertical': [{ d: 'M5 4.5v15M9 4.5v15' }, { d: 'M13 5.2l3.6-1 3.8 14.6-3.6 1z' }],
+  'e-square-fill': [{ r: [4, 4, 16, 16, 3], f: 1 }, { d: 'M14.4 8H9.8v8h4.6M9.8 12h4', k: 1, w: 1.1 }],
   waveform: [{ d: 'M4.5 10.2v3.6' }, { d: 'M8.25 7.5v9' }, { d: 'M12 4.8v14.4' }, { d: 'M15.75 7.5v9' }, { d: 'M19.5 10.2v3.6' }],
   radiowaves: [
     { c: [12, 12, 2], f: 1 },
@@ -490,6 +493,7 @@ export const ICON_KEYWORDS: Partial<Record<IconCanonicalName, string>> = {
   'quote-bubble': 'lyrics quote', queue: 'up next list play', airplay: 'cast screen', speaker: 'volume sound audio',
   'speaker-low': 'volume sound', 'speaker-high': 'volume loud sound', 'speaker-slash': 'mute silent volume',
   mic: 'microphone record dictate voice', 'music-note': 'song audio', 'music-notes': 'song music audio',
+  'music-note-list': 'playlist songs tracks', 'books-vertical': 'library shelf collection', 'e-square-fill': 'explicit parental advisory',
   waveform: 'siri voice audio voicemail', radiowaves: 'broadcast radio live', photo: 'image picture',
   camera: 'photo picture', video: 'camera facetime movie', lock: 'secure private password', 'lock-open': 'unlock unsecure',
   key: 'password credential', passkey: 'person key credential', shield: 'security protect', 'shield-check': 'verified secure',
