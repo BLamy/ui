@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { enableDebugMode } from 'ios-vibrator-pro-max';
+import { useRef, useState, type CSSProperties } from 'react';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { cn } from '../lib/utils';
 import { List, ListRow, ListSection } from '../components/list';
 import { Switch } from '../components/switch';
 
-/* ══ Haptics Playground — the vibrator.dev homepage set: magic toggle, brightness, haptic slider,
-   slide-to-unlock, timer wheels. Every surface calls Haptics/navigator.vibrate inside the live gesture. ══ */
+/* ══ Haptics Playground — haptics setting, brightness, haptic slider, slide-to-unlock, timer wheels. Every surface
+   calls Haptics inside the live gesture. On Android each detent vibrates; iOS/macOS Safari can only tick on a tap,
+   a key press or a native range's input events, so the pointer-driven drags are silent there (see lib/haptics). ══ */
 
 const sq = (color: string, icon: string) => (
   <span className="grid size-[29px] shrink-0 place-items-center rounded-[7px]" style={{ background: color }}>
@@ -22,20 +22,23 @@ export function Sun({ size, color }: { size?: number; color?: string }) {
   );
 }
 
-export function ShowMagicRow() {
-  const [on, setOn] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+/** The user's haptics setting: flips `Haptics.enabled`, which persists on this device. */
+export function HapticsEnabledRow() {
+  const [on, setOn] = useState(() => Haptics.enabled);
   const toggle = (v: boolean) => {
-    setOn(v); Haptics.impact('light');
-    enableDebugMode(v);
-    setNote(v ? 'Overlay switches are now visible' : null);
+    // The Switch ticks before this runs, so turning off still ticks once; turning on confirms with one tick.
+    Haptics.enabled = v; setOn(v);
+    if (v) Haptics.impact('light');
   };
   return (
-    <ListRow leading={sq('#BF5AF2', 'wave')} title="Show the magic!" divider={false}
-      subtitle={note || 'Reveal the hidden switch overlays the polyfill drives'}
-      trailing={<Switch checked={on} onChange={toggle} aria-label="Show the magic" />} />
+    <ListRow leading={sq('#BF5AF2', 'wave')} title="Haptics" divider={false}
+      subtitle={on ? 'On for this device · Haptics.enabled' : 'Off — no ticks, no events'}
+      trailing={<Switch checked={on} onChange={toggle} aria-label="Haptics" />} />
   );
 }
+
+/** @deprecated The polyfill overlay it revealed is gone; this is now {@link HapticsEnabledRow}. */
+export const ShowMagicRow = HapticsEnabledRow;
 
 export function BrightnessSlider() {
   const [v, setV] = useState(0.55);
@@ -46,7 +49,7 @@ export function BrightnessSlider() {
     const d = Math.round(nv * 16); if (d !== det.current) { det.current = d; Haptics.selection(); }
   };
   return (
-    <div data-haptic-drag ref={ref} role="slider" aria-label="Brightness" aria-valuenow={Math.round(v * 100)} tabIndex={0}
+    <div ref={ref} role="slider" aria-label="Brightness" aria-valuenow={Math.round(v * 100)} tabIndex={0}
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); move(e); }}
       onPointerMove={(e) => { if (e.buttons) move(e); }}
       onKeyDown={(e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { setV((x) => Math.min(1, Math.max(0, x + (e.key === 'ArrowRight' ? 0.0625 : -0.0625)))); Haptics.selection(); e.preventDefault(); } }}
@@ -101,7 +104,7 @@ export function SlideToUnlock() {
         // The hint fades as the knob travels.
         style={{ opacity: done ? 1 : Math.max(0, 1 - x * 1.7) }}>
         {done ? 'unlocked' : 'slide to unlock'}</span>
-      <button data-haptic-drag aria-label="Slide to unlock"
+      <button aria-label="Slide to unlock"
         onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setDrag(true); }}
         onPointerMove={(e) => { if (drag) move(e); }}
         onPointerUp={up} onPointerCancel={up}
@@ -154,7 +157,7 @@ export function WheelDrum({ n, init, label }: { n: number; init?: number; label:
   const idx = -off / H;
   return (
     <div className="flex min-w-0 flex-1 items-center justify-center gap-[7px]">
-      <div data-haptic-drag role="spinbutton" aria-label={label} aria-valuenow={st.current.det} tabIndex={0}
+      <div role="spinbutton" aria-label={label} aria-valuenow={st.current.det} tabIndex={0}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
         onWheel={(e) => { e.preventDefault(); const d = e.deltaY > 0 ? 1 : -1; settle(clampHard((Math.round(-off / H) + d) * -H)); }}
         onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { settle(clampHard((Math.round(-off / H) + (e.key === 'ArrowDown' ? 1 : -1)) * -H)); e.preventDefault(); } }}
@@ -180,30 +183,22 @@ export function WheelDrum({ n, init, label }: { n: number; init?: number; label:
 }
 
 export function HapticsPlayground() {
-  const [, bump] = useState(0);
-  useEffect(() => {
-    const h = () => setTimeout(() => bump((x) => x + 1), 40);
-    window.addEventListener('bl-vib', h);
-    const t = setInterval(() => bump((x) => x + 1), 1200);
-    const stop = setTimeout(() => clearInterval(t), 10000);
-    return () => { window.removeEventListener('bl-vib', h); clearInterval(t); clearTimeout(stop); };
-  }, []);
   return (
     <List inset>
       <div className="px-1 pt-0.5 pb-3.5 text-[15px] leading-[1.5] text-muted-foreground">
-        The playground from <span className="[font-family:ui-monospace,Menlo,monospace] text-[13.5px]">vibrator.dev</span> — on an iPhone or MacBook, in Safari, you'll feel haptic feedback as you slide these elements. <span className="text-bl-label3">(If you don't feel anything, drag slower.)</span></div>
+        Tap, slide and spin. On Android every detent vibrates. In Safari on an iPhone, or a Mac with a Force Touch trackpad, taps tick and so does the native haptic slider. <span className="text-bl-label3">(iOS can't tick mid-drag, so the custom drags are silent there.)</span></div>
       <div className="px-1 pt-0 pb-4 [font-family:ui-monospace,Menlo,monospace] text-[12px] text-bl-label3">engine: {Haptics.engine}</div>
-      <ListSection><ShowMagicRow /></ListSection>
+      <ListSection><HapticsEnabledRow /></ListSection>
       <ListSection title="Brightness">
         <div className="rounded-[12px] bg-card p-3.5"><BrightnessSlider /></div>
       </ListSection>
-      <ListSection title="Haptic slider">
+      <ListSection title="Haptic slider" footer="A native range input: Safari can tick on its input events.">
         <div className="rounded-[12px] bg-card px-3.5 py-2.5"><HapticSlider /></div>
       </ListSection>
       <ListSection title="Slide to unlock">
         <div className="rounded-[12px] bg-card p-2.5"><SlideToUnlock /></div>
       </ListSection>
-      <ListSection title="Timer" footer="A selection tick per detent — Haptics.selection(), the same call the A–Z index scrubber makes. Flick a wheel: ticks ride the momentum. Playground set recreated from vibrator.dev — ios-vibrator-pro-max by @samdenty (MIT).">
+      <ListSection title="Timer" footer="A selection tick per detent — Haptics.selection(), the same call the A–Z index scrubber makes. Flick a wheel: on Android the ticks ride the momentum.">
         <div className="flex gap-0.5 rounded-[12px] bg-card px-2.5 py-2">
           <WheelDrum n={24} init={1} label="hours" />
           <WheelDrum n={60} init={30} label="min" />

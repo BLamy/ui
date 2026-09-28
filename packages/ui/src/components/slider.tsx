@@ -96,7 +96,6 @@ export function SliderTrack({ className, children, ...props }: SliderTrackProps)
   return (
     <AriaSliderTrack
       data-slot="slider-track"
-      data-haptic-drag=""
       className={composeRenderProps(className, (cls) => cn('relative mx-[13px] h-7 cursor-pointer group-data-[size=sm]:mx-[6px] group-data-[size=sm]:h-5 data-disabled:cursor-default', cls))}
       {...props}
     >

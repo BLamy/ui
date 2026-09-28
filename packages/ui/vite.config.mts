@@ -41,11 +41,9 @@ export default defineConfig(() => ({
     },
     rolldownOptions: {
       // External packages that should not be bundled into your library.
-      // Dependencies stay external so apps share one copy (react-aria's contexts must be shared), except
-      // ios-vibrator-pro-max: we ship it patched, so it is bundled rather than resolved from npm.
+      // Dependencies stay external so apps share one copy (react-aria's contexts must be shared).
       external: (id: string) =>
         [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {}), 'react/jsx-runtime']
-          .filter((dep) => dep !== 'ios-vibrator-pro-max')
           .some((dep) => id === dep || id.startsWith(dep + '/')),
     },
   },
