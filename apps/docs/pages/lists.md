@@ -46,19 +46,21 @@ import {
 A sticky section header has to stop below whatever chrome is above it. `BLList` figures that out instead of you passing pixels:
 
 ```jsx
-// In a NavigationStack screen: sections stick below the nav bar — and follow it up when it hides
+// In a NavigationStack screen: sections stick below the nav bar — and follow
+// it up when it hides
 <BLList><BLSection title="A" sticky>…</BLSection></BLList>
 
 // In a bare scroller: no chrome above, so sections stick at the very top
 <BLList><BLSection title="A" sticky>…</BLSection></BLList>
 
-// The list has its own header: sections stick below it, whatever height it measures
+// The list has its own header: sections stick below it, whatever its height
 <BLList header={<SearchField/>}>
   <BLSection title="A" sticky>…</BLSection>
 </BLList>
 
 // Or state it yourself
-<BLList stickyTop={72}>…</BLList>   // also available per-section: <BLSection stickyTop={…}>
+// (also per section: <BLSection stickyTop={…}>)
+<BLList stickyTop={72}>…</BLList>
 ```
 
 A `header` passed to `BLList` sticks to the top of the list itself and is measured with a ResizeObserver, so a header that grows (a search field turning into a scope bar) keeps the section offsets honest. Nothing needs to know the value of `BARH`.

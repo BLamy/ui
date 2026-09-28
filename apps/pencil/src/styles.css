@@ -1,1 +1,7 @@
-html,body,#root{height:100%;margin:0}
+/* @brett_lamy/ui's stylesheet, compiled together with this app's Tailwind classes. A relative path to the
+   package source, like registry/styles.css: Tailwind's @import resolver ignores the workspace `@org/source`
+   export condition (the package's default export is the built dist sheet). */
+@import "../../../packages/ui/src/styles.css";
+@source "./";
+
+html, body, #root { height: 100%; margin: 0; }

@@ -63,7 +63,10 @@ Every palette pick ticks with `Haptics.selection()`; undo and redo thump lightly
 import { PencilKitDemo, demoStrokes } from '@brett_lamy/ui'
 
 <div style={{ position: 'relative', height: 540 }}>
-  <PencilKitDemo defaultStrokes={demoStrokes()} style={{ position: 'absolute', inset: 0 }} />
+  <PencilKitDemo
+    defaultStrokes={demoStrokes()}
+    style={{ position: 'absolute', inset: 0 }}
+  />
 </div>
 ```
 

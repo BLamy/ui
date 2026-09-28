@@ -33,10 +33,12 @@ import {
 
 ```tsx
 import {
-  ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader, ChatShellNavTrigger,
-  ChatShellHeaderIcon, ChatShellTitle, ChatShellFooter, ChatShellAside, ChatShellPanel,
-  WorkspaceRail, WorkspaceRailList, WorkspaceRailItem, ServerHeader, ChannelList, ChannelGroup,
-  ChannelItem, UserPanel, MessageList, MemberList, ChatComposer,
+  ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader,
+  ChatShellNavTrigger, ChatShellHeaderIcon, ChatShellTitle, ChatShellFooter,
+  ChatShellAside, ChatShellPanel,
+  WorkspaceRail, WorkspaceRailList, WorkspaceRailItem, ServerHeader,
+  ChannelList, ChannelGroup, ChannelItem, UserPanel, MessageList, MemberList,
+  ChatComposer,
 } from '@brett_lamy/ui'
 
 export function Chat() {
@@ -72,7 +74,9 @@ export function Chat() {
         </ChatShellFooter>
       </ChatShellMain>
       <ChatShellAside><MemberList>…</MemberList></ChatShellAside>
-      <ChatShellPanel open={!!thread} onOpenChange={closeThread}>…</ChatShellPanel>
+      <ChatShellPanel open={!!thread} onOpenChange={closeThread}>
+        …
+      </ChatShellPanel>
     </ChatShell>
   )
 }

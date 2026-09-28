@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import {
+  chatVars,
   Icon,
   TabView,
   TabViewBar,
@@ -7,6 +8,7 @@ import {
   TabViewPanel,
   TabViewPanels,
   TabViewTab,
+  useAppearance,
   WorkspaceRail,
   WorkspaceRailAction,
   WorkspaceRailHome,
@@ -104,14 +106,17 @@ function ServerRail({
 }) {
   const serverName =
     server === 'home' ? 'Direct Messages' : servers.find((s) => s.id === server)?.title
+  // WorkspaceRail reads the chat --ck-* tokens; chatVars follows light / dark.
+  const appearance = useAppearance() ?? 'light'
   return (
     <div
       style={{
+        ...chatVars(appearance),
         position: 'absolute',
         inset: 0,
         display: 'flex',
-        background: '#131318',
-        color: '#EDEDF2',
+        background: 'var(--ck-bg)',
+        color: 'var(--ck-label)',
       }}
     >
       <WorkspaceRail selectedKey={server} onSelectionChange={setServer}>
@@ -129,11 +134,16 @@ function ServerRail({
           padding: '22px 24px',
           fontSize: 13,
           lineHeight: 1.5,
-          color: 'rgba(235,235,245,.6)',
+          color: 'var(--ck-mut)',
         }}
       >
         <div
-          style={{ fontSize: 16.5, fontWeight: 650, color: '#EDEDF2', marginBottom: 4 }}
+          style={{
+            fontSize: 16.5,
+            fontWeight: 650,
+            color: 'var(--ck-label)',
+            marginBottom: 4,
+          }}
         >
           {serverName}
         </div>

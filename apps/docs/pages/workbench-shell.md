@@ -33,8 +33,9 @@ import {
 
 ```tsx
 import {
-  WorkbenchShell, WorkbenchSidebar, WorkbenchMain, WorkbenchHeader, WorkbenchSidebarTrigger, WorkbenchTitle,
-  WorkbenchActions, WorkbenchDockTrigger, WorkbenchPanelTrigger, WorkbenchDock, WorkbenchPanel,
+  WorkbenchShell, WorkbenchSidebar, WorkbenchMain, WorkbenchHeader,
+  WorkbenchSidebarTrigger, WorkbenchTitle, WorkbenchActions,
+  WorkbenchDockTrigger, WorkbenchPanelTrigger, WorkbenchDock, WorkbenchPanel,
   WorkbenchTabBar, WorkbenchTab,
 } from '@brett_lamy/ui'
 

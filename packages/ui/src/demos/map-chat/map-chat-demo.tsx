@@ -70,6 +70,26 @@ let uidCounter = 0;
 const uid = (prefix: string) => `${prefix}-${(uidCounter++).toString(36)}-${Date.now().toString(36)}`;
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+/** Runs `fn` once the press in progress has finished its click (or shortly, if no click follows). A starter
+    chip hides itself when the turn starts. Under the iOS haptics polyfill the press's tick is a switch the click
+    toggles through an overlay on the pressed element — as the click's activation, after every listener — and
+    unmounting the chip removes that overlay. Hiding it mid-click dropped the tick to the polyfill's fallback
+    loop, which runs after the new turn's render and often found the 16ms pulse already expired. */
+function afterClick(fn: () => void) {
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    window.removeEventListener('click', onClick, true);
+    clearTimeout(timer);
+    fn();
+  };
+  // A task after the click, so its activation (the tick) has happened.
+  const onClick = () => setTimeout(run);
+  window.addEventListener('click', onClick, true);
+  const timer = setTimeout(run, 350);
+}
+
 function summarizeArgs(args: Record<string, unknown>): string {
   return Object.entries(args)
     .map(([key, value]) => {
@@ -261,12 +281,12 @@ export function MapChatDemo({
   );
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, { haptic = true }: { haptic?: boolean } = {}) => {
       const trimmed = text.trim();
       if (!trimmed || busy) return;
       cancelRef.current = false;
       setBusy(true);
-      Haptics.selection();
+      if (haptic) Haptics.selection();
       const plan = planTurn(trimmed, memoryRef.current, USER_POSITION);
       memoryRef.current = plan.memory;
       const assistantId = uid('a');
@@ -513,7 +533,10 @@ export function MapChatDemo({
                           '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
                           chrome.chip,
                         )}
-                        onPress={() => void send(s)}
+                        onPress={() => {
+                          Haptics.selection();
+                          afterClick(() => void send(s, { haptic: false }));
+                        }}
                       >
                         {s}
                       </Button>

@@ -42,7 +42,10 @@ The index is [`registry.json`](https://blamy.github.io/ui/r/registry.json). With
 ```ts
 // vite.config.ts
 optimizeDeps: {
-  include: ['@brett_lamy/ui > @brett_lamy/docstream', '@brett_lamy/ui > @brett_lamy/docstream-editor'],
+  include: [
+    '@brett_lamy/ui > @brett_lamy/docstream',
+    '@brett_lamy/ui > @brett_lamy/docstream-editor',
+  ],
 },
 ```
 

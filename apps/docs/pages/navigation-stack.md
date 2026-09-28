@@ -74,7 +74,8 @@ The bar collapses **to a floor, never to nothing**: set `--bl-safe-top` (or pass
 
 ```jsx
 // device frame
-<div style={{'--bl-safe-top': '59px'}}>     // env(safe-area-inset-top) on real hardware
+// --bl-safe-top is env(safe-area-inset-top) on real hardware
+<div style={{'--bl-safe-top': '59px'}}>
   <App safeTop={59}/>
 </div>
 ```

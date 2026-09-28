@@ -32,9 +32,17 @@ function Shell({ nav, children }) {
   const [ref, width] = useContainerWidth()
   const [open, setOpen] = useState(false)
   return (
-    <div ref={ref} style={{ position: 'relative', display: 'flex', height: '100%' }}>
-      <AdaptivePane mode={width < 760 ? 'drawer' : 'column'} open={open} onClose={() => setOpen(false)}
-        columnWidth={240} drawerWidth={280}>
+    <div
+      ref={ref}
+      style={{ position: 'relative', display: 'flex', height: '100%' }}
+    >
+      <AdaptivePane
+        mode={width < 760 ? 'drawer' : 'column'}
+        open={open}
+        onClose={() => setOpen(false)}
+        columnWidth={240}
+        drawerWidth={280}
+      >
         {nav}
       </AdaptivePane>
       <main style={{ flex: 1, minWidth: 0 }}>{children}</main>

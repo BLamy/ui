@@ -33,14 +33,19 @@ import {
 
 ```tsx
 import {
-  Composer, ComposerBump, ComposerBumpHandle, ComposerBumpContent, ComposerCard, ComposerButton,
-  ComposerAttachments, ComposerInput, ComposerExpand, ComposerFooter, ComposerSelect,
-  ComposerSeparator, ComposerSpacer, ComposerAttach, ComposerStop, ComposerSend,
-  ComposerText, ModelPicker,
+  Composer, ComposerBump, ComposerBumpHandle, ComposerBumpContent, ComposerCard,
+  ComposerButton, ComposerAttachments, ComposerInput, ComposerExpand,
+  ComposerFooter, ComposerSelect, ComposerSeparator, ComposerSpacer,
+  ComposerAttach, ComposerStop, ComposerSend, ComposerText, ModelPicker,
 } from '@brett_lamy/ui'
 
-<Composer onSubmit={(markdown, attachments) => send(markdown, attachments)} streaming={busy} onStop={stop}>
-  <ComposerBump side="top" draggable>              {/* drag the handle up to reveal the log */}
+<Composer
+  onSubmit={(markdown, attachments) => send(markdown, attachments)}
+  streaming={busy}
+  onStop={stop}
+>
+  {/* drag the handle up to reveal the log */}
+  <ComposerBump side="top" draggable>
     <ComposerBumpContent><DevServerLog /></ComposerBumpContent>
     <ComposerBumpHandle>
       <ComposerText className="flex-1">● Monitoring</ComposerText>
@@ -48,10 +53,10 @@ import {
     </ComposerBumpHandle>
   </ComposerBump>
   <ComposerCard size="lg">
-    <ComposerAttachments />                         {/* block-start: thumbnails */}
+    <ComposerAttachments />                   {/* block-start: thumbnails */}
     <ComposerInput placeholder="Ask anything" />
     <ComposerExpand />
-    <ComposerFooter>                                {/* block-end */}
+    <ComposerFooter>                          {/* block-end */}
       <ModelPicker models={models} providers={providers} />
       <ComposerSeparator />
       <ComposerSelect aria-label="Effort" options={efforts} />
@@ -65,7 +70,9 @@ import {
   </ComposerCard>
   <ComposerBump side="bottom">
     <ComposerBumpHandle>
-      <ComposerText icon="folder" className="flex-1">Local checkout</ComposerText>
+      <ComposerText icon="folder" className="flex-1">
+        Local checkout
+      </ComposerText>
       <ComposerText icon="branch">main</ComposerText>
     </ComposerBumpHandle>
   </ComposerBump>
@@ -175,8 +182,17 @@ A searchable model menu in the style of T3 Code, and the footer's model pill. Se
 
 ```tsx
 <ModelPicker
-  models={[{ id: 'opus', name: 'Claude Opus 5.5', provider: 'anthropic', badge: 'NEW', shortcut: 1 }, …]}
-  providers={[{ id: 'anthropic', name: 'Anthropic', icon: <AnthropicGlyph /> }, …]}
+  models={[
+    {
+      id: 'opus', name: 'Claude Opus 5.5', provider: 'anthropic',
+      badge: 'NEW', shortcut: 1,
+    },
+    …
+  ]}
+  providers={[
+    { id: 'anthropic', name: 'Anthropic', icon: <AnthropicGlyph /> },
+    …
+  ]}
   value={model} onChange={setModel}
   favorites={favorites} onFavoritesChange={setFavorites}
 />

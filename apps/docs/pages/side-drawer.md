@@ -38,7 +38,9 @@ import { SideDrawer } from '@/components/ui/side-drawer'
 </SideDrawer>
 
 // desktop/tablet: overlay sheet
-<SideDrawer mode="overlay" open={act} onClose={close} title="Activity" width={340}>
+<SideDrawer
+  mode="overlay" open={act} onClose={close} title="Activity" width={340}
+>
   <ActivityView c={contact}/>
 </SideDrawer>
 

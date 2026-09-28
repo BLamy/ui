@@ -34,7 +34,9 @@ import {
 ```tsx
 import { SyntaxHighlighting } from '@brett_lamy/ui'
 
-<SyntaxHighlighting code={source} language="ts" title="src/queue.ts" lineNumbers showCopy />
+<SyntaxHighlighting
+  code={source} language="ts" title="src/queue.ts" lineNumbers showCopy
+/>
 ```
 
 ## Live examples
