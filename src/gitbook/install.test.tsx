@@ -50,8 +50,11 @@ describe("{% command %}", () => {
       { type: "command", command: "npm install x\nnpm run build", overrides: { bun: "bun add x --trust" }, sync: "setup" },
     ])
     expect(serializeMarkdown(parseMarkdown(block))).toBe(block)
-    // A one-command block form serializes as the one-liner; `sync="pm"` is the default.
-    expect(serializeMarkdown(parseMarkdown('{% command sync="pm" %}\nnpm i x\n{% endcommand %}'))).toBe("{% command %}npm i x{% endcommand %}\n")
+    // A one-command block form comes back as written; a programmatic node gets the one-liner (`sync="pm"` is the default).
+    const written = '{% command sync="pm" %}\nnpm i x\n{% endcommand %}\n'
+    expect(serializeMarkdown(parseMarkdown(written))).toBe(written)
+    const [node] = parseMarkdown(written).children
+    expect(serializeMarkdown({ type: "doc", children: [{ ...node, raw: undefined } as typeof node] })).toBe("{% command %}npm i x{% endcommand %}\n")
   })
 
   it("never flashes a half-streamed one-liner as text", () => {

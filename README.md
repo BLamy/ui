@@ -8,7 +8,11 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 
 - React renderer for GitBook-style markdown blocks.
 - Streaming-friendly `GitbookStreamdown` component inspired by `vercel/streamdown`.
-- Parser and serializer for round-tripping supported GitBook syntax.
+- Parser and serializer for round-tripping supported GitBook syntax — byte-for-byte: `serializeMarkdown(parseMarkdown(md)) === md`
+  for Markdown and GitBook pages (the author's emphasis markers, escapes, link forms and reference definitions,
+  Markdown vs HTML images, blank lines between blocks, list markers, fences, table layout and tag lines as written).
+  Layout-only fields (`gap`, `raw`, `opening`, …) are recorded only where the source differs from the default
+  output, and are ignored once they no longer fit an edited node.
 - Syntax-highlighted code blocks through `lowlight`.
 - GitBook block support for hints, tabs, expandables, steppers, embeds, content refs, columns, figures, tables, math, dividers, updates, and OpenAPI operations.
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.

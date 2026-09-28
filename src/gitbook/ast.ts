@@ -3,13 +3,14 @@
 
 export type HintStyle = "info" | "success" | "warning" | "danger"
 
-export interface TextNode {
-  type: "text"
-  text: string
+/**
+ * Formatting every inline carries — text runs, chips and inline images alike, so emphasis and links can span
+ * them (`**ask @brett**`, `*see ![i](s)*`, `[![badge](b.svg)](url)`) — plus how the source spelled it.
+ */
+export interface InlineMarks {
   bold?: boolean
   italic?: boolean
   strike?: boolean
-  code?: boolean
   link?: string
   /**
    * The link sits inside the emphasis (`**[x](url)**`) rather than around it
@@ -17,31 +18,92 @@ export interface TextNode {
    */
   linkInner?: true
   /**
-   * How the source spelled this run's formatting, outermost → innermost, when that differs from the default
+   * How the source spelled this inline's formatting, outermost → innermost, when that differs from the default
    * output (`_italic_`, `**bold**`, `~~strike~~`, link around its emphasis, bare autolinks). Each entry is an
-   * emphasis marker, or a link form: `"link"` (`[x](url)`), `"<>"` (`<url>`), `"url"` (bare autolink).
-   * E.g. `**_x_**` → `["**", "_"]`, `***x***` → `["*", "**"]`, `*x*` → `["*"]`.
+   * emphasis marker, or a link form (see {@link LinkForm}). E.g. `**_x_**` → `["**", "_"]`, `***x***` →
+   * `["*", "**"]`, `*x*` → `["*"]`, `*a *b* c*` → `["*", "*"]` for `b`.
    *
    * A hint only — the boolean marks and `link` stay authoritative: entries for marks the run no longer has are
    * ignored, marks it has without an entry get the default spelling and position. Absent on runs that
    * serialize the default way and on programmatically created nodes.
    */
   delims?: InlineDelimiter[]
+  /** The link's title as written between the quotes: `[x](url "title")`. */
+  linkTitle?: string
+  /**
+   * The reference label of a reference-style link, as written: `ref` for `[text][ref]`, and the link text
+   * for the collapsed `[text][]` and shortcut `[text]` forms.
+   */
+  linkRef?: string
+  /** The opening tag of an inline HTML link as written (`<a href="…" target="_blank">`). */
+  linkTag?: string
+  /** The closing tag of an inline HTML link, when not `</a>` (`</A>`). */
+  linkTagEnd?: string
+  /**
+   * Link identity: set on the runs of a link that directly follows another link to the same target
+   * (`[a](u)[b](u)`), so the two stay distinct instead of merging into one. Runs of one link share it.
+   */
+  linkId?: number
+}
+
+export interface TextNode extends InlineMarks {
+  type: "text"
+  text: string
+  code?: boolean
+  /**
+   * The source wrote every character of this run backslash-escaped (`snake\_case` → `snake`, `_` escaped,
+   * `case`). Only ASCII punctuation can be escaped. Kept so author escapes survive even where they aren't
+   * needed; the text itself is the literal characters.
+   */
+  escaped?: true
+  /**
+   * Code span in a GFM table cell: offsets (in `text`) of the `|` characters the source wrote bare instead
+   * of as `\|`. Serialization escapes every other pipe.
+   */
+  barePipes?: number[]
+  /** A code span's backtick count as written, when longer than serialization needs (```` ```x``` ````). */
+  ticks?: number
 }
 
 /** An emphasis marker as written in the source. */
 export type EmphasisDelimiter = "**" | "__" | "*" | "_" | "~~"
-/** An entry of {@link TextNode.delims}: an emphasis marker or a link form. */
-export type InlineDelimiter = EmphasisDelimiter | "link" | "<>" | "url"
+/**
+ * How a link is written: `"link"` `[x](url)`, `"<>"` `<url>`, `"url"` a bare autolink, `"ref"` `[x][label]`,
+ * `"collapsed"` `[x][]`, `"shortcut"` `[x]` (the last three resolved through a `[label]: url` definition),
+ * `"html"` `<a href="url">x</a>`.
+ */
+export type LinkForm = "link" | "<>" | "url" | "ref" | "collapsed" | "shortcut" | "html"
+/** An entry of {@link InlineMarks.delims}: an emphasis marker or a link form. */
+export type InlineDelimiter = EmphasisDelimiter | LinkForm
 
-/** Inline HTML image, optionally wrapped in a link — GitHub README badge style. */
-export interface InlineImageNode {
+/**
+ * Inline image: `![alt](src "title")` (`syntax: "markdown"`), or HTML `<img …>` / `<a href><img …></a>`
+ * (GitHub README badge style, the default).
+ *
+ * `link` without a link form in `delims` is the HTML `<a href>` around the `<img>`; with one
+ * (`[![a](s)](url)`) it is an ordinary link mark that may span neighbouring text.
+ */
+export interface InlineImageNode extends InlineMarks {
   type: "image"
   src: string
   alt?: string
   width?: string
   height?: string
-  link?: string
+  /** `![alt](src "title")`'s title, as written between the quotes. */
+  title?: string
+  /** Written as Markdown `![alt](src)`. Absent: HTML `<img>`. */
+  syntax?: "markdown"
+  /**
+   * A Markdown image whose source comes from a definition: `![alt][label]` (`"ref"`), `![alt][]`
+   * (`"collapsed"`) or `![alt]` (`"shortcut"`), with `srcRef` the label as written.
+   */
+  srcForm?: "ref" | "collapsed" | "shortcut"
+  srcRef?: string
+  /**
+   * The HTML as written (`<img …>`, or `<a href><img …></a>` for a linked image). Serialization reuses it
+   * while it still says the same src / alt / width / height / link; otherwise it writes fresh HTML.
+   */
+  html?: string
 }
 
 export type ReferenceKind = "mention" | "tag" | "codebase" | "citation"
@@ -50,8 +112,10 @@ export type ReferenceKind = "mention" | "tag" | "codebase" | "citation"
  * Inline reference chip: `@mention`, `#tag`, or footnote-style citation `[^id]`.
  * `id` carries no sigil. Citations resolve `url`/`label` from their
  * `[^id]: url "Label"` definition at parse time when one exists.
+ *
+ * The inherited `link` is a link *around* the chip (`[@brett](url)`); `url` is the citation's target.
  */
-export interface ReferenceNode {
+export interface ReferenceNode extends InlineMarks {
   type: "reference"
   kind: ReferenceKind
   id: string
@@ -68,18 +132,55 @@ export interface CitationDef {
 
 export type Inline = TextNode | InlineImageNode | ReferenceNode
 
-export interface ParagraphNode {
-  type: "paragraph"
-  children: Inline[]
+/**
+ * Layout the source used around a block, recorded only where it differs from the serializer's default so
+ * pages round-trip byte-for-byte.
+ */
+export interface BlockSpacing {
+  /**
+   * Blank lines before this block (or tab / step / column / update / list item): by default 1 between
+   * siblings and 0 before the first child of a container (1 after an expandable's `<summary>`).
+   */
+  gap?: number
+  /** Those blank lines as written, when some hold whitespace. */
+  blanks?: string[]
 }
 
-export interface HeadingNode {
+/** A `{% tag %}` container's opening and closing lines as written, reused while they still say the same. */
+export interface TagLines {
+  /** The opening tag line, when not the one serialization writes (quote style, spacing, extra attributes). */
+  opening?: string
+  /** The closing tag line, when not the canonical `{% endtag %}` ("" when the input ended first). */
+  closing?: string
+}
+
+/** A block's source lines as written, where they aren't what serialization writes; reused while they still parse to the same block. */
+export interface RawSource {
+  raw?: string
+}
+
+/** Spacing inside a container, before its closing line. */
+export interface ContainerSpacing extends BlockSpacing {
+  /** Blank lines between the last child and the closing tag (default 0; 1 in an expandable). */
+  gapEnd?: number
+}
+
+export interface ParagraphNode extends BlockSpacing {
+  type: "paragraph"
+  children: Inline[]
+  /** Whitespace before the paragraph's first line, as written (continuation lines keep theirs in the text). */
+  indent?: string
+}
+
+export interface HeadingNode extends BlockSpacing {
   type: "heading"
   level: 1 | 2 | 3 | 4 | 5 | 6
   children: Inline[]
+  /** A setext heading's underline as written (`===`, `---`); absent for `#` headings. */
+  setext?: string
 }
 
-export interface CodeBlockNode {
+export interface CodeBlockNode extends BlockSpacing {
   type: "code"
   language: string | null
   title: string | null
@@ -102,21 +203,31 @@ export interface CodeBlockNode {
   collapsedCodeLines?: number
   /** Maximum source lines visible before expanded code scrolls. */
   expandedCodeLines?: number
+  /** The opening fence as written when not ```` ``` ```` (`~~~`, ````` ```` `````). */
+  fence?: string
+  /** The info string as written after the fence, when it isn't the one serialization writes. */
+  info?: string
+  /** The closing fence line as written, when it isn't the opening fence ("" when the input ended first). */
+  closingFence?: string
+  /** An indented (four-space) code block rather than a fence. */
+  indented?: true
+  /** The block as written when it isn't a plain fence (a `{% code %}` wrapper), reused while it still says the same. */
+  raw?: string
 }
 
-export interface HintNode {
+export interface HintNode extends ContainerSpacing, TagLines {
   type: "hint"
   style: HintStyle
   children: Block[]
 }
 
-export interface TabNode {
+export interface TabNode extends ContainerSpacing, TagLines {
   type: "tab"
   title: string
   children: Block[]
 }
 
-export interface TabsNode {
+export interface TabsNode extends ContainerSpacing, TagLines {
   type: "tabs"
   tabs: TabNode[]
   /**
@@ -143,7 +254,7 @@ export type PackageManager = "npm" | "pnpm" | "yarn" | "bun"
  * manager (`pnpm="…"`). The reader's manager is synced page-wide (and across
  * pages) under `sync` — `"pm"` by default, the same key install `{% tabs %}` use.
  */
-export interface CommandNode {
+export interface CommandNode extends BlockSpacing, RawSource {
   type: "command"
   /** The npm / npx command (may span lines). */
   command: string
@@ -153,24 +264,36 @@ export interface CommandNode {
   sync?: string
 }
 
-export interface ExpandableNode {
+export interface ExpandableNode extends ContainerSpacing {
+  /** The closing line, when not `</details>`. */
+  closing?: string
   type: "expandable"
   summary: string
   children: Block[]
+  /**
+   * The lines from `<details>` through `</summary>` as written, when not `<details>`, a blank line,
+   * `<summary>…</summary>`. Reused while they still say the same summary.
+   */
+  opening?: string
 }
 
-export interface StepNode {
+export interface StepNode extends ContainerSpacing, TagLines {
   type: "step"
   title: string
   children: Block[]
+  /**
+   * The title heading as written (and any blank lines before it), when not `### title` — `## Title`,
+   * `### **Bold** title`. Reused while it still gives the same title.
+   */
+  heading?: string
 }
 
-export interface StepperNode {
+export interface StepperNode extends ContainerSpacing, TagLines {
   type: "stepper"
   steps: StepNode[]
 }
 
-export interface EmbedNode {
+export interface EmbedNode extends BlockSpacing {
   type: "embed"
   url: string
   title?: string
@@ -179,12 +302,16 @@ export interface EmbedNode {
   muted?: boolean
   controls?: boolean
   poster?: string
+  /** The tag as written (with its `{% endembed %}`), reused while it still says the same. */
+  raw?: string
 }
 
-export interface ContentRefNode {
+export interface ContentRefNode extends BlockSpacing {
   type: "content-ref"
   url: string
   children: Inline[]
+  /** The block as written when it isn't the canonical `{% content-ref %}` (a `{% file %}` tag), reused while it still says the same. */
+  raw?: string
 }
 
 export type SourceReferenceKind = "component" | "story"
@@ -193,7 +320,7 @@ export type SourceReferenceKind = "component" | "story"
  * A reference to an export in a real source file. The source file remains the
  * authority; Markdown only stores the composition and presentation metadata.
  */
-export interface SourceRefNode {
+export interface SourceRefNode extends BlockSpacing {
   type: "source-ref"
   /** Name of the directory mounted by the Docstream Vite plugin. */
   mount: string
@@ -203,6 +330,8 @@ export interface SourceRefNode {
   exportName: string
   kind: SourceReferenceKind
   title?: string
+  /** The tag as written (`{% component … %}`, an end tag), reused while it still says the same. */
+  raw?: string
 }
 
 export type DemoLayout = "auto" | "single" | "multi"
@@ -238,7 +367,7 @@ export interface DemoInlineFile {
  *     ```
  *     {% enddemo %}
  */
-export interface DemoNode {
+export interface DemoNode extends BlockSpacing, RawSource {
   type: "demo"
   /** `<page>/<example>` folder id understood by the host's resolver. */
   src: string
@@ -276,66 +405,103 @@ export interface DemoNode {
   open?: true
 }
 
-export interface ColumnNode {
+export interface ColumnNode extends ContainerSpacing, TagLines {
   type: "column"
   children: Block[]
 }
 
-export interface ColumnsNode {
+export interface ColumnsNode extends ContainerSpacing, TagLines {
   type: "columns"
   columns: ColumnNode[]
 }
 
-export interface FigureNode {
+export interface FigureNode extends BlockSpacing {
   type: "figure"
   src: string
   alt: string
   caption: string
+  /** `![alt](src "title")`'s title. */
+  title?: string
+  /**
+   * The line(s) as written (`![alt](src)`, `<img …>`, `<figure>…</figure>`). Serialization reuses them while
+   * they still parse to the same src / alt / caption / title; otherwise it writes a `<figure>`.
+   */
+  raw?: string
 }
 
-export interface ListItemNode {
+export interface ListItemNode extends ContainerSpacing {
   type: "listItem"
   children: Block[]
   checked?: boolean // present only in task lists
+  /** The item's marker as written (`*`, `3.`), when it isn't the one its list's pattern gives it. */
+  marker?: string
+  /** Spaces between the marker and the content (default 1). */
+  pad?: number
+  /** Indent of the item's continuation lines, relative to its marker (default 2). */
+  indent?: number
+  /** A checked task written `[X]`. */
+  checkMark?: "X"
 }
 
-export interface ListNode {
+export interface ListNode extends BlockSpacing {
   type: "list"
   ordered: boolean
   task: boolean
   items: ListItemNode[]
+  /** Bullet marker of an unordered list (default `-`). */
+  bullet?: "*" | "+"
+  /** Number of an ordered list's first item (default 1). */
+  start?: number
+  /** Ordered-list delimiter (default `.`). */
+  delimiter?: ")"
+  /** Whitespace before the list's markers, as written. */
+  indent?: string
 }
 
-export interface BlockquoteNode {
+export interface BlockquoteNode extends ContainerSpacing {
   type: "blockquote"
   children: Block[]
+  /** Each line's `>` prefix as written (indent, spacing), when not `> ` (`>` on empty lines). */
+  markers?: string[]
 }
 
-export interface DividerNode {
+export interface DividerNode extends BlockSpacing {
   type: "divider"
+  /** The rule as written when not `---` (`***`, `___`, `-----`). */
+  marker?: string
 }
 
-export interface TableNode {
+export interface TableNode extends BlockSpacing {
   type: "table"
   header: Inline[][]
   rows: Inline[][][]
   /** GitBook table view, e.g. "cards" for <table data-view="cards"> */
   view?: string
+  /** Written as an HTML `<table>` (without a view). */
+  html?: true
+  /** Column alignment from the delimiter row (`:---`, `:---:`, `---:`); null = default. */
+  align?: Array<"left" | "center" | "right" | null>
+  /** The delimiter row as written (`|:--|--:|`), reused while it still says the same `align`. */
+  delimiterRow?: string
+  /** An HTML table as written, reused while it still parses to the same cells. */
+  raw?: string
+  /** GFM rows as written (header first), each reused while it still parses to the same cells. */
+  rawRows?: string[]
 }
 
-export interface UpdateNode {
+export interface UpdateNode extends ContainerSpacing, TagLines {
   type: "update"
   date: string
   children: Block[]
 }
 
-export interface UpdatesNode {
+export interface UpdatesNode extends ContainerSpacing, TagLines {
   type: "updates"
   format: string | null
   updates: UpdateNode[]
 }
 
-export interface OpenApiOperationNode {
+export interface OpenApiOperationNode extends BlockSpacing, RawSource {
   type: "openapi-operation"
   spec: string
   path: string
@@ -344,7 +510,30 @@ export interface OpenApiOperationNode {
   label: string
 }
 
-export interface MathNode {
+/**
+ * A reference-style link definition, `[label]: url "title"`, where the source put it. Links written
+ * `[text][label]`, `[text][]` or `[label]` resolve through it.
+ */
+export interface DefinitionNode extends BlockSpacing {
+  type: "definition"
+  /** The label as written (matched case-insensitively). */
+  label: string
+  url: string
+  title?: string
+  /** The line as written, reused while it still says the same label / url / title. */
+  raw?: string
+}
+
+/**
+ * A line docstream keeps verbatim but doesn't model — an unknown `{% tag %}` (GitBook tags from other
+ * integrations). Renders nothing; serialized as written.
+ */
+export interface RawNode extends BlockSpacing {
+  type: "raw"
+  markdown: string
+}
+
+export interface MathNode extends BlockSpacing, RawSource {
   type: "math"
   formula: string
 }
@@ -371,12 +560,20 @@ export type Block =
   | MathNode
   | UpdatesNode
   | OpenApiOperationNode
+  | DefinitionNode
+  | RawNode
 
 export interface DocumentNode {
   type: "doc"
   children: Block[]
   /** Footnote citation definitions, in definition order. */
   citations?: CitationDef[]
+  /** Blank lines before the trailing footnote definitions (default 1). */
+  citationsGap?: number
+  /** Line ending of the source when it used `\r\n` throughout. */
+  lineEnding?: "\r\n"
+  /** What the source ended with after its last line, when more than a single newline (`"\n\n"`). */
+  end?: string
 }
 
 export const text = (t: string, marks: Partial<Omit<TextNode, "type" | "text">> = {}): TextNode => ({

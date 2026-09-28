@@ -177,7 +177,7 @@ function inlineDemoKeepingTag(tagLine: string, node: DemoNode, files: DemoFile[]
   const next = inlineDemoNode(node, files, meta)
   const out = serializeBlocks([next])
   const bare = (n: DemoNode): DemoNode => {
-    const { files: _files, open: _open, ...rest } = n
+    const { files: _files, open: _open, raw: _raw, ...rest } = n
     return rest
   }
   if (serializeBlocks([bare(next)]) !== serializeBlocks([bare(node)])) return out

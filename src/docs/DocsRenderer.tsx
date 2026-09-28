@@ -52,8 +52,12 @@ function InlineText({ nodes }: { nodes: Inline[] }) {
   return (
     <>
       {nodes.map((n, i) => {
-        if (n.type === "reference") return <InlineReference key={i} node={n} />
-        if (n.type === "image") {
+        const emphasized = !!(n.bold || n.italic || n.strike)
+        let el: ReactNode
+        if (n.type === "reference") {
+          if (!emphasized && !n.link) return <InlineReference key={i} node={n} />
+          el = <InlineReference node={n} />
+        } else if (n.type === "image") {
           const img = (
             <img
               src={resolveAsset(n.src)}
@@ -62,16 +66,20 @@ function InlineText({ nodes }: { nodes: Inline[] }) {
               style={{ width: n.width, height: n.height }}
             />
           )
-          return n.link ? (
+          const linked = n.link ? (
             <a key={i} href={n.link} target="_blank" rel="noreferrer" className="docs-inline-img-link">
               {img}
             </a>
-          ) : (
-            <span key={i}>{img}</span>
-          )
-        }
-        let el: ReactNode = n.text
-        if (n.code) el = <code>{el}</code>
+          ) : null
+          if (!emphasized) return linked ?? <span key={i}>{img}</span>
+          // The image's link is its own anchor; emphasis wraps it.
+          el = linked ?? img
+          if (n.bold) el = <strong>{el}</strong>
+          if (n.italic) el = <em>{el}</em>
+          if (n.strike) el = <s>{el}</s>
+          return <span key={i}>{el}</span>
+        } else el = n.text
+        if (n.type === "text" && n.code) el = <code>{el}</code>
         if (n.bold) el = <strong>{el}</strong>
         if (n.italic) el = <em>{el}</em>
         if (n.strike) el = <s>{el}</s>
@@ -523,6 +531,10 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
           method={block.method || "get"}
         />
       )
+    // Reference definitions and verbatim-kept tags carry no content of their own.
+    case "definition":
+    case "raw":
+      return null
   }
 }
 

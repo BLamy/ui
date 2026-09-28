@@ -43,13 +43,21 @@ describe("mention and tag chips", () => {
   })
 
   it("supports escaping with a backslash", () => {
-    expect(parseInline("\\@brett and \\#tag")).toEqual([{ type: "text", text: "@brett and #tag" }])
+    // Escaped characters are their own runs, so the backslashes round-trip.
+    expect(parseInline("\\@brett and \\#tag")).toEqual([
+      { type: "text", text: "@", escaped: true },
+      { type: "text", text: "brett and " },
+      { type: "text", text: "#", escaped: true },
+      { type: "text", text: "tag" },
+    ])
+    expect(plainText(parseInline("\\@brett and \\#tag"))).toBe("@brett and #tag")
   })
 
   it("parses chips inside bold spans", () => {
     expect(parseInline("**ask @brett**")).toEqual([
       { type: "text", text: "ask ", bold: true },
-      { type: "reference", kind: "mention", id: "brett" },
+      // The chip carries the emphasis around it too.
+      { type: "reference", kind: "mention", id: "brett", bold: true },
     ])
   })
 
@@ -78,7 +86,10 @@ describe("codebase chips", () => {
     const src = "ship $reading-room with @luna in #general"
     expect(serializeInline(parseInline(src))).toBe(src)
     expect(serializeInline([{ type: "text", text: "$HOME is literal" }])).toBe("\\$HOME is literal")
-    expect(parseInline("\\$HOME is literal")).toEqual([{ type: "text", text: "$HOME is literal" }])
+    expect(parseInline("\\$HOME is literal")).toEqual([
+      { type: "text", text: "$", escaped: true },
+      { type: "text", text: "HOME is literal" },
+    ])
   })
 })
 
@@ -149,7 +160,8 @@ describe("serialization round-trip", () => {
     const nodes: ReturnType<typeof parseInline> = [{ type: "text", text: "ping @brett" }]
     const md = serializeInline(nodes)
     expect(md).toBe("ping \\@brett")
-    expect(parseInline(md)).toEqual(nodes)
+    expect(plainText(parseInline(md))).toBe("ping @brett")
+    expect(serializeInline(parseInline(md))).toBe(md)
   })
 
   it("does not escape emails", () => {

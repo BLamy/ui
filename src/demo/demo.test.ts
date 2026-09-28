@@ -37,13 +37,18 @@ describe("{% demo %} syntax", () => {
   it("accepts the self-closing form and a trailing enddemo", () => {
     const doc = parseMarkdown('Intro\n\n{% demo src="a/b" /%}\n\n{% demo src="c/d" %}\n{% enddemo %}\n\nOutro')
     expect(doc.children.map((b) => b.type)).toEqual(["paragraph", "demo", "demo", "paragraph"])
-    expect(doc.children[1]).toEqual({ type: "demo", src: "a/b" })
+    // The self-closing spelling is remembered (`raw`), so it round-trips.
+    expect(doc.children[1]).toEqual({ type: "demo", src: "a/b", raw: '{% demo src="a/b" /%}' })
+    expect(serializeMarkdown(doc)).toBe('Intro\n\n{% demo src="a/b" /%}\n\n{% demo src="c/d" %}\n{% enddemo %}\n\nOutro\n')
   })
 
   it("drops unknown layout/viewport values and keeps bare variant ids", () => {
-    const node = parseMarkdown('{% demo src="a/b" layout="grid" viewport="watch" variants="one, two:Two" %}').children[0]
-    expect(node).toEqual({ type: "demo", src: "a/b", variants: [{ id: "one", label: "one" }, { id: "two", label: "Two" }] })
-    expect(serializeMarkdown({ type: "doc", children: [node] })).toBe('{% demo src="a/b" variants="one,two:Two" %}\n')
+    const tag = '{% demo src="a/b" layout="grid" viewport="watch" variants="one, two:Two" %}'
+    const node = parseMarkdown(tag).children[0]
+    expect(node).toEqual({ type: "demo", src: "a/b", variants: [{ id: "one", label: "one" }, { id: "two", label: "Two" }], raw: tag })
+    // The tag comes back as written; without its source line the node serializes canonically.
+    expect(serializeMarkdown({ type: "doc", children: [node] })).toBe(`${tag}\n`)
+    expect(serializeMarkdown({ type: "doc", children: [{ ...node, raw: undefined } as typeof node] })).toBe('{% demo src="a/b" variants="one,two:Two" %}\n')
   })
 
   it("never shows a partially streamed tag as text", () => {
