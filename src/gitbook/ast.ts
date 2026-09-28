@@ -16,7 +16,23 @@ export interface TextNode {
    * (`[**x**](url)`, the default). Kept so the source round-trips byte-for-byte.
    */
   linkInner?: true
+  /**
+   * How the source spelled this run's formatting, outermost → innermost, when that differs from the default
+   * output (`_italic_`, `**bold**`, `~~strike~~`, link around its emphasis, bare autolinks). Each entry is an
+   * emphasis marker, or a link form: `"link"` (`[x](url)`), `"<>"` (`<url>`), `"url"` (bare autolink).
+   * E.g. `**_x_**` → `["**", "_"]`, `***x***` → `["*", "**"]`, `*x*` → `["*"]`.
+   *
+   * A hint only — the boolean marks and `link` stay authoritative: entries for marks the run no longer has are
+   * ignored, marks it has without an entry get the default spelling and position. Absent on runs that
+   * serialize the default way and on programmatically created nodes.
+   */
+  delims?: InlineDelimiter[]
 }
+
+/** An emphasis marker as written in the source. */
+export type EmphasisDelimiter = "**" | "__" | "*" | "_" | "~~"
+/** An entry of {@link TextNode.delims}: an emphasis marker or a link form. */
+export type InlineDelimiter = EmphasisDelimiter | "link" | "<>" | "url"
 
 /** Inline HTML image, optionally wrapped in a link — GitHub README badge style. */
 export interface InlineImageNode {

@@ -99,7 +99,9 @@ export type {
 export { parseDemoVariants, parseMarkdown, parseBlocks, trimPartialInlineToken } from "./gitbook/parse"
 export { fenceFor, serializeBlocks, serializeDemoFile, serializeMarkdown } from "./gitbook/serialize"
 export {
+  defaultInlineDelims,
   footnoteDefinitions,
+  inlineDelims,
   parseInline,
   plainText,
   refDefinitions,

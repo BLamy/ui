@@ -166,7 +166,8 @@ function serializeBlock(b: Block): string {
       }
       // Escape pipes inside cell text so they don't break the GFM row.
       const cell = (c: Inline[]) => serializeInline(c).replace(/\|/g, "\\|")
-      const row = (cells: Inline[][]) => `| ${cells.map(cell).join(" | ")} |`
+      // An empty cell is written `| |`, as authors do.
+      const row = (cells: Inline[][]) => `|${cells.map((c) => ` ${cell(c)} `.replace(/^  $/, " ")).join("|")}|`
       const sep = `| ${b.header.map(() => "---").join(" | ")} |`
       return [row(b.header), sep, ...b.rows.map(row)].join("\n")
     }

@@ -39,20 +39,31 @@ function splitTableRow(row: string): string[] {
   const trimmed = row.trim().replace(/^\|/, "").replace(/\|$/, "")
   const cells: string[] = []
   let cur = ""
-  let inCode = false
   for (let k = 0; k < trimmed.length; k++) {
     const ch = trimmed[k]
-    if (ch === "\\" && trimmed[k + 1] === "|") {
-      cur += "|"
+    if (ch === "\\") {
+      // `\|` is a literal pipe (in code spans too); any other escape passes through for the inline parser.
+      cur += trimmed[k + 1] === "|" ? "|" : trimmed.slice(k, k + 2)
       k++
       continue
     }
     if (ch === "`") {
-      inCode = !inCode
-      cur += ch
+      // A code span (a backtick run closed by one of the same length) keeps its pipes; a lone run is literal.
+      let n = 1
+      while (trimmed[k + n] === "`") n++
+      const fence = "`".repeat(n)
+      let end = trimmed.indexOf(fence, k + n)
+      while (end !== -1 && (trimmed[end + n] === "`" || trimmed[end - 1] === "`")) {
+        let e = end
+        while (trimmed[e] === "`") e++
+        end = trimmed.indexOf(fence, e)
+      }
+      const stop = end === -1 ? k + n : end + n
+      cur += trimmed.slice(k, stop).replace(/\\\|/g, "|")
+      k = stop - 1
       continue
     }
-    if (ch === "|" && !inCode) {
+    if (ch === "|") {
       cells.push(cur)
       cur = ""
       continue
