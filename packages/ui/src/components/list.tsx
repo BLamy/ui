@@ -450,7 +450,8 @@ export function ListRow(p: ListRowProps) {
         onPointerDown={start} onPointerMove={mv} onPointerUp={end} onPointerCancel={end}
         onClickCapture={onClickCapture} onClick={onContainerClick}
         className={cn(
-          'relative box-border flex min-h-[46px] w-full touch-pan-y items-center gap-3 px-4 py-0 text-left text-[17px] outline-none',
+          // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row.
+          'relative box-border flex min-h-[46px] w-full touch-pan-y items-center gap-3 px-4 py-0 text-left text-[17px] leading-[normal] tracking-[normal] outline-none',
           'focus-visible:[box-shadow:inset_0_0_0_2px_var(--bl-tint)]',
           p.destructive ? 'text-destructive' : 'text-foreground',
           p.selected ? 'bg-accent' : 'bg-card',

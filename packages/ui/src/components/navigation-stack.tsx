@@ -3,11 +3,12 @@ import {
   type CSSProperties, type ReactNode,
 } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
+import { animate, type AnimationPlaybackControls } from 'framer-motion';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { chromeStore, BLSafeCtx, BLStickyCtx } from '../lib/theme';
 import { cn, BARH } from '../lib/utils';
-import { springCss } from '../lib/motion';
+import { springCss, springs } from '../lib/motion';
 import { Spinner } from './spinner';
 
 /** Screen descriptor consumed by NavigationStack. */
@@ -29,7 +30,19 @@ export interface Screen {
 }
 
 interface NavHandle { pop: () => void; canPop: boolean }
-type Reg = (key: string, part: { el?: HTMLDivElement | null; dim?: HTMLDivElement | null }) => void;
+/** Elements a screen hands the stack: its root and dimmer (edge swipe), and its titles (header morph). */
+interface ScreenParts {
+  el?: HTMLDivElement | null;
+  dim?: HTMLDivElement | null;
+  large?: HTMLElement | null;
+  inline?: HTMLElement | null;
+  back?: HTMLElement | null;
+  scroller?: HTMLElement | null;
+}
+type Reg = (key: string, part: ScreenParts) => void;
+
+/** Back label: the previous title (ellipsized when tight), "Back" when even that has no room, else nothing. */
+type BackMode = 'title' | 'back' | 'none';
 
 export interface ScreenWrapProps {
   sc: Screen;
@@ -54,6 +67,27 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
   const lastY = useRef(0);
   const scroller = useRef<any>(null); const inner = useRef<any>(null); const spin = useRef<any>(null);
   const pl = useRef<any>(null); const [refr, setRefr] = useState(false);
+  const rowRef = useRef<HTMLDivElement | null>(null); const titleRef = useRef<HTMLDivElement | null>(null);
+  const measFull = useRef<HTMLSpanElement | null>(null); const measBack = useRef<HTMLSpanElement | null>(null);
+  const [bk, setBk] = useState<{ mode: BackMode; w: number }>({ mode: 'title', w: 160 });
+  const hasBack = depth > 0 || ghost;
+  // Measured: the back label gets whatever the centered title leaves on its side of the bar.
+  useLayoutEffect(() => {
+    const row = rowRef.current, t = titleRef.current, f = measFull.current, b = measBack.current;
+    if (!hasBack || !row || !f || !b) return undefined;
+    const m = () => {
+      const tw = sc.title != null && t ? t.offsetWidth : 0;
+      // Half the row beside the title, less the chevron (24), the button's end padding (8) and a gap (8).
+      const avail = Math.floor((row.clientWidth - tw) / 2 - 40);
+      const fw = f.offsetWidth, bw = b.offsetWidth;
+      const mode: BackMode = fw > 0 && (avail >= fw || avail >= bw + 14) ? 'title' : avail >= bw ? 'back' : 'none';
+      setBk((o) => (o.mode === mode && o.w === avail ? o : { mode, w: Math.max(0, avail) }));
+    };
+    m();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(m); [row, f, b].forEach((e) => ro.observe(e)); if (t) ro.observe(t);
+    return () => ro.disconnect();
+  }, [hasBack, backTitle, sc.title]);
   useLayoutEffect(() => {
     if (entering && !started.current) {
       started.current = true; setIn(false);
@@ -143,13 +177,16 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
         depth > 0 && 'shadow-[-10px_0_30px_rgba(0,0,0,.16)]',
         ghost ? 'pointer-events-none' : 'pointer-events-auto',
       )}
+      data-scrolled={scr ? '' : undefined}
       style={{ zIndex: 10 + z, '--screen-x': tx } as CSSProperties}>
-      <div ref={scroller} className="bl-scroll absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" onScroll={onScroll} onKeyDown={onKey}
+      <div ref={(e) => { scroller.current = e; reg(sc.key, { scroller: e }); }} className="bl-scroll absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" onScroll={onScroll} onKeyDown={onKey}
         onPointerDown={pDown} onPointerMove={pMove} onPointerUp={pEnd} onPointerCancel={pEnd}>
         <div ref={inner} className="mx-auto box-border w-full" style={{ maxWidth: sc.maxW || 'none' }}>
           {sc.largeTitle
             ? <div className="px-4 pb-1.5" style={{ paddingTop: barH + 2 }}>
-                <div className="text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]">{sc.title}</div>
+                <div className="text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]">
+                  <span ref={(e) => reg(sc.key, { large: e })}>{sc.title}</span>
+                </div>
                 {sc.subheader ? <div className="mt-2.5">{sc.subheader}</div> : null}
               </div>
             : <div style={{ height: barH }} />}
@@ -174,17 +211,27 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
             scr || hid ? 'opacity-100' : 'opacity-0',
           )} style={{ height: safeTop, transform: hid ? 'translateY(' + (barH - safeTop) + 'px)' : 'none' }} />
         ) : null}
-        <div className={cn('flex h-[52px] w-full items-center transition-opacity duration-spring-snappy ease-spring-snappy', hid ? 'opacity-0' : 'opacity-100')}>
+        <div ref={rowRef} className={cn('flex h-[52px] w-full items-center transition-opacity duration-spring-snappy ease-spring-snappy', hid ? 'opacity-0' : 'opacity-100')}>
           <div className="relative z-1 flex min-w-[44px] items-center">
-            {(depth > 0 || ghost)
-              ? <AriaButton className="bl-btn flex max-w-[160px] cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary"
+            {hasBack
+              ? <AriaButton className="bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary"
+                  aria-label={bk.mode === 'none' ? 'Back' : undefined}
                   onPress={nav.canPop ? nav.pop : undefined}>
                   <Icon name="chevL" size={24} sw={2.4} />
-                  <span className="truncate">{typeof backTitle === 'string' && backTitle.length <= 12 ? backTitle : 'Back'}</span>
+                  {bk.mode !== 'none' ? (
+                    <span ref={(e) => reg(sc.key, { back: e })} data-mode={bk.mode}
+                      className="truncate" style={{ maxWidth: bk.w }}>{bk.mode === 'title' ? backTitle : 'Back'}</span>
+                  ) : null}
                 </AriaButton>
               : (sc.leading || null)}
+            {hasBack ? (
+              // Off-screen rulers for the full previous title and for "Back".
+              <span aria-hidden="true" className="pointer-events-none invisible absolute top-0 left-0 flex text-[17px] whitespace-nowrap">
+                <span ref={measFull}>{backTitle}</span><span ref={measBack}>Back</span>
+              </span>
+            ) : null}
           </div>
-          <div className={cn(
+          <div ref={(e) => { titleRef.current = e; reg(sc.key, { inline: e }); }} className={cn(
             'pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-[17px] font-semibold text-foreground transition-opacity duration-spring-snappy ease-spring-snappy',
             showTitle ? 'opacity-100' : 'opacity-0',
           )}>{sc.title}</div>
@@ -196,6 +243,68 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
         className={cn('pointer-events-none absolute inset-0 z-200 bg-black transition-opacity duration-spring-smooth ease-spring-smooth', isUnder ? 'opacity-12' : 'opacity-0')} />
     </div>
   );
+}
+
+/* ══ Header title morph ══
+   On push the previous screen's title (large or inline, whichever is showing) flies into the new screen's back
+   button; on pop the back label flies back into the title it names. The two real labels hide while a pair of
+   copies (one styled as the source, one as the destination) travels between them on the same spring as the
+   screens, scaling and cross-fading from one style to the other. An edge swipe scrubs it with the finger. */
+
+interface Flight { set: (t: number) => void; done: () => void }
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+/** The title a screen is showing right now: its large title until it scrolls under the bar, else the inline one. */
+function shownTitle(r: ScreenParts | undefined): HTMLElement | null {
+  if (!r) return null;
+  if (r.large && !r.el?.hasAttribute('data-scrolled')) return r.large;
+  if (r.inline && parseFloat(getComputedStyle(r.inline).opacity) > 0.5) return r.inline;
+  return null;
+}
+function backLabel(r: ScreenParts | undefined): HTMLElement | null {
+  return r?.back && r.back.dataset.mode === 'title' ? r.back : null;
+}
+
+function titleFlight(cont: HTMLElement, from: HTMLElement, to: HTMLElement, toScreen: HTMLElement | null | undefined): Flight | null {
+  const cr = cont.getBoundingClientRect(), fr = from.getBoundingClientRect(), tr = to.getBoundingClientRect();
+  if (!fr.width || !tr.width) return null;
+  // `to` is measured where it will be once its screen settles at the stack's origin.
+  const sr = toScreen ? toScreen.getBoundingClientRect() : cr;
+  const f = { x: fr.left - cr.left, y: fr.top - cr.top, w: fr.width, h: fr.height };
+  const d = { x: tr.left - sr.left, y: tr.top - sr.top, w: tr.width, h: tr.height };
+  const fs = getComputedStyle(from), ts = getComputedStyle(to);
+  const k = (parseFloat(ts.fontSize) || 17) / (parseFloat(fs.fontSize) || 17);
+  const layer = document.createElement('div');
+  layer.setAttribute('aria-hidden', 'true');
+  layer.dataset.slot = 'navigation-title-flight';
+  Object.assign(layer.style, { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '300', overflow: 'hidden' });
+  const copy = (src: HTMLElement, cs: CSSStyleDeclaration, r: { w: number; h: number }) => {
+    const c = document.createElement('div');
+    c.innerHTML = src.innerHTML;
+    Object.assign(c.style, {
+      position: 'absolute', left: '0', top: '0', width: r.w + 'px', height: r.h + 'px', whiteSpace: 'nowrap', overflow: 'hidden',
+      textOverflow: 'ellipsis', transformOrigin: '0 50%', willChange: 'transform, opacity',
+      color: cs.color, fontFamily: cs.fontFamily, fontSize: cs.fontSize, fontWeight: cs.fontWeight,
+      letterSpacing: cs.letterSpacing, lineHeight: r.h + 'px',
+    });
+    layer.appendChild(c);
+    return c;
+  };
+  const a = copy(from, fs, f), b = copy(to, ts, d);
+  cont.appendChild(layer);
+  from.style.visibility = 'hidden'; to.style.visibility = 'hidden';
+  return {
+    set(t) {
+      const x = lerp(f.x, d.x, t), cy = lerp(f.y + f.h / 2, d.y + d.h / 2, t);
+      a.style.transform = `translate(${x}px, ${cy - f.h / 2}px) scale(${lerp(1, k, t)})`;
+      b.style.transform = `translate(${x}px, ${cy - d.h / 2}px) scale(${lerp(1 / k, 1, t)})`;
+      a.style.opacity = String(clamp01(1 - t * 1.8));
+      b.style.opacity = String(clamp01((t - 0.2) / 0.6));
+    },
+    done() { from.style.visibility = ''; to.style.visibility = ''; layer.remove(); },
+  };
 }
 
 /** Push/pop settle time: the smooth spring (--duration-spring-smooth) plus a frame. */
@@ -247,6 +356,25 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
   const tRef = useRef<any>(null);
   const onPopRef = useRef(onPop); onPopRef.current = onPop;
   const drag = useRef<any>(null);
+  const flight = useRef<{ f: Flight; run?: AnimationPlaybackControls } | null>(null);
+  const endFlight = () => { const c = flight.current; flight.current = null; if (c) { c.run?.stop(); c.f.done(); } };
+  const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /** Fly a title between two screens (after a frame, once the new screen has laid out its bar). */
+  const fly = (pick: () => [HTMLElement | null, HTMLElement | null, HTMLElement | null | undefined]) => {
+    endFlight();
+    if (reducedMotion()) return;
+    requestAnimationFrame(() => {
+      const [from, to, toScreen] = pick();
+      if (!from || !to || !contRef.current) return;
+      const f = titleFlight(contRef.current, from, to, toScreen);
+      if (!f) return;
+      f.set(0);
+      const c: { f: Flight; run?: AnimationPlaybackControls } = { f };
+      flight.current = c;
+      c.run = animate(0, 1, { ...springs.smooth, onUpdate: f.set, onComplete: () => { if (flight.current === c) endFlight(); } });
+    });
+  };
+  useEffect(() => endFlight, []);
   const keysJ = screens.map((s) => s.key).join('¦');
   useLayoutEffect(() => {
     const old = prevRef.current; prevRef.current = screens;
@@ -256,11 +384,15 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
     const pref = (a: string[], b: string[]) => a.every((k, i) => b[i] === k);
     if (nk.length > ok.length && pref(ok, nk)) {
       setAnim({ enter: nk[nk.length - 1], exit: null });
+      const fromK = ok[ok.length - 1], toK = nk[nk.length - 1];
+      fly(() => [shownTitle(regMap.current[fromK]), backLabel(regMap.current[toK]), regMap.current[toK]?.el]);
       armHistory();
       tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), SETTLE_MS);
     } else if (nk.length < ok.length && pref(nk, ok)) {
       if (skipRef.current) { skipRef.current = false; setAnim({ enter: null, exit: null }); return; }
       setAnim({ enter: null, exit: old.slice(nk.length) });
+      const fromK = ok[ok.length - 1], toK = nk[nk.length - 1];
+      fly(() => [backLabel(regMap.current[fromK]), shownTitle(regMap.current[toK]), regMap.current[toK]?.el]);
       tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), SETTLE_MS);
     } else setAnim({ enter: null, exit: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -286,8 +418,14 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
     const d = drag.current; if (!d) return;
     const raw = e.clientX - d.x0, dy = e.clientY - d.y0;
     if (!d.on) {  // slop: engage only on a clearly horizontal rightward drag
-      if (raw > 8 && raw > Math.abs(dy) * 1.2) d.on = true;
-      else { if (Math.abs(dy) > 14) drag.current = null; return; }
+      if (raw > 8 && raw > Math.abs(dy) * 1.2) {
+        d.on = true;
+        // The back label scrubs toward the title it names, with the finger.
+        endFlight();
+        const from = backLabel(d.topR), to = shownTitle(d.undR);
+        const f = !reducedMotion() && from && to ? titleFlight(contRef.current, from, to, d.undR.el) : null;
+        if (f) { f.set(0); flight.current = { f }; d.flight = flight.current; }
+      } else { if (Math.abs(dy) > 14) drag.current = null; return; }
     }
     const dx = Math.max(0, raw); d.moved = true; d.dx = dx;
     d.vel = (e.clientX - d.last) / Math.max(1, performance.now() - d.lt); d.last = e.clientX; d.lt = performance.now();
@@ -296,6 +434,7 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
       d.topR.el.style.transition = 'none'; d.topR.el.style.transform = `translateX(${dx}px)`;
       d.undR.el.style.transition = 'none'; d.undR.el.style.transform = `translateX(${-28 * (1 - p)}%)`;
       if (d.undR.dim) { d.undR.dim.style.transition = 'none'; d.undR.dim.style.opacity = String(.12 * (1 - p)); }
+      if (d.flight && flight.current === d.flight) d.flight.f.set(p);
     } catch (err) { drag.current = null; }
   };
   const up = () => {
@@ -305,6 +444,8 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
     const commit = p > .32 || d.vel > .55;
     // Release continues on the tray spring from wherever the finger let go (the CSS spring retargets).
     const ease = springCss('transform', 'tray');
+    const c = d.flight && flight.current === d.flight ? d.flight : null;
+    if (c) c.run = animate(p, commit ? 1 : 0, { ...springs.tray, onUpdate: c.f.set, onComplete: () => { if (flight.current === c) endFlight(); } });
     if (commit) {
       Haptics.impact('light');
       d.topR.el.style.transition = ease; d.topR.el.style.transform = 'translateX(104%)';
@@ -326,6 +467,11 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
     } catch (e) { /* noop */ }
   });
   const topIdx = screens.length - 1;
+  // A push is known during render, before the effect below records it: the new screen mounts already off to the
+  // right, so nothing (a layout read in a child's effect, say) can catch it at rest and cancel its slide.
+  const prevKeys = prevRef.current.map((s) => s.key);
+  const pendingEnter = screens.length > prevKeys.length && prevKeys.every((k, i) => screens[i] && screens[i].key === k)
+    ? screens[topIdx].key : null;
   const rendered = [
     ...screens.map((sc, i) => ({ sc, i, ghost: false })),
     ...ghosts.map((sc, j) => ({ sc, i: screens.length + j, ghost: true })),
@@ -339,7 +485,7 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
       className={cn('absolute inset-0 touch-pan-y overflow-hidden', className)} style={style}>
       {rendered.map((r) => (
         <ScreenWrap key={r.sc.key} sc={r.sc} depth={r.i} top={r.ghost ? total : topIdx} ghost={r.ghost}
-          entering={!r.ghost && anim.enter === r.sc.key && r.i === topIdx}
+          entering={!r.ghost && (anim.enter === r.sc.key || pendingEnter === r.sc.key) && r.i === topIdx}
           nav={{ pop: () => onPopRef.current && onPopRef.current(), canPop: canPop && !r.ghost }}
           backTitle={r.i > 0 ? (r.ghost ? (screens[screens.length - 1] && screens[screens.length - 1].title) : screens[r.i - 1].title) : null}
           reg={reg} defIns={defIns} z={r.i} />
