@@ -194,7 +194,7 @@ export const StickySearchHeader: Story = {
   },
 };
 
-/** Drag a row left: past 55% width commits (medium tick), release past 64px parks the Delete action. */
+/** Drag a row left: past 55% width commits (medium tick); a slower release past half the action width parks Delete open. */
 export const SwipeToDelete: Story = {
   render: function SwipeToDeleteStory() {
     const [gone, setGone] = useState<Set<string>>(() => new Set());
