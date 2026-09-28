@@ -85,8 +85,8 @@ export interface InlineDemoRuntimeProps {
 /**
  * Renders the Preview of a `{% demo %}` block that carries its files inline and has
  * no resolver behind it. `@brett_lamy/docstream/playground` provides an almost-node
- * implementation (`createAlmostNodeDemoRuntime`), which `PlaygroundStreamdown` (the
- * package root's `GitbookStreamdown`) wires in by default.
+ * implementation (`createAlmostNodeDemoRuntime`), which that entry's `PlaygroundStreamdown`
+ * wires in by default. The package root never loads a runtime on its own.
  */
 export type InlineDemoRuntime = (props: InlineDemoRuntimeProps) => ReactNode
 

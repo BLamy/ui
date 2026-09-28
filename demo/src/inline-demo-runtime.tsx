@@ -5,7 +5,7 @@ import { Suspense, lazy } from 'react';
 import type { InlineDemoRuntime } from '@brett_lamy/docstream';
 
 const InlineDemoPreview = lazy(() =>
-  import('../../src/playground').then((m) => ({ default: m.InlineDemoPreview })),
+  import('@brett_lamy/docstream/playground').then((m) => ({ default: m.InlineDemoPreview })),
 );
 
 // Stable identity — it lands in the preview's effect deps.

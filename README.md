@@ -13,7 +13,7 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
   Markdown vs HTML images, blank lines between blocks, list markers, fences, table layout and tag lines as written).
   Layout-only fields (`gap`, `raw`, `opening`, …) are recorded only where the source differs from the default
   output, and are ignored once they no longer fit an edited node.
-- Syntax-highlighted code blocks through `lowlight`.
+- Syntax-highlighted code blocks through `gpu-lexer`; Mermaid diagrams and KaTeX math load on first use.
 - GitBook block support for hints, tabs, expandables, steppers, embeds, content refs, columns, figures, tables, math, dividers, updates, and OpenAPI operations.
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.
 - Attribute-aware direct video embeds for muted, looping inline clips in long-form posts.
@@ -23,10 +23,31 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 ## Installation
 
 ```sh
-npm install @brett_lamy/docstream react
+pnpm add @brett_lamy/docstream
+# or: npm install @brett_lamy/docstream
 ```
 
-React is a peer dependency and must be provided by your app.
+React and React DOM are peer dependencies and must be provided by your app.
+Nothing in docstream's dependency tree runs an install script, so
+`pnpm add` succeeds with no build-script prompts (no `ERR_PNPM_IGNORED_BUILDS`).
+Heavy renderers are loaded only when a page needs them: Mermaid for
+` ```mermaid ` fences, KaTeX for math blocks, rrweb for replay event lists.
+
+Two features are opt-in, each behind its own entry and an **optional** peer
+dependency that the rest of the package never references:
+
+| Entry | Install to use it | What it adds |
+| --- | --- | --- |
+| `@brett_lamy/docstream/playground` | `@agent-wasm/core` (almost-node, an in-browser Node runtime) | Live React code fences and runnable inline `{% demo %}` files |
+| `@brett_lamy/docstream/viz` | `@brett_lamy/viz-engine` | `VizEmbed` |
+
+```sh
+pnpm add @agent-wasm/core   # only if you import @brett_lamy/docstream/playground
+```
+
+Without the playground, live code fences render as highlighted code (or through
+a `liveRenderer` you pass), and inline-file demos open on their Code view with a
+short "needs the playground runtime" note.
 
 ## Basic Setup
 
@@ -50,11 +71,12 @@ If your TypeScript app checks CSS side-effect imports, include Vite's standard e
 
 Use `GitbookStreamdown` when markdown may arrive incrementally from an AI stream. The component accepts either `markdown` or string children.
 
-Markdown-only applications can import the renderer from the `streamdown`
-subpath. This keeps optional playground integrations out of the host bundle:
+The package root's `GitbookStreamdown` is the same component as the
+`@brett_lamy/docstream/streamdown` entry. For live code fences and runnable
+inline demos, import the playground variant instead (requires `@agent-wasm/core`):
 
 ```tsx
-import { GitbookStreamdown } from "@brett_lamy/docstream/streamdown"
+import { GitbookStreamdown } from "@brett_lamy/docstream/playground" // = PlaygroundStreamdown
 ```
 
 ```tsx
@@ -367,13 +389,15 @@ what it did before 1.2: a demo, then a code block. While streaming, a block whos
 | inline files | no runtime (e.g. the `/streamdown` entry) | a one-line note; the viewer opens on Code | the inline files |
 | `src` only | no resolver | a placeholder chip | — |
 
-The package root's `GitbookStreamdown` (`PlaygroundStreamdown`) runs inline demos
-in almost-node by default. Elsewhere pass `demoRuntime`:
+`PlaygroundStreamdown` (also exported as `GitbookStreamdown` from
+`@brett_lamy/docstream/playground`) runs inline demos in almost-node by default.
+Elsewhere pass `demoRuntime` (and `liveRenderer` for live code fences):
 
 ```tsx
 import { createAlmostNodeDemoRuntime } from "@brett_lamy/docstream/playground"
 
 const demoRuntime = createAlmostNodeDemoRuntime({ workspaceOptions: { basePath: "/docs" } })
+// live code fences: import { almostNodeLiveRenderer } from "@brett_lamy/docstream/playground"
 
 <MarkdownContent markdown={page} demoResolver={demoResolver} demoRuntime={demoRuntime}
   demoDependencies={{ "@brett_lamy/ui": "^1.2.0" }} />
@@ -546,7 +570,8 @@ You can also resolve paths yourself with `resolveAsset`.
 - `resolveDemosToMarkdown(markdown, resolver, { format })`: Gives each `{% demo %}` its real files inline — renderable docstream by default, `format: "plain"` for LLM prompts (pure, async).
 - `inlineDemoMarkdown(node, files, meta)`: One demo as a pasteable block-form `{% demo %}`.
 - `preloadDemos(resolver, srcs)`: Settle resolver demos before the first render (SSR, static export).
-- `createAlmostNodeDemoRuntime(options)` / `InlineDemoPreview` / `createInlineDemoProject(files, { entry, dependencies })` (`/playground`): Run inline demo files in almost-node.
+- `createAlmostNodeDemoRuntime(options)` / `InlineDemoPreview` (`/playground`): Run inline demo files in almost-node. `createInlineDemoProject(files, { entry, dependencies })` (root and `/playground`) builds the runnable project as plain data.
+- `PlaygroundStreamdown`, `almostNodeLiveRenderer`, `ReactDemo` / `ReactCodePreview`, `createAlmostNodeWorkspace`, `useAlmostNodeServer` (`/playground` only): the almost-node playground.
 - `DocPageActions`: The "Copy page ▾" menu.
 
 ### Parser and Serializer
@@ -622,6 +647,23 @@ This release ships TypeScript and TSX source through ESM exports:
 ```
 
 It is validated with Vite and modern TypeScript `moduleResolution: "Bundler"`. Plain Node.js, CommonJS, or tooling that does not transpile TypeScript in dependencies may need a future precompiled JS build.
+
+## Migrating to 1.3
+
+1.3 moves everything that touches almost-node (`@agent-wasm/core`) out of the
+package root, so installing docstream no longer drags a WASM Node runtime and
+native compressors into every app. `@agent-wasm/core` is now an optional peer.
+
+| 1.2 (root import) | 1.3 |
+| --- | --- |
+| `GitbookStreamdown` (ran live code + inline demos in almost-node) | Root `GitbookStreamdown` renders them as code unless you pass `liveRenderer` / `demoRuntime`. For the old behaviour: `import { GitbookStreamdown } from "@brett_lamy/docstream/playground"` and install `@agent-wasm/core`. |
+| `ReactCodePreview`, `ReactDemo`, `InlineDemoPreview`, `almostNodeDemoRuntime`, `createAlmostNodeDemoRuntime`, `createAlmostNodeFilesystem`, `createAlmostNodeWorkspace` and their option/prop types | `@brett_lamy/docstream/playground` |
+| `VizEmbed`, `VizEmbedProps` | `@brett_lamy/docstream/viz`, and install `@brett_lamy/viz-engine` (now an optional peer, no longer a dependency) |
+| `Streamdown`, `StreamdownProps` (re-export of `streamdown`) | Removed: install `streamdown` and import it directly |
+
+`createInlineDemoProject`, `createReactDemoFiles` and the `AlmostNodeFile*` data
+types stay on the root (they are plain data helpers). Math blocks now show their
+TeX source for a moment while KaTeX loads.
 
 ## Related Package
 

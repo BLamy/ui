@@ -1,11 +1,11 @@
 /* Actual live React demo for the "Live React demos" page.
 
-   Imports the playground entry DIRECTLY (not via docstream-lite) and lazily,
+   Imports `@brett_lamy/docstream/playground` lazily,
    so the almost-node/@agent-wasm runtime only loads when this page mounts. */
 import { Suspense, lazy } from 'react';
 
 const ReactCodePreview = lazy(() =>
-  import('../../src/playground').then((m) => ({ default: m.ReactCodePreview })),
+  import('@brett_lamy/docstream/playground').then((m) => ({ default: m.ReactCodePreview })),
 );
 
 const FILES = {

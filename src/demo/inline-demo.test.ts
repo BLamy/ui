@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import type { DemoNode } from "../gitbook/ast"
 import { parseMarkdown, trimPartialInlineToken } from "../gitbook/parse"
 import { serializeMarkdown } from "../gitbook/serialize"
-import { createInlineDemoProject } from "../playground/filesystem"
+import { createInlineDemoProject } from "../playground/project"
 import { inlineDemoMarkdown, resolveDemosToMarkdown } from "./markdown"
 import type { DemoResolver } from "./types"
 

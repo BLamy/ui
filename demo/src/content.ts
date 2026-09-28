@@ -28,7 +28,7 @@ Everything on this site is rendered by docstream itself — the prose, this hint
 - Parser and serializer for round-tripping supported GitBook syntax through a plain-data AST.
 - Syntax-highlighted code blocks through \`lowlight\`, Mermaid diagrams, and math blocks.
 - GitBook block support for hints, tabs, expandables, steppers, embeds, content refs, columns, figures, tables (including card views), math, dividers, updates/changelogs, and OpenAPI operations.
-- Optional live React code demos powered by almost-node (\`@agent-wasm/core\`).
+- Optional, opt-in live React code demos powered by almost-node (\`@agent-wasm/core\`) from \`@brett_lamy/docstream/playground\`.
 - CSS exported as a stable package entrypoint, driven by \`--gb-*\` CSS variables that map from shadcn-style host tokens with sensible built-in defaults.
 
 ## Package layout
@@ -37,23 +37,24 @@ The package ships TypeScript source with subpath exports so hosts only pull what
 
 | Entry | Contents |
 | --- | --- |
-| \`@brett_lamy/docstream\` | Everything: renderers, parser, embeds, playground helpers. |
+| \`@brett_lamy/docstream\` | Renderers, parser, serializer, embeds. Never references almost-node. |
 | \`@brett_lamy/docstream/gitbook\` | Parser, serializer, and AST types only. |
-| \`@brett_lamy/docstream/streamdown\` | \`GitbookStreamdown\` without the almost-node playground boundary. |
+| \`@brett_lamy/docstream/streamdown\` | \`GitbookStreamdown\` plus the few helpers it needs. |
 | \`@brett_lamy/docstream/assets\` | \`setAssetBase\` / \`resolveAsset\`. |
 | \`@brett_lamy/docstream/openapi\` | \`OpenApiOperation\`. |
 | \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, URL helpers, source types. |
 | \`@brett_lamy/docstream/video\` | \`VideoEmbed\`. |
-| \`@brett_lamy/docstream/playground\` | Live React demos (\`ReactDemo\`, almost-node helpers). |
+| \`@brett_lamy/docstream/playground\` | Live React demos (\`PlaygroundStreamdown\`, \`ReactDemo\`, almost-node runtime + helpers). Needs \`@agent-wasm/core\`. |
+| \`@brett_lamy/docstream/viz\` | \`VizEmbed\`. Needs \`@brett_lamy/viz-engine\`. |
 | \`@brett_lamy/docstream/styles.css\` | The stylesheet. |
 
 ## Installation
 
 \`\`\`sh
-npm install @brett_lamy/docstream react
+pnpm add @brett_lamy/docstream
 \`\`\`
 
-React is a peer dependency and must be provided by your app. \`@agent-wasm/core\` is an optional peer, only needed for live React code demos — see the **Live React demos** page.
+React is a peer dependency and must be provided by your app. Nothing in the install runs a build script. \`@agent-wasm/core\` is an optional peer, only needed for the opt-in live React code demos from \`@brett_lamy/docstream/playground\` — see the **Live React demos** page.
 `,
   },
   {
@@ -118,7 +119,7 @@ Every React export from \`@brett_lamy/docstream\`, with its real props.
 
 ## GitbookStreamdown
 
-The streaming renderer. It parses the markdown with \`parseMarkdown\` on each render (memoized on content) and renders through \`DocsRenderer\`, wrapped in a \`div[data-docstream]\`. The export from the package root also wires a live-preview renderer for live code blocks (see **Live React demos**); the \`@brett_lamy/docstream/streamdown\` entry is the same component without that boundary.
+The streaming renderer. It parses the markdown with \`parseMarkdown\` on each render (memoized on content) and renders through \`DocsRenderer\`, wrapped in a \`div[data-docstream]\`. Live code blocks render as highlighted code unless you pass a \`liveRenderer\`; \`@brett_lamy/docstream/playground\` exports a \`GitbookStreamdown\` (alias of \`PlaygroundStreamdown\`) that wires almost-node in for live code blocks and inline demos (see **Live React demos**).
 
 | Prop | Type | Default | Purpose |
 | --- | --- | --- | --- |
@@ -247,7 +248,7 @@ It is also what \`openapi-operation\` blocks render to — see the live example 
 
 ## Streamdown re-export
 
-The package root re-exports \`Streamdown\` (and \`StreamdownProps\`) from the upstream \`streamdown\` package for hosts that want the plain GFM streaming renderer without GitBook blocks.
+For the plain GFM streaming renderer without GitBook blocks, install the upstream \`streamdown\` package and import \`Streamdown\` from it directly (docstream 1.3 no longer re-exports it).
 `,
   },
   {
@@ -255,10 +256,10 @@ The package root re-exports \`Streamdown\` (and \`StreamdownProps\`) from the up
     title: 'Live React demos',
     markdown: `# Live React demos
 
-Docstream can run multi-file React projects inside the page through **almost-node** — a browser Node.js runtime with a virtual filesystem and a real Vite dev server, provided by the \`@agent-wasm/core\` peer dependency.
+Docstream can run multi-file React projects inside the page through **almost-node** — a browser Node.js runtime with a virtual filesystem and a real Vite dev server, provided by the optional \`@agent-wasm/core\` peer dependency.
 
 {% hint style="warning" %}
-Live demos require the host app to install \`@agent-wasm/core\` (>= 0.4.0) and import from \`@brett_lamy/docstream/playground\` (or the package root, which includes it). The runtime is loaded lazily, so ordinary markdown rendering never pulls the WASM runtime into your bundle. The panel at the bottom of this page is a real \`ReactCodePreview\` booting Vite in your browser.
+Live demos require the host app to install \`@agent-wasm/core\` (>= 0.4.0) and import from \`@brett_lamy/docstream/playground\` — the only entry that references it. The package root and every other entry never do, so hosts without \`@agent-wasm/core\` typecheck and bundle cleanly, and the runtime itself is still loaded lazily. The panel at the bottom of this page is a real \`ReactCodePreview\` booting Vite in your browser.
 {% endhint %}
 
 ## ReactDemo / ReactCodePreview
@@ -293,7 +294,7 @@ import { ReactDemo } from "@brett_lamy/docstream/playground"
 
 ## Live code blocks in markdown
 
-A code-tag-wrapped jsx/tsx fence with \`live="true"\` renders through the \`liveRenderer\` prop when one is supplied (the root \`GitbookStreamdown\` supplies \`ReactCodePreview\` automatically):
+A code-tag-wrapped jsx/tsx fence with \`live="true"\` renders through the \`liveRenderer\` prop when one is supplied (\`almostNodeLiveRenderer\` from \`@brett_lamy/docstream/playground\` runs it in almost-node, and that entry's \`PlaygroundStreamdown\` wires it in automatically); otherwise it renders as highlighted code:
 
 ~~~md
 {% code title="Counter" live="true" entry="/src/main.jsx" %}
@@ -443,7 +444,7 @@ Where the Preview comes from:
 | inline files | no runtime either (e.g. the \`/streamdown\` entry) | a one-line note | the inline files, shown first |
 | \`src\` only | no resolver | a placeholder chip | — |
 
-\`GitbookStreamdown\` from the package root wires the almost-node runtime in by default; elsewhere pass \`demoRuntime={createAlmostNodeDemoRuntime()}\` (from \`@brett_lamy/docstream/playground\`). Inline demos may import npm packages: pass \`demoDependencies={{ "@brett_lamy/ui": "^1.2.0" }}\`, or include a \`package.json\` among the files.
+\`PlaygroundStreamdown\` (also exported as \`GitbookStreamdown\`) from \`@brett_lamy/docstream/playground\` wires the almost-node runtime in by default; elsewhere pass \`demoRuntime={createAlmostNodeDemoRuntime()}\` (from \`@brett_lamy/docstream/playground\`). Inline demos may import npm packages: pass \`demoDependencies={{ "@brett_lamy/ui": "^1.2.0" }}\`, or include a \`package.json\` among the files.
 
 ## Syntax
 
@@ -1185,12 +1186,13 @@ setAssetBase(null, null, null)                 // clear the base
 | Import | What you get |
 | --- | --- |
 | \`@brett_lamy/docstream/gitbook\` | \`parseMarkdown\`, \`parseBlocks\`, \`parseInline\`, \`plainText\`, \`refDefinitions\`, \`serializeMarkdown\`, \`serializeBlocks\`, \`serializeInline\`, all AST types. |
-| \`@brett_lamy/docstream/streamdown\` | \`GitbookStreamdown\` without the playground boundary. |
+| \`@brett_lamy/docstream/streamdown\` | \`GitbookStreamdown\` plus the few helpers it needs. |
 | \`@brett_lamy/docstream/assets\` | \`setAssetBase\`, \`resolveAsset\`. |
 | \`@brett_lamy/docstream/openapi\` | \`OpenApiOperation\`. |
 | \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, \`isReplayQaUrl\`, \`normalizeReplayEmbedUrl\`, \`sanitizeReplayEvent\`, source types. |
 | \`@brett_lamy/docstream/video\` | \`VideoEmbed\`. |
-| \`@brett_lamy/docstream/playground\` | \`ReactDemo\`, \`ReactCodePreview\`, almost-node helpers (needs the \`@agent-wasm/core\` peer). |
+| \`@brett_lamy/docstream/playground\` | \`PlaygroundStreamdown\`, \`ReactDemo\`, \`ReactCodePreview\`, \`almostNodeLiveRenderer\`, \`createAlmostNodeDemoRuntime\`, almost-node helpers (needs the optional \`@agent-wasm/core\` peer). |
+| \`@brett_lamy/docstream/viz\` | \`VizEmbed\` (needs the optional \`@brett_lamy/viz-engine\` peer). |
 | \`@brett_lamy/docstream/styles.css\` | The stylesheet. |
 `,
   },

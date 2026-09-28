@@ -1,6 +1,5 @@
-import { useContext, useId, useMemo, useState, type ReactNode } from "react"
+import { useContext, useEffect, useId, useMemo, useState, type ReactNode } from "react"
 import { motion, useReducedMotion } from "framer-motion"
-import "katex/dist/katex.min.css"
 import {
   AlertTriangle,
   CheckCircle2,
@@ -24,16 +23,41 @@ import { CopyButton } from "./copy"
 import { PillTabs, rovingKeyDown } from "./controls"
 import { DocPageActions, type DocPageActionsOptions } from "./PageActions"
 import { useSyncedTab } from "./tabs-sync"
-import { ReplayPreview, isReplayQaUrl } from "../replay"
+import { ReplayPreview } from "../replay/ReplayPreview"
+import { isReplayQaUrl } from "../replay/url"
 import { VideoEmbed } from "../video"
 import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
 import { HighlightedCode } from "./HighlightedCode"
 import { CitationSources, InlineReference } from "./reference"
-import { renderMathToHtml } from "./math"
 
+type MathRenderer = (formula: string) => string
+let mathRenderer: MathRenderer | null = null
+let mathLoad: Promise<MathRenderer> | null = null
+function loadMathRenderer(): Promise<MathRenderer> {
+  mathLoad ??= import("./math").then((m) => (mathRenderer = m.renderMathToHtml))
+  return mathLoad
+}
+
+// KaTeX loads on first use; until then the TeX source shows in place.
 function MathBlock({ formula }: { formula: string }) {
-  return <div className="docs-math" dangerouslySetInnerHTML={{ __html: renderMathToHtml(formula) }} />
+  const [render, setRender] = useState<MathRenderer | null>(() => mathRenderer)
+  useEffect(() => {
+    if (render) return
+    let live = true
+    loadMathRenderer().then((fn) => live && setRender(() => fn), () => {})
+    return () => {
+      live = false
+    }
+  }, [render])
+  if (!render) {
+    return (
+      <div className="docs-math" data-pending="">
+        <code>{formula}</code>
+      </div>
+    )
+  }
+  return <div className="docs-math" dangerouslySetInnerHTML={{ __html: render(formula) }} />
 }
 
 export interface LivePreviewProps {
@@ -561,8 +585,8 @@ export interface DocRenderOptions {
   demoResolver?: DemoResolver
   /**
    * Runs the Preview of `{% demo %}` blocks that carry their files inline and have no
-   * resolver behind them. `PlaygroundStreamdown` (the package root's `GitbookStreamdown`)
-   * supplies an almost-node runtime by default; see `createAlmostNodeDemoRuntime`.
+   * resolver behind them. Nothing is supplied by default: pass `createAlmostNodeDemoRuntime()`
+   * from `@brett_lamy/docstream/playground` (or use its `PlaygroundStreamdown`) to run them.
    * Without one, such demos show their code with a short note.
    */
   demoRuntime?: InlineDemoRuntime

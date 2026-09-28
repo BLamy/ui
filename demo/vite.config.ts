@@ -16,7 +16,10 @@ export default defineConfig({
       'vite-plugin-node-polyfills/shims/process': path.resolve(__dirname, 'node_modules/vite-plugin-node-polyfills/shims/process'),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
       '@brett_lamy/docstream/styles.css': path.resolve(__dirname, '../src/styles.css'),
-      '@brett_lamy/docstream': path.resolve(__dirname, 'src/docstream-lite.ts'),
+      // The playground (almost-node) is opt-in: only this subpath needs @agent-wasm/core,
+      // which the demo site installs as its own dependency.
+      '@brett_lamy/docstream/playground': path.resolve(__dirname, '../src/playground/index.ts'),
+      '@brett_lamy/docstream': path.resolve(__dirname, '../src/index.ts'),
     },
   },
 });

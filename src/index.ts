@@ -1,5 +1,7 @@
-export { PlaygroundStreamdown as GitbookStreamdown } from "./playground/PlaygroundStreamdown"
-export type { PlaygroundStreamdownProps as GitbookStreamdownProps } from "./playground/PlaygroundStreamdown"
+// The root entry never references `@agent-wasm/core` (almost-node). Live code fences and
+// inline-file demos run only when the host passes a runtime — see `@brett_lamy/docstream/playground`.
+export { GitbookStreamdown } from "./streamdown"
+export type { GitbookStreamdownProps } from "./streamdown"
 export { DocsRenderer, MarkdownContent } from "./docs/DocsRenderer"
 export type { DocRenderOptions, LivePreviewProps, LivePreviewRenderer, SourceReferenceRenderer } from "./docs/DocsRenderer"
 export { DocPageActions } from "./docs/PageActions"
@@ -47,45 +49,27 @@ export type {
 } from "./demo"
 export { CitationSources, DocstreamRefContext, InlineReference } from "./docs/reference"
 export type { CitationPreview, CitationPreviewResolver, DocstreamRefContextValue } from "./docs/reference"
-export { ReplayEmbed, ReplayPreview } from "./replay"
+export { ReplayEmbed, ReplayPreview } from "./replay/ReplayPreview"
 export type {
   ReplayEventsSource,
   ReplayEventsUrlSource,
   ReplayPageSource,
   ReplayPreviewProps,
   ReplaySource,
-} from "./replay"
-export { isReplayQaUrl, normalizeReplayEmbedUrl } from "./replay"
+} from "./replay/ReplayPreview"
+export { isReplayQaUrl, normalizeReplayEmbedUrl } from "./replay/url"
 export { VideoEmbed } from "./video"
 export type { VideoEmbedProps } from "./video"
-export { VizEmbed } from "./viz"
-export type { VizEmbedProps } from "./viz"
 export { OpenApiOperation } from "./openapi/OpenApiOperation"
-export {
-  InlineDemoPreview,
-  ReactCodePreview,
-  ReactDemo,
-  almostNodeDemoRuntime,
-  createAlmostNodeDemoRuntime,
-  createInlineDemoProject,
-  createReactDemoFiles,
-  createAlmostNodeFilesystem,
-  createAlmostNodeWorkspace,
-} from "./playground"
+export { createInlineDemoProject, createReactDemoFiles } from "./playground/project"
 export type {
   AlmostNodeFile,
   AlmostNodeFileContent,
   AlmostNodeFiles,
-  AlmostNodeFilesystemOptions,
-  AlmostNodeWorkspace,
-  AlmostNodeWorkspaceOptions,
-  AlmostNodeDemoRuntimeOptions,
-  InlineDemoPreviewProps,
   InlineDemoProject,
   InlineDemoProjectOptions,
-  ReactCodePreviewProps,
-  ReactDemoProps,
-} from "./playground"
+  ReactDemoFilesOptions,
+} from "./playground/project"
 export { resolveAsset, setAssetBase } from "./assets"
 export { createBundledSourceClient, createViteSourceClient, SourcePreview } from "./source"
 export type {
@@ -108,8 +92,6 @@ export {
   serializeInline,
   serializeReference,
 } from "./gitbook/inline"
-export { Streamdown } from "streamdown"
-export type { StreamdownProps } from "streamdown"
 export type * from "./gitbook/ast"
 export { PACKAGE_MANAGERS, packageManagerCommands } from "./gitbook/package-managers"
 export { flattenBlocks, flattenForPlainMarkdown } from "./gitbook/flatten"
