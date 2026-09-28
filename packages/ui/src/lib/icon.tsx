@@ -235,6 +235,30 @@ const SHAPES = {
   'cloud-fill': [{ d: CLOUD, f: 2 }],
   iphone: [{ r: [6.6, 3.2, 10.8, 17.6, 2.6] }, { d: 'M10.8 5.9h2.4' }],
   laptop: [{ d: 'M5 6.2c0-.7.5-1.2 1.2-1.2h11.6c.7 0 1.2.5 1.2 1.2V15H5z' }, { d: 'M2.8 18.4h18.4' }],
+  applewatch: [
+    { d: 'M8.4 6.4h7.2c1.1 0 2 .9 2 2v7.2c0 1.1-.9 2-2 2H8.4c-1.1 0-2-.9-2-2V8.4c0-1.1.9-2 2-2z' },
+    { d: 'M9 6.4l.6-3h4.8l.6 3M9 17.6l.6 3h4.8l.6-3' },
+  ],
+  keyboard: [
+    { d: 'M3 7c0-.8.6-1.4 1.4-1.4h15.2c.8 0 1.4.6 1.4 1.4v10c0 .8-.6 1.4-1.4 1.4H4.4c-.8 0-1.4-.6-1.4-1.4z' },
+    { d: 'M6.6 9.4h.1M10 9.4h.1M13.4 9.4h.1M16.8 9.4h.1M6.6 12.4h.1M10 12.4h.1M13.4 12.4h.1M16.8 12.4h.1M8.4 15.4h7.2' },
+  ],
+  internaldrive: [
+    { d: 'M4 6.5c0-1 .8-1.8 1.8-1.8h12.4c1 0 1.8.8 1.8 1.8v11c0 1-.8 1.8-1.8 1.8H5.8c-1 0-1.8-.8-1.8-1.8z' },
+    { d: 'M4 13.6h16' },
+    { c: [16.4, 16.5, .9], f: 1 },
+  ],
+  'switch-2': [
+    { d: 'M7.5 4.6h9a3.6 3.6 0 0 1 0 7.2h-9a3.6 3.6 0 0 1 0-7.2z' }, { c: [16.5, 8.2, 2], f: 1 },
+    { d: 'M7.5 12.8h9a3.6 3.6 0 0 1 0 7.2h-9a3.6 3.6 0 0 1 0-7.2z' }, { c: [7.5, 16.4, 2], f: 1 },
+  ],
+  car: [
+    { d: 'M4 15.6v-3l1.8-4.8c.2-.6.8-1 1.4-1h9.6c.6 0 1.2.4 1.4 1l1.8 4.8v3z' },
+    { d: 'M5.4 15.6v2.2M18.6 15.6v2.2M4.4 12.4h15.2' },
+    { c: [7.6, 13.8, .9], f: 1 },
+    { c: [16.4, 13.8, .9], f: 1 },
+  ],
+  bed: [{ d: 'M3.5 18V7M3.5 14.5h17V18M20.5 14.5V12c0-1.4-1.1-2.5-2.5-2.5h-7v5' }, { c: [7.2, 11.2, 1.8], f: 1 }],
 
   /* ── productivity ── */
   cart: [{ d: 'M3 4h2.4l2.2 10.4c.1.6.7 1 1.3 1h8.6c.6 0 1.1-.4 1.3-1L20.4 8H6.4' }, { c: [9.5, 19, 1.5], f: 1 }, { c: [17, 19, 1.5], f: 1 }],
@@ -263,6 +287,12 @@ const SHAPES = {
     { c: [4.8, 17.5, 1.1], f: 1 },
   ],
   grid: [{ r: [4, 4, 7, 7, 1.6] }, { r: [13, 4, 7, 7, 1.6] }, { r: [4, 13, 7, 7, 1.6] }, { r: [13, 13, 7, 7, 1.6] }],
+  'grid-fill': [{ r: [4, 4, 7, 7, 1.6], f: 2 }, { r: [13, 4, 7, 7, 1.6], f: 2 }, { r: [4, 13, 7, 7, 1.6], f: 2 }, { r: [13, 13, 7, 7, 1.6], f: 2 }],
+  wallet: [
+    { d: 'M4 7.4c0-1 .8-1.8 1.8-1.8h12.4c1 0 1.8.8 1.8 1.8v9.2c0 1-.8 1.8-1.8 1.8H5.8c-1 0-1.8-.8-1.8-1.8z' },
+    { d: 'M4 9.8h16' },
+    { d: 'M14.6 14.6h3' },
+  ],
   share: [{ d: 'M12 3.8v11' }, { d: 'M8.2 7.4L12 3.6l3.8 3.8' }, { d: 'M8.5 10.5H7c-.9 0-1.6.7-1.6 1.6v6.6c0 .9.7 1.6 1.6 1.6h10c.9 0 1.6-.7 1.6-1.6v-6.6c0-.9-.7-1.6-1.6-1.6h-1.5' }],
   download: [{ d: 'M12 3.6v10.6' }, { d: 'M8.2 10.6l3.8 3.8 3.8-3.8' }, { d: 'M8.5 10.5H7c-.9 0-1.6.7-1.6 1.6v6.6c0 .9.7 1.6 1.6 1.6h10c.9 0 1.6-.7 1.6-1.6v-6.6c0-.9-.7-1.6-1.6-1.6h-1.5' }],
   compose: [{ d: 'M11.5 4.5H6.2c-.9 0-1.7.8-1.7 1.7v11.6c0 .9.8 1.7 1.7 1.7h11.6c.9 0 1.7-.8 1.7-1.7v-5.3' }, { d: 'M17.6 3.9a1.9 1.9 0 0 1 2.6 2.6L12.4 14.3l-3.5.9.9-3.5z' }],
@@ -459,10 +489,12 @@ export const ICON_KEYWORDS: Partial<Record<IconCanonicalName, string>> = {
   gear: 'settings preferences cog', sliders: 'settings adjust controls filter', sun: 'brightness display light day',
   accessibility: 'a11y person', sos: 'emergency', flower: 'wallpaper macro', location: 'gps navigation arrow',
   cloud: 'icloud weather', iphone: 'phone device mobile', laptop: 'mac computer device',
+  applewatch: 'watch wearable device', keyboard: 'typing keys input', internaldrive: 'storage disk drive ssd',
+  'switch-2': 'control center toggles settings', car: 'vehicle drive carplay', bed: 'sleep bedtime rest',
   cart: 'shopping groceries basket', flag: 'report mark', tray: 'inbox', archivebox: 'archive box store',
   trash: 'delete remove bin', folder: 'directory', 'folder-badge-plus': 'new folder add', pushpin: 'pin keep',
   'pushpin-slash': 'unpin', mappin: 'pin place map location', checklist: 'todo tasks', table: 'grid spreadsheet',
-  list: 'bullets', grid: 'gallery squares', share: 'export upload square arrow', download: 'save import',
+  list: 'bullets', grid: 'gallery squares', 'grid-fill': 'apps home screen squares', wallet: 'pass card pay apple pay', share: 'export upload square arrow', download: 'save import',
   compose: 'write new edit square pencil', pencil: 'edit write', paperclip: 'attachment attach', calendar: 'date event schedule',
   clock: 'time recent history', tag: 'label', doc: 'document file page', note: 'document text', copy: 'duplicate doc on doc',
   link: 'url chain', bookmark: 'save read later', book: 'read library', briefcase: 'work job', gift: 'present birthday',
