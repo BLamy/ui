@@ -1,0 +1,10 @@
+{
+  "title": "SplitView · tinted rows, large titles",
+  "status": "Live",
+  "variants": [
+    { "id": "regular", "label": "Regular" },
+    { "id": "scrolled", "label": "Scrolled" },
+    { "id": "compact", "label": "Compact" }
+  ],
+  "variantsWidth": 280
+}

@@ -21,7 +21,7 @@ export function ListTop({ notes, large = true }: { notes: NotesState; large?: bo
           <div className="mb-2.5 text-[14px] text-muted-foreground"><NumberMorph value={notes.list.length} /> {notes.list.length === 1 ? 'note' : 'notes'}</div>
         </>
       ) : null}
-      <SearchField q={notes.query} setQ={notes.setQuery} aria-label="Search notes" />
+      <SearchField value={notes.query} onChange={notes.setQuery} aria-label="Search notes" />
     </div>
   );
 }

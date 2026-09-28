@@ -22,7 +22,7 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
           </button>
         ) : null} />
       <div className="px-3 pt-2.5 pb-2">
-        <SearchField q={query} setQ={onQuery} placeholder={`Search ${categoryTitle(category)}`} className="py-[6px] [&_input]:text-[15px]" />
+        <SearchField value={query} onChange={onQuery} placeholder={`Search ${categoryTitle(category)}`} className="py-[6px] [&_input]:text-[15px]" />
       </div>
       <SplitViewContent>
         {total === 0 ? (

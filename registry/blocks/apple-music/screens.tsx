@@ -274,7 +274,7 @@ function Search({ ctx }: { ctx: Ctx }) {
   const artists = s ? ARTISTS.filter((a) => a.toLowerCase().includes(s)) : [];
   return (
     <div className="pb-4">
-      <div className="px-4 pt-1 pb-3"><SearchField q={q} setQ={setQ} placeholder="Artists, Songs, Lyrics, and More" /></div>
+      <div className="px-4 pt-1 pb-3"><SearchField value={q} onChange={setQ} placeholder="Artists, Songs, Lyrics, and More" /></div>
       {!s ? (
         <>
           <div className="px-4 pb-2 text-[21px] font-bold">Browse Categories</div>

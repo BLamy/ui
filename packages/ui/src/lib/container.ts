@@ -20,6 +20,34 @@ export function useContainerWidth<T extends HTMLElement = HTMLDivElement>(initia
   return [ref, width];
 }
 
+export interface ContainerSize {
+  width: number;
+  height: number;
+}
+/** Measures an element's width and height with a ResizeObserver (content box, like `useContainerWidth`).
+ *  `initial` is used until the first measurement; a zero-sized first read (not laid out yet) is ignored. */
+export function useContainerSize<T extends HTMLElement = HTMLDivElement>(
+  initial: ContainerSize = { width: 1200, height: 800 },
+): [RefObject<T | null>, ContainerSize] {
+  const ref = useRef<T | null>(null);
+  const [size, setSize] = useState<ContainerSize>(initial);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = (width: number, height: number) => {
+      if (width <= 0 && height <= 0) return;
+      setSize((s) => (s.width === width && s.height === height ? s : { width, height }));
+    };
+    const r = el.getBoundingClientRect();
+    apply(r.width, r.height);
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => apply(entries[0].contentRect.width, entries[0].contentRect.height));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, size];
+}
+
 export interface SlotProps {
   children?: ReactNode;
 }

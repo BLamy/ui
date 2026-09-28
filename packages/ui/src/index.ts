@@ -22,10 +22,10 @@ export {
   AppearanceContext, AppearanceProvider, useAppearance, darkVars as blDarkVars, lightVars as blLightVars,
 } from './lib/theme';
 export type { BLProviderProps, Appearance } from './lib/theme';
-export { useContainerWidth, defineSlot, collectSlots } from './lib/container';
+export { useContainerWidth, useContainerSize, defineSlot, collectSlots } from './lib/container';
 export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL, SHEET_OPEN_THRESHOLD } from './lib/sheet-drag';
 export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
-export type { SlotComponent, SlotProps } from './lib/container';
+export type { SlotComponent, SlotProps, ContainerSize } from './lib/container';
 export { Icon, IC, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS, ICON_WEIGHTS } from './lib/icon';
 export type { IconProps, IconName, IconCanonicalName, IconShape, IconWeight, IconCategory } from './lib/icon';
 
@@ -49,7 +49,7 @@ export type { PillButtonProps } from './components/pill-button';
 export { QRSvg } from './components/qr-svg';
 export type { QRSvgProps } from './components/qr-svg';
 export { List, ListSection, ListRow } from './components/list';
-export type { ListProps, ListSectionProps, ListRowProps } from './components/list';
+export type { ListProps, ListSectionProps, ListRowProps, ListRowAction } from './components/list';
 export { IndexBar, AL, indexBarVariants } from './components/index-bar';
 export type { IndexBarProps, IndexBarItem, IndexBarKey } from './components/index-bar';
 export { TabBar } from './components/tab-bar';
@@ -71,10 +71,12 @@ export type { NavigationStackProps, Screen, ScreenWrapProps } from './components
 export {
   SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail, SplitViewHeader, SplitViewContent, SplitViewToggle,
   SplitViewItem, SplitViewEmpty, useSplitView, useSplitViewColumn,
+  SplitViewSection, SplitViewStack, useSplitViewStack,
 } from './components/split-view';
 export type {
   SplitViewProps, SplitViewColumnProps, SplitViewHeaderProps, SplitViewToggleProps, SplitViewItemProps, SplitViewEmptyProps,
   SplitViewState, SplitViewColumn, SplitViewWidthClass, SplitViewSidebarBehavior, SplitViewSelection,
+  SplitViewSectionProps, SplitViewStackProps, SplitViewStackApi, SplitViewItemTint,
 } from './components/split-view';
 export { Credenza } from './components/credenza';
 export type { CredenzaProps } from './components/credenza';
@@ -97,6 +99,7 @@ export type { AdaptivePaneProps, AdaptivePaneMode } from './components/adaptive-
 export { SidebarDemo, sidebarDarkVars } from './demos/sidebar-demo';
 export {
   SplitViewMailDemo, SplitViewNotesDemo, SplitViewSettingsDemo, SplitViewResizableDemo, DemoGlyph,
+  SplitViewRemindersDemo, SplitViewLibraryDemo, SplitViewGalleryDemo,
 } from './demos/split-view-demos';
 export type { SplitViewResizableDemoProps } from './demos/split-view-demos';
 export {

@@ -10,7 +10,7 @@ function RootList() {
     <div className="px-4 pt-3">
       <ListSection>
         <ListRow leading={<Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={58} />} onPress={() => s.open('account')} accessory="chevron" divider={false}
-          title={<span className="text-[20px] font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>} subtitle="Apple Account, iCloud, and more" className="[&_button]:py-1.5" />
+          title={<span className="text-[20px] font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>} subtitle="Apple Account, iCloud, and more" className="[&_[data-slot=list-row-content]]:py-1.5" />
       </ListSection>
       {GROUPS.map((g, i) => (
         <ListSection key={i}>{g.map((r, j) => <RowView key={j} row={r} last={j === g.length - 1} />)}</ListSection>
@@ -24,7 +24,7 @@ export function PhoneSettings() {
   const screens: Screen[] = [
     {
       key: 'root', title: 'Settings', largeTitle: true, grouped: true, hideChromeOnScroll: false,
-      subheader: <SearchField q={s.query} setQ={s.setQuery} aria-label="Search settings" />,
+      subheader: <SearchField value={s.query} onChange={s.setQuery} aria-label="Search settings" />,
       content: s.query ? <div className="px-4 pt-3"><SearchResults /></div> : <RootList />,
     },
     ...s.path.map((id, i): Screen => ({

@@ -26,7 +26,7 @@ export default function AppleReminders({ initialList = 'today', openList = false
   return (
     <BLProvider dark={dark} tint={tint} className="**:box-border">
       <RemindersCtx.Provider value={reminders}>
-        <SplitView aria-label="Reminders" selection={selection} onSelectionChange={setSelection} sidebarBehavior="tile"
+        <SplitView aria-label="Reminders" selection={selection} onSelectionChange={setSelection} sidebarBehavior="tile" sidebarVisibility={{ medium: true }}
           sidebarVisible={sidebar} onSidebarVisibleChange={setSidebar} defaultCompactColumn={openList ? 'detail' : 'sidebar'}>
           <ListsSidebar />
           <ListView />

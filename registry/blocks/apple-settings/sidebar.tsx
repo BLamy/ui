@@ -44,7 +44,7 @@ export function SettingsSidebar() {
           {['#FF5F57', '#FEBC2E', '#28C840'].map((c) => <span key={c} className="size-3 rounded-full shadow-[inset_0_0_0_.5px_rgba(0,0,0,.18)]" style={{ background: c }} />)}
         </div>
         <div className="px-3 pb-2">
-          <SearchField q={s.query} setQ={s.setQuery} aria-label="Search settings" className="gap-1.5 rounded-[7px] bg-bl-fill px-2 py-[5px] [&_input]:text-[13px] [&_svg]:size-[14px]" />
+          <SearchField value={s.query} onChange={s.setQuery} aria-label="Search settings" className="gap-1.5 rounded-[7px] bg-bl-fill px-2 py-[5px] [&_input]:text-[13px] [&_svg]:size-[14px]" />
         </div>
         <SplitViewContent className="px-2.5 pb-4">
           {s.query ? <div className="pt-1"><SearchResults /></div> : (
@@ -71,7 +71,7 @@ export function SettingsSidebar() {
     <SplitViewSidebar aria-label="Settings" width={350} minWidth={300} maxWidth={420} className="bg-muted">
       <SplitViewContent className="px-4 pb-6">
         <h1 className="m-0 pt-5 pb-2.5 text-[34px] leading-[1.15] font-bold tracking-[-.5px]">Settings</h1>
-        <SearchField q={s.query} setQ={s.setQuery} aria-label="Search settings" className="mb-5" />
+        <SearchField value={s.query} onChange={s.setQuery} aria-label="Search settings" className="mb-5" />
         {s.query ? <SearchResults /> : (
           <>
             <div className="mb-5 overflow-hidden rounded-[12px] bg-card">

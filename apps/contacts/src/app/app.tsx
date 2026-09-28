@@ -120,7 +120,7 @@ export function ContactsApp(props: ContactsAppProps) {
   </div>;
   const listScreen: any = {
     key: 'list', title: edit ? (selN ? selN + ' Selected' : 'Select Contacts') : listTitle, largeTitle: true, grouped,
-    subheader: <SearchField q={q} setQ={setQ} />,
+    subheader: <SearchField value={q} onChange={setQ} />,
     leading: collapsed ? <button className="bl-btn" onClick={() => { setDrawer(true); Haptics.impact('light'); }} aria-label="Show sidebar"
       style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--bl-tint)', display: 'grid', padding: '8px 10px' }}>
       <Icon name="sidebar" size={22} sw={1.9} /></button> : null,

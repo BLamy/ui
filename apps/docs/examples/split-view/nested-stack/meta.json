@@ -1,0 +1,9 @@
+{
+  "title": "SplitView · nested stack",
+  "status": "Live",
+  "variants": [
+    { "id": "regular", "label": "Regular" },
+    { "id": "compact", "label": "Compact" }
+  ],
+  "variantsWidth": 200
+}

@@ -803,7 +803,10 @@
           "SplitViewItem",
           "SplitViewEmpty",
           "useSplitView",
-          "useSplitViewColumn"
+          "useSplitViewColumn",
+          "SplitViewSection",
+          "SplitViewStack",
+          "useSplitViewStack"
         ]
       }
     },
