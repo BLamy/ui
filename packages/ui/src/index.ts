@@ -103,7 +103,7 @@ export {
 } from './demos/split-view-demos';
 export type { SplitViewResizableDemoProps } from './demos/split-view-demos';
 export {
-  HapticsPlayground, ShowMagicRow, BrightnessSlider, HapticSlider, SlideToUnlock, WheelDrum, Sun,
+  HapticsPlayground, HapticsEnabledRow, ShowMagicRow, BrightnessSlider, HapticSlider, SlideToUnlock, WheelDrum, Sun,
 } from './demos/haptics-playground';
 
 // ── shadcn primitives (react-aria-components + Tailwind + cva) ──

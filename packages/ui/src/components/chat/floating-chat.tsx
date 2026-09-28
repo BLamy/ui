@@ -305,7 +305,7 @@ export function FloatingChat({
         style={{ '--ck-chat-gutter': `${gutter}px`, '--ck-chat-fold': fold, ...style } as CSSProperties}
       >
         {/* Dims the host as far as the transcript has grown. Mounted only while the chat is open or growing, so a
-            closed chat leaves nothing over the host (the iOS haptics polyfill forwards taps by position). */}
+            closed chat leaves nothing over the host. */}
         {open || bump.progress > 0 ? (
         <button
           type="button"

@@ -7,8 +7,7 @@ import {
 } from 'react-aria-components';
 
 /* react-aria buttons that keep `title` (react-aria's buttons drop it, and icon buttons rely on it for their
-   tooltip). Taps under Safari's haptics polyfill press normally: its replayed clicks are virtual clicks,
-   which react-aria presses on. */
+   tooltip). */
 const withTitle = (title: string | undefined) =>
   title ? { render: (props: React.JSX.IntrinsicElements['button']) => <button {...props} title={title} /> } : {};
 

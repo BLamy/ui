@@ -111,8 +111,8 @@ export function IndexBar<K extends IndexBarKey = string>({
   const down = (e: React.PointerEvent) => {
     if (e.button) return;
     measure(); setOn(true); setHov(-1); fire(at(e.clientY)); along(e.clientY);
-    // No pointer capture here: the vibrator polyfill slides a native <input switch> under the finger during
-    // drags, and capture would starve it of events. Window listeners track the scrub instead.
+    // Window listeners track the scrub (they keep working if the finger leaves the rail). Ticks from pointermove
+    // play on Android; iOS Safari has no user gesture mid-drag, so the scrub is silent there.
     const mm = (ev: PointerEvent) => { fire(at(ev.clientY)); along(ev.clientY); };
     const uu = () => {
       window.removeEventListener('pointermove', mm); window.removeEventListener('pointerup', uu);
@@ -151,7 +151,7 @@ export function IndexBar<K extends IndexBarKey = string>({
   // The wave centres on the pointer while it's on the rail, else on the keyboard-active stop.
   const focal = pu != null ? pu : idx >= 0 ? idx + 0.5 : null;
   return (
-    <div ref={rail} data-slot="index-bar" data-variant={variant} data-side={side} data-haptic-drag
+    <div ref={rail} data-slot="index-bar" data-variant={variant} data-side={side}
       onPointerDown={down} onPointerEnter={() => { if (!on) measure(); }} onPointerMove={hover}
       onPointerLeave={() => { setHov(-1); if (!on) setPu(null); }}
       role="listbox" aria-orientation="vertical" aria-label={label} aria-activedescendant={idx >= 0 ? `${optionId}-${idx}` : undefined}
