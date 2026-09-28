@@ -154,6 +154,12 @@ const SHAPES = {
   'lock-fill': [{ d: LOCK_BODY, f: 2 }, { d: LOCK_SHACKLE }],
   'lock-open': [{ d: LOCK_BODY }, { d: LOCK_SHACKLE_OPEN }],
   'lock-open-fill': [{ d: LOCK_BODY, f: 2 }, { d: LOCK_SHACKLE_OPEN }],
+  'lock-rotation': [
+    { d: 'M19.6 12a7.6 7.6 0 1 1-2.2-5.4' },
+    { d: 'M17.8 3.4v3.4h-3.4' },
+    { r: [9.1, 11, 5.8, 4.6, 1], f: 1 },
+    { d: 'M10.4 11V9.9a1.6 1.6 0 0 1 3.2 0V11' },
+  ],
   key: [{ c: [7.6, 12, 4.4] }, { c: [6.8, 12, 1.2], f: 1 }, { d: KEY_SHAFT }],
   'key-fill': [{ c: [7.6, 12, 4.4], f: 2 }, { c: [6.8, 12, 1.3], f: 1, k: 1 }, { d: KEY_SHAFT }],
   passkey: [
@@ -166,6 +172,7 @@ const SHAPES = {
   'shield-fill': [{ d: SHIELD, f: 2 }],
   'shield-check': [{ d: SHIELD }, { d: SHIELD_CHECK }],
   'shield-check-fill': [{ d: SHIELD, f: 2 }, { d: SHIELD_CHECK, k: 1 }],
+  'shield-exclamation': [{ d: SHIELD }, { d: 'M12 8v5' }, { c: [12, 16, 0.4], f: 2 }],
   eye: [{ d: 'M2.4 12s3.5-6.4 9.6-6.4 9.6 6.4 9.6 6.4-3.5 6.4-9.6 6.4S2.4 12 2.4 12z' }, { c: [12, 12, 3] }],
   'eye-slash': [
     { d: 'M9.6 5.9A9.8 9.8 0 0 1 12 5.6c6.1 0 9.6 6.4 9.6 6.4a17 17 0 0 1-2.6 3.4M6.3 7.5C3.9 9.2 2.4 12 2.4 12s3.5 6.4 9.6 6.4c1.6 0 3-.4 4.2-1' },
@@ -496,7 +503,8 @@ export const ICON_KEYWORDS: Partial<Record<IconCanonicalName, string>> = {
   'music-note-list': 'playlist songs tracks', 'books-vertical': 'library shelf collection', 'e-square-fill': 'explicit parental advisory',
   waveform: 'siri voice audio voicemail', radiowaves: 'broadcast radio live', photo: 'image picture',
   camera: 'photo picture', video: 'camera facetime movie', lock: 'secure private password', 'lock-open': 'unlock unsecure',
-  key: 'password credential', passkey: 'person key credential', shield: 'security protect', 'shield-check': 'verified secure',
+  key: 'password credential', passkey: 'person key credential', shield: 'security protect', 'shield-check': 'verified secure', 'shield-exclamation': 'security warning alert breach compromised',
+  'lock-rotation': 'codes verification one-time otp totp 2fa authenticator',
   eye: 'show visible reveal', 'eye-slash': 'hide hidden conceal', faceid: 'face biometric', qrcode: 'scan code',
   warning: 'exclamationmark triangle alert caution', wifi: 'wireless network', antenna: 'cellular mobile data',
   cellularbars: 'signal cellular', hotspot: 'personal link tether', vpn: 'network private', airplane: 'flight travel mode',
