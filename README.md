@@ -34,6 +34,12 @@ pnpm add @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tipta
 
 React and the TipTap packages (including `@tiptap/extension-code`) are peer dependencies. `@brett_lamy/docstream` is a runtime dependency (pinned to the same version as the editor) because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers. Nothing in the install runs a build script, and the editor never references Docstream's optional almost-node playground (`@agent-wasm/core`) — see `liveRenderer` below to opt in.
 
+### Migrating to 1.4
+
+No API changes. Exports resolve to compiled `dist/*.js` + `.d.ts` instead of `src/*.ts(x)`
+(Docstream 1.4 does the same); drop any `optimizeDeps` / `transpilePackages` entries or
+type-check settings you added for the raw sources.
+
 ### Migrating to 1.3
 
 - `GitbookEditor` no longer runs `live` jsx/tsx code blocks in almost-node on its own. Pass
@@ -338,21 +344,31 @@ The editor exposes classes such as `gb`, `gb-toolbar`, `gb-tool`, `gb-tool-activ
 
 ## Bundler Notes
 
-This release ships TypeScript and TSX source through ESM exports:
+Since 1.4 the package ships compiled ES modules (ES2022, `react-jsx`) with type
+declarations and declaration maps — one file per source module in `dist/`, TipTap,
+Docstream and every other dependency left as imports:
 
 ```json
 {
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
-    "./styles.css": "./src/styles.css"
+    "./editor": { "types": "./dist/editor/Editor.d.ts", "import": "./dist/editor/Editor.js" },
+    "./convert": { "types": "./dist/editor/convert.d.ts", "import": "./dist/editor/convert.js" },
+    "./styles.css": "./dist/styles.css"
   }
 }
 ```
 
-It is validated with Vite and modern TypeScript `moduleResolution: "Bundler"`. Plain Node.js, CommonJS, or tooling that does not transpile TypeScript in dependencies may need a future precompiled JS build.
+No bundler configuration is needed: Vite pre-bundles the editor (and TipTap's CommonJS
+dependencies such as `use-sync-external-store`) like any other dependency, so no
+`optimizeDeps` entries; Next.js and webpack consume it as plain ESM; your type-check
+reads `.d.ts` files instead of the editor's sources. The TypeScript sources are
+published too, behind a `source` export condition, for monorepos that compile from source.
 
 ## Renderer Pairing
 
