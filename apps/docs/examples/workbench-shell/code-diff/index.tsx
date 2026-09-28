@@ -8,12 +8,12 @@ function Change() {
         <SurfaceDiff
           oldFile={{
             name: 'src/haptics.ts',
-            contents: "export async function bootHaptics() {\n  if (navigator.vibrate) return\n  await import('ios-vibrator-pro-max')\n}",
+            contents: "export async function bootHaptics() {\n  if (navigator.vibrate) return\n  await import('buzzkit')\n}",
           }}
           newFile={{
             name: 'src/haptics.ts',
             contents:
-              "export async function bootHaptics() {\n  if (isBlockingStub(navigator.vibrate)) delete navigator.vibrate\n  await import('ios-vibrator-pro-max@3.0.3')\n}",
+              "export async function bootHaptics() {\n  if (isBlockingStub(navigator.vibrate)) delete navigator.vibrate\n  await import('buzzkit@3.0.3')\n}",
           }}
         />
       </div>

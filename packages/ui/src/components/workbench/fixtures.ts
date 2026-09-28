@@ -65,8 +65,8 @@ const REPLY_REVIEW = `## Review notes
 
 Checked the haptics path end to end:
 
-- \`Haptics.boot()\` now runs at import, so the polyfill wraps the DOM **before** your first tap
-- the CDN import is pinned to \`ios-vibrator-pro-max@3.0.3\` with a fallback host
+- \`Haptics.boot()\` now runs at import, so the shim wraps the DOM **before** your first tap
+- the CDN import is pinned to \`buzzkit@3.0.3\` with a fallback host
 - a pre-existing \`navigator.vibrate\` stub is deleted on Safari — it was silently blocking the install gate
 
 > On iOS 18.4+ only a real click grants vibration (~1s). Drags vibrate through the overlay-switch trick instead, so mid-scrub ticks keep working.
@@ -181,14 +181,14 @@ export const DIFF: { before: SurfaceDiffFile; after: SurfaceDiffFile } = {
     name: 'src/haptics.ts',
     contents: `export async function bootHaptics() {
   if (navigator.vibrate) return
-  await import('https://esm.run/ios-vibrator-pro-max')
+  await import('https://esm.run/buzzkit')
 }`,
   },
   after: {
     name: 'src/haptics.ts',
     contents: `export async function bootHaptics() {
   if (isBlockingStub(navigator.vibrate)) delete navigator.vibrate
-  await import('https://esm.sh/ios-vibrator-pro-max@3.0.3')
+  await import('https://esm.sh/buzzkit@3.0.3')
   window.addEventListener('bl-vib', reportHaptic)
 }`,
   },
