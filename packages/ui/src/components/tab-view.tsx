@@ -1,4 +1,8 @@
-import { createContext, useContext, useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from 'react';
+import {
+  Children, createContext, isValidElement, useContext, useLayoutEffect, useReducer, useRef, useState,
+  type CSSProperties, type HTMLAttributes, type ReactNode, type Ref,
+} from 'react';
+import { createPortal } from 'react-dom';
 import {
   Button as AriaButton, type ButtonProps as AriaButtonProps,
   SelectionIndicator,
@@ -6,6 +10,7 @@ import {
   TabList as AriaTabList, type TabListProps as AriaTabListProps,
   TabPanel as AriaTabPanel, type TabPanelProps as AriaTabPanelProps,
   TabPanels as AriaTabPanels, type TabPanelsProps as AriaTabPanelsProps,
+  TabListStateContext,
   Tabs as AriaTabs, type TabsProps as AriaTabsProps,
   composeRenderProps, createLeafComponent,
   type Key,
@@ -33,7 +38,13 @@ import { TabDirection, useTabPanelDirection } from './tabs';
      <TabViewPanels><TabViewPanel id="a">…</TabViewPanel>…</TabViewPanels>
    </TabView>
 
-   Placement `top`/`bottom` is horizontal, `start`/`end` vertical. One selection tick per user change. ══ */
+   Placement `top`/`bottom` is horizontal, `start`/`end` vertical. One selection tick per user change.
+
+   Order doesn't matter: the bar and the panels may be written either way round. react-aria needs the tablist
+   to render before any panel (it mints the ids panels point at, on every render), so TabView moves a bar/list
+   that is its direct child ahead of the panels (which also keeps `placement` right). When the bar is nested
+   deeper and comes after the panels, TabViewPanels leaves a box-less placeholder where it was written and
+   the panels are rendered after everything else — portalled back into that placeholder. ══ */
 
 export type TabViewPlacement = 'top' | 'bottom' | 'start' | 'end';
 export type TabViewOrientation = 'horizontal' | 'vertical';
@@ -45,6 +56,58 @@ interface TabViewCtxValue {
   variant: TabViewBarVariant;
 }
 const TabViewCtx = createContext<TabViewCtxValue>({ orientation: 'horizontal', placement: 'bottom', variant: 'bar' });
+
+/* Panels outlet: with a nested bar, TabViewPanels hands its panels to an outlet rendered after all of
+   TabView's children (so after the tablist, whatever the nesting), which portals them into its box. */
+interface PanelsStore {
+  /** Tab list states the tablist has rendered with (react-aria mints the panel ids per state object). */
+  seen: WeakSet<object>;
+  content: ReactNode;
+  host: HTMLElement | null;
+  set: (content: ReactNode, host: HTMLElement | null) => void;
+  subscribe: (fn: () => void) => () => void;
+}
+function createPanelsStore(): PanelsStore {
+  const subs = new Set<() => void>();
+  const store: PanelsStore = {
+    seen: new WeakSet(),
+    content: null,
+    host: null,
+    set(content, host) { store.content = content; store.host = host; subs.forEach((f) => f()); },
+    subscribe(fn) { subs.add(fn); return () => { subs.delete(fn); }; },
+  };
+  return store;
+}
+const PanelsOutletCtx = createContext<PanelsStore | null>(null);
+
+function PanelsOutlet({ store }: { store: PanelsStore }) {
+  const [, force] = useReducer((n: number) => n + 1, 0);
+  useLayoutEffect(() => store.subscribe(force), [store]);
+  return store.content && store.host ? createPortal(store.content, store.host) : null;
+}
+
+const isBar = (c: ReactNode) => isValidElement(c) && (c.type === TabViewBar || c.type === TabViewList);
+const isPanels = (c: ReactNode) => isValidElement(c) && c.type === TabViewPanels;
+
+/** Moves a bar / list that is a direct child ahead of the panels, keeping everything else in place, and
+ *  ends with the outlet a nested-bar-after-panels layout needs. */
+function Ordered({ kids, store }: { kids: ReactNode; store: PanelsStore }) {
+  const arr = Children.toArray(kids);
+  const firstPanels = arr.findIndex(isPanels);
+  let out: ReactNode = kids;
+  if (firstPanels >= 0 && arr.slice(firstPanels).some(isBar)) {
+    const bars = arr.filter((c, i) => i > firstPanels && isBar(c));
+    const rest = arr.filter((c, i) => !(i > firstPanels && isBar(c)));
+    rest.splice(firstPanels, 0, ...bars);
+    out = rest;
+  }
+  return (
+    <PanelsOutletCtx.Provider value={store}>
+      {out}
+      <PanelsOutlet store={store} />
+    </PanelsOutletCtx.Provider>
+  );
+}
 /** The enclosing TabView's orientation, placement and bar variant. */
 export const useTabView = () => useContext(TabViewCtx);
 
@@ -76,6 +139,7 @@ export function TabView({ placement, orientation, className, onSelectionChange, 
   const orient: TabViewOrientation = orientation ?? (place === 'start' || place === 'end' ? 'vertical' : 'horizontal');
   // react-aria reports its automatic first selection too; only user changes tick.
   const last = useRef<Key | null>(props.selectedKey ?? props.defaultSelectedKey ?? null);
+  const [store] = useState(createPanelsStore);
   return (
     <TabViewCtx.Provider value={{ orientation: orient, placement: place, variant: orient === 'vertical' ? 'rail' : 'bar' }}>
       <AriaTabs
@@ -90,7 +154,7 @@ export function TabView({ placement, orientation, className, onSelectionChange, 
         className={composeRenderProps(className, (cls) => cn(tabViewVariants({ placement: place }), cls))}
         {...props}
       >
-        {composeRenderProps(children, (kids) => <TabDirection>{kids}</TabDirection>)}
+        {composeRenderProps(children, (kids) => <TabDirection><Ordered kids={kids} store={store} /></TabDirection>)}
       </AriaTabs>
     </TabViewCtx.Provider>
   );
@@ -146,6 +210,10 @@ export const tabViewListVariants = cva('outline-none', {
 
 export function TabViewList<T extends object>({ className, ...props }: AriaTabListProps<T>) {
   const { variant } = useContext(TabViewCtx);
+  // Real pass (not react-aria's collection pass): the tablist below mints the panel ids for this state.
+  const state = useContext(TabListStateContext);
+  const store = useContext(PanelsOutletCtx);
+  if (state && store) store.seen.add(state);
   return (
     <AriaTabList
       data-slot="tab-view-list"
@@ -325,6 +393,18 @@ export function TabViewFooter({ className, style, children }: SlotProps) {
 
 /* ── Panels ── */
 export function TabViewPanels<T extends object>({ className, ...props }: AriaTabPanelsProps<T>) {
+  // Rendered before a (nested) tablist: leave a box-less placeholder here and let the outlet, which renders
+  // after the tablist, draw the panels into it. Decided on the first real render; the tree order is fixed.
+  const store = useContext(PanelsOutletCtx);
+  const state = useContext(TabListStateContext);
+  const mode = useRef<'direct' | 'outlet' | null>(null);
+  if (!mode.current && state) mode.current = store && !store.seen.has(state) ? 'outlet' : 'direct';
+  const outlet = mode.current === 'outlet';
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const panels = <AriaTabPanels data-slot="tab-view-panels" className={cn('relative min-h-0 min-w-0 flex-1', className)} {...props} />;
+  useLayoutEffect(() => { if (outlet) store?.set(panels, host); });
+  useLayoutEffect(() => () => { if (mode.current === 'outlet') store?.set(null, null); }, [store]);
+  if (outlet) return <div ref={setHost} data-slot="tab-view-panels-placeholder" className="contents" />;
   return <AriaTabPanels data-slot="tab-view-panels" className={cn('relative min-h-0 min-w-0 flex-1', className)} {...props} />;
 }
 

@@ -63,7 +63,7 @@ export function ListsSidebar() {
   return (
     <SplitViewSidebar aria-label="Lists" width={330} minWidth={280} maxWidth={400} className="bg-muted">
       <SplitViewContent className="px-4 pb-4">
-        <SearchField q={api.query} setQ={api.setQuery} aria-label="Search reminders" className="mt-3 mb-4" />
+        <SearchField value={api.query} onChange={api.setQuery} aria-label="Search reminders" className="mt-3 mb-4" />
         {api.query && s.collapsed ? <InlineResults /> : (
           <>
             <div className="grid grid-cols-2 gap-3">{SMART.map((t) => <SmartTile key={t.id} t={t} />)}</div>

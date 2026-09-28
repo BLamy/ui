@@ -6,6 +6,7 @@ export type {
   IndexBarKey,
   IndexBarProps,
   ListProps,
+  ListRowAction,
   ListRowProps,
   ListSectionProps,
 } from '@brett_lamy/ui';

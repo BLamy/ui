@@ -209,3 +209,50 @@ export const CustomTabs: Story = {
     </Panel>
   ),
 };
+
+/** Order-independent: the panels are written before the bar. TabView moves a direct-child bar ahead of the
+    panels (so react-aria has minted its tab ids, and `placement` still puts the bar at the bottom) — this
+    renders exactly like `Bottom`, with no "There is no tab id" error. */
+export const PanelsFirst: Story = {
+  render: () => (
+    <Phone w={390} h={420}>
+      <TabView defaultSelectedKey="contacts" className="absolute inset-0">
+        <TabViewPanels>
+          {sections.map((s) => <TabViewPanel key={s.id} id={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
+        </TabViewPanels>
+        <TabViewBar>
+          <TabViewList aria-label="Sections">
+            {sections.map((s) => <TabViewTab key={s.id} id={s.id} icon={s.icon} title={s.title} />)}
+          </TabViewList>
+        </TabViewBar>
+      </TabView>
+    </Phone>
+  ),
+};
+
+/** Panels first with the bar nested in a wrapper: TabViewPanels waits one layout pass (before paint) for the
+    tablist, so this works too. Here the wrapper is laid out by hand (the panels fill, the bar pins to the top). */
+export const PanelsFirstNested: Story = {
+  render: () => (
+    <Panel w={560} h={320}>
+      <TabView placement="top" defaultSelectedKey="recents" className="absolute inset-0 bg-bl-bg">
+        <TabViewPanels className="order-2">
+          {sections.map((s) => <TabViewPanel key={s.id} id={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
+        </TabViewPanels>
+        <div className="order-1 flex shrink-0 items-center gap-3 px-4 pt-3 shadow-[inset_0_-1px_0_var(--bl-sep)]">
+          <span className="text-[15px] font-bold text-bl-label">Address Book</span>
+          <TabViewBar variant="plain">
+            <TabViewList aria-label="Sections" className="gap-1">
+              {sections.map((s) => (
+                <TabViewTab key={s.id} id={s.id} className="relative px-3 py-2 text-[14px] font-semibold text-bl-label3 data-selected:text-primary">
+                  {s.title}
+                  <TabViewIndicator />
+                </TabViewTab>
+              ))}
+            </TabViewList>
+          </TabViewBar>
+        </div>
+      </TabView>
+    </Panel>
+  ),
+};
