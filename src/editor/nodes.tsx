@@ -25,12 +25,12 @@ import {
   XCircle,
 } from "lucide-react"
 
-import { DocsRenderer } from "@brett_lamy/docstream"
+// The root entry (unlike `/replay`) keeps rrweb behind a dynamic import. The editor never
+// imports `/playground`: live previews run only through a host-supplied `liveRenderer`.
+import { DocsRenderer, ReplayPreview, isReplayQaUrl } from "@brett_lamy/docstream"
 import { resolveAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
 import { packageManagerCommands, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/docstream/gitbook"
-import { ReactCodePreview } from "@brett_lamy/docstream/playground"
-import { ReplayPreview, isReplayQaUrl } from "@brett_lamy/docstream/replay"
 import { VideoEmbed } from "@brett_lamy/docstream/video"
 import { DemoViewer } from "@brett_lamy/docstream/demo"
 import { pmToCommand, pmToDemo } from "./convert"
@@ -1065,7 +1065,8 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
   const previewCode = useDebouncedValue(code)
   const language = String(node.attrs.language ?? "").toLowerCase()
   const mermaid = language === "mermaid"
-  const almostNode = !!node.attrs.live && (language === "jsx" || language === "tsx" || language === "react")
+  const { liveRenderer } = useEditorRuntime()
+  const live = !!liveRenderer && !!node.attrs.live && (language === "jsx" || language === "tsx" || language === "react")
   const entry = String(node.attrs.entry || (language === "tsx" ? "/src/main.tsx" : "/src/main.jsx"))
   const files = useMemo(() => ({ [entry]: previewCode }), [entry, previewCode])
   const mermaidDocument = useMemo<DocumentNode>(() => ({
@@ -1080,15 +1081,9 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
           <DocsRenderer doc={mermaidDocument} />
         </div>
       ) : null}
-      {almostNode ? (
+      {live && liveRenderer ? (
         <div className="gb-code-preview gb-code-almost-preview" contentEditable={false}>
-          <ReactCodePreview
-            files={files}
-            entry={entry}
-            codeFile={entry}
-            height={300}
-            title={node.attrs.title || "Live preview"}
-          />
+          {liveRenderer({ files, entry, title: node.attrs.title || "Live preview" })}
         </div>
       ) : null}
       <div className="gb-code-header" contentEditable={false}>

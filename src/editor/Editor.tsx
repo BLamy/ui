@@ -12,6 +12,7 @@ import {
 
 import { parseMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
 import type { DemoResolver, InlineDemoRuntime } from "@brett_lamy/docstream/demo"
+import type { LivePreviewRenderer } from "@brett_lamy/docstream"
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import {
   attachmentName,
@@ -99,6 +100,12 @@ export interface GitbookEditorProps {
    * `@brett_lamy/docstream/playground`. Without one, such demos show their code with a note.
    */
   demoRuntime?: InlineDemoRuntime
+  /**
+   * Renders the preview above `live` jsx/tsx code blocks (as `DocRenderOptions`' `liveRenderer`),
+   * e.g. `almostNodeLiveRenderer` from `@brett_lamy/docstream/playground`. The editor never
+   * loads a runtime itself; without one, live code blocks are edited as plain code.
+   */
+  liveRenderer?: LivePreviewRenderer
   /** Extra npm dependencies inline demos may import (as `DocRenderOptions.demoDependencies`). */
   demoDependencies?: Record<string, string>
   /**
@@ -195,6 +202,7 @@ export function GitbookEditor({
   onSourceError,
   demoResolver,
   demoRuntime,
+  liveRenderer,
   demoDependencies,
   markdownPaste = true,
 }: GitbookEditorProps) {
@@ -361,10 +369,11 @@ export function GitbookEditor({
     ...(onSourceError ? { onSourceError } : {}),
     ...(demoResolver ? { demoResolver } : {}),
     ...(demoRuntime ? { demoRuntime } : {}),
+    ...(liveRenderer ? { liveRenderer } : {}),
     ...(demoDependencies ? { demoDependencies } : {}),
     ...(attachments ? { attachments } : {}),
     ...(onAttachmentOpen ? { onAttachmentOpen } : {}),
-  }), [attachments, demoDependencies, demoResolver, demoRuntime, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
+  }), [attachments, demoDependencies, demoResolver, demoRuntime, liveRenderer, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
 
   if (!editor) return null
 

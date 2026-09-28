@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { FileCode2, Play } from "lucide-react"
 
-import { ReactCodePreview } from "@brett_lamy/docstream/playground"
+import type { LivePreviewRenderer } from "@brett_lamy/docstream"
 
 export interface ReactDemoEditorProps {
   /** Source files keyed by their project-relative or absolute paths. */
@@ -13,7 +13,13 @@ export interface ReactDemoEditorProps {
   className?: string
   /** Called whenever a file is edited. */
   onChange?: (files: Record<string, string>) => void
-  /** Refresh the AlmostNode preview as files are edited (default true). */
+  /**
+   * Renders the running preview, e.g. `almostNodeLiveRenderer` from
+   * `@brett_lamy/docstream/playground` (needs `@agent-wasm/core`). The editor never loads a
+   * runtime itself: without one the files stay editable and a short note replaces the preview.
+   */
+  liveRenderer?: LivePreviewRenderer
+  /** Refresh the live preview as files are edited (default true). */
   autoPreview?: boolean
   /** Delay before a live preview receives edited files (default 350ms). */
   previewDebounceMs?: number
@@ -32,6 +38,7 @@ export function ReactDemoEditor({
   onChange,
   autoPreview = true,
   previewDebounceMs = 350,
+  liveRenderer,
 }: ReactDemoEditorProps) {
   const [draftFiles, setDraftFiles] = useState<Record<string, string>>(() => ({ ...files }))
   const [selectedFile, setSelectedFile] = useState(() => nextFile(files))
@@ -64,13 +71,15 @@ export function ReactDemoEditor({
 
   return (
     <section className={wrapperClass} data-docstream-react-demo-editor="">
-      <ReactCodePreview
-        key={previewRevision}
-        files={previewFiles}
-        entry={entry}
-        height={height}
-        title="React demo preview"
-      />
+      {liveRenderer ? (
+        <div key={previewRevision} className="gb-react-demo-editor-preview" style={{ minHeight: typeof height === "number" ? `${height}px` : height }}>
+          {liveRenderer({ files: previewFiles, entry, title: "React demo preview" })}
+        </div>
+      ) : (
+        <div className="gb-react-demo-editor-preview docs-demo-runtime-note" role="note">
+          Live preview needs the playground runtime (pass <code>liveRenderer</code>). The code is shown below.
+        </div>
+      )}
       <div className="gb-react-demo-editor-source">
         <aside className="gb-react-demo-files" aria-label="Demo files">
           <div className="gb-react-demo-files-header">

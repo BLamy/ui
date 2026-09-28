@@ -27,10 +27,19 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 ## Installation
 
 ```sh
-npm install @brett_lamy/docstream-editor @brett_lamy/docstream react
+pnpm add @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block \
+  @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm \
+  @tiptap/react @tiptap/starter-kit @tiptap/suggestion
 ```
 
-React and the TipTap packages (including `@tiptap/extension-code`) are peer dependencies. `@brett_lamy/docstream` is a runtime dependency because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers.
+React and the TipTap packages (including `@tiptap/extension-code`) are peer dependencies. `@brett_lamy/docstream` is a runtime dependency (pinned to the same version as the editor) because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers. Nothing in the install runs a build script, and the editor never references Docstream's optional almost-node playground (`@agent-wasm/core`) — see `liveRenderer` below to opt in.
+
+### Migrating to 1.3
+
+- `GitbookEditor` no longer runs `live` jsx/tsx code blocks in almost-node on its own. Pass
+  `liveRenderer={almostNodeLiveRenderer}` (from `@brett_lamy/docstream/playground`) to keep the preview.
+- `ReactDemoEditor` takes the same `liveRenderer` prop; without it the files stay editable and a
+  short note replaces the preview.
 
 ## Basic Setup
 
@@ -91,6 +100,7 @@ export interface GitbookEditorProps {
   onAttachmentOpen?: (attachment: EditorAttachment) => void
   demoResolver?: DemoResolver
   demoRuntime?: InlineDemoRuntime
+  liveRenderer?: LivePreviewRenderer
   demoDependencies?: Record<string, string>
   markdownPaste?: boolean
 }
@@ -106,6 +116,11 @@ export interface GitbookEditorProps {
   preview — see [Demo blocks](#demo-blocks).
 - `demoRuntime` / `demoDependencies`: run demos that carry their files inline and have no
   resolver behind them — the same options as Docstream's `DocRenderOptions`.
+- `liveRenderer`: renders the preview above `live` jsx/tsx code blocks (as Docstream's
+  `liveRenderer`). The editor never imports Docstream's almost-node playground itself; to run
+  live code, pass `almostNodeLiveRenderer` / `createAlmostNodeDemoRuntime()` from
+  `@brett_lamy/docstream/playground` (and install `@agent-wasm/core`). Without them, live code
+  blocks are edited as plain code and inline demos open on their Code view.
 - `markdownPaste` (default `true`): plain-text Markdown pasted into the editor that contains
   blocks (a "Copy page" export, `{% … %}` tags, fences, lists, headings …) is parsed into
   editor blocks instead of pasted as literal text. Plain prose pastes as usual; HTML clipboards

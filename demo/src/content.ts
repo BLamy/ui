@@ -382,10 +382,10 @@ interface PMNode {
     title: 'ReactDemoEditor',
     markdown: `# ReactDemoEditor
 
-A small multi-file source editor paired with docstream's live React preview (\`ReactCodePreview\`). The preview appears above the file list and source editor, and refreshes automatically as the selected virtual file changes.
+A small multi-file source editor paired with a live React preview supplied by the host through \`liveRenderer\` (e.g. \`almostNodeLiveRenderer\` from \`@brett_lamy/docstream/playground\`). The preview appears above the file list and source editor, and refreshes automatically as the selected virtual file changes.
 
 {% hint style="warning" %}
-The preview side requires the \`@agent-wasm/core\` peer (almost-node), same as docstream's live demos — the source-editing UI itself has no extra runtime requirements. This docs site excludes that runtime, so there is no live instance here.
+The editor never imports the almost-node playground itself. Pass \`liveRenderer\` from \`@brett_lamy/docstream/playground\` (and install its optional \`@agent-wasm/core\` peer) to get a running preview; without it the files stay editable and a short note replaces the preview. This docs site excludes that runtime, so there is no live instance here.
 {% endhint %}
 
 | Prop | Type | Default | Purpose |
@@ -393,15 +393,18 @@ The preview side requires the \`@agent-wasm/core\` peer (almost-node), same as d
 | \`files\` | \`Record<string, string>\` | — | Source files keyed by project-relative or absolute paths (required). |
 | \`entry\` | \`string\` | \`"/src/main.jsx"\` | Vite entry file for the preview. |
 | \`height\` | \`number \\| string\` | \`320\` | Preview height after the user runs the demo. |
+| \`liveRenderer\` | \`LivePreviewRenderer\` | — | Renders the running preview (e.g. \`almostNodeLiveRenderer\`). |
 | \`onChange\` | \`(files: Record<string, string>) => void\` | — | Called whenever a file is edited. |
-| \`autoPreview\` | \`boolean\` | \`true\` | Write edited files into the refreshed AlmostNode preview automatically. |
+| \`autoPreview\` | \`boolean\` | \`true\` | Refresh the live preview with edited files automatically. |
 | \`previewDebounceMs\` | \`number\` | \`350\` | Pause before edited virtual files update the preview. |
 | \`className\` | \`string\` | — | Appended to \`gb-react-demo-editor\`. |
 
 \`\`\`tsx
 import { ReactDemoEditor } from "@brett_lamy/docstream-editor"
+import { almostNodeLiveRenderer } from "@brett_lamy/docstream/playground"
 
 <ReactDemoEditor
+  liveRenderer={almostNodeLiveRenderer}
   files={{
     "/src/main.jsx": mainSource,
     "/src/App.jsx": appSource,

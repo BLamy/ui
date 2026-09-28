@@ -5,9 +5,6 @@ import path from 'node:path';
 export default defineConfig({
   base: '/docstream-editor/',
   plugins: [react()],
-  build: {
-    rollupOptions: { external: ['@agent-wasm/core'] },
-  },
   resolve: {
     alias: {
       react: path.resolve(__dirname, 'node_modules/react'),
