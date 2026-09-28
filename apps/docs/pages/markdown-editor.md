@@ -30,7 +30,11 @@ import { MarkdownEditor } from '@brett_lamy/ui'
 
 const [markdown, setMarkdown] = useState('# Notes')
 
-<MarkdownEditor value={markdown} onValueChange={setMarkdown} placeholder="Type / for blocks" />
+<MarkdownEditor
+  value={markdown}
+  onValueChange={setMarkdown}
+  placeholder="Type / for blocks"
+/>
 ```
 
 ## Live examples

@@ -27,9 +27,9 @@ import { Haptics, HapticIndicator } from '@/components/ui/haptics'
 
 ```js
 Haptics.impact('light' | 'medium' | 'heavy')
-Haptics.selection()                       // A–Z scrub · pickers · tabs
+Haptics.selection()           // A–Z scrub · pickers · tabs
 Haptics.notification('success' | 'warning' | 'error')
-Haptics.on(meta => ...)                   // observe events (drives the pulse indicator)
+Haptics.on(meta => ...)       // observe events (drives the pulse indicator)
 ```
 
 ## Engines, by platform

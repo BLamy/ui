@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import {
   Sidebar,
   SidebarInset,
@@ -7,20 +7,6 @@ import {
   type SidebarVariant,
   WorkbenchTheme,
 } from '@brett_lamy/ui'
-
-/** The dark Workbench palette the Sidebar's --wb-* tokens read. */
-const darkVars = {
-  '--wb-bg': '#141419',
-  '--wb-side': '#101015',
-  '--wb-card': '#1C1C23',
-  '--wb-fill': 'rgba(255,255,255,.06)',
-  '--wb-fill2': 'rgba(255,255,255,.11)',
-  '--wb-sep': 'rgba(255,255,255,.08)',
-  '--wb-label': '#EDEDF2',
-  '--wb-label2': '#9C9CA6',
-  '--wb-label3': '#69696F',
-  '--wb-tint': '#0A84FF',
-} as CSSProperties
 
 const font =
   "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif"
@@ -34,7 +20,6 @@ function SidebarVariants() {
   return (
     <div
       style={{
-        ...darkVars,
         display: 'grid',
         justifyItems: 'center',
         gap: 12,

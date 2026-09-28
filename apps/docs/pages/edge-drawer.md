@@ -30,7 +30,13 @@ import { EdgeDrawer } from '@brett_lamy/ui'
 
 <div style={{ position: 'relative' }}>
   <Page />
-  <EdgeDrawer side="left" open={open} onClose={() => setOpen(false)} width={280} maxWidth="84%">
+  <EdgeDrawer
+    side="left"
+    open={open}
+    onClose={() => setOpen(false)}
+    width={280}
+    maxWidth="84%"
+  >
     <Navigation />
   </EdgeDrawer>
 </div>

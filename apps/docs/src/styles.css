@@ -275,6 +275,12 @@ a:hover {
   font-size: 12.5px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+/* Same leak inside live examples: a SyntaxHighlighting block rendered in a demo is a <pre> under the page's
+   `.wb-md`, and the dark MarkdownView code background (re-emitted by the registry sheet, after ui's) beat
+   `.bl-syntax-pre { background: none }` — a near-black file viewer in light mode. */
+.dk-md .bl-syntax-pre {
+  background: none;
+}
 .dk-md .docs-react-demo-code-body {
   /* The panel paints the code background; without this the page's `.wb-md pre` (MarkdownView's dark code
      block) shows through as a near-black strip in light mode. */

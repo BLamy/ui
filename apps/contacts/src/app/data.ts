@@ -1,4 +1,4 @@
-/* Demo data for the Contacts app — verbatim from the BL UI prototype. */
+/* Demo data for the Contacts app. */
 export const GROUPS = [
   { name: 'Work', color: '#0A84FF' },
   { name: 'Family', color: '#34C759' },
@@ -82,5 +82,4 @@ export const NOTES: Record<string, string> = {
   hanasato: 'Working on the onboarding animation — check in Friday.',
   chidiokafor: 'Intro to the Parallel design team pending.',
 };
-export const TINTS = ['#0A84FF', '#5E5CE6', '#30B0C7', '#34C759', '#FF9F0A', '#FF375F'];
 export const AL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');

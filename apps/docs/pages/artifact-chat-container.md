@@ -33,7 +33,8 @@ The floating half is not special to this container: it is the standalone `Floati
 
 ```tsx
 import {
-  ArtifactChatContainer, Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
+  ArtifactChatContainer, Composer, ComposerCard, ComposerInput, ComposerFooter,
+  ComposerSpacer, ComposerSend,
 } from '@brett_lamy/ui'
 
 <ArtifactChatContainer
@@ -123,14 +124,23 @@ A chat that is always floating over a map and works by calling tools. The compos
 ```tsx
 import { ArtifactChatContainer, TileMap, planTurn } from '@brett_lamy/ui'
 
-<ArtifactChatContainer layout="floating" peek={236} working={busy} hideOnScroll={false}>
+<ArtifactChatContainer
+  layout="floating" peek={236} working={busy} hideOnScroll={false}
+>
   <ArtifactChatContainer.Content>
-    <TileMap view={view} pins={pins} route={route} controls onPinClick={focusPlace} />
+    <TileMap
+      view={view} pins={pins} route={route} controls onPinClick={focusPlace}
+    />
   </ArtifactChatContainer.Content>
-  <ArtifactChatContainer.Chat><Transcript turns={turns} /></ArtifactChatContainer.Chat>
+  <ArtifactChatContainer.Chat>
+    <Transcript turns={turns} />
+  </ArtifactChatContainer.Chat>
   <ArtifactChatContainer.Composer>
     <Composer onSubmit={send} streaming={busy} onStop={stop}>
-      <ComposerCard><ComposerInput /><ComposerFooter><ComposerSpacer /><ComposerSend /></ComposerFooter></ComposerCard>
+      <ComposerCard>
+        <ComposerInput />
+        <ComposerFooter><ComposerSpacer /><ComposerSend /></ComposerFooter>
+      </ComposerCard>
     </Composer>
   </ArtifactChatContainer.Composer>
 </ArtifactChatContainer>
@@ -157,11 +167,19 @@ Tiles load from Esri, so this block needs network. Open it full screen at [`?dem
 An order tracker in the style of a food-delivery app, composed from the same primitives as the map chat: a light `TileMap` underneath and an opaque, edge-docked `FloatingSheet` carrying the order status. Resting, the sheet shows the headline, a `ProgressStepper`, the pickup instructions, and a promo row; drag the cap and the same surface grows into the full page with gift-card and menu carousels.
 
 ```tsx
-import { FloatingSheet, ProgressStepper, TileMap, esriLightGrayTiles } from '@brett_lamy/ui'
+import {
+  FloatingSheet, ProgressStepper, TileMap, esriLightGrayTiles,
+} from '@brett_lamy/ui'
 
 <div style={{ position: 'relative' }}>
-  <TileMap view={route} pins={[store, car]} route={path} tileUrl={esriLightGrayTiles} scheme="light" />
-  <FloatingSheet appearance="sheet" tone="light" gutter={0} radius={20} peek={344} bodyAlign="start" minimizable={false} scrim={false}>
+  <TileMap
+    view={route} pins={[store, car]} route={path}
+    tileUrl={esriLightGrayTiles} scheme="light"
+  />
+  <FloatingSheet
+    appearance="sheet" tone="light" gutter={0} radius={20} peek={344}
+    bodyAlign="start" minimizable={false} scrim={false}
+  >
     <FloatingSheet.Body>
       <h2>Preparing your order</h2>
       <ProgressStepper steps={steps} current={stage} />

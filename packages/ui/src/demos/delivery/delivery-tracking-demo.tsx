@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 import { Haptics } from '../../lib/haptics';
-import { springs } from '../../lib/motion';
+import { springs, useReducedMotion } from '../../lib/motion';
 import { useAppearance } from '../../lib/theme';
 import { Button } from 'react-aria-components';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -31,7 +31,8 @@ export const DELIVERY_STAGES: DeliveryStage[] = [
 export interface DeliveryTrackingDemoProps {
   /** Order stage to show; leave unset and the demo advances on its own. */
   stage?: number;
-  /** Advance through the stages while uncontrolled. */
+  /** Advance through the stages while uncontrolled. Holds still under `prefers-reduced-motion: reduce` — it's
+      auto-updating content — so reduced-motion readers and screenshot runs always see the same stage. */
   autoAdvance?: boolean;
   /** Milliseconds each stage lasts while auto-advancing. */
   stageMs?: number;
@@ -179,14 +180,16 @@ export function DeliveryTrackingDemo({
   const [open, setOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsId = useId();
+  const reducedMotion = !!useReducedMotion();
+  const advancing = autoAdvance && !reducedMotion;
 
   useEffect(() => {
-    if (controlledStage != null || !autoAdvance) return;
+    if (controlledStage != null || !advancing) return;
     const timer = setInterval(() => {
       setUncontrolledStage((s) => (s + 1) % DELIVERY_STAGES.length);
     }, stageMs);
     return () => clearInterval(timer);
-  }, [controlledStage, autoAdvance, stageMs]);
+  }, [controlledStage, advancing, stageMs]);
 
   const travel = useTween(stage.travel);
   const car = useMemo(() => alongRoute(ROUTE, travel), [travel]);

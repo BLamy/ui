@@ -115,16 +115,24 @@ Or style off the data attributes: give the tab `className="group"` and use `grou
 A plain bar, custom tiles as tabs, the pill indicator, a separator under Home, and "Add a server" as an action. The rail gets tab semantics for free: one tab stop, Up/Down between servers, Home/End to jump.
 
 ```tsx
-<TabView orientation="vertical" selectedKey={server} onSelectionChange={setServer}>
+<TabView
+  orientation="vertical" selectedKey={server} onSelectionChange={setServer}
+>
   <TabViewBar variant="plain" className="w-[52px] items-center gap-2 py-2.5">
     <TabViewList aria-label="Servers" className="w-full items-center gap-2">
-      <TabViewTab id="home" textValue="Direct Messages" className="group flex w-full justify-center">
+      <TabViewTab
+        id="home" textValue="Direct Messages"
+        className="group flex w-full justify-center"
+      >
         <TabViewIndicator variant="pill" />
         <Tile icon="message" />
       </TabViewTab>
       <TabViewSeparator className="h-0.5 w-5 rounded-full" />
       {servers.map((s) => (
-        <TabViewTab key={s.id} id={s.id} textValue={s.name} className="group flex w-full justify-center">
+        <TabViewTab
+          key={s.id} id={s.id} textValue={s.name}
+          className="group flex w-full justify-center"
+        >
           <TabViewIndicator variant="pill" attention={s.unread} />
           <Tile label={s.label} color={s.color} mentions={s.mentions} />
         </TabViewTab>
@@ -158,9 +166,12 @@ Tabs are just containers — where you nest them decides how pushes interact wit
 The `bar` variant follows the scrolling screen: down hides it, up brings it back, in step with the nav bar above. It needs no wiring — the bar subscribes to the kit's chrome state wherever it is mounted:
 
 ```jsx
-<TabBar items={tabs} selected={tab} onSelect={setTab}/>                       // follows the scroll
-<TabBar items={tabs} selected={tab} onSelect={setTab} hideOnScroll={false}/>  // pinned
-<TabViewBar hideOnScroll={false}>…</TabViewBar>                              // same, composed
+// follows the scroll
+<TabBar items={tabs} selected={tab} onSelect={setTab}/>
+// pinned
+<TabBar items={tabs} selected={tab} onSelect={setTab} hideOnScroll={false}/>
+// pinned, composed
+<TabViewBar hideOnScroll={false}>…</TabViewBar>
 ```
 
 Anything else that should duck out of the way can read the same flag with `useChromeHidden()`.

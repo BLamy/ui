@@ -30,7 +30,9 @@ import {
 {% endtabs %}
 
 ```tsx
-import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset } from '@brett_lamy/ui'
+import {
+  SidebarProvider, Sidebar, SidebarTrigger, SidebarInset,
+} from '@brett_lamy/ui'
 ```
 
 {% demo src="sidebar/variant-playground" %}

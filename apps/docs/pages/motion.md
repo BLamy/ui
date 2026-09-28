@@ -51,14 +51,21 @@ The same four springs exist in JavaScript (framer-motion) and in CSS (sampled in
 
 ```tsx
 import { motion } from 'framer-motion'
-import { springs, springCss, useDirection, useSpringTransition } from '@brett_lamy/ui'
+import {
+  springs, springCss, useDirection, useSpringTransition,
+} from '@brett_lamy/ui'
 
-<motion.div layout transition={springs.smooth} />                    // framer-motion
-<div className="transition-transform duration-spring-smooth ease-spring-smooth" />   // Tailwind
-<div style={{ transition: springCss(['transform', 'opacity'], 'tray') }} />         // inline CSS
+// framer-motion
+<motion.div layout transition={springs.smooth} />
+// Tailwind
+<div className="transition-transform duration-spring-smooth ease-spring-smooth"/>
+// inline CSS
+<div style={{ transition: springCss(['transform', 'opacity'], 'tray') }} />
 
-const t = useSpringTransition('snappy')   // the preset, or { duration: 0 } under reduced motion
-const dir = useDirection(tabIndex)        // -1 | 0 | 1 — direction of the latest change
+// the preset, or { duration: 0 } under reduced motion
+const t = useSpringTransition('snappy')
+// -1 | 0 | 1 — direction of the latest change
+const dir = useDirection(tabIndex)
 ```
 
 Exits are quicker than entrances: what leaves gets out of the way, what arrives takes its time. Exits use a short ease-in rather than a spring.
