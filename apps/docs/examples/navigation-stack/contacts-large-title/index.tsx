@@ -32,7 +32,7 @@ function ContactsLargeTitle() {
       title: 'Contacts',
       largeTitle: true, // collapses into the bar as you scroll
       hideChromeOnScroll: false,
-      subheader: <SearchField q={q} setQ={setQ} />,
+      subheader: <SearchField value={q} onChange={setQ} />,
       content: (
         <List>
           <ListSection>

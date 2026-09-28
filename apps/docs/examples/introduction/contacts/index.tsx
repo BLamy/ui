@@ -52,7 +52,7 @@ export default function Contacts() {
       bottomInset: 62,
       subheader: (
         <div style={{ padding: '0 14px 8px' }}>
-          <SearchField q={q} setQ={setQ} placeholder="Search" />
+          <SearchField value={q} onChange={setQ} placeholder="Search" />
         </div>
       ),
       overlay: (

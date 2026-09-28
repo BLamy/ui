@@ -31,7 +31,7 @@ function CitySearch() {
         inset
         header={
           <div style={{ padding: '10px 0' }}>
-            <SearchField q={q} setQ={setQ} placeholder="Search cities" />
+            <SearchField value={q} onChange={setQ} placeholder="Search cities" />
           </div>
         }
       >

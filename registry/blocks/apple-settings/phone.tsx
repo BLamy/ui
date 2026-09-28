@@ -24,7 +24,7 @@ export function PhoneSettings() {
   const screens: Screen[] = [
     {
       key: 'root', title: 'Settings', largeTitle: true, grouped: true, hideChromeOnScroll: false,
-      subheader: <SearchField q={s.query} setQ={s.setQuery} aria-label="Search settings" />,
+      subheader: <SearchField value={s.query} onChange={s.setQuery} aria-label="Search settings" />,
       content: s.query ? <div className="px-4 pt-3"><SearchResults /></div> : <RootList />,
     },
     ...s.path.map((id, i): Screen => ({

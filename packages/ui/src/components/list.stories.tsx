@@ -127,7 +127,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
         key: 'list',
         title: edit ? (selN ? selN + ' Selected' : 'Select Contacts') : 'Contacts',
         largeTitle: true, grouped,
-        subheader: <SearchField q={q} setQ={setQ} aria-label="Search contacts" />,
+        subheader: <SearchField value={q} onChange={setQ} aria-label="Search contacts" />,
         trailing: (
           <button className="bl-btn" onClick={() => { edit ? exitEdit() : setEdit(true); Haptics.impact('light'); }}
             style={{
@@ -178,7 +178,7 @@ export const StickySearchHeader: Story = {
     return (
       <Phone>
         <div className="bl-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--bl-bg)' }}>
-          <List header={<div style={{ padding: '10px 16px' }}><SearchField q={q} setQ={setQ} /></div>}>
+          <List header={<div style={{ padding: '10px 16px' }}><SearchField value={q} onChange={setQ} /></div>}>
             {sections.map((s) => (
               <List.Section key={s.L} sticky title={s.L}>
                 {s.items.map((c, i) => (
@@ -257,7 +257,7 @@ export const EmptyState: Story = {
     <Phone h={480}>
       <NavigationStack onPop={() => undefined} screens={[{
         key: 'empty', title: 'Contacts', largeTitle: true,
-        subheader: <SearchField q="zzzz" setQ={() => undefined} />,
+        subheader: <SearchField value="zzzz" onChange={() => undefined} />,
         content: (
           <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--bl-label2)', fontSize: 15 }}>
             No results for &ldquo;zzzz&rdquo;

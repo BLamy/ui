@@ -117,7 +117,7 @@ function MailList() {
       <SplitViewHeader title={box.title} leading={<SplitViewToggle />}
         trailing={<BarButton label="New message"><DemoGlyph name="compose" size={21} /></BarButton>} />
       <SplitViewContent>
-        <div className="px-4 pt-2.5 pb-2"><SearchField q={q} setQ={setQ} /></div>
+        <div className="px-4 pt-2.5 pb-2"><SearchField value={q} onChange={setQ} /></div>
         {msgs.length === 0 ? <SplitViewEmpty className="h-48" title="No Mail" description={q ? `Nothing matches “${q}”` : undefined} /> : null}
         {msgs.map((m) => (
           <SplitViewItem key={m.id} id={m.id} className="items-start py-3 pl-7">

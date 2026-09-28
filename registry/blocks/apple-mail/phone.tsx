@@ -19,7 +19,7 @@ export function PhoneMail({ mail, initialDepth = 1 }: { mail: MailState; initial
   }];
   if (depth >= 1) screens.push({
     key: `box-${mail.boxId}`, title: mail.editing && mail.checked.size ? `${mail.checked.size} Selected` : mail.box.title, largeTitle: true,
-    subheader: <SearchField q={mail.query} setQ={mail.setQuery} aria-label={`Search ${mail.box.title}`} />,
+    subheader: <SearchField value={mail.query} onChange={mail.setQuery} aria-label={`Search ${mail.box.title}`} />,
     trailing: <BarButton label={mail.editing ? 'Done' : 'Edit'} className={mail.editing ? 'font-semibold' : undefined}
       onPress={() => mail.setEditing(!mail.editing)} />,
     content: <MessageList mail={mail} selectable={false} largeTitle={false} onOpen={(id) => { mail.open(id); setDepth(2); }} />,

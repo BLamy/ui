@@ -7,7 +7,7 @@ import { AvatarStack, Counter, LabelChip, Oct, StateIcon, ghButton, type OctName
 export function ListToolbar({ ui, nav, q, setQ, placeholder, newLabel }: { ui: Layout; nav: Nav; q: string; setQ: (q: string) => void; placeholder: string; newLabel: string }) {
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
-      <SearchField q={q} setQ={setQ} placeholder={placeholder} aria-label="Search"
+      <SearchField value={q} onChange={setQ} placeholder={placeholder} aria-label="Search"
         className="h-8 min-w-[200px] flex-1 rounded-md border border-bl-sep bg-bl-bg2 px-2 py-0 text-[14px] [&_input]:text-[14px] [&_svg]:size-4" />
       <div className="flex">
         <Button className={cn(ghButton(), 'rounded-r-none')} onPress={nav.labels}><Oct name="tag" className="text-bl-label2" />Labels{!ui.phone ? <Counter>{Object.keys(LABELS).length}</Counter> : null}</Button>
