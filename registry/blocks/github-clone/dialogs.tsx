@@ -20,8 +20,8 @@ export function CloneDialog({ open, onClose, compact }: { open: boolean; onClose
           {proto === 'cli' ? 'Work fast with our official CLI.' : proto === 'ssh' ? 'Use a password-protected SSH key.' : 'Clone using the web URL.'}
         </p>
         <List className="overflow-hidden rounded-xl border border-bl-sep">
-          <ListRow leading={<Oct name="desktop" className="text-bl-label2" />} title="Open with GitHub Desktop" onPress={onClose} className="[&_button]:text-[15px]" />
-          <ListRow leading={<Oct name="zip" className="text-bl-label2" />} title="Download ZIP" divider={false} onPress={onClose} className="[&_button]:text-[15px]" />
+          <ListRow leading={<Oct name="desktop" className="text-bl-label2" />} title="Open with GitHub Desktop" onPress={onClose} className="[&_[data-slot=list-row-content]]:text-[15px]" />
+          <ListRow leading={<Oct name="zip" className="text-bl-label2" />} title="Download ZIP" divider={false} onPress={onClose} className="[&_[data-slot=list-row-content]]:text-[15px]" />
         </List>
       </div>
     </Credenza>
@@ -39,7 +39,7 @@ export function LabelFilter({ open, onClose, compact, value, onChange }: {
         <List className="overflow-hidden rounded-xl border border-bl-sep">
           {labels.map((l, i) => (
             <ListRow key={l.name} title={l.name} subtitle={l.description} accessory="check" checked={value.includes(l.name)}
-              onPress={() => toggle(l.name)} divider={i < labels.length - 1} className="[&_button]:text-[15px] [&_button>div]:min-h-0 [&_button>div]:py-2"
+              onPress={() => toggle(l.name)} divider={i < labels.length - 1} className="[&_[data-slot=list-row-content]]:text-[15px] [&_[data-slot=list-row-body]]:min-h-0 [&_[data-slot=list-row-body]]:py-2"
               leading={<span className="size-3.5 shrink-0 rounded-full" style={{ background: l.color }} />} />
           ))}
         </List>

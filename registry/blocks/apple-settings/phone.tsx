@@ -10,7 +10,7 @@ function RootList() {
     <div className="px-4 pt-3">
       <ListSection>
         <ListRow leading={<Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={58} />} onPress={() => s.open('account')} accessory="chevron" divider={false}
-          title={<span className="text-[20px] font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>} subtitle="Apple Account, iCloud, and more" className="[&_button]:py-1.5" />
+          title={<span className="text-[20px] font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>} subtitle="Apple Account, iCloud, and more" className="[&_[data-slot=list-row-content]]:py-1.5" />
       </ListSection>
       {GROUPS.map((g, i) => (
         <ListSection key={i}>{g.map((r, j) => <RowView key={j} row={r} last={j === g.length - 1} />)}</ListSection>

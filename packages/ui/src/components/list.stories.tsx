@@ -287,3 +287,43 @@ export const WithFooter: Story = {
     </Phone>
   ),
 };
+
+/* ── Animated insert / remove / reorder ── */
+
+const PLAYLIST = ['Golden Hour', 'Nightcall', 'Midnight City', 'Heat Waves', 'Dreams', 'Cruel Summer', 'Redbone', 'Motion Sickness'];
+
+function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
+  const [songs, setSongs] = useState(PLAYLIST.slice(0, 5));
+  const [edit, setEdit] = useState(startEditing);
+  const move = (from: number, to: number) => setSongs((s) => { const n = [...s]; const [m] = n.splice(from, 1); n.splice(to, 0, m); return n; });
+  const add = () => setSongs((s) => { const next = PLAYLIST.find((t) => !s.includes(t)); return next ? [next, ...s] : s; });
+  const bar = (label: string, on: () => void) => (
+    <button className="bl-btn" onClick={on}
+      style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--bl-tint)', fontFamily: 'inherit', fontSize: 17, padding: '8px 10px' }}>{label}</button>
+  );
+  return (
+    <NavigationStack onPop={() => undefined} screens={[{
+      key: 'up-next', title: 'Up Next', largeTitle: true, grouped: true,
+      leading: bar('Add', add),
+      trailing: bar(edit ? 'Done' : 'Edit', () => { setEdit(!edit); Haptics.impact('light'); }),
+      content: (
+        <List inset>
+          <List.Section animate onReorder={edit ? move : undefined}
+            footer={edit ? 'Drag a grip, or focus it and press ↑/↓. Each new slot ticks.' : 'Add inserts at the top; swipe a row to remove it.'}>
+            {songs.map((t, i) => (
+              <List.Row key={t} title={t} subtitle={`Track ${PLAYLIST.indexOf(t) + 1}`}
+                leading={<span aria-hidden style={{ width: 34, height: 34, borderRadius: 7, background: `hsl(${PLAYLIST.indexOf(t) * 45} 70% 60%)` }} />}
+                trailingActions={edit ? undefined : [{ label: 'Remove', icon: 'trash', destructive: true, onAction: () => setSongs((s) => s.filter((x) => x !== t)) }]}
+                divider={i < songs.length - 1} />
+            ))}
+          </List.Section>
+        </List>
+      ),
+    }]} />
+  );
+}
+
+/** `List.Section animate`: keyed rows spring in, collapse out and slide on reorder. `onReorder` adds a grip to
+ *  every row — drag it (a selection tick per slot) or focus it and press ↑/↓. */
+export const AnimatedReorder: Story = { render: () => <Phone h={600}><ReorderDemo /></Phone> };
+export const AnimatedReorderDark: Story = { render: () => <Phone h={600} dark><ReorderDemo /></Phone> };

@@ -26,6 +26,9 @@
 .bl-scroll::-webkit-scrollbar-track{background:transparent}
 .bl-btn{-webkit-tap-highlight-color:transparent}
 .bl-hl:active{background:var(--bl-press)!important}
+/* ListRow: its content lets presses through to the row button beneath, except on the controls it holds. */
+[data-swiping] .bl-hl:active{background:transparent!important}
+[data-row-control] :is(button,input,select,textarea,a,label,[role=switch],[role=slider],[role=checkbox],[data-slot=slider]){pointer-events:auto}
 input::placeholder{color:var(--bl-label3)}
 @keyframes blShimmer{from{background-position:200% 0}to{background-position:0% 0}}
 .bl-shimmer{background:linear-gradient(90deg,var(--bl-label3) 40%,var(--bl-label) 50%,var(--bl-label3) 60%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:blShimmer 2.4s linear infinite}
