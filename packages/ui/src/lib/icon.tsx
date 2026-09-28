@@ -410,14 +410,15 @@ export type IconCanonicalName = keyof typeof SHAPES;
 /** Every name `Icon` draws: canonical names plus the legacy keys and aliases. */
 export type IconName = IconCanonicalName | keyof typeof LEGACY | keyof typeof ICON_ALIASES;
 
-/* ══ Icons ══ */
-export const IC = {
+/* ══ Icons ══ Every name (canonical, legacy, alias) → its shapes. Indexable by any string, as before (unknown → undefined). */
+const IC_MAP = {
   ...SHAPES,
   ...LEGACY,
   ...(Object.fromEntries(Object.entries(ICON_ALIASES).map(([k, v]) => [k, SHAPES[v]])) as {
     [K in keyof typeof ICON_ALIASES]: (typeof SHAPES)[(typeof ICON_ALIASES)[K]];
   }),
 } satisfies Record<IconName, readonly IconShape[]>;
+export const IC: Readonly<Record<IconName, readonly IconShape[]>> & { readonly [name: string]: readonly IconShape[] | undefined } = IC_MAP;
 
 /** Canonical names, sorted. */
 export const ICON_NAMES = (Object.keys(SHAPES) as IconCanonicalName[]).sort();
