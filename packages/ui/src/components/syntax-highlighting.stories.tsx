@@ -85,7 +85,7 @@ const meta: Meta<typeof SyntaxHighlighting> = {
   argTypes: {
     variant: { control: 'inline-radio', options: ['default', 'ghost', 'inline'] },
     wrap: { control: 'boolean' },
-    engine: { control: 'inline-radio', options: ['gpu', 'fallback'] },
+    engine: { control: 'inline-radio', options: ['auto', 'gpu', 'fallback'] },
   },
   decorators: [(Story, { parameters }) => <Panel dark={!!parameters.dark} w={640}><Story /></Panel>],
 };

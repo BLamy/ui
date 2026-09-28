@@ -1,0 +1,16 @@
+{
+  "name": "now-playing-bars",
+  "title": "NowPlayingBars",
+  "description": "The animated equaliser beside the track that's playing — still when paused and under reduced motion — plus the Slider tones for media controls.",
+  "page": "now-playing-bars",
+  "exports": [
+    "NowPlayingBars",
+    "Slider",
+    "SliderTrack",
+    "SliderThumb"
+  ],
+  "imports": [
+    "NowPlayingBars",
+    "Slider"
+  ]
+}

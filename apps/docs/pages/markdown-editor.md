@@ -94,6 +94,8 @@ Type `/` for headings, lists, tasks, quotes, code, hints, tabs, expandables, ste
 | `onKeyDown` / `onPaste` | `(event) => boolean` | — | Run before the editor's own handling; return `true` when handled. |
 | `onFocus` / `onBlur` | `() => void` | — | Focus changes. |
 | `onEditorReady` | `(editor \| null) => void` | — | The TipTap editor once mounted. |
+| `classNames` | `MarkdownEditorClassNames` | — | Classes for parts of the document: `title`, `heading`, `paragraph`, `list`, `checklist`, `checklistItem`, `checkbox`, `table`, `tableHeader`, `tableCell`, `blockquote`, `codeBlock`, `link`, `toolbar`, `editor`, `content`. |
+| `contentClassName` | `string` | — | Classes for the writing area (the contenteditable); same as `classNames.content`. |
 | `ref` | `MarkdownEditorHandle` | — | `editor`, `commands`, `chain()`, `focus()`, `blur()`, `getMarkdown()`, `setMarkdown()`, `insertMarkdown()`, `clear()`, `isEmpty()`. |
 
 `id`, `aria-label`, `aria-labelledby`, `aria-describedby`, `className` and `style` are passed through as well. `markdownEditorVariants` is the cva recipe; `looksLikeMarkdown` and `insertMarkdown(editor, markdown)` are the paste helpers, exported for editors of your own.
@@ -103,3 +105,25 @@ Type `/` for headings, lists, tasks, quotes, code, hints, tabs, expandables, ste
 The editor follows the surrounding `--bl-*` tokens, so it matches light and dark wherever `BLProvider` or the docs' `AppearanceProvider` put it. It maps them onto the shadcn names the Docstream stylesheet reads (`--card`, `--muted`, `--border`, `--accent`, `--primary`…), the same way `MarkdownView` does. The slash menu and the chip hover card render on `<body>`, and they take the tokens of the editor that opened them.
 
 The wrapper has `data-slot="markdown-editor"` and `data-variant`, plus `data-readonly`, `data-disabled` and `data-invalid` for state styling. The editor inside keeps Docstream's `gb`, `gb-toolbar` and `gb-content` classes for overrides.
+
+## Styling the document
+
+The Docstream editor's stylesheet ships inside `@brett_lamy/ui/styles.css` in a cascade layer (`components.bl-editor`), with the kit's own editor rules in the layer above it (`components.bl-mde`) — both under Tailwind's `utilities`. So ordinary classes restyle the editor without `!important`.
+
+`classNames` puts classes on parts of the live document and keeps them there as you type: the first block (`title`), headings, checklists and their checkboxes, tables and their cells, quotes, code blocks, links, the toolbar. The Notes block dresses its editor this way — a big bold title line, round checklist circles that fill with the tint, hairline tables:
+
+```tsx
+<MarkdownEditor
+  variant="ghost"
+  classNames={{
+    title: 'text-[28px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
+    checklist: 'pl-0',
+    checklistItem: 'gap-2.5 items-start',
+    checkbox: 'appearance-none m-0 size-[21px] rounded-full shadow-[inset_0_0_0_1.6px_var(--bl-label3)] checked:bg-primary checked:shadow-none',
+    tableHeader: 'bg-transparent font-semibold px-3 py-2',
+    tableCell: 'px-3 py-2',
+  }}
+/>
+```
+
+Descendant variants on `className` work too (`[&_.ProseMirror_h2]:text-[21px]`). Don't import `@brett_lamy/docstream-editor/styles.css` yourself: an unlayered copy outranks every layer, and you'd be back to `!important`.

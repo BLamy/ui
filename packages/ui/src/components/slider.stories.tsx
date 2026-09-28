@@ -24,6 +24,23 @@ export const Labeled: Story = {
   ),
 };
 
+/** `tone` for media controls over artwork or dark glass (`onDark`) and light imagery (`onLight`); `size="sm"` is the
+    scrubber thumb that grows while dragging. Custom `trackColor` / `fillColor` / `thumbColor` fine-tune any tone. */
+export const Tones: Story = {
+  render: () => (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4 rounded-[18px] p-5" style={{ background: 'linear-gradient(160deg,#5b2a86,#1d1030 70%)' }}>
+        <Slider aria-label="Playback position" tone="onDark" size="sm" defaultValue={38} />
+        <Slider aria-label="Volume" tone="onDark" defaultValue={70} />
+      </div>
+      <div className="flex flex-col gap-4 rounded-[18px] p-5" style={{ background: 'linear-gradient(160deg,#fde2c4,#f7c6d9)' }}>
+        <Slider aria-label="Warmth" tone="onLight" size="sm" defaultValue={55} />
+        <Slider aria-label="Brightness" fillColor="#FF9F0A" trackColor="rgba(255,159,10,.22)" defaultValue={62} />
+      </div>
+    </div>
+  ),
+};
+
 export const Dark: Story = {
   decorators: [(Story) => <Panel dark><Story /></Panel>],
   render: () => (

@@ -3,7 +3,6 @@ import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-ed
 import type { EditorAttachment } from '@brett_lamy/docstream-editor';
 import { astToTiptap } from '@brett_lamy/docstream-editor/convert';
 import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
-import '@brett_lamy/docstream-editor/styles.css';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../lib/utils';
 
@@ -94,6 +93,100 @@ export interface MarkdownEditorHandle {
   isEmpty: () => boolean;
 }
 
+/** Classes for the parts of the document, so a host restyles the editor with ordinary utilities (the editor's
+    stylesheet is layered under them; no `!important`). Applied to the live DOM and kept on it as you type. */
+export interface MarkdownEditorClassNames {
+  /** The editor surface (the flex column holding the toolbar and the writing area). */
+  editor?: string;
+  /** The writing area (the contenteditable). Same as `contentClassName`. */
+  content?: string;
+  /** The first block, whatever it is — a Notes-style title line. */
+  title?: string;
+  /** Headings (h1–h6) after the first block. */
+  heading?: string;
+  paragraph?: string;
+  /** Bulleted and numbered lists (not checklists). */
+  list?: string;
+  /** A checklist (`- [ ]` task list). */
+  checklist?: string;
+  /** One checklist row. Checked rows also carry `data-checked="true"`. */
+  checklistItem?: string;
+  /** A checklist row's checkbox (`<input type="checkbox">`). */
+  checkbox?: string;
+  table?: string;
+  /** Header cells (`th`). */
+  tableHeader?: string;
+  /** Body cells (`td`). */
+  tableCell?: string;
+  blockquote?: string;
+  codeBlock?: string;
+  link?: string;
+  /** The formatting toolbar (`toolbar`). */
+  toolbar?: string;
+}
+
+/* Slot → selector, relative to the editor surface (.gb). */
+const SLOT_SELECTORS: Record<Exclude<keyof MarkdownEditorClassNames, 'editor' | 'content' | 'title'>, string> = {
+  heading: '.ProseMirror > :is(h1,h2,h3,h4,h5,h6):not(:first-child)',
+  paragraph: '.ProseMirror p',
+  list: '.ProseMirror :is(ul:not([data-type="taskList"]), ol)',
+  checklist: '.ProseMirror ul[data-type="taskList"]',
+  checklistItem: '.ProseMirror ul[data-type="taskList"] > li',
+  checkbox: '.ProseMirror ul[data-type="taskList"] > li > label input[type="checkbox"]',
+  table: '.ProseMirror table',
+  tableHeader: '.ProseMirror th',
+  tableCell: '.ProseMirror td',
+  blockquote: '.ProseMirror blockquote',
+  codeBlock: '.ProseMirror pre',
+  link: '.ProseMirror a',
+  toolbar: '.gb-toolbar',
+};
+
+const splitClasses = (c: string | undefined) => (c ? c.split(/\s+/).filter(Boolean) : []);
+
+/** Puts the slot classes on the editor's DOM. ProseMirror's DOM observer is paused meanwhile so the class changes
+    don't read as edits; nodes it re-renders lose them and get them back on the next pass (every transaction). */
+function applySlotClasses(
+  editor: MarkdownEditorInstance,
+  slots: MarkdownEditorClassNames,
+  applied: Map<Element, string[]>,
+) {
+  const view = editor.view as unknown as { dom: HTMLElement; domObserver?: { stop(): void; start(): void } };
+  const pm = view.dom;
+  const surface = pm.closest('.gb') ?? pm.parentElement;
+  if (!surface) return;
+  const want = new Map<Element, string[]>();
+  const add = (el: Element | null | undefined, cls: string | undefined) => {
+    const list = splitClasses(cls);
+    if (!el || !list.length) return;
+    want.set(el, [...(want.get(el) ?? []), ...list]);
+  };
+  add(surface, slots.editor);
+  add(pm, slots.content);
+  add(pm.firstElementChild, slots.title);
+  for (const [slot, sel] of Object.entries(SLOT_SELECTORS)) {
+    const cls = slots[slot as keyof typeof SLOT_SELECTORS];
+    if (cls) surface.querySelectorAll(sel).forEach((el) => add(el, cls));
+  }
+  const same = (a: string[] | undefined, b: string[] | undefined) => (a ?? []).join(' ') === (b ?? []).join(' ');
+  let dirty = applied.size !== want.size;
+  if (!dirty) for (const [el, list] of want) if (!same(applied.get(el), list) || !list.every((c) => el.classList.contains(c))) { dirty = true; break; }
+  if (!dirty) return;
+  view.domObserver?.stop();
+  try {
+    for (const [el, list] of applied) if (!want.has(el)) el.classList.remove(...list);
+    for (const [el, list] of want) {
+      const prev = applied.get(el);
+      if (prev) el.classList.remove(...prev.filter((c) => !list.includes(c)));
+      el.classList.add(...list);
+    }
+  } finally {
+    view.domObserver?.start();
+  }
+  applied.clear();
+  for (const [el, list] of want) applied.set(el, list);
+}
+
 export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorVariants> {
   /** Markdown (controlled). */
   value?: string;
@@ -148,6 +241,10 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   'aria-labelledby'?: string;
   'aria-describedby'?: string;
   className?: string;
+  /** Classes for the writing area (the contenteditable) — shorthand for `classNames.content`. */
+  contentClassName?: string;
+  /** Classes for parts of the document: title line, headings, checklists and their checkboxes, tables, … */
+  classNames?: MarkdownEditorClassNames;
   style?: React.CSSProperties;
 }
 
@@ -221,6 +318,8 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     variant,
     size,
     className,
+    contentClassName,
+    classNames,
     style,
   },
   ref,
@@ -342,6 +441,34 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
   );
 
   usePortalTheme(rootRef);
+
+  // Slot classes onto the live document, re-applied after every transaction (ProseMirror re-renders nodes).
+  const slotKey = JSON.stringify([contentClassName, classNames ?? null]);
+  React.useEffect(() => {
+    if (!editor) return;
+    const slots: MarkdownEditorClassNames = { ...classNames, content: cn(classNames?.content, contentClassName) || undefined };
+    const applied = new Map<Element, string[]>();
+    const run = () => { if (!editor.isDestroyed) applySlotClasses(editor, slots, applied); };
+    run();
+    // Node views that render on their own schedule (React ones, tables) add DOM outside a transaction: re-apply on
+    // the next frame after any child-list change (class changes are attribute mutations, so this doesn't loop).
+    // (A timeout rather than a frame: frames don't run in background tabs or under a paused clock.)
+    let raf: ReturnType<typeof setTimeout> | undefined;
+    const later = () => { clearTimeout(raf); raf = setTimeout(run, 16); };
+    const onTx = () => { run(); later(); };
+    editor.on('transaction', onTx);
+    const surface = (editor.view.dom as HTMLElement).closest('.gb') ?? editor.view.dom;
+    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => { run(); later(); });
+    mo?.observe(surface, { childList: true, subtree: true });
+    return () => {
+      editor.off('transaction', onTx);
+      mo?.disconnect();
+      clearTimeout(raf);
+      if (editor.isDestroyed) return;
+      applySlotClasses(editor, {}, applied);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, slotKey]);
 
   return (
     <div

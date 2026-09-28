@@ -26,8 +26,8 @@ export { useContainerWidth, defineSlot, collectSlots } from './lib/container';
 export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL, SHEET_OPEN_THRESHOLD } from './lib/sheet-drag';
 export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
 export type { SlotComponent, SlotProps } from './lib/container';
-export { Icon, IC } from './lib/icon';
-export type { IconProps, IconName } from './lib/icon';
+export { Icon, IC, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS, ICON_WEIGHTS } from './lib/icon';
+export type { IconProps, IconName, IconCanonicalName, IconShape, IconWeight, IconCategory } from './lib/icon';
 
 // components
 export { Avatar } from './components/avatar';
@@ -123,7 +123,7 @@ export { Textarea, textareaVariants } from './components/textarea';
 export type { TextareaProps } from './components/textarea';
 export { MarkdownEditor, markdownEditorVariants, looksLikeMarkdown, insertMarkdown } from './components/markdown-editor';
 export type {
-  MarkdownEditorProps, MarkdownEditorHandle, MarkdownEditorInstance, MarkdownEditorAttachment,
+  MarkdownEditorProps, MarkdownEditorHandle, MarkdownEditorInstance, MarkdownEditorAttachment, MarkdownEditorClassNames,
 } from './components/markdown-editor';
 export { TextField, FieldDescription, FieldError } from './components/text-field';
 export type { TextFieldProps } from './components/text-field';
@@ -160,7 +160,7 @@ export type { SelectProps, SelectTriggerProps, SelectContentProps } from './comp
 export { ComboBox, ComboBoxInput, ComboBoxContent, ComboBoxItem, ComboBoxSection } from './components/combobox';
 export type { ComboBoxProps, ComboBoxInputProps, ComboBoxContentProps } from './components/combobox';
 export { Slider, SliderTrack, SliderThumb } from './components/slider';
-export type { SliderProps } from './components/slider';
+export type { SliderProps, SliderTone } from './components/slider';
 export { ListBox, ListBoxItem, ListBoxSection, ListBoxHeader, listBoxVariants, listBoxItemVariants } from './components/list-box';
 export type { ListBoxProps, ListBoxItemProps, ListBoxSectionProps } from './components/list-box';
 export {
@@ -180,8 +180,8 @@ export type {
   SyntaxHighlightingProps, SyntaxHighlightingContentProps, SyntaxHighlightingCopyButtonProps, SyntaxLineRange,
   UseSyntaxTokensOptions, SyntaxTokensState,
 } from './components/syntax-highlighting';
-export { lexSyntax, webgpuSupported, languageFromPath, tokenizeLines } from './lib/syntax';
-export type { SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, SyntaxResult } from './lib/syntax';
+export { lexSyntax, webgpuSupported, probeWebGPU, languageFromPath, tokenizeLines } from './lib/syntax';
+export type { SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, SyntaxResult, SyntaxEngine, WebGPUProbe } from './lib/syntax';
 // ── end shadcn primitives ──
 
 // ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
@@ -656,3 +656,19 @@ export { PencilKitAnnotator } from './components/pencilkit/pencilkit-annotator';
 export { demoStrokes } from './demos/pencilkit/demo-strokes';
 export { PencilKitDemo } from './demos/pencilkit/pencilkit-demo';
 export type { PencilKitDemoProps } from './demos/pencilkit/pencilkit-demo';
+
+// ── feedback, media and morph primitives ──
+export {
+  Toaster, ToastProvider, ToastQueue, toast, toastApi, useToast, createToastQueue, defaultToastQueue,
+} from './components/toast';
+export type {
+  ToastData, ToastOptions, ToastVariant, ToastTone, ToastApi, ToasterProps, ToasterPlacement,
+} from './components/toast';
+export { ProgressRing, CountdownRing, useCountdown } from './components/progress-ring';
+export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, UseCountdownOptions } from './components/progress-ring';
+export { NowPlayingBars } from './components/now-playing-bars';
+export type { NowPlayingBarsProps } from './components/now-playing-bars';
+export { MorphGroup, Morph, MorphPresence, useMorphTransition } from './components/morph';
+export type { MorphGroupProps, MorphProps, MorphPresenceProps } from './components/morph';
+export { encodeQR } from './lib/qr';
+export type { QRCode, QRLevel, QROptions } from './lib/qr';

@@ -1,0 +1,16 @@
+{
+  "name": "morph",
+  "title": "Morph",
+  "description": "Shared-element transitions: one element springs between two layouts (mini player → full player), drag-to-dismiss friendly, reduced-motion aware.",
+  "page": "morph",
+  "exports": [
+    "MorphGroup",
+    "Morph",
+    "MorphPresence",
+    "useMorphTransition"
+  ],
+  "imports": [
+    "MorphGroup",
+    "Morph"
+  ]
+}
