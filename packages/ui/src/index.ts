@@ -49,7 +49,7 @@ export type { PillButtonProps } from './components/pill-button';
 export { QRSvg } from './components/qr-svg';
 export type { QRSvgProps } from './components/qr-svg';
 export { List, ListSection, ListRow } from './components/list';
-export type { ListProps, ListSectionProps, ListRowProps } from './components/list';
+export type { ListProps, ListSectionProps, ListRowProps, ListRowAction } from './components/list';
 export { IndexBar, AL, indexBarVariants } from './components/index-bar';
 export type { IndexBarProps, IndexBarItem, IndexBarKey } from './components/index-bar';
 export { TabBar } from './components/tab-bar';

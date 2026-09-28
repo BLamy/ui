@@ -54,6 +54,14 @@ import {
 
 Dragging from the left edge pops interactively — the outgoing screen tracks your finger while the one below parallaxes in. On touch devices the stack also arms a **history sentinel** so the system back-swipe lands as a `popstate` and pops the stack instead of leaving the page.
 
+## Back button and title morph
+
+The back button names the screen behind it, as on iOS. Its label gets whatever room the centered title leaves on its side of the bar — measured, not counted in characters — so a long previous title is ellipsized; only when a sliver is left does it fall back to **Back**, and then to the chevron alone.
+
+Titles travel between screens. On push the previous screen's title — its large title, or the inline one once it has scrolled — flies into the new back button, shrinking and taking the tint; on pop the back label flies back into the title it names. The edge swipe scrubs the flight with your finger and finishes it on the same spring as the screens, and a push or pop that lands mid-flight simply takes over. Reduced motion skips the flight.
+
+{% demo src="navigation-stack/title-morph" %}
+
 ## Chrome that gets out of the way
 
 Scrolling down slides the nav bar (and any `<TabBar>` in the tree) away; scrolling up — or reaching the top — brings both back. Sticky section headers ride along, because they read their offset from the same source.
