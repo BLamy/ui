@@ -91,8 +91,17 @@ Highlighting runs on the GPU. The first block on a page loads gpu-lexer (about 2
 - **Shared and queued.** Parse calls from every instance go through one FIFO queue, and identical sources share a single call. Results are cached by source text, so remounts, repeated snippets and switching tabs show colors on the first frame.
 - **Large files.** Sources over 64 KB are lexed in line-aligned pieces that stay under WebGPU's buffer limits. Files longer than 400 lines render in 200-line blocks with `content-visibility: auto`, so the browser skips layout and paint for blocks that are off screen.
 - **Streaming.** While a source grows, the lines that haven't changed keep their tokens until the new result arrives.
+- **Operators, not keywords.** gpu-lexer sometimes labels operators such as `=>`, `?.` and `??` (and some punctuation) as keywords. Those spans are re-cut before caching, so `=>`, `===`, `?.`, `??`, `&&`, `...`, `::` and `->` get the operator color. Brackets, commas, semicolons and a lone `.` or `:` stay plain, and words keep their label.
 
-Where WebGPU is missing (no `navigator.gpu`, no adapter, or an insecure context), the block degrades to a small fallback that only knows comments, strings, numbers, a shared keyword list, calls and capitalized types. It is a stand-in, not a second highlighter. `engine="fallback"` forces it, for tests or pages that must not use the GPU.
+Before the first lex, the page asks for a WebGPU adapter once and caches the answer. The `engine` prop decides what to do with it:
+
+| `engine` | Behavior |
+| --- | --- |
+| `'auto'` (default) | gpu-lexer on a hardware adapter (Metal, D3D12, Vulkan on a real GPU). If the only adapter is a software one (SwiftShader in headless CI, llvmpipe), there is no adapter, or the probe takes longer than 2.5 s, the fallback shows right away instead of waiting on a slow software GPU. |
+| `'gpu'` | gpu-lexer on any adapter, software included. This was the old default. It is slow on software adapters, and falls back only where WebGPU is missing. |
+| `'fallback'` | Always the fallback, for tests or pages that must not use the GPU. |
+
+The fallback is a small lexer that only knows comments, strings, numbers, a shared keyword list, calls, capitalized types and operators. It is a stand-in, not a second highlighter.
 
 {% demo src="syntax-highlighting/engines" %}
 
@@ -100,12 +109,14 @@ Each `<pre>` (and inline `<code>`) reports what it shows in `data-highlighter`:
 
 | Value | Meaning |
 | --- | --- |
-| `pending` | Plain text, waiting for the GPU. |
+| `pending` | Plain text, waiting for the adapter probe or the GPU. |
 | `gpu` | Tokens from gpu-lexer on WebGPU. |
-| `fallback` | WebGPU is unavailable (or `engine="fallback"`, which also sets `data-engine="fallback"`). |
+| `fallback` | No hardware WebGPU adapter (with `engine="auto"`), no WebGPU at all, or `engine="fallback"`. |
 | `none` | Not lexed: `language="text"` or `highlight={false}`. |
 
-Tests should wait for `pending` to go away before taking a screenshot. The visual tests do this and run these screens in full Chromium, which has a WebGPU adapter. gpu-lexer's labels are the same from run to run, so the screenshots are too.
+An explicit `engine="gpu"` or `engine="fallback"` also sets `data-engine`.
+
+Tests should wait for `pending` to go away before taking a screenshot. In headless CI without a GPU, `auto` settles on the fallback within the probe, so this wait is short. The GPU visual tests run in full Chromium on macOS, whose Metal adapter is hardware, so `auto` uses gpu-lexer there. gpu-lexer's labels are the same from run to run, so the screenshots are too.
 
 ## Props
 
@@ -124,7 +135,7 @@ Tests should wait for `pending` to go away before taking a screenshot. The visua
 | `maxHeight` | `number \| string` | — | Scroll past this height. |
 | `lineProps` | `(line) => HTMLAttributes` | — | Extra attributes per line, such as `id` anchors or click handlers. |
 | `highlight` | `boolean` | `true` | `false` renders plain text. |
-| `engine` | `'gpu' \| 'fallback'` | `'gpu'` | Force the fallback. |
+| `engine` | `'auto' \| 'gpu' \| 'fallback'` | `'auto'` | `auto` uses the GPU only on a hardware adapter. `gpu` uses it on software adapters too. `fallback` never uses it. |
 | `appearance` | `'light' \| 'dark'` | ambient | Force the token palette. It defaults to the `AppearanceProvider` value, and otherwise follows the color scheme. |
 | `contentClassName` | `string` | — | Class for the inner `<pre>`. |
 
@@ -136,8 +147,9 @@ Tests should wait for `pending` to go away before taking a screenshot. The visua
 | --- | --- |
 | `useSyntaxTokens(code, { language?, enabled?, engine? })` | `{ lines: SyntaxToken[][], highlighter }`. It returns plain lines at first, then tokens. |
 | `SyntaxTokens` | Renders one line's tokens as `bl-tok-*` spans. |
-| `lexSyntax(code)` | `Promise<{ spans, highlighter }>` through the shared queue and cache. |
-| `webgpuSupported()` | `false` once WebGPU is known to be missing. |
+| `lexSyntax(code, engine?)` | `Promise<{ spans, highlighter }>` through the shared queue and cache. |
+| `webgpuSupported(engine?)` | `false` once WebGPU is known to be missing, and for `auto` (the default) once the probe has found only a software adapter. |
+| `probeWebGPU()` | `Promise<'hardware' \| 'software' \| 'none'>`, the cached one-time adapter probe. |
 | `languageFromPath(path)` | `'src/queue.ts'` → `'ts'`, for `language` and labels. |
 | `tokenizeLines(code, spans)` | Cuts gpu-lexer spans into per-line tokens. |
 

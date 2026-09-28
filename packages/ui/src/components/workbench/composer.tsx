@@ -3,7 +3,6 @@ import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
 import type { EditorAttachment } from '@brett_lamy/docstream-editor';
-import '@brett_lamy/docstream-editor/styles.css';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
   Dialog,

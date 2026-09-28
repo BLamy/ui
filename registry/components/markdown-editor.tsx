@@ -3,6 +3,7 @@
 export { MarkdownEditor, markdownEditorVariants, looksLikeMarkdown, insertMarkdown } from '@brett_lamy/ui';
 export type {
   MarkdownEditorAttachment,
+  MarkdownEditorClassNames,
   MarkdownEditorHandle,
   MarkdownEditorInstance,
   MarkdownEditorProps,

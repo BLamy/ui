@@ -3,10 +3,10 @@ import * as ReactDOM from 'react-dom/client';
 import '@brett_lamy/ui/styles.css';
 // ui's sheet compiled with the registry blocks' Tailwind classes (loaded last, so it's the superset that wins).
 import '@brett_lamy/registry/styles.css';
-// Docstream's renderer and editor sheets, in the same order dev loads them (after ui's). Imported here, not only
-// through lazily-loaded modules, so the production build ships them in the entry CSS.
+// Docstream's renderer sheet, in the same order dev loads it (after ui's). Imported here, not only through
+// lazily-loaded modules, so the production build ships it in the entry CSS. (The editor's sheet comes layered
+// inside ui's stylesheet — an unlayered copy here would outrank the kit's editor rules and every utility.)
 import '@brett_lamy/docstream/styles.css';
-import '@brett_lamy/docstream-editor/styles.css';
 import { DemoFullscreen, demoFromSearch } from '@brett_lamy/docstream';
 import { AppearanceProvider } from '@brett_lamy/ui';
 import App from './app/app';

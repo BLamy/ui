@@ -100,3 +100,33 @@ function ControlledDemo() {
 }
 
 export const Controlled: Story = { render: () => <ControlledDemo /> };
+
+const styledDoc = `Groceries for Saturday
+
+- [x] Oat milk
+- [ ] Sourdough
+- [ ] Figs
+
+| Item | Qty |
+| --- | --- |
+| Lemons | 4 |
+| Basil | 1 bunch |`;
+
+/** `classNames` restyles the document's parts with plain utilities — here a Notes-like title line, round checklist
+    circles and hairline tables. The editor's stylesheet is layered under utilities, so no `!important`. */
+export const StyledParts: Story = {
+  args: {
+    variant: 'ghost',
+    'aria-label': 'Styled note',
+    defaultValue: styledDoc,
+    classNames: {
+      title: 'text-[26px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
+      checklist: 'pl-0',
+      checklistItem: 'gap-2.5 items-center',
+      checkbox: 'appearance-none m-0 size-[20px] rounded-full shadow-[inset_0_0_0_1.6px_var(--bl-label3)] checked:bg-primary checked:shadow-none',
+      table: 'text-[14px]',
+      tableHeader: 'bg-transparent font-semibold border-border px-3 py-1.5',
+      tableCell: 'border-border px-3 py-1.5',
+    },
+  },
+};

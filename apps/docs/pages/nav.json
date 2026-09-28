@@ -13,15 +13,20 @@
     {
       "section": "Atoms",
       "pages": [
+        { "id": "icons", "title": "Icons" },
         { "id": "docstream", "title": "Markdown" },
         { "id": "markdown-editor", "title": "MarkdownEditor" },
-        { "id": "syntax-highlighting", "title": "SyntaxHighlighting" }
+        { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
+        { "id": "progress-ring", "title": "ProgressRing" },
+        { "id": "now-playing-bars", "title": "NowPlayingBars" }
       ]
     },
     {
       "section": "Molecules",
       "pages": [
         { "id": "composer", "title": "Composer" },
+        { "id": "toast", "title": "Toast" },
+        { "id": "morph", "title": "Morph" },
         { "id": "tab-view", "title": "TabView" },
         { "id": "edge-drawer", "title": "EdgeDrawer" }
       ]

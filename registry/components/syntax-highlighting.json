@@ -15,6 +15,7 @@
     "useSyntaxHighlighting",
     "lexSyntax",
     "webgpuSupported",
+    "probeWebGPU",
     "languageFromPath",
     "tokenizeLines"
   ],
@@ -23,6 +24,8 @@
     "SyntaxTokenType",
     "SyntaxSpan",
     "SyntaxHighlighter",
-    "SyntaxResult"
+    "SyntaxResult",
+    "SyntaxEngine",
+    "WebGPUProbe"
   ]
 }

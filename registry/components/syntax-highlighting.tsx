@@ -12,10 +12,12 @@ export {
   useSyntaxHighlighting,
   lexSyntax,
   webgpuSupported,
+  probeWebGPU,
   languageFromPath,
   tokenizeLines,
 } from '@brett_lamy/ui';
 export type {
+  SyntaxEngine,
   SyntaxHighlighter,
   SyntaxHighlightingContentProps,
   SyntaxHighlightingCopyButtonProps,
@@ -25,4 +27,5 @@ export type {
   SyntaxToken,
   SyntaxTokenType,
   SyntaxTokensState,
+  WebGPUProbe,
 } from '@brett_lamy/ui';

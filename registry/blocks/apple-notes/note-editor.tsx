@@ -2,30 +2,37 @@
    round checklist circles that fill with the tint, hairline tables. Locked notes show the lock screen until
    you choose View Note; the note blurs in where the lock was. */
 import { useRef, type RefObject } from 'react';
-import { Button, ContentSwap, MarkdownEditor, cn, type MarkdownEditorHandle } from '@brett_lamy/ui';
+import { Button, ContentSwap, MarkdownEditor, cn, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@brett_lamy/ui';
 import { longDate, type Note } from './data';
 import { G } from './glyphs';
 import type { NotesState } from './use-notes';
 
-/* Notes typography and controls over the editor's own stylesheet (which is unlayered, hence the `!`). */
+/* Notes typography and controls. The editor's stylesheet sits in a layer under utilities, so plain classes win:
+   the document's parts through `classNames`, the rest as descendant variants on the field. */
 const NOTES_EDITOR = cn(
   'text-[17px] leading-[1.5]',
-  // The first line is the title, whatever block it is.
-  '[&_.ProseMirror>:first-child]:text-[28px]! [&_.ProseMirror>:first-child]:leading-[1.2]! [&_.ProseMirror>:first-child]:font-bold! [&_.ProseMirror>:first-child]:tracking-[-.4px]! [&_.ProseMirror>:first-child]:mb-2!',
-  '[&_.ProseMirror_h2]:text-[21px]! [&_.ProseMirror_h2]:font-bold! [&_.ProseMirror_h2]:mt-5!',
-  // Checklists: round circles that fill with the tint.
-  '[&_ul[data-type=taskList]]:pl-0! [&_ul[data-type=taskList]_li]:gap-2.5! [&_ul[data-type=taskList]_li]:items-start',
-  '[&_ul[data-type=taskList]_label]:mt-[2px]! [&_ul[data-type=taskList]_input]:appearance-none! [&_ul[data-type=taskList]_input]:m-0!',
-  '[&_ul[data-type=taskList]_input]:size-[21px]! [&_ul[data-type=taskList]_input]:rounded-full! [&_ul[data-type=taskList]_input]:cursor-pointer',
-  '[&_ul[data-type=taskList]_input]:shadow-[inset_0_0_0_1.6px_var(--bl-label3)] [&_ul[data-type=taskList]_input]:transition-[background-color,box-shadow] [&_ul[data-type=taskList]_input]:duration-200',
-  '[&_ul[data-type=taskList]_input:checked]:bg-primary! [&_ul[data-type=taskList]_input:checked]:shadow-none!',
-  '[&_ul[data-type=taskList]_input:checked]:bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27white%27%20stroke-width=%273.2%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M6%2012.5l4%204%208-9%27/%3E%3C/svg%3E)]!',
-  '[&_ul[data-type=taskList]_input:checked]:bg-[length:13px_13px]! [&_ul[data-type=taskList]_input:checked]:bg-center! [&_ul[data-type=taskList]_input:checked]:bg-no-repeat!',
+  '[&_.ProseMirror_h2]:text-[21px] [&_.ProseMirror_h2]:font-bold [&_.ProseMirror_h2]:mt-5',
+  '[&_ul[data-type=taskList]_label]:mt-[2px]',
   '[&_li[data-checked=true]>div]:text-muted-foreground',
-  // Tables: hairlines, no header fill.
-  '[&_.ProseMirror_th]:bg-transparent! [&_.ProseMirror_th]:font-semibold! [&_.ProseMirror_:is(th,td)]:border-border! [&_.ProseMirror_:is(th,td)]:px-3! [&_.ProseMirror_:is(th,td)]:py-2!',
-  '[&_.ProseMirror_table]:text-[15px]',
 );
+
+const NOTES_PARTS: MarkdownEditorClassNames = {
+  // The first line is the title, whatever block it is.
+  title: 'text-[28px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
+  // Checklists: round circles that fill with the tint.
+  checklist: 'pl-0',
+  checklistItem: 'gap-2.5 items-start',
+  checkbox: cn(
+    'appearance-none m-0 size-[21px] rounded-full cursor-pointer',
+    'shadow-[inset_0_0_0_1.6px_var(--bl-label3)] transition-[background-color,box-shadow] duration-200',
+    'checked:bg-primary checked:shadow-none checked:bg-[length:13px_13px] checked:bg-center checked:bg-no-repeat',
+    'checked:bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27white%27%20stroke-width=%273.2%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M6%2012.5l4%204%208-9%27/%3E%3C/svg%3E)]',
+  ),
+  // Tables: hairlines, no header fill.
+  table: 'text-[15px]',
+  tableHeader: 'bg-transparent font-semibold border-border px-3 py-2',
+  tableCell: 'border-border px-3 py-2',
+};
 
 function Locked({ onUnlock }: { onUnlock: () => void }) {
   return (
@@ -55,7 +62,7 @@ export function NoteEditor({ notes, n, editorRef, format }: {
             autoFocus={!n.body} placeholder="Title" toolbar={format} minHeight={320}
             onFocus={() => { focused.current = true; }} onBlur={() => { focused.current = false; }}
             onValueChange={(md) => { if (focused.current) notes.edit(n.id, md); }}
-            className={NOTES_EDITOR} />
+            className={NOTES_EDITOR} classNames={NOTES_PARTS} />
         </div>
       )}
     </ContentSwap>

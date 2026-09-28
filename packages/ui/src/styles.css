@@ -1,7 +1,12 @@
 @layer theme, base, components, utilities;
+@layer components.bl-editor, components.bl-mde;
 @import "./theme.css";
 /* Utilities only — no preflight, so a host app's base styles are left alone. */
 @import "tailwindcss/utilities.css" layer(utilities);
+/* The Docstream editor's sheet (MarkdownEditor, Composer), layered under the kit's own editor rules and every
+   utility, so a host restyles the editor with plain classes — no !important. Imported here rather than from
+   JavaScript: an unlayered copy anywhere would outrank every layer. */
+@import "@brett_lamy/docstream-editor/styles.css" layer(components.bl-editor);
 @source "./";
 
 /* Box sizing, scoped to the kit. There is no preflight (see above), so a host without Tailwind's would leave
@@ -29,7 +34,7 @@
 /* ListRow: its content lets presses through to the row button beneath, except on the controls it holds. */
 [data-swiping] .bl-hl:active{background:transparent!important}
 [data-row-control] :is(button,input,select,textarea,a,label,[role=switch],[role=slider],[role=checkbox],[data-slot=slider]){pointer-events:auto}
-input::placeholder{color:var(--bl-label3)}
+input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
 @keyframes blShimmer{from{background-position:200% 0}to{background-position:0% 0}}
 .bl-shimmer{background:linear-gradient(90deg,var(--bl-label3) 40%,var(--bl-label) 50%,var(--bl-label3) 60%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:blShimmer 2.4s linear infinite}
 .bl-range{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
@@ -289,6 +294,7 @@ body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-ch
    stylesheet reads (BL light literals when there is no BLProvider above), so the editor follows light/dark; the
    same resolved values are copied onto the popovers it portals to <body>. The editor itself is a flex column:
    the toolbar stays put, the writing area scrolls. */
+@layer components.bl-mde{
 .bl-mde{
   --card:var(--bl-card,#fff);--popover:var(--bl-card,#fff);--background:var(--bl-card,#fff);
   --foreground:var(--bl-label,#0B0B0F);--card-foreground:var(--bl-label,#0B0B0F);--popover-foreground:var(--bl-label,#0B0B0F);
@@ -337,6 +343,16 @@ body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-ch
 [data-markdown-editor-portal] .slash-menu{border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.06)}
 [data-markdown-editor-portal] .slash-item{border-radius:8px}
 [data-markdown-editor-portal][data-scheme="dark"] .slash-menu,.gb-attachment-card[data-markdown-editor-portal][data-scheme="dark"]{box-shadow:0 14px 40px rgba(0,0,0,.5)}
+}
+
+/* TipTap injects its base sheet unlayered at runtime (`.ProseMirror{white-space:break-spaces}`), which would now
+   outrank the layered editor sheet's `pre-wrap`; restate the editor's choice at the same level. */
+.gb .ProseMirror{white-space:pre-wrap}
+/* A host's unlayered prose rules (an article's `h2`, `table`, checkbox styles around an embedded editor) would
+   likewise outrank the layered editor sheet and every utility. Inside the editor, roll such rules back to the
+   layered cascade: the editor's sheet, the kit's rules and the host's utilities decide. More specific unlayered
+   rules (0,2,1 and up, e.g. the Composer's) still apply. */
+.gb .ProseMirror :is(h1,h2,h3,h4,h5,h6,p,ul,ol,li,blockquote,table,thead,tbody,tr,th,td,hr,input,label,a,:not(pre)>code){all:revert-layer}
 
 /* ── Composer shape states (motion: one shape, after "Family Values") ──
    The card is the same element in every state; composer.tsx springs its size between them (FLIP) and these
@@ -406,4 +422,12 @@ body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-ch
 .bl-syntax:hover>.bl-syntax-copy-float,.bl-syntax-copy-float[data-focus-visible],.bl-syntax-copy-float[data-copied]{opacity:1}
 @media (hover:none){.bl-syntax-copy-float{opacity:1}}
 .bl-syntax-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+}
+
+/* ── NowPlayingBars (now-playing-bars.tsx): each bar scales from the bottom on its own period; still when paused
+   and under reduced motion. ── */
+@keyframes blEq{from{transform:scaleY(.25)}to{transform:scaleY(1)}}
+@layer components{
+[data-slot="now-playing-bars"][data-playing]>.bl-eq-bar{animation:blEq var(--bl-eq-dur,.7s) ease-in-out var(--bl-eq-delay,0s) infinite alternate}
+@media (prefers-reduced-motion:reduce){[data-slot="now-playing-bars"][data-playing]>.bl-eq-bar{animation:none}}
 }

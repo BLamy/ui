@@ -390,6 +390,37 @@
       }
     },
     {
+      "name": "icon",
+      "type": "registry:ui",
+      "title": "Icons",
+      "description": "An SF Symbols-style icon set on a 24px grid: round-capped strokes in six weights, filled variants, and custom shapes.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/icon.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/icon.tsx"
+        }
+      ],
+      "meta": {
+        "page": "icons",
+        "exports": [
+          "Icon",
+          "IC",
+          "ICON_NAMES",
+          "ICON_ALIASES",
+          "ICON_CATEGORIES",
+          "ICON_KEYWORDS",
+          "ICON_WEIGHTS"
+        ]
+      }
+    },
+    {
       "name": "list",
       "type": "registry:ui",
       "title": "List",
@@ -500,6 +531,34 @@
       }
     },
     {
+      "name": "morph",
+      "type": "registry:ui",
+      "title": "Morph",
+      "description": "Shared-element transitions: one element springs between two layouts (mini player → full player), drag-to-dismiss friendly, reduced-motion aware.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/morph.tsx"
+        }
+      ],
+      "meta": {
+        "page": "morph",
+        "exports": [
+          "MorphGroup",
+          "Morph",
+          "MorphPresence",
+          "useMorphTransition"
+        ]
+      }
+    },
+    {
       "name": "motion",
       "type": "registry:ui",
       "title": "Motion",
@@ -563,6 +622,34 @@
       }
     },
     {
+      "name": "now-playing-bars",
+      "type": "registry:ui",
+      "title": "NowPlayingBars",
+      "description": "The animated equaliser beside the track that's playing — still when paused and under reduced motion — plus the Slider tones for media controls.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/now-playing-bars.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/now-playing-bars.tsx"
+        }
+      ],
+      "meta": {
+        "page": "now-playing-bars",
+        "exports": [
+          "NowPlayingBars",
+          "Slider",
+          "SliderTrack",
+          "SliderThumb"
+        ]
+      }
+    },
+    {
       "name": "pencilkit",
       "type": "registry:ui",
       "title": "PencilKit",
@@ -593,6 +680,33 @@
           "PencilActions",
           "usePencilHistory",
           "PencilKitAnnotator"
+        ]
+      }
+    },
+    {
+      "name": "progress-ring",
+      "type": "registry:ui",
+      "title": "ProgressRing",
+      "description": "Circular progress: a determinate ring that springs to each value with a rolling percentage, and a CountdownRing that drains second by second and turns red near the end.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/progress-ring.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/progress-ring.tsx"
+        }
+      ],
+      "meta": {
+        "page": "progress-ring",
+        "exports": [
+          "ProgressRing",
+          "CountdownRing",
+          "useCountdown"
         ]
       }
     },
@@ -728,6 +842,7 @@
           "useSyntaxHighlighting",
           "lexSyntax",
           "webgpuSupported",
+          "probeWebGPU",
           "languageFromPath",
           "tokenizeLines"
         ]
@@ -798,6 +913,38 @@
           "useWorkbenchAppearance",
           "blLightVars",
           "blDarkVars"
+        ]
+      }
+    },
+    {
+      "name": "toast",
+      "type": "registry:ui",
+      "title": "Toast",
+      "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, stacking banners with actions, springs, auto-dismiss and announcements.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/toast.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/toast.tsx"
+        }
+      ],
+      "meta": {
+        "page": "toast",
+        "exports": [
+          "Toaster",
+          "toast",
+          "useToast",
+          "createToastQueue",
+          "ToastQueue",
+          "ToastProvider",
+          "toastApi",
+          "defaultToastQueue"
         ]
       }
     },

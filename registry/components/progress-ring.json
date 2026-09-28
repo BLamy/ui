@@ -1,0 +1,11 @@
+{
+  "name": "progress-ring",
+  "title": "ProgressRing",
+  "description": "Circular progress: a determinate ring that springs to each value with a rolling percentage, and a CountdownRing that drains second by second and turns red near the end.",
+  "page": "progress-ring",
+  "exports": [
+    "ProgressRing",
+    "CountdownRing",
+    "useCountdown"
+  ]
+}

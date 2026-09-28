@@ -8,12 +8,13 @@ import { cn } from '../lib/utils';
 import { useAppearance } from '../lib/theme';
 import {
   PLAIN_LANGUAGES, lexSyntax, peekSyntax, fallbackResult, tokenizeLines, webgpuSupported,
-  type SyntaxHighlighter, type SyntaxResult, type SyntaxToken,
+  type SyntaxEngine, type SyntaxHighlighter, type SyntaxResult, type SyntaxToken,
 } from '../lib/syntax';
 
 /* ══ SyntaxHighlighting — code highlighted by gpu-lexer on WebGPU ══
    Plain text renders first and keeps its exact layout; token colors swap in when the shared GPU lexer returns
-   (usually one frame for a cached or small source). Token colors are classes (`bl-tok-*`) reading `--bl-syntax-*`,
+   (usually one frame for a cached or small source). Without a hardware WebGPU adapter the small fallback answers at
+   once (`engine`, default `auto`). Token colors are classes (`bl-tok-*`) reading `--bl-syntax-*`,
    with light and dark defaults that follow the color scheme (BLProvider / AppearanceProvider). */
 
 /* ── Hook ── */
@@ -24,9 +25,11 @@ export interface UseSyntaxTokensOptions {
   language?: string;
   /** `false` renders plain lines and never lexes. */
   enabled?: boolean;
-  /** `gpu` (default): gpu-lexer on WebGPU, degrading to the small fallback only where WebGPU is unavailable.
-      `fallback`: always use the fallback (tests, or pages that must not touch the GPU). */
-  engine?: 'gpu' | 'fallback';
+  /** `auto` (default): gpu-lexer on a hardware WebGPU adapter; where the only adapter is a software one
+      (SwiftShader in headless CI, llvmpipe), there is none, or the one-time adapter probe takes over 2.5 s, the
+      small fallback at once. `gpu`: gpu-lexer on any adapter, software included (slow on software; the fallback
+      only where WebGPU is missing). `fallback`: always the fallback (tests, or pages that must not touch the GPU). */
+  engine?: SyntaxEngine;
 }
 
 export interface SyntaxTokensState {
@@ -39,16 +42,17 @@ export interface SyntaxTokensState {
 /** Lines of tokens for `code`, lexed on the GPU through the page's shared gpu-lexer. Returns plain lines at once
     and highlighted lines when ready; results are cached by source, so remounts and repeats are instant. While a
     source grows (streaming), the tokens of its unchanged lines are kept until the new result lands. */
-export function useSyntaxTokens(code: string, { language, enabled = true, engine = 'gpu' }: UseSyntaxTokensOptions = {}): SyntaxTokensState {
+export function useSyntaxTokens(code: string, { language, enabled = true, engine = 'auto' }: UseSyntaxTokensOptions = {}): SyntaxTokensState {
   const off = !enabled || (!!language && PLAIN_LANGUAGES.has(language.toLowerCase()));
   const forced = engine === 'fallback';
   const ready = (src: string): SyntaxResult | null =>
-    off ? null : forced ? fallbackResult(src) : peekSyntax(src) ?? (webgpuSupported() ? null : fallbackResult(src));
-  const [state, setState] = useState<{ code: string; result: SyntaxResult | null }>(() => ({ code, result: ready(code) }));
+    off ? null : forced ? fallbackResult(src) : peekSyntax(src, engine) ?? (webgpuSupported(engine) ? null : fallbackResult(src));
+  const [state, setState] = useState<{ code: string; engine: SyntaxEngine; result: SyntaxResult | null }>(() => ({ code, engine, result: ready(code) }));
 
-  let result: SyntaxResult | null = state.code === code && (!forced || state.result?.highlighter === 'fallback') ? state.result : ready(code);
+  const same = state.code === code && state.engine === engine;
+  let result: SyntaxResult | null = same ? state.result : ready(code);
   let partial = false;
-  if (!result && state.result && !off && code.startsWith(state.code)) {
+  if (!result && state.result && !off && state.engine === engine && code.startsWith(state.code)) {
     // Streaming: keep the tokens of the lines that haven't changed.
     const cut = state.code.lastIndexOf('\n') + 1;
     result = { highlighter: state.result.highlighter, spans: state.result.spans.filter((s) => s.end <= cut) };
@@ -57,17 +61,18 @@ export function useSyntaxTokens(code: string, { language, enabled = true, engine
 
   useEffect(() => {
     if (off) return;
+    const keep = (r: SyntaxResult) =>
+      setState((s) => (s.code === code && s.engine === engine && s.result === r ? s : { code, engine, result: r }));
     if (forced) {
-      const r = fallbackResult(code);
-      setState((s) => (s.code === code && s.result === r ? s : { code, result: r }));
+      keep(fallbackResult(code));
       return;
     }
     let live = true;
-    const hit = peekSyntax(code);
-    if (hit) setState((s) => (s.code === code && s.result === hit ? s : { code, result: hit }));
-    else void lexSyntax(code).then((r) => { if (live) setState({ code, result: r }); });
+    const hit = peekSyntax(code, engine);
+    if (hit) keep(hit);
+    else void lexSyntax(code, engine).then((r) => { if (live) keep(r); });
     return () => { live = false; };
-  }, [code, off, forced]);
+  }, [code, off, forced, engine]);
 
   const spans = result?.spans ?? null;
   const lines = useMemo(() => tokenizeLines(code, spans), [code, spans]);
@@ -134,7 +139,7 @@ interface SyntaxHighlightingContextValue {
   language?: string;
   variant: Variant;
   title?: ReactNode;
-  engine?: 'gpu' | 'fallback';
+  engine?: SyntaxEngine;
 }
 const SyntaxHighlightingContext = createContext<SyntaxHighlightingContextValue | null>(null);
 /** The enclosing SyntaxHighlighting's `code`, `language`, `variant` and `title`. */
@@ -164,8 +169,9 @@ export interface SyntaxHighlightingContentProps extends Omit<ComponentProps<'pre
   lineProps?: (line: number) => HTMLAttributes<HTMLSpanElement> | undefined;
   /** `false` renders plain text and never lexes. */
   highlight?: boolean;
-  /** `gpu` (default) or `fallback` — see `useSyntaxTokens`. */
-  engine?: 'gpu' | 'fallback';
+  /** `auto` (default: GPU on a hardware adapter, else the fallback at once), `gpu` (gpu-lexer even on a software
+      adapter) or `fallback` — see `useSyntaxTokens`. */
+  engine?: SyntaxEngine;
 }
 
 // Long files render in blocks the browser can skip while off screen (content-visibility), so layout and paint
@@ -197,7 +203,7 @@ export function SyntaxHighlightingContent({
     <pre
       data-slot="syntax-highlighting-content"
       data-highlighter={highlighter}
-      data-engine={eng === 'fallback' ? 'fallback' : undefined}
+      data-engine={eng && eng !== 'auto' ? eng : undefined}
       data-language={language}
       data-wrap={wrap || undefined}
       data-line-numbers={lineNumbers || undefined}
@@ -408,7 +414,7 @@ export function SyntaxHighlighting({
 }
 
 function InlineCode({ code, language, scheme, className, highlight, engine, ...props }: ComponentProps<'code'> & {
-  code: string; language?: string; scheme?: string; highlight?: boolean; engine?: 'gpu' | 'fallback';
+  code: string; language?: string; scheme?: string; highlight?: boolean; engine?: SyntaxEngine;
 }) {
   const { lines, highlighter } = useSyntaxTokens(code, { language, enabled: highlight, engine });
   return (
@@ -417,7 +423,7 @@ function InlineCode({ code, language, scheme, className, highlight, engine, ...p
       data-variant="inline"
       data-language={language}
       data-highlighter={highlighter}
-      data-engine={engine === 'fallback' ? 'fallback' : undefined}
+      data-engine={engine && engine !== 'auto' ? engine : undefined}
       className={cn(syntaxHighlightingVariants({ variant: 'inline' }), scheme === 'dark' ? 'scheme-dark' : scheme === 'light' ? 'scheme-light' : null, className)}
       {...props}
     >
