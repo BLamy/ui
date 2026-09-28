@@ -4,6 +4,16 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 @source "./";
 
+/* Box sizing, scoped to the kit. There is no preflight (see above), so a host without Tailwind's would leave
+   every part content-box and padded full-width parts would overflow (a 46px ListRow grew to 60px). Every part
+   root carries `data-slot`, so the reset reaches exactly the kit's parts and whatever renders inside them —
+   never the host's own page. :where() keeps it at zero specificity and it sits in the lowest (base) layer, so
+   any host rule, unlayered CSS, or `box-content` utility still wins. */
+@layer base{
+  :where([data-slot]),:where([data-slot])::before,:where([data-slot])::after,
+  :where([data-slot]) *,:where([data-slot]) ::before,:where([data-slot]) ::after{box-sizing:border-box}
+}
+
 /* BL UI framework CSS — verbatim from the prototype's injected `bl-kf` block. */
 @keyframes blSpin{to{transform:rotate(360deg)}}
 @keyframes blRing{from{transform:scale(.35);opacity:.85}to{transform:scale(2.4);opacity:0}}
