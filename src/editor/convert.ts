@@ -14,7 +14,10 @@ import {
   type DocumentNode,
   type Inline,
   type InlineDelimiter,
+  type InlineImageNode,
   type ListItemNode,
+  type ReferenceNode,
+  type TableNode,
   type TextNode,
 } from "@brett_lamy/docstream/gitbook"
 
@@ -29,6 +32,10 @@ const DELIM_MARK: Record<InlineDelimiter, SpelledMark> = {
   link: "link",
   "<>": "link",
   url: "link",
+  ref: "link",
+  collapsed: "link",
+  shortcut: "link",
+  html: "link",
 }
 
 // Attachment chips live in markdown as images with an `attachment:<id>` URL.
@@ -48,52 +55,154 @@ export interface PMNode {
   text?: string
 }
 
+// ---------- Markdown layout (docstream fields the editor carries opaquely in `md` attrs) ----------
+
+/**
+ * Block / item / doc fields that only say how the Markdown was laid out. Carried in the node's `md` attr
+ * and handed back verbatim; docstream validates them against the (possibly edited) node on the way out.
+ */
+const LAYOUT_KEYS = [
+  "gap",
+  "blanks",
+  "gapEnd",
+  "opening",
+  "closing",
+  "raw",
+  "indent",
+  "setext",
+  "fence",
+  "info",
+  "closingFence",
+  "indented",
+  "heading",
+  "delimiterRow",
+  "rawRows",
+  "markers",
+  "marker",
+  "bullet",
+  "delimiter",
+  "pad",
+  "checkMark",
+  "html",
+  "citationsGap",
+  "end",
+  "lineEnding",
+] as const
+
+/** Link details beyond the target, on the link mark's `md`. */
+const LINK_KEYS = ["linkTitle", "linkRef", "linkTag", "linkTagEnd", "linkId"] as const
+/** A code span's layout, on the code mark's `md`. */
+const CODE_KEYS = ["barePipes", "ticks"] as const
+/** Image syntax details, on the image / attachment node's `md`. */
+const IMAGE_KEYS = ["title", "syntax", "html", "srcForm", "srcRef"] as const
+
+function pick(from: object, keys: readonly string[]): Record<string, unknown> | null {
+  const source = from as Record<string, unknown>
+  const out: Record<string, unknown> = {}
+  for (const k of keys) if (source[k] !== undefined) out[k] = source[k]
+  return Object.keys(out).length ? out : null
+}
+
+/** `pm` with the block's layout fields in its `md` attr. */
+function withLayout(pm: PMNode, from: object): PMNode {
+  const md = pick(from, LAYOUT_KEYS)
+  return md ? { ...pm, attrs: { ...pm.attrs, md } } : pm
+}
+
+/** The layout fields a PM node carries, to spread onto the block. */
+function layoutOf(n: PMNode | undefined): Record<string, unknown> {
+  const md = n?.attrs?.md
+  return md && typeof md === "object" ? pick(md, LAYOUT_KEYS) ?? {} : {}
+}
+
 // ---------- AST → TipTap ----------
+
+type PMMark = NonNullable<PMNode["marks"]>[number]
+
+/** Is the inline's `link` a link mark (not the HTML anchor of an `<a href><img></a>` badge)? */
+function linkIsMark(n: Inline): boolean {
+  if (!n.link) return false
+  return n.type !== "image" || !!n.delims?.some((d) => DELIM_MARK[d] === "link")
+}
+
+/**
+ * The PM marks for an inline's formatting (text runs, chips and images alike). A run spelled other than the
+ * default (`***x***`, `**_x_**`, `*x*`, `*a *b* c*`) puts each mark's marker and nesting depth on the mark
+ * (`delim` / `depth`, further occurrences in `more`); `tiptapToAst` turns them back into `delims`.
+ */
+function marksPM(n: Inline): PMMark[] {
+  const spelling = n.delims?.length ? inlineDelims(n) : []
+  const spelled = (mark: SpelledMark): Record<string, unknown> => {
+    const at = spelling.flatMap((d, depth): Array<[number, InlineDelimiter]> => (DELIM_MARK[d] === mark ? [[depth, d]] : []))
+    if (!at.length) return {}
+    const [[depth, delim], ...more] = at
+    return { delim, depth, ...(more.length ? { more } : {}) }
+  }
+  const marks: PMMark[] = []
+  const emphasis = (type: "bold" | "italic" | "strike") => {
+    const attrs = spelled(type)
+    marks.push(Object.keys(attrs).length ? { type, attrs } : { type })
+  }
+  if (n.bold) emphasis("bold")
+  if (n.italic) emphasis("italic")
+  if (n.strike) emphasis("strike")
+  if (n.type === "text" && n.code) {
+    const md = pick(n, CODE_KEYS)
+    marks.push(md ? { type: "code", attrs: { md } } : { type: "code" })
+  }
+  if (n.type === "text" && n.escaped) marks.push({ type: "mdEscaped" })
+  // `inner` keeps `**[x](url)**` (link inside the emphasis) apart from `[**x**](url)`.
+  if (linkIsMark(n)) {
+    const md = pick(n, LINK_KEYS)
+    marks.push({
+      type: "link",
+      attrs: { href: n.link, ...(n.linkInner ? { inner: true } : {}), ...spelled("link"), ...(md ? { md } : {}) },
+    })
+  }
+  return marks
+}
+
+const marked = (pm: PMNode, n: Inline): PMNode => {
+  const marks = marksPM(n)
+  return marks.length ? { ...pm, marks } : pm
+}
 
 function inlineToPM(nodes: Inline[]): PMNode[] {
   return nodes
-    // Only empty text nodes are dropped — every non-text inline must pass, or
-    // it silently vanishes on the first edit round-trip.
-    .filter((n) => n.type !== "text" || n.text.length > 0)
+    // Only empty text runs without a link are dropped — every other inline must pass, or it silently
+    // vanishes on the first edit round-trip.
+    .filter((n) => n.type !== "text" || n.text.length > 0 || !!n.link)
     .map((n) => {
       if (n.type === "reference") {
-        return {
-          type: "gbReference",
-          attrs: { kind: n.kind, id: n.id, url: n.url ?? "", label: n.label ?? "" },
-        }
+        return marked({ type: "gbReference", attrs: { kind: n.kind, id: n.id, url: n.url ?? "", label: n.label ?? "" } }, n)
       }
-      if (n.type === "image" && isAttachmentSrc(n.src)) return attachmentPM(n.src, n.alt)
       if (n.type === "image") {
-        return {
-          type: "gbInlineImage",
-          attrs: {
-            src: n.src,
-            alt: n.alt ?? "",
-            width: n.width ?? "",
-            height: n.height ?? "",
-            link: n.link ?? "",
-          },
+        const md = pick(n, IMAGE_KEYS)
+        if (isAttachmentSrc(n.src)) {
+          const chip = attachmentPM(n.src, n.alt)
+          // Chips are Markdown images by default; only another spelling is recorded.
+          const chipMd = md && !(Object.keys(md).length === 1 && md.syntax === "markdown") ? md : null
+          return marked(chipMd ? { ...chip, attrs: { ...chip.attrs, md: chipMd } } : chip, n)
         }
+        return marked(
+          {
+            type: "gbInlineImage",
+            attrs: {
+              src: n.src,
+              alt: n.alt ?? "",
+              width: n.width ?? "",
+              height: n.height ?? "",
+              // The badge's own HTML anchor; a Markdown link around the image is a link mark instead.
+              link: linkIsMark(n) ? "" : (n.link ?? ""),
+              ...(md ? { md } : {}),
+            },
+          },
+          n,
+        )
       }
-      // A run spelled other than the default (`***x***`, `**_x_**`, `*x*`) puts each mark's marker and
-      // nesting depth on the mark; `tiptapToAst` turns them back into `delims`.
-      const spelling = n.delims?.length ? inlineDelims(n) : []
-      const spelled = (mark: SpelledMark): Record<string, unknown> => {
-        const depth = spelling.findIndex((d) => DELIM_MARK[d] === mark)
-        return depth < 0 ? {} : { delim: spelling[depth], depth }
-      }
-      const marks: PMNode["marks"] = []
-      const emphasis = (type: "bold" | "italic" | "strike") => {
-        const attrs = spelled(type)
-        marks.push(Object.keys(attrs).length ? { type, attrs } : { type })
-      }
-      if (n.bold) emphasis("bold")
-      if (n.italic) emphasis("italic")
-      if (n.strike) emphasis("strike")
-      if (n.code) marks.push({ type: "code" })
-      // `inner` keeps `**[x](url)**` (link inside the emphasis) apart from `[**x**](url)`.
-      if (n.link) marks.push({ type: "link", attrs: { href: n.link, ...(n.linkInner ? { inner: true } : {}), ...spelled("link") } })
-      return { type: "text", text: n.text, ...(marks.length ? { marks } : {}) }
+      // `[](url)`: a link without text
+      if (!n.text) return marked({ type: "gbEmptyLink" }, n)
+      return marked({ type: "text", text: n.text }, n)
     })
 }
 
@@ -107,14 +216,23 @@ const blocksPM = (children: Block[]): PMNode[] =>
   children.length ? children.map(blockToPM) : [{ type: "paragraph" }]
 
 function listItemToPM(item: ListItemNode, task: boolean): PMNode {
-  return {
-    type: task ? "taskItem" : "listItem",
-    ...(task ? { attrs: { checked: !!item.checked } } : {}),
-    content: item.children.map(blockToPM),
-  }
+  return withLayout(
+    {
+      type: task ? "taskItem" : "listItem",
+      ...(task ? { attrs: { checked: !!item.checked } } : {}),
+      content: item.children.map(blockToPM),
+    },
+    item,
+  )
 }
 
 function blockToPM(b: Block): PMNode {
+  // A chip alone on its line is a paragraph in the editor: only its spacing carries over.
+  const layout = b.type === "figure" && isAttachmentSrc(b.src) ? { gap: b.gap, blanks: b.blanks } : b
+  return withLayout(blockContentToPM(b), layout)
+}
+
+function blockContentToPM(b: Block): PMNode {
   switch (b.type) {
     case "paragraph":
       return paragraphPM(b.children)
@@ -146,11 +264,7 @@ function blockToPM(b: Block): PMNode {
       return {
         type: "gbTabs",
         ...(Object.keys(attrs).length ? { attrs } : {}),
-        content: b.tabs.map((t) => ({
-          type: "gbTab",
-          attrs: { title: t.title },
-          content: blocksPM(t.children),
-        })),
+        content: b.tabs.map((t) => withLayout({ type: "gbTab", attrs: { title: t.title }, content: blocksPM(t.children) }, t)),
       }
     }
     case "command":
@@ -171,11 +285,7 @@ function blockToPM(b: Block): PMNode {
     case "stepper":
       return {
         type: "gbStepper",
-        content: b.steps.map((s) => ({
-          type: "gbStep",
-          attrs: { title: s.title },
-          content: blocksPM(s.children),
-        })),
+        content: b.steps.map((s) => withLayout({ type: "gbStep", attrs: { title: s.title }, content: blocksPM(s.children) }, s)),
       }
     case "embed": {
       const attrs: Record<string, string | boolean> = { url: b.url }
@@ -192,7 +302,11 @@ function blockToPM(b: Block): PMNode {
       // whether this one was, so a plain label stays plain.
       const only = b.children.length === 1 ? b.children[0] : undefined
       const linked = only?.type === "text" && only.link === b.url && !only.bold && !only.italic && !only.strike && !only.code
-      return { type: "gbContentRef", attrs: { url: b.url, label: plainText(b.children), linked } }
+      const label = plainText(b.children)
+      // Children the label / linked model can't say (emphasis, several runs, a spelled link) ride along.
+      const simple: Inline[] = label ? [{ type: "text", text: label, ...(linked ? { link: b.url } : {}) }] : []
+      const children = JSON.stringify(simple) === JSON.stringify(b.children) ? {} : { children: b.children }
+      return { type: "gbContentRef", attrs: { url: b.url, label, linked, ...children } }
     }
     case "source-ref":
       return {
@@ -228,15 +342,16 @@ function blockToPM(b: Block): PMNode {
     case "columns":
       return {
         type: "gbColumns",
-        content: b.columns.map((c) => ({ type: "gbColumn", content: blocksPM(c.children) })),
+        content: b.columns.map((c) => withLayout({ type: "gbColumn", content: blocksPM(c.children) }, c)),
       }
     case "figure":
       // A chip alone on its line parses as a figure; it is still a chip.
       if (isAttachmentSrc(b.src)) return { type: "paragraph", content: [attachmentPM(b.src, b.alt)] }
-      return { type: "gbFigure", attrs: { src: b.src, alt: b.alt, caption: b.caption } }
+      return { type: "gbFigure", attrs: { src: b.src, alt: b.alt, caption: b.caption, ...(b.title !== undefined ? { title: b.title } : {}) } }
     case "list":
       return {
         type: b.task ? "taskList" : b.ordered ? "orderedList" : "bulletList",
+        ...(b.ordered && !b.task && b.start !== undefined ? { attrs: { start: b.start } } : {}),
         content: b.items.map((item) => listItemToPM(item, b.task)),
       }
     case "blockquote":
@@ -246,7 +361,7 @@ function blockToPM(b: Block): PMNode {
     case "table":
       return {
         type: "table",
-        ...(b.view ? { attrs: { view: b.view } } : {}),
+        ...(b.view || b.align ? { attrs: { ...(b.view ? { view: b.view } : {}), ...(b.align ? { align: b.align } : {}) } } : {}),
         content: [
           {
             type: "tableRow",
@@ -267,12 +382,12 @@ function blockToPM(b: Block): PMNode {
       return {
         type: "gbUpdates",
         attrs: { format: b.format },
-        content: b.updates.map((u) => ({
-          type: "gbUpdate",
-          attrs: { date: u.date },
-          content: blocksPM(u.children),
-        })),
+        content: b.updates.map((u) => withLayout({ type: "gbUpdate", attrs: { date: u.date }, content: blocksPM(u.children) }, u)),
       }
+    case "definition":
+      return { type: "gbDefinition", attrs: { label: b.label, url: b.url, title: b.title ?? null } }
+    case "raw":
+      return { type: "gbRaw", attrs: { markdown: b.markdown } }
     case "openapi-operation":
       return {
         type: "gbOpenapi",
@@ -289,10 +404,54 @@ function blockToPM(b: Block): PMNode {
 
 export function astToTiptap(doc: DocumentNode): PMNode {
   const content = doc.children.map(blockToPM)
-  return { type: "doc", content: content.length ? content : [{ type: "paragraph" }] }
+  return withLayout({ type: "doc", content: content.length ? content : [{ type: "paragraph" }] }, doc)
 }
 
 // ---------- TipTap → AST ----------
+
+/** Applies PM marks to an inline: emphasis, code, escapes, the link and their spelling (`delims`). */
+function applyMarks(inline: Inline, marks: PMNode["marks"]) {
+  const spelling: Array<[number, InlineDelimiter]> = []
+  let linkMark = false
+  for (const mark of marks ?? []) {
+    if (mark.type === "bold") inline.bold = true
+    if (mark.type === "italic") inline.italic = true
+    if (mark.type === "strike") inline.strike = true
+    if (inline.type === "text" && mark.type === "code") {
+      inline.code = true
+      Object.assign(inline, pick((mark.attrs?.md as object | null) ?? {}, CODE_KEYS))
+    }
+    if (inline.type === "text" && mark.type === "mdEscaped") inline.escaped = true
+    if (mark.type === "link") {
+      linkMark = true
+      inline.link = String(mark.attrs?.href ?? "")
+      if (mark.attrs?.inner) inline.linkInner = true
+      Object.assign(inline, pick((mark.attrs?.md as object | null) ?? {}, LINK_KEYS))
+    }
+    const delim = mark.attrs?.delim as InlineDelimiter | undefined
+    const depth = mark.attrs?.depth
+    if (delim && typeof depth === "number" && DELIM_MARK[delim] === mark.type) spelling.push([depth, delim])
+    const more = mark.attrs?.more
+    if (Array.isArray(more)) {
+      for (const entry of more) {
+        if (Array.isArray(entry) && typeof entry[0] === "number" && DELIM_MARK[entry[1] as InlineDelimiter] === mark.type) {
+          spelling.push([entry[0], entry[1] as InlineDelimiter])
+        }
+      }
+    }
+  }
+  const emphasis = inline.bold || inline.italic || inline.strike
+  if (inline.linkInner && !emphasis) delete inline.linkInner
+  // A link mark put on an image in the editor stays a Markdown link around it.
+  if (inline.type === "image" && linkMark && !spelling.some(([, d]) => DELIM_MARK[d] === "link")) {
+    spelling.push([inline.linkInner ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY, "link"])
+  }
+  if (spelling.length) {
+    const delims = spelling.sort((a, b) => a[0] - b[0]).map(([, d]) => d)
+    const fallback = defaultInlineDelims(inline)
+    if (delims.length !== fallback.length || delims.some((d, k) => d !== fallback[k])) inline.delims = delims
+  }
+}
 
 function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
   if (!nodes) return []
@@ -302,61 +461,47 @@ function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
         (n.type === "text" && n.text) ||
         n.type === "gbInlineImage" ||
         n.type === "gbReference" ||
-        n.type === "gbAttachment"
+        n.type === "gbAttachment" ||
+        n.type === "gbEmptyLink"
     )
     .map((n): Inline => {
+      let inline: Inline
       if (n.type === "gbAttachment") {
         const a = n.attrs ?? {}
-        return {
+        // Chips are Markdown images unless the source wrote them otherwise.
+        const md = pick((a.md as object | null) ?? {}, IMAGE_KEYS) ?? { syntax: "markdown" }
+        inline = {
           type: "image",
           src: `${ATTACHMENT_SCHEME}${String(a.id ?? "")}`,
           ...(a.name ? { alt: String(a.name) } : {}),
-        }
-      }
-      if (n.type === "gbReference") {
+          ...md,
+        } as InlineImageNode
+      } else if (n.type === "gbReference") {
         const a = n.attrs ?? {}
         const kind =
           a.kind === "tag" || a.kind === "codebase" || a.kind === "citation" ? a.kind : "mention"
-        return {
+        inline = {
           type: "reference",
           kind,
           id: String(a.id ?? ""),
           ...(a.url ? { url: String(a.url) } : {}),
           ...(a.label ? { label: String(a.label) } : {}),
-        }
-      }
-      if (n.type === "gbInlineImage") {
+        } satisfies ReferenceNode
+      } else if (n.type === "gbInlineImage") {
         const a = n.attrs ?? {}
-        return {
+        inline = {
           type: "image",
           src: String(a.src ?? ""),
           ...(a.alt ? { alt: String(a.alt) } : {}),
           ...(a.width ? { width: String(a.width) } : {}),
           ...(a.height ? { height: String(a.height) } : {}),
           ...(a.link ? { link: String(a.link) } : {}),
-        }
+          ...pick((a.md as object | null) ?? {}, IMAGE_KEYS),
+        } as InlineImageNode
+      } else {
+        inline = { type: "text", text: n.type === "gbEmptyLink" ? "" : n.text! } satisfies TextNode
       }
-      const inline: TextNode = { type: "text", text: n.text! }
-      const spelling: Array<[number, InlineDelimiter]> = []
-      for (const mark of n.marks ?? []) {
-        if (mark.type === "bold") inline.bold = true
-        if (mark.type === "italic") inline.italic = true
-        if (mark.type === "strike") inline.strike = true
-        if (mark.type === "code") inline.code = true
-        if (mark.type === "link") {
-          inline.link = String(mark.attrs?.href ?? "")
-          if (mark.attrs?.inner) inline.linkInner = true
-        }
-        const delim = mark.attrs?.delim as InlineDelimiter | undefined
-        const depth = mark.attrs?.depth
-        if (delim && typeof depth === "number" && DELIM_MARK[delim] === mark.type) spelling.push([depth, delim])
-      }
-      if (inline.linkInner && !(inline.bold || inline.italic || inline.strike)) delete inline.linkInner
-      if (spelling.length) {
-        const delims = spelling.sort((a, b) => a[0] - b[0]).map(([, d]) => d)
-        const fallback = defaultInlineDelims(inline)
-        if (delims.length !== fallback.length || delims.some((d, k) => d !== fallback[k])) inline.delims = delims
-      }
+      applyMarks(inline, n.marks)
       return inline
     })
 }
@@ -367,6 +512,14 @@ function pmCellToInline(cell: PMNode): Inline[] {
 }
 
 function pmToBlock(n: PMNode): Block | null {
+  const block = pmContentToBlock(n)
+  return block ? ({ ...block, ...layoutOf(n) } as Block) : null
+}
+
+/** An item node (tab, step, column, update, list item) with its layout. */
+const item = <T extends object>(n: PMNode, value: T): T => ({ ...value, ...layoutOf(n) })
+
+function pmContentToBlock(n: PMNode): Block | null {
   switch (n.type) {
     case "paragraph": {
       const children = pmTextToInline(n.content)
@@ -405,11 +558,9 @@ function pmToBlock(n: PMNode): Block | null {
       const level = Number(n.attrs?.level)
       return {
         type: "tabs",
-        tabs: (n.content ?? []).map((t) => ({
-          type: "tab",
-          title: String(t.attrs?.title ?? "Tab"),
-          children: pmToBlocks(t.content),
-        })),
+        tabs: (n.content ?? []).map((t) =>
+          item(t, { type: "tab" as const, title: String(t.attrs?.title ?? "Tab"), children: pmToBlocks(t.content) }),
+        ),
         ...(n.attrs?.sync ? { sync: String(n.attrs.sync) } : {}),
         ...(n.attrs?.title ? { title: String(n.attrs.title) } : {}),
         ...(level === 2 || level === 3 || level === 4 ? { level } : {}),
@@ -426,11 +577,9 @@ function pmToBlock(n: PMNode): Block | null {
     case "gbStepper":
       return {
         type: "stepper",
-        steps: (n.content ?? []).map((s) => ({
-          type: "step",
-          title: String(s.attrs?.title ?? ""),
-          children: pmToBlocks(s.content),
-        })),
+        steps: (n.content ?? []).map((s) =>
+          item(s, { type: "step" as const, title: String(s.attrs?.title ?? ""), children: pmToBlocks(s.content) }),
+        ),
       }
     case "gbEmbed": {
       const embed: Extract<Block, { type: "embed" }> = {
@@ -449,10 +598,17 @@ function pmToBlock(n: PMNode): Block | null {
       const url = String(n.attrs?.url ?? "")
       const label = String(n.attrs?.label ?? "")
       const linked = n.attrs?.linked !== false && !!url && !!label
+      // Children the label model can't say are carried along while the label is unchanged.
+      const carried = Array.isArray(n.attrs?.children) ? (n.attrs.children as Inline[]) : null
       return {
         type: "content-ref",
         url,
-        children: label ? [{ type: "text", text: label, ...(linked ? { link: url } : {}) }] : [],
+        children:
+          carried && plainText(carried) === label
+            ? carried
+            : label
+              ? [{ type: "text", text: label, ...(linked ? { link: url } : {}) }]
+              : [],
       }
     }
     case "gbSourceRef":
@@ -469,7 +625,7 @@ function pmToBlock(n: PMNode): Block | null {
     case "gbColumns":
       return {
         type: "columns",
-        columns: (n.content ?? []).map((c) => ({ type: "column", children: pmToBlocks(c.content) })),
+        columns: (n.content ?? []).map((c) => item(c, { type: "column" as const, children: pmToBlocks(c.content) })),
       }
     case "gbFigure":
       return {
@@ -477,6 +633,7 @@ function pmToBlock(n: PMNode): Block | null {
         src: String(n.attrs?.src ?? ""),
         alt: String(n.attrs?.alt ?? ""),
         caption: String(n.attrs?.caption ?? ""),
+        ...(typeof n.attrs?.title === "string" ? { title: n.attrs.title } : {}),
       }
     case "gbMath":
       return { type: "math", formula: String(n.attrs?.formula ?? "") }
@@ -484,12 +641,19 @@ function pmToBlock(n: PMNode): Block | null {
       return {
         type: "updates",
         format: (n.attrs?.format as string) || null,
-        updates: (n.content ?? []).map((u) => ({
-          type: "update",
-          date: String(u.attrs?.date ?? ""),
-          children: pmToBlocks(u.content),
-        })),
+        updates: (n.content ?? []).map((u) =>
+          item(u, { type: "update" as const, date: String(u.attrs?.date ?? ""), children: pmToBlocks(u.content) }),
+        ),
       }
+    case "gbDefinition":
+      return {
+        type: "definition",
+        label: String(n.attrs?.label ?? ""),
+        url: String(n.attrs?.url ?? ""),
+        ...(typeof n.attrs?.title === "string" ? { title: n.attrs.title } : {}),
+      }
+    case "gbRaw":
+      return { type: "raw", markdown: String(n.attrs?.markdown ?? "") }
     case "gbOpenapi":
       return {
         type: "openapi-operation",
@@ -503,16 +667,18 @@ function pmToBlock(n: PMNode): Block | null {
     case "orderedList":
     case "taskList": {
       const task = n.type === "taskList"
+      const start = n.type === "orderedList" ? Number(n.attrs?.start ?? 1) : 1
       return {
         type: "list",
         ordered: n.type === "orderedList",
         task,
-        items: (n.content ?? []).map((item) => {
-          const base: ListItemNode = { type: "listItem", children: pmToBlocks(item.content) }
-          if (task) base.checked = !!item.attrs?.checked
+        items: (n.content ?? []).map((pmItem) => {
+          const base: ListItemNode = { type: "listItem", children: pmToBlocks(pmItem.content) }
+          if (task) base.checked = !!pmItem.attrs?.checked
           if (!base.children.length) base.children = [{ type: "paragraph", children: [] }]
-          return base
+          return item(pmItem, base)
         }),
+        ...(Number.isInteger(start) && start !== 1 ? { start } : {}),
       }
     }
     case "blockquote":
@@ -523,11 +689,13 @@ function pmToBlock(n: PMNode): Block | null {
       const rows = n.content ?? []
       const [head, ...body] = rows
       const view = n.attrs?.view as string | undefined
+      const align = Array.isArray(n.attrs?.align) ? (n.attrs.align as TableNode["align"]) : undefined
       return {
         type: "table",
         header: (head?.content ?? []).map(pmCellToInline),
         rows: body.map((r) => (r.content ?? []).map(pmCellToInline)),
         ...(view ? { view } : {}),
+        ...(align ? { align } : {}),
       }
     }
     default:
@@ -600,23 +768,29 @@ function pmToBlocks(nodes: PMNode[] | undefined): Block[] {
 }
 
 export function tiptapToAst(doc: PMNode): DocumentNode {
-  return { type: "doc", children: pmToBlocks(doc.content) }
+  return { type: "doc", children: pmToBlocks(doc.content), ...layoutOf(doc) }
 }
 
-// docstream writes inline images as `<img src alt />`; attachment chips read
-// better (and diff better) as plain markdown images.
-const ATTACHMENT_IMG = /<img src="(attachment:[^"\s]+)"(?: alt="([^"]*)")? \/>/g
+/** Attachment chips with no recorded syntax are Markdown images (they read, and diff, better). */
+function attachmentsAsMarkdown<T>(value: T): T {
+  if (Array.isArray(value)) return value.map(attachmentsAsMarkdown) as T
+  if (!value || typeof value !== "object") return value
+  const node = value as Record<string, unknown>
+  if (node.type === "image" && isAttachmentSrc(node.src as string) && !node.syntax && !node.html) {
+    return { ...node, syntax: "markdown" } as T
+  }
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(node)) out[k] = v && typeof v === "object" ? attachmentsAsMarkdown(v) : v
+  return out as T
+}
 
 /**
- * Serialize an editor AST to GitBook markdown, writing attachment chips as
- * `![name](attachment:<id>)`. Use this instead of `serializeMarkdown` for
- * editor output.
+ * Serialize an editor AST to GitBook markdown, writing new attachment chips as
+ * `![name](attachment:<id>)` (a name with an unbalanced `]` keeps the `<img>` form), and
+ * everything else as docstream does. Use this instead of `serializeMarkdown` for editor output.
  */
 export function serializeEditorMarkdown(doc: DocumentNode): string {
-  return serializeMarkdown(doc).replace(ATTACHMENT_IMG, (img: string, src: string, alt = "") =>
-    // `]` can't be escaped in `![alt]`; such names keep the <img> form.
-    alt.includes("]") ? img : `![${alt}](${src})`
-  )
+  return serializeMarkdown(attachmentsAsMarkdown(doc))
 }
 
 /**

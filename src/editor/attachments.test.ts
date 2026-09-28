@@ -33,8 +33,9 @@ describe("attachment chips", () => {
     expect(roundTrip("![a.png](attachment:att-1) ![b.png](attachment:att-2) done\n")).toBe(
       "![a.png](attachment:att-1) ![b.png](attachment:att-2) done\n"
     )
+    // A chip written as HTML stays HTML (the Markdown round-trips byte-for-byte); new chips are Markdown.
     expect(roundTrip('Look <img src="attachment:att-9" alt="x.png" /> here\n')).toBe(
-      "Look ![x.png](attachment:att-9) here\n"
+      'Look <img src="attachment:att-9" alt="x.png" /> here\n'
     )
     // Serialized straight from editor JSON, as onChange does (chip + trailing space).
     const pm: PMNode = {

@@ -3,16 +3,16 @@ import Code from "@tiptap/extension-code"
 import Placeholder from "@tiptap/extension-placeholder"
 import { TaskItem, TaskList } from "@tiptap/extension-list"
 import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table"
-import { Extension, getSchema, type AnyExtension } from "@tiptap/core"
+import { Extension, Mark, getSchema, type AnyExtension } from "@tiptap/core"
 import type { Schema } from "@tiptap/pm/model"
 import { GbCodeBlock, gitbookNodes } from "./nodes"
 import { SlashMenu, createSlashMenu, type SlashItem } from "./slash-menu"
 import { createReferenceSuggestion, type ReferenceSource } from "./reference-menu"
 
-// Carries GitBook's data-view (e.g. "cards") through the editor untouched.
+// Carries GitBook's data-view (e.g. "cards") and the GFM column alignment through the editor untouched.
 export const GbTable = Table.extend({
   addAttributes() {
-    return { ...this.parent?.(), view: { default: null } }
+    return { ...this.parent?.(), view: { default: null }, align: { default: null, rendered: false } }
   },
 })
 
@@ -79,9 +79,104 @@ export const GbMarkSpelling = Extension.create({
             renderHTML: (attributes) =>
               typeof attributes.depth === "number" ? { "data-md-depth": String(attributes.depth) } : {},
           },
+          // Further occurrences of the same mark in the run's spelling — `*a *b* c*` nests italic in
+          // italic, which ProseMirror holds as one mark: `[[depth, delim], …]`.
+          more: jsonAttribute("data-md-more", "more"),
         },
       },
     ]
+  },
+})
+
+/** A JSON-valued attribute `key`, kept in the editor's HTML (clipboard) as `name='…'`. */
+function jsonAttribute(name: string, key: string) {
+  return {
+    default: null,
+    keepOnSplit: false,
+    parseHTML: (element: HTMLElement) => {
+      const value = element.getAttribute(name)
+      if (!value) return null
+      try {
+        return JSON.parse(value) as unknown
+      } catch {
+        return null
+      }
+    },
+    renderHTML: (attributes: Record<string, unknown>) => {
+      const value = attributes[key]
+      return value === null || value === undefined ? {} : { [name]: JSON.stringify(value) }
+    },
+  }
+}
+
+/** Every node that holds Markdown layout docstream records (blocks, list items, container items, the doc). */
+const LAYOUT_NODES = [
+  "doc",
+  "paragraph",
+  "heading",
+  "codeBlock",
+  "blockquote",
+  "bulletList",
+  "orderedList",
+  "taskList",
+  "listItem",
+  "taskItem",
+  "horizontalRule",
+  "table",
+  "gbHint",
+  "gbTabs",
+  "gbTab",
+  "gbExpandable",
+  "gbStepper",
+  "gbStep",
+  "gbEmbed",
+  "gbContentRef",
+  "gbSourceRef",
+  "gbDemo",
+  "gbCommand",
+  "gbColumns",
+  "gbColumn",
+  "gbFigure",
+  "gbMath",
+  "gbUpdates",
+  "gbUpdate",
+  "gbOpenapi",
+  "gbDefinition",
+  "gbRaw",
+  "gbInlineImage",
+  "gbAttachment",
+]
+
+/**
+ * `md`: how the Markdown laid a node out — docstream's layout fields (blank lines around it, fences,
+ * markers, tag lines as written, image syntax, …) — and, on link and code marks, the link's title /
+ * reference label / HTML tag / identity and the code span's backtick count. Opaque to the editor: set from
+ * the docstream AST and handed back, so pages round-trip byte-for-byte; docstream ignores whatever no longer
+ * fits after an edit. Not carried onto the second half of a split block.
+ */
+export const GbMarkdownLayout = Extension.create({
+  name: "gbMarkdownLayout",
+  addGlobalAttributes() {
+    return [
+      { types: LAYOUT_NODES, attributes: { md: jsonAttribute("data-md", "md") } },
+      { types: ["link", "code"], attributes: { md: jsonAttribute("data-md", "md") } },
+    ]
+  },
+})
+
+/**
+ * Characters the Markdown wrote backslash-escaped (`snake\_case`): kept escaped on the way out. Not
+ * extended by typing next to it.
+ */
+export const GbEscaped = Mark.create({
+  name: "mdEscaped",
+  inclusive: false,
+  excludes: "",
+  parseHTML() {
+    return [{ tag: "span[data-md-escaped]" }]
+  },
+  renderHTML() {
+    return ["span", { "data-md-escaped": "" }, 0]
   },
 })
 
@@ -145,6 +240,8 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
     Placeholder.configure({ placeholder }),
     GbLinkInner,
     GbMarkSpelling,
+    GbMarkdownLayout,
+    GbEscaped,
     ...gitbookNodes,
   ]
 

@@ -519,7 +519,13 @@ export const GbContentRef = Node.create({
   atom: true,
   addAttributes() {
     // `linked`: the label is written as a link to the page (`[Card](card.md)`, GitBook's form).
-    return { url: { default: "" }, label: { default: "" }, linked: { default: true, rendered: false } }
+    // `children`: the label's inlines when they say more than plain / linked text (emphasis, several runs).
+    return {
+      url: { default: "" },
+      label: { default: "" },
+      linked: { default: true, rendered: false },
+      children: { default: null, rendered: false },
+    }
   },
   parseHTML() {
     return [{ tag: "div[data-gb-content-ref]" }]
@@ -1000,7 +1006,8 @@ export const GbFigure = Node.create({
   group: "block",
   atom: true,
   addAttributes() {
-    return { src: { default: "" }, alt: { default: "" }, caption: { default: "" } }
+    // `title`: a Markdown image's `![alt](src "title")`.
+    return { src: { default: "" }, alt: { default: "" }, caption: { default: "" }, title: { default: null, rendered: false } }
   },
   parseHTML() {
     return [{ tag: "div[data-gb-figure]" }]
@@ -1388,6 +1395,135 @@ export const GbOpenapi = Node.create({
   },
 })
 
+// ---------- Reference definitions (`[label]: url "title"`) ----------
+
+function DefinitionView({ node, updateAttributes, editor }: NodeViewProps) {
+  const { label, url, title } = node.attrs
+  return (
+    <NodeViewWrapper className="gb-definition" contentEditable={false}>
+      {editor.isEditable ? (
+        <>
+          <span className="gb-definition-bracket">[</span>
+          <input
+            className="gb-inline-input gb-definition-label"
+            value={label}
+            placeholder="label"
+            onChange={(e) => updateAttributes({ label: e.target.value })}
+          />
+          <span className="gb-definition-bracket">]:</span>
+          <input
+            className="gb-inline-input gb-definition-url"
+            value={url}
+            placeholder="https://…"
+            onChange={(e) => updateAttributes({ url: e.target.value })}
+          />
+          <input
+            className="gb-inline-input gb-definition-title"
+            value={title ?? ""}
+            placeholder="Title (optional)"
+            onChange={(e) => updateAttributes({ title: e.target.value || null })}
+          />
+        </>
+      ) : (
+        <code>{`[${label}]: ${url}${title ? ` "${title}"` : ""}`}</code>
+      )}
+    </NodeViewWrapper>
+  )
+}
+
+/**
+ * A reference-style link definition, where the Markdown put it. Links written `[text][label]`,
+ * `[text][]` or `[label]` resolve through it; it renders nothing in docs.
+ */
+export const GbDefinition = Node.create({
+  name: "gbDefinition",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return { label: { default: "" }, url: { default: "" }, title: { default: null } }
+  },
+  parseHTML() {
+    return [
+      {
+        tag: "div[data-gb-definition]",
+        getAttrs: (el) => ({
+          label: (el as HTMLElement).getAttribute("data-gb-definition") ?? "",
+          url: (el as HTMLElement).getAttribute("data-url") ?? "",
+          title: (el as HTMLElement).getAttribute("data-title"),
+        }),
+      },
+    ]
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, {
+        "data-gb-definition": node.attrs.label,
+        "data-url": node.attrs.url,
+        ...(node.attrs.title !== null ? { "data-title": node.attrs.title } : {}),
+      }),
+    ]
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(DefinitionView)
+  },
+})
+
+// ---------- Lines kept verbatim (unknown `{% tags %}`) ----------
+
+function RawView({ node, updateAttributes, editor }: NodeViewProps) {
+  return (
+    <NodeViewWrapper className="gb-raw" contentEditable={false}>
+      {editor.isEditable ? (
+        <input
+          className="gb-inline-input gb-raw-input"
+          value={node.attrs.markdown}
+          onChange={(e) => updateAttributes({ markdown: e.target.value })}
+        />
+      ) : (
+        <code>{node.attrs.markdown}</code>
+      )}
+    </NodeViewWrapper>
+  )
+}
+
+/** A line docstream keeps as written without modelling it (an unknown `{% tag %}`). */
+export const GbRaw = Node.create({
+  name: "gbRaw",
+  group: "block",
+  atom: true,
+  addAttributes() {
+    return { markdown: { default: "" } }
+  },
+  parseHTML() {
+    return [{ tag: "div[data-gb-raw]", getAttrs: (el) => ({ markdown: (el as HTMLElement).getAttribute("data-gb-raw") ?? "" }) }]
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    return ["div", mergeAttributes(HTMLAttributes, { "data-gb-raw": node.attrs.markdown })]
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(RawView)
+  },
+})
+
+/**
+ * A link without text (`[](url)`): an empty inline that carries the link mark (and any emphasis), since
+ * ProseMirror has no empty text runs.
+ */
+export const GbEmptyLink = Node.create({
+  name: "gbEmptyLink",
+  group: "inline",
+  inline: true,
+  atom: true,
+  selectable: true,
+  parseHTML() {
+    return [{ tag: "span[data-gb-empty-link]" }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["span", mergeAttributes(HTMLAttributes, { "data-gb-empty-link": "", class: "gb-empty-link" })]
+  },
+})
+
 export const gitbookNodes = [
   GbHint,
   GbTabs,
@@ -1410,4 +1546,7 @@ export const gitbookNodes = [
   GbInlineImage,
   GbReference,
   GbAttachment,
+  GbDefinition,
+  GbRaw,
+  GbEmptyLink,
 ]

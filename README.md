@@ -17,6 +17,11 @@ TipTap editor components for Docstream GitBook-style markdown documents.
   serializes it back byte-for-byte — demos with their inline files, install command boxes, titled
   tab sets and all. Inline code may combine with links, bold, italic and strike
   (``[`@brett_lamy/ui`](url)``, ``**bold `x` text**``); the editor's `GbCode` mark allows it.
+- Lossless: any Markdown page comes back byte-for-byte through the editor. docstream's layout fields
+  (blank lines, fences, list markers, tag lines, raw HTML, …) ride on each node's `md` attribute
+  (`GbMarkdownLayout`); link details and code-span backticks on the link / code marks; escapes as the
+  `mdEscaped` mark; nested same-type emphasis as `more` on the mark; reference definitions and unknown
+  `{% tags %}` as `gbDefinition` / `gbRaw` blocks; chips and inline images carry emphasis and link marks.
 - Preserves mounted source-file/export provenance and can write edits to the real file through Vite.
 
 ## Installation
