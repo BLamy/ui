@@ -127,10 +127,11 @@ describe("links inside emphasis (linkInner)", () => {
     expect(throughEditor(markdown)).toBe(markdown)
   })
 
-  it("matches docstream's own parse → serialize where that isn't byte-stable either", () => {
-    // docstream serializes a link inside a longer emphasis run per text node; the editor adds nothing.
-    const markdown = "A **bold [link](https://a.dev) inside** run.\n"
-    expect(throughEditor(markdown)).toBe(serializeMarkdown(parseMarkdown(markdown)))
+  it("keeps a link inside a longer emphasis run, and a link around several runs, whole", () => {
+    for (const markdown of ["A **bold [link](https://a.dev) inside** run.\n", "A [**bold** link](https://a.dev) run.\n"]) {
+      expect(throughEditor(markdown)).toBe(markdown)
+      expect(throughEditor(markdown)).toBe(serializeMarkdown(parseMarkdown(markdown)))
+    }
   })
 
   it("marks the inner form on the link mark only", () => {

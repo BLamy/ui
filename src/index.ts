@@ -5,7 +5,7 @@ export type { PMNode } from "./editor/convert"
 
 // Building blocks for composing a custom editor (e.g. with Yjs collaboration
 // or a bespoke slash menu) instead of the batteries-included GitbookEditor.
-export { createGitbookExtensions, getGitbookSchema, GbCode, GbTable, GbLinkInner } from "./editor/extensions"
+export { createGitbookExtensions, getGitbookSchema, GbCode, GbTable, GbLinkInner, GbMarkSpelling } from "./editor/extensions"
 export type { GitbookExtensionOptions, ReferenceSources } from "./editor/extensions"
 export { gitbookNodes, GbCodeBlock, GbCommand, GbDemo, GbReference } from "./editor/nodes"
 export { GbAttachment, formatBytes } from "./editor/attachments"

@@ -1,4 +1,6 @@
 import {
+  defaultInlineDelims,
+  inlineDelims,
   parseMarkdown,
   plainText,
   serializeMarkdown,
@@ -11,8 +13,23 @@ import {
   type DemoViewport,
   type DocumentNode,
   type Inline,
+  type InlineDelimiter,
   type ListItemNode,
+  type TextNode,
 } from "@brett_lamy/docstream/gitbook"
+
+type SpelledMark = "bold" | "italic" | "strike" | "link"
+/** The PM mark each docstream delimiter spells. */
+const DELIM_MARK: Record<InlineDelimiter, SpelledMark> = {
+  "**": "bold",
+  __: "bold",
+  "*": "italic",
+  _: "italic",
+  "~~": "strike",
+  link: "link",
+  "<>": "link",
+  url: "link",
+}
 
 // Attachment chips live in markdown as images with an `attachment:<id>` URL.
 const ATTACHMENT_SCHEME = "attachment:"
@@ -58,13 +75,24 @@ function inlineToPM(nodes: Inline[]): PMNode[] {
           },
         }
       }
+      // A run spelled other than the default (`***x***`, `**_x_**`, `*x*`) puts each mark's marker and
+      // nesting depth on the mark; `tiptapToAst` turns them back into `delims`.
+      const spelling = n.delims?.length ? inlineDelims(n) : []
+      const spelled = (mark: SpelledMark): Record<string, unknown> => {
+        const depth = spelling.findIndex((d) => DELIM_MARK[d] === mark)
+        return depth < 0 ? {} : { delim: spelling[depth], depth }
+      }
       const marks: PMNode["marks"] = []
-      if (n.bold) marks.push({ type: "bold" })
-      if (n.italic) marks.push({ type: "italic" })
-      if (n.strike) marks.push({ type: "strike" })
+      const emphasis = (type: "bold" | "italic" | "strike") => {
+        const attrs = spelled(type)
+        marks.push(Object.keys(attrs).length ? { type, attrs } : { type })
+      }
+      if (n.bold) emphasis("bold")
+      if (n.italic) emphasis("italic")
+      if (n.strike) emphasis("strike")
       if (n.code) marks.push({ type: "code" })
       // `inner` keeps `**[x](url)**` (link inside the emphasis) apart from `[**x**](url)`.
-      if (n.link) marks.push({ type: "link", attrs: { href: n.link, ...(n.linkInner ? { inner: true } : {}) } })
+      if (n.link) marks.push({ type: "link", attrs: { href: n.link, ...(n.linkInner ? { inner: true } : {}), ...spelled("link") } })
       return { type: "text", text: n.text, ...(marks.length ? { marks } : {}) }
     })
 }
@@ -308,7 +336,8 @@ function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
           ...(a.link ? { link: String(a.link) } : {}),
         }
       }
-      const inline: Inline = { type: "text", text: n.text! }
+      const inline: TextNode = { type: "text", text: n.text! }
+      const spelling: Array<[number, InlineDelimiter]> = []
       for (const mark of n.marks ?? []) {
         if (mark.type === "bold") inline.bold = true
         if (mark.type === "italic") inline.italic = true
@@ -318,8 +347,16 @@ function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
           inline.link = String(mark.attrs?.href ?? "")
           if (mark.attrs?.inner) inline.linkInner = true
         }
+        const delim = mark.attrs?.delim as InlineDelimiter | undefined
+        const depth = mark.attrs?.depth
+        if (delim && typeof depth === "number" && DELIM_MARK[delim] === mark.type) spelling.push([depth, delim])
       }
       if (inline.linkInner && !(inline.bold || inline.italic || inline.strike)) delete inline.linkInner
+      if (spelling.length) {
+        const delims = spelling.sort((a, b) => a[0] - b[0]).map(([, d]) => d)
+        const fallback = defaultInlineDelims(inline)
+        if (delims.length !== fallback.length || delims.some((d, k) => d !== fallback[k])) inline.delims = delims
+      }
       return inline
     })
 }

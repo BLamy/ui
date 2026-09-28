@@ -51,6 +51,40 @@ export const GbLinkInner = Extension.create({
   },
 })
 
+/**
+ * `delim` / `depth` on bold, italic, strike and link marks: how the Markdown spelled the run — its marker
+ * (`*` vs `_`, `**` vs `__`, the link form `link` / `<>` / `url`) and its nesting position (0 = outermost).
+ * Set only on runs whose spelling differs from docstream's default (docstream `TextNode.delims`), so
+ * `***x***`, `**_x_**` and `*italic*` round-trip byte-for-byte. Marks added in the editor carry neither and
+ * get the default spelling.
+ */
+export const GbMarkSpelling = Extension.create({
+  name: "gbMarkSpelling",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["bold", "italic", "strike", "link"],
+        attributes: {
+          delim: {
+            default: null,
+            parseHTML: (element) => element.getAttribute("data-md-delim"),
+            renderHTML: (attributes) => (attributes.delim ? { "data-md-delim": attributes.delim } : {}),
+          },
+          depth: {
+            default: null,
+            parseHTML: (element) => {
+              const depth = element.getAttribute("data-md-depth")
+              return depth === null || depth === "" || Number.isNaN(Number(depth)) ? null : Number(depth)
+            },
+            renderHTML: (attributes) =>
+              typeof attributes.depth === "number" ? { "data-md-depth": String(attributes.depth) } : {},
+          },
+        },
+      },
+    ]
+  },
+})
+
 export interface ReferenceSources {
   /** "@" — people, agents, … */
   mentions?: ReferenceSource
@@ -110,6 +144,7 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
     TableCell,
     Placeholder.configure({ placeholder }),
     GbLinkInner,
+    GbMarkSpelling,
     ...gitbookNodes,
   ]
 
