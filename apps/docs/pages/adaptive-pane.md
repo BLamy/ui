@@ -59,6 +59,7 @@ The templates share two more primitives, exported from `@brett_lamy/ui`:
 | Export | Role |
 | --- | --- |
 | `useContainerWidth(initial?)` | Returns `[ref, width]`; a ResizeObserver keeps `width` in sync with the element, not the viewport. |
+| `useContainerSize(initial?)` | The same with both axes: returns `[ref, { width, height }]` (for positioning things against the box, like a mini player above a tab bar). |
 | `defineSlot(name)` / `collectSlots(children)` | Marker components for compound slots (`Shell.Main`) and the reader that maps them to their children. |
 
 ## Live example

@@ -1,0 +1,9 @@
+{
+  "title": "SplitView · gallery (hidden supplementary)",
+  "status": "Live",
+  "variants": [
+    { "id": "gallery", "label": "Gallery" },
+    { "id": "list", "label": "List" }
+  ],
+  "variantsWidth": 200
+}

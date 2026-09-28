@@ -10,11 +10,16 @@
      medium    supplementary · detail tiled; the sidebar floats over them (overlay) or pushes them (displace)
      compact   one column at a time — selecting pushes the next column, back / edge-swipe / Esc pops
 
+   A column can host its own push/pop stack (<SplitViewStack>, or `<SplitViewDetail stack>`): its pages slide
+   like the compact columns do, and the edge swipe / Esc / back button pop the innermost level first — the
+   column stack only moves once the nested one is at its root. The supplementary column can be hidden
+   (`supplementaryVisible={false}`, Notes' gallery): it slides away and the detail takes its space.
+
    Motion follows lib/motion.ts: `springs.smooth` for every column move (interruptible — a motion value is
    retargeted mid-flight and keeps its velocity), instant while a divider or the back swipe is being dragged,
    and no movement at all under prefers-reduced-motion. */
 import {
-  createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState,
+  createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState,
   type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode,
 } from 'react';
 import { animate, motion, useMotionValue, type MotionValue } from 'framer-motion';
@@ -23,7 +28,9 @@ import { useFocusRing, useHover, useMove, mergeProps } from 'react-aria';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { useContainerWidth } from '../lib/container';
-import { springs, useReducedMotion } from '../lib/motion';
+import { AnimatedHeight } from './animated-height';
+import { Chevron } from './icon-swap';
+import { fades, springs, useReducedMotion } from '../lib/motion';
 import { cn } from '../lib/utils';
 
 export type SplitViewColumn = 'sidebar' | 'supplementary' | 'detail';
@@ -62,11 +69,16 @@ function computeLayout(o: {
   W: number; wc: SplitViewWidthClass; present: SplitViewColumn[]; specs: Partial<Record<SplitViewColumn, ColumnSpec>>;
   widths: Partial<Record<SplitViewColumn, number>>; sidebarVisible: boolean; behavior: Exclude<SplitViewSidebarBehavior, 'auto'>;
   top: SplitViewColumn; swipe: number;
+  /** Registered columns that are hidden (the supplementary in gallery mode): laid out off to the side. */
+  hidden?: SplitViewColumn[];
 }) {
-  const { W, wc, present, specs, widths, sidebarVisible, behavior, top, swipe } = o;
+  const { W, wc, present, specs, widths, sidebarVisible, behavior, top, swipe, hidden = [] } = o;
   const out: Partial<Record<SplitViewColumn, ColumnLayout>> = {};
   let scrim = 0;
+  const off = (c: SplitViewColumn, x: number, width: number): ColumnLayout =>
+    ({ x, width, z: 0, dim: 0, inert: true, lifted: false, resizable: false, hairline: true });
   if (wc === 'compact') {
+    hidden.forEach((c) => { out[c] = off(c, W + 24, W); });
     const t = Math.max(0, present.indexOf(top));
     const p = W ? clamp(swipe / W, 0, 1) : 0;
     present.forEach((c, i) => {
@@ -96,6 +108,13 @@ function computeLayout(o: {
     if (sideShown && behavior !== 'tile') scrim = behavior === 'overlay' ? 1 : 0.6;
   }
   const rest = present.filter((c) => c !== 'sidebar' || !hasSide);
+  // A hidden column tucks in behind the leading edge of the space it gave up (under a tiled sidebar, or
+  // off-screen), keeping its width so it slides back out unchanged.
+  hidden.forEach((c) => {
+    const s = spec(c);
+    const w = clamp(widths[c] ?? s.width, s.minWidth, s.maxWidth);
+    out[c] = off(c, shift - w - 1, w);
+  });
   let x = shift;
   rest.forEach((c, i) => {
     const last = i === rest.length - 1;
@@ -122,7 +141,7 @@ export interface SplitViewState {
   collapsed: boolean;
   /** Measured width of the SplitView, px. */
   width: number;
-  /** Columns that are rendered, in order. */
+  /** Columns that are shown, in order (a hidden supplementary is left out). */
   columns: SplitViewColumn[];
   sidebarVisible: boolean;
   setSidebarVisible: (visible: boolean) => void;
@@ -141,6 +160,9 @@ export interface SplitViewState {
   canGoBack: boolean;
   widths: Partial<Record<SplitViewColumn, number>>;
   setColumnWidth: (column: SplitViewColumn, width: number) => void;
+  /** False while the supplementary column is hidden and the detail has taken its space. */
+  supplementaryVisible: boolean;
+  setSupplementaryVisible: (visible: boolean) => void;
 }
 type Tracking = 'drag' | 'resize' | false;
 interface InternalState extends SplitViewState {
@@ -184,9 +206,20 @@ export interface SplitViewProps {
   sidebarBehavior?: SplitViewSidebarBehavior;
   /** Controlled sidebar visibility. */
   sidebarVisible?: boolean;
-  /** Initial sidebar visibility at regular width (medium always starts hidden). Default true. */
+  /** Sidebar visibility at regular width — shorthand for `sidebarVisibility={{ regular }}`. Default true. */
   defaultSidebarVisible?: boolean;
+  /** The visibility the sidebar starts at, and resets to whenever the width class changes, per class.
+   *  Default `{ regular: defaultSidebarVisible, medium: false }`. */
+  sidebarVisibility?: Partial<Record<Exclude<SplitViewWidthClass, 'compact'>, boolean>>;
+  /** Every visibility change: the toggle, the scrim, Esc, picking in a floating sidebar — and the reset to
+   *  `sidebarVisibility` when the width class changes, so a controlling parent can simply mirror it. */
   onSidebarVisibleChange?: (visible: boolean) => void;
+  /** Controlled supplementary visibility. `false` slides the supplementary away and the detail takes its space
+   *  (Notes' gallery); when collapsed, the stack skips it. */
+  supplementaryVisible?: boolean;
+  /** Default true. */
+  defaultSupplementaryVisible?: boolean;
+  onSupplementaryVisibleChange?: (visible: boolean) => void;
   selection?: SplitViewSelection;
   defaultSelection?: SplitViewSelection;
   onSelectionChange?: (selection: SplitViewSelection) => void;
@@ -203,7 +236,8 @@ export interface SplitViewProps {
 
 export function SplitView({
   widthClass: wcProp, breakpoints = { medium: 640, regular: 1024 }, sidebarBehavior = 'auto',
-  sidebarVisible: sideProp, defaultSidebarVisible = true, onSidebarVisibleChange,
+  sidebarVisible: sideProp, defaultSidebarVisible = true, sidebarVisibility, onSidebarVisibleChange,
+  supplementaryVisible: suppProp, defaultSupplementaryVisible = true, onSupplementaryVisibleChange,
   selection: selProp, defaultSelection, onSelectionChange, defaultCompactColumn, onCompactColumnChange,
   onWidthClassChange, children, className, style, ...aria
 }: SplitViewProps) {
@@ -222,22 +256,41 @@ export function SplitView({
       return { ...s, [c]: spec };
     });
   }, []);
-  const present = ORDER.filter((c) => specs[c]);
+  const [suppState, setSuppState] = useState(defaultSupplementaryVisible);
+  const suppVisible = suppProp ?? suppState;
+  const onSuppRef = useRef(onSupplementaryVisibleChange); onSuppRef.current = onSupplementaryVisibleChange;
+  const setSupplementaryVisible = useCallback((v: boolean) => { setSuppState(v); onSuppRef.current?.(v); }, []);
+  const registered = ORDER.filter((c) => specs[c]);
+  const hidden: SplitViewColumn[] = !suppVisible && specs.supplementary && specs.detail ? ['supplementary'] : [];
+  const present = registered.filter((c) => !hidden.includes(c));
   const [titles, setTitles] = useState<Partial<Record<SplitViewColumn, string>>>({});
   const setTitle = useCallback((c: SplitViewColumn, t: string | undefined) => {
     setTitles((s) => (s[c] === t ? s : { ...s, [c]: t }));
   }, []);
 
-  // Sidebar visibility: reset to the class default whenever the width class changes.
-  const [sideState, setSideState] = useState(wc === 'regular' ? defaultSidebarVisible : false);
+  // Sidebar visibility: reset to the class default whenever the width class changes — and say so, so a
+  // controlling parent follows the reset instead of re-implementing it.
+  const classDefault = (c: SplitViewWidthClass) =>
+    c === 'regular' ? sidebarVisibility?.regular ?? defaultSidebarVisible : c === 'medium' ? sidebarVisibility?.medium ?? false : false;
+  const [sideState, setSideState] = useState(() => classDefault(wc));
   const [prevWc, setPrevWc] = useState(wc);
   if (prevWc !== wc) {
     setPrevWc(wc);
-    setSideState(wc === 'regular' ? defaultSidebarVisible : false);
+    setSideState(classDefault(wc));
   }
   const sidebarVisible = sideProp ?? sideState;
   const onSideRef = useRef(onSidebarVisibleChange); onSideRef.current = onSidebarVisibleChange;
   const setSidebarVisible = useCallback((v: boolean) => { setSideState(v); onSideRef.current?.(v); }, []);
+  const committedSide = useRef(sidebarVisible);
+  // The first measurement (mount → the real width) is where the sidebar *starts*, not a change to report.
+  const settled = useRef(false);
+  const classDefaultRef = useRef(classDefault); classDefaultRef.current = classDefault;
+  useEffect(() => {
+    if (!settled.current) return;
+    const v = classDefaultRef.current(wc);
+    if (v !== committedSide.current) onSideRef.current?.(v);
+  }, [wc]);
+  useEffect(() => { committedSide.current = sidebarVisible; });
   const wcRef = useRef(onWidthClassChange); wcRef.current = onWidthClassChange;
   useEffect(() => { wcRef.current?.(wc); }, [wc]);
 
@@ -285,13 +338,13 @@ export function SplitView({
   const drag = useRef<{ x0: number; y0: number; on: boolean; last: number; lt: number; vel: number } | null>(null);
   const [resizing, setResizing] = useState(false);
 
-  const { columns: layout, scrim } = computeLayout({ W, wc, present, specs, widths, sidebarVisible, behavior, top, swipe });
+  const { columns: layout, scrim } = computeLayout({ W, wc, present, specs, widths, sidebarVisible, behavior, top, swipe, hidden });
 
   // First paint lands in place; springs start once the layout has settled.
   const [ready, setReady] = useState(false);
   useEffect(() => {
     let b = 0;
-    const a = requestAnimationFrame(() => { b = requestAnimationFrame(() => setReady(true)); });
+    const a = requestAnimationFrame(() => { b = requestAnimationFrame(() => { settled.current = true; setReady(true); }); });
     return () => { cancelAnimationFrame(a); cancelAnimationFrame(b); };
   }, []);
 
@@ -307,7 +360,7 @@ export function SplitView({
   const value: InternalState = {
     widthClass: wc, collapsed, width: W, columns: present, sidebarVisible: present.includes('sidebar') && sidebarVisible,
     setSidebarVisible, toggleSidebar, sidebarBehavior: behavior, selection, select, isSelected, topColumn: top, show, back,
-    canGoBack: collapsed && tIdx > 0, widths, setColumnWidth,
+    canGoBack: collapsed && tIdx > 0, widths, setColumnWidth, supplementaryVisible: suppVisible, setSupplementaryVisible,
     layout, specs, register, titles, setTitle, instant: !ready || reduce,
     tracking: resizing || swipe > 0 ? 'drag' : widthOnly ? 'resize' : false, setResizing, idFor, rootRef: ref,
   };
@@ -316,6 +369,8 @@ export function SplitView({
     if (!collapsed || tIdx < 1 || e.button) return;
     const r = e.currentTarget.getBoundingClientRect();
     if (e.clientX - r.left > 28) return;
+    // A nested stack that can pop owns the edge swipe: only the innermost level goes back.
+    if (innerStackCanPop(e.target, e.currentTarget)) return;
     drag.current = { x0: e.clientX, y0: e.clientY, on: false, last: e.clientX, lt: performance.now(), vel: 0 };
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -338,7 +393,7 @@ export function SplitView({
     setSwipe(0);
   };
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    if (e.key !== 'Escape' || e.defaultPrevented || innerStackCanPop(e.target, e.currentTarget)) return;
     if (!collapsed && value.sidebarVisible && behavior !== 'tile') { setSidebarVisible(false); e.preventDefault(); }
     else if (collapsed && tIdx > 0) { back(); e.preventDefault(); }
   };
@@ -355,6 +410,19 @@ export function SplitView({
       </div>
     </Ctx.Provider>
   );
+}
+
+/** True when `target` sits in a nested stack (a SplitViewStack or a NavigationStack) that is deeper than its
+ *  root — that stack pops itself, so the split view must not pop a column too. */
+function innerStackCanPop(target: EventTarget | null, root: Element) {
+  let el = target instanceof Element ? target : null;
+  while (el && el !== root) {
+    if (el.hasAttribute('data-split-stack-can-pop')) return true;
+    if (el.getAttribute('data-slot') === 'navigation-stack'
+      && [...el.children].filter((c) => c.getAttribute('data-slot') === 'screen').length > 1) return true;
+    el = el.parentElement;
+  }
+  return false;
 }
 
 /** Drives a motion value toward `target`: jumps when instant, follows 1:1 while tracking, else springs
@@ -386,6 +454,8 @@ export interface SplitViewColumnProps {
   maxWidth?: number;
   /** Draggable divider on the trailing edge (tiled only). Default true for sidebar and supplementary. */
   resizable?: boolean;
+  /** Host a push/pop stack: the children become its root page (see `SplitViewStack`, `useSplitViewStack`). */
+  stack?: boolean;
   /** Accessible name of the column region. */
   'aria-label'?: string;
   children?: ReactNode;
@@ -399,7 +469,7 @@ const COLUMN_BG: Record<SplitViewColumn, string> = {
   detail: 'bg-background',
 };
 
-function ColumnPart({ column, width, minWidth, maxWidth, resizable, children, className, style, ...aria }: SplitViewColumnProps & { column: SplitViewColumn }) {
+function ColumnPart({ column, width, minWidth, maxWidth, resizable, stack, children, className, style, ...aria }: SplitViewColumnProps & { column: SplitViewColumn }) {
   const s = useInternal(`SplitView${column[0].toUpperCase()}${column.slice(1)}`);
   const d = DEFAULTS[column];
   const spec = { width: width ?? d.width, minWidth: minWidth ?? d.minWidth, maxWidth: maxWidth ?? d.maxWidth, resizable: resizable ?? d.resizable };
@@ -440,7 +510,7 @@ function ColumnPart({ column, width, minWidth, maxWidth, resizable, children, cl
           l?.hairline && 'shadow-[inset_-1px_0_0_var(--bl-sep)]',
           className,
         )} style={style}>
-          {children}
+          <Pane>{stack ? <SplitViewStack>{children}</SplitViewStack> : children}</Pane>
           <motion.div aria-hidden="true" className="pointer-events-none absolute inset-0 z-50 bg-black" style={{ opacity: dim }} />
         </div>
         <div aria-hidden="true" className={cn(
@@ -514,52 +584,157 @@ function Resizer({ column }: { column: SplitViewColumn }) {
   );
 }
 
+/* ── Panes: one header + content pair that scroll together (a column, or one page of a nested stack) ── */
+interface PaneState {
+  /** A large title the pane's SplitViewContent draws at the top of its scroll. */
+  large: ReactNode;
+  setLarge: (title: ReactNode) => void;
+  /** The large title has scrolled under the bar: the header shows the inline title and its hairline. */
+  under: boolean;
+  setUnder: (under: boolean) => void;
+  contents: number;
+  addContent: () => () => void;
+}
+const PaneCtx = createContext<PaneState | null>(null);
+
+function Pane({ children }: { children?: ReactNode }) {
+  const [large, setLarge] = useState<ReactNode>(null);
+  const [under, setUnder] = useState(false);
+  const [contents, setContents] = useState(0);
+  const addContent = useCallback(() => {
+    setContents((n) => n + 1);
+    return () => setContents((n) => n - 1);
+  }, []);
+  const value = useMemo(() => ({ large, setLarge, under, setUnder, contents, addContent }), [large, under, contents, addContent]);
+  return <PaneCtx.Provider value={value}>{children}</PaneCtx.Provider>;
+}
+
+function LargeTitle({ children, titleRef }: { children: ReactNode; titleRef?: React.Ref<HTMLHeadingElement> }) {
+  return (
+    <div data-slot="split-view-large-title" className="px-4 pt-1 pb-2">
+      <h1 ref={titleRef} className="m-0 truncate text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]">{children}</h1>
+    </div>
+  );
+}
+
 /* ── Column chrome ── */
 export interface SplitViewHeaderProps {
   title?: ReactNode;
+  /** iOS large title: drawn big at the top of the pane's SplitViewContent and scrolling with it; once it has
+   *  gone under the bar the inline title (and the bar's hairline) spring in. */
+  largeTitle?: boolean;
   /** Leading items (e.g. <SplitViewToggle/>). Replaced by the back button when collapsed and not the root. */
   leading?: ReactNode;
   trailing?: ReactNode;
-  /** Back button label; defaults to the previous column's title. */
+  /** Back button label; defaults to the previous column's (or stack page's) title, truncated to the room
+   *  the title leaves. */
   backLabel?: string;
   className?: string;
   style?: CSSProperties;
 }
 
-/** Column bar: back button when collapsed, title, leading / trailing items. */
-export function SplitViewHeader({ title, leading, trailing, backLabel, className, style }: SplitViewHeaderProps) {
+/** Column bar: back button when collapsed (or on a pushed stack page), title, leading / trailing items. */
+export function SplitViewHeader({ title, largeTitle, leading, trailing, backLabel, className, style }: SplitViewHeaderProps) {
   const s = useInternal('SplitViewHeader');
   const column = useContext(ColumnCtx);
+  const page = useContext(PageCtx);
+  const pane = useContext(PaneCtx);
+  const reduce = !!useReducedMotion();
   const { setTitle } = s;
   const t = typeof title === 'string' ? title : undefined;
-  useLayoutEffect(() => { if (column) setTitle(column, t); }, [column, t, setTitle]);
+  const rootPage = !page || page.index === 0;
+  useLayoutEffect(() => { if (column && rootPage) setTitle(column, t); }, [column, t, setTitle, rootPage]);
+  const setPageTitle = page?.stack.setTitle;
+  const pageKey = page?.pageKey;
+  useLayoutEffect(() => { if (setPageTitle && pageKey) setPageTitle(pageKey, t); }, [setPageTitle, pageKey, t]);
+
+  // Back: a pushed stack page pops its stack; otherwise the collapsed column stack pops a column.
+  const inPage = !!page && page.index > 0;
   const i = column ? s.columns.indexOf(column) : -1;
   const prev = i > 0 ? s.columns[i - 1] : null;
-  const showBack = s.collapsed && !!prev;
-  const label = backLabel ?? (prev ? s.titles[prev] : undefined) ?? 'Back';
+  const showBack = inPage || (s.collapsed && !!prev);
+  const prevTitle = inPage ? page.stack.titleAt(page.index - 1) : prev ? s.titles[prev] : undefined;
+  const label = backLabel ?? prevTitle ?? 'Back';
+  const onBack = inPage ? page.stack.pop : s.back;
+
+  // Large title.
+  const large = !!largeTitle && title != null;
+  const setLarge = pane?.setLarge;
+  useLayoutEffect(() => { setLarge?.(large ? title : null); }, [setLarge, large, title]);
+  useLayoutEffect(() => () => setLarge?.(null), [setLarge]);
+  const inContent = large && !!pane && pane.contents > 0;
+  const inline = !large || (inContent && pane.under);
+
+  // The back label may use the room the centered title leaves on its side.
+  const head = useRef<HTMLDivElement | null>(null);
+  const titleEl = useRef<HTMLDivElement | null>(null);
+  const [backMax, setBackMax] = useState<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    const h = head.current;
+    if (!showBack || !h) return;
+    const m = () => {
+      const tw = titleEl.current?.offsetWidth ?? 0;
+      setBackMax(Math.max(44, tw ? (h.clientWidth - tw) / 2 - 10 : h.clientWidth * 0.6));
+    };
+    m();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(m);
+    ro.observe(h);
+    if (titleEl.current) ro.observe(titleEl.current);
+    return () => ro.disconnect();
+  }, [showBack, title]);
+
+  const titleCls = 'pointer-events-none absolute left-1/2 max-w-[56%] -translate-x-1/2 truncate text-[17px] font-semibold tracking-[-.2px]';
   return (
-    <div data-slot="split-view-header"
-      className={cn('relative z-30 flex h-[52px] shrink-0 items-center px-1.5 shadow-[inset_0_-1px_0_var(--bl-sep)]', className)} style={style}>
-      <div className="relative z-1 flex min-w-[44px] items-center">
-        {showBack ? (
-          <AriaButton onPress={s.back} data-slot="split-view-back"
-            className="bl-btn flex max-w-[150px] cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary outline-none data-[focus-visible]:rounded-lg data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
-            <Icon name="chevL" size={24} sw={2.4} />
-            <span className="truncate">{label.length <= 14 ? label : 'Back'}</span>
-          </AriaButton>
-        ) : leading}
+    <>
+      <div ref={head} data-slot="split-view-header" data-large-title={large || undefined}
+        className={cn('relative z-30 flex h-[52px] shrink-0 items-center px-1.5', !large && 'shadow-[inset_0_-1px_0_var(--bl-sep)]', className)} style={style}>
+        <div className="relative z-1 flex min-w-[44px] items-center">
+          {showBack ? (
+            <AriaButton onPress={onBack} data-slot="split-view-back" aria-label={label === 'Back' ? undefined : `Back to ${label}`}
+              className="bl-btn flex max-w-[150px] cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary outline-none data-[focus-visible]:rounded-lg data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring"
+              style={backMax != null ? { maxWidth: backMax } : undefined}>
+              <Icon name="chevL" size={24} sw={2.4} className="shrink-0" />
+              <span className="min-w-0 truncate">{label}</span>
+            </AriaButton>
+          ) : leading}
+        </div>
+        {large ? (
+          <>
+            <motion.div ref={titleEl} className={titleCls} aria-hidden={!inline || undefined}
+              initial={false} animate={{ opacity: inline ? 1 : 0, y: inline ? 0 : 8 }}
+              transition={reduce ? { duration: 0 } : { y: springs.snappy, opacity: inline ? fades.in : fades.out }}>{title}</motion.div>
+            <motion.span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-bl-sep"
+              initial={false} animate={{ opacity: inline ? 1 : 0 }} transition={reduce ? { duration: 0 } : inline ? fades.in : fades.out} />
+          </>
+        ) : <div ref={titleEl} className={titleCls}>{title}</div>}
+        <div className="relative z-1 ml-auto flex items-center gap-0.5">{trailing}</div>
       </div>
-      <div className="pointer-events-none absolute left-1/2 max-w-[56%] -translate-x-1/2 truncate text-[17px] font-semibold tracking-[-.2px]">{title}</div>
-      <div className="relative z-1 ml-auto flex items-center gap-0.5">{trailing}</div>
-    </div>
+      {large && !inContent ? <LargeTitle>{title}</LargeTitle> : null}
+    </>
   );
 }
 
-/** Scrolling body of a column. */
+/** Scrolling body of a column. Draws the header's large title, if it has one, at the top of the scroll. */
 export function SplitViewContent({ children, className, style }: { children?: ReactNode; className?: string; style?: CSSProperties }) {
+  const pane = useContext(PaneCtx);
+  const add = pane?.addContent;
+  useLayoutEffect(() => add?.(), [add]);
+  const large = pane?.large;
+  const setUnder = pane?.setUnder;
+  const scroller = useRef<HTMLDivElement | null>(null);
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const check = useCallback(() => {
+    const el = titleRef.current, sc = scroller.current;
+    if (!setUnder || !sc) return;
+    setUnder(!!el && sc.scrollTop > el.offsetTop + el.offsetHeight - 4);
+  }, [setUnder]);
+  const hasLarge = large != null;
+  useLayoutEffect(() => { check(); }, [check, hasLarge]);
   return (
-    <div data-slot="split-view-content"
+    <div ref={scroller} data-slot="split-view-content" onScroll={hasLarge ? check : undefined}
       className={cn('bl-scroll relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain', className)} style={style}>
+      {hasLarge ? <LargeTitle titleRef={titleRef}>{large}</LargeTitle> : null}
       {children}
     </div>
   );
@@ -587,8 +762,12 @@ export function SplitViewToggle({ className, ...aria }: SplitViewToggleProps) {
   );
 }
 
+/** Selected colours for a SplitViewItem: a background (foreground white), or both. */
+export type SplitViewItemTint = string | { background: string; foreground?: string };
+
 export interface SplitViewItemProps {
-  /** Selection id within this column. */
+  /** Selection value within this column. Several items may share one (the same mailbox under Favorites and
+   *  under its account): every item whose id is selected draws selected. */
   id: string;
   title?: ReactNode;
   subtitle?: ReactNode;
@@ -599,16 +778,25 @@ export interface SplitViewItemProps {
   children?: ReactNode;
   /** `pill` (sidebar default): inset rounded row. `row`: full-bleed list row with a separator. */
   variant?: 'pill' | 'row';
+  /** This item's own selection colour instead of the app tint (Reminders' coloured lists). Also colours the
+   *  icon while unselected. Exposed to custom content as `--split-item-tint` / `--split-item-on-tint`. */
+  tint?: SplitViewItemTint;
   onPress?: () => void;
   className?: string;
 }
 /** A selectable row bound to the column's selection: pressing it selects `id` and shows the next column. */
-export function SplitViewItem({ id, title, subtitle, icon, badge, children, variant, onPress, className }: SplitViewItemProps) {
+export function SplitViewItem({ id, title, subtitle, icon, badge, children, variant, tint, onPress, className }: SplitViewItemProps) {
   const s = useInternal('SplitViewItem');
   const column = useContext(ColumnCtx) ?? 'supplementary';
   const v = variant ?? (column === 'sidebar' ? 'pill' : 'row');
   const selected = s.isSelected(column, id);
   const pushes = s.collapsed && s.columns.indexOf(column) < s.columns.length - 1;
+  const tinted = tint != null;
+  const tintStyle = tinted ? {
+    '--split-item-tint': typeof tint === 'string' ? tint : tint.background,
+    '--split-item-on-tint': typeof tint === 'string' ? '#fff' : tint.foreground ?? '#fff',
+  } as CSSProperties : undefined;
+  const onSel = selected && v === 'pill';
   const onKeyDown = (e: ReactKeyboardEvent<HTMLElement>) => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     const col = e.currentTarget.closest('[data-slot^="split-view-"]');
@@ -618,6 +806,7 @@ export function SplitViewItem({ id, title, subtitle, icon, badge, children, vari
   };
   return (
     <AriaButton data-split-item="" data-slot="split-view-item" data-selected={selected || undefined} aria-current={selected || undefined}
+      data-tinted={tinted || undefined}
       onPress={() => { Haptics.selection(); s.select(column, id); onPress?.(); }}
       onKeyDown={onKeyDown}
       className={cn(
@@ -625,25 +814,265 @@ export function SplitViewItem({ id, title, subtitle, icon, badge, children, vari
         'transition-[background-color,color] duration-150',
         v === 'pill'
           ? cn('min-h-[40px] rounded-[10px] px-2.5 py-1.5 text-[15.5px]',
-            selected ? 'bg-primary text-primary-foreground' : 'bg-transparent data-[hovered]:bg-bl-fill data-[pressed]:bg-bl-press')
+            selected
+              ? tinted ? 'bg-(--split-item-tint) text-(--split-item-on-tint)' : 'bg-primary text-primary-foreground'
+              : 'bg-transparent data-[hovered]:bg-bl-fill data-[pressed]:bg-bl-press')
           : cn('min-h-[46px] px-4 py-2.5 text-[15.5px]',
-            selected ? 'bg-[color-mix(in_srgb,var(--bl-tint)_14%,transparent)]' : 'bg-transparent data-[hovered]:bg-bl-fill data-[pressed]:bg-bl-press'),
+            selected
+              ? tinted ? 'bg-[color-mix(in_srgb,var(--split-item-tint)_14%,transparent)]' : 'bg-[color-mix(in_srgb,var(--bl-tint)_14%,transparent)]'
+              : 'bg-transparent data-[hovered]:bg-bl-fill data-[pressed]:bg-bl-press'),
         'data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset',
         className,
-      )}>
+      )} style={tintStyle}>
       {children ?? (
         <>
-          {icon ? <span className={cn('grid w-6 shrink-0 place-items-center', selected && v === 'pill' ? 'text-primary-foreground' : 'text-primary')}>{icon}</span> : null}
+          {icon ? <span className={cn('grid w-6 shrink-0 place-items-center',
+            onSel ? tinted ? 'text-(--split-item-on-tint)' : 'text-primary-foreground' : tinted ? 'text-(--split-item-tint)' : 'text-primary')}>{icon}</span> : null}
           <span className="min-w-0 flex-1">
             <span className="block truncate leading-[1.3]">{title}</span>
-            {subtitle ? <span className={cn('mt-px block truncate text-[13px]', selected && v === 'pill' ? 'text-primary-foreground/80' : 'text-muted-foreground')}>{subtitle}</span> : null}
+            {subtitle ? <span className={cn('mt-px block truncate text-[13px]',
+              onSel ? tinted ? 'text-(--split-item-on-tint)/80' : 'text-primary-foreground/80' : 'text-muted-foreground')}>{subtitle}</span> : null}
           </span>
-          {badge != null ? <span className={cn('shrink-0 text-[14px] tabular-nums', selected && v === 'pill' ? 'text-primary-foreground/85' : 'text-muted-foreground')}>{badge}</span> : null}
-          {pushes ? <Icon name="chev" size={14} sw={2.6} className={cn('shrink-0', selected && v === 'pill' ? 'text-primary-foreground/70' : 'text-bl-label3')} /> : null}
+          {badge != null ? <span className={cn('shrink-0 text-[14px] tabular-nums',
+            onSel ? tinted ? 'text-(--split-item-on-tint)/85' : 'text-primary-foreground/85' : 'text-muted-foreground')}>{badge}</span> : null}
+          {pushes ? <Icon name="chev" size={14} sw={2.6} className={cn('shrink-0',
+            onSel ? tinted ? 'text-(--split-item-on-tint)/70' : 'text-primary-foreground/70' : 'text-bl-label3')} /> : null}
         </>
       )}
       {v === 'row' ? <span aria-hidden="true" className="pointer-events-none absolute right-0 bottom-0 left-4 h-px bg-border" /> : null}
     </AriaButton>
+  );
+}
+
+export interface SplitViewSectionProps {
+  /** Section label ("Favorites", "iCloud"). */
+  title?: ReactNode;
+  /** The label becomes a disclosure button that folds the section with a spring. */
+  collapsible?: boolean;
+  expanded?: boolean;
+  /** Default true. */
+  defaultExpanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
+  children?: ReactNode;
+  className?: string;
+}
+/** A titled group of SplitViewItems in a column. An item id may appear in more than one section; each copy
+ *  highlights when it's selected. */
+export function SplitViewSection({ title, collapsible, expanded, defaultExpanded = true, onExpandedChange, children, className }: SplitViewSectionProps) {
+  const uid = useId();
+  const [openState, setOpen] = useState(defaultExpanded);
+  const open = !collapsible || (expanded ?? openState);
+  const toggle = () => { const n = !open; setOpen(n); onExpandedChange?.(n); Haptics.selection(); };
+  const labelCls = 'px-2.5 pt-4 pb-1.5 text-[13px] font-semibold tracking-[-.1px] text-muted-foreground';
+  const items = <div className="flex flex-col gap-px">{children}</div>;
+  return (
+    <div data-slot="split-view-section" role="group" aria-labelledby={title != null ? uid : undefined} className={className}>
+      {title == null ? null : collapsible ? (
+        <AriaButton id={uid} onPress={toggle} aria-expanded={open}
+          className={cn('bl-btn flex w-full cursor-pointer items-center border-0 bg-transparent text-left [font-family:inherit] outline-none data-[focus-visible]:rounded-lg data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring', labelCls)}>
+          <span className="flex-1">{title}</span>
+          <Chevron direction={open ? 'down' : 'right'} size={14} sw={2.6} className="text-primary" />
+        </AriaButton>
+      ) : <div id={uid} className={labelCls}>{title}</div>}
+      {collapsible ? <AnimatedHeight>{open ? items : null}</AnimatedHeight> : items}
+    </div>
+  );
+}
+
+/* ── Nested stack ── */
+export interface SplitViewStackApi {
+  /** Push a page on top. Pages are kept as elements, so read live data from hooks/context inside them. */
+  push: (page: ReactNode, options?: { key?: string }) => void;
+  /** Pop the top page (no-op at the root). */
+  pop: () => void;
+  popToRoot: () => void;
+  /** Pages including the root: 1 at the root. */
+  depth: number;
+  canPop: boolean;
+}
+interface StackInternal extends SplitViewStackApi {
+  setTitle: (key: string, title: string | undefined) => void;
+  titleAt: (index: number) => string | undefined;
+}
+const StackCtx = createContext<StackInternal | null>(null);
+interface PageState { index: number; pageKey: string; stack: StackInternal }
+const PageCtx = createContext<PageState | null>(null);
+
+/** The nearest SplitViewStack's push / pop. */
+export function useSplitViewStack(): SplitViewStackApi {
+  const c = useContext(StackCtx);
+  if (!c) throw new Error('useSplitViewStack must be used inside <SplitViewStack> (or a column with `stack`)');
+  return c;
+}
+
+export interface SplitViewStackProps {
+  /** The root page. */
+  children?: ReactNode;
+  /** Changing this drops every pushed page at once (e.g. the sidebar selection the stack belongs to). */
+  resetKey?: unknown;
+  onDepthChange?: (depth: number) => void;
+  className?: string;
+  style?: CSSProperties;
+}
+
+interface PageEntry { key: string; node: ReactNode; leaving?: boolean }
+const ROOT_KEY = '__root';
+
+/** A push/pop stack inside a column. Each page may have its own SplitViewHeader (whose back button pops,
+ *  labelled with the page below's title) and SplitViewContent. The leading-edge swipe and Esc pop the
+ *  innermost level first; the column stack only moves once this stack is at its root. */
+export function SplitViewStack({ children, resetKey, onDepthChange, className, style }: SplitViewStackProps) {
+  const s = useInternal('SplitViewStack');
+  const [ref, W] = useContainerWidth<HTMLDivElement>();
+  const [pages, setPages] = useState<PageEntry[]>([]);
+  const live = pages.filter((p) => !p.leaving);
+  const depth = live.length + 1;
+  const seq = useRef(0);
+
+  const [prevReset, setPrevReset] = useState(resetKey);
+  if (!Object.is(prevReset, resetKey)) { setPrevReset(resetKey); setPages([]); }
+
+  const push = useCallback((node: ReactNode, o?: { key?: string }) => {
+    const key = o?.key ?? `page-${++seq.current}`;
+    setPages((ps) => [...ps.filter((p) => p.key !== key), { key, node }]);
+  }, []);
+  const depthRef = useRef(depth); depthRef.current = depth;
+  const pop = useCallback(() => {
+    if (depthRef.current < 2) return;
+    Haptics.impact('light');
+    setPages((ps) => {
+      let i = ps.length - 1;
+      while (i >= 0 && ps[i].leaving) i--;
+      if (i < 0) return ps;
+      const n = [...ps]; n[i] = { ...n[i], leaving: true }; return n;
+    });
+  }, []);
+  const popToRoot = useCallback(() => setPages((ps) => ps.map((p) => (p.leaving ? p : { ...p, leaving: true }))), []);
+  const remove = useCallback((key: string) => setPages((ps) => ps.filter((p) => p.key !== key || !p.leaving)), []);
+
+  const [titles, setTitles] = useState<Record<string, string | undefined>>({});
+  const setTitle = useCallback((key: string, t: string | undefined) => setTitles((m) => (m[key] === t ? m : { ...m, [key]: t })), []);
+  const liveKeys = live.map((p) => p.key).join('\u0000');
+  const titleAt = useCallback((i: number) => titles[i === 0 ? ROOT_KEY : liveKeys.split('\u0000')[i - 1]], [titles, liveKeys]);
+
+  const onDepth = useRef(onDepthChange); onDepth.current = onDepthChange;
+  const firstDepth = useRef(true);
+  useEffect(() => {
+    if (firstDepth.current) { firstDepth.current = false; return; }
+    onDepth.current?.(depth);
+  }, [depth]);
+
+  const api = useMemo<StackInternal>(() => ({ push, pop, popToRoot, depth, canPop: depth > 1, setTitle, titleAt }),
+    [push, pop, popToRoot, depth, setTitle, titleAt]);
+
+  // Leading-edge swipe pops the top page.
+  const [swipe, setSwipe] = useState(0);
+  const drag = useRef<{ x0: number; y0: number; on: boolean; last: number; lt: number; vel: number } | null>(null);
+  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (depth < 2 || e.button) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    if (e.clientX - r.left > 28 || innerStackCanPop(e.target, e.currentTarget)) return;
+    drag.current = { x0: e.clientX, y0: e.clientY, on: false, last: e.clientX, lt: performance.now(), vel: 0 };
+  };
+  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current; if (!d) return;
+    const dx = e.clientX - d.x0, dy = e.clientY - d.y0;
+    if (!d.on) {
+      if (dx > 8 && dx > Math.abs(dy) * 1.2) {
+        d.on = true;
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* noop */ }
+      } else { if (Math.abs(dy) > 14) drag.current = null; return; }
+    }
+    const now = performance.now();
+    d.vel = (e.clientX - d.last) / Math.max(1, now - d.lt); d.last = e.clientX; d.lt = now;
+    setSwipe(Math.max(0.01, dx));
+  };
+  const onPointerUp = () => {
+    const d = drag.current; drag.current = null;
+    if (!d || !d.on) return;
+    if (swipe / Math.max(1, W) > 0.33 || d.vel > 0.5) pop();
+    setSwipe(0);
+  };
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Escape' || e.defaultPrevented || depth < 2 || innerStackCanPop(e.target, e.currentTarget)) return;
+    pop(); e.preventDefault();
+  };
+
+  const top = depth - 1;
+  const p = W ? clamp(swipe / W, 0, 1) : 0;
+  const entries: (PageEntry & { pos: number })[] = [{ key: ROOT_KEY, node: children, pos: 0 }];
+  let n = 0;
+  pages.forEach((pg) => entries.push({ ...pg, pos: pg.leaving ? top + 1 : ++n }));
+  return (
+    <StackCtx.Provider value={api}>
+      <div ref={ref} data-slot="split-view-stack" data-depth={depth} data-split-stack-can-pop={depth > 1 || undefined}
+        className={cn('relative min-h-0 flex-1 touch-pan-y overflow-hidden bg-inherit', className)} style={style}
+        onPointerDownCapture={onPointerDown} onPointerMoveCapture={onPointerMove} onPointerUpCapture={onPointerUp} onPointerCancelCapture={onPointerUp}
+        onKeyDown={onKeyDown}>
+        {entries.map((e, i) => {
+          let x = 0, dim = 0;
+          if (e.leaving) x = W + 24;
+          else if (e.pos < top) { x = -0.3 * W; dim = 0.1; if (p > 0 && e.pos === top - 1) { x = -0.3 * W * (1 - p); dim = 0.1 * (1 - p); } }
+          else if (p > 0) x = swipe;
+          return (
+            <StackPage key={e.key} pageKey={e.key} index={e.pos} z={i} x={x} dim={dim} top={e.pos === top && !e.leaving}
+              leaving={!!e.leaving} enterFrom={W + 24} instant={s.instant} tracking={swipe > 0}
+              api={api} onGone={remove}>
+              {e.node}
+            </StackPage>
+          );
+        })}
+      </div>
+    </StackCtx.Provider>
+  );
+}
+
+function StackPage({ pageKey, index, z, x: tx, dim: tdim, top, leaving, enterFrom, instant, tracking, api, onGone, children }: {
+  pageKey: string; index: number; z: number; x: number; dim: number; top: boolean; leaving: boolean; enterFrom: number;
+  instant: boolean; tracking: boolean; api: StackInternal; onGone: (key: string) => void; children: ReactNode;
+}) {
+  // A pushed page enters from the trailing edge; the root (and anything on first paint) is simply there.
+  const x = useMotionValue(index > 0 && !instant ? enterFrom : tx);
+  const dim = useMotionValue(tdim);
+  useLayoutEffect(() => {
+    if (instant) { x.jump(tx); if (leaving) onGone(pageKey); return; }
+    if (tracking) { x.stop(); x.set(tx); return; }
+    if (x.get() === tx) { if (leaving) onGone(pageKey); return; }
+    const c = animate(x, tx, springs.smooth);
+    if (leaving) c.then(() => onGone(pageKey));
+    return undefined;
+  }, [x, tx, instant, tracking, leaving, pageKey, onGone]);
+  useLayoutEffect(() => {
+    if (instant || tracking) dim.jump(tdim);
+    else if (dim.get() !== tdim) animate(dim, tdim, springs.smooth);
+  }, [dim, tdim, instant, tracking]);
+
+  // Keep keyboard focus with the navigation, like the column stack.
+  const el = useRef<HTMLDivElement | null>(null);
+  const wasTop = useRef(top);
+  useEffect(() => {
+    const node = el.current;
+    const host = node?.parentElement;
+    if (top && !wasTop.current && node && host) {
+      const a = document.activeElement;
+      if (!a || a === document.body || (host.contains(a) && !node.contains(a))) node.focus({ preventScroll: true });
+    }
+    wasTop.current = top;
+  }, [top]);
+
+  const page = useMemo(() => ({ index, pageKey, stack: api }), [index, pageKey, api]);
+  return (
+    <PageCtx.Provider value={page}>
+      <motion.div ref={el} tabIndex={-1} data-slot="split-view-stack-page" data-top={top || undefined} inert={!top || undefined}
+        className="absolute inset-0 flex flex-col bg-inherit outline-none"
+        style={{ x, zIndex: z }}>
+        <Pane>{children}</Pane>
+        <motion.div aria-hidden="true" className="pointer-events-none absolute inset-0 z-50 bg-black" style={{ opacity: dim }} />
+        {index > 0 ? (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 -left-10 w-10 bg-[linear-gradient(to_left,rgba(0,0,0,.14),transparent)]" />
+        ) : null}
+      </motion.div>
+    </PageCtx.Provider>
   );
 }
 

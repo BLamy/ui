@@ -12,6 +12,9 @@ export {
   SplitViewEmpty,
   useSplitView,
   useSplitViewColumn,
+  SplitViewSection,
+  SplitViewStack,
+  useSplitViewStack,
 } from '@brett_lamy/ui';
 export type {
   SplitViewColumn,
@@ -19,9 +22,13 @@ export type {
   SplitViewEmptyProps,
   SplitViewHeaderProps,
   SplitViewItemProps,
+  SplitViewItemTint,
   SplitViewProps,
+  SplitViewSectionProps,
   SplitViewSelection,
   SplitViewSidebarBehavior,
+  SplitViewStackApi,
+  SplitViewStackProps,
   SplitViewState,
   SplitViewToggleProps,
   SplitViewWidthClass,
