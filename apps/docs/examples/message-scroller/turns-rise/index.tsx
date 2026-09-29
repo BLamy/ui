@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { MessageScroller, type MessageScrollerItem, WorkbenchTheme } from '@brett_lamy/ui'
+import {
+  MessageScroller,
+  type MessageScrollerItem,
+  WorkbenchTheme,
+} from '@brett_lamy/ui'
 
 function UserBubble({ children }: { children: ReactNode }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '8px 0' }}>
+    <div
+      style={{ display: 'flex', justifyContent: 'flex-end', margin: '8px 0' }}
+    >
       <div
         style={{
           maxWidth: '80%',
@@ -19,12 +25,17 @@ function UserBubble({ children }: { children: ReactNode }) {
   )
 }
 
-// Items that arrive after the thread opened rise into place — the user's turn up from the composer,
-// the reply beneath it. The ones the thread opened with are simply there.
+// Items that arrive after the thread opened rise into place — the user's turn
+// up from the composer, the reply beneath it. The ones the thread opened with
+// are simply there.
 function TurnsRise() {
   const [msgs, setMsgs] = useState([
     { id: 'u0', user: true, text: 'Opened with this turn — no animation.' },
-    { id: 'a0', user: false, text: 'Messages already in a thread are just there when it opens.' },
+    {
+      id: 'a0',
+      user: false,
+      text: 'Messages already in a thread are just there when it opens.',
+    },
   ])
   const n = useRef(0)
   const t = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -39,13 +50,21 @@ function TurnsRise() {
     const k = n.current
     setMsgs((m) => [
       ...m,
-      { id: 'u' + k, user: true, text: `Turn ${k}: rising up from the composer.` },
+      {
+        id: 'u' + k,
+        user: true,
+        text: `Turn ${k}: rising up from the composer.`,
+      },
     ])
     t.current = setTimeout(
       () =>
         setMsgs((m) => [
           ...m,
-          { id: 'a' + k, user: false, text: 'And the reply settles in beneath it.' },
+          {
+            id: 'a' + k,
+            user: false,
+            text: 'And the reply settles in beneath it.',
+          },
         ]),
       420,
     )
@@ -56,7 +75,9 @@ function TurnsRise() {
     node: m.user ? (
       <UserBubble>{m.text}</UserBubble>
     ) : (
-      <div style={{ margin: '4px 0 12px', fontSize: 13.5, lineHeight: 1.55 }}>{m.text}</div>
+      <div style={{ margin: '4px 0 12px', fontSize: 13.5, lineHeight: 1.55 }}>
+        {m.text}
+      </div>
     ),
   }))
   return (
@@ -72,7 +93,13 @@ function TurnsRise() {
       }}
     >
       <MessageScroller items={items} threadKey="turns" />
-      <div style={{ padding: 10, borderTop: '1px solid var(--wb-sep)', flexShrink: 0 }}>
+      <div
+        style={{
+          padding: 10,
+          borderTop: '1px solid var(--wb-sep)',
+          flexShrink: 0,
+        }}
+      >
         <button
           type="button"
           className="wb-btn"
@@ -97,7 +124,8 @@ function TurnsRise() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function TurnsRiseExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

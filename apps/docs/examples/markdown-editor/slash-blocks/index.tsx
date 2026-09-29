@@ -1,14 +1,20 @@
 import { useRef } from 'react'
-import { Button, MarkdownEditor, type MarkdownEditorHandle } from '@brett_lamy/ui'
+import {
+  Button,
+  MarkdownEditor,
+  type MarkdownEditorHandle,
+} from '@brett_lamy/ui'
 
 const blocks: { label: string; markdown: string }[] = [
   {
     label: 'Hint',
-    markdown: '{% hint style="warning" %}\nMind the release threshold.\n{% endhint %}',
+    markdown:
+      '{% hint style="warning" %}\nMind the release threshold.\n{% endhint %}',
   },
   {
     label: 'Table',
-    markdown: '| Step | Owner |\n| --- | --- |\n| Design | Maya |\n| Build | Jonas |',
+    markdown:
+      '| Step | Owner |\n| --- | --- |\n| Design | Maya |\n| Build | Jonas |',
   },
   { label: 'Code', markdown: '```tsx\n<Credenza compact open={open} />\n```' },
   { label: 'Tasks', markdown: '- [ ] Write the docs\n- [ ] Record the demo' },
@@ -29,7 +35,11 @@ export default function SlashBlocks() {
             + {b.label}
           </Button>
         ))}
-        <Button size="sm" variant="ghost" onPress={() => editor.current?.clear()}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onPress={() => editor.current?.clear()}
+        >
           Clear
         </Button>
       </div>

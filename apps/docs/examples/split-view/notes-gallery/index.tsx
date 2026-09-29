@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { SplitViewGalleryDemo } from '@brett_lamy/ui'
 
-/** Lays a composition out at a real device width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a composition out at a real device width, scaled down (never up) to fit,
+ * centered.
+ */
 function Scaled({
   width,
   height,
@@ -65,16 +68,24 @@ function Caption({ children }: { children: ReactNode }) {
 
 // The grid button calls setSupplementaryVisible(false): the list column slides
 // away under the sidebar and the detail springs across to fill its space.
-export default function NotesGallery({ variant = 'gallery' }: { variant?: string }) {
+export default function NotesGallery({
+  variant = 'gallery',
+}: {
+  variant?: string
+}) {
   return (
     <div>
       <Scaled width={1100} height={560}>
-        <SplitViewGalleryDemo defaultSupplementaryVisible={variant !== 'gallery'} />
+        <SplitViewGalleryDemo
+          defaultSupplementaryVisible={variant !== 'gallery'}
+        />
       </Scaled>
       <Caption>
         {variant === 'gallery'
-          ? 'Gallery: the list column is hidden. Open a card (or the list button) and it springs back.'
-          : 'List: the grid button in the list’s bar hides the column and the note grid takes its place.'}
+          ? 'Gallery: the list column is hidden. Open a card (or the list ' +
+            'button) and it springs back.'
+          : 'List: the grid button in the list’s bar hides the column and ' +
+            'the note grid takes its place.'}
       </Caption>
     </div>
   )

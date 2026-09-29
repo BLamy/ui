@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { SplitViewSettingsDemo } from '@brett_lamy/ui'
 
-/** Lays a composition out at a real device width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a composition out at a real device width, scaled down (never up) to fit,
+ * centered.
+ */
 function Scaled({
   width,
   height,
@@ -69,7 +72,8 @@ export default function SettingsSidebarBehaviours({
   variant?: string
 }) {
   const tile = variant === 'tile' || !variant
-  // Overlay and displace are controlled: tap the scrim, press Esc, or pick a row to dismiss.
+  // Overlay and displace are controlled: tap the scrim, press Esc, or pick a
+  // row to dismiss.
   const [open, setOpen] = useState(true)
   useEffect(() => {
     setOpen(true)
@@ -78,7 +82,8 @@ export default function SettingsSidebarBehaviours({
     <div>
       <Scaled width={tile ? 1060 : 820} height={560}>
         {tile ? (
-          // Regular width: the sidebar tiles; the toggle slides it away and the detail widens.
+          // Regular width: the sidebar tiles; the toggle slides it away and the
+          // detail widens.
           <SplitViewSettingsDemo />
         ) : (
           <SplitViewSettingsDemo
@@ -92,8 +97,10 @@ export default function SettingsSidebarBehaviours({
         {tile
           ? 'Tile (regular): the sidebar takes its own column.'
           : variant === 'overlay'
-            ? 'Overlay (medium): the sidebar floats above a scrim. Tap outside or press Esc.'
-            : 'Displace (medium): the sidebar pushes the detail aside and dims it.'}
+            ? 'Overlay (medium): the sidebar floats above a scrim. Tap ' +
+              'outside or press Esc.'
+            : 'Displace (medium): the sidebar pushes the detail aside and ' +
+              'dims it.'}
       </Caption>
     </div>
   )

@@ -6,6 +6,7 @@ import { AppearanceProvider, type Appearance } from '../../lib/theme';
 import {
   AnnotateLightbox,
   Composer,
+  ComposerAdd,
   ComposerAddon,
   ComposerAttach,
   ComposerAttachments,
@@ -398,4 +399,83 @@ export const ModelPickerOpenLight: Story = { render: () => <PickerFrame appearan
 /* the annotate lightbox that opens when an attachment is clicked (PencilKitAnnotator, the default) */
 export const Annotate: Story = {
   render: () => <Frame><AnnotateLightbox src={SAMPLE_IMG} onClose={() => {}} onSave={() => {}} /></Frame>,
+};
+
+/* ── Files: the "+" button, the drop zone, and tiles for every kind of file ── */
+const FRAME_POSTER =
+  'data:image/svg+xml;charset=utf-8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="240" height="135"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0" stop-color="#2B2F77"/><stop offset="1" stop-color="#C2410C"/></linearGradient></defs>' +
+      '<rect width="240" height="135" fill="url(#g)"/><circle cx="178" cy="44" r="18" fill="#FDE68A"/>' +
+      '<path d="M0 135 L70 70 L120 110 L165 80 L240 135 Z" fill="#111827" opacity=".85"/></svg>',
+  );
+const EXCERPT = [
+  "import { Composer } from '@brett_lamy/ui'",
+  '',
+  'export function Chat() {',
+  '  const [busy, setBusy] = useState(false)',
+  '  return (',
+  '    <Composer onSubmit={send} streaming={busy}>',
+].join('\n');
+const MIXED_ATTACHMENTS: ComposerAttachment[] = [
+  { id: 'mx-img', name: 'header.png', src: SHOT, size: 84 * 1024, type: 'image/svg+xml' },
+  { id: 'mx-code', name: 'chat.tsx', type: 'text/tsx', kind: 'text', size: 2300, excerpt: EXCERPT },
+  { id: 'mx-video', name: 'repro.mov', type: 'video/quicktime', kind: 'video', size: 14.2 * 1024 * 1024, preview: FRAME_POSTER },
+  { id: 'mx-pdf', name: 'Design review.pdf', type: 'application/pdf', kind: 'pdf', size: 1.3 * 1024 * 1024 },
+  { id: 'mx-audio', name: 'voice-note.m4a', type: 'audio/mp4', kind: 'audio', size: 612 * 1024 },
+  { id: 'mx-zip', name: 'logs.zip', type: 'application/zip', kind: 'archive', size: 3.4 * 1024 * 1024 },
+];
+const MIXED_MARKDOWN = "Here's the repro and the logs ![header.png](attachment:mx-img) — what's going on?";
+
+function FilesComposer({ attachments = [], value = '' }: { attachments?: ComposerAttachment[]; value?: string }) {
+  return (
+    <Composer defaultAttachments={attachments} defaultValue={value} maxFileSize={25 * 1024 * 1024} maxFiles={10}>
+      <ComposerCard>
+        <ComposerAttachments />
+        <ComposerInput placeholder="Ask anything — drop files here, or press +" />
+        <ComposerFooter>
+          <ComposerAdd />
+          <ComposerSpacer />
+          <ComposerSend />
+        </ComposerFooter>
+      </ComposerCard>
+    </Composer>
+  );
+}
+
+/** The "+" button (react-aria FileTrigger): pick any files; images chip into the text, others become tiles. */
+export const AddButton: Story = { render: () => <Frame><FilesComposer /></Frame> };
+
+/** Files hovering over the card: the drop overlay springs in (a dragenter + dragover carrying a file). */
+const dragFilesOver: Story['play'] = async ({ canvasElement }) => {
+  const card = canvasElement.querySelector<HTMLElement>('[data-slot="composer-card"]');
+  if (!card) throw new Error('no composer card');
+  const dataTransfer = new DataTransfer();
+  dataTransfer.items.add(new File(['# Notes'], 'notes.md', { type: 'text/markdown' }));
+  // What the OS reports for a file drag (a constructed DataTransfer is stuck at "none").
+  Object.defineProperty(dataTransfer, 'effectAllowed', { value: 'all' });
+  const r = card.getBoundingClientRect();
+  const init = { bubbles: true, cancelable: true, dataTransfer, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 };
+  card.dispatchEvent(new DragEvent('dragenter', init));
+  card.dispatchEvent(new DragEvent('dragover', init));
+  await waitFor(() => expect(canvasElement.querySelector('[data-slot="composer-drop-overlay"]')).toBeTruthy());
+};
+export const DropOverlay: Story = { render: () => <Frame><FilesComposer /></Frame>, play: dragFilesOver };
+export const DropOverlayLight: Story = { render: () => <Frame appearance="light"><FilesComposer /></Frame>, play: dragFilesOver };
+
+/** Every kind of file: an image thumbnail, code's first lines, a video's first frame, and glyph tiles. */
+export const MixedAttachments: Story = {
+  render: () => (
+    <Frame width={620}>
+      <FilesComposer attachments={MIXED_ATTACHMENTS} value={MIXED_MARKDOWN} />
+    </Frame>
+  ),
+};
+export const MixedAttachmentsLight: Story = {
+  render: () => (
+    <Frame appearance="light" width={620}>
+      <FilesComposer attachments={MIXED_ATTACHMENTS} value={MIXED_MARKDOWN} />
+    </Frame>
+  ),
 };

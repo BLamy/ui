@@ -37,7 +37,15 @@ const BUILD_LOG = [
 ]
 
 // A fixed-size, rounded window.
-function Frame({ width, height, children }: { width?: number; height: number; children: ReactNode }) {
+function Frame({
+  width,
+  height,
+  children,
+}: {
+  width?: number
+  height: number
+  children: ReactNode
+}) {
   return (
     <div
       style={{
@@ -87,13 +95,24 @@ function PhoneWorkbench() {
           </WorkbenchHeader>
           <Conversation>
             <ConversationMessages threadKey="build" streaming>
-              <UserMessage key="u1">Build it and tell me the bundle size.</UserMessage>
+              <UserMessage key="u1">
+                Build it and tell me the bundle size.
+              </UserMessage>
               <AssistantMessage key="a1">
-                <MessageMarkdown markdown="Building now — the log is in the terminal sheet. Drag it down to dismiss, or up for more." />
+                <MessageMarkdown
+                  markdown={
+                    'Building now — the log is in the terminal sheet. ' +
+                    'Drag it down to dismiss, or up for more.'
+                  }
+                />
               </AssistantMessage>
             </ConversationMessages>
             <ConversationComposer>
-              <WorkbenchComposer options={false} checkout={false} onSubmit={() => {}} />
+              <WorkbenchComposer
+                options={false}
+                checkout={false}
+                onSubmit={() => {}}
+              />
             </ConversationComposer>
           </Conversation>
           {/* compact width: the dock is a SnapSheet over the whole shell */}
@@ -109,7 +128,8 @@ function PhoneWorkbench() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function PhoneWorkbenchExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

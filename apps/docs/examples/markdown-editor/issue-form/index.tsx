@@ -1,8 +1,17 @@
 import { useState } from 'react'
-import { Button, Form, Input, Label, MarkdownEditor, TextField } from '@brett_lamy/ui'
+import {
+  Button,
+  Form,
+  Input,
+  Label,
+  MarkdownEditor,
+  TextField,
+} from '@brett_lamy/ui'
 
 export default function IssueForm() {
-  const [submitted, setSubmitted] = useState<Record<string, string> | null>(null)
+  const [submitted, setSubmitted] = useState<Record<string, string> | null>(
+    null,
+  )
   const [body, setBody] = useState('')
   const [tried, setTried] = useState(false)
   const invalid = tried && !body.trim()
@@ -14,10 +23,19 @@ export default function IssueForm() {
         e.preventDefault()
         setTried(true)
         if (!body.trim()) return
-        setSubmitted(Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>)
+        setSubmitted(
+          Object.fromEntries(new FormData(e.currentTarget)) as Record<
+            string,
+            string
+          >,
+        )
       }}
     >
-      <TextField name="title" isRequired defaultValue="Tray snaps back on slow drags">
+      <TextField
+        name="title"
+        isRequired
+        defaultValue="Tray snaps back on slow drags"
+      >
         <Label variant="field">Title</Label>
         <Input />
       </TextField>
@@ -44,14 +62,23 @@ export default function IssueForm() {
             color: invalid ? 'var(--bl-red)' : 'var(--bl-label2)',
           }}
         >
-          {invalid ? 'Describe the issue.' : 'Markdown works — lists, links, code blocks.'}
+          {invalid
+            ? 'Describe the issue.'
+            : 'Markdown works — lists, links, code blocks.'}
         </span>
       </div>
       <Button type="submit" style={{ alignSelf: 'flex-start' }}>
         File issue
       </Button>
       {submitted && (
-        <pre style={{ margin: 0, fontSize: 12, whiteSpace: 'pre-wrap', color: 'var(--bl-label2)' }}>
+        <pre
+          style={{
+            margin: 0,
+            fontSize: 12,
+            whiteSpace: 'pre-wrap',
+            color: 'var(--bl-label2)',
+          }}
+        >
           {JSON.stringify(submitted, null, 2)}
         </pre>
       )}

@@ -1,19 +1,32 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { MarkdownView, MessageScroller, type MessageScrollerItem, WorkbenchTheme } from '@brett_lamy/ui'
+import {
+  MarkdownView,
+  MessageScroller,
+  type MessageScrollerItem,
+  WorkbenchTheme,
+} from '@brett_lamy/ui'
 
 const answer =
-  'The scroller anchors each new turn near the top, then **follows the live edge** only while you are there.\n\n' +
-  '- Scroll up mid-reply and following stops.\n- The jump pill rises in and widens to say a reply is streaming.\n- Tap it and the view glides back to the newest line on a spring — interruptible, so a scroll catches it.\n\n' +
-  'New turns rise into place rather than appearing, and a thread you open is simply there: nothing replays.\n\n' +
+  'The scroller anchors each new turn near the top, then **follows the live ' +
+  'edge** only while you are there.\n\n' +
+  '- Scroll up mid-reply and following stops.\n- The jump pill rises in and ' +
+  'widens to say a reply is streaming.\n- Tap it and the view glides back ' +
+  'to the newest line on a spring — interruptible, so a scroll catches ' +
+  'it.\n\n' +
+  'New turns rise into place rather than appearing, and a thread you open is ' +
+  'simply there: nothing replays.\n\n' +
   Array.from(
     { length: 6 },
     (_, i) =>
-      `${i + 1}. A line of the streamed answer, long enough to push the live edge below the fold.`,
+      `${i + 1}. A line of the streamed answer, long enough to push ` +
+      'the live edge below the fold.',
   ).join('\n')
 
 function UserBubble({ children }: { children: ReactNode }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '8px 0' }}>
+    <div
+      style={{ display: 'flex', justifyContent: 'flex-end', margin: '8px 0' }}
+    >
       <div
         style={{
           maxWidth: '80%',
@@ -29,8 +42,9 @@ function UserBubble({ children }: { children: ReactNode }) {
   )
 }
 
-// While `streaming`, the scroller follows the live edge. Scroll up and it lets go; the jump pill rises in
-// ("Streaming ↓"), and tapping it springs the view back down.
+// While `streaming`, the scroller follows the live edge. Scroll up and it lets
+// go; the jump pill rises in ("Streaming ↓"), and tapping it springs the view
+// back down.
 function StreamingJumpPill() {
   const [shown, setShown] = useState(0)
   const [run, setRun] = useState(0)
@@ -41,7 +55,10 @@ function StreamingJumpPill() {
       return
     }
     setShown(0)
-    const id = setInterval(() => setShown((n) => (n >= answer.length ? n : n + 6)), 60)
+    const id = setInterval(
+      () => setShown((n) => (n >= answer.length ? n : n + 6)),
+      60,
+    )
     return () => clearInterval(id)
   }, [run])
   const done = shown >= answer.length
@@ -72,7 +89,11 @@ function StreamingJumpPill() {
         border: '1px solid var(--wb-sep)',
       }}
     >
-      <MessageScroller items={items} streaming={!done} threadKey={'stream' + run} />
+      <MessageScroller
+        items={items}
+        streaming={!done}
+        threadKey={'stream' + run}
+      />
       <div
         style={{
           padding: 10,
@@ -110,7 +131,8 @@ function StreamingJumpPill() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function StreamingJumpPillExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

@@ -1,5 +1,12 @@
 import { useState, type ReactNode } from 'react'
-import { Button, Icon, List, ListRow, ListSection, SideDrawer } from '@brett_lamy/ui'
+import {
+  Button,
+  Icon,
+  List,
+  ListRow,
+  ListSection,
+  SideDrawer,
+} from '@brett_lamy/ui'
 
 const files = [
   {
@@ -30,7 +37,14 @@ function FileInspector() {
   const [sel, setSel] = useState(files[0])
   return (
     <div style={{ display: 'flex', height: 360, background: 'var(--bl-bg)' }}>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <header
           style={{
             display: 'flex',
@@ -54,7 +68,11 @@ function FileInspector() {
               <ListRow
                 key={f.name}
                 leading={
-                  <Icon name={f.icon} size={22} style={{ color: 'var(--bl-tint)' }} />
+                  <Icon
+                    name={f.icon}
+                    size={22}
+                    style={{ color: 'var(--bl-tint)' }}
+                  />
                 }
                 title={f.name}
                 subtitle={f.modified}
@@ -86,7 +104,9 @@ function FileInspector() {
           >
             <Icon name={sel.icon} size={40} />
           </div>
-          <div style={{ fontWeight: 650, margin: '12px 0 8px' }}>{sel.name}</div>
+          <div style={{ fontWeight: 650, margin: '12px 0 8px' }}>
+            {sel.name}
+          </div>
           {[
             ['Kind', sel.kind],
             ['Size', sel.size],
@@ -118,7 +138,10 @@ export default function DockedInspector() {
   )
 }
 
-/** A rounded window with the page background; `width` caps it (phone-sized examples), centered. */
+/**
+ * A rounded window with the page background; `width` caps it (phone-sized
+ * examples), centered.
+ */
 function Window({ width, children }: { width?: number; children?: ReactNode }) {
   return (
     <div

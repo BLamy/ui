@@ -75,7 +75,13 @@ function FriendsTab() {
         title="Invite sent"
         onClose={() => setInviting(false)}
       >
-        <p style={{ margin: 0, padding: '4px 20px 24px', color: 'var(--bl-label2)' }}>
+        <p
+          style={{
+            margin: 0,
+            padding: '4px 20px 24px',
+            color: 'var(--bl-label2)',
+          }}
+        >
           {open?.f} will get a notification.
         </p>
       </Credenza>
@@ -105,12 +111,16 @@ function Window({ width, children }: { width: number; children: ReactNode }) {
   )
 }
 
-// Containers own behavior, your state owns data: a tab bar, a stack per tab, lists and a tray.
+// Containers own behavior, your state owns data: a tab bar, a stack per tab,
+// lists and a tray.
 export default function FirstApp() {
   return (
     <Window width={390}>
       <BLProvider style={{ height: 480 }}>
-        <TabView defaultSelectedKey="friends" style={{ position: 'absolute', inset: 0 }}>
+        <TabView
+          defaultSelectedKey="friends"
+          style={{ position: 'absolute', inset: 0 }}
+        >
           <TabViewBar hideOnScroll={false}>
             <TabViewList aria-label="App">
               <TabViewTab id="friends" icon="person2" title="Friends" />

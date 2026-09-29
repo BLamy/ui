@@ -9,11 +9,15 @@ import {
 } from '@brett_lamy/ui'
 
 const font =
-  "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif"
+  "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, " +
+  "'Helvetica Neue', sans-serif"
 
 const variants: SidebarVariant[] = ['docked', 'rail', 'float', 'overlay']
 
-/** One Sidebar, four variants, plus a narrow container that turns any of them into the overlay. */
+/**
+ * One Sidebar, four variants, plus a narrow container that turns any of them
+ * into the overlay.
+ */
 function SidebarVariants() {
   const [variant, setVariant] = useState<SidebarVariant>('docked')
   const [narrow, setNarrow] = useState(false)
@@ -28,7 +32,14 @@ function SidebarVariants() {
         fontFamily: font,
       }}
     >
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 6 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          gap: 6,
+        }}
+      >
         {variants.map((v) => (
           <Chip key={v} active={variant === v} onPress={() => setVariant(v)}>
             {v}
@@ -46,7 +57,8 @@ function SidebarVariants() {
           overflow: 'hidden',
           borderRadius: 14,
           border: '1px solid var(--wb-sep)',
-          transition: 'width var(--duration-spring-smooth) var(--ease-spring-smooth)',
+          transition:
+            'width var(--duration-spring-smooth) var(--ease-spring-smooth)',
         }}
       >
         {/* remount per variant so each starts in its default state */}
@@ -68,7 +80,13 @@ function SidebarVariants() {
             >
               {/* the hamburger toggles every variant */}
               <SidebarTrigger />
-              <span style={{ fontSize: 12.5, fontWeight: 650, color: 'var(--wb-label)' }}>
+              <span
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: 650,
+                  color: 'var(--wb-label)',
+                }}
+              >
                 Home
               </span>
             </div>
@@ -80,9 +98,9 @@ function SidebarVariants() {
                 color: 'var(--wb-label2)',
               }}
             >
-              One API, four behaviors — the trigger toggles whichever variant is mounted, and
-              every variant becomes a hamburger overlay when the container is narrower than the
-              breakpoint. Try “narrow container”.
+              One API, four behaviors — the trigger toggles whichever variant is
+              mounted, and every variant becomes a hamburger overlay when the
+              container is narrower than the breakpoint. Try “narrow container”.
             </div>
           </SidebarInset>
         </SidebarProvider>
@@ -154,7 +172,8 @@ function Chip({
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function SidebarVariantsExample() {
   return (
     <WorkbenchTheme>

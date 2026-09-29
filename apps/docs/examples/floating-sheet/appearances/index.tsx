@@ -33,7 +33,9 @@ const presets: Record<string, Preset> = {
     peek: 0,
     minimizable: true,
     foot: true,
-    note: 'Rests on its foot. Drag the cap up to grow it, or down to fold it into a FAB.',
+    note:
+      'Rests on its foot. Drag the cap up to grow it, or down to fold it ' +
+      'into a FAB.',
   },
   peeking: {
     appearance: 'glass',
@@ -42,7 +44,9 @@ const presets: Record<string, Preset> = {
     peek: 190,
     minimizable: true,
     foot: true,
-    note: 'peek keeps the top of the body visible above the foot while resting.',
+    note:
+      'peek keeps the top of the body visible above the foot ' +
+      'while resting.',
   },
   card: {
     appearance: 'sheet',
@@ -60,7 +64,9 @@ const presets: Record<string, Preset> = {
     peek: 250,
     minimizable: false,
     foot: false,
-    note: 'gutter={0} docks it edge to edge like a system sheet; it cannot be folded away.',
+    note:
+      'gutter={0} docks it edge to edge like a system sheet; it cannot be ' +
+      'folded away.',
   },
   open: {
     appearance: 'glass',
@@ -70,11 +76,16 @@ const presets: Record<string, Preset> = {
     minimizable: true,
     foot: true,
     defaultOpen: true,
-    note: 'Fully grown: the cap meets the top edge and the host dims behind it.',
+    note:
+      'Fully grown: the cap meets the top edge and the host dims ' +
+      'behind it.',
   },
 }
 
-/** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a fixed-size composition out at its design width, scaled down (never up)
+ * to fit, centered.
+ */
 function Scaled({
   width,
   height,
@@ -122,7 +133,10 @@ function Scaled({
   )
 }
 
-/** A host with enough colour and texture that the glass visibly blurs it; follows the appearance. */
+/**
+ * A host with enough colour and texture that the glass visibly blurs it;
+ * follows the appearance.
+ */
 function Host({ note, children }: { note: string; children?: ReactNode }) {
   const dark = useAppearance() === 'dark'
   return (
@@ -143,11 +157,28 @@ function Host({ note, children }: { note: string; children?: ReactNode }) {
         }}
       >
         <div style={{ padding: 22 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.08em', opacity: 0.6 }}>
+          <div
+            style={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              letterSpacing: '.08em',
+              opacity: 0.6,
+            }}
+          >
             HOST CONTENT
           </div>
-          <h2 style={{ margin: '8px 0 10px', fontSize: 24 }}>Anything positioned</h2>
-          <p style={{ margin: 0, maxWidth: 330, lineHeight: 1.5, opacity: 0.78, fontSize: 14 }}>
+          <h2 style={{ margin: '8px 0 10px', fontSize: 24 }}>
+            Anything positioned
+          </h2>
+          <p
+            style={{
+              margin: 0,
+              maxWidth: 330,
+              lineHeight: 1.5,
+              opacity: 0.78,
+              fontSize: 14,
+            }}
+          >
             {note}
           </p>
           <div
@@ -158,10 +189,22 @@ function Host({ note, children }: { note: string; children?: ReactNode }) {
               marginTop: 20,
             }}
           >
-            {['#0A84FF', '#FF9F0A', '#30D158', '#BF5AF2', '#FF375F', '#64D2FF'].map((c) => (
+            {[
+              '#0A84FF',
+              '#FF9F0A',
+              '#30D158',
+              '#BF5AF2',
+              '#FF375F',
+              '#64D2FF',
+            ].map((c) => (
               <div
                 key={c}
-                style={{ height: 70, borderRadius: 14, background: c, opacity: dark ? 0.75 : 0.6 }}
+                style={{
+                  height: 70,
+                  borderRadius: 14,
+                  background: c,
+                  opacity: dark ? 0.75 : 0.6,
+                }}
               />
             ))}
           </div>
@@ -172,7 +215,11 @@ function Host({ note, children }: { note: string; children?: ReactNode }) {
   )
 }
 
-export default function Appearances({ variant = 'glass' }: { variant?: string }) {
+export default function Appearances({
+  variant = 'glass',
+}: {
+  variant?: string
+}) {
   const p = presets[variant] ?? presets.glass
   return (
     <Host note={p.note}>
@@ -190,14 +237,23 @@ export default function Appearances({ variant = 'glass' }: { variant?: string })
       >
         <FloatingSheet.Body>
           <div
-            style={{ padding: '2px 20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}
+            style={{
+              padding: '2px 20px 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+            }}
           >
             <h3 style={{ margin: 0, fontSize: 21 }}>Preparing your order</h3>
             <ProgressStepper current={1} labels steps={steps} />
             {Array.from({ length: 5 }, (_, i) => (
               <div
                 key={i}
-                style={{ height: 64, borderRadius: 14, background: 'rgba(120,120,128,.14)' }}
+                style={{
+                  height: 64,
+                  borderRadius: 14,
+                  background: 'rgba(120,120,128,.14)',
+                }}
               />
             ))}
           </div>

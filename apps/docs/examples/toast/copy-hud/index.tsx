@@ -25,15 +25,20 @@ function Fields() {
           }}
         >
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12.5, color: 'var(--bl-label2)' }}>{f.label}</div>
-            <div style={{ fontSize: 15, color: 'var(--bl-label)' }}>{f.value}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--bl-label2)' }}>
+              {f.label}
+            </div>
+            <div style={{ fontSize: 15, color: 'var(--bl-label)' }}>
+              {f.value}
+            </div>
           </div>
           <Button
             variant="secondary"
             size="sm"
             onPress={() => {
               void navigator.clipboard?.writeText(f.value).catch(() => {})
-              // Copying again while the HUD is up updates it in place: the label morphs.
+              // Copying again while the HUD is up updates it in place: the
+              // label morphs.
               toast.hud(`${f.label} Copied`, { tone: 'success' })
             }}
           >
@@ -46,7 +51,8 @@ function Fields() {
 }
 
 export default function CopyHud() {
-  // A queue of its own, shown inside this box (`inline`), so the demo's HUD stays in the demo.
+  // A queue of its own, shown inside this box (`inline`), so the demo's HUD
+  // stays in the demo.
   const [queue] = useState(() => createToastQueue())
   return (
     <div

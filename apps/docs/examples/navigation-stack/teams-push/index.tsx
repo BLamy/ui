@@ -11,7 +11,9 @@ import {
 
 const teams = ['Design', 'Engineering', 'Research']
 
-/** A rounded, fixed-height frame; NavigationStack fills its positioned parent. */
+/**
+ * A rounded, fixed-height frame; NavigationStack fills its positioned parent.
+ */
 function Frame({ children }: { children: ReactNode }) {
   return (
     <div
@@ -74,8 +76,8 @@ export default function TeamsPush() {
               lineHeight: 1.5,
             }}
           >
-            Pushed screen — use the back chevron, or drag from the left edge to pop
-            interactively.
+            Pushed screen — use the back chevron, or drag from the left edge to
+            pop interactively.
           </div>
         </div>
       ),

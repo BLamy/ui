@@ -27,7 +27,11 @@ function Sample({ name }: { name: string }) {
         ]}
       />
       <div
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
       >
         <span style={{ fontSize: 14 }}>Sync</span>
         <Switch aria-label="Sync" checked={on} onChange={setOn} />
@@ -51,7 +55,11 @@ export default function TintGallery() {
         <BLProvider
           key={a.name}
           tint={a.tint}
-          style={{ height: 'auto', borderRadius: 14, boxShadow: '0 0 0 1px var(--bl-sep)' }}
+          style={{
+            height: 'auto',
+            borderRadius: 14,
+            boxShadow: '0 0 0 1px var(--bl-sep)',
+          }}
         >
           <Sample name={a.name} />
         </BLProvider>

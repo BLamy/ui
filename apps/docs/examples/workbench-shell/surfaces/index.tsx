@@ -23,10 +23,21 @@ function Surfaces() {
   const meta = SURFACES.find((s) => s.k === kind)
   return (
     // a fixed-height, rounded window
-    <div style={{ width: '100%', height: 380, margin: '0 auto', borderRadius: 12, overflow: 'hidden', boxShadow: '0 0 0 1px var(--wb-sep)' }}>
+    <div
+      style={{
+        width: '100%',
+        height: 380,
+        margin: '0 auto',
+        borderRadius: 12,
+        overflow: 'hidden',
+        boxShadow: '0 0 0 1px var(--wb-sep)',
+      }}
+    >
       <WorkbenchPanel>
         <WorkbenchPanelHeader>
-          <WorkbenchPanelTitle icon={meta?.icon}>{meta?.name ?? 'Surfaces'}</WorkbenchPanelTitle>
+          <WorkbenchPanelTitle icon={meta?.icon}>
+            {meta?.name ?? 'Surfaces'}
+          </WorkbenchPanelTitle>
           <WorkbenchPanelClose onPress={() => setKind(null)} />
         </WorkbenchPanelHeader>
         {kind === 'browser' ? (
@@ -38,11 +49,20 @@ function Surfaces() {
             <TerminalBody />
           </SurfaceTerminal>
         ) : kind === 'files' ? (
-          <SurfaceFiles paths={['src/App.tsx', 'src/main.tsx', 'package.json']} />
+          <SurfaceFiles
+            paths={['src/App.tsx', 'src/main.tsx', 'package.json']}
+          />
         ) : kind === 'diff' ? (
-          <SurfaceDiff oldFile={{ name: 'a.ts', contents: 'let a = 1\n' }} newFile={{ name: 'a.ts', contents: 'const a = 1\n' }} />
+          <SurfaceDiff
+            oldFile={{ name: 'a.ts', contents: 'let a = 1\n' }}
+            newFile={{ name: 'a.ts', contents: 'const a = 1\n' }}
+          />
         ) : kind === 'agents' ? (
-          <SurfaceAgents agents={[{ name: 'lint', status: 'passed', detail: 'no issues · 4s' }]} />
+          <SurfaceAgents
+            agents={[
+              { name: 'lint', status: 'passed', detail: 'no issues · 4s' },
+            ]}
+          />
         ) : (
           <SurfacePicker onPick={setKind} />
         )}
@@ -51,7 +71,8 @@ function Surfaces() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function SurfacesExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

@@ -1,11 +1,19 @@
 import { useState } from 'react'
-import { Icon, Morph, MorphGroup, MorphPresence, NowPlayingBars, Slider } from '@brett_lamy/ui'
+import {
+  Icon,
+  Morph,
+  MorphGroup,
+  MorphPresence,
+  NowPlayingBars,
+  Slider,
+} from '@brett_lamy/ui'
 
 const art = 'linear-gradient(135deg,#ff7a59 0%,#ff3d7f 45%,#7b3dff 100%)'
 
-// One player, two layouts. Both use <Morph id="player"> (and the artwork and title inside use their own
-// ids), so switching layouts springs the same element from the bar's frame to the full screen.
-// Drag the full player down to fold it back.
+// One player, two layouts. Both use <Morph id="player"> (and the artwork and
+// title inside use their own ids), so switching layouts springs the same
+// element from the bar's frame to the full screen. Drag the full player down to
+// fold it back.
 export default function MiniPlayer() {
   const [open, setOpen] = useState(false)
   return (
@@ -22,10 +30,33 @@ export default function MiniPlayer() {
       }}
     >
       <div style={{ padding: 20 }}>
-        <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: -0.4, color: 'var(--bl-label)' }}>Listen Now</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
+        <div
+          style={{
+            fontSize: 28,
+            fontWeight: 700,
+            letterSpacing: -0.4,
+            color: 'var(--bl-label)',
+          }}
+        >
+          Listen Now
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 12,
+            marginTop: 14,
+          }}
+        >
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} style={{ aspectRatio: '1', borderRadius: 12, background: 'var(--bl-fill)' }} />
+            <div
+              key={i}
+              style={{
+                aspectRatio: '1',
+                borderRadius: 12,
+                background: 'var(--bl-fill)',
+              }}
+            />
           ))}
         </div>
       </div>
@@ -56,18 +87,63 @@ export default function MiniPlayer() {
                 type="button"
                 aria-label="Close Now Playing"
                 onClick={() => setOpen(false)}
-                style={{ alignSelf: 'center', width: 56, height: 20, border: 0, padding: 0, background: 'transparent', cursor: 'pointer', marginBottom: 14 }}
+                style={{
+                  alignSelf: 'center',
+                  width: 56,
+                  height: 20,
+                  border: 0,
+                  padding: 0,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  marginBottom: 14,
+                }}
               >
-                <span style={{ display: 'block', width: 40, height: 5, margin: '0 auto', borderRadius: 3, background: 'rgba(255,255,255,.4)' }} />
+                <span
+                  style={{
+                    display: 'block',
+                    width: 40,
+                    height: 5,
+                    margin: '0 auto',
+                    borderRadius: 3,
+                    background: 'rgba(255,255,255,.4)',
+                  }}
+                />
               </button>
-              <Morph id="art" radius={14} style={{ width: '100%', aspectRatio: '1', background: art, boxShadow: '0 18px 50px rgba(0,0,0,.35)' }} />
+              <Morph
+                id="art"
+                radius={14}
+                style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  background: art,
+                  boxShadow: '0 18px 50px rgba(0,0,0,.35)',
+                }}
+              />
               <Morph id="title" layout="position" style={{ marginTop: 24 }}>
                 <div style={{ fontSize: 20, fontWeight: 600 }}>Golden Hour</div>
-                <div style={{ fontSize: 16, color: 'rgba(255,255,255,.6)' }}>The Weekend Ensemble</div>
+                <div style={{ fontSize: 16, color: 'rgba(255,255,255,.6)' }}>
+                  The Weekend Ensemble
+                </div>
               </Morph>
-              <Morph id="controls" fade style={{ marginTop: 18, display: 'grid', gap: 16 }}>
-                <Slider aria-label="Position" tone="onDark" size="sm" defaultValue={32} />
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 44 }}>
+              <Morph
+                id="controls"
+                fade
+                style={{ marginTop: 18, display: 'grid', gap: 16 }}
+              >
+                <Slider
+                  aria-label="Position"
+                  tone="onDark"
+                  size="sm"
+                  defaultValue={32}
+                />
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 44,
+                  }}
+                >
                   <Icon name="backward" size={32} />
                   <Icon name="pause" size={40} />
                   <Icon name="forward" size={32} />
@@ -102,13 +178,29 @@ export default function MiniPlayer() {
                 color: 'var(--bl-label)',
                 background: 'var(--bl-bar)',
                 backdropFilter: 'blur(24px) saturate(1.8)',
-                boxShadow: '0 6px 24px rgba(0,0,0,.16), 0 0 0 .5px var(--bl-sep)',
+                boxShadow:
+                  '0 6px 24px rgba(0,0,0,.16), 0 0 0 .5px var(--bl-sep)',
               }}
             >
-              <Morph id="art" radius={8} style={{ width: 48, height: 48, flexShrink: 0, background: art }} />
-              <Morph id="title" layout="position" style={{ flex: 1, minWidth: 0 }}>
+              <Morph
+                id="art"
+                radius={8}
+                style={{
+                  width: 48,
+                  height: 48,
+                  flexShrink: 0,
+                  background: art,
+                }}
+              />
+              <Morph
+                id="title"
+                layout="position"
+                style={{ flex: 1, minWidth: 0 }}
+              >
                 <div style={{ fontSize: 15, fontWeight: 500 }}>Golden Hour</div>
-                <div style={{ fontSize: 13, color: 'var(--bl-label2)' }}>The Weekend Ensemble</div>
+                <div style={{ fontSize: 13, color: 'var(--bl-label2)' }}>
+                  The Weekend Ensemble
+                </div>
               </Morph>
               <NowPlayingBars style={{ color: 'var(--bl-tint)' }} />
             </Morph>

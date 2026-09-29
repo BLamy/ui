@@ -34,10 +34,16 @@ function ContactsList() {
     if (el && scroller.current) scroller.current.scrollTop = el.offsetTop
   }
   return (
-    <div style={{ position: 'relative', height: 400, background: 'var(--bl-card)' }}>
+    <div
+      style={{
+        position: 'relative',
+        height: 400,
+        background: 'var(--bl-card)',
+      }}
+    >
       <div
         ref={scroller}
-        style={{ position: 'absolute', inset: 0, overflowY: 'auto', paddingRight: 22 }}
+        style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}
       >
         <List>
           {letters.map((letter) => (
@@ -74,7 +80,8 @@ function ContactsList() {
   )
 }
 
-// A rounded, hairline-bordered window the example sits in; `width` caps it, centered.
+// A rounded, hairline-bordered window the example sits in; `width` caps it,
+// centered.
 function Window({
   width,
   bg = 'var(--bl-bg)',

@@ -6,15 +6,25 @@ import type { EditorAttachment } from '@brett_lamy/docstream-editor';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
   Dialog,
+  FileTrigger,
   Menu,
   MenuItem,
   MenuTrigger,
   Modal,
   ModalOverlay,
+  VisuallyHidden,
   composeRenderProps,
+  useDrop,
+  type DropItem,
   type Key,
   type MenuItemProps,
 } from 'react-aria-components';
+import { useButton } from 'react-aria/useButton';
+import { useClipboard } from 'react-aria/useClipboard';
+import { useFocusRing } from 'react-aria/useFocusRing';
+import { mergeProps } from 'react-aria/mergeProps';
+import { Extension } from '@tiptap/core';
+import { Plugin } from '@tiptap/pm/state';
 import { Button, ToggleButton, type ButtonProps } from '../../lib/workbench/press';
 import { cn } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
@@ -23,6 +33,20 @@ import { WbPopover } from './wb-popover';
 import { looksLikeMarkdown, insertMarkdown } from '../markdown-editor';
 import { useComposerAnnotator, type ComposerAnnotator, type ComposerAnnotatorSurface } from './annotator';
 import { animate, AnimatePresence, motion } from 'framer-motion';
+import { Icon } from '../../lib/icon';
+import { useToast } from '../toast';
+import {
+  acceptsFile,
+  attachmentFileName,
+  attachmentKind,
+  describeAccepted,
+  fileExtension,
+  formatFileSize,
+  readFileAsDataURL,
+  textExcerpt,
+  videoPoster,
+  type ComposerAttachmentKind,
+} from './composer-files';
 import { MorphText, flipPlay, flipSnapshot, prefersReducedMotion, springs, useSpringSheetDrag, type FlipSnapshot, type SpringSheetDragState } from '../../lib/workbench/motion';
 
 /* ══ Composer — a compositional prompt box, in the spirit of shadcn's InputGroup ══
@@ -45,7 +69,39 @@ import { MorphText, flipPlay, flipSnapshot, prefersReducedMotion, springs, useSp
    from `useComposer()`. `ComposerOutlet` lets an ancestor add parts to (or wrap the card of) the Composer
    inside it — ArtifactChatContainer uses it to hang its transcript off a draggable top bump. */
 
-export type ComposerAttachment = EditorAttachment;
+export type { ComposerAttachmentKind } from './composer-files';
+
+/**
+ * A file in the draft. Images are data URLs (they chip into the editor and can be annotated); other files keep
+ * an object URL in `src` (revoked when removed, or when the Composer unmounts) and show as tiles.
+ */
+export interface ComposerAttachment extends EditorAttachment {
+  /** What it is, for its tile (derived from `type` / `name` when missing). */
+  kind?: ComposerAttachmentKind;
+  /** The picked, dropped or pasted file (for uploading it). */
+  file?: File;
+  /** A still for the tile: a video's first frame, a document's first page (an image URL). */
+  preview?: string;
+  /** The first lines of a text or code file, for its tile. */
+  excerpt?: string;
+}
+
+/** Where attached files came from. */
+export type ComposerFileSource = 'picker' | 'drop' | 'paste' | 'api';
+
+/** A file the Composer turned away, and why. */
+export interface ComposerFileRejection {
+  file: File;
+  /** `type`: not in `acceptedFileTypes` · `size`: over `maxFileSize` · `count`: past `maxFiles`. */
+  reason: 'type' | 'size' | 'count';
+}
+
+export interface ComposerAttachOptions {
+  /** Where the files came from (passed to `onDropFiles`; default `api`). */
+  source?: ComposerFileSource;
+  /** A viewport point (e.g. a drop's) — image chips land there when it is over the editor, else at the caret. */
+  point?: { x: number; y: number };
+}
 
 type ComposerEditor = NonNullable<Parameters<NonNullable<GitbookEditorProps['onEditorReady']>>[0]>;
 
@@ -58,8 +114,14 @@ export interface ComposerContextValue {
   /** Drops an attachment and its chip in the editor. */
   removeAttachment: (id: string) => void;
   updateAttachment: (id: string, patch: Partial<ComposerAttachment>) => void;
-  /** Reads image files and adds them as attachments (with a chip at the caret when an input is mounted). */
-  attachFiles: (files: File[]) => void;
+  /**
+   * Adds files as attachments, after the `acceptedFileTypes` / `maxFileSize` / `maxFiles` checks and the
+   * `onDropFiles` hook. Images chip into the editor (at `point` when over it, else the caret); other files
+   * become tiles with a preview where one is cheap (a video's first frame, a text file's first lines).
+   */
+  attachFiles: (files: File[], options?: ComposerAttachOptions) => void;
+  /** The Composer's `acceptedFileTypes` (the add button and the drop zone use it). */
+  acceptedFileTypes?: string[];
   expanded: boolean;
   setExpanded: (expanded: boolean) => void;
   streaming: boolean;
@@ -130,7 +192,7 @@ export interface ComposerProps {
   value?: string;
   defaultValue?: string;
   onValueChange?: (markdown: string) => void;
-  /** Controlled attachments (pasted/dropped/attached images). */
+  /** Controlled attachments (pasted, dropped, or picked files). */
   attachments?: ComposerAttachment[];
   defaultAttachments?: ComposerAttachment[];
   onAttachmentsChange?: (attachments: ComposerAttachment[]) => void;
@@ -151,6 +213,22 @@ export interface ComposerProps {
   annotator?: ComposerAnnotator | null;
   /** A fixed drawing surface for the AnnotateLightbox instead of an `annotator` (its first <svg> is flattened). */
   annotateCanvas?: React.ReactNode;
+  /**
+   * Files the composer takes — from the add button, a drop, or a paste — as MIME types, wildcards and
+   * extensions (`['image/*', 'application/pdf', '.md']`). Default: any file. Others are turned away with a toast.
+   */
+  acceptedFileTypes?: string[];
+  /** The largest file (bytes) the composer takes; larger ones are turned away with a toast. */
+  maxFileSize?: number;
+  /** How many attachments a draft can hold; files past it are turned away with a toast. */
+  maxFiles?: number;
+  /**
+   * Sees every batch of files that passed the checks, before they attach (from `picker`, `drop`, `paste`, or
+   * `api`). Return `false` to take them yourself (nothing attaches), or an array to attach those instead.
+   */
+  onDropFiles?: (files: File[], source: ComposerFileSource) => File[] | false | void;
+  /** Called with the files turned away. Providing it replaces the default warning toast. */
+  onFilesRejected?: (rejections: ComposerFileRejection[]) => void;
   /** Collapse state: the full card, a single-row `compact` pill, or a `fab`. */
   collapsed?: ComposerCollapse;
   defaultCollapsed?: ComposerCollapse;
@@ -198,15 +276,15 @@ function useControllable<T>(value: T | undefined, initial: T, onChange?: (v: T) 
   return [current, set];
 }
 
-const readAsDataURL = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-
 const newId = () => 'att-' + Math.random().toString(36).slice(2, 12);
+
+/** An attachment's kind: its own, else from its type and name (untyped legacy attachments are images). */
+function resolveKind(a: ComposerAttachment): ComposerAttachmentKind {
+  if (a.kind) return a.kind;
+  const kind = attachmentKind(a.type, a.name);
+  if (kind === 'other' && !a.type && (!a.src || a.src.startsWith('data:image/'))) return 'image';
+  return kind;
+}
 
 export function Composer({
   value: valueProp,
@@ -223,6 +301,11 @@ export function Composer({
   onSubmit,
   annotator: annotatorProp,
   annotateCanvas,
+  acceptedFileTypes,
+  maxFileSize,
+  maxFiles,
+  onDropFiles,
+  onFilesRejected,
   collapsed: collapsedProp,
   defaultCollapsed = 'none',
   onCollapsedChange,
@@ -267,19 +350,122 @@ export function Composer({
     editor?.commands.removeAttachment(id);
     setAttachments((all) => all.filter((a) => a.id !== id));
   };
-  const attachFiles = (files: File[]) => {
-    for (const file of files) {
-      if (!file.type.startsWith('image/')) continue;
-      const id = newId();
-      const name = (file.name || 'image.png').replace(/[[\]"<>\r\n]/g, '_');
-      editor?.chain().focus().insertContent([{ type: 'gbAttachment', attrs: { id, name } }, { type: 'text', text: ' ' }]).run();
-      readAsDataURL(file).then(
-        (src) => {
-          vib([8]);
-          addAttachment({ id, name, src, size: file.size, type: file.type });
-        },
-        () => addAttachment({ id, name, size: file.size, type: file.type }),
-      );
+
+  // ── files ──
+  // Object URLs for non-image files: revoked once their attachment leaves the draft (removed, or replaced by a
+  // controlled parent). Sent ones belong to onSubmit's receiver until the Composer unmounts.
+  const objectUrls = useRef(new Map<string, string>());
+  const sentUrls = useRef<string[]>([]);
+  // Files still being read, so `maxFiles` counts them.
+  const pendingFiles = useRef(0);
+  React.useEffect(() => {
+    const live = new Set(attachments.map((a) => a.id));
+    objectUrls.current.forEach((url, id) => {
+      if (live.has(id)) return;
+      URL.revokeObjectURL(url);
+      objectUrls.current.delete(id);
+    });
+  }, [attachments]);
+  React.useEffect(
+    () => () => {
+      objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      objectUrls.current.clear();
+      sentUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      sentUrls.current = [];
+    },
+    [],
+  );
+  const toast = useToast();
+  const [announcement, setAnnouncement] = useState('');
+  const rejectFiles = (rejections: ComposerFileRejection[]) => {
+    if (!rejections.length) return;
+    if (onFilesRejected) return onFilesRejected(rejections);
+    const names = (rs: ComposerFileRejection[]) => {
+      const list = rs.map((r) => r.file.name || 'a file');
+      const shown = list.slice(0, 2).join(list.length === 2 ? ' and ' : ', ');
+      return list.length > 2 ? `${shown} and ${list.length - 2} more` : shown;
+    };
+    const group = (reason: ComposerFileRejection['reason']) => rejections.filter((r) => r.reason === reason);
+    const [type, size, count] = [group('type'), group('size'), group('count')];
+    const are = (rs: unknown[]) => (rs.length > 1 ? 'are' : 'is');
+    const lines = [
+      type.length && `${names(type)} ${are(type)} not a type this composer takes (${describeAccepted(acceptedFileTypes)}).`,
+      size.length && `${names(size)} ${are(size)} over the ${formatFileSize(maxFileSize)} limit.`,
+      count.length && `${names(count)} didn't fit — a draft holds ${maxFiles} attachment${maxFiles === 1 ? '' : 's'}.`,
+    ].filter(Boolean);
+    const n = rejections.length;
+    toast.warning(n === 1 ? "Couldn't attach a file" : `Couldn't attach ${n} files`, {
+      id: 'composer-files-rejected',
+      description: lines.join(' '),
+    });
+  };
+  // Image chips go in one step (like the editor's own paste): a space before them if they would touch a word.
+  const insertChips = (items: { id: string; name: string }[], at?: number) => {
+    const ed = editor;
+    if (!ed || ed.isDestroyed || !items.length) return;
+    const pos = at === undefined ? undefined : Math.min(at, ed.state.doc.content.size);
+    const $at = pos === undefined ? ed.state.selection.$from : ed.state.doc.resolve(pos);
+    const before = $at.parent.isTextblock ? $at.parent.textBetween(Math.max(0, $at.parentOffset - 1), $at.parentOffset, '', '\uFFFC') : '';
+    const content = [
+      ...(before && !/\s/.test(before) ? [{ type: 'text', text: ' ' }] : []),
+      ...items.flatMap(({ id, name }) => [{ type: 'gbAttachment', attrs: { id, name } }, { type: 'text', text: ' ' }]),
+    ];
+    const chain = ed.chain().focus();
+    (pos === undefined ? chain.insertContent(content) : chain.insertContentAt(pos, content)).run();
+  };
+  const attachFiles = (incoming: File[], { source = 'api', point }: ComposerAttachOptions = {}) => {
+    const rejected: ComposerFileRejection[] = [];
+    let files = incoming.filter((file) => {
+      if (!acceptsFile(file, acceptedFileTypes)) rejected.push({ file, reason: 'type' });
+      else if (maxFileSize != null && file.size > maxFileSize) rejected.push({ file, reason: 'size' });
+      else return true;
+      return false;
+    });
+    if (maxFiles != null) {
+      const room = Math.max(0, maxFiles - attRef.current.length - pendingFiles.current);
+      files.slice(room).forEach((file) => rejected.push({ file, reason: 'count' }));
+      files = files.slice(0, room);
+    }
+    rejectFiles(rejected);
+    if (files.length && onDropFiles) {
+      const picked = onDropFiles(files, source);
+      if (picked === false) files = [];
+      else if (Array.isArray(picked)) files = picked;
+    }
+    if (!files.length) return;
+
+    const items = files.map((file) => {
+      const kind = attachmentKind(file.type, file.name);
+      return { file, kind, id: newId(), name: attachmentFileName(file, kind === 'image' ? 'image.png' : 'file') };
+    });
+    // Images chip into the editor: where they were dropped when that is over it, else at the caret.
+    const images = items.filter((i) => i.kind === 'image');
+    let at: number | undefined;
+    if (point && editor && !editor.isDestroyed) {
+      const hit = typeof document !== 'undefined' ? document.elementFromPoint(point.x, point.y) : null;
+      if (hit && editor.view.dom.contains(hit)) at = editor.view.posAtCoords({ left: point.x, top: point.y })?.pos;
+    }
+    insertChips(images, at);
+    vib([8]);
+    setAnnouncement(`Attached ${files.length === 1 ? items[0].name : `${files.length} files`}.`);
+    for (const { file, kind, id, name } of items) {
+      const base: ComposerAttachment = { id, name, size: file.size, type: file.type, kind, file };
+      pendingFiles.current++;
+      const settle = (a: ComposerAttachment) => {
+        pendingFiles.current--;
+        addAttachment(a);
+      };
+      if (kind === 'image') {
+        readFileAsDataURL(file).then((src) => settle({ ...base, src }), () => settle(base));
+        continue;
+      }
+      const src = URL.createObjectURL(file);
+      objectUrls.current.set(id, src);
+      // Previews are cheap (a few KB read, one decoded frame): the tile arrives with its face rather than
+      // swapping it in — a video that can't be decoded in time keeps its glyph.
+      if (kind === 'text') textExcerpt(file).then((excerpt) => settle({ ...base, src, excerpt }));
+      else if (kind === 'video') videoPoster(src, { timeout: 2500 }).then((preview) => settle({ ...base, src, preview }));
+      else settle({ ...base, src });
     }
   };
 
@@ -288,6 +474,13 @@ export function Composer({
     vib([8]);
     const markdown = valueRef.current.trim();
     const sent = attRef.current;
+    // The receiver owns the sent files' URLs now; they stay valid until this Composer unmounts.
+    for (const a of sent) {
+      const url = objectUrls.current.get(a.id);
+      if (!url) continue;
+      sentUrls.current.push(url);
+      objectUrls.current.delete(a.id);
+    }
     setAttachments([]);
     if (editor) editor.commands.clearContent(true);
     setValue('');
@@ -390,6 +583,9 @@ export function Composer({
   const origin = useRef<(() => HTMLElement | null) | undefined>(undefined);
   const pressedAttachment = useRef<Element | null>(null);
   const openAnnotator = (id: string) => {
+    // Annotation is for images; other files open from their tiles.
+    const target = attRef.current.find((a) => a.id === id);
+    if (target && resolveKind(target) !== 'image') return;
     // The lightbox zooms out of the thumbnail (or the inline chip) and lands back in it.
     const esc = typeof CSS !== 'undefined' ? CSS.escape(id) : id;
     const pressed = pressedAttachment.current;
@@ -412,6 +608,7 @@ export function Composer({
     removeAttachment,
     updateAttachment,
     attachFiles,
+    acceptedFileTypes,
     expanded,
     setExpanded,
     streaming,
@@ -458,6 +655,12 @@ export function Composer({
             {outlet?.parts}
             {children}
           </div>
+          {/* Screen readers hear what a drop, paste or pick attached. */}
+          <VisuallyHidden>
+            <span data-slot="composer-announcer" role="status" aria-live="polite">
+              {announcement}
+            </span>
+          </VisuallyHidden>
         </div>
         {annotated?.src ? (
           <AnnotateLightbox
@@ -659,19 +862,178 @@ export const composerCardVariants = cva(
 );
 
 export interface ComposerCardProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof composerCardVariants> {
+  /**
+   * The card is a react-aria drop zone for files (default): drag files from the OS onto it and they attach; a
+   * drop overlay springs in while they hover. Keyboard users reach a hidden drop target after the card's
+   * controls, where react-aria's keyboard drag and drop and ⌘V paste work. `false` opts out.
+   */
+  dropZone?: boolean;
+  /** The overlay's title while files hover (default "Drop to attach"). */
+  dropLabel?: React.ReactNode;
   ref?: React.Ref<HTMLDivElement>;
 }
 
-/** The bordered surface. Holds the input and its addons; an outlet may wrap it. */
-export function ComposerCard({ size, className, ref, children, ...props }: ComposerCardProps) {
-  const { renderCard, collapsed, fab } = useComposer();
+/** Files carried by drop items (directories are read recursively). */
+async function filesFromDropItems(items: DropItem[], limit = 500): Promise<File[]> {
+  const files: File[] = [];
+  const walk = async (list: AsyncIterable<DropItem> | DropItem[]) => {
+    for await (const item of list) {
+      if (files.length >= limit) return;
+      if (item.kind === 'file') files.push(await item.getFile());
+      else if (item.kind === 'directory') await walk(item.getEntries());
+    }
+  };
+  await walk(items);
+  return files;
+}
+
+const carriesFiles = (e: React.DragEvent) => !!e.dataTransfer && Array.from(e.dataTransfer.types ?? []).includes('Files');
+
+/**
+ * The card as a react-aria drop target: `useDrop` with a (visually hidden) drop button, as in react-aria's
+ * DropZone, but only file drags reach it — text dragged inside the editor keeps the editor's own handling.
+ */
+function useComposerDrop(card: React.RefObject<HTMLDivElement | null>, disabled: boolean) {
+  const { attachFiles } = useComposer();
+  const latest = useRef(attachFiles);
+  latest.current = attachFiles;
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  // The drop's files as the browser listed them — for drops whose items can't be read as entries.
+  const nativeFiles = useRef<File[]>([]);
+  const take = async (items: DropItem[], source: ComposerFileSource, point?: { x: number; y: number }) => {
+    const fallback = nativeFiles.current;
+    nativeFiles.current = [];
+    const read = await filesFromDropItems(items);
+    const files = read.length ? read : fallback;
+    if (files.length) latest.current(files, { source, point });
+  };
+  const { dropProps, dropButtonProps, isDropTarget } = useDrop({
+    ref: buttonRef,
+    hasDropButton: true,
+    isDisabled: disabled,
+    // Every file is welcome at the door; attachFiles turns away what the composer doesn't take, with a toast.
+    getDropOperation: () => 'copy',
+    onDrop: (e) => {
+      const rect = card.current?.getBoundingClientRect();
+      // Keyboard and clipboard drops arrive at 0,0 — they go to the caret.
+      const point = rect && (e.x || e.y) ? { x: rect.left + e.x, y: rect.top + e.y } : undefined;
+      void take(e.items, 'drop', point);
+    },
+  });
+  const { buttonProps } = useButton({ ...dropButtonProps, isDisabled: disabled || dropButtonProps?.isDisabled }, buttonRef);
+  const { clipboardProps } = useClipboard({ isDisabled: disabled, onPaste: (items) => void take(items, 'paste') });
+  const { focusProps, isFocusVisible } = useFocusRing();
+  // Only file drags: the editor handles its own text drags (moving a selection, dropping a link).
+  const gate =
+    (handler: React.DragEventHandler | undefined): React.DragEventHandler =>
+    (e) => {
+      if (carriesFiles(e)) handler?.(e);
+    };
+  const gated: React.HTMLAttributes<HTMLElement> = {
+    onDragEnter: gate(dropProps.onDragEnter),
+    onDragOver: gate(dropProps.onDragOver),
+    onDragLeave: gate(dropProps.onDragLeave),
+    onDrop: gate((e) => {
+      nativeFiles.current = Array.from(e.dataTransfer.files ?? []);
+      dropProps.onDrop?.(e as React.DragEvent<HTMLElement>);
+    }),
+  };
+  return {
+    dropProps: gated,
+    buttonProps: mergeProps(buttonProps, clipboardProps, focusProps),
+    buttonRef,
+    isDropTarget,
+    isFocusVisible,
+  };
+}
+
+/** The card's drop overlay: a tinted wash and ring that spring in, the plus lifting into place. */
+function ComposerDropOverlay({ state, label, hint }: { state: 'drop' | 'focus' | null; label?: React.ReactNode; hint: string }) {
+  return (
+    <AnimatePresence>
+      {state ? (
+        <motion.div
+          key="drop"
+          data-slot="composer-drop-overlay"
+          data-state={state}
+          aria-hidden="true"
+          className={cn(
+            'pointer-events-none absolute -inset-px z-4 flex items-center justify-center overflow-hidden rounded-[inherit] border-2 border-wb-tint',
+            state === 'drop'
+              ? 'bg-[color-mix(in_srgb,var(--wb-tint)_11%,var(--wb-card))]'
+              : 'border-dashed bg-[color-mix(in_srgb,var(--wb-tint)_6%,var(--wb-card))]',
+          )}
+          initial={{ opacity: 0, scale: 0.985 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.985 }}
+          transition={springs.snappy}
+        >
+          <motion.div
+            className="flex min-w-0 items-center gap-2.5 px-4"
+            initial={{ y: 8, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 8, opacity: 0 }}
+            transition={springs.bouncy}
+          >
+            <motion.span
+              className="grid size-8 shrink-0 place-items-center rounded-full bg-wb-tint text-white shadow-[0_4px_14px_-4px_var(--wb-tint)] group-data-[collapsed=compact]/composer:size-6"
+              initial={{ scale: 0.4, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0.4, rotate: -90 }}
+              transition={springs.bouncy}
+            >
+              <WIcon name="plus" size={16} sw={2.6} />
+            </motion.span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-[13.5px] font-semibold text-wb-label">
+                {state === 'focus' ? 'Paste or drop files' : (label ?? 'Drop to attach')}
+              </span>
+              <span className="truncate text-[11.5px] text-wb-label2 group-data-[collapsed=compact]/composer:hidden">{hint}</span>
+            </span>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+/** The bordered surface. Holds the input and its addons, takes dropped files; an outlet may wrap it. */
+export function ComposerCard({ size, dropZone = true, dropLabel, className, ref, children, ...props }: ComposerCardProps) {
+  const { renderCard, collapsed, fab, acceptedFileTypes } = useComposer();
   const folded = collapsed === 'fab' && !!fab;
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const drop = useComposerDrop(cardRef, !dropZone || folded);
+  const overlay = !dropZone || folded ? null : drop.isDropTarget ? 'drop' : drop.isFocusVisible ? 'focus' : null;
   const card = (
-    <div ref={ref} data-slot="composer-card" data-folded={folded || undefined} className={cn(composerCardVariants({ size }), className)} {...props}>
+    <div
+      ref={(el) => {
+        cardRef.current = el;
+        if (typeof ref === 'function') ref(el);
+        else if (ref) ref.current = el;
+      }}
+      data-slot="composer-card"
+      data-folded={folded || undefined}
+      data-drop-zone={(dropZone && !folded) || undefined}
+      data-drop-target={drop.isDropTarget || undefined}
+      className={cn(composerCardVariants({ size }), className)}
+      {...(dropZone ? mergeProps(props, drop.dropProps) : props)}
+    >
       {/* Folded into the FAB, the card keeps its content (faded, inert) and shows the button face over it. */}
       <div data-slot="composer-card-body" className="contents" inert={folded || undefined} aria-hidden={folded || undefined}>
         {children}
       </div>
+      {dropZone ? (
+        <>
+          <ComposerDropOverlay
+            state={overlay}
+            label={dropLabel}
+            hint={acceptedFileTypes?.length ? describeAccepted(acceptedFileTypes) : 'Images, documents, code — any file'}
+          />
+          <VisuallyHidden>
+            <button ref={drop.buttonRef} data-slot="composer-drop-target" aria-label="Attach files: drop or paste here" {...drop.buttonProps} />
+          </VisuallyHidden>
+        </>
+      ) : null}
       {fab ? (
         <Button
           data-slot="composer-fab"
@@ -1041,40 +1403,78 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
   );
 }
 
-/** Paperclip → file picker → image attachments (inserted as chips at the caret). */
-export function ComposerAttach({ className, accept = 'image/*', ...props }: Omit<ComposerButtonProps, 'variant'> & { accept?: string }) {
-  const { attachFiles } = useComposer();
-  const input = useRef<HTMLInputElement>(null);
+export interface ComposerAddProps extends Omit<ComposerButtonProps, 'variant' | 'children'> {
+  /** Files the picker offers (MIME types, wildcards, extensions). Defaults to the Composer's `acceptedFileTypes`. */
+  acceptedFileTypes?: string[];
+  /** Pick several files at once (default `true`). */
+  allowsMultiple?: boolean;
+  /** Pick a whole directory instead of files. */
+  acceptDirectory?: boolean;
+  /** On mobile, open the camera (`user` / `environment`) rather than the library. */
+  defaultCamera?: 'user' | 'environment';
+  /** The glyph (a WIcon name or a node; default `plus`). */
+  icon?: WIconName | React.ReactNode;
+  /** Accessible name and tooltip (default "Add files"). */
+  label?: string;
+}
+
+/**
+ * The "+" button: a react-aria `FileTrigger` that opens the file picker and attaches what you pick — images
+ * as chips at the caret, other files as tiles. Pair it with `ComposerAttachments`.
+ */
+export function ComposerAdd({
+  acceptedFileTypes,
+  allowsMultiple = true,
+  acceptDirectory,
+  defaultCamera,
+  icon = 'plus',
+  label = 'Add files',
+  className,
+  onPress,
+  ...props
+}: ComposerAddProps) {
+  const { attachFiles, acceptedFileTypes: accepted } = useComposer();
   return (
-    <>
+    <FileTrigger
+      acceptedFileTypes={acceptedFileTypes ?? accepted}
+      allowsMultiple={allowsMultiple}
+      acceptDirectory={acceptDirectory}
+      defaultCamera={defaultCamera}
+      onSelect={(list) => attachFiles(Array.from(list ?? []), { source: 'picker' })}
+    >
       <ComposerButton
-        data-slot="composer-attach"
+        data-slot="composer-add"
         variant="ghost"
-        aria-label="Attach images"
-        title="Attach images"
-        onPress={() => {
+        aria-label={label}
+        title={label}
+        onPress={(e) => {
           tick();
-          input.current?.click();
+          onPress?.(e);
         }}
         className={className}
         {...props}
       >
-        <WIcon name="clip" size={15.5} sw={2} />
+        {typeof icon === 'string' ? <WIcon name={icon} size={icon === 'plus' ? 17 : 15.5} sw={2} /> : icon}
       </ComposerButton>
-      <input
-        ref={input}
-        type="file"
-        accept={accept}
-        multiple
-        hidden
-        tabIndex={-1}
-        data-slot="composer-attach-input"
-        onChange={(e) => {
-          attachFiles(Array.from(e.currentTarget.files ?? []));
-          e.currentTarget.value = '';
-        }}
-      />
-    </>
+    </FileTrigger>
+  );
+}
+
+export interface ComposerAttachProps extends ComposerAddProps {
+  /** @deprecated use `acceptedFileTypes` — an `<input accept>` string (e.g. `"image/*,.pdf"`). */
+  accept?: string;
+}
+
+/** The paperclip: `ComposerAdd` with a clip glyph (kept for existing compositions). */
+export function ComposerAttach({ accept, acceptedFileTypes, label = 'Attach files', ...props }: ComposerAttachProps) {
+  return (
+    <ComposerAdd
+      data-slot="composer-attach"
+      icon="clip"
+      label={label}
+      acceptedFileTypes={acceptedFileTypes ?? (accept ? accept.split(',').map((t) => t.trim()).filter(Boolean) : undefined)}
+      {...props}
+    />
   );
 }
 
@@ -1107,12 +1507,109 @@ export function ComposerExpand({ className }: { className?: string }) {
 }
 
 /* ── Attachments strip ── */
+/** Each kind's glyph and colour on its tile. */
+const KIND_FACE: Record<ComposerAttachmentKind, { icon: string; color: string; label: string }> = {
+  image: { icon: 'photo', color: 'var(--wb-green)', label: 'Image' },
+  video: { icon: 'video', color: '#AF52DE', label: 'Video' },
+  audio: { icon: 'music-note', color: '#FF2D55', label: 'Audio' },
+  pdf: { icon: 'doc', color: 'var(--wb-red)', label: 'PDF' },
+  text: { icon: 'doc', color: 'var(--wb-tint)', label: 'Text' },
+  archive: { icon: 'archivebox', color: '#A2845E', label: 'Archive' },
+  other: { icon: 'doc', color: 'var(--wb-label2)', label: 'File' },
+};
+
+/** "PDF · 1.2 MB" — the extension (or the kind) and the size. */
+function attachmentMeta(a: ComposerAttachment, kind: ComposerAttachmentKind) {
+  const ext = fileExtension(a.name).toUpperCase();
+  return [ext && ext.length <= 5 ? ext : KIND_FACE[kind].label, formatFileSize(a.size)].filter(Boolean).join(' · ');
+}
+
+/** The small dark badge in a thumbnail's corner (the annotate pencil, a file's extension). */
+function TileBadge({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn(
+        'pointer-events-none absolute bottom-1 left-1 grid h-[18px] min-w-[18px] place-items-center rounded-md bg-[rgba(0,0,0,.55)] px-1 text-[9.5px] leading-none font-bold tracking-[.02em] text-white uppercase',
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** The face of a non-image file: a video's poster, a text file's first lines, else a glyph with its name and size. */
+function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttachmentKind }) {
+  const ext = fileExtension(a.name);
+  if (kind === 'video' && a.preview) {
+    return (
+      <span className="relative block h-[58px] w-[104px]">
+        <motion.img
+          src={a.preview}
+          alt=""
+          className="block size-full object-cover"
+          initial={{ opacity: 0, filter: 'blur(6px)' }}
+          animate={{ opacity: 1, filter: 'blur(0px)' }}
+          transition={springs.smooth}
+        />
+        <span className="absolute top-1/2 left-1/2 grid size-[22px] -translate-1/2 place-items-center rounded-full bg-[rgba(0,0,0,.55)] pl-px text-white">
+          <Icon name="play" size={11} sw={2} className="[&_path]:fill-current" />
+        </span>
+        {ext ? <TileBadge>{ext}</TileBadge> : null}
+      </span>
+    );
+  }
+  if (kind === 'text' && a.excerpt) {
+    return (
+      <span className="relative block h-[58px] w-[112px] text-left">
+        <span className="block h-full overflow-hidden px-[7px] pt-[6px] font-mono text-[6px] leading-[8px] whitespace-pre text-wb-label2 [mask-image:linear-gradient(to_bottom,#000_45%,transparent_92%)]">
+          {a.excerpt}
+        </span>
+        {ext ? <TileBadge>{ext}</TileBadge> : null}
+      </span>
+    );
+  }
+  const face = KIND_FACE[kind];
+  return (
+    <span className="flex h-[58px] w-[164px] min-w-0 items-center gap-2.5 px-2.5 text-left">
+      <span
+        className="grid size-9 shrink-0 place-items-center rounded-[9px]"
+        style={{ color: face.color, background: `color-mix(in srgb, ${face.color} 15%, transparent)` }}
+      >
+        <Icon name={face.icon} size={20} sw={1.8} />
+      </span>
+      <span className="flex min-w-0 flex-col gap-px">
+        <span className="truncate text-[12.5px] leading-[16px] font-medium text-wb-label">{a.name}</span>
+        <span className="truncate text-[11px] leading-[14px] text-wb-label2">{attachmentMeta(a, kind)}</span>
+      </span>
+    </span>
+  );
+}
+
 /**
- * Thumbnails of the attachments: click to annotate, ✕ to remove (its chip goes too). A block-start addon.
- * The strip opens and closes as a height morph, and thumbnails pop in and out while their neighbours slide.
+ * The attachments as tiles: images as thumbnails (click to annotate), videos as their first frame, text and
+ * code as their first lines, other files as a glyph with name and size (click to open). ✕ — or Backspace /
+ * Delete on a focused tile — removes one (an image's chip goes too). A block-start addon. The strip opens and
+ * closes as a height morph, and tiles pop in and out while their neighbours slide.
  */
 export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonProps, 'align'>) {
-  const { attachments, annotate, canAnnotate, removeAttachment } = useComposer();
+  const { attachments, annotate, canAnnotate, removeAttachment, editor } = useComposer();
+  const strip = useRef<HTMLDivElement | null>(null);
+  // Removing from the keyboard hands focus to a neighbour (or back to the editor), never to the page.
+  const removeFromKeyboard = (id: string) => {
+    const tiles = Array.from(strip.current?.querySelectorAll<HTMLElement>('[data-slot="composer-attachment-open"]') ?? []);
+    const i = tiles.findIndex((t) => t.closest('[data-attachment-id]')?.getAttribute('data-attachment-id') === id);
+    const next = tiles[i + 1] ?? tiles[i - 1];
+    tick();
+    removeAttachment(id);
+    if (next) next.focus();
+    else editor?.commands.focus('end');
+  };
+  const onTileKey = (id: string) => (e: React.KeyboardEvent) => {
+    if (e.key !== 'Backspace' && e.key !== 'Delete') return;
+    e.preventDefault();
+    removeFromKeyboard(id);
+  };
   return (
     <AnimatePresence initial={false}>
       {attachments.length ? (
@@ -1125,55 +1622,81 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
           exit={{ height: 0, opacity: 0 }}
           transition={springs.smooth}
         >
-          <ComposerAddon data-slot="composer-attachments" align="block-start" className={cn('flex-wrap gap-2', className)} {...props}>
+          <ComposerAddon ref={strip} data-slot="composer-attachments" align="block-start" className={cn('flex-wrap gap-2', className)} {...props}>
             <AnimatePresence mode="popLayout" initial={false}>
-              {attachments.map((a) => (
-                <motion.div
-                  key={a.id}
-                  layout="position"
-                  layoutDependency={attachments.map((x) => x.id).join()}
-                  data-slot="composer-attachment"
-                  data-attachment-id={a.id}
-                  className="relative"
-                  initial={{ opacity: 0, scale: 0.6, filter: 'blur(4px)' }}
-                  animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, scale: 0.6, filter: 'blur(4px)' }}
-                  transition={springs.snappy}
-                >
-                  <Button
-                    onPress={() => {
-                      tick();
-                      annotate(a.id);
-                    }}
-                    title={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
-                    aria-label={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
-                    className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-wb-term p-0"
+              {attachments.map((a) => {
+                const kind = resolveKind(a);
+                const image = kind === 'image';
+                const meta = attachmentMeta(a, kind);
+                return (
+                  <motion.div
+                    key={a.id}
+                    layout="position"
+                    layoutDependency={attachments.map((x) => x.id).join()}
+                    data-slot="composer-attachment"
+                    data-attachment-id={a.id}
+                    data-kind={kind}
+                    className="relative"
+                    initial={{ opacity: 0, scale: 0.6, filter: 'blur(4px)' }}
+                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, scale: 0.6, filter: 'blur(4px)' }}
+                    transition={springs.snappy}
                   >
-                    {a.src ? (
-                      <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
+                    {image ? (
+                      <>
+                        <Button
+                          data-slot="composer-attachment-open"
+                          onPress={() => {
+                            tick();
+                            annotate(a.id);
+                          }}
+                          onKeyDown={onTileKey(a.id)}
+                          title={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
+                          aria-label={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
+                          className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-wb-term p-0"
+                        >
+                          {a.src ? (
+                            <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
+                          ) : (
+                            <span className="grid h-[58px] w-[72px] place-items-center text-wb-label3">
+                              <WIcon name="doc" size={18} />
+                            </span>
+                          )}
+                        </Button>
+                        <span className="pointer-events-none absolute bottom-1 left-1 grid size-[18px] place-items-center rounded-md bg-[rgba(0,0,0,.55)] text-white">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 4l6 6-10 10H4v-6z" />
+                          </svg>
+                        </span>
+                      </>
                     ) : (
-                      <span className="grid h-[58px] w-[72px] place-items-center text-wb-label3">
-                        <WIcon name="doc" size={18} />
-                      </span>
+                      <Button
+                        data-slot="composer-attachment-open"
+                        onPress={() => {
+                          tick();
+                          if (a.src && typeof window !== 'undefined') window.open(a.src, '_blank', 'noopener');
+                        }}
+                        onKeyDown={onTileKey(a.id)}
+                        title={`${a.name}${meta ? ` · ${meta}` : ''}`}
+                        aria-label={`Open ${a.name}${meta ? `, ${meta}` : ''}`}
+                        className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-wb-fill p-0 font-ios outline-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60"
+                      >
+                        <FileTileFace a={a} kind={kind} />
+                      </Button>
                     )}
-                  </Button>
-                  <span className="pointer-events-none absolute bottom-1 left-1 grid size-[18px] place-items-center rounded-md bg-[rgba(0,0,0,.55)] text-white">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 4l6 6-10 10H4v-6z" />
-                    </svg>
-                  </span>
-                  <Button
-                    onPress={() => {
-                      tick();
-                      removeAttachment(a.id);
-                    }}
-                    aria-label={`Remove ${a.name}`}
-                    className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-wb-sep bg-wb-card2 p-0 text-[10px] leading-none text-wb-label2"
-                  >
-                    ✕
-                  </Button>
-                </motion.div>
-              ))}
+                    <Button
+                      onPress={() => {
+                        tick();
+                        removeAttachment(a.id);
+                      }}
+                      aria-label={`Remove ${a.name}`}
+                      className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-wb-sep bg-wb-card2 p-0 text-[10px] leading-none text-wb-label2"
+                    >
+                      ✕
+                    </Button>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </ComposerAddon>
         </motion.div>
@@ -1182,12 +1705,33 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
   );
 }
 
-
 /* ── Input ── */
 function caretOnPlainLine(editor: ComposerEditor): boolean {
   const { $from, empty } = editor.state.selection;
   return empty && $from.depth === 1 && $from.parent.type.name === 'paragraph';
 }
+
+/** Files dropped on the editor inside a drop-zone card are the card's (they attach — images as chips at the
+    drop point); the editor keeps text drags and, without a drop zone, its own image drops. */
+const FILE_DROP_EXTENSIONS = [
+  Extension.create({
+    name: 'composerFileDrop',
+    addProseMirrorPlugins() {
+      return [
+        new Plugin({
+          props: {
+            handleDOMEvents: {
+              drop: (view, event) =>
+                !!event.dataTransfer &&
+                Array.from(event.dataTransfer.types ?? []).includes('Files') &&
+                !!view.dom.closest('[data-slot="composer-card"][data-drop-zone]'),
+            },
+          },
+        }),
+      ];
+    },
+  }),
+];
 
 export interface ComposerInputProps {
   placeholder?: string;
@@ -1230,10 +1774,19 @@ export function ComposerInput({
     latest.current.send();
     return true;
   };
-  // Images are the editor's (imagePaste); this only turns Markdown-looking text into structure.
+  // Pasted files attach (images as chips, others as tiles); Markdown-looking text becomes structure.
   const handlePaste = (event: ClipboardEvent) => {
     const data = event.clipboardData;
-    if (data && Array.from(data.files ?? []).some((f) => f.type.startsWith('image/'))) return false;
+    const files = Array.from(data?.files ?? []);
+    if (files.length) {
+      const images = files.every((f) => f.type.startsWith('image/'));
+      // A Word / Excel selection ships a rendered PNG beside its text: that is a text paste. Inline image
+      // blocks are the editor's own.
+      if (images && (imagePaste === 'inline' || data?.getData('text/plain').trim())) return false;
+      event.preventDefault();
+      latest.current.attachFiles(files, { source: 'paste' });
+      return true;
+    }
     const text = data?.getData('text/plain') ?? '';
     if (!looksLikeMarkdown(text) || !editorRef.current) return false;
     return insertMarkdown(editorRef.current, text);
@@ -1265,14 +1818,16 @@ export function ComposerInput({
         onPaste={handlePaste}
         imagePaste={imagePaste}
         attachments={attachments}
-        onAttachmentAdd={({ file: _file, ...attachment }) => {
+        // Images the editor takes itself (a drop onto a card without a drop zone).
+        onAttachmentAdd={({ file, ...attachment }) => {
           vib([8]);
-          addAttachment(attachment);
+          addAttachment({ ...attachment, kind: 'image', file });
         }}
         // Chips deleted, cut or cleared in the editor drop their attachment.
         onAttachmentRemove={(ids) => ids.forEach((id) => latest.current.removeAttachment(id))}
         onAttachmentOpen={onAttachmentOpen}
         onEditorReady={onEditorReady}
+        extensions={FILE_DROP_EXTENSIONS}
       />
     </div>
   );

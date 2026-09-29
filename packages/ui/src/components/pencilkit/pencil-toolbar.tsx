@@ -51,20 +51,69 @@ export function PencilToolButton({ name, active, label, disabled, isDisabled, cl
 
 export type PencilToolbarProps = React.HTMLAttributes<HTMLDivElement>;
 
-/** Floating toolbar card, absolutely positioned bottom-center of the canvas. */
+/** Floating toolbar card, absolutely positioned bottom-center of the canvas. Its groups sit on one row; when
+ *  they don't fit (a phone), the pickers scroll sideways — edges fade where more tools are hidden — while
+ *  PencilActions (undo / redo / clear) stays pinned at the trailing end, instead of everything wrapping into a
+ *  ragged second line. Where everything fits it is the plain, centered card. */
 export function PencilToolbar({ className, style, children, ...rest }: PencilToolbarProps) {
+  const row = React.useRef<HTMLDivElement>(null);
+  const [fade, setFade] = React.useState<{ l: boolean; r: boolean }>({ l: false, r: false });
+  const sync = React.useCallback(() => {
+    const el = row.current;
+    if (!el) return;
+    const l = el.scrollLeft > 1, r = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+    setFade((f) => (f.l === l && f.r === r ? f : { l, r }));
+  }, []);
+  React.useLayoutEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    for (const c of el.children) ro.observe(c);
+    return () => ro.disconnect();
+  }, [sync, children]);
+  const all = React.Children.toArray(children);
+  const actions = all.filter((c) => React.isValidElement(c) && c.type === PencilActions);
+  // Nothing to scroll past (a toolbar of only actions): keep one plain row.
+  const pinned = actions.length < all.length ? actions : [];
+  const scrolled = pinned.length ? all.filter((c) => !pinned.includes(c)) : all;
+  const over = fade.l || fade.r;
+  const mask = over
+    ? `linear-gradient(to right, ${fade.l ? 'transparent, #000 22px' : '#000'}, ${fade.r ? '#000 calc(100% - 22px), transparent' : '#000'})`
+    : undefined;
   return (
     <div
       data-slot="pencil-toolbar"
+      data-overflowing={over ? '' : undefined}
       onPointerDown={(e) => e.stopPropagation()}
       className={cn(
-        'absolute inset-x-2.5 bottom-3.5 mx-auto box-border flex w-fit max-w-[calc(100%-20px)] cursor-default flex-wrap items-center justify-center gap-2.5 rounded-2xl border border-border bg-card px-3 py-[9px] shadow-[0_10px_34px_rgba(0,0,0,.24)]',
+        'absolute inset-x-2.5 bottom-3.5 mx-auto box-border flex w-fit max-w-[calc(100%-20px)] cursor-default overflow-hidden rounded-2xl border border-border bg-card shadow-[0_10px_34px_rgba(0,0,0,.24)]',
         className,
       )}
       style={style}
       {...rest}
     >
-      {children}
+      <div
+        ref={row}
+        data-slot="pencil-toolbar-row"
+        onScroll={sync}
+        className={cn(
+          'flex min-w-0 flex-1 touch-pan-x items-center gap-2.5 overflow-x-auto overscroll-x-contain py-[9px] pl-3 [scrollbar-width:none] *:shrink-0 [&::-webkit-scrollbar]:hidden',
+          pinned.length ? 'pr-0' : 'pr-3',
+        )}
+        style={{ maskImage: mask, WebkitMaskImage: mask }}
+      >
+        {scrolled}
+      </div>
+      {pinned.length ? (
+        <div
+          data-slot="pencil-toolbar-pinned"
+          className="flex shrink-0 items-center gap-2.5 py-[9px] pr-3 pl-2.5"
+        >
+          {pinned}
+        </div>
+      ) : null}
     </div>
   );
 }

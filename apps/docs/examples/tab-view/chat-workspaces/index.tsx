@@ -12,7 +12,13 @@ import {
 
 const servers = [
   { id: 'design', label: 'D', color: '#0A84FF', title: 'Design Team' },
-  { id: 'eng', label: 'E', color: '#BF5AF2', title: 'Engineering', unread: true },
+  {
+    id: 'eng',
+    label: 'E',
+    color: '#BF5AF2',
+    title: 'Engineering',
+    unread: true,
+  },
   { id: 'ops', label: 'O', color: '#FF9F0A', title: 'Ops', mentions: 3 },
 ]
 const channels: Record<string, string[]> = {
@@ -74,8 +80,11 @@ function ChatWorkspaces() {
           </div>
         ))}
       </nav>
-      <main style={{ flex: 1, padding: 20, fontSize: 13.5, color: 'var(--ck-mut)' }}>
-        Up / Down moves between workspaces; the pill marks unread, hover and selection.
+      <main
+        style={{ flex: 1, padding: 20, fontSize: 13.5, color: 'var(--ck-mut)' }}
+      >
+        Up / Down moves between workspaces; the pill marks unread, hover and
+        selection.
       </main>
     </div>
   )

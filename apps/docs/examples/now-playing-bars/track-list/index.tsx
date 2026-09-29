@@ -8,7 +8,8 @@ const tracks = [
   { title: 'Low Tide', time: '5:03' },
 ]
 
-// Tap a track to play it, tap it again to pause: the bars settle to a still skyline.
+// Tap a track to play it, tap it again to pause: the bars settle to a still
+// skyline.
 export default function TrackList() {
   const [current, setCurrent] = useState(1)
   const [playing, setPlaying] = useState(true)
@@ -29,7 +30,9 @@ export default function TrackList() {
           <button
             key={t.title}
             type="button"
-            onClick={() => (on ? setPlaying((p) => !p) : (setCurrent(i), setPlaying(true)))}
+            onClick={() =>
+              on ? setPlaying((p) => !p) : (setCurrent(i), setPlaying(true))
+            }
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -47,7 +50,15 @@ export default function TrackList() {
               color: on ? 'var(--bl-tint)' : 'var(--bl-label)',
             }}
           >
-            <span style={{ width: 18, display: 'grid', placeItems: 'center', color: 'var(--bl-label2)', fontSize: 14 }}>
+            <span
+              style={{
+                width: 18,
+                display: 'grid',
+                placeItems: 'center',
+                color: 'var(--bl-label2)',
+                fontSize: 14,
+              }}
+            >
               {on ? (
                 <NowPlayingBars
                   playing={playing}
@@ -58,8 +69,18 @@ export default function TrackList() {
                 i + 1
               )}
             </span>
-            <span style={{ flex: 1, fontWeight: on ? 600 : 400 }}>{t.title}</span>
-            <span style={{ fontSize: 14, color: 'var(--bl-label2)', fontVariantNumeric: 'tabular-nums' }}>{t.time}</span>
+            <span style={{ flex: 1, fontWeight: on ? 600 : 400 }}>
+              {t.title}
+            </span>
+            <span
+              style={{
+                fontSize: 14,
+                color: 'var(--bl-label2)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {t.time}
+            </span>
           </button>
         )
       })}

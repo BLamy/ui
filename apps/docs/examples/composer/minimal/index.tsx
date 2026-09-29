@@ -9,7 +9,10 @@ import {
   WorkbenchTheme,
 } from '@brett_lamy/ui'
 
-/** Replies for a few seconds after each send, so the send ↔ stop morph can be seen. */
+/**
+ * Replies for a few seconds after each send, so the send ↔ stop morph can be
+ * seen.
+ */
 function useFakeReply(ms = 2200) {
   const [streaming, setStreaming] = useState(false)
   const t = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -33,15 +36,22 @@ function useFakeReply(ms = 2200) {
   }
 }
 
-// The smallest composer: a card, the editor and a send button. While `streaming`, the send button
-// morphs into the stop control — the same button, its fill and glyph changing.
+// The smallest composer: a card, the editor and a send button. While
+// `streaming`, the send button morphs into the stop control — the same button,
+// its fill and glyph changing.
 function Minimal() {
   const reply = useFakeReply()
   return (
     <div style={{ maxWidth: 520, margin: '0 auto', padding: '28px 0' }}>
-      <Composer onSubmit={reply.onSubmit} streaming={reply.streaming} onStop={reply.onStop}>
+      <Composer
+        onSubmit={reply.onSubmit}
+        streaming={reply.streaming}
+        onStop={reply.onStop}
+      >
         <ComposerCard>
-          <ComposerInput placeholder="Message — press Enter to watch send turn into stop" />
+          <ComposerInput
+            placeholder={'Message — press Enter to watch send turn into stop'}
+          />
           <ComposerFooter>
             <ComposerSpacer />
             <ComposerSend />
@@ -52,7 +62,8 @@ function Minimal() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function MinimalExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

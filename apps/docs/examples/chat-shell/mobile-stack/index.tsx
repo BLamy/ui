@@ -31,7 +31,12 @@ import {
 
 const rooms = [
   { id: 'general', name: 'general', last: 'Morning! Docs are up.' },
-  { id: 'design', name: 'design', last: 'Credenza morph is buttery now.', unread: true },
+  {
+    id: 'design',
+    name: 'design',
+    last: 'Credenza morph is buttery now.',
+    unread: true,
+  },
   { id: 'random', name: 'random', last: '🍕 Friday?' },
 ]
 
@@ -83,7 +88,9 @@ function Room() {
           <Message variant="continued">
             <MessageAvatar />
             <MessageBody>
-              <MessageContent>Swipe from the left edge to go back.</MessageContent>
+              <MessageContent>
+                Swipe from the left edge to go back.
+              </MessageContent>
             </MessageBody>
           </Message>
         </MessageGroup>
@@ -95,7 +102,8 @@ function Room() {
   )
 }
 
-// A rounded, hairline-bordered window with the page background; `width` caps it, centered.
+// A rounded, hairline-bordered window with the page background; `width` caps
+// it, centered.
 function Window({ width, children }: { width?: number; children: ReactNode }) {
   return (
     <div
@@ -117,15 +125,24 @@ function Window({ width, children }: { width?: number; children: ReactNode }) {
   )
 }
 
-// A phone stack from SplitView: compact shows one column at a time — pick a channel to push the
-// conversation, back / edge-swipe / Esc to pop. Wider, the same two columns tile.
-export default function MobileStack({ variant = 'phone' }: { variant?: string }) {
+// A phone stack from SplitView: compact shows one column at a time — pick a
+// channel to push the conversation, back / edge-swipe / Esc to pop. Wider, the
+// same two columns tile.
+export default function MobileStack({
+  variant = 'phone',
+}: {
+  variant?: string
+}) {
   return (
     <Window width={variant === 'phone' ? 390 : undefined}>
       <div style={{ height: 540, display: 'flex' }}>
         {/* remount on switch so each width starts from its default column */}
         <ChatShell key={variant}>
-          <SplitView defaultSelection={{ sidebar: 'design' }} defaultCompactColumn="sidebar" className="bg-ck-bg">
+          <SplitView
+            defaultSelection={{ sidebar: 'design' }}
+            defaultCompactColumn="sidebar"
+            className="bg-ck-bg"
+          >
             <SplitViewSidebar width={240} className="bg-ck-side">
               <Rooms />
             </SplitViewSidebar>

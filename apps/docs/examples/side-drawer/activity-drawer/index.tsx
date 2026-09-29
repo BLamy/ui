@@ -8,7 +8,11 @@ const rows = [
   'Mail · Re: schedule',
 ]
 
-export default function ActivityDrawer({ variant = 'overlay' }: { variant?: string }) {
+export default function ActivityDrawer({
+  variant = 'overlay',
+}: {
+  variant?: string
+}) {
   const mode = variant === 'fixed' ? 'fixed' : 'overlay'
   // "fixed" starts docked open; "overlay" waits for the button
   const [open, setOpen] = useState(mode === 'fixed')
@@ -55,7 +59,8 @@ export default function ActivityDrawer({ variant = 'overlay' }: { variant?: stri
             )}
           </div>
         </div>
-        {/* overlay slides over the detail with a scrim; fixed docks it as a layout column */}
+        {/* overlay slides over the detail with a scrim; fixed docks it as a
+            layout column */}
         <SideDrawer
           mode={mode}
           open={open}
@@ -83,7 +88,15 @@ export default function ActivityDrawer({ variant = 'overlay' }: { variant?: stri
 }
 
 /** A rounded, fixed-height stage for the drawer to live in. */
-function Frame({ height, bg, children }: { height: number; bg: string; children?: ReactNode }) {
+function Frame({
+  height,
+  bg,
+  children,
+}: {
+  height: number
+  bg: string
+  children?: ReactNode
+}) {
   return (
     <div
       style={{

@@ -7,7 +7,10 @@ function TurnAnchoring() {
     {
       id: 'a1',
       role: 'assistant',
-      text: 'Each new turn scrolls near the top of the viewport with a peek of the previous one — the reply streams into the room below without moving your view.',
+      text:
+        'Each new turn scrolls near the top of the viewport with a peek of ' +
+        'the previous one — the reply streams into the room below without ' +
+        'moving your view.',
     },
   ])
   const n = useRef(1)
@@ -17,9 +20,14 @@ function TurnAnchoring() {
     const aid = 'a' + n.current
     setMsgs((m) => [
       ...m,
-      { id: uid, role: 'user', text: 'Turn ' + n.current + ' — watch me anchor to the top.' },
+      {
+        id: uid,
+        role: 'user',
+        text: 'Turn ' + n.current + ' — watch me anchor to the top.',
+      },
     ])
-    // The reply lands a beat later, into the room reserved below the anchored turn
+    // The reply lands a beat later, into the room reserved below the anchored
+    // turn
     setTimeout(
       () =>
         setMsgs((m) => [
@@ -27,7 +35,10 @@ function TurnAnchoring() {
           {
             id: aid,
             role: 'assistant',
-            text: 'Replies grow into the reserved room below the anchor. Scroll up mid-reply and following stops; the pill at the bottom jumps back to the live edge.',
+            text:
+              'Replies grow into the reserved room below the anchor. Scroll ' +
+              'up mid-reply and following stops; the pill at the bottom ' +
+              'jumps back to the live edge.',
           },
         ]),
       380,
@@ -38,7 +49,13 @@ function TurnAnchoring() {
     anchor: m.role === 'user', // a user message starts a turn
     node:
       m.role === 'user' ? (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '8px 0' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            margin: '8px 0',
+          }}
+        >
           <div
             style={{
               maxWidth: '80%',
@@ -52,7 +69,9 @@ function TurnAnchoring() {
           </div>
         </div>
       ) : (
-        <div style={{ margin: '4px 0 12px', fontSize: 13.5, lineHeight: 1.55 }}>{m.text}</div>
+        <div style={{ margin: '4px 0 12px', fontSize: 13.5, lineHeight: 1.55 }}>
+          {m.text}
+        </div>
       ),
   }))
   return (
@@ -68,7 +87,13 @@ function TurnAnchoring() {
       }}
     >
       <MessageScroller items={items} streaming={false} threadKey="live" />
-      <div style={{ padding: 10, borderTop: '1px solid var(--wb-sep)', flexShrink: 0 }}>
+      <div
+        style={{
+          padding: 10,
+          borderTop: '1px solid var(--wb-sep)',
+          flexShrink: 0,
+        }}
+      >
         <button
           className="wb-btn"
           onClick={add}
@@ -92,7 +117,8 @@ function TurnAnchoring() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function TurnAnchoringExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

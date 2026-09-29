@@ -116,8 +116,8 @@ export type { SeparatorProps } from './components/separator';
 export { Label, labelVariants } from './components/label';
 export type { LabelProps } from './components/label';
 export { Kbd, KbdGroup } from './components/kbd';
-export { Skeleton, skeletonVariants } from './components/skeleton';
-export type { SkeletonProps } from './components/skeleton';
+export { Skeleton, SkeletonText, skeletonVariants } from './components/skeleton';
+export type { SkeletonProps, SkeletonTextProps } from './components/skeleton';
 export { ScrollArea, scrollAreaVariants } from './components/scroll-area';
 export type { ScrollAreaProps } from './components/scroll-area';
 export { Input, inputVariants } from './components/input';
@@ -277,6 +277,7 @@ export {
   ComposerMenuItem,
   ComposerSend,
   ComposerStop,
+  ComposerAdd,
   ComposerAttach,
   ComposerExpand,
   ComposerAttachments,
@@ -301,6 +302,12 @@ export {
   type ComposerFabProps,
   type ComposerContextValue,
   type ComposerAttachment,
+  type ComposerAttachmentKind,
+  type ComposerAttachOptions,
+  type ComposerFileSource,
+  type ComposerFileRejection,
+  type ComposerAddProps,
+  type ComposerAttachProps,
   type ComposerOutletProps,
   type ComposerCardProps,
   type ComposerAddonProps,

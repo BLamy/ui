@@ -451,8 +451,10 @@ export function ListRow(p: ListRowProps) {
         onClickCapture={onClickCapture} onClick={onContainerClick}
         className={cn(
           // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row.
-          'relative box-border flex min-h-[46px] w-full touch-pan-y items-center gap-3 px-4 py-0 text-left text-[17px] leading-[normal] tracking-[normal] outline-none',
+          'relative box-border flex min-h-[46px] w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-[17px] leading-[normal] tracking-[normal] outline-none',
           'focus-visible:[box-shadow:inset_0_0_0_2px_var(--bl-tint)]',
+          // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent).
+          'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]',
           p.destructive ? 'text-destructive' : 'text-foreground',
           p.selected ? 'bg-accent' : 'bg-card',
           (pressable || swipeable || (control && p.labelToggles !== false)) ? 'cursor-pointer' : 'cursor-default',

@@ -1,5 +1,12 @@
 import { useState, type ReactNode } from 'react'
-import { Avatar, Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, WorkbenchTheme } from '@brett_lamy/ui'
+import {
+  Avatar,
+  Sidebar,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+  WorkbenchTheme,
+} from '@brett_lamy/ui'
 
 const deals = [
   { name: 'Northwind renewal', stage: 'Negotiation', value: '$48k' },
@@ -56,7 +63,9 @@ function CrmSidebar() {
             }}
           >
             <SidebarTrigger />
-            <strong style={{ fontSize: 14, color: 'var(--wb-label)' }}>{page}</strong>
+            <strong style={{ fontSize: 14, color: 'var(--wb-label)' }}>
+              {page}
+            </strong>
           </header>
           <div style={{ padding: 12 }}>
             {deals.map((d) => (
@@ -71,7 +80,9 @@ function CrmSidebar() {
                 }}
               >
                 <span style={{ flex: 1 }}>{d.name}</span>
-                <span style={{ width: 110, color: 'var(--wb-label2)' }}>{d.stage}</span>
+                <span style={{ width: 110, color: 'var(--wb-label2)' }}>
+                  {d.stage}
+                </span>
                 <strong>{d.value}</strong>
               </div>
             ))}
@@ -90,7 +101,10 @@ function DockedCrm() {
   )
 }
 
-/** A rounded window with a hairline border; `width` caps it (phone-sized examples), centered. */
+/**
+ * A rounded window with a hairline border; `width` caps it (phone-sized
+ * examples), centered.
+ */
 function Window({ width, children }: { width?: number; children?: ReactNode }) {
   return (
     <div
@@ -107,7 +121,8 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function DockedCrmExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

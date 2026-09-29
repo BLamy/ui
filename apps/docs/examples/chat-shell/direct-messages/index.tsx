@@ -34,7 +34,11 @@ const people: Record<string, ChatUser> = {
 }
 
 const history: Record<string, [string, string][]> = {
-  maya: [['maya', 'Did the morph land?'], ['me', 'Spring on transform, not layout. Buttery.'], ['maya', 'Ship it 🚢']],
+  maya: [
+    ['maya', 'Did the morph land?'],
+    ['me', 'Spring on transform, not layout. Buttery.'],
+    ['maya', 'Ship it 🚢'],
+  ],
   jonas: [['jonas', 'Can you review the rail PR?']],
   priya: [['priya', 'Lunch Thursday?']],
 }
@@ -60,7 +64,8 @@ function Window({ children }: { children: ReactNode }) {
   )
 }
 
-// No rail: a DM list in the sidebar and one conversation. Below 640px the list becomes a drawer.
+// No rail: a DM list in the sidebar and one conversation. Below 640px the list
+// becomes a drawer.
 export default function DirectMessages() {
   const [who, setWho] = useState('maya')
   return (
@@ -108,7 +113,10 @@ export default function DirectMessages() {
                 ))}
               </MessageList>
               <ChatShellFooter>
-                <ChatComposer placeholder={'Message ' + people[who].name} onSend={() => {}} />
+                <ChatComposer
+                  placeholder={'Message ' + people[who].name}
+                  onSend={() => {}}
+                />
               </ChatShellFooter>
             </ChatShellMain>
           </ChatShell>

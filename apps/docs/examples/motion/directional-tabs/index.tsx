@@ -30,9 +30,14 @@ const TABS = [
   },
 ]
 
-// The selected card (segmented) or underline slides to the new tab; the panel arrives from
-// the side of the tab you picked (a tab to the left → content comes in from the left).
-export default function Wallet({ variant = 'segmented' }: { variant?: string }) {
+// The selected card (segmented) or underline slides to the new tab; the panel
+// arrives from the side of the tab you picked (a tab to the left → content
+// comes in from the left).
+export default function Wallet({
+  variant = 'segmented',
+}: {
+  variant?: string
+}) {
   return (
     <div style={{ maxWidth: 380, margin: '0 auto' }}>
       <Tabs
@@ -49,7 +54,13 @@ export default function Wallet({ variant = 'segmented' }: { variant?: string }) 
         </TabList>
         {TABS.map((t) => (
           <TabPanel key={t.id} id={t.id}>
-            <div style={{ background: 'var(--bl-card)', borderRadius: 14, overflow: 'hidden' }}>
+            <div
+              style={{
+                background: 'var(--bl-card)',
+                borderRadius: 14,
+                overflow: 'hidden',
+              }}
+            >
               {t.rows.map(([a, b], i) => (
                 <div
                   key={a}
