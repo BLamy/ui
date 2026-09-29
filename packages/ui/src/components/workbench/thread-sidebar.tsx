@@ -2,9 +2,10 @@ import * as React from 'react';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../lib/workbench/press';
-import { cn } from '../../lib/workbench/util';
+import { cn, wbPress, wbBrandTile } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
-import { WIcon, IconBtn, type WIconName } from '../../lib/workbench/icons';
+import { IconBtn } from '../../lib/workbench/icons';
+import { Icon, type IconName } from '../../lib/icon';
 import { springs } from '../../lib/workbench/motion';
 import { useOptionalWorkbenchShell } from '../../templates/workbench-shell';
 
@@ -24,7 +25,7 @@ import { useOptionalWorkbenchShell } from '../../templates/workbench-shell';
 type Div = { className?: string; style?: React.CSSProperties; children?: React.ReactNode };
 
 /* Sidebar row chrome shared by threads, the project switcher, "Show more" and footer items. */
-const rowBtn = 'wb-btn wb-hl flex cursor-pointer items-center gap-2 rounded-lg border-0 text-left';
+const rowBtn = cn(wbPress, 'flex cursor-pointer items-center gap-2 rounded-lg border-0 text-left hover:bg-secondary!');
 
 /** Closes the compact drawer after a navigation. */
 function useCloseDrawer() {
@@ -55,8 +56,8 @@ export function ThreadSidebarBrand({ icon, children, className }: { icon?: React
   return (
     <>
       {icon ?? (
-        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]">
-          <WIcon name="spark" size={13} sw={2.2} className="text-white" />
+        <span className={cn(wbBrandTile, 'grid size-[22px] shrink-0 place-items-center rounded-md')}>
+          <Icon name="asterisk" size={13} sw={2.2} className="text-white" />
         </span>
       )}
       <span data-slot="thread-sidebar-brand" className={cn('text-[13.5px] font-bold tracking-[-.1px]', className)}>
@@ -83,7 +84,7 @@ export interface ThreadSearchProps {
 export function ThreadSearch({ value, onChange, placeholder = 'Search', className }: ThreadSearchProps) {
   return (
     <div data-slot="thread-search" className={cn('flex flex-1 items-center gap-1.5 rounded-lg bg-secondary px-2 py-[5px]', className)}>
-      <WIcon name="search" size={14} sw={2} className="text-tertiary-foreground" />
+      <Icon name="magnifier" size={14} sw={2} className="text-tertiary-foreground" />
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -100,7 +101,7 @@ export function ThreadNewButton({ onPress, label = 'New thread', className }: { 
   const close = useCloseDrawer();
   return (
     <IconBtn
-      name="compose"
+      name="square-pencil"
       label={label}
       size={17}
       className={className}
@@ -130,10 +131,10 @@ export function ProjectSwitcher({ children = 'All projects', onPress, className 
         onPress?.();
       }}
     >
-      <WIcon name="folder" size={15} sw={1.8} />
+      <Icon name="folder-closed" size={15} sw={1.8} />
       <span className="flex-1 truncate">{children}</span>
-      <WIcon name="chevD" size={13} sw={2.2} />
-      <WIcon name="folderP" size={15} sw={1.8} className="text-tertiary-foreground" />
+      <Icon name="chevron-down-wide" size={13} sw={2.2} />
+      <Icon name="folder-plus" size={15} sw={1.8} className="text-tertiary-foreground" />
     </Button>
   );
 }
@@ -168,7 +169,7 @@ export function ThreadGroup({ label, collapsible, defaultOpen = true, open: open
       {collapsible ? (
         <Button
           aria-expanded={open}
-          className="wb-btn box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1"
+          className={cn(wbPress, 'box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1')}
           onPress={() => {
             tick();
             setOwnOpen(!open);
@@ -177,7 +178,7 @@ export function ThreadGroup({ label, collapsible, defaultOpen = true, open: open
         >
           {labelEl}
           {line}
-          <WIcon name={open ? 'chevU' : 'chevD'} size={12} sw={2.2} className="text-tertiary-foreground" />
+          <Icon name={open ? 'chevron-up-wide' : 'chevron-down-wide'} size={12} sw={2.2} className="text-tertiary-foreground" />
         </Button>
       ) : (
         <div className="flex items-center gap-2 px-2 pt-2.5 pb-1">
@@ -211,12 +212,12 @@ export interface ThreadItemProps {
   status?: ThreadStatus;
   /** trailing text, e.g. the thread's age */
   meta?: React.ReactNode;
-  icon?: WIconName;
+  icon?: IconName | (string & {});
   onPress?: () => void;
   className?: string;
   children?: React.ReactNode;
 }
-export function ThreadItem({ active, status = 'idle', meta, icon = 'msg', onPress, className, children }: ThreadItemProps) {
+export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left', onPress, className, children }: ThreadItemProps) {
   const close = useCloseDrawer();
   return (
     <Button
@@ -236,7 +237,7 @@ export function ThreadItem({ active, status = 'idle', meta, icon = 'msg', onPres
         </span>
       ) : (
         <span className="contents" aria-label={status === 'error' ? 'Failed' : undefined}>
-          <WIcon name={icon} size={15} sw={1.8} className={status === 'error' ? 'text-destructive' : 'text-tertiary-foreground'} />
+          <Icon name={icon} size={15} sw={1.8} className={status === 'error' ? 'text-destructive' : 'text-tertiary-foreground'} />
         </span>
       )}
       <span className={cn('min-w-0 flex-1 truncate', status === 'unread' && 'font-semibold')}>{children}</span>
@@ -257,7 +258,7 @@ export function ThreadShowMore({ count, onPress, className }: { count: number; o
         onPress?.();
       }}
     >
-      <WIcon name="plus" size={13} sw={2} />
+      <Icon name="plus" size={13} sw={2} />
       <span>Show {count} more</span>
     </Button>
   );
@@ -272,20 +273,20 @@ export function ThreadSidebarFooter({ className, style, children }: Div) {
 }
 
 /** A tinted callout in the footer ("Update available"). `onDismiss` adds the ×. */
-export function SidebarNotice({ icon = 'dl', onPress, onDismiss, className, children }: { icon?: WIconName; onPress?: () => void; onDismiss?: () => void; className?: string; children?: React.ReactNode }) {
+export function SidebarNotice({ icon = 'arrow-down-to-line', onPress, onDismiss, className, children }: { icon?: IconName | (string & {}); onPress?: () => void; onDismiss?: () => void; className?: string; children?: React.ReactNode }) {
   return (
-    <div data-slot="sidebar-notice" className={cn('mb-1.5 flex items-center gap-2 rounded-[9px] bg-[rgba(10,132,255,.12)] px-2.5 py-[7px]', className)}>
-      <WIcon name={icon} size={14} sw={2} className="text-primary" />
+    <div data-slot="sidebar-notice" className={cn('mb-1.5 flex items-center gap-2 rounded-[9px] bg-primary/12 px-2.5 py-[7px]', className)}>
+      <Icon name={icon} size={14} sw={2} className="text-primary" />
       {onPress ? (
-        <Button className="wb-btn flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-primary" onPress={onPress}>
+        <Button className={cn(wbPress, 'flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-primary')} onPress={onPress}>
           {children}
         </Button>
       ) : (
         <span className="flex-1 text-[12.5px] font-semibold text-primary">{children}</span>
       )}
       {onDismiss !== undefined ? (
-        <Button aria-label="Dismiss" className="wb-btn grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-tertiary-foreground" onPress={onDismiss}>
-          <WIcon name="x" size={13} sw={2} />
+        <Button aria-label="Dismiss" className={cn(wbPress, 'grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-tertiary-foreground')} onPress={onDismiss}>
+          <Icon name="xmark-large" size={13} sw={2} />
         </Button>
       ) : null}
     </div>
@@ -293,7 +294,7 @@ export function SidebarNotice({ icon = 'dl', onPress, onDismiss, className, chil
 }
 
 /** A footer row: Settings, Help, Sign out. */
-export function SidebarFooterItem({ icon, onPress, className, children }: { icon: WIconName; onPress?: () => void; className?: string; children?: React.ReactNode }) {
+export function SidebarFooterItem({ icon, onPress, className, children }: { icon: IconName | (string & {}); onPress?: () => void; className?: string; children?: React.ReactNode }) {
   return (
     <Button
       data-slot="sidebar-footer-item"
@@ -303,7 +304,7 @@ export function SidebarFooterItem({ icon, onPress, className, children }: { icon
         onPress?.();
       }}
     >
-      <WIcon name={icon} size={16} sw={1.7} />
+      <Icon name={icon} size={16} sw={1.7} />
       <span>{children}</span>
     </Button>
   );
@@ -338,7 +339,7 @@ export function SidebarUser({ name, detail, avatar, onPress, className }: Sideba
       {avatar ? (
         <img src={avatar} alt="" className="size-7 shrink-0 rounded-full object-cover" />
       ) : (
-        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--primary),#5E5CE6)] text-[11px] font-bold text-white">
+        <span className={cn(wbBrandTile, 'grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white')}>
           {initials}
         </span>
       )}
@@ -346,7 +347,7 @@ export function SidebarUser({ name, detail, avatar, onPress, className }: Sideba
         <span className="truncate text-[13px] font-semibold text-foreground">{name}</span>
         {detail != null ? <span className="truncate text-[11.5px] text-tertiary-foreground">{detail}</span> : null}
       </span>
-      <WIcon name="chevD" size={13} sw={2.2} className="text-tertiary-foreground" />
+      <Icon name="chevron-down-wide" size={13} sw={2.2} className="text-tertiary-foreground" />
     </Button>
   );
 }

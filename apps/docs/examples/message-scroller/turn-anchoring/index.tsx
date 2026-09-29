@@ -95,14 +95,13 @@ function TurnAnchoring() {
         }}
       >
         <button
-          className="wb-btn"
           onClick={add}
           style={{
             width: '100%',
             border: 0,
             borderRadius: 9,
             background: 'var(--primary)',
-            color: '#fff',
+            color: 'var(--primary-foreground)',
             fontFamily: 'inherit',
             fontWeight: 600,
             fontSize: 13,
@@ -117,8 +116,8 @@ function TurnAnchoring() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function TurnAnchoringExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

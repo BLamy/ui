@@ -102,14 +102,13 @@ function TurnsRise() {
       >
         <button
           type="button"
-          className="wb-btn"
           onClick={send}
           style={{
             width: '100%',
             border: 0,
             borderRadius: 9,
             background: 'var(--primary)',
-            color: '#fff',
+            color: 'var(--primary-foreground)',
             font: 'inherit',
             fontWeight: 600,
             fontSize: 13,
@@ -124,8 +123,8 @@ function TurnsRise() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function TurnsRiseExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

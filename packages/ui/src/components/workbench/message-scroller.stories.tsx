@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MessageScroller } from './message-scroller';
 import { WorkbenchTheme } from '../../lib/workbench/theme';
+import { wbPress } from '../../lib/workbench/util';
 import '../../styles.css';
 
 const meta: Meta<typeof MessageScroller> = {
@@ -67,9 +68,9 @@ function ScrollerDemo() {
       <MessageScroller items={items} streaming={false} threadKey="live" />
       <div style={{ padding: 10, borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         <button
-          className="wb-btn"
+          className={wbPress}
           onClick={add}
-          style={{ width: '100%', border: 0, borderRadius: 9, background: 'var(--primary)', color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 0', cursor: 'pointer' }}
+          style={{ width: '100%', border: 0, borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 0', cursor: 'pointer' }}
         >
           Send a turn
         </button>
@@ -113,9 +114,9 @@ function StreamingDemo() {
       <MessageScroller items={items} streaming={streaming} threadKey="stream" />
       <div style={{ padding: 10, borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         <button
-          className="wb-btn"
+          className={wbPress}
           onClick={start}
-          style={{ width: '100%', border: 0, borderRadius: 9, background: 'var(--primary)', color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 0', cursor: 'pointer' }}
+          style={{ width: '100%', border: 0, borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 0', cursor: 'pointer' }}
         >
           {streaming ? 'Streaming… scroll up to release' : 'Replay stream'}
         </button>

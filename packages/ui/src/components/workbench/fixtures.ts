@@ -1,5 +1,5 @@
 import type { SurfaceAgent, SurfaceDiffFile } from './surfaces';
-import type { TermLine } from './terminal';
+import { TERMINAL_COLORS, type TermLine } from './terminal';
 
 /* Story fixtures: a sample workspace for the Workbench stories (the t3-clone block carries its own copy). */
 
@@ -158,10 +158,10 @@ export const TERMINAL_SEED: TermLine[] = [
   { t: '> cookbook@0.1.0 dev' },
   { t: '> vite' },
   { t: '' },
-  { t: '  VITE v6.0.3  ready in 412 ms', c: '#7EE0B8' },
+  { t: '  VITE v6.0.3  ready in 412 ms', c: TERMINAL_COLORS.green },
   { t: '' },
-  { t: '  ➜  Local:   http://localhost:3000/', c: '#8AB4FF' },
-  { t: '  ➜  Network: http://192.168.1.24:3000/', c: '#8AB4FF' },
+  { t: '  ➜  Local:   http://localhost:3000/', c: TERMINAL_COLORS.blue },
+  { t: '  ➜  Network: http://192.168.1.24:3000/', c: TERMINAL_COLORS.blue },
 ];
 
 export const FILES = [

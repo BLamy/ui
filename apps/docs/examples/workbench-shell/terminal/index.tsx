@@ -2,26 +2,33 @@ import {
   TerminalAction,
   TerminalBody,
   TerminalHeader,
+  ThemeScope,
   WorkbenchTheme,
 } from '@brett_lamy/ui'
 
 function Terminal() {
   return (
-    // a rounded window in the terminal's own background
+    // a rounded window: the terminal is a `terminal` theme scope, dark in
+    // either appearance
     <div
       style={{
         borderRadius: 12,
         overflow: 'hidden',
-        background: 'var(--wb-term)',
         boxShadow: '0 0 0 1px var(--border)',
       }}
     >
-      <div
-        style={{ display: 'flex', flexDirection: 'column', height: 300 }}
-        className="wb-term"
+      <ThemeScope
+        scope="terminal"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: 300,
+          background: 'var(--background)',
+          color: 'var(--foreground)',
+        }}
       >
         <TerminalHeader title="zsh">
-          <TerminalAction icon="split" label="Split terminal" />
+          <TerminalAction icon="rectangle-split" label="Split terminal" />
           <TerminalAction icon="plus" label="New terminal" />
         </TerminalHeader>
         <TerminalBody
@@ -30,13 +37,13 @@ function Terminal() {
             { t: 'available: ls, pwd, echo, whoami, npm run dev, clear' },
           ]}
         />
-      </div>
+      </ThemeScope>
     </div>
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function TerminalExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

@@ -32,7 +32,7 @@ import {
 import { ModelPicker } from './model-picker';
 import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from './models';
 import { WorkbenchComposer } from './workbench-composer';
-import { WIcon } from '../../lib/workbench/icons';
+import { Icon } from '../../lib/icon';
 import { WorkbenchTheme } from '../../lib/workbench/theme';
 import '../../styles.css';
 
@@ -166,7 +166,7 @@ function T3Composer({ open, defaultOpen, attachments = true, streaming = true, c
             <ComposerSeparator />
             <ComposerSelect aria-label="Effort" options={EFFORTS} defaultValue="medium" />
             <ComposerSeparator />
-            <ComposerSelect aria-label="Access" icon="lock" options={ACCESS} />
+            <ComposerSelect aria-label="Access" icon="lock-rounded" options={ACCESS} />
           </ComposerOptions>
           <ComposerSpacer />
           <ComposerAttach />
@@ -176,13 +176,13 @@ function T3Composer({ open, defaultOpen, attachments = true, streaming = true, c
       </ComposerCard>
       <ComposerBump side="bottom">
         <ComposerBumpHandle>
-          <ComposerText icon="folder" className="shrink-0">Local checkout</ComposerText>
+          <ComposerText icon="folder-closed" className="shrink-0">Local checkout</ComposerText>
           <ComposerOptionsOutlet />
           <ComposerSpacer />
           <ComposerButton variant="pill" className="gap-1 py-0.5 font-normal text-[12px]">
-            <WIcon name="branch" size={13} sw={1.9} />
+            <Icon name="branch" size={13} sw={1.9} />
             <span className="font-mono text-[11.5px]">main</span>
-            <WIcon name="chevD" size={11} sw={2.4} className="opacity-60" />
+            <Icon name="chevron-down-wide" size={11} sw={2.4} className="opacity-60" />
           </ComposerButton>
         </ComposerBumpHandle>
       </ComposerBump>
@@ -289,7 +289,7 @@ export const Addons: Story = {
       <Composer defaultValue="Addons can sit on any side of the input.">
         <ComposerCard>
           <ComposerAddon align="block-start" className="pb-0">
-            <ComposerText icon="doc">block-start · composer.tsx</ComposerText>
+            <ComposerText icon="doc-corner">block-start · composer.tsx</ComposerText>
           </ComposerAddon>
           <ComposerAddon align="inline-start">
             <ComposerAttach />
@@ -299,7 +299,7 @@ export const Addons: Story = {
             <ComposerSend />
           </ComposerAddon>
           <ComposerAddon align="block-end">
-            <ComposerText icon="clock">block-end · 2.1k tokens</ComposerText>
+            <ComposerText icon="clock-dial">block-end · 2.1k tokens</ComposerText>
           </ComposerAddon>
         </ComposerCard>
       </Composer>
@@ -312,9 +312,9 @@ export const Buttons: Story = {
     <Frame>
       <Composer defaultValue="x" streaming={false}>
         <div className="flex flex-wrap items-center gap-2">
-          <ComposerButton aria-label="Ghost icon"><WIcon name="clip" size={15.5} sw={2} /></ComposerButton>
-          <ComposerButton variant="pill"><WIcon name="lock" size={13.5} sw={2} />Pill<WIcon name="chevD" size={11} sw={2.4} className="opacity-60" /></ComposerButton>
-          <ComposerButton variant="pill" tint><WIcon name="spark" size={13.5} sw={2} />Tint pill</ComposerButton>
+          <ComposerButton aria-label="Ghost icon"><Icon name="paperclip-diagonal" size={15.5} sw={2} /></ComposerButton>
+          <ComposerButton variant="pill"><Icon name="lock-rounded" size={13.5} sw={2} />Pill<Icon name="chevron-down-wide" size={11} sw={2.4} className="opacity-60" /></ComposerButton>
+          <ComposerButton variant="pill" tint><Icon name="asterisk" size={13.5} sw={2} />Tint pill</ComposerButton>
           <ComposerSeparator />
           <ComposerSend />
           <ComposerStop variant="solid" forceMount />
@@ -331,7 +331,7 @@ export const Bumps: Story = {
     <Frame>
       <Composer>
         <ComposerBump side="bottom">
-          <ComposerBumpHandle><ComposerText icon="folder" className="flex-1">attached bottom bump</ComposerText><ComposerText icon="branch">main</ComposerText></ComposerBumpHandle>
+          <ComposerBumpHandle><ComposerText icon="folder-closed" className="flex-1">attached bottom bump</ComposerText><ComposerText icon="branch">main</ComposerText></ComposerBumpHandle>
         </ComposerBump>
         <ComposerCard size="lg">
           <ComposerInput placeholder="Bumps order themselves by side" />
@@ -341,7 +341,7 @@ export const Bumps: Story = {
           <ComposerBumpHandle><span className="size-[7px] rounded-full bg-primary" /><ComposerText className="flex-1">attached top bump (tucked)</ComposerText></ComposerBumpHandle>
         </ComposerBump>
         <ComposerBump side="bottom" variant="detached">
-          <ComposerBumpHandle><ComposerText icon="doc">detached bottom bump</ComposerText></ComposerBumpHandle>
+          <ComposerBumpHandle><ComposerText icon="doc-corner">detached bottom bump</ComposerText></ComposerBumpHandle>
         </ComposerBump>
       </Composer>
     </Frame>
@@ -365,7 +365,7 @@ export const SelectOpen: Story = {
         <ComposerCard>
           <ComposerInput />
           <ComposerFooter>
-            <ComposerSelect aria-label="Access" icon="lock" options={ACCESS} />
+            <ComposerSelect aria-label="Access" icon="lock-rounded" options={ACCESS} />
             <ComposerSpacer />
             <ComposerSend />
           </ComposerFooter>

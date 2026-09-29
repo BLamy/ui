@@ -19,7 +19,7 @@ import {
 } from './composer';
 import { ModelPicker } from './model-picker';
 import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from './models';
-import { WIcon } from '../../lib/workbench/icons';
+import { Icon } from '../../lib/icon';
 
 /* ══ WorkbenchComposer — the Workbench's default Composer composition ══
    Card (attachments, editor, expand, footer: model / effort / access pills, send) over a detached checkout
@@ -70,10 +70,10 @@ export function WorkbenchComposer({
                 models={WORKBENCH_MODELS}
                 providers={WORKBENCH_PROVIDERS}
                 defaultValue="claude-opus-4-7"
-                icon={<WIcon name="spark" size={13.5} sw={2} />}
+                icon={<Icon name="asterisk" size={13.5} sw={2} />}
               />
               <ComposerSelect aria-label="Effort" options={WORKBENCH_EFFORTS} />
-              <ComposerSelect aria-label="Access" icon="lock" options={WORKBENCH_ACCESS} />
+              <ComposerSelect aria-label="Access" icon="lock-rounded" options={WORKBENCH_ACCESS} />
             </ComposerOptions>
           ) : null}
           <ComposerSpacer />
@@ -83,12 +83,12 @@ export function WorkbenchComposer({
       {checkout ? (
         <ComposerBump side="bottom" variant="detached">
           <ComposerBumpHandle>
-            <ComposerText icon="folder">Local checkout</ComposerText>
+            <ComposerText icon="folder-closed">Local checkout</ComposerText>
             <ComposerOptionsOutlet />
             <ComposerSpacer />
             <ComposerText icon="branch">
               <span className="font-mono text-[11.5px]">main</span>
-              <WIcon name="chevD" size={11} sw={2.4} className="opacity-60" />
+              <Icon name="chevron-down-wide" size={11} sw={2.4} className="opacity-60" />
             </ComposerText>
           </ComposerBumpHandle>
         </ComposerBump>

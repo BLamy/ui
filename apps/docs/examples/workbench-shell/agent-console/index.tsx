@@ -89,11 +89,11 @@ function AgentConsole() {
       <WorkbenchShell defaultDockOpen defaultPanelOpen>
         <WorkbenchMain>
           <WorkbenchHeader>
-            <WorkbenchTitle icon="bot" project="ops">
+            <WorkbenchTitle icon="robot" project="ops">
               release 2.14
             </WorkbenchTitle>
             <WorkbenchActions>
-              <WorkbenchAction icon="stop" label="Stop run" />
+              <WorkbenchAction icon="stop-square" label="Stop run" />
               <WorkbenchDockTrigger />
               <WorkbenchPanelTrigger />
             </WorkbenchActions>
@@ -111,7 +111,7 @@ function AgentConsole() {
                     detail="2 of 4 pods"
                     status="running"
                   />
-                  <ToolCall icon="clock" title="Smoke tests" detail="queued" />
+                  <ToolCall icon="clock-dial" title="Smoke tests" detail="queued" />
                 </WorkLog>
                 <MessageMarkdown
                   markdown={
@@ -147,7 +147,7 @@ function AgentConsole() {
         </WorkbenchMain>
         <WorkbenchPanel>
           <WorkbenchPanelHeader>
-            <WorkbenchPanelTitle icon="bot">Runs</WorkbenchPanelTitle>
+            <WorkbenchPanelTitle icon="robot">Runs</WorkbenchPanelTitle>
             <WorkbenchPanelClose />
           </WorkbenchPanelHeader>
           <SurfaceAgents agents={RUNS} />
@@ -157,8 +157,8 @@ function AgentConsole() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function AgentConsoleExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

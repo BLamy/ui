@@ -1,9 +1,9 @@
 import * as React from 'react';
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Button } from '../../lib/workbench/press';
-import { cn } from '../../lib/workbench/util';
+import { cn, wbPress } from '../../lib/workbench/util';
 import { tick } from '../../lib/workbench/haptics';
-import { WIcon } from '../../lib/workbench/icons';
+import { Icon } from '../../lib/icon';
 import { AnimatePresence, animate, motion, type AnimationPlaybackControls } from 'framer-motion';
 import { prefersReducedMotion, springs } from '../../lib/workbench/motion';
 
@@ -194,7 +194,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
                   initial={arriving ? { opacity: 0, y: it.anchor ? 18 : 10, scale: it.anchor ? 0.98 : 1 } : false}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ ...springs.smooth, opacity: { duration: 0.22 } }}
-                  style={{ transformOrigin: it.anchor ? '100% 100%' : '0 0' }}
+                  className={it.anchor ? 'origin-bottom-right' : 'origin-top-left'}
                 >
                   {it.node}
                 </motion.div>
@@ -217,7 +217,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
           >
             <Button
               data-slot="message-scroller-jump"
-              className="wb-btn flex cursor-pointer items-center overflow-hidden rounded-[99px] border border-border bg-card p-[7px] text-[12.5px] font-semibold text-foreground shadow-[0_4px_16px_black] shadow-black/8 dark:shadow-black/35"
+              className={cn(wbPress, 'flex cursor-pointer items-center overflow-hidden rounded-[99px] border border-border bg-card p-[7px] text-[12.5px] font-semibold text-foreground shadow-[0_4px_16px_black] shadow-black/8 dark:shadow-black/35')}
               onPress={() => {
                 toEnd(true);
                 tick();
@@ -239,7 +239,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
                   </motion.span>
                 ) : null}
               </AnimatePresence>
-              <WIcon name="chevD" size={15} sw={2.2} />
+              <Icon name="chevron-down-wide" size={15} sw={2.2} />
             </Button>
           </motion.div>
         ) : null}

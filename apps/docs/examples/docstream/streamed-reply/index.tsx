@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { MarkdownView, WFONT } from '@brett_lamy/ui'
+import { FONT, MarkdownView } from '@brett_lamy/ui'
 
 const reply = `Both servers are now running detached and won't be killed by the
 tool's session limits.
@@ -74,7 +74,7 @@ export default function StreamedReply() {
   }
 
   return (
-    <div style={{ fontFamily: WFONT }}>
+    <div style={{ fontFamily: FONT }}>
       <DemoButton
         label={live ? 'Streaming…' : 'Replay stream'}
         onPress={replay}

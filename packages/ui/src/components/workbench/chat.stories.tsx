@@ -145,7 +145,7 @@ export const WorkLogOpen: Story = {
       <div style={{ width: 560, maxWidth: '100%' }}>
         <WorkLog summary="Worked for 1m 4s" defaultOpen>
           {THREADS[0].messages[1].steps?.map((s, i) => <ToolCall key={i} {...s} />)}
-          <ToolCall icon="globe" title="Opened the browser surface" detail="localhost:3000" status="running" />
+          <ToolCall icon="network" title="Opened the browser surface" detail="localhost:3000" status="running" />
           <ToolCall title="Ran the e2e suite" detail="2 failed" status="error" />
         </WorkLog>
       </div>
