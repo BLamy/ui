@@ -1,6 +1,6 @@
 /* Reminders data: lists (name, color, icon, sections), reminders (due day as an offset from "today", time, notes,
    flag, priority, subtasks) and the smart lists that filter them. "Today" is pinned so the data never goes stale. */
-import type { GlyphName } from './glyphs';
+import type { IconName } from '@brett_lamy/ui';
 
 export const TODAY = new Date(2026, 8, 28); // Monday, September 28, 2026
 
@@ -22,14 +22,14 @@ export interface Reminder {
   tags?: string[];
   subtasks?: Subtask[];
 }
-export interface RList { id: string; name: string; color: string; glyph: GlyphName; sections?: string[] }
+export interface RList { id: string; name: string; color: string; glyph: IconName; sections?: string[] }
 
 export const COLORS = ['#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#32ADE6', '#007AFF', '#5856D6', '#FF2D55', '#AF52DE', '#A2845E'];
 
 export const LISTS: RList[] = [
-  { id: 'reminders', name: 'Reminders', color: '#007AFF', glyph: 'bullets' },
-  { id: 'family', name: 'Family', color: '#FF9500', glyph: 'house' },
-  { id: 'work', name: 'Work', color: '#AF52DE', glyph: 'briefcase', sections: ['This Week', 'Launch', 'Someday'] },
+  { id: 'reminders', name: 'Reminders', color: '#007AFF', glyph: 'list' },
+  { id: 'family', name: 'Family', color: '#FF9500', glyph: 'house-fill' },
+  { id: 'work', name: 'Work', color: '#AF52DE', glyph: 'briefcase-fill', sections: ['This Week', 'Launch', 'Someday'] },
   { id: 'groceries', name: 'Groceries', color: '#34C759', glyph: 'cart', sections: ['Produce', 'Dairy & Eggs', 'Bakery', 'Pantry'] },
   { id: 'lisbon', name: 'Lisbon Trip', color: '#32ADE6', glyph: 'airplane', sections: ['Before We Go', 'Packing'] },
   { id: 'reading', name: 'Reading List', color: '#A2845E', glyph: 'book' },
@@ -91,12 +91,12 @@ export const REMINDERS: Reminder[] = [
 ];
 
 export type SmartId = 'today' | 'scheduled' | 'all' | 'flagged' | 'completed';
-export interface Smart { id: SmartId; name: string; color: string; glyph: GlyphName; match: (r: Reminder) => boolean }
+export interface Smart { id: SmartId; name: string; color: string; glyph: IconName | 'today'; match: (r: Reminder) => boolean }
 export const SMART: Smart[] = [
-  { id: 'today', name: 'Today', color: '#007AFF', glyph: 'calendarDay', match: (x) => !x.done && x.due != null && x.due <= 0 },
-  { id: 'scheduled', name: 'Scheduled', color: '#FF3B30', glyph: 'calendar', match: (x) => !x.done && x.due != null },
-  { id: 'all', name: 'All', color: '#5B5B60', glyph: 'tray', match: (x) => !x.done },
-  { id: 'flagged', name: 'Flagged', color: '#FF9500', glyph: 'flag', match: (x) => !x.done && !!x.flagged },
+  { id: 'today', name: 'Today', color: '#007AFF', glyph: 'today', match: (x) => !x.done && x.due != null && x.due <= 0 },
+  { id: 'scheduled', name: 'Scheduled', color: '#FF3B30', glyph: 'calendar-fill', match: (x) => !x.done && x.due != null },
+  { id: 'all', name: 'All', color: '#5B5B60', glyph: 'tray-fill', match: (x) => !x.done },
+  { id: 'flagged', name: 'Flagged', color: '#FF9500', glyph: 'flag-fill', match: (x) => !x.done && !!x.flagged },
   { id: 'completed', name: 'Completed', color: '#8E8E93', glyph: 'check', match: (x) => !!x.done },
 ];
 export const isSmart = (id: string): id is SmartId => SMART.some((s) => s.id === id);
