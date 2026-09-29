@@ -609,10 +609,11 @@ function Pane({ children }: { children?: ReactNode }) {
   return <PaneCtx.Provider value={value}>{children}</PaneCtx.Provider>;
 }
 
-function LargeTitle({ children, titleRef }: { children: ReactNode; titleRef?: React.Ref<HTMLHeadingElement> }) {
+function LargeTitle({ children, titleRef }: { children: ReactNode; titleRef?: React.Ref<HTMLDivElement> }) {
   return (
     <div data-slot="split-view-large-title" className="px-4 pt-1 pb-2">
-      <h1 ref={titleRef} className="m-0 truncate text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]">{children}</h1>
+      {/* A heading role, not an <h1>: host prose styles (a docs page's `.markdown h1`) would otherwise restyle it. */}
+      <div ref={titleRef} role="heading" aria-level={1} className="m-0 truncate text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]">{children}</div>
     </div>
   );
 }
@@ -723,7 +724,7 @@ export function SplitViewContent({ children, className, style }: { children?: Re
   const large = pane?.large;
   const setUnder = pane?.setUnder;
   const scroller = useRef<HTMLDivElement | null>(null);
-  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const titleRef = useRef<HTMLDivElement | null>(null);
   const check = useCallback(() => {
     const el = titleRef.current, sc = scroller.current;
     if (!setUnder || !sc) return;
