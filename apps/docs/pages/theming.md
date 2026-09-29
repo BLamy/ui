@@ -90,6 +90,8 @@ A scope sets only what its surface changes; everything else (primary, overlay, b
 | `workbench` | `WorkbenchShell`, `WorkbenchTheme` | surfaces, labels, fills, hairlines, code blocks (dark `#141419` / light `#FFFFFF` background) |
 | `terminal` | `WorkbenchDock`, `SurfaceTerminal`, `TerminalBody` | always dark; background `#0C0C10` (`#1A1A1F` in a light Workbench) |
 | `chat` | `ChatShell` | chat grays, link and mention colors |
+| `sheet` | `FloatingSheet`, `FloatingChat`, `ArtifactChatContainer` with a `tone` | the floating surface's text, card, fills and hairlines in that tone (background and accent stay the host's) |
+| `glass` | the Composer inside `FloatingChat` / `ArtifactChatContainer` | the translucent composer card over content |
 
 ## Variables
 
