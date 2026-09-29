@@ -1,0 +1,25 @@
+{
+  "name": "command-menu",
+  "title": "CommandMenu",
+  "description": "A cmdk-style command palette on react-aria: nested pages, fuzzy ranking with highlight, grid groups, ⌘1–9 and a keyboard legend.",
+  "page": "command-menu",
+  "exports": [
+    "CommandMenu",
+    "CommandInput",
+    "CommandList",
+    "CommandPage",
+    "CommandGroup",
+    "CommandItem",
+    "CommandEmpty",
+    "CommandSeparator",
+    "CommandFooter",
+    "CommandHighlight",
+    "useCommandMenu",
+    "useCommandActive",
+    "useHotkey",
+    "matchesHotkey",
+    "commandMatch"
+  ],
+  "imports": ["CommandMenu", "CommandInput", "CommandList", "CommandGroup", "CommandItem"],
+  "types": ["CommandLegendItem"]
+}

@@ -145,7 +145,7 @@ interface ItemRecord {
 }
 
 interface GroupRecord { el: HTMLElement | null; columns: number }
-interface PageRecord { placeholder?: string; title?: string; onKeyDown?: (e: ReactKeyboardEvent) => void }
+interface PageRecord { placeholder?: string; title?: string; onKeyDown?: (e: ReactKeyboardEvent, menu: CommandMenuApi) => void }
 
 type Source = 'keyboard' | 'pointer' | 'auto';
 
@@ -512,9 +512,10 @@ function CommandRoot({
     if (rec && !rec.disabled) rec.select();
   }, [store]);
 
+  const apiRef = useRef<CommandMenuApi | null>(null);
   const onKeyDown = useCallback((e: ReactKeyboardEvent) => {
     if (e.nativeEvent.isComposing) return;
-    store.pages.get(store.page)?.onKeyDown?.(e);
+    store.pages.get(store.page)?.onKeyDown?.(e, apiRef.current!);
     if (e.defaultPrevented) return;
     const mod = isMac() ? e.metaKey : e.ctrlKey;
     const ids = store.visible;
@@ -604,6 +605,7 @@ function CommandRoot({
     store, menuId, listId, inputRef, direction: dir, loop, closeOnSelect, filter, onKeyDown,
     query, setQuery, page, pages, depth: stack.length - 1, push, pop, close, move, select,
   };
+  apiRef.current = ctx;
 
   return (
     <MenuCtx.Provider value={ctx}>
@@ -643,7 +645,7 @@ export interface CommandInputProps extends Omit<React.ComponentProps<'input'>, '
   trailing?: ReactNode;
 }
 
-export function CommandInput({ placeholder = 'Search…', backButton = true, pageTitle = true, trailing, className, autoFocus = true, ...props }: CommandInputProps) {
+export function CommandInput({ placeholder = 'Search…', backButton = true, pageTitle = true, trailing, className, style, autoFocus = true, ...props }: CommandInputProps) {
   const ctx = useMenu('CommandInput');
   const { store, inputRef, listId, menuId, query, setQuery, depth, pop } = ctx;
   const meta = useStoreValue(store, (s) => s.pages.get(s.page));
@@ -702,6 +704,8 @@ export function CommandInput({ placeholder = 'Search…', backButton = true, pag
         placeholder={ph}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        // The field is the whole bar, always focused: no ring (inline, so a host's global :focus-visible can't add one).
+        style={{ outline: 'none', ...style }}
         className={cn(
           'h-full min-w-0 flex-1 border-0 bg-transparent p-0 font-[inherit] text-[16px] text-foreground outline-none placeholder:text-tertiary-foreground',
           selectableText,
@@ -763,8 +767,8 @@ export interface CommandPageProps {
   filter?: boolean;
   /** Show ⌘1–⌘9 on the first nine visible items (⌘N selects them either way). */
   numbered?: boolean;
-  /** Runs before the menu's keys; preventDefault() to take a key over. */
-  onKeyDown?: (e: ReactKeyboardEvent) => void;
+  /** Runs before the menu's keys; preventDefault() to take a key over. `menu` selects, moves, pushes, pops. */
+  onKeyDown?: (e: ReactKeyboardEvent, menu: CommandMenuApi) => void;
   children?: ReactNode;
 }
 
@@ -773,7 +777,7 @@ export function CommandPage({ id, placeholder, title, filter, numbered = false, 
   const keyRef = useRef(onKeyDown);
   keyRef.current = onKeyDown;
   useLayoutEffect(() => {
-    store.pages.set(id, { placeholder, title, onKeyDown: (e) => keyRef.current?.(e) });
+    store.pages.set(id, { placeholder, title, onKeyDown: (e, menu) => keyRef.current?.(e, menu) });
     store.emit();
     return () => { store.pages.delete(id); store.emit(); };
   }, [store, id, placeholder, title]);

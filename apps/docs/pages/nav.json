@@ -37,6 +37,7 @@
       "section": "Organisms",
       "pages": [
         { "id": "navigation-stack", "title": "NavigationStack" },
+        { "id": "command-menu", "title": "CommandMenu" },
         { "id": "split-view", "title": "SplitView" },
         { "id": "lists", "title": "Lists" },
         { "id": "credenza", "title": "Credenza" },
