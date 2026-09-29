@@ -18,7 +18,8 @@
         { "id": "markdown-editor", "title": "MarkdownEditor" },
         { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
         { "id": "progress-ring", "title": "ProgressRing" },
-        { "id": "now-playing-bars", "title": "NowPlayingBars" }
+        { "id": "now-playing-bars", "title": "NowPlayingBars" },
+        { "id": "skeleton", "title": "Skeleton" }
       ]
     },
     {

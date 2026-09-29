@@ -773,6 +773,33 @@
       }
     },
     {
+      "name": "skeleton",
+      "type": "registry:ui",
+      "title": "Skeleton",
+      "description": "Loading placeholders with a soft left-to-right sweep instead of a pulse: text lines, circles, rects and rounded blocks, and a SkeletonText paragraph with a shorter last line.",
+      "dependencies": [
+        "@brett_lamy/ui@^1.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/skeleton.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/skeleton.tsx"
+        }
+      ],
+      "meta": {
+        "page": "skeleton",
+        "exports": [
+          "Skeleton",
+          "SkeletonText",
+          "skeletonVariants"
+        ]
+      }
+    },
+    {
       "name": "split-view",
       "type": "registry:ui",
       "title": "SplitView",

@@ -1,0 +1,15 @@
+{
+  "name": "skeleton",
+  "title": "Skeleton",
+  "description": "Loading placeholders with a soft left-to-right sweep instead of a pulse: text lines, circles, rects and rounded blocks, and a SkeletonText paragraph with a shorter last line.",
+  "page": "skeleton",
+  "exports": [
+    "Skeleton",
+    "SkeletonText",
+    "skeletonVariants"
+  ],
+  "imports": [
+    "Skeleton",
+    "SkeletonText"
+  ]
+}
