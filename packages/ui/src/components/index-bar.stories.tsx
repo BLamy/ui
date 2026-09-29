@@ -52,7 +52,7 @@ export const CustomItemsWithPreviews: Story = {
 
 const THREAD = [
   ['Flaky CI on the index-bar test', 'Why does the index-bar test only fail on CI and never on my machine?'],
-  ['Pointer capture vs. the polyfill', 'Capturing the pointer starves the vibrator polyfill of move events during a scrub.'],
+  ['Pointer capture vs. the shim', 'Capturing the pointer starves the haptics shim of move events during a scrub.'],
   ['Window listeners for scrubbing', 'Track the drag with window listeners instead, and clean them up on pointercancel.'],
   ['Haptic tick per stop', 'Only tick when the stop actually changes, otherwise a slow drag buzzes constantly.'],
   ['Reduced motion', 'Keep the active state visible but drop the width transitions when motion is reduced.'],

@@ -7,7 +7,11 @@ const snippet = `def backoff(attempt: int, base: float = 1.0) -> float:
 export default function Engines() {
   return (
     <div style={{ display: 'grid', gap: 12 }}>
-      <SyntaxHighlighting code={snippet} language="python" title="gpu-lexer (WebGPU)" />
+      <SyntaxHighlighting
+        code={snippet}
+        language="python"
+        title="gpu-lexer (WebGPU)"
+      />
       <SyntaxHighlighting
         code={snippet}
         language="python"

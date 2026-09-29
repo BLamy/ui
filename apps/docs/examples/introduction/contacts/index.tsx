@@ -60,7 +60,9 @@ export default function Contacts() {
           avail={new Set(letters)}
           top={118}
           bottom={70}
-          onLetter={(L) => sections.current[L]?.scrollIntoView({ block: 'start' })}
+          onLetter={(L) =>
+            sections.current[L]?.scrollIntoView({ block: 'start' })
+          }
         />
       ),
       content: (
@@ -102,7 +104,9 @@ export default function Contacts() {
           <div style={{ fontSize: 21, fontWeight: 700, marginTop: 12 }}>
             {sel.f} {sel.l}
           </div>
-          <div style={{ fontSize: 13.5, color: 'var(--bl-label2)', marginTop: 3 }}>
+          <div
+            style={{ fontSize: 13.5, color: 'var(--bl-label2)', marginTop: 3 }}
+          >
             {sel.role}
           </div>
           <div
@@ -141,7 +145,13 @@ export default function Contacts() {
                   <div style={{ fontSize: 16.5, fontWeight: 650 }}>
                     {tab === 'recents' ? 'Recents' : 'Settings'}
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--bl-label2)', marginTop: 4 }}>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--bl-label2)',
+                      marginTop: 4,
+                    }}
+                  >
                     Tab state survives switching away and back.
                   </div>
                 </div>

@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { DeliveryTrackingDemo } from '@brett_lamy/ui'
 
-/** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a fixed-size composition out at its design width, scaled down (never up)
+ * to fit, centered.
+ */
 function Scaled({
   width,
   height,
@@ -54,7 +57,12 @@ export default function DeliveryTracking() {
   return (
     <Scaled width={430} height={780}>
       <DeliveryTrackingDemo
-        style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
       />
     </Scaled>
   )

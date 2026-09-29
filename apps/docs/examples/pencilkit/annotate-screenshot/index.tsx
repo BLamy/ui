@@ -26,7 +26,8 @@ export default function AnnotateScreenshot() {
         background: 'var(--bl-bg2)',
       }}
     >
-      {/* Anything underneath: the canvas is transparent and fills its positioned host */}
+      {/* Anything underneath: the canvas is transparent and fills its
+          positioned host */}
       <div
         style={{
           position: 'absolute',
@@ -66,7 +67,14 @@ export default function AnnotateScreenshot() {
               background: 'var(--bl-tint)',
             }}
           />
-          <div style={{ width: 90, height: 34, borderRadius: 9, background: 'var(--bl-fill)' }} />
+          <div
+            style={{
+              width: 90,
+              height: 34,
+              borderRadius: 9,
+              background: 'var(--bl-fill)',
+            }}
+          />
         </div>
       </div>
       <PencilCanvas
@@ -76,7 +84,11 @@ export default function AnnotateScreenshot() {
         onStrokesChange={history.onStrokesChange}
       >
         <PencilToolbar>
-          <ToolPicker value={tool} onChange={setTool} tools={['marker', 'pen', 'eraser']} />
+          <ToolPicker
+            value={tool}
+            onChange={setTool}
+            tools={['marker', 'pen', 'eraser']}
+          />
           <PencilToolbarDivider />
           <InkPicker value={ink} onChange={setInk} inks={highlighters} />
           <PencilToolbarDivider />

@@ -1,5 +1,11 @@
 import { useState, type ReactNode } from 'react'
-import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, WorkbenchTheme } from '@brett_lamy/ui'
+import {
+  Sidebar,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+  WorkbenchTheme,
+} from '@brett_lamy/ui'
 
 function EditorRail() {
   const [panel, setPanel] = useState('Explorer')
@@ -14,7 +20,8 @@ function EditorRail() {
   )
   return (
     <div style={{ height: 340 }}>
-      {/* rail: closed collapses to icons (with tooltips) instead of sliding away */}
+      {/* rail: closed collapses to icons (with tooltips) instead of sliding
+          away */}
       <SidebarProvider defaultOpen={false} breakpoint={420}>
         <Sidebar variant="rail" width={210} railWidth={52}>
           <Sidebar.Header>
@@ -41,7 +48,9 @@ function EditorRail() {
             }}
           >
             <SidebarTrigger />
-            <strong style={{ fontSize: 13.5, color: 'var(--wb-label)' }}>{panel}</strong>
+            <strong style={{ fontSize: 13.5, color: 'var(--wb-label)' }}>
+              {panel}
+            </strong>
           </header>
           <pre
             style={{
@@ -68,7 +77,10 @@ function CollapsibleRail() {
   )
 }
 
-/** A rounded window with a hairline border; `width` caps it (phone-sized examples), centered. */
+/**
+ * A rounded window with a hairline border; `width` caps it (phone-sized
+ * examples), centered.
+ */
 function Window({ width, children }: { width?: number; children?: ReactNode }) {
   return (
     <div
@@ -85,7 +97,8 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function CollapsibleRailExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

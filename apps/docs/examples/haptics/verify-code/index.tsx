@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { Button, FieldError, Haptics, Input, Label, TextField } from '@brett_lamy/ui'
+import {
+  Button,
+  FieldError,
+  Haptics,
+  Input,
+  Label,
+  TextField,
+} from '@brett_lamy/ui'
 
 export default function VerifyCode() {
   const [code, setCode] = useState('')
@@ -40,7 +47,13 @@ export default function VerifyCode() {
         Verify
       </Button>
       {state === 'ok' && (
-        <div style={{ textAlign: 'center', color: 'var(--bl-green)', fontWeight: 600 }}>
+        <div
+          style={{
+            textAlign: 'center',
+            color: 'var(--bl-green)',
+            fontWeight: 600,
+          }}
+        >
           Verified
         </div>
       )}

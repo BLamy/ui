@@ -10,7 +10,11 @@ import {
 
 const sections = [
   { id: 'contacts', title: 'Contacts', body: 'Everyone you know, A to Z.' },
-  { id: 'recents', title: 'Recents', body: 'Calls and messages from the last week.' },
+  {
+    id: 'recents',
+    title: 'Recents',
+    body: 'Calls and messages from the last week.',
+  },
   { id: 'favorites', title: 'Favorites', body: 'The people you reach most.' },
 ]
 
@@ -35,8 +39,24 @@ export default function PanelsFirst() {
         {sections.map((s) => (
           <TabViewPanel key={s.id} id={s.id}>
             <div style={{ padding: 24 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--bl-label)' }}>{s.title}</div>
-              <div style={{ fontSize: 14, color: 'var(--bl-label2)', marginTop: 6 }}>{s.body}</div>
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: 'var(--bl-label)',
+                }}
+              >
+                {s.title}
+              </div>
+              <div
+                style={{
+                  fontSize: 14,
+                  color: 'var(--bl-label2)',
+                  marginTop: 6,
+                }}
+              >
+                {s.body}
+              </div>
             </div>
           </TabViewPanel>
         ))}
@@ -51,18 +71,29 @@ export default function PanelsFirst() {
           boxShadow: 'inset 0 -1px 0 var(--bl-sep)',
         }}
       >
-        <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--bl-label)' }}>Address Book</span>
+        <span
+          style={{ fontSize: 15, fontWeight: 700, color: 'var(--bl-label)' }}
+        >
+          Address Book
+        </span>
         <TabViewBar variant="plain">
           <TabViewList aria-label="Sections" style={{ gap: 4 }}>
             {sections.map((s) => (
-              <TabViewTab key={s.id} id={s.id} textValue={s.title} style={{ position: 'relative', padding: '8px 12px' }}>
+              <TabViewTab
+                key={s.id}
+                id={s.id}
+                textValue={s.title}
+                style={{ position: 'relative', padding: '8px 12px' }}
+              >
                 {({ isSelected }) => (
                   <>
                     <span
                       style={{
                         fontSize: 14,
                         fontWeight: 600,
-                        color: isSelected ? 'var(--bl-tint)' : 'var(--bl-label3)',
+                        color: isSelected
+                          ? 'var(--bl-tint)'
+                          : 'var(--bl-label3)',
                       }}
                     >
                       {s.title}

@@ -312,7 +312,7 @@ export const ChatWithInspector: Story = {
           </WorkbenchHeader>
           <Conversation>
             <ConversationMessages threadKey="inspect">
-              <UserMessage key="u">Fix the boot order so the polyfill installs before the first tap.</UserMessage>
+              <UserMessage key="u">Fix the boot order so the shim installs before the first tap.</UserMessage>
               <AssistantMessage key="a">
                 <WorkLog summary="Worked for 42s" defaultOpen>
                   {THREADS[1].messages[1].steps?.map((s, i) => <ToolCall key={i} {...s} />)}

@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import { Button, Haptics, TextMorph } from '@brett_lamy/ui'
 
-// A string child morphs on change: shared letters (C, o, n, i) slide into place,
-// the rest blur out and in, and the button springs to its new width.
+// A string child morphs on change: shared letters (C, o, n, i) slide into
+// place, the rest blur out and in, and the button springs to its new width.
 export default function SendButton() {
   const [ready, setReady] = useState(false)
   return (
-    <div style={{ display: 'grid', placeItems: 'center', gap: 14, justifyItems: 'center' }}>
+    <div
+      style={{
+        display: 'grid',
+        placeItems: 'center',
+        gap: 14,
+        justifyItems: 'center',
+      }}
+    >
       <Button
         size="lg"
         onPress={() => {
@@ -18,7 +25,9 @@ export default function SendButton() {
       </Button>
       {/* Any text, outside a button too */}
       <div style={{ fontSize: 26, fontWeight: 750, letterSpacing: -0.4 }}>
-        <TextMorph>{ready ? 'Review and confirm' : 'Review and continue'}</TextMorph>
+        <TextMorph>
+          {ready ? 'Review and confirm' : 'Review and continue'}
+        </TextMorph>
       </div>
       <div
         style={{
@@ -28,8 +37,8 @@ export default function SendButton() {
           lineHeight: 1.5,
         }}
       >
-        Press the button. Letters the two words share stay and slide; the rest cross through a
-        blur.
+        Press the button. Letters the two words share stay and slide; the rest
+        cross through a blur.
       </div>
     </div>
   )

@@ -1,5 +1,13 @@
 import { useState, type ReactNode } from 'react'
-import { Button, Icon, List, ListRow, ListSection, Slider, Switch } from '@brett_lamy/ui'
+import {
+  Button,
+  Icon,
+  List,
+  ListRow,
+  ListSection,
+  Slider,
+  Switch,
+} from '@brett_lamy/ui'
 
 function Tile({ icon, color }: { icon: string; color: string }) {
   return (
@@ -27,8 +35,9 @@ function Controls() {
   return (
     <div style={{ padding: '18px 0' }}>
       <List inset>
-        {/* No onPress: each row is a plain container, the Switch is the control, and pressing the row's
-            label flips it. The Switch is named by the row title. */}
+        {/* No onPress: each row is a plain container, the Switch is the
+            control, and pressing the row's label flips it. The Switch is named
+            by the row title. */}
         <ListSection footer="Tap anywhere on a row to flip its switch.">
           <ListRow
             leading={<Tile icon="link" color="#0A84FF" />}
@@ -47,12 +56,16 @@ function Controls() {
             title="Volume"
             divider={false}
             accessory={
-              <Slider value={volume} onChange={(v) => setVolume(v as number)} style={{ width: 170 }} />
+              <Slider
+                value={volume}
+                onChange={(v) => setVolume(v as number)}
+                style={{ width: 170 }}
+              />
             }
           />
         </ListSection>
-        {/* onPress and a Button together: the row button sits beneath the content, so the two are
-            siblings, never nested. */}
+        {/* onPress and a Button together: the row button sits beneath the
+            content, so the two are siblings, never nested. */}
         <ListSection>
           <ListRow
             leading={<Tile icon="doc" color="#34C759" />}
@@ -61,7 +74,11 @@ function Controls() {
             onPress={() => {}}
             divider={false}
             accessory={
-              <Button size="sm" variant="secondary" onPress={() => setQueued((n) => n + 1)}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => setQueued((n) => n + 1)}
+              >
                 Get
               </Button>
             }
@@ -72,7 +89,8 @@ function Controls() {
   )
 }
 
-// A rounded, hairline-bordered window the example sits in; `width` caps it, centered.
+// A rounded, hairline-bordered window the example sits in; `width` caps it,
+// centered.
 function Window({ width, children }: { width?: number; children?: ReactNode }) {
   return (
     <div

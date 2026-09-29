@@ -1,5 +1,10 @@
 import { useMemo, useState } from 'react'
-import { ICON_CATEGORIES, ICON_KEYWORDS, ICON_NAMES, Icon } from '@brett_lamy/ui'
+import {
+  ICON_CATEGORIES,
+  ICON_KEYWORDS,
+  ICON_NAMES,
+  Icon,
+} from '@brett_lamy/ui'
 import type { IconCategory, IconWeight } from '@brett_lamy/ui'
 
 const TABS: { id: 'all' | IconCategory; label: string }[] = [
@@ -14,7 +19,8 @@ const TABS: { id: 'all' | IconCategory; label: string }[] = [
 ]
 const WEIGHTS: IconWeight[] = ['light', 'regular', 'semibold', 'bold']
 
-// Search by name or keyword ("mute", "lyrics", "settings"), narrow by category, and click to copy the JSX.
+// Search by name or keyword ("mute", "lyrics", "settings"), narrow by category,
+// and click to copy the JSX.
 export default function IconGallery() {
   const [query, setQuery] = useState('')
   const [tab, setTab] = useState<'all' | IconCategory>('all')
@@ -31,21 +37,43 @@ export default function IconGallery() {
   }, [query, tab])
 
   const copy = (name: string) => {
-    const jsx = weight === 'regular' ? `<Icon name="${name}" />` : `<Icon name="${name}" weight="${weight}" />`
+    const jsx =
+      weight === 'regular'
+        ? `<Icon name="${name}" />`
+        : `<Icon name="${name}" weight="${weight}" />`
     void navigator.clipboard?.writeText(jsx).catch(() => {})
     setCopied(jsx)
   }
 
   return (
-    <div style={{ display: 'grid', gap: 12, width: '100%', maxWidth: 640, color: 'var(--bl-label)' }}>
+    <div
+      style={{
+        display: 'grid',
+        gap: 12,
+        width: '100%',
+        maxWidth: 640,
+        color: 'var(--bl-label)',
+      }}
+    >
       <style>{`
-        .ig-tile { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 7px;
-          padding: 12px 4px 9px; border-radius: 12px; cursor: pointer; min-width: 0; transition: background .15s; }
+        .ig-tile {
+          all: unset; box-sizing: border-box; display: flex;
+          flex-direction: column; align-items: center; gap: 7px;
+          padding: 12px 4px 9px; border-radius: 12px; cursor: pointer;
+          min-width: 0; transition: background .15s;
+        }
         .ig-tile:hover { background: var(--bl-fill); }
-        .ig-tile:focus-visible { outline: 2px solid var(--bl-tint); outline-offset: -2px; }
-        .ig-chip { all: unset; cursor: pointer; padding: 5px 11px; border-radius: 999px; font-size: 13px; font-weight: 500;
-          color: var(--bl-label2); white-space: nowrap; }
-        .ig-chip[aria-pressed='true'] { background: var(--bl-label); color: var(--bl-card); }
+        .ig-tile:focus-visible {
+          outline: 2px solid var(--bl-tint); outline-offset: -2px;
+        }
+        .ig-chip {
+          all: unset; cursor: pointer; padding: 5px 11px; border-radius: 999px;
+          font-size: 13px; font-weight: 500; color: var(--bl-label2);
+          white-space: nowrap;
+        }
+        .ig-chip[aria-pressed='true'] {
+          background: var(--bl-label); color: var(--bl-card);
+        }
         .ig-chip:focus-visible { outline: 2px solid var(--bl-tint); }
       `}</style>
 
@@ -78,15 +106,34 @@ export default function IconGallery() {
           }}
         />
         {query ? (
-          <button type="button" className="ig-chip" style={{ padding: 0 }} aria-label="Clear" onClick={() => setQuery('')}>
+          <button
+            type="button"
+            className="ig-chip"
+            style={{ padding: 0 }}
+            aria-label="Clear"
+            onClick={() => setQuery('')}
+          >
             <Icon name="xmark-circle-fill" size={17} />
           </button>
         ) : null}
       </label>
 
-      <div style={{ display: 'flex', gap: 4, overflowX: 'auto', scrollbarWidth: 'none' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 4,
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+        }}
+      >
         {TABS.map((t) => (
-          <button key={t.id} type="button" className="ig-chip" aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
+          <button
+            key={t.id}
+            type="button"
+            className="ig-chip"
+            aria-pressed={tab === t.id}
+            onClick={() => setTab(t.id)}
+          >
             {t.label}
           </button>
         ))}
@@ -112,12 +159,28 @@ export default function IconGallery() {
             color: 'var(--bl-label2)',
           }}
         >
-          <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {copied ? `Copied ${copied}` : `${hits.length} icons · click to copy`}
+          <span
+            style={{
+              fontFamily: 'ui-monospace, Menlo, monospace',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {copied
+              ? `Copied ${copied}`
+              : `${hits.length} icons · click to copy`}
           </span>
           <div style={{ display: 'flex', gap: 2 }}>
             {WEIGHTS.map((w) => (
-              <button key={w} type="button" className="ig-chip" style={{ fontSize: 12, padding: '3px 8px' }} aria-pressed={weight === w} onClick={() => setWeight(w)}>
+              <button
+                key={w}
+                type="button"
+                className="ig-chip"
+                style={{ fontSize: 12, padding: '3px 8px' }}
+                aria-pressed={weight === w}
+                onClick={() => setWeight(w)}
+              >
                 {w}
               </button>
             ))}
@@ -135,7 +198,13 @@ export default function IconGallery() {
           }}
         >
           {hits.map((name) => (
-            <button key={name} type="button" className="ig-tile" title={name} onClick={() => copy(name)}>
+            <button
+              key={name}
+              type="button"
+              className="ig-tile"
+              title={name}
+              onClick={() => copy(name)}
+            >
               <Icon name={name} size={26} weight={weight} />
               <span
                 style={{
@@ -151,7 +220,15 @@ export default function IconGallery() {
             </button>
           ))}
           {hits.length === 0 ? (
-            <div style={{ gridColumn: '1 / -1', padding: 40, textAlign: 'center', color: 'var(--bl-label2)', fontSize: 14 }}>
+            <div
+              style={{
+                gridColumn: '1 / -1',
+                padding: 40,
+                textAlign: 'center',
+                color: 'var(--bl-label2)',
+                fontSize: 14,
+              }}
+            >
               No icons match “{query}”.
             </div>
           ) : null}

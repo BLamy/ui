@@ -1,12 +1,23 @@
 import { useState, type ReactNode } from 'react'
-import { AdaptivePane, Button, Segmented, type AdaptivePaneMode } from '@brett_lamy/ui'
+import {
+  AdaptivePane,
+  Button,
+  Segmented,
+  type AdaptivePaneMode,
+} from '@brett_lamy/ui'
 
 const outlineModes = [
   { id: 'column', label: 'Docked' },
   { id: 'drawer', label: 'Drawer' },
   { id: 'hidden', label: 'Focus' },
 ]
-const headings = ['Overview', 'Getting started', 'Composition', 'Theming', 'Accessibility']
+const headings = [
+  'Overview',
+  'Getting started',
+  'Composition',
+  'Theming',
+  'Accessibility',
+]
 
 function Reader() {
   // The mode is also just state: let the reader pick how the outline presents.
@@ -63,8 +74,17 @@ function Reader() {
           ))}
         </aside>
       </AdaptivePane>
-      <article style={{ flex: 1, minWidth: 0, padding: '16px 26px', overflow: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+      <article
+        style={{ flex: 1, minWidth: 0, padding: '16px 26px', overflow: 'auto' }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 6,
+          }}
+        >
           <div style={{ width: 250 }}>
             <Segmented
               aria-label="Outline"
@@ -84,10 +104,15 @@ function Reader() {
         </div>
         <h2 style={{ margin: '14px 0 8px', fontSize: 24 }}>Composition</h2>
         <p
-          style={{ margin: 0, lineHeight: 1.65, color: 'var(--bl-label2)', maxWidth: 520 }}
+          style={{
+            margin: 0,
+            lineHeight: 1.65,
+            color: 'var(--bl-label2)',
+            maxWidth: 520,
+          }}
         >
-          The outline keeps its children across modes: docked beside the text, a drawer over
-          it, or gone for focused reading.
+          The outline keeps its children across modes: docked beside the text, a
+          drawer over it, or gone for focused reading.
         </p>
       </article>
     </div>
@@ -102,7 +127,10 @@ export default function ReaderOutline() {
   )
 }
 
-/** A rounded window with the page background; `width` caps it (phone-sized examples), centered. */
+/**
+ * A rounded window with the page background; `width` caps it (phone-sized
+ * examples), centered.
+ */
 function Window({ width, children }: { width?: number; children?: ReactNode }) {
   return (
     <div

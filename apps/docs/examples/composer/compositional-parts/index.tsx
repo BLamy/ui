@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react'
 import {
   Composer,
   ComposerAttach,
@@ -34,42 +40,58 @@ const access = [
   { id: 'read', label: 'Read only' },
 ]
 
-/* A chat transcript for the scroll-linked composer: it opens at the newest message (the bottom). */
+/* A chat transcript for the scroll-linked composer: it opens at the newest
+   message (the bottom). */
 const thread: [who: 'me' | 'agent', text: string][] = [
   ['me', 'Morning! Can you look at the shell layout before the release?'],
   [
     'agent',
-    'Sure. I opened the shell at 1400, 1024 and 390 px and read through the layout code first.',
+    'Sure. I opened the shell at 1400, 1024 and 390 px and read through the ' +
+      'layout code first.',
   ],
   [
     'agent',
-    'Two things stand out: the sidebar drawer and the sticky header compete on z-index, and the scrim lives inside the main column.',
+    'Two things stand out: the sidebar drawer and the sticky header compete ' +
+      'on z-index, and the scrim lives inside the main column.',
   ],
   ['me', 'Which one bites first?'],
-  ['agent', 'The z-index one. At 390 px the header paints over the open drawer’s first row.'],
+  [
+    'agent',
+    'The z-index one. At 390 px the header paints over the open drawer’s ' +
+      'first row.',
+  ],
   ['me', 'The header has a backdrop-filter.'],
   [
     'agent',
-    'That’s it: backdrop-filter makes a stacking context, so the drawer is compared against the header’s parent. Portaling the drawer into the shell fixes it.',
+    'That’s it: backdrop-filter makes a stacking context, so the drawer is ' +
+      'compared against the header’s parent. Portaling the drawer into the ' +
+      'shell fixes it.',
   ],
   ['me', 'Do that, and keep the scrim under the header.'],
   [
     'agent',
-    'Done — the drawer portals into the shell and the scrim sits at 25. Storybook and the docs both look right.',
+    'Done — the drawer portals into the shell and the scrim sits at 25. ' +
+      'Storybook and the docs both look right.',
   ],
   ['me', 'Check the light appearance too?'],
   [
     'agent',
-    'Same result in light; the scrim is a touch lighter there, matching the system sheets.',
+    'Same result in light; the scrim is a touch lighter there, matching the ' +
+      'system sheets.',
   ],
   ['me', 'Ship it.'],
   [
     'agent',
-    'Committed as “fix(shell): drawer above sticky header”. Scroll up to read back — the composer folds out of the way.',
+    'Committed as “fix(shell): drawer above sticky header”. Scroll up to ' +
+      'read back — the composer folds out of the way.',
   ],
 ]
 
-function Transcript({ scroller }: { scroller: RefObject<HTMLDivElement | null> }) {
+function Transcript({
+  scroller,
+}: {
+  scroller: RefObject<HTMLDivElement | null>
+}) {
   useLayoutEffect(() => {
     const el = scroller.current
     if (el) el.scrollTop = el.scrollHeight
@@ -78,9 +100,16 @@ function Transcript({ scroller }: { scroller: RefObject<HTMLDivElement | null> }
     <div
       ref={scroller}
       className="wb-scroll"
-      style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: '20px 20px 190px' }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        overflowY: 'auto',
+        padding: '20px 20px 190px',
+      }}
     >
-      <div style={{ maxWidth: 620, margin: '0 auto', display: 'grid', gap: 10 }}>
+      <div
+        style={{ maxWidth: 620, margin: '0 auto', display: 'grid', gap: 10 }}
+      >
         <div
           style={{
             fontSize: 12,
@@ -94,7 +123,10 @@ function Transcript({ scroller }: { scroller: RefObject<HTMLDivElement | null> }
         </div>
         {thread.map(([who, text], i) =>
           who === 'me' ? (
-            <div key={i} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div
+              key={i}
+              style={{ display: 'flex', justifyContent: 'flex-end' }}
+            >
               <div
                 style={{
                   maxWidth: '78%',
@@ -127,10 +159,11 @@ function Transcript({ scroller }: { scroller: RefObject<HTMLDivElement | null> }
   )
 }
 
-// Options live in the footer; when the composer is compact they move into the bottom bump's outlet.
-// Scroll → FAB (collapseOnScroll): the transcript opens at its newest message; scrolling up folds the
-// composer to one row, a flick or a long read folds it into a FAB; scrolling back down — or tapping the
-// FAB — restores it.
+// Options live in the footer; when the composer is compact they move into the
+// bottom bump's outlet. Scroll → FAB (collapseOnScroll): the transcript opens
+// at its newest message; scrolling up folds the composer to one row, a flick or
+// a long read folds it into a FAB; scrolling back down — or tapping the FAB —
+// restores it.
 function CompositionalParts({ variant = 'full' }: { variant?: string }) {
   const [streaming, setStreaming] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -141,7 +174,9 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
   const composer = (
     <Composer
       key={variant}
-      defaultValue={full ? '## Ship checklist\n\n- Highlight code\n- Publish package' : ''}
+      defaultValue={
+        full ? '## Ship checklist\n\n- Highlight code\n- Publish package' : ''
+      }
       defaultCollapsed={variant === 'compact' ? 'compact' : undefined}
       collapseOnScroll={variant === 'scroll' ? scroller : undefined}
       collapseTo="fab"
@@ -175,9 +210,16 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
           </ComposerBumpContent>
           <ComposerBumpHandle>
             <span
-              style={{ width: 7, height: 7, borderRadius: 99, background: 'var(--wb-green)' }}
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: 99,
+                background: 'var(--wb-green)',
+              }}
             />
-            <ComposerText className="flex-1">Monitoring · pnpm dev</ComposerText>
+            <ComposerText className="flex-1">
+              Monitoring · pnpm dev
+            </ComposerText>
           </ComposerBumpHandle>
         </ComposerBump>
       ) : null}
@@ -193,7 +235,11 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
               defaultValue="claude-opus-5-5"
             />
             <ComposerSeparator />
-            <ComposerSelect aria-label="Effort" options={efforts} defaultValue="medium" />
+            <ComposerSelect
+              aria-label="Effort"
+              options={efforts}
+              defaultValue="medium"
+            />
             <ComposerSeparator />
             <ComposerSelect aria-label="Access" icon="lock" options={access} />
           </ComposerOptions>
@@ -239,8 +285,13 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
-export default function CompositionalPartsExample({ variant }: { variant?: string }) {
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
+export default function CompositionalPartsExample({
+  variant,
+}: {
+  variant?: string
+}) {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>
       <CompositionalParts variant={variant} />

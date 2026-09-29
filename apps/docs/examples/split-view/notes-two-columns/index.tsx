@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { SplitViewNotesDemo } from '@brett_lamy/ui'
 
-/** Lays a composition out at a real device width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a composition out at a real device width, scaled down (never up) to fit,
+ * centered.
+ */
 function Scaled({
   width,
   height,
@@ -63,7 +66,11 @@ function Caption({ children }: { children: ReactNode }) {
   )
 }
 
-export default function NotesTwoColumns({ variant = 'regular' }: { variant?: string }) {
+export default function NotesTwoColumns({
+  variant = 'regular',
+}: {
+  variant?: string
+}) {
   const compact = variant === 'compact'
   return (
     <div>
@@ -72,8 +79,10 @@ export default function NotesTwoColumns({ variant = 'regular' }: { variant?: str
       </Scaled>
       <Caption>
         {compact
-          ? 'Compact starts on the list; the note pushes in from the trailing edge.'
-          : 'Hide the list for a full-width editor — the editor morphs, it never re-renders into a new place.'}
+          ? 'Compact starts on the list; the note pushes in from the ' +
+            'trailing edge.'
+          : 'Hide the list for a full-width editor — the editor morphs, it ' +
+            'never re-renders into a new place.'}
       </Caption>
     </div>
   )

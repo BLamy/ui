@@ -66,7 +66,8 @@ const trays: { id: string; title: string; peek: number; body: ReactNode }[] = [
   },
 ]
 
-// Content slides the way the flow moves: forward from the right, back from the left.
+// Content slides the way the flow moves: forward from the right, back from the
+// left.
 const slide = {
   enter: (dir: number) => ({ x: dir * 60, opacity: 0, filter: 'blur(3px)' }),
   center: { x: 0, opacity: 1, filter: 'blur(0px)' },
@@ -93,7 +94,14 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
         }}
       >
         <div style={{ padding: 22 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.08em', opacity: 0.6 }}>
+          <div
+            style={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              letterSpacing: '.08em',
+              opacity: 0.6,
+            }}
+          >
             HOST CONTENT
           </div>
           <p
@@ -115,10 +123,22 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
               marginTop: 18,
             }}
           >
-            {['#0A84FF', '#FF9F0A', '#30D158', '#BF5AF2', '#FF375F', '#64D2FF'].map((c) => (
+            {[
+              '#0A84FF',
+              '#FF9F0A',
+              '#30D158',
+              '#BF5AF2',
+              '#FF375F',
+              '#64D2FF',
+            ].map((c) => (
               <div
                 key={c}
-                style={{ height: 64, borderRadius: 14, background: c, opacity: dark ? 0.75 : 0.6 }}
+                style={{
+                  height: 64,
+                  borderRadius: 14,
+                  background: c,
+                  opacity: dark ? 0.75 : 0.6,
+                }}
               />
             ))}
           </div>
@@ -129,9 +149,11 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
   )
 }
 
-// One sheet, several trays: the height springs between steps rather than jumping.
+// One sheet, several trays: the height springs between steps rather than
+// jumping.
 export default function Trays() {
-  // useMotion() hands back framer-motion (AnimatePresence, motion) through the kit.
+  // useMotion() hands back framer-motion (AnimatePresence, motion) through the
+  // kit.
   const { AnimatePresence, motion } = useMotion()
   const [step, setStep] = useState(0)
   const [dir, setDir] = useState(1)
@@ -142,7 +164,13 @@ export default function Trays() {
   const tray = trays[step]
   const last = step === trays.length - 1
   return (
-    <Host note="Continue and Back move through the trays: each has its own height, and the sheet morphs between them while the content slides the way the flow moves.">
+    <Host
+      note={
+        'Continue and Back move through the trays: each has its own height, ' +
+        'and the sheet morphs between them while the content slides the way ' +
+        'the flow moves.'
+      }
+    >
       <FloatingSheet
         peek={tray.peek}
         appearance="sheet"
@@ -164,7 +192,9 @@ export default function Trays() {
                 exit="exit"
                 transition={springs.smooth}
               >
-                <h3 style={{ margin: '0 0 12px', fontSize: 19 }}>{tray.title}</h3>
+                <h3 style={{ margin: '0 0 12px', fontSize: 19 }}>
+                  {tray.title}
+                </h3>
                 {tray.body}
               </motion.div>
             </AnimatePresence>

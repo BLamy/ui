@@ -1,8 +1,15 @@
 import { useState, type ReactNode } from 'react'
-import { List, ListRow, ListSection, NavigationStack, type Screen } from '@brett_lamy/ui'
+import {
+  List,
+  ListRow,
+  ListSection,
+  NavigationStack,
+  type Screen,
+} from '@brett_lamy/ui'
 
-// Titles of different lengths, so the back label shows each case: the full previous title, an ellipsized one,
-// and "Back" once the centered title leaves only a sliver.
+// Titles of different lengths, so the back label shows each case: the full
+// previous title, an ellipsized one, and "Back" once the centered title leaves
+// only a sliver.
 const TREE: Record<string, string[]> = {
   Settings: ['Notifications and Focus', 'General'],
   'Notifications and Focus': ['Scheduled Summary', 'Show Previews'],
@@ -26,8 +33,10 @@ function Stack() {
         <ListSection
           footer={
             TREE[title].length
-              ? 'Push a row: the title flies into the back button. Pop with the button, Esc, or an edge swipe.'
-              : 'The back label names the screen behind — truncated, or “Back”, when the title leaves no room.'
+              ? 'Push a row: the title flies into the back button. Pop with ' +
+                'the button, Esc, or an edge swipe.'
+              : 'The back label names the screen behind — truncated, or ' +
+                '“Back”, when the title leaves no room.'
           }
         >
           {TREE[title].map((t, i) => (
@@ -53,7 +62,10 @@ function Stack() {
   )
 }
 
-/** The rounded, hairline-bordered window the example sits in, capped to a phone width and centered. */
+/**
+ * The rounded, hairline-bordered window the example sits in, capped to a phone
+ * width and centered.
+ */
 function Window({ width, children }: { width?: number; children: ReactNode }) {
   return (
     <div

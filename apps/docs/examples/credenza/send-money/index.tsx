@@ -30,7 +30,12 @@ function SendMoneyTray() {
   }
   return (
     <div
-      style={{ position: 'relative', height: 460, display: 'grid', placeItems: 'center' }}
+      style={{
+        position: 'relative',
+        height: 460,
+        display: 'grid',
+        placeItems: 'center',
+      }}
     >
       <Button onPress={() => setStep('amount')}>Send money</Button>
       {/* compact: a floating bottom tray you can drag down to dismiss */}
@@ -105,7 +110,11 @@ function SendMoneyTray() {
               value={amount}
               onChange={setAmount}
             />
-            <Button size="pill" style={{ marginTop: 16 }} onPress={() => setStep('review')}>
+            <Button
+              size="pill"
+              style={{ marginTop: 16 }}
+              onPress={() => setStep('review')}
+            >
               Continue
             </Button>
           </div>
@@ -115,7 +124,8 @@ function SendMoneyTray() {
   )
 }
 
-// A rounded, hairline-bordered window the example sits in; `width` caps it, centered.
+// A rounded, hairline-bordered window the example sits in; `width` caps it,
+// centered.
 function Window({
   width,
   bg = 'var(--bl-bg)',

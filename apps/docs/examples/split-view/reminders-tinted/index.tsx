@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { SplitViewRemindersDemo } from '@brett_lamy/ui'
 
-/** Lays a composition out at a real device width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a composition out at a real device width, scaled down (never up) to fit,
+ * centered.
+ */
 function Scaled({
   width,
   height,
@@ -65,7 +68,11 @@ function Caption({ children }: { children: ReactNode }) {
 
 // Each list's row selects in its own colour (`tint`), Groceries lives in two
 // sections and highlights in both, and both headers use `largeTitle`.
-export default function RemindersTinted({ variant = 'regular' }: { variant?: string }) {
+export default function RemindersTinted({
+  variant = 'regular',
+}: {
+  variant?: string
+}) {
   const compact = variant === 'compact'
   return (
     <div>
@@ -77,10 +84,13 @@ export default function RemindersTinted({ variant = 'regular' }: { variant?: str
       </Scaled>
       <Caption>
         {variant === 'scrolled'
-          ? 'Scrolled: the large title has gone under the bar, so the inline title and hairline sprang in.'
+          ? 'Scrolled: the large title has gone under the bar, so the inline ' +
+            'title and hairline sprang in.'
           : compact
-            ? 'Compact: the pushed list keeps its large title; the back button is labelled “Lists”.'
-            : 'Pick a list — the row takes that list’s colour. Scroll the list to fold its title into the bar.'}
+            ? 'Compact: the pushed list keeps its large title; the back ' +
+              'button is labelled “Lists”.'
+            : 'Pick a list — the row takes that list’s colour. Scroll the ' +
+              'list to fold its title into the bar.'}
       </Caption>
     </div>
   )

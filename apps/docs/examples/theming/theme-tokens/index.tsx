@@ -29,7 +29,14 @@ export default function Appearance() {
     >
       <BLProvider dark={dark} tint={tint}>
         <div style={{ padding: 16 }}>
-          <div style={{ display: 'flex', gap: 9, marginBottom: 12, justifyContent: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 9,
+              marginBottom: 12,
+              justifyContent: 'center',
+            }}
+          >
             {tints.map((c) => (
               <button
                 key={c}
@@ -58,7 +65,13 @@ export default function Appearance() {
                 leading={<Icon name="bell" size={20} />}
                 title="Dark Mode"
                 divider={false}
-                trailing={<Switch aria-label="Dark Mode" checked={dark} onChange={setDark} />}
+                trailing={
+                  <Switch
+                    aria-label="Dark Mode"
+                    checked={dark}
+                    onChange={setDark}
+                  />
+                }
               />
             </ListSection>
           </List>

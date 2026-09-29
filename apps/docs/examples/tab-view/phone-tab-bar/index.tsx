@@ -19,11 +19,19 @@ const recents = [
   { f: 'Leo', l: 'Okafor', kind: 'mobile', time: 'Monday', missed: false },
 ]
 
-function TabScreen({ title, children }: { title: string; children: ReactNode }) {
+function TabScreen({
+  title,
+  children,
+}: {
+  title: string
+  children: ReactNode
+}) {
   return (
     // The bar floats over the panel, so leave room for its 62px.
     <div style={{ padding: '14px 0 80px' }}>
-      <h2 style={{ margin: '0 20px 12px', fontSize: 30, fontWeight: 800 }}>{title}</h2>
+      <h2 style={{ margin: '0 20px 12px', fontSize: 30, fontWeight: 800 }}>
+        {title}
+      </h2>
       {children}
     </div>
   )
@@ -31,7 +39,10 @@ function TabScreen({ title, children }: { title: string; children: ReactNode }) 
 
 function PhoneApp() {
   return (
-    <TabView defaultSelectedKey="recents" style={{ position: 'relative', height: 440 }}>
+    <TabView
+      defaultSelectedKey="recents"
+      style={{ position: 'relative', height: 440 }}
+    >
       <TabViewBar hideOnScroll={false}>
         <TabViewList aria-label="Phone">
           <TabViewTab id="favorites" icon="star" title="Favorites" />
@@ -63,7 +74,11 @@ function PhoneApp() {
                   <ListRow
                     key={c.l}
                     title={
-                      <span style={{ color: c.missed ? 'var(--bl-red)' : undefined }}>
+                      <span
+                        style={{
+                          color: c.missed ? 'var(--bl-red)' : undefined,
+                        }}
+                      >
                         {c.f} {c.l}
                       </span>
                     }
@@ -116,7 +131,10 @@ function PhoneApp() {
   )
 }
 
-/** The rounded, hairline-bordered window the example sits in, capped to a phone width and centered. */
+/**
+ * The rounded, hairline-bordered window the example sits in, capped to a phone
+ * width and centered.
+ */
 function Window({
   width,
   children,

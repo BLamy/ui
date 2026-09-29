@@ -2,8 +2,18 @@ import { useState, type ReactNode } from 'react'
 import { Avatar, Button, Icon, SideDrawer } from '@brett_lamy/ui'
 
 const comments = [
-  { f: 'Nadia', l: 'Brooks', text: 'Can we tighten the intro? It runs long.', time: '2h' },
-  { f: 'Tom', l: 'Reyes', text: 'Agreed. The second paragraph could go.', time: '1h' },
+  {
+    f: 'Nadia',
+    l: 'Brooks',
+    text: 'Can we tighten the intro? It runs long.',
+    time: '2h',
+  },
+  {
+    f: 'Tom',
+    l: 'Reyes',
+    text: 'Agreed. The second paragraph could go.',
+    time: '1h',
+  },
   { f: 'Ellen', l: 'Park', text: 'Love the new headline.', time: '12m' },
 ]
 
@@ -18,16 +28,22 @@ function CommentsDrawer() {
         background: 'var(--bl-bg)',
       }}
     >
-      <article style={{ maxWidth: 440, margin: '0 auto', padding: '26px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ flex: 1, margin: 0, fontSize: 22 }}>Launch announcement</h3>
+      <article
+        style={{ maxWidth: 440, margin: '0 auto', padding: '26px 24px' }}
+      >
+        <div
+          style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}
+        >
+          <h3 style={{ flex: 1, margin: 0, fontSize: 22 }}>
+            Launch announcement
+          </h3>
           <Button variant="secondary" size="sm" onPress={() => setOpen(true)}>
             <Icon name="message" size={16} /> {comments.length}
           </Button>
         </div>
         <p style={{ lineHeight: 1.6, color: 'var(--bl-label2)' }}>
-          Today we are shipping the new workspace. It is faster, it syncs everywhere, and it
-          finally has dark mode.
+          Today we are shipping the new workspace. It is faster, it syncs
+          everywhere, and it finally has dark mode.
         </p>
       </article>
       {/* overlay: slides over the page from the right; the scrim closes it */}
@@ -69,7 +85,10 @@ export default function CommentsOverlay() {
   )
 }
 
-/** A rounded window with the page background; `width` caps it (phone-sized examples), centered. */
+/**
+ * A rounded window with the page background; `width` caps it (phone-sized
+ * examples), centered.
+ */
 function Window({ width, children }: { width?: number; children?: ReactNode }) {
   return (
     <div

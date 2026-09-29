@@ -3,7 +3,8 @@ import { MarkdownView } from '@brett_lamy/ui'
 const notes = `## Release 2.4
 
 {% hint style="info" %}
-**Heads up:** \`TabBar\` now hides with the scroll by default. Pass \`hideOnScroll={false}\` to pin it.
+**Heads up:** \`TabBar\` now hides with the scroll by default.
+Pass \`hideOnScroll={false}\` to pin it.
 {% endhint %}
 
 | Component | Change | Breaking |

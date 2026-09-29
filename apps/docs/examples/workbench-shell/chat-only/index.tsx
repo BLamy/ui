@@ -26,10 +26,22 @@ import {
   WorkbenchTheme,
 } from '@brett_lamy/ui'
 
-const RECENT = ['Onboarding checklist', 'Rename the billing events', 'Why is CI slow?']
+const RECENT = [
+  'Onboarding checklist',
+  'Rename the billing events',
+  'Why is CI slow?',
+]
 
 // Lays the shell out at its design width, scaled down (never up) to fit.
-function Scaled({ width, height, children }: { width: number; height: number; children: ReactNode }) {
+function Scaled({
+  width,
+  height,
+  children,
+}: {
+  width: number
+  height: number
+  children: ReactNode
+}) {
   const host = useRef<HTMLDivElement | null>(null)
   const [scale, setScale] = useState(1)
   useEffect(() => {
@@ -55,7 +67,15 @@ function Scaled({ width, height, children }: { width: number; height: number; ch
         boxShadow: '0 0 0 1px var(--wb-sep)',
       }}
     >
-      <div style={{ position: 'absolute', width, height, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+      <div
+        style={{
+          position: 'absolute',
+          width,
+          height,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      >
         {children}
       </div>
     </div>
@@ -65,18 +85,29 @@ function Scaled({ width, height, children }: { width: number; height: number; ch
 function ChatOnly() {
   const [current, setCurrent] = useState(RECENT[0])
   const [messages, setMessages] = useState([
-    { id: 'u1', role: 'user', text: 'Draft an onboarding checklist for new engineers.' },
+    {
+      id: 'u1',
+      role: 'user',
+      text: 'Draft an onboarding checklist for new engineers.',
+    },
     {
       id: 'a1',
       role: 'assistant',
-      text: '1. **Day one** — laptop, accounts, and a first PR\n2. **Week one** — pair on a small feature\n3. **Month one** — own an on-call shift',
+      text:
+        '1. **Day one** — laptop, accounts, and a first PR\n2. **Week ' +
+        'one** — pair on a small feature\n3. **Month one** — own an on-call ' +
+        'shift',
     },
   ])
   const send = (text: string) =>
     setMessages((m) => [
       ...m,
       { id: 'u' + m.length, role: 'user', text },
-      { id: 'a' + m.length, role: 'assistant', text: 'Noted — I’ll fold that into the checklist.' },
+      {
+        id: 'a' + m.length,
+        role: 'assistant',
+        text: 'Noted — I’ll fold that into the checklist.',
+      },
     ])
   return (
     <Scaled width={980} height={480}>
@@ -90,7 +121,11 @@ function ChatOnly() {
             <ThreadList>
               <ThreadGroup label="Recent">
                 {RECENT.map((t) => (
-                  <ThreadItem key={t} active={t === current} onPress={() => setCurrent(t)}>
+                  <ThreadItem
+                    key={t}
+                    active={t === current}
+                    onPress={() => setCurrent(t)}
+                  >
                     {t}
                   </ThreadItem>
                 ))}
@@ -119,7 +154,11 @@ function ChatOnly() {
               )}
             </ConversationMessages>
             <ConversationComposer>
-              <WorkbenchComposer options={false} checkout={false} onSubmit={(md) => send(stripAttachmentRefs(md))} />
+              <WorkbenchComposer
+                options={false}
+                checkout={false}
+                onSubmit={(md) => send(stripAttachmentRefs(md))}
+              />
             </ConversationComposer>
           </Conversation>
         </WorkbenchMain>
@@ -128,7 +167,8 @@ function ChatOnly() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function ChatOnlyExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

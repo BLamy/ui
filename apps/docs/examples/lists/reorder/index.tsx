@@ -1,7 +1,15 @@
 import { useState, type ReactNode } from 'react'
 import { Button, List, ListRow, ListSection } from '@brett_lamy/ui'
 
-const LIBRARY = ['Golden Hour', 'Nightcall', 'Midnight City', 'Heat Waves', 'Dreams', 'Cruel Summer', 'Redbone']
+const LIBRARY = [
+  'Golden Hour',
+  'Nightcall',
+  'Midnight City',
+  'Heat Waves',
+  'Dreams',
+  'Cruel Summer',
+  'Redbone',
+]
 
 function Artwork({ title }: { title: string }) {
   return (
@@ -34,7 +42,13 @@ function UpNext() {
     })
   return (
     <div style={{ padding: '10px 0 4px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px 10px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 16px 10px',
+        }}
+      >
         <strong style={{ flex: 1, fontSize: 20 }}>Up Next</strong>
         <Button size="sm" variant="ghost" onPress={add}>
           Add
@@ -44,12 +58,17 @@ function UpNext() {
         </Button>
       </div>
       <List inset>
-        {/* `animate`: keyed rows spring in, collapse out, and slide to new places. `onReorder` (only while
-            editing) adds a grip: drag it, or focus it and press ↑ / ↓. */}
+        {/* `animate`: keyed rows spring in, collapse out, and slide to new
+            places. `onReorder` (only while editing) adds a grip: drag it, or
+            focus it and press ↑ / ↓. */}
         <ListSection
           animate
           onReorder={editing ? move : undefined}
-          footer={editing ? 'Drag a grip — each new slot ticks.' : 'Swipe a song left to remove it.'}
+          footer={
+            editing
+              ? 'Drag a grip — each new slot ticks.'
+              : 'Swipe a song left to remove it.'
+          }
         >
           {songs.map((t, i) => (
             <ListRow
@@ -65,7 +84,8 @@ function UpNext() {
                         label: 'Remove',
                         icon: 'trash',
                         destructive: true,
-                        onAction: () => setSongs((s) => s.filter((x) => x !== t)),
+                        onAction: () =>
+                          setSongs((s) => s.filter((x) => x !== t)),
                       },
                     ]
               }
@@ -78,7 +98,8 @@ function UpNext() {
   )
 }
 
-// A rounded, hairline-bordered window the example sits in; `width` caps it, centered.
+// A rounded, hairline-bordered window the example sits in; `width` caps it,
+// centered.
 function Window({ width, children }: { width?: number; children?: ReactNode }) {
   return (
     <div

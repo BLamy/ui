@@ -32,7 +32,10 @@ const regions = [
   ['South', '24.6%', '+1.2'],
 ]
 
-/** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a fixed-size composition out at its design width, scaled down (never up)
+ * to fit, centered.
+ */
 function Scaled({
   width,
   height,
@@ -103,7 +106,9 @@ function Transcript() {
           >
             {author}
           </div>
-          <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>{copy}</div>
+          <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>
+            {copy}
+          </div>
         </div>
       ))}
     </div>
@@ -121,11 +126,26 @@ function Artifact({ compact }: { compact: boolean }) {
         color: '#15161A',
       }}
     >
-      <div style={{ color: '#777B84', fontSize: 11, fontWeight: 750, letterSpacing: '.08em' }}>
+      <div
+        style={{
+          color: '#777B84',
+          fontSize: 11,
+          fontWeight: 750,
+          letterSpacing: '.08em',
+        }}
+      >
         LIVE ARTIFACT
       </div>
-      <h2 style={{ fontSize: compact ? 23 : 28, margin: '8px 0 22px' }}>Quarterly performance</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }}>
+      <h2 style={{ fontSize: compact ? 23 : 28, margin: '8px 0 22px' }}>
+        Quarterly performance
+      </h2>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3,minmax(0,1fr))',
+          gap: 10,
+        }}
+      >
         {stats.map(([label, value]) => (
           <div
             key={label}
@@ -147,7 +167,13 @@ function Artifact({ compact }: { compact: boolean }) {
             >
               {label}
             </div>
-            <strong style={{ display: 'block', marginTop: 7, fontSize: compact ? 15 : 21 }}>
+            <strong
+              style={{
+                display: 'block',
+                marginTop: 7,
+                fontSize: compact ? 15 : 21,
+              }}
+            >
               {value}
             </strong>
           </div>
@@ -164,7 +190,15 @@ function Artifact({ compact }: { compact: boolean }) {
         }}
       >
         <strong style={{ fontSize: 14 }}>Conversion by region</strong>
-        <div style={{ height: 180, display: 'flex', alignItems: 'end', gap: 14, paddingTop: 12 }}>
+        <div
+          style={{
+            height: 180,
+            display: 'flex',
+            alignItems: 'end',
+            gap: 14,
+            paddingTop: 12,
+          }}
+        >
           {bars.map((height, index) => (
             <div
               key={index}
@@ -217,14 +251,26 @@ function Artifact({ compact }: { compact: boolean }) {
   )
 }
 
-// Above the breakpoint the chat is a docked column; below it, a floating sheet over the artifact.
-export default function SplitToFloating({ variant = 'wide' }: { variant?: string }) {
+// Above the breakpoint the chat is a docked column; below it, a floating sheet
+// over the artifact.
+export default function SplitToFloating({
+  variant = 'wide',
+}: {
+  variant?: string
+}) {
   const [working, setWorking] = useState(false)
   const compact = variant === 'compact'
   return (
     <div>
       <Scaled width={compact ? 430 : 1040} height={555}>
-        <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 12 }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            overflow: 'hidden',
+            borderRadius: 12,
+          }}
+        >
           <ArtifactChatContainer
             breakpoint={760}
             working={working}

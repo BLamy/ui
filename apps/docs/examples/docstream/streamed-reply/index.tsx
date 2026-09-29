@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { MarkdownView, WFONT } from '@brett_lamy/ui'
 
-const reply = `Both servers are now running detached and won't be killed by the tool's session limits.
+const reply = `Both servers are now running detached and won't be killed by the
+tool's session limits.
 
 | App | URL | PID | Log |
 | --- | --- | --- | --- |
@@ -54,7 +55,8 @@ export default function StreamedReply() {
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   useEffect(() => () => clearInterval(timer.current), [])
 
-  // Reveal the reply four words at a time; `streaming` keeps half-open Markdown (tables, fences) stable.
+  // Reveal the reply four words at a time; `streaming` keeps half-open Markdown
+  // (tables, fences) stable.
   const replay = () => {
     clearInterval(timer.current)
     const words = reply.split(' ')

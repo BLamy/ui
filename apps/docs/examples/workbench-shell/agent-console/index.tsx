@@ -34,7 +34,15 @@ const RUNS = [
 ]
 
 // Lays the shell out at its design width, scaled down (never up) to fit.
-function Scaled({ width, height, children }: { width: number; height: number; children: ReactNode }) {
+function Scaled({
+  width,
+  height,
+  children,
+}: {
+  width: number
+  height: number
+  children: ReactNode
+}) {
   const host = useRef<HTMLDivElement | null>(null)
   const [scale, setScale] = useState(1)
   useEffect(() => {
@@ -60,7 +68,15 @@ function Scaled({ width, height, children }: { width: number; height: number; ch
         boxShadow: '0 0 0 1px var(--wb-sep)',
       }}
     >
-      <div style={{ position: 'absolute', width, height, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+      <div
+        style={{
+          position: 'absolute',
+          width,
+          height,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      >
         {children}
       </div>
     </div>
@@ -86,15 +102,32 @@ function AgentConsole() {
             <ConversationMessages threadKey="release" streaming>
               <AssistantMessage key="plan">
                 <WorkLog summary="Running for 1m 2s" defaultOpen>
-                  <ToolCall title="Applied database migrations" detail="3 files" />
-                  <ToolCall title="Deploying the API" detail="2 of 4 pods" status="running" />
+                  <ToolCall
+                    title="Applied database migrations"
+                    detail="3 files"
+                  />
+                  <ToolCall
+                    title="Deploying the API"
+                    detail="2 of 4 pods"
+                    status="running"
+                  />
                   <ToolCall icon="clock" title="Smoke tests" detail="queued" />
                 </WorkLog>
-                <MessageMarkdown markdown="Deploying **api@2.14**. I’ll run the smoke tests once every pod is healthy." />
+                <MessageMarkdown
+                  markdown={
+                    'Deploying **api@2.14**. I’ll run the smoke tests once ' +
+                    'every pod is healthy.'
+                  }
+                />
               </AssistantMessage>
             </ConversationMessages>
             <ConversationComposer>
-              <WorkbenchComposer options={false} checkout={false} placeholder="Steer the run…" onSubmit={() => {}} />
+              <WorkbenchComposer
+                options={false}
+                checkout={false}
+                placeholder="Steer the run…"
+                onSubmit={() => {}}
+              />
             </ConversationComposer>
           </Conversation>
           <WorkbenchDock>
@@ -102,7 +135,11 @@ function AgentConsole() {
             <TerminalBody
               seed={[
                 { t: 'kubectl rollout status deploy/api', p: true },
-                { t: 'Waiting for rollout: 2 of 4 updated replicas are available…' },
+                {
+                  t:
+                    'Waiting for rollout: 2 of 4 updated replicas are ' +
+                    'available…',
+                },
               ]}
               cwd="ops"
             />
@@ -120,7 +157,8 @@ function AgentConsole() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function AgentConsoleExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

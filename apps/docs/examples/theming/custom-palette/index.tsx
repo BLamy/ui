@@ -36,7 +36,11 @@ export default function SepiaReader() {
     <div style={{ maxWidth: 460, margin: '0 auto' }}>
       <BLProvider
         tint="#B8742A"
-        style={{ ...(sepia[appearance] as CSSProperties), height: 'auto', borderRadius: 14 }}
+        style={{
+          ...(sepia[appearance] as CSSProperties),
+          height: 'auto',
+          borderRadius: 14,
+        }}
       >
         <div style={{ padding: '16px 0 0' }}>
           <List inset>
@@ -52,7 +56,11 @@ export default function SepiaReader() {
                 title="Serif font"
                 divider={false}
                 trailing={
-                  <Switch aria-label="Serif font" checked={serif} onChange={setSerif} />
+                  <Switch
+                    aria-label="Serif font"
+                    checked={serif}
+                    onChange={setSerif}
+                  />
                 }
               />
             </ListSection>
@@ -65,8 +73,8 @@ export default function SepiaReader() {
               fontFamily: serif ? 'Georgia, serif' : undefined,
             }}
           >
-            It is a truth universally acknowledged, that a single man in possession of a good
-            fortune, must be in want of a wife.
+            It is a truth universally acknowledged, that a single man in
+            possession of a good fortune, must be in want of a wife.
           </p>
         </div>
       </BLProvider>

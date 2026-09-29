@@ -20,7 +20,8 @@ function TeamDirectory() {
   const [ref, width] = useContainerWidth()
   const [sel, setSel] = useState<(typeof team)[number] | null>(team[0])
   const compact = width < 600
-  // Wide: the detail is a column beside the list. Compact: it covers the list until you close it.
+  // Wide: the detail is a column beside the list. Compact: it covers the list
+  // until you close it.
   const mode: AdaptivePaneMode = compact ? (sel ? 'cover' : 'hidden') : 'column'
   return (
     <div
@@ -80,12 +81,20 @@ function TeamDirectory() {
               <div style={{ fontSize: 19, fontWeight: 700 }}>
                 {sel.f} {sel.l}
               </div>
-              <div style={{ fontSize: 13.5, color: 'var(--bl-label2)', marginTop: 4 }}>
+              <div
+                style={{
+                  fontSize: 13.5,
+                  color: 'var(--bl-label2)',
+                  marginTop: 4,
+                }}
+              >
                 {sel.role}
               </div>
             </>
           ) : (
-            <div style={{ marginTop: 40, color: 'var(--bl-label2)' }}>Select a person</div>
+            <div style={{ marginTop: 40, color: 'var(--bl-label2)' }}>
+              Select a person
+            </div>
           )}
         </div>
       </AdaptivePane>
@@ -94,9 +103,16 @@ function TeamDirectory() {
 }
 
 // The host width each variant previews; wide fills the card.
-const widths: Record<string, number | undefined> = { wide: undefined, narrow: 390 }
+const widths: Record<string, number | undefined> = {
+  wide: undefined,
+  narrow: 390,
+}
 
-export default function ColumnOrCover({ variant = 'wide' }: { variant?: string }) {
+export default function ColumnOrCover({
+  variant = 'wide',
+}: {
+  variant?: string
+}) {
   return (
     <Window width={widths[variant]}>
       {/* remount per width so the selection resets */}
@@ -105,7 +121,10 @@ export default function ColumnOrCover({ variant = 'wide' }: { variant?: string }
   )
 }
 
-/** A rounded window with the page background; `width` caps it (phone-sized examples), centered. */
+/**
+ * A rounded window with the page background; `width` caps it (phone-sized
+ * examples), centered.
+ */
 function Window({ width, children }: { width?: number; children?: ReactNode }) {
   return (
     <div

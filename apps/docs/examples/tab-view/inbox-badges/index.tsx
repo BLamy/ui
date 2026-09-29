@@ -80,7 +80,11 @@ function InboxTabs() {
               {({ isSelected }) => (
                 <>
                   <span
-                    style={{ color: isSelected ? 'var(--bl-label)' : 'var(--bl-label2)' }}
+                    style={{
+                      color: isSelected
+                        ? 'var(--bl-label)'
+                        : 'var(--bl-label2)',
+                    }}
                   >
                     {t.label}
                   </span>

@@ -14,8 +14,11 @@ export default function SignaturePad() {
         boxShadow: '0 0 0 1px var(--bl-sep)',
       }}
     >
-      <div style={{ fontWeight: 650, marginBottom: 10 }}>Sign to accept the terms</div>
-      {/* ink="currentColor" draws in the label colour, so it flips with light / dark */}
+      <div style={{ fontWeight: 650, marginBottom: 10 }}>
+        Sign to accept the terms
+      </div>
+      {/* ink="currentColor" draws in the label colour, so it flips with light /
+          dark */}
       <div
         style={{
           position: 'relative',

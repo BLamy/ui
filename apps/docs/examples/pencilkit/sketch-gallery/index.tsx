@@ -16,7 +16,9 @@ function Thumbnail({ strokes }: { strokes: PencilStroke[] }) {
   const pad = 12 // room for the widest nib
   const x = Math.min(...xs) - pad,
     y = Math.min(...ys) - pad
-  const box = `${x} ${y} ${Math.max(...xs) - x + pad} ${Math.max(...ys) - y + pad}`
+  const w = Math.max(...xs) - x + pad,
+    h = Math.max(...ys) - y + pad
+  const box = `${x} ${y} ${w} ${h}`
   return (
     <div
       style={{
@@ -30,7 +32,12 @@ function Thumbnail({ strokes }: { strokes: PencilStroke[] }) {
         boxShadow: '0 0 0 1px var(--bl-sep)',
       }}
     >
-      <svg viewBox={box} width="100%" height="100%" style={{ display: 'block' }}>
+      <svg
+        viewBox={box}
+        width="100%"
+        height="100%"
+        style={{ display: 'block' }}
+      >
         {strokes.map((s, i) => (
           <StrokePath key={i} st={s} />
         ))}

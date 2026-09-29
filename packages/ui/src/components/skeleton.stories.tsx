@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Skeleton } from './skeleton';
+import { Skeleton, SkeletonText } from './skeleton';
 import { Card, CardContent } from './card';
 import { Panel } from '../stories/primitive-frame';
 
@@ -29,3 +29,19 @@ const rows = (
 
 export const ListRows: Story = { render: () => rows };
 export const Dark: Story = { decorators: [(Story) => <Panel dark><Story /></Panel>], render: () => rows };
+
+/** Every shape, plus a SkeletonText paragraph. */
+export const Shapes: Story = {
+  render: () => (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <Skeleton shape="circle" width={44} height={44} />
+        <Skeleton shape="rect" width={72} height={44} />
+        <Skeleton shape="rounded" width={112} height={34} />
+        <Skeleton shape="text" width={120} />
+      </div>
+      <SkeletonText lines={3} />
+      <SkeletonText lines={2} lastLineWidth="40%" lineHeight={11} gap={6} />
+    </div>
+  ),
+};

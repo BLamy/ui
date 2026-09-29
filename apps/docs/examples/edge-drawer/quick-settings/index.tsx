@@ -5,7 +5,12 @@ function QuickSettings() {
   const [open, setOpen] = useState(true)
   const [wifi, setWifi] = useState(true)
   const [focus, setFocus] = useState(false)
-  const tile = (label: string, icon: string, on: boolean, toggle: () => void) => (
+  const tile = (
+    label: string,
+    icon: string,
+    on: boolean,
+    toggle: () => void,
+  ) => (
     <button
       type="button"
       onClick={() => {
@@ -47,7 +52,8 @@ function QuickSettings() {
           Quick settings
         </Button>
       </div>
-      {/* No dimming and no panel shadow: the card inside floats with its own */}
+      {/* No dimming and no panel shadow: the card inside floats with its
+          own */}
       <EdgeDrawer
         side="right"
         open={open}
@@ -70,7 +76,9 @@ function QuickSettings() {
             boxShadow: open ? '0 20px 60px rgba(0,0,0,.25)' : 'none',
           }}
         >
-          <strong style={{ fontSize: 17, marginBottom: 4 }}>Quick settings</strong>
+          <strong style={{ fontSize: 17, marginBottom: 4 }}>
+            Quick settings
+          </strong>
           {tile('Wi-Fi', 'wifi', wifi, () => setWifi(!wifi))}
           {tile('Focus', 'moon', focus, () => setFocus(!focus))}
         </div>

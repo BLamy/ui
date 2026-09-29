@@ -21,7 +21,14 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
         }}
       >
         <div style={{ padding: 22 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.08em', opacity: 0.6 }}>
+          <div
+            style={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              letterSpacing: '.08em',
+              opacity: 0.6,
+            }}
+          >
             HOST CONTENT
           </div>
           <p
@@ -43,10 +50,22 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
               marginTop: 18,
             }}
           >
-            {['#0A84FF', '#FF9F0A', '#30D158', '#BF5AF2', '#FF375F', '#64D2FF'].map((c) => (
+            {[
+              '#0A84FF',
+              '#FF9F0A',
+              '#30D158',
+              '#BF5AF2',
+              '#FF375F',
+              '#64D2FF',
+            ].map((c) => (
               <div
                 key={c}
-                style={{ height: 64, borderRadius: 14, background: c, opacity: dark ? 0.75 : 0.6 }}
+                style={{
+                  height: 64,
+                  borderRadius: 14,
+                  background: c,
+                  opacity: dark ? 0.75 : 0.6,
+                }}
               />
             ))}
           </div>
@@ -60,17 +79,31 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
 function DetentReadout() {
   const { open, progress } = useFloatingSheet()
   return (
-    <div style={{ fontSize: 12.5, opacity: 0.7, fontVariantNumeric: 'tabular-nums' }}>
-      {open ? 'Full' : progress > 0.05 ? 'Half detent' : 'Resting'} · {Math.round(progress * 100)}%
+    <div
+      style={{
+        fontSize: 12.5,
+        opacity: 0.7,
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      {open ? 'Full' : progress > 0.05 ? 'Half detent' : 'Resting'} ·{' '}
+      {Math.round(progress * 100)}%
     </div>
   )
 }
 
-// A half-height stop between resting and full. Release is velocity-aware: a flick
-// goes to the next stop in its direction; a slow drag settles at the nearest one.
+// A half-height stop between resting and full. Release is velocity-aware: a
+// flick goes to the next stop in its direction; a slow drag settles at the
+// nearest one.
 export default function Detents() {
   return (
-    <Host note="Drag the cap slowly and let go — it settles at the nearest of resting, half and full. Flick it and it goes to the next stop the way you threw it, keeping your speed.">
+    <Host
+      note={
+        'Drag the cap slowly and let go — it settles at the nearest of ' +
+        'resting, half and full. Flick it and it goes to the next stop the ' +
+        'way you threw it, keeping your speed.'
+      }
+    >
       <FloatingSheet
         peek={110}
         detents={[0.5]}
@@ -83,7 +116,11 @@ export default function Detents() {
         <FloatingSheet.Body>
           <div style={{ padding: '2px 18px 24px', display: 'grid', gap: 10 }}>
             <div
-              style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+              }}
             >
               <h3 style={{ margin: 0, fontSize: 19 }}>Coffee nearby</h3>
               <DetentReadout />
@@ -91,7 +128,11 @@ export default function Detents() {
             {Array.from({ length: 7 }, (_, i) => (
               <div
                 key={i}
-                style={{ height: 56, borderRadius: 14, background: 'rgba(120,120,128,.14)' }}
+                style={{
+                  height: 56,
+                  borderRadius: 14,
+                  background: 'rgba(120,120,128,.14)',
+                }}
               />
             ))}
           </div>

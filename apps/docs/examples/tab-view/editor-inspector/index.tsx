@@ -12,7 +12,14 @@ import {
 function EditorInspector() {
   return (
     <div style={{ display: 'flex', height: 360, background: 'var(--bl-bg)' }}>
-      <main style={{ flex: 1, minWidth: 0, padding: 24, background: 'var(--bl-bg2)' }}>
+      <main
+        style={{
+          flex: 1,
+          minWidth: 0,
+          padding: 24,
+          background: 'var(--bl-bg2)',
+        }}
+      >
         <div
           style={{
             height: '100%',
@@ -27,7 +34,8 @@ function EditorInspector() {
           Canvas
         </div>
       </main>
-      {/* placement="end": the rail sits on the trailing edge, panels open beside it */}
+      {/* placement="end": the rail sits on the trailing edge, panels open
+          beside it */}
       <TabView
         placement="end"
         defaultSelectedKey="info"
@@ -48,7 +56,9 @@ function EditorInspector() {
           </TabViewPanel>
           <TabViewPanel id="comments" style={{ padding: 16, fontSize: 13.5 }}>
             <strong>2 comments</strong>
-            <p style={{ color: 'var(--bl-label2)' }}>“Tighten the header spacing.”</p>
+            <p style={{ color: 'var(--bl-label2)' }}>
+              “Tighten the header spacing.”
+            </p>
           </TabViewPanel>
           <TabViewPanel id="history" style={{ padding: 16, fontSize: 13.5 }}>
             <strong>Version history</strong>
