@@ -3,7 +3,7 @@
    library's SyntaxHighlighting (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  Avatar, SyntaxHighlighting, SyntaxTokens, TabViewIndicator, TabViewPanel, TabViewTab, cn, languageFromPath, useSyntaxTokens,
+  Avatar, Icon, SyntaxHighlighting, SyntaxTokens, TabViewIndicator, TabViewPanel, TabViewTab, cn, languageFromPath, useSyntaxTokens, type IconName,
 } from '@brett_lamy/ui';
 import type { FileNode, Label, PullRequest, User } from './data';
 
@@ -53,7 +53,14 @@ export function githubVars(dark: boolean): CSSProperties {
   } as CSSProperties;
 }
 
-/* ── Octicon-style glyphs (16px grid, drawn for this block) ── */
+/* ── Octicon-style glyphs (16px grid, drawn for this block) ──
+   GitHub's domain marks (repo, branch, PR, issue, CI states…) are drawn here; generic UI glyphs come from the
+   library's Icon (regular weight at 1.25× lands on the octicons' 1.5px stroke). */
+const GENERIC = {
+  check: 'check', x: 'xmark', chevDown: 'chevron-down', chevRight: 'chevron-right', chevLeft: 'chevron-left',
+  search: 'magnifyingglass', plus: 'plus', bell: 'bell', menu: 'menu', link: 'link', gear: 'gear', copy: 'copy',
+  kebab: 'ellipsis', sidebar: 'sidebar', star: 'star',
+} as const satisfies Record<string, IconName>;
 const OCT: Record<string, ReactNode> = {
   code: <path d="M5.2 4.2 1.5 8l3.7 3.8M10.8 4.2 14.5 8l-3.7 3.8" />,
   issue: <><circle cx="8" cy="8" r="6.25" /><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none" /></>,
@@ -65,8 +72,6 @@ const OCT: Record<string, ReactNode> = {
   play: <><circle cx="8" cy="8" r="6.25" /><path d="M6.6 5.4v5.2L10.6 8z" fill="currentColor" /></>,
   eye: <><path d="M1.2 8S3.6 3.3 8 3.3 14.8 8 14.8 8 12.4 12.7 8 12.7 1.2 8 1.2 8z" /><circle cx="8" cy="8" r="2" /></>,
   fork: <><circle cx="4" cy="3" r="1.6" /><circle cx="12" cy="3" r="1.6" /><circle cx="8" cy="13" r="1.6" /><path d="M4 4.6v.9A1.8 1.8 0 0 0 5.8 7.3h4.4A1.8 1.8 0 0 0 12 5.5v-.9M8 7.3v4.1" /></>,
-  star: <path d="m8 1.8 1.9 3.9 4.2.6-3 3 .7 4.2L8 11.5l-3.8 2 .7-4.2-3-3 4.2-.6z" />,
-  starFill: <path d="m8 1.8 1.9 3.9 4.2.6-3 3 .7 4.2L8 11.5l-3.8 2 .7-4.2-3-3 4.2-.6z" fill="currentColor" />,
   book: <path d="M1.8 2.8h3.7A2.5 2.5 0 0 1 8 5.3v8.2a2 2 0 0 0-2-2H1.8zM14.2 2.8h-3.7A2.5 2.5 0 0 0 8 5.3v8.2a2 2 0 0 1 2-2h4.2z" />,
   file: <><path d="M3.5 1.8h5.8l3.2 3.2v9.2h-9z" /><path d="M9.2 1.8v3.3h3.3" /></>,
   folder: <path d="M1.5 3.2c0-.5.4-.9.9-.9h3.7l1.5 1.8h6c.5 0 .9.4.9.9v7.8c0 .5-.4.9-.9.9H2.4a.9.9 0 0 1-.9-.9z" fill="currentColor" stroke="none" />,
@@ -74,37 +79,27 @@ const OCT: Record<string, ReactNode> = {
   tag: <><path d="M1.8 2.6v4.8l6.9 6.9 5.6-5.6-6.9-6.9H2.6z" /><circle cx="5" cy="5" r="1" fill="currentColor" stroke="none" /></>,
   history: <><path d="M2.2 8a5.8 5.8 0 1 0 1.7-4.1L2.2 5.6M2.2 2.2v3.4h3.4" /><path d="M8 5v3.3l2.2 1.4" /></>,
   comment: <path d="M2.3 3.3c0-.6.5-1 1-1h9.4c.6 0 1 .4 1 1v6.4c0 .6-.4 1-1 1H7.4L4.3 13.5v-2.8h-1c-.5 0-1-.4-1-1z" />,
-  check: <path d="m2.8 8.4 3.3 3.3 7.1-7.4" />,
   checkFill: <><circle cx="8" cy="8" r="7" fill="currentColor" stroke="none" /><path d="m4.9 8.2 2.1 2.1 4.1-4.3" stroke="var(--bl-bg)" strokeWidth="1.7" /></>,
   xFill: <><circle cx="8" cy="8" r="7" fill="currentColor" stroke="none" /><path d="m5.6 5.6 4.8 4.8m0-4.8-4.8 4.8" stroke="var(--bl-bg)" strokeWidth="1.7" /></>,
   stopFill: <><circle cx="8" cy="8" r="7" fill="currentColor" stroke="none" /><path d="M5.3 8h5.4" stroke="var(--bl-bg)" strokeWidth="1.7" /></>,
   dotFill: <><circle cx="8" cy="8" r="6.2" /><circle cx="8" cy="8" r="3" fill="currentColor" stroke="none" /></>,
-  x: <path d="m3.8 3.8 8.4 8.4m0-8.4-8.4 8.4" />,
-  chevDown: <path d="m4 6 4 4 4-4" />,
-  chevRight: <path d="m6 4 4 4-4 4" />,
-  chevLeft: <path d="m10 4-4 4 4 4" />,
-  search: <><circle cx="7" cy="7" r="4.6" /><path d="m10.4 10.4 3.8 3.8" /></>,
-  plus: <path d="M8 2.5v11M2.5 8h11" />,
-  bell: <path d="M8 1.8a4.3 4.3 0 0 1 4.3 4.3c0 3.3 1.4 4.8 1.4 4.8H2.3s1.4-1.5 1.4-4.8A4.3 4.3 0 0 1 8 1.8zM6.5 13.4a1.6 1.6 0 0 0 3 0" />,
-  menu: <path d="M2 4h12M2 8h12M2 12h12" />,
-  link: <path d="M6.9 9.1a2.9 2.9 0 0 0 4.1 0l2.1-2.1A2.9 2.9 0 0 0 9 2.9l-1 1M9.1 6.9a2.9 2.9 0 0 0-4.1 0L2.9 9A2.9 2.9 0 0 0 7 13.1l1-1" />,
   law: <path d="M8 1.8v12.4M3.5 14.2h9M2 4.2h12M4 4.2 1.8 9.3a2.2 2.2 0 0 0 4.4 0zM12 4.2l-2.2 5.1a2.2 2.2 0 0 0 4.4 0z" />,
   pulse: <path d="M1.2 8h3l1.8-4.5 3.4 9 1.8-4.5h3.6" />,
-  gear: <><circle cx="8" cy="8" r="2.2" /><path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.3 1.3M11.3 11.3l1.3 1.3M3.4 12.6l1.3-1.3M11.3 4.7l1.3-1.3" /></>,
-  copy: <><rect x="5.2" y="5.2" width="8.6" height="8.6" rx="1.3" /><path d="M10.8 5.2V3.1c0-.7-.6-1.3-1.3-1.3H3.1c-.7 0-1.3.6-1.3 1.3v6.4c0 .7.6 1.3 1.3 1.3h2.1" /></>,
   commit: <><circle cx="8" cy="8" r="2.6" /><path d="M1 8h4.4M10.6 8H15" /></>,
-  kebab: <><circle cx="3" cy="8" r="1.1" fill="currentColor" stroke="none" /><circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none" /><circle cx="13" cy="8" r="1.1" fill="currentColor" stroke="none" /></>,
   desktop: <><rect x="1.8" y="2.5" width="12.4" height="8.5" rx="1.2" /><path d="M5.5 13.8h5M8 11v2.8" /></>,
   zip: <><path d="M3.5 1.8h5.8l3.2 3.2v9.2h-9z" /><path d="M7 3v1.2M7 5.4v1.2M7 7.8V9" /></>,
-  sidebar: <><rect x="1.8" y="2.5" width="12.4" height="11" rx="1.4" /><path d="M6 2.5v11" /></>,
   eyeClosed: <path d="M1.8 6.2S4 9.8 8 9.8s6.2-3.6 6.2-3.6M3.8 8.5l-1.2 1.8M12.2 8.5l1.2 1.8M8 9.8v2" />,
   shield: <path d="M8 1.5 2.8 3.4v4c0 3.2 2.2 5.8 5.2 7.1 3-1.3 5.2-3.9 5.2-7.1v-4z" />,
   people: <><circle cx="5.8" cy="5.2" r="2.3" /><path d="M1.6 13.3a4.2 4.2 0 0 1 8.4 0M10.8 3.2a2.2 2.2 0 0 1 0 4.2M12 9.4a3.6 3.6 0 0 1 2.4 3.4" /></>,
   inbox: <path d="M1.8 9.2 3.6 3.3c.1-.4.5-.8 1-.8h6.8c.5 0 .9.4 1 .8l1.8 5.9v3.3c0 .6-.4 1-1 1H2.8c-.6 0-1-.4-1-1zM1.8 9.2h3.6l1 1.8h3.2l1-1.8h3.6" />,
 };
-export type OctName = keyof typeof OCT;
+export type OctName = keyof typeof OCT | keyof typeof GENERIC;
 
 export function Oct({ name, size = 16, className, style }: { name: OctName; size?: number; className?: string; style?: CSSProperties }) {
+  // Icon's 24px grid pads its glyphs more than the 16px octicons: draw 25% larger inside the same box.
+  if (name in GENERIC)
+    return <Icon name={GENERIC[name as keyof typeof GENERIC]} size={size * 1.25} className={cn('inline-block', className)}
+      style={{ margin: size * -0.125, ...style }} />;
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round"
       strokeLinejoin="round" aria-hidden="true" className={cn('inline-block shrink-0', className)} style={style}>
