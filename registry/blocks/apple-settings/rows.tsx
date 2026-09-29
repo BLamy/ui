@@ -2,30 +2,51 @@
    dense macOS System Settings row on desktop. PaneView lays a pane's sections out; SearchResults lists hits. */
 import { useState, type ReactNode } from 'react';
 import {
-  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, Haptics, ListRow, ListSection, Segmented, Slider, Switch,
-  TextMorph, cn, type Appearance,
+  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, Haptics, IC, Icon, ListRow, ListSection, Segmented, Slider, Switch,
+  TextMorph, cn, type Appearance, type IconProps, type ListRowProps,
 } from '@brett_lamy/ui';
-import { SEARCH, getPane, iconFor, notifSummary, pathTo, type Pane, type Row, type Section, type Values } from './data';
-import { Glyph, Tile, WifiBars, isGlyph, type GlyphName } from './glyphs';
+import { MARKS, SEARCH, getPane, iconFor, notifSummary, pathTo, type Glyph, type Pane, type Row, type Section, type Values } from './data';
 import { useSettings } from './state';
 
-/* ── Row chrome ── */
-interface ShellProps {
-  title?: ReactNode; subtitle?: ReactNode; leading?: ReactNode; trailing?: ReactNode;
-  chevron?: boolean; check?: boolean; onPress?: () => void; center?: boolean; last?: boolean;
+/* ── Icons ── */
+/** A library icon, or one of the block's Apple marks. */
+function SettingsIcon({ glyph, ...p }: { glyph: Glyph } & Omit<IconProps, 'name' | 'shapes'>) {
+  return <Icon name={glyph} shapes={glyph in MARKS ? MARKS[glyph as keyof typeof MARKS] : undefined} {...p} />;
 }
+
+/** The colored rounded square (squircle-ish radius) with a white glyph. `color` may be a gradient. */
+export function Tile({ glyph, color, size = 29 }: { glyph: Glyph; color: string; size?: number }) {
+  return (
+    <span aria-hidden="true" className="grid shrink-0 place-items-center text-white"
+      style={{ width: size, height: size, borderRadius: size * 0.235, background: color }}>
+      <SettingsIcon glyph={glyph} size={size * 0.66} weight="semibold" />
+    </span>
+  );
+}
+
+/** Wi-Fi strength: three arcs, the missing bars dimmed. */
+function WifiBars({ bars }: { bars: 1 | 2 | 3 }) {
+  const on = (n: number) => (bars >= n ? 1 : 0.28);
+  return (
+    <svg aria-label={`${bars} of 3 bars`} role="img" width={17} height={17} viewBox="0 0 24 24" className="block shrink-0" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round">
+      <path d="M3.2 9.2a12.5 12.5 0 0 1 17.6 0" opacity={on(3)} />
+      <path d="M6.3 12.4a8 8 0 0 1 11.4 0" opacity={on(2)} />
+      <circle cx={12} cy={17.6} r={2} fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/* ── Row chrome ── */
+type ShellProps = Pick<ListRowProps, 'title' | 'subtitle' | 'leading' | 'trailing' | 'accessory' | 'checked' | 'onPress' | 'center'> & { last?: boolean };
 
 /** macOS group rows get a hairline above every row but the first, inset like the system's. */
 const macSep = 'before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-bl-sep first:before:hidden';
 
-function Shell(p: ShellProps) {
+/** iOS: a ListRow (a control accessory makes it a plain row whose label flips the switch). macOS: a dense row. */
+function Shell({ last, ...p }: ShellProps) {
   const { layout } = useSettings();
-  if (layout !== 'desktop') {
-    return (
-      <ListRow title={p.title} subtitle={p.subtitle} leading={p.leading} trailing={p.trailing} onPress={p.onPress} center={p.center}
-        accessory={p.chevron ? 'chevron' : p.check !== undefined ? 'check' : undefined} checked={p.check} divider={!p.last} />
-    );
-  }
+  if (layout !== 'desktop') return <ListRow {...p} divider={!last} />;
+  const { accessory: a } = p;
   const body = (
     <>
       {p.leading}
@@ -34,11 +55,12 @@ function Shell(p: ShellProps) {
         {p.subtitle ? <span className="block truncate text-[11.5px] text-muted-foreground">{p.subtitle}</span> : null}
       </span>
       {p.trailing}
-      {p.check ? <Glyph name="check" size={15} sw={2.6} className="text-primary" /> : null}
-      {p.chevron ? <Glyph name="chevron" size={12} sw={2.6} className="text-bl-label3" /> : null}
+      {a === 'check' ? (p.checked ? <Icon name="check" size={15} weight="bold" className="text-primary" /> : null)
+        : a === 'chevron' ? <Icon name="chevron-right" size={12} weight="bold" className="text-bl-label3" />
+        : a}
     </>
   );
-  const cls = cn('relative box-border flex min-h-[38px] w-full items-center gap-2.5 px-3 py-[7px] text-left text-[13px] text-foreground', macSep);
+  const cls = cn('relative flex min-h-[38px] w-full items-center gap-2.5 px-3 py-[7px] text-left text-[13px] text-foreground', macSep);
   return p.onPress ? (
     <button type="button" onClick={p.onPress}
       className={cn(cls, 'bl-btn cursor-pointer border-0 bg-transparent [font-family:inherit] transition-colors duration-150 hover:bg-bl-fill/60 active:bg-bl-press')}>{body}</button>
@@ -56,13 +78,8 @@ function Plain({ children, last }: { children: ReactNode; last?: boolean }) {
 const Detail = ({ children }: { children?: ReactNode }) =>
   children ? <span className="min-w-0 shrink truncate text-muted-foreground">{children}</span> : null;
 
-function Toggle({ id, label }: { id: string; label: string }) {
-  const s = useSettings();
-  return (
-    <Switch checked={!!s.values[id]} onChange={(v) => s.set(id, v)} aria-label={label}
-      className={s.layout === 'desktop' ? '-my-[6px] -ml-[19px] origin-right scale-[.62]' : undefined} />
-  );
-}
+/** macOS switches are the small control size. */
+const MAC_SWITCH = '-my-[6px] -ml-[19px] origin-right scale-[.62]';
 
 /** macOS pop-up button: the current value and ⌃⌄, a menu of the options. */
 function Popup({ id, title, options }: { id: string; title: string; options: string[] }) {
@@ -72,7 +89,7 @@ function Popup({ id, title, options }: { id: string; title: string; options: str
     <DropdownMenu>
       <Button variant="ghost" size="sm" aria-label={`${title}: ${cur}`}
         className="-my-1 h-[26px] gap-1 rounded-[6px] px-2 text-[13px] font-normal text-foreground shadow-[0_0_0_.5px_var(--bl-sep),0_1px_1px_rgba(0,0,0,.06)]">
-        {cur}<Glyph name="chevronUpDown" size={12} sw={2.2} className="text-muted-foreground" />
+        {cur}<Icon name="chevron-up-down" size={12} weight="semibold" className="text-muted-foreground" />
       </Button>
       <DropdownMenuContent aria-label={title} placement="bottom end" selectionMode="single" selectedKeys={[cur]}
         onSelectionChange={(k) => { if (k !== 'all' && k.size) s.set(id, String([...k][0])); }}>
@@ -84,9 +101,9 @@ function Popup({ id, title, options }: { id: string; title: string; options: str
 
 const NetIcons = ({ secure, bars }: { secure: boolean; bars: 1 | 2 | 3 }) => (
   <span className="flex items-center gap-2 text-foreground">
-    {secure ? <Glyph name="lockSmall" size={15} /> : null}
+    {secure ? <Icon name="lock-fill" size={13} /> : null}
     <WifiBars bars={bars} />
-    <Glyph name="info" size={21} sw={1.6} className="text-primary" />
+    <Icon name="info" size={21} weight="light" className="text-primary" />
   </span>
 );
 
@@ -97,27 +114,29 @@ const visible = (r: Row, v: Values) =>
 export function RowView({ row, last }: { row: Row; last?: boolean }) {
   const s = useSettings();
   const v = s.values;
-  const tile = (glyph?: GlyphName, color?: string) =>
+  const mac = s.layout === 'desktop';
+  const tile = (glyph?: Glyph, color?: string) =>
     glyph && color ? <Tile glyph={glyph} color={color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined;
   switch (row.t) {
     case 'toggle':
-      return <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} subtitle={row.subtitle} trailing={<Toggle id={row.id} label={row.title} />} />;
+      return <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} subtitle={row.subtitle} 
+        accessory={<Switch checked={!!v[row.id]} onChange={(x) => s.set(row.id, x)} aria-label={mac ? row.title : undefined} className={mac ? MAC_SWITCH : undefined} />} />;
     case 'link': {
       const p = getPane(row.to);
       const value = typeof row.value === 'function' ? row.value(v) : row.value;
       const subtitle = row.subtitle ?? (row.to.startsWith('notif-') ? notifSummary(v, row.to) : undefined);
       return <Shell last={last} leading={row.icon ? tile(p?.glyph, p?.color) : undefined} title={row.title ?? p?.title} subtitle={subtitle}
-        trailing={<Detail>{value}</Detail>} chevron onPress={() => s.open(row.to)} />;
+        trailing={<Detail>{value}</Detail>} accessory="chevron" onPress={() => s.open(row.to)} />;
     }
     case 'value':
       return <Shell last={last} title={row.title} trailing={<Detail>{row.value}</Detail>} />;
     case 'select':
       return s.layout === 'desktop'
         ? <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} trailing={<Popup id={row.id} title={row.title} options={row.options} />} />
-        : <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} trailing={<Detail>{String(v[row.id])}</Detail>} chevron onPress={() => s.open('choose:' + row.id)} />;
+        : <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} trailing={<Detail>{String(v[row.id])}</Detail>} accessory="chevron" onPress={() => s.open('choose:' + row.id)} />;
     case 'option': {
       const on = v[row.id] === row.option;
-      return <Shell last={last} title={row.option} check={on} onPress={() => { if (!on) { Haptics.selection(); s.set(row.id, row.option); } }} />;
+      return <Shell last={last} title={row.option} accessory="check" checked={on} onPress={() => { if (!on) { Haptics.selection(); s.set(row.id, row.option); } }} />;
     }
     case 'slider':
       return <Plain last={last}><SliderRow row={row} /></Plain>;
@@ -131,12 +150,12 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
       return <Shell last={last} leading={<span className="w-[18px] shrink-0" />} title={row.name} trailing={<NetIcons secure={row.secure} bars={row.bars} />}
         onPress={() => { Haptics.impact('light'); s.set('wifi.network', row.name); }} />;
     case 'connected':
-      return <Shell last={last} leading={<Glyph name="check" size={18} sw={2.6} className="text-primary" />} title={String(v['wifi.network'])}
+      return <Shell last={last} leading={<Icon name="check" size={18} weight="bold" className="text-primary" />} title={String(v['wifi.network'])}
         trailing={<NetIcons secure bars={3} />} />;
     case 'device': {
       const on = !!v['bt.' + row.name];
-      return <Shell last={last} leading={s.layout === 'desktop' ? <Glyph name={row.glyph} size={18} className="text-muted-foreground" /> : undefined} title={row.name}
-        trailing={<><Detail>{on ? 'Connected' : 'Not Connected'}</Detail><Glyph name="info" size={21} sw={1.6} className="text-primary" /></>}
+      return <Shell last={last} leading={s.layout === 'desktop' ? <SettingsIcon glyph={row.glyph} size={18} className="text-muted-foreground" /> : undefined} title={row.name}
+        trailing={<><Detail>{on ? 'Connected' : 'Not Connected'}</Detail><Icon name="info" size={21} weight="light" className="text-primary" /></>}
         onPress={() => { Haptics.impact('light'); s.set('bt.' + row.name, !on); }} />;
     }
     case 'action':
@@ -150,7 +169,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
       return <Plain last={last}><Meter row={row} /></Plain>;
     case 'login':
       return <Shell last={last} leading={<LetterTile site={row.site} color={row.color} size={s.layout === 'desktop' ? 22 : 32} />} title={row.site} subtitle={row.user}
-        chevron onPress={() => s.open(row.to)} />;
+        accessory="chevron" onPress={() => s.open(row.to)} />;
     case 'secret':
       return <SecretRow title={row.title} value={row.value} last={last} />;
   }
@@ -159,8 +178,8 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
 /* ── Controls that fill a row ── */
 function SliderRow({ row }: { row: Extract<Row, { t: 'slider' }> }) {
   const s = useSettings();
-  const end = (e: string, big: boolean) => isGlyph(e)
-    ? <Glyph name={e} size={big ? 24 : 18} className="text-muted-foreground" />
+  const end = (e: string, big: boolean) => IC[e]
+    ? <Icon name={e} size={big ? 24 : 18} className="text-muted-foreground" />
     : <span className={cn('w-5 text-center text-muted-foreground', big ? 'text-[22px]' : 'text-[13px]')}>{e}</span>;
   return (
     <div className="flex items-center gap-2">
@@ -197,7 +216,7 @@ function AppearancePicker() {
             <span className={s.layout === 'desktop' ? 'text-[13px]' : 'text-[15px]'}>{label}</span>
             <span className={cn('grid size-[22px] place-items-center rounded-full text-white transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy',
               on ? 'bg-primary' : 'shadow-[inset_0_0_0_1.5px_var(--bl-label3)]')}>
-              {on ? <Glyph name="check" size={14} sw={3} className="transition-[scale] duration-spring-snappy ease-spring-bouncy starting:scale-40" /> : null}
+              {on ? <Icon name="check" size={14} sw={3} className="transition-[scale] duration-spring-snappy ease-spring-bouncy starting:scale-40" /> : null}
             </span>
           </button>
         );
@@ -341,7 +360,7 @@ export function SearchResults({ onOpen }: { onOpen?: () => void }) {
         return (
           <Shell key={h.pane + h.title} last={i === hits.length - 1} title={h.title} subtitle={h.trail || undefined}
             leading={icon?.glyph && icon.color ? <Tile glyph={icon.glyph} color={icon.color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined}
-            chevron={s.layout !== 'desktop'} onPress={() => { Haptics.selection(); s.openPath(pathTo(h.pane)); onOpen?.(); }} />
+            accessory={s.layout !== 'desktop' ? 'chevron' : undefined} onPress={() => { Haptics.selection(); s.openPath(pathTo(h.pane)); onOpen?.(); }} />
         );
       })}
     </Group>
