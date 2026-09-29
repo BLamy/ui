@@ -98,7 +98,6 @@
           "bar": "rgba(250, 250, 252, .85)",
           "sticky": "rgba(244, 244, 248, .92)",
           "handle": "rgba(120, 120, 128, .24)",
-          "link": "var(--primary)",
           "code": "#101014",
           "code-foreground": "#D8D8E2"
         },
@@ -142,7 +141,6 @@
           "bar": "rgba(16, 16, 18, .82)",
           "sticky": "rgba(18, 18, 20, .9)",
           "handle": "rgba(120, 120, 128, .34)",
-          "link": "var(--primary)",
           "code": "#101014",
           "code-foreground": "#D8D8E2"
         }
@@ -190,7 +188,6 @@
           "--bar": "rgba(250, 250, 252, .85)",
           "--sticky": "rgba(244, 244, 248, .92)",
           "--handle": "rgba(120, 120, 128, .24)",
-          "--link": "var(--primary)",
           "--code": "#101014",
           "--code-foreground": "#D8D8E2"
         },
@@ -222,7 +219,6 @@
           "--handle": "rgba(0, 0, 0, .18)",
           "--code": "#F4F4F7",
           "--code-foreground": "#24242B",
-          "--link": "var(--primary)",
           "--scope-terminal-background": "#1A1A1F"
         },
         "[data-theme-scope=\"workbench\"].dark": {
@@ -253,7 +249,6 @@
           "--handle": "rgba(255, 255, 255, .22)",
           "--code": "#0C0C10",
           "--code-foreground": "#D8D8E2",
-          "--link": "var(--primary)",
           "--scope-terminal-background": "#0C0C10"
         },
         "[data-theme-scope=\"terminal\"]": {
@@ -383,8 +378,7 @@
           "--secondary-strong": "rgba(255, 255, 255, .15)",
           "--handle": "rgba(255, 255, 255, .22)",
           "--code": "#0C0C10",
-          "--code-foreground": "#D8D8E2",
-          "--link": "var(--primary)"
+          "--code-foreground": "#D8D8E2"
         },
         "[data-theme-scope=\"glass\"].light": {
           "color-scheme": "light",
