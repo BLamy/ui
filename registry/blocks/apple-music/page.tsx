@@ -40,6 +40,9 @@ const sectionPage = (id: string): Page =>
   id.startsWith('playlist:') ? { kind: 'playlist', id: id.slice(9) } : ({ kind: id } as Page);
 const tabFor = (s: MusicSection): Tab => (s === 'listen' || s === 'browse' || s === 'radio' || s === 'search' ? s : 'library');
 
+/** Music's accent red (light / dark). */
+const MUSIC_TINT = { light: '#FA2D48', dark: '#FF375F' } as const;
+
 export default function AppleMusic({ initialSection = 'listen', initialAlbum, nowPlaying = false }: AppleMusicProps) {
   const dark = useAppearance() === 'dark';
   const [ref, box] = useContainerSize<HTMLDivElement>();
@@ -55,7 +58,7 @@ export default function AppleMusic({ initialSection = 'listen', initialAlbum, no
   );
 
   return (
-    <BLProvider dark={dark} tint={dark ? '#FF375F' : '#FA2D48'} className="bg-background">
+    <BLProvider dark={dark} tint={MUSIC_TINT[dark ? 'dark' : 'light']} className="bg-background">
       <MorphGroup>
         <div ref={ref} className="relative h-full w-full">
           {phone ? (

@@ -13,6 +13,9 @@ export interface AppleSettingsProps {
   initialPath?: string[];
 }
 
+/** Settings' accent: iOS system blue (light #007AFF, dark #0A84FF). */
+const SETTINGS_TINT = { light: '#007AFF', dark: '#0A84FF' } as const;
+
 export default function AppleSettings({ initialPath = [] }: AppleSettingsProps) {
   const ambient = useAppearance();
   const [appearance, setAppearance] = useState<Appearance | null>(null);
@@ -20,7 +23,7 @@ export default function AppleSettings({ initialPath = [] }: AppleSettingsProps) 
   const settings = useSettingsState(initialPath, dark, setAppearance);
 
   return (
-    <BLProvider dark={dark} tint={dark ? '#0A84FF' : '#007AFF'}>
+    <BLProvider dark={dark} tint={SETTINGS_TINT[dark ? 'dark' : 'light']}>
       <SettingsCtx.Provider value={settings}>
         <SplitView aria-label="Settings" sidebarBehavior="tile" sidebarVisibility={{ medium: true }}
           defaultCompactColumn={initialPath.length ? 'detail' : 'sidebar'}

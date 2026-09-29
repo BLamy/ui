@@ -6,12 +6,12 @@ import {
 } from '@brett_lamy/ui';
 import { GROUPS, SEVERITY, type Account, type WifiNetwork } from './data';
 import {
-  Card, CodeValue, CopyButton, DetailHeader, Field, PasswordValue, RevealButton, SiteTile, WifiTile, useCode,
+  Card, CodeValue, CopyButton, DetailHeader, Field, PasswordValue, RevealButton, SiteTile, WifiTile, useCode, type CodeClock,
 } from './parts';
 import type { Entry, Vault } from './vault';
 
 export function Detail({ entry, vault, now, editing, onEditing }: {
-  entry: Entry | null; vault: Vault; now: number; editing: boolean; onEditing: (on: boolean) => void;
+  entry: Entry | null; vault: Vault; now: CodeClock; editing: boolean; onEditing: (on: boolean) => void;
 }) {
   if (!entry) {
     return (
@@ -38,7 +38,7 @@ function Page({ children }: { children: ReactNode }) {
 }
 
 function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: {
-  account: Account; deleted: boolean; vault: Vault; now: number; editing: boolean; onEditing: (on: boolean) => void;
+  account: Account; deleted: boolean; vault: Vault; now: CodeClock; editing: boolean; onEditing: (on: boolean) => void;
 }) {
   const [draft, setDraft] = useState(a);
   const [pinned, setPinned] = useState(false);
@@ -226,7 +226,7 @@ function IssueCard({ account: a }: { account: Account }) {
         <Button size="sm" className="mt-3" onPress={() => Haptics.impact('light')}>Change Password on {a.websites[0]}</Button>
       </div>
       <span className="h-fit shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-[.3px] uppercase"
-        style={{ color: s.color === '#FFCC00' ? '#A67C00' : s.color, background: `color-mix(in oklab, ${s.color} 16%, transparent)` }}>
+        style={{ color: s.badge, background: `color-mix(in oklab, ${s.color} 16%, transparent)` }}>
         {a.issue!.severity}
       </span>
     </Card>
@@ -262,7 +262,7 @@ function WifiDetail({ network: n }: { network: WifiNetwork }) {
           <AnimatedHeight>
             {qr ? (
               <div className="flex flex-col items-center gap-3 px-4 pt-1 pb-5 text-center">
-                <div className="rounded-[18px] bg-white p-4 text-black shadow-[0_0_0_.5px_rgba(0,0,0,.12)]">
+                <div className="rounded-[18px] bg-white p-4 text-black shadow-[0_0_0_.5px_black] shadow-black/12">
                   <QRSvg seed={`WIFI:S:${n.ssid};T:WPA;P:${n.password};;`} size={184} />
                 </div>
                 <div className="max-w-[300px] text-[13px] text-muted-foreground">

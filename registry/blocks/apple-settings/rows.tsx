@@ -88,7 +88,7 @@ function Popup({ id, title, options }: { id: string; title: string; options: str
   return (
     <DropdownMenu>
       <Button variant="ghost" size="sm" aria-label={`${title}: ${cur}`}
-        className="-my-1 h-[26px] gap-1 rounded-[6px] px-2 text-[13px] font-normal text-foreground shadow-[0_0_0_.5px_var(--border),0_1px_1px_rgba(0,0,0,.06)]">
+        className="-my-1 h-[26px] gap-1 rounded-[6px] px-2 text-[13px] font-normal text-foreground shadow-[0_1px_1px_black] ring-[.5px] shadow-black/6 ring-border">
         {cur}<Icon name="chevron-up-down" size={12} weight="semibold" className="text-muted-foreground" />
       </Button>
       <DropdownMenuContent aria-label={title} placement="bottom end" selectionMode="single" selectedKeys={[cur]}
@@ -191,11 +191,17 @@ function SliderRow({ row }: { row: Extract<Row, { t: 'slider' }> }) {
   );
 }
 
+/** The Appearance picker's lock-screen thumbnails: wallpaper and clock ink (fixed artwork). */
+const WALLPAPER = {
+  light: { background: 'linear-gradient(180deg,#9ad0ff,#e9d9ff)', color: '#1c1c1e' },
+  dark: { background: 'linear-gradient(180deg,#1b2a4a,#0b0f1c)', color: '#fff' },
+} as const;
+
 function PhoneThumb({ dark }: { dark: boolean }) {
   return (
-    <span className={cn('relative block h-[112px] w-[56px] overflow-hidden rounded-[11px] shadow-[0_0_0_1px_var(--border),0_2px_6px_rgba(0,0,0,.12)]')}
-      style={{ background: dark ? 'linear-gradient(180deg,#1b2a4a,#0b0f1c)' : 'linear-gradient(180deg,#9ad0ff,#e9d9ff)' }}>
-      <span className={cn('absolute inset-x-0 top-2.5 text-center text-[14px] font-semibold tracking-[-.3px]', dark ? 'text-white' : 'text-[#1c1c1e]')}>9:41</span>
+    <span className="relative block h-[112px] w-[56px] overflow-hidden rounded-[11px] shadow-[0_2px_6px_black] ring-1 shadow-black/12 ring-border"
+      style={WALLPAPER[dark ? 'dark' : 'light']}>
+      <span className="absolute inset-x-0 top-2.5 text-center text-[14px] font-semibold tracking-[-.3px]">9:41</span>
       <span className={cn('absolute inset-x-2 top-9 h-5 rounded-[6px]', dark ? 'bg-white/15' : 'bg-white/60')} />
       <span className={cn('absolute inset-x-2 top-[62px] h-5 rounded-[6px]', dark ? 'bg-white/15' : 'bg-white/60')} />
     </span>

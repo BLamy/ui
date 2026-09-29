@@ -2,7 +2,7 @@
    date and time with quick picks, flag, priority, list, and subtasks you can check off or add to. */
 import { useRef, useState, type ReactNode } from 'react';
 import { Button, Credenza, Haptics, Icon, ListRow, ListSection, Segmented, Switch, useSplitView, type IconName } from '@brett_lamy/ui';
-import { dueLabel, type Reminder } from './data';
+import { SYSTEM, dueLabel, type Reminder } from './data';
 import { CheckCircle, ListIcon } from './reminder-row';
 import { useReminders } from './store';
 
@@ -42,12 +42,12 @@ function Body({ r }: { r: Reminder }) {
       </div>
 
       <ListSection>
-        <ListRow leading={<Tile glyph="calendar" color="#FF3B30" />} title="Date" subtitle={r.due != null ? <span className="text-primary">{dueLabel({ due: r.due })}</span> : undefined}
+        <ListRow leading={<Tile glyph="calendar" color={SYSTEM.red} />} title="Date" subtitle={r.due != null ? <span className="text-primary">{dueLabel({ due: r.due })}</span> : undefined}
           accessory={<Switch checked={r.due != null} onChange={(v) => up(v ? { due: 0 } : { due: undefined, time: undefined })} />} divider={r.due != null} />
         <Reveal open={r.due != null}>
           <Segmented aria-label="Due date" className="[&>*]:px-1.5" options={DAYS} value={String(r.due ?? '')} onChange={(d) => up({ due: Number(d) })} />
         </Reveal>
-        <ListRow leading={<Tile glyph="clock" color="#007AFF" />} title="Time" subtitle={r.time ? <span className="text-primary">{r.time}</span> : undefined}
+        <ListRow leading={<Tile glyph="clock" color={SYSTEM.blue} />} title="Time" subtitle={r.time ? <span className="text-primary">{r.time}</span> : undefined}
           accessory={<Switch checked={!!r.time} onChange={(v) => up(v ? { time: '9:00 AM', due: r.due ?? 0 } : { time: undefined })} />} divider={!!r.time} />
         <Reveal open={!!r.time}>
           <Segmented aria-label="Due time" className="[&>*]:px-1.5" options={TIMES} value={r.time ?? ''} onChange={(t) => up({ time: t })} />
@@ -55,7 +55,7 @@ function Body({ r }: { r: Reminder }) {
       </ListSection>
 
       <ListSection>
-        <ListRow leading={<Tile glyph="flag-fill" color="#FF9500" />} title="Flag" divider={false}
+        <ListRow leading={<Tile glyph="flag-fill" color={SYSTEM.orange} />} title="Flag" divider={false}
           accessory={<Switch checked={!!r.flagged} onChange={(v) => up({ flagged: v })} />} />
       </ListSection>
 
@@ -75,7 +75,7 @@ function Body({ r }: { r: Reminder }) {
         <div className="flex flex-col bg-card">
           {(r.subtasks ?? []).map((s) => (
             <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 shadow-[inset_0_-1px_0_var(--border)]">
-              <CheckCircle size={22} done={!!s.done} color={list?.color ?? '#007AFF'} label={`Subtask “${s.title}”`} onToggle={() => api.toggleSubtask(r.id, s.id)} />
+              <CheckCircle size={22} done={!!s.done} color={list?.color ?? SYSTEM.blue} label={`Subtask “${s.title}”`} onToggle={() => api.toggleSubtask(r.id, s.id)} />
               <span className={s.done ? 'text-[17px] text-muted-foreground' : 'text-[17px]'}>{s.title}</span>
             </div>
           ))}

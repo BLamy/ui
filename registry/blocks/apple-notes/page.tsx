@@ -18,6 +18,12 @@ export interface AppleNotesProps {
   initialView?: NotesView;
 }
 
+/** Notes' yellow accent (light / dark) … */
+const NOTES_TINT = { light: '#E0A500', dark: '#FFD60A' } as const;
+/** … with dark text on it (selected rows, the checked-circle fill): the app's palette overrides the theme's
+    primary-foreground on the block's root. */
+const NOTES_ON_TINT = { '--primary-foreground': '#1C1C1E' } as CSSProperties;
+
 export default function AppleNotes({ appearance, initialFolder = 'all', initialNote = 'n1', initialView = 'list' }: AppleNotesProps) {
   const ambient = useAppearance();
   const dark = (appearance ?? ambient) === 'dark';
@@ -26,8 +32,7 @@ export default function AppleNotes({ appearance, initialFolder = 'all', initialN
 
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
-      {/* Notes' yellow, with dark text on it (selected rows, the checked-circle fill). */}
-      <BLProvider tint={dark ? '#FFD60A' : '#E0A500'} className="bg-background" style={{ '--primary-foreground': '#1C1C1E' } as CSSProperties}>
+      <BLProvider tint={NOTES_TINT[dark ? 'dark' : 'light']} className="bg-background" style={NOTES_ON_TINT}>
         {/* Gallery view hides the list column (the phone keeps it: the gallery takes its place in the stack). */}
         <SplitView aria-label="Notes" onWidthClassChange={(wc) => setCompact(wc === 'compact')}
           supplementaryVisible={notes.view === 'list' || compact}

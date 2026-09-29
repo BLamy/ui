@@ -20,6 +20,9 @@ export interface AppleMailProps {
   initialDraft?: Draft | null;
 }
 
+/** Mail's accent: iOS system blue (light #007AFF, dark #0A84FF). */
+const MAIL_TINT = { light: '#007AFF', dark: '#0A84FF' } as const;
+
 export default function AppleMail({ appearance, initialMailbox = 'inbox', initialMessage = 'm2', initialDraft = null }: AppleMailProps) {
   const ambient = useAppearance();
   const dark = (appearance ?? ambient) === 'dark';
@@ -28,7 +31,7 @@ export default function AppleMail({ appearance, initialMailbox = 'inbox', initia
 
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
-      <BLProvider tint={dark ? '#0A84FF' : '#007AFF'} className="bg-background">
+      <BLProvider tint={MAIL_TINT[dark ? 'dark' : 'light']} className="bg-background">
         <SplitView aria-label="Mail" onWidthClassChange={(wc) => setCompact(wc === 'compact')}
           selection={{ sidebar: mail.boxId, supplementary: mail.selectedId }}
           onSelectionChange={(sel) => { if (sel.sidebar) mail.openBox(sel.sidebar); }}>

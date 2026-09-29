@@ -127,6 +127,26 @@ export function ProgressRing({
   );
 }
 
+/** CountdownRing's seconds label: `labelSize` picks a font size independent of the ring's (default: the ring's
+ *  --ring-font); `warn` turns it the warning color. */
+export const countdownRingLabelVariants = cva(
+  'absolute inset-0 grid place-items-center font-semibold tabular-nums transition-colors duration-300',
+  {
+    variants: {
+      labelSize: {
+        auto: 'text-(length:--ring-font)',
+        sm: 'text-[9.36px]',
+        md: 'text-[10.5px]',
+        lg: 'text-[13px]',
+        xl: 'text-[20px]',
+      },
+      warn: { false: 'text-muted-foreground', true: 'text-(--ring-warn)' },
+    },
+    defaultVariants: { labelSize: 'auto', warn: false },
+  },
+);
+export type CountdownRingLabelSize = Exclude<NonNullable<VariantProps<typeof countdownRingLabelVariants>['labelSize']>, 'auto'>;
+
 export interface CountdownRingProps {
   /** Seconds left. */
   remaining: number;
@@ -142,8 +162,11 @@ export interface CountdownRingProps {
   /** The arc and label color while warning (default red). */
   warnColor?: string;
   trackColor?: string;
-  /** Seconds in the middle (default true when the ring is `md` or larger). */
+  /** Seconds in the middle (default true when the ring is `md` or larger, or when `labelSize` is set). */
   showLabel?: boolean;
+  /** The seconds' font size, independent of the ring: `sm` 9.36px (a 26px code ring) · `md` 10.5 · `lg` 13 ·
+   *  `xl` 20 (the preset rings' labels). Default: scales with the ring. */
+  labelSize?: CountdownRingLabelSize;
   /** Accessible label; default "N seconds left". */
   'aria-label'?: string;
   className?: string;
@@ -151,7 +174,7 @@ export interface CountdownRingProps {
 }
 
 export function CountdownRing({
-  remaining, duration = 30, warnAt = 5, size, thickness, color, warnColor, trackColor, showLabel, className, style,
+  remaining, duration = 30, warnAt = 5, size, thickness, color, warnColor, trackColor, showLabel, labelSize, className, style,
   'aria-label': label,
 }: CountdownRingProps) {
   const d = dims(size, thickness);
@@ -161,7 +184,7 @@ export function CountdownRing({
   // Counting up means the period restarted: jump, don't drain backwards through the turnover.
   const jump = left > prev.current;
   useEffect(() => { prev.current = left; }, [left]);
-  const label_ = showLabel ?? d.font > 0;
+  const label_ = showLabel ?? (labelSize != null || d.font > 0);
   return (
     <span
       data-slot="countdown-ring"
@@ -182,10 +205,7 @@ export function CountdownRing({
         transition={jump ? '[transition:none]' : '[transition:stroke-dashoffset_1s_linear,stroke_.3s]'}
       />
       {label_ ? (
-        <span aria-hidden="true" className={cn(
-          'absolute inset-0 grid place-items-center text-(length:--ring-font) font-semibold tabular-nums transition-colors duration-300',
-          warn ? 'text-(--ring-warn)' : 'text-muted-foreground',
-        )}>
+        <span aria-hidden="true" className={countdownRingLabelVariants({ labelSize: labelSize ?? 'auto', warn })}>
           <NumberMorph value={left} />
         </span>
       ) : null}
@@ -198,30 +218,60 @@ export interface UseCountdownOptions {
   running?: boolean;
   /** Start again from `duration` when it reaches zero (default true: a TOTP-style period). */
   loop?: boolean;
-  /** Called each time it reaches zero. */
+  /** Called each time it reaches zero (once per period that ended, even if the page was throttled meanwhile). */
   onEnd?: () => void;
+  /** Seconds already elapsed when it starts, e.g. to align a TOTP period with a clock (default 0). */
+  offset?: number;
 }
 
-/** Whole seconds left in a `duration`-second countdown, ticking once a second. */
-export function useCountdown(duration: number, { running = true, loop = true, onEnd }: UseCountdownOptions = {}) {
-  const [left, setLeft] = useState(duration);
-  const cur = useRef(duration);
+export interface Countdown {
+  /** Whole seconds left in the current period (`duration` … 1 while looping; down to 0 when not). */
+  remaining: number;
+  /** Periods completed so far (0 at the start); a TOTP code's window is its start window + `period`. */
+  period: number;
+  /** Whole seconds elapsed, `offset` included. */
+  elapsed: number;
+  /** Start over from `offset` (period 0). */
+  reset: () => void;
+}
+
+/** A `duration`-second countdown on the wall clock: it reads `Date.now()` (so throttled or delayed timers catch up
+ *  instead of drifting, and a frozen clock freezes it) and re-renders only when the whole second changes. */
+export function useCountdown(duration: number, { running = true, loop = true, onEnd, offset = 0 }: UseCountdownOptions = {}): Countdown {
+  // Milliseconds run before the current stretch, and when the current stretch started (null while paused).
+  const acc = useRef(0);
+  const since = useRef<number | null>(null);
+  const [elapsed, setElapsed] = useState(offset);
+  const seen = useRef(-1);
   const end = useRef(onEnd);
   end.current = onEnd;
+  const read = () => offset + Math.floor((acc.current + (since.current == null ? 0 : Date.now() - since.current)) / 1000);
+  const periodOf = (e: number) => (loop ? Math.floor(e / duration) : Math.min(1, Math.floor(e / duration)));
+  if (seen.current < 0) seen.current = periodOf(offset);
+  const sync = () => {
+    const e = read();
+    const p = periodOf(e);
+    for (; seen.current < p; seen.current++) end.current?.();
+    setElapsed(e);
+  };
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => {
-      if (cur.current <= 0) return;
-      let next = cur.current - 1;
-      if (next <= 0) {
-        end.current?.();
-        next = loop ? duration : 0;
-      }
-      cur.current = next;
-      setLeft(next);
-    }, 1000);
-    return () => clearInterval(id);
-  }, [running, loop, duration]);
-  const reset = () => { cur.current = duration; setLeft(duration); };
-  return { remaining: left, reset };
+    since.current = Date.now();
+    const id = setInterval(sync, 250);
+    return () => {
+      clearInterval(id);
+      acc.current += Date.now() - (since.current ?? Date.now());
+      since.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running, loop, duration, offset]);
+  const reset = () => {
+    acc.current = 0;
+    if (since.current != null) since.current = Date.now();
+    seen.current = periodOf(offset);
+    setElapsed(offset);
+  };
+  const period = periodOf(elapsed) - periodOf(offset);
+  const remaining = loop ? duration - (elapsed % duration) : Math.max(0, duration - elapsed);
+  return { remaining, period, elapsed, reset };
 }

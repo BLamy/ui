@@ -7,7 +7,7 @@ import {
   useContainerWidth, type Screen,
 } from '@brett_lamy/ui';
 import { ISSUE_COUNTS, ME, PR_COUNTS, REPO } from './data';
-import { Box, FlowPanel, Oct, UnderlineTab, ghButton, githubVars, type OctName, type Layout, type Nav } from './parts';
+import { Box, FlowPanel, Oct, UnderlineTab, ghButton, GITHUB_THEME, GITHUB_TINT, type OctName, type Layout, type Nav } from './parts';
 import { ActionsView } from './actions-tab';
 import { CodeHome, PathView } from './code-tab';
 import { CloneDialog, LabelFilter } from './dialogs';
@@ -30,7 +30,8 @@ export interface GithubCloneProps {
 }
 
 export default function GithubClone({ initialTab, initialPullRequest, initialPath = '', initialPullRequestTab }: GithubCloneProps) {
-  const dark = useAppearance() === 'dark';
+  const appearance = useAppearance() === 'dark' ? 'dark' : 'light';
+  const dark = appearance === 'dark';
   const [ref, width] = useContainerWidth<HTMLDivElement>(1200);
   const ui: Layout = { phone: width < 640, wide: width >= 1012, dark };
   const [tab, setTab] = useState<GithubTab>(initialTab ?? (initialPullRequest ? 'pulls' : 'code'));
@@ -68,8 +69,8 @@ export default function GithubClone({ initialTab, initialPullRequest, initialPat
   const pop = () => (pr && tab === 'pulls' ? setPr(null) : setPath(path.split('/').slice(0, -1).join('/')));
 
   return (
-    <BLProvider tint={dark ? '#4493f8' : '#0969da'} style={githubVars(dark)} className="min-h-0 bg-background">
-      <WorkbenchTheme appearance={dark ? 'dark' : 'light'} tint={dark ? '#4493f8' : '#0969da'} style={githubVars(dark)}
+    <BLProvider tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]} className="min-h-0 bg-background">
+      <WorkbenchTheme appearance={appearance} tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]}
         className="h-full w-full bg-background text-[14px] text-foreground select-text">
         <div ref={ref} className="relative flex h-full min-h-0 w-full flex-col">
           {ui.phone ? (

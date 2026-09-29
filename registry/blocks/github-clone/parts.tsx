@@ -8,50 +8,58 @@ import {
 import type { FileNode, Label, PullRequest, User } from './data';
 
 /* ── Palette ──
-   BLProvider and WorkbenchTheme take a `style`; these override their tokens with GitHub's Primer colors so
-   every bl-* / wb-* utility (and the library parts) pick them up. The --gh-* extras are the diff / state colors. */
-export function githubVars(dark: boolean): CSSProperties {
-  const c = dark
-    ? {
-        bg: '#0d1117', bg2: '#151b23', inset: '#010409', label: '#f0f6fc', label2: '#9198a1', label3: '#656c76',
-        sep: '#3d444d', fill: 'rgba(101,108,118,.2)', fill2: 'rgba(101,108,118,.4)', tint: '#4493f8', green: '#3fb950', red: '#f85149',
-      }
-    : {
-        bg: '#ffffff', bg2: '#f6f8fa', inset: '#f6f8fa', label: '#1f2328', label2: '#59636e', label3: '#818b98',
-        sep: '#d1d9e0', fill: 'rgba(129,139,152,.12)', fill2: 'rgba(129,139,152,.22)', tint: '#0969da', green: '#1a7f37', red: '#d1242f',
-      };
+   GitHub's Primer colors. The block is an app with its own palette: `GITHUB_THEME` overrides the theme's shadcn
+   variables on the block's root (BLProvider / WorkbenchTheme `style`), so every utility and library part inside picks
+   them up. The --gh-* extras are GitHub's state / diff / button colors; --bl-syntax-* recolor SyntaxHighlighting
+   with Primer's prettylights palette. */
+const PRIMER = {
+  light: {
+    bg: '#ffffff', bg2: '#f6f8fa', inset: '#f6f8fa', label: '#1f2328', label2: '#59636e', label3: '#818b98',
+    sep: '#d1d9e0', fill: 'rgba(129,139,152,.12)', fill2: 'rgba(129,139,152,.22)', tint: '#0969da', green: '#1a7f37', red: '#d1242f',
+    done: '#8250df', attention: '#9a6700', btn: '#f6f8fa', btnHover: '#eff2f5', folder: '#54aeff',
+    add: '#dafbe1', addNum: '#aceebb', del: '#ffebe9', delNum: '#ffcecb', hunk: '#ddf4ff',
+    kw: '#cf222e', str: '#0a3069', num: '#0550ae', com: '#59636e', fn: '#8250df', type: '#953800', hl: '#fff8c5', hlBar: '#d4a72c',
+  },
+  dark: {
+    bg: '#0d1117', bg2: '#151b23', inset: '#010409', label: '#f0f6fc', label2: '#9198a1', label3: '#656c76',
+    sep: '#3d444d', fill: 'rgba(101,108,118,.2)', fill2: 'rgba(101,108,118,.4)', tint: '#4493f8', green: '#3fb950', red: '#f85149',
+    done: '#ab7df8', attention: '#d29922', btn: '#212830', btnHover: '#262c36', folder: '#7d8590',
+    add: 'rgba(46,160,67,.15)', addNum: 'rgba(63,185,80,.3)', del: 'rgba(248,81,73,.1)', delNum: 'rgba(248,81,73,.3)', hunk: 'rgba(56,139,253,.1)',
+    kw: '#ff7b72', str: '#a5d6ff', num: '#79c0ff', com: '#9198a1', fn: '#d2a8ff', type: '#ffa657', hl: 'rgba(187,128,9,.15)', hlBar: '#9e6a03',
+  },
+} as const;
+
+/** Colors GitHub uses in both appearances: the green merge / primary button, the gray draft pill, the tab underline,
+    dark ink on light label chips. */
+const PRIMER_FIXED = { merge: '#1f883d', mergeHover: '#1c8139', mergeBorder: 'rgba(31,35,40,.15)', draft: '#59636e', tab: '#fd8c73', ink: '#1f2328' } as const;
+
+function primerVars(dark: boolean): CSSProperties {
+  const c = PRIMER[dark ? 'dark' : 'light'];
   return {
-    '--background': c.bg, '--muted': c.bg2, '--card': c.bg, '--popover': c.bg2, '--foreground': c.label,
-    '--muted-foreground': c.label2, '--tertiary-foreground': c.label3, '--border': c.sep, '--secondary': c.fill, '--secondary-strong': c.fill2,
-    '--accent': c.fill, '--bar': c.bg, '--sticky': c.bg, '--sidebar': c.inset, '--primary': c.tint,
-    '--success': c.green, '--destructive': c.red,
-    '--background': c.bg, '--sidebar': c.bg2, '--card': c.bg, '--popover': c.bg2, '--border': c.sep, '--secondary': c.fill,
-    '--secondary-strong': c.fill2, '--foreground': c.label, '--muted-foreground': c.label2, '--tertiary-foreground': c.label3, '--primary': c.tint,
-    '--wb-shadow': dark ? 'rgba(1,4,9,.5)' : 'rgba(31,35,40,.06)',
-    '--mdc-code': dark ? 'rgba(101,108,118,.2)' : 'rgba(129,139,152,.12)', '--mdc-pre': c.bg2, '--mdc-pre-fg': c.label,
-    '--mdc-border': c.sep, '--mdc-mut': c.label2, '--mdc-card': c.bg, '--mdc-muted': c.bg2,
-    '--wb-hl-kw': dark ? '#ff7b72' : '#cf222e', '--wb-hl-str': dark ? '#a5d6ff' : '#0a3069', '--wb-hl-num': dark ? '#79c0ff' : '#0550ae',
-    '--wb-hl-com': dark ? '#9198a1' : '#59636e', '--wb-hl-fn': dark ? '#d2a8ff' : '#8250df', '--wb-hl-tag': dark ? '#7ee787' : '#116329',
-    '--wb-hl-attr': dark ? '#ffa657' : '#953800', '--wb-hl-punc': c.label, '--wb-hl-id': c.label,
-    /* SyntaxHighlighting tokens → Primer's prettylights palette. */
-    '--bl-syntax-keyword': dark ? '#ff7b72' : '#cf222e', '--bl-syntax-operator': c.label,
-    '--bl-syntax-string': dark ? '#a5d6ff' : '#0a3069', '--bl-syntax-number': dark ? '#79c0ff' : '#0550ae',
-    '--bl-syntax-constant': dark ? '#79c0ff' : '#0550ae', '--bl-syntax-comment': dark ? '#9198a1' : '#59636e',
-    '--bl-syntax-comment-style': 'normal', '--bl-syntax-function': dark ? '#d2a8ff' : '#8250df',
-    '--bl-syntax-type': dark ? '#ffa657' : '#953800', '--bl-syntax-fg': c.label, '--bl-syntax-surface': c.bg,
-    '--bl-syntax-line-number': c.label3,
-    '--bl-syntax-highlight': dark ? 'rgba(187,128,9,.15)' : '#fff8c5', '--bl-syntax-highlight-bar': dark ? '#9e6a03' : '#d4a72c',
-    /* Docstream (MarkdownView) draws h2 rules with the shadcn --border token directly. */
-    '--border': c.sep,
-    '--gh-inset': c.inset,
-    '--gh-open': dark ? '#3fb950' : '#1a7f37', '--gh-done': dark ? '#ab7df8' : '#8250df', '--gh-closed': dark ? '#f85149' : '#d1242f',
-    '--gh-attention': dark ? '#d29922' : '#9a6700', '--gh-btn': dark ? '#212830' : '#f6f8fa', '--gh-btn-hover': dark ? '#262c36' : '#eff2f5',
-    '--gh-add': dark ? 'rgba(46,160,67,.15)' : '#dafbe1', '--gh-add-num': dark ? 'rgba(63,185,80,.3)' : '#aceebb',
-    '--gh-del': dark ? 'rgba(248,81,73,.1)' : '#ffebe9', '--gh-del-num': dark ? 'rgba(248,81,73,.3)' : '#ffcecb',
-    '--gh-hunk': dark ? 'rgba(56,139,253,.1)' : '#ddf4ff', '--gh-hunk-fg': c.label2,
-    '--gh-tab': '#fd8c73', '--gh-folder': dark ? '#7d8590' : '#54aeff',
+    '--background': c.bg, '--foreground': c.label, '--card': c.bg, '--card-foreground': c.label,
+    '--popover': c.bg2, '--popover-foreground': c.label, '--primary': c.tint, '--ring': c.tint,
+    '--secondary': c.fill, '--secondary-foreground': c.label, '--input': c.fill, '--muted': c.bg2, '--muted-foreground': c.label2,
+    '--accent': c.fill, '--accent-foreground': c.label, '--destructive': c.red, '--border': c.sep,
+    '--sidebar': c.inset, '--sidebar-foreground': c.label, '--sidebar-accent': c.fill, '--sidebar-accent-foreground': c.label,
+    '--sidebar-border': c.sep, '--sidebar-primary': c.tint, '--sidebar-ring': c.tint,
+    '--success': c.green, '--tertiary-foreground': c.label3, '--secondary-strong': c.fill2,
+    '--bar': c.bg, '--sticky': c.bg, '--link': c.tint, '--code': c.bg2, '--code-foreground': c.label,
+    '--bl-syntax-keyword': c.kw, '--bl-syntax-operator': c.label, '--bl-syntax-string': c.str, '--bl-syntax-number': c.num,
+    '--bl-syntax-constant': c.num, '--bl-syntax-comment': c.com, '--bl-syntax-comment-style': 'normal', '--bl-syntax-function': c.fn,
+    '--bl-syntax-type': c.type, '--bl-syntax-fg': c.label, '--bl-syntax-surface': c.bg, '--bl-syntax-line-number': c.label3,
+    '--bl-syntax-highlight': c.hl, '--bl-syntax-highlight-bar': c.hlBar,
+    '--gh-inset': c.inset, '--gh-open': c.green, '--gh-done': c.done, '--gh-closed': c.red, '--gh-attention': c.attention,
+    '--gh-btn': c.btn, '--gh-btn-hover': c.btnHover, '--gh-add': c.add, '--gh-add-num': c.addNum, '--gh-del': c.del,
+    '--gh-del-num': c.delNum, '--gh-hunk': c.hunk, '--gh-hunk-fg': c.label2, '--gh-folder': c.folder,
+    '--gh-tab': PRIMER_FIXED.tab, '--gh-merge': PRIMER_FIXED.merge, '--gh-merge-hover': PRIMER_FIXED.mergeHover,
+    '--gh-merge-border': PRIMER_FIXED.mergeBorder, '--gh-draft': PRIMER_FIXED.draft, '--gh-ink': PRIMER_FIXED.ink,
   } as CSSProperties;
 }
+
+/** The block root's theme override (shadcn variables + GitHub extras), per appearance. */
+export const GITHUB_THEME = { light: primerVars(false), dark: primerVars(true) } as const;
+/** GitHub's accent blue, per appearance (the `tint` of the block's BLProvider / WorkbenchTheme). */
+export const GITHUB_TINT = { light: PRIMER.light.tint, dark: PRIMER.dark.tint } as const;
 
 /* ── Octicon-style glyphs (16px grid, drawn for this block) ──
    GitHub's domain marks (repo, branch, PR, issue, CI states…) are drawn here; generic UI glyphs come from the
@@ -130,35 +138,36 @@ export function LabelChip({ label, dark, className }: { label: Label; dark: bool
   const lift = (v: number) => Math.round(v + (255 - v) * (lum < 0.5 ? 0.45 : 0.15));
   const style: CSSProperties = dark
     ? { background: `rgba(${r},${g},${b},.18)`, color: `rgb(${lift(r)},${lift(g)},${lift(b)})`, boxShadow: `inset 0 0 0 1px rgba(${r},${g},${b},.4)` }
-    : { background: label.color, color: lum > 0.6 ? '#1f2328' : '#fff' };
+    : { background: label.color };
   return (
-    <span className={cn('inline-flex h-5 items-center rounded-full px-[7px] text-[12px] leading-none font-medium whitespace-nowrap', className)} style={style}>
+    <span className={cn('inline-flex h-5 items-center rounded-full px-[7px] text-[12px] leading-none font-medium whitespace-nowrap',
+      !dark && (lum > 0.6 ? 'text-(--gh-ink)' : 'text-white'), className)} style={style}>
       {label.name}
     </span>
   );
 }
 
 /* ── Issue / PR state glyphs and pills ── */
-const STATE: Record<string, { icon: OctName; color: string; label: string }> = {
-  open: { icon: 'issue', color: 'var(--gh-open)', label: 'Open' },
-  closed: { icon: 'issueClosed', color: 'var(--gh-done)', label: 'Closed' },
-  prOpen: { icon: 'pr', color: 'var(--gh-open)', label: 'Open' },
-  merged: { icon: 'merged', color: 'var(--gh-done)', label: 'Merged' },
-  prClosed: { icon: 'prClosed', color: 'var(--gh-closed)', label: 'Closed' },
-  draft: { icon: 'prDraft', color: 'var(--muted-foreground)', label: 'Draft' },
-};
+/* icon, glyph color, pill fill (open states use the merge-button green, draft a fixed gray). */
+const STATE = {
+  open: { icon: 'issue', text: 'text-(--gh-open)', pill: 'bg-(--gh-merge)', label: 'Open' },
+  closed: { icon: 'issueClosed', text: 'text-(--gh-done)', pill: 'bg-(--gh-done)', label: 'Closed' },
+  prOpen: { icon: 'pr', text: 'text-(--gh-open)', pill: 'bg-(--gh-merge)', label: 'Open' },
+  merged: { icon: 'merged', text: 'text-(--gh-done)', pill: 'bg-(--gh-done)', label: 'Merged' },
+  prClosed: { icon: 'prClosed', text: 'text-(--gh-closed)', pill: 'bg-(--gh-closed)', label: 'Closed' },
+  draft: { icon: 'prDraft', text: 'text-muted-foreground', pill: 'bg-(--gh-draft)', label: 'Draft' },
+} satisfies Record<string, { icon: OctName; text: string; pill: string; label: string }>;
 export type StateKind = keyof typeof STATE;
 
 export function StateIcon({ state, className }: { state: StateKind; className?: string }) {
   const s = STATE[state];
-  return <Oct name={s.icon} className={className} style={{ color: s.color }} />;
+  return <Oct name={s.icon} className={cn(s.text, className)} />;
 }
 
 export function StatePill({ state }: { state: StateKind }) {
   const s = STATE[state];
   return (
-    <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[14px] font-medium text-white"
-      style={{ background: state === 'draft' ? '#59636e' : state === 'prOpen' || state === 'open' ? '#1f883d' : s.color }}>
+    <span className={cn('inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[14px] font-medium text-white', s.pill)}>
       <Oct name={s.icon} />
       {s.label}
     </span>
@@ -224,8 +233,8 @@ export const ghButton = (primary?: boolean) =>
     'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-[14px] font-medium outline-none whitespace-nowrap',
     'data-focus-visible:ring-2 data-focus-visible:ring-primary data-focus-visible:ring-offset-1',
     primary
-      ? 'border-[rgba(31,35,40,.15)] bg-[#1f883d] text-white data-hovered:bg-[#1c8139]'
-      : 'border-border bg-[var(--gh-btn)] text-foreground data-hovered:bg-[var(--gh-btn-hover)]',
+      ? 'border-(--gh-merge-border) bg-(--gh-merge) text-white data-hovered:bg-(--gh-merge-hover)'
+      : 'border-border bg-(--gh-btn) text-foreground data-hovered:bg-(--gh-btn-hover)',
   );
 
 /** MarkdownView overrides for GitHub's markdown look. Docstream's sheet is unlayered, so these need `!`. */

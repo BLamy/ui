@@ -1,6 +1,7 @@
 /* The sidebar: iOS / iPadOS Settings (large title, search, account card, inset groups) on phones and tablets —
    on a phone it is the root list and every row pushes — and macOS System Settings (window controls, compact
    search, dense rows with small icons) on desktop. Rows select panes in the SplitView. */
+import type { CSSProperties } from 'react';
 import {
   Avatar, Icon, SearchField, SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView,
 } from '@brett_lamy/ui';
@@ -42,6 +43,11 @@ function MacItem({ row }: { row: Extract<Row, { t: 'link' }> }) {
   );
 }
 
+/** macOS window controls (close, minimize, zoom): fixed colors. */
+const TRAFFIC_LIGHTS = ['#FF5F57', '#FEBC2E', '#28C840'];
+/** macOS System Settings' dark sidebar is lighter than the theme's: the app's palette overrides --sidebar there. */
+const MAC_SIDEBAR_DARK = { '--sidebar': '#232326' } as CSSProperties;
+
 export function SettingsSidebar() {
   const s = useSettings();
   const split = useSplitView();
@@ -49,9 +55,9 @@ export function SettingsSidebar() {
   const results = <SearchResults onOpen={() => split.show('detail')} />;
   if (s.layout === 'desktop') {
     return (
-      <SplitViewSidebar aria-label="Settings" width={260} minWidth={220} maxWidth={320} className={s.dark ? 'bg-[#232326]' : undefined}>
+      <SplitViewSidebar aria-label="Settings" width={260} minWidth={220} maxWidth={320} style={s.dark ? MAC_SIDEBAR_DARK : undefined}>
         <div aria-hidden="true" className="flex h-[52px] shrink-0 items-center gap-2 px-5">
-          {['#FF5F57', '#FEBC2E', '#28C840'].map((c) => <span key={c} className="size-3 rounded-full shadow-[inset_0_0_0_.5px_rgba(0,0,0,.18)]" style={{ background: c }} />)}
+          {TRAFFIC_LIGHTS.map((c) => <span key={c} className="size-3 rounded-full shadow-[inset_0_0_0_.5px_black] shadow-black/18" style={{ background: c }} />)}
         </div>
         <div className="px-3 pb-2">
           <SearchField value={s.query} onChange={s.setQuery} aria-label="Search settings" className="gap-1.5 rounded-[7px] bg-secondary px-2 py-[5px] [&_input]:text-[13px] [&_svg]:size-[14px]" />

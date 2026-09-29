@@ -20,7 +20,7 @@ export function BarButton({ label, children, onPress, isDisabled, className }: {
 
 export function FlagButton({ mail, m }: { mail: MailState; m: Message }) {
   return (
-    <BarButton label={m.flagged ? 'Unflag' : 'Flag'} onPress={() => mail.toggleFlag(m.id)} className={m.flagged ? 'text-[#FF9F0A]' : undefined}>
+    <BarButton label={m.flagged ? 'Unflag' : 'Flag'} onPress={() => mail.toggleFlag(m.id)} className={m.flagged ? 'text-warning' : undefined}>
       <IconSwap id={m.flagged ? 'on' : 'off'}><Icon name={m.flagged ? 'flag-fill' : 'flag'} /></IconSwap>
     </BarButton>
   );

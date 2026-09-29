@@ -88,7 +88,7 @@ export function Artwork({ album: a, size, className, style, rounded = 8 }: {
   const [c1, c2, accent, ink] = a.colors;
   return (
     <svg viewBox="0 0 100 100" role="img" aria-label={`${a.title} artwork`} preserveAspectRatio="xMidYMid slice"
-      className={cn('block shrink-0 overflow-hidden shadow-[0_0_0_.5px_rgba(0,0,0,.1)]', className)}
+      className={cn('block shrink-0 overflow-hidden shadow-[0_0_0_.5px_black] shadow-black/10', className)}
       style={{ width: size, height: size, borderRadius: rounded, ...style }}>
       <defs>
         <linearGradient id={uid + 'g'} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={c1} /><stop offset="1" stopColor={c2} /></linearGradient>
@@ -96,9 +96,8 @@ export function Artwork({ album: a, size, className, style, rounded = 8 }: {
       </defs>
       <rect width="100" height="100" fill={`url(#${uid}g)`} />
       <PatternArt album={a} uid={uid} />
-      <text x="7" y="12" fontSize="5.4" fontWeight="700" letterSpacing=".6" fill={ink} opacity=".92"
-        style={{ fontFamily: 'var(--font-ios)', textTransform: 'uppercase' }}>{a.artist}</text>
-      <text x="7" y="18.5" fontSize="4.6" letterSpacing=".3" fill={ink} opacity=".75" style={{ fontFamily: 'var(--font-ios)' }}>{a.title}</text>
+      <text x="7" y="12" fontSize="5.4" fontWeight="700" letterSpacing=".6" fill={ink} opacity=".92" className="font-ios uppercase">{a.artist}</text>
+      <text x="7" y="18.5" fontSize="4.6" letterSpacing=".3" fill={ink} opacity=".75" className="font-ios">{a.title}</text>
     </svg>
   );
 }
@@ -108,7 +107,7 @@ export function PlaylistArt({ playlist: p, size, className, rounded = 8 }: { pla
   const ids = [...new Set(p.songs.map(([id]) => id))].slice(0, 4);
   while (ids.length < 4) ids.push(ids[0]);
   return (
-    <span className={cn('relative grid shrink-0 grid-cols-2 overflow-hidden shadow-[0_0_0_.5px_rgba(0,0,0,.1)]', className)}
+    <span className={cn('relative grid shrink-0 grid-cols-2 overflow-hidden shadow-[0_0_0_.5px_black] shadow-black/10', className)}
       style={{ width: size, height: size, borderRadius: rounded }} role="img" aria-label={`${p.title} artwork`}>
       {ids.map((id, i) => <Artwork key={i} album={ALBUM[id]} rounded={0} className="size-full shadow-none" />)}
     </span>
@@ -120,7 +119,7 @@ export function ArtistArt({ artist, album, size = 44 }: { artist: string; album:
   return (
     <span className="relative grid shrink-0 place-items-center overflow-hidden rounded-full" style={{ width: size, height: size, background: album.colors[1] }}>
       <Artwork album={album} rounded={0} className="absolute inset-0 size-full scale-[1.6] blur-[1.5px]" />
-      <span className="relative font-bold text-white [text-shadow:0_1px_3px_rgba(0,0,0,.4)]" style={{ fontSize: size * 0.34 }}>
+      <span className="relative font-bold text-white text-shadow-[0_1px_3px_black] text-shadow-black/40" style={{ fontSize: size * 0.34 }}>
         {artist.split(/\s+/).filter((w) => /^[A-Z]/.test(w)).slice(0, 2).map((w) => w[0]).join('')}
       </span>
     </span>

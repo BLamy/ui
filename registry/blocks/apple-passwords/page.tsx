@@ -14,6 +14,11 @@ import { useClock } from './parts';
 import { Sidebar } from './sidebar';
 import { firstEntry, sectionsFor, useVault, type Selection } from './vault';
 
+/** Passwords' accent: iOS system blue (light #007AFF, dark #0A84FF). */
+const PASSWORDS_TINT = { light: '#007AFF', dark: '#0A84FF' } as const;
+/** A new password's tile color until it has a website (iOS system gray). */
+const NEW_ITEM_GRAY = '#8E8E93';
+
 export interface ApplePasswordsProps {
   /** Sidebar category (or `group:family`) to open on. Defaults to All. */
   initialCategory?: CategoryId | `group:${string}`;
@@ -52,14 +57,14 @@ export default function ApplePasswords({ initialCategory = 'all', initialItem, l
 
   const addPassword = () => {
     const id = 'new-' + (vault.accounts.length + 1);
-    vault.add({ id, title: 'New Password', username: '', password: '', websites: [''], color: '#8E8E93', modified: 'Today' });
+    vault.add({ id, title: 'New Password', username: '', password: '', websites: [''], color: NEW_ITEM_GRAY, modified: 'Today' });
     setQuery('');
     setSelection({ ...selection, supplementary: id });
     setEditing(true);
   };
 
   return (
-    <BLProvider dark={dark} tint={dark ? '#0A84FF' : '#007AFF'} className="bg-background">
+    <BLProvider dark={dark} tint={PASSWORDS_TINT[dark ? 'dark' : 'light']} className="bg-background">
       {/* The "Copied" HUD: the block's own toast queue, drawn inside the block; copy buttons reach it via useToast. */}
       <Toaster queue={hud} inline aria-label="Passwords notifications">
         <SplitView aria-label="Passwords" selection={selection} onSelectionChange={onSelectionChange} defaultCompactColumn="sidebar">

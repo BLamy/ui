@@ -159,10 +159,12 @@ export const WIFI: WifiNetwork[] = [
   { id: 'cafe', ssid: 'Tidal Coffee Guest', password: 'flatwhite2026', security: 'WPA2 Personal', modified: 'Mar 9, 2026' },
 ];
 
-export const SEVERITY: Record<Severity, { label: string; color: string; rank: number }> = {
-  high: { label: 'High Priority', color: 'var(--destructive)', rank: 0 },
-  medium: { label: 'Recommendation', color: '#FF9500', rank: 1 },
-  low: { label: 'Recommendation', color: '#FFCC00', rank: 2 },
+/** Severity colors: `color` for the glyph and the badge wash; `ink` for list text and `badge` for the badge's
+    text (the yellow darkened so it reads on a light background). */
+export const SEVERITY: Record<Severity, { label: string; color: string; ink: string; badge: string; rank: number }> = {
+  high: { label: 'High Priority', color: 'var(--destructive)', ink: 'var(--destructive)', badge: 'var(--destructive)', rank: 0 },
+  medium: { label: 'Recommendation', color: '#FF9500', ink: '#FF9500', badge: '#FF9500', rank: 1 },
+  low: { label: 'Recommendation', color: '#FFCC00', ink: '#C79A00', badge: '#A67C00', rank: 2 },
 };
 
 /** A fake six-digit code for a seed and a 30-second window — deterministic, not TOTP. */

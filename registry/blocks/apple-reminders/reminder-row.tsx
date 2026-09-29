@@ -2,7 +2,7 @@
    flag, subtasks that fold open, and the info button that opens the details sheet. Also the list icon. */
 import { useState, type CSSProperties } from 'react';
 import { Chevron, Icon, cn, type IconName } from '@brett_lamy/ui';
-import { dueLabel, type Reminder } from './data';
+import { SYSTEM, dueLabel, type Reminder } from './data';
 import { useReminders } from './store';
 
 /** A list's icon: a colored circle with a white glyph. */
@@ -19,10 +19,11 @@ export function ListIcon({ glyph, color, size = 30, className }: { glyph: IconNa
 export function CheckCircle({ done, color, label, size = 24, onToggle }: { done: boolean; color: string; label: string; size?: number; onToggle: () => void }) {
   return (
     <button type="button" role="checkbox" aria-checked={done} aria-label={label} onClick={onToggle}
-      className="bl-btn relative grid shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-[scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.86] motion-reduce:transition-none"
-      style={{ width: size, height: size, boxShadow: `inset 0 0 0 1.6px ${done ? color : 'var(--tertiary-foreground)'}` }}>
-      <span aria-hidden="true" className={cn('rounded-full transition-[scale,opacity] duration-spring-bouncy ease-spring-bouncy motion-reduce:transition-none', done ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}
-        style={{ width: size - 9, height: size - 9, background: color }} />
+      className={cn('bl-btn relative grid shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-[scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.86] motion-reduce:transition-none',
+        done ? 'shadow-[inset_0_0_0_1.6px_var(--list-color)]' : 'shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)]')}
+      style={{ width: size, height: size, '--list-color': color } as CSSProperties}>
+      <span aria-hidden="true" className={cn('rounded-full bg-(--list-color) transition-[scale,opacity] duration-spring-bouncy ease-spring-bouncy motion-reduce:transition-none', done ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}
+        style={{ width: size - 9, height: size - 9 }} />
     </button>
   );
 }
@@ -48,7 +49,7 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
                 {r.priority ? <span className="mr-1 font-semibold" style={{ color: r.done ? undefined : color }}>{'!'.repeat(r.priority)}</span> : null}
                 {r.title}
               </div>
-              {r.flagged ? <Icon name="flag-fill" size={16} className="mt-0.5 text-[#FF9500]" /> : null}
+              {r.flagged ? <Icon name="flag-fill" size={16} className="mt-0.5" style={{ color: SYSTEM.orange }} /> : null}
               <button type="button" aria-label={`Details for “${r.title}”`} onClick={() => api.openDetails(r.id)}
                 className={cn('bl-btn -my-0.5 grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-primary transition-opacity duration-150',
                   phone ? 'opacity-100' : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100')}>

@@ -24,6 +24,9 @@ export interface Reminder {
 }
 export interface RList { id: string; name: string; color: string; glyph: IconName; sections?: string[] }
 
+/** iOS system colors Reminders uses outside the lists (fixed; the lists' own colors are data). */
+export const SYSTEM = { red: '#FF3B30', orange: '#FF9500', yellow: '#FFCC00', green: '#34C759', blue: '#007AFF', pink: '#FF2D55', gray: '#8E8E93' } as const;
+
 export const COLORS = ['#FF3B30', '#FF9500', '#FFCC00', '#34C759', '#32ADE6', '#007AFF', '#5856D6', '#FF2D55', '#AF52DE', '#A2845E'];
 
 export const LISTS: RList[] = [

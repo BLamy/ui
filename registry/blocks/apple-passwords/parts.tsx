@@ -1,22 +1,17 @@
 /* Pieces the columns share: site and Wi-Fi tiles, the grouped card and its rows, copy buttons (confirmed by the
    block's "Copied" HUD), the password that reveals by morphing, and the verification code with its countdown ring. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CountdownRing, Haptics, Icon, IconSwap, NumberMorph, TextMorph, cn, useToast } from '@brett_lamy/ui';
+import { CountdownRing, Haptics, Icon, IconSwap, NumberMorph, TextMorph, cn, useCountdown, useToast } from '@brett_lamy/ui';
 import { codeFor } from './data';
 
 /* ── Clock ──
-   Seconds on a fixed sample epoch, so codes are the same on every load; `live` advances it with the wall clock
-   (Date.now, so a frozen clock — a screenshot run — freezes the codes too). */
+   30-second code windows counted from a fixed sample epoch, so codes are the same on every load; `live` runs the
+   library's useCountdown (wall clock, so a frozen clock — a screenshot run — freezes the codes too). */
 const EPOCH = 1_790_000_018;
-export function useClock(live: boolean) {
-  const [t, setT] = useState(EPOCH);
-  useEffect(() => {
-    if (!live) return;
-    const start = Date.now();
-    const id = setInterval(() => setT(EPOCH + Math.floor((Date.now() - start) / 1000)), 250);
-    return () => clearInterval(id);
-  }, [live]);
-  return t;
+export interface CodeClock { /** The current 30s window. */ step: number; /** Seconds left in it. */ left: number }
+export function useClock(live: boolean): CodeClock {
+  const { remaining, period } = useCountdown(30, { running: live, offset: EPOCH % 30 });
+  return { step: Math.floor(EPOCH / 30) + period, left: remaining };
 }
 
 /* ── Tiles ── */
@@ -24,7 +19,7 @@ export function useClock(live: boolean) {
 export function SiteTile({ title, color, size = 32, className }: { title: string; color: string; size?: number; className?: string }) {
   return (
     <span aria-hidden="true"
-      className={cn('grid shrink-0 place-items-center font-semibold text-white shadow-[inset_0_0_0_.5px_rgba(0,0,0,.12)]', className)}
+      className={cn('grid shrink-0 place-items-center font-semibold text-white shadow-[inset_0_0_0_.5px_black] shadow-black/12', className)}
       style={{
         width: size, height: size, borderRadius: size * 0.24, fontSize: size * 0.46,
         background: `linear-gradient(180deg, color-mix(in oklab, ${color} 78%, white), ${color})`,
@@ -34,9 +29,12 @@ export function SiteTile({ title, color, size = 32, className }: { title: string
   );
 }
 
+/** The Wi-Fi tile's color (iOS system cyan, fixed). */
+const WIFI_BLUE = '#32ADE6';
+
 export function WifiTile({ size = 32 }: { size?: number }) {
   return (
-    <span aria-hidden="true" className="grid shrink-0 place-items-center bg-[#32ADE6] text-white" style={{ width: size, height: size, borderRadius: size * 0.24 }}>
+    <span aria-hidden="true" className="grid shrink-0 place-items-center text-white" style={{ width: size, height: size, borderRadius: size * 0.24, background: WIFI_BLUE }}>
       <Icon name="wifi" size={Math.round(size * 0.6)} weight="medium" />
     </span>
   );
@@ -107,12 +105,11 @@ export function RevealButton({ revealed, onToggle }: { revealed: boolean; onTogg
 }
 
 /* ── Verification code: two three-digit halves whose digits roll when the window turns over ── */
-export function useCode(seed: string, now: number) {
-  const step = Math.floor(now / 30);
-  return { code: codeFor(seed, step), left: 30 - (now % 30) };
+export function useCode(seed: string, now: CodeClock) {
+  return { code: codeFor(seed, now.step), left: now.left };
 }
 
-export function CodeValue({ seed, now, size = 'md' }: { seed: string; now: number; size?: 'md' | 'lg' }) {
+export function CodeValue({ seed, now, size = 'md' }: { seed: string; now: CodeClock; size?: 'md' | 'lg' }) {
   const { code, left } = useCode(seed, now);
   const fmt = { minimumIntegerDigits: 3, useGrouping: false };
   return (
@@ -121,7 +118,7 @@ export function CodeValue({ seed, now, size = 'md' }: { seed: string; now: numbe
         <NumberMorph value={Math.floor(code / 1000)} format={fmt} />
         <NumberMorph value={code % 1000} format={fmt} />
       </span>
-      <CountdownRing remaining={left} size={26} thickness={2.4} />
+      <CountdownRing remaining={left} size={26} thickness={2.4} labelSize="sm" />
     </span>
   );
 }

@@ -151,21 +151,23 @@ a:hover {
 :root[data-theme="dark"] .dk-doc {
   --secondary: rgba(255, 255, 255, .09);
 }
-.dk-doc .wb-md :where(h1) {
+/* The page's own prose. Demos (`.docs-demo-canvas`) are apps rendered inside the page: its heading, table and code
+   sizes must not restyle their h1–h3 / th / pre. */
+.dk-doc .wb-md :where(h1:not(.docs-demo-canvas *)) {
   font-size: 28px;
   letter-spacing: -0.5px;
   margin: 6px 0 14px;
 }
-.dk-doc .wb-md :where(h2) {
+.dk-doc .wb-md :where(h2:not(.docs-demo-canvas *)) {
   font-size: 19px;
   margin: 26px 0 8px;
   padding-top: 6px;
 }
-.dk-doc .wb-md :where(h3) {
+.dk-doc .wb-md :where(h3:not(.docs-demo-canvas *)) {
   font-size: 15.5px;
   margin: 18px 0 6px;
 }
-.dk-doc .wb-md :where(th) {
+.dk-doc .wb-md :where(th:not(.docs-demo-canvas *)) {
   font-size: 11.5px;
 }
 /* The page's own table heads and quotes keep the docs' muted ink (MarkdownView reads --muted-foreground, which the
@@ -176,8 +178,21 @@ a:hover {
 :root[data-theme="dark"] .dk-doc .wb-md :where(th, blockquote):not(.docs-demo-canvas *) {
   color: #9C9CA6;
 }
-.dk-doc .wb-md :where(pre) {
+.dk-doc .wb-md :where(pre:not(.docs-demo-canvas *)) {
   font-size: 12.5px;
+}
+/* The page is a MarkdownView, and its prose rules (MarkdownView's `.wb-md` and Docstream's article sheet) are
+   unlayered, so they beat a demo's utility classes on its headings and paragraphs. Roll those back to the layered
+   styles (the demo's utilities, else the browser's) — except where a demo renders Markdown or an editor itself. */
+.dk-doc .docs-demo-canvas :is(h1, h2, h3, h4, h5, h6, p):not(:is(.docs-demo-canvas .wb-md, .docs-demo-canvas [data-docstream], .docs-demo-canvas .docs-article, .docs-demo-canvas .ProseMirror, .docs-demo-canvas .gb) *) {
+  font-size: revert-layer;
+  font-weight: revert-layer;
+  line-height: revert-layer;
+  letter-spacing: revert-layer;
+  margin: revert-layer;
+  padding: revert-layer;
+  border: revert-layer;
+  text-wrap: revert-layer;
 }
 .dk-nav {
   display: block;
