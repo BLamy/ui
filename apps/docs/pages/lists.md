@@ -144,6 +144,12 @@ A `Switch`, `Slider` or `Button` as the `accessory`. Rows without `onPress` are 
 
 {% demo src="lists/control-rows" %}
 
+### Row layouts
+
+`align="top"` pins the leading slot to the first line of a multi-line row and `contentClassName` styles the row surface. Pass `children` for a control that spans the whole row; a `Switch` or `Slider` anywhere in a titled row is labelled by the title; `selected` marks the current row with `aria-current`.
+
+{% demo src="lists/row-layouts" %}
+
 ### Insert, remove and reorder
 
 `ListSection animate` with `onReorder` while editing. Add springs a song in at the top, swiping one away collapses it, and the grips drag (or move with ↑ / ↓).

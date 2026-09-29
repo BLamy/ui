@@ -135,6 +135,12 @@ Resize across the breakpoints, hide the sidebar, resize again — the readout fo
 
 {% demo src="split-view/reminders-tinted" %}
 
+### Header options
+
+`titleOnScroll` hides the inline title until the content scrolls; `largeTitleTrailing` puts content (a count, a button) on the large title's line, and `largeTitleClassName` aligns it with the content. `SplitViewSection variant="prominent"` draws a large section label.
+
+{% demo src="split-view/header-options" %}
+
 ## Nested stacks
 
 A column can host its own push/pop stack — `<SplitViewStack>` inside it, or `<SplitViewDetail stack>` as a shorthand. Each page can have its own `SplitViewHeader` and `SplitViewContent`; a pushed page's back button pops the stack and is labelled with the page below's title. The leading-edge swipe, Esc and the back button always pop the **innermost** level: the column stack only moves once the nested stack is back at its root. A `NavigationStack` nested in a column gets the same treatment.
