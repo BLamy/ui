@@ -1,7 +1,7 @@
 {
   "name": "apple-mail",
   "title": "Apple Mail clone",
-  "description": "Apple Mail: Favorites, Smart Mailboxes and iCloud sections with rolling unread counts; a message list with unread dots, flags, attachments, previews and relative times; swipe actions, edit mode, search and an unread filter; a message view with a quoted thread and reply, flag, move, archive and trash; and a compose sheet. Three tiled columns on desktop, an overlay sidebar on iPad, a NavigationStack with large titles on iPhone. Composed from SplitView, NavigationStack, List, SheetContent, MarkdownEditor and DropdownMenu.",
+  "description": "Apple Mail: Favorites, Smart Mailboxes and iCloud sections with rolling unread counts; a message list with unread dots, flags, attachments, previews and relative times; swipe actions (ListRow), edit mode, search and an unread filter; a message view with a quoted thread and reply, flag, move, archive and trash; and a compose sheet. One SplitView at every size: three tiled columns on desktop, an overlay sidebar on iPad, a stack with large titles and back buttons on iPhone. Composed from SplitView (sections, large titles), ListRow, Icon, SearchField, SheetContent, MarkdownEditor and DropdownMenu.",
   "categories": ["email", "productivity", "application"],
   "files": [
     "page.tsx",
@@ -10,10 +10,7 @@
     "message-list.tsx",
     "message-view.tsx",
     "compose.tsx",
-    "phone.tsx",
     "parts.tsx",
-    "swipe-row.tsx",
-    "glyphs.tsx",
     "use-mail.ts",
     "data.ts"
   ]
