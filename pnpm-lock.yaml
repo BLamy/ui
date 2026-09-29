@@ -251,11 +251,11 @@ importers:
   apps/docs:
     dependencies:
       '@brett_lamy/docstream':
-        specifier: 1.4.0
-        version: 1.4.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
+        specifier: 1.5.0
+        version: 1.5.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@brett_lamy/docstream-editor':
-        specifier: 1.4.0
-        version: 1.4.0(c69d0baf4fe269b6285422bf266259cc)
+        specifier: 1.5.0
+        version: 1.5.0(c69d0baf4fe269b6285422bf266259cc)
       '@brett_lamy/registry':
         specifier: workspace:*
         version: link:../../registry
@@ -314,11 +314,11 @@ importers:
   packages/ui:
     dependencies:
       '@brett_lamy/docstream':
-        specifier: 1.4.0
-        version: 1.4.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
+        specifier: 1.5.0
+        version: 1.5.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@brett_lamy/docstream-editor':
-        specifier: 1.4.0
-        version: 1.4.0(c69d0baf4fe269b6285422bf266259cc)
+        specifier: 1.5.0
+        version: 1.5.0(c69d0baf4fe269b6285422bf266259cc)
       '@pierre/diffs':
         specifier: ^1.3.6
         version: 1.3.6(@shikijs/themes@4.4.3)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1164,8 +1164,8 @@ packages:
   '@braintree/sanitize-url@7.1.2':
     resolution: {integrity: sha512-jigsZK+sMF/cuiB7sERuo9V7N9jx+dhmHHnQyDSVdpZwVutaBu7WvNYqMDLSgFgfB30n452TP3vjDAvFC973mA==}
 
-  '@brett_lamy/docstream-editor@1.4.0':
-    resolution: {integrity: sha512-rn3o0NyUTNqMeO2z6sH/uyINKlPK1HJFPG56iI55hbcUu+GS7VWPlsRPG6Zd3sXmkAx+hRwgUQiCYsKBo39dwA==}
+  '@brett_lamy/docstream-editor@1.5.0':
+    resolution: {integrity: sha512-1SQnezSA84NP3QnSSTsl5THcoGUW64FCJtQVARxiunveeTjWnigLqzC1FJp3Dy7CdAO+bvTdfpdVEHq1U079vg==}
     peerDependencies:
       '@tiptap/core': ^3.26.1
       '@tiptap/extension-code': ^3.26.1
@@ -1180,8 +1180,8 @@ packages:
       react: '>=18'
       react-dom: '>=18'
 
-  '@brett_lamy/docstream@1.4.0':
-    resolution: {integrity: sha512-xXvAlpWIOlPDTmoTCatt1SyCuKqxav/6ETU+ryrJZRn+x2YA8iP1W+xbJ5NxhYJ7OBzpKdRb4sYU4sdswzhITw==}
+  '@brett_lamy/docstream@1.5.0':
+    resolution: {integrity: sha512-W9YUIubE9zHtPDrjfAZ02Qe3TF7Nm4wsWeIgisU8BU9xlWo9AZbNkj/ncro/pTVsrAjmZTLtFBP9xJ6RTc/xTA==}
     peerDependencies:
       '@agent-wasm/core': '>=0.4.0'
       '@brett_lamy/viz-engine': '>=0.2.0'
@@ -1497,8 +1497,14 @@ packages:
   '@internationalized/date@3.12.3':
     resolution: {integrity: sha512-fuLX+3ZKLsxI73y8b01EG/WjHb6gE6weCqlfawPO27kBWGMh9G1yH6Csv1uU7/cac9H2GHmOMt6CjmuQ1aia4Q==}
 
+  '@internationalized/date@3.12.4':
+    resolution: {integrity: sha512-M1dEn4c1U1HsSlaVR8upZtSqvXrTkHDfv18H01uCSJyjVLDxnBR38v/fMxecmlwXKR4i9HeZcmgQAPE6A+aGJQ==}
+
   '@internationalized/number@3.6.7':
     resolution: {integrity: sha512-3ji1fcrT+FPAK86UqEhB/psHixYo6niWPJtt7+qRaYFynt/BaJG8GhAPimtWUpEiVSTq8ZM8L5psMxGquiB/Vg==}
+
+  '@internationalized/number@3.6.8':
+    resolution: {integrity: sha512-8UmMFia46DUt+k97zKd9fKWXcWHR+k8ae3eYzILETuT2KbIvLyOfac7zesw+sJdRAAZ7Q9pM1Mk22aXp2LD0Ig==}
 
   '@internationalized/string@3.2.10':
     resolution: {integrity: sha512-PDx6//vHSpRnHfxqMqto11zQvhsaU74O3mKv2F/0eicGZcl9NLjQmGlbHz/LsJh5tLKp4A4L7ZVTzN1/MmMTvA==}
@@ -7558,6 +7564,12 @@ packages:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
       react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
 
+  react-aria@3.52.1:
+    resolution: {integrity: sha512-fdZZruC9/x/joCg0mhKGs5aHpwrXLCSZ4GOJmhhYyiE0ffyEsk9MLFt9LCOCF9tn8ErTD+UDQP4oDUSlZkmpCg==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+      react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+
   react-docgen-typescript@2.4.0:
     resolution: {integrity: sha512-ZtAp5XTO5HRzQctjPU0ybY0RRCQO19X/8fxn3w7y2VVTUbGHDKULPTL4ky3vB05euSgG5NpALhEhDPvQ56wvXg==}
     peerDependencies:
@@ -7599,6 +7611,11 @@ packages:
 
   react-stately@3.49.0:
     resolution: {integrity: sha512-13iNq2KzBrRAzxRc+n53hgROfIistiYY/sPtIhCw1qUB7/kmo+X1xEU2uiS5zcCIrc55AUPwoHqOIIpKWSwB9A==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+
+  react-stately@3.50.0:
+    resolution: {integrity: sha512-TnckvpDQGU0672wEaLZqdzvhuSeXWjgW6vijMWxiKOxc8CosQUfPGISdcZyfHqjX3XMjEtRxj4w9HumvX4h4mw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
 
@@ -10002,9 +10019,9 @@ snapshots:
 
   '@braintree/sanitize-url@7.1.2': {}
 
-  '@brett_lamy/docstream-editor@1.4.0(c69d0baf4fe269b6285422bf266259cc)':
+  '@brett_lamy/docstream-editor@1.5.0(c69d0baf4fe269b6285422bf266259cc)':
     dependencies:
-      '@brett_lamy/docstream': 1.4.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
+      '@brett_lamy/docstream': 1.5.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))
       '@tiptap/core': 3.30.5(@tiptap/pm@3.30.5)
       '@tiptap/extension-code': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))
       '@tiptap/extension-code-block': 3.30.5(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
@@ -10018,13 +10035,14 @@ snapshots:
       gpu-lexer: 0.0.2
       lucide-react: 1.37.0(react@19.0.0)
       react: 19.0.0
+      react-aria: 3.52.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-dom: 19.0.0(react@19.0.0)
     transitivePeerDependencies:
       - '@agent-wasm/core'
       - '@brett_lamy/viz-engine'
       - vite
 
-  '@brett_lamy/docstream@1.4.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))':
+  '@brett_lamy/docstream@1.5.0(@agent-wasm/core@0.4.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@swc/helpers@0.5.18)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0)))(@brett_lamy/viz-engine@0.2.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.50.0)(yaml@2.9.0))':
     dependencies:
       framer-motion: 13.4.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       gpu-lexer: 0.0.2
@@ -10032,6 +10050,7 @@ snapshots:
       lucide-react: 1.37.0(react@19.0.0)
       mermaid: 11.17.2
       react: 19.0.0
+      react-aria: 3.52.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-dom: 19.0.0(react@19.0.0)
       rrweb: 2.0.0-alpha.20
       yaml: 2.9.0
@@ -10311,7 +10330,15 @@ snapshots:
     dependencies:
       '@swc/helpers': 0.5.18
 
+  '@internationalized/date@3.12.4':
+    dependencies:
+      '@swc/helpers': 0.5.18
+
   '@internationalized/number@3.6.7':
+    dependencies:
+      '@swc/helpers': 0.5.18
+
+  '@internationalized/number@3.6.8':
     dependencies:
       '@swc/helpers': 0.5.18
 
@@ -17358,6 +17385,20 @@ snapshots:
       react-stately: 3.49.0(react@19.0.0)
       use-sync-external-store: 1.6.0(react@19.0.0)
 
+  react-aria@3.52.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+    dependencies:
+      '@internationalized/date': 3.12.4
+      '@internationalized/number': 3.6.8
+      '@internationalized/string': 3.2.10
+      '@react-types/shared': 3.36.1(react@19.0.0)
+      '@swc/helpers': 0.5.18
+      aria-hidden: 1.2.6
+      clsx: 2.1.1
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      react-stately: 3.50.0(react@19.0.0)
+      use-sync-external-store: 1.6.0(react@19.0.0)
+
   react-docgen-typescript@2.4.0(typescript@6.0.3):
     dependencies:
       typescript: 6.0.3
@@ -17406,6 +17447,16 @@ snapshots:
     dependencies:
       '@internationalized/date': 3.12.3
       '@internationalized/number': 3.6.7
+      '@internationalized/string': 3.2.10
+      '@react-types/shared': 3.36.1(react@19.0.0)
+      '@swc/helpers': 0.5.18
+      react: 19.0.0
+      use-sync-external-store: 1.6.0(react@19.0.0)
+
+  react-stately@3.50.0(react@19.0.0):
+    dependencies:
+      '@internationalized/date': 3.12.4
+      '@internationalized/number': 3.6.8
       '@internationalized/string': 3.2.10
       '@react-types/shared': 3.36.1(react@19.0.0)
       '@swc/helpers': 0.5.18
