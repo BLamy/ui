@@ -1,7 +1,7 @@
 {
   "name": "apple-notes",
   "title": "Apple Notes clone",
-  "description": "Apple Notes: iCloud and On My Mac folders with All iCloud, Recently Deleted and tags; notes grouped Pinned · Today · Previous 7 Days… with snippets, or a gallery of thumbnails; a Markdown note editor with checklists and tables; pin, lock, share, move, delete, search, swipe actions and new notes that spring into place. Three tiled columns on desktop, an overlay sidebar on iPad, a NavigationStack with large titles on iPhone. Composed from SplitView, NavigationStack, List, MarkdownEditor, Segmented and DropdownMenu.",
+  "description": "Apple Notes: iCloud and On My Mac folders with All iCloud, Recently Deleted and tags; notes grouped Pinned · Today · Previous 7 Days… with snippets, or a gallery of thumbnails; a Markdown note editor with checklists and tables; pin, lock, share, move, delete, search, swipe actions (ListRow) and new notes that spring into place. One SplitView at every size: three tiled columns on desktop (the list steps aside for the gallery), an overlay sidebar on iPad, a stack with large titles and back buttons on iPhone. Composed from SplitView (sections, large titles, supplementaryVisible), ListRow, Icon, SearchField, MarkdownEditor (classNames), Segmented and DropdownMenu.",
   "categories": ["notes", "productivity", "application"],
   "files": [
     "page.tsx",
@@ -9,10 +9,7 @@
     "folders.tsx",
     "note-list.tsx",
     "note-editor.tsx",
-    "phone.tsx",
     "parts.tsx",
-    "swipe-row.tsx",
-    "glyphs.tsx",
     "use-notes.ts",
     "data.ts"
   ]

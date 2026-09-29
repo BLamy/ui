@@ -2,6 +2,8 @@
    written in Markdown (the first line is the title, as in Notes; checklists and tables included). Dates are
    relative to a fixed "now" so the date groups read the same on every render. */
 
+import type { IconName } from '@brett_lamy/ui';
+
 /** The clock the block reads: Sunday, September 27 2026, 9:41 AM. */
 export const NOW = new Date(2026, 8, 27, 9, 41);
 const at = (daysAgo: number, h: number, m: number) => new Date(2026, 8, 27 - daysAgo, h, m);
@@ -23,17 +25,17 @@ export interface Folder {
   title: string;
   /** Smart folders gather notes from several folders. */
   match?: (n: Note) => boolean;
-  glyph?: 'folder' | 'trash' | 'folderGear';
+  icon?: IconName;
 }
 
 const live = (n: Note) => n.folder !== 'deleted';
 export const ICLOUD: Folder[] = [
-  { id: 'all', title: 'All iCloud', glyph: 'folderGear', match: (n) => live(n) && !n.folder.startsWith('mac') },
+  { id: 'all', title: 'All iCloud', icon: 'folder-badge-gear', match: (n) => live(n) && !n.folder.startsWith('mac') },
   { id: 'notes', title: 'Notes' },
   { id: 'recipes', title: 'Recipes' },
   { id: 'travel', title: 'Travel' },
   { id: 'work', title: 'Work' },
-  { id: 'deleted', title: 'Recently Deleted', glyph: 'trash' },
+  { id: 'deleted', title: 'Recently Deleted', icon: 'trash' },
 ];
 export const ON_MY_MAC: Folder[] = [
   { id: 'mac-notes', title: 'Notes' },

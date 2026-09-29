@@ -1,83 +1,80 @@
 /* The message list: unread dots and flags in the leading gutter, sender · time, subject, a two-line preview,
-   swipe actions on every row, and an edit mode whose check circles slide in from the leading edge. Rows spring
-   in and collapse out as mail arrives, moves or gets filtered; the selection highlight glides between rows. */
-import type { ReactNode } from 'react';
-import { Haptics, Icon, cn, springCss, springs, useMotion } from '@brett_lamy/ui';
+   swipe actions on every row (ListRow's leading / trailing actions; a long swipe fires the outermost), and an
+   edit mode whose check circles slide in from the leading edge. Rows spring in and collapse out as mail
+   arrives, moves or gets filtered; the selection highlight glides between rows. */
+import { useRef } from 'react';
+import { Haptics, Icon, ListRow, cn, springs, useMotion, useSplitView } from '@brett_lamy/ui';
 import { preview, relativeTime, type Message } from './data';
-import { G } from './glyphs';
-import { SwipeRow } from './swipe-row';
 import type { MailState } from './use-mail';
 
-export function MessageRow({ mail, m, selected, chevron, onOpen }: {
-  mail: MailState; m: Message; selected: boolean; chevron?: boolean; onOpen: (id: string) => void;
+/* ListRow draws a full-bleed card row; Mail's rows sit on the column (transparent) with a 32px gutter for the
+   unread dot, which narrows while the edit circles are showing. */
+const ROW = cn(
+  '[&>[data-slot=list-row-content]]:bg-transparent [&>[data-slot=list-row-content]]:transition-[padding]',
+  '[&>[data-slot=list-row-content]]:duration-spring-snappy [&>[data-slot=list-row-content]]:ease-spring-snappy',
+);
+
+function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
+  mail: MailState; m: Message; selected: boolean; chevron?: boolean; isEdge?: (x: number) => boolean; onOpen: (id: string) => void;
 }) {
   const { motion } = useMotion();
-  const checked = mail.checked.has(m.id);
   const on = selected && !mail.editing;
   return (
-    <SwipeRow disabled={mail.editing}
-      leading={[{
-        label: m.unread ? 'Read' : 'Unread', color: 'var(--bl-tint)', onAction: () => mail.toggleRead(m.id),
-        icon: <G name={m.unread ? 'envelopeOpen' : 'envelopeBadge'} size={22} />,
-      }]}
-      trailing={[
-        { label: m.flagged ? 'Unflag' : 'Flag', color: '#FF9F0A', icon: <G name="flagFill" size={22} />, onAction: () => mail.toggleFlag(m.id) },
-        { label: 'Archive', color: '#AF52DE', icon: <G name="archive" size={22} />, onAction: () => mail.archive([m.id]) },
-        { label: 'Trash', color: 'var(--bl-red)', icon: <G name="trash" size={22} />, onAction: () => mail.trash([m.id]) },
-      ]}>
-      <button type="button" data-message-row="" aria-current={on || undefined}
-        aria-label={`${m.unread ? 'Unread, ' : ''}${m.flagged ? 'Flagged, ' : ''}${m.from.name}, ${m.subject}, ${relativeTime(m.date)}`}
-        onClick={() => { if (mail.editing) mail.toggleChecked(m.id); else { Haptics.selection(); onOpen(m.id); } }}
-        className="bl-btn group/row relative flex w-full cursor-pointer items-stretch border-0 bg-transparent py-[9px] pr-4 pl-1 text-left [font-family:inherit] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
+    <ListRow edit={mail.editing} checked={mail.checked.has(m.id)} divider={false} isEdge={isEdge}
+      className={cn(ROW, mail.editing ? '[&>[data-slot=list-row-content]]:pl-2' : '[&>[data-slot=list-row-content]]:pl-8')}
+      onPress={() => { if (mail.editing) mail.toggleChecked(m.id); else { Haptics.selection(); onOpen(m.id); } }}
+      // Index 0 is the outermost action: the one a long swipe fires.
+      leadingActions={[{ label: m.unread ? 'Read' : 'Unread', icon: m.unread ? 'envelope-open' : 'envelope-badge', onAction: () => mail.toggleRead(m.id) }]}
+      trailingActions={[
+        { label: 'Trash', icon: 'trash', destructive: true, onAction: () => mail.trash([m.id]) },
+        { label: 'Archive', icon: 'archivebox', tint: '#AF52DE', onAction: () => mail.archive([m.id]) },
+        { label: m.flagged ? 'Unflag' : 'Flag', icon: 'flag-fill', tint: '#FF9F0A', onAction: () => mail.toggleFlag(m.id) },
+      ]}
+      title={<>
+        {/* Positioned against the row body (which starts where the text does). */}
         {on ? (
           <motion.span layoutId="mail-selection" transition={springs.snappy} aria-hidden="true"
-            className="absolute inset-x-2 inset-y-[2px] rounded-[10px] bg-primary" />
+            className="absolute inset-y-[2px] -right-2 -left-6 rounded-[10px] bg-primary" />
         ) : null}
-        <span aria-hidden="true" className={cn('relative flex shrink-0 items-center justify-center overflow-hidden', mail.editing ? 'w-9 opacity-100' : 'w-0 opacity-0')}
-          style={{ transition: springCss(['width', 'opacity'], 'snappy') }}>
-          <span className={cn('grid size-[22px] place-items-center rounded-full', checked ? 'bg-primary text-primary-foreground' : 'shadow-[inset_0_0_0_1.6px_var(--bl-label3)]')}
-            style={{ transition: springCss('background-color', 'snappy') }}>
-            {checked ? <Icon name="check" size={13} sw={3} /> : null}
-          </span>
-        </span>
-        <span aria-hidden="true" className="relative flex w-7 shrink-0 flex-col items-center gap-[7px] pt-[7px]">
+        <span aria-hidden="true" className={cn('absolute top-4 right-full flex flex-col items-center gap-[7px]', mail.editing ? 'w-5' : 'w-7')}>
           <span className={cn('size-[10px] rounded-full transition-[scale,opacity] duration-spring-snappy ease-spring-bouncy',
             m.unread ? 'scale-100 opacity-100' : 'scale-0 opacity-0', on ? 'bg-primary-foreground' : 'bg-primary')} />
-          {m.flagged ? <G name="flagFill" size={13} sw={2} className={on ? 'text-primary-foreground' : 'text-[#FF9F0A]'} /> : null}
+          {m.flagged ? <Icon name="flag-fill" size={13} weight="medium" className={on ? 'text-primary-foreground' : 'text-[#FF9F0A]'} /> : null}
         </span>
-        <span className={cn('relative min-w-0 flex-1', on && 'text-primary-foreground')}>
+        <span className={cn('relative block py-0.5 whitespace-normal', on && 'text-primary-foreground')}>
+          <span className="sr-only">{m.unread ? 'Unread, ' : ''}{m.flagged ? 'Flagged, ' : ''}</span>
           <span className="flex items-center gap-1.5">
             <span className="min-w-0 flex-1 truncate text-[16px] leading-[1.3] font-semibold tracking-[-.2px]">{m.from.name}</span>
-            {m.attachments?.length ? <G name="paperclip" size={14} sw={2} className={on ? 'opacity-80' : 'text-muted-foreground'} /> : null}
+            {m.attachments?.length ? <Icon name="paperclip" size={14} weight="medium" className={on ? 'opacity-80' : 'text-muted-foreground'} /> : null}
             <span className={cn('shrink-0 text-[14px] tabular-nums', on ? 'opacity-85' : 'text-muted-foreground')}>{relativeTime(m.date)}</span>
-            {chevron ? <Icon name="chev" size={13} sw={2.6} className="text-bl-label3" /> : null}
+            {chevron ? <Icon name="chevron-right" size={13} sw={2.6} className="text-bl-label3" /> : null}
           </span>
           <span className="block truncate text-[15px] leading-[1.35]">{m.subject}</span>
           <span className={cn('line-clamp-2 text-[14.5px] leading-[1.35]', on ? 'opacity-80' : 'text-muted-foreground')}>{preview(m)}</span>
         </span>
-        <span aria-hidden="true" className={cn('absolute right-0 bottom-0 left-8 h-px bg-border', on && 'opacity-0')} />
-      </button>
-    </SwipeRow>
+        <span aria-hidden="true" className={cn('absolute -right-4 bottom-0 left-0 h-px bg-border', on && 'opacity-0')} />
+      </>} />
   );
 }
 
-/** Large title, search, and the rows. `selectable` draws the selection (split layout); the phone pushes instead. */
-export function MessageList({ mail, onOpen, selectable, largeTitle = true, search }: {
-  mail: MailState; onOpen: (id: string) => void; selectable: boolean; largeTitle?: boolean; search?: ReactNode;
-}) {
+/** The rows. Wide layouts draw the selection; on the phone rows show a chevron and push the message. */
+export function MessageList({ mail, onOpen }: { mail: MailState; onOpen: (id: string) => void }) {
   const { motion, AnimatePresence, LayoutGroup } = useMotion();
+  const s = useSplitView();
+  const list = useRef<HTMLDivElement | null>(null);
+  // On the phone the leading edge belongs to the back swipe.
+  const isEdge = s.collapsed ? (x: number) => x - (list.current?.getBoundingClientRect().left ?? 0) < 28 : undefined;
   return (
     <div className="pb-16">
-      {largeTitle ? <h1 className="m-0 px-4 pt-1 pb-2 text-[30px] leading-[1.15] font-bold tracking-[-.5px]">{mail.box.title}</h1> : null}
-      {search}
       <LayoutGroup id={`mail-${mail.boxId}`}>
-        <div key={mail.boxId} role="list" aria-label={mail.box.title}>
+        <div ref={list} key={mail.boxId} role="list" aria-label={mail.box.title}>
           <AnimatePresence initial={false}>
             {mail.list.map((m) => (
               <motion.div key={m.id} role="listitem" className="overflow-hidden"
                 initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                 transition={{ height: springs.smooth, opacity: { duration: 0.18 } }}>
-                <MessageRow mail={mail} m={m} selected={selectable && mail.selectedId === m.id} chevron={!selectable} onOpen={onOpen} />
+                <MessageRow mail={mail} m={m} selected={!s.collapsed && mail.selectedId === m.id} chevron={s.collapsed}
+                  isEdge={isEdge} onOpen={onOpen} />
               </motion.div>
             ))}
           </AnimatePresence>

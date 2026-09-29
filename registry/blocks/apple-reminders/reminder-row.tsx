@@ -1,10 +1,19 @@
 /* A reminder: the completion circle, title with priority marks, notes, due date (red when overdue), link, tags,
-   flag, subtasks that fold open, and the info button that opens the details sheet. */
-import { useState } from 'react';
-import { Chevron, cn } from '@brett_lamy/ui';
+   flag, subtasks that fold open, and the info button that opens the details sheet. Also the list icon. */
+import { useState, type CSSProperties } from 'react';
+import { Chevron, Icon, cn, type IconName } from '@brett_lamy/ui';
 import { dueLabel, type Reminder } from './data';
-import { Glyph } from './glyphs';
 import { useReminders } from './store';
+
+/** A list's icon: a colored circle with a white glyph. */
+export function ListIcon({ glyph, color, size = 30, className }: { glyph: IconName; color: string; size?: number; className?: string }) {
+  return (
+    <span aria-hidden="true" className={cn('grid shrink-0 place-items-center rounded-full bg-(--list-color) text-white', className)}
+      style={{ width: size, height: size, '--list-color': color } as CSSProperties}>
+      <Icon name={glyph} size={size * 0.58} weight="semibold" />
+    </span>
+  );
+}
 
 /** The circle: a ring that fills with the list color on the bouncy spring when completed. */
 export function CheckCircle({ done, color, label, size = 24, onToggle }: { done: boolean; color: string; label: string; size?: number; onToggle: () => void }) {
@@ -39,11 +48,11 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
                 {r.priority ? <span className="mr-1 font-semibold" style={{ color: r.done ? undefined : color }}>{'!'.repeat(r.priority)}</span> : null}
                 {r.title}
               </div>
-              {r.flagged ? <Glyph name="flag" size={16} className="mt-0.5 text-[#FF9500]" /> : null}
+              {r.flagged ? <Icon name="flag-fill" size={16} className="mt-0.5 text-[#FF9500]" /> : null}
               <button type="button" aria-label={`Details for “${r.title}”`} onClick={() => api.openDetails(r.id)}
                 className={cn('bl-btn -my-0.5 grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-primary transition-opacity duration-150',
                   phone ? 'opacity-100' : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100')}>
-                <Glyph name="info" size={22} sw={1.6} />
+                <Icon name="info" size={22} weight="light" />
               </button>
             </div>
             {r.notes ? <div className="mt-0.5 line-clamp-2 text-[15px] leading-[1.35] text-muted-foreground">{r.notes}</div> : null}
@@ -55,7 +64,7 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
             ) : null}
             {r.url ? (
               <span className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-[8px] bg-bl-fill px-2 py-1 text-[13px] text-muted-foreground">
-                <Glyph name="link" size={13} sw={2.2} /><span className="truncate">{r.url}</span>
+                <Icon name="link" size={13} weight="semibold" /><span className="truncate">{r.url}</span>
               </span>
             ) : null}
             {subs.length ? (

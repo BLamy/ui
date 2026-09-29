@@ -1,41 +1,44 @@
 /* The notes list, grouped Pinned · Today · Yesterday · Previous 7 Days · Previous 30 Days · months, and the
    gallery of thumbnails. Rows are one flat, keyed list with the section headers in it, so a note that gets
    pinned (or edited to the top of Today) glides to its new place on the smooth spring instead of jumping;
-   new notes grow in, deleted ones collapse out. Swipe right to pin, left to lock or delete. */
-import type { ReactNode } from 'react';
-import { Haptics, cn, springs, useMotion } from '@brett_lamy/ui';
+   new notes grow in, deleted ones collapse out. Swipe right to pin, left to lock or delete (ListRow actions). */
+import { useRef, type ReactNode } from 'react';
+import { Haptics, Icon, ListRow, cn, springs, useMotion, useSplitView } from '@brett_lamy/ui';
 import { FOLDERS, shortDate, snippet, title, type Note } from './data';
-import { G } from './glyphs';
-import { SwipeRow } from './swipe-row';
 import type { NotesState } from './use-notes';
 
 const folderName = (id: string) => FOLDERS.find((f) => f.id === id)?.title ?? 'Notes';
 
-function NoteRow({ notes, n, selected, inset, first, last, onOpen }: {
-  notes: NotesState; n: Note; selected: boolean; inset?: boolean; first: boolean; last: boolean; onOpen: (id: string) => void;
+/* ListRow draws a card row: kept for the phone's inset cards; on the column it's transparent, 20px in. */
+const PLAIN = '[&>[data-slot=list-row-content]]:bg-transparent [&>[data-slot=list-row-content]]:pl-5';
+
+function NoteRow({ notes, n, selected, inset, first, last, isEdge, onOpen }: {
+  notes: NotesState; n: Note; selected: boolean; inset?: boolean; first: boolean; last: boolean;
+  isEdge?: (x: number) => boolean; onOpen: (id: string) => void;
 }) {
   const { motion } = useMotion();
   const locked = !!n.locked;
   const showFolder = !!notes.folder.match || !!notes.tag || !!notes.query;
   return (
-    <SwipeRow className={cn(inset && 'bg-card', inset && first && 'rounded-t-[12px]', inset && last && 'rounded-b-[12px]')}
-      leading={n.folder === 'deleted' ? [] : [{
-        label: n.pinned ? 'Unpin' : 'Pin', color: '#FF9F0A', onAction: () => notes.togglePin(n.id),
-        icon: <G name={n.pinned ? 'pinSlash' : 'pinFill'} size={22} />,
+    <ListRow divider={false} isEdge={isEdge} onPress={() => { Haptics.selection(); onOpen(n.id); }}
+      className={cn(inset ? cn(first && 'rounded-t-[12px]', last && 'rounded-b-[12px]') : PLAIN)}
+      // Index 0 is the outermost action: the one a long swipe fires.
+      leadingActions={n.folder === 'deleted' ? undefined : [{
+        label: n.pinned ? 'Unpin' : 'Pin', icon: n.pinned ? 'pushpin-slash' : 'pushpin-fill', tint: '#FF9F0A', onAction: () => notes.togglePin(n.id),
       }]}
-      trailing={[
-        { label: locked ? 'Unlock' : 'Lock', color: '#8E8E93', icon: <G name={locked ? 'lockOpen' : 'lock'} size={22} />, onAction: () => notes.toggleLock(n.id) },
-        { label: 'Delete', color: 'var(--bl-red)', icon: <G name="trash" size={22} />, onAction: () => notes.remove(n.id) },
-      ]}>
-      <button type="button" data-note-row="" aria-current={selected || undefined}
-        onClick={() => { Haptics.selection(); onOpen(n.id); }}
-        className={cn('bl-btn relative flex w-full cursor-pointer items-center gap-2 border-0 py-[10px] pr-4 text-left [font-family:inherit] text-foreground outline-none',
-          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset', inset ? 'bg-card pl-4' : 'bg-transparent pl-5')}>
+      trailingActions={[
+        { label: 'Delete', icon: 'trash', destructive: true, onAction: () => notes.remove(n.id) },
+        { label: locked ? 'Unlock' : 'Lock', icon: locked ? 'lock-open' : 'lock', tint: '#8E8E93', onAction: () => notes.toggleLock(n.id) },
+      ]}
+      trailing={locked ? <Icon name={notes.isLocked(n) ? 'lock-fill' : 'lock-open'} size={16}
+        className={cn('relative', selected ? 'text-primary-foreground' : 'text-muted-foreground')} /> : null}
+      title={<>
+        {/* Positioned against the row body (which starts where the text does). */}
         {selected ? (
           <motion.span layoutId="note-selection" transition={springs.snappy} aria-hidden="true"
-            className="absolute inset-x-2 inset-y-[2px] rounded-[9px] bg-primary" />
+            className="absolute inset-y-[2px] -right-2 -left-3 rounded-[9px] bg-primary" />
         ) : null}
-        <span className={cn('relative min-w-0 flex-1', selected && 'text-primary-foreground')}>
+        <span className={cn('relative block py-[3px]', selected && 'text-primary-foreground')}>
           <span className="block truncate text-[15.5px] leading-[1.35] font-semibold tracking-[-.15px]">{title(n)}</span>
           <span className="flex gap-2 text-[14px] leading-[1.35]">
             <span className={cn('shrink-0 font-medium', selected ? 'opacity-90' : 'text-foreground/80')}>{shortDate(n.updated)}</span>
@@ -43,14 +46,12 @@ function NoteRow({ notes, n, selected, inset, first, last, onOpen }: {
           </span>
           {showFolder ? (
             <span className={cn('mt-0.5 flex items-center gap-1 text-[12.5px]', selected ? 'opacity-75' : 'text-muted-foreground')}>
-              <G name="folder" size={13} sw={2} />{folderName(n.folder === 'deleted' ? n.deletedFrom ?? 'notes' : n.folder)}
+              <Icon name="folder" size={13} weight="medium" />{folderName(n.folder === 'deleted' ? n.deletedFrom ?? 'notes' : n.folder)}
             </span>
           ) : null}
         </span>
-        {locked ? <G name={notes.isLocked(n) ? 'lockFill' : 'lockOpen'} size={16} className={cn('relative', selected ? 'text-primary-foreground' : 'text-muted-foreground')} /> : null}
-        {!last ? <span aria-hidden="true" className={cn('absolute right-0 bottom-0 h-px bg-border', inset ? 'left-4' : 'left-5', selected && 'opacity-0')} /> : null}
-      </button>
-    </SwipeRow>
+        {!last ? <span aria-hidden="true" className={cn('absolute -right-4 bottom-0 left-0 h-px bg-border', selected && 'opacity-0')} /> : null}
+      </>} />
   );
 }
 
@@ -61,16 +62,20 @@ const Header = ({ children, inset }: { children: ReactNode; inset?: boolean }) =
 function Empty({ notes }: { notes: NotesState }) {
   return (
     <div className="px-6 pt-20 text-center">
-      <div className="mb-2 grid place-items-center text-bl-label3"><G name="note" size={44} sw={1.3} /></div>
+      <div className="mb-2 grid place-items-center text-bl-label3"><Icon name="note" size={44} sw={1.3} /></div>
       <div className="text-[18px] font-semibold text-muted-foreground">{notes.query ? 'No Results' : 'No Notes'}</div>
       {notes.query ? <div className="mt-1 text-[14px] text-bl-label3">Nothing matches “{notes.query}”.</div> : null}
     </div>
   );
 }
 
-/** `selectable` draws the selection (split layout); `inset` draws iOS inset-grouped cards (phone). */
-export function NoteList({ notes, onOpen, selectable, inset }: { notes: NotesState; onOpen: (id: string) => void; selectable: boolean; inset?: boolean }) {
+/** Wide layouts draw the selection; `inset` draws iOS inset-grouped cards (the phone). */
+export function NoteList({ notes, onOpen, inset }: { notes: NotesState; onOpen: (id: string) => void; inset?: boolean }) {
   const { motion, AnimatePresence, LayoutGroup } = useMotion();
+  const s = useSplitView();
+  const list = useRef<HTMLDivElement | null>(null);
+  // On the phone the leading edge belongs to the back swipe.
+  const isEdge = s.collapsed ? (x: number) => x - (list.current?.getBoundingClientRect().left ?? 0) < 28 : undefined;
   const items = notes.groups.flatMap((g) => [
     { key: `h:${g.title}`, header: g.title } as const,
     ...g.notes.map((n, i) => ({ key: n.id, note: n, first: i === 0, last: i === g.notes.length - 1 }) as const),
@@ -78,7 +83,7 @@ export function NoteList({ notes, onOpen, selectable, inset }: { notes: NotesSta
   return (
     <div className={cn('pb-16', inset && 'px-4')}>
       <LayoutGroup id={`notes-${notes.folderId}-${notes.tag}`}>
-        <div key={`${notes.folderId}-${notes.tag}`}>
+        <div ref={list} key={`${notes.folderId}-${notes.tag}`}>
           <AnimatePresence initial={false}>
             {items.map((it) => (
               <motion.div key={it.key} layout="position" className="overflow-hidden"
@@ -86,8 +91,8 @@ export function NoteList({ notes, onOpen, selectable, inset }: { notes: NotesSta
                 transition={{ layout: springs.smooth, height: springs.smooth, opacity: { duration: 0.18 } }}>
                 {'header' in it
                   ? <Header inset={inset}>{it.header}</Header>
-                  : <NoteRow notes={notes} n={it.note} first={it.first} last={it.last} inset={inset}
-                      selected={selectable && notes.selectedId === it.note.id} onOpen={onOpen} />}
+                  : <NoteRow notes={notes} n={it.note} first={it.first} last={it.last} inset={inset} isEdge={isEdge}
+                      selected={!s.collapsed && notes.selectedId === it.note.id} onOpen={onOpen} />}
               </motion.div>
             ))}
           </AnimatePresence>
@@ -100,7 +105,7 @@ export function NoteList({ notes, onOpen, selectable, inset }: { notes: NotesSta
 
 /* ── Gallery ── */
 function Thumbnail({ n, locked }: { n: Note; locked: boolean }) {
-  if (locked) return <div className="grid h-full place-items-center text-muted-foreground"><G name="lockFill" size={30} /></div>;
+  if (locked) return <div className="grid h-full place-items-center text-muted-foreground"><Icon name="lock-fill" size={30} /></div>;
   const lines = n.body.split('\n').filter((l) => l.trim() && !/^\s*\|?\s*-{3}/.test(l)).slice(0, 12);
   return (
     <div className="flex flex-col gap-[3px] text-[8.5px] leading-[1.3] text-foreground">
@@ -125,7 +130,8 @@ function Thumbnail({ n, locked }: { n: Note; locked: boolean }) {
   );
 }
 
-export function NoteGallery({ notes, onOpen, selectable }: { notes: NotesState; onOpen: (id: string) => void; selectable: boolean }) {
+/** `selected` draws a tinted ring around that note's card. */
+export function NoteGallery({ notes, onOpen, selected }: { notes: NotesState; onOpen: (id: string) => void; selected?: string | null }) {
   const { motion, AnimatePresence } = useMotion();
   return (
     <div className="px-4 pb-16">
@@ -135,13 +141,13 @@ export function NoteGallery({ notes, onOpen, selectable }: { notes: NotesState; 
           <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-4 px-1">
             <AnimatePresence initial={false}>
               {g.notes.map((n) => {
-                const on = selectable && notes.selectedId === n.id;
+                const on = selected === n.id;
                 return (
                   <motion.button key={n.id} type="button" layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }} transition={springs.smooth} data-note-card=""
                     onClick={() => { Haptics.selection(); onOpen(n.id); }}
                     className="bl-btn flex min-w-0 cursor-pointer flex-col items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-foreground">
-                    <span className={cn('box-border block aspect-[4/3.3] w-full overflow-hidden rounded-[10px] bg-card p-2.5 text-left',
+                    <span className={cn('block aspect-[4/3.3] w-full overflow-hidden rounded-[10px] bg-card p-2.5 text-left',
                       'shadow-[0_0_0_1px_var(--bl-sep),0_1px_3px_rgba(0,0,0,.06)] transition-shadow duration-200',
                       on && 'shadow-[0_0_0_3px_var(--bl-tint)]')}>
                       <Thumbnail n={n} locked={notes.isLocked(n)} />

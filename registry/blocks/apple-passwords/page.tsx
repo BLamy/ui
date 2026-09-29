@@ -4,12 +4,13 @@
    the sidebar floating. Phone: one column at a time, pushed like iOS. All sample data is invented. */
 import { useState } from 'react';
 import {
-  BLProvider, SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, useAppearance, type SplitViewSelection,
+  BLProvider, SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, Toaster, createToastQueue, useAppearance,
+  type SplitViewSelection,
 } from '@brett_lamy/ui';
 import type { CategoryId } from './data';
 import { Detail } from './detail';
 import { ItemList } from './item-list';
-import { CopyHud, useClock, useCopy } from './parts';
+import { useClock } from './parts';
 import { Sidebar } from './sidebar';
 import { firstEntry, sectionsFor, useVault, type Selection } from './vault';
 
@@ -18,7 +19,7 @@ export interface ApplePasswordsProps {
   initialCategory?: CategoryId | `group:${string}`;
   /** Item to show in the detail; defaults to the category's first item. */
   initialItem?: string;
-  /** Advance the verification-code clock. Pass false for still frames (screenshots). Default true. */
+  /** Advance the verification-code clock (with Date.now). Pass false for still frames (screenshots). Default true. */
   live?: boolean;
 }
 
@@ -26,7 +27,7 @@ export default function ApplePasswords({ initialCategory = 'all', initialItem, l
   const dark = useAppearance() === 'dark';
   const vault = useVault();
   const now = useClock(live);
-  const { toast, copy } = useCopy();
+  const [hud] = useState(createToastQueue);
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState(false);
   const [selection, setSelection] = useState<SplitViewSelection>(() => ({
@@ -58,19 +59,21 @@ export default function ApplePasswords({ initialCategory = 'all', initialItem, l
   };
 
   return (
-    <BLProvider dark={dark} tint={dark ? '#0A84FF' : '#007AFF'} className="bg-bl-bg **:box-border">
-      <SplitView aria-label="Passwords" selection={selection} onSelectionChange={onSelectionChange} defaultCompactColumn="sidebar">
-        <SplitViewSidebar width={296} minWidth={250}>
-          <Sidebar vault={vault} />
-        </SplitViewSidebar>
-        <SplitViewSupplementary width={320}>
-          <ItemList category={category} sections={sections} query={query} onQuery={setQuery} now={now} onAdd={addPassword} />
-        </SplitViewSupplementary>
-        <SplitViewDetail>
-          <Detail entry={entry} vault={vault} now={now} onCopy={copy} editing={editing} onEditing={setEditing} />
-        </SplitViewDetail>
-      </SplitView>
-      <CopyHud toast={toast} />
+    <BLProvider dark={dark} tint={dark ? '#0A84FF' : '#007AFF'} className="bg-bl-bg">
+      {/* The "Copied" HUD: the block's own toast queue, drawn inside the block; copy buttons reach it via useToast. */}
+      <Toaster queue={hud} inline aria-label="Passwords notifications">
+        <SplitView aria-label="Passwords" selection={selection} onSelectionChange={onSelectionChange} defaultCompactColumn="sidebar">
+          <SplitViewSidebar width={296} minWidth={250}>
+            <Sidebar vault={vault} />
+          </SplitViewSidebar>
+          <SplitViewSupplementary width={320}>
+            <ItemList category={category} sections={sections} query={query} onQuery={setQuery} now={now} onAdd={addPassword} />
+          </SplitViewSupplementary>
+          <SplitViewDetail>
+            <Detail entry={entry} vault={vault} now={now} editing={editing} onEditing={setEditing} />
+          </SplitViewDetail>
+        </SplitView>
+      </Toaster>
     </BLProvider>
   );
 }

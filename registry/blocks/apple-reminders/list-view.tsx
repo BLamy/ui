@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Button, Celebrate, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, Haptics, NumberMorph,
-  SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, cn, useSplitView,
+  Icon, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, cn, useSplitView,
 } from '@brett_lamy/ui';
 import type { Reminder } from './data';
-import { Glyph } from './glyphs';
 import { ReminderRow } from './reminder-row';
 import { useReminders } from './store';
 import { buildView, type View } from './views';
@@ -68,12 +67,12 @@ export function ListView() {
 
   return (
     <SplitViewDetail aria-label={view.title}>
-      <SplitViewHeader leading={<SplitViewToggle />} backLabel="Lists"
+      <SplitViewHeader title={<span style={{ color: view.color }}>{view.title}</span>} largeTitle leading={<SplitViewToggle />} backLabel="Lists"
         trailing={list ? (
           <DropdownMenu>
-            <Button variant="ghost" size="icon" aria-label="List options" className="size-9 text-primary"><Glyph name="ellipsis" size={24} sw={1.7} /></Button>
+            <Button variant="ghost" size="icon" aria-label="List options" className="size-9 text-primary"><Icon name="ellipsis-circle" size={24} weight="light" /></Button>
             <DropdownMenuContent aria-label="List options" placement="bottom end">
-              <DropdownMenuItem onAction={() => api.setShowCompleted(list.id, !shown)} icon={<Glyph name="check" size={20} />}>
+              <DropdownMenuItem onAction={() => api.setShowCompleted(list.id, !shown)} icon={<Icon name="check" size={20} />}>
                 {shown ? 'Hide Completed' : 'Show Completed'}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -83,17 +82,16 @@ export function ListView() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null} />
-      <SplitViewContent>
-        <div className="mx-auto max-w-[760px] pb-6">
-          <div className="flex items-end justify-between gap-4 px-5 pt-3 pb-1" style={{ color: view.color }}>
-            <h1 className="m-0 min-w-0 truncate text-[34px] leading-[1.15] font-bold tracking-[-.5px]">{view.title}</h1>
-            {id !== 'completed' ? (
-              <span className="relative isolate text-[34px] leading-[1.15] font-semibold tabular-nums">
-                <NumberMorph value={view.open} />
-                <Celebrate fire={fire} count={16} spread={72} colors={[view.color, '#FFCC00', '#34C759', '#FF2D55']} />
-              </span>
-            ) : null}
-          </div>
+      {/* The large title lines up with the reminders (centred, 760 wide) and leaves room for the count. */}
+      <SplitViewContent className="[&>[data-slot=split-view-large-title]]:mx-auto [&>[data-slot=split-view-large-title]]:max-w-[760px] [&>[data-slot=split-view-large-title]]:pr-24 [&>[data-slot=split-view-large-title]]:pl-5">
+        <div className="relative mx-auto max-w-[760px] pb-6">
+          {id !== 'completed' ? (
+            // The open count sits on the large title's line, on the trailing edge.
+            <span className="absolute right-5 -top-[47px] isolate text-[34px] leading-[1.15] font-semibold tabular-nums" style={{ color: view.color }}>
+              <NumberMorph value={view.open} />
+              <Celebrate fire={fire} count={16} spread={72} colors={[view.color, '#FFCC00', '#34C759', '#FF2D55']} />
+            </span>
+          ) : null}
 
           {list && view.completed ? (
             <div className="mx-5 mt-1 flex items-center gap-2 py-1.5 text-[15px] text-muted-foreground shadow-[inset_0_-1px_0_var(--bl-sep)]">
@@ -132,7 +130,7 @@ export function ListView() {
         <div className="flex h-[54px] shrink-0 items-center px-4">
           <button type="button" onClick={() => setAdding(true)} style={{ color: view.color }}
             className="bl-btn flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-[17px] font-semibold transition-[scale] duration-spring-snappy ease-spring-snappy active:scale-95">
-            <span className="grid size-[23px] place-items-center rounded-full text-white" style={{ background: view.color }}><Glyph name="plus" size={15} sw={2.8} /></span>
+            <span className="grid size-[23px] place-items-center rounded-full text-white" style={{ background: view.color }}><Icon name="plus" size={15} sw={2.8} /></span>
             New Reminder
           </button>
         </div>

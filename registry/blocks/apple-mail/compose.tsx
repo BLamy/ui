@@ -2,9 +2,8 @@
    so replies carry the quoted message as a real quote block). A card sheet on the phone, a centered form sheet
    on wider screens. Cancelling keeps anything you wrote in Drafts. */
 import { useRef, type ReactNode } from 'react';
-import { Button, MarkdownEditor, SheetContent, TextMorph, cn } from '@brett_lamy/ui';
+import { Button, Icon, MarkdownEditor, SheetContent, TextMorph, cn } from '@brett_lamy/ui';
 import { ME } from './data';
-import { G } from './glyphs';
 import type { MailState } from './use-mail';
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -35,7 +34,9 @@ export function ComposeSheet({ mail, wide }: { mail: MailState; wide: boolean })
             <div className="min-w-0 flex-1 truncate text-center text-[17px] font-semibold"><TextMorph>{d.subject.trim() || 'New Message'}</TextMorph></div>
             <Button variant="ghost" size="icon" aria-label="Send" isDisabled={!d.to.trim()} onPress={() => mail.closeDraft('send')}
               className="text-primary data-disabled:text-bl-label3 data-disabled:opacity-100">
-              <G name="send" size={32} />
+              <span className="grid size-[25px] place-items-center rounded-full bg-current">
+                <Icon name="arrow-up" size={20} sw={3.4} className="text-primary-foreground" />
+              </span>
             </Button>
           </div>
           <div className="bl-scroll min-h-0 flex-1 overflow-y-auto">
@@ -53,7 +54,7 @@ export function ComposeSheet({ mail, wide }: { mail: MailState; wide: boolean })
             </Field>
             <MarkdownEditor key={d.replyTo ?? 'new'} variant="ghost" aria-label="Message body" defaultValue={d.body}
               autoFocus={!!d.to} slashMenu={false} minHeight={260} placeholder=" "
-              onValueChange={(body) => mail.editDraft({ body })} className="px-4 pt-3 pb-8 text-[16px] [&_blockquote]:border-l-primary!" />
+              onValueChange={(body) => mail.editDraft({ body })} className="px-4 pt-3 pb-8 text-[16px]" classNames={{ blockquote: 'border-l-primary' }} />
           </div>
         </div>
       ) : null}

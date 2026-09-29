@@ -24,7 +24,7 @@ export default function AppleReminders({ initialList = 'today', openList = false
   const tint = SMART.find((s) => s.id === id)?.color ?? reminders.lists.find((l) => l.id === id)?.color ?? '#007AFF';
 
   return (
-    <BLProvider dark={dark} tint={tint} className="**:box-border">
+    <BLProvider dark={dark} tint={tint}>
       <RemindersCtx.Provider value={reminders}>
         <SplitView aria-label="Reminders" selection={selection} onSelectionChange={setSelection} sidebarBehavior="tile" sidebarVisibility={{ medium: true }}
           sidebarVisible={sidebar} onSidebarVisibleChange={setSidebar} defaultCompactColumn={openList ? 'detail' : 'sidebar'}>

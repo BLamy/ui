@@ -634,17 +634,18 @@ function Pane({ children }: { children?: ReactNode }) {
   return <PaneCtx.Provider value={value}>{children}</PaneCtx.Provider>;
 }
 
-function LargeTitle({ spec, titleRef }: { spec: LargeSpec; titleRef?: React.Ref<HTMLHeadingElement> }) {
+function LargeTitle({ spec, titleRef }: { spec: LargeSpec; titleRef?: React.Ref<HTMLDivElement> }) {
   const h1 = 'm-0 truncate text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]';
   return spec.trailing != null ? (
     // A trailing item (a count, a button) shares the title's line, on the trailing edge.
     <div data-slot="split-view-large-title" className={cn('flex items-end gap-4 px-4 pt-1 pb-2', spec.className)}>
-      <h1 ref={titleRef} className={cn(h1, 'min-w-0 flex-1')}>{spec.title}</h1>
+      <div ref={titleRef} role="heading" aria-level={1} className={cn(h1, 'min-w-0 flex-1')}>{spec.title}</div>
       <div data-slot="split-view-large-title-trailing" className="flex shrink-0 items-center text-[34px] leading-[1.15]">{spec.trailing}</div>
     </div>
   ) : (
     <div data-slot="split-view-large-title" className={cn('px-4 pt-1 pb-2', spec.className)}>
-      <h1 ref={titleRef} className={h1}>{spec.title}</h1>
+      {/* A heading role, not an <h1>: host prose styles (a docs page's `.markdown h1`) would otherwise restyle it. */}
+      <div ref={titleRef} role="heading" aria-level={1} className={h1}>{spec.title}</div>
     </div>
   );
 }
@@ -773,7 +774,7 @@ export function SplitViewContent({ children, className, style }: { children?: Re
   const setUnder = pane?.setUnder;
   const setScrolled = pane?.setScrolled;
   const scroller = useRef<HTMLDivElement | null>(null);
-  const titleRef = useRef<HTMLHeadingElement | null>(null);
+  const titleRef = useRef<HTMLDivElement | null>(null);
   const check = useCallback(() => {
     const el = titleRef.current, sc = scroller.current;
     if (!sc) return;

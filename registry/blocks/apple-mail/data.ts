@@ -1,6 +1,8 @@
 /* Sample mail for the Apple Mail clone: one iCloud account, its mailboxes, smart mailboxes, and a week of
    messages. Times are relative to a fixed "now" so the list reads the same on every render. */
 
+import type { IconName } from '@brett_lamy/ui';
+
 /** The clock the block reads: Sunday, September 27 2026, 9:41 AM. */
 export const NOW = new Date(2026, 8, 27, 9, 41);
 
@@ -38,14 +40,10 @@ export interface Message {
   thread?: ThreadEntry[];
 }
 
-export type Glyph =
-  | 'tray' | 'star' | 'flag' | 'doc' | 'paperplane' | 'junk' | 'trash' | 'archive' | 'folder' | 'gear' | 'clock'
-  | 'envelopeBadge' | 'paperclip';
-
 export interface Mailbox {
   id: string;
   title: string;
-  glyph: Glyph;
+  icon: IconName;
   /** What the sidebar count shows: unread messages (default) or every message. */
   count?: 'unread' | 'all' | 'none';
   /** Smart mailboxes match across folders instead of holding messages. */
@@ -67,24 +65,24 @@ export const VIPS = new Set([MOM.email, SAM.email]);
 
 const inInbox = (m: Message) => m.box === 'inbox';
 export const FAVORITES: Mailbox[] = [
-  { id: 'inbox', title: 'Inbox', glyph: 'tray' },
-  { id: 'vip', title: 'VIP', glyph: 'star', match: (m) => inInbox(m) && VIPS.has(m.from.email) },
-  { id: 'flagged', title: 'Flagged', glyph: 'flag', count: 'all', match: (m) => !!m.flagged && m.box !== 'trash' },
-  { id: 'drafts', title: 'Drafts', glyph: 'doc', count: 'all' },
-  { id: 'sent', title: 'Sent', glyph: 'paperplane', count: 'none' },
+  { id: 'inbox', title: 'Inbox', icon: 'tray' },
+  { id: 'vip', title: 'VIP', icon: 'star', match: (m) => inInbox(m) && VIPS.has(m.from.email) },
+  { id: 'flagged', title: 'Flagged', icon: 'flag', count: 'all', match: (m) => !!m.flagged && m.box !== 'trash' },
+  { id: 'drafts', title: 'Drafts', icon: 'doc', count: 'all' },
+  { id: 'sent', title: 'Sent', icon: 'paperplane', count: 'none' },
 ];
 export const SMART: Mailbox[] = [
-  { id: 'today', title: 'Today', glyph: 'clock', match: (m) => inInbox(m) && m.date.toDateString() === NOW.toDateString() },
-  { id: 'unread', title: 'Unread', glyph: 'envelopeBadge', match: (m) => inInbox(m) && !!m.unread },
-  { id: 'attachments', title: 'Attachments', glyph: 'paperclip', count: 'none', match: (m) => !!m.attachments?.length && m.box !== 'trash' && m.box !== 'junk' },
+  { id: 'today', title: 'Today', icon: 'clock', match: (m) => inInbox(m) && m.date.toDateString() === NOW.toDateString() },
+  { id: 'unread', title: 'Unread', icon: 'envelope-badge', match: (m) => inInbox(m) && !!m.unread },
+  { id: 'attachments', title: 'Attachments', icon: 'paperclip', count: 'none', match: (m) => !!m.attachments?.length && m.box !== 'trash' && m.box !== 'junk' },
 ];
 export const ICLOUD: Mailbox[] = [
-  { id: 'junk', title: 'Junk', glyph: 'junk' },
-  { id: 'trash', title: 'Trash', glyph: 'trash', count: 'none' },
-  { id: 'archive', title: 'Archive', glyph: 'archive', count: 'none' },
-  { id: 'receipts', title: 'Receipts', glyph: 'folder' },
-  { id: 'travel', title: 'Travel', glyph: 'folder' },
-  { id: 'family', title: 'Family', glyph: 'folder' },
+  { id: 'junk', title: 'Junk', icon: 'xmark-bin' },
+  { id: 'trash', title: 'Trash', icon: 'trash', count: 'none' },
+  { id: 'archive', title: 'Archive', icon: 'archivebox', count: 'none' },
+  { id: 'receipts', title: 'Receipts', icon: 'folder' },
+  { id: 'travel', title: 'Travel', icon: 'folder' },
+  { id: 'family', title: 'Family', icon: 'folder' },
 ];
 export const MAILBOXES = [...FAVORITES, ...SMART, ...ICLOUD];
 /** Folders a message can be moved into. */

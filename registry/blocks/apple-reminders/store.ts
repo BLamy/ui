@@ -79,7 +79,7 @@ export function useRemindersState(): RemindersApi {
       },
       addList() {
         const id = `list-${++seq.current}`;
-        setLists((ls) => [...ls, { id, name: 'New List', color: COLORS[ls.length % COLORS.length], glyph: 'bullets' }]);
+        setLists((ls) => [...ls, { id, name: 'New List', color: COLORS[ls.length % COLORS.length], glyph: 'list' }]);
         return id;
       },
       clearCompleted(list) {

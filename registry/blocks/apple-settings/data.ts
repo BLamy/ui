@@ -1,6 +1,17 @@
 /* Everything Settings shows, as data: panes (title, icon, sections of rows), the sidebar groups, the account
    and every setting's starting value. The renderers in rows.tsx turn each row kind into the matching control. */
-import type { GlyphName } from './glyphs';
+import type { IconName, IconShape } from '@brett_lamy/ui';
+
+/** Apple app marks the library icon set has no symbol for, drawn with the same 24px stroke system. */
+export const MARKS = {
+  appstore: [{ d: 'M9.6 5.2l5.6 9.8M14.4 5.2L7 17.8M5.4 15h8.2M16.6 15h2.2M16.6 15l1.6 2.8' }],
+  airdrop: [{ c: [12, 12, 1.6], f: 1 }, { d: 'M8.6 15.4a4.8 4.8 0 1 1 6.8 0M6 18a8.5 8.5 0 1 1 12 0' }],
+  photos: [{ c: [12, 7.2, 3], f: 1 }, { c: [16.4, 10.4, 3], f: 1 }, { c: [14.8, 15.6, 3], f: 1 }, { c: [9.2, 15.6, 3], f: 1 }, { c: [7.6, 10.4, 3], f: 1 }],
+  standby: [{ r: [3.5, 6.1, 17, 11.8, 1.4] }, { d: 'M7 12h3.5M13.5 10v4M16.5 10v4' }],
+} satisfies Record<string, IconShape[]>;
+
+/** A library icon name, or one of the marks above. */
+export type Glyph = IconName | keyof typeof MARKS;
 
 export type Value = string | number | boolean;
 export type Values = Record<string, Value>;
@@ -14,18 +25,18 @@ export const C = {
 };
 
 export type Row =
-  | { t: 'toggle'; id: string; title: string; subtitle?: string; glyph?: GlyphName; color?: string }
+  | { t: 'toggle'; id: string; title: string; subtitle?: string; glyph?: Glyph; color?: string }
   /** Drill-down. Title and icon default to the target pane's. `value` is the gray detail text. */
   | { t: 'link'; to: string; title?: string; subtitle?: string; value?: string | ((v: Values) => string); icon?: boolean }
   | { t: 'value'; title: string; value: string }
   /** A choice: iOS pushes a checkmark list, macOS shows a pop-up menu. */
-  | { t: 'select'; id: string; title: string; options: string[]; glyph?: GlyphName; color?: string }
+  | { t: 'select'; id: string; title: string; options: string[]; glyph?: Glyph; color?: string }
   | { t: 'option'; id: string; option: string }
-  | { t: 'slider'; id: string; lo: GlyphName | string; hi: GlyphName | string; min?: number; max?: number; step?: number }
+  | { t: 'slider'; id: string; lo: Glyph | string; hi: Glyph | string; min?: number; max?: number; step?: number }
   | { t: 'segmented'; id: string; options: string[] }
   | { t: 'network'; name: string; secure: boolean; bars: 1 | 2 | 3 }
   | { t: 'connected' }
-  | { t: 'device'; name: string; glyph: GlyphName }
+  | { t: 'device'; name: string; glyph: Glyph }
   | { t: 'action'; title: string; destructive?: boolean }
   | { t: 'appearance' }
   | { t: 'usage'; title: string; total: string; days: number[][]; legend: [string, string][]; caption: string }
@@ -34,7 +45,7 @@ export type Row =
   | { t: 'secret'; title: string; value: string };
 
 export interface Section { title?: string; footer?: string; rows: Row[]; /** Shown only while this setting is on. */ when?: string }
-export interface Pane { id: string; title: string; glyph?: GlyphName; color?: string; /** Header card text (top-level panes). */ blurb?: string; sections: Section[] }
+export interface Pane { id: string; title: string; glyph?: Glyph; color?: string; /** Header card text (top-level panes). */ blurb?: string; sections: Section[] }
 
 export const ACCOUNT = { first: 'Brett', last: 'Lamy', email: 'brett.lamy@icloud.com', phone: '+1 (415) 555-0142' };
 
@@ -73,13 +84,13 @@ export const DEFAULTS: Values = {
 
 const onOff = (id: string) => (v: Values) => (v[id] ? 'On' : 'Off');
 
-const NOTIF_APPS: [string, GlyphName, string, string][] = [
-  ['Messages', 'message', C.green, 'Banners, Sounds, Badges'],
-  ['Mail', 'mail', C.blue, 'Banners, Badges'],
+const NOTIF_APPS: [string, Glyph, string, string][] = [
+  ['Messages', 'message-fill', C.green, 'Banners, Sounds, Badges'],
+  ['Mail', 'envelope-fill', C.blue, 'Banners, Badges'],
   ['Calendar', 'calendar', C.red, 'Banners, Sounds'],
-  ['Phone', 'phone', C.green, 'Banners, Sounds, Badges'],
+  ['Phone', 'phone-fill', C.green, 'Banners, Sounds, Badges'],
   ['Photos', 'photos', C.orange, 'Off'],
-  ['Music', 'music', C.pink, 'Banners'],
+  ['Music', 'music-notes', C.pink, 'Banners'],
 ];
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
@@ -135,18 +146,18 @@ const BASE: Pane[] = [
       { t: 'value', title: 'Things 3 Cloud', value: '$4.99/yr' }, { t: 'value', title: 'Overcast Premium', value: '$9.99/yr' },
     ] },
   ] },
-  { id: 'icloud', title: 'iCloud', glyph: 'cloud', color: C.cyan, sections: [
+  { id: 'icloud', title: 'iCloud', glyph: 'cloud-fill', color: C.cyan, sections: [
     { rows: [{ t: 'meter', title: 'iCloud+', used: '118.4 GB of 200 GB used', cap: 200, parts: [['Photos', C.orange, 64], ['Backups', C.purple, 24], ['Drive', C.blue, 18], ['Messages', C.green, 12]] }] },
     { title: 'Saved to iCloud', rows: [
       { t: 'toggle', id: 'icloud.photos', title: 'Photos', glyph: 'photos', color: C.orange },
-      { t: 'toggle', id: 'icloud.drive', title: 'iCloud Drive', glyph: 'cloud', color: C.cyan },
+      { t: 'toggle', id: 'icloud.drive', title: 'iCloud Drive', glyph: 'cloud-fill', color: C.cyan },
       { t: 'toggle', id: 'icloud.passwords', title: 'Passwords & Keychain', glyph: 'key', color: C.gray },
-      { t: 'toggle', id: 'icloud.messages', title: 'Messages in iCloud', glyph: 'message', color: C.green },
+      { t: 'toggle', id: 'icloud.messages', title: 'Messages in iCloud', glyph: 'message-fill', color: C.green },
       { t: 'toggle', id: 'icloud.health', title: 'Health', glyph: 'hand', color: C.pink },
     ] },
     { title: 'Device Backups', rows: [{ t: 'toggle', id: 'icloud.backup', title: 'iCloud Backup', subtitle: 'Last backup: Today at 3:12 AM' }] },
   ] },
-  { id: 'findmy', title: 'Find My', glyph: 'location', color: C.green, sections: [
+  { id: 'findmy', title: 'Find My', glyph: 'location-fill', color: C.green, sections: [
     { rows: [{ t: 'toggle', id: 'account.find', title: 'Find My iPhone' }], footer: 'Locate, lock, or erase your iPhone and supported accessories. Your iPhone can be found even when it’s offline or powered off.' },
     { rows: [{ t: 'toggle', id: 'account.shareLocation', title: 'Share My Location' }, { t: 'value', title: 'My Location', value: 'This Device' }] },
   ] },
@@ -177,14 +188,14 @@ const BASE: Pane[] = [
     sections: [
       { rows: [{ t: 'toggle', id: 'bt.on', title: 'Bluetooth' }], footer: 'This iPhone is discoverable as “Brett’s iPhone” while Bluetooth Settings is open.' },
       { title: 'My Devices', when: 'bt.on', rows: [
-        { t: 'device', name: 'AirPods Pro', glyph: 'headphones' }, { t: 'device', name: 'Apple Watch', glyph: 'watch' },
+        { t: 'device', name: 'AirPods Pro', glyph: 'headphones' }, { t: 'device', name: 'Apple Watch', glyph: 'applewatch' },
         { t: 'device', name: 'Magic Keyboard', glyph: 'keyboard' }, { t: 'device', name: 'Model Y', glyph: 'car' },
       ] },
       { title: 'Other Devices', when: 'bt.on', footer: 'To pair an Apple Watch with your iPhone, go to the Apple Watch app.', rows: [] },
     ],
   },
   {
-    id: 'cellular', title: 'Cellular', glyph: 'cellular', color: C.green,
+    id: 'cellular', title: 'Cellular', glyph: 'antenna', color: C.green,
     blurb: 'Manage your cellular plans, data usage, and how your iPhone connects when you’re away from Wi-Fi.',
     sections: [
       { rows: [
@@ -219,7 +230,7 @@ const BASE: Pane[] = [
       { rows: [{ t: 'value', title: 'Battery Health', value: 'Normal' }, { t: 'select', id: 'battery.charging', title: 'Charging', options: ['Optimized', '80% Limit', 'None'] }] },
     ],
   },
-  { id: 'vpn', title: 'VPN', glyph: 'vpn', color: C.blue, blurb: 'Route your traffic through a virtual private network.', sections: [
+  { id: 'vpn', title: 'VPN', glyph: 'globe', color: C.blue, blurb: 'Route your traffic through a virtual private network.', sections: [
     { title: 'VPN Configurations', rows: [{ t: 'value', title: 'Status', value: 'Not Connected' }, { t: 'value', title: 'Mullvad', value: 'WireGuard' }] },
   ] },
 
@@ -240,7 +251,7 @@ const BASE: Pane[] = [
     { rows: [{ t: 'value', title: 'Songs', value: '4,812' }, { t: 'value', title: 'Photos', value: '31,406' }, { t: 'value', title: 'Applications', value: '142' }, { t: 'value', title: 'Capacity', value: '512 GB' }, { t: 'value', title: 'Available', value: '188.6 GB' }] },
     { rows: [{ t: 'value', title: 'Carrier', value: 'Verizon 62.0' }, { t: 'value', title: 'Wi-Fi Address', value: '5C:1B:F4:0A:9E:22' }, { t: 'value', title: 'Bluetooth', value: '5C:1B:F4:0A:9E:23' }] },
   ] },
-  { id: 'update', title: 'Software Update', glyph: 'update', color: C.gray, sections: [
+  { id: 'update', title: 'Software Update', glyph: 'arrow-clockwise', color: C.gray, sections: [
     { rows: [{ t: 'value', title: 'Automatic Updates', value: 'On' }, { t: 'value', title: 'Beta Updates', value: 'Off' }] },
     { footer: 'Your software is up to date. iOS 26.0.1 was installed on Sep 22, 2026.', rows: [{ t: 'value', title: 'iOS 26.0.1', value: 'Up to Date' }] },
   ] },
@@ -249,7 +260,7 @@ const BASE: Pane[] = [
       { t: 'option', id: 'general.airdrop', option: 'Receiving Off' }, { t: 'option', id: 'general.airdrop', option: 'Contacts Only' }, { t: 'option', id: 'general.airdrop', option: 'Everyone for 10 Minutes' },
     ] },
   ] },
-  { id: 'storage', title: 'iPhone Storage', glyph: 'storage', color: C.gray, sections: [
+  { id: 'storage', title: 'iPhone Storage', glyph: 'internaldrive', color: C.gray, sections: [
     { rows: [{ t: 'meter', title: 'iPhone', used: '323.4 GB of 512 GB used', cap: 512, parts: [['Apps', C.red, 120], ['Photos', C.orange, 110], ['Media', C.purple, 38], ['iOS', C.gray, 22], ['System Data', '#C7C7CC', 33]] }] },
     { title: 'Apps', rows: [{ t: 'value', title: 'Photos', value: '109.8 GB' }, { t: 'value', title: 'Messages', value: '31.2 GB' }, { t: 'value', title: 'Logic Remote', value: '8.4 GB' }, { t: 'value', title: 'Figma', value: '1.9 GB' }] },
   ] },
@@ -273,7 +284,7 @@ const BASE: Pane[] = [
     ],
   },
   {
-    id: 'camera', title: 'Camera', glyph: 'camera', color: C.gray,
+    id: 'camera', title: 'Camera', glyph: 'camera-fill', color: C.gray,
     blurb: 'Adjust camera formats, video recording, composition, and photo capture.',
     sections: [
       { rows: [{ t: 'select', id: 'cam.format', title: 'Formats', options: ['High Efficiency', 'Most Compatible'] }, { t: 'select', id: 'cam.video', title: 'Record Video', options: ['1080p at 30 fps', '1080p at 60 fps', '4K at 30 fps', '4K at 60 fps'] }] },
@@ -281,7 +292,7 @@ const BASE: Pane[] = [
     ],
   },
   {
-    id: 'control', title: 'Control Center', glyph: 'controls', color: C.gray,
+    id: 'control', title: 'Control Center', glyph: 'switch-2', color: C.gray,
     blurb: 'Swipe down from the top-right edge to open Control Center. Touch and hold to customize controls.',
     sections: [
       { rows: [{ t: 'toggle', id: 'cc.apps', title: 'Access Within Apps' }], footer: 'Allow access to Control Center within apps. When disabled, you can still access Control Center from the Home Screen.' },
@@ -289,11 +300,11 @@ const BASE: Pane[] = [
     ],
   },
   {
-    id: 'display', title: 'Display & Brightness', glyph: 'sun', color: C.blue,
+    id: 'display', title: 'Display & Brightness', glyph: 'sun-fill', color: C.blue,
     blurb: 'Adjust the brightness of your display, choose a light or dark appearance, and change text size.',
     sections: [
       { title: 'Appearance', rows: [{ t: 'appearance' }, { t: 'toggle', id: 'display.auto', title: 'Automatic' }] },
-      { title: 'Brightness', rows: [{ t: 'slider', id: 'display.brightness', lo: 'sunSmall', hi: 'sun' }, { t: 'toggle', id: 'display.trueTone', title: 'True Tone' }],
+      { title: 'Brightness', rows: [{ t: 'slider', id: 'display.brightness', lo: 'sun', hi: 'sun-fill' }, { t: 'toggle', id: 'display.trueTone', title: 'True Tone' }],
         footer: 'Automatically adapt iPhone display based on ambient lighting conditions to make colors appear consistent in different environments.' },
       { rows: [{ t: 'select', id: 'display.nightShift', title: 'Night Shift', options: ['Off', 'Sunset to Sunrise', 'Custom Schedule'] }] },
       { rows: [
@@ -303,14 +314,14 @@ const BASE: Pane[] = [
       { title: 'Text Size', rows: [{ t: 'slider', id: 'display.textSize', lo: 'A', hi: 'A', min: 0, max: 6, step: 1 }, { t: 'toggle', id: 'display.bold', title: 'Bold Text' }] },
     ],
   },
-  { id: 'home', title: 'Home Screen & App Library', glyph: 'grid', color: C.indigo, blurb: 'Choose where new apps go, and show app badges and Search on your Home Screen.', sections: [
+  { id: 'home', title: 'Home Screen & App Library', glyph: 'grid-fill', color: C.indigo, blurb: 'Choose where new apps go, and show app badges and Search on your Home Screen.', sections: [
     { title: 'Newly Downloaded Apps', rows: [{ t: 'option', id: 'home.layout', option: 'Add to Home Screen' }, { t: 'option', id: 'home.layout', option: 'App Library Only' }] },
     { rows: [{ t: 'toggle', id: 'home.badges', title: 'Show in App Library' }, { t: 'toggle', id: 'home.search', title: 'Show on Home Screen' }] },
   ] },
-  { id: 'search', title: 'Search', glyph: 'search', color: C.gray, blurb: 'Choose what shows when you search, and which apps can suggest content.', sections: [
+  { id: 'search', title: 'Search', glyph: 'magnifyingglass', color: C.gray, blurb: 'Choose what shows when you search, and which apps can suggest content.', sections: [
     { rows: [{ t: 'toggle', id: 'search.suggest', title: 'Show Suggestions' }, { t: 'toggle', id: 'search.recent', title: 'Show Recent Searches' }, { t: 'toggle', id: 'search.lock', title: 'Show on Lock Screen' }] },
   ] },
-  { id: 'siri', title: 'Siri', glyph: 'siri', color: C.siri, blurb: 'Ask Siri to get things done, just by using your voice.', sections: [
+  { id: 'siri', title: 'Siri', glyph: 'waveform', color: C.siri, blurb: 'Ask Siri to get things done, just by using your voice.', sections: [
     { rows: [
       { t: 'select', id: 'siri.listen', title: 'Talk to Siri', options: ['Off', '“Hey Siri”', '“Siri” or “Hey Siri”'] },
       { t: 'toggle', id: 'siri.side', title: 'Press Side Button for Siri' }, { t: 'toggle', id: 'siri.locked', title: 'Allow Siri When Locked' },
@@ -326,7 +337,7 @@ const BASE: Pane[] = [
 
   /* ── Notifications group ── */
   {
-    id: 'notifications', title: 'Notifications', glyph: 'bell', color: C.red,
+    id: 'notifications', title: 'Notifications', glyph: 'bell-fill', color: C.red,
     blurb: 'Manage notifications, including how they look on the Lock Screen and which apps can send them.',
     sections: [
       { title: 'Display As', rows: [{ t: 'segmented', id: 'notif.style', options: ['Count', 'Stack', 'List'] }] },
@@ -339,10 +350,10 @@ const BASE: Pane[] = [
     ],
   },
   {
-    id: 'sounds', title: 'Sounds & Haptics', glyph: 'speaker', color: C.pink,
+    id: 'sounds', title: 'Sounds & Haptics', glyph: 'speaker-high-fill', color: C.pink,
     blurb: 'Change the sounds and vibrations you hear for calls, alerts, and system interactions.',
     sections: [
-      { title: 'Ringtone and Alert Volume', rows: [{ t: 'slider', id: 'sound.volume', lo: 'speakerLow', hi: 'speaker' }, { t: 'toggle', id: 'sound.buttons', title: 'Change with Buttons' }],
+      { title: 'Ringtone and Alert Volume', rows: [{ t: 'slider', id: 'sound.volume', lo: 'speaker-fill', hi: 'speaker-high-fill' }, { t: 'toggle', id: 'sound.buttons', title: 'Change with Buttons' }],
         footer: 'The volume of the ringer and alerts can be adjusted using the volume buttons.' },
       { title: 'Sounds and Haptic Patterns', rows: [
         { t: 'select', id: 'sound.ringtone', title: 'Ringtone', options: ['Reflection', 'Radar', 'Opening', 'Chimes', 'Silk', 'Uplift'] },
@@ -354,14 +365,14 @@ const BASE: Pane[] = [
     ],
   },
   {
-    id: 'focus', title: 'Focus', glyph: 'moon', color: C.indigo,
+    id: 'focus', title: 'Focus', glyph: 'moon-fill', color: C.indigo,
     blurb: 'Silence notifications and calls, and share when you’re busy, by setting up a Focus.',
     sections: [
       { rows: [
-        { t: 'toggle', id: 'focus.dnd', title: 'Do Not Disturb', glyph: 'moon', color: C.indigo },
-        { t: 'toggle', id: 'focus.personal', title: 'Personal', glyph: 'person', color: C.purple },
+        { t: 'toggle', id: 'focus.dnd', title: 'Do Not Disturb', glyph: 'moon-fill', color: C.indigo },
+        { t: 'toggle', id: 'focus.personal', title: 'Personal', glyph: 'person-bust-fill', color: C.purple },
         { t: 'toggle', id: 'focus.sleep', title: 'Sleep', glyph: 'bed', color: C.teal },
-        { t: 'toggle', id: 'focus.work', title: 'Work', glyph: 'work', color: '#30B0C7' },
+        { t: 'toggle', id: 'focus.work', title: 'Work', glyph: 'briefcase-fill', color: '#30B0C7' },
       ], footer: 'Focus lets you customize your device and silence calls and notifications. Turn it on and off in Control Center.' },
       { rows: [{ t: 'toggle', id: 'focus.share', title: 'Share Across Devices' }], footer: 'Focus is shared across your devices, and turning one on for this device will turn it on for all of them.' },
     ],
@@ -374,7 +385,7 @@ const BASE: Pane[] = [
       { title: 'Limit Usage', rows: [
         { t: 'toggle', id: 'st.downtime', title: 'Downtime', subtitle: 'Schedule time away from the screen', glyph: 'hourglass', color: C.indigo },
         { t: 'toggle', id: 'st.limits', title: 'App Limits', subtitle: 'Set time limits for apps', glyph: 'hourglass', color: C.orange },
-        { t: 'toggle', id: 'st.distance', title: 'Screen Distance', subtitle: 'Reduce eye strain', glyph: 'person', color: C.blue },
+        { t: 'toggle', id: 'st.distance', title: 'Screen Distance', subtitle: 'Reduce eye strain', glyph: 'person-bust-fill', color: C.blue },
       ] },
       { rows: [{ t: 'toggle', id: 'st.share', title: 'Share Across Devices' }], footer: 'You can enable this on any device signed in to iCloud to sync your Screen Time settings.' },
     ],
@@ -407,7 +418,7 @@ const BASE: Pane[] = [
     blurb: 'Control which apps can access your data, location, camera, and microphone, and manage safety protections.',
     sections: [
       { rows: [
-        { t: 'toggle', id: 'privacy.location', title: 'Location Services', glyph: 'location', color: C.blue },
+        { t: 'toggle', id: 'privacy.location', title: 'Location Services', glyph: 'location-fill', color: C.blue },
         { t: 'toggle', id: 'privacy.track', title: 'Allow Apps to Request to Track', glyph: 'hand', color: C.orange },
       ] },
       { rows: [

@@ -1,7 +1,7 @@
-/* Settings state: every setting's value, the navigation path (panes pushed so far), search, and which layout
-   is showing. One context so any row can read or change a value, or push a pane. */
+/* Settings state: every setting's value, the navigation path (panes pushed so far) and search. One context so
+   any row can read or change a value, or push a pane. The layout follows the SplitView's width class. */
 import { createContext, useContext, useMemo, useState } from 'react';
-import type { Appearance } from '@brett_lamy/ui';
+import { useSplitView, type Appearance, type SplitViewWidthClass } from '@brett_lamy/ui';
 import { DEFAULTS, type Value, type Values } from './data';
 
 export type Layout = 'phone' | 'tablet' | 'desktop';
@@ -20,16 +20,19 @@ export interface SettingsApi {
   forward: () => void;
   query: string;
   setQuery: (q: string) => void;
-  layout: Layout;
   dark: boolean;
   setAppearance: (a: Appearance) => void;
 }
 
 export const SettingsCtx = createContext<SettingsApi | null>(null);
-export function useSettings() {
+const LAYOUT: Record<SplitViewWidthClass, Layout> = { compact: 'phone', medium: 'tablet', regular: 'desktop' };
+
+/** Settings state plus the layout in effect: macOS at regular width, iOS / iPadOS below. */
+export function useSettings(): SettingsApi & { layout: Layout } {
+  const { widthClass } = useSplitView();
   const s = useContext(SettingsCtx);
   if (!s) throw new Error('useSettings must be used inside <AppleSettings>');
-  return s;
+  return { ...s, layout: LAYOUT[widthClass] };
 }
 
 /** Sidebar layouts always show a pane: the path, or Wi-Fi when nothing is open yet. */
@@ -37,7 +40,7 @@ export const trailOf = (path: string[]) => (path.length ? path : ['wifi']);
 
 interface Nav { path: string[]; dir: -1 | 0 | 1; fwd: string[] }
 
-export function useSettingsState(initialPath: string[], layout: Layout, dark: boolean, setAppearance: (a: Appearance) => void): SettingsApi {
+export function useSettingsState(initialPath: string[], dark: boolean, setAppearance: (a: Appearance) => void): SettingsApi {
   const [values, setValues] = useState<Values>(DEFAULTS);
   const [nav, setNav] = useState<Nav>({ path: initialPath, dir: 0, fwd: [] });
   const [query, setQuery] = useState('');
@@ -53,8 +56,7 @@ export function useSettingsState(initialPath: string[], layout: Layout, dark: bo
     forward: () => setNav((n) => (n.fwd.length ? { path: [...n.path, n.fwd[0]], dir: 1, fwd: n.fwd.slice(1) } : n)),
     query,
     setQuery,
-    layout,
     dark,
     setAppearance,
-  }), [values, nav, query, layout, dark, setAppearance]);
+  }), [values, nav, query, dark, setAppearance]);
 }

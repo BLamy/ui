@@ -70,7 +70,7 @@ export default function GithubClone({ initialTab, initialPullRequest, initialPat
   return (
     <BLProvider tint={dark ? '#4493f8' : '#0969da'} style={githubVars(dark)} className="min-h-0 bg-bl-bg">
       <WorkbenchTheme appearance={dark ? 'dark' : 'light'} tint={dark ? '#4493f8' : '#0969da'} style={githubVars(dark)}
-        className="h-full w-full bg-bl-bg text-[14px] text-bl-label select-text **:box-border">
+        className="h-full w-full bg-bl-bg text-[14px] text-bl-label select-text">
         <div ref={ref} className="relative flex h-full min-h-0 w-full flex-col">
           {ui.phone ? (
             <NavigationStack screens={screens} onPop={pop} />

@@ -1,9 +1,8 @@
-/* Toolbar pieces shared by the split layout and the phone stack: tinted bar buttons, the Move / Reply / Mark
+/* Toolbar pieces shared by the columns at every width: tinted bar buttons, the Move / Reply / Mark
    pull-down menus, and the translucent bottom bar. */
 import type { ReactNode } from 'react';
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, IconSwap, cn } from '@brett_lamy/ui';
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, Icon, IconSwap, cn } from '@brett_lamy/ui';
 import { MOVE_TARGETS, type Message } from './data';
-import { G } from './glyphs';
 import type { MailState } from './use-mail';
 
 /** A tinted, borderless toolbar button: a glyph, or a text label like "Edit". */
@@ -22,7 +21,7 @@ export function BarButton({ label, children, onPress, isDisabled, className }: {
 export function FlagButton({ mail, m }: { mail: MailState; m: Message }) {
   return (
     <BarButton label={m.flagged ? 'Unflag' : 'Flag'} onPress={() => mail.toggleFlag(m.id)} className={m.flagged ? 'text-[#FF9F0A]' : undefined}>
-      <IconSwap id={m.flagged ? 'on' : 'off'}><G name={m.flagged ? 'flagFill' : 'flag'} /></IconSwap>
+      <IconSwap id={m.flagged ? 'on' : 'off'}><Icon name={m.flagged ? 'flag-fill' : 'flag'} /></IconSwap>
     </BarButton>
   );
 }
@@ -33,10 +32,10 @@ export function MoveMenu({ mail, ids, children, isDisabled, onMoved }: {
 }) {
   return (
     <DropdownMenu>
-      {children ?? <BarButton label="Move to…" isDisabled={isDisabled}><G name="folder" /></BarButton>}
+      {children ?? <BarButton label="Move to…" isDisabled={isDisabled}><Icon name="folder" /></BarButton>}
       <DropdownMenuContent aria-label="Move to" onAction={(key) => { mail.moveTo(ids, String(key)); onMoved?.(); }} disabledKeys={[mail.boxId]}>
         {MOVE_TARGETS.map((b) => (
-          <DropdownMenuItem key={b.id} id={b.id} icon={<G name={b.glyph} size={20} />}>{b.title}</DropdownMenuItem>
+          <DropdownMenuItem key={b.id} id={b.id} icon={<Icon name={b.icon} size={20} />}>{b.title}</DropdownMenuItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -46,14 +45,14 @@ export function MoveMenu({ mail, ids, children, isDisabled, onMoved }: {
 export function ReplyMenu({ mail, m }: { mail: MailState; m: Message }) {
   return (
     <DropdownMenu>
-      <BarButton label="Reply"><G name="reply" /></BarButton>
+      <BarButton label="Reply"><Icon name="reply" /></BarButton>
       <DropdownMenuContent aria-label="Reply" placement="bottom end"
         onAction={(key) => mail.compose(key as 'reply' | 'replyAll' | 'forward', m)}>
-        <DropdownMenuItem id="reply" icon={<G name="reply" size={20} />}>Reply</DropdownMenuItem>
-        <DropdownMenuItem id="replyAll" icon={<G name="replyAll" size={20} />}>Reply All</DropdownMenuItem>
-        <DropdownMenuItem id="forward" icon={<G name="forward" size={20} />}>Forward</DropdownMenuItem>
+        <DropdownMenuItem id="reply" icon={<Icon name="reply" size={20} />}>Reply</DropdownMenuItem>
+        <DropdownMenuItem id="replyAll" icon={<Icon name="reply-all" size={20} />}>Reply All</DropdownMenuItem>
+        <DropdownMenuItem id="forward" icon={<Icon name="arrow-forward" size={20} />}>Forward</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem id="print" isDisabled icon={<G name="doc" size={20} />}>Print</DropdownMenuItem>
+        <DropdownMenuItem id="print" isDisabled icon={<Icon name="doc" size={20} />}>Print</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -78,8 +77,8 @@ export function ListBar({ mail }: { mail: MailState }) {
         <DropdownMenu>
           <BarButton label="Mark" isDisabled={!ids.length} />
           <DropdownMenuContent aria-label="Mark" placement="top start" onAction={(k) => mail.markChecked(k === 'unread')}>
-            <DropdownMenuItem id="read" icon={<G name="envelopeOpen" size={20} />}>Mark as Read</DropdownMenuItem>
-            <DropdownMenuItem id="unread" icon={<G name="envelopeBadge" size={20} />}>Mark as Unread</DropdownMenuItem>
+            <DropdownMenuItem id="read" icon={<Icon name="envelope-open" size={20} />}>Mark as Read</DropdownMenuItem>
+            <DropdownMenuItem id="unread" icon={<Icon name="envelope-badge" size={20} />}>Mark as Unread</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <span className="flex-1" />
@@ -93,7 +92,7 @@ export function ListBar({ mail }: { mail: MailState }) {
   return (
     <BottomBar>
       <BarButton label={mail.unreadOnly ? 'Show all mail' : 'Filter by unread'} onPress={mail.toggleUnreadFilter}>
-        <IconSwap id={mail.unreadOnly ? 'on' : 'off'}><G name={mail.unreadOnly ? 'filterFill' : 'filter'} size={24} /></IconSwap>
+        <IconSwap id={mail.unreadOnly ? 'on' : 'off'}><Icon name={mail.unreadOnly ? 'filter-circle-fill' : 'filter-circle'} size={24} /></IconSwap>
       </BarButton>
       <div className="min-w-0 flex-1 text-center leading-[1.25]" aria-live="polite">
         {mail.unreadOnly ? (
@@ -108,7 +107,7 @@ export function ListBar({ mail }: { mail: MailState }) {
           </>
         )}
       </div>
-      <BarButton label="New message" onPress={() => mail.compose('new')}><G name="compose" size={24} /></BarButton>
+      <BarButton label="New message" onPress={() => mail.compose('new')}><Icon name="compose" size={24} /></BarButton>
     </BottomBar>
   );
 }

@@ -1,5 +1,5 @@
 /* Mail state: messages, the open mailbox and message, search, the unread filter, edit-mode selection and the
-   compose draft — one hook shared by the split layout and the phone stack, so crossing a width class keeps
+   compose draft — one hook shared by every column, so crossing a width class keeps
    everything where it was. Every action plays its haptic here, next to the change it confirms. */
 import { useMemo, useState } from 'react';
 import { Haptics } from '@brett_lamy/ui';
