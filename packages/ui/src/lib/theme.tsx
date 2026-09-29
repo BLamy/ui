@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
 import { cn, BARH } from './utils';
 
@@ -40,7 +40,20 @@ export const AppearanceContext = createContext<Appearance | undefined>(undefined
 export function AppearanceProvider({ value, children }: { value: Appearance | undefined; children?: ReactNode }) {
   return <AppearanceContext.Provider value={value}>{children}</AppearanceContext.Provider>;
 }
-export const useAppearance = () => useContext(AppearanceContext);
+/* Without an AppearanceProvider, a shadcn app's dark mode — the `dark` class on <html> — counts as the ambient
+   appearance, so blocks and shells follow it. No class → no preference (undefined), as before. */
+function subscribeHtmlClass(cb: () => void) {
+  if (typeof MutationObserver === 'undefined' || typeof document === 'undefined') return () => {};
+  const mo = new MutationObserver(cb);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  return () => mo.disconnect();
+}
+const htmlDark = () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+export function useAppearance(): Appearance | undefined {
+  const ctx = useContext(AppearanceContext);
+  const dark = useSyncExternalStore(subscribeHtmlClass, htmlDark, () => false);
+  return ctx ?? (dark ? 'dark' : undefined);
+}
 
 /* ══ Theme scopes ══
    Colors are shadcn's CSS variables. A theme (the app's own, or BL UI's bl-theme — `@brett_lamy/ui/theme.css`)
