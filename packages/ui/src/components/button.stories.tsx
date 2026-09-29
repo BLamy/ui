@@ -27,6 +27,16 @@ export const Variants: Story = {
   ),
 };
 
+/** `size="pill"` — the full-width iOS action pill (was `PillButton`; its soft tone is `variant="secondary"`). */
+export const Pill: Story = {
+  render: () => (
+    <div className="flex flex-col gap-2.5">
+      <Button size="pill">Export Wei.vcf</Button>
+      <Button size="pill" variant="secondary">Cancel</Button>
+    </div>
+  ),
+};
+
 /** Each press counts once and ticks once — the haptics check taps this in iOS-Safari mode. */
 export const PressCounter: Story = {
   render: function PressCounterStory() {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PillButton } from './pill-button';
+import { Button } from './button';
 import { SideDrawer } from './side-drawer';
 import { Phone } from '../stories/frame';
 
@@ -29,7 +29,7 @@ export const Fixed: Story = {
       <Phone w={760} h={520}>
         <div style={{ display: 'flex', height: '100%' }}>
           <div style={{ flex: 1, position: 'relative', background: 'var(--muted)', display: 'grid', placeItems: 'center', minWidth: 0 }}>
-            <PillButton label={open ? 'Close drawer' : 'Open drawer'} onPress={() => setOpen((v) => !v)} style={{ width: 180 }} />
+            <Button size="pill" onPress={() => setOpen((v) => !v)} className="w-[180px]">{open ? 'Close drawer' : 'Open drawer'}</Button>
           </div>
           <SideDrawer mode="fixed" open={open} onClose={() => setOpen(false)} title="Activity" width={318}>
             {content}
@@ -46,7 +46,7 @@ export const Overlay: Story = {
     return (
       <Phone w={640} h={520}>
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
-          <PillButton label="Open overlay" onPress={() => setOpen(true)} style={{ width: 180 }} />
+          <Button size="pill" onPress={() => setOpen(true)} className="w-[180px]">Open overlay</Button>
         </div>
         <SideDrawer mode="overlay" open={open} onClose={() => setOpen(false)} title="Activity" width={340}>
           {content}

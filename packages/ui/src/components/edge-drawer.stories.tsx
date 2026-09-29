@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PillButton } from './pill-button';
+import { Button } from './button';
 import { EdgeDrawer } from './edge-drawer';
 import { Phone } from '../stories/frame';
 
@@ -23,7 +23,7 @@ function Demo({ side }: { side: 'left' | 'right' }) {
   return (
     <Phone w={640} h={460}>
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
-        <PillButton label={`Open ${side} drawer`} onPress={() => setOpen(true)} style={{ width: 200 }} />
+        <Button size="pill" onPress={() => setOpen(true)} className="w-[200px]">{`Open ${side} drawer`}</Button>
       </div>
       <EdgeDrawer side={side} open={open} onClose={() => setOpen(false)} width={280} maxWidth="84%">
         {panel(side === 'left' ? 'Navigation' : 'Inspector')}

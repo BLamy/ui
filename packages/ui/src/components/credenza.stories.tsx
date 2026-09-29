@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Credenza } from './credenza';
 import { Icon } from '../lib/icon';
-import { PillButton } from './pill-button';
+import { Button } from './button';
 import { QRSvg } from './qr-svg';
 import { Phone } from '../stories/frame';
 
@@ -21,7 +21,7 @@ function Views({ view, go, onClose }: { view: string; go: (v: string) => void; o
       <div style={{ display: 'inline-grid', placeItems: 'center', padding: 16, borderRadius: 20, background: '#fff', color: '#111', boxShadow: '0 0 0 1px var(--border)' }}>
         <QRSvg seed="weichen" /></div>
       <div style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '12px 0 14px', lineHeight: 1.45 }}>Scanning adds Wei Chen — name, phone, and email.</div>
-      <PillButton label="Save to Photos" onPress={() => go('done')} />
+      <Button size="pill" onPress={() => go('done')}>Save to Photos</Button>
     </div>
   );
   if (view === 'done') return (
@@ -29,7 +29,7 @@ function Views({ view, go, onClose }: { view: string; go: (v: string) => void; o
       <span style={{ display: 'inline-grid', placeItems: 'center', width: 54, height: 54, borderRadius: '50%', background: 'var(--success)', color: '#fff', marginBottom: 10 }}><Icon name="check" size={26} sw={3} /></span>
       <div style={{ fontSize: 17, fontWeight: 700 }}>Card shared</div>
       <div style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '4px 0 16px' }}>Wei Chen is on the way.</div>
-      <PillButton label="Done" onPress={onClose} />
+      <Button size="pill" onPress={onClose}>Done</Button>
     </div>
   );
   return (
@@ -58,7 +58,7 @@ function Demo({ compact }: { compact?: boolean }) {
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
-        <PillButton label="Open Credenza" onPress={() => { setView('menu'); setOpen(true); }} style={{ width: 200 }} />
+        <Button size="pill" onPress={() => { setView('menu'); setOpen(true); }} className="w-[200px]">Open Credenza</Button>
       </div>
       <Credenza open={open} onClose={() => setOpen(false)} compact={compact} view={view}
         title={TITLES[view]} canBack={view !== 'menu'} onBack={() => setView('menu')}>
