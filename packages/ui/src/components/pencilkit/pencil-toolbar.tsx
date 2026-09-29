@@ -74,7 +74,9 @@ export function PencilToolbar({ className, style, children, ...rest }: PencilToo
     return () => ro.disconnect();
   }, [sync, children]);
   const all = React.Children.toArray(children);
-  const pinned = all.filter((c) => React.isValidElement(c) && c.type === PencilActions);
+  const actions = all.filter((c) => React.isValidElement(c) && c.type === PencilActions);
+  // Nothing to scroll past (a toolbar of only actions): keep one plain row.
+  const pinned = actions.length < all.length ? actions : [];
   const scrolled = pinned.length ? all.filter((c) => !pinned.includes(c)) : all;
   const over = fade.l || fade.r;
   const mask = over
