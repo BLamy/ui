@@ -27,3 +27,10 @@ export function useDemoRuntime(override?: DemoRuntimeOptions): DemoRuntimeOption
       : undefined,
   }
 }
+
+/**
+ * Demo files held in memory by `src` (a `DemoVFS`), e.g. demos pasted from another page or
+ * editor. `DemoViewer` falls back to them when a block has no inline files; the host
+ * resolver still wins when it knows `src`. Provided by renderers' / editors' `demoVFS`.
+ */
+export const DocstreamDemoVFSContext = createContext<import("./vfs").DemoVFS | undefined>(undefined)

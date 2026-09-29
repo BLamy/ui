@@ -16,7 +16,8 @@ import { slugify } from "../gitbook/outline"
 import { resolveAsset } from "../assets"
 import { parseMarkdown } from "../gitbook/parse"
 import { serializeMarkdown } from "../gitbook/serialize"
-import { DocstreamDemoContext, DocstreamDemoRuntimeContext } from "../demo/context"
+import { DocstreamDemoContext, DocstreamDemoRuntimeContext, DocstreamDemoVFSContext } from "../demo/context"
+import type { DemoVFS } from "../demo/vfs"
 import { DemoBlock } from "../demo/DemoViewer"
 import type { DemoResolver, InlineDemoRuntime } from "../demo/types"
 import { CopyButton } from "./copy"
@@ -593,14 +594,20 @@ export interface DocRenderOptions {
   /** Extra npm dependencies inline demos may import (`{ "@brett_lamy/ui": "^1.2.0" }`). */
   demoDependencies?: Record<string, string>
   /**
+   * Demo files held in memory by `src` (`createDemoVFS` / `useDemoVFS`), e.g. demos pasted
+   * into an editor. Blocks without inline files use them when no resolver knows `src`.
+   */
+  demoVFS?: DemoVFS
+  /**
    * Render "Copy page ▾" (Copy / View as Markdown, Open in ChatGPT / Claude) above the content.
    * `true` uses the defaults; an object passes options to `DocPageActions`.
    */
   pageActions?: boolean | DocPageActionsOptions
 }
 
-function withDemoContext({ demoResolver, demoRuntime, demoDependencies }: DocRenderOptions, children: ReactNode) {
+function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS }: DocRenderOptions, children: ReactNode) {
   let out = children
+  if (demoVFS) out = <DocstreamDemoVFSContext.Provider value={demoVFS}>{out}</DocstreamDemoVFSContext.Provider>
   if (demoRuntime || demoDependencies) {
     out = <DemoRuntimeProvider runtime={demoRuntime} dependencies={demoDependencies}>{out}</DemoRuntimeProvider>
   }
@@ -640,12 +647,13 @@ export function MarkdownContent({
   demoResolver,
   demoRuntime,
   demoDependencies,
+  demoVFS,
   pageActions,
   className,
 }: { markdown: string; className?: string } & Renderers & DocRenderOptions) {
   const doc = useMemo(() => parseMarkdown(markdown), [markdown])
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS },
     <div data-docstream="" className={className}>
       <PageActionsBar markdown={markdown} options={pageActions} />
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
@@ -661,11 +669,12 @@ export function DocsRenderer({
   demoResolver,
   demoRuntime,
   demoDependencies,
+  demoVFS,
   pageActions,
   markdown,
 }: { doc: DocumentNode; /** Source for page actions; defaults to `serializeMarkdown(doc)`. */ markdown?: string } & Renderers & DocRenderOptions) {
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS },
     <article className="docs-article">
       <PageActionsBar markdown={markdown ?? (() => serializeMarkdown(doc))} options={pageActions} />
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />

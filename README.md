@@ -416,6 +416,50 @@ or inline it); each inline demo boots its own container (the fullscreen overlay
 boots a second one). `preloadDemos(resolver, srcs)` settles resolver demos before
 the first render (server rendering, static export).
 
+#### Copy a demo, paste it elsewhere (clipboard + demo VFS)
+
+Every demo viewer has a **Copy demo** button. It writes one clipboard item with
+three representations, through react-aria's `useClipboard`:
+
+| Type | Content |
+| --- | --- |
+| `text/plain`, `text/markdown` | renderable docstream Markdown: the block with its files inline (resolver files for `src`-only demos, `meta.json` folded into the tag) |
+| `application/x-docstream+json` (`DOCSTREAM_CLIPBOARD_TYPE`) | `{ kind: "docstream", version: 1, markdown, files: { [src]: DemoFile[] }, meta: { [src]: DemoMeta } }` — the exact Markdown (a `src`-only block stays `src`-only) plus every demo's files and meta |
+
+Pasting into a docstream editor (`@brett_lamy/docstream-editor` 1.5+) recreates
+the demo with its files; pasting anywhere else gets the Markdown. Where the
+browser's copy command is unavailable the button copies the Markdown only
+(editors still parse its inline-file demos).
+
+Pasted demo files live in a **demo VFS** — an in-memory `{ [src]: { files, meta } }`
+store. Give it to a renderer (`demoVFS`) or an editor, or share one between
+several:
+
+```tsx
+import { MarkdownContent, useDemoVFS, useDemoVFSFiles } from "@brett_lamy/docstream"
+
+const vfs = useDemoVFS()                // stable per component; createDemoVFS() outside React
+const files = useDemoVFSFiles(vfs)      // { [src]: DemoFile[] }, re-renders on change — persist it
+<MarkdownContent markdown={page} demoResolver={demoResolver} demoRuntime={demoRuntime} demoVFS={vfs} />
+```
+
+A demo block resolves in this order: the host `demoResolver` when it knows `src`
+→ the block's inline files, else the VFS files for `src`, run by the
+`demoRuntime` (almost-node from `/playground` when installed) → the Code view
+with the "needs runtime" note. `vfs.resolver({ resolver, runtime })` is the same
+layering as a `DemoResolver` (`files` / `meta` from the host when it knows
+`src`, else from the VFS; `load` runs VFS files through the runtime).
+`vfs.subscribe(change => …)`, `get/set/delete/list/files()` manage it directly.
+
+Building blocks (`@brett_lamy/docstream/demo`): `createDocstreamClipboard(doc, { lookup, serialize })`
+/ `createDocstreamClipboardFromMarkdown`, `docstreamClipboardItems` (react-aria
+`DragItem`s), `writeDocstreamClipboard(dataTransfer, clip)`,
+`readDocstreamClipboard(dataTransfer)`, `readDocstreamClipboardItems(dropItems)`,
+`parseDocstreamClipboard(json)`, `docstreamPayloadFromMarkdown`,
+`useDocstreamCopy` / `CopyDemoButton`, and `prefetchDemoSources(resolver, srcs)` +
+`peekDemoSource(resolver, src)` to read a resolver's files synchronously (a copy
+event can't wait).
+
 Tell docstream where demos live with a `DemoResolver`. With Vite, three
 `import.meta.glob` maps are enough:
 
@@ -660,6 +704,16 @@ ESM, and your type-check reads `.d.ts` files instead of docstream's sources. The
 The TypeScript sources are published too, behind a `source` export condition, for
 monorepos that want to compile docstream from source (e.g. Vite
 `resolve.conditions: ["source", ...]` or TypeScript `customConditions`).
+
+## Migrating to 1.5
+
+No breaking changes. New: **Copy demo** (clipboard with the demo's files and an
+`application/x-docstream+json` payload), the demo VFS (`demoVFS` on the
+renderers, `createDemoVFS` / `useDemoVFS`), and the clipboard helpers above.
+`react-aria` is now a dependency (for `useClipboard`); hosts on
+`react-aria-components` share it. The single-file demo card gains the Copy demo
+button; the multi-file viewer's "Copy demo as Markdown" is now "Copy demo" (the
+same Markdown as `text/plain`, plus the payload).
 
 ## Migrating to 1.4
 

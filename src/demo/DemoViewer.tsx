@@ -24,7 +24,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-  type MutableRefObject,
+  type Ref,
 } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import { ExternalLink, FileCode2, Folder, Maximize2, Monitor, Smartphone, Tablet, X } from "lucide-react"
@@ -36,8 +36,10 @@ import { HighlightedCode } from "../docs/HighlightedCode"
 import { CopyButton } from "../docs/copy"
 import { PillTabs, Segmented, rovingKeyDown } from "../docs/controls"
 import { useDemoResolver, useDemoRuntime } from "./context"
+import { createDocstreamClipboard, type DemoSourceSnapshot, type DocstreamClipboard } from "./clipboard"
+import { CopyDemoButton } from "./copy-demo"
 import { languageForPath } from "./glob"
-import { inlineDemoMarkdown } from "./markdown"
+import { useDemoVFSContext, useDemoVFSEntry, type DemoVFS } from "./vfs"
 import { cssToSurface, surfaceStyle, surfaceToCss } from "./surface"
 import type { DemoComponent, DemoFile, DemoMeta, DemoResolver, DemoVariant, InlineDemoRuntime } from "./types"
 
@@ -67,6 +69,11 @@ export interface DemoViewerProps {
   runtime?: InlineDemoRuntime
   /** Extra npm dependencies for the runtime, merged over `demoDependencies` from context. */
   dependencies?: Record<string, string>
+  /**
+   * Demo files held in memory by `src` (pasted demos). Used, like inline files, when the block
+   * has none of its own and no resolver knows `src`. Defaults to the VFS in context (`demoVFS`).
+   */
+  vfs?: DemoVFS
   /** Class on the viewer's outer element. (The preview canvas's class is `canvasClassName`.) */
   className?: string
   /*
@@ -120,6 +127,32 @@ export async function preloadDemos(resolver: DemoResolver, srcs: string[]): Prom
   )
 }
 
+/**
+ * Fetch demos' meta and files (not their components) into the viewer's cache, so
+ * `peekDemoSource` can answer synchronously — e.g. when a copy event needs a demo's files.
+ */
+export async function prefetchDemoSources(resolver: DemoResolver, srcs: string[]): Promise<void> {
+  const cache = cacheFor(resolver)
+  const settle = async (key: string, run: () => Promise<unknown>) => {
+    if (cache.get(key)?.status === "ready") return
+    try {
+      cache.set(key, { status: "ready", value: await run() })
+    } catch (cause) {
+      cache.set(key, { status: "error", error: cause instanceof Error ? cause : new Error(String(cause)) })
+    }
+  }
+  await Promise.all(srcs.flatMap((src) => [settle(`meta:${src}`, () => resolver.meta(src)), settle(`files:${src}`, () => resolver.files(src))]))
+}
+
+/** A demo's files (and meta) if the resolver has already delivered them (viewer, `preloadDemos`, `prefetchDemoSources`). */
+export function peekDemoSource(resolver: DemoResolver, src: string): DemoSourceSnapshot | undefined {
+  const cache = settled.get(resolver)
+  const files = cache?.get(`files:${src}`)
+  if (files?.status !== "ready" || !(files.value as DemoFile[]).length) return undefined
+  const meta = cache?.get(`meta:${src}`)
+  return { files: files.value as DemoFile[], ...(meta?.status === "ready" && meta.value ? { meta: meta.value as DemoMeta } : {}) }
+}
+
 /** Resolves `run()` once `active`, remembering settled values so remounts don't flash. */
 function useResolved<T>(resolver: DemoResolver | undefined, key: string, active: boolean, run: () => Promise<T>): Loaded<T> {
   const cached = resolver ? (cacheFor(resolver).get(key) as Loaded<T> | undefined) : undefined
@@ -165,10 +198,11 @@ const useComponent = (resolver: DemoResolver | undefined, src: string, active: b
 
 /** True once the element has come within `margin` of the viewport (stays true). */
 function useNearViewport<T extends Element>(margin = "400px 0px") {
-  const ref = useRef<T | null>(null)
+  // A callback ref, so an element that appears later (a VFS demo arriving) is observed too.
+  const [el, setEl] = useState<T | null>(null)
+  const ref = useMemo(() => (node: T | null) => setEl(node), [])
   const [near, setNear] = useState(false)
   useEffect(() => {
-    const el = ref.current
     if (!el || near) return
     if (typeof IntersectionObserver === "undefined") {
       setNear(true)
@@ -179,7 +213,7 @@ function useNearViewport<T extends Element>(margin = "400px 0px") {
     }, { rootMargin: margin })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [near, margin])
+  }, [el, near, margin])
   return [ref, near] as const
 }
 
@@ -594,7 +628,12 @@ export function DemoViewer(props: DemoViewerProps) {
   const runtimeOptions = useDemoRuntime({ runtime: props.runtime, dependencies: props.dependencies })
   const { src } = props
   const [ref, near] = useNearViewport<HTMLElement>()
-  const inlineFiles = useMemo(() => orderInline(props.files, props.entry), [props.files, props.entry])
+  const vfs = useDemoVFSContext(props.vfs)
+  // Pasted demos: files held by the VFS stand in for inline files the block doesn't carry.
+  const vfsEntry = useDemoVFSEntry(vfs, props.files?.length ? "" : src)
+  const ownFiles = props.files?.length ? props.files : vfsEntry?.files
+  const ownEntry = props.files?.length ? props.entry : props.entry ?? vfsEntry?.meta?.entry
+  const inlineFiles = useMemo(() => orderInline(ownFiles, ownEntry), [ownFiles, ownEntry])
 
   // A resolver is consulted unless the block brings its own files and the resolver
   // says (via `list()`) that it does not know this src.
@@ -607,7 +646,7 @@ export function DemoViewer(props: DemoViewerProps) {
   const mode: "resolver" | "inline" | "none" =
     tryResolver && !(inlineFiles && resolverFailed) ? "resolver" : inlineFiles ? "inline" : "none"
 
-  const metaValue = mode === "resolver" && meta.status === "ready" ? meta.value : undefined
+  const metaValue = mode === "resolver" ? (meta.status === "ready" ? meta.value : undefined) : mode === "inline" && !props.files?.length ? vfsEntry?.meta : undefined
   const files: Loaded<DemoFile[]> = mode === "inline" ? { status: "ready", value: inlineFiles! } : resolvedFiles
   const title = props.title ?? metaValue?.title ?? (src.split("/").pop() || "Demo")
   const description = props.description ?? metaValue?.description
@@ -669,7 +708,12 @@ export function DemoViewer(props: DemoViewerProps) {
     ...(props.surface ? { surface: typeof props.surface === "string" ? props.surface : surfaceToCss(props.surface) } : {}),
     ...(props.variantsWidth !== undefined && props.variantsWidth !== "" ? { variantsWidth: String(props.variantsWidth) } : {}),
   }
-  const copyDemo = () => inlineDemoMarkdown(node, fileList ?? [], metaValue)
+  // "Copy demo": the exact block (src-only stays src-only; inline files stay inline) plus its files.
+  const copyDemo = (): DocstreamClipboard | null => {
+    if (!fileList?.length) return null
+    const exact: DemoNode = props.files?.length ? { ...node, ...(props.entry ? { entry: props.entry } : {}), files: props.files.map((f) => ({ ...f })) } : node
+    return createDocstreamClipboard({ type: "doc", children: [exact] }, { lookup: () => ({ files: fileList, ...(metaValue ? { meta: metaValue } : {}) }) })
+  }
 
   const dialog = (
     <FullscreenDialog
@@ -702,6 +746,7 @@ export function DemoViewer(props: DemoViewerProps) {
             <span className="docs-demo-spacer" />
             <StatusBadge status={status} />
             <VariantSwitch variants={variants} value={variant} onChange={setVariant} title={title} width={variantsWidth} />
+            {fileList?.length ? <CopyDemoButton clipboard={copyDemo} className="docs-demo-icon-btn" /> : null}
             {runnable ? <FullscreenButton onOpen={() => setFullscreen(true)} title={title} /> : null}
           </header>
           {runnable ? (
@@ -766,7 +811,7 @@ export function DemoViewer(props: DemoViewerProps) {
 }
 
 function MultiFileViewer({ rootRef, className, baseId, mode, src, title, description, variants, variant, onVariant, files, preview, near, height, viewport, bleed, look, status, variantsWidth, href, onFullscreen, copyDemo, dialog }: {
-  rootRef: MutableRefObject<HTMLElement | null>
+  rootRef: Ref<HTMLElement>
   className: string
   baseId: string
   mode: "resolver" | "inline"
@@ -787,7 +832,7 @@ function MultiFileViewer({ rootRef, className, baseId, mode, src, title, descrip
   variantsWidth: number | string | undefined
   href: string | undefined
   onFullscreen: () => void
-  copyDemo: (() => string) | undefined
+  copyDemo: (() => DocstreamClipboard | null) | undefined
   dialog: ReactNode
 }) {
   const runnable = preview.kind !== "unavailable"
@@ -835,7 +880,7 @@ function MultiFileViewer({ rootRef, className, baseId, mode, src, title, descrip
               ))}
             </div>
           ) : null}
-          {copyDemo ? <CopyButton text={copyDemo} label="Copy demo as Markdown" className="docs-demo-icon-btn" /> : null}
+          {copyDemo ? <CopyDemoButton clipboard={copyDemo} className="docs-demo-icon-btn" /> : null}
           {runnable ? <FullscreenButton onOpen={onFullscreen} title={title} /> : null}
           <NewTabLink href={href} title={title} />
         </div>

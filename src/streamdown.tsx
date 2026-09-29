@@ -33,6 +33,7 @@ export function GitbookStreamdown({
   demoResolver,
   demoRuntime,
   demoDependencies,
+  demoVFS,
   pageActions,
 }: GitbookStreamdownProps) {
   const content = markdown ?? children ?? ""
@@ -56,6 +57,7 @@ export function GitbookStreamdown({
         demoResolver={demoResolver}
         demoRuntime={demoRuntime}
         demoDependencies={demoDependencies}
+        demoVFS={demoVFS}
         pageActions={isStreaming ? false : pageActions}
       />
     </div>
