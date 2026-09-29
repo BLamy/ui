@@ -35,7 +35,7 @@ const CASES = [
   ['atoms-segmented--three-options', { tap: `${root} [data-slot=segmented] label >> nth=1` }],
   ['molecules-tabbar--interactive', { tap: `${root} [role=tab] >> nth=1` }],
   ['molecules-tabview--vertical-rail', { tap: `${root} [role=tab] >> nth=0` }, (t) => t.includes('Everyone you know')],
-  ['organisms-workspacerail--discord-style', { tap: `${root} [role=tab] >> nth=2` }],
+  ['molecules-tabview--workspace-rail', { tap: `${root} [role=tab] >> nth=2` }], // the Discord rail (1.x WorkspaceRail)
   ['organisms-navigationstack--push-pop', { tap: `${root} [data-slot=list-row] >> nth=0` }, (t) => t.includes('Pop with the back button')],
   ['atoms-toggle--default', { tap: `${root} button >> nth=0` }],
   ['atoms-checkbox--default', { tap: `${root} label >> nth=0` }],
