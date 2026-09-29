@@ -11,9 +11,9 @@ import { cn } from '../lib/utils';
    Hover peeks the stop under the cursor (no tick, no jump); drag commits it.
    variant="wave" draws one dash per stop that swells around the pointer like the macOS Dock, with a
    title + preview card beside the rail: <IndexBar variant="wave" side="left" value={current} items={…}/>
-   A right-side rail publishes its width as --bl-index-bar-inset on its parent (the element it overlays), and
-   ListRows under that parent widen their trailing inset by it, so chevrons and accessories stay clear of the
-   letters. Opt out with insetContent={false}. */
+   A right-side rail publishes how far list rows run under it as --bl-index-bar-inset on its parent (the element
+   it overlays), and ListRows under that parent widen their trailing inset by it, so chevrons and accessories
+   stay clear of the letters. Opt out with insetContent={false}. */
 
 export const AL = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
@@ -72,8 +72,8 @@ export interface IndexBarProps<K extends IndexBarKey = string> {
   side?: 'left' | 'right';
   /** Key of the current item (e.g. the turn in view); the wave draws it full length in the tint. */
   value?: K;
-  /** Publish the rail's width as `--bl-index-bar-inset` on the parent element so ListRows beside it keep their
-   * trailing accessories clear of it (right side only). Default true. */
+  /** Publish how far list rows run under the rail as `--bl-index-bar-inset` on the parent element so ListRows
+   * beside it keep their trailing accessories clear of it (right side only). Default true. */
   insetContent?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -93,11 +93,30 @@ export function IndexBar<K extends IndexBarKey = string>({
   const [focused, setFocused] = useState(false); const [keyboardIndex, setKeyboardIndex] = useState(-1);
   // Continuous pointer position along the track, in stops (0 = top edge, n = bottom edge); drives the wave.
   const [pu, setPu] = useState<number | null>(null);
+  // Publish how far the rows run under the rail: a row's right edge minus the rail's left edge (the rail's width
+  // for an edge-to-edge list, less — often nothing — for an inset-grouped one). Re-measured as rows mount or the
+  // host resizes; rows' own padding doesn't move their edge, so this never feeds back.
   useLayoutEffect(() => {
-    const host = rail.current?.parentElement;
-    if (!host || !insetContent || side !== 'right') return;
-    host.style.setProperty('--bl-index-bar-inset', `${width}px`);
-    return () => { host.style.removeProperty('--bl-index-bar-inset'); };
+    const el = rail.current, host = el?.parentElement;
+    if (!el || !host || !insetContent || side !== 'right') return;
+    let raf = 0;
+    const sync = () => {
+      raf = 0;
+      const row = host.querySelector<HTMLElement>('[data-slot="list-row-content"]');
+      const overlap = row ? Math.max(0, row.getBoundingClientRect().right - el.getBoundingClientRect().left) : width;
+      const v = `${Math.round(overlap)}px`;
+      if (host.style.getPropertyValue('--bl-index-bar-inset') !== v) host.style.setProperty('--bl-index-bar-inset', v);
+    };
+    sync();
+    const later = () => { if (!raf) raf = requestAnimationFrame(sync); };
+    const ro = new ResizeObserver(later);
+    ro.observe(host);
+    const mo = new MutationObserver(later);
+    mo.observe(host, { childList: true, subtree: true });
+    return () => {
+      cancelAnimationFrame(raf); ro.disconnect(); mo.disconnect();
+      host.style.removeProperty('--bl-index-bar-inset');
+    };
   }, [insetContent, side, width]);
   const measure = () => {
     const r = rail.current, t = track.current; if (!r || !t) return null;

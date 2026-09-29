@@ -249,7 +249,7 @@ Pass no `items` (or an empty array) and the same component renders A-Z. Place it
 | `variant` | `'default' \| 'wave'` | `wave` renders dashes that swell around the pointer, with a title + preview card |
 | `side` | `'left' \| 'right'` | Edge the rail sits on (default `right`); previews open on the inner side |
 | `value` | `K` | Current stop; the wave draws it full length in the tint |
-| `insetContent` | `boolean` | Default `true`: a right-side rail publishes its width as `--bl-index-bar-inset` on its parent, and `ListRow`s under that parent widen their trailing inset by it so chevrons and accessories stay clear of the rail |
+| `insetContent` | `boolean` | Default `true`: a right-side rail publishes how far list rows run under it as `--bl-index-bar-inset` on its parent (its width for an edge-to-edge list, little or nothing for inset-grouped cards), and `ListRow`s under that parent widen their trailing inset by it so chevrons and accessories stay clear of the rail |
 
 ### Interaction and accessibility
 
