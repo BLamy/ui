@@ -85,15 +85,16 @@ import {
 
 | Part | Role |
 | --- | --- |
-| `Composer` | Root and state. `value` / `defaultValue` / `onValueChange` (Markdown), `attachments` / `defaultAttachments` / `onAttachmentsChange`, `expanded` / `defaultExpanded` / `onExpandedChange`, `streaming`, `onStop`, `onSubmit(markdown, attachments)`, `annotator` (see *Image annotation* below). Parts read it with `useComposer()` (`send`, `stop`, `canSend`, `attachFiles`, `removeAttachment`, `annotate`, …). |
-| `ComposerCard` | The bordered surface (`size="default"` 15px corners, `size="lg"` 22px). Its addons order themselves, so they can be written in any order. |
+| `Composer` | Root and state. `value` / `defaultValue` / `onValueChange` (Markdown), `attachments` / `defaultAttachments` / `onAttachmentsChange`, `expanded` / `defaultExpanded` / `onExpandedChange`, `streaming`, `onStop`, `onSubmit(markdown, attachments)`, `annotator` (see *Image annotation* below), and the file rules `acceptedFileTypes`, `maxFileSize`, `maxFiles`, `onDropFiles(files, source)`, `onFilesRejected(rejections)` (see *Files and drop* below). Parts read it with `useComposer()` (`send`, `stop`, `canSend`, `attachFiles(files, { source, point })`, `removeAttachment`, `annotate`, …). |
+| `ComposerCard` | The bordered surface (`size="default"` 15px corners, `size="lg"` 22px). Its addons order themselves, so they can be written in any order. It is a react-aria drop zone for files (`dropZone={false}` opts out; `dropLabel` retitles the overlay). |
 | `ComposerAddon` | `align="block-start" \| "block-end" \| "inline-start" \| "inline-end"` — a row above/below the input or a column beside it. `ComposerFooter` is the block-end row. |
 | `ComposerInput` | The Docstream WYSIWYG editor (slash menu, Markdown paste, image chips). |
-| `ComposerAttachments` | Thumbnail strip (block-start): click to annotate (or preview, with `annotator={null}`), ✕ to remove. |
+| `ComposerAttachments` | The tile strip (block-start): image thumbnails (click to annotate, or preview with `annotator={null}`), a video's first frame, code's first lines, a glyph with name and size for other files (click to open). ✕, or Backspace / Delete on a focused tile, removes one. |
 | `ComposerButton` | `variant="ghost" \| "pill" \| "primary" \| "destructive"`, plus `tint`. `ComposerPillLabel` draws icon + label + chevron. |
 | `ComposerSelect` | An option pill that opens a react-aria `Menu`; ticks on selection. `options: { id, label, short?, description? }[]`. |
 | `ComposerSend` / `ComposerStop` | Send circle, disabled while empty. It morphs into the stop control while `streaming` (`morph={false}` keeps it; pair it with `<ComposerStop variant="solid" />`). |
-| `ComposerAttach` | Paperclip → file picker → attachments, inserted as chips at the caret. |
+| `ComposerAdd` | The "+" button: a react-aria `FileTrigger` → attachments. `acceptedFileTypes` (defaults to the Composer's), `allowsMultiple` (default `true`), `acceptDirectory`, `defaultCamera`, `icon`, `label`. |
+| `ComposerAttach` | The paperclip: `ComposerAdd` with a clip glyph (its old `accept="image/*"` string still works). |
 | `ComposerExpand` | Toggles the tall drafting mode; sits in the card's top-right corner. |
 | `ComposerSeparator`, `ComposerSpacer`, `ComposerText` | Footer rule, flex spacer, muted text with an icon. |
 | `ComposerBump` | A strip attached above (`side="top"`, tucked behind the card) or below the card. `variant="attached" \| "detached" \| "flush"`. Bumps lay out by `side` wherever they are placed. |
@@ -137,6 +138,43 @@ import {
 ## Pasted images become chips
 
 `ComposerInput` uses the editor's `imagePaste="chip"` mode. A pasted or dropped image lands as a compact chip exactly where it was pasted — thumbnail, name and size — and its file joins the Composer's `attachments`, so it also appears in `ComposerAttachments`. Hovering a chip shows the full image; clicking the chip or its thumbnail opens `AnnotateLightbox` — a PencilKit drawing surface over the image. Saving flattens the strokes into the image and replaces the attachment's `src`, so the chip and the thumbnail update together. Removing a thumbnail removes its chip; deleting the chip removes the attachment. The sent Markdown refers to each image as `![image.png](attachment:att-…)`, and `onSubmit` receives the attachments alongside it.
+
+## Files and drop
+
+Files come in three ways, and all three go through the same door: the **`ComposerAdd`** "+" button (react-aria `FileTrigger`), a **drop** on the card (the card is a react-aria drop target), or a **paste** into the text. Images chip into the draft where they land — at the drop point when you drop onto the text, else at the caret — and can be annotated as before. Every other file becomes a tile in `ComposerAttachments`:
+
+- **Video** — its first frame, captured on a canvas (a glyph if the browser can't decode it).
+- **Text and code** — its first lines, in mono.
+- **PDF, audio, archives, anything else** — a glyph in the kind's colour with the name, extension and size.
+
+While files hover the card, a tinted wash and ring spring in over it with the "+" lifting into place, and fold away when they leave or land. Only file drags reach the drop zone, so dragging text inside the editor works as before. Keyboard users reach a hidden drop target after the card's controls: focusing it shows the overlay, and react-aria's keyboard drag and drop and ⌘V paste work there; a live region announces what was attached.
+
+```tsx
+<Composer
+  acceptedFileTypes={['image/*', 'video/*', 'application/pdf', '.md', '.ts', '.tsx']}
+  maxFileSize={10 * 1024 * 1024}   // 10 MB
+  maxFiles={8}
+  onDropFiles={(files, source) => files.filter((f) => !f.name.startsWith('.'))}
+  onSubmit={(markdown, attachments) => upload(attachments.map((a) => a.file))}
+>
+  <ComposerCard>
+    <ComposerAttachments />
+    <ComposerInput />
+    <ComposerFooter>
+      <ComposerAdd />
+      <ComposerSpacer />
+      <ComposerSend />
+    </ComposerFooter>
+  </ComposerCard>
+</Composer>
+```
+
+- `acceptedFileTypes` takes MIME types, wildcards and extensions, as an `<input accept>` does; the picker offers only those, and drops or pastes of anything else are turned away. Files over `maxFileSize`, or past `maxFiles`, are turned away too — with a warning toast on the nearest `Toaster` (mount one), or through `onFilesRejected(rejections)` instead.
+- `onDropFiles(files, source)` sees every batch that passed (`source` is `picker`, `drop`, `paste` or `api`): return `false` to take the files yourself, or an array to attach those instead.
+- Each attachment is `{ id, name, size, type, kind, file, src, preview?, excerpt? }` — `kind` is `image | video | audio | pdf | text | archive | other`, and `file` is the original `File` for uploading. Images keep a data URL in `src`; other files get an object URL, revoked when the attachment is removed or the Composer unmounts (files handed to `onSubmit` stay valid until then).
+- Only images chip into the editor (the chip is an image preview); other files live in the tile strip.
+
+{% demo src="composer/files-and-drop" %}
 
 ## Image annotation
 
@@ -209,6 +247,7 @@ Every state change moves rather than swaps, after Benji Taylor's [Family Values]
 - **Send ↔ stop** is one button: the fill drains (or turns red with `stopVariant="solid"`) and the arrow turns into the stop glyph. A standalone `ComposerStop` pops in beside its neighbours.
 - **Expand** springs the card to its tall drafting height; the icon morphs.
 - **Attachments** pop into the strip (it opens as a height morph) and out of it, neighbours sliding over.
+- **Dropping files**: the card's drop overlay springs in (wash, ring, the "+" lifting into place) and folds away when the files land or leave.
 - **Annotate** zooms the image out of the thumbnail or chip you pressed and, on Cancel or Save, back into it.
 - **Option pills** morph their label by the letters old and new share; menu ticks pop in.
 - **Draggable bumps** follow the finger, then settle on a spring that keeps the release velocity — a flick opens or closes them.

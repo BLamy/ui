@@ -18,6 +18,7 @@
     "ComposerMenuItem",
     "ComposerSend",
     "ComposerStop",
+    "ComposerAdd",
     "ComposerAttach",
     "ComposerExpand",
     "ComposerAttachments",
