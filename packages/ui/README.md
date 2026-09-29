@@ -1,6 +1,6 @@
 # @brett_lamy/ui
 
-Touch-first React components inspired by UIKit container patterns. The package includes theme tokens, haptics, lists, navigation, adaptive split views, drawers, sheets, and a reusable jump rail — plus a team-chat scaffold (`ChatShell`, `ArtifactChatContainer`, `FloatingSheet`), an IDE workbench (`WorkbenchShell`, `Composer`, `MessageScroller`, terminal dock, surfaces, `MarkdownView`) and PencilKit drawing (`PencilCanvas`, pickers, `usePencilHistory`, on perfect-freehand).
+Touch-first React components inspired by UIKit container patterns. Colors come from your shadcn theme (CSS variables); the iOS look ships as an optional theme. The package includes haptics, lists, navigation, adaptive split views, drawers, sheets, and a reusable jump rail — plus a team-chat scaffold (`ChatShell`, `ArtifactChatContainer`, `FloatingSheet`), an IDE workbench (`WorkbenchShell`, `Composer`, `MessageScroller`, terminal dock, surfaces, `MarkdownView`) and PencilKit drawing (`PencilCanvas`, pickers, `usePencilHistory`, on perfect-freehand).
 
 ## Install
 
@@ -8,10 +8,14 @@ Touch-first React components inspired by UIKit container patterns. The package i
 npm i @brett_lamy/ui
 ```
 
-Import the stylesheet once, then wrap the part of the app that uses BL UI tokens:
+Import the stylesheet once — and, for the iOS palette, the bl-theme (it sets shadcn's CSS variables; leave it out to use your own shadcn theme). `BLProvider` picks light/dark and a tint for a subtree:
+
+```css
+@import '@brett_lamy/ui/styles.css';
+@import '@brett_lamy/ui/theme.css'; /* optional: the iOS palette */
+```
 
 ```tsx
-import '@brett_lamy/ui/styles.css';
 import { BLProvider, NavigationStack } from '@brett_lamy/ui';
 
 export function App() {
@@ -23,7 +27,7 @@ export function App() {
 }
 ```
 
-React 18 and 19 are supported peer dependencies.
+React 18 and 19 are supported peer dependencies. Upgrading from 1.x: see [Migrating to 2.0](https://blamy.github.io/ui/#/migrating-to-2).
 
 ## IndexBar
 
@@ -61,9 +65,9 @@ If `items` is omitted or empty, the component retains its A-Z form:
 - Lists and navigation: `List`, `List.Section`, `List.Row`, `IndexBar`, `TabBar`, `TabView`, `EditBar`
 - Inputs and feedback: `SearchField`, `Switch`, `Segmented`, `Haptics`, `HapticIndicator`, plus shadcn-style primitives (`Button`, `Dialog`, `Sheet`, `Select`, `ComboBox`, `Tabs`, …)
 - Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `ContentSwap`, `Celebrate`
-- Foundations: `BLProvider`, `Icon`, `Avatar`, `Spinner`, token helpers
-- Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `WorkspaceRail` parts, `ServerHeader`, `ChannelList` / `ChannelGroup` / `ChannelItem`, `UserPanel`, `MessageList`, `Message` parts, `ThreadPreview`, `MemberList`, `TypingIndicator`, `ChatComposer`, `RichText`, `ChatUsersProvider`, `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer`
-- Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), thread sidebar parts (`ThreadSidebar`, `ThreadList`, `ThreadGroup`, `ThreadItem`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `SnapSheet`, `MarkdownView`
+- Foundations: `BLProvider`, `ThemeScope`, `AppearanceProvider`, `Icon`, `Avatar`, `Spinner`
+- Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer` (the Discord parts — channels, messages, threads, members — live in the `discord-clone` registry block)
+- Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `SnapSheet`, `MarkdownView`
 - Demo apps: `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo`, `HapticsPlayground` (full apps — Discord, T3 Code, GitHub — are registry blocks)
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.

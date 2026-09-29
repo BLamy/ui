@@ -6,6 +6,7 @@
         { "id": "introduction", "title": "Introduction" },
         { "id": "installation", "title": "Installation" },
         { "id": "theming", "title": "Theming" },
+        { "id": "migrating-to-2", "title": "Migrating to 2.0" },
         { "id": "motion", "title": "Motion" },
         { "id": "haptics", "title": "Haptics" }
       ]

@@ -9,7 +9,7 @@
       "title": "BL UI",
       "description": "Installs @brett_lamy/ui, imports its stylesheet, and registers BL UI's extra color utilities (text-tertiary-foreground, bg-secondary-strong, bg-bar, text-success, …) next to shadcn's.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "cssVars": {
         "theme": {
@@ -419,7 +419,7 @@
       "title": "AdaptivePane",
       "description": "One pane presented as a column, sheet or pushed page depending on the room it has.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -444,7 +444,7 @@
       "title": "ArtifactChatContainer",
       "description": "Chat docked beside an artifact when wide; a floating glass Composer over the artifact when narrow.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -471,7 +471,7 @@
       "title": "ChatShell",
       "description": "A team-chat scaffold: workspace rail and channels beside the conversation, one drawer when narrow.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -555,7 +555,7 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -613,7 +613,7 @@
       "title": "Credenza",
       "description": "A dialog on wide screens and a draggable tray on phones, from one composition.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -638,7 +638,7 @@
       "title": "EdgeDrawer",
       "description": "A drawer that follows the finger from any edge, with rubber-banding and velocity-aware snapping.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -663,7 +663,7 @@
       "title": "FloatingSheet",
       "description": "A floating card that grows into the full page along one drag, over a map or canvas.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -689,7 +689,7 @@
       "title": "Haptics",
       "description": "Named haptic feedback for touch devices, with an on-screen indicator for desktop.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -716,7 +716,7 @@
       "title": "Icons",
       "description": "An SF Symbols-style icon set on a 24px grid: round-capped strokes in six weights, filled variants, and custom shapes.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -747,7 +747,7 @@
       "title": "List",
       "description": "Inset-grouped and plain lists with rows, sections, swipe actions and an A-Z IndexBar.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -776,7 +776,7 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -804,7 +804,7 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -831,7 +831,7 @@
       "title": "MessageScroller",
       "description": "A chat transcript scroller anchored to the newest message, with streaming-aware autoscroll.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -857,7 +857,7 @@
       "title": "Morph",
       "description": "Shared-element transitions: one element springs between two layouts (mini player → full player), drag-to-dismiss friendly, reduced-motion aware.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -885,7 +885,7 @@
       "title": "Motion",
       "description": "Springs and the motion vocabulary: TextMorph, NumberMorph, IconSwap, Chevron, AnimatedHeight, ContentSwap, Celebrate.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -922,7 +922,7 @@
       "title": "NavigationStack",
       "description": "A controlled push/pop stack with large titles and edge-swipe back.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -948,7 +948,7 @@
       "title": "NowPlayingBars",
       "description": "The animated equaliser beside the track that's playing — still when paused and under reduced motion — plus the Slider tones for media controls.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -976,7 +976,7 @@
       "title": "PencilKit",
       "description": "Pressure-aware drawing (perfect-freehand) with the PencilKit tool picker, and the Composer image annotator.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1010,7 +1010,7 @@
       "title": "ProgressRing",
       "description": "Circular progress: a determinate ring that springs to each value with a rolling percentage, and a CountdownRing that drains second by second and turns red near the end.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1037,7 +1037,7 @@
       "title": "SideDrawer",
       "description": "An inspector column: docked beside the content, or an overlay sheet with a scrim.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1062,7 +1062,7 @@
       "title": "Sidebar",
       "description": "Docked, rail, floating or overlay navigation with workspace, search, sections and items.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1099,7 +1099,7 @@
       "title": "Skeleton",
       "description": "Loading placeholders with a soft left-to-right sweep instead of a pulse: text lines, circles, rects and rounded blocks, and a SkeletonText paragraph with a shorter last line.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1126,7 +1126,7 @@
       "title": "SplitView",
       "description": "An adaptive sidebar / supplementary / detail split that collapses by its own measured width.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1164,7 +1164,7 @@
       "title": "SyntaxHighlighting",
       "description": "Code highlighted on the GPU by gpu-lexer: file header, copy button, line numbers, highlighted and diff lines, inline code.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1202,7 +1202,7 @@
       "title": "TabView",
       "description": "Tabs as parts: a bar at any edge, sliding indicator, directional panels, swipe between panels.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1239,7 +1239,7 @@
       "title": "Theme",
       "description": "BLProvider, ThemeScope and the appearance context: pick light/dark, a tint and a theme scope for a subtree. Colors are shadcn variables (see the bl-theme item for the iOS palette).",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1270,7 +1270,7 @@
       "title": "Toast",
       "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, stacking banners with actions, springs, auto-dismiss and announcements.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1302,7 +1302,7 @@
       "title": "WorkbenchShell",
       "description": "An IDE scaffold that owns the width class and region visibility; compose regions into its slots.",
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1397,7 +1397,7 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1463,7 +1463,7 @@
         "media"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1520,7 +1520,7 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1581,7 +1581,7 @@
         "security"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1637,7 +1637,7 @@
         "productivity"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1698,7 +1698,7 @@
         "settings"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1749,7 +1749,7 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1790,7 +1790,7 @@
         "dashboard"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1868,7 +1868,7 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^2.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
