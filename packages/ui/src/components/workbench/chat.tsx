@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
 import { Button } from '../../lib/workbench/press';
-import { cn } from '../../lib/workbench/util';
+import { cn, wbPress, wbBrandTile } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
 import { Icon, type IconName } from '../../lib/icon';
 import { prefersReducedMotion, springs } from '../../lib/workbench/motion';
@@ -81,7 +81,7 @@ export function ConversationGreeting({ title, description, icon, className }: Co
   return (
     <div data-slot="conversation-greeting" className={cn('mb-[18px] text-center', className)}>
       {icon ?? (
-        <span className="inline-grid size-10 place-items-center rounded-[11px] bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]">
+        <span className={cn(wbBrandTile, 'inline-grid size-10 place-items-center rounded-[11px]')}>
           <Icon name="asterisk" size={21} sw={2.1} className="text-white" />
         </span>
       )}
@@ -181,7 +181,7 @@ export function Suggestion({ onPress, className, children }: { onPress?: () => v
   return (
     <Button
       data-slot="suggestion"
-      className={cn('wb-btn wb-hl cursor-pointer rounded-[99px] border border-border bg-transparent px-[13px] py-1.5 text-[12.5px] text-muted-foreground', className)}
+      className={cn(wbPress, 'cursor-pointer rounded-[99px] border border-border bg-transparent px-[13px] py-1.5 text-[12.5px] text-muted-foreground hover:bg-secondary!', className)}
       onPress={() => {
         vib([8]);
         onPress?.();
@@ -274,7 +274,7 @@ export function WorkLog({ summary, defaultOpen = false, children, className }: W
       {has ? (
         <Button
           aria-expanded={open}
-          className={cn(row, 'wb-btn cursor-pointer border-0 bg-transparent p-0 leading-[inherit]')}
+          className={cn(row, wbPress, 'cursor-pointer border-0 bg-transparent p-0 leading-[inherit]')}
           onPress={() => {
             tick();
             setOpen(!open);
@@ -368,7 +368,7 @@ export function SettledBanner({
         <div className="mt-px text-[12px] text-muted-foreground">{description}</div>
       </div>
       <Button
-        className="wb-btn wb-hl shrink-0 cursor-pointer rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12.5px] font-semibold text-foreground"
+        className={cn(wbPress, 'shrink-0 cursor-pointer rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12.5px] font-semibold text-foreground hover:bg-secondary!')}
         onPress={() => {
           tick();
           onUnsettle();

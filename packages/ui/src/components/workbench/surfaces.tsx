@@ -2,7 +2,7 @@ import * as React from 'react';
 import { MultiFileDiff } from '@pierre/diffs/react';
 import { FileTree, useFileTree } from '@pierre/trees/react';
 import { Button } from '../../lib/workbench/press';
-import { cn } from '../../lib/workbench/util';
+import { cn, wbPress, wbBrandTile } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
 import { Icon, type IconName } from '../../lib/icon';
 import { useWorkbenchAppearance } from '../../lib/workbench/theme';
@@ -52,7 +52,7 @@ export function SurfacePicker({
           <Button
             key={s.k}
             data-slot="surface-card"
-            className="wb-btn wb-hl cursor-pointer rounded-[13px] border border-border bg-card px-3.5 py-[15px] text-left text-foreground"
+            className={cn(wbPress, 'cursor-pointer rounded-[13px] border border-border bg-card px-3.5 py-[15px] text-left text-foreground hover:bg-secondary!')}
             onPress={() => {
               vib([8]);
               onPick(s.k);
@@ -94,7 +94,7 @@ export function SurfaceBrowser({ url, children, className }: SurfaceBrowserProps
 export function SurfaceAppPreview({ name, detail }: { name: React.ReactNode; detail?: React.ReactNode }) {
   return (
     <div data-slot="surface-app-preview" className="text-center">
-      <span className="inline-grid size-10 place-items-center rounded-[10px] bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]">
+      <span className={cn(wbBrandTile, 'inline-grid size-10 place-items-center rounded-[10px]')}>
         <Icon name="asterisk" size={20} sw={2} className="text-white" />
       </span>
       <div className="mt-3 text-[13.5px] font-[650]">{name}</div>

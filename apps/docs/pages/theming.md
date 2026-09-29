@@ -12,7 +12,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  BLProvider, AppearanceProvider, useAppearance,
+  BLProvider, ThemeScope, AppearanceProvider, useAppearance,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -23,7 +23,7 @@ Adds `@/components/ui/theme.tsx`, installs `@brett_lamy/ui`, and wires its style
 
 ```tsx
 import {
-  BLProvider, AppearanceProvider, useAppearance,
+  BLProvider, ThemeScope, AppearanceProvider, useAppearance,
 } from '@/components/ui/theme'
 ```
 {% endtab %}

@@ -111,7 +111,6 @@ function StreamingJumpPill() {
         </span>
         <button
           type="button"
-          className="wb-btn"
           onClick={() => setRun((r) => r + 1)}
           style={{
             border: 0,
@@ -131,8 +130,8 @@ function StreamingJumpPill() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function StreamingJumpPillExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

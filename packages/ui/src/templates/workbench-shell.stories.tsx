@@ -111,7 +111,7 @@ function ShellDemo({
     </ThreadItem>
   );
   return (
-    <div style={{ width, height, margin: '0 auto', overflow: 'hidden', border: '1px solid rgba(255,255,255,.1)' }}>
+    <div className="border border-white/10" style={{ width, height, margin: '0 auto', overflow: 'hidden' }}>
       <WorkbenchShell defaultDockOpen={terminal} defaultPanelOpen={panel} defaultPanelFullscreen={full}>
         <WorkbenchSidebar>
           <ThreadSidebar>
@@ -251,7 +251,7 @@ export const CompactSurfacePage: Story = { render: () => <ShellDemo width={390} 
 function ChatOnlyDemo() {
   const t = THREADS[1];
   return (
-    <div style={{ width: 980, height: 600, margin: '0 auto', overflow: 'hidden', border: '1px solid rgba(255,255,255,.1)' }}>
+    <div className="border border-white/10" style={{ width: 980, height: 600, margin: '0 auto', overflow: 'hidden' }}>
       <WorkbenchShell>
         <WorkbenchSidebar width={220}>
           <ThreadSidebar>

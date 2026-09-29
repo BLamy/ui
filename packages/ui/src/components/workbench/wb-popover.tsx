@@ -13,14 +13,17 @@ import { readThemeVars } from '../../lib/theme';
    scope). The popover copies the resolved theme variables off its trigger when it opens (`readThemeVars`), so a
    menu matches the surface it came from in either appearance. */
 
-/** Whether an element sits in a light surface. */
+/** Whether an element sits in a light surface: the nearest appearance root (`light` / `dark`, set by BLProvider,
+    ThemeScope and the theme-scoped shells) decides, else the computed color scheme. */
 export function isLightSurface(el: Element | null | undefined): boolean {
-  if (!el || typeof getComputedStyle === 'undefined') return false;
-  return getComputedStyle(el).colorScheme === 'light' || !!el.closest('.light,[data-tone="light"],[data-appearance="light"]');
+  if (!el) return false;
+  const root = el.closest('.light,.dark,[data-tone]');
+  if (root) return root.classList.contains('light') || root.getAttribute('data-tone') === 'light';
+  return typeof getComputedStyle !== 'undefined' && getComputedStyle(el).colorScheme === 'light';
 }
 
 export const wbPopoverSurface =
-  'box-border rounded-[12px] border border-border bg-card font-ios text-foreground shadow-[0_14px_44px_rgba(0,0,0,.34),0_2px_8px_rgba(0,0,0,.12)] outline-none backdrop-blur-[18px] ' +
+  'box-border rounded-[12px] border border-border bg-card font-ios text-foreground shadow-[0_14px_44px_color-mix(in_srgb,black_34%,transparent),0_2px_8px_color-mix(in_srgb,black_12%,transparent)] outline-none backdrop-blur-[18px] ' +
   'origin-(--trigger-anchor-point) data-entering:animate-[wb-pop-in_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-exiting:animate-[wb-pop-out_.14s_ease-in_forwards] motion-reduce:animate-none';
 
 export interface WbPopoverProps extends AriaPopoverProps {}

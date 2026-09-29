@@ -26,7 +26,7 @@ import { mergeProps } from 'react-aria/mergeProps';
 import { Extension } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
 import { Button, ToggleButton, type ButtonProps } from '../../lib/workbench/press';
-import { cn } from '../../lib/workbench/util';
+import { cn, wbPress } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
 import { Icon, type IconName } from '../../lib/icon';
 import { WbPopover } from './wb-popover';
@@ -49,6 +49,7 @@ import {
 import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '../../lib/workbench/motion';
 import { useSheetDrag, type SheetDragState } from '../../lib/sheet-drag';
 import { TextMorph } from '../text-morph';
+import { themeScopeProps } from '../../lib/theme';
 
 /* ══ Composer — a compositional prompt box, in the spirit of shadcn's InputGroup ══
 
@@ -784,9 +785,10 @@ function playShape(root: HTMLElement | null, snap: ShapeSnapshot) {
 }
 
 /* ── FAB ── */
-export const composerFabVariants = cva(
-  'wb-btn z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-border bg-card p-0 text-foreground shadow-[0_10px_30px_-8px_rgba(0,0,0,.45),0_2px_8px_rgba(0,0,0,.14)] outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
-);
+export const composerFabVariants = cva([
+  wbPress,
+  'z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-border bg-card p-0 text-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,black_45%,transparent),0_2px_8px_color-mix(in_srgb,black_14%,transparent)] outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
+]);
 
 export interface ComposerFabProps extends Omit<ButtonProps, 'children'> {
   className?: string;
@@ -1042,7 +1044,7 @@ export function ComposerCard({ size, dropZone = true, dropLabel, className, ref,
           aria-hidden={!folded || undefined}
           excludeFromTabOrder={!folded}
           onPress={fab.restore}
-          className="wb-btn absolute inset-0 z-3 grid cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60"
+          className={cn(wbPress, 'absolute inset-0 z-3 grid cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60')}
         >
           {fab.icon ?? <Icon name="square-pencil" size={21} sw={1.9} />}
         </Button>
@@ -1125,14 +1127,14 @@ export function ComposerText({
 
 /* ── Buttons ── */
 export const composerButtonVariants = cva(
-  'wb-btn flex shrink-0 cursor-pointer items-center justify-center border-0 font-ios outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
+  cn(wbPress, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-ios outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60'),
   {
     variants: {
       variant: {
         /** Transparent until hovered. */
-        ghost: 'wb-hl bg-transparent text-muted-foreground',
+        ghost: 'bg-transparent text-muted-foreground hover:bg-secondary!',
         /** Option pill: label + chevron (model, effort, access). */
-        pill: 'wb-hl gap-[5px] rounded-[7px] bg-transparent px-[7px] py-[5px] text-[12.5px] font-semibold text-muted-foreground',
+        pill: 'gap-[5px] rounded-[7px] bg-transparent px-[7px] py-[5px] text-[12.5px] font-semibold text-muted-foreground hover:bg-secondary!',
         /** Filled accent circle (send). */
         primary: 'rounded-[50%] bg-primary text-white [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
         /** Filled red circle (stop). */
@@ -1331,7 +1333,7 @@ export function ComposerStop({ variant = 'ring', forceMount, className, ...props
     ) : (
       <Button
         data-slot="composer-stop"
-        className={cn('wb-btn relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-foreground', className)}
+        className={cn(wbPress, 'relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-foreground', className)}
         onPress={stop}
         aria-label="Stop"
         {...props}
@@ -1381,7 +1383,8 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
       isDisabled={stopping ? false : !canSend || streaming}
       onPress={stopping ? stop : send}
       className={cn(
-        'wb-btn relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-ios text-white outline-none data-disabled:cursor-default data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
+        wbPress,
+        'relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-ios text-white outline-none data-disabled:cursor-default data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
         '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
         !stopping ? 'bg-primary data-disabled:opacity-35' : stopVariant === 'solid' ? 'bg-destructive' : 'bg-transparent text-foreground',
         className,
@@ -1487,7 +1490,8 @@ export function ComposerExpand({ className }: { className?: string }) {
     <ToggleButton
       data-slot="composer-expand"
       className={cn(
-        'wb-btn wb-hl absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground',
+        wbPress,
+        'absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary!',
         // Compact: fades out of the way rather than vanishing.
         'group-data-[collapsed=compact]/composer:pointer-events-none group-data-[collapsed=compact]/composer:scale-75 group-data-[collapsed=compact]/composer:opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
         className,
@@ -1508,7 +1512,11 @@ export function ComposerExpand({ className }: { className?: string }) {
 }
 
 /* ── Attachments strip ── */
-/** Each kind's glyph and colour on its tile. */
+/** A thumbnail's dark well: the `terminal` theme scope (dark in either appearance). */
+const TERMINAL_WELL = themeScopeProps({ scope: 'terminal', appearance: 'dark' });
+/** The annotate lightbox's palette: a dark `workbench` theme scope. */
+const LIGHTBOX_SCOPE = themeScopeProps({ scope: 'workbench', appearance: 'dark' });
+/** Each kind's glyph and colour on its tile (video, audio and archive are fixed iOS system colours: purple, pink, brown). */
 const KIND_FACE: Record<ComposerAttachmentKind, { icon: string; color: string; label: string }> = {
   image: { icon: 'photo', color: 'var(--success)', label: 'Image' },
   video: { icon: 'video', color: '#AF52DE', label: 'Video' },
@@ -1530,7 +1538,7 @@ function TileBadge({ children, className }: { children: React.ReactNode; classNa
   return (
     <span
       className={cn(
-        'pointer-events-none absolute bottom-1 left-1 grid h-[18px] min-w-[18px] place-items-center rounded-md bg-[rgba(0,0,0,.55)] px-1 text-[9.5px] leading-none font-bold tracking-[.02em] text-white uppercase',
+        'pointer-events-none absolute bottom-1 left-1 grid h-[18px] min-w-[18px] place-items-center rounded-md bg-black/55 px-1 text-[9.5px] leading-none font-bold tracking-[.02em] text-white uppercase',
         className,
       )}
     >
@@ -1553,7 +1561,7 @@ function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttach
           animate={{ opacity: 1, filter: 'blur(0px)' }}
           transition={springs.smooth}
         />
-        <span className="absolute top-1/2 left-1/2 grid size-[22px] -translate-1/2 place-items-center rounded-full bg-[rgba(0,0,0,.55)] pl-px text-white">
+        <span className="absolute top-1/2 left-1/2 grid size-[22px] -translate-1/2 place-items-center rounded-full bg-black/55 pl-px text-white">
           <Icon name="play" size={11} sw={2} className="[&_path]:fill-current" />
         </span>
         {ext ? <TileBadge>{ext}</TileBadge> : null}
@@ -1654,7 +1662,9 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                           onKeyDown={onTileKey(a.id)}
                           title={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
                           aria-label={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
-                          className="block cursor-pointer overflow-hidden rounded-[10px] border border-border bg-(--scope-terminal-background) p-0"
+                          // The thumbnail sits in a dark well in either appearance: a `terminal` theme scope.
+                          data-theme-scope={TERMINAL_WELL['data-theme-scope']}
+                          className={cn(TERMINAL_WELL.className, 'block cursor-pointer overflow-hidden rounded-[10px] border border-border bg-background p-0')}
                         >
                           {a.src ? (
                             <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
@@ -1664,7 +1674,7 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                             </span>
                           )}
                         </Button>
-                        <span className="pointer-events-none absolute bottom-1 left-1 grid size-[18px] place-items-center rounded-md bg-[rgba(0,0,0,.55)] text-white">
+                        <span className="pointer-events-none absolute bottom-1 left-1 grid size-[18px] place-items-center rounded-md bg-black/55 text-white">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M14 4l6 6-10 10H4v-6z" />
                           </svg>
@@ -2323,7 +2333,7 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
       onPress={onPress}
       className={cn(
         'cursor-pointer rounded-[9px] px-3.5 py-[7px] font-ios text-[12.5px] font-[650] text-white',
-        primary ? 'border-0 bg-[var(--primary)]' : 'border border-[rgba(255,255,255,.2)] bg-transparent',
+        primary ? 'border-0 bg-primary' : 'border border-white/20 bg-transparent',
       )}
     >
       {label}
@@ -2334,7 +2344,7 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
   const layout = (surface: ComposerAnnotatorSurface | null) => (
     <>
       <div ref={chromeRef} className="flex items-center gap-2">
-        <span className="flex-1 font-ios text-[13px] font-[650] text-[#EDEDF2]">
+        <span className="flex-1 font-ios text-[13px] font-[650] text-foreground">
           {surface ? (surface.title ?? 'Annotate — strokes flatten into the image on save') : 'Preview'}
         </span>
         {surface ? (
@@ -2349,7 +2359,7 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
       <div
         ref={boxRef}
         data-slot="annotate-lightbox-image"
-        className="relative origin-center self-center overflow-hidden rounded-[14px] border border-[rgba(255,255,255,.14)] bg-[#0C0C10] will-change-transform"
+        className="relative origin-center self-center overflow-hidden rounded-[14px] border border-white/14 bg-code will-change-transform"
       >
         <img ref={imgRef} src={src} alt="" className="block h-auto max-h-[68vh] w-auto max-w-[86vw] min-w-[min(340px,86vw)]" />
         {surface?.canvas}
@@ -2369,11 +2379,13 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
       }}
       className="fixed inset-0 z-400 grid place-items-center"
     >
-      <div ref={backdropRef} data-slot="annotate-lightbox-backdrop" aria-hidden="true" className="absolute inset-0 bg-[rgba(0,0,0,.74)]" />
+      <div ref={backdropRef} data-slot="annotate-lightbox-backdrop" aria-hidden="true" className="absolute inset-0 bg-black/74" />
       <Modal className="relative outline-none">
         <Dialog
           aria-label={preview ? 'Preview image' : 'Annotate image'}
-          className="flex max-w-[90vw] flex-col gap-2.5 outline-none [--card:#1C1C23] [--secondary-strong:rgba(255,255,255,.14)] [--secondary:rgba(255,255,255,.07)] [--muted-foreground:rgba(235,235,245,.6)] [--tertiary-foreground:rgba(235,235,245,.35)] [--foreground:#EDEDF2] [--border:rgba(255,255,255,.12)] scheme-dark"
+          // The lightbox is always a dark Workbench surface (image well, PencilKit tools), whatever opened it.
+          {...LIGHTBOX_SCOPE}
+          className={cn(LIGHTBOX_SCOPE.className, 'flex max-w-[90vw] flex-col gap-2.5 text-foreground outline-none')}
         >
           {Annotator ? <Annotator>{layout}</Annotator> : layout(canvas === undefined ? null : { canvas })}
         </Dialog>

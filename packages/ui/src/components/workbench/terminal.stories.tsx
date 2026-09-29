@@ -3,7 +3,10 @@ import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
 import { WorkbenchDock, WorkbenchDockClose } from '../../templates/workbench-shell';
 import { WorkbenchTheme } from '../../lib/workbench/theme';
 import { TERMINAL_SEED } from './fixtures';
+import { themeScopeProps } from '../../lib/theme';
 import '../../styles.css';
+
+const TERMINAL = themeScopeProps({ scope: 'terminal', appearance: 'dark' });
 
 const meta: Meta<typeof WorkbenchDock> = {
   title: 'Organisms/TerminalDock',
@@ -35,7 +38,8 @@ export const Dock: Story = {
 export const HeaderAndBody: Story = {
   render: () => (
     <WorkbenchTheme style={{ minHeight: 420, padding: 24, display: 'grid', placeItems: 'center' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: 300, width: 520, borderRadius: 12, overflow: 'hidden', background: '#0C0C10', border: '1px solid var(--border)' }}>
+      {/* The terminal's window is a `terminal` theme scope: its own dark background. */}
+      <div {...TERMINAL} className={TERMINAL.className} style={{ display: 'flex', flexDirection: 'column', height: 300, width: 520, borderRadius: 12, overflow: 'hidden', background: 'var(--background)', border: '1px solid var(--border)' }}>
         <TerminalHeader title="zsh — cookbook">
           <TerminalAction icon="rectangle-split" label="Split terminal" />
           <TerminalAction icon="plus" label="New terminal" />

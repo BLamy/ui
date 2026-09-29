@@ -1,7 +1,8 @@
 /* ══ Sidebar system — one compositional API over every sidebar variant ══
    <SidebarProvider> owns open state + container width (useContainerWidth); <Sidebar variant="docked|rail|float|overlay">
    renders the same children in any behavior, and ANY variant becomes a hamburger overlay (EdgeDrawer) below the
-   breakpoint. Styled in the workbench dark language: every colour reads a --wb-* token with a fallback. */
+   breakpoint. Styled in the workbench language: put it in a `workbench` theme scope (WorkbenchTheme, or
+   <ThemeScope scope="workbench">) for the Workbench palette; elsewhere it follows the surrounding theme. */
 import * as React from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
@@ -9,14 +10,12 @@ import { Button as AriaButton } from 'react-aria-components';
 import { EdgeDrawer } from './edge-drawer';
 import { useContainerWidth } from '../lib/container';
 import { cn } from '../lib/utils';
+import { wbBrandTile } from '../lib/workbench/util';
 
-const BLUE = '#0A84FF';
-/* Muted label colours with the workbench-dark fallbacks the sidebar has always carried. */
-const mut = 'text-[color:var(--muted-foreground)]';
-const mut3 = 'text-[color:var(--tertiary-foreground)]';
-/* Sidebar hairline. */
-const sepR = '[border-right:1px_solid_var(--border)]';
-const sideBg = 'bg-[var(--sidebar)]';
+/** The overlay drawer's shadow (EdgeDrawer takes a CSS box-shadow). */
+const DRAWER_SHADOW = '0 0 44px rgba(0,0,0,.4)';
+/* Rows highlight on hover over their resting fill. */
+const hl = 'hover:bg-secondary!';
 /** Haptic tap (no-ops where navigator.vibrate is unavailable; the Haptics engine patches it on iOS Safari). */
 const vib = (pattern: number | number[]) => {
   try {
@@ -89,7 +88,7 @@ export function SidebarProvider({ defaultOpen = true, breakpoint = 560, children
       <div
         ref={ref}
         data-slot="sidebar-provider"
-        className={cn('relative flex h-full overflow-hidden bg-[var(--background)] font-ios', className)}
+        className={cn('relative flex h-full overflow-hidden bg-background font-ios', className)}
         style={style}
       >
         {children}
@@ -122,8 +121,8 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
         onClose={() => c.setOpen(false)}
         width={width}
         zIndex={20}
-        shadow="0 0 44px rgba(0,0,0,.4)"
-        className={cn(sideBg, sepR)}
+        shadow={DRAWER_SHADOW}
+        className="border-r border-border bg-sidebar"
       >
         <div data-slot="sidebar" className="h-full">{body}</div>
       </EdgeDrawer>
@@ -135,7 +134,7 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
       data-slot="sidebar"
       className={cn(
         'box-border shrink-0 overflow-hidden transition-[width] duration-spring-smooth ease-spring-smooth',
-        float ? 'bg-transparent p-2.5' : cn(sideBg, sepR, 'p-0'),
+        float ? 'bg-transparent p-2.5' : 'border-r border-border bg-sidebar p-0',
       )}
       // Width follows open/collapsed state and the width props.
       style={{ width: w }}
@@ -143,7 +142,7 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
       <div
         className={cn(
           'box-border h-full',
-          float && cn(sideBg, 'overflow-hidden rounded-[14px] [border:1px_solid_var(--border)] font-ios'),
+          float && 'overflow-hidden rounded-[14px] border border-border bg-sidebar font-ios',
         )}
         style={{ width: (collapsed ? railWidth : width) - (float ? 20 : 0) }}
       >
@@ -172,7 +171,7 @@ export function SidebarContent({ children }: { children?: ReactNode }) {
 }
 export function SidebarFooter({ children }: { children?: ReactNode }) {
   return (
-    <div data-slot="sidebar-footer" className="shrink-0 p-2 [border-top:1px_solid_var(--border)]">
+    <div data-slot="sidebar-footer" className="shrink-0 border-t border-border p-2">
       {children}
     </div>
   );
@@ -190,13 +189,13 @@ export function SidebarWorkspace({ name, detail, initial }: SidebarWorkspaceProp
       data-slot="sidebar-workspace"
       className={cn('flex items-center gap-2 px-0.5 pt-0 pb-1', collapsed ? 'justify-center' : 'justify-start')}
     >
-      <span className="grid size-[26px] shrink-0 place-items-center rounded-[8px] bg-[linear-gradient(135deg,#0A84FF,#5E5CE6)] text-[12px] font-extrabold text-white">
+      <span className={cn(wbBrandTile, 'grid size-[26px] shrink-0 place-items-center rounded-[8px] text-[12px] font-extrabold text-white')}>
         {initial || (name || 'W')[0]}
       </span>
       {!collapsed && (
         <div className="min-w-0 leading-[1.15]">
           <div className="text-[12.5px] font-bold whitespace-nowrap text-foreground">{name}</div>
-          {detail && <div className={cn('text-[10.5px] whitespace-nowrap', mut3)}>{detail}</div>}
+          {detail && <div className="text-[10.5px] whitespace-nowrap text-tertiary-foreground">{detail}</div>}
         </div>
       )}
     </div>
@@ -213,7 +212,7 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
     return (
       <AriaButton
         data-slot="sidebar-search"
-        className={cn('bl-sidebar-hl grid w-full cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent px-0 py-2', mut3)}
+        className={cn(hl, 'grid w-full cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent px-0 py-2 text-tertiary-foreground')}
         render={(props) => <button {...props} title={placeholder} />}
         onPress={onPress}
       >
@@ -223,14 +222,14 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
   return (
     <AriaButton
       data-slot="sidebar-search"
-      className="bl-sidebar-hl mx-0 mt-0.5 mb-1 flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 bg-secondary px-[9px] py-1.5 font-ios"
+      className={cn(hl, 'mx-0 mt-0.5 mb-1 flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 bg-secondary px-[9px] py-1.5 font-ios')}
       onPress={onPress}
     >
-      <span className={cn('grid', mut3)}>
+      <span className="grid text-tertiary-foreground">
         <BIcon d={P['search']} size={13} />
       </span>
-      <span className={cn('flex-1 text-left text-[12px]', mut3)}>{placeholder}</span>
-      <span className={cn('rounded-[4px] px-1 py-0 font-mono text-[10px] [border:1px_solid_var(--border)]', mut3)}>
+      <span className="flex-1 text-left text-[12px] text-tertiary-foreground">{placeholder}</span>
+      <span className="rounded-[4px] border border-border px-1 py-0 font-mono text-[10px] text-tertiary-foreground">
         /
       </span>
     </AriaButton>
@@ -249,7 +248,7 @@ export function SidebarSection({ title, children }: SidebarSectionProps) {
         collapsed ? (
           <div className="mx-1.5 my-2 h-px bg-border" />
         ) : (
-          <div className={cn('px-[9px] pt-2.5 pb-1 text-[10px] font-bold tracking-[.6px] whitespace-nowrap uppercase', mut3)}>
+          <div className="px-[9px] pt-2.5 pb-1 text-[10px] font-bold tracking-[.6px] whitespace-nowrap text-tertiary-foreground uppercase">
             {title}
           </div>
         )
@@ -274,10 +273,11 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
     <AriaButton
       data-slot="sidebar-item"
       className={cn(
-        'bl-sidebar-hl mx-0 my-px flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] border-0 text-left font-ios text-[13px]',
+        hl,
+        'mx-0 my-px flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] border-0 text-left font-ios text-[13px]',
         collapsed ? 'justify-center px-0 py-2' : 'justify-start px-[9px] py-1.5',
         active ? 'bg-secondary-strong' : 'bg-transparent',
-        !tone && (active ? 'text-foreground' : mut),
+        !tone && (active ? 'text-foreground' : 'text-muted-foreground'),
         tone ? 'font-semibold' : 'font-normal',
       )}
       render={(props) => <button {...props} title={label} />}
@@ -293,7 +293,7 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
         <span className="flex-1 truncate">{label}</span>
       )}
       {!collapsed && badge != null && (
-        <span className="rounded-[6px] bg-[rgba(10,132,255,.13)] px-1.5 py-px font-mono text-[10.5px] text-[#0A84FF]">
+        <span className="rounded-[6px] bg-primary/13 px-1.5 py-px font-mono text-[10.5px] text-primary">
           {badge}
         </span>
       )}
@@ -314,7 +314,7 @@ export function SidebarTrigger({ style, className }: { style?: CSSProperties; cl
   return (
     <AriaButton
       data-slot="sidebar-trigger"
-      className={cn('bui-hl grid cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent p-1.5', mut, className)}
+      className={cn('grid cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent p-1.5 text-muted-foreground', className)}
       onPress={c.toggle}
       aria-label="Toggle sidebar"
       style={style}
@@ -354,7 +354,7 @@ export function SidebarNav({ variant = 'docked' }: SidebarNavProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarSearch />
-        <SidebarItem icon="plus" label="New task" tone={BLUE} />
+        <SidebarItem icon="plus" label="New task" tone="var(--primary)" />
         <SidebarSection title="Workspace">{[it('home', 'Home'), it('bolt', 'Agent tasks', 4), it('inbox', 'Inbox')]}</SidebarSection>
         <SidebarSection title="Objects">{[it('box', 'Suppliers'), it('box', 'Inventory')]}</SidebarSection>
       </SidebarContent>

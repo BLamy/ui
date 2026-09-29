@@ -34,6 +34,9 @@ import type { ModelOption, ModelProvider } from './models';
 
 const FAVORITES = '__favorites';
 
+/** A favorited model's star: a fixed gold. */
+const FAVORITE_INK = 'text-[#FFB020]';
+
 export interface ModelPickerProps {
   models: ModelOption[];
   providers: ModelProvider[];
@@ -288,12 +291,10 @@ export function ModelPicker({
                         onPress={() => toggleFavorite(m.id)}
                         className={cn(
                           'grid size-6 shrink-0 cursor-pointer place-items-center rounded-[6px] border-0 bg-transparent p-0 outline-none data-hovered:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-primary/50',
-                          fav ? 'text-[#FFB020]' : 'text-tertiary-foreground opacity-0 group-data-focused/row:opacity-100 group-data-hovered/row:opacity-100 data-focus-visible:opacity-100',
+                          fav ? FAVORITE_INK : 'text-tertiary-foreground opacity-0 group-data-focused/row:opacity-100 group-data-hovered/row:opacity-100 data-focus-visible:opacity-100',
                         )}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill={fav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M12 3.8l2.5 5.2 5.7.8-4.1 4 1 5.7-5.1-2.7-5.1 2.7 1-5.7-4.1-4 5.7-.8z" />
-                        </svg>
+                        <Icon name="star-sharp" size={14} sw={2} className={fav ? '[&_path]:fill-current' : undefined} />
                       </Button>
                     </GridListItem>
                   );

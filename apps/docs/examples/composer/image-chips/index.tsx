@@ -76,8 +76,8 @@ function ImageChips() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function ImageChipsExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

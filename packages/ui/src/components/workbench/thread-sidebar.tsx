@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../lib/workbench/press';
-import { cn } from '../../lib/workbench/util';
+import { cn, wbPress, wbBrandTile } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
 import { IconBtn } from '../../lib/workbench/icons';
 import { Icon, type IconName } from '../../lib/icon';
@@ -25,7 +25,7 @@ import { useOptionalWorkbenchShell } from '../../templates/workbench-shell';
 type Div = { className?: string; style?: React.CSSProperties; children?: React.ReactNode };
 
 /* Sidebar row chrome shared by threads, the project switcher, "Show more" and footer items. */
-const rowBtn = 'wb-btn wb-hl flex cursor-pointer items-center gap-2 rounded-lg border-0 text-left';
+const rowBtn = cn(wbPress, 'flex cursor-pointer items-center gap-2 rounded-lg border-0 text-left hover:bg-secondary!');
 
 /** Closes the compact drawer after a navigation. */
 function useCloseDrawer() {
@@ -56,7 +56,7 @@ export function ThreadSidebarBrand({ icon, children, className }: { icon?: React
   return (
     <>
       {icon ?? (
-        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]">
+        <span className={cn(wbBrandTile, 'grid size-[22px] shrink-0 place-items-center rounded-md')}>
           <Icon name="asterisk" size={13} sw={2.2} className="text-white" />
         </span>
       )}
@@ -169,7 +169,7 @@ export function ThreadGroup({ label, collapsible, defaultOpen = true, open: open
       {collapsible ? (
         <Button
           aria-expanded={open}
-          className="wb-btn box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1"
+          className={cn(wbPress, 'box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1')}
           onPress={() => {
             tick();
             setOwnOpen(!open);
@@ -275,17 +275,17 @@ export function ThreadSidebarFooter({ className, style, children }: Div) {
 /** A tinted callout in the footer ("Update available"). `onDismiss` adds the ×. */
 export function SidebarNotice({ icon = 'arrow-down-to-line', onPress, onDismiss, className, children }: { icon?: IconName | (string & {}); onPress?: () => void; onDismiss?: () => void; className?: string; children?: React.ReactNode }) {
   return (
-    <div data-slot="sidebar-notice" className={cn('mb-1.5 flex items-center gap-2 rounded-[9px] bg-[rgba(10,132,255,.12)] px-2.5 py-[7px]', className)}>
+    <div data-slot="sidebar-notice" className={cn('mb-1.5 flex items-center gap-2 rounded-[9px] bg-primary/12 px-2.5 py-[7px]', className)}>
       <Icon name={icon} size={14} sw={2} className="text-primary" />
       {onPress ? (
-        <Button className="wb-btn flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-primary" onPress={onPress}>
+        <Button className={cn(wbPress, 'flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-primary')} onPress={onPress}>
           {children}
         </Button>
       ) : (
         <span className="flex-1 text-[12.5px] font-semibold text-primary">{children}</span>
       )}
       {onDismiss !== undefined ? (
-        <Button aria-label="Dismiss" className="wb-btn grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-tertiary-foreground" onPress={onDismiss}>
+        <Button aria-label="Dismiss" className={cn(wbPress, 'grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-tertiary-foreground')} onPress={onDismiss}>
           <Icon name="xmark-large" size={13} sw={2} />
         </Button>
       ) : null}
@@ -339,7 +339,7 @@ export function SidebarUser({ name, detail, avatar, onPress, className }: Sideba
       {avatar ? (
         <img src={avatar} alt="" className="size-7 shrink-0 rounded-full object-cover" />
       ) : (
-        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--primary),#5E5CE6)] text-[11px] font-bold text-white">
+        <span className={cn(wbBrandTile, 'grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white')}>
           {initials}
         </span>
       )}

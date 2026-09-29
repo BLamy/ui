@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ToggleButtonGroup } from 'react-aria-components';
 import { AdaptivePane, type AdaptivePaneMode } from '../components/adaptive-pane';
 import { useContainerWidth } from '../lib/container';
-import { cn } from '../lib/workbench/util';
+import { cn, wbPress } from '../lib/workbench/util';
 import { tick, vib } from '../lib/workbench/haptics';
 import { IconBtn } from '../lib/workbench/icons';
 import { Icon, type IconName } from '../lib/icon';
@@ -168,6 +168,8 @@ export function WorkbenchShell({
 
 /* Drawers over a light shell: a lighter scrim and a softer shadow than EdgeDrawer's dark defaults. */
 const LIGHT_DRAWER = { scrim: 'rgba(0,0,0,.22)', shadow: '0 0 36px rgba(0,0,0,.14)' };
+/* The panel drawer's shadow over a dark shell. */
+const DARK_PANEL_SHADOW = '0 0 44px rgba(0,0,0,.55)';
 
 /* ── Sidebar ── */
 export interface WorkbenchSidebarProps {
@@ -439,7 +441,7 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
       columnStyle={{ gridColumn: 3, gridRow: 1, borderLeft: '1px solid var(--border)' }}
       drawerWidth="min(420px, 94%)"
       zIndex={mode === 'cover' ? 60 : 58}
-      shadow={light ? LIGHT_DRAWER.shadow : '0 0 44px rgba(0,0,0,.55)'}
+      shadow={light ? LIGHT_DRAWER.shadow : DARK_PANEL_SHADOW}
       {...(light ? { scrim: LIGHT_DRAWER.scrim } : null)}
       className="border-l border-border"
     >
@@ -574,7 +576,7 @@ export function WorkbenchTab({ id, icon, className, children }: { id: string; ic
     <ToggleButton
       id={id}
       className={cn(
-        'wb-btn flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-tertiary-foreground data-selected:text-primary',
+        wbPress, 'flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-tertiary-foreground data-selected:text-primary',
         className,
       )}
       onPress={() => {

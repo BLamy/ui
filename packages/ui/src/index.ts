@@ -237,6 +237,7 @@ export {
   TerminalAction,
   fakeShell,
   TERM_FILES,
+  TERMINAL_COLORS,
   type TermLine,
   type TerminalHeaderProps,
   type TerminalBodyProps,

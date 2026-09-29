@@ -127,7 +127,7 @@ function Nav({ variant }: { variant: SidebarVariant }) {
       </Sidebar.Header>
       <Sidebar.Content>
         <Sidebar.Search />
-        <Sidebar.Item icon="plus" label="New task" tone="#0A84FF" />
+        <Sidebar.Item icon="plus" label="New task" tone="var(--primary)" />
         <Sidebar.Section title="Workspace">
           {item('home', 'Home')}
           {item('bolt', 'Agent tasks', 4)}
@@ -164,7 +164,7 @@ function Chip({
         fontSize: 12,
         fontWeight: 600,
         background: active ? 'var(--primary)' : 'var(--secondary-strong)',
-        color: active ? '#fff' : 'var(--foreground)',
+        color: active ? 'var(--primary-foreground)' : 'var(--foreground)',
       }}
     >
       {children}
@@ -172,8 +172,8 @@ function Chip({
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function SidebarVariantsExample() {
   return (
     <WorkbenchTheme>

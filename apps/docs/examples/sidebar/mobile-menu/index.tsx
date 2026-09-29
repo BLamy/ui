@@ -48,7 +48,7 @@ function MobileMenu() {
             <Sidebar.Workspace name="Creamery Ops" detail="Production" />
           </Sidebar.Header>
           <Sidebar.Content>
-            <Sidebar.Item icon="plus" label="New task" tone="#0A84FF" />
+            <Sidebar.Item icon="plus" label="New task" tone="var(--primary)" />
             <Sidebar.Section title="Workspace">
               <MenuItem
                 icon="inbox"
@@ -133,8 +133,8 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function NarrowHamburgerExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>
