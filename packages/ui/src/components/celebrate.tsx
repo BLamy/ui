@@ -9,7 +9,7 @@ import { cn } from '../lib/utils';
    behind it, then falls away.
    Reduced motion gets the ring only, as a soft fade. */
 
-const PALETTE = ['var(--primary)', 'var(--success)', '#FFD60A', '#FF375F', '#BF5AF2', '#FF9F0A'];
+const PALETTE = ['var(--primary)', 'var(--success, oklch(0.723 0.191 149.6))', '#FFD60A', '#FF375F', '#BF5AF2', '#FF9F0A'];
 
 /** Small deterministic PRNG so a burst looks the same each time it is replayed (and in screenshots). */
 function rand(seed: number) {

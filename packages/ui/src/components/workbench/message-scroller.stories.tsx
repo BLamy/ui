@@ -28,7 +28,7 @@ interface Msg {
 const bubble = (m: Msg) =>
   m.role === 'user' ? (
     <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '8px 0' }}>
-      <div style={{ maxWidth: '80%', background: 'var(--secondary-strong)', borderRadius: '12px 12px 4px 12px', padding: '8px 12px', fontSize: 13.5 }}>{m.text}</div>
+      <div style={{ maxWidth: '80%', background: 'var(--secondary-strong, var(--accent))', borderRadius: '12px 12px 4px 12px', padding: '8px 12px', fontSize: 13.5 }}>{m.text}</div>
     </div>
   ) : (
     <div style={{ margin: '4px 0 12px', fontSize: 13.5, lineHeight: 1.55 }}>{m.text}</div>

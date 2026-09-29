@@ -29,8 +29,8 @@ export const progressRingVariants = cva(
     variants: {
       tone: {
         default: '[--ring-color:var(--primary)]',
-        success: '[--ring-color:var(--success)]',
-        warning: '[--ring-color:var(--warning)]',
+        success: '[--ring-color:var(--success,oklch(0.723_0.191_149.6))]',
+        warning: '[--ring-color:var(--warning,oklch(0.769_0.165_70.1))]',
         destructive: '[--ring-color:var(--destructive)]',
       },
     },
@@ -66,7 +66,7 @@ function RingSvg({ px, stroke, r, c, fraction, transition, spin }: RingSvgProps)
   return (
     <svg width={px} height={px} viewBox={`0 0 ${px} ${px}`} aria-hidden="true"
       className={cn('block -rotate-90', spin && 'animate-spin [animation-duration:900ms] motion-reduce:animate-none')}>
-      <circle cx={px / 2} cy={px / 2} r={r} fill="none" strokeWidth={stroke} className="stroke-(--ring-track,var(--secondary-strong))" />
+      <circle cx={px / 2} cy={px / 2} r={r} fill="none" strokeWidth={stroke} className="stroke-(--ring-track,var(--secondary-strong,var(--accent)))" />
       <circle
         data-slot="progress-ring-arc"
         cx={px / 2} cy={px / 2} r={r} fill="none" strokeWidth={stroke} strokeLinecap="round"

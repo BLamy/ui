@@ -1297,7 +1297,7 @@ export interface ComposerStopProps extends Omit<ComposerButtonProps, 'variant'> 
 function StopRing() {
   return (
     <svg width="30" height="30" viewBox="0 0 30 30" className="absolute inset-0 animate-[wbSpin_1s_linear_infinite] motion-reduce:animate-none">
-      <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--secondary-strong)" strokeWidth="2.5" />
+      <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--secondary-strong, var(--accent))" strokeWidth="2.5" />
       <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeDasharray="24 55" strokeLinecap="round" />
     </svg>
   );
@@ -1518,7 +1518,7 @@ const TERMINAL_WELL = themeScopeProps({ scope: 'terminal', appearance: 'dark' })
 const LIGHTBOX_SCOPE = themeScopeProps({ scope: 'workbench', appearance: 'dark' });
 /** Each kind's glyph and colour on its tile (video, audio and archive are fixed iOS system colours: purple, pink, brown). */
 const KIND_FACE: Record<ComposerAttachmentKind, { icon: string; color: string; label: string }> = {
-  image: { icon: 'photo', color: 'var(--success)', label: 'Image' },
+  image: { icon: 'photo', color: 'var(--success, oklch(0.723 0.191 149.6))', label: 'Image' },
   video: { icon: 'video', color: '#AF52DE', label: 'Video' },
   audio: { icon: 'music-note', color: '#FF2D55', label: 'Audio' },
   pdf: { icon: 'doc', color: 'var(--destructive)', label: 'PDF' },

@@ -20,7 +20,7 @@ export function CheckCircle({ done, color, label, size = 24, onToggle }: { done:
   return (
     <button type="button" role="checkbox" aria-checked={done} aria-label={label} onClick={onToggle}
       className={cn('bl-btn relative grid shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-[scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.86] motion-reduce:transition-none',
-        done ? 'shadow-[inset_0_0_0_1.6px_var(--list-color)]' : 'shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)]')}
+        done ? 'shadow-[inset_0_0_0_1.6px_var(--list-color)]' : 'shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))]')}
       style={{ width: size, height: size, '--list-color': color } as CSSProperties}>
       <span aria-hidden="true" className={cn('rounded-full bg-(--list-color) transition-[scale,opacity] duration-spring-bouncy ease-spring-bouncy motion-reduce:transition-none', done ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}
         style={{ width: size - 9, height: size - 9 }} />

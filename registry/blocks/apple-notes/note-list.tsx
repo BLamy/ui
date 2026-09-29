@@ -27,7 +27,7 @@ function NoteRow({ notes, n, selected, inset, first, last, isEdge, onOpen }: {
       className={cn(inset ? cn(first && 'rounded-t-[12px]', last && 'rounded-b-[12px]') : PLAIN)}
       // Index 0 is the outermost action: the one a long swipe fires.
       leadingActions={n.folder === 'deleted' ? undefined : [{
-        label: n.pinned ? 'Unpin' : 'Pin', icon: n.pinned ? 'pushpin-slash' : 'pushpin-fill', tint: 'var(--warning)', onAction: () => notes.togglePin(n.id),
+        label: n.pinned ? 'Unpin' : 'Pin', icon: n.pinned ? 'pushpin-slash' : 'pushpin-fill', tint: 'var(--warning, oklch(0.769 0.165 70.1))', onAction: () => notes.togglePin(n.id),
       }]}
       trailingActions={[
         { label: 'Delete', icon: 'trash', destructive: true, onAction: () => notes.remove(n.id) },
@@ -118,7 +118,7 @@ function Thumbnail({ n, locked }: { n: Note; locked: boolean }) {
         if (/^#+\s/.test(l)) return <div key={i} className="truncate pt-[2px] text-[9.5px] font-bold">{l.replace(/^#+\s*/, '')}</div>;
         if (task) return (
           <div key={i} className="flex items-center gap-[4px] truncate">
-            <span className={cn('size-[7px] shrink-0 rounded-full', task[1] === 'x' ? 'bg-primary' : 'shadow-[inset_0_0_0_1px_var(--tertiary-foreground)]')} />
+            <span className={cn('size-[7px] shrink-0 rounded-full', task[1] === 'x' ? 'bg-primary' : 'shadow-[inset_0_0_0_1px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))]')} />
             <span className={cn('truncate', task[1] === 'x' && 'text-muted-foreground')}>{task[2]}</span>
           </div>
         );

@@ -214,7 +214,7 @@ function ThemedArtifact() {
       <div style={{ ...card, height: 230, marginTop: 16, padding: 18 }}>
         <strong>Conversion by region</strong>
         <div style={{ height: 170, display: 'flex', alignItems: 'end', gap: 18, padding: '14px 10px 0' }}>
-          {[58, 92, 72, 48, 82].map((height, index) => <div key={index} style={{ flex: 1, height: `${height}%`, minWidth: 18, borderRadius: '7px 7px 2px 2px', background: index === 1 ? 'var(--primary)' : 'var(--secondary-strong)' }} />)}
+          {[58, 92, 72, 48, 82].map((height, index) => <div key={index} style={{ flex: 1, height: `${height}%`, minWidth: 18, borderRadius: '7px 7px 2px 2px', background: index === 1 ? 'var(--primary)' : 'var(--secondary-strong, var(--accent))' }} />)}
         </div>
       </div>
     </div>

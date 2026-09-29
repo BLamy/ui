@@ -16,7 +16,7 @@ const content = (
     {['Outgoing call · 2 min', 'iMessage · "see you at 6"', 'FaceTime · 12 min', 'Mail · Re: schedule'].map((t, i) => (
       <div key={i} style={{ padding: '10px 2px', fontSize: 14, boxShadow: i < 3 ? 'inset 0 -1px 0 var(--border)' : 'none' }}>{t}</div>
     ))}
-    <div style={{ marginTop: 14, fontSize: 11.5, color: 'var(--tertiary-foreground)', lineHeight: 1.5 }}>
+    <div style={{ marginTop: 14, fontSize: 11.5, color: 'var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))', lineHeight: 1.5 }}>
       Same panel, three hosts — fixed column, overlay sheet, or pushed page.
     </div>
   </div>

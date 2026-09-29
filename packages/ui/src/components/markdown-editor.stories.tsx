@@ -123,7 +123,7 @@ export const StyledParts: Story = {
       title: 'text-[26px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
       checklist: 'pl-0',
       checklistItem: 'gap-2.5 items-center',
-      checkbox: 'appearance-none m-0 size-[20px] rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)] checked:bg-primary checked:shadow-none',
+      checkbox: 'appearance-none m-0 size-[20px] rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))] checked:bg-primary checked:shadow-none',
       table: 'text-[14px]',
       tableHeader: 'bg-transparent font-semibold border-border px-3 py-1.5',
       tableCell: 'border-border px-3 py-1.5',

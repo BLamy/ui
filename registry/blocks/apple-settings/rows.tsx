@@ -221,7 +221,7 @@ function AppearancePicker() {
             <PhoneThumb dark={k === 'dark'} />
             <span className={s.layout === 'desktop' ? 'text-[13px]' : 'text-[15px]'}>{label}</span>
             <span className={cn('grid size-[22px] place-items-center rounded-full text-white transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy',
-              on ? 'bg-primary' : 'shadow-[inset_0_0_0_1.5px_var(--tertiary-foreground)]')}>
+              on ? 'bg-primary' : 'shadow-[inset_0_0_0_1.5px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))]')}>
               {on ? <Icon name="check" size={14} sw={3} className="transition-[scale] duration-spring-snappy ease-spring-bouncy starting:scale-40" /> : null}
             </span>
           </button>

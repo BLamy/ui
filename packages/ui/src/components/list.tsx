@@ -508,7 +508,7 @@ export function ListRow(p: ListRowProps) {
           )}>
             <span className={cn(
               'box-border grid size-[22px] shrink-0 place-items-center rounded-[50%] transition-[background-color,scale] duration-spring-snappy ease-spring-bouncy',
-              p.checked ? 'border-none bg-primary' : '[border:1.6px_solid_var(--tertiary-foreground)] bg-transparent',
+              p.checked ? 'border-none bg-primary' : '[border:1.6px_solid_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))] bg-transparent',
             )}>
               {p.checked ? <Icon name="check" size={13} sw={3} className="text-primary-foreground transition-[scale,opacity] duration-spring-snappy ease-spring-bouncy starting:scale-50 starting:opacity-0" /> : null}
             </span>

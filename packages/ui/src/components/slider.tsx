@@ -115,7 +115,7 @@ export function SliderTrack({ className, children, ...props }: SliderTrackProps)
         const end = state.getThumbPercent(range ? state.values.length - 1 : 0);
         return (
           <>
-            <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--bl-slider-track,var(--secondary-strong))]" />
+            <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--bl-slider-track,var(--secondary-strong,var(--accent)))]" />
             <span
               aria-hidden="true"
               data-slot="slider-range"

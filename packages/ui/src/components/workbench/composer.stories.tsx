@@ -233,7 +233,7 @@ function ChatThread({ scroller, bottomPad = 170 }: { scroller: React.RefObject<H
   return (
     <div ref={scroller} data-testid="scroller" className="wb-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: `24px 24px ${bottomPad}px` }}>
       <div style={{ maxWidth: 720, margin: '0 auto', display: 'grid', gap: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tertiary-foreground)', textAlign: 'center', padding: '4px 0 8px' }}>Thread · Fix the header overlap</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))', textAlign: 'center', padding: '4px 0 8px' }}>Thread · Fix the header overlap</div>
         {THREAD.map((m, i) =>
           m.who === 'me' ? (
             <div key={i} style={{ display: 'flex', justifyContent: 'flex-end' }}>

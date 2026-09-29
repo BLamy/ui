@@ -216,7 +216,7 @@ export function IndexBar<K extends IndexBarKey = string>({
                   className={cn(
                     'h-[2px] w-(--len) shrink-0 rounded-full transition-[width,background-color] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
                     idx === i ? 'bg-foreground' : curIdx === i ? 'bg-primary'
-                      : 'bg-[color:color-mix(in_oklab,var(--foreground)_calc(var(--f)*75%),var(--tertiary-foreground))]',
+                      : 'bg-[color:color-mix(in_oklab,var(--foreground)_calc(var(--f)*75%),var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent)))]',
                     q.dim && idx !== i && 'opacity-55',
                   )} />
               </div>

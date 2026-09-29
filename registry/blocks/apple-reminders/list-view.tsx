@@ -30,7 +30,7 @@ function Composer({ color, onAdd, onClose }: { color: string; onAdd: (title: str
   const [text, setText] = useState('');
   return (
     <div className="flex items-start gap-3 pl-4 animate-bl-fade-in">
-      <span className="mt-[11px] size-6 shrink-0 rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)]" />
+      <span className="mt-[11px] size-6 shrink-0 rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))]" />
       <input autoFocus value={text} placeholder="New Reminder" aria-label="New reminder"
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {

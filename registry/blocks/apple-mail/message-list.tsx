@@ -31,7 +31,7 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
       trailingActions={[
         { label: 'Trash', icon: 'trash', destructive: true, onAction: () => mail.trash([m.id]) },
         { label: 'Archive', icon: 'archivebox', tint: ARCHIVE_PURPLE, onAction: () => mail.archive([m.id]) },
-        { label: m.flagged ? 'Unflag' : 'Flag', icon: 'flag-fill', tint: 'var(--warning)', onAction: () => mail.toggleFlag(m.id) },
+        { label: m.flagged ? 'Unflag' : 'Flag', icon: 'flag-fill', tint: 'var(--warning, oklch(0.769 0.165 70.1))', onAction: () => mail.toggleFlag(m.id) },
       ]}
       title={<>
         {/* Positioned against the row body (which starts where the text does). */}

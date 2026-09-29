@@ -112,7 +112,7 @@ export function SurfaceAppPreview({ name, detail }: { name: React.ReactNode; det
 const TREE_VARS = {
   '--trees-fg-override': 'var(--foreground)',
   '--trees-border-color-override': 'var(--border)',
-  '--trees-selected-bg-override': 'var(--secondary-strong)',
+  '--trees-selected-bg-override': 'var(--secondary-strong, var(--accent))',
 } as React.CSSProperties;
 export interface SurfaceFilesProps {
   paths: string[];

@@ -17,7 +17,7 @@ const NOTES_PARTS: MarkdownEditorClassNames = {
   checklistItem: 'gap-2.5 items-start [&>label]:mt-[2px] data-[checked=true]:[&>div]:text-muted-foreground',
   checkbox: cn(
     'appearance-none m-0 size-[21px] rounded-full cursor-pointer',
-    'shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)] transition-[background-color,box-shadow] duration-200',
+    'shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))] transition-[background-color,box-shadow] duration-200',
     'checked:bg-primary checked:shadow-none checked:bg-[length:13px_13px] checked:bg-center checked:bg-no-repeat',
     'checked:bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27white%27%20stroke-width=%273.2%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M6%2012.5l4%204%208-9%27/%3E%3C/svg%3E)]',
   ),

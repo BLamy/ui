@@ -111,7 +111,7 @@ export function ChatShellNav({ children, className, style }: ChatShellNavProps) 
       side="left"
       open={navOpen}
       onClose={() => setNavOpen(false)}
-      scrim="var(--overlay)"
+      scrim="var(--overlay, color-mix(in oklab, black 40%, transparent))"
       columnStyle={{ ...navColumnStyle, ...style }}
       className={cn('flex', className)}
     >
@@ -316,7 +316,7 @@ export function ChatShellPanel({ open, onOpenChange, title = 'Thread', dockWidth
       width={width ?? Math.min(360, w - 60)}
       // Inside the chat scope the drawer already paints with the chat palette; its close button takes the stronger fill.
       className={cn(
-        '[--secondary:var(--secondary-strong)]',
+        '[--secondary:var(--secondary-strong,var(--accent))]',
         className,
       )}
       style={style}

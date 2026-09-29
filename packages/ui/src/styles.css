@@ -34,13 +34,13 @@
 /* ListRow: its content lets presses through to the row button beneath, except on the controls it holds. */
 [data-swiping] .bl-hl:active{background:transparent!important}
 [data-row-control] :is(button,input,select,textarea,a,label,[role=switch],[role=slider],[role=checkbox],[data-slot=slider]){pointer-events:auto}
-input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var(--tertiary-foreground)}
+input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))}
 @keyframes blShimmer{from{background-position:200% 0}to{background-position:0% 0}}
-.bl-shimmer{background:linear-gradient(90deg,var(--tertiary-foreground) 40%,var(--foreground) 50%,var(--tertiary-foreground) 60%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:blShimmer 2.4s linear infinite}
+.bl-shimmer{background:linear-gradient(90deg,var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent)) 40%,var(--foreground) 50%,var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent)) 60%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:blShimmer 2.4s linear infinite}
 .bl-range{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
-.bl-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(var(--primary),var(--primary)) 0/var(--bl-range-fill,50%) 100% no-repeat,var(--secondary-strong)}
+.bl-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(var(--primary),var(--primary)) 0/var(--bl-range-fill,50%) 100% no-repeat,var(--secondary-strong, var(--accent))}
 .bl-range::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28),0 0 1px rgba(0,0,0,.22);margin-top:-11px}
-.bl-range::-moz-range-track{height:4px;border-radius:2px;background:var(--secondary-strong)}
+.bl-range::-moz-range-track{height:4px;border-radius:2px;background:var(--secondary-strong, var(--accent))}
 .bl-range::-moz-range-progress{height:4px;border-radius:2px;background:var(--primary)}
 .bl-range::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28)}
 
@@ -121,7 +121,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
    The embedded Workbench Composer is a `glass` theme scope, and the transcript rides on the Composer's top bump —
    inside that scope. The layer records the palette around it (the host's, or its `sheet` tone) before the glass
    takes over, and the transcript (and an opaque sheet's bump and card) takes it back. Plumbing only: no values. */
-.ck-floating-chat{--ck-host-background:var(--background);--ck-host-foreground:var(--foreground);--ck-host-card:var(--card);--ck-host-card-foreground:var(--card-foreground);--ck-host-popover:var(--popover);--ck-host-popover-foreground:var(--popover-foreground);--ck-host-secondary:var(--secondary);--ck-host-secondary-foreground:var(--secondary-foreground);--ck-host-muted:var(--muted);--ck-host-muted-foreground:var(--muted-foreground);--ck-host-accent:var(--accent);--ck-host-accent-foreground:var(--accent-foreground);--ck-host-destructive:var(--destructive);--ck-host-border:var(--border);--ck-host-input:var(--input);--ck-host-success:var(--success);--ck-host-tertiary-foreground:var(--tertiary-foreground);--ck-host-secondary-strong:var(--secondary-strong);--ck-host-handle:var(--handle);--ck-host-code:var(--code);--ck-host-code-foreground:var(--code-foreground);--ck-host-link:var(--link)}
+.ck-floating-chat{--ck-host-background:var(--background);--ck-host-foreground:var(--foreground);--ck-host-card:var(--card);--ck-host-card-foreground:var(--card-foreground);--ck-host-popover:var(--popover);--ck-host-popover-foreground:var(--popover-foreground);--ck-host-secondary:var(--secondary);--ck-host-secondary-foreground:var(--secondary-foreground);--ck-host-muted:var(--muted);--ck-host-muted-foreground:var(--muted-foreground);--ck-host-accent:var(--accent);--ck-host-accent-foreground:var(--accent-foreground);--ck-host-destructive:var(--destructive);--ck-host-border:var(--border);--ck-host-input:var(--input);--ck-host-success:var(--success, oklch(0.723 0.191 149.6));--ck-host-tertiary-foreground:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent));--ck-host-secondary-strong:var(--secondary-strong, var(--accent));--ck-host-handle:var(--handle, var(--secondary-strong, var(--accent)));--ck-host-code:var(--code, var(--muted));--ck-host-code-foreground:var(--code-foreground, var(--foreground));--ck-host-link:var(--link, var(--primary))}
 .ck-floating-chat__transcript{--background:var(--ck-host-background);--foreground:var(--ck-host-foreground);--card:var(--ck-host-card);--card-foreground:var(--ck-host-card-foreground);--popover:var(--ck-host-popover);--popover-foreground:var(--ck-host-popover-foreground);--secondary:var(--ck-host-secondary);--secondary-foreground:var(--ck-host-secondary-foreground);--muted:var(--ck-host-muted);--muted-foreground:var(--ck-host-muted-foreground);--accent:var(--ck-host-accent);--accent-foreground:var(--ck-host-accent-foreground);--destructive:var(--ck-host-destructive);--border:var(--ck-host-border);--input:var(--ck-host-input);--success:var(--ck-host-success);--tertiary-foreground:var(--ck-host-tertiary-foreground);--secondary-strong:var(--ck-host-secondary-strong);--handle:var(--ck-host-handle);--code:var(--ck-host-code);--code-foreground:var(--ck-host-code-foreground);--link:var(--ck-host-link)}
 /* A transcript sits on the glass: its own background goes. */
 .ck-floating-chat__bump [data-slot="composer-bump-body"]>*,.ck-floating-chat__transcript.contents>*,.ck-floating-chat__bump [data-slot="floating-chat-transcript"]>[data-slot="artifact-chat-transcript"]>*{box-sizing:border-box;width:100%;min-height:0;max-height:100%;background:transparent!important}
@@ -173,7 +173,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-md :where(ul,ol){margin:8px 0;padding-left:22px}
 .wb-md :where(li){margin:3px 0}
 .wb-md :where(code){font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.86em;background:var(--secondary);padding:2px 5px;border-radius:5px}
-.wb-md :where(pre){background:var(--code);color:var(--code-foreground);border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
+.wb-md :where(pre){background:var(--code, var(--muted));color:var(--code-foreground, var(--foreground));border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
 .wb-md :where(pre code){background:none;padding:0;font-size:inherit;color:inherit}
 .wb-md :where(table){border-collapse:collapse;margin:10px 0;width:100%;font-size:13.5px}
 .wb-md :where(th){text-align:left;font-weight:600;color:var(--muted-foreground);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
@@ -208,7 +208,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-md :where(.hljs-addition){color:var(--_wb-code-added)}
 .wb-tok-constant{color:var(--bl-syntax-constant,var(--_wb-code-constant))}
 .wb-tok-type{color:var(--bl-syntax-type,var(--_wb-code-type))}
-.wb-tok-text{color:var(--bl-syntax-fg,var(--code-foreground))}
+.wb-tok-text{color:var(--bl-syntax-fg,var(--code-foreground, var(--foreground)))}
 
 /* Docstream editor compressed into the Workbench composer. The editor package defaults to a
    full document canvas, so this adapter supplies the same narrow, auto-growing surface used by
@@ -216,7 +216,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-composer-doc.gb{
   --background:var(--card);
   --muted:var(--secondary);
-  --accent:var(--secondary-strong);
+  --accent:var(--secondary-strong, var(--accent));
   --accent-foreground:var(--foreground);
   width:100%;max-width:none;max-height:120px;min-height:0;margin:0;padding:0 14px 2px;
   box-sizing:border-box;overflow-y:auto;color:var(--foreground);font-family:inherit;font-size:14px;line-height:1.5
@@ -230,7 +230,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-composer-doc.gb .ProseMirror>*+*{margin-top:.4em}
 .wb-composer-doc.gb .ProseMirror p{margin:0}
 .wb-composer-doc.gb .ProseMirror p:is(.is-empty,.is-editor-empty):first-child:before{
-  content:attr(data-placeholder);float:left;height:0;color:var(--tertiary-foreground);pointer-events:none
+  content:attr(data-placeholder);float:left;height:0;color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent));pointer-events:none
 }
 .wb-composer-doc.gb .gb-code{margin:.45em 0}
 
@@ -256,7 +256,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
    composer is hovered or focused, the card takes the dark Workbench scope's palette (card, foreground, muted and
    muted-foreground are that scope's values; the editor's defaults are light). */
 .wb-composer-doc.gb .gb-attachment{background:var(--secondary);border-color:var(--border)}
-.wb-composer-doc.gb .gb-attachment:hover{border-color:var(--tertiary-foreground)}
+.wb-composer-doc.gb .gb-attachment:hover{border-color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))}
 body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark) [data-slot="composer-input"]:not([data-theme-scope="workbench"].light *) .gb-attachment:is(:hover,:focus-visible)) .gb-attachment-card{--border:rgba(255,255,255,.12);--card:#1C1C23;--card-foreground:#EDEDF2;--foreground:#EDEDF2;--muted:#101014;--muted-foreground:#9C9CA6;box-shadow:0 14px 40px rgba(0,0,0,.5)}
 /* Compact composer: one row, the editor a single line beside the controls. */
 .wb-composer-doc-compact.gb{max-height:44px;padding-right:4px}
@@ -283,7 +283,7 @@ body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark
   min-height:var(--mde-min-h,var(--mde-min-h-d));max-height:var(--mde-max-h,none);
   color:inherit;font-size:var(--mde-fs);line-height:var(--mde-lh);--gb-radius:10px
 }
-.bl-mde .bl-mde-doc>.gb-content{display:flex;flex:1 1 auto;flex-direction:column;min-height:0;overflow-y:auto;padding:var(--mde-py) var(--mde-px);scrollbar-width:thin;scrollbar-color:var(--secondary-strong) transparent}
+.bl-mde .bl-mde-doc>.gb-content{display:flex;flex:1 1 auto;flex-direction:column;min-height:0;overflow-y:auto;padding:var(--mde-py) var(--mde-px);scrollbar-width:thin;scrollbar-color:var(--secondary-strong, var(--accent)) transparent}
 .bl-mde .bl-mde-doc .ProseMirror{flex:1 0 auto;min-height:0;font-size:inherit;line-height:inherit;color:inherit;caret-color:var(--primary)}
 .bl-mde:is([data-readonly],[data-disabled]) .bl-mde-doc .ProseMirror{caret-color:transparent}
 .bl-mde[data-disabled] .bl-mde-doc{pointer-events:none}
@@ -299,14 +299,14 @@ body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark
 .bl-mde .bl-mde-doc .ProseMirror a:hover{text-decoration:underline}
 .bl-mde .bl-mde-doc .ProseMirror hr{margin:1.2em 0}
 .bl-mde .bl-mde-doc .ProseMirror :not(pre)>code{background:var(--secondary);border-radius:5px;font-size:.86em;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
-.bl-mde .bl-mde-doc .ProseMirror p:is(.is-empty,.is-editor-empty):first-child::before{color:var(--tertiary-foreground)}
+.bl-mde .bl-mde-doc .ProseMirror p:is(.is-empty,.is-editor-empty):first-child::before{color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))}
 .bl-mde .bl-mde-doc .ProseMirror ul[data-type="taskList"] input{accent-color:var(--primary)}
 /* Toolbar: a quiet strip above the writing area, divided by a hairline. */
 .bl-mde .bl-mde-doc .gb-toolbar{position:static;flex:none;margin:0;padding:5px 6px;gap:2px;border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent;box-shadow:none}
 .bl-mde .bl-mde-doc .gb-tool{width:28px;height:28px;border-radius:7px;color:var(--muted-foreground);transition:background-color .12s ease,color .12s ease}
 .bl-mde .bl-mde-doc .gb-tool:hover{background:var(--accent);color:var(--foreground)}
-.bl-mde .bl-mde-doc .gb-tool-active{background:var(--secondary-strong);color:var(--foreground)}
-.bl-mde .bl-mde-doc .gb-toolbar-hint{font-size:12px;color:var(--tertiary-foreground)}
+.bl-mde .bl-mde-doc .gb-tool-active{background:var(--secondary-strong, var(--accent));color:var(--foreground)}
+.bl-mde .bl-mde-doc .gb-toolbar-hint{font-size:12px;color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))}
 .bl-mde .bl-mde-doc .gb-toolbar-hint kbd{border-color:var(--border);background:transparent;font-family:inherit;color:var(--muted-foreground)}
 .bl-mde[data-variant="ghost"] .bl-mde-doc .gb-toolbar{padding-left:0;padding-right:0;margin-bottom:8px}
 /* The editor's popovers, dressed by the editor that opened them (tokens copied when they open). */
@@ -371,7 +371,7 @@ body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark
 .bl-syntax-line[data-highlighted]>:first-child{box-shadow:inset 3px 0 var(--bl-syntax-highlight-bar,var(--primary))}
 .bl-syntax-line[data-diff=add]{--_bl-syn-line:var(--bl-syntax-added,light-dark(rgba(52,199,89,.14),rgba(48,209,88,.15)))}
 .bl-syntax-line[data-diff=del]{--_bl-syn-line:var(--bl-syntax-removed,light-dark(rgba(255,59,48,.11),rgba(255,69,58,.15)))}
-.bl-syntax-ln{flex:none;position:sticky;left:0;z-index:1;box-sizing:border-box;width:calc(var(--bl-syntax-gutter-digits,2)*1ch + 28px);padding:0 12px 0 16px;text-align:right;color:var(--bl-syntax-line-number,var(--tertiary-foreground));background:linear-gradient(var(--_bl-syn-line),var(--_bl-syn-line)),var(--_bl-syn-surface);-webkit-user-select:none;user-select:none}
+.bl-syntax-ln{flex:none;position:sticky;left:0;z-index:1;box-sizing:border-box;width:calc(var(--bl-syntax-gutter-digits,2)*1ch + 28px);padding:0 12px 0 16px;text-align:right;color:var(--bl-syntax-line-number,var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent)));background:linear-gradient(var(--_bl-syn-line),var(--_bl-syn-line)),var(--_bl-syn-surface);-webkit-user-select:none;user-select:none}
 .bl-syntax-ln::before{content:attr(data-n)}
 .bl-syntax-line[data-diff=add]>.bl-syntax-ln{--_bl-syn-line:var(--bl-syntax-added-gutter,light-dark(rgba(52,199,89,.26),rgba(48,209,88,.3)))}
 .bl-syntax-line[data-diff=del]>.bl-syntax-ln{--_bl-syn-line:var(--bl-syntax-removed-gutter,light-dark(rgba(255,59,48,.2),rgba(255,69,58,.3)))}
@@ -387,7 +387,7 @@ body:has(:is([data-theme-scope="workbench"].dark,[data-theme-scope="glass"].dark
 .bl-syntax-copy{display:grid;flex:none;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--muted-foreground);cursor:pointer;outline:none;transition:background-color .15s,color .15s,opacity .15s}
 .bl-syntax-copy[data-hovered]{background:var(--secondary);color:var(--foreground)}
 .bl-syntax-copy[data-focus-visible]{box-shadow:0 0 0 2px var(--primary)}
-.bl-syntax-copy[data-copied]{color:var(--success)}
+.bl-syntax-copy[data-copied]{color:var(--success, oklch(0.723 0.191 149.6))}
 .bl-syntax-copy-float{position:absolute;top:7px;right:7px;z-index:2;background:var(--_bl-syn-surface);box-shadow:inset 0 0 0 1px var(--border);opacity:0}
 .bl-syntax:hover>.bl-syntax-copy-float,.bl-syntax-copy-float[data-focus-visible],.bl-syntax-copy-float[data-copied]{opacity:1}
 @media (hover:none){.bl-syntax-copy-float{opacity:1}}

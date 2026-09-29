@@ -415,7 +415,7 @@ function RemindersList({ scrolled }: { scrolled?: boolean }) {
           {l.items.map((t) => (
             <label key={t} className="flex cursor-pointer items-center gap-3 pl-4">
               <input type="checkbox" className="peer sr-only" checked={!!done[t]} onChange={(e) => setDone((d) => ({ ...d, [t]: e.target.checked }))} />
-              <span aria-hidden="true" className="grid size-[22px] shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)] peer-checked:bg-(--c) peer-checked:shadow-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring" style={{ '--c': l.color } as CSSProperties}>
+              <span aria-hidden="true" className="grid size-[22px] shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))] peer-checked:bg-(--c) peer-checked:shadow-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring" style={{ '--c': l.color } as CSSProperties}>
                 {done[t] ? <span className="size-2 rounded-full bg-white" /> : null}
               </span>
               <span className="min-w-0 flex-1 truncate py-[11px] pr-4 text-[17px] shadow-[inset_0_-1px_0_var(--border)] peer-checked:text-muted-foreground">{t}</span>

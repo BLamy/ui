@@ -20,7 +20,7 @@ type Story = StoryObj<typeof WorkbenchDock>;
 export const Dock: Story = {
   render: () => (
     <WorkbenchTheme style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, minHeight: 0, display: 'grid', placeItems: 'center', color: 'var(--tertiary-foreground)', fontSize: 13 }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'grid', placeItems: 'center', color: 'var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))', fontSize: 13 }}>
         editor area — drag the dock's top edge to resize
       </div>
       <WorkbenchDock>

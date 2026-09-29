@@ -26,7 +26,7 @@ function Views({ view, go, onClose }: { view: string; go: (v: string) => void; o
   );
   if (view === 'done') return (
     <div style={{ padding: '18px 20px 22px', textAlign: 'center' }}>
-      <span style={{ display: 'inline-grid', placeItems: 'center', width: 54, height: 54, borderRadius: '50%', background: 'var(--success)', color: '#fff', marginBottom: 10 }}><Icon name="check" size={26} sw={3} /></span>
+      <span style={{ display: 'inline-grid', placeItems: 'center', width: 54, height: 54, borderRadius: '50%', background: 'var(--success, oklch(0.723 0.191 149.6))', color: '#fff', marginBottom: 10 }}><Icon name="check" size={26} sw={3} /></span>
       <div style={{ fontSize: 17, fontWeight: 700 }}>Card shared</div>
       <div style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '4px 0 16px' }}>Wei Chen is on the way.</div>
       <Button size="pill" onPress={onClose}>Done</Button>
@@ -45,7 +45,7 @@ function Views({ view, go, onClose }: { view: string; go: (v: string) => void; o
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', fontSize: 15.5, fontWeight: 600 }}>{t}</span>
             <span style={{ display: 'block', fontSize: 12.5, color: 'var(--muted-foreground)', marginTop: 1 }}>{d}</span></span>
-          <Icon name="chev" size={14} sw={2.6} style={{ color: 'var(--tertiary-foreground)' }} />
+          <Icon name="chev" size={14} sw={2.6} style={{ color: 'var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))' }} />
         </button>
       ))}
     </div>
