@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSidebar,
+  SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar,
 } from './split-view';
 import { NavigationStack, type Screen } from './navigation-stack';
 import {
@@ -174,4 +174,64 @@ export const NestedNavigationStack: Story = {
       </Phone>
     );
   },
+};
+
+/** Collapsed with a NavigationStack at its root: the root screen gets a back button to the sidebar, labelled
+ *  with its title (`rootBack` defaults to the previous column inside a collapsed SplitView). */
+export const NavigationStackRootBack: Story = {
+  render: function RootBackStory() {
+    const screens: Screen[] = [{
+      key: 'root', title: 'Recently Added', largeTitle: true,
+      content: <div className="px-4 py-3 text-[16px] text-muted-foreground">The back button returns to the Library column.</div>,
+    }];
+    return (
+      <Phone w={390} h={640}>
+        <SplitView aria-label="Music" defaultCompactColumn="detail" defaultSelection={{ sidebar: 'recent' }}>
+          <SplitViewSidebar aria-label="Library">
+            <SplitViewHeader title="Library" />
+            <SplitViewContent className="px-2.5 pt-2">
+              <SplitViewItem id="recent" title="Recently Added" />
+            </SplitViewContent>
+          </SplitViewSidebar>
+          <SplitViewDetail aria-label="Albums">
+            <div className="relative min-h-0 flex-1">
+              <NavigationStack screens={screens} />
+            </div>
+          </SplitViewDetail>
+        </SplitView>
+      </Phone>
+    );
+  },
+};
+
+/** Header and section options: the sidebar's bar shows its title only once the list scrolls (`titleOnScroll`);
+ *  "My Lists" is a `prominent` section label; the detail's large title carries a trailing count
+ *  (`largeTitleTrailing`) and lines up with the centred content (`largeTitleClassName`). */
+export const HeaderOptions: Story = {
+  render: () => (
+    <Phone w={1100} h={600}>
+      <SplitView aria-label="Reminders" defaultSelection={{ sidebar: 'today' }} sidebarBehavior="tile">
+        <SplitViewSidebar aria-label="Lists" className="bg-muted">
+          <SplitViewHeader title="Lists" titleOnScroll className="bg-muted" />
+          <SplitViewContent className="px-2.5">
+            <SplitViewSection title="My Lists" variant="prominent">
+              {['Today', 'Groceries', 'Work'].map((t) => <SplitViewItem key={t} id={t.toLowerCase()} title={t} />)}
+            </SplitViewSection>
+          </SplitViewContent>
+        </SplitViewSidebar>
+        <SplitViewDetail aria-label="Today">
+          <SplitViewHeader title={<span className="text-primary">Today</span>} largeTitle
+            largeTitleTrailing={<span className="font-semibold text-primary tabular-nums">4</span>}
+            largeTitleClassName="mx-auto max-w-[560px] px-5" />
+          <SplitViewContent>
+            <div className="mx-auto max-w-[560px] px-5 text-[17px]">
+              {['Book the cabin ferry', 'Call Mom back', 'Review SplitView PR', 'Water the ferns'].map((t) => (
+                <div key={t} className="py-[11px] shadow-[inset_0_-1px_0_var(--border)]">{t}</div>
+              ))}
+            </div>
+          </SplitViewContent>
+        </SplitViewDetail>
+      </SplitView>
+    </Phone>
+  ),
 };

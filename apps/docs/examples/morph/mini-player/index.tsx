@@ -132,6 +132,7 @@ export default function MiniPlayer() {
               >
                 <Slider
                   aria-label="Position"
+                  data-no-drag
                   tone="onDark"
                   size="sm"
                   defaultValue={32}

@@ -330,7 +330,7 @@ export const WorkspaceRailScrolling: Story = {
     <ThemeScope scope="chat" appearance="dark" className="flex h-[300px] w-[200px] overflow-hidden bg-background text-foreground">
       <TabView orientation="vertical" defaultSelectedKey="w0" className="flex h-full">
         <TabViewBar variant="workspace">
-          <TabViewHeader className="text-[10px] font-bold tracking-[.4px] text-tertiary-foreground uppercase">Chat</TabViewHeader>
+          <TabViewHeader className="font-ios text-[10px] font-bold tracking-[.4px] text-tertiary-foreground uppercase">Chat</TabViewHeader>
           <TabViewList aria-label="Workspaces">
             {Array.from({ length: 12 }, (_, i) => (
               <TabViewTab key={i} id={`w${i}`} textValue={`Workspace ${i + 1}`}>
