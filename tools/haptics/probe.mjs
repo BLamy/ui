@@ -50,6 +50,9 @@ const CASES = [
   ['molecules-indexbar--wave', { drag: `${root} [data-slot=index-bar]` }],
   ['pages-haptics-playground--bare', { tap: `${root} [role=switch], ${root} label >> nth=0` }],
   ['pages-haptics-playground--bare', { range: `${root} input[type=range]` }],
+  // CommandMenu: a leaf row (impact) and a row that pushes a page (selection); the input keeps focus either way.
+  ['organisms-commandmenu--inline', { tap: `${root} [data-value="Go to file"]` }],
+  ['organisms-commandmenu--inline', { tap: `${root} [data-value="New thread in…"]` }, (t) => t.includes('Projects')],
 ];
 
 const browser = await (useChromium ? chromium : webkit).launch();
