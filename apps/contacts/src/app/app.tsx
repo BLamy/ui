@@ -18,38 +18,30 @@ export function ContactsApp() {
 
   return (
     <BLProvider dark={dark}>
-      {/* Escape closes the share sheet only — without this it would also reach SplitView and pop the stack. */}
-      <div
-        className="contents"
-        onKeyDownCapture={(e) => {
-          if (share && e.key === 'Escape') e.preventDefault();
+      <SplitView
+        aria-label="Contacts"
+        selection={{
+          sidebar: contacts.listId,
+          supplementary: contacts.selectedId,
         }}
+        onSelectionChange={(sel) => {
+          if (sel.sidebar && sel.sidebar !== contacts.listId) {
+            contacts.setListId(sel.sidebar);
+            contacts.setEditing(false);
+          }
+          contacts.setSelectedId(sel.supplementary ?? null);
+        }}
+        onWidthClassChange={(wc) => setCompact(wc === 'compact')}
       >
-        <SplitView
-          aria-label="Contacts"
-          selection={{
-            sidebar: contacts.listId,
-            supplementary: contacts.selectedId,
-          }}
-          onSelectionChange={(sel) => {
-            if (sel.sidebar && sel.sidebar !== contacts.listId) {
-              contacts.setListId(sel.sidebar);
-              contacts.setEditing(false);
-            }
-            contacts.setSelectedId(sel.supplementary ?? null);
-          }}
-          onWidthClassChange={(wc) => setCompact(wc === 'compact')}
-        >
-          <ListsSidebar contacts={contacts} />
-          <ContactList contacts={contacts} />
-          <ContactDetail
-            contacts={contacts}
-            activity={activity}
-            onActivity={setActivity}
-            onShare={() => setShare('menu')}
-          />
-        </SplitView>
-      </div>
+        <ListsSidebar contacts={contacts} />
+        <ContactList contacts={contacts} />
+        <ContactDetail
+          contacts={contacts}
+          activity={activity}
+          onActivity={setActivity}
+          onShare={() => setShare('menu')}
+        />
+      </SplitView>
       <ShareSheet
         contact={contacts.selected}
         view={share}

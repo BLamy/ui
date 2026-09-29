@@ -48,6 +48,16 @@ Each state (`menu → qr → vcard → done`) is measured, and the card **spring
 
 Try it in the Contacts demo: open any contact → **Share Contact**.
 
+## Focus and keyboard
+
+The Credenza is a modal dialog (`role="dialog"`, `aria-modal`, labelled by its title) scoped to the element it fills:
+
+- Opening moves focus onto the sheet — or onto a descendant marked `data-autofocus`
+- Tab and Shift+Tab cycle inside it; focus that lands elsewhere in its host is pulled back
+- **Escape closes only the Credenza** — the key is stopped, so a SplitView or NavigationStack behind it doesn't also pop
+- Closing returns focus to the control that opened it
+- A Credenza mounted already open (a demo on page load) doesn't take focus until you work inside its host
+
 ## Live example
 
 {% demo src="credenza/share-contact" %}
