@@ -1,14 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
-  ChannelGroup,
-  ChannelIntro,
-  ChannelItem,
-  ChannelList,
-  ChannelThreadItem,
-  ChatAvatar,
-  ChatComposer,
-  ChatIcon,
-  chatIconPaths,
   ChatShell,
   ChatShellAside,
   ChatShellBack,
@@ -24,26 +15,26 @@ import {
   ChatShellPanel,
   ChatShellSidebar,
   ChatShellTitle,
-  ChatUsersProvider,
-  DateDivider,
-  MemberGroup,
-  MemberItem,
-  MemberList,
-  MessageList,
-  ServerHeader,
-  TypingIndicator,
-  UserPanel,
-  UserPanelAction,
-  UserPanelInfo,
-  UserPanelName,
-  UserPanelStatus,
+  Icon,
+  TabView,
+  TabViewAction,
+  TabViewBar,
+  TabViewFooter,
+  TabViewIndicator,
+  TabViewList,
+  TabViewTab,
   useChatShell,
-  WorkspaceRail,
-  WorkspaceRailAction,
-  WorkspaceRailItem,
-  WorkspaceRailList,
   type Appearance,
 } from '@brett_lamy/ui';
+import { ChannelGroup, ChannelItem, ChannelList, ChannelThreadItem } from './components/channel-list';
+import { ChatAvatar } from './components/chat-avatar';
+import { ChatComposer } from './components/chat-composer';
+import { ChatUsersProvider } from './components/chat-users';
+import { MemberGroup, MemberItem, MemberList } from './components/member-list';
+import { ChannelIntro, DateDivider, MessageList, TypingIndicator } from './components/message-list';
+import { ServerHeader } from './components/server-header';
+import { UserPanel, UserPanelAction, UserPanelInfo, UserPanelName, UserPanelStatus } from './components/user-panel';
+import { WorkspaceTile } from './components/workspace-tile';
 import { ChannelMessage } from './channel-message';
 import { ThreadView } from './thread-view';
 import { BOT_REPLY, CHANNELS, ME, PRESENCE, USERS, WORKSPACES, type Channel, type MessageData } from './data';
@@ -67,6 +58,11 @@ export interface DiscordCloneProps {
 }
 
 const groups = [...new Set(CHANNELS.map((c) => c.group))];
+
+/** react-aria's tabs drop `title`, so the rail's tooltips go on through a ref. */
+const titleRef = (title: string) => (el: HTMLElement | null) => {
+  if (el) el.title = title;
+};
 
 export default function DiscordClone({
   tint = '#0A84FF',
@@ -97,14 +93,21 @@ export default function DiscordClone({
     <ChatUsersProvider users={USERS}>
       <ChatShell tint={tint} appearance={appearance} className={className} style={style}>
         <ChatShellNav>
-          <WorkspaceRail defaultSelectedKey="blui">
-            <WorkspaceRailList>
-              {WORKSPACES.map((w) => (
-                <WorkspaceRailItem key={w.id} {...w} />
-              ))}
-            </WorkspaceRailList>
-            <WorkspaceRailAction aria-label="Add workspace" />
-          </WorkspaceRail>
+          <TabView orientation="vertical" defaultSelectedKey="blui" className="contents">
+            <TabViewBar variant="workspace">
+              <TabViewList aria-label="Workspaces">
+                {WORKSPACES.map((w) => (
+                  <TabViewTab key={w.id} id={w.id} textValue={w.title} ref={titleRef(w.title)}>
+                    <TabViewIndicator variant="pill" />
+                    <WorkspaceTile color={w.color}>{w.label}</WorkspaceTile>
+                  </TabViewTab>
+                ))}
+              </TabViewList>
+              <TabViewFooter>
+                <TabViewAction aria-label="Add workspace" icon="plus" />
+              </TabViewFooter>
+            </TabViewBar>
+          </TabView>
           <ChatShellSidebar>
             <ServerHeader>BL UI HQ</ServerHeader>
             <ChannelList
@@ -147,7 +150,7 @@ export default function DiscordClone({
                 <UserPanelStatus status={PRESENCE[ME]} />
               </UserPanelInfo>
               <UserPanelAction aria-label="Notifications">
-                <ChatIcon d={chatIconPaths.bell} size={14} />
+                <Icon name="bell-simple" size={14} sw={1.9} className="inline" />
               </UserPanelAction>
             </UserPanel>
           </ChatShellSidebar>
@@ -160,7 +163,7 @@ export default function DiscordClone({
                 <ChatShellNavTrigger />
                 <ChatShellBack onPress={() => setThread(null)}>#{channel.name}</ChatShellBack>
                 <ChatShellHeaderIcon>
-                  <ChatIcon d={chatIconPaths.thread} size={14} />
+                  <Icon name="text-bubble" size={14} sw={1.9} className="inline" />
                 </ChatShellHeaderIcon>
                 <ChatShellTitle>{threadMessage.thread!.title}</ChatShellTitle>
                 <ChatShellHeaderActions>
@@ -236,7 +239,7 @@ function ChannelHeader({ channel, membersOn, onToggleMembers }: { channel: Chann
       <ChatShellDescription>{channel.topic}</ChatShellDescription>
       <ChatShellHeaderActions>
         <ChatShellHeaderAction aria-label="Members" isActive={membersOn && width >= 1320} onPress={onToggleMembers}>
-          <ChatIcon d={chatIconPaths.people} size={16} />
+          <Icon name="people-simple" size={16} sw={1.9} className="inline" />
         </ChatShellHeaderAction>
       </ChatShellHeaderActions>
     </ChatShellHeader>

@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ChatAvatar } from './chat-avatar';
+import { ChatAvatar } from './components/chat-avatar';
 import { ChatFrame } from './chat.fixtures';
-import '../../styles.css';
 
 const meta: Meta<typeof ChatAvatar> = {
   title: 'Atoms/ChatAvatar',

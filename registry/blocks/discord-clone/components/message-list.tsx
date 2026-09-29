@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef, type ComponentProps, type ReactNode, type Ref } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Icon } from '../../lib/icon';
-import { cn } from '../../lib/utils';
+import { Icon, cn } from '@brett_lamy/ui';
 
 /* ══ Transcript parts ══
    <MessageList scrollKey={channelId}>

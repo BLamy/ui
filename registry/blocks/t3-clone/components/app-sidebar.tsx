@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { WorkbenchSidebarClose } from '@brett_lamy/ui';
 import {
   ProjectSwitcher,
   SidebarFooterItem,
@@ -14,8 +15,7 @@ import {
   ThreadSidebarFooter,
   ThreadSidebarHeader,
   ThreadSidebarToolbar,
-  WorkbenchSidebarClose,
-} from '@brett_lamy/ui';
+} from './thread-sidebar';
 import type { Thread } from '../lib/data';
 import type { ThreadsState } from '../lib/use-threads';
 

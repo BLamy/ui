@@ -1,4 +1,5 @@
-import type { ChatPresence, ChatUsers } from '@brett_lamy/ui';
+import type { ChatUsers } from './components/chat-users';
+import type { ChatPresence } from './components/user-panel';
 
 /* Sample data for the Discord clone. Swap it for your API. */
 

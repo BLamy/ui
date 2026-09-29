@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react';
-import { Icon } from '../../lib/icon';
-import type { ChatUser } from '../../lib/chat/chat-users';
-import { cn } from '../../lib/utils';
+import { Icon, cn } from '@brett_lamy/ui';
+import type { ChatUser } from './chat-users';
 import { cva } from 'class-variance-authority';
 
 export interface ChatAvatarProps {

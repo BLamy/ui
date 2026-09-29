@@ -17,11 +17,9 @@ import {
   SidebarFooterItem,
   SidebarUser,
   type ThreadStatus,
-} from './thread-sidebar';
-import { IconBtn } from '../../lib/workbench/icons';
-import { WorkbenchTheme } from '../../lib/workbench/theme';
-import { THREADS } from './fixtures';
-import '../../styles.css';
+} from './components/thread-sidebar';
+import { IconBtn, WorkbenchTheme } from '@brett_lamy/ui';
+import { THREADS } from './lib/data';
 
 const meta: Meta<typeof ThreadSidebar> = {
   title: 'Organisms/ThreadSidebar',
@@ -40,7 +38,7 @@ const meta: Meta<typeof ThreadSidebar> = {
 export default meta;
 type Story = StoryObj<typeof ThreadSidebar>;
 
-/* The parts composed the way the t3-clone block does: search filters, Settled folds, "Show more" expands. */
+/* The t3-clone block's sidebar parts (components/thread-sidebar.tsx), composed the way its AppSidebar does: search filters, Settled folds, "Show more" expands. */
 function SidebarDemo({ compact }: { compact?: boolean }) {
   const [cur, setCur] = useState<string | null>('t1');
   const [query, setQuery] = useState('');

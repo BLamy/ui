@@ -1,14 +1,9 @@
 import type { CSSProperties } from 'react';
-import {
-  ChatComposer,
-  ChatShellFooter,
-  MessageDivider,
-  MessageList,
-  MessageListEmpty,
-  ThreadHeader,
-  cn,
-  useChatUsers,
-} from '@brett_lamy/ui';
+import { ChatShellFooter, cn } from '@brett_lamy/ui';
+import { ChatComposer } from './components/chat-composer';
+import { useChatUsers } from './components/chat-users';
+import { MessageDivider, MessageList, MessageListEmpty } from './components/message-list';
+import { ThreadHeader } from './components/thread-preview';
 import { ChannelMessage } from './channel-message';
 import type { MessageData } from './data';
 

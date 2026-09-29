@@ -1,9 +1,6 @@
 import type { ReactNode } from 'react'
 import {
-  ChannelGroup,
-  ChannelItem,
-  ChannelList,
-  ChatComposer,
+  Avatar,
   ChatShell,
   ChatShellBack,
   ChatShellFooter,
@@ -12,17 +9,17 @@ import {
   ChatShellMain,
   ChatShellSidebar,
   ChatShellTitle,
-  DateDivider,
-  Message,
-  MessageAuthor,
-  MessageAvatar,
-  MessageBody,
-  MessageContent,
-  MessageGroup,
-  MessageHeader,
-  MessageList,
-  MessageTimestamp,
-  ServerHeader,
+  Composer,
+  ComposerCard,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSend,
+  ComposerSpacer,
+  Icon,
+  SidebarContent,
+  SidebarHeader,
+  SidebarItem,
+  SidebarSection,
   SplitView,
   SplitViewDetail,
   SplitViewSidebar,
@@ -40,24 +37,32 @@ const rooms = [
   { id: 'random', name: 'random', last: '🍕 Friday?' },
 ]
 
+const miles = { f: 'Miles', l: 'Okafor' }
+
 function Rooms() {
   const { selection, select, collapsed } = useSplitView()
   return (
     <ChatShellSidebar className="w-full border-r-0">
-      <ServerHeader action={null}>Motion Lab</ServerHeader>
-      <ChannelList
-        // Collapsed, the rows are navigation: nothing stays selected.
-        selectedKey={collapsed ? null : selection.sidebar}
-        onSelectionChange={(id) => select('sidebar', id)}
-      >
-        <ChannelGroup label="Channels">
+      <SidebarHeader>
+        <div className="px-[9px] font-ios text-[14px] font-bold text-foreground">
+          Motion Lab
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarSection title="Channels">
           {rooms.map((r) => (
-            <ChannelItem key={r.id} id={r.id} unread={r.unread}>
-              {r.name}
-            </ChannelItem>
+            <SidebarItem
+              key={r.id}
+              icon={<Icon name="number" size={13} sw={2} />}
+              label={r.name}
+              // Collapsed, the rows are navigation: nothing stays selected.
+              active={!collapsed && selection.sidebar === r.id}
+              badge={r.unread ? 'new' : undefined}
+              onPress={() => select('sidebar', r.id)}
+            />
           ))}
-        </ChannelGroup>
-      </ChannelList>
+        </SidebarSection>
+      </SidebarContent>
     </ChatShellSidebar>
   )
 }
@@ -72,31 +77,39 @@ function Room() {
         <ChatShellHeaderIcon />
         <ChatShellTitle>{room.name}</ChatShellTitle>
       </ChatShellHeader>
-      <MessageList scrollKey={room.id}>
-        <DateDivider>Today</DateDivider>
-        <MessageGroup>
-          <Message user={{ name: 'Miles', c: '#BF5AF2', role: '#D8A9F0' }}>
-            <MessageAvatar />
-            <MessageBody>
-              <MessageHeader>
-                <MessageAuthor />
-                <MessageTimestamp>9:41 AM</MessageTimestamp>
-              </MessageHeader>
-              <MessageContent>{room.last}</MessageContent>
-            </MessageBody>
-          </Message>
-          <Message variant="continued">
-            <MessageAvatar />
-            <MessageBody>
-              <MessageContent>
-                Swipe from the left edge to go back.
-              </MessageContent>
-            </MessageBody>
-          </Message>
-        </MessageGroup>
-      </MessageList>
+      <div
+        key={room.id}
+        role="log"
+        aria-live="polite"
+        className="min-h-0 flex-1 overflow-y-auto py-3"
+      >
+        <div className="px-4 pb-2 text-center text-[11px] font-semibold text-tertiary-foreground">
+          Today
+        </div>
+        <div className="flex gap-3 px-4 py-1.5">
+          <Avatar c={miles} size={32} />
+          <div className="min-w-0 flex-1 text-[13.5px] leading-normal text-foreground">
+            <div className="flex items-baseline gap-2">
+              <span className="font-semibold">{miles.f}</span>
+              <span className="text-[11px] text-tertiary-foreground">
+                9:41 AM
+              </span>
+            </div>
+            <p className="m-0">{room.last}</p>
+            <p className="m-0">Swipe from the left edge to go back.</p>
+          </div>
+        </div>
+      </div>
       <ChatShellFooter>
-        <ChatComposer placeholder={'Message #' + room.name} onSend={() => {}} />
+        <Composer>
+          <ComposerCard>
+            <ComposerInput placeholder={'Message #' + room.name} />
+            <ComposerFooter>
+              <ComposerSpacer />
+              <ComposerSend />
+            </ComposerFooter>
+          </ComposerCard>
+        </Composer>
       </ChatShellFooter>
     </ChatShellMain>
   )

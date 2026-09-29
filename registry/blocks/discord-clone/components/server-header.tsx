@@ -1,8 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button } from 'react-aria-components';
-import { Icon } from '../../lib/icon';
-import { useOptionalChatShell } from '../../lib/chat/chat-shell-context';
-import { cn } from '../../lib/utils';
+import { Icon, cn, useOptionalChatShell } from '@brett_lamy/ui';
 
 export interface ServerHeaderProps extends ComponentProps<'div'> {
   /** trailing control; defaults to a close button inside a compact ChatShell, else a disclosure chevron */

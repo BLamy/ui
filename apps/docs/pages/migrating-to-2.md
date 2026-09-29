@@ -71,7 +71,8 @@ A custom palette that overrode `--bl-*` tokens through `style` now overrides the
 | `WIcon`, `ChatIcon` + `chatIconPaths`, `PKIcon` | `Icon` — their shapes are in the Icon set |
 | `useSpringSheetDrag` | `useSheetDrag` (the old `useSheetDrag` is removed) |
 | `MorphText` | `TextMorph` |
-| `WorkspaceRail` (+ `…List`, `…Item`, `…Home`, `…Separator`, `…Action`) | a vertical `TabView` with `TabViewHeader` / `TabViewFooter` — see the discord-clone block |
+| `WorkspaceRail` (+ `…List`, `…Item`, `…Home`, `…Separator`, `…Action`) | a vertical `TabView` with `TabViewBar variant="workspace"`, `TabViewIndicator variant="pill"`, `TabViewSeparator` and a `TabViewFooter` › `TabViewAction`; the Discord tile is the discord-clone block's `WorkspaceTile` |
+| `kvib` | `Haptics` (`Haptics.impact('light')`, `Haptics.selection()`) |
 
 ## 5. Parts that moved into blocks
 
@@ -79,7 +80,7 @@ Parts that only one app used now live in that app's block, where you can edit th
 
 | Part | Block |
 | --- | --- |
-| `ServerHeader`, `ChannelList`, `ChannelGroup`, `ChannelItem`, `ChannelThreadItem`, `UserPanel*`, `MemberList*`, `ThreadPreview`, `ThreadHeader`, `Message*`, `MessageList*`, `ChatComposer*`, `ChatAvatar`, `RichText` | `discord-clone` |
-| `ThreadSidebar*`, `ThreadList`, `ThreadItem`, `ProjectSwitcher` | `t3-clone` |
+| `ServerHeader`, `ChannelList`, `ChannelGroup`, `ChannelItem`, `ChannelThreadItem`, `UserPanel*` (+ `presenceLabel`, `ChatPresence`), `MemberList` / `MemberGroup` / `MemberItem`, `ThreadPreview`, `ThreadPreviewReply`, `ThreadHeader`, `Message*` (+ `messageVariants`), `MessageList`, `MessageGroup`, `MessageDivider`, `DateDivider`, `MessageListEmpty`, `ChannelIntro`, `TypingIndicator`, `ChatComposer*`, `ChatAvatar`, `RichText`, `ChatUsersProvider` / `useChatUsers` / `ChatUser` | `discord-clone` (`components/*`) |
+| `ThreadSidebar`, `ThreadSidebarHeader`, `ThreadSidebarBrand`, `ThreadSidebarToolbar`, `ThreadSearch`, `ThreadNewButton`, `ProjectSwitcher`, `ThreadList`, `ThreadGroup`, `ThreadItem`, `ThreadShowMore`, `ThreadSidebarFooter`, `SidebarNotice`, `SidebarFooterItem`, `SidebarUser` | `t3-clone` (`components/thread-sidebar.tsx`) |
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/discord-clone.json{% endcommand %}

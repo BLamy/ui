@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   WorkbenchShell,
@@ -21,23 +21,10 @@ import {
   WorkbenchPanelClose,
   WorkbenchTabBar,
   WorkbenchTab,
+  useOptionalWorkbenchShell,
 } from './workbench-shell';
-import {
-  ThreadSidebar,
-  ThreadSidebarHeader,
-  ThreadSidebarBrand,
-  ThreadSidebarToolbar,
-  ThreadSearch,
-  ThreadNewButton,
-  ProjectSwitcher,
-  ThreadList,
-  ThreadGroup,
-  ThreadItem,
-  ThreadShowMore,
-  ThreadSidebarFooter,
-  SidebarNotice,
-  SidebarFooterItem,
-} from '../components/workbench/thread-sidebar';
+import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSearch, SidebarSection, SidebarWorkspace } from '../components/sidebar';
+import { Icon } from '../lib/icon';
 import {
   Conversation,
   ConversationEmpty,
@@ -77,6 +64,62 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
+/* The thread list, from the generic Sidebar parts (the t3-clone block has T3 Code's own thread sidebar). Picking
+   a thread closes the compact drawer. */
+function ThreadNav({
+  brand,
+  detail,
+  threads,
+  current,
+  onPick,
+  label = 'Threads',
+  search,
+  children,
+}: {
+  brand: string;
+  detail?: string;
+  threads: Thread[];
+  current?: string | null;
+  onPick?: (id: string) => void;
+  label?: string;
+  /** a search field under the brand */
+  search?: boolean;
+  /** the footer */
+  children?: ReactNode;
+}) {
+  const shell = useOptionalWorkbenchShell();
+  return (
+    <nav aria-label="Threads" className="flex h-full flex-col bg-sidebar">
+      <SidebarHeader>
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <SidebarWorkspace name={brand} detail={detail} />
+          </div>
+          <WorkbenchSidebarClose />
+        </div>
+        {search ? <SidebarSearch placeholder="Search threads" /> : null}
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarSection title={label}>
+          {threads.map((t) => (
+            <SidebarItem
+              key={t.id}
+              icon={<Icon name="bubble-left" size={15} sw={1.8} />}
+              label={t.title}
+              active={t.id === current}
+              onPress={() => {
+                onPick?.(t.id);
+                if (shell?.compact) shell.setSidebarOpen(false);
+              }}
+            />
+          ))}
+        </SidebarSection>
+      </SidebarContent>
+      {children}
+    </nav>
+  );
+}
+
 /* The full composition, static (no agent): each frame width exercises one width class —
    regular (≥1120) · medium (760–1119, right-edge drawer) · compact (<760, tab bar + snap-sheet dock). */
 function ShellDemo({
@@ -99,42 +142,17 @@ function ShellDemo({
   const [threads, setThreads] = useState<Thread[]>(THREADS);
   const [cur, setCur] = useState<string | null>(initialThread);
   const [kind, setKind] = useState<SurfaceKind | null>(surface);
-  const [query, setQuery] = useState('');
-  const [showAll, setShowAll] = useState(false);
   const thread = threads.find((t) => t.id === cur) ?? null;
-  const settled = threads.filter((t) => t.settled && t.title.includes(query));
-  const shown = showAll ? settled : settled.slice(0, 7);
   const surfaceMeta = SURFACES.find((s) => s.k === kind);
-  const item = (t: Thread) => (
-    <ThreadItem key={t.id} active={t.id === cur} meta={t.age} onPress={() => setCur(t.id)}>
-      {t.title}
-    </ThreadItem>
-  );
   return (
     <div className="border border-white/10" style={{ width, height, margin: '0 auto', overflow: 'hidden' }}>
       <WorkbenchShell defaultDockOpen={terminal} defaultPanelOpen={panel} defaultPanelFullscreen={full}>
         <WorkbenchSidebar>
-          <ThreadSidebar>
-            <ThreadSidebarHeader>
-              <ThreadSidebarBrand>Workbench</ThreadSidebarBrand>
-              <WorkbenchSidebarClose />
-            </ThreadSidebarHeader>
-            <ThreadSidebarToolbar>
-              <ThreadSearch value={query} onChange={setQuery} />
-              <ThreadNewButton onPress={() => setCur(null)} />
-            </ThreadSidebarToolbar>
-            <ProjectSwitcher />
-            <ThreadList>
-              <ThreadGroup label="Settled" collapsible>
-                {shown.map(item)}
-                {settled.length > shown.length ? <ThreadShowMore count={settled.length - shown.length} onPress={() => setShowAll(true)} /> : null}
-              </ThreadGroup>
-            </ThreadList>
-            <ThreadSidebarFooter>
-              <SidebarNotice onDismiss={() => {}}>Update available</SidebarNotice>
-              <SidebarFooterItem icon="gearshape">Settings</SidebarFooterItem>
-            </ThreadSidebarFooter>
-          </ThreadSidebar>
+          <ThreadNav brand="Workbench" detail="cookbook" threads={threads.filter((t) => t.settled).slice(0, 7)} current={cur} onPick={setCur} label="Settled" search>
+            <SidebarFooter>
+              <SidebarItem icon={<Icon name="gearshape" size={15} sw={1.8} />} label="Settings" />
+            </SidebarFooter>
+          </ThreadNav>
         </WorkbenchSidebar>
 
         <WorkbenchMain>
@@ -254,21 +272,7 @@ function ChatOnlyDemo() {
     <div className="border border-white/10" style={{ width: 980, height: 600, margin: '0 auto', overflow: 'hidden' }}>
       <WorkbenchShell>
         <WorkbenchSidebar width={220}>
-          <ThreadSidebar>
-            <ThreadSidebarHeader>
-              <ThreadSidebarBrand>Assistant</ThreadSidebarBrand>
-              <WorkbenchSidebarClose />
-            </ThreadSidebarHeader>
-            <ThreadList>
-              <ThreadGroup label="Recent">
-                {THREADS.slice(0, 5).map((x) => (
-                  <ThreadItem key={x.id} active={x.id === t.id} status={x.id === 't3' ? 'unread' : 'idle'}>
-                    {x.title}
-                  </ThreadItem>
-                ))}
-              </ThreadGroup>
-            </ThreadList>
-          </ThreadSidebar>
+          <ThreadNav brand="Assistant" threads={THREADS.slice(0, 5)} current={t.id} label="Recent" />
         </WorkbenchSidebar>
         <WorkbenchMain>
           <WorkbenchHeader>

@@ -1,7 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
-import { Haptics } from '../../lib/haptics';
-import { cn } from '../../lib/utils';
+import { Haptics, cn } from '@brett_lamy/ui';
 
 /* ══ UserPanel — the signed-in user at the foot of the channel sidebar ══
    <UserPanel>

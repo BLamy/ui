@@ -207,29 +207,6 @@ export {
 export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './components/workbench/message-scroller';
 export { SnapSheet, type SnapSheetProps } from './components/workbench/snap-sheet';
 export {
-  ThreadSidebar,
-  ThreadSidebarHeader,
-  ThreadSidebarBrand,
-  ThreadSidebarToolbar,
-  ThreadSearch,
-  ThreadNewButton,
-  ProjectSwitcher,
-  ThreadList,
-  ThreadGroup,
-  ThreadItem,
-  ThreadShowMore,
-  ThreadSidebarFooter,
-  SidebarNotice,
-  SidebarFooterItem,
-  SidebarUser,
-  type ThreadSearchProps,
-  type ProjectSwitcherProps,
-  type ThreadGroupProps,
-  type ThreadItemProps,
-  type ThreadStatus,
-  type SidebarUserProps,
-} from './components/workbench/thread-sidebar';
-export {
   TerminalHeader,
   TerminalBody,
   TerminalAction,
@@ -401,19 +378,7 @@ export {
   type WorkbenchTabBarProps,
 } from './templates/workbench-shell';
 
-// ── Chat: ChatShell and its team-chat primitives, floating/artifact chat containers ──
-// TEMPORARY: registry/blocks/discord-clone still imports these (removed in 2.0 phase 3). Use Icon.
-export { ChatIcon, chatIconPaths, type ChatIconProps } from './lib/chat/chat-icon';
-export { kvib } from './lib/chat/kvib';
-export {
-  ChatUsersProvider,
-  useChatUsers,
-  type ChatUser,
-  type ChatUsers,
-  type ChatUsersProviderProps,
-} from './lib/chat/chat-users';
-export { ChatAvatar, type ChatAvatarProps } from './components/chat/chat-avatar';
-export { RichText, type RichTextProps } from './components/chat/rich-text';
+// ── Chat: ChatShell, floating/artifact chat containers (the Discord-style parts live in the discord-clone block) ──
 export {
   ChatShell,
   ChatShellNav,
@@ -432,6 +397,7 @@ export {
   ChatShellPanel,
   chatShellHeaderActionVariants,
   useChatShell,
+  useOptionalChatShell,
   type ChatShellProps,
   type ChatShellContextValue,
   type ChatShellNavProps,
@@ -441,89 +407,6 @@ export {
   type ChatShellAsideProps,
   type ChatShellPanelProps,
 } from './templates/chat-shell';
-export {
-  WorkspaceRail,
-  WorkspaceRailList,
-  WorkspaceRailItem,
-  WorkspaceRailHome,
-  WorkspaceRailSeparator,
-  WorkspaceRailAction,
-  type WorkspaceRailProps,
-  type WorkspaceRailListProps,
-  type WorkspaceRailItemProps,
-  type WorkspaceRailHomeProps,
-  type WorkspaceRailActionProps,
-} from './components/chat/workspace-rail';
-export { ServerHeader, type ServerHeaderProps } from './components/chat/server-header';
-export {
-  ChannelList,
-  ChannelGroup,
-  ChannelItem,
-  ChannelThreadItem,
-  type ChannelListProps,
-  type ChannelGroupProps,
-  type ChannelItemProps,
-  type ChannelThreadItemProps,
-} from './components/chat/channel-list';
-export {
-  UserPanel,
-  UserPanelInfo,
-  UserPanelName,
-  UserPanelStatus,
-  UserPanelAction,
-  presenceLabel,
-  type UserPanelStatusProps,
-  type ChatPresence,
-} from './components/chat/user-panel';
-export {
-  MessageList,
-  MessageGroup,
-  MessageDivider,
-  DateDivider,
-  MessageListEmpty,
-  ChannelIntro,
-  TypingIndicator,
-  messageDividerVariants,
-  type MessageListProps,
-  type MessageDividerProps,
-  type ChannelIntroProps,
-} from './components/chat/message-list';
-export {
-  Message,
-  MessageAvatar,
-  MessageBody,
-  MessageHeader,
-  MessageAuthor,
-  MessageBadge,
-  MessageTimestamp,
-  MessageContent,
-  MessageReactions,
-  MessageReaction,
-  MessageActions,
-  MessageAction,
-  messageVariants,
-  type MessageProps,
-  type MessageAvatarProps,
-  type MessageReactionProps,
-  type MessageActionProps,
-} from './components/chat/message';
-export {
-  ThreadPreview,
-  ThreadPreviewReply,
-  ThreadHeader,
-  type ThreadPreviewProps,
-  type ThreadPreviewReplyProps,
-  type ThreadHeaderProps,
-} from './components/chat/thread-preview';
-export { MemberList, MemberGroup, MemberItem, type MemberGroupProps, type MemberItemProps } from './components/chat/member-list';
-export {
-  ChatComposer,
-  ChatComposerInput,
-  ChatComposerSend,
-  ChatComposerAction,
-  type ChatComposerProps,
-  type ChatComposerSendProps,
-} from './components/chat/chat-composer';
 export {
   FloatingSheet,
   useFloatingSheet,

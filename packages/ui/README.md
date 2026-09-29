@@ -62,21 +62,21 @@ If `items` is omitted or empty, the component retains its A-Z form:
 - Inputs and feedback: `SearchField`, `Switch`, `Segmented`, `Haptics`, `HapticIndicator`, plus shadcn-style primitives (`Button`, `Dialog`, `Sheet`, `Select`, `ComboBox`, `Tabs`, …)
 - Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `ContentSwap`, `Celebrate`
 - Foundations: `BLProvider`, `Icon`, `Avatar`, `Spinner`, token helpers
-- Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `WorkspaceRail` parts, `ServerHeader`, `ChannelList` / `ChannelGroup` / `ChannelItem`, `UserPanel`, `MessageList`, `Message` parts, `ThreadPreview`, `MemberList`, `TypingIndicator`, `ChatComposer`, `RichText`, `ChatUsersProvider`, `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer`
-- Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), thread sidebar parts (`ThreadSidebar`, `ThreadList`, `ThreadGroup`, `ThreadItem`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `SnapSheet`, `MarkdownView`
+- Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer`
+- Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `SnapSheet`, `MarkdownView`
 - Demo apps: `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo`, `HapticsPlayground` (full apps — Discord, T3 Code, GitHub — are registry blocks)
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.
 
 ## Team chat
 
-`ChatShell` is a thin layout root: it measures its own width, owns the compact navigation drawer and applies the chat palette. Everything inside is a part you place yourself — leave out what a layout doesn't need. Parts read shell state (`width`, `compact`, `navOpen`, `setNavOpen`) through `useChatShell()`. A full Discord-style app built from these parts ships as the `discord-clone` registry block.
+`ChatShell` is a thin layout root: it measures its own width, owns the compact navigation drawer and applies the chat palette. Everything inside is a part you place yourself — leave out what a layout doesn't need. Parts read shell state (`width`, `compact`, `navOpen`, `setNavOpen`) through `useChatShell()`. A full Discord-style app ships as the `discord-clone` registry block, with its channel, message, member and composer parts (install it to own and edit them).
 
 ```tsx
 import {
   ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader, ChatShellNavTrigger, ChatShellTitle,
-  ChatShellFooter, WorkspaceRail, WorkspaceRailList, WorkspaceRailItem, ServerHeader, ChannelList, ChannelGroup,
-  ChannelItem, MessageList, ChatComposer,
+  ChatShellFooter, TabView, TabViewBar, TabViewList, TabViewTab, TabViewIndicator, SidebarContent, SidebarSection,
+  SidebarItem, Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
 } from '@brett_lamy/ui';
 
 export function Chat() {
@@ -84,23 +84,33 @@ export function Chat() {
   return (
     <ChatShell breakpoint={880}>
       <ChatShellNav>
-        <WorkspaceRail defaultSelectedKey="hq">
-          <WorkspaceRailList><WorkspaceRailItem id="hq" label="H" title="HQ" /></WorkspaceRailList>
-        </WorkspaceRail>
+        <TabView orientation="vertical" defaultSelectedKey="hq" className="contents">
+          <TabViewBar variant="workspace">
+            <TabViewList aria-label="Workspaces">
+              <TabViewTab id="hq" textValue="HQ"><TabViewIndicator variant="pill" />{/* tile */}</TabViewTab>
+            </TabViewList>
+          </TabViewBar>
+        </TabView>
         <ChatShellSidebar>
-          <ServerHeader>HQ</ServerHeader>
-          <ChannelList selectedKey={channel} onSelectionChange={setChannel}>
-            <ChannelGroup label="Team">
-              <ChannelItem id="general">general</ChannelItem>
-              <ChannelItem id="dev" unread mentions={2}>dev</ChannelItem>
-            </ChannelGroup>
-          </ChannelList>
+          <SidebarContent>
+            <SidebarSection title="Team">
+              <SidebarItem label="general" active={channel === 'general'} onPress={() => setChannel('general')} />
+              <SidebarItem label="dev" badge={2} active={channel === 'dev'} onPress={() => setChannel('dev')} />
+            </SidebarSection>
+          </SidebarContent>
         </ChatShellSidebar>
       </ChatShellNav>
       <ChatShellMain>
         <ChatShellHeader><ChatShellNavTrigger /><ChatShellTitle>{channel}</ChatShellTitle></ChatShellHeader>
-        <MessageList scrollKey={channel}>{/* Message parts */}</MessageList>
-        <ChatShellFooter><ChatComposer placeholder={'Message #' + channel} onSend={send} /></ChatShellFooter>
+        <div role="log" className="min-h-0 flex-1 overflow-y-auto">{/* messages */}</div>
+        <ChatShellFooter>
+          <Composer onSubmit={send}>
+            <ComposerCard>
+              <ComposerInput placeholder={'Message #' + channel} />
+              <ComposerFooter><ComposerSpacer /><ComposerSend /></ComposerFooter>
+            </ComposerCard>
+          </Composer>
+        </ChatShellFooter>
       </ChatShellMain>
     </ChatShell>
   );

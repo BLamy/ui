@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { RichText } from './rich-text';
+import { RichText } from './components/rich-text';
 import { USERS, ChatFrame } from './chat.fixtures';
-import '../../styles.css';
 
 const meta: Meta<typeof RichText> = {
   title: 'Atoms/RichText',

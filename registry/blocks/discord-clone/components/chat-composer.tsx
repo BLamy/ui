@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, type ComponentProps, type ReactNode } from 'react';
 import { Button, Input, composeRenderProps } from 'react-aria-components';
-import { Icon } from '../../lib/icon';
-import { Haptics } from '../../lib/haptics';
-import { cn } from '../../lib/utils';
+import { Haptics, Icon, cn } from '@brett_lamy/ui';
 
 /* ══ ChatComposer — the message field ══
    <ChatComposer onSend={send} placeholder="Message #dev" />      // input + send button

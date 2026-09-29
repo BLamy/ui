@@ -469,7 +469,7 @@
       "name": "chat-shell",
       "type": "registry:ui",
       "title": "ChatShell",
-      "description": "A team-chat scaffold: workspace rail and channels beside the conversation, one drawer when narrow.",
+      "description": "A team-chat scaffold: an optional workspace rail and channel sidebar beside the conversation, one drawer when narrow.",
       "dependencies": [
         "@brett_lamy/ui@^1.1.0"
       ],
@@ -502,50 +502,8 @@
           "ChatShellFooter",
           "ChatShellAside",
           "ChatShellPanel",
-          "WorkspaceRail",
-          "WorkspaceRailList",
-          "WorkspaceRailItem",
-          "WorkspaceRailHome",
-          "WorkspaceRailSeparator",
-          "WorkspaceRailAction",
-          "ChannelList",
-          "ChannelGroup",
-          "ChannelItem",
-          "ChannelThreadItem",
-          "UserPanel",
-          "UserPanelInfo",
-          "UserPanelName",
-          "presenceLabel",
-          "UserPanelStatus",
-          "UserPanelAction",
-          "MessageList",
-          "MessageGroup",
-          "ChannelIntro",
-          "messageDividerVariants",
-          "MessageDivider",
-          "DateDivider",
-          "MessageListEmpty",
-          "TypingIndicator",
-          "messageVariants",
-          "Message",
-          "MessageAvatar",
-          "MessageBody",
-          "MessageHeader",
-          "MessageAuthor",
-          "MessageBadge",
-          "MessageTimestamp",
-          "MessageContent",
-          "MessageReactions",
-          "MessageReaction",
-          "MessageActions",
-          "MessageAction",
-          "ThreadPreview",
-          "ThreadPreviewReply",
-          "ThreadHeader",
-          "ChatComposer",
-          "ChatComposerInput",
-          "ChatComposerSend",
-          "ChatComposerAction"
+          "useChatShell",
+          "useOptionalChatShell"
         ]
       }
     },
@@ -1340,21 +1298,6 @@
           "WorkbenchPanelClose",
           "WorkbenchTabBar",
           "WorkbenchTab",
-          "ThreadSidebar",
-          "ThreadSidebarHeader",
-          "ThreadSidebarBrand",
-          "ThreadSidebarToolbar",
-          "ThreadSearch",
-          "ThreadNewButton",
-          "ProjectSwitcher",
-          "ThreadList",
-          "ThreadGroup",
-          "ThreadItem",
-          "ThreadShowMore",
-          "ThreadSidebarFooter",
-          "SidebarNotice",
-          "SidebarFooterItem",
-          "SidebarUser",
           "Conversation",
           "ConversationEmpty",
           "ConversationGreeting",
@@ -1743,13 +1686,15 @@
       "name": "discord-clone",
       "type": "registry:block",
       "title": "Discord clone",
-      "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell and the chat primitives.",
+      "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell and TabView, with its own channel, message, member and composer parts.",
       "categories": [
         "chat",
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^1.1.0",
+        "class-variance-authority",
+        "react-aria-components"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1774,6 +1719,66 @@
           "path": "registry/blocks/discord-clone/data.ts",
           "type": "registry:component",
           "target": "components/blocks/discord-clone/data.ts"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/chat-users.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/chat-users.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/chat-avatar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/chat-avatar.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/rich-text.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/rich-text.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/workspace-tile.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/workspace-tile.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/server-header.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/server-header.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/channel-list.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/channel-list.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/user-panel.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/user-panel.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/message.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/message.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/message-list.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/message-list.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/thread-preview.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/thread-preview.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/member-list.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/member-list.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/chat-composer.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/chat-composer.tsx"
         }
       ],
       "meta": {
@@ -1860,7 +1865,7 @@
       "name": "t3-clone",
       "type": "registry:block",
       "title": "T3 Code clone",
-      "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock, and a surface panel (browser, terminal, files, diff, agents). Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, thread sidebar, conversation, terminal and surface primitives.",
+      "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock, and a surface panel (browser, terminal, files, diff, agents). Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, conversation, terminal and surface primitives, with its own thread sidebar parts.",
       "categories": [
         "ai",
         "chat",
@@ -1868,7 +1873,9 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^1.1.0"
+        "@brett_lamy/ui@^1.1.0",
+        "framer-motion",
+        "react-aria-components"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1883,6 +1890,11 @@
           "path": "registry/blocks/t3-clone/components/app-sidebar.tsx",
           "type": "registry:component",
           "target": "components/blocks/t3-clone/components/app-sidebar.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/thread-sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/thread-sidebar.tsx"
         },
         {
           "path": "registry/blocks/t3-clone/components/thread-view.tsx",

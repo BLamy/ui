@@ -12,8 +12,8 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import {
-  ChatShell, ChatShellSidebar, ChatShellMain, ChatShellHeader,
-  ChannelList, ChannelItem, MessageList, Message, ChatComposer,
+  ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain,
+  ChatShellHeader, ChatShellTitle, ChatShellFooter,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -24,8 +24,8 @@ Adds `@/components/ui/chat-shell.tsx`, installs `@brett_lamy/ui`, and wires its 
 
 ```tsx
 import {
-  ChatShell, ChatShellSidebar, ChatShellMain, ChatShellHeader,
-  ChannelList, ChannelItem, MessageList, Message, ChatComposer,
+  ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain,
+  ChatShellHeader, ChatShellTitle, ChatShellFooter,
 } from '@/components/ui/chat-shell'
 ```
 {% endtab %}
@@ -36,9 +36,9 @@ import {
   ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader,
   ChatShellNavTrigger, ChatShellHeaderIcon, ChatShellTitle, ChatShellFooter,
   ChatShellAside, ChatShellPanel,
-  WorkspaceRail, WorkspaceRailList, WorkspaceRailItem, ServerHeader,
-  ChannelList, ChannelGroup, ChannelItem, UserPanel, MessageList, MemberList,
-  ChatComposer,
+  TabView, TabViewBar, TabViewList, TabViewTab, TabViewIndicator,
+  SidebarHeader, SidebarContent, SidebarSection, SidebarItem, Icon,
+  Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
 } from '@brett_lamy/ui'
 
 export function Chat() {
@@ -46,20 +46,24 @@ export function Chat() {
   return (
     <ChatShell breakpoint={880} tint="#0A84FF">
       <ChatShellNav>
-        <WorkspaceRail defaultSelectedKey="hq">
-          <WorkspaceRailList>
-            <WorkspaceRailItem id="hq" label="H" title="HQ" />
-          </WorkspaceRailList>
-        </WorkspaceRail>
+        <TabView orientation="vertical" defaultSelectedKey="hq" className="contents">
+          <TabViewBar variant="workspace">
+            <TabViewList aria-label="Workspaces">
+              <TabViewTab id="hq" textValue="HQ">
+                <TabViewIndicator variant="pill" />
+                <span className="…">H</span>
+              </TabViewTab>
+            </TabViewList>
+          </TabViewBar>
+        </TabView>
         <ChatShellSidebar>
-          <ServerHeader>HQ</ServerHeader>
-          <ChannelList selectedKey={channel} onSelectionChange={setChannel}>
-            <ChannelGroup label="Team">
-              <ChannelItem id="general">general</ChannelItem>
-              <ChannelItem id="dev" unread mentions={2}>dev</ChannelItem>
-            </ChannelGroup>
-          </ChannelList>
-          <UserPanel>…</UserPanel>
+          <SidebarHeader>HQ</SidebarHeader>
+          <SidebarContent>
+            <SidebarSection title="Team">
+              <SidebarItem icon={<Icon name="number" size={13} />} label="general"
+                active={channel === 'general'} onPress={() => setChannel('general')} />
+            </SidebarSection>
+          </SidebarContent>
         </ChatShellSidebar>
       </ChatShellNav>
       <ChatShellMain>
@@ -68,12 +72,17 @@ export function Chat() {
           <ChatShellHeaderIcon />
           <ChatShellTitle>{channel}</ChatShellTitle>
         </ChatShellHeader>
-        <MessageList scrollKey={channel}>{/* Message parts */}</MessageList>
+        <div role="log" className="min-h-0 flex-1 overflow-y-auto">{/* messages */}</div>
         <ChatShellFooter>
-          <ChatComposer placeholder={'Message #' + channel} onSend={send} />
+          <Composer onSubmit={send}>
+            <ComposerCard>
+              <ComposerInput placeholder={'Message #' + channel} />
+              <ComposerFooter><ComposerSpacer /><ComposerSend /></ComposerFooter>
+            </ComposerCard>
+          </Composer>
         </ChatShellFooter>
       </ChatShellMain>
-      <ChatShellAside><MemberList>…</MemberList></ChatShellAside>
+      <ChatShellAside>{/* members */}</ChatShellAside>
       <ChatShellPanel open={!!thread} onOpenChange={closeThread}>
         …
       </ChatShellPanel>
@@ -82,65 +91,31 @@ export function Chat() {
 }
 ```
 
+The regions hold whatever you give them. The Discord-style parts — channel list with thread rows, messages with reactions and thread previews, member list, typing indicator, the one-line composer — belong to the **discord-clone** block below: `npx shadcn add` copies them into your app (`components/blocks/discord-clone/components/*`), where they are yours to change.
+
 ## Live example
 
-The full Discord layout is a registry block — `npx shadcn add` copies `page.tsx` (below), a message component, a thread view and a sample-data file into your app. Switch widths to watch the navigation dock, collapse into a drawer, or make room for the member list:
+The full Discord layout is a registry block — `npx shadcn add` copies `page.tsx` (below), its channel, message, member and composer parts, a thread view and a sample-data file into your app. Switch widths to watch the navigation dock, collapse into a drawer, or make room for the member list:
 
 {% demo src="blocks/discord-clone" %}
 
 ## Built from
 
-`useContainerWidth` measures the shell. [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) turns `ChatShellNav` into a docked column or a left [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer); [SideDrawer](https://blamy.github.io/ui/#/side-drawer) gives `ChatShellPanel` its docked and overlay modes; the rail is a vertical [TabView](https://blamy.github.io/ui/#/tab-view). For a phone-style stack, put the sidebar and conversation in a [SplitView](https://blamy.github.io/ui/#/split-view) (below).
+`useContainerWidth` measures the shell. [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) turns `ChatShellNav` into a docked column or a left [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer); [SideDrawer](https://blamy.github.io/ui/#/side-drawer) gives `ChatShellPanel` its docked and overlay modes; the rail is a vertical [TabView](https://blamy.github.io/ui/#/tab-view) with a `workspace` bar; the channel column can use the [Sidebar](https://blamy.github.io/ui/#/sidebar) parts. For a phone-style stack, put the sidebar and conversation in a [SplitView](https://blamy.github.io/ui/#/split-view) (below).
 
 ## Parts
-
-### Layout
 
 | Part | What it is |
 | --- | --- |
 | `ChatShell` | Root. Measures itself (`breakpoint`, default 880), holds the compact drawer (`defaultNavOpen` / `navOpen` / `onNavOpenChange`), applies `--ck-*` tokens for `appearance` (default: the ambient `AppearanceProvider`, else dark) and the `tint` accent. |
 | `ChatShellNav` | Rail + sidebar. A docked column when wide; one left drawer over a scrim when compact. |
 | `ChatShellNavTrigger` | The hamburger that opens the drawer. Renders nothing while the navigation is docked. |
-| `ChatShellSidebar` | The 222px channel column that stacks `ServerHeader`, `ChannelList`, `UserPanel`. |
+| `ChatShellSidebar` | The 222px channel column (a header, the channel list, the signed-in user). |
 | `ChatShellMain` | The conversation column; takes the remaining width. |
 | `ChatShellHeader` | 46px title bar. Holds `ChatShellHeaderIcon` (a # by default), `ChatShellTitle`, `ChatShellDescription` (the topic, fills the middle) and `ChatShellHeaderActions` › `ChatShellHeaderAction` (`variant="icon"` with `isActive`, or `"outline"`). `ChatShellBack` is a tinted back button for views that replace the channel. |
 | `ChatShellFooter` | Pins the composer under the transcript. |
 | `ChatShellAside` | A docked trailing column (the member list). Shows from `minWidth` (1320) and while `open`. |
 | `ChatShellPanel` | Thread / details panel. Docks as a column from `dockWidth` (1180), overlays below it. `open`, `onOpenChange`, `title`, `width`. |
-
-### Navigation
-
-| Part | What it is |
-| --- | --- |
-| `WorkspaceRail` | The server rail (vertical TabView): `selectedKey` / `defaultSelectedKey` / `onSelectionChange`. |
-| `WorkspaceRailList` › `WorkspaceRailItem` | The tiles: `id`, `label`, `color`, `title`, `unread` (pill nub), `mentions` (red badge), or custom `children`. `WorkspaceRailHome` is the DM tile; `WorkspaceRailSeparator` a rule arrow keys skip. |
-| `WorkspaceRailAction` | A dashed tile that is a button, not a tab ("Add workspace"). |
-| `ServerHeader` | The workspace name. Inside a compact shell its trailing control closes the drawer; otherwise a chevron (or your `action`). |
-| `ChannelList` | The scrolling list; owns `selectedKey` / `onSelectionChange`. |
-| `ChannelGroup` | A labelled section. |
-| `ChannelItem` | A channel: `id`, `icon` (a # by default — pass an avatar for DMs), `unread` (bold + tint dot), `mentions` (red pill). Picking one closes a compact drawer. |
-| `ChannelThreadItem` | An indented thread row with an elbow connector. |
-| `UserPanel` | The signed-in user: `ChatAvatar`, `UserPanelInfo` › `UserPanelName` + `UserPanelStatus` (`online` · `idle` · `dnd` · `offline`), `UserPanelAction`. |
-
-### Transcript
-
-| Part | What it is |
-| --- | --- |
-| `MessageList` | The scrolling `log`. Stays pinned to the newest message until the reader scrolls up; a new `scrollKey` snaps back. |
-| `ChannelIntro` | "Welcome to #channel" at the top. |
-| `DateDivider` / `MessageDivider` | A labelled rule (`variant="date"` or `"subtle"`). |
-| `Message` | One row; `user` is read by its parts. `variant="continued"` for follow-ups inside a `MessageGroup`; `appear` rises new rows into place. |
-| `MessageAvatar` · `MessageBody` · `MessageHeader` | Avatar (bots get a squircle), the column beside it, and the name line. |
-| `MessageAuthor` · `MessageBadge` · `MessageTimestamp` | Name in the role color, a tag ("APP"), the time. |
-| `MessageContent` | The text; a string child renders as `RichText`, so `@id` mentions become chips. |
-| `MessageReactions` › `MessageReaction` | Reaction toggles: `emoji`, `count`, `mine`. |
-| `MessageActions` › `MessageAction` | The floating action bar on hover and keyboard focus; `label` is the name and tooltip. |
-| `ThreadPreview` · `ThreadPreviewReply` · `ThreadHeader` | The card that opens a thread, its latest reply, and the title block of an open thread. |
-| `TypingIndicator` · `MessageListEmpty` | "… is typing" with three dots; placeholder text. |
-| `MemberList` › `MemberGroup` › `MemberItem` | Members by group, with presence dots (`status`) and bot badges. |
-| `ChatComposer` | The field: `onSend`, `placeholder`. Compose it from `ChatComposerAction`, `ChatComposerInput` and `ChatComposerSend` when you need more. |
-
-`ChatUsersProvider` gives `RichText` the users that `@id` mentions resolve against.
 
 ## Context
 
@@ -150,13 +125,15 @@ Anything inside the shell can call `useChatShell()`:
 | --- | --- |
 | `width` | Measured shell width |
 | `compact` | `width < breakpoint` |
-| `navOpen` / `setNavOpen` | The compact drawer |
+| `navOpen` / `setNavOpen` | The compact drawer — call `setNavOpen(false)` when a channel is picked |
+
+`useOptionalChatShell()` returns the same, or `null` outside a shell — for parts that also render standalone.
 
 ## Compositions
 
 ### Direct messages
 
-Two columns and no rail: a DM list in `ChatShellSidebar`, avatars as the channel icons.
+Two columns and no rail: a DM list in `ChatShellSidebar` (Sidebar parts, avatars as the icons).
 
 {% demo src="chat-shell/direct-messages" %}
 
@@ -180,10 +157,12 @@ The smallest shell is just `ChatShellMain`: a header, a transcript and a compose
 
 ### The rail
 
-`WorkspaceRail` in Discord's style: a tile is a circle at rest and morphs into a rounded square when hovered or selected, and the pill on its leading edge grows from the unread nub to half height on hover and full height when selected — corners and pill on springs, a small dip on press, one selection tick per change.
+A vertical `TabView` with `TabViewBar variant="workspace"`, tiles in Discord's style: a tile is a circle at rest and morphs into a rounded square when hovered or selected, and the pill on its leading edge grows from the unread nub to half height on hover and full height when selected — corners and pill on springs, a small dip on press, one selection tick per change.
 
 {% demo src="chat-shell/workspace-rail" %}
 
-### User panel
+### Signed-in user
+
+The foot of the channel column: who you are and your status, from library parts.
 
 {% demo src="chat-shell/user-panel" %}

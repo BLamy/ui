@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Icon } from '../../lib/icon';
-import { ChatUsersProvider } from '../../lib/chat/chat-users';
+import { Icon } from '@brett_lamy/ui';
+import { ChatUsersProvider } from './components/chat-users';
 import {
   Message,
   MessageAction,
@@ -15,11 +15,10 @@ import {
   MessageReaction,
   MessageReactions,
   MessageTimestamp,
-} from './message';
-import { MessageGroup } from './message-list';
-import { ThreadPreview, ThreadPreviewReply } from './thread-preview';
+} from './components/message';
+import { MessageGroup } from './components/message-list';
+import { ThreadPreview, ThreadPreviewReply } from './components/thread-preview';
 import { USERS, ChatFrame } from './chat.fixtures';
-import '../../styles.css';
 
 interface Reaction {
   emoji: string;
