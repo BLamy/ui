@@ -16,7 +16,9 @@ import { springs } from '../lib/motion';
 import { useAppearance } from '../lib/theme';
 import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from '../components/chat/chat-column';
 import { cn } from '../lib/utils';
-import { FloatingChat, type FloatingChatFabPosition, type FloatingChatProps } from '../components/chat/floating-chat';
+import { FloatingChat, glassScopeProps, type FloatingChatFabPosition, type FloatingChatProps } from '../components/chat/floating-chat';
+import { sheetToneProps } from '../components/chat/floating-sheet';
+import { cva } from 'class-variance-authority';
 import { ChatHostContext, ComposerPortal, createOutletStore, useAttachHost, usePersistentHost } from '../lib/chat/persistent-host';
 
 export type ArtifactChatLayout = 'split' | 'floating';
@@ -46,7 +48,22 @@ export function useArtifactChatContainer(): ArtifactChatContainerContextValue {
 export type ArtifactChatContainerSlotChildren = ReactNode;
 
 /** ck-artifact-chat__content stays as a hook for hosts that restyle the artifact pane. */
-const contentClass = 'ck-artifact-chat__content min-h-0 min-w-0 overflow-auto bg-[color:var(--background)]';
+const contentClass = 'ck-artifact-chat__content min-h-0 min-w-0 overflow-auto bg-background';
+
+/** The container: the chat column beside the content (`split`), or the content full-bleed under a floating chat.
+    ck-artifact-chat stays as a hook for hosts. */
+export const artifactChatContainerVariants = cva(
+  'ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-background text-foreground [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]',
+  {
+    variants: {
+      layout: {
+        split: 'grid grid-cols-[minmax(0,var(--ck-artifact-chat-width,400px))_minmax(0,1fr)]',
+        floating: 'block',
+      },
+    },
+    defaultVariants: { layout: 'split' },
+  },
+);
 export type ArtifactChatFabPosition = FloatingChatFabPosition;
 
 export interface ArtifactChatContainerProps {
@@ -103,14 +120,16 @@ export function ArtifactChatContainer({
   fabPosition = 'bottom-center',
   peek = 0,
   appearance,
-  tone,
+  tone: toneProp,
   children,
   className,
   style,
 }: ArtifactChatContainerProps) {
   const [rootRef, width] = useContainerWidth();
   const ambient = useAppearance();
-  const resolvedTone = tone ?? ambient;
+  const tone: NonNullable<FloatingChatProps['tone']> = toneProp ?? ambient ?? 'auto';
+  const toneProps = sheetToneProps(tone);
+  const glassScope = glassScopeProps(tone);
   const contentRef = useRef<HTMLElement>(null);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultChatOpen);
   const [composing, setComposing] = useState(!working);
@@ -210,14 +229,10 @@ export function ArtifactChatContainer({
         ref={rootRef}
         data-slot="artifact-chat-container"
         data-layout={compact ? 'compact' : 'split'}
-        // light/dark key the token maps in styles.css; `auto` leaves the host's tokens alone.
-        data-tone={resolvedTone === 'light' || resolvedTone === 'dark' ? resolvedTone : undefined}
-        // ck-artifact-chat carries the --wb-* token map (styles.css) and is a hook for hosts.
-        className={cn(
-          'ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-[color:var(--background)] text-[color:var(--foreground)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]',
-          compact ? 'block' : 'grid grid-cols-[minmax(0,var(--ck-artifact-chat-width,400px))_minmax(0,1fr)]',
-          className,
-        )}
+        // light/dark: the bl-theme's `sheet` scope in that appearance; `auto` leaves the host's theme alone.
+        data-tone={tone === 'auto' ? undefined : tone}
+        data-theme-scope={toneProps['data-theme-scope']}
+        className={cn(artifactChatContainerVariants({ layout }), toneProps.className, className)}
         style={{
           '--ck-artifact-chat-width': typeof chatWidth === 'number' ? `${chatWidth}px` : chatWidth,
           ...style,
@@ -240,7 +255,13 @@ export function ArtifactChatContainer({
                   <div ref={setChatDock} data-slot="artifact-chat-transcript-dock" className="flex h-full min-h-0 min-w-0 flex-col" />
                 </ChatColumnTranscript>
                 <ChatColumnComposer>
-                  <div ref={setComposerDock} data-slot="artifact-chat-composer-dock" className="min-w-0" />
+                  {/* The embedded Workbench Composer paints with the bl-theme's `glass` scope. */}
+                  <div
+                    ref={setComposerDock}
+                    data-slot="artifact-chat-composer-dock"
+                    data-theme-scope={glassScope['data-theme-scope']}
+                    className={cn('min-w-0', glassScope.className)}
+                  />
                 </ChatColumnComposer>
               </ChatColumn>
             </motion.div>
@@ -272,7 +293,7 @@ export function ArtifactChatContainer({
               fabPosition={fabPosition}
               peek={peek}
               appearance={appearance}
-              tone={resolvedTone}
+              tone={tone}
             />
           </ChatHostContext.Provider>
         ) : null}

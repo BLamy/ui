@@ -14,11 +14,12 @@ import { Button } from 'react-aria-components';
 import { Haptics } from '../../lib/haptics';
 import { collectSlots, defineSlot } from '../../lib/container';
 import { springCss } from '../../lib/motion';
-import { useAppearance, useChromeHidden } from '../../lib/theme';
+import { themeScopeClass, useAppearance, useChromeHidden } from '../../lib/theme';
+import { cva } from 'class-variance-authority';
 import { ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerFab, ComposerOutlet, type ComposerBumpProgress } from '../workbench/composer';
-import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { Icon } from '../../lib/icon';
 import { cn } from '../../lib/utils';
-import type { FloatingSheetAppearance, FloatingSheetFabPosition, FloatingSheetTone } from './floating-sheet';
+import { sheetToneProps, type FloatingSheetAppearance, type FloatingSheetFabPosition, type FloatingSheetTone } from './floating-sheet';
 import { ChatHostContext } from '../../lib/chat/persistent-host';
 
 export type FloatingChatFabPosition = FloatingSheetFabPosition;
@@ -87,17 +88,59 @@ export interface FloatingChatProps {
   style?: CSSProperties;
 }
 
-/** Where the folded FAB rests. */
-const fabPlacement: Record<FloatingSheetFabPosition, string> = {
-  'top-left': 'top-(--ck-chat-gutter) left-(--ck-chat-gutter)',
-  'top-center': 'top-(--ck-chat-gutter) left-1/2 -translate-x-1/2',
-  'top-right': 'top-(--ck-chat-gutter) right-(--ck-chat-gutter)',
-  'center-left': 'top-1/2 left-(--ck-chat-gutter) -translate-y-1/2',
-  'center-right': 'top-1/2 right-(--ck-chat-gutter) -translate-y-1/2',
-  'bottom-left': 'bottom-(--ck-chat-gutter) left-(--ck-chat-gutter)',
-  'bottom-center': 'bottom-[max(var(--ck-chat-gutter),20px)] left-1/2 -translate-x-1/2',
-  'bottom-right': 'bottom-(--ck-chat-gutter) right-(--ck-chat-gutter)',
-};
+/** The layer. --ck-sheet-surface / --ck-sheet-line are the RGB triplets the glass mixes its alphas into (dark glass
+    unless the tone is light). ck-floating-chat keeps the host's palette for the transcript (styles.css). */
+export const floatingChatVariants = cva(
+  'ck-floating-chat pointer-events-none absolute inset-0 z-40 text-foreground [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]',
+  {
+    variants: {
+      tone: {
+        auto: '[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
+        dark: '[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
+        light: '[--ck-sheet-line:0,0,0] [--ck-sheet-surface:250,250,252]',
+      },
+    },
+    defaultVariants: { tone: 'auto' },
+  },
+);
+
+/** The transcript's bump on top of the composer: glass that firms up as it grows, or an opaque card. */
+export const floatingChatBumpVariants = cva('ck-floating-chat__bump', {
+  variants: {
+    appearance: {
+      glass:
+        'border-[color:rgba(var(--ck-sheet-line),.14)] bg-[color:rgba(var(--ck-sheet-surface),calc(.5_+_.4_*_var(--bump-progress,0)))] [box-shadow:inset_0_1px_0_rgba(255,255,255,.12)] backdrop-blur-[16px]',
+      sheet: 'border-[color:rgba(var(--ck-sheet-line),.1)] bg-(--ck-host-card)',
+    },
+  },
+  defaultVariants: { appearance: 'glass' },
+});
+
+/** The FAB the chat folds into: glazed or opaque, resting at one of eight spots. */
+export const floatingChatFabVariants = cva('absolute border-[color:rgba(var(--ck-sheet-line),.14)] text-foreground', {
+  variants: {
+    appearance: {
+      glass: 'bg-[color:rgba(var(--ck-sheet-surface),.62)]',
+      sheet: 'bg-card',
+    },
+    position: {
+      'top-left': 'top-(--ck-chat-gutter) left-(--ck-chat-gutter)',
+      'top-center': 'top-(--ck-chat-gutter) left-1/2 -translate-x-1/2',
+      'top-right': 'top-(--ck-chat-gutter) right-(--ck-chat-gutter)',
+      'center-left': 'top-1/2 left-(--ck-chat-gutter) -translate-y-1/2',
+      'center-right': 'top-1/2 right-(--ck-chat-gutter) -translate-y-1/2',
+      'bottom-left': 'bottom-(--ck-chat-gutter) left-(--ck-chat-gutter)',
+      'bottom-center': 'bottom-[max(var(--ck-chat-gutter),20px)] left-1/2 -translate-x-1/2',
+      'bottom-right': 'bottom-(--ck-chat-gutter) right-(--ck-chat-gutter)',
+    },
+  },
+  defaultVariants: { appearance: 'glass', position: 'bottom-center' },
+});
+
+/** The embedded Workbench Composer's theme scope: the bl-theme's `glass` (dark unless the chat's tone is light). */
+export function glassScopeProps(tone: FloatingSheetTone) {
+  return { 'data-theme-scope': 'glass' as const, className: themeScopeClass(tone === 'light' ? 'light' : 'dark') };
+}
 
 /** Hidden by the shared chrome state or by scrolling `scrollRef` down. */
 function useScrollHidden(hideOnScroll: boolean, scrollRef?: RefObject<HTMLElement | null>) {
@@ -154,6 +197,8 @@ export function FloatingChat({
 }: FloatingChatProps) {
   const ambient = useAppearance();
   const tone: FloatingSheetTone = toneProp ?? ambient ?? 'auto';
+  const toneProps = sheetToneProps(tone);
+  const glassScope = glassScopeProps(tone);
   const layerRef = useRef<HTMLDivElement>(null);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const [uncontrolledComposing, setUncontrolledComposing] = useState(!working);
@@ -187,6 +232,8 @@ export function FloatingChat({
   const expanded = bump.reveal > 0;
   const hidden = useScrollHidden(hideOnScroll, scrollRef) && !expanded;
   const glass = appearance === 'glass';
+  // Glass blurs what's behind the card; an opaque sheet gives the card the host's card colour.
+  const composerClass = cn('ck-floating-chat__composer', glass ? '[&_[data-slot=composer-card]]:backdrop-blur-[16px]' : '[--card:var(--ck-host-card)]');
   const fold = bump.minimize;
 
   const revealComposer = () => {
@@ -209,14 +256,17 @@ export function FloatingChat({
           <Button
             data-slot="floating-chat-working"
             // Swaps in for the card with a soft rise; the real card waits, mounted, underneath.
-            className="box-border flex min-h-[46px] w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-border bg-card px-[15px] py-1.5 text-left [font:inherit] text-foreground shadow-[0_6px_24px_var(--wb-shadow,rgba(0,0,0,.28))] outline-none motion-reduce:animate-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60"
+            className={cn(
+              'box-border flex min-h-[46px] w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-border bg-card px-[15px] py-1.5 text-left [font:inherit] text-foreground shadow-[0_6px_24px_black] shadow-black/7 dark:shadow-black/28 outline-none motion-reduce:animate-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
+              glass && 'backdrop-blur-[16px]',
+            )}
             onPress={() => revealRef.current()}
           >
             <span className="grid animate-[ck-floating-working_1.8s_ease-in-out_infinite] place-items-center text-muted-foreground motion-reduce:animate-none" aria-hidden="true">
-              <ChatIcon d={chatIconPaths.spark} size={18} />
+              <Icon name="sparkle" size={18} sw={1.9} />
             </span>
             <span className="min-w-0 flex-1 truncate text-[15px] font-[560] text-muted-foreground">{labelRef.current}</span>
-            <ChatIcon d={chatIconPaths.plus} size={20} />
+            <Icon name="plus" size={20} sw={1.9} />
             <span className="sr-only">Add something new</span>
           </Button>
           <div data-inactive="" aria-hidden inert className="pointer-events-none invisible absolute inset-x-0 bottom-0">
@@ -227,7 +277,7 @@ export function FloatingChat({
         card
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [idle, workingLabel],
+    [idle, workingLabel, glass],
   );
 
   const parts = (
@@ -251,15 +301,18 @@ export function FloatingChat({
       onMinimizedChange={setMinimized}
       onProgressChange={setBump}
       data-slot="floating-chat-bump"
-      className={cn(
-        'ck-floating-chat__bump',
-        glass
-          ? 'border-[color:rgba(var(--ck-sheet-line),.14)] bg-[color:rgba(var(--ck-sheet-surface),calc(.5_+_.4_*_var(--bump-progress,0)))] [box-shadow:inset_0_1px_0_rgba(255,255,255,.12)]'
-          : 'border-[color:rgba(var(--ck-sheet-line),.1)] bg-[color:var(--card)]',
-      )}
+      className={floatingChatBumpVariants({ appearance })}
     >
+      {/* The bump sits inside the Composer's glass scope; the transcript on it takes the host's palette back
+          (ck-floating-chat__transcript, styles.css). */}
       <ComposerBumpContent label={label}>
-        {shared ? <div ref={shared.chatDock} data-slot="floating-chat-transcript" className="flex h-full min-h-0 min-w-0 flex-col" /> : slots.chat}
+        {shared ? (
+          <div ref={shared.chatDock} data-slot="floating-chat-transcript" className="ck-floating-chat__transcript flex h-full min-h-0 min-w-0 flex-col" />
+        ) : (
+          <div data-slot="floating-chat-transcript" className="ck-floating-chat__transcript contents">
+            {slots.chat}
+          </div>
+        )}
       </ComposerBumpContent>
       <ComposerBumpHandle label={open ? 'Collapse chat' : 'Expand chat'} className="pt-px" />
     </ComposerBump>
@@ -267,7 +320,7 @@ export function FloatingChat({
 
   // Report the outlet every render (the bump's props follow this chat's state).
   useLayoutEffect(() => {
-    shared?.outlet.set({ parts, renderCard, className: 'ck-floating-chat__composer' });
+    shared?.outlet.set({ parts, renderCard, className: composerClass });
   });
   useLayoutEffect(() => () => shared?.outlet.set(null), [shared]);
 
@@ -292,16 +345,13 @@ export function FloatingChat({
         data-slot="floating-chat"
         data-appearance={appearance}
         data-tone={tone === 'auto' ? undefined : tone}
+        data-theme-scope={toneProps['data-theme-scope']}
         data-open={open || undefined}
         data-expanded={expanded || undefined}
         data-dragging={bump.dragging || undefined}
         data-minimized={minimized || undefined}
         data-hidden={hidden || undefined}
-        // ck-floating-chat keys the tone token maps (and the glass overrides for the composer) in styles.css.
-        className={cn(
-          'ck-floating-chat pointer-events-none absolute inset-0 z-40 text-[color:var(--foreground)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)] [--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
-          className,
-        )}
+        className={cn(floatingChatVariants({ tone }), toneProps.className, className)}
         style={{ '--ck-chat-gutter': `${gutter}px`, '--ck-chat-fold': fold, ...style } as CSSProperties}
       >
         {/* Dims the host as far as the transcript has grown. Mounted only while the chat is open or growing, so a
@@ -314,7 +364,7 @@ export function FloatingChat({
           tabIndex={open ? 0 : -1}
           data-slot="floating-chat-scrim"
           className={cn(
-            'absolute inset-0 z-0 block border-0 bg-[#000] p-0 motion-reduce:[transition:none]',
+            'absolute inset-0 z-0 block border-0 bg-black p-0 motion-reduce:[transition:none]',
             open ? 'pointer-events-auto' : 'pointer-events-none',
           )}
           // The bump's spring writes progress every frame; only other changes transition.
@@ -339,12 +389,20 @@ export function FloatingChat({
           aria-hidden={minimized || undefined}
           inert={minimized || undefined}
         >
+          {/* The embedded Workbench Composer paints with the bl-theme's `glass` scope. */}
           {shared ? (
-            <div ref={shared.composerDock} data-slot="floating-chat-composer" className="min-w-0" />
+            <div
+              ref={shared.composerDock}
+              data-slot="floating-chat-composer"
+              data-theme-scope={glassScope['data-theme-scope']}
+              className={cn('min-w-0', glassScope.className)}
+            />
           ) : (
-            <ComposerOutlet parts={parts} renderCard={renderCard} className="ck-floating-chat__composer">
-              {slots.composer}
-            </ComposerOutlet>
+            <div data-slot="floating-chat-composer" data-theme-scope={glassScope['data-theme-scope']} className={cn('min-w-0', glassScope.className)}>
+              <ComposerOutlet parts={parts} renderCard={renderCard} className={composerClass}>
+                {slots.composer}
+              </ComposerOutlet>
+            </div>
           )}
         </div>
         {/* The same FAB a Composer folds into, placed and glazed for the floating layer. */}
@@ -352,9 +410,7 @@ export function FloatingChat({
           data-slot="floating-chat-fab"
           aria-label="Open chat"
           className={cn(
-            'absolute border-[color:rgba(var(--ck-sheet-line),.14)] text-[color:var(--foreground)]',
-            glass ? 'bg-[color:rgba(var(--ck-sheet-surface),.62)]' : 'bg-[color:var(--card)]',
-            fabPlacement[fabPosition],
+            floatingChatFabVariants({ appearance, position: fabPosition }),
             minimized ? 'pointer-events-auto' : 'pointer-events-none',
           )}
           style={{
@@ -370,7 +426,7 @@ export function FloatingChat({
             setMinimized(false);
           }}
         >
-          <ChatIcon d={chatIconPaths.spark} size={22} />
+          <Icon name="sparkle" size={22} sw={1.9} />
         </ComposerFab>
       </div>
     </FloatingChatContext.Provider>

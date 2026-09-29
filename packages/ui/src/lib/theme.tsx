@@ -48,7 +48,7 @@ export const useAppearance = () => useContext(AppearanceContext);
    apply below them: they put `light` or `dark` on their root, and `data-theme-scope` names a surface the bl-theme
    restyles with the same variables (the Workbench, its always-dark terminal, team chat). A `tint` overrides
    --primary / --ring for the subtree. */
-export type ThemeScopeName = 'workbench' | 'chat' | 'terminal';
+export type ThemeScopeName = 'workbench' | 'chat' | 'terminal' | 'sheet' | 'glass';
 
 /** Root classes for an appearance: shadcn's `dark` (or `light`) plus the matching color-scheme. */
 export const themeScopeClass = (appearance: Appearance) => (appearance === 'dark' ? 'dark scheme-dark' : 'light scheme-light');
@@ -85,7 +85,7 @@ export function readThemeVars(el: Element | null | undefined): CSSProperties {
 }
 
 export interface ThemeScopeProps extends HTMLAttributes<HTMLDivElement> {
-  /** The surface palette the bl-theme defines: `workbench`, `chat` or `terminal`. Omit for the plain theme. */
+  /** The surface palette the bl-theme defines: `workbench`, `chat`, `terminal`, `sheet` (a floating chat surface's tone) or `glass` (the Composer floating over content). Omit for the plain theme. */
   scope?: ThemeScopeName;
   /** Defaults to the ambient `AppearanceProvider` value, else light (the terminal scope is always dark). */
   appearance?: Appearance;

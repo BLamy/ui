@@ -10,8 +10,9 @@ import {
   type RefObject,
 } from 'react';
 import { Button } from 'react-aria-components';
+import { cva } from 'class-variance-authority';
 import { Haptics } from '../../lib/haptics';
-import { useAppearance, useChromeHidden } from '../../lib/theme';
+import { themeScopeClass, useAppearance, useChromeHidden } from '../../lib/theme';
 import { collectSlots, defineSlot } from '../../lib/container';
 import { springCss } from '../../lib/motion';
 import { useSpringSheetDrag } from '../../lib/workbench/motion';
@@ -29,7 +30,8 @@ export type FloatingSheetFabPosition =
 
 /** Translucent glass over dark content, or an opaque card like a system sheet. */
 export type FloatingSheetAppearance = 'glass' | 'sheet';
-/** Colour scheme of the surface; `auto` inherits the host's `--bl-*` tokens. */
+/** Colour scheme of the surface: `dark` / `light` put the bl-theme's `sheet` scope on it in that appearance (the
+    host's background and accent stay); `auto` inherits the host's theme. */
 export type FloatingSheetTone = 'auto' | 'dark' | 'light';
 
 export interface FloatingSheetContextValue {
@@ -79,25 +81,56 @@ const surfaceTransition = (driving: boolean) =>
   [springCss(PLACEMENT, 'smooth'), springCss(LOOK, 'smooth'), springCss('opacity', 'snappy'), driving ? '' : springCss(GEOMETRY, 'tray')]
     .filter(Boolean)
     .join(', ');
-/** Translucent glass: a highlight gradient over the tone's surface colour. */
-const surfaceGlass =
-  'border-[color:rgba(var(--ck-sheet-line),var(--ck-sheet-border-alpha,.12))] bg-[color:rgba(var(--ck-sheet-surface),var(--ck-sheet-bg-alpha,.28))] bg-[linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.018)_34%,rgba(255,255,255,.026))] [box-shadow:inset_0_1px_0_rgba(255,255,255,.14),inset_0_-1px_0_rgba(255,255,255,.03),0_2px_10px_rgba(0,0,0,.12),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]';
-/** Opaque system sheet: card colour, no glass highlights, a soft shadow that deepens as it grows. */
-const surfaceSheet =
-  'border-[color:rgba(var(--ck-sheet-line),calc(var(--ck-sheet-border-alpha,.12)_*_.5))] bg-[color:var(--card)] [box-shadow:0_-1px_0_rgba(var(--ck-sheet-line),.04),0_2px_10px_rgba(0,0,0,.08),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]';
-const surfaceResting = '[transform:translateX(-50%)]';
-const surfaceHidden = 'pointer-events-none opacity-0';
-/** Where the folded FAB rests. The bottom-center FAB keeps 20px from the host edge even when docked edge to edge. */
-const fabPlacement: Record<FloatingSheetFabPosition, string> = {
-  'top-left': 'top-[var(--ck-sheet-gutter,20px)] right-auto bottom-auto left-[var(--ck-sheet-gutter,20px)] [transform:none]',
-  'top-center': 'top-[var(--ck-sheet-gutter,20px)] right-auto bottom-auto left-1/2 [transform:translateX(-50%)]',
-  'top-right': 'top-[var(--ck-sheet-gutter,20px)] right-[var(--ck-sheet-gutter,20px)] bottom-auto left-auto [transform:none]',
-  'center-left': 'top-1/2 right-auto bottom-auto left-[var(--ck-sheet-gutter,20px)] [transform:translateY(-50%)]',
-  'center-right': 'top-1/2 right-[var(--ck-sheet-gutter,20px)] bottom-auto left-auto [transform:translateY(-50%)]',
-  'bottom-left': 'top-auto right-auto bottom-[var(--ck-sheet-gutter,20px)] left-[var(--ck-sheet-gutter,20px)] [transform:none]',
-  'bottom-center': 'top-auto right-auto bottom-[max(var(--ck-sheet-gutter,20px),20px)] left-1/2 [transform:translateX(-50%)]',
-  'bottom-right': 'top-auto right-[var(--ck-sheet-gutter,20px)] bottom-[var(--ck-sheet-gutter,20px)] left-auto [transform:none]',
-};
+/** The surface: translucent glass (a highlight gradient over the tone's surface colour) or an opaque system sheet
+    (card colour, no glass highlights, a soft shadow that deepens as it grows) — resting, hidden by scrolling, or
+    folded into its FAB at one of eight spots (bottom-center keeps 20px from the host edge even when docked). */
+export const floatingSheetSurfaceVariants = cva(surfaceBase, {
+  variants: {
+    appearance: {
+      glass:
+        'border-[color:rgba(var(--ck-sheet-line),var(--ck-sheet-border-alpha,.12))] bg-[color:rgba(var(--ck-sheet-surface),var(--ck-sheet-bg-alpha,.28))] bg-[linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.018)_34%,rgba(255,255,255,.026))] [box-shadow:inset_0_1px_0_rgba(255,255,255,.14),inset_0_-1px_0_rgba(255,255,255,.03),0_2px_10px_rgba(0,0,0,.12),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]',
+      sheet:
+        'border-[color:rgba(var(--ck-sheet-line),calc(var(--ck-sheet-border-alpha,.12)_*_.5))] bg-card [box-shadow:0_-1px_0_rgba(var(--ck-sheet-line),.04),0_2px_10px_rgba(0,0,0,.08),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]',
+    },
+    placement: {
+      resting: '[transform:translateX(-50%)]',
+      hidden: '[transform:translate(-50%,calc(100%_+_44px))]',
+      'top-left': 'top-[var(--ck-sheet-gutter,20px)] right-auto bottom-auto left-[var(--ck-sheet-gutter,20px)] [transform:none]',
+      'top-center': 'top-[var(--ck-sheet-gutter,20px)] right-auto bottom-auto left-1/2 [transform:translateX(-50%)]',
+      'top-right': 'top-[var(--ck-sheet-gutter,20px)] right-[var(--ck-sheet-gutter,20px)] bottom-auto left-auto [transform:none]',
+      'center-left': 'top-1/2 right-auto bottom-auto left-[var(--ck-sheet-gutter,20px)] [transform:translateY(-50%)]',
+      'center-right': 'top-1/2 right-[var(--ck-sheet-gutter,20px)] bottom-auto left-auto [transform:translateY(-50%)]',
+      'bottom-left': 'top-auto right-auto bottom-[var(--ck-sheet-gutter,20px)] left-[var(--ck-sheet-gutter,20px)] [transform:none]',
+      'bottom-center': 'top-auto right-auto bottom-[max(var(--ck-sheet-gutter,20px),20px)] left-1/2 [transform:translateX(-50%)]',
+      'bottom-right': 'top-auto right-[var(--ck-sheet-gutter,20px)] bottom-[var(--ck-sheet-gutter,20px)] left-auto [transform:none]',
+    },
+    /** Hidden by scrolling: faded out and out of reach. */
+    hidden: { true: 'pointer-events-none opacity-0', false: '' },
+  },
+  defaultVariants: { appearance: 'glass', placement: 'resting', hidden: false },
+});
+
+/** The layer. --ck-sheet-surface / --ck-sheet-line are the RGB triplets the glass mixes its alphas into: dark glass
+    unless the tone is light. ck-floating-sheet keys the body / peek-mask rules in styles.css. */
+export const floatingSheetVariants = cva(
+  'ck-floating-sheet pointer-events-none absolute inset-0 z-40 text-foreground [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]',
+  {
+    variants: {
+      tone: {
+        auto: '[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
+        dark: '[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
+        light: '[--ck-sheet-line:0,0,0] [--ck-sheet-surface:250,250,252]',
+      },
+    },
+    defaultVariants: { tone: 'auto' },
+  },
+);
+
+/** The theme-scope props for a floating chat surface's tone: the bl-theme's `sheet` scope in that appearance, or
+    nothing for `auto` (the host's theme carries through). */
+export function sheetToneProps(tone: FloatingSheetTone): { 'data-theme-scope'?: 'sheet'; className?: string } {
+  return tone === 'auto' ? {} : { 'data-theme-scope': 'sheet', className: themeScopeClass(tone) };
+}
 
 export interface FloatingSheetProps {
   /** Controlled state for the fully grown sheet. */
@@ -179,6 +212,7 @@ export function FloatingSheet({
 }: FloatingSheetProps) {
   const ambient = useAppearance();
   const tone: FloatingSheetTone = toneProp ?? ambient ?? 'auto';
+  const toneProps = sheetToneProps(tone);
   const rootRef = useRef<HTMLDivElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(430);
@@ -309,16 +343,13 @@ export function FloatingSheet({
         data-slot="floating-sheet"
         data-appearance={appearance}
         data-tone={tone === 'auto' ? undefined : tone}
+        data-theme-scope={toneProps['data-theme-scope']}
         data-body-align={bodyAlign}
         data-open={open || undefined}
         data-expanded={expanded || undefined}
         data-dragging={dragging || undefined}
         data-minimized={minimized || undefined}
-        // ck-floating-sheet keys the tone token maps and the body/peek rules in styles.css.
-        className={cn(
-          'ck-floating-sheet pointer-events-none absolute inset-0 z-40 text-[color:var(--foreground)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)] [--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
-          className,
-        )}
+        className={cn(floatingSheetVariants({ tone }), toneProps.className, className)}
         style={{
           '--ck-sheet-dock-height': `${dockHeight}px`,
           '--ck-sheet-reveal': `${reveal}px`,
@@ -353,7 +384,7 @@ export function FloatingSheet({
           tabIndex={open ? 0 : -1}
           data-slot="floating-sheet-scrim"
           className={cn(
-            'absolute inset-0 z-0 block border-0 bg-[#000] p-0 opacity-[var(--ck-sheet-scrim-opacity,0)] motion-reduce:[transition:none]',
+            'absolute inset-0 z-0 block border-0 bg-black p-0 opacity-[var(--ck-sheet-scrim-opacity,0)] motion-reduce:[transition:none]',
             open ? 'pointer-events-auto' : 'pointer-events-none',
           )}
           style={{ transition: driving ? 'none' : springCss('opacity', 'smooth') }}
@@ -362,16 +393,7 @@ export function FloatingSheet({
         />
         <div
           data-slot="floating-sheet-surface"
-          className={cn(
-            surfaceBase,
-            glass ? surfaceGlass : surfaceSheet,
-            minimized
-              ? fabPlacement[fabPosition]
-              : hidden
-                ? '[transform:translate(-50%,calc(100%_+_44px))]'
-                : surfaceResting,
-            hidden && surfaceHidden,
-          )}
+          className={floatingSheetSurfaceVariants({ appearance, placement: minimized ? fabPosition : hidden ? 'hidden' : 'resting', hidden })}
           // Inline so the production CSS optimizer cannot rewrite the unprefixed property
           // out of Safari's bundle.
           style={{
@@ -392,7 +414,7 @@ export function FloatingSheet({
             type="button"
             data-slot="floating-sheet-cap"
             className={cn(
-              'group/cap box-border grid h-[18px] w-full shrink-0 touch-none place-items-center border-0 bg-transparent p-0 text-inherit opacity-[calc(1_-_var(--ck-sheet-minimize,0))] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--primary)]',
+              'group/cap box-border grid h-[18px] w-full shrink-0 touch-none place-items-center border-0 bg-transparent p-0 text-inherit opacity-[calc(1_-_var(--ck-sheet-minimize,0))] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary',
               dragging ? 'cursor-grabbing' : 'cursor-grab',
             )}
             data-open={open || undefined}
@@ -407,8 +429,8 @@ export function FloatingSheet({
               className={cn(
                 'block h-[4px] rounded-[999px] [transition:width_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:[transition:none]',
                 open
-                  ? 'w-[40px] bg-[color:var(--muted-foreground)]'
-                  : 'w-[32px] bg-[color:var(--tertiary-foreground)] group-focus-visible/cap:w-[40px] group-focus-visible/cap:bg-[color:var(--muted-foreground)] group-[:hover]/cap:w-[40px] group-[:hover]/cap:bg-[color:var(--muted-foreground)]',
+                  ? 'w-[40px] bg-muted-foreground'
+                  : 'w-[32px] bg-tertiary-foreground group-focus-visible/cap:w-[40px] group-focus-visible/cap:bg-muted-foreground group-[:hover]/cap:w-[40px] group-[:hover]/cap:bg-muted-foreground',
               )}
             />
           </button>
@@ -455,13 +477,13 @@ export function FloatingSheet({
           <Button
             data-slot="floating-sheet-fab"
             className={cn(
-              'absolute inset-0 grid h-full w-full cursor-pointer place-items-center rounded-[50%] border-0 bg-transparent p-0 text-[color:var(--foreground)] opacity-[var(--ck-sheet-minimize,0)]',
+              'absolute inset-0 grid h-full w-full cursor-pointer place-items-center rounded-[50%] border-0 bg-transparent p-0 text-foreground opacity-[var(--ck-sheet-minimize,0)]',
               minimized ? 'pointer-events-auto' : 'pointer-events-none',
             )}
             aria-label="Open"
             onPress={restore}
           >
-            {fabIcon ?? slots.fab ?? <span className="block size-[10px] rounded-[50%] bg-[color:var(--primary)]" />}
+            {fabIcon ?? slots.fab ?? <span className="block size-[10px] rounded-[50%] bg-primary" />}
           </Button>
         </div>
       </div>
