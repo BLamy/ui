@@ -341,8 +341,8 @@ function ToastItem({ toast: t, state, fromTop }: { toast: QueuedToast<Entry>; st
         className={cn(
           'outline-none data-[focus-visible]:ring-2 focus-visible:ring-2 focus-visible:ring-[var(--primary)]',
           hud
-            ? 'flex items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_8px_30px_rgba(0,0,0,.25)] backdrop-blur-xl backdrop-saturate-150'
-            : 'flex w-[min(360px,calc(100vw-32px))] items-start gap-3 rounded-2xl bg-card px-3.5 py-3 text-foreground shadow-[0_10px_34px_rgba(0,0,0,.16),0_0_0_.5px_var(--border)]',
+            ? 'flex items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_8px_30px_black] shadow-black/25 backdrop-blur-xl backdrop-saturate-150'
+            : 'flex w-[min(360px,calc(100vw-32px))] items-start gap-3 rounded-2xl bg-card px-3.5 py-3 text-foreground shadow-[0_10px_34px_--alpha(black/16%),0_0_0_.5px_var(--border)]',
         )}
       >
         <ToastIcon data={data} size={hud ? 16 : 20} />

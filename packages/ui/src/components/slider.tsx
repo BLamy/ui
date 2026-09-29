@@ -7,23 +7,38 @@ import {
   SliderTrack as AriaSliderTrack, type SliderTrackProps,
   composeRenderProps,
 } from 'react-aria-components';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
+import { useRowLabel } from '../lib/row-label';
 
 /* ══ Slider — react-aria's Slider with the iOS look of `.bl-range`: 4px track, tint fill, 26px white thumb.
    Arrow keys / Page keys / Home / End from react-aria; one or two thumbs (pass an array for a range).
    Haptics: a selection tick at each detent — every step when there are ≤ 16, else sixteenths of the range. ══ */
 
-export interface SliderProps<T extends number | number[]> extends AriaSliderProps<T> {
+/** Root layout plus the tone's track / fill colors (as --bl-slider-* knobs the track and thumb read). */
+export const sliderVariants = cva('group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disabled:opacity-40', {
+  variants: {
+    tone: {
+      default: '',
+      onDark: '[--bl-slider-track:--alpha(white/22%)] [--bl-slider-fill:--alpha(white/88%)]',
+      onLight: '[--bl-slider-track:--alpha(black/14%)] [--bl-slider-fill:--alpha(black/72%)]',
+    },
+    size: { default: '', sm: '' },
+  },
+  defaultVariants: { tone: 'default', size: 'default' },
+});
+
+export interface SliderProps<T extends number | number[]> extends AriaSliderProps<T>, VariantProps<typeof sliderVariants> {
   label?: ReactNode;
   /** Show the formatted value opposite the label. */
   showValue?: boolean;
   /** Color scheme of the track, fill and thumb. `default`: the tint on the fill color. `onDark`: translucent
       white for media controls over artwork or dark glass (Music's scrubber and volume). `onLight`: translucent
       black for light imagery. Fine-tune any of them with `trackColor` / `fillColor` / `thumbColor`. */
-  tone?: SliderTone;
+  tone?: SliderTone | null;
   /** `default`: the 26px iOS thumb. `sm`: a 12px thumb on a 20px-tall hit area that grows while dragging (scrubbers). */
-  size?: 'default' | 'sm';
+  size?: 'default' | 'sm' | null;
   /** Any CSS color for the unfilled track. */
   trackColor?: string;
   /** Any CSS color for the filled part. */
@@ -34,18 +49,13 @@ export interface SliderProps<T extends number | number[]> extends AriaSliderProp
 
 export type SliderTone = 'default' | 'onDark' | 'onLight';
 
-const TONE_VARS: Record<SliderTone, Record<string, string> | null> = {
-  default: null,
-  onDark: { '--bl-slider-track': 'rgba(255,255,255,.22)', '--bl-slider-fill': 'rgba(255,255,255,.88)' },
-  onLight: { '--bl-slider-track': 'rgba(0,0,0,.14)', '--bl-slider-fill': 'rgba(0,0,0,.72)' },
-};
-
 export function Slider<T extends number | number[]>({
   className, label, showValue, children, onChange, minValue = 0, maxValue = 100, step = 1,
   tone = 'default', size = 'default', trackColor, fillColor, thumbColor, style, ...props
 }: SliderProps<T>) {
   const detents = Math.max(1, Math.min(16, Math.round((maxValue - minValue) / step)));
   const last = useRef<number[] | null>(null);
+  const rowLabel = useRowLabel(props);
   const detentOf = (v: number) => Math.round(((v - minValue) / (maxValue - minValue || 1)) * detents);
   return (
     <AriaSlider<T>
@@ -61,11 +71,10 @@ export function Slider<T extends number | number[]>({
         last.current = d;
         onChange?.(v);
       }}
-      className={composeRenderProps(className, (cls) =>
-        cn('group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disabled:opacity-40', cls))}
+      className={composeRenderProps(className, (cls) => cn(sliderVariants({ tone, size }), cls))}
+      // Caller-picked colors are runtime values, fed in as the --bl-slider-* knobs.
       style={composeRenderProps(style, (st) => {
         const vars = {
-          ...TONE_VARS[tone],
           ...(trackColor ? { '--bl-slider-track': trackColor } : null),
           ...(fillColor ? { '--bl-slider-fill': fillColor } : null),
           ...(thumbColor ? { '--bl-slider-thumb': thumbColor } : null),
@@ -73,6 +82,7 @@ export function Slider<T extends number | number[]>({
         return Object.keys(vars).length ? ({ ...vars, ...st } as CSSProperties) : st;
       })}
       {...props}
+      aria-labelledby={label ? props['aria-labelledby'] : rowLabel}
     >
       {composeRenderProps(children, (kids, { state }) => {
         if (last.current == null) last.current = state.values.map(detentOf);
@@ -125,10 +135,10 @@ export function SliderThumb({ className, ...props }: SliderThumbProps) {
     <AriaSliderThumb
       data-slot="slider-thumb"
       className={composeRenderProps(className, (cls) => cn(
-        'top-1/2 size-[26px] rounded-full bg-[var(--bl-slider-thumb,#fff)] shadow-[0_1px_4px_rgba(0,0,0,.28),0_0_1px_rgba(0,0,0,.22)] outline-none',
-        'group-data-[size=sm]:size-3 group-data-[size=sm]:shadow-[0_0_0_.5px_rgba(0,0,0,.18),0_1px_2px_rgba(0,0,0,.18)] group-data-[size=sm]:data-dragging:scale-150',
+        'top-1/2 size-[26px] rounded-full bg-[var(--bl-slider-thumb,white)] shadow-[0_1px_4px_--alpha(black/28%),0_0_1px_--alpha(black/22%)] outline-none',
+        'group-data-[size=sm]:size-3 group-data-[size=sm]:shadow-[0_0_0_.5px_--alpha(black/18%),0_1px_2px_--alpha(black/18%)] group-data-[size=sm]:data-dragging:scale-150',
         'transition-[scale,box-shadow] duration-spring-snappy ease-spring-snappy data-dragging:scale-110 motion-reduce:transition-none',
-        'data-focus-visible:shadow-[0_1px_4px_rgba(0,0,0,.28),0_0_0_4px_color-mix(in_oklab,var(--primary)_45%,transparent)]',
+        'data-focus-visible:shadow-[0_1px_4px_--alpha(black/28%),0_0_0_4px_color-mix(in_oklab,var(--primary)_45%,transparent)]',
         cls,
       ))}
       {...props}

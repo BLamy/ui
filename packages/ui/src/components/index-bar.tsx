@@ -174,7 +174,7 @@ export function IndexBar<K extends IndexBarKey = string>({
   const cy = g && p ? (g.tTop - g.rTop) + (idx + 0.5) * (g.tH / pts.length) : 0;
   // Bubble floats beside the rail at the active stop; both come from measured geometry.
   const bub = cn(
-    'pointer-events-none absolute [transform:translateY(-50%)] bg-card shadow-[0_8px_28px_rgba(0,0,0,.28),0_0_0_1px_var(--border)] animate-[blBub_var(--duration-spring-snappy)_var(--ease-spring-bouncy)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:animate-none motion-reduce:transition-none',
+    'pointer-events-none absolute [transform:translateY(-50%)] bg-card shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] animate-[blBub_var(--duration-spring-snappy)_var(--ease-spring-bouncy)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:animate-none motion-reduce:transition-none',
     on ? 'opacity-100' : 'opacity-93',
   );
   const bubPos: CSSProperties = side === 'left' ? { left: width + 10, top: cy } : { right: width + 10, top: cy };
@@ -229,7 +229,7 @@ export function IndexBar<K extends IndexBarKey = string>({
       {wave
         ? p && <div className={cn(
               'pointer-events-none absolute box-border w-max max-w-[260px] min-w-[160px] -translate-y-1/2 rounded-[14px] bg-card px-[13px] py-[9px]',
-              'shadow-[0_8px_28px_rgba(0,0,0,.28),0_0_0_1px_var(--border)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+              'shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
               'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
               side === 'left' ? 'origin-left' : 'origin-right',
             )} style={side === 'left' ? { left: width + 4, top: cy } : { right: width + 4, top: cy }}>

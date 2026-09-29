@@ -45,7 +45,7 @@ export function SideDrawer({ mode, open, onClose, title, width, children, classN
       <div onClick={onClose} className={cn('absolute inset-0 bg-overlay transition-opacity duration-spring-smooth ease-spring-smooth', open ? 'opacity-100' : 'opacity-0')} />
       <div className={cn(
         'absolute inset-y-0 right-0 flex flex-col [border-left:1px_solid_var(--border)] bg-background transition-[translate,box-shadow] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
-        open ? 'shadow-[-16px_0_48px_rgba(0,0,0,.25)]' : 'translate-x-[106%]',
+        open ? 'shadow-[-16px_0_48px_black] shadow-black/25' : 'translate-x-[106%]',
       )} style={{ width: 'min(' + width + 'px, 88%)' }}>{col}</div>
     </div>
   );

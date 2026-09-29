@@ -1,5 +1,5 @@
 import {
-  Children, cloneElement, createContext, isValidElement, use, useEffect, useId, useLayoutEffect, useRef, useState,
+  Children, createContext, isValidElement, use, useEffect, useId, useLayoutEffect, useRef, useState,
   type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement,
   type ReactNode,
 } from 'react';
@@ -12,8 +12,8 @@ import { Icon, IC } from '../lib/icon';
 import { springs } from '../lib/motion';
 import { chromeOffset, BLStickyCtx, useChromeHidden } from '../lib/theme';
 import { cn } from '../lib/utils';
-import { Slider } from './slider';
-import { Switch } from './switch';
+import { RowLabelContext } from '../lib/row-label';
+import { cva, type VariantProps } from 'class-variance-authority';
 
 /* ══ List primitives (prototype BLList / BLSection / BLRow) ══
    A list works out its own sticky offset: whatever chrome sits above it (nav bar, none, …) plus its own
@@ -46,8 +46,8 @@ function ListBase({ children, inset, header, stickyTop, className, style }: List
     <BLStickyCtx.Provider value={top}>
       <div data-slot="list" className={cn(inset ? 'px-4 py-0' : 'p-0', className)} style={style}>
         {header ? (
-          <div ref={hRef} className="sticky z-24 bg-sticky backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
-            style={{ top: chromeOffset(above, chromeHid) }}>{header}</div>
+          <div ref={hRef} className="sticky top-(--list-header-top) z-24 bg-sticky backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
+            style={{ '--list-header-top': chromeOffset(above, chromeHid) + 'px' } as CSSProperties}>{header}</div>
         ) : null}
         {children}
       </div>
@@ -95,8 +95,8 @@ export function ListSection({
   return (
     <div ref={innerRef} data-slot="list-section" className={cn(className)} style={style}>
       {title != null ? (sticky
-        ? <div className="sticky z-20 bg-sticky px-4 py-[3px] text-[13.5px] font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
-            style={{ top }}>{title}</div>
+        ? <div className="sticky top-(--list-section-top) z-20 bg-sticky px-4 py-[3px] text-[13.5px] font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
+            style={{ '--list-section-top': top + 'px' } as CSSProperties}>{title}</div>
         : <div className="px-4 pt-1 pb-[7px] text-[12.5px] font-medium tracking-[.4px] text-muted-foreground uppercase">{title}</div>) : null}
       <div className={cn('overflow-hidden', sticky ? 'rounded-none' : 'rounded-[12px]')}>
         {animated ? <AnimatedRows onReorder={onReorder}>{children}</AnimatedRows> : children}
@@ -155,15 +155,16 @@ function AnimatedRow({ value, index, count, reduced, reorder, children }: {
   };
   return (
     <Reorder.Item as="div" value={value} dragListener={false} dragControls={controls}
-      className="relative"
+      className={cn(
+        'relative shadow-[0_8px_24px_black] transition-shadow duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+        dragging ? 'overflow-visible shadow-black/18' : 'overflow-hidden shadow-transparent',
+      )}
       // Insert grows from nothing, remove collapses to nothing; neighbours ride the layout spring.
       initial={reduced ? false : { height: 0, opacity: 0 }}
-      animate={{ height: 'auto', opacity: 1, scale: dragging ? 1.02 : 1, zIndex: dragging ? 5 : 0,
-        boxShadow: dragging ? '0 8px 24px rgba(0,0,0,.18)' : '0 0 0 rgba(0,0,0,0)' }}
+      animate={{ height: 'auto', opacity: 1, scale: dragging ? 1.02 : 1, zIndex: dragging ? 5 : 0 }}
       exit={reduced ? { opacity: 0, transition: { duration: 0.1 } } : { height: 0, opacity: 0 }}
       transition={reduced ? { duration: 0 } : { ...springs.smooth, opacity: { duration: 0.18 } }}
-      onDragEnd={() => { setDragging(false); reorder?.drop(value); }}
-      style={{ overflow: dragging ? 'visible' : 'hidden' }}>
+      onDragEnd={() => { setDragging(false); reorder?.drop(value); }}>
       <RowSlotCtx.Provider value={slot}>{children}</RowSlotCtx.Provider>
     </Reorder.Item>
   );
@@ -186,7 +187,29 @@ export interface ListRowAction {
 
 const openRows = new Set<() => void>();
 
-export interface ListRowProps {
+/** The row surface (`list-row-content`): layout, selection wash, destructive text, and where the leading slot sits. */
+export const listRowVariants = cva(
+  [
+    // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row.
+    'relative box-border flex min-h-[46px] w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-[17px] leading-[normal] tracking-[normal] outline-none',
+    'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]',
+    // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent).
+    'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]',
+  ],
+  {
+    variants: {
+      /** `center` (default): the leading slot is centered on the row. `top`: it sits on the first line of a
+       *  multi-line row (a checkbox beside a wrapping title, an avatar beside a message preview). */
+      align: { center: '', top: '[&>[data-slot=list-row-leading]]:self-start [&>[data-slot=list-row-leading]]:pt-[7px]' },
+      selected: { true: 'bg-accent', false: 'bg-card' },
+      destructive: { true: 'text-destructive', false: 'text-foreground' },
+      interactive: { true: 'cursor-pointer', false: 'cursor-default' },
+    },
+    defaultVariants: { align: 'center', selected: false, destructive: false, interactive: false },
+  },
+);
+
+export interface ListRowProps extends Pick<VariantProps<typeof listRowVariants>, 'align'> {
   title?: ReactNode;
   subtitle?: ReactNode;
   leading?: ReactNode;
@@ -216,6 +239,12 @@ export interface ListRowProps {
   rowRole?: string;
   /** Return true to ignore swipe starts near an edge (e.g. under a back-gesture zone). */
   isEdge?: (clientX: number) => boolean;
+  /** Content that spans the row instead of the title (a slider between two icons, a segmented control). It is a
+   *  live control area: presses reach it and swipes don't start on it. */
+  children?: ReactNode;
+  /** Classes for the row surface (`list-row-content`: padding, gap, min height, background). `className` goes on
+   *  the outer wrapper, which also holds the swipe actions. */
+  contentClassName?: string;
   className?: string;
   style?: CSSProperties;
 }
@@ -228,14 +257,6 @@ const INTERACTIVE = 'button,input,select,textarea,a[href],label,[role=switch],[r
 function ActionIcon({ icon }: { icon: ListRowAction['icon'] }) {
   if (typeof icon === 'string') return IC[icon] ? <Icon name={icon} size={20} sw={2.2} /> : null;
   return <>{icon}</>;
-}
-
-/** Row accessories that name themselves after the row's title. */
-function labelled(node: ReactNode, id: string): ReactNode {
-  if (!isValidElement(node) || (node.type !== Switch && node.type !== Slider)) return node;
-  const pr = node.props as Record<string, unknown>;
-  if (pr['aria-label'] || pr['aria-labelledby']) return node;
-  return cloneElement(node as ReactElement<Record<string, unknown>>, { 'aria-labelledby': id });
 }
 
 export function ListRow(p: ListRowProps) {
@@ -396,6 +417,9 @@ export function ListRow(p: ListRowProps) {
   const inEdit = p.edit !== undefined && p.edit !== null;
   const control = p.accessory != null && p.accessory !== 'chevron' && p.accessory !== 'check' ? p.accessory : null;
   const pressable = !!p.onPress;
+  /** Full-width content replaces the title. */
+  const fullWidth = p.children != null && p.children !== false;
+  const hasTitle = !fullWidth && p.title != null;
   const allActs = [...leading, ...trailing];
   const focusable = pressable || (swipeable && allActs.length > 0);
   const hint = swipeable
@@ -408,9 +432,13 @@ export function ListRow(p: ListRowProps) {
   return (
     <div data-slot="list-row"
       ref={wrap}
-      className={cn('relative overflow-hidden transition-[height,opacity] duration-spring-tray ease-spring-tray motion-reduce:transition-none', dead ? 'opacity-0' : 'opacity-100', p.className)}
+      className={cn(
+        'relative overflow-hidden transition-[height,opacity] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
+        dead ? 'h-0 opacity-0' : cn('opacity-100', closing != null && 'h-(--list-row-h)'),
+        p.className,
+      )}
       // Removal collapses from the measured height to 0 on the tray spring.
-      style={{ ...p.style, height: dead ? 0 : closing ?? undefined }}>
+      style={closing != null ? { '--list-row-h': closing + 'px', ...p.style } as CSSProperties : p.style}>
       {side && shown.length ? (
         // The action strip tracks the swipe offset; a full swipe hands the whole strip to the outermost action.
         <motion.div ref={strip} data-slot="list-row-actions" onKeyDown={onStripKey}
@@ -421,17 +449,18 @@ export function ListRow(p: ListRowProps) {
               onClick={(e) => { e.stopPropagation(); commit(side, a); }}
               aria-label={a.label}
               className={cn(
-                'bl-btn relative flex min-w-0 cursor-pointer overflow-hidden border-0 p-0 [font-family:inherit] text-white outline-none focus-visible:[box-shadow:inset_0_0_0_2px_#fff]',
-                'transition-[flex-grow] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+                'bl-btn relative flex min-w-0 shrink basis-0 cursor-pointer overflow-hidden border-0 p-0 [font-family:inherit] text-white outline-none focus-visible:[box-shadow:inset_0_0_0_2px_white]',
+                'grow-(--action-grow) bg-(--action-bg) transition-[flex-grow] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
                 side === 'leading' ? 'justify-end' : 'justify-start',
               )}
+              // The action's color and its share of the strip (all of it on a full swipe) are per-action values.
               style={{
-                background: a.tint || (a.destructive ? 'var(--destructive)' : 'var(--primary)'),
-                flexGrow: full ? (i === 0 ? 1 : 0) : actionW(a), flexBasis: 0, flexShrink: 1,
-              }}>
+                '--action-bg': a.tint || (a.destructive ? 'var(--destructive)' : 'var(--primary)'),
+                '--action-grow': full ? (i === 0 ? 1 : 0) : actionW(a),
+                '--action-w': actionW(a) + 'px',
+              } as CSSProperties}>
               {/* Content keeps its slot width, pinned to the row's edge, so it slides out from under the row. */}
-              <span className="flex h-full shrink-0 flex-col items-center justify-center gap-[3px] px-2"
-                style={{ width: actionW(a) }}>
+              <span className="flex h-full w-(--action-w) shrink-0 flex-col items-center justify-center gap-[3px] px-2">
                 {a.icon ? <ActionIcon icon={a.icon} /> : null}
                 <span className={cn('truncate font-semibold', a.icon ? 'text-[12px]' : 'text-[15px]')}>{a.label}</span>
               </span>
@@ -449,15 +478,13 @@ export function ListRow(p: ListRowProps) {
         onKeyDown={!pressable ? onRowKey : undefined}
         onPointerDown={start} onPointerMove={mv} onPointerUp={end} onPointerCancel={end}
         onClickCapture={onClickCapture} onClick={onContainerClick}
+        aria-current={!pressable && focusable && p.selected ? 'true' : undefined}
         className={cn(
-          // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row.
-          'relative box-border flex min-h-[46px] w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-[17px] leading-[normal] tracking-[normal] outline-none',
-          'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]',
-          // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent).
-          'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]',
-          p.destructive ? 'text-destructive' : 'text-foreground',
-          p.selected ? 'bg-accent' : 'bg-card',
-          (pressable || swipeable || (control && p.labelToggles !== false)) ? 'cursor-pointer' : 'cursor-default',
+          listRowVariants({
+            align: p.align, selected: !!p.selected, destructive: !!p.destructive,
+            interactive: pressable || swipeable || (!!control && p.labelToggles !== false),
+          }),
+          p.contentClassName,
         )}
         // Swipe offset, driven by the gesture above.
         style={{ x }}>
@@ -466,6 +493,7 @@ export function ListRow(p: ListRowProps) {
           // never nested inside it. Its name is the row's title and subtitle.
           <button ref={(b) => { focusEl.current = b; }} data-tkrow type="button" role={p.rowRole as never}
             aria-selected={p.rowRole ? (p.selected || p.checked || false) : undefined}
+            aria-current={!p.rowRole && p.selected ? 'true' : undefined}
             aria-labelledby={p.subtitle ? `${titleId} ${subId}` : titleId}
             aria-describedby={hint ? hintId : undefined}
             aria-keyshortcuts={hint ? 'ArrowRight ArrowLeft Delete' : undefined}
@@ -482,29 +510,35 @@ export function ListRow(p: ListRowProps) {
               'box-border grid size-[22px] shrink-0 place-items-center rounded-[50%] transition-[background-color,scale] duration-spring-snappy ease-spring-bouncy',
               p.checked ? 'border-none bg-primary' : '[border:1.6px_solid_var(--tertiary-foreground)] bg-transparent',
             )}>
-              {p.checked ? <Icon name="check" size={13} sw={3} className="text-white transition-[scale,opacity] duration-spring-snappy ease-spring-bouncy starting:scale-50 starting:opacity-0" /> : null}
+              {p.checked ? <Icon name="check" size={13} sw={3} className="text-primary-foreground transition-[scale,opacity] duration-spring-snappy ease-spring-bouncy starting:scale-50 starting:opacity-0" /> : null}
             </span>
           </span>
         ) : null}
-        {p.leading ? <span className="pointer-events-none relative flex shrink-0 items-center">{p.leading}</span> : null}
+        {p.leading ? <span data-slot="list-row-leading" className="pointer-events-none relative flex shrink-0 items-center">{p.leading}</span> : null}
         <div data-slot="list-row-body" className={cn(
-          'pointer-events-none relative flex min-h-[46px] min-w-0 flex-1 items-center gap-2.5 px-0 py-[7px]',
+          'pointer-events-none relative flex min-h-[46px] min-w-0 flex-1 items-center gap-2.5 px-0',
+          fullWidth ? 'py-3' : 'py-[7px]',
           p.divider !== false && '[box-shadow:inset_0_-1px_0_var(--border)]',
           p.center ? 'justify-center' : 'justify-start',
         )}>
-          <div className={cn('min-w-0', p.center ? 'flex-none' : 'flex-1')}>
-            <div id={titleId} className="truncate leading-[1.3]">{p.title}</div>
-            {p.subtitle ? <div id={subId} className="mt-px truncate text-[13px] text-muted-foreground">{p.subtitle}</div> : null}
-          </div>
-          {p.trailing ? (
-            <span data-row-control="" className="flex shrink-0 items-center">
-              {labelled(p.trailing, titleId)}
-            </span>
-          ) : null}
-          {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} className="text-tertiary-foreground" />
-            : p.accessory === 'check' ? <span className="w-[22px] shrink-0">{p.checked ? <Icon name="check" size={20} sw={2.4} className="text-primary" /> : null}</span>
-            : control ? <span data-row-control="" className="pointer-events-auto flex min-w-0 shrink-0 items-center">{labelled(control, titleId)}</span>
-            : null}
+          {/* Switches and sliders anywhere in the row (even wrapped in the caller's own component) are named by the title. */}
+          <RowLabelContext value={hasTitle ? titleId : undefined}>
+            {fullWidth ? (
+              <div data-row-control="" data-slot="list-row-control" className="pointer-events-auto min-w-0 flex-1">{p.children}</div>
+            ) : (
+              <div className={cn('min-w-0', p.center ? 'flex-none' : 'flex-1')}>
+                <div id={titleId} className="truncate leading-[1.3]">{p.title}</div>
+                {p.subtitle ? <div id={subId} className="mt-px truncate text-[13px] text-muted-foreground">{p.subtitle}</div> : null}
+              </div>
+            )}
+            {p.trailing ? (
+              <span data-row-control="" className="flex shrink-0 items-center">{p.trailing}</span>
+            ) : null}
+            {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} className="text-tertiary-foreground" />
+              : p.accessory === 'check' ? <span className="w-[22px] shrink-0">{p.checked ? <Icon name="check" size={20} sw={2.4} className="text-primary" /> : null}</span>
+              : control ? <span data-row-control="" className="pointer-events-auto flex min-w-0 shrink-0 items-center">{control}</span>
+              : null}
+          </RowLabelContext>
           {slot?.startDrag ? (
             <button type="button" data-row-grip
               aria-label={`Reorder ${typeof p.title === 'string' ? p.title : 'row'}`}

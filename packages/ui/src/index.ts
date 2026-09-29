@@ -47,7 +47,7 @@ export { Button, buttonVariants } from './components/button';
 export type { ButtonProps } from './components/button';
 export { QRSvg } from './components/qr-svg';
 export type { QRSvgProps } from './components/qr-svg';
-export { List, ListSection, ListRow } from './components/list';
+export { List, ListSection, ListRow, listRowVariants } from './components/list';
 export type { ListProps, ListSectionProps, ListRowProps, ListRowAction } from './components/list';
 export { IndexBar, AL, indexBarVariants } from './components/index-bar';
 export type { IndexBarProps, IndexBarItem, IndexBarKey } from './components/index-bar';
@@ -66,11 +66,11 @@ export type {
 export { EditBar } from './components/edit-bar';
 export type { EditBarProps } from './components/edit-bar';
 export { NavigationStack, ScreenWrap } from './components/navigation-stack';
-export type { NavigationStackProps, Screen, ScreenWrapProps } from './components/navigation-stack';
+export type { NavigationStackProps, NavigationStackRootBack, Screen, ScreenWrapProps } from './components/navigation-stack';
 export {
   SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail, SplitViewHeader, SplitViewContent, SplitViewToggle,
-  SplitViewItem, SplitViewEmpty, useSplitView, useSplitViewColumn,
-  SplitViewSection, SplitViewStack, useSplitViewStack,
+  SplitViewItem, SplitViewEmpty, useSplitView, useSplitViewColumn, useSplitViewBack,
+  SplitViewSection, SplitViewStack, useSplitViewStack, splitViewItemVariants, splitViewSectionLabelVariants,
 } from './components/split-view';
 export type {
   SplitViewProps, SplitViewColumnProps, SplitViewHeaderProps, SplitViewToggleProps, SplitViewItemProps, SplitViewEmptyProps,
@@ -161,7 +161,7 @@ export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectSe
 export type { SelectProps, SelectTriggerProps, SelectContentProps } from './components/select';
 export { ComboBox, ComboBoxInput, ComboBoxContent, ComboBoxItem, ComboBoxSection } from './components/combobox';
 export type { ComboBoxProps, ComboBoxInputProps, ComboBoxContentProps } from './components/combobox';
-export { Slider, SliderTrack, SliderThumb } from './components/slider';
+export { Slider, SliderTrack, SliderThumb, sliderVariants } from './components/slider';
 export type { SliderProps, SliderTone } from './components/slider';
 export { ListBox, ListBoxItem, ListBoxSection, ListBoxHeader, listBoxVariants, listBoxItemVariants } from './components/list-box';
 export type { ListBoxProps, ListBoxItemProps, ListBoxSectionProps } from './components/list-box';

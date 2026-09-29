@@ -61,7 +61,7 @@ export const markdownEditorVariants = cva(
         /** No chrome: text on the surface it sits on (inline notes, full-page documents). */
         ghost: 'rounded-none bg-transparent',
         /** A raised card with a hairline, for editors that stand on their own. */
-        card: 'rounded-[14px] bg-card shadow-[0_0_0_1px_var(--border),0_1px_2px_rgba(0,0,0,.04)] focus-within:shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_rgba(0,0,0,.04)] data-readonly:focus-within:shadow-[0_0_0_1px_var(--border),0_1px_2px_rgba(0,0,0,.04)] data-invalid:shadow-[0_0_0_1.5px_var(--destructive)]',
+        card: 'rounded-[14px] bg-card shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] focus-within:shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_--alpha(black/4%)] data-readonly:focus-within:shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] data-invalid:shadow-[0_0_0_1.5px_var(--destructive)]',
       },
       size: {
         sm: 'bl-mde-sm',

@@ -120,7 +120,7 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
       <Icon name={icon} size={15} sw={2.6} />
     </AriaButton>
   );
-  const card = 'box-border overflow-hidden outline-none bg-card text-foreground shadow-[0_24px_80px_rgba(0,0,0,.34),0_0_0_1px_var(--border)]';
+  const card = 'box-border overflow-hidden outline-none bg-card text-foreground shadow-[0_24px_80px_--alpha(black/34%),0_0_0_1px_var(--border)]';
   const m = FM.motion as any, AP = FM.AnimatePresence;
   const spring = reduced ? { duration: 0 } : springs.tray;
   const header = (
