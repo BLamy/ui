@@ -37,3 +37,9 @@ export const AppearanceLight: Story = { render: inAppearance('light') };
 export const AppearanceDark: Story = { render: inAppearance('dark') };
 export const AppearanceLightDiff: Story = { args: { surface: 'diff' }, render: inAppearance('light') };
 export const AppearanceLightPhone: Story = { render: inAppearance('light', 390, 720) };
+
+/* The ⌘K command palette, open on each of its reference pages. */
+export const CommandPalette: Story = { args: { palette: true }, render: frame(1280, 760) };
+export const CommandPaletteProjects: Story = { args: { palette: ['projects'] }, render: frame(1280, 760) };
+export const CommandPaletteAddProject: Story = { args: { palette: ['add-project'] }, render: frame(1280, 760) };
+export const CommandPaletteLight: Story = { args: { palette: true }, render: inAppearance('light') };

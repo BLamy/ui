@@ -20,7 +20,7 @@ import {
 import { AGENTS, DIFF, FILES } from '../lib/data';
 
 /** The right panel: a surface picker, or the open surface under a header with switch / fullscreen / close. */
-export function SurfacePanel({ surface, onSurface }: { surface: SurfaceKind | null; onSurface: (k: SurfaceKind | null) => void }) {
+export function SurfacePanel({ surface, onSurface, file }: { surface: SurfaceKind | null; onSurface: (k: SurfaceKind | null) => void; /** file selected in the Files surface (Go to file) */ file?: string }) {
   const meta = SURFACES.find((s) => s.k === surface);
   return (
     <WorkbenchPanel>
@@ -50,7 +50,8 @@ export function SurfacePanel({ surface, onSurface }: { surface: SurfaceKind | nu
           <TerminalBody />
         </SurfaceTerminal>
       ) : surface === 'files' ? (
-        <SurfaceFiles paths={FILES} selected={['cookbook/src/App.tsx']} />
+        // Keyed by the file, so "Go to file" re-selects in the tree.
+        <SurfaceFiles key={file} paths={FILES} selected={[file ?? 'cookbook/src/App.tsx']} />
       ) : surface === 'diff' ? (
         <SurfaceDiff oldFile={DIFF.before} newFile={DIFF.after} />
       ) : surface === 'agents' ? (

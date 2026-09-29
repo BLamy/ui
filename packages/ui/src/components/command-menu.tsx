@@ -4,6 +4,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Dialog as AriaDialog, Modal, ModalOverlay } from 'react-aria-components';
+import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AnimatedHeight, ContentSwap } from './animated-height';
 import { IconSwap } from './icon-swap';
@@ -368,13 +369,17 @@ export interface CommandMenuProps {
   style?: CSSProperties;
   /** Dialog scrim classes. */
   overlayClassName?: string;
+  /** Where the dialog portals (default: BLProvider's root, else document.body). Pass an element inside a themed
+   *  surface (a `display: contents` layer in a Workbench shell) so the palette keeps that surface's palette and
+   *  its scrim covers that surface. */
+  container?: Element | null;
   children?: ReactNode;
 }
 
 export function CommandMenu({
   variant = 'inline', isOpen: openProp, defaultOpen = false, onOpenChange, hotkey, query: queryProp, onQueryChange,
   defaultPages, onPageChange, loop = true, closeOnSelect, escapeBehavior = 'close', filter = true, 'aria-label': ariaLabel = 'Command menu',
-  className, style, overlayClassName, children,
+  className, style, overlayClassName, container, children,
 }: CommandMenuProps) {
   const [openState, setOpenState] = useState(defaultOpen);
   const open = openProp ?? openState;
@@ -391,7 +396,7 @@ export function CommandMenu({
     </CommandRoot>
   );
   if (variant === 'inline') return inner;
-  return (
+  const modal = (
     <ModalOverlay
       data-slot="command-overlay"
       isOpen={open}
@@ -416,6 +421,7 @@ export function CommandMenu({
       </Modal>
     </ModalOverlay>
   );
+  return container ? <UNSAFE_PortalProvider getContainer={() => container as HTMLElement}>{modal}</UNSAFE_PortalProvider> : modal;
 }
 
 interface RootProps {
@@ -609,7 +615,8 @@ function CommandRoot({
         role={variant === 'inline' ? 'group' : undefined}
         onKeyDown={onKeyDown}
         className={cn(
-          'relative box-border flex w-full min-w-0 flex-col overflow-hidden bg-popover text-popover-foreground',
+          // --command-surface is the card's fill; sticky group headings share it. Override it (not bg-*) to recolour.
+          'relative box-border flex w-full min-w-0 flex-col overflow-hidden bg-(--command-surface) text-popover-foreground [--command-surface:var(--popover)]',
           variant === 'dialog'
             ? 'max-h-[min(640px,calc(100dvh-160px))] rounded-[18px] shadow-[0_24px_80px_--alpha(black/35%),0_0_0_.5px_var(--border)]'
             : 'rounded-[14px] shadow-[0_0_0_.5px_var(--border)]',
@@ -802,7 +809,7 @@ export function CommandGroup({ heading, columns = 1, forceMount, className, chil
   return (
     <div ref={ref} role="group" aria-labelledby={heading ? headingId : undefined} data-slot="command-group" hidden={hidden} className={cn('pt-1', className)}>
       {heading ? (
-        <div id={headingId} data-slot="command-group-heading" aria-hidden="true" className="sticky top-0 z-1 bg-popover px-3 pt-2 pb-1.5 text-[12.5px] font-medium text-muted-foreground">
+        <div id={headingId} data-slot="command-group-heading" aria-hidden="true" className="sticky top-0 z-1 bg-(--command-surface) px-3 pt-2 pb-1.5 text-[12.5px] font-medium text-muted-foreground">
           {heading}
         </div>
       ) : null}

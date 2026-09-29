@@ -199,3 +199,65 @@ export const AGENTS: SurfaceAgent[] = [
   { name: 'lint', status: 'passed', detail: 'no issues · 4s' },
   { name: 'bundle-size', status: 'queued', detail: 'waiting on test-runner' },
 ];
+
+/* ── Command palette (⌘K) ── */
+
+export interface Project {
+  name: string;
+  path: string;
+  /** Monogram colour. */
+  color: string;
+}
+export const PROJECTS: Project[] = [
+  { name: 'cookbook', path: '~/Code/cookbook', color: '#30D158' },
+  { name: 'wasm-vm', path: '~/Code/wasm-vm', color: '#FFD60A' },
+  { name: 'loop-qa', path: '~/Code/loop-qa', color: '#FF375F' },
+  { name: 'electric-forest', path: '~/Code/electric-forest', color: '#A4E34F' },
+  { name: 'Codex', path: '~/Code', color: '#FF9F0A' },
+  { name: 'jev-ultrafast', path: '~/Code/jev-ultrafast', color: '#FF9F0A' },
+];
+
+/** Folders "on disk" the Local folder source offers. */
+export const LOCAL_FOLDERS = ['~/Code/ios-haptics', '~/Code/agent-kanban', '~/Code/app-builder', '~/Documents/notes'];
+
+/** Repositories the GitHub source offers. */
+export const GITHUB_REPOS = ['blamy/ui', 'blamy/docstream', 'pmndrs/zustand', 'emilkowalski/vaul', 'pacocoursey/cmdk'];
+
+/** A stable, uuid-shaped id per thread (what "Copy thread ID" copies). */
+export function threadUuid(id: string) {
+  let h = 2166136261;
+  for (const c of id) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+  const hex = (n: number, len: number) => (n >>> 0).toString(16).padStart(len, '0').slice(-len);
+  return `${hex(h, 8)}-${hex(h >>> 7, 4)}-4${hex(h >>> 3, 3)}-a${hex(h >>> 11, 3)}-${hex(Math.imul(h, 2654435761), 8)}${hex(h >>> 5, 4)}`;
+}
+
+export interface PullRequest {
+  number: number;
+  title: string;
+  branch: string;
+  author: string;
+}
+export const PULL_REQUESTS: PullRequest[] = [
+  { number: 412, title: 'Spring the composer between centre and dock', branch: 'composer-fly', author: 'blamy' },
+  { number: 409, title: 'Haptics: probe the TabView rail', branch: 'haptics-probe', author: 'blamy' },
+  { number: 405, title: 'Credenza height morph without layout thrash', branch: 'credenza-morph', author: 'nat' },
+  { number: 398, title: 'Detached dev servers survive tool timeouts', branch: 'detached-servers', author: 'blamy' },
+];
+
+/** Lines "Search project contents" greps through. */
+export const CONTENT_INDEX: { file: string; line: number; text: string }[] = [
+  { file: 'src/haptics.ts', line: 3, text: 'if (isBlockingStub(navigator.vibrate)) delete navigator.vibrate' },
+  { file: 'src/haptics.ts', line: 4, text: "await import('https://esm.sh/ios-vibrator-pro-max@3.0.3')" },
+  { file: 'src/haptics.ts', line: 5, text: "window.addEventListener('bl-vib', reportHaptic)" },
+  { file: 'src/components/Credenza.tsx', line: 41, text: 'const h = ref.current.offsetHeight' },
+  { file: 'src/components/Credenza.tsx', line: 42, text: 'setSpring({ height: h })' },
+  { file: 'src/components/MessageScroller.tsx', line: 88, text: 'const anchor = items.findLast((i) => i.anchor)' },
+  { file: 'src/components/MessageScroller.tsx', line: 120, text: 'if (following) el.scrollTop = el.scrollHeight' },
+  { file: 'src/components/SideDrawer.tsx', line: 17, text: 'export function SideDrawer({ open, onClose, children })' },
+  { file: 'src/App.tsx', line: 12, text: '<MessageScroller items={items} streaming={streaming} />' },
+  { file: 'vite.config.js', line: 6, text: 'server: { port: 3000, strictPort: true }' },
+  { file: 'package.json', line: 7, text: '"dev": "vite --host"' },
+];
+
+/** Accents the theme editor offers. */
+export const TINTS = ['#0A84FF', '#30D158', '#FF9F0A', '#FF375F', '#BF5AF2', '#64D2FF'];
