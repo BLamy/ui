@@ -1,5 +1,5 @@
 /* Notes state: the notes, the open folder or tag, the selected note, search, list/gallery view, and which
-   locked notes are unlocked this session. Shared by the split layout and the phone stack; each action plays
+   locked notes are unlocked this session. Shared by every column; each action plays
    its haptic next to the change it confirms. */
 import { useMemo, useState } from 'react';
 import { Haptics } from '@brett_lamy/ui';
