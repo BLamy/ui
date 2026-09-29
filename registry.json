@@ -1070,7 +1070,7 @@
       "name": "apple-mail",
       "type": "registry:block",
       "title": "Apple Mail clone",
-      "description": "Apple Mail: Favorites, Smart Mailboxes and iCloud sections with rolling unread counts; a message list with unread dots, flags, attachments, previews and relative times; swipe actions, edit mode, search and an unread filter; a message view with a quoted thread and reply, flag, move, archive and trash; and a compose sheet. Three tiled columns on desktop, an overlay sidebar on iPad, a NavigationStack with large titles on iPhone. Composed from SplitView, NavigationStack, List, SheetContent, MarkdownEditor and DropdownMenu.",
+      "description": "Apple Mail: Favorites, Smart Mailboxes and iCloud sections with rolling unread counts; a message list with unread dots, flags, attachments, previews and relative times; swipe actions (ListRow), edit mode, search and an unread filter; a message view with a quoted thread and reply, flag, move, archive and trash; and a compose sheet. One SplitView at every size: three tiled columns on desktop, an overlay sidebar on iPad, a stack with large titles and back buttons on iPhone. Composed from SplitView (sections, large titles), ListRow, Icon, SearchField, SheetContent, MarkdownEditor and DropdownMenu.",
       "categories": [
         "email",
         "productivity",
@@ -1114,24 +1114,9 @@
           "target": "components/blocks/apple-mail/compose.tsx"
         },
         {
-          "path": "registry/blocks/apple-mail/phone.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-mail/phone.tsx"
-        },
-        {
           "path": "registry/blocks/apple-mail/parts.tsx",
           "type": "registry:component",
           "target": "components/blocks/apple-mail/parts.tsx"
-        },
-        {
-          "path": "registry/blocks/apple-mail/swipe-row.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-mail/swipe-row.tsx"
-        },
-        {
-          "path": "registry/blocks/apple-mail/glyphs.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-mail/glyphs.tsx"
         },
         {
           "path": "registry/blocks/apple-mail/use-mail.ts",
@@ -1190,11 +1175,6 @@
           "target": "components/blocks/apple-music/artwork.tsx"
         },
         {
-          "path": "registry/blocks/apple-music/glyphs.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-music/glyphs.tsx"
-        },
-        {
           "path": "registry/blocks/apple-music/player.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-music/player.ts"
@@ -1213,7 +1193,7 @@
       "name": "apple-notes",
       "type": "registry:block",
       "title": "Apple Notes clone",
-      "description": "Apple Notes: iCloud and On My Mac folders with All iCloud, Recently Deleted and tags; notes grouped Pinned · Today · Previous 7 Days… with snippets, or a gallery of thumbnails; a Markdown note editor with checklists and tables; pin, lock, share, move, delete, search, swipe actions and new notes that spring into place. Three tiled columns on desktop, an overlay sidebar on iPad, a NavigationStack with large titles on iPhone. Composed from SplitView, NavigationStack, List, MarkdownEditor, Segmented and DropdownMenu.",
+      "description": "Apple Notes: iCloud and On My Mac folders with All iCloud, Recently Deleted and tags; notes grouped Pinned · Today · Previous 7 Days… with snippets, or a gallery of thumbnails; a Markdown note editor with checklists and tables; pin, lock, share, move, delete, search, swipe actions (ListRow) and new notes that spring into place. One SplitView at every size: three tiled columns on desktop (the list steps aside for the gallery), an overlay sidebar on iPad, a stack with large titles and back buttons on iPhone. Composed from SplitView (sections, large titles, supplementaryVisible), ListRow, Icon, SearchField, MarkdownEditor (classNames), Segmented and DropdownMenu.",
       "categories": [
         "notes",
         "productivity",
@@ -1252,24 +1232,9 @@
           "target": "components/blocks/apple-notes/note-editor.tsx"
         },
         {
-          "path": "registry/blocks/apple-notes/phone.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-notes/phone.tsx"
-        },
-        {
           "path": "registry/blocks/apple-notes/parts.tsx",
           "type": "registry:component",
           "target": "components/blocks/apple-notes/parts.tsx"
-        },
-        {
-          "path": "registry/blocks/apple-notes/swipe-row.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-notes/swipe-row.tsx"
-        },
-        {
-          "path": "registry/blocks/apple-notes/glyphs.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-notes/glyphs.tsx"
         },
         {
           "path": "registry/blocks/apple-notes/use-notes.ts",
@@ -1290,7 +1255,7 @@
       "name": "apple-passwords",
       "type": "registry:block",
       "title": "Apple Passwords",
-      "description": "Apple's Passwords app: category tiles with counts (All, Passkeys, Codes, Wi-Fi, Security, Deleted) and shared groups, a searchable item list, and a detail with copy buttons, a password that morphs into view, verification codes with a countdown ring, edit mode, security recommendations by severity, and Wi-Fi networks with a QR code. Three columns on desktop, two on tablet, a pushed stack on phones; light and dark.",
+      "description": "Apple's Passwords app: category tiles with counts (All, Passkeys, Codes, Wi-Fi, Security, Deleted) and shared groups, a searchable item list, and a detail with copy buttons, a password that morphs into view, verification codes with a countdown ring, a “Copied” HUD, edit mode, security recommendations by severity, and Wi-Fi networks with a QR code. Three columns on desktop, two on tablet, a pushed stack on phones; light and dark.",
       "categories": [
         "application",
         "security"
@@ -1328,11 +1293,6 @@
           "target": "components/blocks/apple-passwords/parts.tsx"
         },
         {
-          "path": "registry/blocks/apple-passwords/glyphs.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-passwords/glyphs.tsx"
-        },
-        {
           "path": "registry/blocks/apple-passwords/vault.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-passwords/vault.ts"
@@ -1351,7 +1311,7 @@
       "name": "apple-reminders",
       "type": "registry:block",
       "title": "Apple Reminders",
-      "description": "Apple Reminders: smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts, colored lists with sections, circular checkboxes that spring filled with a haptic tick, inline add, a details sheet (notes, date and time, flag, priority, subtasks), show/clear completed, search, and a small burst when a list is cleared. Sidebar and list side by side on wide screens; the lists screen pushes the list on phones. Tints with each list's color, light and dark.",
+      "description": "Apple Reminders: smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts, colored lists with sections, circular checkboxes that spring filled with a haptic tick, inline add, a details sheet (notes, date and time, flag, priority, subtasks), show/clear completed, search, and a small burst when a list is cleared. Sidebar and list side by side on wide screens; the lists screen pushes the list on phones. Large list titles fold into the bar as you scroll; tints with each list's color, light and dark.",
       "categories": [
         "application",
         "productivity"
@@ -1399,11 +1359,6 @@
           "target": "components/blocks/apple-reminders/store.ts"
         },
         {
-          "path": "registry/blocks/apple-reminders/glyphs.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-reminders/glyphs.tsx"
-        },
-        {
           "path": "registry/blocks/apple-reminders/data.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-reminders/data.ts"
@@ -1417,7 +1372,7 @@
       "name": "apple-settings",
       "type": "registry:block",
       "title": "Apple Settings",
-      "description": "iOS, iPadOS and macOS Settings in one block: search, an Apple Account header, inset groups with colored icon tiles, and drill-down panes with switches, sliders, pickers and segmented controls. macOS System Settings at desktop, an iPad split on tablets, and a large-title navigation stack on phones. Display & Brightness switches light and dark live.",
+      "description": "iOS, iPadOS and macOS Settings in one block: search, an Apple Account header, inset groups with colored icon tiles, and drill-down panes with switches, sliders, pickers and segmented controls. One SplitView: macOS System Settings at desktop, an iPad split on tablets, and on phones the large-title list with panes pushing over it. Display & Brightness switches light and dark live.",
       "categories": [
         "application",
         "settings"
@@ -1445,11 +1400,6 @@
           "target": "components/blocks/apple-settings/detail.tsx"
         },
         {
-          "path": "registry/blocks/apple-settings/phone.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-settings/phone.tsx"
-        },
-        {
           "path": "registry/blocks/apple-settings/rows.tsx",
           "type": "registry:component",
           "target": "components/blocks/apple-settings/rows.tsx"
@@ -1458,11 +1408,6 @@
           "path": "registry/blocks/apple-settings/state.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-settings/state.ts"
-        },
-        {
-          "path": "registry/blocks/apple-settings/glyphs.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/apple-settings/glyphs.tsx"
         },
         {
           "path": "registry/blocks/apple-settings/data.ts",
