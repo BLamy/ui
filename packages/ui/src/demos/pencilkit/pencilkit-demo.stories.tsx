@@ -8,7 +8,7 @@ const meta: Meta<typeof PencilKitDemo> = {
   parameters: { layout: 'centered' },
   decorators: [
     (Story) => (
-      <div style={{ position: 'relative', width: 834, height: 640, overflow: 'hidden', borderRadius: 12 }}>
+      <div className="relative h-[640px] w-[834px] overflow-hidden rounded-xl">
         <Story />
       </div>
     ),

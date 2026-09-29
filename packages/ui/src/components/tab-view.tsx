@@ -48,7 +48,7 @@ import { TabDirection, useTabPanelDirection } from './tabs';
 
 export type TabViewPlacement = 'top' | 'bottom' | 'start' | 'end';
 export type TabViewOrientation = 'horizontal' | 'vertical';
-export type TabViewBarVariant = 'bar' | 'rail' | 'plain';
+export type TabViewBarVariant = 'bar' | 'rail' | 'workspace' | 'plain';
 
 interface TabViewCtxValue {
   orientation: TabViewOrientation;
@@ -168,7 +168,10 @@ export const tabViewBarVariants = cva('box-border', {
       bar: 'absolute inset-x-0 bottom-0 z-120 flex h-[62px] [border-top:1px_solid_var(--border)] bg-bar pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
       /** Vertical side rail — icons over labels. */
       rail: 'relative flex w-[76px] shrink-0 flex-col gap-1 bg-bar py-2 data-[placement=end]:[border-left:1px_solid_var(--border)] data-[placement=start]:[border-right:1px_solid_var(--border)]',
-      /** No chrome: the host styles the bar (see the Discord-style rail). */
+      /** Workspace switcher (Discord / Slack): a narrow column of tiles on the muted surface. Header and footer
+       *  stay put; the list between them scrolls when there are more tiles than room. */
+      workspace: 'flex w-[52px] shrink-0 flex-col items-center gap-[8px] border-r border-border bg-muted px-0 py-[10px]',
+      /** No chrome: the host styles the bar. */
       plain: 'flex shrink-0 data-[orientation=vertical]:flex-col',
     },
   },
@@ -202,6 +205,8 @@ export const tabViewListVariants = cva('outline-none', {
     variant: {
       bar: 'flex flex-1',
       rail: 'flex flex-col gap-1 px-1.5',
+      // Scrolls on its own; the padding (cancelled by the margin) keeps badges and focus rings from being clipped.
+      workspace: 'flex min-h-0 w-full flex-col items-center gap-[8px] overflow-y-auto overscroll-contain -mt-1 -mb-1.5 pt-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
       plain: 'flex data-[orientation=vertical]:flex-col',
     },
   },
@@ -229,6 +234,8 @@ export const tabViewTabVariants = cva('relative cursor-pointer outline-none', {
     variant: {
       bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 text-center leading-[normal] [font-family:inherit] text-tertiary-foreground transition-[color] duration-spring-snappy ease-spring-snappy data-selected:text-primary data-focus-visible:rounded-[12px] data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset',
       rail: 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-[12px] px-1 pt-[7px] pb-1.5 text-center leading-[normal] text-tertiary-foreground transition-[color,background-color] duration-spring-snappy ease-spring-snappy data-hovered:bg-secondary/60 data-hovered:text-muted-foreground data-pressed:bg-secondary data-selected:bg-primary/12 data-selected:text-primary data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
+      /** A full-width row that centers its tile; the tile styles itself from the tab's state (`group-data-*`). */
+      workspace: 'group flex w-full shrink-0 justify-center data-disabled:cursor-default',
       plain: 'data-disabled:cursor-default',
     },
   },
@@ -313,9 +320,14 @@ export interface TabViewIndicatorProps {
 }
 
 export function TabViewIndicator({ variant = 'bar', attention, className, style }: TabViewIndicatorProps) {
-  const { orientation } = useContext(TabViewCtx);
+  const { orientation, variant: bar } = useContext(TabViewCtx);
   const tab = useContext(TabItemCtx);
-  const cls = cn(tabViewIndicatorVariants({ variant, orientation }), className);
+  const cls = cn(
+    tabViewIndicatorVariants({ variant, orientation }),
+    // The workspace pill grows on the bouncy spring, with the tile's corners.
+    variant === 'pill' && bar === 'workspace' && 'duration-(--duration-spring-bouncy) ease-(--ease-spring-bouncy)',
+    className,
+  );
   if (variant === 'bar') return <SelectionIndicator data-slot="tab-view-indicator" className={cls} style={style} />;
   return (
     <span data-slot="tab-view-indicator" aria-hidden className={cls} style={style}
@@ -329,10 +341,12 @@ export function TabViewIndicator({ variant = 'bar', attention, className, style 
 
 interface SeparatorProps { className?: string; style?: CSSProperties }
 const SeparatorItem = createLeafComponent('separator', (props: SeparatorProps & { isDisabled?: boolean }, ref) => {
-  const { orientation } = useContext(TabViewCtx);
+  const { orientation, variant } = useContext(TabViewCtx);
   return (
     <div ref={ref as never} role="presentation" data-slot="tab-view-separator" data-orientation={orientation}
-      className={cn('shrink-0 self-center bg-border', orientation === 'vertical' ? 'h-px w-8' : 'h-6 w-px', props.className)}
+      className={cn('shrink-0 self-center bg-border',
+        variant === 'workspace' ? 'my-[-1px] h-[2px] w-[20px] rounded-full' : orientation === 'vertical' ? 'h-px w-8' : 'h-6 w-px',
+        props.className)}
       style={props.style} />
   );
 });
@@ -346,6 +360,8 @@ export const tabViewActionVariants = cva('cursor-pointer outline-none data-focus
     variant: {
       bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-tertiary-foreground data-pressed:opacity-60',
       rail: 'bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-[12px] border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inherit] text-tertiary-foreground data-hovered:bg-secondary/60 data-pressed:bg-secondary',
+      /** A dashed tile ("Add workspace") that rounds its corners on hover and dips on press. */
+      workspace: 'grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-tertiary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:rounded-[11px] data-hovered:text-muted-foreground data-pressed:scale-[.94] motion-reduce:transition-none',
       plain: 'bl-btn border-0 bg-transparent p-0 [font-family:inherit]',
     },
   },
@@ -368,7 +384,7 @@ export function TabViewAction({ className, icon, title, children, onPress, ...pr
     >
       {children ?? (
         <>
-          {icon && <Icon name={icon} size={variant === 'bar' ? 25 : 24} sw={1.8} />}
+          {icon && <Icon name={icon} size={variant === 'bar' ? 25 : variant === 'workspace' ? 14 : 24} sw={variant === 'workspace' ? 1.9 : 1.8} />}
           {title != null && <span className={cn('font-semibold tracking-[.1px]', variant === 'bar' ? 'text-[10px]' : 'text-[10.5px]')}>{title}</span>}
         </>
       )}
@@ -381,12 +397,14 @@ interface SlotProps { className?: string; style?: CSSProperties; children?: Reac
 export function TabViewHeader({ className, style, children }: SlotProps) {
   return <div data-slot="tab-view-header" className={cn('flex shrink-0 items-center justify-center', className)} style={style}>{children}</div>;
 }
-/** Content after the tabs, pushed to the far end of the bar. */
+/** Content after the tabs, pushed to the far end of the bar — in a `workspace` bar it follows the list instead
+ *  (Discord's add button sits right under the last tile), and the list scrolls once they no longer fit. */
 export function TabViewFooter({ className, style, children }: SlotProps) {
-  const { orientation } = useContext(TabViewCtx);
+  const { orientation, variant } = useContext(TabViewCtx);
   return (
     <div data-slot="tab-view-footer"
-      className={cn('flex shrink-0 items-center justify-center', orientation === 'vertical' ? 'mt-auto flex-col' : 'ms-auto', className)}
+      className={cn('flex shrink-0 items-center justify-center',
+        orientation === 'vertical' ? cn('flex-col', variant === 'workspace' ? 'gap-[8px]' : 'mt-auto') : 'ms-auto', className)}
       style={style}>{children}</div>
   );
 }

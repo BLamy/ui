@@ -56,7 +56,7 @@ export function ToggleGroupItem({ className, variant, size, children, ...props }
       className={composeRenderProps(className, (cls) => cn(
         v === 'filled' && (slide
           ? 'relative rounded-[9px] data-selected:bg-transparent data-selected:text-foreground data-selected:data-pressed:bg-transparent'
-          : 'rounded-[9px] data-selected:bg-card data-selected:text-foreground data-selected:shadow-[0_1px_4px_rgba(0,0,0,.14)] data-selected:data-pressed:bg-card'),
+          : 'rounded-[9px] data-selected:bg-card data-selected:text-foreground data-selected:shadow-[0_1px_4px_black] data-selected:shadow-black/14 data-selected:data-pressed:bg-card'),
         v === 'outline' && 'rounded-none shadow-none not-first:shadow-[inset_1px_0_0_var(--border)] data-selected:shadow-none data-selected:not-first:shadow-[inset_1px_0_0_var(--border)]',
         cls,
       ))}

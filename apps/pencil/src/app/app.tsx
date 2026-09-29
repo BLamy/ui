@@ -1,19 +1,19 @@
 /* Pencil — a full-window sketchpad: PencilCanvas on dotted paper, the PencilKit toolbar parts and an undo
    history. Paper and the default ink follow the ambient appearance. */
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import {
   InkPicker,
   PencilActions,
   PencilCanvas,
   PencilToolbar,
   PencilToolbarDivider,
-  PK_DARK,
   PK_INKS,
-  PK_LIGHT,
   PK_W,
   ToolPicker,
   WidthPicker,
   cn,
+  pencilPaperClassName,
+  themeScopeClass,
   useAppearance,
   usePencilHistory,
   type PencilTool,
@@ -31,13 +31,10 @@ export function PencilApp() {
   return (
     <div
       className={cn(
-        'h-full bg-muted bg-[length:22px_22px] font-ios text-foreground antialiased',
-        dark
-          ? 'bg-[radial-gradient(rgba(235,235,245,.13)_1px,transparent_1.2px)] scheme-dark'
-          : 'bg-[radial-gradient(rgba(60,60,67,.15)_1px,transparent_1.2px)] scheme-light',
+        'h-full font-ios text-foreground antialiased',
+        pencilPaperClassName,
+        themeScopeClass(dark ? 'dark' : 'light'),
       )}
-      // PencilKit's light/dark token set
-      style={(dark ? PK_DARK : PK_LIGHT) as CSSProperties}
     >
       <PencilCanvas
         tool={tool}

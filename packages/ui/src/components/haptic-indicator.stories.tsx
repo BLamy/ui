@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { HapticIndicator } from './haptic-indicator';
-import { PillButton } from './pill-button';
+import { Button } from './button';
 import { Haptics } from '../lib/haptics';
 import { Phone } from '../stories/frame';
 
@@ -16,10 +16,10 @@ export const Interactive: Story = {
   render: () => (
     <Phone h={480}>
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', alignContent: 'center', gap: 10, padding: 40 }}>
-        <PillButton label="Impact · light" tone="soft" onPress={() => Haptics.impact('light')} />
-        <PillButton label="Impact · heavy" tone="soft" onPress={() => Haptics.impact('heavy')} />
-        <PillButton label="Selection tick" tone="soft" onPress={() => Haptics.selection()} />
-        <PillButton label="Notification · success" tone="soft" onPress={() => Haptics.notification('success')} />
+        <Button size="pill" variant="secondary" onPress={() => Haptics.impact('light')}>Impact · light</Button>
+        <Button size="pill" variant="secondary" onPress={() => Haptics.impact('heavy')}>Impact · heavy</Button>
+        <Button size="pill" variant="secondary" onPress={() => Haptics.selection()}>Selection tick</Button>
+        <Button size="pill" variant="secondary" onPress={() => Haptics.notification('success')}>Notification · success</Button>
       </div>
       <HapticIndicator visible bottom={14} />
     </Phone>

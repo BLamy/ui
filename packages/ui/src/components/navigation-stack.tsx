@@ -10,6 +10,7 @@ import { chromeStore, BLSafeCtx, BLStickyCtx } from '../lib/theme';
 import { cn, BARH } from '../lib/utils';
 import { springCss, springs } from '../lib/motion';
 import { Spinner } from './spinner';
+import { useSplitViewBack } from './split-view';
 
 /** Screen descriptor consumed by NavigationStack. */
 export interface Screen {
@@ -44,6 +45,12 @@ type Reg = (key: string, part: ScreenParts) => void;
 /** Back label: the previous title (ellipsized when tight), "Back" when even that has no room, else nothing. */
 type BackMode = 'title' | 'back' | 'none';
 
+/** A back button on the root screen (there is nothing of the stack's own to pop): its label and action. */
+export interface NavigationStackRootBack {
+  title?: ReactNode;
+  onPress: () => void;
+}
+
 export interface ScreenWrapProps {
   sc: Screen;
   depth: number;
@@ -55,9 +62,13 @@ export interface ScreenWrapProps {
   reg: Reg;
   defIns?: number;
   z: number;
+  /** Shown on the root screen only (depth 0). */
+  rootBack?: NavigationStackRootBack | null;
 }
 
-export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, reg, defIns, z }: ScreenWrapProps) {
+export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: prevTitle, reg, defIns, z, rootBack: rootBackProp }: ScreenWrapProps) {
+  const rootBack = depth === 0 && !ghost ? rootBackProp : null;
+  const backTitle = rootBack ? rootBack.title ?? 'Back' : prevTitle;
   const started = useRef(false);
   const [in_, setIn] = useState(!entering);
   const [out, setOut] = useState(false);
@@ -70,7 +81,7 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
   const rowRef = useRef<HTMLDivElement | null>(null); const titleRef = useRef<HTMLDivElement | null>(null);
   const measFull = useRef<HTMLSpanElement | null>(null); const measBack = useRef<HTMLSpanElement | null>(null);
   const [bk, setBk] = useState<{ mode: BackMode; w: number }>({ mode: 'title', w: 160 });
-  const hasBack = depth > 0 || ghost;
+  const hasBack = depth > 0 || ghost || !!rootBack;
   // Measured: the back label gets whatever the centered title leaves on its side of the bar.
   useLayoutEffect(() => {
     const row = rowRef.current, t = titleRef.current, f = measFull.current, b = measBack.current;
@@ -168,38 +179,44 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
     }
   };
   return (
-    // Slide position, depth, and bar geometry are per-render values; the edge-swipe writes transform/transition
-    // inline during a drag and clears them back to these classes.
+    // Slide position, depth, and bar geometry are per-render values, fed in as CSS variables; the edge-swipe writes
+    // transform/transition inline during a drag and clears them back to these classes.
     <div ref={(el) => reg(sc.key, { el })} data-slot="screen" data-screen-label={typeof sc.title === 'string' ? sc.title : sc.key}
       className={cn(
-        'absolute inset-0 overflow-hidden will-change-transform [transform:translateX(var(--screen-x))] transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+        'absolute inset-0 z-(--screen-z) overflow-hidden will-change-transform [transform:translateX(var(--screen-x))] transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
         sc.grouped ? 'bg-muted' : 'bg-background',
-        depth > 0 && 'shadow-[-10px_0_30px_rgba(0,0,0,.16)]',
+        depth > 0 && 'shadow-[-10px_0_30px_black] shadow-black/16',
         ghost ? 'pointer-events-none' : 'pointer-events-auto',
       )}
       data-scrolled={scr ? '' : undefined}
-      style={{ zIndex: 10 + z, '--screen-x': tx } as CSSProperties}>
+      style={{
+        '--screen-z': 10 + z, '--screen-x': tx, '--screen-bar-h': barH + 'px', '--screen-safe-top': safeTop + 'px',
+        '--screen-max-w': sc.maxW == null || sc.maxW === 0 || sc.maxW === '' ? 'none' : typeof sc.maxW === 'number' ? sc.maxW + 'px' : sc.maxW,
+        '--screen-inset': ins + 28 + 'px',
+      } as CSSProperties}>
       <div ref={(e) => { scroller.current = e; reg(sc.key, { scroller: e }); }} className="bl-scroll absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" onScroll={onScroll} onKeyDown={onKey}
         onPointerDown={pDown} onPointerMove={pMove} onPointerUp={pEnd} onPointerCancel={pEnd}>
-        <div ref={inner} className="mx-auto box-border w-full" style={{ maxWidth: sc.maxW || 'none' }}>
+        <div ref={inner} className="mx-auto box-border w-full max-w-(--screen-max-w)">
           {sc.largeTitle
-            ? <div className="px-4 pb-1.5" style={{ paddingTop: barH + 2 }}>
+            ? <div className="px-4 pt-[calc(var(--screen-bar-h)+2px)] pb-1.5">
                 <div className="text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]">
                   <span ref={(e) => reg(sc.key, { large: e })}>{sc.title}</span>
                 </div>
                 {sc.subheader ? <div className="mt-2.5">{sc.subheader}</div> : null}
               </div>
-            : <div style={{ height: barH }} />}
+            : <div className="h-(--screen-bar-h)" />}
           <BLStickyCtx.Provider value={barH}>{sc.content}</BLStickyCtx.Provider>
-          <div style={{ height: ins + 28 }} />
+          <div className="h-(--screen-inset)" />
         </div>
       </div>
       {sc.onRefresh ? (
-        <div ref={spin} style={{ top: barH + 8 }}
-          className="pointer-events-none absolute left-1/2 z-5 [transform:translateX(-50%)] text-muted-foreground opacity-0 transition-opacity duration-spring-snappy ease-spring-snappy"><Spinner spin={refr} /></div>
+        <div ref={spin}
+          className="pointer-events-none absolute top-[calc(var(--screen-bar-h)+8px)] left-1/2 z-5 [transform:translateX(-50%)] text-muted-foreground opacity-0 transition-opacity duration-spring-snappy ease-spring-snappy"><Spinner spin={refr} /></div>
       ) : null}
-      <div className="absolute inset-x-0 top-0 z-30 box-border flex items-end px-1.5 transition-transform duration-spring-smooth ease-spring-smooth"
-        style={{ height: barH, paddingTop: safeTop, transform: hid ? 'translateY(' + (-(barH - safeTop)) + 'px)' : 'none' }}>
+      <div className={cn(
+        'absolute inset-x-0 top-0 z-30 box-border flex h-(--screen-bar-h) items-end px-1.5 pt-(--screen-safe-top) transition-transform duration-spring-smooth ease-spring-smooth',
+        hid ? '[transform:translateY(calc(var(--screen-safe-top)-var(--screen-bar-h)))]' : '[transform:none]',
+      )}>
         <div className={cn(
           'absolute inset-0 [border-bottom:1px_solid_var(--border)] bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-opacity duration-spring-snappy ease-spring-snappy',
           scr ? 'opacity-100' : 'opacity-0',
@@ -207,20 +224,21 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
         {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
         {safeTop ? (
           <div className={cn(
-            'absolute inset-x-0 top-0 bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
+            'absolute inset-x-0 top-0 h-(--screen-safe-top) bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
             scr || hid ? 'opacity-100' : 'opacity-0',
-          )} style={{ height: safeTop, transform: hid ? 'translateY(' + (barH - safeTop) + 'px)' : 'none' }} />
+            hid ? '[transform:translateY(calc(var(--screen-bar-h)-var(--screen-safe-top)))]' : '[transform:none]',
+          )} />
         ) : null}
         <div ref={rowRef} className={cn('flex h-[52px] w-full items-center transition-opacity duration-spring-snappy ease-spring-snappy', hid ? 'opacity-0' : 'opacity-100')}>
           <div className="relative z-1 flex min-w-[44px] items-center">
             {hasBack
               ? <AriaButton className="bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary"
                   aria-label={bk.mode === 'none' ? 'Back' : undefined}
-                  onPress={nav.canPop ? nav.pop : undefined}>
+                  onPress={rootBack ? rootBack.onPress : nav.canPop ? nav.pop : undefined}>
                   <Icon name="chevL" size={24} sw={2.4} />
                   {bk.mode !== 'none' ? (
                     <span ref={(e) => reg(sc.key, { back: e })} data-mode={bk.mode}
-                      className="truncate" style={{ maxWidth: bk.w }}>{bk.mode === 'title' ? backTitle : 'Back'}</span>
+                      className="max-w-(--back-w) truncate" style={{ '--back-w': bk.w + 'px' } as CSSProperties}>{bk.mode === 'title' ? backTitle : 'Back'}</span>
                   ) : null}
                 </AriaButton>
               : (sc.leading || null)}
@@ -342,11 +360,18 @@ export interface NavigationStackProps {
   defIns?: number;
   /** Safe-area top override for this stack (px). Usually inherited from BLProvider instead. */
   safeTop?: number | string;
+  /** A back button on the root screen, for a stack that sits under something else to go back to. Inside a
+   *  collapsed SplitView column it defaults to the previous column (the sidebar), labelled with its title;
+   *  `false` turns that off. */
+  rootBack?: NavigationStackRootBack | false;
   className?: string;
   style?: CSSProperties;
 }
 
-export function NavigationStack({ screens, onPop, defIns, safeTop, className, style }: NavigationStackProps) {
+export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: rootBackProp, className, style }: NavigationStackProps) {
+  const rootTitle = screens[0]?.title;
+  const split = useSplitViewBack(typeof rootTitle === 'string' ? rootTitle : undefined);
+  const rootBack = rootBackProp === false ? null : rootBackProp ?? (split ? { title: split.title, onPress: split.back } : null);
   const contRef = useRef<any>(null);
   const regMap = useRef<Record<string, any>>({});
   const reg: Reg = (k, part) => { regMap.current[k] = { ...regMap.current[k], ...part }; };
@@ -488,7 +513,7 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, className, st
           entering={!r.ghost && (anim.enter === r.sc.key || pendingEnter === r.sc.key) && r.i === topIdx}
           nav={{ pop: () => onPopRef.current && onPopRef.current(), canPop: canPop && !r.ghost }}
           backTitle={r.i > 0 ? (r.ghost ? (screens[screens.length - 1] && screens[screens.length - 1].title) : screens[r.i - 1].title) : null}
-          reg={reg} defIns={defIns} z={r.i} />
+          reg={reg} defIns={defIns} z={r.i} rootBack={rootBack} />
       ))}
     </div>
   );

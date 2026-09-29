@@ -1,27 +1,15 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PFONT, PK_DARK, PK_INKS, PK_LIGHT } from '../../lib/pencilkit/constants';
+import { PK_INKS } from '../../lib/pencilkit/constants';
+import { ThemeScope } from '../../lib/theme';
 import { PencilCanvas } from './pencil-canvas';
 import { demoStrokes } from '../../demos/pencilkit/demo-strokes';
 
 function Frame({ dark, children }: { dark?: boolean; children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        ...((dark ? PK_DARK : PK_LIGHT) as React.CSSProperties),
-        position: 'relative',
-        width: 640,
-        height: 420,
-        overflow: 'hidden',
-        borderRadius: 12,
-        background: 'var(--muted)',
-        color: 'var(--foreground)',
-        fontFamily: PFONT,
-        colorScheme: dark ? 'dark' : 'light',
-      }}
-    >
+    <ThemeScope appearance={dark ? 'dark' : 'light'} className="relative h-[420px] w-[640px] overflow-hidden rounded-xl bg-muted font-ios text-foreground">
       {children}
-    </div>
+    </ThemeScope>
   );
 }
 
@@ -41,8 +29,8 @@ export const Light: Story = {
     width: 1,
     hint: (
       <>
-        <div style={{ fontSize: 15.5, fontWeight: 600 }}>Draw anywhere</div>
-        <div style={{ fontSize: 12.5, marginTop: 3 }}>Apple Pencil pressure is real — mouse and touch are simulated.</div>
+        <div className="text-[15.5px] font-semibold">Draw anywhere</div>
+        <div className="mt-[3px] text-[12.5px]">Apple Pencil pressure is real — mouse and touch are simulated.</div>
       </>
     ),
     status: 'perfect-freehand@1.2.2',

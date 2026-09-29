@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PFONT, PK_DARK, PK_LIGHT, type PencilTool } from '../../lib/pencilkit/constants';
+import { type PencilTool } from '../../lib/pencilkit/constants';
+import { ThemeScope } from '../../lib/theme';
 import {
   InkPicker,
   PencilActions,
@@ -13,21 +14,9 @@ import {
 
 function Frame({ dark, children }: { dark?: boolean; children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        ...((dark ? PK_DARK : PK_LIGHT) as React.CSSProperties),
-        position: 'relative',
-        width: 620,
-        height: 120,
-        borderRadius: 12,
-        background: 'var(--muted)',
-        color: 'var(--foreground)',
-        fontFamily: PFONT,
-        colorScheme: dark ? 'dark' : 'light',
-      }}
-    >
+    <ThemeScope appearance={dark ? 'dark' : 'light'} className="relative h-[120px] w-[620px] rounded-xl bg-muted font-ios text-foreground">
       {children}
-    </div>
+    </ThemeScope>
   );
 }
 

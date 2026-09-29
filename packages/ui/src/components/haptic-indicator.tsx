@@ -36,7 +36,7 @@ export function HapticIndicator({ visible, bottom, className, style }: HapticInd
       {visible && shown && ev ? (
         <motion.div key="haptic" data-slot="haptic-indicator"
           className={cn(
-            'pointer-events-none absolute left-3 z-900 flex items-center gap-[9px] rounded-[99px] bg-card py-1.5 pr-3 pl-2 shadow-[0_6px_24px_rgba(0,0,0,.22),0_0_0_1px_var(--border)]',
+            'pointer-events-none absolute left-3 z-900 flex items-center gap-[9px] rounded-[99px] bg-card py-1.5 pr-3 pl-2 shadow-[0_6px_24px_--alpha(black/22%),0_0_0_1px_var(--border)]',
             className,
           )}
           style={{ bottom, ...style }}

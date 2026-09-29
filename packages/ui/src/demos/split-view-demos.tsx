@@ -17,6 +17,12 @@ import {
 import { Switch } from '../components/switch';
 import { SIDEBAR_ICONS } from '../components/sidebar';
 import { Icon } from '../lib/icon';
+
+/** iOS system colors the demo's app icons and lists are painted in (content, fixed in both appearances). */
+const SYSTEM = {
+  blue: '#0A84FF', blueClassic: '#007AFF', red: '#FF3B30', pink: '#FF2D55', indigo: '#5E5CE6', purple: '#5856D6',
+  green: '#34C759', orange: '#FF9500',
+} as const;
 import { cn } from '../lib/utils';
 import { useContainerWidth } from '../lib/container';
 
@@ -135,7 +141,7 @@ function MailList() {
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline gap-2">
                 <span className="min-w-0 flex-1 truncate text-[16px] font-semibold">{m.from.join(' ')}</span>
-                {m.flagged ? <span className="text-[#FF9F0A]"><DemoGlyph name="flag" size={13} sw={2.4} /></span> : null}
+                {m.flagged ? <span className="text-warning"><DemoGlyph name="flag" size={13} sw={2.4} /></span> : null}
                 <span className="shrink-0 text-[14px] text-muted-foreground">{m.time}</span>
               </span>
               <span className="mt-0.5 block truncate text-[15px]">{m.subject}</span>
@@ -250,15 +256,15 @@ function NotesEditor() {
 
 /* ── Settings: sidebar · detail ── */
 const SETTINGS = [
-  { id: 'wifi', title: 'Wi-Fi', icon: 'wifi', color: '#0A84FF', value: 'Studio' },
-  { id: 'notifications', title: 'Notifications', icon: 'bell', color: '#FF3B30' },
-  { id: 'sounds', title: 'Sounds & Haptics', icon: 'sound', color: '#FF2D55' },
-  { id: 'focus', title: 'Focus', icon: 'moon', color: '#5E5CE6' },
-  { id: 'display', title: 'Display & Brightness', icon: 'display', color: '#0A84FF' },
-  { id: 'privacy', title: 'Privacy & Security', icon: 'lock', color: '#34C759' },
+  { id: 'wifi', title: 'Wi-Fi', icon: 'wifi', color: SYSTEM.blue, value: 'Studio' },
+  { id: 'notifications', title: 'Notifications', icon: 'bell', color: SYSTEM.red },
+  { id: 'sounds', title: 'Sounds & Haptics', icon: 'sound', color: SYSTEM.pink },
+  { id: 'focus', title: 'Focus', icon: 'moon', color: SYSTEM.indigo },
+  { id: 'display', title: 'Display & Brightness', icon: 'display', color: SYSTEM.blue },
+  { id: 'privacy', title: 'Privacy & Security', icon: 'lock', color: SYSTEM.green },
 ];
 const Tile = ({ icon, color }: { icon: string; color: string }) => (
-  <span className="grid size-[28px] place-items-center rounded-[7px] text-white" style={{ background: color }}><DemoGlyph name={icon} size={17} sw={2.1} /></span>
+  <span className="grid size-[28px] place-items-center rounded-[7px] bg-(--tile) text-white" style={{ '--tile': color } as CSSProperties}><DemoGlyph name={icon} size={17} sw={2.1} /></span>
 );
 
 function SettingsPane() {
@@ -273,7 +279,7 @@ function SettingsPane() {
         <SplitViewContent>
           <div className="mx-auto max-w-[620px] px-5 pt-5 pb-10">
             <div className="mb-6 flex flex-col items-center rounded-[14px] bg-card px-6 py-6 text-center">
-              <span className="grid size-[58px] place-items-center rounded-[14px] text-white" style={{ background: cur.color }}><DemoGlyph name={cur.icon} size={32} sw={1.9} /></span>
+              <span className="grid size-[58px] place-items-center rounded-[14px] bg-(--tile) text-white" style={{ '--tile': cur.color } as CSSProperties}><DemoGlyph name={cur.icon} size={32} sw={1.9} /></span>
               <div className="mt-3 text-[22px] font-bold tracking-[-.3px]">{cur.title}</div>
               <div className="mt-1 max-w-[360px] text-[14px] leading-[1.4] text-muted-foreground">Adjust how {cur.title.toLowerCase()} behaves on this device and everywhere you’re signed in.</div>
             </div>
@@ -349,7 +355,8 @@ export function SplitViewResizableDemo({ children, initial = 900, min = 320, max
         <span className="ml-1">{Math.round(w)}px</span>
       </div>
       <div className="relative flex max-w-full">
-        <div className="relative overflow-hidden rounded-[14px] shadow-[0_0_0_1px_var(--border),0_10px_30px_rgba(0,0,0,.12)]" style={{ width: w, height }}>
+        <div className="relative h-(--frame-h) w-(--frame-w) overflow-hidden rounded-[14px] shadow-[0_0_0_1px_var(--border),0_10px_30px_--alpha(black/12%)]"
+          style={{ '--frame-w': w + 'px', '--frame-h': height + 'px' } as CSSProperties}>
           {children}
         </div>
         <div role="separator" aria-orientation="vertical" aria-label="Resize frame" aria-valuenow={Math.round(w)} aria-valuemin={min} aria-valuemax={hi}
@@ -366,15 +373,15 @@ export function SplitViewResizableDemo({ children, initial = 900, min = 320, max
 /* ── Reminders: tinted rows, one list in two sections, large titles ── */
 interface RList { title: string; color: string; icon: string; items: string[] }
 const RLISTS: Record<string, RList> = {
-  today: { title: 'Today', color: '#007AFF', icon: 'cal', items: ['Book the cabin ferry', 'Call Mom back', 'Review SplitView PR', 'Water the ferns'] },
-  scheduled: { title: 'Scheduled', color: '#FF3B30', icon: 'clock', items: ['Dentist — Thu 9:30', 'Renew passport', 'Offsite prep'] },
-  flagged: { title: 'Flagged', color: '#FF9500', icon: 'flag', items: ['Contract renewal', 'Spring presets, round two'] },
+  today: { title: 'Today', color: SYSTEM.blueClassic, icon: 'cal', items: ['Book the cabin ferry', 'Call Mom back', 'Review SplitView PR', 'Water the ferns'] },
+  scheduled: { title: 'Scheduled', color: SYSTEM.red, icon: 'clock', items: ['Dentist — Thu 9:30', 'Renew passport', 'Offsite prep'] },
+  flagged: { title: 'Flagged', color: SYSTEM.orange, icon: 'flag', items: ['Contract renewal', 'Spring presets, round two'] },
   groceries: {
-    title: 'Groceries', color: '#34C759', icon: 'list',
+    title: 'Groceries', color: SYSTEM.green, icon: 'list',
     items: ['Oat milk', 'Lemons', 'Sourdough', 'Basil', 'Parmesan', 'Coffee beans', 'Olive oil', 'Tomatoes', 'Garlic', 'Rigatoni', 'Sparkling water', 'Dark chocolate', 'Eggs', 'Butter', 'Honey', 'Yogurt'],
   },
-  work: { title: 'Work', color: '#5856D6', icon: 'list', items: ['Motion review notes', 'Docs screenshots', 'Haptics numbers', 'Hiring loop'] },
-  travel: { title: 'Travel', color: '#FF2D55', icon: 'list', items: ['Adapter', 'Tokyo rail pass', 'Hotel confirmation'] },
+  work: { title: 'Work', color: SYSTEM.purple, icon: 'list', items: ['Motion review notes', 'Docs screenshots', 'Haptics numbers', 'Hiring loop'] },
+  travel: { title: 'Travel', color: SYSTEM.pink, icon: 'list', items: ['Adapter', 'Tokyo rail pass', 'Hotel confirmation'] },
 };
 
 function RListItem({ id }: { id: string }) {
@@ -403,7 +410,7 @@ function RemindersList({ scrolled }: { scrolled?: boolean }) {
     <SplitViewDetail aria-label={l.title}>
       <SplitViewHeader title={l.title} largeTitle leading={<SplitViewToggle />}
         trailing={<BarButton label="Add reminder"><DemoGlyph name="plus" size={22} /></BarButton>} />
-      <SplitViewContent key={id} style={{ color: l.color }}>
+      <SplitViewContent key={id} className="text-(--list-color)" style={{ '--list-color': l.color } as CSSProperties}>
         <div ref={marker} className="pb-8 text-foreground">
           {l.items.map((t) => (
             <label key={t} className="flex cursor-pointer items-center gap-3 pl-4">
@@ -456,7 +463,7 @@ const SECTIONS_LIB = [
   { id: 'songs', title: 'Songs', short: 'Songs', icon: 'music' },
 ];
 const Cover = ({ a, className }: { a: Album; className?: string }) => (
-  <span aria-hidden="true" className={cn('block shrink-0 rounded-[8px] shadow-[0_2px_10px_rgba(0,0,0,.18)]', className)}
+  <span aria-hidden="true" className={cn('block shrink-0 rounded-[8px] shadow-[0_2px_10px_black] shadow-black/18', className)}
     style={{ background: `linear-gradient(135deg, hsl(${a.hue} 80% 62%), hsl(${a.hue + 40} 70% 38%))` }} />
 );
 

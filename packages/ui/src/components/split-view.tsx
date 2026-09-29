@@ -25,6 +25,7 @@ import {
 import { animate, motion, useMotionValue, type MotionValue } from 'framer-motion';
 import { Button as AriaButton } from 'react-aria-components';
 import { useFocusRing, useHover, useMove, mergeProps } from 'react-aria';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { useContainerWidth } from '../lib/container';
@@ -195,6 +196,23 @@ export function useSplitView(): SplitViewState {
 /** The column the calling component is rendered in, or null outside a column. */
 export function useSplitViewColumn() {
   return useContext(ColumnCtx);
+}
+
+/** For a container that draws its own bar (NavigationStack) at the root of a SplitView column: while the split
+ *  view is collapsed and a column comes before this one, that column's title and the way back to it — else
+ *  null (outside a SplitView too). `title` registers this column's own title, for the back label of the column
+ *  after it (what a SplitViewHeader does). */
+export function useSplitViewBack(title?: string): { title: string; back: () => void } | null {
+  const s = useContext(Ctx);
+  const column = useContext(ColumnCtx);
+  const page = useContext(PageCtx);
+  const setTitle = s?.setTitle;
+  const root = !page || page.index === 0;
+  useLayoutEffect(() => { if (setTitle && column && root && title !== undefined) setTitle(column, title); }, [setTitle, column, root, title]);
+  if (!s || !column || !s.collapsed || !root) return null;
+  const i = s.columns.indexOf(column);
+  if (i < 1) return null;
+  return { title: s.titles[s.columns[i - 1]] ?? 'Back', back: s.back };
 }
 
 /* ── Root ── */
@@ -515,12 +533,12 @@ function ColumnPart({ column, width, minWidth, maxWidth, resizable, stack, child
         </div>
         <div aria-hidden="true" className={cn(
           'pointer-events-none absolute inset-y-0 -left-10 w-10 transition-opacity duration-300',
-          'bg-[linear-gradient(to_left,rgba(0,0,0,.14),transparent)]',
+          'bg-[linear-gradient(to_left,--alpha(black/14%),transparent)]',
           l?.lifted && column !== 'sidebar' ? 'opacity-100' : 'opacity-0',
         )} />
         <div aria-hidden="true" className={cn(
           'pointer-events-none absolute inset-y-0 -right-10 w-10 transition-opacity duration-300',
-          'bg-[linear-gradient(to_right,rgba(0,0,0,.16),transparent)]',
+          'bg-[linear-gradient(to_right,--alpha(black/16%),transparent)]',
           l?.lifted && column === 'sidebar' ? 'opacity-100' : 'opacity-0',
         )} />
         {l?.resizable ? <Resizer column={column} /> : null}
@@ -585,34 +603,48 @@ function Resizer({ column }: { column: SplitViewColumn }) {
 }
 
 /* ── Panes: one header + content pair that scroll together (a column, or one page of a nested stack) ── */
+/** What a header's large title draws at the top of the pane's scroll. */
+interface LargeSpec { title: ReactNode; trailing?: ReactNode; className?: string }
 interface PaneState {
   /** A large title the pane's SplitViewContent draws at the top of its scroll. */
-  large: ReactNode;
-  setLarge: (title: ReactNode) => void;
+  large: LargeSpec | null;
+  setLarge: (large: LargeSpec | null) => void;
   /** The large title has scrolled under the bar: the header shows the inline title and its hairline. */
   under: boolean;
   setUnder: (under: boolean) => void;
+  /** The pane's content has scrolled off its top (drives `titleOnScroll`). */
+  scrolled: boolean;
+  setScrolled: (scrolled: boolean) => void;
   contents: number;
   addContent: () => () => void;
 }
 const PaneCtx = createContext<PaneState | null>(null);
 
 function Pane({ children }: { children?: ReactNode }) {
-  const [large, setLarge] = useState<ReactNode>(null);
+  const [large, setLarge] = useState<LargeSpec | null>(null);
   const [under, setUnder] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [contents, setContents] = useState(0);
   const addContent = useCallback(() => {
     setContents((n) => n + 1);
     return () => setContents((n) => n - 1);
   }, []);
-  const value = useMemo(() => ({ large, setLarge, under, setUnder, contents, addContent }), [large, under, contents, addContent]);
+  const value = useMemo(() => ({ large, setLarge, under, setUnder, scrolled, setScrolled, contents, addContent }),
+    [large, under, scrolled, contents, addContent]);
   return <PaneCtx.Provider value={value}>{children}</PaneCtx.Provider>;
 }
 
-function LargeTitle({ children, titleRef }: { children: ReactNode; titleRef?: React.Ref<HTMLHeadingElement> }) {
-  return (
-    <div data-slot="split-view-large-title" className="px-4 pt-1 pb-2">
-      <h1 ref={titleRef} className="m-0 truncate text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]">{children}</h1>
+function LargeTitle({ spec, titleRef }: { spec: LargeSpec; titleRef?: React.Ref<HTMLHeadingElement> }) {
+  const h1 = 'm-0 truncate text-[34px] leading-[1.15] font-extrabold tracking-[-.5px]';
+  return spec.trailing != null ? (
+    // A trailing item (a count, a button) shares the title's line, on the trailing edge.
+    <div data-slot="split-view-large-title" className={cn('flex items-end gap-4 px-4 pt-1 pb-2', spec.className)}>
+      <h1 ref={titleRef} className={cn(h1, 'min-w-0 flex-1')}>{spec.title}</h1>
+      <div data-slot="split-view-large-title-trailing" className="flex shrink-0 items-center text-[34px] leading-[1.15]">{spec.trailing}</div>
+    </div>
+  ) : (
+    <div data-slot="split-view-large-title" className={cn('px-4 pt-1 pb-2', spec.className)}>
+      <h1 ref={titleRef} className={h1}>{spec.title}</h1>
     </div>
   );
 }
@@ -623,6 +655,12 @@ export interface SplitViewHeaderProps {
   /** iOS large title: drawn big at the top of the pane's SplitViewContent and scrolling with it; once it has
    *  gone under the bar the inline title (and the bar's hairline) spring in. */
   largeTitle?: boolean;
+  /** Drawn on the large title's line, at the trailing edge (Reminders' open count). */
+  largeTitleTrailing?: ReactNode;
+  /** Classes for the large-title block — to line it up with the content (`mx-auto max-w-[760px] px-5`). */
+  largeTitleClassName?: string;
+  /** No large title: the inline title (and the bar's hairline) fade in once the content scrolls. */
+  titleOnScroll?: boolean;
   /** Leading items (e.g. <SplitViewToggle/>). Replaced by the back button when collapsed and not the root. */
   leading?: ReactNode;
   trailing?: ReactNode;
@@ -634,7 +672,9 @@ export interface SplitViewHeaderProps {
 }
 
 /** Column bar: back button when collapsed (or on a pushed stack page), title, leading / trailing items. */
-export function SplitViewHeader({ title, largeTitle, leading, trailing, backLabel, className, style }: SplitViewHeaderProps) {
+export function SplitViewHeader({
+  title, largeTitle, largeTitleTrailing, largeTitleClassName, titleOnScroll, leading, trailing, backLabel, className, style,
+}: SplitViewHeaderProps) {
   const s = useInternal('SplitViewHeader');
   const column = useContext(ColumnCtx);
   const page = useContext(PageCtx);
@@ -659,11 +699,16 @@ export function SplitViewHeader({ title, largeTitle, leading, trailing, backLabe
 
   // Large title.
   const large = !!largeTitle && title != null;
+  const spec = useMemo<LargeSpec | null>(() => (large ? { title, trailing: largeTitleTrailing, className: largeTitleClassName } : null),
+    [large, title, largeTitleTrailing, largeTitleClassName]);
   const setLarge = pane?.setLarge;
-  useLayoutEffect(() => { setLarge?.(large ? title : null); }, [setLarge, large, title]);
+  useLayoutEffect(() => { setLarge?.(spec); }, [setLarge, spec]);
   useLayoutEffect(() => () => setLarge?.(null), [setLarge]);
   const inContent = large && !!pane && pane.contents > 0;
-  const inline = !large || (inContent && pane.under);
+  // The inline title (and the hairline) come and go: under a large title once it scrolls away, or on scroll.
+  const onScroll = !large && !!titleOnScroll && !!pane && pane.contents > 0;
+  const fading = large || onScroll;
+  const inline = large ? inContent && pane.under : onScroll ? pane.scrolled : true;
 
   // The back label may use the room the centered title leaves on its side.
   const head = useRef<HTMLDivElement | null>(null);
@@ -688,18 +733,22 @@ export function SplitViewHeader({ title, largeTitle, leading, trailing, backLabe
   return (
     <>
       <div ref={head} data-slot="split-view-header" data-large-title={large || undefined}
-        className={cn('relative z-30 flex h-[52px] shrink-0 items-center px-1.5', !large && 'shadow-[inset_0_-1px_0_var(--border)]', className)} style={style}>
+        className={cn('relative z-30 flex h-[52px] shrink-0 items-center px-1.5', !fading && 'shadow-[inset_0_-1px_0_var(--border)]', className)} style={style}>
         <div className="relative z-1 flex min-w-[44px] items-center">
           {showBack ? (
             <AriaButton onPress={onBack} data-slot="split-view-back" aria-label={label === 'Back' ? undefined : `Back to ${label}`}
-              className="bl-btn flex max-w-[150px] cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary outline-none data-[focus-visible]:rounded-lg data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring"
-              style={backMax != null ? { maxWidth: backMax } : undefined}>
+              className={cn(
+                'bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary outline-none data-[focus-visible]:rounded-lg data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring',
+                backMax != null ? 'max-w-(--back-max)' : 'max-w-[150px]',
+              )}
+              // The room the centered title leaves, measured.
+              style={backMax != null ? { '--back-max': backMax + 'px' } as CSSProperties : undefined}>
               <Icon name="chevL" size={24} sw={2.4} className="shrink-0" />
               <span className="min-w-0 truncate">{label}</span>
             </AriaButton>
           ) : leading}
         </div>
-        {large ? (
+        {fading ? (
           <>
             <motion.div ref={titleEl} className={titleCls} aria-hidden={!inline || undefined}
               initial={false} animate={{ opacity: inline ? 1 : 0, y: inline ? 0 : 8 }}
@@ -710,7 +759,7 @@ export function SplitViewHeader({ title, largeTitle, leading, trailing, backLabe
         ) : <div ref={titleEl} className={titleCls}>{title}</div>}
         <div className="relative z-1 ml-auto flex items-center gap-0.5">{trailing}</div>
       </div>
-      {large && !inContent ? <LargeTitle>{title}</LargeTitle> : null}
+      {spec && !inContent ? <LargeTitle spec={spec} /> : null}
     </>
   );
 }
@@ -722,19 +771,21 @@ export function SplitViewContent({ children, className, style }: { children?: Re
   useLayoutEffect(() => add?.(), [add]);
   const large = pane?.large;
   const setUnder = pane?.setUnder;
+  const setScrolled = pane?.setScrolled;
   const scroller = useRef<HTMLDivElement | null>(null);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
   const check = useCallback(() => {
     const el = titleRef.current, sc = scroller.current;
-    if (!setUnder || !sc) return;
-    setUnder(!!el && sc.scrollTop > el.offsetTop + el.offsetHeight - 4);
-  }, [setUnder]);
+    if (!sc) return;
+    setUnder?.(!!el && sc.scrollTop > el.offsetTop + el.offsetHeight - 4);
+    setScrolled?.(sc.scrollTop > 8);
+  }, [setUnder, setScrolled]);
   const hasLarge = large != null;
   useLayoutEffect(() => { check(); }, [check, hasLarge]);
   return (
-    <div ref={scroller} data-slot="split-view-content" onScroll={hasLarge ? check : undefined}
+    <div ref={scroller} data-slot="split-view-content" onScroll={pane ? check : undefined}
       className={cn('bl-scroll relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain', className)} style={style}>
-      {hasLarge ? <LargeTitle titleRef={titleRef}>{large}</LargeTitle> : null}
+      {large ? <LargeTitle spec={large} titleRef={titleRef} /> : null}
       {children}
     </div>
   );
@@ -765,7 +816,34 @@ export function SplitViewToggle({ className, ...aria }: SplitViewToggleProps) {
 /** Selected colours for a SplitViewItem: a background (foreground white), or both. */
 export type SplitViewItemTint = string | { background: string; foreground?: string };
 
-export interface SplitViewItemProps {
+/** A SplitViewItem's surface: `pill` (inset rounded, sidebar default) or `row` (full-bleed with a separator);
+ *  selected fills with the tint (pill) or a 14% wash of it (row) — the item's own `tint` when it has one. */
+export const splitViewItemVariants = cva(
+  [
+    'bl-btn group/item relative flex w-full cursor-pointer items-center gap-3 border-0 text-left [font-family:inherit] text-foreground outline-none',
+    'transition-[background-color,color] duration-150',
+    'data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset',
+  ],
+  {
+    variants: {
+      variant: {
+        pill: 'min-h-[40px] rounded-[10px] px-2.5 py-1.5 text-[15.5px]',
+        row: 'min-h-[46px] px-4 py-2.5 text-[15.5px]',
+      },
+      selected: { true: '', false: 'bg-transparent data-[hovered]:bg-secondary data-[pressed]:bg-accent' },
+      tinted: { true: '', false: '' },
+    },
+    compoundVariants: [
+      { variant: 'pill', selected: true, tinted: false, class: 'bg-primary text-primary-foreground' },
+      { variant: 'pill', selected: true, tinted: true, class: 'bg-(--split-item-tint) text-(--split-item-on-tint)' },
+      { variant: 'row', selected: true, tinted: false, class: 'bg-[color-mix(in_srgb,var(--primary)_14%,transparent)]' },
+      { variant: 'row', selected: true, tinted: true, class: 'bg-[color-mix(in_srgb,var(--split-item-tint)_14%,transparent)]' },
+    ],
+    defaultVariants: { variant: 'pill', selected: false, tinted: false },
+  },
+);
+
+export interface SplitViewItemProps extends Pick<VariantProps<typeof splitViewItemVariants>, 'variant'> {
   /** Selection value within this column. Several items may share one (the same mailbox under Favorites and
    *  under its account): every item whose id is selected draws selected. */
   id: string;
@@ -777,7 +855,7 @@ export interface SplitViewItemProps {
   /** Replaces the title/subtitle layout entirely. */
   children?: ReactNode;
   /** `pill` (sidebar default): inset rounded row. `row`: full-bleed list row with a separator. */
-  variant?: 'pill' | 'row';
+  variant?: 'pill' | 'row' | null;
   /** This item's own selection colour instead of the app tint (Reminders' coloured lists). Also colours the
    *  icon while unselected. Exposed to custom content as `--split-item-tint` / `--split-item-on-tint`. */
   tint?: SplitViewItemTint;
@@ -794,7 +872,7 @@ export function SplitViewItem({ id, title, subtitle, icon, badge, children, vari
   const tinted = tint != null;
   const tintStyle = tinted ? {
     '--split-item-tint': typeof tint === 'string' ? tint : tint.background,
-    '--split-item-on-tint': typeof tint === 'string' ? '#fff' : tint.foreground ?? '#fff',
+    '--split-item-on-tint': typeof tint === 'string' ? 'white' : tint.foreground ?? 'white',
   } as CSSProperties : undefined;
   const onSel = selected && v === 'pill';
   const onKeyDown = (e: ReactKeyboardEvent<HTMLElement>) => {
@@ -809,21 +887,9 @@ export function SplitViewItem({ id, title, subtitle, icon, badge, children, vari
       data-tinted={tinted || undefined}
       onPress={() => { Haptics.selection(); s.select(column, id); onPress?.(); }}
       onKeyDown={onKeyDown}
-      className={cn(
-        'bl-btn group/item relative flex w-full cursor-pointer items-center gap-3 border-0 text-left [font-family:inherit] text-foreground outline-none',
-        'transition-[background-color,color] duration-150',
-        v === 'pill'
-          ? cn('min-h-[40px] rounded-[10px] px-2.5 py-1.5 text-[15.5px]',
-            selected
-              ? tinted ? 'bg-(--split-item-tint) text-(--split-item-on-tint)' : 'bg-primary text-primary-foreground'
-              : 'bg-transparent data-[hovered]:bg-secondary data-[pressed]:bg-accent')
-          : cn('min-h-[46px] px-4 py-2.5 text-[15.5px]',
-            selected
-              ? tinted ? 'bg-[color-mix(in_srgb,var(--split-item-tint)_14%,transparent)]' : 'bg-[color-mix(in_srgb,var(--primary)_14%,transparent)]'
-              : 'bg-transparent data-[hovered]:bg-secondary data-[pressed]:bg-accent'),
-        'data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset',
-        className,
-      )} style={tintStyle}>
+      className={cn(splitViewItemVariants({ variant: v, selected, tinted }), className)}
+      // The item's own tint is a runtime color.
+      style={tintStyle}>
       {children ?? (
         <>
           {icon ? <span className={cn('grid w-6 shrink-0 place-items-center',
@@ -844,9 +910,23 @@ export function SplitViewItem({ id, title, subtitle, icon, badge, children, vari
   );
 }
 
-export interface SplitViewSectionProps {
+/** A SplitViewSection's label: `default` — the small grey group label (Mail's "Favorites"); `prominent` — the
+ *  bold 20px heading iOS uses over a list group (Reminders' "My Lists"). */
+export const splitViewSectionLabelVariants = cva('', {
+  variants: {
+    variant: {
+      default: 'px-2.5 pt-4 pb-1.5 text-[13px] font-semibold tracking-[-.1px] text-muted-foreground',
+      prominent: 'px-1 pt-6 pb-2 text-[20px] font-bold tracking-[-.2px] text-foreground',
+    },
+  },
+  defaultVariants: { variant: 'default' },
+});
+
+export interface SplitViewSectionProps extends VariantProps<typeof splitViewSectionLabelVariants> {
   /** Section label ("Favorites", "iCloud"). */
   title?: ReactNode;
+  /** Classes for the label (merged over the variant's). */
+  labelClassName?: string;
   /** The label becomes a disclosure button that folds the section with a spring. */
   collapsible?: boolean;
   expanded?: boolean;
@@ -858,12 +938,14 @@ export interface SplitViewSectionProps {
 }
 /** A titled group of SplitViewItems in a column. An item id may appear in more than one section; each copy
  *  highlights when it's selected. */
-export function SplitViewSection({ title, collapsible, expanded, defaultExpanded = true, onExpandedChange, children, className }: SplitViewSectionProps) {
+export function SplitViewSection({
+  title, variant, labelClassName, collapsible, expanded, defaultExpanded = true, onExpandedChange, children, className,
+}: SplitViewSectionProps) {
   const uid = useId();
   const [openState, setOpen] = useState(defaultExpanded);
   const open = !collapsible || (expanded ?? openState);
   const toggle = () => { const n = !open; setOpen(n); onExpandedChange?.(n); Haptics.selection(); };
-  const labelCls = 'px-2.5 pt-4 pb-1.5 text-[13px] font-semibold tracking-[-.1px] text-muted-foreground';
+  const labelCls = cn(splitViewSectionLabelVariants({ variant }), labelClassName);
   const items = <div className="flex flex-col gap-px">{children}</div>;
   return (
     <div data-slot="split-view-section" role="group" aria-labelledby={title != null ? uid : undefined} className={className}>
@@ -871,7 +953,7 @@ export function SplitViewSection({ title, collapsible, expanded, defaultExpanded
         <AriaButton id={uid} onPress={toggle} aria-expanded={open}
           className={cn('bl-btn flex w-full cursor-pointer items-center border-0 bg-transparent text-left [font-family:inherit] outline-none data-[focus-visible]:rounded-lg data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring', labelCls)}>
           <span className="flex-1">{title}</span>
-          <Chevron direction={open ? 'down' : 'right'} size={14} sw={2.6} className="text-primary" />
+          <Chevron direction={open ? 'down' : 'right'} size={variant === 'prominent' ? 18 : 14} sw={2.6} className="text-primary" />
         </AriaButton>
       ) : <div id={uid} className={labelCls}>{title}</div>}
       {collapsible ? <AnimatedHeight>{open ? items : null}</AnimatedHeight> : items}
@@ -1069,7 +1151,7 @@ function StackPage({ pageKey, index, z, x: tx, dim: tdim, top, leaving, enterFro
         <Pane>{children}</Pane>
         <motion.div aria-hidden="true" className="pointer-events-none absolute inset-0 z-50 bg-black" style={{ opacity: dim }} />
         {index > 0 ? (
-          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 -left-10 w-10 bg-[linear-gradient(to_left,rgba(0,0,0,.14),transparent)]" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 -left-10 w-10 bg-[linear-gradient(to_left,--alpha(black/14%),transparent)]" />
         ) : null}
       </motion.div>
     </PageCtx.Provider>

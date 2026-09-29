@@ -22,7 +22,7 @@ import { DialogBody, DialogClose, DialogDescription, DialogHeader, DialogTitle }
 export const Sheet = DialogTrigger;
 
 export const sheetVariants = cva(
-  'absolute box-border flex flex-col bg-card text-card-foreground shadow-[0_0_40px_rgba(0,0,0,.22)] outline-none motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
+  'absolute box-border flex flex-col bg-card text-card-foreground shadow-[0_0_40px_black] shadow-black/22 outline-none motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
   {
     variants: {
       side: {

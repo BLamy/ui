@@ -41,7 +41,7 @@ function Player({ initial = false, dark }: { initial?: boolean; dark?: boolean }
                 <div className="text-[17px] text-white/60">The Weekend Ensemble</div>
               </Morph>
               <Morph id="controls-full" fade className="mt-6 flex flex-col gap-6">
-                <Slider aria-label="Position" tone="onDark" size="sm" defaultValue={32} />
+                <Slider aria-label="Position" data-no-drag tone="onDark" size="sm" defaultValue={32} />
                 <div className="flex items-center justify-center gap-12">
                   <Icon name="chevL" size={34} />
                   <Icon name="pause" size={44} />

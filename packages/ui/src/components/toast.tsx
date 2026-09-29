@@ -8,6 +8,7 @@ import { AnimatePresence, motion, useReducedMotion, type PanInfo } from 'framer-
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { fades, springs } from '../lib/motion';
+import { cva } from 'class-variance-authority';
 import { cn } from '../lib/utils';
 import { TextMorph } from './text-morph';
 
@@ -281,12 +282,27 @@ function Region({ state, placement, inline, offset, className, style, onSettled,
   );
 }
 
-const TONE_COLOR: Record<ToastTone, string> = {
-  default: 'var(--primary)',
-  success: 'var(--success)',
-  warning: 'var(--warning)',
-  destructive: 'var(--destructive)',
-};
+/** A toast's surface: the dark HUD pill (a fixed material, the same in light and dark, as on iOS) or the banner card. */
+export const toastVariants = cva(
+  'outline-none data-[focus-visible]:ring-2 focus-visible:ring-2 focus-visible:ring-[var(--primary)]',
+  {
+    variants: {
+      variant: {
+        hud: 'flex items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_8px_30px_black] shadow-black/25 backdrop-blur-xl backdrop-saturate-150',
+        banner: 'flex w-[min(360px,calc(100vw-32px))] items-start gap-3 rounded-2xl bg-card px-3.5 py-3 text-foreground shadow-[0_10px_34px_--alpha(black/16%),0_0_0_.5px_var(--border)]',
+      },
+    },
+    defaultVariants: { variant: 'banner' },
+  },
+);
+
+/** The icon's color per tone. */
+export const toastIconVariants = cva('grid shrink-0 place-items-center', {
+  variants: {
+    tone: { default: 'text-primary', success: 'text-success', warning: 'text-warning', destructive: 'text-destructive' },
+  },
+  defaultVariants: { tone: 'default' },
+});
 /* HUDs use the bare glyph (on the dark pill); banners the filled circle SF uses in notifications. */
 const TONE_ICON: Record<ToastVariant, Record<ToastTone, string | null>> = {
   hud: { default: null, success: 'check', warning: 'warning', destructive: 'xmark' },
@@ -297,14 +313,16 @@ function ToastIcon({ data, size }: { data: ToastData; size: number }) {
   const tone = data.tone ?? 'default';
   if (data.loading) {
     return (
-      <span aria-hidden="true" className="inline-block shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-[spin_2s_linear_infinite]"
-        style={{ width: size - 2, height: size - 2, color: 'currentColor', opacity: 0.8 }} />
+      <span aria-hidden="true" className={cn(
+        'inline-block shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent opacity-80 motion-reduce:animate-[spin_2s_linear_infinite]',
+        size === 16 ? 'size-[14px]' : 'size-[18px]',
+      )} />
     );
   }
   const icon = data.icon ?? TONE_ICON[data.variant ?? 'banner'][tone];
   if (icon == null) return null;
   return (
-    <span aria-hidden="true" className="grid shrink-0 place-items-center" style={{ color: TONE_COLOR[tone] }}>
+    <span aria-hidden="true" className={toastIconVariants({ tone })}>
       {typeof icon === 'string' ? <Icon name={icon} size={size} sw={data.variant === 'hud' ? 2.6 : 2.2} /> : icon}
     </span>
   );
@@ -338,12 +356,7 @@ function ToastItem({ toast: t, state, fromTop }: { toast: QueuedToast<Entry>; st
         data-slot="toast"
         data-variant={data.variant}
         data-tone={data.tone ?? 'default'}
-        className={cn(
-          'outline-none data-[focus-visible]:ring-2 focus-visible:ring-2 focus-visible:ring-[var(--primary)]',
-          hud
-            ? 'flex items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_8px_30px_rgba(0,0,0,.25)] backdrop-blur-xl backdrop-saturate-150'
-            : 'flex w-[min(360px,calc(100vw-32px))] items-start gap-3 rounded-2xl bg-card px-3.5 py-3 text-foreground shadow-[0_10px_34px_rgba(0,0,0,.16),0_0_0_.5px_var(--border)]',
-        )}
+        className={toastVariants({ variant: hud ? 'hud' : 'banner' })}
       >
         <ToastIcon data={data} size={hud ? 16 : 20} />
         <div {...contentProps} className={cn('min-w-0', !hud && 'flex-1 pt-px')}>
