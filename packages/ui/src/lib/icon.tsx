@@ -1,5 +1,8 @@
 import { useId, type CSSProperties } from 'react';
 import { cn } from './utils';
+import { WORKBENCH_SHAPES } from './icon-shapes/workbench';
+import { CHAT_SHAPES } from './icon-shapes/chat';
+import { PENCILKIT_SHAPES } from './icon-shapes/pencilkit';
 
 /**
  * One piece of an icon, drawn on a 24px grid in `currentColor`.
@@ -382,6 +385,10 @@ const SHAPES = {
   'heart-fill': [{ d: HEART, f: 2 }],
   pulse: [{ c: [12, 12, 3], f: 1 }, { c: [12, 12, 8] }],
   drop: [{ d: 'M12 3.5c3.2 3.9 6 7 6 10.2a6 6 0 1 1-12 0C6 10.5 8.8 7.4 12 3.5z' }],
+  // Merged in from the Workbench, chat and PencilKit icon sets (lib/icon-shapes/*).
+  ...WORKBENCH_SHAPES,
+  ...CHAT_SHAPES,
+  ...PENCILKIT_SHAPES,
 } as const satisfies Record<string, readonly IconShape[]>;
 
 /** Legacy keys whose geometry differs from the canonical icon; kept so existing usages render unchanged. */
