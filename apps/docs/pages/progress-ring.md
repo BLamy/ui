@@ -43,7 +43,7 @@ import {
 
 A countdown is a clock, so its arc runs at constant speed — one linear second per tick — rather than on a spring. The seconds in the middle roll (NumberMorph); at `warnAt` seconds (5 by default) the arc and the digits turn the warning color. When the period restarts the arc jumps straight back to full instead of spinning backwards through the turnover.
 
-`useCountdown(duration, { running, loop, onEnd })` drives one: it returns the whole seconds left, ticking once a second, and by default loops like a TOTP period.
+`useCountdown(duration, { running, loop, onEnd, offset })` drives one. It runs on the wall clock (`Date.now()`), so throttled timers catch up instead of drifting, and returns `remaining` (whole seconds left), `period` (periods completed, for the code window), `elapsed` and `reset`. By default it loops like a TOTP period; `offset` starts it part-way through (align it with a clock).
 
 {% demo src="progress-ring/countdown" %}
 
@@ -79,5 +79,6 @@ The ring has `role="timer"` and an `aria-label` of "N seconds left" (override wi
 | `size` / `thickness` | `md` | As for ProgressRing. |
 | `color` / `warnColor` / `trackColor` | tint / red / fill | Any CSS colors. |
 | `showLabel` | on from `md` | The seconds in the middle. |
+| `labelSize` | scales with the ring | `sm` 9.36 · `md` 10.5 · `lg` 13 · `xl` 20 px, independent of the ring's size (`countdownRingLabelVariants`). |
 
 The elements carry `data-slot="progress-ring"` or `data-slot="countdown-ring"` (with `data-warning` while warning); the arc is `data-slot="progress-ring-arc"`.

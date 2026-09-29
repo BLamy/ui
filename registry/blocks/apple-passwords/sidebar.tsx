@@ -1,5 +1,6 @@
 /* The sidebar: Passwords' category tiles (icon, count, name) over the shared groups. Tiles and group rows
    select into the SplitView's sidebar column, so on a phone they push the list. */
+import type { CSSProperties } from 'react';
 import {
   Avatar, Haptics, Icon, NumberMorph, SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, cn, useSplitView, type IconName,
 } from '@brett_lamy/ui';
@@ -54,11 +55,11 @@ function Tile({ id, label, icon, color, count }: { id: CategoryId; label: string
         'bl-btn group flex cursor-pointer flex-col gap-2 rounded-[12px] border-0 p-2.5 text-left [font-family:inherit] outline-none',
         'transition-[background-color,scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.97]',
         'focus-visible:ring-2 focus-visible:ring-ring',
-        selected ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground shadow-[0_.5px_1.5px_rgba(0,0,0,.08)] hover:bg-[color-mix(in_oklab,var(--card)_92%,var(--foreground))]',
+        selected ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground shadow-[0_.5px_1.5px_black] shadow-black/8 hover:bg-[color-mix(in_oklab,var(--card)_92%,var(--foreground))]',
       )}>
       <span className="flex w-full items-start justify-between">
-        <span className="grid size-[30px] place-items-center rounded-full transition-colors duration-200"
-          style={{ background: selected ? '#fff' : color, color: selected ? color : '#fff' }}>
+        <span className={cn('grid size-[30px] place-items-center rounded-full transition-colors duration-200', selected ? 'bg-white text-(--tile)' : 'bg-(--tile) text-white')}
+          style={{ '--tile': color } as CSSProperties}>
           <Icon name={icon} size={18} weight="semibold" />
         </span>
         <span className="pt-0.5 text-[20px] font-bold tabular-nums"><NumberMorph value={count} /></span>

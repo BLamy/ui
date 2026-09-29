@@ -651,8 +651,8 @@ export {
 export type {
   ToastData, ToastOptions, ToastVariant, ToastTone, ToastApi, ToasterProps, ToasterPlacement,
 } from './components/toast';
-export { ProgressRing, CountdownRing, useCountdown, progressRingVariants } from './components/progress-ring';
-export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, UseCountdownOptions } from './components/progress-ring';
+export { ProgressRing, CountdownRing, useCountdown, progressRingVariants, countdownRingLabelVariants } from './components/progress-ring';
+export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, CountdownRingLabelSize, UseCountdownOptions, Countdown } from './components/progress-ring';
 export { NowPlayingBars } from './components/now-playing-bars';
 export type { NowPlayingBarsProps } from './components/now-playing-bars';
 export { MorphGroup, Morph, MorphPresence, useMorphTransition } from './components/morph';

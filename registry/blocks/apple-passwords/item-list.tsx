@@ -2,11 +2,11 @@
    detail beside them — or push it on a phone. */
 import { Haptics, Icon, SearchField, SplitViewContent, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewToggle, cn } from '@brett_lamy/ui';
 import { SEVERITY } from './data';
-import { CodeValue, SiteTile, WifiTile } from './parts';
+import { CodeValue, SiteTile, WifiTile, type CodeClock } from './parts';
 import { categoryTitle, type Entry, type EntrySection, type Selection } from './vault';
 
 export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
-  category: Selection; sections: EntrySection[]; query: string; onQuery: (q: string) => void; now: number; onAdd: () => void;
+  category: Selection; sections: EntrySection[]; query: string; onQuery: (q: string) => void; now: CodeClock; onAdd: () => void;
 }) {
   const total = sections.reduce((n, s) => n + s.items.length, 0);
   const canAdd = category !== 'wifi' && category !== 'deleted' && category !== 'security';
@@ -43,7 +43,7 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
   );
 }
 
-function Row({ entry: e, category, now }: { entry: Entry; category: Selection; now: number }) {
+function Row({ entry: e, category, now }: { entry: Entry; category: Selection; now: CodeClock }) {
   const a = e.account;
   return (
     <SplitViewItem id={e.id} variant="row" className="min-h-[58px] py-2">
@@ -56,7 +56,7 @@ function Row({ entry: e, category, now }: { entry: Entry; category: Selection; n
           {a?.group && category === 'all' ? <Icon name="people" size={14} className="text-muted-foreground" /> : null}
         </span>
         <span className={cn('mt-px block truncate text-[13px]', e.severity && e.kind === 'account' && category === 'security' ? '' : 'text-muted-foreground')}
-          style={e.severity && category === 'security' ? { color: SEVERITY[e.severity].color === '#FFCC00' ? '#C79A00' : SEVERITY[e.severity].color } : undefined}>
+          style={e.severity && category === 'security' ? { color: SEVERITY[e.severity].ink } : undefined}>
           {e.kind === 'deleted' ? a!.deleted : e.subtitle}
         </span>
       </span>
