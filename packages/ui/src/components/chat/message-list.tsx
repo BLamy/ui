@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type ComponentProps, type ReactNode, type Ref } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { Icon } from '../../lib/icon';
 import { cn } from '../../lib/utils';
 
 /* ══ Transcript parts ══
@@ -72,7 +72,7 @@ export function ChannelIntro({ title, icon, className, children, ...props }: Cha
   return (
     <div data-slot="channel-intro" className={cn('px-[18px] pb-2.5', className)} {...props}>
       <div className="mb-2 grid size-10 place-items-center rounded-[12px] bg-secondary-strong text-muted-foreground">
-        {icon ?? <ChatIcon d={chatIconPaths.hash} size={20} sw={2.2} />}
+        {icon ?? <Icon name="number" size={20} sw={2.2} />}
       </div>
       <div className="text-[15.5px] font-[750]">{title}</div>
       {children != null && <div className="mt-0.5 text-[12px] text-tertiary-foreground">{children}</div>}

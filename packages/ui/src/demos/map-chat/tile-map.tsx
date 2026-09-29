@@ -104,32 +104,62 @@ export const CARTO_ATTRIBUTION = '© OpenStreetMap contributors © CARTO';
 /** Host font, falling back to the system stack. */
 export const MAP_FONT = "font-[family-name:var(--bl-font,-apple-system,BlinkMacSystemFont,'SF_Pro_Text',sans-serif)]";
 
-/* Map chrome. Dark and light tile sets flip labels and the glass controls. */
-const SCHEME = {
+/** The basemap's own colours per tile set (content, like the tiles): backdrop and ink, the label halo, the glass
+    controls that float on the map, and the route halo. Fed to the utilities below as --tile-map-* variables. */
+export const TILE_MAP_COLORS = {
   dark: {
-    root: 'bg-[#0d0f14] text-[#f5f5f7]',
-    label: 'text-white [text-shadow:0_0_2px_#000,0_0_4px_#000,0_1px_3px_rgba(0,0,0,.9)]',
-    glass: 'border-[rgba(255,255,255,.12)] bg-[rgba(24,24,30,.78)] shadow-[0_6px_18px_rgba(0,0,0,.35)]',
-    control: 'text-[#f5f5f7]',
-    hover: 'data-hovered:bg-[rgba(48,48,58,.85)]',
-    divider: 'border-t-[rgba(255,255,255,.1)]',
-    attribution: 'bg-[rgba(10,10,14,.55)] text-[rgba(255,255,255,.55)]',
-    halo: 'rgba(255,255,255,.85)',
+    backdrop: '#0d0f14',
+    ink: '#f5f5f7',
+    label: '#fff',
+    labelHalo: '#000',
+    labelHaloSoft: 'rgba(0,0,0,.9)',
+    glass: 'rgba(24,24,30,.78)',
+    glassBorder: 'rgba(255,255,255,.12)',
+    glassShadow: 'rgba(0,0,0,.35)',
+    glassHover: 'rgba(48,48,58,.85)',
+    divider: 'rgba(255,255,255,.1)',
+    attribution: 'rgba(10,10,14,.55)',
+    attributionInk: 'rgba(255,255,255,.55)',
+    routeHalo: 'rgba(255,255,255,.85)',
   },
   light: {
-    root: 'bg-[#eef0f3] text-[#1c1c1e]',
-    label: 'text-[#1c1c1e] [text-shadow:0_0_2px_#fff,0_0_4px_#fff,0_1px_3px_rgba(255,255,255,.9)]',
-    glass: 'border-[rgba(0,0,0,.08)] bg-[rgba(255,255,255,.86)] text-[#1c1c1e] shadow-[0_6px_18px_rgba(0,0,0,.14)]',
-    control: 'text-[#1c1c1e]',
-    hover: 'data-hovered:bg-[rgba(245,245,247,.95)]',
-    divider: 'border-t-[rgba(0,0,0,.08)]',
-    attribution: 'bg-[rgba(255,255,255,.7)] text-[rgba(0,0,0,.55)]',
-    halo: 'rgba(255,255,255,.9)',
+    backdrop: '#eef0f3',
+    ink: '#1c1c1e',
+    label: '#1c1c1e',
+    labelHalo: '#fff',
+    labelHaloSoft: 'rgba(255,255,255,.9)',
+    glass: 'rgba(255,255,255,.86)',
+    glassBorder: 'rgba(0,0,0,.08)',
+    glassShadow: 'rgba(0,0,0,.14)',
+    glassHover: 'rgba(245,245,247,.95)',
+    divider: 'rgba(0,0,0,.08)',
+    attribution: 'rgba(255,255,255,.7)',
+    attributionInk: 'rgba(0,0,0,.55)',
+    routeHalo: 'rgba(255,255,255,.9)',
   },
 } as const;
 
+/** The user-location pin and the default pin colour (content: the map's own blue, not the theme accent). */
+export const TILE_MAP_USER_BLUE = '#0a84ff';
+/** Callout bubble over a pin (content). */
+const CALLOUT_FILL = '#1c1c1e';
+
+const tileMapVars = (scheme: 'dark' | 'light') =>
+  Object.fromEntries(Object.entries(TILE_MAP_COLORS[scheme]).map(([k, v]) => ['--tile-map-' + k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()), v])) as CSSProperties;
+
+/* Map chrome, painted from the --tile-map-* colours of the current tile set. */
+const CHROME = {
+  root: 'bg-(--tile-map-backdrop) text-(--tile-map-ink)',
+  label: 'text-(--tile-map-label) [text-shadow:0_0_2px_var(--tile-map-label-halo),0_0_4px_var(--tile-map-label-halo),0_1px_3px_var(--tile-map-label-halo-soft)]',
+  glass: 'border-(--tile-map-glass-border) bg-(--tile-map-glass) text-(--tile-map-ink) shadow-[0_6px_18px_var(--tile-map-glass-shadow)]',
+  control: 'text-(--tile-map-ink)',
+  hover: 'data-hovered:bg-(--tile-map-glass-hover)',
+  divider: 'border-t-(--tile-map-divider)',
+  attribution: 'bg-(--tile-map-attribution) text-(--tile-map-attribution-ink)',
+};
+
 const CONTROL =
-  'grid size-10 cursor-pointer place-items-center p-0 [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--primary)]';
+  'grid size-10 cursor-pointer place-items-center p-0 [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary';
 const PIN_SHADOW_RAISED = 'shadow-[0_4px_12px_rgba(0,0,0,.5),0_0_0_1px_rgba(0,0,0,.25)]';
 
 const FLY_MS = 900;
@@ -386,7 +416,7 @@ export function TileMap({
 
   const z = Math.round(cam.zoom);
   const ordered = [...pins].sort((a, b) => Number(a.selected ?? false) - Number(b.selected ?? false));
-  const tone = SCHEME[scheme];
+  const tone = CHROME;
   const routePoints = route?.points.map((p) => { const s = toScreen(p); return `${s.x},${s.y}`; }).join(' ');
 
   return (
@@ -401,7 +431,7 @@ export function TileMap({
         tone.root,
         className,
       )}
-      style={style}
+      style={{ ...tileMapVars(scheme), '--tile-map-callout': CALLOUT_FILL, '--tile-map-user': TILE_MAP_USER_BLUE, ...style } as CSSProperties}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerEnd}
@@ -416,7 +446,7 @@ export function TileMap({
       </div>
       {measured && route && route.points.length > 1 && (
         <svg data-slot="tile-map-route" className="pointer-events-none absolute inset-0 overflow-visible" width={size.width} height={size.height} aria-hidden>
-          <polyline fill="none" stroke={tone.halo} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" points={routePoints} />
+          <polyline fill="none" stroke={TILE_MAP_COLORS[scheme].routeHalo} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" points={routePoints} />
           <polyline
             fill="none"
             strokeWidth={4.5}
@@ -447,7 +477,7 @@ export function TileMap({
                 )}
                 style={{
                   transform: `translate3d(${s.x}px, ${s.y}px, 0)`,
-                  '--ck-pin-color': pin.color ?? (kind === 'stop' ? 'var(--primary)' : '#0a84ff'),
+                  '--ck-pin-color': pin.color ?? (kind === 'stop' ? 'var(--primary)' : TILE_MAP_USER_BLUE),
                 } as CSSProperties}
                 aria-label={pin.label ?? pin.id}
                 onClick={(e) => {
@@ -456,7 +486,7 @@ export function TileMap({
                 }}
               >
                 {pin.callout != null && (
-                  <span className="pointer-events-auto absolute bottom-[23px] left-1/2 [transform:translateX(-50%)] rounded-[10px] bg-[#1c1c1e] px-2.5 py-[5px] text-[13px] leading-[1.1] font-bold tracking-[-.01em] whitespace-nowrap text-white shadow-[0_4px_12px_rgba(0,0,0,.25)] after:absolute after:-bottom-[5px] after:left-1/2 after:size-2.5 after:[transform:translateX(-50%)_rotate(45deg)] after:rounded-[2px] after:bg-inherit">
+                  <span className="pointer-events-auto absolute bottom-[23px] left-1/2 [transform:translateX(-50%)] rounded-[10px] bg-(--tile-map-callout) px-2.5 py-[5px] text-[13px] leading-[1.1] font-bold tracking-[-.01em] whitespace-nowrap text-white shadow-[0_4px_12px_rgba(0,0,0,.25)] after:absolute after:-bottom-[5px] after:left-1/2 after:size-2.5 after:[transform:translateX(-50%)_rotate(45deg)] after:rounded-[2px] after:bg-inherit">
                     {pin.callout}
                   </span>
                 )}
@@ -465,7 +495,7 @@ export function TileMap({
                   className={cn(
                     'pointer-events-auto grid shrink-0 place-items-center rounded-[50%] border-solid border-white [transition:transform_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),box-shadow_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-[:hover]/pin:[transform:scale(1.18)] motion-reduce:[transition:none]',
                     user
-                      ? '-mt-[9px] size-[18px] animate-[ck-tile-map-pulse_2.4s_ease-out_infinite] border-3 bg-[#0a84ff] shadow-[0_0_0_6px_rgba(10,132,255,.22),0_2px_6px_rgba(0,0,0,.45)] motion-reduce:animate-none'
+                      ? '-mt-[9px] size-[18px] animate-[ck-tile-map-pulse_2.4s_ease-out_infinite] border-3 bg-(--tile-map-user) shadow-[0_0_0_6px_color-mix(in_srgb,var(--tile-map-user)_22%,transparent),0_2px_6px_rgba(0,0,0,.45)] motion-reduce:animate-none'
                       : cn(
                           '-mt-[15px] size-[30px] border-[2.5px] bg-(--ck-pin-color) shadow-[0_2px_6px_rgba(0,0,0,.45),0_0_0_1px_rgba(0,0,0,.25)]',
                           'group-[:hover]/pin:shadow-[0_4px_12px_rgba(0,0,0,.5),0_0_0_1px_rgba(0,0,0,.25)]',

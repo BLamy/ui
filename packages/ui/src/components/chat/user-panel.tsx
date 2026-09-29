@@ -10,7 +10,7 @@ import { cn } from '../../lib/utils';
        <UserPanelName>Ada</UserPanelName>
        <UserPanelStatus status="online" />
      </UserPanelInfo>
-     <UserPanelAction aria-label="Notifications"><ChatIcon d={chatIconPaths.bell} size={14} /></UserPanelAction>
+     <UserPanelAction aria-label="Notifications"><Icon name="bell-simple" size={14} sw={1.9} /></UserPanelAction>
    </UserPanel> */
 
 export function UserPanel({ className, ...props }: ComponentProps<'div'>) {

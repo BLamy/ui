@@ -1,9 +1,10 @@
 import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
-import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { Icon } from '../../lib/icon';
 import { useOptionalChatShell } from '../../lib/chat/chat-shell-context';
 import { Haptics } from '../../lib/haptics';
 import { cn } from '../../lib/utils';
+import { cva } from 'class-variance-authority';
 
 /* ══ Channel navigation ══
    <ChannelList selectedKey onSelectionChange>
@@ -66,6 +67,29 @@ function MentionPill({ n }: { n: number }) {
   );
 }
 
+/** A channel row: the selected one on the stronger fill; selected or unread rows bold. */
+export const channelItemVariants = cva(
+  'flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 px-[8px] py-[5px] text-left font-ios text-[13.5px] [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
+  {
+    variants: {
+      active: { true: 'bg-secondary-strong', false: 'bg-transparent data-hovered:bg-accent' },
+      emphasized: { true: 'font-[650] text-foreground', false: 'font-normal text-muted-foreground' },
+    },
+    defaultVariants: { active: false, emphasized: false },
+  },
+);
+
+/** An indented thread row under its channel. */
+export const channelThreadItemVariants = cva(
+  'flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 py-[3px] pr-[8px] pl-[24px] text-left font-ios text-[12px]',
+  {
+    variants: {
+      active: { true: 'bg-secondary font-semibold text-foreground', false: 'bg-transparent text-tertiary-foreground data-hovered:text-muted-foreground' },
+    },
+    defaultVariants: { active: false },
+  },
+);
+
 export interface ChannelItemProps extends Omit<ComponentProps<typeof Button>, 'id' | 'children'> {
   id: string;
   children?: ReactNode;
@@ -96,16 +120,11 @@ export function ChannelItem({ id, icon, unread, mentions, isActive, className, c
         shell?.setNavOpen(false);
       }}
       className={composeRenderProps(className, (c) =>
-        cn(
-          'flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 px-[8px] py-[5px] text-left font-ios text-[13.5px] [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
-          on ? 'bg-secondary-strong' : 'bg-transparent data-hovered:bg-accent',
-          on || unread ? 'font-[650] text-foreground' : 'font-normal text-muted-foreground',
-          c,
-        ),
+        cn(channelItemVariants({ active: on, emphasized: on || !!unread }), c),
       )}
       {...props}
     >
-      <span className="grid text-tertiary-foreground">{icon ?? <ChatIcon d={chatIconPaths.hash} size={13} sw={2} />}</span>
+      <span className="grid text-tertiary-foreground">{icon ?? <Icon name="number" size={13} sw={2} />}</span>
       <span className="flex-1 truncate">{children}</span>
       {mentions ? <MentionPill n={mentions} /> : unread && !on && <span className="size-[7px] rounded-[50%] bg-primary" />}
     </Button>
@@ -132,11 +151,7 @@ export function ChannelThreadItem({ isActive, className, children, onPress, ...p
         shell?.setNavOpen(false);
       }}
       className={composeRenderProps(className, (c) =>
-        cn(
-          'flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 py-[3px] pr-[8px] pl-[24px] text-left font-ios text-[12px]',
-          isActive ? 'bg-secondary font-semibold text-foreground' : 'bg-transparent text-tertiary-foreground data-hovered:text-muted-foreground',
-          c,
-        ),
+        cn(channelThreadItemVariants({ active: !!isActive }), c),
       )}
       {...props}
     >

@@ -1,13 +1,13 @@
 import { createContext, useContext, useState, type ComponentProps, type ReactNode } from 'react';
 import { Button, Input, composeRenderProps } from 'react-aria-components';
-import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { Icon } from '../../lib/icon';
 import { Haptics } from '../../lib/haptics';
 import { cn } from '../../lib/utils';
 
 /* ══ ChatComposer — the message field ══
    <ChatComposer onSend={send} placeholder="Message #dev" />      // input + send button
    <ChatComposer onSend={send}>                                  // or compose it
-     <ChatComposerAction aria-label="Attach"><ChatIcon d={chatIconPaths.plus} /></ChatComposerAction>
+     <ChatComposerAction aria-label="Attach"><Icon name="plus" size={16} sw={1.9} /></ChatComposerAction>
      <ChatComposerInput placeholder="Message #dev" />
      <ChatComposerSend />
    </ChatComposer>
@@ -110,7 +110,7 @@ export function ChatComposerSend({ className, children, ...props }: ChatComposer
       )}
       {...props}
     >
-      {children ?? <ChatIcon d={chatIconPaths.send} size={15} sw={2.2} />}
+      {children ?? <Icon name="arrow-up-compact" size={15} sw={2.2} />}
     </Button>
   );
 }

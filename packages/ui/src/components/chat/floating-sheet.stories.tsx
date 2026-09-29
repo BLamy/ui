@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from './floating-sheet';
 import { ProgressStepper } from './progress-stepper';
-import { KFONT } from '../../lib/chat/chat-tokens';
 import '../../styles.css';
 
 interface Args {
@@ -17,24 +16,20 @@ interface Args {
   defaultOpen: boolean;
 }
 
+/** The host page behind the sheet (artwork: a dark or light wash with its own ink). */
+const HOST_ART = {
+  dark: { background: 'radial-gradient(circle at 30% 20%, #2b2f4a, #0f1017 60%)', color: '#f5f5f7' },
+  light: { background: 'radial-gradient(circle at 30% 20%, #fff4e6, #e8ecf3 60%)', color: '#1c1c1e' },
+} as const;
+/** Placeholder rows in the body (content). */
+const ROW_FILL = 'rgba(120,120,128,.14)';
+
 function Host({ tone }: { tone: FloatingSheetTone }) {
-  const dark = tone !== 'light';
   return (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        padding: 24,
-        boxSizing: 'border-box',
-        background: dark
-          ? 'radial-gradient(circle at 30% 20%, #2b2f4a, #0f1017 60%)'
-          : 'radial-gradient(circle at 30% 20%, #fff4e6, #e8ecf3 60%)',
-        color: dark ? '#f5f5f7' : '#1c1c1e',
-      }}
-    >
-      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.08em', opacity: 0.6 }}>HOST CONTENT</div>
-      <h1 style={{ margin: '8px 0 12px', fontSize: 26 }}>Anything positioned</h1>
-      <p style={{ maxWidth: 320, lineHeight: 1.5, opacity: 0.75 }}>
+    <div className="absolute inset-0 box-border p-6" style={HOST_ART[tone === 'light' ? 'light' : 'dark']}>
+      <div className="text-[12px] font-bold tracking-[.08em] opacity-60">HOST CONTENT</div>
+      <h1 className="mt-2 mb-3 text-[26px]">Anything positioned</h1>
+      <p className="max-w-[320px] leading-[1.5] opacity-75">
         The sheet is a pointer-transparent layer over this box. Drag its cap up to grow it into the full page, or down to fold it away.
       </p>
     </div>
@@ -43,7 +38,7 @@ function Host({ tone }: { tone: FloatingSheetTone }) {
 
 function Demo(args: Args) {
   return (
-    <div style={{ position: 'relative', width: args.width, height: args.height, overflow: 'hidden', fontFamily: KFONT }}>
+    <div className="relative overflow-hidden font-ios" style={{ width: args.width, height: args.height }}>
       <Host tone={args.tone} />
       <FloatingSheet
         appearance={args.appearance}
@@ -57,8 +52,8 @@ function Demo(args: Args) {
         label="Details"
       >
         <FloatingSheet.Body>
-          <div style={{ padding: '4px 20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <h2 style={{ margin: 0, fontSize: 22 }}>Preparing your order</h2>
+          <div className="flex flex-col gap-3.5 px-5 pt-1 pb-6">
+            <h2 className="m-0 text-[22px]">Preparing your order</h2>
             <ProgressStepper
               current={1}
               steps={[
@@ -70,14 +65,14 @@ function Demo(args: Args) {
               labels
             />
             {Array.from({ length: 6 }, (_, i) => (
-              <div key={i} style={{ height: 72, borderRadius: 14, background: 'rgba(120,120,128,.14)' }} />
+              <div key={i} className="h-[72px] rounded-[14px]" style={{ background: ROW_FILL }} />
             ))}
           </div>
         </FloatingSheet.Body>
         {args.withFoot && (
           <FloatingSheet.Foot>
-            <div style={{ padding: '10px 16px 16px', display: 'flex', gap: 10 }}>
-              <button type="button" style={{ flex: 1, height: 44, border: 0, borderRadius: 999, background: 'var(--primary)', color: '#fff', fontWeight: 700, font: 'inherit' }}>
+            <div className="flex gap-2.5 px-4 pt-2.5 pb-4">
+              <button type="button" className="h-11 flex-1 rounded-full border-0 bg-primary [font:inherit] text-white">
                 Continue
               </button>
             </div>

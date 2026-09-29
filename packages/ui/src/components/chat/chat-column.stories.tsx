@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '../workbench/composer';
 import '../../styles.css';
 import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from './chat-column';
-import { K, KFONT } from '../../lib/chat/chat-tokens';
+import { ThemeScope } from '../../lib/theme';
 
 /* The chat composer: the Workbench Composer parts, trimmed to editor + send. */
 function ChatComposer({ placeholder, onSubmit }: { placeholder: string; onSubmit?: () => void }) {
@@ -29,21 +29,22 @@ const meta: Meta<typeof ChatColumn> = {
 export default meta;
 type Story = StoryObj<typeof ChatColumn>;
 
+/** A ChatColumn on a plain page: the transcript on the dark chat palette, the Workbench Composer in the `glass`
+    scope (as ArtifactChatContainer docks it). */
 export const Default: Story = {
   render: () => (
-    <div
-      className="ck-artifact-chat relative isolate min-h-0 min-w-0 overflow-hidden bg-[color:var(--background)] text-[color:var(--foreground)]"
-      style={{ width: 400, height: 560, display: 'flex', borderRadius: 18, fontFamily: KFONT }}
-    >
-      <ChatColumn style={{ flex: 1 }}>
+    <div className="relative isolate flex h-[560px] w-[400px] min-h-0 min-w-0 overflow-hidden rounded-[18px] bg-background font-ios text-foreground">
+      <ChatColumn className="flex-1">
         <ChatColumnTranscript>
-          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 14, padding: 18, background: K.bg, color: K.label, boxSizing: 'border-box' }}>
-            <div style={{ fontSize: 13.5 }}>Which region moved the most against last month?</div>
-            <div style={{ fontSize: 13.5, color: K.mut }}>Northeast — up 6.1 points.</div>
-          </div>
+          <ThemeScope scope="chat" appearance="dark" className="box-border flex h-full flex-col justify-end gap-3.5 bg-background p-[18px] text-foreground">
+            <div className="text-[13.5px]">Which region moved the most against last month?</div>
+            <div className="text-[13.5px] text-muted-foreground">Northeast — up 6.1 points.</div>
+          </ThemeScope>
         </ChatColumnTranscript>
         <ChatColumnComposer>
-          <ChatComposer placeholder="Reply…" />
+          <ThemeScope scope="glass" appearance="dark" className="min-w-0">
+            <ChatComposer placeholder="Reply…" />
+          </ThemeScope>
         </ChatColumnComposer>
       </ChatColumn>
     </div>

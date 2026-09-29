@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chatTokens } from '../../lib/chat/chat-tokens';
-import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { Icon } from '../../lib/icon';
 import { ChatUsersProvider } from '../../lib/chat/chat-users';
 import {
   Message,
@@ -19,7 +18,7 @@ import {
 } from './message';
 import { MessageGroup } from './message-list';
 import { ThreadPreview, ThreadPreviewReply } from './thread-preview';
-import { USERS } from './chat.fixtures';
+import { USERS, ChatFrame } from './chat.fixtures';
 import '../../styles.css';
 
 interface Reaction {
@@ -73,7 +72,7 @@ function Row({ user, time, text, reactions: initial, thread }: Args) {
           👍
         </MessageAction>
         <MessageAction label={thread ? 'Open thread' : 'Start thread'}>
-          <ChatIcon d={chatIconPaths.thread} size={14} />
+          <Icon name="text-bubble" size={14} sw={1.9} />
         </MessageAction>
       </MessageActions>
     </Message>
@@ -95,18 +94,9 @@ const meta: Meta<Args> = {
   decorators: [
     (Story) => (
       <ChatUsersProvider users={USERS}>
-        <div
-          style={{
-            width: 560,
-            padding: '24px 0',
-            background: chatTokens.bg,
-            color: chatTokens.label,
-            colorScheme: 'dark',
-            borderRadius: 12,
-          }}
-        >
+        <ChatFrame className="w-[560px] rounded-[12px] py-6">
           <Story />
-        </div>
+        </ChatFrame>
       </ChatUsersProvider>
     ),
   ],

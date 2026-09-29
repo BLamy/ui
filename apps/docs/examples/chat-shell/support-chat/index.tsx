@@ -2,8 +2,7 @@ import { useState, type ReactNode } from 'react'
 import {
   ChatAvatar,
   ChatComposer,
-  ChatIcon,
-  chatIconPaths,
+  Icon,
   ChatShell,
   ChatShellDescription,
   ChatShellFooter,
@@ -80,7 +79,7 @@ export default function SupportChat() {
               </ChatShellDescription>
               <ChatShellHeaderActions>
                 <ChatShellHeaderAction aria-label="Close">
-                  <ChatIcon d={chatIconPaths.x} size={15} />
+                  <Icon name="xmark-large" size={15} sw={1.9} />
                 </ChatShellHeaderAction>
               </ChatShellHeaderActions>
             </ChatShellHeader>

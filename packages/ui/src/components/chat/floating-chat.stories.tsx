@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '../workbench/composer';
 import '../../styles.css';
 import { FloatingChat, type FloatingChatFabPosition } from './floating-chat';
-import { K, KFONT } from '../../lib/chat/chat-tokens';
+import { ThemeScope } from '../../lib/theme';
 
 /* The chat composer: the Workbench Composer parts, trimmed to editor + send. */
 function ChatComposer({ placeholder, onSubmit }: { placeholder: string; onSubmit?: () => void }) {
@@ -39,14 +39,18 @@ const LINES = [
   ['BL UI', 'The map — attribution and a light tile set are still open.'],
 ];
 
+/** The assistant's name colour (content). */
+const ASSISTANT_INK = '#68A7FF';
+
 function Transcript() {
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto', padding: '18px 18px 12px', color: 'inherit' }}>
+    <div className="flex h-full flex-col overflow-auto px-[18px] pt-[18px] pb-3 text-inherit">
       {LINES.map(([author, copy], index) => (
         // The newest lines hug the composer so they are what peeks out of the closed chat.
-        <div key={copy} style={{ marginBottom: 16, marginTop: index === 0 ? 'auto' : undefined }}>
-          <div style={{ color: index % 2 ? '#68A7FF' : 'var(--muted-foreground)', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{author}</div>
-          <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>{copy}</div>
+        <div key={copy} className={index === 0 ? 'mt-auto mb-4' : 'mb-4'}>
+          {/* The user's name takes the bump's own text colour. */}
+          <div className="mb-1 text-[12px] font-bold" style={index % 2 ? { color: ASSISTANT_INK } : undefined}>{author}</div>
+          <div className="text-[13.5px] leading-[1.5]">{copy}</div>
         </div>
       ))}
     </div>
@@ -56,23 +60,23 @@ function Transcript() {
 function Demo(args: Args) {
   const scrollRef = useRef<HTMLDivElement>(null);
   return (
-    <div style={{ position: 'relative', width: args.width, height: args.height, overflow: 'hidden', fontFamily: KFONT, background: K.bg, color: K.label }}>
+    <ThemeScope scope="chat" appearance="dark" className="relative overflow-hidden bg-background font-ios text-foreground" style={{ width: args.width, height: args.height }}>
       {/* Any scrolling host: the chat follows its scroll direction like a TabBar. */}
-      <div ref={scrollRef} style={{ position: 'absolute', inset: 0, overflow: 'auto', padding: 20, boxSizing: 'border-box' }}>
-        <h1 style={{ margin: '4px 0 16px', fontSize: 24 }}>Release notes</h1>
+      <div ref={scrollRef} className="absolute inset-0 box-border overflow-auto p-5">
+        <h1 className="mt-1 mb-4 text-[24px]">Release notes</h1>
         {Array.from({ length: 14 }, (_, i) => (
-          <div key={i} style={{ height: 88, marginBottom: 12, borderRadius: 14, background: 'rgba(255,255,255,.06)' }} />
+          <div key={i} className="mb-3 h-[88px] rounded-[14px] bg-white/6" />
         ))}
       </div>
       <FloatingChat peek={args.peek} working={args.working} fabPosition={args.fabPosition} tone={args.tone} scrollRef={scrollRef}>
         <FloatingChat.Chat><Transcript /></FloatingChat.Chat>
         <FloatingChat.Composer>
-          <div style={{ padding: 8 }}>
+          <div className="p-2">
             <ChatComposer placeholder="Ask about this page" />
           </div>
         </FloatingChat.Composer>
       </FloatingChat>
-    </div>
+    </ThemeScope>
   );
 }
 

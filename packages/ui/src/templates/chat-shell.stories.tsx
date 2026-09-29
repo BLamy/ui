@@ -17,8 +17,7 @@ import {
   ChatShellTitle,
   useChatShell,
 } from './chat-shell';
-import { ChatIcon, chatIconPaths } from '../lib/chat/chat-icon';
-import { chatTokens as K, KFONT } from '../lib/chat/chat-tokens';
+import { Icon } from '../lib/icon';
 import { ChatUsersProvider, type ChatUser } from '../lib/chat/chat-users';
 import { ChatAvatar } from '../components/chat/chat-avatar';
 import { ChannelGroup, ChannelItem, ChannelList } from '../components/chat/channel-list';
@@ -41,7 +40,7 @@ interface FrameArgs {
 function Frame({ width, height, children }: { width: number; height: number; children: ReactNode }) {
   return (
     <ChatUsersProvider users={USERS}>
-      <div style={{ width, height, overflow: 'hidden' }}>{children}</div>
+      <div className="overflow-hidden" style={{ width, height }}>{children}</div>
     </ChatUsersProvider>
   );
 }
@@ -49,30 +48,20 @@ function Frame({ width, height, children }: { width: number; height: number; chi
 function DemoMain() {
   const { width, compact, setNavOpen } = useChatShell();
   return (
-    <ChatShellMain style={{ fontFamily: KFONT }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 9,
-          padding: '0 16px',
-          height: 46,
-          borderBottom: '1px solid ' + K.sep,
-          flexShrink: 0,
-        }}
-      >
+    <ChatShellMain className="font-ios">
+      <div className="flex h-[46px] shrink-0 items-center gap-[9px] border-b border-border px-4">
         {compact && (
           <button
             onClick={() => setNavOpen(true)}
             aria-label="Channels"
-            style={{ border: 0, background: 'none', color: K.mut, cursor: 'pointer', padding: 4, display: 'grid' }}
+            className="grid cursor-pointer border-0 bg-transparent p-1 text-muted-foreground"
           >
-            <ChatIcon d={chatIconPaths.menu} size={17} sw={2} />
+            <Icon name="line-3-horizontal" size={17} sw={2} />
           </button>
         )}
-        <span style={{ fontSize: 14, fontWeight: 750 }}>Main slot</span>
+        <span className="text-[14px] font-[750]">Main slot</span>
       </div>
-      <div style={{ flex: 1, display: 'grid', placeItems: 'center', color: K.mut, fontSize: 13 }}>
+      <div className="grid flex-1 place-items-center text-[13px] text-muted-foreground">
         container width {width}px · {compact ? 'compact (drawer nav)' : 'wide (docked rail + nav)'}
       </div>
     </ChatShellMain>
@@ -215,7 +204,7 @@ export const ThreadPanel: Story = {
           <Conversation name="design">
             <ChatShellHeaderActions>
               <ChatShellHeaderAction aria-label="Thread" isActive={open} onPress={() => setOpen(!open)}>
-                <ChatIcon d={chatIconPaths.thread} size={16} />
+                <Icon name="text-bubble" size={16} sw={1.9} />
               </ChatShellHeaderAction>
             </ChatShellHeaderActions>
           </Conversation>

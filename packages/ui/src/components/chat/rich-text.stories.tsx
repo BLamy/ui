@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chatTokens, KFONT } from '../../lib/chat/chat-tokens';
 import { RichText } from './rich-text';
-import { USERS } from './chat.fixtures';
+import { USERS, ChatFrame } from './chat.fixtures';
 import '../../styles.css';
 
 const meta: Meta<typeof RichText> = {
@@ -9,21 +8,9 @@ const meta: Meta<typeof RichText> = {
   component: RichText,
   decorators: [
     (Story) => (
-      <div
-        style={{
-          width: 420,
-          padding: 24,
-          background: chatTokens.bg,
-          color: chatTokens.label,
-          colorScheme: 'dark',
-          fontFamily: KFONT,
-          fontSize: 13.5,
-          lineHeight: 1.55,
-          borderRadius: 12,
-        }}
-      >
+      <ChatFrame className="w-[420px] rounded-[12px] p-6 font-ios text-[13.5px] leading-[1.55]">
         <Story />
-      </div>
+      </ChatFrame>
     ),
   ],
 };

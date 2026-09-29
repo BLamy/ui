@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import {
   ChatComposer,
-  ChatIcon,
-  chatIconPaths,
+  Icon,
   ChatShell,
   ChatShellDescription,
   ChatShellFooter,
@@ -123,7 +122,7 @@ export default function ThreadPanel() {
                       label="Open thread"
                       onPress={() => setOpen(true)}
                     >
-                      <ChatIcon d={chatIconPaths.thread} size={14} />
+                      <Icon name="text-bubble" size={14} sw={1.9} />
                     </MessageAction>
                   </MessageActions>
                 </Message>

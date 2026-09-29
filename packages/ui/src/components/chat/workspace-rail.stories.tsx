@@ -1,25 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chatLightTokens, chatTokens, chatVars } from '../../lib/chat/chat-tokens';
 import { WorkspaceRail, WorkspaceRailAction, WorkspaceRailHome, WorkspaceRailItem, WorkspaceRailList, WorkspaceRailSeparator } from './workspace-rail';
+import { ChatFrame } from './chat.fixtures';
 import '../../styles.css';
 
 const meta: Meta = {
   title: 'Organisms/WorkspaceRail',
   decorators: [
     (Story) => (
-      <div
-        style={{
-          width: 200,
-          height: 480,
-          background: chatTokens.bg,
-          color: chatTokens.label,
-          colorScheme: 'dark',
-          display: 'flex',
-          overflow: 'hidden',
-        }}
-      >
+      <ChatFrame className="flex h-[480px] w-[200px] overflow-hidden">
         <Story />
-      </div>
+      </ChatFrame>
     ),
   ],
 };
@@ -90,25 +80,14 @@ export const DiscordStyle: Story = {
   render: () => <Rail defaultSelectedKey="blui" home={{ mentions: 2 }} workspaces={discord} />,
 };
 
-/** The same rail on the light chat tokens (`chatVars('light')`). */
+/** The same rail in the light chat scope. */
 export const DiscordStyleLight: Story = {
   render: () => <Rail defaultSelectedKey="blui" home={{ mentions: 2 }} workspaces={discord} />,
   decorators: [
     (Story) => (
-      <div
-        data-appearance="light"
-        style={{
-          ...chatVars('light'),
-          width: 200,
-          height: 480,
-          background: chatLightTokens.bg,
-          color: chatLightTokens.label,
-          colorScheme: 'light',
-          display: 'flex',
-        }}
-      >
+      <ChatFrame appearance="light" className="flex h-[480px] w-[200px]">
         <Story />
-      </div>
+      </ChatFrame>
     ),
   ],
 };

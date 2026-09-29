@@ -2,7 +2,8 @@ import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type R
 import { cn } from '../../lib/utils';
 import { Haptics } from '../../lib/haptics';
 import { springs, useReducedMotion } from '../../lib/motion';
-import { useAppearance } from '../../lib/theme';
+import { themeScopeProps, useAppearance } from '../../lib/theme';
+import { cva } from 'class-variance-authority';
 import { Button } from 'react-aria-components';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from '../../components/chat/floating-sheet';
@@ -81,16 +82,27 @@ const GIFT_CARDS = [
 /** `font: inherit` for buttons, leaving size and weight to the caller. */
 const FONT_INHERIT = '[font-family:inherit] [font-style:inherit] [font-variant:inherit] [font-stretch:inherit] leading-[inherit]';
 const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
-const MAP_BUTTON = cn(
-  'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-white p-0 text-[15px] font-semibold text-[#191919] shadow-[0_2px_10px_rgba(0,0,0,.14),0_0_0_1px_rgba(0,0,0,.04)] data-hovered:bg-[#f6f6f8]',
-  FONT_INHERIT,
-  FOCUS_RING,
+/** The round buttons over the map: the tone's card with a soft lift. */
+const mapButtonVariants = cva(
+  cn(
+    'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-card p-0 text-[15px] font-semibold text-foreground data-hovered:bg-popover',
+    FONT_INHERIT,
+    FOCUS_RING,
+  ),
+  {
+    variants: {
+      tone: {
+        light: 'shadow-[0_2px_10px_--alpha(var(--color-black)/14%),0_0_0_1px_--alpha(var(--color-black)/4%)]',
+        dark: 'shadow-[0_2px_10px_--alpha(var(--color-black)/40%),0_0_0_1px_--alpha(var(--color-white)/8%)]',
+      },
+    },
+    defaultVariants: { tone: 'light' },
+  },
 );
-const MAP_BUTTON_DARK = cn(
-  'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-[#1c1c1e] p-0 text-[15px] font-semibold text-[#f5f5f7] shadow-[0_2px_10px_rgba(0,0,0,.4),0_0_0_1px_rgba(255,255,255,.08)] data-hovered:bg-[#2c2c2e]',
-  FONT_INHERIT,
-  FOCUS_RING,
-);
+/** The store's brand colour (content; the `accent` prop overrides it). */
+const DELIVERY_ACCENT = '#eb1700';
+/** The courier's pin and the route line, per basemap (content, like the tiles). */
+const DELIVERY_MAP_INK = { dark: { car: '#3a3a3c', route: '#f5f5f7' }, light: { car: '#1c1c1e', route: '#1c1c1e' } } as const;
 const ACTION_BUTTON = cn(
   'inline-flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[999px] border-0 px-3.5 py-0 text-[15px] font-bold [transition:transform_var(--duration-spring-snappy)_var(--ease-spring-snappy),filter_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-pressed:[transform:scale(.97)]',
   FONT_INHERIT,
@@ -165,7 +177,7 @@ export function DeliveryTrackingDemo({
   appearance = 'sheet',
   tone: toneProp,
   gutter = 0,
-  accent = '#eb1700',
+  accent = DELIVERY_ACCENT,
   onClose,
   className,
   style,
@@ -173,7 +185,9 @@ export function DeliveryTrackingDemo({
   const ambient = useAppearance();
   const tone: FloatingSheetTone = toneProp ?? ambient ?? 'light';
   const dark = tone === 'dark';
-  const mapButton = dark ? MAP_BUTTON_DARK : MAP_BUTTON;
+  const scheme = dark ? 'dark' : 'light';
+  const mapButton = mapButtonVariants({ tone: scheme });
+  const scope = themeScopeProps({ scope: 'sheet', appearance: scheme });
   const [uncontrolledStage, setUncontrolledStage] = useState(1);
   const stageIndex = Math.max(0, Math.min(DELIVERY_STAGES.length - 1, controlledStage ?? uncontrolledStage));
   const stage = DELIVERY_STAGES[stageIndex];
@@ -209,9 +223,9 @@ export function DeliveryTrackingDemo({
     { id: 'store', position: STORE, kind: 'place', icon: 'store', color: accent, label: STORE_NAME },
     ...(arrived
       ? []
-      : [{ id: 'car', position: car, kind: 'place' as const, icon: 'car' as const, color: dark ? '#3a3a3c' : '#1c1c1e', callout: `${etaMinutes} min` }]),
+      : [{ id: 'car', position: car, kind: 'place' as const, icon: 'car' as const, color: DELIVERY_MAP_INK[scheme].car, callout: `${etaMinutes} min` }]),
   ];
-  const route: MapRoute = { points: ROUTE, color: dark ? '#f5f5f7' : '#1c1c1e' };
+  const route: MapRoute = { points: ROUTE, color: DELIVERY_MAP_INK[scheme].route };
 
   const steps: ProgressStep[] = DELIVERY_STAGES.map((s, i) => ({ id: s.id, label: s.step, icon: <Icon name={STEP_ICONS[i]} size={16} /> }));
 
@@ -221,12 +235,12 @@ export function DeliveryTrackingDemo({
     <div
       data-slot="delivery-tracking-demo"
       data-stage={stage.id}
+      data-theme-scope={scope['data-theme-scope']}
       className={cn(
         'relative h-full min-h-0 w-full overflow-hidden',
-        dark
-          ? 'bg-[#0d0f14] text-[#f5f5f7] scheme-dark [--background:#000] [--card:#1c1c1e] [--popover:#2c2c2e] [--foreground:#f5f5f7] [--muted-foreground:rgba(235,235,245,.62)] [--tertiary-foreground:rgba(235,235,245,.32)] [--border:rgba(84,84,88,.6)] [--secondary:rgba(120,120,128,.24)]'
-          : 'bg-[#eef0f3] text-[#191919] scheme-light [--background:#f2f2f7] [--card:#fff] [--popover:#f4f4f6] [--foreground:#191919] [--muted-foreground:rgba(60,60,67,.62)] [--tertiary-foreground:rgba(60,60,67,.32)] [--border:rgba(60,60,67,.16)] [--secondary:rgba(120,120,128,.14)]',
-        '[--primary:var(--ck-delivery-accent,#eb1700)]',
+        // The tone's `sheet` scope for the chrome over the map; the store's accent is the primary.
+        scope.className,
+        'text-foreground [--primary:var(--ck-delivery-accent)]',
         MAP_FONT,
         className,
       )}
@@ -319,7 +333,7 @@ export function DeliveryTrackingDemo({
               </p>
               <div className="flex gap-2.5">
                 <Button
-                  className={cn(ACTION_BUTTON, 'bg-[color:var(--ck-delivery-accent,#eb1700)] text-white data-hovered:[filter:brightness(1.06)]')}
+                  className={cn(ACTION_BUTTON, 'bg-[color:var(--ck-delivery-accent)] text-white data-hovered:[filter:brightness(1.06)]')}
                   data-variant="primary"
                   onPress={() => {
                     Haptics.selection();
@@ -329,7 +343,7 @@ export function DeliveryTrackingDemo({
                   <Icon name="message" size={17} />
                   I'm here
                 </Button>
-                <Button className={cn(ACTION_BUTTON, 'bg-[rgba(120,120,128,.16)] text-foreground')} data-variant="secondary">
+                <Button className={cn(ACTION_BUTTON, 'bg-secondary text-foreground')} data-variant="secondary">
                   <Icon name="phone" size={17} />
                   Call store
                 </Button>
@@ -386,12 +400,12 @@ export function DeliveryTrackingDemo({
             <Button
               className={cn(
                 'm-0 mt-[18px] flex w-full cursor-pointer items-center gap-3 rounded-[14px] border-0 bg-popover px-3.5 py-3 text-left text-[15px] font-semibold text-foreground',
-                dark ? 'data-hovered:bg-[#3a3a3c]' : 'data-hovered:bg-[#ededf0]',
+                'data-hovered:bg-secondary-strong',
                 FONT_INHERIT,
               )}
               onPress={() => setOpen(true)}
             >
-              <span className={cn('grid size-8 place-items-center rounded-[50%] text-[color:var(--ck-delivery-accent,#eb1700)] shadow-[0_0_0_1px_var(--border)]', dark ? 'bg-[#1c1c1e]' : 'bg-white')}>
+              <span className={cn('grid size-8 place-items-center rounded-[50%] text-[color:var(--ck-delivery-accent)] shadow-[0_0_0_1px_var(--border)] bg-card')}>
                 <Icon name="gift" size={18} />
               </span>
               <span className="min-w-0 flex-1">Save up to $25 on gift cards</span>
@@ -403,7 +417,7 @@ export function DeliveryTrackingDemo({
                 {GIFT_CARDS.map((card) => (
                   <Button
                     key={card.id}
-                    className="flex h-[104px] w-[168px] shrink-0 cursor-pointer snap-start flex-col justify-between rounded-[14px] border-0 [background:var(--ck-gift-bg)] px-3.5 py-3 text-left [font:inherit] text-white shadow-[0_6px_18px_rgba(0,0,0,.14)]"
+                    className="flex h-[104px] w-[168px] shrink-0 cursor-pointer snap-start flex-col justify-between rounded-[14px] border-0 [background:var(--ck-gift-bg)] px-3.5 py-3 text-left [font:inherit] text-white shadow-[0_6px_18px_black] shadow-black/14"
                     style={{ '--ck-gift-bg': card.gradient } as CSSProperties}
                   >
                     <span className="text-[11px] font-bold tracking-[.06em] uppercase opacity-85">DoorDash</span>

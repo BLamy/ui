@@ -112,34 +112,23 @@ function Icon({ name, size = 16, stroke = 2 }: { name: MapIconName; size?: numbe
 
 /** `font: inherit` for buttons, leaving size, weight and line-height to the caller. */
 const FONT_INHERIT = '[font-family:inherit] [font-style:inherit] [font-variant:inherit] [font-stretch:inherit]';
-const SPINNER =
-  'inline-block size-3 animate-[ck-map-chat-spin_.8s_linear_infinite] rounded-[50%] border-2 border-[rgba(255,255,255,.18)] border-t-[#f5f5f7] align-middle';
-
-/* The demo's own chrome per appearance; dark is the original look. */
+/* The demo's own chrome, on the theme: it reads the chat's tone through `dark:` (the container's `sheet` scope and
+   the Composer's `glass` scope both carry the appearance class). */
 const CHROME = {
-  dark: {
-    spinner: SPINNER,
-    tool: 'border-[rgba(255,255,255,.07)] bg-[rgba(255,255,255,.06)]',
-    toolDone: 'bg-[rgba(48,209,88,.16)] text-[#5ad67a]',
-    toolRunning: 'bg-[rgba(10,132,255,.2)] text-[#7fb6ff]',
-    banner: 'border-[rgba(255,255,255,.12)] bg-[rgba(24,24,30,.82)] shadow-[0_8px_24px_rgba(0,0,0,.35)]',
-    bannerClose: 'bg-[rgba(255,255,255,.1)] text-[#f5f5f7] data-hovered:bg-[rgba(255,255,255,.18)]',
-    chip: 'border-[rgba(255,255,255,.14)] bg-[rgba(255,255,255,.08)] data-hovered:bg-[rgba(255,255,255,.16)]',
-    ref: 'text-white',
-  },
-  light: {
-    spinner:
-      'inline-block size-3 animate-[ck-map-chat-spin_.8s_linear_infinite] rounded-[50%] border-2 border-[rgba(0,0,0,.12)] border-t-[#1c1c1e] align-middle',
-    tool: 'border-[rgba(0,0,0,.06)] bg-[rgba(0,0,0,.035)]',
-    toolDone: 'bg-[rgba(52,199,89,.16)] text-[#1f8a3c]',
-    toolRunning: 'bg-[rgba(10,132,255,.13)] text-[#0a64d6]',
-    banner: 'border-[rgba(0,0,0,.08)] bg-[rgba(255,255,255,.88)] text-[#1c1c1e] shadow-[0_8px_24px_rgba(0,0,0,.14)]',
-    bannerClose: 'bg-[rgba(0,0,0,.06)] text-[#1c1c1e] data-hovered:bg-[rgba(0,0,0,.1)]',
-    chip: 'border-[rgba(0,0,0,.1)] bg-[rgba(255,255,255,.9)] data-hovered:bg-[rgba(0,0,0,.05)]',
-    ref: 'text-[#1c1c1e]',
-  },
+  spinner:
+    'inline-block size-3 animate-[ck-map-chat-spin_.8s_linear_infinite] rounded-[50%] border-2 border-black/12 border-t-foreground align-middle dark:border-white/18 dark:border-t-foreground',
+  tool: 'border-black/6 bg-black/3.5 dark:border-white/7 dark:bg-white/6',
+  toolDone: 'bg-success/16 text-success',
+  toolRunning: 'bg-primary/13 text-primary dark:bg-primary/20',
+  banner: 'border-black/8 bg-card/88 text-foreground shadow-[0_8px_24px_black] shadow-black/14 dark:border-white/12 dark:bg-card/82 dark:shadow-black/35',
+  bannerClose: 'bg-black/6 text-foreground data-hovered:bg-black/10 dark:bg-white/10 dark:data-hovered:bg-white/18',
+  chip: 'border-black/10 bg-white/90 data-hovered:bg-black/5 dark:border-white/14 dark:bg-white/8 dark:data-hovered:bg-white/16',
+  ref: 'text-foreground dark:text-white',
 };
-type Chrome = (typeof CHROME)['dark'];
+type Chrome = typeof CHROME;
+
+/** The basemap's backdrop behind the tiles (content: matches the tile sets). */
+const MAP_BACKDROP = { dark: '#0d0f14', light: '#eef0f3' } as const;
 
 function ToolRow({ call, chrome }: { call: ToolCallState; chrome: Chrome }) {
   const meta = TOOL_META[call.name];
@@ -183,7 +172,7 @@ export function MapChatDemo({
 }: MapChatDemoProps) {
   const ambient = useAppearance();
   const light = (appearance ?? ambient) === 'light';
-  const chrome = light ? CHROME.light : CHROME.dark;
+  const chrome = CHROME;
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -373,13 +362,13 @@ export function MapChatDemo({
             'mx-px inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border py-px pr-2 pl-1 align-baseline text-[.92em] leading-[1.35] font-semibold',
             chrome.ref,
             FONT_INHERIT,
-            'border-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_45%,transparent)] bg-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_16%,transparent)]',
-            '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:bg-[color:color-mix(in_srgb,var(--ck-ref-color,#0a84ff)_30%,transparent)]',
+            'border-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_45%,transparent)] bg-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_16%,transparent)]',
+            '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:bg-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_30%,transparent)]',
           )}
           style={{ '--ck-ref-color': meta.color } as CSSProperties}
           onPress={() => focusPlace(place)}
         >
-          <span className="grid size-4 place-items-center rounded-[50%] bg-[color:var(--ck-ref-color,#0a84ff)] text-white">
+          <span className="grid size-4 place-items-center rounded-[50%] bg-[color:var(--ck-ref-color,var(--primary))] text-white">
             <Icon name={meta.icon} size={11} stroke={2.4} />
           </span>
           {place.name}
@@ -422,9 +411,9 @@ export function MapChatDemo({
       working={working != null}
       workingLabel={working ?? undefined}
       hideOnScroll={false}
-      tone={appearance}
-      className={cn('ck-map-chat group/map-chat', className)}
-      style={style}
+      tone={light ? 'light' : 'dark'}
+      className={cn('ck-map-chat group/map-chat bg-(--map-backdrop) [&_[data-slot=artifact-chat-content]]:overflow-hidden [&_[data-slot=artifact-chat-content]]:bg-(--map-backdrop)', className)}
+      style={{ '--map-backdrop': MAP_BACKDROP[light ? 'light' : 'dark'], ...style } as CSSProperties}
     >
       <ArtifactChatContainer.Content>
         <TileMap
@@ -479,7 +468,7 @@ export function MapChatDemo({
         <div
           ref={scrollerRef}
           data-slot="map-chat-transcript"
-          className="ck-scroll box-border flex h-full min-h-0! flex-col gap-3 overflow-y-auto overscroll-contain px-3.5 pt-3.5 pb-2.5 text-[14.5px] leading-[1.45] [&>:first-child]:mt-auto"
+          className="ck-scroll box-border flex h-full min-h-0! flex-col text-foreground gap-3 overflow-y-auto overscroll-contain px-3.5 pt-3.5 pb-2.5 text-[14.5px] leading-[1.45] [&>:first-child]:mt-auto"
           aria-live="polite"
         >
           {turns.map((turn) =>

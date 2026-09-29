@@ -109,7 +109,7 @@ export const floatingChatBumpVariants = cva('ck-floating-chat__bump', {
   variants: {
     appearance: {
       glass:
-        'border-[color:rgba(var(--ck-sheet-line),.14)] bg-[color:rgba(var(--ck-sheet-surface),calc(.5_+_.4_*_var(--bump-progress,0)))] [box-shadow:inset_0_1px_0_rgba(255,255,255,.12)] backdrop-blur-[16px]',
+        'border-[color:rgba(var(--ck-sheet-line),.14)] bg-[color:rgba(var(--ck-sheet-surface),calc(.5_+_.4_*_var(--bump-progress,0)))] [box-shadow:inset_0_1px_0_color-mix(in_srgb,var(--color-white)_12%,transparent)] backdrop-blur-[16px]',
       sheet: 'border-[color:rgba(var(--ck-sheet-line),.1)] bg-(--ck-host-card)',
     },
   },

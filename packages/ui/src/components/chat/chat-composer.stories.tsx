@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chatTokens } from '../../lib/chat/chat-tokens';
-import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { Icon } from '../../lib/icon';
 import { ChatComposer, ChatComposerAction, ChatComposerInput, ChatComposerSend } from './chat-composer';
+import { ChatFrame } from './chat.fixtures';
 import '../../styles.css';
 
 interface Args {
@@ -17,18 +17,9 @@ const meta: Meta<Args> = {
   render: ({ tint, ...args }) => <ChatComposer {...args} onSend={() => {}} style={{ '--primary': tint } as CSSProperties} />,
   decorators: [
     (Story) => (
-      <div
-        style={{
-          width: 480,
-          padding: 24,
-          background: chatTokens.bg,
-          color: chatTokens.label,
-          colorScheme: 'dark',
-          borderRadius: 12,
-        }}
-      >
+      <ChatFrame className="w-[480px] rounded-[12px] p-6">
         <Story />
-      </div>
+      </ChatFrame>
     ),
   ],
 };
@@ -53,7 +44,7 @@ export const WithAction: Story = {
   render: () => (
     <ChatComposer onSend={() => {}}>
       <ChatComposerAction aria-label="Attach">
-        <ChatIcon d={chatIconPaths.plus} size={16} sw={2.2} />
+        <Icon name="plus" size={16} sw={2.2} />
       </ChatComposerAction>
       <ChatComposerInput placeholder="Message #dev" />
       <ChatComposerSend />

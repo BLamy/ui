@@ -85,7 +85,7 @@ export function ProgressStepper({
               data-slot="progress-step-icon"
               className={cn(
                 'grid size-[28px] place-items-center [transition:color_var(--duration-spring-smooth)_var(--ease-spring-smooth),transform_var(--duration-spring-bouncy)_var(--ease-spring-bouncy)] motion-reduce:transition-none',
-                state === 'todo' ? 'text-[color:var(--tertiary-foreground)]' : 'text-(--ck-stepper-accent)',
+                state === 'todo' ? 'text-tertiary-foreground' : 'text-(--ck-stepper-accent)',
                 state === 'active' && '[transform:scale(1.1)]',
               )}
               aria-hidden="true"
@@ -106,7 +106,7 @@ export function ProgressStepper({
                 labels
                   ? cn(
                       'max-w-full truncate text-[11px] font-semibold',
-                      state === 'active' ? 'text-[color:var(--foreground)]' : 'text-[color:var(--muted-foreground)]',
+                      state === 'active' ? 'text-foreground' : 'text-muted-foreground',
                     )
                   : 'sr-only'
               }

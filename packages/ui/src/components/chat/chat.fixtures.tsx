@@ -1,12 +1,25 @@
 /* Story fixtures for the chat primitives (not exported from the package). */
 import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import type { ChatUsers } from '../../lib/chat/chat-users';
-import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { Icon } from '../../lib/icon';
+import { themeScopeProps, type Appearance } from '../../lib/theme';
+import { cn } from '../../lib/utils';
 import { ChatShellSidebar } from '../../templates/chat-shell';
 import { ChatAvatar } from './chat-avatar';
 import { ChannelGroup, ChannelItem, ChannelList, ChannelThreadItem } from './channel-list';
 import { ServerHeader } from './server-header';
 import { UserPanel, UserPanelAction, UserPanelInfo, UserPanelName, UserPanelStatus } from './user-panel';
+
+/** A story frame on the chat scope (dark by default). A plain element, not a `data-slot` part, so the story
+    content keeps the page's own box model. */
+export function ChatFrame({ appearance = 'dark', className, children }: { appearance?: Appearance; className?: string; children?: ReactNode }) {
+  const scope = themeScopeProps({ scope: 'chat', appearance });
+  return (
+    <div data-theme-scope={scope['data-theme-scope']} className={cn(scope.className, 'bg-background text-foreground', className)}>
+      {children}
+    </div>
+  );
+}
 
 export const USERS: ChatUsers = {
   ada: { name: 'Ada', c: '#0A84FF', role: '#7EB6FF' },
@@ -53,7 +66,7 @@ export function FixtureUserPanel() {
         <UserPanelStatus status="online" />
       </UserPanelInfo>
       <UserPanelAction aria-label="Notifications">
-        <ChatIcon d={chatIconPaths.bell} size={14} />
+        <Icon name="bell-simple" size={14} sw={1.9} />
       </UserPanelAction>
     </UserPanel>
   );

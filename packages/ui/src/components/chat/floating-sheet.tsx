@@ -15,7 +15,7 @@ import { Haptics } from '../../lib/haptics';
 import { themeScopeClass, useAppearance, useChromeHidden } from '../../lib/theme';
 import { collectSlots, defineSlot } from '../../lib/container';
 import { springCss } from '../../lib/motion';
-import { useSheetDrag as useSpringSheetDrag } from '../../lib/sheet-drag';
+import { useSheetDrag } from '../../lib/sheet-drag';
 import { cn } from '../../lib/utils';
 
 export type FloatingSheetFabPosition =
@@ -88,9 +88,9 @@ export const floatingSheetSurfaceVariants = cva(surfaceBase, {
   variants: {
     appearance: {
       glass:
-        'border-[color:rgba(var(--ck-sheet-line),var(--ck-sheet-border-alpha,.12))] bg-[color:rgba(var(--ck-sheet-surface),var(--ck-sheet-bg-alpha,.28))] bg-[linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.018)_34%,rgba(255,255,255,.026))] [box-shadow:inset_0_1px_0_rgba(255,255,255,.14),inset_0_-1px_0_rgba(255,255,255,.03),0_2px_10px_rgba(0,0,0,.12),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]',
+        'border-[color:rgba(var(--ck-sheet-line),var(--ck-sheet-border-alpha,.12))] bg-[color:rgba(var(--ck-sheet-surface),var(--ck-sheet-bg-alpha,.28))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-white)_8%,transparent),color-mix(in_srgb,var(--color-white)_1.8%,transparent)_34%,color-mix(in_srgb,var(--color-white)_2.6%,transparent))] [box-shadow:inset_0_1px_0_color-mix(in_srgb,var(--color-white)_14%,transparent),inset_0_-1px_0_color-mix(in_srgb,var(--color-white)_3%,transparent),0_2px_10px_color-mix(in_srgb,var(--color-black)_12%,transparent),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]',
       sheet:
-        'border-[color:rgba(var(--ck-sheet-line),calc(var(--ck-sheet-border-alpha,.12)_*_.5))] bg-card [box-shadow:0_-1px_0_rgba(var(--ck-sheet-line),.04),0_2px_10px_rgba(0,0,0,.08),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]',
+        'border-[color:rgba(var(--ck-sheet-line),calc(var(--ck-sheet-border-alpha,.12)_*_.5))] bg-card [box-shadow:0_-1px_0_rgba(var(--ck-sheet-line),.04),0_2px_10px_color-mix(in_srgb,var(--color-black)_8%,transparent),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]',
     },
     placement: {
       resting: '[transform:translateX(-50%)]',
@@ -272,7 +272,7 @@ export function FloatingSheet({
   // The peek can never take more than three quarters of the host, or there is nothing to grow into.
   const peek = Math.max(0, Math.min(requestedPeek, maxReveal * 0.75));
   // The cap gesture (grow, snap, fold into the FAB) is the shared sheet drag.
-  const sheetDrag = useSpringSheetDrag({
+  const sheetDrag = useSheetDrag({
     open,
     onOpenChange: setOpen,
     peek,

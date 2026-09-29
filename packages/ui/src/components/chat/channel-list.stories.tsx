@@ -4,9 +4,8 @@ import { ChannelGroup, ChannelItem, ChannelList } from './channel-list';
 import { ChatAvatar } from './chat-avatar';
 import { ServerHeader } from './server-header';
 import { ChatShellSidebar } from '../../templates/chat-shell';
-import { chatTokens } from '../../lib/chat/chat-tokens';
 import { ChatUsersProvider } from '../../lib/chat/chat-users';
-import { FixtureSidebar, FixtureUserPanel, USERS } from './chat.fixtures';
+import { FixtureSidebar, FixtureUserPanel, USERS, ChatFrame } from './chat.fixtures';
 import '../../styles.css';
 
 /* The channel sidebar: ChatShellSidebar › ServerHeader · ChannelList (ChannelGroup › ChannelItem,
@@ -16,18 +15,9 @@ const meta: Meta = {
   decorators: [
     (Story) => (
       <ChatUsersProvider users={USERS}>
-        <div
-          style={{
-            width: 222,
-            height: 640,
-            background: chatTokens.bg,
-            color: chatTokens.label,
-            colorScheme: 'dark',
-            overflow: 'hidden',
-          }}
-        >
+        <ChatFrame className="h-[640px] w-[222px] overflow-hidden">
           <Story />
-        </div>
+        </ChatFrame>
       </ChatUsersProvider>
     ),
   ],
@@ -67,7 +57,7 @@ export const ActiveChannelThreadRows: Story = {
         onSelect={setPicked}
         onPickThread={(c, t) => setPicked(`${c} → thread ${t}`)}
         footer={
-          <div style={{ padding: '9px 12px', fontSize: 11, color: chatTokens.mut3, borderTop: '1px solid ' + chatTokens.sep }}>
+          <div className="border-t border-border px-3 py-[9px] text-[11px] text-tertiary-foreground">
             picked: {picked || '—'}
           </div>
         }

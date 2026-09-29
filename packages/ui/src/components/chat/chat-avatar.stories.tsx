@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ChatAvatar } from './chat-avatar';
-import { chatTokens } from '../../lib/chat/chat-tokens';
+import { ChatFrame } from './chat.fixtures';
 import '../../styles.css';
 
 const meta: Meta<typeof ChatAvatar> = {
@@ -8,21 +8,9 @@ const meta: Meta<typeof ChatAvatar> = {
   component: ChatAvatar,
   decorators: [
     (Story) => (
-      <div
-        style={{
-          width: 320,
-          padding: 24,
-          background: chatTokens.bg,
-          color: chatTokens.label,
-          colorScheme: 'dark',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          borderRadius: 12,
-        }}
-      >
+      <ChatFrame className="flex w-[320px] items-center gap-3 rounded-[12px] p-6">
         <Story />
-      </div>
+      </ChatFrame>
     ),
   ],
 };

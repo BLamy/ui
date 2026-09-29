@@ -6,7 +6,7 @@ import { SideDrawer } from '../components/side-drawer';
 import { useContainerWidth } from '../lib/container';
 import { Haptics } from '../lib/haptics';
 import { useAppearance, themeScopeProps, type Appearance } from '../lib/theme';
-import { ChatIcon, chatIconPaths } from '../lib/chat/chat-icon';
+import { Icon } from '../lib/icon';
 import { ChatShellContext, useChatShell, type ChatShellContextValue } from '../lib/chat/chat-shell-context';
 import { cn } from '../lib/utils';
 
@@ -139,7 +139,7 @@ export function ChatShellNavTrigger({ className, children, onPress, ...props }: 
       className={composeRenderProps(className, (c) => cn('grid cursor-pointer border-0 bg-transparent p-1 text-muted-foreground', c))}
       {...props}
     >
-      {children ?? <ChatIcon d={chatIconPaths.menu} size={17} sw={2} />}
+      {children ?? <Icon name="line-3-horizontal" size={17} sw={2} />}
     </Button>
   );
 }
@@ -176,7 +176,7 @@ export function ChatShellHeader({ className, ...props }: ComponentProps<'div'>) 
 export function ChatShellHeaderIcon({ className, children, ...props }: ComponentProps<'span'>) {
   return (
     <span data-slot="chat-shell-header-icon" className={cn('grid text-tertiary-foreground', className)} {...props}>
-      {children ?? <ChatIcon d={chatIconPaths.hash} size={15} sw={2.2} />}
+      {children ?? <Icon name="number" size={15} sw={2.2} />}
     </span>
   );
 }
@@ -254,7 +254,7 @@ export function ChatShellBack({ className, children, onPress, ...props }: ChatSh
       )}
       {...props}
     >
-      <ChatIcon d={chatIconPaths.chev} size={13} className="rotate-180" />
+      <Icon name="chevron-right-compact" size={13} sw={1.9} className="rotate-180" />
       {children}
     </Button>
   );

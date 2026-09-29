@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { Key } from 'react-aria-components';
 import { TabView, TabViewAction, TabViewBar, TabViewIndicator, TabViewList, TabViewSeparator, TabViewTab } from '../tab-view';
-import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { Icon } from '../../lib/icon';
 import { Haptics } from '../../lib/haptics';
 import { cn } from '../../lib/utils';
 import { titleRef } from '../../lib/chat/title-ref';
@@ -120,7 +120,7 @@ export type WorkspaceRailHomeProps = Omit<WorkspaceRailItemProps, 'id' | 'label'
 export function WorkspaceRailHome({ id = 'home', title = 'Direct Messages', children, ...props }: WorkspaceRailHomeProps) {
   return (
     <WorkspaceRailItem id={id} title={title} {...props}>
-      {children ?? <ChatIcon d={chatIconPaths.dm} size={17} sw={2} />}
+      {children ?? <Icon name="bubble-oval" size={17} sw={2} />}
     </WorkspaceRailItem>
   );
 }
@@ -152,7 +152,7 @@ export function WorkspaceRailAction({ 'aria-label': ariaLabel = 'Add workspace',
         className,
       )}
     >
-      {children ?? <ChatIcon d={chatIconPaths.plus} size={14} />}
+      {children ?? <Icon name="plus" size={14} sw={1.9} />}
     </TabViewAction>
   );
 }

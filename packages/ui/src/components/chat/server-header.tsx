@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button } from 'react-aria-components';
-import { ChatIcon, chatIconPaths } from '../../lib/chat/chat-icon';
+import { Icon } from '../../lib/icon';
 import { useOptionalChatShell } from '../../lib/chat/chat-shell-context';
 import { cn } from '../../lib/utils';
 
@@ -26,11 +26,11 @@ export function ServerHeader({ action, onClose, className, children, ...props }:
         action
       ) : close ? (
         <Button onPress={close} aria-label="Close channels" className="grid cursor-pointer border-0 bg-transparent p-[4px] text-tertiary-foreground">
-          <ChatIcon d={chatIconPaths.x} size={14} />
+          <Icon name="xmark-large" size={14} sw={1.9} />
         </Button>
       ) : (
         <span className="grid text-tertiary-foreground">
-          <ChatIcon d={chatIconPaths.chev} size={13} className="[transform:rotate(90deg)]" />
+          <Icon name="chevron-right-compact" size={13} sw={1.9} className="[transform:rotate(90deg)]" />
         </span>
       )}
     </div>

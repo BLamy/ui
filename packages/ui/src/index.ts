@@ -402,6 +402,7 @@ export {
 } from './templates/workbench-shell';
 
 // ── Chat: ChatShell and its team-chat primitives, floating/artifact chat containers ──
+// TEMPORARY: registry/blocks/discord-clone still imports these (removed in 2.0 phase 3). Use Icon.
 export { ChatIcon, chatIconPaths, type ChatIconProps } from './lib/chat/chat-icon';
 export { kvib } from './lib/chat/kvib';
 export {

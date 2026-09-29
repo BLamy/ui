@@ -128,6 +128,17 @@ export function MessageReactions({ className, ...props }: ComponentProps<'div'>)
   return <div data-slot="message-reactions" className={cn('mt-[6px] flex flex-wrap gap-[5px]', className)} {...props} />;
 }
 
+/** A reaction pill; your own reaction is tinted. */
+export const messageReactionVariants = cva(
+  'inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border px-[8px] py-[2px] font-ios text-[12px] text-foreground',
+  {
+    variants: {
+      mine: { true: 'border-primary bg-primary/10 dark:bg-primary/14', false: 'border-border bg-secondary' },
+    },
+    defaultVariants: { mine: false },
+  },
+);
+
 export interface MessageReactionProps extends Omit<ComponentProps<typeof ToggleButton>, 'children' | 'isSelected'> {
   emoji: ReactNode;
   count: number;
@@ -146,11 +157,7 @@ export function MessageReaction({ emoji, count, mine, className, onChange, ...pr
         onChange?.(v);
       }}
       className={composeRenderProps(className, (c) =>
-        cn(
-          'inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border px-[8px] py-[2px] font-ios text-[12px] text-foreground',
-          mine ? 'border-primary bg-primary/10 dark:bg-primary/14' : 'border-border bg-secondary',
-          c,
-        ),
+        cn(messageReactionVariants({ mine: !!mine }), c),
       )}
       {...props}
     >
