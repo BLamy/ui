@@ -1,7 +1,7 @@
 /* The lists column: search, the smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts,
    and My Lists. On a phone it's the root screen and search results show right here. */
 import { Haptics, Icon, NumberMorph, SearchField, SplitViewContent, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@brett_lamy/ui';
-import { SMART, TODAY_NUMBER, type RList, type Smart } from './data';
+import { SMART, SYSTEM, TODAY_NUMBER, type RList, type Smart } from './data';
 import { ListIcon, ReminderRow } from './reminder-row';
 import { useReminders } from './store';
 import { buildView, countFor } from './views';
@@ -59,7 +59,7 @@ function InlineResults() {
       {v.groups.map((g) => (
         <section key={g.key} className="pb-3">
           <h3 className="m-0 px-4 pt-3 pb-1 text-[20px] font-bold" style={{ color: g.color }}>{g.title}</h3>
-          {g.items.map((r) => <ReminderRow key={r.id} r={r} color={g.color ?? '#8E8E93'} phone />)}
+          {g.items.map((r) => <ReminderRow key={r.id} r={r} color={g.color ?? SYSTEM.gray} phone />)}
         </section>
       ))}
     </div>
@@ -86,7 +86,7 @@ export function ListsSidebar() {
         )}
       </SplitViewContent>
       <div className="flex h-[50px] shrink-0 items-center justify-end px-4">
-        <button type="button" onClick={addList} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[17px] text-[#007AFF]">Add List</button>
+        <button type="button" onClick={addList} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[17px]" style={{ color: SYSTEM.blue }}>Add List</button>
       </div>
     </SplitViewSidebar>
   );

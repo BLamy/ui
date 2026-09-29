@@ -9,16 +9,19 @@ const meta: Meta<typeof AppleSettings> = {
   parameters: { layout: 'fullscreen' },
 };
 export default meta;
+/** The desk behind the device frames: a fixed backdrop, not a theme color. */
+const DESK = '#e6e8eb';
+
 type Story = StoryObj<typeof AppleSettings>;
 
 /** The block fills whatever box it's given; these stories give it the viewport, a tablet or a phone-sized frame. */
 function Full({ children }: { children: ReactNode }) {
-  return <div style={{ height: '100vh', width: '100%' }}>{children}</div>;
+  return <div className="h-screen w-full">{children}</div>;
 }
 function Device({ width, height, children }: { width: number; height: number; children: ReactNode }) {
   return (
-    <div style={{ display: 'grid', placeItems: 'center', minHeight: '100vh', background: '#e6e8eb', padding: 16, boxSizing: 'border-box' }}>
-      <div style={{ width, height, borderRadius: 28, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.18)' }}>{children}</div>
+    <div className="box-border grid min-h-screen place-items-center p-4" style={{ background: DESK }}>
+      <div className="overflow-hidden rounded-[28px] shadow-[0_12px_40px_black] shadow-black/18" style={{ width, height }}>{children}</div>
     </div>
   );
 }

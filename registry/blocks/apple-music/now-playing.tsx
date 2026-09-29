@@ -18,7 +18,7 @@ export function MiniPlayer({ player: p, phone, onOpen, className, style }: {
   const art = phone ? 40 : 48;
   return (
     <Morph id="player" radius={14}
-      className={cn('absolute z-[300] flex items-center gap-3 overflow-hidden bg-bar pr-2 pl-2 text-foreground backdrop-blur-[24px] backdrop-saturate-[1.8] shadow-[0_6px_24px_rgba(0,0,0,.16),0_0_0_.5px_var(--border)]', phone ? 'h-14' : 'h-16', className)} style={style}>
+      className={cn('absolute z-[300] flex items-center gap-3 overflow-hidden bg-bar pr-2 pl-2 text-foreground backdrop-blur-[24px] backdrop-saturate-[1.8] shadow-[0_6px_24px_black] ring-[.5px] shadow-black/16 ring-border', phone ? 'h-14' : 'h-16', className)} style={style}>
       <button type="button" aria-label={`Open Now Playing: ${p.current.track.title}`} onClick={() => { Haptics.impact('light'); onOpen(); }}
         className="bl-btn absolute inset-0 cursor-pointer border-0 bg-transparent" />
       <Morph id="art" radius={7} className="pointer-events-none shrink-0 overflow-hidden" style={{ width: art, height: art }}>
@@ -38,9 +38,12 @@ export function MiniPlayer({ player: p, phone, onOpen, className, style }: {
   );
 }
 
-/** The album's colors, washed dark enough for white text. */
+/** The album's colors, washed dark enough for white text: a 20% black veil over two radial glows of the artwork's
+    colors on its accent mixed into near-black (fixed, like the artwork itself). */
+const WASH_VEIL = 'rgba(0,0,0,.2)';
+const WASH_BASE = '#0b0b10';
 const wash = (a: Album) =>
-  `linear-gradient(rgba(0,0,0,.2), rgba(0,0,0,.2)), radial-gradient(120% 80% at 15% 0%, color-mix(in oklab, ${a.colors[1]} 80%, black), transparent 70%), radial-gradient(100% 70% at 90% 100%, color-mix(in oklab, ${a.colors[2]} 75%, black), transparent 70%), color-mix(in oklab, ${a.colors[2]} 50%, #0b0b10)`;
+  `linear-gradient(${WASH_VEIL}, ${WASH_VEIL}), radial-gradient(120% 80% at 15% 0%, color-mix(in oklab, ${a.colors[1]} 80%, black), transparent 70%), radial-gradient(100% 70% at 90% 100%, color-mix(in oklab, ${a.colors[2]} 75%, black), transparent 70%), color-mix(in oklab, ${a.colors[2]} 50%, ${WASH_BASE})`;
 
 export function FullPlayer({ player: p, phone, height, onClose }: { player: Player; phone: boolean; height: number; onClose: () => void }) {
   const [panel, setPanel] = useState<Panel>('none');
@@ -56,7 +59,7 @@ export function FullPlayer({ player: p, phone, height, onClose }: { player: Play
   // The cover: one element for both layouts. It rests a little smaller while paused, as on iOS.
   const art = (className: string, style?: CSSProperties) => (
     <div className={cn('transition-[scale] duration-spring-smooth ease-spring-smooth', !compact && !p.playing && 'scale-[.86]', className)} style={style}>
-      <Morph id="art" radius={compact ? 6 : 12} className="size-full overflow-hidden shadow-[0_18px_50px_rgba(0,0,0,.35)]">
+      <Morph id="art" radius={compact ? 6 : 12} className="size-full overflow-hidden shadow-[0_18px_50px_black] shadow-black/35">
         <Artwork album={p.current.album} rounded={0} className="size-full" />
       </Morph>
     </div>
@@ -91,7 +94,7 @@ export function FullPlayer({ player: p, phone, height, onClose }: { player: Play
 
   return (
     <Morph id="player" radius={0} dragToDismiss onDismiss={onClose} role="dialog" aria-label="Now Playing"
-      className={cn('absolute inset-0 z-[300] flex flex-col overflow-hidden text-white shadow-[0_-10px_40px_rgba(0,0,0,.3)]', phone ? 'px-7 pt-2.5 pb-6' : 'px-5 pt-4')}
+      className={cn('absolute inset-0 z-[300] flex flex-col overflow-hidden text-white shadow-[0_-10px_40px_black] shadow-black/30', phone ? 'px-7 pt-2.5 pb-6' : 'px-5 pt-4')}
       style={{ background: wash(p.current.album) }}>
       {phone ? (
         <>

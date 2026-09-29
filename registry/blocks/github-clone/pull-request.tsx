@@ -193,7 +193,7 @@ export function TimelineEntry({ ui, item }: { ui: Layout; item: TimelineItem }) 
     case 'review':
       return (
         <>
-          <TimelineEvent ui={ui} icon={item.state === 'approved' ? 'check' : 'eye'} badge={item.state === 'approved' ? 'bg-[#1f883d] text-white' : undefined}>
+          <TimelineEvent ui={ui} icon={item.state === 'approved' ? 'check' : 'eye'} badge={item.state === 'approved' ? 'bg-(--gh-merge) text-white' : undefined}>
             {who(item.author)} {item.state === 'approved' ? 'approved these changes' : 'reviewed'} {item.when}
           </TimelineEvent>
           {item.body ? <CommentCard ui={ui} author={item.author} when={item.when} body={item.body} verb="left a comment" role="Member" /> : null}
@@ -212,11 +212,11 @@ export function MergeBox({ ui }: { ui: Layout }) {
       </div>
     </div>
   );
-  const ok = <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#1f883d] text-white"><Oct name="check" /></span>;
+  const ok = <span className="grid size-8 shrink-0 place-items-center rounded-full bg-(--gh-merge) text-white"><Oct name="check" /></span>;
   return (
     <div className="relative flex gap-4 pt-4">
-      {!ui.phone ? <span className="grid size-10 shrink-0 place-items-center rounded-md bg-[#1f883d] text-white"><Oct name="pr" size={20} /></span> : null}
-      <div className="relative z-1 min-w-0 flex-1 overflow-hidden rounded-md border border-[#1f883d]/60 bg-background">
+      {!ui.phone ? <span className="grid size-10 shrink-0 place-items-center rounded-md bg-(--gh-merge) text-white"><Oct name="pr" size={20} /></span> : null}
+      <div className="relative z-1 min-w-0 flex-1 overflow-hidden rounded-md border border-(--gh-merge)/60 bg-background">
         {row(ok, 'Changes approved', '1 approving review by reviewers with write access.')}
         {row(ok, 'All checks have passed', `${PR_CHECKS.length} successful checks`)}
         <div className="border-b border-border bg-muted">
@@ -232,7 +232,7 @@ export function MergeBox({ ui }: { ui: Layout }) {
         <div className="flex flex-wrap items-center gap-3 bg-background px-4 py-3">
           <div className="flex">
             <Button className={cn(ghButton(true), 'rounded-r-none')}>Merge pull request</Button>
-            <Button aria-label="Merge options" className={cn(ghButton(true), 'rounded-l-none border-l-[rgba(255,255,255,.3)] px-2')}><Oct name="chevDown" size={12} /></Button>
+            <Button aria-label="Merge options" className={cn(ghButton(true), 'rounded-l-none border-l-white/30 px-2')}><Oct name="chevDown" size={12} /></Button>
           </div>
           <span className="text-[12px] text-muted-foreground">You can also merge this with the command line.</span>
         </div>

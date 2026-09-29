@@ -7,6 +7,9 @@ import { Haptics, Icon, ListRow, cn, springs, useMotion, useSplitView } from '@b
 import { FOLDERS, shortDate, snippet, title, type Note } from './data';
 import type { NotesState } from './use-notes';
 
+/** The Lock swipe action's color (iOS system gray, fixed). */
+const LOCK_GRAY = '#8E8E93';
+
 const folderName = (id: string) => FOLDERS.find((f) => f.id === id)?.title ?? 'Notes';
 
 /* ListRow draws a card row: kept for the phone's inset cards; on the column it's transparent, 20px in. */
@@ -24,11 +27,11 @@ function NoteRow({ notes, n, selected, inset, first, last, isEdge, onOpen }: {
       className={cn(inset ? cn(first && 'rounded-t-[12px]', last && 'rounded-b-[12px]') : PLAIN)}
       // Index 0 is the outermost action: the one a long swipe fires.
       leadingActions={n.folder === 'deleted' ? undefined : [{
-        label: n.pinned ? 'Unpin' : 'Pin', icon: n.pinned ? 'pushpin-slash' : 'pushpin-fill', tint: '#FF9F0A', onAction: () => notes.togglePin(n.id),
+        label: n.pinned ? 'Unpin' : 'Pin', icon: n.pinned ? 'pushpin-slash' : 'pushpin-fill', tint: 'var(--warning)', onAction: () => notes.togglePin(n.id),
       }]}
       trailingActions={[
         { label: 'Delete', icon: 'trash', destructive: true, onAction: () => notes.remove(n.id) },
-        { label: locked ? 'Unlock' : 'Lock', icon: locked ? 'lock-open' : 'lock', tint: '#8E8E93', onAction: () => notes.toggleLock(n.id) },
+        { label: locked ? 'Unlock' : 'Lock', icon: locked ? 'lock-open' : 'lock', tint: LOCK_GRAY, onAction: () => notes.toggleLock(n.id) },
       ]}
       trailing={locked ? <Icon name={notes.isLocked(n) ? 'lock-fill' : 'lock-open'} size={16}
         className={cn('relative', selected ? 'text-primary-foreground' : 'text-muted-foreground')} /> : null}
@@ -148,8 +151,8 @@ export function NoteGallery({ notes, onOpen, selected }: { notes: NotesState; on
                     onClick={() => { Haptics.selection(); onOpen(n.id); }}
                     className="bl-btn flex min-w-0 cursor-pointer flex-col items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-foreground">
                     <span className={cn('block aspect-[4/3.3] w-full overflow-hidden rounded-[10px] bg-card p-2.5 text-left',
-                      'shadow-[0_0_0_1px_var(--border),0_1px_3px_rgba(0,0,0,.06)] transition-shadow duration-200',
-                      on && 'shadow-[0_0_0_3px_var(--primary)]')}>
+                      'shadow-[0_1px_3px_black] ring-1 shadow-black/6 ring-border transition-shadow duration-200',
+                      on && 'shadow-none ring-3 ring-primary')}>
                       <Thumbnail n={n} locked={notes.isLocked(n)} />
                     </span>
                     <span className="mt-1 w-full truncate text-center text-[13px] font-semibold">{title(n)}</span>

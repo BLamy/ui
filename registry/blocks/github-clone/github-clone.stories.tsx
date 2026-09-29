@@ -9,11 +9,14 @@ const meta: Meta<typeof GithubClone> = {
   parameters: { layout: 'fullscreen' },
 };
 export default meta;
+/** The desk behind the device frames: a fixed backdrop, not a theme color. */
+const DESK = '#e6e8eb';
+
 type Story = StoryObj<typeof GithubClone>;
 
 /** The block fills whatever box it's given; these stories give it the viewport or a phone-sized frame. */
 function Full({ children }: { children: ReactNode }) {
-  return <div style={{ height: '100vh', width: '100%' }}>{children}</div>;
+  return <div className="h-screen w-full">{children}</div>;
 }
 
 export const Light: Story = { render: (args) => <Full><GithubClone {...args} /></Full> };
@@ -28,8 +31,8 @@ export const Dark: Story = {
 
 export const Phone: Story = {
   render: (args) => (
-    <div style={{ display: 'grid', placeItems: 'center', minHeight: '100vh', background: '#e6e8eb', padding: 16, boxSizing: 'border-box' }}>
-      <div style={{ width: 390, height: 844, borderRadius: 24, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,.18)' }}>
+    <div className="box-border grid min-h-screen place-items-center p-4" style={{ background: DESK }}>
+      <div className="h-[844px] w-[390px] overflow-hidden rounded-[24px] shadow-[0_12px_40px_black] shadow-black/18">
         <GithubClone {...args} />
       </div>
     </div>

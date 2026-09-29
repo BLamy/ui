@@ -154,7 +154,7 @@ function ListenNow({ ctx }: { ctx: Ctx }) {
           <button key={a.id} type="button" onClick={() => { Haptics.selection(); ctx.open({ kind: 'album', id: a.id }); }}
             className="bl-btn shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit]">
             <div className="mb-1.5 text-[12.5px] text-muted-foreground">{['Made for You', 'New Release', 'Because You Listened to Juno Vale'][i]}</div>
-            <div className="relative w-[250px] overflow-hidden rounded-[12px] shadow-[0_4px_16px_rgba(0,0,0,.12)]"
+            <div className="relative w-[250px] overflow-hidden rounded-[12px] shadow-[0_4px_16px_black] shadow-black/12"
               style={{ background: `linear-gradient(180deg, ${a.colors[0]}, ${a.colors[1]})` }}>
               <Artwork album={a} size={250} rounded={0} className="shadow-none" />
               <div className="px-3.5 pt-2.5 pb-3.5 text-white">
@@ -199,7 +199,7 @@ function Browse({ ctx }: { ctx: Ctx }) {
             <div className="relative aspect-[16/9] overflow-hidden rounded-[12px]" style={{ background: a.colors[0] }}>
               <Artwork album={a} rounded={0} className="absolute top-1/2 right-0 h-[180%] w-auto -translate-y-1/2 shadow-none" />
               <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, ${a.colors[0]} 30%, transparent 75%)` }} />
-              <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(0,0,0,.5),transparent_50%)]" />
+              <div className="absolute inset-0 bg-linear-to-t/srgb from-black/50 to-transparent to-50%" />
               <div className="absolute bottom-4 left-4 max-w-[55%] text-[14px] leading-snug font-medium text-white/90">
                 {['A neon-lit, eight-bit love letter to late nights.', 'Harbour-front electronica, recorded on rooftops.', 'Sea spray, bonfires, and big choruses.'][i]}
               </div>
@@ -240,7 +240,7 @@ function Radio({ ctx }: { ctx: Ctx }) {
         <button type="button" onClick={() => ctx.player.playFrom(albumSongs(a), 0)}
           className="bl-btn relative block aspect-[2/1] w-full max-w-[760px] cursor-pointer overflow-hidden rounded-[14px] border-0 p-0"
           style={{ background: `linear-gradient(120deg, ${a.colors[0]}, ${a.colors[1]})` }}>
-          <Artwork album={a} rounded={10} className="absolute top-1/2 right-[6%] h-[72%] w-auto -translate-y-1/2 shadow-[0_12px_40px_rgba(0,0,0,.35)]" />
+          <Artwork album={a} rounded={10} className="absolute top-1/2 right-[6%] h-[72%] w-auto -translate-y-1/2 shadow-[0_12px_40px_black] shadow-black/35" />
           <span className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-[15px] font-semibold text-black">
             <Icon name="play" size={15} /> Listen Now
           </span>
@@ -253,7 +253,7 @@ function Radio({ ctx }: { ctx: Ctx }) {
             className="bl-btn w-[164px] shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
             <span className="relative block">
               <Artwork album={ALBUM[s.album]} size={164} />
-              <Icon name="radiowaves" size={22} className="absolute top-2 right-2 text-white [filter:drop-shadow(0_1px_2px_rgba(0,0,0,.4))]" />
+              <Icon name="radiowaves" size={22} className="absolute top-2 right-2 text-white drop-shadow-[0_1px_2px_black] drop-shadow-black/40" />
             </span>
             <div className="mt-1.5 truncate text-[14px] font-medium">{s.title}</div>
             <div className="truncate text-[13px] text-muted-foreground">{s.subtitle}</div>
@@ -288,7 +288,7 @@ function Search({ ctx }: { ctx: Ctx }) {
                 <button key={name} type="button" onClick={() => setQ(name === 'Chill' ? 'Low' : a.artist)}
                   className="bl-btn relative aspect-[1.55] cursor-pointer overflow-hidden rounded-[11px] border-0 p-0 text-left [font-family:inherit]"
                   style={{ background: color }}>
-                  <Artwork album={a} size="46%" rounded={4} className="absolute right-[-6%] bottom-[-6%] rotate-[18deg] shadow-[0_4px_12px_rgba(0,0,0,.25)]" />
+                  <Artwork album={a} size="46%" rounded={4} className="absolute right-[-6%] bottom-[-6%] rotate-[18deg] shadow-[0_4px_12px_black] shadow-black/25" />
                   <span className="absolute bottom-2.5 left-3 text-[16px] font-bold text-white">{name}</span>
                 </button>
               );
@@ -376,6 +376,9 @@ function ArtistList({ ctx }: { ctx: Ctx }) {
 
 /* ── Detail pages ── */
 
+/** Music's red, for artwork with no legible color (fixed). */
+const FALLBACK_TINT = { light: '#FA243C', dark: '#FF375F' } as const;
+
 /** The page tints from its artwork: the album's most legible color becomes the tint for its buttons and links. */
 function tintFor(a: Album, dark: boolean) {
   const lum = (hex: string) => {
@@ -383,7 +386,7 @@ function tintFor(a: Album, dark: boolean) {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
   const ok = a.colors.filter((c) => (dark ? lum(c) > 0.16 && lum(c) < 0.75 : lum(c) > 0.04 && lum(c) < 0.3));
-  return ok.sort((x, y) => Math.abs(lum(x) - (dark ? 0.35 : 0.12)) - Math.abs(lum(y) - (dark ? 0.35 : 0.12)))[0] ?? (dark ? '#FF375F' : '#FA243C');
+  return ok.sort((x, y) => Math.abs(lum(x) - (dark ? 0.35 : 0.12)) - Math.abs(lum(y) - (dark ? 0.35 : 0.12)))[0] ?? FALLBACK_TINT[dark ? 'dark' : 'light'];
 }
 
 function AlbumPage({ album: a, ctx }: { album: Album; ctx: Ctx }) {
@@ -392,7 +395,7 @@ function AlbumPage({ album: a, ctx }: { album: Album; ctx: Ctx }) {
   return (
     <div className="pb-6" style={{ '--primary': tintFor(a, ctx.dark) } as CSSProperties}>
       <div className={cn('flex gap-6 px-4 pt-2 pb-5', ctx.wide ? 'items-end px-6' : 'flex-col items-center text-center')}>
-        <Artwork album={a} size={ctx.wide ? 250 : 260} rounded={10} className="shadow-[0_10px_30px_rgba(0,0,0,.18)]" />
+        <Artwork album={a} size={ctx.wide ? 250 : 260} rounded={10} className="shadow-[0_10px_30px_black] shadow-black/18" />
         <div className={cn('flex min-w-0 flex-col gap-1', ctx.wide ? 'items-start pb-1' : 'items-center')}>
           <h2 className="m-0 text-[24px] leading-tight font-bold tracking-[-.3px]">{a.title}</h2>
           <button type="button" onClick={() => ctx.open({ kind: 'artist', name: a.artist })}
@@ -421,7 +424,7 @@ function ArtistPage({ name, ctx }: { name: string; ctx: Ctx }) {
         <Artwork album={a} rounded={0} className="absolute inset-0 size-full scale-125 opacity-60 blur-[18px]" />
         <div className="relative flex items-center gap-4">
           <ArtistArt artist={name} album={a} size={72} />
-          <div className="text-[30px] font-extrabold tracking-[-.4px] text-white [text-shadow:0_2px_12px_rgba(0,0,0,.3)]">{name}</div>
+          <div className="text-[30px] font-extrabold tracking-[-.4px] text-white text-shadow-[0_2px_12px_black] text-shadow-black/30">{name}</div>
         </div>
       </div>
       <div className="px-4 pt-5 pb-1 text-[21px] font-bold">Top Songs</div>

@@ -5,7 +5,7 @@ import {
   Button, Celebrate, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, Haptics, NumberMorph,
   Icon, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, cn, useSplitView,
 } from '@brett_lamy/ui';
-import type { Reminder } from './data';
+import { SYSTEM, type Reminder } from './data';
 import { ReminderRow } from './reminder-row';
 import { useReminders } from './store';
 import { buildView, type View } from './views';
@@ -89,7 +89,7 @@ export function ListView() {
             // The open count sits on the large title's line, on the trailing edge.
             <span className="absolute right-5 -top-[47px] isolate text-[34px] leading-[1.15] font-semibold tabular-nums" style={{ color: view.color }}>
               <NumberMorph value={view.open} />
-              <Celebrate fire={fire} count={16} spread={72} colors={[view.color, '#FFCC00', '#34C759', '#FF2D55']} />
+              <Celebrate fire={fire} count={16} spread={72} colors={[view.color, SYSTEM.yellow, SYSTEM.green, SYSTEM.pink]} />
             </span>
           ) : null}
 

@@ -2,7 +2,7 @@
    toggles away). Phone: the lists screen pushes the open list. Everything tints with the open list's color. */
 import { useState } from 'react';
 import { BLProvider, SplitView, useAppearance, type SplitViewSelection } from '@brett_lamy/ui';
-import { SMART } from './data';
+import { SMART, SYSTEM } from './data';
 import { DetailsSheet } from './details';
 import { ListView } from './list-view';
 import { ListsSidebar } from './sidebar';
@@ -21,7 +21,7 @@ export default function AppleReminders({ initialList = 'today', openList = false
   const [selection, setSelection] = useState<SplitViewSelection>({ sidebar: initialList });
   const [sidebar, setSidebar] = useState(true);
   const id = selection.sidebar ?? 'today';
-  const tint = SMART.find((s) => s.id === id)?.color ?? reminders.lists.find((l) => l.id === id)?.color ?? '#007AFF';
+  const tint = SMART.find((s) => s.id === id)?.color ?? reminders.lists.find((l) => l.id === id)?.color ?? SYSTEM.blue;
 
   return (
     <BLProvider dark={dark} tint={tint}>

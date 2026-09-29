@@ -27,12 +27,14 @@ function Body({ lines }: { lines: string[] }) {
   );
 }
 
+/** File-type tile colors (fixed, like Mail's document icons). */
+const ATTACHMENT_TONE: Record<Attachment['kind'], string> = { pdf: '#FF3B30', image: '#34C759', zip: '#8E8E93', doc: '#0A84FF' };
+
 function AttachmentTile({ a }: { a: Attachment }) {
-  const tone = a.kind === 'pdf' ? '#FF3B30' : a.kind === 'image' ? '#34C759' : a.kind === 'zip' ? '#8E8E93' : '#0A84FF';
   return (
     <button type="button" onClick={() => Haptics.impact('light')}
       className="bl-btn flex min-w-0 cursor-pointer items-center gap-2.5 rounded-[12px] border-0 bg-secondary px-3 py-2.5 text-left [font-family:inherit] text-foreground transition-colors hover:bg-secondary-strong">
-      <span className="grid size-9 shrink-0 place-items-center rounded-[8px] text-white" style={{ background: tone }}>
+      <span className="grid size-9 shrink-0 place-items-center rounded-[8px] text-white" style={{ background: ATTACHMENT_TONE[a.kind] }}>
         <Icon name={a.kind === 'image' ? 'photo' : a.kind === 'zip' ? 'archivebox' : 'doc'} size={20} sw={1.9} />
       </span>
       <span className="min-w-0">
@@ -89,7 +91,7 @@ export function MessageView({ m }: { m: Message }) {
       <Header from={m.from} to={m.to} cc={m.cc} date={m.date} />
       <h1 className="mt-4 mb-1 flex items-start gap-2 text-[22px] leading-[1.25] font-bold tracking-[-.3px]">
         <span className="min-w-0 flex-1">{m.subject}</span>
-        {m.flagged ? <Icon name="flag-fill" size={18} weight="medium" className="mt-1 text-[#FF9F0A]" /> : null}
+        {m.flagged ? <Icon name="flag-fill" size={18} weight="medium" className="mt-1 text-warning" /> : null}
       </h1>
       <div className="mb-5 text-[13px] text-muted-foreground">{longTime(m.date)}</div>
       <Body lines={m.body} />

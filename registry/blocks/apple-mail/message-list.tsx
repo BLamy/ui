@@ -7,6 +7,9 @@ import { Haptics, Icon, ListRow, cn, springs, useMotion, useSplitView } from '@b
 import { preview, relativeTime, type Message } from './data';
 import type { MailState } from './use-mail';
 
+/** The Archive swipe action's color (iOS system purple, fixed). */
+const ARCHIVE_PURPLE = '#AF52DE';
+
 /* ListRow draws a full-bleed card row; Mail's rows sit on the column (transparent) with a 32px gutter for the
    unread dot, which narrows while the edit circles are showing. */
 const ROW = cn(
@@ -27,8 +30,8 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
       leadingActions={[{ label: m.unread ? 'Read' : 'Unread', icon: m.unread ? 'envelope-open' : 'envelope-badge', onAction: () => mail.toggleRead(m.id) }]}
       trailingActions={[
         { label: 'Trash', icon: 'trash', destructive: true, onAction: () => mail.trash([m.id]) },
-        { label: 'Archive', icon: 'archivebox', tint: '#AF52DE', onAction: () => mail.archive([m.id]) },
-        { label: m.flagged ? 'Unflag' : 'Flag', icon: 'flag-fill', tint: '#FF9F0A', onAction: () => mail.toggleFlag(m.id) },
+        { label: 'Archive', icon: 'archivebox', tint: ARCHIVE_PURPLE, onAction: () => mail.archive([m.id]) },
+        { label: m.flagged ? 'Unflag' : 'Flag', icon: 'flag-fill', tint: 'var(--warning)', onAction: () => mail.toggleFlag(m.id) },
       ]}
       title={<>
         {/* Positioned against the row body (which starts where the text does). */}
@@ -39,7 +42,7 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
         <span aria-hidden="true" className={cn('absolute top-4 right-full flex flex-col items-center gap-[7px]', mail.editing ? 'w-5' : 'w-7')}>
           <span className={cn('size-[10px] rounded-full transition-[scale,opacity] duration-spring-snappy ease-spring-bouncy',
             m.unread ? 'scale-100 opacity-100' : 'scale-0 opacity-0', on ? 'bg-primary-foreground' : 'bg-primary')} />
-          {m.flagged ? <Icon name="flag-fill" size={13} weight="medium" className={on ? 'text-primary-foreground' : 'text-[#FF9F0A]'} /> : null}
+          {m.flagged ? <Icon name="flag-fill" size={13} weight="medium" className={on ? 'text-primary-foreground' : 'text-warning'} /> : null}
         </span>
         <span className={cn('relative block py-0.5 whitespace-normal', on && 'text-primary-foreground')}>
           <span className="sr-only">{m.unread ? 'Unread, ' : ''}{m.flagged ? 'Flagged, ' : ''}</span>
