@@ -79,9 +79,9 @@ export type {
 } from './components/split-view';
 export { Credenza } from './components/credenza';
 export type { CredenzaProps } from './components/credenza';
-export { SideDrawer } from './components/side-drawer';
+export { SideDrawer, sideDrawerVariants } from './components/side-drawer';
 export type { SideDrawerProps } from './components/side-drawer';
-export { EdgeDrawer } from './components/edge-drawer';
+export { EdgeDrawer, edgeDrawerVariants } from './components/edge-drawer';
 export type { EdgeDrawerProps } from './components/edge-drawer';
 export { AdaptivePane } from './components/adaptive-pane';
 export {
@@ -647,12 +647,12 @@ export type { PencilKitDemoProps } from './demos/pencilkit/pencilkit-demo';
 
 // ── feedback, media and morph primitives ──
 export {
-  Toaster, ToastProvider, ToastQueue, toast, toastApi, useToast, createToastQueue, defaultToastQueue,
+  Toaster, ToastProvider, ToastQueue, toast, toastApi, useToast, createToastQueue, defaultToastQueue, toastVariants, toastIconVariants,
 } from './components/toast';
 export type {
   ToastData, ToastOptions, ToastVariant, ToastTone, ToastApi, ToasterProps, ToasterPlacement,
 } from './components/toast';
-export { ProgressRing, CountdownRing, useCountdown } from './components/progress-ring';
+export { ProgressRing, CountdownRing, useCountdown, progressRingVariants } from './components/progress-ring';
 export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, UseCountdownOptions } from './components/progress-ring';
 export { NowPlayingBars } from './components/now-playing-bars';
 export type { NowPlayingBarsProps } from './components/now-playing-bars';

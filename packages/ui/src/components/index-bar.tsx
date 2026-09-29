@@ -177,7 +177,9 @@ export function IndexBar<K extends IndexBarKey = string>({
     'pointer-events-none absolute [transform:translateY(-50%)] bg-card shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] animate-[blBub_var(--duration-spring-snappy)_var(--ease-spring-bouncy)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:animate-none motion-reduce:transition-none',
     on ? 'opacity-100' : 'opacity-93',
   );
-  const bubPos: CSSProperties = side === 'left' ? { left: width + 10, top: cy } : { right: width + 10, top: cy };
+  // Bubble / card position beside the rail: its side comes from `side`, the offset from the measured stop.
+  const bubPos = cn('top-(--ib-y)', side === 'left' ? 'left-[calc(var(--ib-w)+10px)]' : 'right-[calc(var(--ib-w)+10px)]');
+  const len = (v: number | string | undefined) => (typeof v === 'number' ? v + 'px' : v);
   const curIdx = value != null ? pts.findIndex((q) => q.key === value) : -1;
   // The wave centres on the pointer while it's on the rail, else on the keyboard-active stop.
   const focal = pu != null ? pu : idx >= 0 ? idx + 0.5 : null;
@@ -190,9 +192,15 @@ export function IndexBar<K extends IndexBarKey = string>({
       className={cn(
         indexBarVariants({ variant, side }),
         focused ? '[outline:2px_solid_var(--primary)]' : '[outline:2px_solid_transparent]',
+        'w-(--ib-w)', top != null && 'top-(--ib-top)', bottom != null && 'bottom-(--ib-bottom)',
         className,
       )}
-      style={{ top, bottom, width, ...style }}
+      // Rail geometry (props) and the active stop's measured offset, as variables.
+      style={{
+        '--ib-w': width + 'px', '--ib-y': cy + 'px',
+        ...(top != null ? { '--ib-top': len(top) } : null), ...(bottom != null ? { '--ib-bottom': len(bottom) } : null),
+        ...style,
+      } as CSSProperties}
       >
       <div ref={track} className={cn('flex w-full flex-col', !wave && 'items-center')}>
         {pts.map((q, i) => {
@@ -231,19 +239,19 @@ export function IndexBar<K extends IndexBarKey = string>({
               'pointer-events-none absolute box-border w-max max-w-[260px] min-w-[160px] -translate-y-1/2 rounded-[14px] bg-card px-[13px] py-[9px]',
               'shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
               'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
-              side === 'left' ? 'origin-left' : 'origin-right',
-            )} style={side === 'left' ? { left: width + 4, top: cy } : { right: width + 4, top: cy }}>
+              side === 'left' ? 'origin-left left-[calc(var(--ib-w)+4px)]' : 'origin-right right-[calc(var(--ib-w)+4px)]', 'top-(--ib-y)',
+            )}>
             <div className="truncate text-[13px] leading-[18px] font-semibold text-foreground">{p.caption || p.label || `Stop ${idx + 1}`}</div>
             {p.preview != null
               ? <div className="mt-[2px] line-clamp-2 text-[12px] leading-[16px] text-pretty text-muted-foreground">{p.preview}</div>
               : null}
           </div>
         : p && (p.preview != null)
-        ? <div className={cn(bub, 'box-border max-w-[250px] min-w-[120px] rounded-[14px] px-[13px] py-[9px]')} style={bubPos}>
+        ? <div className={cn(bub, bubPos, 'box-border max-w-[250px] min-w-[120px] rounded-[14px] px-[13px] py-[9px]')}>
             {p.caption ? <div className="mb-[3px] text-[9.5px] font-extrabold tracking-[.6px] text-primary uppercase">{p.caption}</div> : null}
             <div className="line-clamp-3 text-[13px] leading-[1.35] font-[550] text-pretty text-foreground">{p.preview}</div>
           </div>
-        : p ? <div className={cn(bub, 'grid size-[54px] place-items-center rounded-[27px] text-[25px] font-extrabold text-primary')} style={bubPos}>{p.label}</div> : null}
+        : p ? <div className={cn(bub, bubPos, 'grid size-[54px] place-items-center rounded-[27px] text-[25px] font-extrabold text-primary')}>{p.label}</div> : null}
     </div>
   );
 }
