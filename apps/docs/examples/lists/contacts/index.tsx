@@ -37,7 +37,7 @@ function ContactsList() {
     <div style={{ position: 'relative', height: 400, background: 'var(--bl-card)' }}>
       <div
         ref={scroller}
-        style={{ position: 'absolute', inset: 0, overflowY: 'auto', paddingRight: 22 }}
+        style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}
       >
         <List>
           {letters.map((letter) => (

@@ -95,7 +95,10 @@ export default function IndexBarExample({ variant = 'stops' }: { variant?: strin
           style={
             variant === 'wave'
               ? { position: 'absolute', inset: 0, overflowY: 'auto', paddingLeft: 40 }
-              : { position: 'absolute', inset: 0, overflowY: 'auto', paddingRight: 26 }
+              : variant === 'az'
+                ? // ListRows clear the A–Z rail on their own
+                  { position: 'absolute', inset: 0, overflowY: 'auto' }
+                : { position: 'absolute', inset: 0, overflowY: 'auto', paddingRight: 26 }
           }
         >
           {variant === 'az' ? (
