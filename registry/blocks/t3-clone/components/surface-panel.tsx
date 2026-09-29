@@ -1,4 +1,5 @@
 import {
+  Haptics,
   IconBtn,
   SURFACES,
   SurfaceAgents,
@@ -14,7 +15,6 @@ import {
   WorkbenchPanelFullscreen,
   WorkbenchPanelHeader,
   WorkbenchPanelTitle,
-  tick,
   type SurfaceKind,
 } from '@brett_lamy/ui';
 import { AGENTS, DIFF, FILES } from '../lib/data';
@@ -32,7 +32,7 @@ export function SurfacePanel({ surface, onSurface }: { surface: SurfaceKind | nu
             label="Switch surface"
             size={15}
             onPress={() => {
-              tick();
+              Haptics.selection();
               onSurface(null);
             }}
           />

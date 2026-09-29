@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { vib } from '@brett_lamy/ui';
+import { Haptics } from '@brett_lamy/ui';
 import { REPLIES, THREADS, type Thread } from './data';
 
 /**
@@ -56,7 +56,7 @@ export function useThreads(initial: string | null = 't1') {
         steps: [{ title: 'Parsed the request' }, { title: 'Searched the workspace', detail: 'rg -n' }, { title: 'Drafted and streamed the reply' }],
       });
       setLive(null);
-      vib([10, 60, 14]);
+      Haptics.notification('success');
     }, 90);
   };
 
