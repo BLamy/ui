@@ -1582,8 +1582,9 @@ function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttach
   return (
     <span className="flex h-[58px] w-[164px] min-w-0 items-center gap-2.5 px-2.5 text-left">
       <span
-        className="grid size-9 shrink-0 place-items-center rounded-[9px]"
-        style={{ color: face.color, background: `color-mix(in srgb, ${face.color} 15%, transparent)` }}
+        className="grid size-9 shrink-0 place-items-center rounded-[9px] bg-[color-mix(in_srgb,var(--face)_15%,transparent)] text-(--face)"
+        // the kind's color comes with the data
+        style={{ '--face': face.color } as React.CSSProperties}
       >
         <Icon name={face.icon} size={20} sw={1.8} />
       </span>

@@ -194,7 +194,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
                   initial={arriving ? { opacity: 0, y: it.anchor ? 18 : 10, scale: it.anchor ? 0.98 : 1 } : false}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ ...springs.smooth, opacity: { duration: 0.22 } }}
-                  style={{ transformOrigin: it.anchor ? '100% 100%' : '0 0' }}
+                  className={it.anchor ? 'origin-bottom-right' : 'origin-top-left'}
                 >
                   {it.node}
                 </motion.div>
