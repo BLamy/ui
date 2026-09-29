@@ -97,7 +97,7 @@ export function IndexBar<K extends IndexBarKey = string>({
     const host = rail.current?.parentElement;
     if (!host || !insetContent || side !== 'right') return;
     host.style.setProperty('--bl-index-bar-inset', `${width}px`);
-    return () => host.style.removeProperty('--bl-index-bar-inset');
+    return () => { host.style.removeProperty('--bl-index-bar-inset'); };
   }, [insetContent, side, width]);
   const measure = () => {
     const r = rail.current, t = track.current; if (!r || !t) return null;
