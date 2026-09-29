@@ -17,7 +17,7 @@ type Story = StoryObj<Args>;
 /** A sized, rounded frame (like Phone) for desktop-shaped compositions. */
 function Panel({ children, w = 720, h = 440, dark }: { children: ReactNode; w?: number; h?: number; dark?: boolean }) {
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, boxShadow: '0 12px 40px rgba(0,0,0,.18)', width: w, height: h }}>
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, boxShadow: '0 12px 40px color-mix(in srgb, black 18%, transparent)', width: w, height: h }}>
       <BLProvider dark={dark}>{children}</BLProvider>
     </div>
   );

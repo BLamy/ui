@@ -3,8 +3,23 @@ import { Button as AriaButton } from 'react-aria-components';
 import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { fades, springs, useMotion } from '../lib/motion';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../lib/utils';
 import { MeasureH } from './measure-h';
+
+/** The card: a centered dialog, or (`compact`) a bottom tray you can drag down. */
+export const credenzaVariants = cva(
+  'z-401 box-border overflow-hidden bg-card text-foreground shadow-[0_24px_80px_--alpha(black/34%),0_0_0_1px_var(--border)] outline-none',
+  {
+    variants: {
+      compact: {
+        true: 'absolute inset-x-2.5 bottom-2.5 touch-none rounded-[28px]',
+        false: 'absolute top-1/2 left-1/2 w-[400px] max-w-[calc(100%-44px)] rounded-[24px]',
+      },
+    },
+    defaultVariants: { compact: false },
+  },
+);
 
 /* ══ Credenza — responsive dialog ⇄ tray with Family-style state morphing ══
    Desktop: centered dialog. Compact: floating bottom tray, drag-down to dismiss. The card springs its height to
@@ -24,7 +39,7 @@ function tabbables(root: HTMLElement) {
   return [...root.querySelectorAll<HTMLElement>(TABBABLE)].filter((el) => el.getClientRects().length > 0 && !el.closest('[inert],[aria-hidden="true"]'));
 }
 
-export interface CredenzaProps {
+export interface CredenzaProps extends VariantProps<typeof credenzaVariants> {
   open: boolean;
   onClose: () => void;
   onBack?: () => void;
@@ -32,7 +47,7 @@ export interface CredenzaProps {
   /** Key of the current morphing view — changing it cross-fades and re-measures the body. */
   view?: string;
   title?: ReactNode;
-  compact?: boolean;
+  compact?: boolean | null;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -120,7 +135,6 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
       <Icon name={icon} size={15} sw={2.6} />
     </AriaButton>
   );
-  const card = 'box-border overflow-hidden outline-none bg-card text-foreground shadow-[0_24px_80px_--alpha(black/34%),0_0_0_1px_var(--border)]';
   const m = FM.motion as any, AP = FM.AnimatePresence;
   const spring = reduced ? { duration: 0 } : springs.tray;
   const header = (
@@ -165,7 +179,7 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
       {open ? <m.div key="scrim" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: .24 } }} transition={fades.in}
         className="absolute inset-0 z-400 bg-overlay" /> : null}
       {open ? (compact
-        ? <m.div key="tray" data-slot="credenza" {...a11y} className={cn(card, 'absolute inset-x-2.5 bottom-2.5 z-401 touch-none rounded-[28px]', className)} initial={{ y: '112%' }} animate={{ y: '0%' }} exit={{ y: '118%' }} transition={spring}
+        ? <m.div key="tray" data-slot="credenza" {...a11y} className={cn(credenzaVariants({ compact: true }), className)} initial={{ y: '112%' }} animate={{ y: '0%' }} exit={{ y: '118%' }} transition={spring}
             drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: .02, bottom: .55 }}
             onDragEnd={(_ev: unknown, inf: any) => { if (inf.offset.y > 120 || inf.velocity.y > 500) { Haptics.impact('light'); closeRef.current(); } }}
             style={style}>
@@ -173,7 +187,7 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
             {header}{body}
           </m.div>
         : <m.div key="dlg" data-slot="credenza" {...a11y}
-            className={cn(card, 'absolute top-1/2 left-1/2 z-401 w-[400px] max-w-[calc(100%-44px)] rounded-[24px]', className)} initial={{ x: '-50%', y: '-45%', opacity: 0, scale: .95 }} animate={{ x: '-50%', y: '-50%', opacity: 1, scale: 1 }}
+            className={cn(credenzaVariants({ compact: false }), className)} initial={{ x: '-50%', y: '-45%', opacity: 0, scale: .95 }} animate={{ x: '-50%', y: '-50%', opacity: 1, scale: 1 }}
             exit={{ x: '-50%', y: '-48%', opacity: 0, scale: .97 }} transition={spring} style={style}>
             {header}{body}
           </m.div>) : null}

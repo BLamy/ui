@@ -77,7 +77,7 @@ export type {
   SplitViewState, SplitViewColumn, SplitViewWidthClass, SplitViewSidebarBehavior, SplitViewSelection,
   SplitViewSectionProps, SplitViewStackProps, SplitViewStackApi, SplitViewItemTint,
 } from './components/split-view';
-export { Credenza } from './components/credenza';
+export { Credenza, credenzaVariants } from './components/credenza';
 export type { CredenzaProps } from './components/credenza';
 export { SideDrawer, sideDrawerVariants } from './components/side-drawer';
 export type { SideDrawerProps } from './components/side-drawer';

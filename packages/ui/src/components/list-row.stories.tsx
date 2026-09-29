@@ -32,7 +32,7 @@ export const SubtitleAndLeading: Story = {
       title={<span>Wei <span style={{ fontWeight: 600 }}>Chen</span></span>}
       subtitle="iOS Engineer · Parallel"
       leading={<Avatar c={{ f: 'Wei', l: 'Chen' }} />}
-      trailing={<Icon name="starF" size={13} style={{ color: '#FF9F0A' }} />}
+      trailing={<Icon name="starF" size={13} className="text-warning" />}
       divider={false}
       onPress={() => undefined}
     />
@@ -124,7 +124,7 @@ function MailRows() {
         return (
           <ListRow key={from} title={<span style={{ fontWeight: unread.has(from) ? 600 : 400 }}>{from}</span>} subtitle={subject}
             leading={<span aria-hidden style={{ width: 9, height: 9, borderRadius: 5, background: unread.has(from) ? 'var(--primary)' : 'transparent' }} />}
-            trailing={flag.has(from) ? <Icon name="starF" size={13} style={{ color: '#FF9F0A' }} /> : null}
+            trailing={flag.has(from) ? <Icon name="starF" size={13} className="text-warning" /> : null}
             leadingActions={leading} trailingActions={trailing}
             onPress={() => undefined} divider={i < rows.length - 1} />
         );
