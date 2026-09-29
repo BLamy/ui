@@ -11,9 +11,22 @@ export default function Controls() {
   const [range, setRange] = useState('day')
   const [on, setOn] = useState(true)
   return (
-    <div style={{ display: 'grid', gap: 16, justifyItems: 'center', maxWidth: 420, margin: '0 auto' }}>
+    <div
+      style={{
+        display: 'grid',
+        gap: 16,
+        justifyItems: 'center',
+        maxWidth: 420,
+        margin: '0 auto',
+      }}
+    >
       <div style={{ width: 280 }}>
-        <Segmented aria-label="Range" value={range} onChange={setRange} options={ranges} />
+        <Segmented
+          aria-label="Range"
+          value={range}
+          onChange={setRange}
+          options={ranges}
+        />
       </div>
       <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
         <Avatar c={{ f: 'Ada', l: 'Lovelace' }} size={40} />

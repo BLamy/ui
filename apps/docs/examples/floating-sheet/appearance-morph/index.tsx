@@ -33,7 +33,14 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
         }}
       >
         <div style={{ padding: 22 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.08em', opacity: 0.6 }}>
+          <div
+            style={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              letterSpacing: '.08em',
+              opacity: 0.6,
+            }}
+          >
             HOST CONTENT
           </div>
           <p
@@ -55,10 +62,22 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
               marginTop: 18,
             }}
           >
-            {['#0A84FF', '#FF9F0A', '#30D158', '#BF5AF2', '#FF375F', '#64D2FF'].map((c) => (
+            {[
+              '#0A84FF',
+              '#FF9F0A',
+              '#30D158',
+              '#BF5AF2',
+              '#FF375F',
+              '#64D2FF',
+            ].map((c) => (
               <div
                 key={c}
-                style={{ height: 64, borderRadius: 14, background: c, opacity: dark ? 0.75 : 0.6 }}
+                style={{
+                  height: 64,
+                  borderRadius: 14,
+                  background: c,
+                  opacity: dark ? 0.75 : 0.6,
+                }}
               />
             ))}
           </div>
@@ -69,13 +88,28 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
   )
 }
 
-// Changing appearance (or tone) morphs the same surface — background, border and shadow cross
-// on the spring curves; nothing remounts.
-export default function AppearanceMorph({ variant = 'glass' }: { variant?: string }) {
-  const appearance: FloatingSheetAppearance = variant === 'sheet' ? 'sheet' : 'glass'
+// Changing appearance (or tone) morphs the same surface — background, border
+// and shadow cross on the spring curves; nothing remounts.
+export default function AppearanceMorph({
+  variant = 'glass',
+}: {
+  variant?: string
+}) {
+  const appearance: FloatingSheetAppearance =
+    variant === 'sheet' ? 'sheet' : 'glass'
   return (
-    <Host note="Switch the appearance in the header: the same surface changes material — no remount, no jump.">
-      <FloatingSheet appearance={appearance} peek={150} label="Order" hideOnScroll={false}>
+    <Host
+      note={
+        'Switch the appearance in the header: the same surface changes ' +
+        'material — no remount, no jump.'
+      }
+    >
+      <FloatingSheet
+        appearance={appearance}
+        peek={150}
+        label="Order"
+        hideOnScroll={false}
+      >
         <FloatingSheet.Body>
           <div style={{ padding: '2px 20px 24px', display: 'grid', gap: 12 }}>
             <h3 style={{ margin: 0, fontSize: 20 }}>Preparing your order</h3>
@@ -83,7 +117,11 @@ export default function AppearanceMorph({ variant = 'glass' }: { variant?: strin
             {Array.from({ length: 4 }, (_, i) => (
               <div
                 key={i}
-                style={{ height: 56, borderRadius: 14, background: 'rgba(120,120,128,.14)' }}
+                style={{
+                  height: 56,
+                  borderRadius: 14,
+                  background: 'rgba(120,120,128,.14)',
+                }}
               />
             ))}
           </div>

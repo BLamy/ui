@@ -31,8 +31,12 @@ function ProductFilters() {
         background: 'var(--bl-bg2)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', padding: '14px 16px' }}>
-        <strong style={{ flex: 1, fontSize: 17 }}>Headphones · 24 results</strong>
+      <div
+        style={{ display: 'flex', alignItems: 'center', padding: '14px 16px' }}
+      >
+        <strong style={{ flex: 1, fontSize: 17 }}>
+          Headphones · 24 results
+        </strong>
         <Button variant="secondary" size="sm" onPress={() => setOpen(true)}>
           <Icon name="sliders" size={17} /> Filters
         </Button>
@@ -72,7 +76,9 @@ function ProductFilters() {
             background: 'var(--bl-bg2)',
           }}
         >
-          <div style={{ padding: '18px 20px 10px', fontSize: 20, fontWeight: 750 }}>
+          <div
+            style={{ padding: '18px 20px 10px', fontSize: 20, fontWeight: 750 }}
+          >
             Filters
           </div>
           <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -101,7 +107,9 @@ function ProductFilters() {
                 />
               </ListSection>
               <ListSection title={`Under $${maxPrice}`}>
-                <div style={{ padding: '14px 16px', background: 'var(--bl-card)' }}>
+                <div
+                  style={{ padding: '14px 16px', background: 'var(--bl-card)' }}
+                >
                   <Slider
                     aria-label="Maximum price"
                     minValue={20}

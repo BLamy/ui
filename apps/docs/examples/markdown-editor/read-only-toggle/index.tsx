@@ -12,7 +12,11 @@ const spec = `## Release 2.4
 | TabView | New pill indicator |
 | Credenza | \`compact\` tray is draggable |`
 
-export default function ReadOnlyToggle({ variant = 'edit' }: { variant?: string }) {
+export default function ReadOnlyToggle({
+  variant = 'edit',
+}: {
+  variant?: string
+}) {
   const [markdown, setMarkdown] = useState(spec)
   if (variant === 'rendered') return <MarkdownView markdown={markdown} />
   return (

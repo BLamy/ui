@@ -1,7 +1,15 @@
 import { useState } from 'react'
-import { SnapSheet, TerminalAction, TerminalBody, TerminalHeader, useAppearance, WorkbenchTheme } from '@brett_lamy/ui'
+import {
+  SnapSheet,
+  TerminalAction,
+  TerminalBody,
+  TerminalHeader,
+  useAppearance,
+  WorkbenchTheme,
+} from '@brett_lamy/ui'
 
-// The sheet needs a phone-sized, positioned host; the terminal stays dark in light mode.
+// The sheet needs a phone-sized, positioned host; the terminal stays dark in
+// light mode.
 function TerminalSheet() {
   const [open, setOpen] = useState(false)
   const light = useAppearance() === 'light'
@@ -20,8 +28,12 @@ function TerminalSheet() {
     >
       <div style={{ padding: 18, display: 'grid', gap: 12 }}>
         <div style={{ fontSize: 15, fontWeight: 700 }}>cookbook · main</div>
-        <div style={{ fontSize: 13, color: 'var(--wb-label2)', lineHeight: 1.5 }}>
-          Open the terminal, then drag its handle: a slow drag settles at the nearest snap, a flick carries on to the next — or down past the lowest to close.
+        <div
+          style={{ fontSize: 13, color: 'var(--wb-label2)', lineHeight: 1.5 }}
+        >
+          Open the terminal, then drag its handle: a slow drag settles at the
+          nearest snap, a flick carries on to the next — or down past the lowest
+          to close.
         </div>
         <button
           type="button"
@@ -51,15 +63,25 @@ function TerminalSheet() {
         className="wb-term"
       >
         <TerminalHeader title="zsh — cookbook">
-          <TerminalAction icon="trash" label="Close terminal" onPress={() => setOpen(false)} />
+          <TerminalAction
+            icon="trash"
+            label="Close terminal"
+            onPress={() => setOpen(false)}
+          />
         </TerminalHeader>
-        <TerminalBody seed={[{ t: 'npm run dev', p: true }, { t: '  ➜  Local:   http://localhost:3000/', c: '#8AB4FF' }]} />
+        <TerminalBody
+          seed={[
+            { t: 'npm run dev', p: true },
+            { t: '  ➜  Local:   http://localhost:3000/', c: '#8AB4FF' },
+          ]}
+        />
       </SnapSheet>
     </WorkbenchTheme>
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function TerminalSheetExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

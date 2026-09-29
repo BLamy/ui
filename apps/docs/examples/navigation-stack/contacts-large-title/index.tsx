@@ -12,12 +12,42 @@ import {
 } from '@brett_lamy/ui'
 
 const contacts = [
-  { f: 'Ada', l: 'Lovelace', phone: '+44 20 7946 0018', email: 'ada@engine.io' },
-  { f: 'Alan', l: 'Turing', phone: '+44 161 496 0754', email: 'alan@bletchley.uk' },
-  { f: 'Grace', l: 'Hopper', phone: '+1 202 555 0147', email: 'grace@navy.mil' },
-  { f: 'Katherine', l: 'Johnson', phone: '+1 757 555 0123', email: 'kj@nasa.gov' },
-  { f: 'Margaret', l: 'Hamilton', phone: '+1 617 555 0199', email: 'margaret@mit.edu' },
-  { f: 'Barbara', l: 'Liskov', phone: '+1 617 555 0102', email: 'liskov@mit.edu' },
+  {
+    f: 'Ada',
+    l: 'Lovelace',
+    phone: '+44 20 7946 0018',
+    email: 'ada@engine.io',
+  },
+  {
+    f: 'Alan',
+    l: 'Turing',
+    phone: '+44 161 496 0754',
+    email: 'alan@bletchley.uk',
+  },
+  {
+    f: 'Grace',
+    l: 'Hopper',
+    phone: '+1 202 555 0147',
+    email: 'grace@navy.mil',
+  },
+  {
+    f: 'Katherine',
+    l: 'Johnson',
+    phone: '+1 757 555 0123',
+    email: 'kj@nasa.gov',
+  },
+  {
+    f: 'Margaret',
+    l: 'Hamilton',
+    phone: '+1 617 555 0199',
+    email: 'margaret@mit.edu',
+  },
+  {
+    f: 'Barbara',
+    l: 'Liskov',
+    phone: '+1 617 555 0102',
+    email: 'liskov@mit.edu',
+  },
 ]
 
 function ContactsLargeTitle() {
@@ -54,7 +84,8 @@ function ContactsLargeTitle() {
     screens.push({
       key: 'detail',
       title: `${open.f} ${open.l}`,
-      titleOnScroll: true, // the bar title fades in once the header scrolls away
+      // the bar title fades in once the header scrolls away
+      titleOnScroll: true,
       grouped: true,
       hideChromeOnScroll: false,
       trailing: (
@@ -76,7 +107,11 @@ function ContactsLargeTitle() {
                 title="Phone"
                 subtitle={open.phone}
                 trailing={
-                  <Icon name="phone" size={20} style={{ color: 'var(--bl-tint)' }} />
+                  <Icon
+                    name="phone"
+                    size={20}
+                    style={{ color: 'var(--bl-tint)' }}
+                  />
                 }
               />
               <ListRow
@@ -84,7 +119,11 @@ function ContactsLargeTitle() {
                 subtitle={open.email}
                 divider={false}
                 trailing={
-                  <Icon name="mail" size={20} style={{ color: 'var(--bl-tint)' }} />
+                  <Icon
+                    name="mail"
+                    size={20}
+                    style={{ color: 'var(--bl-tint)' }}
+                  />
                 }
               />
             </ListSection>
@@ -99,7 +138,10 @@ function ContactsLargeTitle() {
   )
 }
 
-/** The rounded, hairline-bordered window the example sits in, capped to a phone width and centered. */
+/**
+ * The rounded, hairline-bordered window the example sits in, capped to a phone
+ * width and centered.
+ */
 function Window({ width, children }: { width?: number; children: ReactNode }) {
   return (
     <div

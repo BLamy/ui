@@ -32,7 +32,10 @@ function Transcript() {
       }}
     >
       {messages.map(([who, text], i) => (
-        <div key={text} style={{ marginBottom: 16, marginTop: i === 0 ? 'auto' : undefined }}>
+        <div
+          key={text}
+          style={{ marginBottom: 16, marginTop: i === 0 ? 'auto' : undefined }}
+        >
           <div
             style={{
               color: i % 2 ? 'var(--bl-tint)' : 'var(--bl-label2)',
@@ -42,7 +45,9 @@ function Transcript() {
           >
             {who}
           </div>
-          <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 3 }}>{text}</div>
+          <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 3 }}>
+            {text}
+          </div>
         </div>
       ))}
     </div>
@@ -60,7 +65,14 @@ function Artifact({ title = 'Quarterly performance' }: { title?: string }) {
         color: '#15161A',
       }}
     >
-      <div style={{ color: '#777B84', fontSize: 11, fontWeight: 750, letterSpacing: '.08em' }}>
+      <div
+        style={{
+          color: '#777B84',
+          fontSize: 11,
+          fontWeight: 750,
+          letterSpacing: '.08em',
+        }}
+      >
         LIVE ARTIFACT
       </div>
       <h2 style={{ fontSize: 24, margin: '8px 0 18px' }}>{title}</h2>
@@ -134,8 +146,9 @@ function Frame({ width, children }: { width: number; children: ReactNode }) {
   )
 }
 
-// Always floating, with the newest replies peeking above the composer. While `working`, the card becomes
-// a status pill; tapping it (or dragging the chat open) brings the composer back.
+// Always floating, with the newest replies peeking above the composer. While
+// `working`, the card becomes a status pill; tapping it (or dragging the chat
+// open) brings the composer back.
 export default function FloatingPeek() {
   const [working, setWorking] = useState(false)
   return (
@@ -159,9 +172,16 @@ export default function FloatingPeek() {
           </ArtifactChatContainer.Content>
         </ArtifactChatContainer>
       </Frame>
-      <div style={{ textAlign: 'center', marginTop: 8, fontSize: 12, color: 'var(--bl-label2)' }}>
-        Send a message to see the working pill; drag the grip up with a flick to open the chat, down
-        past rest to fold it into the FAB.
+      <div
+        style={{
+          textAlign: 'center',
+          marginTop: 8,
+          fontSize: 12,
+          color: 'var(--bl-label2)',
+        }}
+      >
+        Send a message to see the working pill; drag the grip up with a flick to
+        open the chat, down past rest to fold it into the FAB.
       </div>
     </div>
   )

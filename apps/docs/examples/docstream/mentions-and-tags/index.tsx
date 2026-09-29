@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Button, MarkdownView, type ReferenceNode } from '@brett_lamy/ui'
 
-const answer = `@maya shipped the tray drag in #credenza last week, and @jonas tuned the haptics in #feedback.
+const answer = `@maya shipped the tray drag in #credenza last week, and @jonas
+tuned the haptics in #feedback.
 
 Ask either of them before changing the release threshold.`
 
@@ -31,7 +32,9 @@ export default function MentionsAndTags() {
         {picked ? (
           <>
             Clicked <code>{picked.kind}</code>{' '}
-            <strong style={{ color: 'var(--bl-label)' }}>{picked.label ?? picked.id}</strong>
+            <strong style={{ color: 'var(--bl-label)' }}>
+              {picked.label ?? picked.id}
+            </strong>
           </>
         ) : (
           'Click a chip.'

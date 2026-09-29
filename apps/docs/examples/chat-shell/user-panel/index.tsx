@@ -1,9 +1,18 @@
 import type { ReactNode } from 'react'
-import { ChatAvatar, ChatShell, UserPanel, UserPanelInfo, UserPanelName, UserPanelStatus, type ChatUser } from '@brett_lamy/ui'
+import {
+  ChatAvatar,
+  ChatShell,
+  UserPanel,
+  UserPanelInfo,
+  UserPanelName,
+  UserPanelStatus,
+  type ChatUser,
+} from '@brett_lamy/ui'
 
 const me: ChatUser = { name: 'Ada', c: '#0A84FF', role: '#7EB6FF' }
 
-// A rounded, hairline-bordered window with the page background; `width` caps it, centered.
+// A rounded, hairline-bordered window with the page background; `width` caps
+// it, centered.
 function Window({ width, children }: { width?: number; children: ReactNode }) {
   return (
     <div

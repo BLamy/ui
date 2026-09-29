@@ -10,10 +10,17 @@ export default function MediumSidebar() {
   const [visible, setVisible] = useState(true)
   return (
     <div>
-      <div style={{ fontSize: 12.5, color: 'var(--bl-label2)', marginBottom: 8 }}>
+      <div
+        style={{ fontSize: 12.5, color: 'var(--bl-label2)', marginBottom: 8 }}
+      >
         Parent state: sidebar <b>{visible ? 'visible' : 'hidden'}</b>
       </div>
-      <SplitViewResizableDemo initial={700} min={320} height={440} breakpoints={breakpoints}>
+      <SplitViewResizableDemo
+        initial={700}
+        min={320}
+        height={440}
+        breakpoints={breakpoints}
+      >
         <SplitViewSettingsDemo
           breakpoints={breakpoints}
           sidebarBehavior="tile"

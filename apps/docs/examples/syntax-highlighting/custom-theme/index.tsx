@@ -2,11 +2,12 @@ import type { CSSProperties } from 'react'
 import { SyntaxHighlighting } from '@brett_lamy/ui'
 
 // Lines 7–11 of src/queue.ts
-const excerpt = `  /** Claim up to \`limit\` jobs that are due, skipping locked rows. */
+const excerpt = `
+  /** Claim up to \`limit\` jobs that are due, skipping locked rows. */
   async claim(limit = 10): Promise<JobRecord[]> {
     const rows = await this.adapter.claim({ limit, now: new Date() })
     return rows.map((row) => ({ ...row, attempts: row.attempts + 1 }))
-  }`
+  }`.slice(1)
 
 const palettes: Record<string, CSSProperties> = {
   default: {},
@@ -40,7 +41,11 @@ const palettes: Record<string, CSSProperties> = {
   } as CSSProperties,
 }
 
-export default function CustomTheme({ variant = 'default' }: { variant?: string }) {
+export default function CustomTheme({
+  variant = 'default',
+}: {
+  variant?: string
+}) {
   // Set --bl-syntax-* on the block or on any ancestor (a page, a theme root).
   return (
     <div style={palettes[variant]}>

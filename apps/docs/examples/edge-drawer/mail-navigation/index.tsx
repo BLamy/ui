@@ -1,5 +1,12 @@
 import { useState, type ReactNode } from 'react'
-import { Button, EdgeDrawer, Icon, List, ListRow, ListSection } from '@brett_lamy/ui'
+import {
+  Button,
+  EdgeDrawer,
+  Icon,
+  List,
+  ListRow,
+  ListSection,
+} from '@brett_lamy/ui'
 
 const folders = [
   { id: 'inbox', icon: 'mail', label: 'Inbox', count: 12 },
@@ -51,8 +58,16 @@ function MailNavigation() {
         width={260}
         maxWidth="84%"
       >
-        <nav style={{ height: '100%', background: 'var(--bl-bg2)', paddingTop: 18 }}>
-          <div style={{ padding: '0 20px 12px', fontSize: 24, fontWeight: 800 }}>
+        <nav
+          style={{
+            height: '100%',
+            background: 'var(--bl-bg2)',
+            paddingTop: 18,
+          }}
+        >
+          <div
+            style={{ padding: '0 20px 12px', fontSize: 24, fontWeight: 800 }}
+          >
             Mailboxes
           </div>
           <List inset>
@@ -61,14 +76,20 @@ function MailNavigation() {
                 <ListRow
                   key={f.id}
                   leading={
-                    <Icon name={f.icon} size={20} style={{ color: 'var(--bl-tint)' }} />
+                    <Icon
+                      name={f.icon}
+                      size={20}
+                      style={{ color: 'var(--bl-tint)' }}
+                    />
                   }
                   title={f.label}
                   selected={f.id === folder}
                   divider={i < folders.length - 1}
                   trailing={
                     f.count ? (
-                      <span style={{ color: 'var(--bl-label2)' }}>{f.count}</span>
+                      <span style={{ color: 'var(--bl-label2)' }}>
+                        {f.count}
+                      </span>
                     ) : null
                   }
                   onPress={() => {
@@ -85,7 +106,10 @@ function MailNavigation() {
   )
 }
 
-/** The rounded, hairline-bordered window the example sits in, capped to a phone width and centered. */
+/**
+ * The rounded, hairline-bordered window the example sits in, capped to a phone
+ * width and centered.
+ */
 function Window({ width, children }: { width?: number; children: ReactNode }) {
   return (
     <div

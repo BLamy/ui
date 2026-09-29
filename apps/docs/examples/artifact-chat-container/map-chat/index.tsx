@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { MapChatDemo } from '@brett_lamy/ui'
 
-/** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a fixed-size composition out at its design width, scaled down (never up)
+ * to fit, centered.
+ */
 function Scaled({
   width,
   height,
@@ -49,12 +52,18 @@ function Scaled({
   )
 }
 
-// An always-floating ArtifactChatContainer over a TileMap, with map tools the chat can call.
+// An always-floating ArtifactChatContainer over a TileMap, with map tools the
+// chat can call.
 export default function MapChat() {
   return (
     <Scaled width={430} height={720}>
       <MapChatDemo
-        style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
       />
     </Scaled>
   )

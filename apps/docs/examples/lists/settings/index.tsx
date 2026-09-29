@@ -56,7 +56,9 @@ function SettingsList() {
             onPress={() => {}}
           />
         </ListSection>
-        <ListSection footer="Silences calls and notifications while Focus is on.">
+        <ListSection
+          footer={'Silences calls and notifications while Focus ' + 'is on.'}
+        >
           <ListRow
             leading={<Tile icon="bell" color="#FF3B30" />}
             title="Notifications"
@@ -74,7 +76,11 @@ function SettingsList() {
             title="Do Not Disturb"
             divider={false}
             trailing={
-              <Switch aria-label="Do Not Disturb" checked={dnd} onChange={setDnd} />
+              <Switch
+                aria-label="Do Not Disturb"
+                checked={dnd}
+                onChange={setDnd}
+              />
             }
           />
         </ListSection>
@@ -83,7 +89,8 @@ function SettingsList() {
   )
 }
 
-// A rounded, hairline-bordered window the example sits in; `width` caps it, centered.
+// A rounded, hairline-bordered window the example sits in; `width` caps it,
+// centered.
 function Window({
   width,
   bg = 'var(--bl-bg)',

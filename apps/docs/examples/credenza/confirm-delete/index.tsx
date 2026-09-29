@@ -1,7 +1,14 @@
 import { useState, type ReactNode } from 'react'
 import { Button, Credenza, Haptics, Icon } from '@brett_lamy/ui'
 
-const photos = ['#FF9F0A', '#30B0C7', '#5E5CE6', '#FF375F', '#34C759', '#0A84FF']
+const photos = [
+  '#FF9F0A',
+  '#30B0C7',
+  '#5E5CE6',
+  '#FF375F',
+  '#34C759',
+  '#0A84FF',
+]
 
 function ConfirmDelete() {
   const [confirming, setConfirming] = useState(false)
@@ -9,7 +16,12 @@ function ConfirmDelete() {
   const selected = left.slice(0, 3)
   return (
     <div
-      style={{ position: 'relative', height: 380, padding: 20, boxSizing: 'border-box' }}
+      style={{
+        position: 'relative',
+        height: 380,
+        padding: 20,
+        boxSizing: 'border-box',
+      }}
     >
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
         <strong style={{ flex: 1, fontSize: 17 }}>
@@ -24,7 +36,13 @@ function ConfirmDelete() {
           <Icon name="trash" size={17} /> Delete
         </Button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 8,
+        }}
+      >
         {left.map((c, i) => (
           <div
             key={c}
@@ -54,7 +72,8 @@ function ConfirmDelete() {
               color: 'var(--bl-label2)',
             }}
           >
-            They move to Recently Deleted and are removed for good after 30 days.
+            They move to Recently Deleted and are removed for good after 30
+            days.
           </p>
           <div style={{ display: 'flex', gap: 8 }}>
             <Button
@@ -82,7 +101,8 @@ function ConfirmDelete() {
   )
 }
 
-// A rounded, hairline-bordered window the example sits in; `width` caps it, centered.
+// A rounded, hairline-bordered window the example sits in; `width` caps it,
+// centered.
 function Window({
   width,
   bg = 'var(--bl-bg)',

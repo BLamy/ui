@@ -25,13 +25,20 @@ function CitySearch() {
   const [q, setQ] = useState('')
   const hits = cities.filter((c) => c.toLowerCase().includes(q.toLowerCase()))
   return (
-    <div style={{ height: 400, overflowY: 'auto', background: 'var(--bl-bg2)' }}>
-      {/* `header` sticks to the top of the list; sections would stick below it */}
+    <div
+      style={{ height: 400, overflowY: 'auto', background: 'var(--bl-bg2)' }}
+    >
+      {/* `header` sticks to the top of the list; sections would stick below
+          it */}
       <List
         inset
         header={
           <div style={{ padding: '10px 0' }}>
-            <SearchField value={q} onChange={setQ} placeholder="Search cities" />
+            <SearchField
+              value={q}
+              onChange={setQ}
+              placeholder="Search cities"
+            />
           </div>
         }
       >
@@ -54,8 +61,12 @@ function CitySearch() {
               size={40}
               style={{ margin: '0 auto', color: 'var(--bl-label3)' }}
             />
-            <div style={{ fontSize: 19, fontWeight: 700, marginTop: 12 }}>No Results</div>
-            <div style={{ fontSize: 14, color: 'var(--bl-label2)', marginTop: 4 }}>
+            <div style={{ fontSize: 19, fontWeight: 700, marginTop: 12 }}>
+              No Results
+            </div>
+            <div
+              style={{ fontSize: 14, color: 'var(--bl-label2)', marginTop: 4 }}
+            >
               Nothing matches “{q}”.
             </div>
             <Button
@@ -73,7 +84,8 @@ function CitySearch() {
   )
 }
 
-// A rounded, hairline-bordered window the example sits in; `width` caps it, centered.
+// A rounded, hairline-bordered window the example sits in; `width` caps it,
+// centered.
 function Window({
   width,
   bg = 'var(--bl-bg)',

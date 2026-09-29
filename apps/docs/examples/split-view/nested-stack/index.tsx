@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { SplitViewLibraryDemo } from '@brett_lamy/ui'
 
-/** Lays a composition out at a real device width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a composition out at a real device width, scaled down (never up) to fit,
+ * centered.
+ */
 function Scaled({
   width,
   height,
@@ -65,7 +68,11 @@ function Caption({ children }: { children: ReactNode }) {
 
 // The detail column hosts a SplitViewStack: albums push, their tracks push a
 // credits page. The sidebar selection is the stack's resetKey.
-export default function NestedStack({ variant = 'regular' }: { variant?: string }) {
+export default function NestedStack({
+  variant = 'regular',
+}: {
+  variant?: string
+}) {
   const compact = variant === 'compact'
   return (
     <div>
@@ -77,8 +84,10 @@ export default function NestedStack({ variant = 'regular' }: { variant?: string 
       </Scaled>
       <Caption>
         {compact
-          ? 'Swipe from the leading edge (or press Esc): the album pops first, then the column.'
-          : 'Open an album, then a track. The back button carries the page below’s title, truncated to fit.'}
+          ? 'Swipe from the leading edge (or press Esc): the album pops ' +
+            'first, then the column.'
+          : 'Open an album, then a track. The back button carries the page ' +
+            'below’s title, truncated to fit.'}
       </Caption>
     </div>
   )

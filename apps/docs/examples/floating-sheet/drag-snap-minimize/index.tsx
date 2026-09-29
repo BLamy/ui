@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Button, FloatingSheet, useAppearance, useFloatingSheet } from '@brett_lamy/ui'
+import {
+  Button,
+  FloatingSheet,
+  useAppearance,
+  useFloatingSheet,
+} from '@brett_lamy/ui'
 
-/** Lays a fixed-size composition out at its design width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a fixed-size composition out at its design width, scaled down (never up)
+ * to fit, centered.
+ */
 function Scaled({
   width,
   height,
@@ -49,7 +57,10 @@ function Scaled({
   )
 }
 
-/** A host with enough colour and texture that the glass visibly blurs it; follows the appearance. */
+/**
+ * A host with enough colour and texture that the glass visibly blurs it;
+ * follows the appearance.
+ */
 function Host({ note, children }: { note: string; children?: ReactNode }) {
   const dark = useAppearance() === 'dark'
   return (
@@ -70,11 +81,28 @@ function Host({ note, children }: { note: string; children?: ReactNode }) {
         }}
       >
         <div style={{ padding: 22 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.08em', opacity: 0.6 }}>
+          <div
+            style={{
+              fontSize: 11.5,
+              fontWeight: 700,
+              letterSpacing: '.08em',
+              opacity: 0.6,
+            }}
+          >
             HOST CONTENT
           </div>
-          <h2 style={{ margin: '8px 0 10px', fontSize: 24 }}>Anything positioned</h2>
-          <p style={{ margin: 0, maxWidth: 330, lineHeight: 1.5, opacity: 0.78, fontSize: 14 }}>
+          <h2 style={{ margin: '8px 0 10px', fontSize: 24 }}>
+            Anything positioned
+          </h2>
+          <p
+            style={{
+              margin: 0,
+              maxWidth: 330,
+              lineHeight: 1.5,
+              opacity: 0.78,
+              fontSize: 14,
+            }}
+          >
             {note}
           </p>
           <div
@@ -85,10 +113,22 @@ function Host({ note, children }: { note: string; children?: ReactNode }) {
               marginTop: 20,
             }}
           >
-            {['#0A84FF', '#FF9F0A', '#30D158', '#BF5AF2', '#FF375F', '#64D2FF'].map((c) => (
+            {[
+              '#0A84FF',
+              '#FF9F0A',
+              '#30D158',
+              '#BF5AF2',
+              '#FF375F',
+              '#64D2FF',
+            ].map((c) => (
               <div
                 key={c}
-                style={{ height: 70, borderRadius: 14, background: c, opacity: dark ? 0.75 : 0.6 }}
+                style={{
+                  height: 70,
+                  borderRadius: 14,
+                  background: c,
+                  opacity: dark ? 0.75 : 0.6,
+                }}
               />
             ))}
           </div>
@@ -117,7 +157,9 @@ function Readout() {
   )
   return (
     <div style={{ padding: '2px 20px 20px', fontSize: 13.5 }}>
-      <div style={{ fontSize: 17, fontWeight: 700, margin: '2px 0 8px' }}>useFloatingSheet()</div>
+      <div style={{ fontSize: 17, fontWeight: 700, margin: '2px 0 8px' }}>
+        useFloatingSheet()
+      </div>
       {row('open', String(open))}
       {row('progress', Math.round(progress * 100) + '%')}
       {row('peek', peek + 'px')}
@@ -154,7 +196,11 @@ export default function DragSnapMinimize() {
   return (
     <Host
       note={
-        'Drag the cap: it tracks the pointer, and on release its velocity carries it — a flick opens or closes it, a slow drag settles at the nearest stop. Drag below the resting height to fold into the FAB. Tap the cap to toggle; Escape or the scrim closes. Last events: ' +
+        'Drag the cap: it tracks the pointer, and on release its velocity ' +
+        'carries it — a flick opens or closes it, a slow drag settles at ' +
+        'the nearest stop. Drag below the resting height to fold into the ' +
+        'FAB. Tap the cap to toggle; Escape or the scrim closes. Last ' +
+        'events: ' +
         (log.length ? log.join(', ') : 'none yet')
       }
     >

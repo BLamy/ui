@@ -26,7 +26,8 @@ import {
 const agent: ChatUser = { name: 'Juniper', c: '#30B06E', role: '#30B06E' }
 const you: ChatUser = { name: 'You', c: '#8E8E93', role: '#8E8E93' }
 
-// A rounded, hairline-bordered window with the page background; `width` caps it, centered.
+// A rounded, hairline-bordered window with the page background; `width` caps
+// it, centered.
 function Window({ width, children }: { width?: number; children: ReactNode }) {
   return (
     <div
@@ -48,16 +49,22 @@ function Window({ width, children }: { width?: number; children: ReactNode }) {
   )
 }
 
-// The smallest shell: no navigation at all — a support widget in the product's accent.
+// The smallest shell: no navigation at all — a support widget in the product's
+// accent.
 export default function SupportChat() {
-  const [log, setLog] = useState([{ from: agent, text: 'Hi! What can I help with today?' }])
+  const [log, setLog] = useState([
+    { from: agent, text: 'Hi! What can I help with today?' },
+  ])
   const [typing, setTyping] = useState(false)
   const send = (text: string) => {
     setLog((l) => [...l, { from: you, text }])
     setTyping(true)
     setTimeout(() => {
       setTyping(false)
-      setLog((l) => [...l, { from: agent, text: 'Thanks — looking into that now.' }])
+      setLog((l) => [
+        ...l,
+        { from: agent, text: 'Thanks — looking into that now.' },
+      ])
     }, 1500)
   }
   return (
@@ -68,7 +75,9 @@ export default function SupportChat() {
             <ChatShellHeader>
               <ChatAvatar user={agent} size={24} status="online" />
               <ChatShellTitle>Support</ChatShellTitle>
-              <ChatShellDescription>Replies in a few minutes</ChatShellDescription>
+              <ChatShellDescription>
+                Replies in a few minutes
+              </ChatShellDescription>
               <ChatShellHeaderActions>
                 <ChatShellHeaderAction aria-label="Close">
                   <ChatIcon d={chatIconPaths.x} size={15} />

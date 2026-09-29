@@ -90,21 +90,29 @@ function MailShell() {
             </Button>
           )}
           <strong style={{ fontSize: 16 }}>{box}</strong>
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--bl-label2)' }}>
+          <span
+            style={{
+              marginLeft: 'auto',
+              fontSize: 12,
+              color: 'var(--bl-label2)',
+            }}
+          >
             {Math.round(width)}px · {compact ? 'drawer' : 'column'}
           </span>
         </header>
         <List>
           <ListSection>
-            {['Launch checklist', 'Offsite agenda', 'Invoice #4012'].map((s, i) => (
-              <ListRow
-                key={s}
-                title={s}
-                subtitle={box}
-                divider={i < 2}
-                onPress={() => {}}
-              />
-            ))}
+            {['Launch checklist', 'Offsite agenda', 'Invoice #4012'].map(
+              (s, i) => (
+                <ListRow
+                  key={s}
+                  title={s}
+                  subtitle={box}
+                  divider={i < 2}
+                  onPress={() => {}}
+                />
+              ),
+            )}
           </ListSection>
         </List>
       </main>
@@ -113,9 +121,16 @@ function MailShell() {
 }
 
 // The host width each variant previews; wide fills the card.
-const widths: Record<string, number | undefined> = { wide: undefined, narrow: 390 }
+const widths: Record<string, number | undefined> = {
+  wide: undefined,
+  narrow: 390,
+}
 
-export default function ColumnOrDrawer({ variant = 'wide' }: { variant?: string }) {
+export default function ColumnOrDrawer({
+  variant = 'wide',
+}: {
+  variant?: string
+}) {
   return (
     <Window width={widths[variant]}>
       {/* remount per width so each starts fresh */}
@@ -124,7 +139,10 @@ export default function ColumnOrDrawer({ variant = 'wide' }: { variant?: string 
   )
 }
 
-/** A rounded window with the page background; `width` caps it (phone-sized examples), centered. */
+/**
+ * A rounded window with the page background; `width` caps it (phone-sized
+ * examples), centered.
+ */
 function Window({ width, children }: { width?: number; children?: ReactNode }) {
   return (
     <div

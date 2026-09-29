@@ -36,7 +36,15 @@ const team: Record<string, ChatUser> = {
   bot: { name: 'Stitch', c: '#5E5CE6', role: '#A6A5F2', bot: true },
 }
 
-function Line({ user, time, children }: { user: ChatUser; time: string; children: string }) {
+function Line({
+  user,
+  time,
+  children,
+}: {
+  user: ChatUser
+  time: string
+  children: string
+}) {
   return (
     <Message user={user}>
       <MessageAvatar />
@@ -73,7 +81,8 @@ function Window({ children }: { children: ReactNode }) {
   )
 }
 
-// The thread opens in a ChatShellPanel: docked beside the channel on wide shells, over it on narrow ones.
+// The thread opens in a ChatShellPanel: docked beside the channel on wide
+// shells, over it on narrow ones.
 export default function ThreadPanel() {
   const [open, setOpen] = useState(true)
   return (
@@ -96,32 +105,67 @@ export default function ThreadPanel() {
                       <MessageBadge>APP</MessageBadge>
                       <MessageTimestamp>7:02 AM</MessageTimestamp>
                     </MessageHeader>
-                    <MessageContent>Deploy docs@4f21c9 → prod failed a smoke check.</MessageContent>
-                    <ThreadPreview title="Smoke check: /chat-shell" count={2} onPress={() => setOpen(true)}>
-                      <ThreadPreviewReply user={team.theo}>Re-ran it, green now.</ThreadPreviewReply>
+                    <MessageContent>
+                      Deploy docs@4f21c9 → prod failed a smoke check.
+                    </MessageContent>
+                    <ThreadPreview
+                      title="Smoke check: /chat-shell"
+                      count={2}
+                      onPress={() => setOpen(true)}
+                    >
+                      <ThreadPreviewReply user={team.theo}>
+                        Re-ran it, green now.
+                      </ThreadPreviewReply>
                     </ThreadPreview>
                   </MessageBody>
                   <MessageActions>
-                    <MessageAction label="Open thread" onPress={() => setOpen(true)}>
+                    <MessageAction
+                      label="Open thread"
+                      onPress={() => setOpen(true)}
+                    >
                       <ChatIcon d={chatIconPaths.thread} size={14} />
                     </MessageAction>
                   </MessageActions>
                 </Message>
               </MessageList>
               <ChatShellFooter>
-                <ChatComposer placeholder="Message #deploys" onSend={() => {}} />
+                <ChatComposer
+                  placeholder="Message #deploys"
+                  onSend={() => {}}
+                />
               </ChatShellFooter>
             </ChatShellMain>
-            <ChatShellPanel open={open} onOpenChange={setOpen} dockWidth={600} width={300}>
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <ChatShellPanel
+              open={open}
+              onOpenChange={setOpen}
+              dockWidth={600}
+              width={300}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                }}
+              >
                 <MessageList className="pt-1">
-                  <ThreadHeader title="Smoke check: /chat-shell" description="Started by Stitch in #deploys" />
+                  <ThreadHeader
+                    title="Smoke check: /chat-shell"
+                    description="Started by Stitch in #deploys"
+                  />
                   <MessageDivider>2 replies</MessageDivider>
-                  <Line user={team.noor} time="7:05 AM">Flaky font load, I think.</Line>
-                  <Line user={team.theo} time="7:09 AM">Re-ran it, green now.</Line>
+                  <Line user={team.noor} time="7:05 AM">
+                    Flaky font load, I think.
+                  </Line>
+                  <Line user={team.theo} time="7:09 AM">
+                    Re-ran it, green now.
+                  </Line>
                 </MessageList>
                 <ChatShellFooter className="px-3">
-                  <ChatComposer placeholder="Reply in thread" onSend={() => {}} />
+                  <ChatComposer
+                    placeholder="Reply in thread"
+                    onSend={() => {}}
+                  />
                 </ChatShellFooter>
               </div>
             </ChatShellPanel>

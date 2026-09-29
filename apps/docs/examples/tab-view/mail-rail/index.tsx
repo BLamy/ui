@@ -28,7 +28,12 @@ const mailboxes = [
     title: 'Chats',
     rows: ['#design', '#launch', 'Priya Raman'],
   },
-  { id: 'starred', icon: 'star', title: 'Starred', rows: ['Brand guidelines v4'] },
+  {
+    id: 'starred',
+    icon: 'star',
+    title: 'Starred',
+    rows: ['Brand guidelines v4'],
+  },
   {
     id: 'alerts',
     icon: 'bell',
@@ -79,7 +84,9 @@ function MailRail() {
       <TabViewPanels>
         {mailboxes.map((m) => (
           <TabViewPanel key={m.id} id={m.id}>
-            <h3 style={{ margin: '18px 20px 10px', fontSize: 20 }}>{m.title}</h3>
+            <h3 style={{ margin: '18px 20px 10px', fontSize: 20 }}>
+              {m.title}
+            </h3>
             <List inset>
               <ListSection>
                 {m.rows.map((r, i) => (

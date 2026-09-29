@@ -32,7 +32,10 @@ function Transcript() {
       }}
     >
       {messages.map(([who, text], i) => (
-        <div key={text} style={{ marginBottom: 16, marginTop: i === 0 ? 'auto' : undefined }}>
+        <div
+          key={text}
+          style={{ marginBottom: 16, marginTop: i === 0 ? 'auto' : undefined }}
+        >
           <div
             style={{
               color: i % 2 ? 'var(--bl-tint)' : 'var(--bl-label2)',
@@ -42,7 +45,9 @@ function Transcript() {
           >
             {who}
           </div>
-          <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 3 }}>{text}</div>
+          <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 3 }}>
+            {text}
+          </div>
         </div>
       ))}
     </div>
@@ -60,7 +65,14 @@ function Artifact({ title = 'Quarterly performance' }: { title?: string }) {
         color: '#15161A',
       }}
     >
-      <div style={{ color: '#777B84', fontSize: 11, fontWeight: 750, letterSpacing: '.08em' }}>
+      <div
+        style={{
+          color: '#777B84',
+          fontSize: 11,
+          fontWeight: 750,
+          letterSpacing: '.08em',
+        }}
+      >
         LIVE ARTIFACT
       </div>
       <h2 style={{ fontSize: 24, margin: '8px 0 18px' }}>{title}</h2>
@@ -134,9 +146,10 @@ function Frame({ width, children }: { width: number; children: ReactNode }) {
   )
 }
 
-// Resize across the breakpoint. The composer and the transcript are rendered once and move between the
-// docked column and the floating sheet — a half-typed draft survives — and the composer flies to its new
-// place while the column slides away and the artifact grows into the room.
+// Resize across the breakpoint. The composer and the transcript are rendered
+// once and move between the docked column and the floating sheet — a half-typed
+// draft survives — and the composer flies to its new place while the column
+// slides away and the artifact grows into the room.
 export default function ResizeBreakpoint() {
   const [width, setWidth] = useState(670)
   return (
@@ -163,7 +176,13 @@ export default function ResizeBreakpoint() {
           onChange={(e) => setWidth(Number(e.currentTarget.value))}
           style={{ width: 220 }}
         />
-        <span style={{ fontVariantNumeric: 'tabular-nums', width: 120, whiteSpace: 'nowrap' }}>
+        <span
+          style={{
+            fontVariantNumeric: 'tabular-nums',
+            width: 120,
+            whiteSpace: 'nowrap',
+          }}
+        >
           {width}px · {width < 620 ? 'floating' : 'split'}
         </span>
       </div>

@@ -68,7 +68,9 @@ function MailboxEdit() {
               title={m.subject}
               subtitle={`${m.f} ${m.l}`}
               trailing={
-                <span style={{ fontSize: 13, color: 'var(--bl-label2)' }}>{m.time}</span>
+                <span style={{ fontSize: 13, color: 'var(--bl-label2)' }}>
+                  {m.time}
+                </span>
               }
               divider={i < mail.length - 1}
               onPress={() => editing && toggle(m.id)}
@@ -100,7 +102,8 @@ function MailboxEdit() {
   )
 }
 
-// A rounded, hairline-bordered window the example sits in; `width` caps it, centered.
+// A rounded, hairline-bordered window the example sits in; `width` caps it,
+// centered.
 function Window({
   width,
   bg = 'var(--bl-bg)',

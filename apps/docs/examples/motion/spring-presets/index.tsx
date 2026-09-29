@@ -8,8 +8,9 @@ const PRESETS: { id: SpringName; use: string }[] = [
   { id: 'bouncy', use: 'rare, celebratory moments' },
 ]
 
-// springCss samples each preset's physics into a linear() easing for a CSS transition.
-// (framer-motion takes the same presets as `transition={springs.smooth}`.)
+// springCss samples each preset's physics into a linear() easing for a CSS
+// transition. (framer-motion takes the same presets as
+// `transition={springs.smooth}`.)
 export default function Springs() {
   const [on, setOn] = useState(false)
   return (

@@ -19,8 +19,15 @@ export default function LogTable() {
       >
         <tbody>
           {lines.map((tokens, i) => (
-            <tr key={i} style={{ borderTop: i ? '1px solid var(--bl-sep)' : undefined }}>
-              <td style={{ padding: '2px 12px 2px 0', color: 'var(--bl-label3)' }}>#{i + 1}</td>
+            <tr
+              key={i}
+              style={{ borderTop: i ? '1px solid var(--bl-sep)' : undefined }}
+            >
+              <td
+                style={{ padding: '2px 12px 2px 0', color: 'var(--bl-label3)' }}
+              >
+                #{i + 1}
+              </td>
               <td style={{ padding: '2px 0', whiteSpace: 'pre' }}>
                 <SyntaxTokens tokens={tokens} />
               </td>
@@ -28,7 +35,9 @@ export default function LogTable() {
           ))}
         </tbody>
       </table>
-      <span style={{ fontSize: 12, color: 'var(--bl-label2)' }}>highlighter: {highlighter}</span>
+      <span style={{ fontSize: 12, color: 'var(--bl-label2)' }}>
+        highlighter: {highlighter}
+      </span>
     </div>
   )
 }

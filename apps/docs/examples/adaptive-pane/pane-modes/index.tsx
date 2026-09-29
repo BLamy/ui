@@ -9,8 +9,13 @@ const panel: CSSProperties = {
   fontSize: 13.5,
 }
 
-export default function PaneModes({ variant = 'column' }: { variant?: string }) {
-  // column | drawer | cover | hidden — a real shell picks this from its measured width
+export default function PaneModes({
+  variant = 'column',
+}: {
+  variant?: string
+}) {
+  // column | drawer | cover | hidden — a real shell picks this from its
+  // measured width
   const mode = variant as AdaptivePaneMode
   const [open, setOpen] = useState(true)
   const [drawer, setDrawer] = useState(false)
@@ -31,7 +36,9 @@ export default function PaneModes({ variant = 'column' }: { variant?: string }) 
         >
           <div style={panel}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Pane</div>
-            <div style={{ color: 'var(--bl-label2)' }}>Same children, mode: {mode}</div>
+            <div style={{ color: 'var(--bl-label2)' }}>
+              Same children, mode: {mode}
+            </div>
           </div>
         </AdaptivePane>
         <div
@@ -44,18 +51,24 @@ export default function PaneModes({ variant = 'column' }: { variant?: string }) 
             gap: 14,
           }}
         >
-          <div style={{ fontSize: 13, color: 'var(--bl-label2)', lineHeight: 1.5 }}>
-            A shell picks the mode from its measured width; the pane never remounts its children
-            within a mode. Switch modes in the header.
+          <div
+            style={{ fontSize: 13, color: 'var(--bl-label2)', lineHeight: 1.5 }}
+          >
+            A shell picks the mode from its measured width; the pane never
+            remounts its children within a mode. Switch modes in the header.
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {mode === 'drawer' ? (
               <TintButton label="Open pane" onPress={() => setOpen(true)} />
             ) : null}
-            <TintButton label="Open EdgeDrawer" onPress={() => setDrawer(true)} />
+            <TintButton
+              label="Open EdgeDrawer"
+              onPress={() => setDrawer(true)}
+            />
           </div>
         </div>
-        {/* EdgeDrawer: the headless scrim + panel AdaptivePane uses for its drawer mode */}
+        {/* EdgeDrawer: the headless scrim + panel AdaptivePane uses for its
+            drawer mode */}
         <EdgeDrawer
           side="right"
           open={drawer}
@@ -93,7 +106,13 @@ function Frame({ height, children }: { height: number; children?: ReactNode }) {
   )
 }
 
-function TintButton({ label, onPress }: { label: string; onPress: () => void }) {
+function TintButton({
+  label,
+  onPress,
+}: {
+  label: string
+  onPress: () => void
+}) {
   return (
     <button
       onClick={onPress}

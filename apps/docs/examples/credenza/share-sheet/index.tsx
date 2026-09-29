@@ -21,7 +21,12 @@ function ShareSheet() {
   const [copied, setCopied] = useState(false)
   return (
     <div
-      style={{ position: 'relative', height: 480, display: 'grid', placeItems: 'center' }}
+      style={{
+        position: 'relative',
+        height: 480,
+        display: 'grid',
+        placeItems: 'center',
+      }}
     >
       <Button
         variant="secondary"
@@ -42,7 +47,13 @@ function ShareSheet() {
         onClose={() => setView(null)}
       >
         {view === 'qr' ? (
-          <div style={{ display: 'grid', placeItems: 'center', padding: '10px 0 26px' }}>
+          <div
+            style={{
+              display: 'grid',
+              placeItems: 'center',
+              padding: '10px 0 26px',
+            }}
+          >
             <QRSvg seed="https://example.com/albums/summer-2026" size={168} />
           </div>
         ) : (
@@ -102,7 +113,8 @@ function ShareSheet() {
   )
 }
 
-// A rounded, hairline-bordered window the example sits in; `width` caps it, centered.
+// A rounded, hairline-bordered window the example sits in; `width` caps it,
+// centered.
 function Window({
   width,
   bg = 'var(--bl-bg)',

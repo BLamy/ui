@@ -9,7 +9,8 @@ import {
   WorkspaceRailSeparator,
 } from '@brett_lamy/ui'
 
-// A rounded, hairline-bordered window with the page background; `width` caps it, centered.
+// A rounded, hairline-bordered window with the page background; `width` caps
+// it, centered.
 function Window({ width, children }: { width?: number; children: ReactNode }) {
   return (
     <div
@@ -31,8 +32,9 @@ function Window({ width, children }: { width?: number; children: ReactNode }) {
   )
 }
 
-// Hover a tile: it rounds from a circle to a squircle and the pill on its edge grows from the unread
-// nub. Select one: the pill runs full height on a springy curve. Up / Down move between tiles.
+// Hover a tile: it rounds from a circle to a squircle and the pill on its edge
+// grows from the unread nub. Select one: the pill runs full height on a springy
+// curve. Up / Down move between tiles.
 export default function Rail() {
   return (
     <Window width={320}>
@@ -41,14 +43,40 @@ export default function Rail() {
           <WorkspaceRailList>
             <WorkspaceRailHome unread />
             <WorkspaceRailSeparator />
-            <WorkspaceRailItem id="blui" label="B" color="#0A84FF" title="BL UI HQ" />
-            <WorkspaceRailItem id="creamery" label="C" color="#BF5AF2" title="Creamery" unread />
-            <WorkspaceRailItem id="lab" label="L" color="#30D158" title="Motion Lab" mentions={3} />
+            <WorkspaceRailItem
+              id="blui"
+              label="B"
+              color="#0A84FF"
+              title="BL UI HQ"
+            />
+            <WorkspaceRailItem
+              id="creamery"
+              label="C"
+              color="#BF5AF2"
+              title="Creamery"
+              unread
+            />
+            <WorkspaceRailItem
+              id="lab"
+              label="L"
+              color="#30D158"
+              title="Motion Lab"
+              mentions={3}
+            />
           </WorkspaceRailList>
           <WorkspaceRailAction aria-label="Add workspace" />
         </WorkspaceRail>
-        <div style={{ flex: 1, padding: 18, fontSize: 13, lineHeight: 1.5, color: 'var(--ck-mut)' }}>
-          Hover and select the tiles: corners and the pill spring between states.
+        <div
+          style={{
+            flex: 1,
+            padding: 18,
+            fontSize: 13,
+            lineHeight: 1.5,
+            color: 'var(--ck-mut)',
+          }}
+        >
+          Hover and select the tiles: corners and the pill spring between
+          states.
         </div>
       </ChatShell>
     </Window>

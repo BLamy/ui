@@ -32,7 +32,15 @@ const AFTER = `export function total(items: Item[]) {
 }`
 
 // Lays the shell out at its design width, scaled down (never up) to fit.
-function Scaled({ width, height, children }: { width: number; height: number; children: ReactNode }) {
+function Scaled({
+  width,
+  height,
+  children,
+}: {
+  width: number
+  height: number
+  children: ReactNode
+}) {
   const host = useRef<HTMLDivElement | null>(null)
   const [scale, setScale] = useState(1)
   useEffect(() => {
@@ -58,7 +66,15 @@ function Scaled({ width, height, children }: { width: number; height: number; ch
         boxShadow: '0 0 0 1px var(--wb-sep)',
       }}
     >
-      <div style={{ position: 'absolute', width, height, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+      <div
+        style={{
+          position: 'absolute',
+          width,
+          height,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      >
         {children}
       </div>
     </div>
@@ -78,13 +94,24 @@ function ChatWithDiff() {
           </WorkbenchHeader>
           <Conversation>
             <ConversationMessages threadKey="cart">
-              <UserMessage key="u1">Totals ignore quantity — can you fix it?</UserMessage>
+              <UserMessage key="u1">
+                Totals ignore quantity — can you fix it?
+              </UserMessage>
               <AssistantMessage key="a1">
                 <WorkLog summary="Worked for 18s" defaultOpen>
                   <ToolCall title="Read src/cart.ts" />
-                  <ToolCall title="Ran the cart tests" detail="12 passed" code="pnpm test cart" />
+                  <ToolCall
+                    title="Ran the cart tests"
+                    detail="12 passed"
+                    code="pnpm test cart"
+                  />
                 </WorkLog>
-                <MessageMarkdown markdown="`total()` now multiplies by `qty`, and the items are typed. The change is in the inspector →" />
+                <MessageMarkdown
+                  markdown={
+                    '`total()` now multiplies by `qty`, and the items are ' +
+                    'typed. The change is in the inspector →'
+                  }
+                />
               </AssistantMessage>
             </ConversationMessages>
             <ConversationComposer>
@@ -98,14 +125,18 @@ function ChatWithDiff() {
             <WorkbenchPanelFullscreen />
             <WorkbenchPanelClose />
           </WorkbenchPanelHeader>
-          <SurfaceDiff oldFile={{ name: 'src/cart.ts', contents: BEFORE }} newFile={{ name: 'src/cart.ts', contents: AFTER }} />
+          <SurfaceDiff
+            oldFile={{ name: 'src/cart.ts', contents: BEFORE }}
+            newFile={{ name: 'src/cart.ts', contents: AFTER }}
+          />
         </WorkbenchPanel>
       </WorkbenchShell>
     </Scaled>
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function ChatWithDiffExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

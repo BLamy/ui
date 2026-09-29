@@ -7,7 +7,10 @@ export default function SketchDemo() {
   const strokes = useMemo(() => demoStrokes(), [])
   return (
     <div style={{ position: 'relative', height: 540, overflow: 'hidden' }}>
-      <PencilKitDemo defaultStrokes={strokes} style={{ position: 'absolute', inset: 0 }} />
+      <PencilKitDemo
+        defaultStrokes={strokes}
+        style={{ position: 'absolute', inset: 0 }}
+      />
     </div>
   )
 }

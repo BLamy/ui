@@ -74,7 +74,11 @@ function InboxWithActions() {
       title: 'New Message',
       hideChromeOnScroll: false,
       trailing: (
-        <Button size="sm" style={{ marginRight: 8 }} onPress={() => setComposing(false)}>
+        <Button
+          size="sm"
+          style={{ marginRight: 8 }}
+          onPress={() => setComposing(false)}
+        >
           Send
         </Button>
       ),
@@ -89,7 +93,12 @@ function InboxWithActions() {
           >
             To: Design team
           </div>
-          <div style={{ padding: '10px 0', borderBottom: '1px solid var(--bl-sep)' }}>
+          <div
+            style={{
+              padding: '10px 0',
+              borderBottom: '1px solid var(--bl-sep)',
+            }}
+          >
             Subject: Friday demo
           </div>
           <p style={{ color: 'var(--bl-label2)' }}>
@@ -105,7 +114,10 @@ function InboxWithActions() {
   )
 }
 
-/** The rounded, hairline-bordered window the example sits in, capped to a phone width and centered. */
+/**
+ * The rounded, hairline-bordered window the example sits in, capped to a phone
+ * width and centered.
+ */
 function Window({ width, children }: { width?: number; children: ReactNode }) {
   return (
     <div

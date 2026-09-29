@@ -58,7 +58,11 @@ function SettingsDrillDown() {
         content: (
           <List inset>
             <ListSection>
-              <ListRow title="About" accessory="chevron" onPress={() => push('about')} />
+              <ListRow
+                title="About"
+                accessory="chevron"
+                onPress={() => push('about')}
+              />
               <ListRow
                 title="Software Update"
                 accessory="chevron"
@@ -126,12 +130,18 @@ function SettingsDrillDown() {
   }
   return (
     <div style={{ position: 'relative', height: 420 }}>
-      <NavigationStack screens={screens} onPop={() => setPath((p) => p.slice(0, -1))} />
+      <NavigationStack
+        screens={screens}
+        onPop={() => setPath((p) => p.slice(0, -1))}
+      />
     </div>
   )
 }
 
-/** The rounded, hairline-bordered window the example sits in, capped to a phone width and centered. */
+/**
+ * The rounded, hairline-bordered window the example sits in, capped to a phone
+ * width and centered.
+ */
 function Window({ width, children }: { width?: number; children: ReactNode }) {
   return (
     <div

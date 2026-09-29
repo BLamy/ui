@@ -5,7 +5,8 @@ const turns = [
   {
     role: 'assistant',
     text: [
-      'Pass `shouldForceMount` to the panel. It stays mounted and is only **hidden**:',
+      'Pass `shouldForceMount` to the panel. It stays mounted and is only ' +
+        '**hidden**:',
       '',
       '```tsx',
       '<TabViewPanel id="settings" shouldForceMount>',
@@ -21,7 +22,15 @@ const turns = [
 
 function ChatTranscript() {
   return (
-    <div style={{ display: 'grid', gap: 14, padding: 18, maxWidth: 620, margin: '0 auto' }}>
+    <div
+      style={{
+        display: 'grid',
+        gap: 14,
+        padding: 18,
+        maxWidth: 620,
+        margin: '0 auto',
+      }}
+    >
       {turns.map((t, i) =>
         t.role === 'user' ? (
           <div
@@ -46,7 +55,8 @@ function ChatTranscript() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the app's light / dark appearance.
+// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
+// app's light / dark appearance.
 export default function ChatTranscriptExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

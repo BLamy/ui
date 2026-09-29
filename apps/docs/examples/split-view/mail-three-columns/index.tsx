@@ -8,7 +8,10 @@ const sizes = [
   { id: 'compact', width: 390 },
 ]
 
-/** Lays a composition out at a real device width, scaled down (never up) to fit, centered. */
+/**
+ * Lays a composition out at a real device width, scaled down (never up) to fit,
+ * centered.
+ */
 function Scaled({
   width,
   height,
@@ -70,7 +73,11 @@ function Caption({ children }: { children: ReactNode }) {
   )
 }
 
-export default function MailThreeColumns({ variant = 'regular' }: { variant?: string }) {
+export default function MailThreeColumns({
+  variant = 'regular',
+}: {
+  variant?: string
+}) {
   const size = sizes.find((s) => s.id === variant) ?? sizes[0]
   return (
     <div>
@@ -79,10 +86,13 @@ export default function MailThreeColumns({ variant = 'regular' }: { variant?: st
       </Scaled>
       <Caption>
         {size.id === 'regular'
-          ? 'Regular: mailboxes, list and message tiled. The sidebar button slides the mailboxes away.'
+          ? 'Regular: mailboxes, list and message tiled. The sidebar button ' +
+            'slides the mailboxes away.'
           : size.id === 'medium'
-            ? 'Medium: list and message tile; the sidebar button floats the mailboxes over them.'
-            : 'Compact: one column at a time. Pick a row to push; back, Esc or an edge swipe pops.'}
+            ? 'Medium: list and message tile; the sidebar button floats the ' +
+              'mailboxes over them.'
+            : 'Compact: one column at a time. Pick a row to push; back, Esc ' +
+              'or an edge swipe pops.'}
       </Caption>
     </div>
   )

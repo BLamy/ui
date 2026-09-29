@@ -1,5 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { Button, Haptics, HapticIndicator, type HapticEvent } from '@brett_lamy/ui'
+import {
+  Button,
+  Haptics,
+  HapticIndicator,
+  type HapticEvent,
+} from '@brett_lamy/ui'
 
 // A rounded window, capped at `width` and centered.
 function Window({ width, children }: { width: number; children: ReactNode }) {
@@ -26,20 +31,40 @@ function Window({ width, children }: { width: number; children: ReactNode }) {
 export default function HapticLog() {
   const [events, setEvents] = useState<HapticEvent[]>([])
   // Haptics.on observes every call (from your code and from the components).
-  useEffect(() => Haptics.on((e) => setEvents((list) => [e, ...list].slice(0, 5))), [])
+  useEffect(
+    () => Haptics.on((e) => setEvents((list) => [e, ...list].slice(0, 5))),
+    [],
+  )
   return (
     <Window width={520}>
       <div
-        style={{ position: 'relative', height: 300, padding: 16, boxSizing: 'border-box' }}
+        style={{
+          position: 'relative',
+          height: 300,
+          padding: 16,
+          boxSizing: 'border-box',
+        }}
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          <Button size="sm" variant="secondary" onPress={() => Haptics.impact('light')}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onPress={() => Haptics.impact('light')}
+          >
             Light
           </Button>
-          <Button size="sm" variant="secondary" onPress={() => Haptics.impact('heavy')}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onPress={() => Haptics.impact('heavy')}
+          >
             Heavy
           </Button>
-          <Button size="sm" variant="secondary" onPress={() => Haptics.selection()}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onPress={() => Haptics.selection()}
+          >
             Selection
           </Button>
           <Button
@@ -69,7 +94,10 @@ export default function HapticLog() {
                   opacity: 1 - i * 0.16,
                 }}
               >
-                {e.label} <span style={{ color: 'var(--bl-label3)' }}>· weight {e.w}</span>
+                {e.label}{' '}
+                <span style={{ color: 'var(--bl-label3)' }}>
+                  · weight {e.w}
+                </span>
               </li>
             ))
           ) : (

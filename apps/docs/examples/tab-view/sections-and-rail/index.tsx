@@ -29,9 +29,22 @@ const blurb: Record<string, string> = {
 }
 const servers = [
   { id: 'blui', label: 'T', color: '#0A84FF', title: 'BL UI HQ' },
-  { id: 'creamery', label: 'C', color: '#BF5AF2', title: 'Creamery', unread: true },
+  {
+    id: 'creamery',
+    label: 'C',
+    color: '#BF5AF2',
+    title: 'Creamery',
+    unread: true,
+  },
   { id: 'labs', label: 'L', color: '#32D74B', title: 'Labs', mentions: 4 },
-  { id: 'ops', label: 'O', color: '#FF9F0A', title: 'Ops', unread: true, mentions: 12 },
+  {
+    id: 'ops',
+    label: 'O',
+    color: '#FF9F0A',
+    title: 'Ops',
+    unread: true,
+    mentions: 12,
+  },
 ]
 
 /** A rounded, fixed-height frame the tab view fills. */
@@ -80,7 +93,9 @@ function Panel({ id, horizontal }: { id: string; horizontal: boolean }) {
         >
           <Icon name={cur.icon} size={25} />
         </span>
-        <div style={{ fontSize: 16.5, fontWeight: 650, marginTop: 10 }}>{cur.title}</div>
+        <div style={{ fontSize: 16.5, fontWeight: 650, marginTop: 10 }}>
+          {cur.title}
+        </div>
         <div
           style={{
             fontSize: 13,
@@ -105,7 +120,9 @@ function ServerRail({
   setServer: (id: string) => void
 }) {
   const serverName =
-    server === 'home' ? 'Direct Messages' : servers.find((s) => s.id === server)?.title
+    server === 'home'
+      ? 'Direct Messages'
+      : servers.find((s) => s.id === server)?.title
   // WorkspaceRail reads the chat --ck-* tokens; chatVars follows light / dark.
   const appearance = useAppearance() ?? 'light'
   return (
@@ -147,8 +164,9 @@ function ServerRail({
         >
           {serverName}
         </div>
-        ChatKit's WorkspaceRail is a vertical TabView: tiles are tabs (Up/Down arrows),
-        the pill marks unread / hover / selected, and Add is an action, not a tab.
+        ChatKit's WorkspaceRail is a vertical TabView: tiles are tabs (Up/Down
+        arrows), the pill marks unread / hover / selected, and Add is an action,
+        not a tab.
       </div>
     </div>
   )
@@ -179,7 +197,12 @@ export default function SectionsAndRail({
             <TabViewBar>
               <TabViewList aria-label="Sections">
                 {items.map((it) => (
-                  <TabViewTab key={it.id} id={it.id} icon={it.icon} title={it.title} />
+                  <TabViewTab
+                    key={it.id}
+                    id={it.id}
+                    icon={it.icon}
+                    title={it.title}
+                  />
                 ))}
               </TabViewList>
             </TabViewBar>

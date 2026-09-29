@@ -17,7 +17,8 @@ export default function ShareContact() {
       >
         Share Contact…
       </Button>
-      {/* `view` keys each state; the card spring-morphs its height between them */}
+      {/* `view` keys each state; the card spring-morphs its height between
+          them */}
       <Credenza
         open={view !== null}
         view={view ?? 'menu'}
@@ -41,8 +42,12 @@ export default function ShareContact() {
             >
               <Icon name="check" size={24} sw={2.4} />
             </span>
-            <div style={{ fontWeight: 650, fontSize: 16, marginTop: 10 }}>Contact shared</div>
-            <div style={{ fontSize: 13, color: 'var(--bl-label2)', marginTop: 3 }}>
+            <div style={{ fontWeight: 650, fontSize: 16, marginTop: 10 }}>
+              Contact shared
+            </div>
+            <div
+              style={{ fontSize: 13, color: 'var(--bl-label2)', marginTop: 3 }}
+            >
               The card spring-morphs its height to each state.
             </div>
           </div>
