@@ -163,13 +163,6 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 /* The terminal stays dark in the light appearance (a `terminal` theme scope): dark scrollbars back. */
 [data-theme-scope="workbench"].light [data-theme-scope="terminal"] .wb-scroll{scrollbar-color:rgba(140,140,155,.3) transparent}
 [data-theme-scope="workbench"].light [data-theme-scope="terminal"] .wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28)}
-/* TEMPORARY (removed when the registry blocks move to 2.0): the 1.x hover hooks the blocks still use. The library's
-   parts use utilities (`wbPress`, `hover:bg-secondary!`). */
-.wb-btn{-webkit-tap-highlight-color:transparent;font-family:inherit}
-.wb-btn:hover{filter:brightness(1.12)}
-[data-theme-scope="workbench"].light .wb-btn:hover{filter:brightness(.97)}
-[data-theme-scope="workbench"].light [data-theme-scope="terminal"] .wb-btn:hover{filter:brightness(1.12)}
-.wb-hl:hover{background:var(--secondary)!important}
 
 /* ── MarkdownView (.wb-md) — reads the theme: code surfaces are --code / --code-foreground, hairlines --border ── */
 .wb-md{line-height:1.6;font-size:14px}
