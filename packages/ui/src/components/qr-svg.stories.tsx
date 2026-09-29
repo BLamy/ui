@@ -16,7 +16,7 @@ const Card = ({ children, style, label }: { children: ReactNode; style?: CSSProp
     <div style={{ display: 'inline-grid', placeItems: 'center', padding: 16, borderRadius: 20, background: '#fff', color: '#111', boxShadow: '0 0 0 1px var(--border)', ...style }}>
       {children}
     </div>
-    {label ? <span style={{ fontSize: 12, color: 'var(--bl-label-2, #888)' }}>{label}</span> : null}
+    {label ? <span className="text-[12px] text-muted-foreground">{label}</span> : null}
   </div>
 );
 

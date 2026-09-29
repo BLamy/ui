@@ -26,6 +26,9 @@ Commands (repo root):
 - `node tools/registry/build.mjs --check` — fail if the committed files are stale (CI).
 
 Every item depends on `bl-ui` (`registry:style`): it installs `@brett_lamy/ui`, adds
-`@import "@brett_lamy/ui/styles.css"` to the app's CSS and the BL token utilities (`bg-bl-card`, `text-bl-label`,
-…) to its `@theme inline`. Blocks should style with those `bl-*` / `wb-*` / `ck-*` utilities rather than shadcn's
-semantic names, which belong to the consumer's own palette.
+`@import "@brett_lamy/ui/styles.css"` to the app's CSS and registers BL UI's extra color utilities
+(`text-tertiary-foreground`, `bg-secondary-strong`, `bg-bar`, `text-success`, …) in its `@theme inline`. `bl-theme`
+(`registry:theme`, opt-in) sets the app's shadcn variables to the iOS palette and adds the workbench / terminal / chat
+theme scopes; it is generated from `packages/ui/src/theme.css`. Blocks style with shadcn's utilities plus those extras
+(no `bl-*` / `wb-*` / `ck-*` palettes since 2.0); an app-specific palette is a block-local constant applied to the
+block's root through `style` (see github-clone), and fixed content colors are named constants.

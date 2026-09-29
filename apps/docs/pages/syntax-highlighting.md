@@ -158,10 +158,10 @@ Tests should wait for `pending` to go away before taking a screenshot. In headle
 | Property | Colors |
 | --- | --- |
 | `--bl-syntax-keyword`, `-type`, `-function`, `-string`, `-number`, `-constant`, `-operator`, `-comment` | Token colors. `--bl-syntax-comment-style` sets the comment font style (default `italic`). |
-| `--bl-syntax-fg` | Plain text (default `--bl-label`). |
-| `--bl-syntax-surface` | Block background and the sticky gutter (default `--bl-card`; transparent for `ghost`). |
+| `--bl-syntax-fg` | Plain text (default `--foreground`). |
+| `--bl-syntax-surface` | Block background and the sticky gutter (default `--card`; transparent for `ghost`). |
 | `--bl-syntax-border`, `--bl-syntax-radius`, `--bl-syntax-header-bg` | Card chrome. |
-| `--bl-syntax-line-number` | Gutter numbers (default `--bl-label3`). |
+| `--bl-syntax-line-number` | Gutter numbers (default `--tertiary-foreground`). |
 | `--bl-syntax-highlight`, `--bl-syntax-highlight-bar` | Highlighted lines (default: a tint wash and a tint bar). |
 | `--bl-syntax-added`, `--bl-syntax-removed` (and `-gutter`) | Diff line backgrounds. |
 | `--bl-syntax-font`, `--bl-syntax-font-size`, `--bl-syntax-line-height`, `--bl-syntax-padding-y`, `--bl-syntax-tab-size` | Type and spacing (defaults: `--font-mono`, 13px, 1.6, 12px, 2). |

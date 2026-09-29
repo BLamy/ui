@@ -31,7 +31,7 @@ Pick a glyph by name. It takes the text color around it, so tint it with `color`
 
 ```tsx
 <Icon name="paperplane" />
-<Icon name="heart-fill" className="text-bl-red" />
+<Icon name="heart-fill" className="text-destructive" />
 <Icon name="bell-slash" size={18} weight="semibold" />
 ```
 

@@ -49,7 +49,7 @@ The host must be positioned (`relative`, `absolute`, …) and sized; the sheet m
 | --- | --- |
 | Glass | `appearance="glass"` (default) with a `gutter`. Blurs whatever is behind it. |
 | Peeking | Any appearance with `peek` — part of the body stays visible above the foot while resting. |
-| Card | `appearance="sheet"` with a `gutter`: an opaque `--bl-card` surface with a soft shadow. |
+| Card | `appearance="sheet"` with a `gutter`: an opaque `--card` surface with a soft shadow. |
 | Docked sheet | `appearance="sheet"` with `gutter={0}`: edge to edge with square bottom corners, like a system sheet. |
 | Open | `defaultOpen` or a controlled `open`: the cap meets the top of the host and the host dims behind it. |
 

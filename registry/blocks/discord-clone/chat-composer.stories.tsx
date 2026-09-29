@@ -33,7 +33,7 @@ export const ThreadReply: Story = {
   args: { placeholder: 'Reply in "Repo connect spawning new project"', autoFocus: true },
 };
 
-/** `--ck-tint` (ChatShell's `tint`) colors the send button once there's a draft. */
+/** `--primary` (ChatShell's `tint`) colors the send button once there's a draft. */
 export const PurpleTint: Story = {
   args: { placeholder: 'Message #design', tint: '#BF5AF2' },
 };

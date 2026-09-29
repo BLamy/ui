@@ -123,7 +123,7 @@ The Docstream editor's stylesheet ships inside `@brett_lamy/ui/styles.css` in a 
     title: 'text-[28px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
     checklist: 'pl-0',
     checklistItem: 'gap-2.5 items-start',
-    checkbox: 'appearance-none m-0 size-[21px] rounded-full shadow-[inset_0_0_0_1.6px_var(--bl-label3)] checked:bg-primary checked:shadow-none',
+    checkbox: 'appearance-none m-0 size-[21px] rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)] checked:bg-primary checked:shadow-none',
     tableHeader: 'bg-transparent font-semibold px-3 py-2',
     tableCell: 'px-3 py-2',
   }}
