@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream-editor",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "TipTap editor for Docstream GitBook-style markdown documents.",
   "type": "module",
   "scripts": {
@@ -44,9 +44,10 @@
     "./styles.css": "./dist/styles.css"
   },
   "dependencies": {
-    "@brett_lamy/docstream": "1.4.0",
+    "@brett_lamy/docstream": "1.5.0",
     "gpu-lexer": "0.0.2",
-    "lucide-react": "^1.17.0"
+    "lucide-react": "^1.17.0",
+    "react-aria": "^3.52.1"
   },
   "peerDependencies": {
     "@tiptap/core": "^3.26.1",
@@ -79,6 +80,7 @@
     "@tiptap/suggestion": "^3.26.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "happy-dom": "^20.14.5",
     "react": "^19",
     "react-dom": "^19",
     "typescript": "^5.6.0",

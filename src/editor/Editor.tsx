@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { EditorContent, useEditor, type Editor as TiptapEditor } from "@tiptap/react"
 import type { AnyExtension } from "@tiptap/core"
 import {
@@ -11,7 +11,20 @@ import {
 } from "lucide-react"
 
 import { parseMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
-import type { DemoResolver, InlineDemoRuntime } from "@brett_lamy/docstream/demo"
+import {
+  DocstreamDemoVFSContext,
+  createDemoVFS,
+  docstreamPayloadFromMarkdown,
+  hasDocstreamClipboard,
+  readDocstreamClipboard,
+  writeDocstreamClipboard,
+  type DemoFile,
+  type DemoResolver,
+  type DemoVFS,
+  type DemoVFSChange,
+  type DocstreamClipboardPayload,
+  type InlineDemoRuntime,
+} from "@brett_lamy/docstream/demo"
 import type { LivePreviewRenderer } from "@brett_lamy/docstream"
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import {
@@ -23,6 +36,14 @@ import {
   type EditorAttachment,
 } from "./attachments"
 import { astToTiptap, markdownPasteContent, serializeEditorMarkdown, tiptapToAst, type PMNode } from "./convert"
+import {
+  payloadContent,
+  registerPayloadFiles,
+  selectionClipboard,
+  takeActiveDemoDrag,
+  useEditorClipboard,
+  type PastedDemoFiles,
+} from "./demo-clipboard"
 import { createGitbookExtensions, type ReferenceSources } from "./extensions"
 import { EditorRuntimeProvider } from "./runtime"
 import type { SlashItem } from "./slash-menu"
@@ -113,6 +134,27 @@ export interface GitbookEditorProps {
    * `{% … %}` block, a fence, a list …) into editor blocks instead of literal text (default true).
    */
   markdownPaste?: boolean
+  /**
+   * The demo virtual file system: demo files held in memory by `src` — pasted / dropped demos
+   * register theirs here, and demo blocks with no inline files whose `src` the host resolver
+   * doesn't know render from it. Pass one VFS (`useDemoVFS()`) to several editors (and
+   * renderers' `demoVFS`) to share files. Defaults to a VFS private to this editor.
+   */
+  demoVFS?: DemoVFS
+  /** Fired when the VFS changes (a paste registered files), with every `{ [src]: files }` it holds. */
+  onDemoFilesChange?: (files: Readonly<Record<string, DemoFile[]>>, change: DemoVFSChange) => void
+  /**
+   * Where a pasted demo's files go: `"inline"` (default) — the VFS, and inline in the block
+   * unless the host resolver lists its `src`; `"vfs"` — the VFS only, the block keeps its exact
+   * copied structure (persist the files with `onDemoFilesChange`).
+   */
+  pastedDemoFiles?: PastedDemoFiles
+  /**
+   * Copying (or cutting) a selection with demo blocks writes the docstream clipboard —
+   * renderable Markdown with every demo's files inline plus `application/x-docstream+json` —
+   * and pasting one restores the demos with their files (default true).
+   */
+  demoClipboard?: boolean
 }
 
 function ToolbarButton({
@@ -205,7 +247,13 @@ export function GitbookEditor({
   liveRenderer,
   demoDependencies,
   markdownPaste = true,
+  demoVFS,
+  onDemoFilesChange,
+  pastedDemoFiles = "inline",
+  demoClipboard = true,
 }: GitbookEditorProps) {
+  const [ownVFS] = useState(() => createDemoVFS())
+  const vfs = demoVFS ?? ownVFS
   // Tracks the markdown the editor itself produced, so external updates
   // (file switches) reset content but our own onChange echoes don't.
   const lastEmitted = useRef<string | null>(null)
@@ -216,8 +264,8 @@ export function GitbookEditor({
   // Ids of the attachment chips in the document, to report removals.
   const attachmentIds = useRef<Set<string>>(new Set())
   // Latest callbacks for handlers the editor captured at creation.
-  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste })
-  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste }
+  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard })
+  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard }
   const editorRef = useRef<TiptapEditor | null>(null)
 
   // Pasted/dropped image files: image blocks ("inline") or attachment chips ("chip").
@@ -273,15 +321,56 @@ export function GitbookEditor({
     if (!data || !ed) return false
     const types = Array.from(data.types ?? [])
     if (types.includes("text/html") && !types.includes("vscode-editor-data")) return false
-    const pasted = markdownPasteContent(data.getData("text/plain"))
+    const text = data.getData("text/plain") || data.getData("text/markdown")
+    const pasted = markdownPasteContent(text)
     if (!pasted?.content.length) return false
     event.preventDefault()
+    // Inline-file demos in the Markdown: their files go into the VFS as well.
+    if (/\{%\s*demo\b/.test(text)) registerPayloadFiles(latest.current.vfs, docstreamPayloadFromMarkdown(text))
+    insertPasted(pasted)
+    return true
+  }
+
+  const insertPasted = (pasted: { content: PMNode[]; citations?: CitationDef[] }, at?: number) => {
+    const ed = editorRef.current
+    if (!ed || ed.isDestroyed || !pasted.content.length) return
     if (pasted.citations) {
       const known = new Map((citationsRef.current ?? []).map((c) => [c.id, c]))
       for (const c of pasted.citations) known.set(c.id, c)
       citationsRef.current = [...known.values()]
     }
-    ed.chain().focus().insertContent(pasted.content).run()
+    const chain = ed.chain().focus()
+    ;(at === undefined ? chain.insertContent(pasted.content) : chain.insertContentAt(at, pasted.content)).run()
+  }
+
+  // A docstream clipboard payload (`application/x-docstream+json`): demos with their files.
+  const insertPayload = (payload: DocstreamClipboardPayload, at?: number) => {
+    const { vfs, demoResolver, pastedDemoFiles } = latest.current
+    insertPasted(payloadContent(payload, { vfs, ...(demoResolver ? { resolver: demoResolver } : {}), mode: pastedDemoFiles }), at)
+  }
+
+  const sources = () => ({ vfs: latest.current.vfs, ...(latest.current.demoResolver ? { resolver: latest.current.demoResolver } : {}) })
+
+  // Copy / cut of a selection with demo blocks: react-aria's useClipboard writes the
+  // docstream clipboard; ProseMirror keeps every other copy.
+  const onClipboardEvent = (event: ClipboardEvent, cut: boolean): boolean => {
+    const ed = editorRef.current
+    if (!ed || !latest.current.demoClipboard) return false
+    const dom = ed.view.dom
+    const active = dom.ownerDocument.activeElement
+    // A control inside a block (an input, "Copy demo") has focus: its own copy, not the editor's.
+    if (active && active !== dom && dom.contains(active)) return true
+    const clip = selectionClipboard(ed, sources())
+    if (!clip) return false
+    if (clipboard.focused()) {
+      clipboard.arm(clip, cut && ed.isEditable)
+      return true
+    }
+    // Not focused (a read-only editor): write it here.
+    if (!event.clipboardData) return false
+    event.preventDefault()
+    writeDocstreamClipboard(event.clipboardData, clip)
+    if (cut && ed.isEditable) ed.commands.deleteSelection()
     return true
   }
 
@@ -306,6 +395,19 @@ export function GitbookEditor({
       handlePaste: (view, event) => {
         if (latest.current.onPaste?.(event)) return true
         if (!view.editable || view.state.selection.$from.parent.type.spec.code) return false
+        if (latest.current.demoClipboard && hasDocstreamClipboard(event.clipboardData)) {
+          if (clipboard.focused()) {
+            // react-aria's useClipboard reads it (onPaste); ProseMirror stays out.
+            clipboard.armPaste()
+            return true
+          }
+          const payload = readDocstreamClipboard(event.clipboardData)
+          if (payload) {
+            event.preventDefault()
+            insertPayload(payload)
+            return true
+          }
+        }
         const files = imageFilesFrom(event.clipboardData, { ignoreWithText: true })
         if (files.length) {
           event.preventDefault()
@@ -314,7 +416,29 @@ export function GitbookEditor({
         }
         return latest.current.markdownPaste ? pasteMarkdown(event) : false
       },
+      handleDOMEvents: {
+        copy: (_view, event) => onClipboardEvent(event, false),
+        cut: (_view, event) => onClipboardEvent(event, true),
+      },
       handleDrop: (view, event, _slice, moved) => {
+        const ed = editorRef.current
+        const payload = latest.current.demoClipboard && !moved && view.editable ? readDocstreamClipboard(event.dataTransfer) : null
+        if (payload && ed) {
+          // A demo block dragged by its grip: copied in from another editor, moved within this one.
+          event.preventDefault()
+          let at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos
+          const from = takeActiveDemoDrag(ed)
+          if (from !== null) {
+            const node = ed.state.doc.nodeAt(from)
+            if (node?.type.name === "gbDemo") {
+              if (at !== undefined && at > from && at <= from + node.nodeSize) return true // dropped on itself
+              ed.chain().deleteRange({ from, to: from + node.nodeSize }).run()
+              if (at !== undefined && at > from) at -= node.nodeSize
+            }
+          }
+          insertPayload(payload, at === undefined ? undefined : Math.min(at, ed.state.doc.content.size))
+          return true
+        }
         if (moved || !view.editable) return false
         const files = imageFilesFrom(event.dataTransfer)
         if (!files.length) return false
@@ -343,6 +467,21 @@ export function GitbookEditor({
 
   editorRef.current = editor ?? null
 
+  const clipboard = useEditorClipboard(editor ?? null, {
+    onCut: () => {
+      const ed = editorRef.current
+      if (ed && !ed.isDestroyed && ed.isEditable) ed.commands.deleteSelection()
+    },
+    onPastePayload: (payload) => {
+      if (editorRef.current?.isEditable) insertPayload(payload)
+    },
+  })
+
+  // Report VFS changes (pasted demo files) to the host.
+  const onFilesChange = useRef(onDemoFilesChange)
+  onFilesChange.current = onDemoFilesChange
+  useEffect(() => vfs.subscribe((change) => onFilesChange.current?.(vfs.files(), change)), [vfs])
+
   // Surface the editor instance to the host (for awareness, commands, etc.).
   useEffect(() => {
     onEditorReady?.(editor ?? null)
@@ -369,11 +508,12 @@ export function GitbookEditor({
     ...(onSourceError ? { onSourceError } : {}),
     ...(demoResolver ? { demoResolver } : {}),
     ...(demoRuntime ? { demoRuntime } : {}),
+    demoVFS: vfs,
     ...(liveRenderer ? { liveRenderer } : {}),
     ...(demoDependencies ? { demoDependencies } : {}),
     ...(attachments ? { attachments } : {}),
     ...(onAttachmentOpen ? { onAttachmentOpen } : {}),
-  }), [attachments, demoDependencies, demoResolver, demoRuntime, liveRenderer, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
+  }), [attachments, demoDependencies, demoResolver, demoRuntime, vfs, liveRenderer, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
 
   if (!editor) return null
 
@@ -381,7 +521,9 @@ export function GitbookEditor({
     <div className={className ? `gb ${className}` : "gb"}>
       {toolbar && <Toolbar editor={editor} />}
       <EditorRuntimeProvider value={runtime}>
-        <EditorContent editor={editor} className="gb-content" />
+        <DocstreamDemoVFSContext.Provider value={vfs}>
+          <EditorContent editor={editor} className="gb-content" />
+        </DocstreamDemoVFSContext.Provider>
       </EditorRuntimeProvider>
     </div>
   )

@@ -20,6 +20,7 @@ import {
   Info,
   Link2,
   FileCode2,
+  GripVertical,
   Plus,
   X,
   XCircle,
@@ -32,8 +33,9 @@ import { resolveAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
 import { packageManagerCommands, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/docstream/gitbook"
 import { VideoEmbed } from "@brett_lamy/docstream/video"
-import { DemoViewer } from "@brett_lamy/docstream/demo"
+import { DemoViewer, prefetchDemoSources, useDemoVFSEntry, writeDocstreamClipboard } from "@brett_lamy/docstream/demo"
 import { pmToCommand, pmToDemo } from "./convert"
+import { clipboardForDoc, setActiveDemoDrag } from "./demo-clipboard"
 import { SourceFileEditor } from "./SourceFileEditor"
 import { useEditorRuntime } from "./runtime"
 import { GbAttachment } from "./attachments"
@@ -723,9 +725,9 @@ function dataAttr(key: string, name = key) {
   }
 }
 
-function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
+function DemoView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
   const editable = editor.isEditable
-  const { demoResolver, demoRuntime, demoDependencies } = useEditorRuntime()
+  const { demoResolver, demoRuntime, demoDependencies, demoVFS } = useEditorRuntime()
   const demo = useMemo(() => pmToDemo(node.attrs), [node.attrs])
   const [filesOpen, setFilesOpen] = useState(false)
   // Typing into `src` or a file would otherwise re-resolve / re-run every keystroke.
@@ -735,7 +737,25 @@ function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
   const hasFiles = !!demo.files?.length
   // The resolver is the authority when it knows `src`; inline files stand in otherwise
   // (DemoViewer falls back to them), so a pasted docs page looks like the page.
-  const preview = (!!demoResolver && !!src) || !!files?.length
+  const vfsEntry = useDemoVFSEntry(demoVFS, src)
+  const preview = (!!demoResolver && !!src) || !!files?.length || !!vfsEntry?.files.length
+  // Fetch the resolver's files ahead, so copying this block can inline them synchronously.
+  useEffect(() => {
+    if (demoResolver && src && (!demoResolver.list || demoResolver.list().includes(src))) void prefetchDemoSources(demoResolver, [src])
+  }, [demoResolver, src])
+  // Drag this block (its files included) into another docstream editor, or within this one.
+  const onDragStart = (event: React.DragEvent) => {
+    const pos = typeof getPos === "function" ? getPos() : undefined
+    if (!event.dataTransfer || pos === undefined) return
+    // Ours, not ProseMirror's / TipTap's: TipTap's cross-editor drag tracking (a window
+    // listener) would otherwise delete the source editor's selection on drop.
+    event.stopPropagation()
+    const clip = clipboardForDoc({ type: "doc", children: [pmToDemo(node.attrs)] }, { ...(demoResolver ? { resolver: demoResolver } : {}), ...(demoVFS ? { vfs: demoVFS } : {}) })
+    event.dataTransfer.clearData()
+    writeDocstreamClipboard(event.dataTransfer, clip)
+    event.dataTransfer.effectAllowed = "copyMove"
+    setActiveDemoDrag({ editor, pos })
+  }
   const setFiles = (next: DemoInlineFile[], nextEntry?: string | null) => {
     updateAttributes({
       files: next.length ? next : null,
@@ -745,6 +765,18 @@ function DemoView({ node, updateAttributes, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper className={preview || (editable && filesOpen) ? "gb-demo-block gb-demo-block-preview" : "gb-demo-block"} contentEditable={false}>
       <div className="gb-demo">
+        <span
+          className="gb-demo-grip"
+          draggable
+          role="button"
+          aria-label="Drag demo"
+          title="Drag this demo (with its files) — into another editor to copy it"
+          data-gb-demo-grip=""
+          onDragStart={onDragStart}
+          onDragEnd={() => window.setTimeout(() => setActiveDemoDrag(null), 0)}
+        >
+          <GripVertical className="size-3.5" />
+        </span>
         <AppWindow className="size-4 shrink-0" />
         {editable ? (
           <>

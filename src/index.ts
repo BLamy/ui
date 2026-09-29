@@ -24,3 +24,15 @@ export { ReactDemoEditor } from "./editor/ReactDemoEditor"
 export type { ReactDemoEditorProps } from "./editor/ReactDemoEditor"
 export { SourceFileEditor } from "./editor/SourceFileEditor"
 export type { SourceFileEditorProps } from "./editor/SourceFileEditor"
+
+// Demo clipboard + virtual file system (copy a demo with its files, paste it into another editor).
+export { clipboardForDoc, lookupDemoSource, payloadContent, registerPayloadFiles, selectionClipboard, useEditorClipboard } from "./editor/demo-clipboard"
+export type { ClipboardBridge, DemoSources, PastedDemoFiles } from "./editor/demo-clipboard"
+export {
+  DOCSTREAM_CLIPBOARD_TYPE,
+  createDemoVFS,
+  readDocstreamClipboard,
+  useDemoVFS,
+  useDemoVFSFiles,
+} from "@brett_lamy/docstream/demo"
+export type { DemoVFS, DemoVFSChange, DemoVFSEntry, DocstreamClipboardPayload } from "@brett_lamy/docstream/demo"

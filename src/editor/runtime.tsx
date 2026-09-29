@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from "react"
 
 import type { LivePreviewRenderer } from "@brett_lamy/docstream"
-import type { DemoResolver, InlineDemoRuntime } from "@brett_lamy/docstream/demo"
+import type { DemoResolver, DemoVFS, InlineDemoRuntime } from "@brett_lamy/docstream/demo"
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import type { EditorAttachment } from "./attachments"
 
@@ -13,6 +13,7 @@ export interface EditorRuntimeOptions {
   onSourceError?: (error: Error) => void
   demoResolver?: DemoResolver
   demoRuntime?: InlineDemoRuntime
+  demoVFS?: DemoVFS
   liveRenderer?: LivePreviewRenderer
   demoDependencies?: Record<string, string>
   attachments?: EditorAttachment[]

@@ -102,6 +102,26 @@
   margin: 0.85em 0;
 }
 
+.gb-demo-grip {
+  display: inline-flex;
+  align-items: center;
+  margin: -0.25rem -0.35rem -0.25rem -0.45rem;
+  padding: 0.25rem 0.1rem;
+  border-radius: 4px;
+  color: var(--gb-muted-foreground, currentColor);
+  opacity: 0.55;
+  cursor: grab;
+}
+
+.gb-demo-grip:hover {
+  opacity: 1;
+  background: var(--gb-border);
+}
+
+.gb-demo-grip:active {
+  cursor: grabbing;
+}
+
 .gb-demo-block-preview > .gb-demo {
   border-radius: var(--gb-radius) var(--gb-radius) 0 0;
 }

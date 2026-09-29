@@ -34,6 +34,14 @@ pnpm add @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tipta
 
 React and the TipTap packages (including `@tiptap/extension-code`) are peer dependencies. `@brett_lamy/docstream` is a runtime dependency (pinned to the same version as the editor) because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers. Nothing in the install runs a build script, and the editor never references Docstream's optional almost-node playground (`@agent-wasm/core`) — see `liveRenderer` below to opt in.
 
+### Migrating to 1.5
+
+No breaking changes. Copying a selection with demo blocks now writes the docstream
+clipboard (see [Copy and paste demos between editors](#copy-and-paste-demos-between-editors)),
+pasting one restores the demos with their files, and demo blocks gain a drag grip. New props:
+`demoVFS`, `onDemoFilesChange`, `pastedDemoFiles`, `demoClipboard`. `react-aria` is now a
+dependency (`useClipboard`).
+
 ### Migrating to 1.4
 
 No API changes. Exports resolve to compiled `dist/*.js` + `.d.ts` instead of `src/*.ts(x)`
@@ -109,6 +117,10 @@ export interface GitbookEditorProps {
   liveRenderer?: LivePreviewRenderer
   demoDependencies?: Record<string, string>
   markdownPaste?: boolean
+  demoVFS?: DemoVFS
+  onDemoFilesChange?: (files: Readonly<Record<string, DemoFile[]>>, change: DemoVFSChange) => void
+  pastedDemoFiles?: "inline" | "vfs"
+  demoClipboard?: boolean
 }
 ```
 
@@ -131,6 +143,9 @@ export interface GitbookEditorProps {
   blocks (a "Copy page" export, `{% … %}` tags, fences, lists, headings …) is parsed into
   editor blocks instead of pasted as literal text. Plain prose pastes as usual; HTML clipboards
   keep TipTap's own handling (except VS Code's, which is treated as plain text).
+
+- `demoVFS`, `onDemoFilesChange`, `pastedDemoFiles`, `demoClipboard`: demo copy / paste and the
+  demo virtual file system — see [Copy and paste demos between editors](#copy-and-paste-demos-between-editors).
 
 The editor tracks the last markdown it emitted so normal controlled updates do not continuously reset the TipTap document. Passing a different external `markdown` value replaces the editor content.
 
@@ -277,6 +292,65 @@ const demoResolver = createGlobDemoResolver({ /* see the Docstream README */ })
 
 <GitbookEditor markdown={markdown} onChange={setMarkdown} demoResolver={demoResolver} />
 ```
+
+## Copy and paste demos between editors
+
+Copying (or cutting) a selection that contains demo blocks — a single selected
+demo, or prose with demos in it — writes one clipboard item through react-aria's
+`useClipboard`:
+
+| Type | Content |
+| --- | --- |
+| `text/plain`, `text/markdown` | renderable Markdown: every demo carries its files inline (`src`-only demos get the resolver's files and `meta.json`), so it renders anywhere |
+| `application/x-docstream+json` | `{ kind: "docstream", version: 1, markdown, files: { [src]: DemoFile[] }, meta: { [src]: DemoMeta } }` — the exact Markdown plus every demo's files |
+
+Any other selection keeps ProseMirror's normal copy. Docstream's `DemoViewer`
+**Copy demo** button (inside the editor and on rendered pages) writes the same
+item for one demo. Resolver files are fetched ahead (`prefetchDemoSources`), as a
+copy event can't wait for them.
+
+Pasting prefers the JSON payload, and falls back to Markdown with inline-file
+demos (`text/plain` / `text/markdown` only). Pasted demo blocks keep their inline
+files, and every demo's files are registered in the editor's **demo VFS** — an
+in-memory `{ [src]: { files, meta } }` store — so they render:
+
+1. with the host `demoResolver` when it knows `src`;
+2. otherwise from the block's inline files or the VFS files, run by `demoRuntime`
+   (`createAlmostNodeDemoRuntime()` from `@brett_lamy/docstream/playground`, when installed);
+3. otherwise in the Code view with the "needs runtime" note.
+
+`pastedDemoFiles` decides where a pasted `src`-only demo's files go: `"inline"`
+(default) — into the VFS and inline in the block (unless the host resolver lists
+`src`), so the saved Markdown is self-contained; `"vfs"` — the VFS only, the block
+keeps its exact copied structure; persist the files yourself.
+
+```tsx
+import { GitbookEditor, useDemoVFS, useDemoVFSFiles } from "@brett_lamy/docstream-editor"
+
+const vfs = useDemoVFS()            // one VFS shared by both editors
+const files = useDemoVFSFiles(vfs)  // { [src]: DemoFile[] } — or use onDemoFilesChange
+
+<GitbookEditor markdown={a} onChange={setA} demoResolver={demoResolver} demoVFS={vfs} />
+<GitbookEditor markdown={b} onChange={setB} demoVFS={vfs} demoRuntime={demoRuntime}
+  pastedDemoFiles="vfs" onDemoFilesChange={(files) => save(files)} />
+```
+
+Without `demoVFS` each editor has its own. `demoClipboard={false}` turns the
+demo copy / paste handling off. Pass the same VFS to a renderer (`demoVFS` on
+Docstream's `MarkdownContent` / `DocsRenderer`) to render the saved Markdown with
+the pasted files.
+
+**Drag.** Each demo block has a grip: drag it into another docstream editor to
+copy the demo there (same payload, files included), or within its editor to move
+it. The drag uses native HTML5 drag-and-drop with the docstream payload rather than
+react-aria's `useDrag` / `useDrop`: `useDrag` insists on `useDrop` targets, which
+would sit on top of ProseMirror's own drop handling. Keyboard / screen-reader drag
+is future work (copy / paste covers it).
+
+Lower-level pieces are exported for custom editors: `selectionClipboard(editor, { resolver, vfs })`,
+`payloadContent(payload, { resolver, vfs, mode })`, `registerPayloadFiles`,
+`clipboardForDoc`, `useEditorClipboard`, plus Docstream's `createDemoVFS`,
+`readDocstreamClipboard` and `DOCSTREAM_CLIPBOARD_TYPE`.
 
 ## Command boxes
 
