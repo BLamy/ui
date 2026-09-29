@@ -51,14 +51,15 @@ export const useAppearance = () => useContext(AppearanceContext);
 export type ThemeScopeName = 'workbench' | 'chat' | 'terminal' | 'sheet' | 'glass';
 
 /** Root classes for an appearance: shadcn's `dark` (or `light`) plus the matching color-scheme. */
-export const themeScopeClass = (appearance: Appearance) => (appearance === 'dark' ? 'dark scheme-dark' : 'light scheme-light');
+export const themeScopeClass = (appearance: Appearance | undefined) =>
+  appearance === 'dark' ? 'dark scheme-dark' : appearance === 'light' ? 'light scheme-light' : '';
 
 /** --primary / --ring for a tint (nothing when no tint is given, so the theme's primary applies). */
 export const tintVars = (tint?: string): CSSProperties =>
   (tint ? { '--primary': tint, '--ring': tint } : {}) as CSSProperties;
 
 /** The props a scope root carries: `data-theme-scope`, the appearance class and the tint. */
-export function themeScopeProps({ scope, appearance, tint }: { scope?: ThemeScopeName; appearance: Appearance; tint?: string }) {
+export function themeScopeProps({ scope, appearance, tint }: { scope?: ThemeScopeName; appearance?: Appearance; tint?: string }) {
   return { 'data-theme-scope': scope, className: themeScopeClass(appearance), style: tintVars(tint) };
 }
 
@@ -87,7 +88,8 @@ export function readThemeVars(el: Element | null | undefined): CSSProperties {
 export interface ThemeScopeProps extends HTMLAttributes<HTMLDivElement> {
   /** The surface palette the bl-theme defines: `workbench`, `chat`, `terminal`, `sheet` (a floating chat surface's tone) or `glass` (the Composer floating over content). Omit for the plain theme. */
   scope?: ThemeScopeName;
-  /** Defaults to the ambient `AppearanceProvider` value, else light (the terminal scope is always dark). */
+  /** Defaults to the ambient `AppearanceProvider` value; without one a plain scope inherits the page's `.dark` / light,
+      a surface scope is light (the terminal scope is always dark). */
   appearance?: Appearance;
   /** Accent for the subtree (--primary / --ring). */
   tint?: string;
@@ -96,7 +98,7 @@ export interface ThemeScopeProps extends HTMLAttributes<HTMLDivElement> {
 /** A subtree with its own appearance, accent and (optionally) surface palette. */
 export function ThemeScope({ scope, appearance: appearanceProp, tint, className, style, ...props }: ThemeScopeProps) {
   const ambient = useAppearance();
-  const appearance: Appearance = scope === 'terminal' ? 'dark' : (appearanceProp ?? ambient ?? 'light');
+  const appearance: Appearance | undefined = scope === 'terminal' ? 'dark' : (appearanceProp ?? ambient ?? (scope ? 'light' : undefined));
   const p = themeScopeProps({ scope, appearance, tint });
   return (
     <div
@@ -110,7 +112,8 @@ export function ThemeScope({ scope, appearance: appearanceProp, tint, className,
 }
 
 export interface BLProviderProps {
-  /** Defaults to the ambient `AppearanceProvider` value, else light. */
+  /** Defaults to the ambient `AppearanceProvider` value; without one the provider inherits the page's appearance
+      (shadcn's `.dark` on an ancestor, else light). */
   dark?: boolean;
   /** Accent for everything below: sets --primary and --ring. Defaults to the theme's primary. */
   tint?: string;
@@ -123,7 +126,7 @@ export interface BLProviderProps {
 
 export function BLProvider({ dark: darkProp, tint, safeTop, children, className, style }: BLProviderProps) {
   const appearance = useAppearance();
-  const dark = darkProp ?? appearance === 'dark';
+  const dark = darkProp ?? (appearance ? appearance === 'dark' : undefined);
   const safe = safeTop === true ? 59 : typeof safeTop === 'number' ? safeTop : 0;
   /* react-aria overlays (Popover, Modal, Tooltip) portal into this root instead of document.body, so they
      inherit the theme variables, font and color scheme. null until mounted → overlays wait one commit. */
@@ -135,7 +138,7 @@ export function BLProvider({ dark: darkProp, tint, safeTop, children, className,
       data-slot="bl-provider"
       className={cn(
         'relative h-full w-full overflow-hidden bg-muted font-ios text-foreground select-none transition-[background] duration-spring-smooth ease-spring-smooth',
-        themeScopeClass(dark ? 'dark' : 'light'),
+        themeScopeClass(dark === undefined ? undefined : dark ? 'dark' : 'light'),
         className,
       )}
       style={{ ...tintVars(tint), '--bl-safe-top': safe + 'px', ...style } as CSSProperties}
