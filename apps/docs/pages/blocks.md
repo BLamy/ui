@@ -14,6 +14,10 @@ Whole apps composed from BL UI parts, in the spirit of shadcn blocks. Each block
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/t3-clone.json{% endcommand %}
 
+{% demo src="blocks/alfred-clone" layout="multi" %}
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/alfred-clone.json{% endcommand %}
+
 {% demo src="blocks/apple-reminders" layout="multi" %}
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-reminders.json{% endcommand %}

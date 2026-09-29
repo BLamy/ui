@@ -1,5 +1,5 @@
 import {
-  Children, createContext, isValidElement, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef,
+  Children, createContext, isValidElement, useCallback, useContext, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef,
   useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement,
   type ReactNode,
 } from 'react';
@@ -144,7 +144,7 @@ interface ItemRecord {
   select: () => void;
 }
 
-interface GroupRecord { el: HTMLElement | null; columns: number }
+interface GroupRecord { el: HTMLElement | null; heading: HTMLElement | null; columns: number }
 interface PageRecord { placeholder?: string; title?: string; onKeyDown?: (e: ReactKeyboardEvent, menu: CommandMenuApi) => void }
 
 type Source = 'keyboard' | 'pointer' | 'auto';
@@ -156,6 +156,11 @@ function createStore() {
     groups: new Map<string, GroupRecord>(),
     pages: new Map<string, PageRecord>(),
     visible: [] as string[],
+    /** Enabled visible ids at the last reconcile, to keep the active row's position when it disappears. */
+    enabled: [] as string[],
+    /** Best score per group while filtering (ranking="global" orders groups by it). */
+    groupBest: new Map<string, number>(),
+    ranking: 'group' as 'group' | 'global',
     active: null as string | null,
     source: 'auto' as Source,
     page: 'root',
@@ -176,15 +181,23 @@ function createStore() {
       s.emit();
       if (source === 'keyboard') s.reveal();
     },
-    /** Brings the active item into view; the first item of a group brings its heading along. */
+    /** Scrolls the list (only the list — never the page) so the active row shows: clear of its group's sticky
+     *  heading, and — for a group's first row — with that heading in view above it. */
     reveal() {
       const rec = s.active ? s.items.get(s.active) : null;
-      if (!rec?.el) return;
-      if (s.visible[0] === rec.id && s.scroller) { s.scroller.scrollTop = 0; return; }
+      const sc = s.scroller;
+      if (!rec?.el || !sc) return;
+      if (s.visible[0] === rec.id) { sc.scrollTop = 0; return; }
       const g = rec.group ? s.groups.get(rec.group) : null;
-      const firstInGroup = rec.group && s.visible.find((id) => s.items.get(id)?.group === rec.group) === rec.id;
-      if (firstInGroup && g?.el) g.el.scrollIntoView({ block: 'nearest' });
-      rec.el.scrollIntoView({ block: 'nearest' });
+      const firstInGroup = !!rec.group && s.visible.find((id) => s.items.get(id)?.group === rec.group) === rec.id;
+      const box = sc.getBoundingClientRect();
+      const r = rec.el.getBoundingClientRect();
+      const heading = g?.heading && getComputedStyle(g.heading).position === 'sticky' ? g.heading.offsetHeight : 0;
+      let top = r.top - box.top + sc.scrollTop - heading;
+      if (firstInGroup && g?.heading) top = g.heading.getBoundingClientRect().top - box.top + sc.scrollTop;
+      const bottom = r.bottom - box.top + sc.scrollTop + 8;
+      if (top < sc.scrollTop) sc.scrollTop = Math.max(0, top);
+      else if (bottom > sc.scrollTop + sc.clientHeight) sc.scrollTop = bottom - sc.clientHeight;
     },
     /** Recomputes the visible, ordered items of the current page and keeps the active item valid. */
     reconcile() {
@@ -197,7 +210,18 @@ function createStore() {
       const groupStart = new Map<string, number>();
       for (const r of recs) if (r.group && !groupStart.has(r.group)) groupStart.set(r.group, dom.get(r)!);
       const filtering = !!s.query.trim();
+      // ranking="global": groups (and loose rows) order by their best row's score; their CSS `order` matches.
+      const best = new Map<string, number>();
+      for (const r of recs) if (r.group) best.set(r.group, Math.max(best.get(r.group) ?? 0, r.score));
+      const bestChanged = best.size !== s.groupBest.size || [...best].some(([g, v]) => s.groupBest.get(g) !== v);
+      if (bestChanged) s.groupBest = best;
+      const global = filtering && s.ranking === 'global';
       recs.sort((a, b) => {
+        if (global) {
+          const sa = a.group ? best.get(a.group)! : a.score;
+          const sb = b.group ? best.get(b.group)! : b.score;
+          if (sa !== sb) return sb - sa;
+        }
         const ga = a.group ? groupStart.get(a.group)! : dom.get(a)!;
         const gb = b.group ? groupStart.get(b.group)! : dom.get(b)!;
         if (ga !== gb) return ga - gb;
@@ -205,7 +229,7 @@ function createStore() {
         return dom.get(a)! - dom.get(b)!;
       });
       const visible = recs.map((r) => r.id);
-      const changed = visible.length !== s.visible.length || visible.some((id, i) => id !== s.visible[i]);
+      const changed = bestChanged || visible.length !== s.visible.length || visible.some((id, i) => id !== s.visible[i]);
       if (changed) s.visible = visible;
       const key = s.page + '\u0000' + s.query;
       const enabled = visible.filter((id) => !s.items.get(id)!.disabled);
@@ -216,7 +240,12 @@ function createStore() {
         next = back ?? enabled[0] ?? null;
         s.restore = null;
         s.seen = key;
-      } else if (!next || !enabled.includes(next)) next = enabled[0] ?? null;
+      } else if (!next || !enabled.includes(next)) {
+        // The active row went away (deleted, disabled): its neighbour takes its place rather than the top row.
+        const at = next ? s.enabled.indexOf(next) : -1;
+        next = at >= 0 ? (enabled[Math.min(at, enabled.length - 1)] ?? null) : (enabled[0] ?? null);
+      }
+      s.enabled = enabled;
       if (next !== s.active) {
         s.active = next;
         s.source = 'auto';
@@ -254,12 +283,18 @@ export interface CommandMenuApi {
   depth: number;
   /** Pushes a page (the query clears; it comes back when the page pops). */
   push: (page: string) => void;
-  /** Pops one page; false at the root. */
+  /** Pops one page; false at the root. Safe to call repeatedly in one handler. */
   pop: () => boolean;
+  /** Pops back to the nearest page with this id ('root' for the bottom); false if it isn't on the stack. */
+  popTo: (page: string) => boolean;
+  /** Back to the root with an empty query — a fresh menu, without remounting it. */
+  reset: () => void;
   /** Closes the menu (dialog: onOpenChange(false); inline: onOpenChange/onClose). */
   close: () => void;
   /** Moves the active item by `delta` visible items (wrapping when `loop`). */
   move: (delta: number) => void;
+  /** Makes the visible row with this `value` active (and scrolls it into view) without selecting it. */
+  setActive: (value: string) => void;
   /** Selects the active item, or the item with this `value`. */
   select: (value?: string) => void;
 }
@@ -289,7 +324,10 @@ function useMenu(part: string): MenuContext {
 /** The menu's state and actions, from inside a CommandMenu (pages, custom rows, footers). */
 export function useCommandMenu(): CommandMenuApi {
   const m = useMenu('useCommandMenu');
-  return { query: m.query, setQuery: m.setQuery, page: m.page, pages: m.pages, depth: m.depth, push: m.push, pop: m.pop, close: m.close, move: m.move, select: m.select };
+  return {
+    query: m.query, setQuery: m.setQuery, page: m.page, pages: m.pages, depth: m.depth, push: m.push, pop: m.pop, popTo: m.popTo,
+    reset: m.reset, close: m.close, move: m.move, setActive: m.setActive, select: m.select,
+  };
 }
 
 /** The active item's `value` (null when nothing is active) — for preview panes. */
@@ -302,8 +340,27 @@ export function useCommandActive(): string | null {
 
 const isMac = () => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
-/** Does a keyboard event match a hotkey like 'mod+k', 'shift+mod+o', 'alt+shift+mod+t'? `mod` is ⌘ on Apple
- *  platforms and Ctrl elsewhere. */
+const NAMED_KEYS: Record<string, { codes: string[]; keys: string[] }> = {
+  space: { codes: ['Space'], keys: [' ', '\u00a0', 'Spacebar'] },
+  enter: { codes: ['Enter', 'NumpadEnter'], keys: ['Enter'] },
+  return: { codes: ['Enter', 'NumpadEnter'], keys: ['Enter'] },
+  escape: { codes: ['Escape'], keys: ['Escape', 'Esc'] },
+  esc: { codes: ['Escape'], keys: ['Escape', 'Esc'] },
+  tab: { codes: ['Tab'], keys: ['Tab'] },
+  backspace: { codes: ['Backspace'], keys: ['Backspace'] },
+  delete: { codes: ['Delete'], keys: ['Delete'] },
+  up: { codes: ['ArrowUp'], keys: ['ArrowUp'] },
+  down: { codes: ['ArrowDown'], keys: ['ArrowDown'] },
+  left: { codes: ['ArrowLeft'], keys: ['ArrowLeft'] },
+  right: { codes: ['ArrowRight'], keys: ['ArrowRight'] },
+  comma: { codes: ['Comma'], keys: [','] },
+  period: { codes: ['Period'], keys: ['.'] },
+  slash: { codes: ['Slash'], keys: ['/'] },
+};
+
+/** Does a keyboard event match a hotkey like 'mod+k', 'shift+mod+o', 'alt+shift+mod+t', 'alt+space'? `mod` is ⌘
+ *  on Apple platforms and Ctrl elsewhere. Named keys: space, enter, escape, tab, backspace, delete, up/down/left/right,
+ *  comma, period, slash (matched by physical key). */
 export function matchesHotkey(e: { key: string; code?: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }, hotkey: string) {
   const parts = hotkey.toLowerCase().split('+');
   const key = parts.pop()!;
@@ -315,10 +372,13 @@ export function matchesHotkey(e: { key: string; code?: string; metaKey: boolean;
     shift: parts.includes('shift'),
   };
   if (e.metaKey !== want.meta || e.ctrlKey !== want.ctrl || e.altKey !== want.alt || e.shiftKey !== want.shift) return false;
-  // Alt/Shift change e.key (⌥T → †), so letters and digits compare by physical key.
+  // Alt/Shift change e.key (⌥T → †, ⌥Space → a non-breaking space on macOS), so letters, digits and named keys
+  // compare by physical key where the event has one.
   const code = e.code ?? '';
   if (/^[a-z]$/.test(key)) return code ? code === `Key${key.toUpperCase()}` : e.key.toLowerCase() === key;
   if (/^[0-9]$/.test(key)) return code ? code === `Digit${key}` : e.key === key;
+  const named = NAMED_KEYS[key];
+  if (named) return code ? named.codes.includes(code) : named.keys.includes(e.key);
   return e.key.toLowerCase() === key;
 }
 
@@ -364,6 +424,11 @@ export interface CommandMenuProps {
   escapeBehavior?: 'close' | 'pop';
   /** Filter items by the query (default true). A page can opt out with `filter={false}`. */
   filter?: boolean;
+  /** While filtering: 'group' (default) ranks rows within each group, groups stay put; 'global' also orders the
+   *  groups (and loose rows) by their best match, so the strongest result is always first. */
+  ranking?: 'group' | 'global';
+  /** The menu's API, for code outside it (reset it when a launcher reopens, drive it from a hotkey). */
+  menuRef?: React.Ref<CommandMenuApi | null>;
   'aria-label'?: string;
   className?: string;
   style?: CSSProperties;
@@ -378,8 +443,8 @@ export interface CommandMenuProps {
 
 export function CommandMenu({
   variant = 'inline', isOpen: openProp, defaultOpen = false, onOpenChange, hotkey, query: queryProp, onQueryChange,
-  defaultPages, onPageChange, loop = true, closeOnSelect, escapeBehavior = 'close', filter = true, 'aria-label': ariaLabel = 'Command menu',
-  className, style, overlayClassName, container, children,
+  defaultPages, onPageChange, loop = true, closeOnSelect, escapeBehavior = 'close', filter = true, ranking = 'group', menuRef,
+  'aria-label': ariaLabel = 'Command menu', className, style, overlayClassName, container, children,
 }: CommandMenuProps) {
   const [openState, setOpenState] = useState(defaultOpen);
   const open = openProp ?? openState;
@@ -389,7 +454,7 @@ export function CommandMenu({
   const inner = (
     <CommandRoot
       variant={variant} open={open} setOpen={setOpen} queryProp={queryProp} onQueryChange={onQueryChange} defaultPages={defaultPages} onPageChange={onPageChange}
-      loop={loop} closeOnSelect={closeOnSelect ?? variant === 'dialog'} escapeBehavior={escapeBehavior} filter={filter}
+      loop={loop} closeOnSelect={closeOnSelect ?? variant === 'dialog'} escapeBehavior={escapeBehavior} filter={filter} ranking={ranking} menuRef={menuRef}
       ariaLabel={ariaLabel} className={className} style={variant === 'inline' ? style : undefined}
     >
       {children}
@@ -436,6 +501,8 @@ interface RootProps {
   closeOnSelect: boolean;
   escapeBehavior: 'close' | 'pop';
   filter: boolean;
+  ranking: 'group' | 'global';
+  menuRef?: React.Ref<CommandMenuApi | null>;
   ariaLabel: string;
   className?: string;
   style?: CSSProperties;
@@ -443,8 +510,8 @@ interface RootProps {
 }
 
 function CommandRoot({
-  variant, setOpen, queryProp, onQueryChange, defaultPages, onPageChange, loop, closeOnSelect, escapeBehavior, filter, ariaLabel,
-  className, style, children,
+  variant, setOpen, queryProp, onQueryChange, defaultPages, onPageChange, loop, closeOnSelect, escapeBehavior, filter, ranking, menuRef,
+  ariaLabel, className, style, children,
 }: RootProps) {
   const [store] = useState(createStore);
   const menuId = useId();
@@ -459,6 +526,7 @@ function CommandRoot({
   const page = stack[stack.length - 1].id;
   store.page = page;
   store.query = filter ? query : '';
+  store.ranking = ranking;
 
   const pageChange = useRef(onPageChange);
   pageChange.current = onPageChange;
@@ -468,31 +536,55 @@ function CommandRoot({
   // Every render (a keystroke, a page change) re-ranks after the items have reported their scores.
   useLayoutEffect(() => store.reconcile());
 
+  // The stack and query as of the latest action, not the latest render: a handler can pop twice, or push then
+  // pop, and each step sees the one before it.
+  const stackRef = useRef(stack);
+  const queryRef = useRef(query);
+  useLayoutEffect(() => { stackRef.current = stack; queryRef.current = query; });
+  const writeQuery = useCallback((q: string) => { queryRef.current = q; setQuery(q); }, [setQuery]);
+
+  /** Replaces the stack; the landing page gets back its query, scroll and active row. */
+  const goTo = useCallback((next: PageEntry[], d: -1 | 1) => {
+    stackRef.current = next;
+    setStack(next);
+    setDir(d);
+    const top = next[next.length - 1];
+    store.restore = d < 0 ? top.active : null;
+    writeQuery(top.query);
+    requestAnimationFrame(() => { if (store.scroller) store.scroller.scrollTop = top.scroll; });
+    inputRef.current?.focus();
+  }, [store, writeQuery]);
+
   const push = useCallback((id: string) => {
     Haptics.selection();
-    const scroll = store.scroller?.scrollTop ?? 0;
-    setStack((st) => [...st.slice(0, -1), { ...st[st.length - 1], query, active: store.active ? (store.items.get(store.active)?.value ?? null) : null, scroll }, { id, query: '', active: null, scroll: 0 }]);
-    setDir(1);
-    setQuery('');
-    if (store.scroller) store.scroller.scrollTop = 0;
-    inputRef.current?.focus();
-  }, [query, setQuery, store]);
+    const st = stackRef.current;
+    const here = { ...st[st.length - 1], query: queryRef.current, active: store.active ? (store.items.get(store.active)?.value ?? null) : null, scroll: store.scroller?.scrollTop ?? 0 };
+    goTo([...st.slice(0, -1), here, { id, query: '', active: null, scroll: 0 }], 1);
+  }, [goTo, store]);
 
-  const stackRef = useRef(stack);
-  stackRef.current = stack;
   const pop = useCallback(() => {
     const st = stackRef.current;
     if (st.length < 2) return false;
     Haptics.selection();
-    const parent = st[st.length - 2];
-    store.restore = parent.active;
-    setStack(st.slice(0, -1));
-    setDir(-1);
-    setQuery(parent.query);
-    requestAnimationFrame(() => { if (store.scroller) store.scroller.scrollTop = parent.scroll; });
-    inputRef.current?.focus();
+    goTo(st.slice(0, -1), -1);
     return true;
-  }, [setQuery, store]);
+  }, [goTo]);
+
+  const popTo = useCallback((id: string) => {
+    const st = stackRef.current;
+    const at = st.map((p) => p.id).lastIndexOf(id);
+    if (at < 0 || at === st.length - 1) return false;
+    Haptics.selection();
+    goTo(st.slice(0, at + 1), -1);
+    return true;
+  }, [goTo]);
+
+  const reset = useCallback(() => {
+    const st = stackRef.current;
+    if (st.length === 1 && !queryRef.current) return;
+    goTo([{ id: 'root', query: '', active: null, scroll: 0 }], -1);
+    store.restore = null;
+  }, [goTo, store]);
 
   const close = useCallback(() => setOpen(false), [setOpen]);
 
@@ -505,6 +597,11 @@ function CommandRoot({
     else n = Math.max(0, Math.min(ids.length - 1, n));
     store.setActive(ids[n], 'keyboard');
   }, [loop, store]);
+
+  const setActive = useCallback((value: string) => {
+    const id = store.visible.find((v) => store.items.get(v)!.value === value);
+    if (id) store.setActive(id, 'keyboard');
+  }, [store]);
 
   const select = useCallback((value?: string) => {
     const rec = value === undefined ? (store.active ? store.items.get(store.active) : undefined)
@@ -577,7 +674,7 @@ function CommandRoot({
     }
     if (e.key === 'Escape') {
       handled();
-      if (inputRef.current?.value) { setQuery(''); return; }
+      if (inputRef.current?.value) { writeQuery(''); return; }
       if (escapeBehavior === 'pop' && pop()) return;
       close();
     }
@@ -599,13 +696,14 @@ function CommandRoot({
         store.setActive(en[Math.max(0, k)], 'keyboard');
       }
     }
-  }, [store, move, select, pop, setQuery, close, escapeBehavior]);
+  }, [store, move, select, pop, writeQuery, close, escapeBehavior]);
 
   const ctx: MenuContext = {
     store, menuId, listId, inputRef, direction: dir, loop, closeOnSelect, filter, onKeyDown,
-    query, setQuery, page, pages, depth: stack.length - 1, push, pop, close, move, select,
+    query, setQuery: writeQuery, page, pages, depth: stack.length - 1, push, pop, popTo, reset, close, move, setActive, select,
   };
   apiRef.current = ctx;
+  useImperativeHandle(menuRef, () => apiRef.current!);
 
   return (
     <MenuCtx.Provider value={ctx}>
@@ -726,13 +824,15 @@ export interface CommandListProps {
   children?: ReactNode | ((page: string) => ReactNode);
   /** Height the list scrolls past (default 360px). */
   maxHeight?: number | string;
+  /** Group headings stick to the top while their rows scroll (default true). Off for translucent cards. */
+  stickyHeadings?: boolean;
   'aria-label'?: string;
   className?: string;
 }
 
 /** The scrolling results. Its height springs between pages and as filtering shrinks the list; pages slide in
  *  the direction of travel (push → from the right, pop → from the left). */
-export function CommandList({ children, maxHeight = 360, 'aria-label': ariaLabel = 'Results', className }: CommandListProps) {
+export function CommandList({ children, maxHeight = 360, stickyHeadings = true, 'aria-label': ariaLabel = 'Results', className }: CommandListProps) {
   const { store, listId, page, direction } = useMenu('CommandList');
   const content = typeof children === 'function'
     ? children(page)
@@ -745,7 +845,8 @@ export function CommandList({ children, maxHeight = 360, 'aria-label': ariaLabel
         role="listbox"
         aria-label={ariaLabel}
         data-slot="command-list"
-        className={cn('bl-scroll relative overflow-x-hidden overflow-y-auto overscroll-contain scroll-pt-9 scroll-pb-2', className)}
+        data-sticky-headings={stickyHeadings}
+        className={cn('group/command-list bl-scroll relative overflow-x-hidden overflow-y-auto overscroll-contain', className)}
         style={{ maxHeight }}
       >
         <ContentSwap id={page} direction={direction} distance={28}>
@@ -802,18 +903,29 @@ export function CommandGroup({ heading, columns = 1, forceMount, className, chil
   const id = useId();
   const headingId = `${id}-heading`;
   const ref = useRef<HTMLDivElement | null>(null);
+  const headingRef = useRef<HTMLDivElement | null>(null);
   useLayoutEffect(() => {
-    store.groups.set(id, { el: ref.current, columns });
+    store.groups.set(id, { el: ref.current, heading: headingRef.current, columns });
     return () => { store.groups.delete(id); };
   }, [store, id, columns]);
   const count = useStoreValue(store, (s) => s.visible.reduce((n, v) => n + (s.items.get(v)?.group === id ? 1 : 0), 0));
   const ctx = useMemo(() => ({ id, columns }), [id, columns]);
+  // ranking="global": the group takes its place by its best match (reconcile sorts the same way).
+  const order = useStoreValue(store, (s) => (s.ranking === 'global' && s.query.trim() ? -Math.round((s.groupBest.get(id) ?? 0) * 1000) : undefined));
   // Items stay mounted while hidden (they keep scoring the query), so the group only hides.
   const hidden = !forceMount && count === 0;
   return (
-    <div ref={ref} role="group" aria-labelledby={heading ? headingId : undefined} data-slot="command-group" hidden={hidden} className={cn('pt-1', className)}>
+    <div ref={ref} role="group" aria-labelledby={heading ? headingId : undefined} data-slot="command-group" hidden={hidden} className={cn('pt-1', className)} style={order !== undefined ? { order } : undefined}>
       {heading ? (
-        <div id={headingId} data-slot="command-group-heading" aria-hidden="true" className="sticky top-0 z-1 bg-(--command-surface) px-3 pt-2 pb-1.5 text-[12.5px] font-medium text-muted-foreground">
+        // Sticky over the rows, on --command-heading-surface (default: the card's --command-surface). A translucent
+        // card doubles its tint under a sticky band: give the headings an opaque surface, or stickyHeadings={false}.
+        <div
+          ref={headingRef}
+          id={headingId}
+          data-slot="command-group-heading"
+          aria-hidden="true"
+          className="sticky top-0 z-1 bg-(--command-heading-surface,var(--command-surface)) px-3 pt-2 pb-1.5 text-[12.5px] font-medium text-muted-foreground group-data-[sticky-headings=false]/command-list:static group-data-[sticky-headings=false]/command-list:bg-transparent"
+        >
           {heading}
         </div>
       ) : null}
@@ -857,6 +969,12 @@ export interface CommandItemProps {
   onSelect?: (value: string) => void;
   /** Override the menu's `closeOnSelect` for this item. */
   closeOnSelect?: boolean;
+  /** Multiplies the row's match score while filtering (2 ranks a favourite above equal matches; 0.5 demotes). */
+  boost?: number;
+  /** How much a keyword match counts against a title match (default 0.92). */
+  keywordWeight?: number;
+  /** Search the description too (default true when it is a string; off for ids, paths, timestamps). */
+  searchDescription?: boolean;
   className?: string;
   /** Custom row content (replaces icon / title / description / trailing). */
   children?: ReactNode;
@@ -873,7 +991,7 @@ function Keycaps({ keys }: { keys: string | string[] }) {
 
 export function CommandItem({
   value: valueProp, keywords, icon, title, description, shortcut, badge, page: pushes, chevron, disabled = false, dimmed = false,
-  onSelect, closeOnSelect, className, children,
+  onSelect, closeOnSelect, boost = 1, keywordWeight = 0.92, searchDescription = true, className, children,
 }: CommandItemProps) {
   const menu = useMenu('CommandItem');
   const { store, menuId, query } = menu;
@@ -887,13 +1005,13 @@ export function CommandItem({
   const filtering = (page.filter ?? menu.filter) && query.trim() !== '';
   const score = useMemo(() => {
     if (!filtering) return 1;
-    const texts: [string, number][] = [[value, 1], ...(keywords ?? []).map((k) => [k, 0.92] as [string, number])];
+    const texts: [string, number][] = [[value, 1], ...(keywords ?? []).map((k) => [k, keywordWeight] as [string, number])];
     if (typeof title === 'string' && title !== value) texts.push([title, 1]);
-    if (typeof description === 'string') texts.push([description, 0.7]);
+    if (searchDescription && typeof description === 'string') texts.push([description, 0.7]);
     let best = 0;
     for (const [t, w] of texts) { const m = commandMatch(query, t); if (m) best = Math.max(best, m.score * w); }
-    return best;
-  }, [filtering, query, value, keywords, title, description]);
+    return best * boost;
+  }, [filtering, query, value, keywords, keywordWeight, title, description, searchDescription, boost]);
 
   const selectRef = useRef<() => void>(() => {});
   selectRef.current = () => {
@@ -937,7 +1055,7 @@ export function CommandItem({
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => { store.setActive(id, 'pointer'); selectRef.current(); }}
       onPointerMove={() => { if (!disabled && store.active !== id) store.setActive(id, 'pointer'); }}
-      style={filtering && group ? { order: -Math.round(score * 1000) } : undefined}
+      style={filtering && (group || store.ranking === 'global') ? { order: -Math.round(score * 1000) } : undefined}
       className={cn(
         'relative flex min-w-0 cursor-default items-center gap-3 rounded-[10px] px-3 text-[15px] text-foreground outline-none select-none',
         grid ? 'aspect-square justify-center p-0' : description ? 'min-h-[52px] py-1.5' : 'min-h-10 py-1',

@@ -314,7 +314,7 @@ export function FloatingChat({
           </div>
         )}
       </ComposerBumpContent>
-      <ComposerBumpHandle label={open ? 'Collapse chat' : 'Expand chat'} className="pt-px" />
+      <ComposerBumpHandle label={open ? 'Collapse chat' : 'Expand chat'} className="pt-px [&>[data-bump-grip]]:top-px" />
     </ComposerBump>
   );
 

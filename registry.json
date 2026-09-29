@@ -502,6 +502,45 @@
       }
     },
     {
+      "name": "command-menu",
+      "type": "registry:ui",
+      "title": "CommandMenu",
+      "description": "A cmdk-style command palette on react-aria: nested pages, fuzzy ranking with highlight, grid groups, ⌘1–9 and a keyboard legend.",
+      "dependencies": [
+        "@brett_lamy/ui@^2.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/command-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/command-menu.tsx"
+        }
+      ],
+      "meta": {
+        "page": "command-menu",
+        "exports": [
+          "CommandMenu",
+          "CommandInput",
+          "CommandList",
+          "CommandPage",
+          "CommandGroup",
+          "CommandItem",
+          "CommandEmpty",
+          "CommandSeparator",
+          "CommandFooter",
+          "CommandHighlight",
+          "useCommandMenu",
+          "useCommandActive",
+          "useHotkey",
+          "matchesHotkey",
+          "commandMatch"
+        ]
+      }
+    },
+    {
       "name": "composer",
       "type": "registry:ui",
       "title": "Composer",
@@ -1324,6 +1363,63 @@
       }
     },
     {
+      "name": "alfred-clone",
+      "type": "registry:block",
+      "title": "Alfred",
+      "description": "A macOS Alfred-style launcher on the CommandMenu primitive, floating over a desktop with a menu bar and dock. Its features are nested pages, each with its own keys: a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Adapts to its container's width; light and dark.",
+      "categories": [
+        "application",
+        "productivity",
+        "command-menu"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^2.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/alfred-clone/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/alfred-clone/page.tsx"
+        },
+        {
+          "path": "registry/blocks/alfred-clone/launcher.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/alfred-clone/launcher.tsx"
+        },
+        {
+          "path": "registry/blocks/alfred-clone/pages.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/alfred-clone/pages.tsx"
+        },
+        {
+          "path": "registry/blocks/alfred-clone/parts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/alfred-clone/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/alfred-clone/state.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/alfred-clone/state.tsx"
+        },
+        {
+          "path": "registry/blocks/alfred-clone/calc.ts",
+          "type": "registry:component",
+          "target": "components/blocks/alfred-clone/calc.ts"
+        },
+        {
+          "path": "registry/blocks/alfred-clone/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/alfred-clone/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/alfred-clone/page.tsx"
+      }
+    },
+    {
       "name": "apple-mail",
       "type": "registry:block",
       "title": "Apple Mail clone",
@@ -1859,7 +1955,7 @@
       "name": "t3-clone",
       "type": "registry:block",
       "title": "T3 Code clone",
-      "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock, and a surface panel (browser, terminal, files, diff, agents). Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, conversation, terminal and surface primitives, with its own thread sidebar parts.",
+      "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock, a surface panel (browser, terminal, files, diff, agents), and a ⌘K command palette with nested pages (new thread in a project, link pull requests, go to file, search contents, add a project from a local folder, Git URL or GitHub) plus a live theme editor. Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, conversation, terminal and surface primitives, with its own thread sidebar parts.",
       "categories": [
         "ai",
         "chat",
@@ -1899,6 +1995,21 @@
           "path": "registry/blocks/t3-clone/components/surface-panel.tsx",
           "type": "registry:component",
           "target": "components/blocks/t3-clone/components/surface-panel.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/commands.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/commands.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/command-palette.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/command-palette.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/theme-editor.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/theme-editor.tsx"
         },
         {
           "path": "registry/blocks/t3-clone/lib/data.ts",
