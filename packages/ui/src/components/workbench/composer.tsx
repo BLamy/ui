@@ -1981,7 +1981,10 @@ export function ComposerBump({
       const b = bounds.current,
         w = windowRef.current;
       if (!b || !w) return;
-      setMeasured(Math.max(0, Math.round(w.getBoundingClientRect().bottom - b.getBoundingClientRect().top - boundsInset)));
+      // The grip is pinned above the content (the bump's top padding), so the content stops that much short.
+      const host = w.parentElement;
+      const grip = host ? parseFloat(getComputedStyle(host).paddingTop) || 0 : 0;
+      setMeasured(Math.max(0, Math.round(w.getBoundingClientRect().bottom - b.getBoundingClientRect().top - boundsInset - grip)));
     };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
@@ -2054,6 +2057,9 @@ export function ComposerBump({
         data-peeking={(draggable && peek > 0 && !open) || undefined}
         className={cn(
           composerBumpVariants({ side, variant }),
+          // A draggable bump's grip is pinned to its top edge (absolutely, in this padding) in every state, so
+          // the revealed content opens between the grip and the handle's row instead of above the grip.
+          draggable && 'has-[>[data-slot=composer-bump-handle]>[data-bump-grip]]:pt-3',
           className,
         )}
         style={
@@ -2103,7 +2109,8 @@ export function ComposerBumpHandle({ grip = true, label, className, children, ..
       data-slot="composer-bump-handle"
       data-dragging={bump.dragging || undefined}
       className={cn(
-        'group/handle relative flex min-w-0 touch-none flex-col select-none',
+        // Not `relative`: the grip positions against the bump, so it stays at the top edge as the content opens.
+        'group/handle flex min-w-0 touch-none flex-col select-none',
         bump.dragging ? 'cursor-grabbing' : 'cursor-grab',
         className,
       )}
@@ -2130,7 +2137,7 @@ export function ComposerBumpHandle({ grip = true, label, className, children, ..
           aria-label={name}
           aria-expanded={bump.open}
           aria-controls={bump.contentId}
-          className="mx-auto grid h-3 w-16 shrink-0 cursor-[inherit] place-items-center border-0 bg-transparent p-0 outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-primary"
+          className="absolute top-0 left-1/2 z-1 grid h-3 w-16 -translate-x-1/2 touch-none cursor-[inherit] place-items-center border-0 bg-transparent p-0 outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-primary"
         >
           <span
             className={cn(
