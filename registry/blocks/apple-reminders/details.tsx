@@ -13,7 +13,7 @@ const PRIORITIES = ['None', 'Low', 'Medium', 'High'].map((p, i) => ({ id: String
 const Tile = ({ glyph, color }: { glyph: IconName; color: string }) => (
   <span className="grid size-[29px] shrink-0 place-items-center rounded-[7px] text-white" style={{ background: color }}><Icon name={glyph} size={18} weight="semibold" /></span>
 );
-const field = 'w-full appearance-none border-0 bg-transparent p-0 [font-family:inherit] text-foreground outline-none select-text placeholder:text-bl-label3';
+const field = 'w-full appearance-none border-0 bg-transparent p-0 [font-family:inherit] text-foreground outline-none select-text placeholder:text-tertiary-foreground';
 /** A row under a switch that springs open with it. */
 const Reveal = ({ open, children }: { open: boolean; children: ReactNode }) => (
   <div className={`grid transition-[grid-template-rows,opacity] duration-spring-tray ease-spring-tray ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
@@ -74,7 +74,7 @@ function Body({ r }: { r: Reminder }) {
       <ListSection title="Subtasks">
         <div className="flex flex-col bg-card">
           {(r.subtasks ?? []).map((s) => (
-            <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 shadow-[inset_0_-1px_0_var(--bl-sep)]">
+            <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 shadow-[inset_0_-1px_0_var(--border)]">
               <CheckCircle size={22} done={!!s.done} color={list?.color ?? '#007AFF'} label={`Subtask “${s.title}”`} onToggle={() => api.toggleSubtask(r.id, s.id)} />
               <span className={s.done ? 'text-[17px] text-muted-foreground' : 'text-[17px]'}>{s.title}</span>
             </div>

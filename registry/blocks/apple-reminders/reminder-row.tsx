@@ -20,7 +20,7 @@ export function CheckCircle({ done, color, label, size = 24, onToggle }: { done:
   return (
     <button type="button" role="checkbox" aria-checked={done} aria-label={label} onClick={onToggle}
       className="bl-btn relative grid shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 transition-[scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.86] motion-reduce:transition-none"
-      style={{ width: size, height: size, boxShadow: `inset 0 0 0 1.6px ${done ? color : 'var(--bl-label3)'}` }}>
+      style={{ width: size, height: size, boxShadow: `inset 0 0 0 1.6px ${done ? color : 'var(--tertiary-foreground)'}` }}>
       <span aria-hidden="true" className={cn('rounded-full transition-[scale,opacity] duration-spring-bouncy ease-spring-bouncy motion-reduce:transition-none', done ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}
         style={{ width: size - 9, height: size - 9, background: color }} />
     </button>
@@ -42,7 +42,7 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
           <div className="pt-[11px]">
             <CheckCircle done={!!r.done} color={color} label={r.done ? `Mark “${r.title}” incomplete` : `Complete “${r.title}”`} onToggle={() => api.toggle(r.id)} />
           </div>
-          <div className="min-w-0 flex-1 py-[11px] pr-3 shadow-[inset_0_-1px_0_var(--bl-sep)]" onDoubleClick={() => api.openDetails(r.id)}>
+          <div className="min-w-0 flex-1 py-[11px] pr-3 shadow-[inset_0_-1px_0_var(--border)]" onDoubleClick={() => api.openDetails(r.id)}>
             <div className="flex items-start gap-2">
               <div className={cn('min-w-0 flex-1 text-[17px] leading-[1.3] transition-colors duration-200', r.done && 'text-muted-foreground')}>
                 {r.priority ? <span className="mr-1 font-semibold" style={{ color: r.done ? undefined : color }}>{'!'.repeat(r.priority)}</span> : null}
@@ -63,7 +63,7 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
               </div>
             ) : null}
             {r.url ? (
-              <span className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-[8px] bg-bl-fill px-2 py-1 text-[13px] text-muted-foreground">
+              <span className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-[8px] bg-secondary px-2 py-1 text-[13px] text-muted-foreground">
                 <Icon name="link" size={13} weight="semibold" /><span className="truncate">{r.url}</span>
               </span>
             ) : null}

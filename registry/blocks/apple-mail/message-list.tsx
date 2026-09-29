@@ -47,7 +47,7 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
             <span className="min-w-0 flex-1 truncate text-[16px] leading-[1.3] font-semibold tracking-[-.2px]">{m.from.name}</span>
             {m.attachments?.length ? <Icon name="paperclip" size={14} weight="medium" className={on ? 'opacity-80' : 'text-muted-foreground'} /> : null}
             <span className={cn('shrink-0 text-[14px] tabular-nums', on ? 'opacity-85' : 'text-muted-foreground')}>{relativeTime(m.date)}</span>
-            {chevron ? <Icon name="chevron-right" size={13} sw={2.6} className="text-bl-label3" /> : null}
+            {chevron ? <Icon name="chevron-right" size={13} sw={2.6} className="text-tertiary-foreground" /> : null}
           </span>
           <span className="block truncate text-[15px] leading-[1.35]">{m.subject}</span>
           <span className={cn('line-clamp-2 text-[14.5px] leading-[1.35]', on ? 'opacity-80' : 'text-muted-foreground')}>{preview(m)}</span>

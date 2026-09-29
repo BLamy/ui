@@ -99,7 +99,7 @@ function AlbumTile({ album: a, ctx, size = 164, caption }: { album: Album; ctx: 
 }
 
 function PillButtons({ onPlay, onShuffle }: { onPlay: () => void; onShuffle: () => void }) {
-  const pill = 'bl-btn flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[11px] border-0 bg-bl-fill [font-family:inherit] text-[16px] font-semibold text-primary transition-[scale,background-color] duration-spring-snappy ease-spring-snappy hover:bg-bl-fill2 active:scale-[.97]';
+  const pill = 'bl-btn flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[11px] border-0 bg-secondary [font-family:inherit] text-[16px] font-semibold text-primary transition-[scale,background-color] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong active:scale-[.97]';
   return (
     <div className="flex w-full max-w-[420px] gap-3">
       <button type="button" className={pill} onClick={onPlay}><Icon name="play" size={18} />Play</button>
@@ -113,7 +113,7 @@ function SongRow({ s, i, songs, ctx, art, number }: { s: Song; i: number; songs:
   const current = ctx.player.current.key === s.key;
   return (
     <button type="button" onClick={() => ctx.player.playFrom(songs, i)} aria-current={current || undefined}
-      className="bl-btn group flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-4 text-left [font-family:inherit] text-foreground hover:bg-bl-fill active:bg-bl-press">
+      className="bl-btn group flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-4 text-left [font-family:inherit] text-foreground hover:bg-secondary active:bg-accent">
       {art ? (
         <span className="relative shrink-0">
           <Artwork album={s.album} size={44} rounded={5} />
@@ -124,7 +124,7 @@ function SongRow({ s, i, songs, ctx, art, number }: { s: Song; i: number; songs:
           {current ? <NowPlayingBars playing={ctx.player.playing} className="text-primary" /> : number}
         </span>
       )}
-      <span className={cn('flex min-w-0 flex-1 items-center gap-2 py-3 shadow-[inset_0_-1px_0_var(--bl-sep)]', art && 'py-2')}>
+      <span className={cn('flex min-w-0 flex-1 items-center gap-2 py-3 shadow-[inset_0_-1px_0_var(--border)]', art && 'py-2')}>
         <span className="min-w-0 flex-1">
           <span className={cn('flex items-center gap-1.5 truncate text-[16px]', current && 'text-primary')}>
             <span className="truncate">{s.track.title}</span>
@@ -213,10 +213,10 @@ function Browse({ ctx }: { ctx: Ctx }) {
         <div className="grid grid-cols-1 gap-x-6 px-0 @xl:grid-cols-2 @4xl:grid-cols-3">
           {top.map((s, i) => (
             <button key={s.key} type="button" onClick={() => ctx.player.playFrom(top, i)}
-              className="bl-btn flex cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-1.5 text-left [font-family:inherit] text-foreground hover:bg-bl-fill">
+              className="bl-btn flex cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-1.5 text-left [font-family:inherit] text-foreground hover:bg-secondary">
               <Artwork album={s.album} size={48} rounded={5} />
               <span className="w-5 text-[16px] font-semibold text-muted-foreground tabular-nums">{i + 1}</span>
-              <span className="min-w-0 flex-1 py-1 shadow-[inset_0_-1px_0_var(--bl-sep)]">
+              <span className="min-w-0 flex-1 py-1 shadow-[inset_0_-1px_0_var(--border)]">
                 <span className="block truncate text-[15px]">{s.track.title}</span>
                 <span className="block truncate pb-1.5 text-[13px] text-muted-foreground">{s.album.artist}</span>
               </span>
@@ -299,7 +299,7 @@ function Search({ ctx }: { ctx: Ctx }) {
         <>
           {artists.map((name) => (
             <button key={name} type="button" onClick={() => ctx.open({ kind: 'artist', name })}
-              className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-2 text-left [font-family:inherit] text-foreground hover:bg-bl-fill">
+              className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-2 text-left [font-family:inherit] text-foreground hover:bg-secondary">
               <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={48} />
               <span className="flex-1"><span className="block text-[16px]">{name}</span><span className="block text-[13px] text-muted-foreground">Artist</span></span>
             </button>
@@ -329,9 +329,9 @@ function LibraryHome({ ctx }: { ctx: Ctx }) {
           <button key={pageKey(page)} type="button" onClick={() => { Haptics.selection(); ctx.open(page); }}
             className="bl-btn flex w-full cursor-pointer items-center gap-3.5 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
             <Icon {...icon} size={24} className="text-primary" />
-            <span className="flex flex-1 items-center py-3 text-[20px] shadow-[inset_0_-1px_0_var(--bl-sep)]">
+            <span className="flex flex-1 items-center py-3 text-[20px] shadow-[inset_0_-1px_0_var(--border)]">
               <span className="flex-1">{pageTitle(page)}</span>
-              <Icon name="chevron-right" size={16} weight="bold" className="text-bl-label3" />
+              <Icon name="chevron-right" size={16} weight="bold" className="text-tertiary-foreground" />
             </span>
           </button>
         ))}
@@ -364,9 +364,9 @@ function ArtistList({ ctx }: { ctx: Ctx }) {
         <button key={name} type="button" onClick={() => { Haptics.selection(); ctx.open({ kind: 'artist', name }); }}
           className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
           <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={44} />
-          <span className="flex flex-1 items-center py-3.5 text-[17px] shadow-[inset_0_-1px_0_var(--bl-sep)]">
+          <span className="flex flex-1 items-center py-3.5 text-[17px] shadow-[inset_0_-1px_0_var(--border)]">
             <span className="flex-1">{name}</span>
-            <Icon name="chevron-right" size={15} weight="bold" className="text-bl-label3" />
+            <Icon name="chevron-right" size={15} weight="bold" className="text-tertiary-foreground" />
           </span>
         </button>
       ))}
@@ -390,7 +390,7 @@ function AlbumPage({ album: a, ctx }: { album: Album; ctx: Ctx }) {
   const songs = albumSongs(a);
   const more = ALBUMS.filter((x) => x.artist === a.artist && x.id !== a.id);
   return (
-    <div className="pb-6" style={{ '--bl-tint': tintFor(a, ctx.dark) } as CSSProperties}>
+    <div className="pb-6" style={{ '--primary': tintFor(a, ctx.dark) } as CSSProperties}>
       <div className={cn('flex gap-6 px-4 pt-2 pb-5', ctx.wide ? 'items-end px-6' : 'flex-col items-center text-center')}>
         <Artwork album={a} size={ctx.wide ? 250 : 260} rounded={10} className="shadow-[0_10px_30px_rgba(0,0,0,.18)]" />
         <div className={cn('flex min-w-0 flex-col gap-1', ctx.wide ? 'items-start pb-1' : 'items-center')}>

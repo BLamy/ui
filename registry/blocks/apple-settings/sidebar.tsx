@@ -12,7 +12,7 @@ const valueOf = (r: Extract<Row, { t: 'link' }>, v: Values) => (typeof r.value =
 
 /** On a phone the sidebar rows push, so they end in a chevron. */
 function Disclosure() {
-  return useSplitView().collapsed ? <Icon name="chevron-right" size={15} weight="bold" className="text-bl-label3" /> : null;
+  return useSplitView().collapsed ? <Icon name="chevron-right" size={15} weight="bold" className="text-tertiary-foreground" /> : null;
 }
 
 /** One pane in the iOS sidebar: tile, title, value; blue fill when selected. */
@@ -22,7 +22,7 @@ function IosItem({ row }: { row: Extract<Row, { t: 'link' }> }) {
   if (!p?.glyph || !p.color) return null;
   return (
     <SplitViewItem id={row.to}
-      className="min-h-[46px] gap-3 rounded-[10px] px-4 text-[17px] after:absolute after:right-0 after:bottom-0 after:left-[57px] after:h-px after:bg-bl-sep last:after:hidden data-selected:after:hidden">
+      className="min-h-[46px] gap-3 rounded-[10px] px-4 text-[17px] after:absolute after:right-0 after:bottom-0 after:left-[57px] after:h-px after:bg-border last:after:hidden data-selected:after:hidden">
       <Tile glyph={p.glyph} color={p.color} />
       <span className="min-w-0 flex-1 truncate">{p.title}</span>
       <span className="max-w-[45%] truncate text-[16px] text-muted-foreground group-data-selected/item:text-white/80">{valueOf(row, s.values)}</span>
@@ -54,7 +54,7 @@ export function SettingsSidebar() {
           {['#FF5F57', '#FEBC2E', '#28C840'].map((c) => <span key={c} className="size-3 rounded-full shadow-[inset_0_0_0_.5px_rgba(0,0,0,.18)]" style={{ background: c }} />)}
         </div>
         <div className="px-3 pb-2">
-          <SearchField value={s.query} onChange={s.setQuery} aria-label="Search settings" className="gap-1.5 rounded-[7px] bg-bl-fill px-2 py-[5px] [&_input]:text-[13px] [&_svg]:size-[14px]" />
+          <SearchField value={s.query} onChange={s.setQuery} aria-label="Search settings" className="gap-1.5 rounded-[7px] bg-secondary px-2 py-[5px] [&_input]:text-[13px] [&_svg]:size-[14px]" />
         </div>
         <SplitViewContent className="px-2.5 pb-4">
           {s.query ? <div className="pt-1">{results}</div> : (

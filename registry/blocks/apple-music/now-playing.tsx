@@ -18,7 +18,7 @@ export function MiniPlayer({ player: p, phone, onOpen, className, style }: {
   const art = phone ? 40 : 48;
   return (
     <Morph id="player" radius={14}
-      className={cn('absolute z-[300] flex items-center gap-3 overflow-hidden bg-bl-bar pr-2 pl-2 text-foreground backdrop-blur-[24px] backdrop-saturate-[1.8] shadow-[0_6px_24px_rgba(0,0,0,.16),0_0_0_.5px_var(--bl-sep)]', phone ? 'h-14' : 'h-16', className)} style={style}>
+      className={cn('absolute z-[300] flex items-center gap-3 overflow-hidden bg-bar pr-2 pl-2 text-foreground backdrop-blur-[24px] backdrop-saturate-[1.8] shadow-[0_6px_24px_rgba(0,0,0,.16),0_0_0_.5px_var(--border)]', phone ? 'h-14' : 'h-16', className)} style={style}>
       <button type="button" aria-label={`Open Now Playing: ${p.current.track.title}`} onClick={() => { Haptics.impact('light'); onOpen(); }}
         className="bl-btn absolute inset-0 cursor-pointer border-0 bg-transparent" />
       <Morph id="art" radius={7} className="pointer-events-none shrink-0 overflow-hidden" style={{ width: art, height: art }}>

@@ -35,7 +35,7 @@ export function Sidebar({ vault }: { vault: Vault }) {
         </SplitViewSection>
         <div className="mt-5 flex items-center gap-2 px-2.5 text-[12.5px] text-muted-foreground">
           <span className="flex -space-x-1.5">
-            {GROUPS[0].members.map((m) => <Avatar key={m.f} c={m} size={20} className="ring-2 ring-bl-side" />)}
+            {GROUPS[0].members.map((m) => <Avatar key={m.f} c={m} size={20} className="ring-2 ring-sidebar" />)}
           </span>
           Family members can see passwords in Family.
         </div>
@@ -54,7 +54,7 @@ function Tile({ id, label, icon, color, count }: { id: CategoryId; label: string
         'bl-btn group flex cursor-pointer flex-col gap-2 rounded-[12px] border-0 p-2.5 text-left [font-family:inherit] outline-none',
         'transition-[background-color,scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.97]',
         'focus-visible:ring-2 focus-visible:ring-ring',
-        selected ? 'bg-primary text-primary-foreground' : 'bg-bl-card text-foreground shadow-[0_.5px_1.5px_rgba(0,0,0,.08)] hover:bg-[color-mix(in_oklab,var(--bl-card)_92%,var(--bl-label))]',
+        selected ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground shadow-[0_.5px_1.5px_rgba(0,0,0,.08)] hover:bg-[color-mix(in_oklab,var(--card)_92%,var(--foreground))]',
       )}>
       <span className="flex w-full items-start justify-between">
         <span className="grid size-[30px] place-items-center rounded-full transition-colors duration-200"

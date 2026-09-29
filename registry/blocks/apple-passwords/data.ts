@@ -160,7 +160,7 @@ export const WIFI: WifiNetwork[] = [
 ];
 
 export const SEVERITY: Record<Severity, { label: string; color: string; rank: number }> = {
-  high: { label: 'High Priority', color: 'var(--bl-red)', rank: 0 },
+  high: { label: 'High Priority', color: 'var(--destructive)', rank: 0 },
   medium: { label: 'Recommendation', color: '#FF9500', rank: 1 },
   low: { label: 'Recommendation', color: '#FFCC00', rank: 2 },
 };

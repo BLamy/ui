@@ -15,7 +15,7 @@ export function BarButton({ label, children, onPress, isDisabled, className }: {
   const text = children == null;
   return (
     <Button variant="ghost" aria-label={label} onPress={onPress} isDisabled={isDisabled}
-      className={cn('h-9 rounded-[10px] text-primary data-hovered:bg-bl-fill', text ? 'px-2.5 text-[17px] font-normal' : 'w-10 px-0', className)}>
+      className={cn('h-9 rounded-[10px] text-primary data-hovered:bg-secondary', text ? 'px-2.5 text-[17px] font-normal' : 'w-10 px-0', className)}>
       {children ?? label}
     </Button>
   );
@@ -87,7 +87,7 @@ export function LockButton({ notes, n }: { notes: NotesState; n: Note }) {
 export function BottomBar({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={cn(
-      'absolute inset-x-0 bottom-0 z-30 flex h-[50px] items-center gap-1 bg-bl-bar px-2 shadow-[inset_0_1px_0_var(--bl-sep)] backdrop-blur-[20px] backdrop-saturate-[1.8]',
+      'absolute inset-x-0 bottom-0 z-30 flex h-[50px] items-center gap-1 bg-bar px-2 shadow-[inset_0_1px_0_var(--border)] backdrop-blur-[20px] backdrop-saturate-[1.8]',
       className,
     )}>{children}</div>
   );

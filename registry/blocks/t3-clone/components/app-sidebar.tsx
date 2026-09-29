@@ -62,7 +62,7 @@ export function AppSidebar({ state }: { state: ThreadsState }) {
       </ThreadList>
       <ThreadSidebarFooter>
         {notice && <SidebarNotice onDismiss={() => setNotice(false)}>Update available</SidebarNotice>}
-        <SidebarFooterItem icon="gear">Settings</SidebarFooterItem>
+        <SidebarFooterItem icon="gearshape">Settings</SidebarFooterItem>
       </ThreadSidebarFooter>
     </ThreadSidebar>
   );

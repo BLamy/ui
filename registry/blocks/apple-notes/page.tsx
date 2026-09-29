@@ -27,7 +27,7 @@ export default function AppleNotes({ appearance, initialFolder = 'all', initialN
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
       {/* Notes' yellow, with dark text on it (selected rows, the checked-circle fill). */}
-      <BLProvider tint={dark ? '#FFD60A' : '#E0A500'} className="bg-background" style={{ '--bl-on-tint': '#1C1C1E' } as CSSProperties}>
+      <BLProvider tint={dark ? '#FFD60A' : '#E0A500'} className="bg-background" style={{ '--primary-foreground': '#1C1C1E' } as CSSProperties}>
         {/* Gallery view hides the list column (the phone keeps it: the gallery takes its place in the stack). */}
         <SplitView aria-label="Notes" onWidthClassChange={(wc) => setCompact(wc === 'compact')}
           supplementaryVisible={notes.view === 'list' || compact}

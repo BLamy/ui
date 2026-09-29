@@ -59,10 +59,10 @@ export function CopyButton({ label, value }: { label: string; value: string }) {
       }}
       className={cn(
         'bl-btn grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-primary',
-        'transition-[background-color,opacity,scale] duration-spring-snappy ease-spring-snappy hover:bg-bl-fill active:scale-90',
+        'transition-[background-color,opacity,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90',
       )}>
       <IconSwap id={done ? 'done' : 'copy'}>
-        <Icon name={done ? 'check' : 'copy'} size={17} weight={done ? 'bold' : 'regular'} className={cn(done && 'text-bl-green')} />
+        <Icon name={done ? 'check' : 'copy'} size={17} weight={done ? 'bold' : 'regular'} className={cn(done && 'text-success')} />
       </IconSwap>
     </button>
   );
@@ -70,7 +70,7 @@ export function CopyButton({ label, value }: { label: string; value: string }) {
 
 /* ── Grouped card + rows ── */
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('overflow-hidden rounded-[12px] bg-bl-card shadow-[0_0_0_.5px_var(--bl-sep)]', className)}>{children}</div>;
+  return <div className={cn('overflow-hidden rounded-[12px] bg-card shadow-[0_0_0_.5px_var(--border)]', className)}>{children}</div>;
 }
 
 /** Label beside the value on a wide detail, above it on a narrow one (a container query on the detail). */
@@ -82,7 +82,7 @@ export function Field({ label, children, trailing, last }: { label: string; chil
         <div className="min-w-0 truncate text-[16px] @md:flex-1 @md:text-[15px]">{children}</div>
       </div>
       {trailing}
-      {!last ? <span aria-hidden="true" className="absolute right-0 bottom-0 left-4 h-px bg-bl-sep @md:left-[160px]" /> : null}
+      {!last ? <span aria-hidden="true" className="absolute right-0 bottom-0 left-4 h-px bg-border @md:left-[160px]" /> : null}
     </div>
   );
 }
@@ -100,7 +100,7 @@ export function RevealButton({ revealed, onToggle }: { revealed: boolean; onTogg
   return (
     <button type="button" aria-label={revealed ? 'Hide password' : 'Show password'} aria-pressed={revealed}
       onClick={() => { Haptics.selection(); onToggle(); }}
-      className="bl-btn grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-bl-fill active:scale-90">
+      className="bl-btn grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
       <IconSwap id={revealed ? 'off' : 'on'}><Icon name={revealed ? 'eye-slash' : 'eye'} size={18} /></IconSwap>
     </button>
   );

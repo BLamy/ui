@@ -31,7 +31,7 @@ export function Detail({ entry, vault, now, editing, onEditing }: {
 /* A centred, readable column inside the detail; `@container` drives the label-beside/label-above rows. */
 function Page({ children }: { children: ReactNode }) {
   return (
-    <SplitViewContent className="bg-bl-bg2">
+    <SplitViewContent className="bg-muted">
       <div className="@container mx-auto flex max-w-[680px] flex-col gap-5 px-4 pb-10 @md:px-8">{children}</div>
     </SplitViewContent>
   );
@@ -75,7 +75,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
           icon={<SiteTile title={draft.title || a.title} color={a.color} size={64} className={cn(deleted && 'grayscale')} />}
           title={edit ? (
             <Input aria-label="Title" size="sm" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-              className="h-9 bg-bl-card text-center text-[22px] font-bold" />
+              className="h-9 bg-card text-center text-[22px] font-bold" />
           ) : a.title}
           subtitle={deleted ? `Deleted · ${a.deleted}` : `Last modified ${a.modified}`}
         />
@@ -118,7 +118,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
           ) : null}
           {a.passkey ? (
             <Field label="Passkey" last={!a.otp && !edit}>
-              <span className="inline-flex items-center gap-1.5"><Icon name="passkey" size={17} className="text-bl-green" />Created {a.passkey}</span>
+              <span className="inline-flex items-center gap-1.5"><Icon name="passkey" size={17} className="text-success" />Created {a.passkey}</span>
             </Field>
           ) : null}
           {a.otp ? (
@@ -141,7 +141,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
                   <span className="flex items-center gap-2">
                     <button type="button" aria-label={`Remove ${w || 'website'}`}
                       onClick={() => { Haptics.impact('light'); setDraft({ ...draft, websites: draft.websites.filter((_, j) => j !== i) }); }}
-                      className="bl-btn grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-bl-red p-0 text-white">
+                      className="bl-btn grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-destructive p-0 text-white">
                       <span className="h-[2px] w-2.5 rounded-full bg-white" />
                     </button>
                     <InlineInput label="Website" value={w} onChange={(v) => setDraft({ ...draft, websites: draft.websites.map((x, j) => (j === i ? v : x)) })} />
@@ -155,7 +155,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
               <Field label="" last>
                 <button type="button" onClick={() => setDraft({ ...draft, websites: [...draft.websites, ''] })}
                   className="bl-btn inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-[15px] text-primary">
-                  <span className="grid size-5 place-items-center rounded-full bg-bl-green text-white"><Icon name="plus" size={13} sw={3} /></span>
+                  <span className="grid size-5 place-items-center rounded-full bg-success text-white"><Icon name="plus" size={13} sw={3} /></span>
                   Add Website
                 </button>
               </Field>
@@ -169,7 +169,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
               <Textarea aria-label="Notes" size="sm" value={draft.notes ?? ''} placeholder="Add Notes"
                 onChange={(e) => setDraft({ ...draft, notes: e.target.value })} className="bg-transparent" />
             ) : (
-              <div className={cn('text-[15px] whitespace-pre-wrap select-text', !a.notes && 'text-bl-label3')}>{a.notes || 'No notes'}</div>
+              <div className={cn('text-[15px] whitespace-pre-wrap select-text', !a.notes && 'text-tertiary-foreground')}>{a.notes || 'No notes'}</div>
             )}
           </Card>
         </Section>
@@ -188,7 +188,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
 
         <AnimatedHeight>
           {edit ? (
-            <Button variant="secondary" size="pill" className="bg-bl-card text-destructive"
+            <Button variant="secondary" size="pill" className="bg-card text-destructive"
               onPress={() => { vault.remove(a.id); onEditing(false); Haptics.notification('warning'); }}>
               Delete Password
             </Button>
@@ -211,7 +211,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function InlineInput({ label, value, onChange, mono }: { label: string; value: string; onChange: (v: string) => void; mono?: boolean }) {
   return (
     <Input aria-label={label} size="sm" value={value} onChange={(e) => onChange(e.target.value)}
-      className={cn('-my-1 h-8 bg-bl-fill px-2 text-[15px]', mono && 'font-mono')} />
+      className={cn('-my-1 h-8 bg-secondary px-2 text-[15px]', mono && 'font-mono')} />
   );
 }
 
@@ -257,7 +257,7 @@ function WifiDetail({ network: n }: { network: WifiNetwork }) {
             className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3.5 text-left [font-family:inherit] text-[15px] text-primary">
             <Icon name="qrcode" size={20} />
             <span className="flex-1">{qr ? 'Hide Network QR Code' : 'Show Network QR Code'}</span>
-            <Icon name="chevron-right" size={15} weight="bold" className={cn('text-bl-label3 transition-transform duration-spring-snappy ease-spring-snappy', qr && 'rotate-90')} />
+            <Icon name="chevron-right" size={15} weight="bold" className={cn('text-tertiary-foreground transition-transform duration-spring-snappy ease-spring-snappy', qr && 'rotate-90')} />
           </button>
           <AnimatedHeight>
             {qr ? (

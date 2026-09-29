@@ -83,24 +83,4 @@
   --transition-duration-spring-bouncy: 597ms;
   --transition-duration-spring-tray: 413ms;
 
-  /* TEMPORARY (removed when the registry blocks move to 2.0): the 1.x `bl-*` utilities the blocks still use,
-     pointed at the shadcn variables. */
-  --color-bl-bg: var(--background);
-  --color-bl-bg2: var(--muted);
-  --color-bl-card: var(--card);
-  --color-bl-card2: var(--popover);
-  --color-bl-label: var(--foreground);
-  --color-bl-label2: var(--muted-foreground);
-  --color-bl-label3: var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent));
-  --color-bl-sep: var(--border);
-  --color-bl-fill: var(--secondary);
-  --color-bl-fill2: var(--secondary-strong, var(--accent));
-  --color-bl-press: var(--accent);
-  --color-bl-bar: var(--bar, color-mix(in oklab, var(--background) 85%, transparent));
-  --color-bl-stick: var(--sticky, color-mix(in oklab, var(--muted) 92%, transparent));
-  --color-bl-side: var(--sidebar);
-  --color-bl-scrim: var(--overlay, color-mix(in oklab, black 40%, transparent));
-  --color-bl-tint: var(--primary);
-  --color-bl-red: var(--destructive);
-  --color-bl-green: var(--success, oklch(0.723 0.191 149.6));
 }

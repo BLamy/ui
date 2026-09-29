@@ -55,7 +55,7 @@ export default function AppleMusic({ initialSection = 'listen', initialAlbum, no
   );
 
   return (
-    <BLProvider dark={dark} tint={dark ? '#FF375F' : '#FA2D48'} className="bg-bl-bg">
+    <BLProvider dark={dark} tint={dark ? '#FF375F' : '#FA2D48'} className="bg-background">
       <MorphGroup>
         <div ref={ref} className="relative h-full w-full">
           {phone ? (

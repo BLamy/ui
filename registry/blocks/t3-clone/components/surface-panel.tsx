@@ -28,7 +28,7 @@ export function SurfacePanel({ surface, onSurface }: { surface: SurfaceKind | nu
         <WorkbenchPanelTitle icon={meta?.icon}>{meta?.name ?? 'Surfaces'}</WorkbenchPanelTitle>
         {meta && (
           <IconBtn
-            name="chevD"
+            name="chevron-down-wide"
             label="Switch surface"
             size={15}
             onPress={() => {

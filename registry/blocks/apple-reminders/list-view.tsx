@@ -30,7 +30,7 @@ function Composer({ color, onAdd, onClose }: { color: string; onAdd: (title: str
   const [text, setText] = useState('');
   return (
     <div className="flex items-start gap-3 pl-4 animate-bl-fade-in">
-      <span className="mt-[11px] size-6 shrink-0 rounded-full shadow-[inset_0_0_0_1.6px_var(--bl-label3)]" />
+      <span className="mt-[11px] size-6 shrink-0 rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)]" />
       <input autoFocus value={text} placeholder="New Reminder" aria-label="New reminder"
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
@@ -38,7 +38,7 @@ function Composer({ color, onAdd, onClose }: { color: string; onAdd: (title: str
           else if (e.key === 'Escape') onClose();
         }}
         onBlur={() => { if (text.trim()) onAdd(text.trim()); onClose(); }}
-        className="min-w-0 flex-1 appearance-none border-0 bg-transparent py-[11px] pr-3 [font-family:inherit] text-[17px] text-foreground caret-(--c) shadow-[inset_0_-1px_0_var(--bl-sep)] outline-none select-text"
+        className="min-w-0 flex-1 appearance-none border-0 bg-transparent py-[11px] pr-3 [font-family:inherit] text-[17px] text-foreground caret-(--c) shadow-[inset_0_-1px_0_var(--border)] outline-none select-text"
         style={{ '--c': color } as CSSProperties} />
     </div>
   );
@@ -94,7 +94,7 @@ export function ListView() {
           ) : null}
 
           {list && view.completed ? (
-            <div className="mx-5 mt-1 flex items-center gap-2 py-1.5 text-[15px] text-muted-foreground shadow-[inset_0_-1px_0_var(--bl-sep)]">
+            <div className="mx-5 mt-1 flex items-center gap-2 py-1.5 text-[15px] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
               <span>{view.completed} Completed</span>
               <span aria-hidden="true">·</span>
               <button type="button" onClick={() => api.clearCompleted(list.id)} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[15px] text-primary">Clear</button>
@@ -109,7 +109,7 @@ export function ListView() {
               <div className="text-[20px] font-semibold text-muted-foreground">
                 {id === 'search' ? 'No Results' : view.completed || id === 'today' || id === 'flagged' ? 'All Done' : 'No Reminders'}
               </div>
-              {id === 'search' ? null : <div className="mt-1 text-[15px] text-bl-label3">{view.completed ? `${view.completed} completed` : 'Tap New Reminder to add one.'}</div>}
+              {id === 'search' ? null : <div className="mt-1 text-[15px] text-tertiary-foreground">{view.completed ? `${view.completed} completed` : 'Tap New Reminder to add one.'}</div>}
             </div>
           ) : null}
 

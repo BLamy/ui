@@ -19,7 +19,7 @@ function Body({ lines }: { lines: string[] }) {
   return (
     <div className="flex flex-col gap-3.5 text-[16px] leading-[1.55]">
       {blocks.map((b, i) => b.quote ? (
-        <blockquote key={i} className="m-0 flex flex-col gap-2 py-0.5 pr-0 pl-3.5 text-[15px] text-muted-foreground shadow-[inset_3px_0_0_var(--bl-tint)]">
+        <blockquote key={i} className="m-0 flex flex-col gap-2 py-0.5 pr-0 pl-3.5 text-[15px] text-muted-foreground shadow-[inset_3px_0_0_var(--primary)]">
           {b.lines.filter(Boolean).map((l, j) => <p key={j} className="m-0">{l}</p>)}
         </blockquote>
       ) : <p key={i} className="m-0">{b.lines[0]}</p>)}
@@ -31,7 +31,7 @@ function AttachmentTile({ a }: { a: Attachment }) {
   const tone = a.kind === 'pdf' ? '#FF3B30' : a.kind === 'image' ? '#34C759' : a.kind === 'zip' ? '#8E8E93' : '#0A84FF';
   return (
     <button type="button" onClick={() => Haptics.impact('light')}
-      className="bl-btn flex min-w-0 cursor-pointer items-center gap-2.5 rounded-[12px] border-0 bg-bl-fill px-3 py-2.5 text-left [font-family:inherit] text-foreground transition-colors hover:bg-bl-fill2">
+      className="bl-btn flex min-w-0 cursor-pointer items-center gap-2.5 rounded-[12px] border-0 bg-secondary px-3 py-2.5 text-left [font-family:inherit] text-foreground transition-colors hover:bg-secondary-strong">
       <span className="grid size-9 shrink-0 place-items-center rounded-[8px] text-white" style={{ background: tone }}>
         <Icon name={a.kind === 'image' ? 'photo' : a.kind === 'zip' ? 'archivebox' : 'doc'} size={20} sw={1.9} />
       </span>
@@ -63,7 +63,7 @@ function Header({ from, to, cc, date, trailing }: { from: Person; to: Person[]; 
 function EarlierMessage({ e }: { e: ThreadEntry }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-[14px] bg-card shadow-[0_0_0_1px_var(--bl-sep)]">
+    <div className="rounded-[14px] bg-card shadow-[0_0_0_1px_var(--border)]">
       <button type="button" aria-expanded={open} onClick={() => { setOpen((o) => !o); Haptics.selection(); }}
         className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3 text-left [font-family:inherit] text-foreground">
         <Avatar c={initials(e.from)} size={30} />
@@ -74,7 +74,7 @@ function EarlierMessage({ e }: { e: ThreadEntry }) {
           </span>
           <span className={cn('block truncate text-[14px] text-muted-foreground transition-opacity duration-200', open && 'opacity-0')}>{e.body[0]}</span>
         </span>
-        <Chevron direction={open ? 'down' : 'right'} size={14} className="text-bl-label3" />
+        <Chevron direction={open ? 'down' : 'right'} size={14} className="text-tertiary-foreground" />
       </button>
       <AnimatedHeight>
         {open ? <div className="px-4 pt-0 pb-4 pl-[58px]"><Body lines={e.body} /></div> : null}
@@ -112,9 +112,9 @@ export function NoMessage({ count }: { count: number }) {
   return (
     <div className="grid h-full place-items-center p-6 text-center">
       <div>
-        <div className="mb-3 grid place-items-center text-bl-label3"><Icon name="envelope" size={56} sw={1.1} /></div>
+        <div className="mb-3 grid place-items-center text-tertiary-foreground"><Icon name="envelope" size={56} sw={1.1} /></div>
         <div className="text-[19px] font-semibold text-muted-foreground">No Message Selected</div>
-        <div className="mt-1 text-[14px] text-bl-label3">{count ? `${count} message${count === 1 ? '' : 's'}` : 'This mailbox is empty'}</div>
+        <div className="mt-1 text-[14px] text-tertiary-foreground">{count ? `${count} message${count === 1 ? '' : 's'}` : 'This mailbox is empty'}</div>
       </div>
     </div>
   );

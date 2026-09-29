@@ -40,7 +40,7 @@ function WifiBars({ bars }: { bars: 1 | 2 | 3 }) {
 type ShellProps = Pick<ListRowProps, 'title' | 'subtitle' | 'leading' | 'trailing' | 'accessory' | 'checked' | 'onPress' | 'center'> & { last?: boolean };
 
 /** macOS group rows get a hairline above every row but the first, inset like the system's. */
-const macSep = 'before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-bl-sep first:before:hidden';
+const macSep = 'before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-border first:before:hidden';
 
 /** iOS: a ListRow (a control accessory makes it a plain row whose label flips the switch). macOS: a dense row. */
 function Shell({ last, ...p }: ShellProps) {
@@ -56,14 +56,14 @@ function Shell({ last, ...p }: ShellProps) {
       </span>
       {p.trailing}
       {a === 'check' ? (p.checked ? <Icon name="check" size={15} weight="bold" className="text-primary" /> : null)
-        : a === 'chevron' ? <Icon name="chevron-right" size={12} weight="bold" className="text-bl-label3" />
+        : a === 'chevron' ? <Icon name="chevron-right" size={12} weight="bold" className="text-tertiary-foreground" />
         : a}
     </>
   );
   const cls = cn('relative flex min-h-[38px] w-full items-center gap-2.5 px-3 py-[7px] text-left text-[13px] text-foreground', macSep);
   return p.onPress ? (
     <button type="button" onClick={p.onPress}
-      className={cn(cls, 'bl-btn cursor-pointer border-0 bg-transparent [font-family:inherit] transition-colors duration-150 hover:bg-bl-fill/60 active:bg-bl-press')}>{body}</button>
+      className={cn(cls, 'bl-btn cursor-pointer border-0 bg-transparent [font-family:inherit] transition-colors duration-150 hover:bg-secondary/60 active:bg-accent')}>{body}</button>
   ) : <div className={cls}>{body}</div>;
 }
 
@@ -72,7 +72,7 @@ function Plain({ children, last }: { children: ReactNode; last?: boolean }) {
   const { layout } = useSettings();
   return layout === 'desktop'
     ? <div className={cn('relative px-3 py-3 text-[13px]', macSep)}>{children}</div>
-    : <div className={cn('relative bg-card px-4 py-3', !last && 'after:absolute after:right-0 after:bottom-0 after:left-4 after:h-px after:bg-bl-sep')}>{children}</div>;
+    : <div className={cn('relative bg-card px-4 py-3', !last && 'after:absolute after:right-0 after:bottom-0 after:left-4 after:h-px after:bg-border')}>{children}</div>;
 }
 
 const Detail = ({ children }: { children?: ReactNode }) =>
@@ -88,7 +88,7 @@ function Popup({ id, title, options }: { id: string; title: string; options: str
   return (
     <DropdownMenu>
       <Button variant="ghost" size="sm" aria-label={`${title}: ${cur}`}
-        className="-my-1 h-[26px] gap-1 rounded-[6px] px-2 text-[13px] font-normal text-foreground shadow-[0_0_0_.5px_var(--bl-sep),0_1px_1px_rgba(0,0,0,.06)]">
+        className="-my-1 h-[26px] gap-1 rounded-[6px] px-2 text-[13px] font-normal text-foreground shadow-[0_0_0_.5px_var(--border),0_1px_1px_rgba(0,0,0,.06)]">
         {cur}<Icon name="chevron-up-down" size={12} weight="semibold" className="text-muted-foreground" />
       </Button>
       <DropdownMenuContent aria-label={title} placement="bottom end" selectionMode="single" selectedKeys={[cur]}
@@ -193,7 +193,7 @@ function SliderRow({ row }: { row: Extract<Row, { t: 'slider' }> }) {
 
 function PhoneThumb({ dark }: { dark: boolean }) {
   return (
-    <span className={cn('relative block h-[112px] w-[56px] overflow-hidden rounded-[11px] shadow-[0_0_0_1px_var(--bl-sep),0_2px_6px_rgba(0,0,0,.12)]')}
+    <span className={cn('relative block h-[112px] w-[56px] overflow-hidden rounded-[11px] shadow-[0_0_0_1px_var(--border),0_2px_6px_rgba(0,0,0,.12)]')}
       style={{ background: dark ? 'linear-gradient(180deg,#1b2a4a,#0b0f1c)' : 'linear-gradient(180deg,#9ad0ff,#e9d9ff)' }}>
       <span className={cn('absolute inset-x-0 top-2.5 text-center text-[14px] font-semibold tracking-[-.3px]', dark ? 'text-white' : 'text-[#1c1c1e]')}>9:41</span>
       <span className={cn('absolute inset-x-2 top-9 h-5 rounded-[6px]', dark ? 'bg-white/15' : 'bg-white/60')} />
@@ -215,7 +215,7 @@ function AppearancePicker() {
             <PhoneThumb dark={k === 'dark'} />
             <span className={s.layout === 'desktop' ? 'text-[13px]' : 'text-[15px]'}>{label}</span>
             <span className={cn('grid size-[22px] place-items-center rounded-full text-white transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy',
-              on ? 'bg-primary' : 'shadow-[inset_0_0_0_1.5px_var(--bl-label3)]')}>
+              on ? 'bg-primary' : 'shadow-[inset_0_0_0_1.5px_var(--tertiary-foreground)]')}>
               {on ? <Icon name="check" size={14} sw={3} className="transition-[scale] duration-spring-snappy ease-spring-bouncy starting:scale-40" /> : null}
             </span>
           </button>
@@ -255,7 +255,7 @@ function Meter({ row }: { row: Extract<Row, { t: 'meter' }> }) {
         <span className="font-semibold">{row.title}</span>
         <span className="truncate text-[13px] text-muted-foreground">{row.used}</span>
       </div>
-      <div className="mt-2.5 flex h-5 gap-px overflow-hidden rounded-[5px] bg-bl-fill">
+      <div className="mt-2.5 flex h-5 gap-px overflow-hidden rounded-[5px] bg-secondary">
         {row.parts.map(([l, c, n]) => <div key={l} style={{ width: `${(n / row.cap) * 100}%`, background: c }} />)}
       </div>
       <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted-foreground">
@@ -296,7 +296,7 @@ export function Group({ title, footer, children }: { title?: ReactNode; footer?:
   return (
     <div className="pb-5">
       {title ? <div className="px-1 pb-1.5 text-[13px] font-semibold">{title}</div> : null}
-      <div className="overflow-hidden rounded-[10px] bg-bl-fill/40 shadow-[0_0_0_.5px_var(--bl-sep)]">{children}</div>
+      <div className="overflow-hidden rounded-[10px] bg-secondary/40 shadow-[0_0_0_.5px_var(--border)]">{children}</div>
       {footer ? <div className="px-1 pt-1.5 text-[11.5px] leading-[1.4] text-muted-foreground">{footer}</div> : null}
     </div>
   );
@@ -317,7 +317,7 @@ function PaneHeader({ pane }: { pane: Pane }) {
   const { layout } = useSettings();
   if (!pane.glyph || !pane.color) return null;
   return layout === 'desktop' ? (
-    <div className="mb-5 flex items-center gap-3.5 rounded-[10px] bg-bl-fill/40 p-4 shadow-[0_0_0_.5px_var(--bl-sep)]">
+    <div className="mb-5 flex items-center gap-3.5 rounded-[10px] bg-secondary/40 p-4 shadow-[0_0_0_.5px_var(--border)]">
       <Tile glyph={pane.glyph} color={pane.color} size={44} />
       <div className="min-w-0">
         <div className="text-[15px] font-semibold">{pane.title}</div>

@@ -13,9 +13,9 @@ export function CodeHome({ ui, nav }: { ui: Layout; nav: Nav }) {
         <Box header={
           <div className="-my-2 flex items-center gap-4 self-stretch">
             <span className="relative flex h-full items-center gap-2 font-semibold after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-[var(--gh-tab)]">
-              <Oct name="book" className="text-bl-label2" />README
+              <Oct name="book" className="text-muted-foreground" />README
             </span>
-            <span className="flex items-center gap-2 text-bl-label2"><Oct name="law" />{REPO.license}</span>
+            <span className="flex items-center gap-2 text-muted-foreground"><Oct name="law" />{REPO.license}</span>
           </div>
         }>
           <Readme markdown={README_MD} phone={ui.phone} />
@@ -38,7 +38,7 @@ export function CodeToolbar({ ui, nav }: { ui: Layout; nav: Nav }) {
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
-        <Button className={ghButton()}><Oct name="branch" className="text-bl-label2" /><span className="max-w-[140px] truncate">{branch}</span><Oct name="chevDown" size={12} className="text-bl-label2" /></Button>
+        <Button className={ghButton()}><Oct name="branch" className="text-muted-foreground" /><span className="max-w-[140px] truncate">{branch}</span><Oct name="chevDown" size={12} className="text-muted-foreground" /></Button>
         <DropdownMenuContent aria-label="Switch branches" selectionMode="single" selectedKeys={[branch]}
           onSelectionChange={(keys) => setBranch(String([...(keys as Set<string>)][0] ?? branch))} className="py-1">
           {REPO.branches.map((b) => (
@@ -48,14 +48,14 @@ export function CodeToolbar({ ui, nav }: { ui: Layout; nav: Nav }) {
       </DropdownMenu>
       {!ui.phone ? (
         <>
-          <span className="flex items-center gap-1.5 px-2 text-bl-label2"><Oct name="branch" /><b className="text-bl-label">{REPO.branchCount}</b> Branches</span>
-          <span className="flex items-center gap-1.5 px-2 text-bl-label2"><Oct name="tag" /><b className="text-bl-label">{REPO.tagCount}</b> Tags</span>
+          <span className="flex items-center gap-1.5 px-2 text-muted-foreground"><Oct name="branch" /><b className="text-foreground">{REPO.branchCount}</b> Branches</span>
+          <span className="flex items-center gap-1.5 px-2 text-muted-foreground"><Oct name="tag" /><b className="text-foreground">{REPO.tagCount}</b> Tags</span>
         </>
       ) : null}
       <span className="flex-1" />
       {ui.wide ? (
-        <div className="flex h-8 w-[240px] items-center gap-2 rounded-md border border-bl-sep px-2 text-bl-label2">
-          <Oct name="search" /><span className="flex-1">Go to file</span><kbd className="rounded border border-bl-sep px-1 font-mono text-[11px]">t</kbd>
+        <div className="flex h-8 w-[240px] items-center gap-2 rounded-md border border-border px-2 text-muted-foreground">
+          <Oct name="search" /><span className="flex-1">Go to file</span><kbd className="rounded border border-border px-1 font-mono text-[11px]">t</kbd>
         </div>
       ) : null}
       {!ui.phone ? <Button className={ghButton()}>Add file<Oct name="chevDown" size={12} /></Button> : null}
@@ -70,10 +70,10 @@ export function LastCommit({ ui, message = REPO.lastCommit.message, when = REPO.
     <div className="flex w-full min-w-0 items-center gap-2">
       <Avatar c={c.author} size={24} />
       <b className="shrink-0 font-semibold">{c.author.login}</b>
-      <span className="min-w-0 truncate text-bl-label2">{message}</span>
+      <span className="min-w-0 truncate text-muted-foreground">{message}</span>
       <span className="flex-1" />
-      {!ui.phone ? <span className="shrink-0 font-mono text-[12px] text-bl-label2">{c.sha} · {when}</span> : null}
-      <span className="flex shrink-0 items-center gap-1.5 font-semibold"><Oct name="history" className="text-bl-label2" />{ui.phone ? '' : REPO.commitCount + ' Commits'}</span>
+      {!ui.phone ? <span className="shrink-0 font-mono text-[12px] text-muted-foreground">{c.sha} · {when}</span> : null}
+      <span className="flex shrink-0 items-center gap-1.5 font-semibold"><Oct name="history" className="text-muted-foreground" />{ui.phone ? '' : REPO.commitCount + ' Commits'}</span>
     </div>
   );
 }
@@ -87,7 +87,7 @@ export function FileTable({ ui, nodes, nav, parent }: { ui: Layout; nodes: FileN
       ) : null}
       {sorted.map((n) => (
         <FileRow key={n.path} ui={ui} name={n.name} commit={n.commit} when={n.when} onOpen={() => nav.openPath(n.path)}
-          icon={n.type === 'dir' ? <Oct name="folder" className="text-[var(--gh-folder)]" /> : <Oct name="file" className="text-bl-label2" />} />
+          icon={n.type === 'dir' ? <Oct name="folder" className="text-[var(--gh-folder)]" /> : <Oct name="file" className="text-muted-foreground" />} />
       ))}
     </Box>
   );
@@ -95,34 +95,34 @@ export function FileTable({ ui, nodes, nav, parent }: { ui: Layout; nodes: FileN
 
 export function FileRow({ ui, icon, name, commit, when, onOpen }: { ui: Layout; icon: ReactNode; name: string; commit?: string; when?: string; onOpen: () => void }) {
   return (
-    <div className="flex h-10 items-center gap-3 border-t border-bl-sep px-4 first:border-t-0 hover:bg-bl-bg2">
+    <div className="flex h-10 items-center gap-3 border-t border-border px-4 first:border-t-0 hover:bg-muted">
       {icon}
       <button type="button" onClick={onOpen}
-        className={cn('min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-[14px] text-bl-label hover:text-bl-tint hover:underline', ui.phone ? 'flex-1' : 'w-[34%] shrink-0')}>
+        className={cn('min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-[14px] text-foreground hover:text-primary hover:underline', ui.phone ? 'flex-1' : 'w-[34%] shrink-0')}>
         {name}
       </button>
-      {!ui.phone ? <span className="min-w-0 flex-1 truncate text-bl-label2">{commit}</span> : null}
-      <span className="shrink-0 text-right text-bl-label2">{when}</span>
+      {!ui.phone ? <span className="min-w-0 flex-1 truncate text-muted-foreground">{commit}</span> : null}
+      <span className="shrink-0 text-right text-muted-foreground">{when}</span>
     </div>
   );
 }
 
 export function About() {
-  const section = 'border-b border-bl-sep py-6 first:pt-0 last:border-0';
+  const section = 'border-b border-border py-6 first:pt-0 last:border-0';
   return (
     <aside className="w-[296px] shrink-0 text-[14px]">
       <div className={section}>
         <h2 className="mt-0 mb-4 text-[16px] font-semibold">About</h2>
         <p className="m-0 text-[16px] leading-6">{REPO.description}</p>
-        <p className="my-4 flex items-center gap-2 font-semibold text-bl-tint"><Oct name="link" className="text-bl-label2" />{REPO.homepage}</p>
+        <p className="my-4 flex items-center gap-2 font-semibold text-primary"><Oct name="link" className="text-muted-foreground" />{REPO.homepage}</p>
         <div className="flex flex-wrap gap-1.5">
           {REPO.topics.map((t) => (
-            <span key={t} className="rounded-full bg-bl-tint/10 px-2.5 py-[3px] text-[12px] leading-[18px] font-medium text-bl-tint">{t}</span>
+            <span key={t} className="rounded-full bg-primary/10 px-2.5 py-[3px] text-[12px] leading-[18px] font-medium text-primary">{t}</span>
           ))}
         </div>
-        <ul className="mt-4 mb-0 list-none space-y-2 p-0 text-bl-label2">
+        <ul className="mt-4 mb-0 list-none space-y-2 p-0 text-muted-foreground">
           {([['book', 'Readme'], ['law', REPO.license], ['pulse', 'Activity'], ['star', REPO.stars + ' stars'], ['eye', REPO.watchers + ' watching'], ['fork', REPO.forks + ' forks']] as [OctName, string][]).map(([i, t]) => (
-            <li key={t} className="flex items-center gap-2 hover:text-bl-tint"><Oct name={i} />{t}</li>
+            <li key={t} className="flex items-center gap-2 hover:text-primary"><Oct name={i} />{t}</li>
           ))}
         </ul>
       </div>
@@ -133,7 +133,7 @@ export function About() {
           <div>
             <div className="flex items-center gap-2"><b className="font-semibold">{REPO.release.tag}</b>
               <span className="rounded-full border border-[var(--gh-open)] px-2 text-[12px] leading-[18px] font-medium text-[var(--gh-open)]">Latest</span></div>
-            <div className="text-[12px] text-bl-label2">{REPO.release.when}</div>
+            <div className="text-[12px] text-muted-foreground">{REPO.release.when}</div>
           </div>
         </div>
       </div>
@@ -149,7 +149,7 @@ export function About() {
         <ul className="mt-3 mb-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[12px]">
           {REPO.languages.map((l) => (
             <li key={l.name} className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full" style={{ background: l.color }} /><b className="font-semibold">{l.name}</b><span className="text-bl-label2">{l.pct}%</span>
+              <span className="size-2 rounded-full" style={{ background: l.color }} /><b className="font-semibold">{l.name}</b><span className="text-muted-foreground">{l.pct}%</span>
             </li>
           ))}
         </ul>
@@ -165,26 +165,26 @@ export function PathView({ ui, path, nav }: { ui: Layout; path: string; nav: Nav
   if (!node) return null;
   const crumbs = (
     <div className="flex min-w-0 flex-wrap items-center gap-1 text-[16px]">
-      <button type="button" onClick={() => nav.openPath('')} className="cursor-pointer border-0 bg-transparent p-0 text-[16px] font-semibold text-bl-tint hover:underline">{REPO.name}</button>
+      <button type="button" onClick={() => nav.openPath('')} className="cursor-pointer border-0 bg-transparent p-0 text-[16px] font-semibold text-primary hover:underline">{REPO.name}</button>
       {parts.map((p, i) => (
         <span key={i} className="flex items-center gap-1">
-          <span className="text-bl-label3">/</span>
+          <span className="text-tertiary-foreground">/</span>
           {i === parts.length - 1
             ? <b className="font-semibold">{p}</b>
-            : <button type="button" onClick={() => nav.openPath(parts.slice(0, i + 1).join('/'))} className="cursor-pointer border-0 bg-transparent p-0 text-[16px] text-bl-tint hover:underline">{p}</button>}
+            : <button type="button" onClick={() => nav.openPath(parts.slice(0, i + 1).join('/'))} className="cursor-pointer border-0 bg-transparent p-0 text-[16px] text-primary hover:underline">{p}</button>}
         </span>
       ))}
-      <Oct name="copy" size={14} className="ml-1 text-bl-label2" />
+      <Oct name="copy" size={14} className="ml-1 text-muted-foreground" />
     </div>
   );
   return (
     <div className={cn('flex gap-6', ui.phone && 'px-4 py-4')}>
       {ui.wide ? (
-        <aside className="w-[280px] shrink-0 border-r border-bl-sep pr-4">
+        <aside className="w-[280px] shrink-0 border-r border-border pr-4">
           <div className="mb-3 flex items-center gap-2">
-            <Oct name="sidebar" className="text-bl-label2" /><b className="text-[16px] font-semibold">Files</b>
+            <Oct name="sidebar" className="text-muted-foreground" /><b className="text-[16px] font-semibold">Files</b>
           </div>
-          <div className="mb-3 flex h-8 items-center gap-2 rounded-md border border-bl-sep px-2 text-bl-label2"><Oct name="search" />Go to file</div>
+          <div className="mb-3 flex h-8 items-center gap-2 rounded-md border border-border px-2 text-muted-foreground"><Oct name="search" />Go to file</div>
           <FileTree nodes={TREE} selected={path} onSelect={(n) => nav.openPath(n.path)} />
         </aside>
       ) : null}
@@ -213,7 +213,7 @@ export function FileViewer({ ui, node }: { ui: Layout; node: FileNode }) {
       <div className="flex w-full items-center gap-3">
         <Segmented aria-label="View" value={view} onChange={setView} className="w-[150px] rounded-md"
           options={isMd ? [{ id: 'preview', label: 'Preview' }, { id: 'code', label: 'Code' }] : [{ id: 'code', label: 'Code' }, { id: 'blame', label: 'Blame' }]} />
-        {!ui.phone ? <span className="text-[12px] text-bl-label2">{lines} lines · {(code.length / 1024).toFixed(1)} KB</span> : null}
+        {!ui.phone ? <span className="text-[12px] text-muted-foreground">{lines} lines · {(code.length / 1024).toFixed(1)} KB</span> : null}
         <span className="flex-1" />
         <Button className={cn(ghButton(), 'h-7 px-2.5 text-[12px]')}>Raw</Button>
         <SyntaxHighlightingCopyButton value={code} label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')} />

@@ -15,7 +15,7 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
       <SplitViewHeader title={categoryTitle(category)} leading={<SplitViewToggle />}
         trailing={canAdd ? (
           <button type="button" aria-label="New password" onClick={() => { Haptics.impact('light'); onAdd(); }}
-            className="bl-btn grid size-9 cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent text-primary transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-bl-fill active:scale-90">
+            className="bl-btn grid size-9 cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent text-primary transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
             <Icon name="plus" size={21} weight="semibold" />
           </button>
         ) : null} />

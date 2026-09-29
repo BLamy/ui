@@ -43,7 +43,7 @@ export function SettingsDetail() {
     const title = getPane(id)?.title ?? '';
     return (
       <SplitViewDetail aria-label={title} className="bg-card">
-        <div className="flex h-[52px] shrink-0 items-center gap-0.5 px-3 shadow-[inset_0_-1px_0_var(--bl-sep)]">
+        <div className="flex h-[52px] shrink-0 items-center gap-0.5 px-3 shadow-[inset_0_-1px_0_var(--border)]">
           <ToolButton label="Back" icon="chevron-left" disabled={trail.length < 2} onPress={s.back} />
           <ToolButton label="Forward" icon="chevron-right" disabled={!s.canForward} onPress={s.forward} />
           <div className="ml-2 min-w-0 truncate text-[15px] font-semibold"><TextMorph>{title}</TextMorph></div>

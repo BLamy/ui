@@ -21,12 +21,12 @@ export function githubVars(dark: boolean): CSSProperties {
         sep: '#d1d9e0', fill: 'rgba(129,139,152,.12)', fill2: 'rgba(129,139,152,.22)', tint: '#0969da', green: '#1a7f37', red: '#d1242f',
       };
   return {
-    '--bl-bg': c.bg, '--bl-bg2': c.bg2, '--bl-card': c.bg, '--bl-card2': c.bg2, '--bl-label': c.label,
-    '--bl-label2': c.label2, '--bl-label3': c.label3, '--bl-sep': c.sep, '--bl-fill': c.fill, '--bl-fill2': c.fill2,
-    '--bl-press': c.fill, '--bl-bar': c.bg, '--bl-stick': c.bg, '--bl-side': c.inset, '--bl-tint': c.tint,
-    '--bl-green': c.green, '--bl-red': c.red,
-    '--wb-bg': c.bg, '--wb-side': c.bg2, '--wb-card': c.bg, '--wb-card2': c.bg2, '--wb-sep': c.sep, '--wb-fill': c.fill,
-    '--wb-fill2': c.fill2, '--wb-label': c.label, '--wb-label2': c.label2, '--wb-label3': c.label3, '--wb-tint': c.tint,
+    '--background': c.bg, '--muted': c.bg2, '--card': c.bg, '--popover': c.bg2, '--foreground': c.label,
+    '--muted-foreground': c.label2, '--tertiary-foreground': c.label3, '--border': c.sep, '--secondary': c.fill, '--secondary-strong': c.fill2,
+    '--accent': c.fill, '--bar': c.bg, '--sticky': c.bg, '--sidebar': c.inset, '--primary': c.tint,
+    '--success': c.green, '--destructive': c.red,
+    '--background': c.bg, '--sidebar': c.bg2, '--card': c.bg, '--popover': c.bg2, '--border': c.sep, '--secondary': c.fill,
+    '--secondary-strong': c.fill2, '--foreground': c.label, '--muted-foreground': c.label2, '--tertiary-foreground': c.label3, '--primary': c.tint,
     '--wb-shadow': dark ? 'rgba(1,4,9,.5)' : 'rgba(31,35,40,.06)',
     '--mdc-code': dark ? 'rgba(101,108,118,.2)' : 'rgba(129,139,152,.12)', '--mdc-pre': c.bg2, '--mdc-pre-fg': c.label,
     '--mdc-border': c.sep, '--mdc-mut': c.label2, '--mdc-card': c.bg, '--mdc-muted': c.bg2,
@@ -79,9 +79,9 @@ const OCT: Record<string, ReactNode> = {
   tag: <><path d="M1.8 2.6v4.8l6.9 6.9 5.6-5.6-6.9-6.9H2.6z" /><circle cx="5" cy="5" r="1" fill="currentColor" stroke="none" /></>,
   history: <><path d="M2.2 8a5.8 5.8 0 1 0 1.7-4.1L2.2 5.6M2.2 2.2v3.4h3.4" /><path d="M8 5v3.3l2.2 1.4" /></>,
   comment: <path d="M2.3 3.3c0-.6.5-1 1-1h9.4c.6 0 1 .4 1 1v6.4c0 .6-.4 1-1 1H7.4L4.3 13.5v-2.8h-1c-.5 0-1-.4-1-1z" />,
-  checkFill: <><circle cx="8" cy="8" r="7" fill="currentColor" stroke="none" /><path d="m4.9 8.2 2.1 2.1 4.1-4.3" stroke="var(--bl-bg)" strokeWidth="1.7" /></>,
-  xFill: <><circle cx="8" cy="8" r="7" fill="currentColor" stroke="none" /><path d="m5.6 5.6 4.8 4.8m0-4.8-4.8 4.8" stroke="var(--bl-bg)" strokeWidth="1.7" /></>,
-  stopFill: <><circle cx="8" cy="8" r="7" fill="currentColor" stroke="none" /><path d="M5.3 8h5.4" stroke="var(--bl-bg)" strokeWidth="1.7" /></>,
+  checkFill: <><circle cx="8" cy="8" r="7" fill="currentColor" stroke="none" /><path d="m4.9 8.2 2.1 2.1 4.1-4.3" stroke="var(--background)" strokeWidth="1.7" /></>,
+  xFill: <><circle cx="8" cy="8" r="7" fill="currentColor" stroke="none" /><path d="m5.6 5.6 4.8 4.8m0-4.8-4.8 4.8" stroke="var(--background)" strokeWidth="1.7" /></>,
+  stopFill: <><circle cx="8" cy="8" r="7" fill="currentColor" stroke="none" /><path d="M5.3 8h5.4" stroke="var(--background)" strokeWidth="1.7" /></>,
   dotFill: <><circle cx="8" cy="8" r="6.2" /><circle cx="8" cy="8" r="3" fill="currentColor" stroke="none" /></>,
   law: <path d="M8 1.8v12.4M3.5 14.2h9M2 4.2h12M4 4.2 1.8 9.3a2.2 2.2 0 0 0 4.4 0zM12 4.2l-2.2 5.1a2.2 2.2 0 0 0 4.4 0z" />,
   pulse: <path d="M1.2 8h3l1.8-4.5 3.4 9 1.8-4.5h3.6" />,
@@ -111,10 +111,10 @@ export function Oct({ name, size = 16, className, style }: { name: OctName; size
 /** The block's logo mark (a stand-in for the host's logo). */
 export function Mark({ size = 32 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className="shrink-0 text-bl-label">
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className="shrink-0 text-foreground">
       <circle cx="16" cy="16" r="15" fill="currentColor" />
-      <ellipse cx="16" cy="16" rx="10.5" ry="4.6" fill="none" stroke="var(--bl-bg)" strokeWidth="2.2" transform="rotate(-28 16 16)" />
-      <circle cx="16" cy="16" r="3.6" fill="var(--bl-bg)" />
+      <ellipse cx="16" cy="16" rx="10.5" ry="4.6" fill="none" stroke="var(--background)" strokeWidth="2.2" transform="rotate(-28 16 16)" />
+      <circle cx="16" cy="16" r="3.6" fill="var(--background)" />
     </svg>
   );
 }
@@ -145,7 +145,7 @@ const STATE: Record<string, { icon: OctName; color: string; label: string }> = {
   prOpen: { icon: 'pr', color: 'var(--gh-open)', label: 'Open' },
   merged: { icon: 'merged', color: 'var(--gh-done)', label: 'Merged' },
   prClosed: { icon: 'prClosed', color: 'var(--gh-closed)', label: 'Closed' },
-  draft: { icon: 'prDraft', color: 'var(--bl-label2)', label: 'Draft' },
+  draft: { icon: 'prDraft', color: 'var(--muted-foreground)', label: 'Draft' },
 };
 export type StateKind = keyof typeof STATE;
 
@@ -168,7 +168,7 @@ export function StatePill({ state }: { state: StateKind }) {
 /** A small gray count bubble (tab counts, button counts). */
 export function Counter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <span className={cn('inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-bl-fill2 px-1.5 text-[12px] leading-none font-medium text-bl-label', className)}>
+    <span className={cn('inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-secondary-strong px-1.5 text-[12px] leading-none font-medium text-foreground', className)}>
       {children}
     </span>
   );
@@ -179,7 +179,7 @@ export function AvatarStack({ users, size = 20 }: { users: User[]; size?: number
   return (
     <span className="flex">
       {users.map((u, i) => (
-        <Avatar key={u.login} c={u} size={size} className="ring-2 ring-bl-bg" style={{ marginLeft: i ? -size / 3 : 0 }} />
+        <Avatar key={u.login} c={u} size={size} className="ring-2 ring-background" style={{ marginLeft: i ? -size / 3 : 0 }} />
       ))}
     </span>
   );
@@ -189,8 +189,8 @@ export function AvatarStack({ users, size = 20 }: { users: User[]; size?: number
 export function UnderlineTab({ id, icon, label, count }: { id: string; icon?: OctName; label: string; count?: ReactNode }) {
   return (
     <TabViewTab id={id} textValue={label} className="group relative flex shrink-0 items-center py-2 outline-none data-selected:font-semibold">
-      <span className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[14px] leading-5 text-bl-label group-data-hovered:bg-bl-fill group-data-focus-visible:ring-2 group-data-focus-visible:ring-bl-tint">
-        {icon ? <Oct name={icon} className="text-bl-label2" /> : null}
+      <span className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[14px] leading-5 text-foreground group-data-hovered:bg-secondary group-data-focus-visible:ring-2 group-data-focus-visible:ring-primary">
+        {icon ? <Oct name={icon} className="text-muted-foreground" /> : null}
         <span className="whitespace-nowrap">{label}</span>
         {count != null ? <Counter>{count}</Counter> : null}
       </span>
@@ -211,8 +211,8 @@ export function FlowPanel({ id, className, children }: { id: string; className?:
 /** GitHub's bordered "Box": rounded, 1px border, optional header row. */
 export function Box({ header, children, className }: { header?: ReactNode; children?: ReactNode; className?: string }) {
   return (
-    <div className={cn('overflow-hidden rounded-md border border-bl-sep bg-bl-bg', className)}>
-      {header ? <div className="flex min-h-[46px] items-center gap-2 border-b border-bl-sep bg-bl-bg2 px-4 py-2 text-[14px]">{header}</div> : null}
+    <div className={cn('overflow-hidden rounded-md border border-border bg-background', className)}>
+      {header ? <div className="flex min-h-[46px] items-center gap-2 border-b border-border bg-muted px-4 py-2 text-[14px]">{header}</div> : null}
       {children}
     </div>
   );
@@ -222,16 +222,16 @@ export function Box({ header, children, className }: { header?: ReactNode; child
 export const ghButton = (primary?: boolean) =>
   cn(
     'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-[14px] font-medium outline-none whitespace-nowrap',
-    'data-focus-visible:ring-2 data-focus-visible:ring-bl-tint data-focus-visible:ring-offset-1',
+    'data-focus-visible:ring-2 data-focus-visible:ring-primary data-focus-visible:ring-offset-1',
     primary
       ? 'border-[rgba(31,35,40,.15)] bg-[#1f883d] text-white data-hovered:bg-[#1c8139]'
-      : 'border-bl-sep bg-[var(--gh-btn)] text-bl-label data-hovered:bg-[var(--gh-btn-hover)]',
+      : 'border-border bg-[var(--gh-btn)] text-foreground data-hovered:bg-[var(--gh-btn-hover)]',
   );
 
 /** MarkdownView overrides for GitHub's markdown look. Docstream's sheet is unlayered, so these need `!`. */
 export const githubMarkdown = cn(
-  'text-bl-label [&_[data-docstream-blocks]>:first-child]:mt-0! [&_[data-docstream-blocks]>:last-child]:mb-0!',
-  '[&_h1]:mt-0! [&_h1]:mb-4! [&_h1]:border-b [&_h1]:border-bl-sep [&_h1]:pb-2! [&_h1]:text-[32px]! [&_h1]:font-semibold!',
+  'text-foreground [&_[data-docstream-blocks]>:first-child]:mt-0! [&_[data-docstream-blocks]>:last-child]:mb-0!',
+  '[&_h1]:mt-0! [&_h1]:mb-4! [&_h1]:border-b [&_h1]:border-border [&_h1]:pb-2! [&_h1]:text-[32px]! [&_h1]:font-semibold!',
   '[&_h2]:mt-6! [&_h2]:mb-4! [&_h2]:pb-2! [&_h2]:text-[24px]! [&_h2]:font-semibold!',
   '[&_li]:my-1! [&_pre]:rounded-md!',
 );
@@ -274,7 +274,7 @@ export function DiffStat({ add, del }: { add: number; del: number }) {
       <span className="text-[var(--gh-closed)]">−{del}</span>
       <span className="flex gap-px">
         {Array.from({ length: 5 }, (_, i) => (
-          <span key={i} className={cn('size-2 rounded-[1px]', i < g ? 'bg-[var(--gh-open)]' : i < g + r ? 'bg-[var(--gh-closed)]' : 'bg-bl-fill2')} />
+          <span key={i} className={cn('size-2 rounded-[1px]', i < g ? 'bg-[var(--gh-open)]' : i < g + r ? 'bg-[var(--gh-closed)]' : 'bg-secondary-strong')} />
         ))}
       </span>
     </span>
@@ -292,15 +292,15 @@ export function DiffView({ path, patch, add, del }: { path: string; patch: strin
   const { lines, highlighter } = useSyntaxTokens(source, { language: languageFromPath(path) });
   let k = 0;
   return (
-    <div id={'diff-' + path} className="overflow-hidden rounded-md border border-bl-sep">
-      <div className="sticky top-0 z-2 flex min-h-11 items-center gap-2 border-b border-bl-sep bg-bl-bg2 px-2 py-1.5">
+    <div id={'diff-' + path} className="overflow-hidden rounded-md border border-border">
+      <div className="sticky top-0 z-2 flex min-h-11 items-center gap-2 border-b border-border bg-muted px-2 py-1.5">
         <button type="button" onClick={() => setOpen(!open)} aria-label={open ? 'Collapse file' : 'Expand file'}
-          className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-bl-label2 hover:bg-bl-fill">
+          className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground hover:bg-secondary">
           <Oct name={open ? 'chevDown' : 'chevRight'} />
         </button>
         <DiffStat add={add} del={del} />
-        <span className="min-w-0 truncate font-mono text-[12px] font-semibold text-bl-label">{path}</span>
-        <Oct name="copy" size={14} className="shrink-0 text-bl-label2" />
+        <span className="min-w-0 truncate font-mono text-[12px] font-semibold text-foreground">{path}</span>
+        <Oct name="copy" size={14} className="shrink-0 text-muted-foreground" />
       </div>
       {open ? (
         <div className="overflow-x-auto font-mono text-[12px] leading-5">
@@ -312,10 +312,10 @@ export function DiffView({ path, patch, add, del }: { path: string; patch: strin
                     <td colSpan={3} className="px-3 py-1 whitespace-pre text-[var(--gh-hunk-fg)]">{r.text}</td>
                   ) : (
                     <>
-                      <td className={cn('w-[1%] min-w-[44px] px-2 text-right align-top text-bl-label3 select-none', NUM_BG[r.t])}>{r.o ?? ''}</td>
-                      <td className={cn('w-[1%] min-w-[44px] px-2 text-right align-top text-bl-label3 select-none', NUM_BG[r.t])}>{r.n ?? ''}</td>
-                      <td className="pr-6 pl-2 whitespace-pre text-bl-label">
-                        <span className="inline-block w-4 text-bl-label2 select-none">{r.t === 'add' ? '+' : r.t === 'del' ? '−' : ' '}</span>
+                      <td className={cn('w-[1%] min-w-[44px] px-2 text-right align-top text-tertiary-foreground select-none', NUM_BG[r.t])}>{r.o ?? ''}</td>
+                      <td className={cn('w-[1%] min-w-[44px] px-2 text-right align-top text-tertiary-foreground select-none', NUM_BG[r.t])}>{r.n ?? ''}</td>
+                      <td className="pr-6 pl-2 whitespace-pre text-foreground">
+                        <span className="inline-block w-4 text-muted-foreground select-none">{r.t === 'add' ? '+' : r.t === 'del' ? '−' : ' '}</span>
                         <SyntaxTokens tokens={lines[k++] ?? [{ type: 'plain', text: r.text }]} />
                       </td>
                     </>
@@ -353,17 +353,17 @@ function TreeItem({ node, selected, onSelect, depth, defaultOpen }: {
       <button type="button"
         onClick={() => (node.type === 'dir' ? setOpen(!open) : onSelect(node))}
         className={cn(
-          'relative flex h-8 w-full cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent pr-2 text-left text-[14px] text-bl-label hover:bg-bl-fill',
-          active && 'bg-bl-fill before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-bl-tint',
+          'relative flex h-8 w-full cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent pr-2 text-left text-[14px] text-foreground hover:bg-secondary',
+          active && 'bg-secondary before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-primary',
         )}
         style={{ paddingLeft: 8 + depth * 16 }}>
         {node.type === 'dir' ? (
           <>
-            <Oct name={open ? 'chevDown' : 'chevRight'} size={12} className="text-bl-label2" />
+            <Oct name={open ? 'chevDown' : 'chevRight'} size={12} className="text-muted-foreground" />
             <Oct name="folder" className="text-[var(--gh-folder)]" />
           </>
         ) : (
-          <Oct name="file" className="ml-[18px] text-bl-label2" />
+          <Oct name="file" className="ml-[18px] text-muted-foreground" />
         )}
         <span className="truncate">{node.name}</span>
       </button>
@@ -395,5 +395,5 @@ export const PR_STATE: Record<PullRequest['state'], StateKind> = { open: 'prOpen
 
 /** A branch name chip. */
 export function Branch({ children }: { children: ReactNode }) {
-  return <span className="rounded-md bg-bl-tint/10 px-1.5 py-0.5 font-mono text-[12px] text-bl-tint">{children}</span>;
+  return <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[12px] text-primary">{children}</span>;
 }

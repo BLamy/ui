@@ -68,9 +68,9 @@ export default function GithubClone({ initialTab, initialPullRequest, initialPat
   const pop = () => (pr && tab === 'pulls' ? setPr(null) : setPath(path.split('/').slice(0, -1).join('/')));
 
   return (
-    <BLProvider tint={dark ? '#4493f8' : '#0969da'} style={githubVars(dark)} className="min-h-0 bg-bl-bg">
+    <BLProvider tint={dark ? '#4493f8' : '#0969da'} style={githubVars(dark)} className="min-h-0 bg-background">
       <WorkbenchTheme appearance={dark ? 'dark' : 'light'} tint={dark ? '#4493f8' : '#0969da'} style={githubVars(dark)}
-        className="h-full w-full bg-bl-bg text-[14px] text-bl-label select-text">
+        className="h-full w-full bg-background text-[14px] text-foreground select-text">
         <div ref={ref} className="relative flex h-full min-h-0 w-full flex-col">
           {ui.phone ? (
             <NavigationStack screens={screens} onPop={pop} />
@@ -94,7 +94,7 @@ function RepoPage({ ui, tab, onTab, path, pr, nav, labelFilter, prTab }: {
 }) {
   return (
     <TabView placement="top" selectedKey={tab} onSelectionChange={(k) => { onTab(k as GithubTab); if (k === 'pulls') nav.openPr(null); }}>
-      <div className="border-b border-bl-sep">
+      <div className="border-b border-border">
         <RepoHeader ui={ui} />
         <TabViewBar variant="plain" className="mt-2 overflow-x-auto px-2 [scrollbar-width:none] md:px-4">
           <TabViewList aria-label="Repository" className="flex gap-1">
@@ -122,9 +122,9 @@ function RepoPage({ ui, tab, onTab, path, pr, nav, labelFilter, prTab }: {
 function Placeholder({ icon, title, text }: { icon: OctName; title: string; text: string }) {
   return (
     <Box className="grid place-items-center px-6 py-16 text-center">
-      <Oct name={icon} size={24} className="text-bl-label2" />
+      <Oct name={icon} size={24} className="text-muted-foreground" />
       <h3 className="mt-3 mb-1 text-[20px] font-semibold">{title}</h3>
-      <p className="m-0 text-bl-label2">{text}</p>
+      <p className="m-0 text-muted-foreground">{text}</p>
     </Box>
   );
 }

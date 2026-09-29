@@ -59,7 +59,7 @@ export default function ApplePasswords({ initialCategory = 'all', initialItem, l
   };
 
   return (
-    <BLProvider dark={dark} tint={dark ? '#0A84FF' : '#007AFF'} className="bg-bl-bg">
+    <BLProvider dark={dark} tint={dark ? '#0A84FF' : '#007AFF'} className="bg-background">
       {/* The "Copied" HUD: the block's own toast queue, drawn inside the block; copy buttons reach it via useToast. */}
       <Toaster queue={hud} inline aria-label="Passwords notifications">
         <SplitView aria-label="Passwords" selection={selection} onSelectionChange={onSelectionChange} defaultCompactColumn="sidebar">

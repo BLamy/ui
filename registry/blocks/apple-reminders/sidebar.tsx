@@ -40,11 +40,11 @@ function ListItem({ l, collapsed }: { l: RList; collapsed: boolean }) {
   const { items } = useReminders();
   return (
     <SplitViewItem id={l.id} tint={l.color}
-      className="min-h-[50px] gap-3 rounded-[10px] px-3 text-[17px] after:absolute after:right-0 after:bottom-0 after:left-[55px] after:h-px after:bg-bl-sep last:after:hidden data-selected:after:hidden">
+      className="min-h-[50px] gap-3 rounded-[10px] px-3 text-[17px] after:absolute after:right-0 after:bottom-0 after:left-[55px] after:h-px after:bg-border last:after:hidden data-selected:after:hidden">
       <ListIcon glyph={l.glyph} color={l.color} size={30} className="transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--list-color)" />
       <span className="min-w-0 flex-1 truncate">{l.name}</span>
       <span className="text-muted-foreground tabular-nums group-data-selected/item:text-white/85">{countFor(l.id, items)}</span>
-      {collapsed ? <Icon name="chevron-right" size={14} weight="bold" className="text-bl-label3" /> : null}
+      {collapsed ? <Icon name="chevron-right" size={14} weight="bold" className="text-tertiary-foreground" /> : null}
     </SplitViewItem>
   );
 }

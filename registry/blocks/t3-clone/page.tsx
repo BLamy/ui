@@ -67,7 +67,7 @@ export default function T3Clone({ tint, appearance, terminal, surface: initialSu
 
         <WorkbenchDock>
           <TerminalHeader title={`zsh — ${PROJECT}`}>
-            <TerminalAction icon="split" label="Split terminal" />
+            <TerminalAction icon="rectangle-split" label="Split terminal" />
             <TerminalAction icon="plus" label="New terminal" />
             <WorkbenchDockClose />
           </TerminalHeader>
@@ -78,7 +78,7 @@ export default function T3Clone({ tint, appearance, terminal, surface: initialSu
       <SurfacePanel surface={surface} onSurface={setSurface} />
 
       <WorkbenchTabBar value={surface} onValueChange={(k) => setSurface(k as SurfaceKind)}>
-        <WorkbenchTab id="chat" icon="msg">
+        <WorkbenchTab id="chat" icon="bubble-left">
           Chat
         </WorkbenchTab>
         {SURFACES.map((s) => (

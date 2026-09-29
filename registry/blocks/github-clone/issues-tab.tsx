@@ -14,7 +14,7 @@ export function IssueList({ ui, nav, labelFilter }: { ui: Layout; nav: Nav; labe
     <div>
       <ListToolbar ui={ui} nav={nav} q={q} setQ={setQ} placeholder={`is:issue state:${state}`} newLabel="New issue" />
       {labelFilter.length ? (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-bl-label2">
+        <div className="mb-3 flex flex-wrap items-center gap-1.5 text-muted-foreground">
           Filtered by {labelFilter.map((l) => <LabelChip key={l} label={Object.values(LABELS).find((x) => x.name === l)!} dark={ui.dark} />)}
         </div>
       ) : null}
@@ -29,10 +29,10 @@ export function IssueList({ ui, nav, labelFilter }: { ui: Layout; nav: Nav; labe
             meta={<>#{i.number} {i.state === 'open' ? 'opened' : 'was closed'} {i.when} by {i.author.login}{i.milestone ? <span className="ml-2 inline-flex items-center gap-1"><Oct name="history" size={12} />{i.milestone}</span> : null}</>}
             assignees={i.assignees} comments={i.comments} />
         ))}
-        {rows.length === 0 ? <div className="px-4 py-10 text-center text-bl-label2">No results matched your search.</div> : null}
+        {rows.length === 0 ? <div className="px-4 py-10 text-center text-muted-foreground">No results matched your search.</div> : null}
       </Box>
-      <p className="mt-4 text-center text-[12px] text-bl-label2">
-        <b className="font-semibold">ProTip!</b> Add <code className="rounded bg-bl-fill px-1 font-mono">no:assignee</code> to see everything that’s not assigned.
+      <p className="mt-4 text-center text-[12px] text-muted-foreground">
+        <b className="font-semibold">ProTip!</b> Add <code className="rounded bg-secondary px-1 font-mono">no:assignee</code> to see everything that’s not assigned.
       </p>
     </div>
   );

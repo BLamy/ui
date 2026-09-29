@@ -15,13 +15,13 @@ export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }
   return (
     <div className={cn(ui.phone && 'px-4 py-4')}>
       {!ui.phone ? (
-        <button type="button" onClick={() => nav.openPr(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-[14px] text-bl-tint hover:underline">
+        <button type="button" onClick={() => nav.openPr(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-[14px] text-primary hover:underline">
           <Oct name="chevLeft" size={14} />Pull requests
         </button>
       ) : null}
       <div className="flex items-start gap-4">
         <h1 className={cn('m-0 min-w-0 flex-1 leading-tight font-normal', ui.phone ? 'text-[22px]' : 'text-[32px]')}>
-          {p.title} <span className="font-light text-bl-label2">#{p.number}</span>
+          {p.title} <span className="font-light text-muted-foreground">#{p.number}</span>
         </h1>
         {!ui.phone ? (
           <div className="flex shrink-0 gap-2 pt-1.5">
@@ -30,14 +30,14 @@ export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }
           </div>
         ) : null}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-bl-sep pb-4 text-bl-label2">
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-border pb-4 text-muted-foreground">
         <StatePill state={PR_STATE[p.state]} />
         <span className="leading-6">
-          <b className="font-semibold text-bl-label">{p.author.login}</b> wants to merge {p.commits} commits into <Branch>{p.base}</Branch> from <Branch>{p.head}</Branch>
+          <b className="font-semibold text-foreground">{p.author.login}</b> wants to merge {p.commits} commits into <Branch>{p.base}</Branch> from <Branch>{p.head}</Branch>
         </span>
       </div>
       <TabView placement="top" selectedKey={sub} onSelectionChange={(k) => setSub(String(k))} className="mt-2">
-        <TabViewBar variant="plain" className="overflow-x-auto border-b border-bl-sep [scrollbar-width:none]">
+        <TabViewBar variant="plain" className="overflow-x-auto border-b border-border [scrollbar-width:none]">
           <TabViewList aria-label="Pull request" className="flex gap-1">
             <UnderlineTab id="conversation" icon="comment" label="Conversation" count={p.comments} />
             <UnderlineTab id="commits" icon="commit" label="Commits" count={PR_COMMITS.length} />
@@ -63,17 +63,17 @@ export function Conversation({ ui, pr }: { ui: Layout; pr: PullRequest }) {
   const [items, setItems] = useState<TimelineItem[]>(PR_TIMELINE);
   const comment = (body: string) =>
     setItems((xs) => [...xs, { kind: 'comment', id: 'new' + xs.length, author: ME, when: 'now', body, role: 'Member' }]);
-  const side = 'border-b border-bl-sep py-4 text-[12px] first:pt-0';
-  const sideTitle = 'mb-2 flex items-center justify-between font-semibold text-bl-label2';
+  const side = 'border-b border-border py-4 text-[12px] first:pt-0';
+  const sideTitle = 'mb-2 flex items-center justify-between font-semibold text-muted-foreground';
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1">
         {/* The timeline rail runs behind the event badges. */}
-        <div className={cn('relative', ui.phone ? 'before:left-4' : 'before:left-[72px]', 'before:absolute before:inset-y-0 before:w-0.5 before:bg-bl-sep')}>
+        <div className={cn('relative', ui.phone ? 'before:left-4' : 'before:left-[72px]', 'before:absolute before:inset-y-0 before:w-0.5 before:bg-border')}>
           {items.map((it) => <TimelineEntry key={it.id} ui={ui} item={it} />)}
         </div>
         <MergeBox ui={ui} />
-        <div className="mt-6 flex gap-4 border-t-2 border-bl-sep pt-6">
+        <div className="mt-6 flex gap-4 border-t-2 border-border pt-6">
           {!ui.phone ? <Avatar c={ME} size={40} /> : null}
           <div className="min-w-0 flex-1">
             <h3 className="mt-0 mb-2 text-[14px] font-semibold">Add a comment</h3>
@@ -114,7 +114,7 @@ export function Conversation({ ui, pr }: { ui: Layout; pr: PullRequest }) {
           </div>
           <div className={side}>
             <div className={sideTitle}>Development</div>
-            <p className="m-0 text-bl-label2">Successfully merging this pull request may close these issues.</p>
+            <p className="m-0 text-muted-foreground">Successfully merging this pull request may close these issues.</p>
             <p className="mt-2 mb-0 flex items-center gap-1.5"><Oct name="issue" size={14} className="text-[var(--gh-open)]" /><b className="font-semibold">Retries fire in lockstep after an outage</b></p>
           </div>
           <div className={side}>
@@ -133,16 +133,16 @@ export function CommentCard({ ui, author, when, body, role, verb = 'commented', 
   return (
     <div className="relative flex gap-4 py-4">
       {!ui.phone ? <Avatar c={author} size={40} /> : null}
-      <div className={cn('relative z-1 min-w-0 flex-1 overflow-hidden rounded-md border bg-bl-bg', tone === 'author' ? 'border-bl-tint/40' : 'border-bl-sep')}>
-        <div className={cn('flex items-center gap-1.5 border-b px-4 py-2 text-bl-label2', tone === 'author' ? 'border-bl-tint/40 bg-bl-tint/8' : 'border-bl-sep bg-bl-bg2')}>
+      <div className={cn('relative z-1 min-w-0 flex-1 overflow-hidden rounded-md border bg-background', tone === 'author' ? 'border-primary/40' : 'border-border')}>
+        <div className={cn('flex items-center gap-1.5 border-b px-4 py-2 text-muted-foreground', tone === 'author' ? 'border-primary/40 bg-primary/8' : 'border-border bg-muted')}>
           {ui.phone ? <Avatar c={author} size={20} /> : null}
-          <b className="shrink-0 font-semibold whitespace-nowrap text-bl-label">{author.login}</b>
+          <b className="shrink-0 font-semibold whitespace-nowrap text-foreground">{author.login}</b>
           <span className="min-w-0 truncate">{verb} {when}</span>
           <span className="flex-1" />
-          {role && !ui.phone ? <span className="rounded-full border border-bl-sep px-2 text-[12px] leading-[18px] font-medium">{role}</span> : null}
+          {role && !ui.phone ? <span className="rounded-full border border-border px-2 text-[12px] leading-[18px] font-medium">{role}</span> : null}
           <Oct name="kebab" className="shrink-0" />
         </div>
-        <MarkdownView markdown={body} className={cn(githubMarkdown, 'bg-bl-bg px-4 py-3 text-[14px] leading-[1.5]')} />
+        <MarkdownView markdown={body} className={cn(githubMarkdown, 'bg-background px-4 py-3 text-[14px] leading-[1.5]')} />
       </div>
     </div>
   );
@@ -151,17 +151,17 @@ export function CommentCard({ ui, author, when, body, role, verb = 'commented', 
 export function TimelineEvent({ ui, icon, badge, children }: { ui: Layout; icon: OctName; badge?: string; children: ReactNode }) {
   return (
     <div className={cn('relative flex items-start gap-2 py-3', ui.phone ? 'pl-0' : 'pl-14')}>
-      <span className={cn('z-1 grid size-8 shrink-0 place-items-center rounded-full border-2 border-bl-bg', badge ?? 'bg-bl-bg2 text-bl-label2')}>
+      <span className={cn('z-1 grid size-8 shrink-0 place-items-center rounded-full border-2 border-background', badge ?? 'bg-muted text-muted-foreground')}>
         <Oct name={icon} size={16} />
       </span>
-      <div className="min-w-0 flex-1 pt-1.5 text-bl-label2">{children}</div>
+      <div className="min-w-0 flex-1 pt-1.5 text-muted-foreground">{children}</div>
     </div>
   );
 }
 
 export function TimelineEntry({ ui, item }: { ui: Layout; item: TimelineItem }) {
   const who = (u: { login: string; f: string; l: string }) => (
-    <><Avatar c={u} size={20} className="mr-1.5 inline-grid align-[-5px]" /><b className="font-semibold text-bl-label">{u.login}</b></>
+    <><Avatar c={u} size={20} className="mr-1.5 inline-grid align-[-5px]" /><b className="font-semibold text-foreground">{u.login}</b></>
   );
   switch (item.kind) {
     case 'comment':
@@ -174,7 +174,7 @@ export function TimelineEntry({ ui, item }: { ui: Layout; item: TimelineItem }) 
             {item.commits.map((c) => (
               <li key={c.sha} className="flex items-center gap-2">
                 <Avatar c={c.author} size={16} />
-                <span className="min-w-0 flex-1 truncate text-bl-label">{c.message}</span>
+                <span className="min-w-0 flex-1 truncate text-foreground">{c.message}</span>
                 <Oct name="check" size={14} className="shrink-0 text-[var(--gh-open)]" />
                 <code className="shrink-0 font-mono text-[12px]">{c.sha}</code>
               </li>
@@ -189,7 +189,7 @@ export function TimelineEntry({ ui, item }: { ui: Layout; item: TimelineItem }) 
         </TimelineEvent>
       );
     case 'requested':
-      return <TimelineEvent ui={ui} icon="eye">{who(item.author)} requested a review from <b className="font-semibold text-bl-label">{item.reviewer.login}</b> {item.when}</TimelineEvent>;
+      return <TimelineEvent ui={ui} icon="eye">{who(item.author)} requested a review from <b className="font-semibold text-foreground">{item.reviewer.login}</b> {item.when}</TimelineEvent>;
     case 'review':
       return (
         <>
@@ -204,11 +204,11 @@ export function TimelineEntry({ ui, item }: { ui: Layout; item: TimelineItem }) 
 
 export function MergeBox({ ui }: { ui: Layout }) {
   const row = (icon: ReactNode, title: string, text: string) => (
-    <div className="flex items-start gap-3 border-b border-bl-sep px-4 py-3">
+    <div className="flex items-start gap-3 border-b border-border px-4 py-3">
       {icon}
       <div className="min-w-0">
         <div className="font-semibold">{title}</div>
-        <div className="text-[12px] text-bl-label2">{text}</div>
+        <div className="text-[12px] text-muted-foreground">{text}</div>
       </div>
     </div>
   );
@@ -216,25 +216,25 @@ export function MergeBox({ ui }: { ui: Layout }) {
   return (
     <div className="relative flex gap-4 pt-4">
       {!ui.phone ? <span className="grid size-10 shrink-0 place-items-center rounded-md bg-[#1f883d] text-white"><Oct name="pr" size={20} /></span> : null}
-      <div className="relative z-1 min-w-0 flex-1 overflow-hidden rounded-md border border-[#1f883d]/60 bg-bl-bg">
+      <div className="relative z-1 min-w-0 flex-1 overflow-hidden rounded-md border border-[#1f883d]/60 bg-background">
         {row(ok, 'Changes approved', '1 approving review by reviewers with write access.')}
         {row(ok, 'All checks have passed', `${PR_CHECKS.length} successful checks`)}
-        <div className="border-b border-bl-sep bg-bl-bg2">
+        <div className="border-b border-border bg-muted">
           {PR_CHECKS.map((c) => (
             <div key={c.name} className="flex items-center gap-2 px-4 py-1.5 text-[12px] sm:pl-[60px]">
               <Oct name="check" size={14} className="text-[var(--gh-open)]" />
               <b className="min-w-0 truncate font-semibold">{c.name}</b>
-              <span className="text-bl-label2">Successful in {c.time}</span>
+              <span className="text-muted-foreground">Successful in {c.time}</span>
             </div>
           ))}
         </div>
         {row(ok, 'No conflicts with base branch', 'Merging can be performed automatically.')}
-        <div className="flex flex-wrap items-center gap-3 bg-bl-bg px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3 bg-background px-4 py-3">
           <div className="flex">
             <Button className={cn(ghButton(true), 'rounded-r-none')}>Merge pull request</Button>
             <Button aria-label="Merge options" className={cn(ghButton(true), 'rounded-l-none border-l-[rgba(255,255,255,.3)] px-2')}><Oct name="chevDown" size={12} /></Button>
           </div>
-          <span className="text-[12px] text-bl-label2">You can also merge this with the command line.</span>
+          <span className="text-[12px] text-muted-foreground">You can also merge this with the command line.</span>
         </div>
       </div>
     </div>
@@ -246,19 +246,19 @@ export function MergeBox({ ui }: { ui: Layout }) {
 export function CommitList({ ui }: { ui: Layout }) {
   return (
     <div className={cn('relative', !ui.phone && 'pl-8')}>
-      <div className="mb-2 flex items-center gap-2 text-bl-label2"><Oct name="commit" />Commits on Sep 24, 2026</div>
+      <div className="mb-2 flex items-center gap-2 text-muted-foreground"><Oct name="commit" />Commits on Sep 24, 2026</div>
       <Box>
         {PR_COMMITS.map((c) => (
-          <div key={c.sha} className="flex items-center gap-3 border-t border-bl-sep px-4 py-3 first:border-t-0 hover:bg-bl-bg2">
+          <div key={c.sha} className="flex items-center gap-3 border-t border-border px-4 py-3 first:border-t-0 hover:bg-muted">
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">{c.message}</div>
-              <div className="mt-1 flex items-center gap-1.5 text-[12px] text-bl-label2">
-                <Avatar c={c.author} size={16} /><b className="font-semibold text-bl-label">{c.author.login}</b> committed {c.when}
+              <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                <Avatar c={c.author} size={16} /><b className="font-semibold text-foreground">{c.author.login}</b> committed {c.when}
                 <Oct name="check" size={14} className="text-[var(--gh-open)]" />
               </div>
             </div>
             <code className={cn(ghButton(), 'h-7 px-2 font-mono text-[12px]')}>{c.sha}</code>
-            {!ui.phone ? <Oct name="copy" size={14} className="text-bl-label2" /> : null}
+            {!ui.phone ? <Oct name="copy" size={14} className="text-muted-foreground" /> : null}
           </div>
         ))}
       </Box>
@@ -268,12 +268,12 @@ export function CommitList({ ui }: { ui: Layout }) {
 
 export function Checks() {
   return (
-    <Box header={<><Oct name="checkFill" className="text-[var(--gh-open)]" /><b className="font-semibold">All checks have passed</b><span className="text-bl-label2">· {PR_CHECKS.length} successful checks</span></>}>
+    <Box header={<><Oct name="checkFill" className="text-[var(--gh-open)]" /><b className="font-semibold">All checks have passed</b><span className="text-muted-foreground">· {PR_CHECKS.length} successful checks</span></>}>
       {PR_CHECKS.map((c) => (
-        <div key={c.name} className="flex items-center gap-3 border-t border-bl-sep px-4 py-2.5 first:border-t-0">
+        <div key={c.name} className="flex items-center gap-3 border-t border-border px-4 py-2.5 first:border-t-0">
           <Oct name="checkFill" className="text-[var(--gh-open)]" />
           <span className="min-w-0 flex-1 truncate font-semibold">{c.name}</span>
-          <span className="shrink-0 text-[12px] text-bl-label2">{c.time}</span>
+          <span className="shrink-0 text-[12px] text-muted-foreground">{c.time}</span>
         </div>
       ))}
     </Box>
@@ -306,9 +306,9 @@ export function FilesChanged({ ui }: { ui: Layout }) {
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {!ui.phone ? <Button className={ghButton()}>All commits<Oct name="chevDown" size={12} /></Button> : null}
-        <span className="flex items-center gap-2 text-bl-label2">{PR_FILES.length} files <DiffStat add={add} del={del} /></span>
+        <span className="flex items-center gap-2 text-muted-foreground">{PR_FILES.length} files <DiffStat add={add} del={del} /></span>
         <span className="flex-1" />
-        <span className="text-[12px] text-bl-label2">0 / {PR_FILES.length} viewed</span>
+        <span className="text-[12px] text-muted-foreground">0 / {PR_FILES.length} viewed</span>
         <Button className={ghButton(true)}>Review changes<Oct name="chevDown" size={12} /></Button>
       </div>
       <div className="flex gap-4">

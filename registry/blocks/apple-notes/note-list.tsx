@@ -62,9 +62,9 @@ const Header = ({ children, inset }: { children: ReactNode; inset?: boolean }) =
 function Empty({ notes }: { notes: NotesState }) {
   return (
     <div className="px-6 pt-20 text-center">
-      <div className="mb-2 grid place-items-center text-bl-label3"><Icon name="note" size={44} sw={1.3} /></div>
+      <div className="mb-2 grid place-items-center text-tertiary-foreground"><Icon name="note" size={44} sw={1.3} /></div>
       <div className="text-[18px] font-semibold text-muted-foreground">{notes.query ? 'No Results' : 'No Notes'}</div>
-      {notes.query ? <div className="mt-1 text-[14px] text-bl-label3">Nothing matches “{notes.query}”.</div> : null}
+      {notes.query ? <div className="mt-1 text-[14px] text-tertiary-foreground">Nothing matches “{notes.query}”.</div> : null}
     </div>
   );
 }
@@ -115,7 +115,7 @@ function Thumbnail({ n, locked }: { n: Note; locked: boolean }) {
         if (/^#+\s/.test(l)) return <div key={i} className="truncate pt-[2px] text-[9.5px] font-bold">{l.replace(/^#+\s*/, '')}</div>;
         if (task) return (
           <div key={i} className="flex items-center gap-[4px] truncate">
-            <span className={cn('size-[7px] shrink-0 rounded-full', task[1] === 'x' ? 'bg-primary' : 'shadow-[inset_0_0_0_1px_var(--bl-label3)]')} />
+            <span className={cn('size-[7px] shrink-0 rounded-full', task[1] === 'x' ? 'bg-primary' : 'shadow-[inset_0_0_0_1px_var(--tertiary-foreground)]')} />
             <span className={cn('truncate', task[1] === 'x' && 'text-muted-foreground')}>{task[2]}</span>
           </div>
         );
@@ -148,8 +148,8 @@ export function NoteGallery({ notes, onOpen, selected }: { notes: NotesState; on
                     onClick={() => { Haptics.selection(); onOpen(n.id); }}
                     className="bl-btn flex min-w-0 cursor-pointer flex-col items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-foreground">
                     <span className={cn('block aspect-[4/3.3] w-full overflow-hidden rounded-[10px] bg-card p-2.5 text-left',
-                      'shadow-[0_0_0_1px_var(--bl-sep),0_1px_3px_rgba(0,0,0,.06)] transition-shadow duration-200',
-                      on && 'shadow-[0_0_0_3px_var(--bl-tint)]')}>
+                      'shadow-[0_0_0_1px_var(--border),0_1px_3px_rgba(0,0,0,.06)] transition-shadow duration-200',
+                      on && 'shadow-[0_0_0_3px_var(--primary)]')}>
                       <Thumbnail n={n} locked={notes.isLocked(n)} />
                     </span>
                     <span className="mt-1 w-full truncate text-center text-[13px] font-semibold">{title(n)}</span>

@@ -8,14 +8,14 @@ import type { MailState } from './use-mail';
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="flex min-h-[46px] items-center gap-2 px-4 shadow-[inset_0_-1px_0_var(--bl-sep)]">
+    <label className="flex min-h-[46px] items-center gap-2 px-4 shadow-[inset_0_-1px_0_var(--border)]">
       <span className="shrink-0 text-[16px] text-muted-foreground">{label}</span>
       {children}
     </label>
   );
 }
 
-const input = 'min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 [font-family:inherit] text-[16px] text-foreground outline-none select-text placeholder:text-bl-label3';
+const input = 'min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 [font-family:inherit] text-[16px] text-foreground outline-none select-text placeholder:text-tertiary-foreground';
 
 export function ComposeSheet({ mail, wide }: { mail: MailState; wide: boolean }) {
   // The sheet keeps showing the last draft while it slides away.
@@ -33,7 +33,7 @@ export function ComposeSheet({ mail, wide }: { mail: MailState; wide: boolean })
             <Button variant="link" className="px-2 text-[17px] font-normal" onPress={() => mail.closeDraft('save')}>Cancel</Button>
             <div className="min-w-0 flex-1 truncate text-center text-[17px] font-semibold"><TextMorph>{d.subject.trim() || 'New Message'}</TextMorph></div>
             <Button variant="ghost" size="icon" aria-label="Send" isDisabled={!d.to.trim()} onPress={() => mail.closeDraft('send')}
-              className="text-primary data-disabled:text-bl-label3 data-disabled:opacity-100">
+              className="text-primary data-disabled:text-tertiary-foreground data-disabled:opacity-100">
               <span className="grid size-[25px] place-items-center rounded-full bg-current">
                 <Icon name="arrow-up" size={20} sw={3.4} className="text-primary-foreground" />
               </span>
