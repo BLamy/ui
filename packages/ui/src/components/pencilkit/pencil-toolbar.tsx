@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { ToggleButtonGroup, composeRenderProps } from 'react-aria-components';
-import { cva } from 'class-variance-authority';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 import { Haptics } from '../../lib/haptics';
-import { PK_INKS, PK_W, type PencilTool, type PKIconName } from '../../lib/pencilkit/constants';
-import { PKIcon } from './pk-icon';
+import { PK_INKS, PK_TOOL_ICONS, PK_W, type PencilTool } from '../../lib/pencilkit/constants';
+import { Icon, type IconName } from '../../lib/icon';
 import { Button, ToggleButton, type ButtonProps } from '../../lib/workbench/press';
 
 /* ---------------------------------- button ---------------------------------- */
@@ -15,36 +15,41 @@ export const pencilToolButtonVariants = cva(
   {
     variants: {
       active: {
-        true: 'bg-primary text-white',
-        false: 'bg-transparent text-muted-foreground data-selected:bg-primary data-selected:text-white',
+        true: 'bg-primary text-primary-foreground',
+        false: 'bg-transparent text-muted-foreground data-selected:bg-primary data-selected:text-primary-foreground',
       },
     },
     defaultVariants: { active: false },
   },
 );
 
-export interface PencilToolButtonProps extends Omit<ButtonProps, 'children'> {
-  name: PKIconName;
-  active?: boolean;
+export interface PencilToolButtonProps extends Omit<ButtonProps, 'children'>, VariantProps<typeof pencilToolButtonVariants> {
+  /** The Icon to draw (e.g. `pencil-tip`, `arrow-uturn-backward`). */
+  icon: IconName;
   label?: string;
   /** Alias of `isDisabled`. */
   disabled?: boolean;
 }
 
 /** The 38×34 icon button used across the PencilKit toolbar (react-aria Button; use `onPress`). */
-export function PencilToolButton({ name, active, label, disabled, isDisabled, className, ...rest }: PencilToolButtonProps) {
+export function PencilToolButton({ icon, active, label, disabled, isDisabled, className, ...rest }: PencilToolButtonProps) {
   return (
     <Button
       data-slot="pencil-tool-button"
       isDisabled={isDisabled ?? disabled}
-      aria-label={label || name}
-      title={label || name}
+      aria-label={label || icon}
+      title={label || icon}
       className={composeRenderProps(className, (cls) => cn(pencilToolButtonVariants({ active: !!active }), cls))}
       {...rest}
     >
-      <PKIcon name={name} />
+      <PencilIcon name={icon} />
     </Button>
   );
+}
+
+/** A PencilKit glyph: `Icon` at PencilKit's 19px / 1.7 stroke. */
+function PencilIcon({ name }: { name: IconName }) {
+  return <Icon name={name} size={19} sw={1.7} />;
 }
 
 /* --------------------------------- container --------------------------------- */
@@ -80,7 +85,7 @@ export function PencilToolbar({ className, style, children, ...rest }: PencilToo
   const scrolled = pinned.length ? all.filter((c) => !pinned.includes(c)) : all;
   const over = fade.l || fade.r;
   const mask = over
-    ? `linear-gradient(to right, ${fade.l ? 'transparent, #000 22px' : '#000'}, ${fade.r ? '#000 calc(100% - 22px), transparent' : '#000'})`
+    ? `linear-gradient(to right, ${fade.l ? 'transparent, black 22px' : 'black'}, ${fade.r ? 'black calc(100% - 22px), transparent' : 'black'})`
     : undefined;
   return (
     <div
@@ -88,7 +93,7 @@ export function PencilToolbar({ className, style, children, ...rest }: PencilToo
       data-overflowing={over ? '' : undefined}
       onPointerDown={(e) => e.stopPropagation()}
       className={cn(
-        'absolute inset-x-2.5 bottom-3.5 mx-auto box-border flex w-fit max-w-[calc(100%-20px)] cursor-default overflow-hidden rounded-2xl border border-border bg-card shadow-[0_10px_34px_rgba(0,0,0,.24)]',
+        'absolute inset-x-2.5 bottom-3.5 mx-auto box-border flex w-fit max-w-[calc(100%-20px)] cursor-default overflow-hidden rounded-2xl border border-border bg-card shadow-[0_10px_34px_black] shadow-black/24',
         className,
       )}
       style={style}
@@ -158,7 +163,7 @@ export function ToolPicker({ value, onChange, tools = ['pen', 'marker', 'pencil'
             Haptics.selection();
           }}
         >
-          <PKIcon name={t} />
+          <PencilIcon name={PK_TOOL_ICONS[t]} />
         </ToggleButton>
       ))}
     </ToggleButtonGroup>
@@ -191,7 +196,8 @@ export function InkPicker({ value, onChange, inks = PK_INKS, className, style, .
           title={c}
           className={cn(
             'size-[21px] cursor-pointer rounded-[50%] border bg-(color:--ink) p-0 outline-offset-2 outline-none data-selected:outline-[2.5px] data-selected:outline-primary data-selected:outline-solid',
-            c === '#F2F2F7' ? 'border-[rgba(0,0,0,.2)]' : 'border-[rgba(0,0,0,.08)]',
+            // the near-white ink needs a firmer ring to read on light paper
+            c === PK_INKS[1] ? 'border-black/20' : 'border-black/8',
           )}
           // the swatch color is data
           style={{ '--ink': c } as React.CSSProperties}
@@ -257,9 +263,9 @@ export interface PencilActionsProps extends React.HTMLAttributes<HTMLDivElement>
 export function PencilActions({ onUndo, onRedo, onClear, canUndo, canRedo, canClear, className, style, ...rest }: PencilActionsProps) {
   return (
     <div data-slot="pencil-actions" role="group" aria-label="History" className={cn('flex gap-0.5', className)} style={style} {...rest}>
-      <PencilToolButton name="undo" onPress={onUndo} disabled={!canUndo} label="Undo" />
-      <PencilToolButton name="redo" onPress={onRedo} disabled={!canRedo} label="Redo" />
-      <PencilToolButton name="trash" onPress={onClear} disabled={!(canClear ?? canUndo)} label="Clear" />
+      <PencilToolButton icon="arrow-uturn-backward" onPress={onUndo} disabled={!canUndo} label="Undo" />
+      <PencilToolButton icon="arrow-uturn-forward" onPress={onRedo} disabled={!canRedo} label="Redo" />
+      <PencilToolButton icon="trash-slim" onPress={onClear} disabled={!(canClear ?? canUndo)} label="Clear" />
     </div>
   );
 }
