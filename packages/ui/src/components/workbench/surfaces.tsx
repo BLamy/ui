@@ -4,7 +4,7 @@ import { FileTree, useFileTree } from '@pierre/trees/react';
 import { Button } from '../../lib/workbench/press';
 import { cn } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
-import { WIcon, type WIconName } from '../../lib/workbench/icons';
+import { Icon, type IconName } from '../../lib/icon';
 import { useWorkbenchAppearance } from '../../lib/workbench/theme';
 
 /* ══ Surfaces — what fills the WorkbenchPanel ══
@@ -14,16 +14,16 @@ import { useWorkbenchAppearance } from '../../lib/workbench/theme';
 export type SurfaceKind = 'browser' | 'terminal' | 'files' | 'diff' | 'agents';
 export interface SurfaceMeta {
   k: SurfaceKind;
-  icon: WIconName;
+  icon: IconName | (string & {});
   name: string;
   blurb: string;
 }
 export const SURFACES: SurfaceMeta[] = [
-  { k: 'browser', icon: 'globe', name: 'Browser', blurb: 'Open a local app or URL.' },
-  { k: 'terminal', icon: 'term', name: 'Terminal', blurb: 'Start a shell in this workspace.' },
-  { k: 'files', icon: 'files', name: 'Files', blurb: 'Browse and read workspace files.' },
-  { k: 'diff', icon: 'diff', name: 'Diff', blurb: 'Review changes in this thread.' },
-  { k: 'agents', icon: 'bot', name: 'Agents', blurb: 'Watch subagents and workflows run.' },
+  { k: 'browser', icon: 'network', name: 'Browser', blurb: 'Open a local app or URL.' },
+  { k: 'terminal', icon: 'terminal', name: 'Terminal', blurb: 'Start a shell in this workspace.' },
+  { k: 'files', icon: 'square-on-square', name: 'Files', blurb: 'Browse and read workspace files.' },
+  { k: 'diff', icon: 'doc-text', name: 'Diff', blurb: 'Review changes in this thread.' },
+  { k: 'agents', icon: 'robot', name: 'Agents', blurb: 'Watch subagents and workflows run.' },
 ];
 
 export interface SurfacePickerProps {
@@ -58,7 +58,7 @@ export function SurfacePicker({
               onPick(s.k);
             }}
           >
-            <WIcon name={s.icon} size={21} sw={1.6} className="text-muted-foreground" />
+            <Icon name={s.icon} size={21} sw={1.6} className="text-muted-foreground" />
             <div className="mt-2.5 text-[13.5px] font-[650]">{s.name}</div>
             <div className="mt-[3px] text-[11.5px] leading-[1.45] text-muted-foreground">{s.blurb}</div>
           </Button>
@@ -79,8 +79,8 @@ export function SurfaceBrowser({ url, children, className }: SurfaceBrowserProps
   return (
     <div data-slot="surface-browser" className={cn('flex min-h-0 flex-1 flex-col', className)}>
       <div className="flex shrink-0 items-center gap-1.5 border-b border-border px-2.5 py-[7px]">
-        <WIcon name="chevR" size={14} sw={2} className="-scale-x-100 text-tertiary-foreground" />
-        <WIcon name="chevR" size={14} sw={2} className="text-tertiary-foreground opacity-40" />
+        <Icon name="chevron-right-wide" size={14} sw={2} className="-scale-x-100 text-tertiary-foreground" />
+        <Icon name="chevron-right-wide" size={14} sw={2} className="text-tertiary-foreground opacity-40" />
         <div className="flex flex-1 items-center gap-1.5 rounded-[7px] bg-secondary px-[9px] py-1 font-mono text-[12px] text-muted-foreground">
           <span className="size-1.5 rounded-[50%] bg-success" />
           {url}
@@ -95,7 +95,7 @@ export function SurfaceAppPreview({ name, detail }: { name: React.ReactNode; det
   return (
     <div data-slot="surface-app-preview" className="text-center">
       <span className="inline-grid size-10 place-items-center rounded-[10px] bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]">
-        <WIcon name="spark" size={20} sw={2} className="text-white" />
+        <Icon name="asterisk" size={20} sw={2} className="text-white" />
       </span>
       <div className="mt-3 text-[13.5px] font-[650]">{name}</div>
       {detail != null ? <div className="mt-[3px] font-mono text-[12px] text-tertiary-foreground">{detail}</div> : null}

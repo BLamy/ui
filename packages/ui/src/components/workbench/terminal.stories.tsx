@@ -22,7 +22,7 @@ export const Dock: Story = {
       </div>
       <WorkbenchDock>
         <TerminalHeader title="zsh — cookbook">
-          <TerminalAction icon="split" label="Split terminal" />
+          <TerminalAction icon="rectangle-split" label="Split terminal" />
           <TerminalAction icon="plus" label="New terminal" />
           <WorkbenchDockClose />
         </TerminalHeader>
@@ -37,9 +37,9 @@ export const HeaderAndBody: Story = {
     <WorkbenchTheme style={{ minHeight: 420, padding: 24, display: 'grid', placeItems: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', height: 300, width: 520, borderRadius: 12, overflow: 'hidden', background: '#0C0C10', border: '1px solid var(--border)' }}>
         <TerminalHeader title="zsh — cookbook">
-          <TerminalAction icon="split" label="Split terminal" />
+          <TerminalAction icon="rectangle-split" label="Split terminal" />
           <TerminalAction icon="plus" label="New terminal" />
-          <TerminalAction icon="trash" label="Close terminal" />
+          <TerminalAction icon="bin" label="Close terminal" />
         </TerminalHeader>
         <TerminalBody seed={[{ t: 'help', p: true }, { t: 'available: ls, pwd, echo, whoami, npm run dev, clear' }]} />
       </div>

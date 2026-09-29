@@ -121,7 +121,7 @@ function ChatWithDiff() {
         </WorkbenchMain>
         <WorkbenchPanel>
           <WorkbenchPanelHeader>
-            <WorkbenchPanelTitle icon="diff">Changes</WorkbenchPanelTitle>
+            <WorkbenchPanelTitle icon="doc-text">Changes</WorkbenchPanelTitle>
             <WorkbenchPanelFullscreen />
             <WorkbenchPanelClose />
           </WorkbenchPanelHeader>

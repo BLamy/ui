@@ -51,7 +51,7 @@ function PanelDemo({ initial, full: initialFull = false, compact }: { initial: S
     <WorkbenchPanel>
       <WorkbenchPanelHeader>
         <WorkbenchPanelTitle icon={meta?.icon}>{meta ? meta.name : 'Surfaces'}</WorkbenchPanelTitle>
-        {meta ? <IconBtn name="chevD" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
+        {meta ? <IconBtn name="chevron-down-wide" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
         {!compact ? <WorkbenchPanelFullscreen active={full} onPress={() => setFull(!full)} /> : null}
         <WorkbenchPanelClose onPress={() => setKind(null)} />
       </WorkbenchPanelHeader>
@@ -96,7 +96,7 @@ function TabBarDemo() {
     <WorkbenchTheme style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
       <div style={{ width: 390, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         <WorkbenchTabBar value={active} onValueChange={setActive}>
-          <WorkbenchTab id="chat" icon="msg">
+          <WorkbenchTab id="chat" icon="bubble-left">
             Chat
           </WorkbenchTab>
           {SURFACES.map((s) => (

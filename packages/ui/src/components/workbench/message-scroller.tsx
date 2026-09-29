@@ -3,7 +3,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Button } from '../../lib/workbench/press';
 import { cn } from '../../lib/workbench/util';
 import { tick } from '../../lib/workbench/haptics';
-import { WIcon } from '../../lib/workbench/icons';
+import { Icon } from '../../lib/icon';
 import { AnimatePresence, animate, motion, type AnimationPlaybackControls } from 'framer-motion';
 import { prefersReducedMotion, springs } from '../../lib/workbench/motion';
 
@@ -239,7 +239,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
                   </motion.span>
                 ) : null}
               </AnimatePresence>
-              <WIcon name="chevD" size={15} sw={2.2} />
+              <Icon name="chevron-down-wide" size={15} sw={2.2} />
             </Button>
           </motion.div>
         ) : null}

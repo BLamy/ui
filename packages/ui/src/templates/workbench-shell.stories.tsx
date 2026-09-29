@@ -132,7 +132,7 @@ function ShellDemo({
             </ThreadList>
             <ThreadSidebarFooter>
               <SidebarNotice onDismiss={() => {}}>Update available</SidebarNotice>
-              <SidebarFooterItem icon="gear">Settings</SidebarFooterItem>
+              <SidebarFooterItem icon="gearshape">Settings</SidebarFooterItem>
             </ThreadSidebarFooter>
           </ThreadSidebar>
         </WorkbenchSidebar>
@@ -177,7 +177,7 @@ function ShellDemo({
           </Conversation>
           <WorkbenchDock>
             <TerminalHeader title="zsh — cookbook">
-              <TerminalAction icon="split" label="Split terminal" />
+              <TerminalAction icon="rectangle-split" label="Split terminal" />
               <TerminalAction icon="plus" label="New terminal" />
               <WorkbenchDockClose />
             </TerminalHeader>
@@ -188,7 +188,7 @@ function ShellDemo({
         <WorkbenchPanel>
           <WorkbenchPanelHeader>
             <WorkbenchPanelTitle icon={surfaceMeta?.icon}>{surfaceMeta?.name ?? 'Surfaces'}</WorkbenchPanelTitle>
-            {surfaceMeta ? <IconBtn name="chevD" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
+            {surfaceMeta ? <IconBtn name="chevron-down-wide" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
             <WorkbenchPanelFullscreen />
             <WorkbenchPanelClose />
           </WorkbenchPanelHeader>
@@ -212,7 +212,7 @@ function ShellDemo({
         </WorkbenchPanel>
 
         <WorkbenchTabBar value={kind} onValueChange={(k) => setKind(k as SurfaceKind)}>
-          <WorkbenchTab id="chat" icon="msg">
+          <WorkbenchTab id="chat" icon="bubble-left">
             Chat
           </WorkbenchTab>
           {SURFACES.map((s) => (
@@ -327,7 +327,7 @@ export const ChatWithInspector: Story = {
         </WorkbenchMain>
         <WorkbenchPanel>
           <WorkbenchPanelHeader>
-            <WorkbenchPanelTitle icon="diff">Changes</WorkbenchPanelTitle>
+            <WorkbenchPanelTitle icon="doc-text">Changes</WorkbenchPanelTitle>
             <WorkbenchPanelFullscreen />
             <WorkbenchPanelClose />
           </WorkbenchPanelHeader>

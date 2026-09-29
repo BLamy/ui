@@ -14,7 +14,7 @@ import { Haptics } from '../../lib/haptics';
 import { useAppearance, useChromeHidden } from '../../lib/theme';
 import { collectSlots, defineSlot } from '../../lib/container';
 import { springCss } from '../../lib/motion';
-import { useSpringSheetDrag } from '../../lib/workbench/motion';
+import { useSheetDrag as useSpringSheetDrag } from '../../lib/sheet-drag';
 import { cn } from '../../lib/utils';
 
 export type FloatingSheetFabPosition =

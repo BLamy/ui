@@ -241,7 +241,7 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
               defaultValue="medium"
             />
             <ComposerSeparator />
-            <ComposerSelect aria-label="Access" icon="lock" options={access} />
+            <ComposerSelect aria-label="Access" icon="lock-rounded" options={access} />
           </ComposerOptions>
           <ComposerSpacer />
           <ComposerAttach />
@@ -251,7 +251,7 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
       </ComposerCard>
       <ComposerBump side="bottom">
         <ComposerBumpHandle>
-          <ComposerText icon="folder" className="shrink-0">
+          <ComposerText icon="folder-closed" className="shrink-0">
             Local checkout
           </ComposerText>
           <ComposerOptionsOutlet />

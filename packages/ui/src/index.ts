@@ -24,7 +24,7 @@ export {
 } from './lib/theme';
 export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName } from './lib/theme';
 export { useContainerWidth, useContainerSize, defineSlot, collectSlots } from './lib/container';
-export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL, SHEET_OPEN_THRESHOLD } from './lib/sheet-drag';
+export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL } from './lib/sheet-drag';
 export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
 export type { SlotComponent, SlotProps, ContainerSize } from './lib/container';
 export { Icon, IC, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS, ICON_WEIGHTS } from './lib/icon';
@@ -189,15 +189,13 @@ export type { SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, Synta
 // ── end shadcn primitives ──
 
 // ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
-// (EASE is the same curve as the core EASE above.)
-export { WFONT, MONO } from './lib/workbench/util';
 export {
   useWorkbenchAppearance,
   WorkbenchTheme,
   type WorkbenchThemeProps,
 } from './lib/workbench/theme';
 export { vib, tick } from './lib/workbench/haptics';
-export { WIcon, IconBtn, iconBtnVariants, type WIconName, type WIconProps, type IconBtnProps } from './lib/workbench/icons';
+export { IconBtn, iconBtnVariants, type IconBtnProps } from './lib/workbench/icons';
 export {
   MarkdownView,
   FbMd,
@@ -210,7 +208,6 @@ export {
 } from './components/workbench/markdown';
 export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './components/workbench/message-scroller';
 export { SnapSheet, type SnapSheetProps } from './components/workbench/snap-sheet';
-export { useSpringSheetDrag, MorphText, type SpringSheetDragOptions, type SpringSheetDragState, type MorphTextProps } from './lib/workbench/motion';
 export {
   ThreadSidebar,
   ThreadSidebarHeader,

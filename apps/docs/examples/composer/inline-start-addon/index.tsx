@@ -7,7 +7,7 @@ import {
   ComposerInput,
   ComposerSelect,
   ComposerSend,
-  WIcon,
+  Icon,
   WorkbenchTheme,
 } from '@brett_lamy/ui'
 
@@ -59,7 +59,7 @@ function Messenger() {
         <ComposerCard size="lg" className="flex-nowrap">
           <ComposerAddon align="inline-start" className="self-center pt-0 pl-2">
             <ComposerButton aria-label="Add" className="rounded-[50%]">
-              <WIcon name="plus" size={16} sw={2.2} />
+              <Icon name="plus" size={16} sw={2.2} />
             </ComposerButton>
           </ComposerAddon>
           <ComposerInput placeholder="Reply to #design" slashMenu={false} />

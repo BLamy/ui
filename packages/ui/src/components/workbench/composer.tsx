@@ -28,12 +28,11 @@ import { Plugin } from '@tiptap/pm/state';
 import { Button, ToggleButton, type ButtonProps } from '../../lib/workbench/press';
 import { cn } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
-import { WIcon, type WIconName } from '../../lib/workbench/icons';
+import { Icon, type IconName } from '../../lib/icon';
 import { WbPopover } from './wb-popover';
 import { looksLikeMarkdown, insertMarkdown } from '../markdown-editor';
 import { useComposerAnnotator, type ComposerAnnotator, type ComposerAnnotatorSurface } from './annotator';
 import { animate, AnimatePresence, motion } from 'framer-motion';
-import { Icon } from '../../lib/icon';
 import { useToast } from '../toast';
 import {
   acceptsFile,
@@ -47,7 +46,9 @@ import {
   videoPoster,
   type ComposerAttachmentKind,
 } from './composer-files';
-import { MorphText, flipPlay, flipSnapshot, prefersReducedMotion, springs, useSpringSheetDrag, type FlipSnapshot, type SpringSheetDragState } from '../../lib/workbench/motion';
+import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '../../lib/workbench/motion';
+import { useSheetDrag, type SheetDragState } from '../../lib/sheet-drag';
+import { TextMorph } from '../text-morph';
 
 /* ══ Composer — a compositional prompt box, in the spirit of shadcn's InputGroup ══
 
@@ -797,7 +798,7 @@ export interface ComposerFabProps extends Omit<ButtonProps, 'children'> {
 export function ComposerFab({ className, children, 'aria-label': ariaLabel = 'Open composer', ...props }: ComposerFabProps) {
   return (
     <Button data-slot="composer-fab" aria-label={ariaLabel} className={cn(composerFabVariants(), className)} {...props}>
-      {children ?? <WIcon name="compose" size={21} sw={1.9} />}
+      {children ?? <Icon name="square-pencil" size={21} sw={1.9} />}
     </Button>
   );
 }
@@ -982,7 +983,7 @@ function ComposerDropOverlay({ state, label, hint }: { state: 'drop' | 'focus' |
               exit={{ scale: 0.4, rotate: -90 }}
               transition={springs.bouncy}
             >
-              <WIcon name="plus" size={16} sw={2.6} />
+              <Icon name="plus" size={16} sw={2.6} />
             </motion.span>
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-[13.5px] font-semibold text-foreground">
@@ -1043,7 +1044,7 @@ export function ComposerCard({ size, dropZone = true, dropLabel, className, ref,
           onPress={fab.restore}
           className="wb-btn absolute inset-0 z-3 grid cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60"
         >
-          {fab.icon ?? <WIcon name="compose" size={21} sw={1.9} />}
+          {fab.icon ?? <Icon name="square-pencil" size={21} sw={1.9} />}
         </Button>
       ) : null}
     </div>
@@ -1113,10 +1114,10 @@ export function ComposerText({
   className,
   children,
   ...props
-}: React.HTMLAttributes<HTMLSpanElement> & { icon?: WIconName }) {
+}: React.HTMLAttributes<HTMLSpanElement> & { icon?: IconName | (string & {}) }) {
   return (
     <span data-slot="composer-text" className={cn('flex min-w-0 items-center gap-[7px] text-[12px] text-muted-foreground', className)} {...props}>
-      {icon ? <WIcon name={icon} size={13.5} sw={1.9} /> : null}
+      {icon ? <Icon name={icon} size={13.5} sw={1.9} /> : null}
       {children}
     </span>
   );
@@ -1170,10 +1171,10 @@ export function ComposerButton({ variant, size, tint, className, ...props }: Com
 export function ComposerPillLabel({ icon, children }: { icon?: React.ReactNode; children?: React.ReactNode }) {
   return (
     <>
-      {typeof icon === 'string' ? <WIcon name={icon} size={13.5} sw={2} /> : icon}
+      {typeof icon === 'string' ? <Icon name={icon} size={13.5} sw={2} /> : icon}
       {/* A changed choice morphs its label by the letters the two share. */}
-      {typeof children === 'string' ? <MorphText className="whitespace-nowrap">{children}</MorphText> : <span className="whitespace-nowrap">{children}</span>}
-      <WIcon name="chevD" size={11} sw={2.4} className="opacity-60" />
+      {typeof children === 'string' ? <TextMorph className="whitespace-nowrap">{children}</TextMorph> : <span className="whitespace-nowrap">{children}</span>}
+      <Icon name="chevron-down-wide" size={11} sw={2.4} className="opacity-60" />
     </>
   );
 }
@@ -1193,8 +1194,8 @@ export interface ComposerSelectProps {
   value?: string;
   defaultValue?: string;
   onChange?: (id: string) => void;
-  /** Leading icon (WIcon name or node). */
-  icon?: WIconName | React.ReactNode;
+  /** Leading icon (an `Icon` name or a node). */
+  icon?: IconName | (string & {}) | React.ReactNode;
   tint?: boolean;
   className?: string;
   /** Popover min width. */
@@ -1222,7 +1223,7 @@ export function ComposerMenuItem({ className, children, ...props }: MenuItemProp
                     exit={{ scale: 0.3, opacity: 0 }}
                     transition={springs.bouncy}
                   >
-                    <WIcon name="check" size={13} sw={2.6} />
+                    <Icon name="checkmark" size={13} sw={2.6} />
                   </motion.span>
                 ) : null}
               </AnimatePresence>
@@ -1336,7 +1337,7 @@ export function ComposerStop({ variant = 'ring', forceMount, className, ...props
         {...props}
       >
         <StopRing />
-        <WIcon name="stop" size={12} sw={2.4} />
+        <Icon name="stop-square" size={12} sw={2.4} />
       </Button>
     );
   return (
@@ -1389,13 +1390,13 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
     >
       <GlyphSwap id={stopping ? `stop-${stopVariant}` : 'send'}>
         {!stopping ? (
-          <WIcon name="up" size={16} sw={2.4} />
+          <Icon name="arrow-up-compact" size={16} sw={2.4} />
         ) : stopVariant === 'solid' ? (
           <span className="block size-[9px] rounded-[2px] bg-current" />
         ) : (
           <>
             <StopRing />
-            <WIcon name="stop" size={12} sw={2.4} />
+            <Icon name="stop-square" size={12} sw={2.4} />
           </>
         )}
       </GlyphSwap>
@@ -1412,8 +1413,8 @@ export interface ComposerAddProps extends Omit<ComposerButtonProps, 'variant' | 
   acceptDirectory?: boolean;
   /** On mobile, open the camera (`user` / `environment`) rather than the library. */
   defaultCamera?: 'user' | 'environment';
-  /** The glyph (a WIcon name or a node; default `plus`). */
-  icon?: WIconName | React.ReactNode;
+  /** The glyph (an `Icon` name or a node; default `plus`). */
+  icon?: IconName | (string & {}) | React.ReactNode;
   /** Accessible name and tooltip (default "Add files"). */
   label?: string;
 }
@@ -1454,7 +1455,7 @@ export function ComposerAdd({
         className={className}
         {...props}
       >
-        {typeof icon === 'string' ? <WIcon name={icon} size={icon === 'plus' ? 17 : 15.5} sw={2} /> : icon}
+        {typeof icon === 'string' ? <Icon name={icon} size={icon === 'plus' ? 17 : 15.5} sw={2} /> : icon}
       </ComposerButton>
     </FileTrigger>
   );
@@ -1470,7 +1471,7 @@ export function ComposerAttach({ accept, acceptedFileTypes, label = 'Attach file
   return (
     <ComposerAdd
       data-slot="composer-attach"
-      icon="clip"
+      icon="paperclip-diagonal"
       label={label}
       acceptedFileTypes={acceptedFileTypes ?? (accept ? accept.split(',').map((t) => t.trim()).filter(Boolean) : undefined)}
       {...props}
@@ -1500,7 +1501,7 @@ export function ComposerExpand({ className }: { className?: string }) {
       title={label}
     >
       <GlyphSwap id={expanded ? 'restore' : 'expand'}>
-        <WIcon name={expanded ? 'restore' : 'expand'} size={14} sw={2} />
+        <Icon name={expanded ? 'arrows-collapse' : 'arrows-expand'} size={14} sw={2} />
       </GlyphSwap>
     </ToggleButton>
   );
@@ -1659,7 +1660,7 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                             <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
                           ) : (
                             <span className="grid h-[58px] w-[72px] place-items-center text-tertiary-foreground">
-                              <WIcon name="doc" size={18} />
+                              <Icon name="doc-corner" size={18} sw={1.7} />
                             </span>
                           )}
                         </Button>
@@ -1875,7 +1876,7 @@ export interface ComposerBumpContextValue {
   maxReveal: number;
   dragging: boolean;
   /** @internal */
-  handleProps: SpringSheetDragState['handlers'] | null;
+  handleProps: SheetDragState['handlers'] | null;
   /** @internal */
   toggle: () => void;
   /** @internal */
@@ -1982,7 +1983,7 @@ export function ComposerBump({
 
   const maxReveal = bounds ? (measured ?? maxRevealProp) : maxRevealProp;
   const peek = Math.max(0, Math.min(requestedPeek, maxReveal * 0.75));
-  const drag = useSpringSheetDrag({
+  const drag = useSheetDrag({
     open,
     onOpenChange: setOpen,
     peek,

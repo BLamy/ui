@@ -2,10 +2,11 @@ import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '../../lib/workbench/util';
 import { tick } from '../../lib/workbench/haptics';
-import { WIcon, IconBtn, type WIconName } from '../../lib/workbench/icons';
+import { IconBtn } from '../../lib/workbench/icons';
+import { Icon, type IconName } from '../../lib/icon';
 
 /* ══ Terminal parts ══
-   <TerminalHeader title="zsh — cookbook"><TerminalAction icon="split"/><WorkbenchDockClose/></TerminalHeader>
+   <TerminalHeader title="zsh — cookbook"><TerminalAction icon="rectangle-split"/><WorkbenchDockClose/></TerminalHeader>
    <TerminalBody seed={lines}/>
    Put them in a WorkbenchDock (inline dock ⇄ compact SnapSheet) or a SurfaceTerminal (panel). */
 export interface TermLine {
@@ -130,7 +131,7 @@ export interface TerminalHeaderProps {
 export function TerminalHeader({ title = 'zsh', children, className, style }: TerminalHeaderProps) {
   return (
     <div data-slot="terminal-header" className={cn('flex shrink-0 items-center gap-1 border-b border-border py-[5px] pr-2 pl-3.5', className)} style={style}>
-      <WIcon name="term" size={14} sw={1.8} className="text-tertiary-foreground" />
+      <Icon name="terminal" size={14} sw={1.8} className="text-tertiary-foreground" />
       <span className="ml-1 text-[12px] font-semibold text-muted-foreground">{title}</span>
       <span className="flex-1" />
       {children}
@@ -138,7 +139,7 @@ export function TerminalHeader({ title = 'zsh', children, className, style }: Te
   );
 }
 
-export function TerminalAction({ icon, label, onPress, className }: { icon: WIconName; label: string; onPress?: () => void; className?: string }) {
+export function TerminalAction({ icon, label, onPress, className }: { icon: IconName | (string & {}); label: string; onPress?: () => void; className?: string }) {
   return (
     <IconBtn
       name={icon}

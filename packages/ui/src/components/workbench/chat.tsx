@@ -4,7 +4,7 @@ import { AnimatePresence, animate, motion } from 'framer-motion';
 import { Button } from '../../lib/workbench/press';
 import { cn } from '../../lib/workbench/util';
 import { vib, tick } from '../../lib/workbench/haptics';
-import { WIcon, type WIconName } from '../../lib/workbench/icons';
+import { Icon, type IconName } from '../../lib/icon';
 import { prefersReducedMotion, springs } from '../../lib/workbench/motion';
 import { MarkdownView } from './markdown';
 import { MessageScroller, type MessageScrollerItem } from './message-scroller';
@@ -82,7 +82,7 @@ export function ConversationGreeting({ title, description, icon, className }: Co
     <div data-slot="conversation-greeting" className={cn('mb-[18px] text-center', className)}>
       {icon ?? (
         <span className="inline-grid size-10 place-items-center rounded-[11px] bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]">
-          <WIcon name="spark" size={21} sw={2.1} className="text-white" />
+          <Icon name="asterisk" size={21} sw={2.1} className="text-white" />
         </span>
       )}
       <div className="mt-3 text-[21px] font-bold tracking-[-.3px]">{title}</div>
@@ -266,7 +266,7 @@ export function WorkLog({ summary, defaultOpen = false, children, className }: W
   const row = 'flex items-center gap-[5px] text-[12px] text-tertiary-foreground';
   const chevron = (
     <motion.span className="grid" animate={{ rotate: open ? 90 : 0 }} transition={springs.snappy}>
-      <WIcon name="chevR" size={11} sw={2.4} />
+      <Icon name="chevron-right-wide" size={11} sw={2.4} />
     </motion.span>
   );
   return (
@@ -280,15 +280,15 @@ export function WorkLog({ summary, defaultOpen = false, children, className }: W
             setOpen(!open);
           }}
         >
-          <WIcon name="clock" size={12.5} sw={2} />
+          <Icon name="clock-dial" size={12.5} sw={2} />
           {summary}
           {chevron}
         </Button>
       ) : (
         <div className={row}>
-          <WIcon name="clock" size={12.5} sw={2} />
+          <Icon name="clock-dial" size={12.5} sw={2} />
           {summary}
-          <WIcon name="chevR" size={11} sw={2.4} />
+          <Icon name="chevron-right-wide" size={11} sw={2.4} />
         </div>
       )}
       <AnimatePresence initial={false}>
@@ -310,7 +310,7 @@ export function WorkLog({ summary, defaultOpen = false, children, className }: W
 }
 
 export interface ToolCallProps {
-  icon?: WIconName;
+  icon?: IconName | (string & {});
   /** what the agent did */
   title: React.ReactNode;
   /** secondary text: a URL, a path, a count */
@@ -321,7 +321,7 @@ export interface ToolCallProps {
   className?: string;
 }
 /** One step in a WorkLog. */
-export function ToolCall({ icon = 'check', title, detail, code, status = 'done', className }: ToolCallProps) {
+export function ToolCall({ icon = 'checkmark', title, detail, code, status = 'done', className }: ToolCallProps) {
   return (
     <div data-slot="tool-call" data-status={status} className={cn('grid gap-1 text-[12.5px] text-muted-foreground', className)}>
       <div className="flex min-w-0 items-center gap-2">
@@ -330,7 +330,7 @@ export function ToolCall({ icon = 'check', title, detail, code, status = 'done',
             <span className="size-[7px] animate-[wbPulse_1.2s_infinite] rounded-full bg-primary motion-reduce:animate-none" />
           </span>
         ) : (
-          <WIcon name={status === 'error' ? 'x' : icon} size={13} sw={2} className={status === 'error' ? 'text-destructive' : 'text-tertiary-foreground'} />
+          <Icon name={status === 'error' ? 'xmark-large' : icon} size={13} sw={2} className={status === 'error' ? 'text-destructive' : 'text-tertiary-foreground'} />
         )}
         <span className="min-w-0 truncate">{title}</span>
         {detail != null ? <span className="min-w-0 truncate text-[11.5px] text-tertiary-foreground">{detail}</span> : null}
@@ -362,7 +362,7 @@ export function SettledBanner({
       className={cn('mb-2.5 flex items-center gap-[11px] rounded-xl border border-border bg-card px-3 py-2.5', className)}
       style={style}
     >
-      <WIcon name="checkC" size={20} sw={1.8} className="text-success" />
+      <Icon name="checkmark-circle" size={20} sw={1.8} className="text-success" />
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-[650]">{title}</div>
         <div className="mt-px text-[12px] text-muted-foreground">{description}</div>

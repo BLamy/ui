@@ -59,7 +59,7 @@ function SidebarDemo({ compact }: { compact?: boolean }) {
     <ThreadSidebar>
       <ThreadSidebarHeader>
         <ThreadSidebarBrand>Workbench</ThreadSidebarBrand>
-        {compact ? <IconBtn name="x" label="Close sidebar" className="ml-auto" /> : null}
+        {compact ? <IconBtn name="xmark-large" label="Close sidebar" className="ml-auto" /> : null}
       </ThreadSidebarHeader>
       <ThreadSidebarToolbar>
         <ThreadSearch value={query} onChange={setQuery} />
@@ -75,7 +75,7 @@ function SidebarDemo({ compact }: { compact?: boolean }) {
       </ThreadList>
       <ThreadSidebarFooter>
         <SidebarNotice onDismiss={() => {}}>Update available</SidebarNotice>
-        <SidebarFooterItem icon="gear">Settings</SidebarFooterItem>
+        <SidebarFooterItem icon="gearshape">Settings</SidebarFooterItem>
       </ThreadSidebarFooter>
     </ThreadSidebar>
   );

@@ -22,7 +22,7 @@ import { direction, springs } from '../../lib/motion';
 import { Button } from '../../lib/workbench/press';
 import { cn } from '../../lib/workbench/util';
 import { tick } from '../../lib/workbench/haptics';
-import { WIcon } from '../../lib/workbench/icons';
+import { Icon } from '../../lib/icon';
 import { WbPopover } from './wb-popover';
 import { ComposerButton, ComposerPillLabel } from './composer';
 import type { ModelOption, ModelProvider } from './models';
@@ -192,7 +192,7 @@ export function ModelPicker({
               }
             }}
           >
-            <WIcon name="search" size={14} sw={2} className="text-tertiary-foreground" />
+            <Icon name="magnifier" size={14} sw={2} className="text-tertiary-foreground" />
             <Input
               placeholder="Search models…"
               className="min-w-0 flex-1 border-0 bg-transparent p-0 font-ios text-[13px] text-foreground outline-none placeholder:text-tertiary-foreground! [&::-webkit-search-cancel-button]:hidden"
@@ -214,7 +214,7 @@ export function ModelPicker({
                 {({ isSelected }) => (
                   <>
                     <RailIndicator group={group} selected={isSelected} />
-                    <WIcon name="star" size={15} sw={2} />
+                    <Icon name="star-sharp" size={15} sw={2} />
                   </>
                 )}
               </Tab>
@@ -310,10 +310,10 @@ export function ModelPicker({
                   textValue="Legacy models"
                   className="flex cursor-pointer items-center gap-2 rounded-[9px] px-2.5 py-2 text-[13px] text-foreground outline-none data-focused:bg-secondary data-open:bg-secondary"
                 >
-                  <WIcon name="clock" size={14} sw={2} className="text-muted-foreground" />
+                  <Icon name="clock-dial" size={14} sw={2} className="text-muted-foreground" />
                   <span className="flex-1 font-medium">Legacy models</span>
                   <span className="text-[12px] text-tertiary-foreground">{legacy.length} models</span>
-                  <WIcon name="chevR" size={12} sw={2.4} className="text-tertiary-foreground" />
+                  <Icon name="chevron-right-wide" size={12} sw={2.4} className="text-tertiary-foreground" />
                 </MenuItem>
                 <WbPopover offset={4} className="min-w-[220px] p-1">
                   <Menu aria-label="Legacy models" className="outline-none" onAction={(k) => choose(String(k))}>
@@ -326,7 +326,7 @@ export function ModelPicker({
                       >
                         <span className="grid w-3.5 shrink-0 place-items-center text-[12px] text-muted-foreground">{providerOf(m)?.icon}</span>
                         <span className="flex-1 truncate">{m.name}</span>
-                        {m.id === value ? <WIcon name="check" size={13} sw={2.6} className="text-primary" /> : null}
+                        {m.id === value ? <Icon name="checkmark" size={13} sw={2.6} className="text-primary" /> : null}
                       </MenuItem>
                     ))}
                   </Menu>
