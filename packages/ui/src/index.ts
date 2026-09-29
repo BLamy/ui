@@ -542,3 +542,11 @@ export { MorphGroup, Morph, MorphPresence, useMorphTransition } from './componen
 export type { MorphGroupProps, MorphProps, MorphPresenceProps } from './components/morph';
 export { encodeQR } from './lib/qr';
 export type { QRCode, QRLevel, QROptions } from './lib/qr';
+export {
+  CommandMenu, CommandInput, CommandList, CommandPage, CommandGroup, CommandItem, CommandEmpty, CommandSeparator,
+  CommandFooter, CommandHighlight, useCommandMenu, useCommandActive, useHotkey, matchesHotkey, commandMatch,
+} from './components/command-menu';
+export type {
+  CommandMenuProps, CommandInputProps, CommandListProps, CommandPageProps, CommandGroupProps, CommandItemProps,
+  CommandFooterProps, CommandLegendItem, CommandMenuApi, CommandMatch,
+} from './components/command-menu';
