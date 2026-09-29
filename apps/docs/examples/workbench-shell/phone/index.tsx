@@ -1,18 +1,19 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   AssistantMessage,
   Conversation,
   ConversationComposer,
   ConversationMessages,
+  Icon,
   MessageMarkdown,
+  SidebarContent,
+  SidebarHeader,
+  SidebarItem,
+  SidebarSection,
+  SidebarWorkspace,
   TerminalBody,
   TerminalHeader,
-  ThreadGroup,
-  ThreadItem,
-  ThreadList,
-  ThreadSidebar,
-  ThreadSidebarBrand,
-  ThreadSidebarHeader,
+  useWorkbenchShell,
   UserMessage,
   WorkbenchActions,
   WorkbenchComposer,
@@ -63,27 +64,49 @@ function Frame({
   )
 }
 
+// The thread list, from the generic Sidebar parts: on a phone it is the
+// hamburger drawer, and picking a thread closes it.
+function Threads() {
+  const shell = useWorkbenchShell()
+  const [current, setCurrent] = useState('ship the build')
+  const item = (title: string, meta: string) => (
+    <SidebarItem
+      icon={<Icon name="bubble-left" size={15} sw={1.8} />}
+      label={title}
+      badge={meta}
+      active={title === current}
+      onPress={() => {
+        setCurrent(title)
+        shell.setSidebarOpen(false)
+      }}
+    />
+  )
+  return (
+    <nav aria-label="Threads" className="flex h-full flex-col bg-sidebar">
+      <SidebarHeader>
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <SidebarWorkspace name="Workbench" />
+          </div>
+          <WorkbenchSidebarClose />
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarSection title="Active">
+          {item('ship the build', 'now')}
+          {item('triage flaky tests', '4m')}
+        </SidebarSection>
+      </SidebarContent>
+    </nav>
+  )
+}
+
 function PhoneWorkbench() {
   return (
     <Frame width={390} height={680}>
       <WorkbenchShell defaultDockOpen>
         <WorkbenchSidebar>
-          <ThreadSidebar>
-            <ThreadSidebarHeader>
-              <ThreadSidebarBrand>Workbench</ThreadSidebarBrand>
-              <WorkbenchSidebarClose />
-            </ThreadSidebarHeader>
-            <ThreadList>
-              <ThreadGroup label="Active">
-                <ThreadItem active status="running" meta="now">
-                  ship the build
-                </ThreadItem>
-                <ThreadItem status="unread" meta="4m">
-                  triage flaky tests
-                </ThreadItem>
-              </ThreadGroup>
-            </ThreadList>
-          </ThreadSidebar>
+          <Threads />
         </WorkbenchSidebar>
         <WorkbenchMain>
           <WorkbenchHeader>

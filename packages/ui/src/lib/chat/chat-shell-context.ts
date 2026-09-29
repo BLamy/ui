@@ -23,7 +23,8 @@ export function useChatShell(): ChatShellContextValue {
   return ctx;
 }
 
-/** The same, or null outside a shell — for parts that also render standalone (ServerHeader, ChannelItem…). */
+/** The same, or null outside a shell — for parts that also render standalone (a channel row that closes the
+ *  compact drawer when it is inside a shell). */
 export function useOptionalChatShell(): ChatShellContextValue | null {
   return useContext(ChatShellContext);
 }

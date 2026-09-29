@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
-import { Haptics } from '../../lib/haptics';
-import { cn } from '../../lib/utils';
+import { Haptics, cn } from '@brett_lamy/ui';
+import { cva } from 'class-variance-authority';
 
 /* ══ UserPanel — the signed-in user at the foot of the channel sidebar ══
    <UserPanel>
@@ -40,12 +40,13 @@ export const presenceLabel: Record<ChatPresence, string> = {
   offline: 'offline',
 };
 
-const presenceText: Record<ChatPresence, string> = {
-  online: 'text-success',
-  idle: 'text-warning',
-  dnd: 'text-destructive',
-  offline: 'text-tertiary-foreground',
-};
+/** The status line, colored by presence. */
+export const userPanelStatusVariants = cva('text-[10px] font-semibold', {
+  variants: {
+    status: { online: 'text-success', idle: 'text-warning', dnd: 'text-destructive', offline: 'text-tertiary-foreground' },
+  },
+  defaultVariants: { status: 'online' },
+});
 
 export interface UserPanelStatusProps extends ComponentProps<'div'> {
   status?: ChatPresence;
@@ -55,7 +56,7 @@ export interface UserPanelStatusProps extends ComponentProps<'div'> {
 
 export function UserPanelStatus({ status = 'online', className, children, ...props }: UserPanelStatusProps) {
   return (
-    <div data-slot="user-panel-status" data-status={status} className={cn('text-[10px] font-semibold', presenceText[status], className)} {...props}>
+    <div data-slot="user-panel-status" data-status={status} className={cn(userPanelStatusVariants({ status }), className)} {...props}>
       {/* One text node for the default label, as the original rendered it. */}
       {children === undefined ? '● ' + presenceLabel[status] : <>● {children}</>}
     </div>

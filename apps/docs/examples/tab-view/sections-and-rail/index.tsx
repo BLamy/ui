@@ -1,20 +1,18 @@
-import { useState, type ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import {
   themeScopeProps,
   Icon,
   TabView,
+  TabViewAction,
   TabViewBar,
+  TabViewFooter,
+  TabViewIndicator,
   TabViewList,
   TabViewPanel,
   TabViewPanels,
+  TabViewSeparator,
   TabViewTab,
   useAppearance,
-  WorkspaceRail,
-  WorkspaceRailAction,
-  WorkspaceRailHome,
-  WorkspaceRailItem,
-  WorkspaceRailList,
-  WorkspaceRailSeparator,
 } from '@brett_lamy/ui'
 
 const items = [
@@ -111,7 +109,78 @@ function Panel({ id, horizontal }: { id: string; horizontal: boolean }) {
   )
 }
 
-// A Discord server rail: WorkspaceRail is a vertical TabView with custom tiles.
+// Discord's tile: a circle at rest that morphs to a rounded square when its
+// tab is hovered or selected (filling with the workspace color), with a
+// mention badge. It reads the tab's state through `group-data-*`.
+function WorkspaceTile({
+  color = 'var(--primary)',
+  mentions,
+  children,
+}: {
+  color?: string
+  mentions?: number
+  children: ReactNode
+}) {
+  return (
+    <span
+      style={{ '--tile': color } as CSSProperties}
+      className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-ios text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-link"
+    >
+      {children}
+      {mentions ? (
+        <span className="absolute -right-[7px] -bottom-[6px] box-border flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-[3px] border-muted bg-destructive px-[3px] font-ios text-[10px] leading-none font-bold text-white">
+          {mentions > 99 ? '99+' : mentions}
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
+// The rail: a vertical TabView with a `workspace` bar. Home is
+// the first tab, over a separator; Add is an action, not a tab.
+function Rail({
+  server,
+  setServer,
+  homeMentions,
+}: {
+  server: string
+  setServer: (id: string) => void
+  homeMentions?: number
+}) {
+  return (
+    <TabView
+      orientation="vertical"
+      selectedKey={server}
+      onSelectionChange={(k) => setServer(String(k))}
+      className="contents"
+    >
+      <TabViewBar variant="workspace">
+        <TabViewList aria-label="Workspaces">
+          <TabViewTab id="home" textValue="Direct Messages">
+            <TabViewIndicator variant="pill" />
+            <WorkspaceTile mentions={homeMentions}>
+              <Icon name="bubble-oval" size={17} sw={2} />
+            </WorkspaceTile>
+          </TabViewTab>
+          <TabViewSeparator />
+          {servers.map((s) => (
+            <TabViewTab key={s.id} id={s.id} textValue={s.title}>
+              <TabViewIndicator variant="pill" attention={s.unread} />
+              <WorkspaceTile color={s.color} mentions={s.mentions}>
+                {s.label}
+              </WorkspaceTile>
+            </TabViewTab>
+          ))}
+        </TabViewList>
+        <TabViewFooter>
+          <TabViewAction aria-label="Add workspace" icon="plus" />
+        </TabViewFooter>
+      </TabViewBar>
+    </TabView>
+  )
+}
+
+// A Discord server rail beside the selected server's name.
 function ServerRail({
   server,
   setServer,
@@ -136,16 +205,7 @@ function ServerRail({
         color: 'var(--foreground)',
       }}
     >
-      <WorkspaceRail selectedKey={server} onSelectionChange={setServer}>
-        <WorkspaceRailList>
-          <WorkspaceRailHome mentions={2} />
-          <WorkspaceRailSeparator />
-          {servers.map((s) => (
-            <WorkspaceRailItem key={s.id} {...s} />
-          ))}
-        </WorkspaceRailList>
-        <WorkspaceRailAction />
-      </WorkspaceRail>
+      <Rail server={server} setServer={setServer} homeMentions={2} />
       <div
         style={{
           padding: '22px 24px',
@@ -164,7 +224,7 @@ function ServerRail({
         >
           {serverName}
         </div>
-        ChatKit's WorkspaceRail is a vertical TabView: tiles are tabs (Up/Down
+        A vertical TabView with a workspace bar: tiles are tabs (Up/Down
         arrows), the pill marks unread / hover / selected, and Add is an action,
         not a tab.
       </div>

@@ -4,16 +4,16 @@ import {
   Conversation,
   ConversationComposer,
   ConversationMessages,
+  Icon,
   MessageMarkdown,
-  SidebarUser,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarItem,
+  SidebarSection,
+  SidebarWorkspace,
   stripAttachmentRefs,
-  ThreadGroup,
-  ThreadItem,
-  ThreadList,
-  ThreadSidebar,
-  ThreadSidebarBrand,
-  ThreadSidebarFooter,
-  ThreadSidebarHeader,
+  useWorkbenchShell,
   UserMessage,
   WorkbenchComposer,
   WorkbenchHeader,
@@ -82,6 +82,49 @@ function Scaled({
   )
 }
 
+// The thread list, from the generic Sidebar parts. Picking a thread closes the
+// compact drawer.
+function Threads({
+  current,
+  onPick,
+}: {
+  current: string
+  onPick: (title: string) => void
+}) {
+  const shell = useWorkbenchShell()
+  return (
+    <nav aria-label="Threads" className="flex h-full flex-col bg-sidebar">
+      <SidebarHeader>
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <SidebarWorkspace name="Assistant" />
+          </div>
+          <WorkbenchSidebarClose />
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarSection title="Recent">
+          {RECENT.map((t) => (
+            <SidebarItem
+              key={t}
+              icon={<Icon name="bubble-left" size={15} sw={1.8} />}
+              label={t}
+              active={t === current}
+              onPress={() => {
+                onPick(t)
+                if (shell.compact) shell.setSidebarOpen(false)
+              }}
+            />
+          ))}
+        </SidebarSection>
+      </SidebarContent>
+      <SidebarFooter>
+        <SidebarWorkspace name="Ada Lovelace" detail="Pro plan" initial="AL" />
+      </SidebarFooter>
+    </nav>
+  )
+}
+
 function ChatOnly() {
   const [current, setCurrent] = useState(RECENT[0])
   const [messages, setMessages] = useState([
@@ -113,28 +156,7 @@ function ChatOnly() {
     <Scaled width={980} height={480}>
       <WorkbenchShell>
         <WorkbenchSidebar width={220}>
-          <ThreadSidebar>
-            <ThreadSidebarHeader>
-              <ThreadSidebarBrand>Assistant</ThreadSidebarBrand>
-              <WorkbenchSidebarClose />
-            </ThreadSidebarHeader>
-            <ThreadList>
-              <ThreadGroup label="Recent">
-                {RECENT.map((t) => (
-                  <ThreadItem
-                    key={t}
-                    active={t === current}
-                    onPress={() => setCurrent(t)}
-                  >
-                    {t}
-                  </ThreadItem>
-                ))}
-              </ThreadGroup>
-            </ThreadList>
-            <ThreadSidebarFooter>
-              <SidebarUser name="Ada Lovelace" detail="Pro plan" />
-            </ThreadSidebarFooter>
-          </ThreadSidebar>
+          <Threads current={current} onPick={setCurrent} />
         </WorkbenchSidebar>
         <WorkbenchMain>
           <WorkbenchHeader>

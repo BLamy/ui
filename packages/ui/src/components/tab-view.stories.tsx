@@ -96,7 +96,7 @@ export const VerticalRail: Story = {
   ),
 };
 
-/* ── Discord-style rail, from the same parts (the chat kit's WorkspaceRail is this composition) ── */
+/* ── Discord-style rail, from the same parts ── */
 const servers = [
   { id: 'bl', label: 'BL', color: '#0A84FF', title: 'BL UI HQ' },
   { id: 'cr', label: 'C', color: '#BF5AF2', title: 'Creamery', unread: true },
@@ -257,15 +257,13 @@ export const PanelsFirstNested: Story = {
   ),
 };
 
-/* ── Workspace rail: the chat kit's rail as a `workspace` bar ── */
+/* ── Workspace rail: a `workspace` bar (the discord-clone block's server rail; its tile is the block's WorkspaceTile) ── */
 const workspaces = [
   { id: 'blui', label: 'T', color: '#0A84FF', title: 'BL UI HQ' },
   { id: 'creamery', label: 'C', color: '#BF5AF2', title: 'Creamery', unread: true },
   { id: 'labs', label: 'L', color: '#32D74B', title: 'Labs', mentions: 4 },
   { id: 'ops', label: 'O', color: '#FF9F0A', title: 'Ops', unread: true, mentions: 12 },
 ];
-/** The direct-messages glyph (the chat icon set's `dm`), drawn with Icon. */
-const DM_SHAPE = [{ d: 'M12 4.5c4.7 0 8.5 3 8.5 6.8s-3.8 6.8-8.5 6.8c-1 0-1.9-.1-2.8-.4L5 19.5l1.1-3.4C4.5 14.9 3.5 13.2 3.5 11.3c0-3.8 3.8-6.8 8.5-6.8z' }];
 
 /** Discord's tile: a circle at rest that morphs to a rounded square when hovered or selected (filling with its
     color), with a mention badge. Styled from the tab's state through `group-data-*`. */
@@ -290,7 +288,7 @@ function WorkspaceRailDemo() {
         <TabViewList aria-label="Workspaces">
           <TabViewTab id="home" textValue="Direct Messages">
             <TabViewIndicator variant="pill" />
-            <WorkspaceTile mentions={2}><Icon shapes={DM_SHAPE} size={17} sw={2} /></WorkspaceTile>
+            <WorkspaceTile mentions={2}><Icon name="bubble-oval" size={17} sw={2} /></WorkspaceTile>
           </TabViewTab>
           <TabViewSeparator />
           {workspaces.map((w) => (
@@ -308,7 +306,7 @@ function WorkspaceRailDemo() {
   );
 }
 
-/** The workspace switcher (was the chat kit's `WorkspaceRail`): a vertical TabView with `TabViewBar
+/** The workspace switcher (replaces 1.x's `WorkspaceRail`): a vertical TabView with `TabViewBar
     variant="workspace"` in the chat scope. Home is the first tab over a separator; tiles are custom tab content
     with the leading-edge `pill` indicator (a nub for unread, taller on hover, full when selected) and mention
     badges; "Add workspace" is a `TabViewAction` in the footer, which follows the list — the list scrolls once

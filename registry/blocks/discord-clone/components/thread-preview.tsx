@@ -1,9 +1,8 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
 import { ChatAvatar } from './chat-avatar';
-import type { ChatUser } from '../../lib/chat/chat-users';
-import { Haptics } from '../../lib/haptics';
-import { cn } from '../../lib/utils';
+import type { ChatUser } from './chat-users';
+import { Haptics, cn } from '@brett_lamy/ui';
 
 /* ══ ThreadPreview — the card under a message that opens its thread ══
    <ThreadPreview title="More relevant bugs" count={2} onPress={open}>

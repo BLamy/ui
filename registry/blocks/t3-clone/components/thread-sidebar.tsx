@@ -1,13 +1,8 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button } from '../../lib/workbench/press';
-import { cn, wbPress, wbBrandTile } from '../../lib/workbench/util';
-import { vib, tick } from '../../lib/workbench/haptics';
-import { IconBtn } from '../../lib/workbench/icons';
-import { Icon, type IconName } from '../../lib/icon';
-import { springs } from '../../lib/workbench/motion';
-import { useOptionalWorkbenchShell } from '../../templates/workbench-shell';
+import { Button } from 'react-aria-components';
+import { Haptics, Icon, IconBtn, cn, springs, useOptionalWorkbenchShell, type IconName } from '@brett_lamy/ui';
 
 /* ══ Thread sidebar parts ══
    <ThreadSidebar>
@@ -20,12 +15,20 @@ import { useOptionalWorkbenchShell } from '../../templates/workbench-shell';
      </ThreadList>
      <ThreadSidebarFooter><SidebarNotice/><SidebarFooterItem/> | <SidebarUser/></ThreadSidebarFooter>
    </ThreadSidebar>
-   Inside a WorkbenchShell, picking a thread or starting a new one closes the compact drawer. */
+   Inside a WorkbenchShell, picking a thread or starting a new one closes the compact drawer.
+   (T3 Code's sidebar, kept with the block: the library's generic sidebar is `Sidebar*`.) */
 
 type Div = { className?: string; style?: React.CSSProperties; children?: React.ReactNode };
 
+/** Pressables: no tap flash, the host font, and a brightness nudge on hover (dimmer on light surfaces, brighter
+    on dark ones). */
+const press = '[-webkit-tap-highlight-color:transparent] [font-family:inherit] hover:brightness-[.97] dark:hover:brightness-[1.12]';
+
+/** The brand tile: the accent into iOS indigo (a fixed brand color). */
+const brandTile = 'bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]';
+
 /* Sidebar row chrome shared by threads, the project switcher, "Show more" and footer items. */
-const rowBtn = cn(wbPress, 'flex cursor-pointer items-center gap-2 rounded-lg border-0 text-left hover:bg-secondary!');
+const rowBtn = cn(press, 'flex cursor-pointer items-center gap-2 rounded-lg border-0 text-left hover:bg-secondary!');
 
 /** Closes the compact drawer after a navigation. */
 function useCloseDrawer() {
@@ -56,7 +59,7 @@ export function ThreadSidebarBrand({ icon, children, className }: { icon?: React
   return (
     <>
       {icon ?? (
-        <span className={cn(wbBrandTile, 'grid size-[22px] shrink-0 place-items-center rounded-md')}>
+        <span className={cn(brandTile, 'grid size-[22px] shrink-0 place-items-center rounded-md')}>
           <Icon name="asterisk" size={13} sw={2.2} className="text-white" />
         </span>
       )}
@@ -106,7 +109,7 @@ export function ThreadNewButton({ onPress, label = 'New thread', className }: { 
       size={17}
       className={className}
       onPress={() => {
-        vib([8]);
+        Haptics.impact('light');
         onPress?.();
         close();
       }}
@@ -127,7 +130,7 @@ export function ProjectSwitcher({ children = 'All projects', onPress, className 
       data-slot="project-switcher"
       className={cn(rowBtn, 'mx-2 bg-transparent px-2 py-1.5 text-[12.5px] font-semibold text-muted-foreground', className)}
       onPress={() => {
-        tick();
+        Haptics.selection();
         onPress?.();
       }}
     >
@@ -169,9 +172,9 @@ export function ThreadGroup({ label, collapsible, defaultOpen = true, open: open
       {collapsible ? (
         <Button
           aria-expanded={open}
-          className={cn(wbPress, 'box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1')}
+          className={cn(press, 'box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1')}
           onPress={() => {
-            tick();
+            Haptics.selection();
             setOwnOpen(!open);
             onOpenChange?.(!open);
           }}
@@ -226,7 +229,7 @@ export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left'
       aria-current={active ? 'page' : undefined}
       className={cn(rowBtn, 'box-border w-full px-2 py-1.5 text-[13px] text-foreground', active ? 'bg-secondary-strong' : 'bg-transparent', className)}
       onPress={() => {
-        tick();
+        Haptics.selection();
         onPress?.();
         close();
       }}
@@ -254,7 +257,7 @@ export function ThreadShowMore({ count, onPress, className }: { count: number; o
       data-slot="thread-show-more"
       className={cn(rowBtn, 'w-full bg-transparent px-2 py-1.5 text-[12.5px] text-tertiary-foreground', className)}
       onPress={() => {
-        tick();
+        Haptics.selection();
         onPress?.();
       }}
     >
@@ -278,14 +281,14 @@ export function SidebarNotice({ icon = 'arrow-down-to-line', onPress, onDismiss,
     <div data-slot="sidebar-notice" className={cn('mb-1.5 flex items-center gap-2 rounded-[9px] bg-primary/12 px-2.5 py-[7px]', className)}>
       <Icon name={icon} size={14} sw={2} className="text-primary" />
       {onPress ? (
-        <Button className={cn(wbPress, 'flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-primary')} onPress={onPress}>
+        <Button className={cn(press, 'flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-primary')} onPress={onPress}>
           {children}
         </Button>
       ) : (
         <span className="flex-1 text-[12.5px] font-semibold text-primary">{children}</span>
       )}
       {onDismiss !== undefined ? (
-        <Button aria-label="Dismiss" className={cn(wbPress, 'grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-tertiary-foreground')} onPress={onDismiss}>
+        <Button aria-label="Dismiss" className={cn(press, 'grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-tertiary-foreground')} onPress={onDismiss}>
           <Icon name="xmark-large" size={13} sw={2} />
         </Button>
       ) : null}
@@ -300,7 +303,7 @@ export function SidebarFooterItem({ icon, onPress, className, children }: { icon
       data-slot="sidebar-footer-item"
       className={cn(rowBtn, 'w-full bg-transparent px-2 py-[7px] text-[13px] text-muted-foreground', className)}
       onPress={() => {
-        tick();
+        Haptics.selection();
         onPress?.();
       }}
     >
@@ -332,14 +335,14 @@ export function SidebarUser({ name, detail, avatar, onPress, className }: Sideba
       data-slot="sidebar-user"
       className={cn(rowBtn, 'w-full bg-transparent px-2 py-1.5', className)}
       onPress={() => {
-        tick();
+        Haptics.selection();
         onPress?.();
       }}
     >
       {avatar ? (
         <img src={avatar} alt="" className="size-7 shrink-0 rounded-full object-cover" />
       ) : (
-        <span className={cn(wbBrandTile, 'grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white')}>
+        <span className={cn(brandTile, 'grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white')}>
           {initials}
         </span>
       )}

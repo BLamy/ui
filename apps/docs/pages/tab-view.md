@@ -1,6 +1,6 @@
 # TabView
 
-A compositional tab container on react-aria's `Tabs`. The same parts make the iOS bottom bar, a vertical rail along the left edge, or a fully custom bar — ChatKit's Discord-style [WorkspaceRail](https://blamy.github.io/ui/#/chat-shell) is one of them.
+A compositional tab container on react-aria's `Tabs`. The same parts make the iOS bottom bar, a vertical rail along the left edge, or a fully custom bar — a Discord-style workspace rail for a [ChatShell](https://blamy.github.io/ui/#/chat-shell) is one of them.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="npm" %}
@@ -112,40 +112,34 @@ Or style off the data attributes: give the tab `className="group"` and use `grou
 
 ## Building a Discord rail
 
-A plain bar, custom tiles as tabs, the pill indicator, a separator under Home, and "Add a server" as an action. The rail gets tab semantics for free: one tab stop, Up/Down between servers, Home/End to jump.
+`TabViewBar variant="workspace"` is the rail: a 52px muted column with a hairline. Its list scrolls on its own once the tiles outgrow the rail, the footer follows the last tile, `TabViewSeparator` is the short rule under Home, `TabViewAction` the dashed "Add" tile, and the `pill` indicator on the leading edge rides the bouncy spring. Custom tiles are the tabs' content; the rail gets tab semantics for free: one tab stop, Up/Down between servers, Home/End to jump.
 
 ```tsx
 <TabView
   orientation="vertical" selectedKey={server} onSelectionChange={setServer}
 >
-  <TabViewBar variant="plain" className="w-[52px] items-center gap-2 py-2.5">
-    <TabViewList aria-label="Servers" className="w-full items-center gap-2">
-      <TabViewTab
-        id="home" textValue="Direct Messages"
-        className="group flex w-full justify-center"
-      >
+  <TabViewBar variant="workspace">
+    <TabViewList aria-label="Workspaces">
+      <TabViewTab id="home" textValue="Direct Messages">
         <TabViewIndicator variant="pill" />
-        <Tile icon="message" />
+        <Tile><Icon name="bubble-oval" size={17} sw={2} /></Tile>
       </TabViewTab>
-      <TabViewSeparator className="h-0.5 w-5 rounded-full" />
+      <TabViewSeparator />
       {servers.map((s) => (
-        <TabViewTab
-          key={s.id} id={s.id} textValue={s.name}
-          className="group flex w-full justify-center"
-        >
+        <TabViewTab key={s.id} id={s.id} textValue={s.name}>
           <TabViewIndicator variant="pill" attention={s.unread} />
-          <Tile label={s.label} color={s.color} mentions={s.mentions} />
+          <Tile color={s.color} mentions={s.mentions}>{s.label}</Tile>
         </TabViewTab>
       ))}
     </TabViewList>
-    <TabViewAction aria-label="Add a server" onPress={addServer}>
-      <Tile icon="plus" />
-    </TabViewAction>
+    <TabViewFooter>
+      <TabViewAction aria-label="Add a server" icon="plus" onPress={addServer} />
+    </TabViewFooter>
   </TabViewBar>
 </TabView>
 ```
 
-`Tile` is yours: a rounded square that reads `group-data-selected:` for its selected color. ChatKit ships this composition as `WorkspaceRail` and its parts (`WorkspaceRailList`, `WorkspaceRailItem` with `unread` / `mentions`, `WorkspaceRailHome`, `WorkspaceRailSeparator`, `WorkspaceRailAction`), themed by the chat's `--ck-*` tokens so it follows ChatShell's light and dark appearance.
+`Tile` is yours: a circle that reads `group-data-hovered:` / `group-data-selected:` to morph into a rounded square in its color (the examples below carry a copy; the discord-clone block ships it as `WorkspaceTile`). Put the rail in a `chat` theme scope — `ChatShell` opens one — and it follows light and dark.
 
 ## TabBar and navigation stacks
 
@@ -210,6 +204,6 @@ A mail client's leading rail: a logo in `TabViewHeader`, the mailboxes as tabs, 
 
 ### Chat workspaces
 
-ChatKit's `WorkspaceRail` is a vertical `TabView` with a plain bar and custom tiles. It reads the `--ck-*` tokens, so `chatVars(appearance)` keeps it in step with light and dark.
+A vertical `TabView` with a `workspace` bar beside a channel column, in a `chat` theme scope (`themeScopeProps({ scope: 'chat', appearance })`) that keeps it in step with light and dark.
 
 {% demo src="tab-view/chat-workspaces" %}

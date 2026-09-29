@@ -1,10 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import {
-  ChannelGroup,
-  ChannelItem,
-  ChannelList,
-  ChatAvatar,
-  ChatComposer,
+  Avatar,
   ChatShell,
   ChatShellFooter,
   ChatShellHeader,
@@ -13,24 +9,26 @@ import {
   ChatShellNavTrigger,
   ChatShellSidebar,
   ChatShellTitle,
-  ChatUsersProvider,
-  Message,
-  MessageAuthor,
-  MessageAvatar,
-  MessageBody,
-  MessageContent,
-  MessageHeader,
-  MessageList,
-  MessageTimestamp,
-  ServerHeader,
-  type ChatUser,
+  Composer,
+  ComposerCard,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSend,
+  ComposerSpacer,
+  SidebarContent,
+  SidebarHeader,
+  SidebarItem,
+  SidebarSection,
+  useChatShell,
 } from '@brett_lamy/ui'
 
-const people: Record<string, ChatUser> = {
-  maya: { name: 'Maya', c: '#FF375F', role: '#FF8FA8' },
-  jonas: { name: 'Jonas', c: '#30B0C7', role: '#7FD6E6' },
-  priya: { name: 'Priya', c: '#FF9F0A', role: '#FFC46B' },
-  me: { name: 'Ada', c: '#0A84FF', role: '#7EB6FF' },
+type Person = { f: string; l: string }
+
+const people: Record<string, Person> = {
+  maya: { f: 'Maya', l: 'Lindqvist' },
+  jonas: { f: 'Jonas', l: 'Brandt' },
+  priya: { f: 'Priya', l: 'Raman' },
+  me: { f: 'Ada', l: 'Lovelace' },
 }
 
 const history: Record<string, [string, string][]> = {
@@ -41,6 +39,71 @@ const history: Record<string, [string, string][]> = {
   ],
   jonas: [['jonas', 'Can you review the rail PR?']],
   priya: [['priya', 'Lunch Thursday?']],
+}
+
+// One transcript row: avatar, name and time, text.
+function Line({
+  who,
+  time,
+  children,
+}: {
+  who: Person
+  time: string
+  children: ReactNode
+}) {
+  return (
+    <div className="flex gap-3 px-4 py-1.5">
+      <Avatar c={who} size={32} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[13.5px] font-semibold text-foreground">
+            {who.f}
+          </span>
+          <span className="text-[11px] text-tertiary-foreground">{time}</span>
+        </div>
+        <p className="m-0 text-[13.5px] leading-normal text-foreground">
+          {children}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// The DM list. Picking a conversation also closes the compact drawer.
+function Conversations({
+  who,
+  onPick,
+}: {
+  who: string
+  onPick: (id: string) => void
+}) {
+  const shell = useChatShell()
+  return (
+    <ChatShellSidebar>
+      <SidebarHeader>
+        <div className="px-[9px] font-ios text-[14px] font-bold text-foreground">
+          Direct messages
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarSection title="Recent">
+          {['maya', 'jonas', 'priya'].map((id) => (
+            <SidebarItem
+              key={id}
+              icon={<Avatar c={people[id]} size={18} />}
+              label={people[id].f}
+              active={who === id}
+              badge={id === 'jonas' ? 1 : undefined}
+              onPress={() => {
+                onPick(id)
+                shell.setNavOpen(false)
+              }}
+            />
+          ))}
+        </SidebarSection>
+      </SidebarContent>
+    </ChatShellSidebar>
+  )
 }
 
 // A rounded, hairline-bordered window with the page background.
@@ -71,56 +134,41 @@ export default function DirectMessages() {
   return (
     <Window>
       <div style={{ height: 420, display: 'flex' }}>
-        <ChatUsersProvider users={people}>
-          <ChatShell breakpoint={640}>
-            <ChatShellNav>
-              <ChatShellSidebar>
-                <ServerHeader>Direct messages</ServerHeader>
-                <ChannelList selectedKey={who} onSelectionChange={setWho}>
-                  <ChannelGroup label="Recent">
-                    {['maya', 'jonas', 'priya'].map((id) => (
-                      <ChannelItem
-                        key={id}
-                        id={id}
-                        icon={<ChatAvatar user={people[id]} size={18} />}
-                        mentions={id === 'jonas' ? 1 : undefined}
-                      >
-                        {people[id].name}
-                      </ChannelItem>
-                    ))}
-                  </ChannelGroup>
-                </ChannelList>
-              </ChatShellSidebar>
-            </ChatShellNav>
-            <ChatShellMain>
-              <ChatShellHeader>
-                <ChatShellNavTrigger />
-                <ChatAvatar user={people[who]} size={22} />
-                <ChatShellTitle>{people[who].name}</ChatShellTitle>
-              </ChatShellHeader>
-              <MessageList scrollKey={who}>
-                {history[who].map(([from, text], i) => (
-                  <Message key={i} user={people[from]}>
-                    <MessageAvatar />
-                    <MessageBody>
-                      <MessageHeader>
-                        <MessageAuthor />
-                        <MessageTimestamp>Today</MessageTimestamp>
-                      </MessageHeader>
-                      <MessageContent>{text}</MessageContent>
-                    </MessageBody>
-                  </Message>
-                ))}
-              </MessageList>
-              <ChatShellFooter>
-                <ChatComposer
-                  placeholder={'Message ' + people[who].name}
-                  onSend={() => {}}
-                />
-              </ChatShellFooter>
-            </ChatShellMain>
-          </ChatShell>
-        </ChatUsersProvider>
+        <ChatShell breakpoint={640}>
+          <ChatShellNav>
+            <Conversations who={who} onPick={setWho} />
+          </ChatShellNav>
+          <ChatShellMain>
+            <ChatShellHeader>
+              <ChatShellNavTrigger />
+              <Avatar c={people[who]} size={22} />
+              <ChatShellTitle>{people[who].f}</ChatShellTitle>
+            </ChatShellHeader>
+            <div
+              key={who}
+              role="log"
+              aria-live="polite"
+              className="min-h-0 flex-1 overflow-y-auto py-3"
+            >
+              {history[who].map(([from, text], i) => (
+                <Line key={i} who={people[from]} time="Today">
+                  {text}
+                </Line>
+              ))}
+            </div>
+            <ChatShellFooter>
+              <Composer>
+                <ComposerCard>
+                  <ComposerInput placeholder={'Message ' + people[who].f} />
+                  <ComposerFooter>
+                    <ComposerSpacer />
+                    <ComposerSend />
+                  </ComposerFooter>
+                </ComposerCard>
+              </Composer>
+            </ChatShellFooter>
+          </ChatShellMain>
+        </ChatShell>
       </div>
     </Window>
   )

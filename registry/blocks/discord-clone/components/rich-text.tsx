@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { useChatUsers, type ChatUsers } from '../../lib/chat/chat-users';
+import { useChatUsers, type ChatUsers } from './chat-users';
 
 export interface RichTextProps {
   text: string;

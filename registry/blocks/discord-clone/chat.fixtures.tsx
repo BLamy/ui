@@ -1,14 +1,11 @@
-/* Story fixtures for the chat primitives (not exported from the package). */
+/* Story fixtures for the block's chat parts (stories only — not a block file, so not installed). */
 import { Fragment, type CSSProperties, type ReactNode } from 'react';
-import type { ChatUsers } from '../../lib/chat/chat-users';
-import { Icon } from '../../lib/icon';
-import { themeScopeProps, type Appearance } from '../../lib/theme';
-import { cn } from '../../lib/utils';
-import { ChatShellSidebar } from '../../templates/chat-shell';
-import { ChatAvatar } from './chat-avatar';
-import { ChannelGroup, ChannelItem, ChannelList, ChannelThreadItem } from './channel-list';
-import { ServerHeader } from './server-header';
-import { UserPanel, UserPanelAction, UserPanelInfo, UserPanelName, UserPanelStatus } from './user-panel';
+import { ChatShellSidebar, Icon, cn, themeScopeProps, type Appearance } from '@brett_lamy/ui';
+import type { ChatUsers } from './components/chat-users';
+import { ChatAvatar } from './components/chat-avatar';
+import { ChannelGroup, ChannelItem, ChannelList, ChannelThreadItem } from './components/channel-list';
+import { ServerHeader } from './components/server-header';
+import { UserPanel, UserPanelAction, UserPanelInfo, UserPanelName, UserPanelStatus } from './components/user-panel';
 
 /** A story frame on the chat scope (dark by default). A plain element, not a `data-slot` part, so the story
     content keeps the page's own box model. */

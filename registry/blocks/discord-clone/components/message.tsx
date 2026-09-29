@@ -3,10 +3,8 @@ import { Button, ToggleButton, composeRenderProps } from 'react-aria-components'
 import { cva, type VariantProps } from 'class-variance-authority';
 import { ChatAvatar } from './chat-avatar';
 import { RichText } from './rich-text';
-import type { ChatUser } from '../../lib/chat/chat-users';
-import { titleRef } from '../../lib/chat/title-ref';
-import { Haptics } from '../../lib/haptics';
-import { cn } from '../../lib/utils';
+import type { ChatUser } from './chat-users';
+import { Haptics, cn } from '@brett_lamy/ui';
 
 /* ══ Message — one row of a transcript, from parts ══
    <Message user={ada}>
@@ -26,6 +24,11 @@ interface MessageContextValue {
   variant: 'default' | 'continued';
 }
 const MessageContext = createContext<MessageContextValue>({ variant: 'default' });
+
+/** react-aria's Button drops `title`, so the tooltip goes on through a ref. */
+const titleRef = (title: string) => (el: HTMLElement | null) => {
+  if (el) el.title = title;
+};
 
 export const messageVariants = cva(
   'group/message relative flex gap-[11px] px-[18px] font-ios [&:hover]:bg-accent',

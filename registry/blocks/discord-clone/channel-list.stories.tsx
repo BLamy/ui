@@ -1,12 +1,11 @@
 import { useState, type CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ChannelGroup, ChannelItem, ChannelList } from './channel-list';
-import { ChatAvatar } from './chat-avatar';
-import { ServerHeader } from './server-header';
-import { ChatShellSidebar } from '../../templates/chat-shell';
-import { ChatUsersProvider } from '../../lib/chat/chat-users';
+import { ChannelGroup, ChannelItem, ChannelList } from './components/channel-list';
+import { ChatAvatar } from './components/chat-avatar';
+import { ServerHeader } from './components/server-header';
+import { ChatShellSidebar } from '@brett_lamy/ui';
+import { ChatUsersProvider } from './components/chat-users';
 import { FixtureSidebar, FixtureUserPanel, USERS, ChatFrame } from './chat.fixtures';
-import '../../styles.css';
 
 /* The channel sidebar: ChatShellSidebar › ServerHeader · ChannelList (ChannelGroup › ChannelItem,
    ChannelThreadItem) · UserPanel. */

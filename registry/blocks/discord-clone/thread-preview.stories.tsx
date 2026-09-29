@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ThreadHeader, ThreadPreview, ThreadPreviewReply } from './thread-preview';
+import { ThreadHeader, ThreadPreview, ThreadPreviewReply } from './components/thread-preview';
 import { USERS, ChatFrame } from './chat.fixtures';
-import '../../styles.css';
 
 interface Args {
   title: string;

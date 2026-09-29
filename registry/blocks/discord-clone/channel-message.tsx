@@ -1,6 +1,6 @@
+import { Icon } from '@brett_lamy/ui';
+import { useChatUsers } from './components/chat-users';
 import {
-  ChatIcon,
-  chatIconPaths,
   Message,
   MessageAction,
   MessageActions,
@@ -13,10 +13,8 @@ import {
   MessageReaction,
   MessageReactions,
   MessageTimestamp,
-  ThreadPreview,
-  ThreadPreviewReply,
-  useChatUsers,
-} from '@brett_lamy/ui';
+} from './components/message';
+import { ThreadPreview, ThreadPreviewReply } from './components/thread-preview';
 import type { MessageData } from './data';
 
 export interface ChannelMessageProps {
@@ -63,7 +61,7 @@ export function ChannelMessage({ message, onToggleReaction, onOpenThread, appear
         </MessageAction>
         {onOpenThread && (
           <MessageAction label={thread ? 'Open thread' : 'Start thread'} onPress={onOpenThread}>
-            <ChatIcon d={chatIconPaths.thread} size={14} />
+            <Icon name="text-bubble" size={14} sw={1.9} className="inline" />
           </MessageAction>
         )}
       </MessageActions>

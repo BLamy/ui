@@ -1,8 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import {
-  ChatAvatar,
-  ChatComposer,
-  Icon,
+  Avatar,
   ChatShell,
   ChatShellDescription,
   ChatShellFooter,
@@ -11,19 +9,36 @@ import {
   ChatShellHeaderActions,
   ChatShellMain,
   ChatShellTitle,
-  Message,
-  MessageAuthor,
-  MessageAvatar,
-  MessageBody,
-  MessageContent,
-  MessageHeader,
-  MessageList,
-  TypingIndicator,
-  type ChatUser,
+  Composer,
+  ComposerCard,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSend,
+  ComposerSpacer,
+  Icon,
 } from '@brett_lamy/ui'
 
-const agent: ChatUser = { name: 'Juniper', c: '#30B06E', role: '#30B06E' }
-const you: ChatUser = { name: 'You', c: '#8E8E93', role: '#8E8E93' }
+type Person = { f: string; l: string }
+
+const agent: Person = { f: 'Juniper', l: 'Hale' }
+const you: Person = { f: 'You', l: '' }
+
+// One transcript row: avatar, name, text.
+function Line({ who, children }: { who: Person; children: ReactNode }) {
+  return (
+    <div className="flex gap-2.5 px-4 py-1.5">
+      <Avatar c={who} size={28} />
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] font-semibold text-foreground">
+          {who.f}
+        </div>
+        <p className="m-0 text-[13.5px] leading-normal text-foreground">
+          {children}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 // A rounded, hairline-bordered window with the page background; `width` caps
 // it, centered.
@@ -56,6 +71,7 @@ export default function SupportChat() {
   ])
   const [typing, setTyping] = useState(false)
   const send = (text: string) => {
+    if (!text) return
     setLog((l) => [...l, { from: you, text }])
     setTyping(true)
     setTimeout(() => {
@@ -72,7 +88,7 @@ export default function SupportChat() {
         <ChatShell tint="#30B06E">
           <ChatShellMain>
             <ChatShellHeader>
-              <ChatAvatar user={agent} size={24} status="online" />
+              <Avatar c={agent} size={24} />
               <ChatShellTitle>Support</ChatShellTitle>
               <ChatShellDescription>
                 Replies in a few minutes
@@ -83,22 +99,32 @@ export default function SupportChat() {
                 </ChatShellHeaderAction>
               </ChatShellHeaderActions>
             </ChatShellHeader>
-            <MessageList>
+            <div
+              role="log"
+              aria-live="polite"
+              className="min-h-0 flex-1 overflow-y-auto py-3"
+            >
               {log.map((m, i) => (
-                <Message key={i} user={m.from} appear={i > 0}>
-                  <MessageAvatar size={28} />
-                  <MessageBody>
-                    <MessageHeader>
-                      <MessageAuthor />
-                    </MessageHeader>
-                    <MessageContent>{m.text}</MessageContent>
-                  </MessageBody>
-                </Message>
+                <Line key={i} who={m.from}>
+                  {m.text}
+                </Line>
               ))}
-              {typing && <TypingIndicator>Juniper is typing…</TypingIndicator>}
-            </MessageList>
+              {typing && (
+                <div className="px-4 py-1 text-[12px] text-muted-foreground">
+                  Juniper is typing…
+                </div>
+              )}
+            </div>
             <ChatShellFooter>
-              <ChatComposer placeholder="Write a message…" onSend={send} />
+              <Composer onSubmit={send}>
+                <ComposerCard>
+                  <ComposerInput placeholder="Write a message…" />
+                  <ComposerFooter>
+                    <ComposerSpacer />
+                    <ComposerSend />
+                  </ComposerFooter>
+                </ComposerCard>
+              </Composer>
             </ChatShellFooter>
           </ChatShellMain>
         </ChatShell>

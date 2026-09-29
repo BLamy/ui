@@ -7,24 +7,25 @@ import { useContainerWidth } from '../lib/container';
 import { Haptics } from '../lib/haptics';
 import { useAppearance, themeScopeProps, type Appearance } from '../lib/theme';
 import { Icon } from '../lib/icon';
-import { ChatShellContext, useChatShell, type ChatShellContextValue } from '../lib/chat/chat-shell-context';
+import { ChatShellContext, useChatShell, useOptionalChatShell, type ChatShellContextValue } from '../lib/chat/chat-shell-context';
 import { cn } from '../lib/utils';
 
-export { useChatShell, type ChatShellContextValue };
+export { useChatShell, useOptionalChatShell, type ChatShellContextValue };
 
 /* ══ ChatShell — the layout root of a team chat, and its regions ══
    <ChatShell>                     measures itself, provides { width, compact, navOpen }, applies --ck-* tokens
      <ChatShellNav>                rail + sidebar: a docked column when wide, one left EdgeDrawer when compact
-       <WorkspaceRail>…            the server rail (components/chat/workspace-rail)
-       <ChatShellSidebar>…         the channel column: ServerHeader · ChannelList · UserPanel
+       <TabView orientation="vertical"><TabViewBar variant="workspace">…   an optional workspace rail
+       <ChatShellSidebar>…         the channel column (header · channel list · signed-in user)
      <ChatShellMain>               the conversation column
        <ChatShellHeader>…          NavTrigger · HeaderIcon · Title · Description · HeaderActions
-       <MessageList>…              transcript (components/chat/message-list)
+       …                           the transcript (e.g. a scrolling `role="log"` region)
        <ChatShellFooter>…          composer
      <ChatShellAside>              docked member list, shown from `minWidth` up
      <ChatShellPanel>              thread panel: docks as a column from `dockWidth`, overlays below it
    Every region is an ordinary element — leave out what you don't need (a DM view has no rail; a support
-   widget has no nav at all). Responsive behaviour comes from AdaptivePane and SideDrawer. */
+   widget has no nav at all). Responsive behaviour comes from AdaptivePane and SideDrawer. The Discord-style
+   channel, message and member parts live in the discord-clone registry block. */
 
 export interface ChatShellProps extends Omit<ComponentProps<'div'>, 'ref'> {
   /** container width below which the navigation moves into a drawer */
@@ -99,7 +100,8 @@ export interface ChatShellNavProps {
 }
 
 /** Holds the rail and the sidebar. Wide: a docked column. Compact: a left EdgeDrawer over a scrim, opened by
- *  `ChatShellNavTrigger` and closed by the scrim, `ServerHeader`'s close button or picking a channel. */
+ *  `ChatShellNavTrigger` and closed by the scrim or by anything that calls `useChatShell().setNavOpen(false)` (a close button, picking a
+ *  channel). */
 export function ChatShellNav({ children, className, style }: ChatShellNavProps) {
   const { compact, navOpen, setNavOpen, registerNav } = useChatShell();
   useLayoutEffect(registerNav, [registerNav]);
@@ -144,7 +146,7 @@ export function ChatShellNavTrigger({ className, children, onPress, ...props }: 
   );
 }
 
-/** The channel column: a 222px surface that stacks ServerHeader, ChannelList and UserPanel. */
+/** The channel column: a 222px sidebar surface (a header, the channel list, the signed-in user). */
 export function ChatShellSidebar({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div

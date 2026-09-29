@@ -15,21 +15,29 @@ import {
   ChatShellPanel,
   ChatShellSidebar,
   ChatShellTitle,
+  Icon,
+  TabView,
+  TabViewAction,
+  TabViewBar,
+  TabViewFooter,
+  TabViewIndicator,
+  TabViewList,
+  TabViewTab,
   useChatShell,
-} from './chat-shell';
-import { Icon } from '../lib/icon';
-import { ChatUsersProvider, type ChatUser } from '../lib/chat/chat-users';
-import { ChatAvatar } from '../components/chat/chat-avatar';
-import { ChannelGroup, ChannelItem, ChannelList } from '../components/chat/channel-list';
-import { ChatComposer } from '../components/chat/chat-composer';
-import { MemberGroup, MemberItem, MemberList } from '../components/chat/member-list';
-import { Message, MessageAuthor, MessageAvatar, MessageBody, MessageContent, MessageHeader, MessageTimestamp } from '../components/chat/message';
-import { DateDivider, MessageList, TypingIndicator } from '../components/chat/message-list';
-import { ServerHeader } from '../components/chat/server-header';
-import { ThreadHeader } from '../components/chat/thread-preview';
-import { WorkspaceRail, WorkspaceRailAction, WorkspaceRailItem, WorkspaceRailList } from '../components/chat/workspace-rail';
-import { FixtureSidebar, FixtureUserPanel, USERS } from '../components/chat/chat.fixtures';
-import '../styles.css';
+} from '@brett_lamy/ui';
+import { ChatUsersProvider, type ChatUser } from './components/chat-users';
+import { ChatAvatar } from './components/chat-avatar';
+import { ChannelGroup, ChannelItem, ChannelList } from './components/channel-list';
+import { ChatComposer } from './components/chat-composer';
+import { MemberGroup, MemberItem, MemberList } from './components/member-list';
+import { Message, MessageAuthor, MessageAvatar, MessageBody, MessageContent, MessageHeader, MessageTimestamp } from './components/message';
+import { DateDivider, MessageList, TypingIndicator } from './components/message-list';
+import { ServerHeader } from './components/server-header';
+import { ThreadHeader } from './components/thread-preview';
+import { WorkspaceTile } from './components/workspace-rail';
+import { FixtureSidebar, FixtureUserPanel, USERS } from './chat.fixtures';
+
+/* ChatShell (a library template) composed with the discord-clone block's parts. */
 
 interface FrameArgs {
   width: number;
@@ -74,13 +82,23 @@ function ShellDemo({ width, height, defaultNavOpen }: FrameArgs) {
     <Frame width={width} height={height}>
       <ChatShell breakpoint={880} defaultNavOpen={defaultNavOpen}>
         <ChatShellNav>
-          <WorkspaceRail defaultSelectedKey="blui">
-            <WorkspaceRailList>
-              <WorkspaceRailItem id="blui" label="T" title="BL UI HQ" />
-              <WorkspaceRailItem id="creamery" label="C" color="#BF5AF2" title="Creamery" />
-            </WorkspaceRailList>
-            <WorkspaceRailAction />
-          </WorkspaceRail>
+          <TabView orientation="vertical" defaultSelectedKey="blui" className="contents">
+            <TabViewBar variant="workspace">
+              <TabViewList aria-label="Workspaces">
+                <TabViewTab id="blui" textValue="BL UI HQ">
+                  <TabViewIndicator variant="pill" />
+                  <WorkspaceTile>T</WorkspaceTile>
+                </TabViewTab>
+                <TabViewTab id="creamery" textValue="Creamery">
+                  <TabViewIndicator variant="pill" />
+                  <WorkspaceTile color="#BF5AF2">C</WorkspaceTile>
+                </TabViewTab>
+              </TabViewList>
+              <TabViewFooter>
+                <TabViewAction aria-label="Add workspace" icon="plus" />
+              </TabViewFooter>
+            </TabViewBar>
+          </TabView>
           <FixtureSidebar selected={cur} onSelect={setCur} />
         </ChatShellNav>
         <DemoMain />

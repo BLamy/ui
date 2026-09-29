@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, type ComponentProps, type ReactNode } from 'react';
 import { Button, Input, composeRenderProps } from 'react-aria-components';
-import { Icon } from '../../lib/icon';
-import { Haptics } from '../../lib/haptics';
-import { cn } from '../../lib/utils';
+import { Haptics, Icon, cn } from '@brett_lamy/ui';
+import { cva } from 'class-variance-authority';
 
 /* ══ ChatComposer — the message field ══
    <ChatComposer onSend={send} placeholder="Message #dev" />      // input + send button
@@ -91,6 +90,15 @@ export interface ChatComposerSendProps extends Omit<ComponentProps<typeof Button
   children?: ReactNode;
 }
 
+/** The send button: tinted once there is something to send. */
+export const chatComposerSendVariants = cva(
+  'grid size-[32px] shrink-0 cursor-pointer place-items-center rounded-[9px] border-0 [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-pressed:scale-[.94] motion-reduce:transition-none',
+  {
+    variants: { ready: { true: 'bg-primary text-white', false: 'bg-secondary-strong text-secondary-foreground' } },
+    defaultVariants: { ready: false },
+  },
+);
+
 /** Sends the draft; tinted once there is something to send. */
 export function ChatComposerSend({ className, children, ...props }: ChatComposerSendProps) {
   const { value, send } = useComposer('ChatComposerSend');
@@ -102,11 +110,7 @@ export function ChatComposerSend({ className, children, ...props }: ChatComposer
       aria-label="Send"
       onPress={send}
       className={composeRenderProps(className, (c) =>
-        cn(
-          'grid size-[32px] shrink-0 cursor-pointer place-items-center rounded-[9px] border-0 [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-pressed:scale-[.94] motion-reduce:transition-none',
-          ready ? 'bg-primary text-white' : 'bg-secondary-strong text-secondary-foreground',
-          c,
-        ),
+        cn(chatComposerSendVariants({ ready }), c),
       )}
       {...props}
     >

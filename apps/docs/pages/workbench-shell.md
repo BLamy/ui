@@ -13,7 +13,7 @@ import '@brett_lamy/ui/styles.css'
 
 import {
   WorkbenchShell, WorkbenchSidebar, WorkbenchMain,
-  WorkbenchHeader, ThreadList, ThreadItem, Conversation,
+  WorkbenchHeader, Conversation,
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
@@ -25,7 +25,7 @@ Adds `@/components/ui/workbench-shell.tsx`, installs `@brett_lamy/ui`, and wires
 ```tsx
 import {
   WorkbenchShell, WorkbenchSidebar, WorkbenchMain,
-  WorkbenchHeader, ThreadList, ThreadItem, Conversation,
+  WorkbenchHeader, Conversation,
 } from '@/components/ui/workbench-shell'
 ```
 {% endtab %}
@@ -63,7 +63,7 @@ import {
 
 ## The T3 Code clone
 
-Every part at once: the `t3-clone` registry block — thread sidebar, a streaming conversation, the terminal dock, and a surface panel. The code panel shows the block's `page.tsx`; its sidebar, conversation, and panel are three more short files built from the parts below, and `npx shadcn add` copies all of them into your app. Switch widths to watch each region move.
+Every part at once: the `t3-clone` registry block — thread sidebar, a streaming conversation, the terminal dock, and a surface panel. The code panel shows the block's `page.tsx`; its sidebar (with the block's own thread sidebar parts), conversation, and panel are more short files built from the parts below, and `npx shadcn add` copies all of them into your app. Switch widths to watch each region move.
 
 {% demo src="blocks/t3-clone" %}
 
@@ -108,20 +108,9 @@ Widths are measured on the shell's own box (`useContainerWidth` → `workbenchWi
 | `panelFullscreen` · `setPanelFullscreen` | Full-screen panel. |
 | `appearance` | The resolved light / dark palette. |
 
-## Thread sidebar parts
+## The sidebar
 
-| Part | Role |
-| --- | --- |
-| `ThreadSidebar` | The column: header, toolbar, list, footer. |
-| `ThreadSidebarHeader` · `ThreadSidebarBrand` | App mark and name (`icon` replaces the tinted tile); put a `WorkbenchSidebarClose` after it. |
-| `ThreadSidebarToolbar` · `ThreadSearch` · `ThreadNewButton` | Controlled search field and the compose button. |
-| `ProjectSwitcher` | The current project row. |
-| `ThreadList` · `ThreadGroup` | The scroller and its labelled groups; `collapsible` groups fold on a spring. |
-| `ThreadItem` | A thread: `active`, `meta` (its age), and `status` — `running` (pulsing dot), `unread` (bold + dot), `error`. |
-| `ThreadShowMore` | "Show N more" for a truncated group. |
-| `ThreadSidebarFooter` · `SidebarNotice` · `SidebarFooterItem` · `SidebarUser` | Footer callout, rows like Settings, and the signed-in user. |
-
-Inside a shell, choosing a thread or starting a new one closes the compact drawer on its own.
+`WorkbenchSidebar` holds whatever navigation you give it. The generic [Sidebar](https://blamy.github.io/ui/#/sidebar) parts fit it — `SidebarHeader` with a `SidebarWorkspace` and a `WorkbenchSidebarClose`, `SidebarContent` › `SidebarSection` › `SidebarItem` for the threads, `SidebarFooter` — as the compositions below do; call `useWorkbenchShell().setSidebarOpen(false)` when a thread is picked so the compact drawer closes. T3 Code's own thread sidebar (search, project switcher, collapsible Active / Settled groups with running and unread states, "Show more", an update notice) is part of the **t3-clone** block above — `npx shadcn add` copies it into your app as `components/thread-sidebar.tsx`.
 
 ## Conversation parts
 
