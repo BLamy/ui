@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { cn } from '../../lib/utils';
-import { useAppearance, type Appearance } from '../../lib/theme';
-import { PK_DARK, PK_INKS, PK_LIGHT, PK_W, type PencilStroke, type PencilTool } from '../../lib/pencilkit/constants';
+import { themeScopeProps, useAppearance, type Appearance } from '../../lib/theme';
+import { PK_INKS, PK_W, type PencilStroke, type PencilTool } from '../../lib/pencilkit/constants';
 import { PencilCanvas } from '../../components/pencilkit/pencil-canvas';
 import {
   InkPicker,
@@ -13,6 +13,10 @@ import {
   WidthPicker,
 } from '../../components/pencilkit/pencil-toolbar';
 import { usePencilHistory } from '../../components/pencilkit/use-pencil-history';
+
+/** Dotted paper: the theme's muted surface with a 22px grid of muted-foreground dots. */
+export const pencilPaperClassName =
+  'bg-muted bg-[length:22px_22px] bg-[radial-gradient(color-mix(in_srgb,var(--muted-foreground)_25%,transparent)_1px,transparent_1.2px)] dark:bg-[radial-gradient(color-mix(in_srgb,var(--muted-foreground)_21%,transparent)_1px,transparent_1.2px)]';
 
 export interface PencilKitDemoProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Dark paper. Wins over `appearance`. */
@@ -28,8 +32,7 @@ export interface PencilKitDemoProps extends React.HTMLAttributes<HTMLDivElement>
 export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes, className, style, ...rest }: PencilKitDemoProps) {
   const ambient = useAppearance();
   const dark = darkProp != null ? darkProp === true || darkProp === 'true' : (appearance ?? ambient) === 'dark';
-  const vars: Record<string, string> = { ...(dark ? PK_DARK : PK_LIGHT) };
-  if (tint) vars["--primary"] = tint;
+  const scope = themeScopeProps({ appearance: dark ? 'dark' : 'light', tint });
 
   const [tool, setTool] = useState<PencilTool>('pen');
   const [ink, setInk] = useState(dark ? 1 : 0);
@@ -40,15 +43,13 @@ export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes
     <div
       data-slot="pencilkit-demo"
       className={cn(
-        'relative h-full w-full overflow-hidden bg-muted bg-[length:22px_22px] font-ios text-foreground antialiased',
-        // dotted paper
-        dark
-          ? 'bg-[radial-gradient(rgba(235,235,245,.13)_1px,transparent_1.2px)] scheme-dark'
-          : 'bg-[radial-gradient(rgba(60,60,67,.15)_1px,transparent_1.2px)] scheme-light',
+        'relative h-full w-full overflow-hidden font-ios text-foreground antialiased',
+        pencilPaperClassName,
+        scope.className,
         className,
       )}
-      // the light/dark token set (and optional tint) is chosen at runtime
-      style={{ ...(vars as React.CSSProperties), ...style }}
+      // the optional tint (--primary / --ring) is chosen at runtime
+      style={{ ...scope.style, ...style }}
       {...rest}
     >
       <PencilCanvas

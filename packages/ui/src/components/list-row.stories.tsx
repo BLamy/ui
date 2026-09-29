@@ -8,6 +8,7 @@ import { Slider } from './slider';
 import { Button } from './button';
 import { type ListRowAction } from './list';
 import { Pad } from '../stories/frame';
+import { cn } from '../lib/utils';
 
 const meta: Meta<typeof ListRow> = {
   title: 'Molecules/ListRow',
@@ -31,7 +32,7 @@ export const SubtitleAndLeading: Story = {
       title={<span>Wei <span style={{ fontWeight: 600 }}>Chen</span></span>}
       subtitle="iOS Engineer · Parallel"
       leading={<Avatar c={{ f: 'Wei', l: 'Chen' }} />}
-      trailing={<Icon name="starF" size={13} style={{ color: '#FF9F0A' }} />}
+      trailing={<Icon name="starF" size={13} className="text-warning" />}
       divider={false}
       onPress={() => undefined}
     />
@@ -123,7 +124,7 @@ function MailRows() {
         return (
           <ListRow key={from} title={<span style={{ fontWeight: unread.has(from) ? 600 : 400 }}>{from}</span>} subtitle={subject}
             leading={<span aria-hidden style={{ width: 9, height: 9, borderRadius: 5, background: unread.has(from) ? 'var(--primary)' : 'transparent' }} />}
-            trailing={flag.has(from) ? <Icon name="starF" size={13} style={{ color: '#FF9F0A' }} /> : null}
+            trailing={flag.has(from) ? <Icon name="starF" size={13} className="text-warning" /> : null}
             leadingActions={leading} trailingActions={trailing}
             onPress={() => undefined} divider={i < rows.length - 1} />
         );
@@ -178,3 +179,44 @@ function ControlRows() {
  *  the row renders a plain container, and with it the press target sits beneath the content. */
 export const WithControls: Story = { render: () => <ControlRows /> };
 export const WithControlsDark: Story = { render: () => <ControlRows />, parameters: { dark: true } };
+
+/* ── Layouts: top-aligned leading, full-width controls, a wrapped Switch, a selected row ── */
+
+/** A caller's own switch component — ListRow still names it after the row title (RowLabelContext). */
+function SettingSwitch({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  return <span className="flex items-center"><Switch checked={on} onChange={onChange} /></span>;
+}
+
+function LayoutRows() {
+  const [done, setDone] = useState(false);
+  const [bright, setBright] = useState(40);
+  const [shake, setShake] = useState(true);
+  const [sel, setSel] = useState('inbox');
+  return (
+    <>
+      {/* align="top": the leading circle sits on the first line of a wrapping title. */}
+      <ListRow align="top" onPress={() => setDone((d) => !d)}
+        leading={<span className={cn('box-border block size-[22px] rounded-full border-[1.6px]', done ? 'border-primary bg-primary' : 'border-tertiary-foreground')} />}
+        title={<span className="block whitespace-normal">Book the cabin ferry for the long weekend, and check whether dogs ride free</span>}
+        subtitle="Friday, 9:00" />
+      {/* children: a control that spans the row. */}
+      <ListRow>
+        <div className="flex items-center gap-2">
+          <Icon name="sun" size={18} className="text-muted-foreground" />
+          <Slider aria-label="Brightness" value={bright} onChange={(v) => setBright(v as number)} className="flex-1" />
+          <Icon name="sun" size={24} className="text-muted-foreground" />
+        </div>
+      </ListRow>
+      {/* A wrapped Switch is labelled by the title; contentClassName restyles the row surface. */}
+      <ListRow title="Shake to Undo" contentClassName="min-h-[52px]" accessory={<SettingSwitch on={shake} onChange={setShake} />} />
+      {/* selected → aria-current on the row button. */}
+      {['inbox', 'archive'].map((m, i) => (
+        <ListRow key={m} title={m === 'inbox' ? 'Inbox' : 'Archive'} selected={sel === m} onPress={() => setSel(m)} divider={i === 0} />
+      ))}
+    </>
+  );
+}
+
+/** `align="top"`, full-width `children`, `contentClassName`, a wrapped Switch named by the row title, and
+    `selected` (aria-current). */
+export const Layouts: Story = { render: () => <LayoutRows /> };

@@ -7,7 +7,7 @@ const frameStyle = {
   position: 'relative' as const,
   overflow: 'hidden' as const,
   borderRadius: 20,
-  boxShadow: '0 12px 40px rgba(0,0,0,.18)',
+  boxShadow: '0 12px 40px color-mix(in srgb, black 18%, transparent)',
 };
 
 export function Phone({ children, w = 390, h = 720, dark, tint, safeTop }: {

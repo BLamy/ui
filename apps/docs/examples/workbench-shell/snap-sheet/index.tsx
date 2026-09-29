@@ -4,7 +4,7 @@ import {
   TerminalAction,
   TerminalBody,
   TerminalHeader,
-  useAppearance,
+  ThemeScope,
   WorkbenchTheme,
 } from '@brett_lamy/ui'
 
@@ -12,7 +12,6 @@ import {
 // light mode.
 function TerminalSheet() {
   const [open, setOpen] = useState(false)
-  const light = useAppearance() === 'light'
   return (
     <WorkbenchTheme
       style={{
@@ -37,14 +36,13 @@ function TerminalSheet() {
         </div>
         <button
           type="button"
-          className="wb-btn"
           onClick={() => setOpen(true)}
           style={{
             justifySelf: 'start',
             border: 0,
             borderRadius: 9,
             background: 'var(--primary)',
-            color: '#fff',
+            color: 'var(--primary-foreground)',
             font: 'inherit',
             fontWeight: 600,
             fontSize: 13,
@@ -55,16 +53,17 @@ function TerminalSheet() {
           Open terminal
         </button>
       </div>
+      {/* A `terminal` theme scope: the terminal's own background and ink. */}
+      <ThemeScope scope="terminal" style={{ display: 'contents' }}>
       <SnapSheet
         open={open}
         onClose={() => setOpen(false)}
         snaps={[0.5, 0.92]}
-        bg={light ? '#1C1C23' : 'var(--wb-term)'}
-        className="wb-term"
+        style={{ background: 'var(--background)' }}
       >
         <TerminalHeader title="zsh — cookbook">
           <TerminalAction
-            icon="trash"
+            icon="bin"
             label="Close terminal"
             onPress={() => setOpen(false)}
           />
@@ -76,12 +75,13 @@ function TerminalSheet() {
           ]}
         />
       </SnapSheet>
+      </ThemeScope>
     </WorkbenchTheme>
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function TerminalSheetExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

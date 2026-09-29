@@ -28,7 +28,7 @@ export function Tooltip({ className, offset = 8, arrow = true, children, ...prop
       data-slot="tooltip"
       offset={offset}
       className={composeRenderProps(className, (cls) => cn(
-        'box-border max-w-60 rounded-[9px] bg-foreground px-2.5 py-1.5 text-[13px] leading-[17px] font-medium text-background shadow-[0_4px_14px_rgba(0,0,0,.18)]',
+        'box-border max-w-60 rounded-[9px] bg-foreground px-2.5 py-1.5 text-[13px] leading-[17px] font-medium text-background shadow-[0_4px_14px_black] shadow-black/18',
         popoverMotion,
         overlayZ, cls,
       ))}

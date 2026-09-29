@@ -20,9 +20,17 @@ This writes `components.json`, the `@/` import alias, `lib/utils.ts` and the the
 {% step %}
 ### Add BL UI
 
-From the new project's folder, add the `bl-ui` base item. It installs `@brett_lamy/ui`, imports its stylesheet into your CSS and adds the BL token utilities (`bg-bl-card`, `text-bl-label`, `border-bl-sep`, …) to your Tailwind theme. Your shadcn palette is left alone.
+From the new project's folder, add the `bl-ui` base item. It installs `@brett_lamy/ui`, imports its stylesheet into your CSS and registers BL UI's few extra color utilities (`text-tertiary-foreground`, `bg-secondary-strong`, `bg-bar`, `text-success`, …) next to shadcn's. Your shadcn palette is left alone: BL UI's parts are styled with your theme's variables.
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/bl-ui.json{% endcommand %}
+{% endstep %}
+
+{% step %}
+### Add the iOS theme (optional)
+
+For the look on this site, add the `bl-theme`: it sets your shadcn variables (light and dark) to the iOS palette and adds the Workbench, terminal and chat [theme scopes](https://blamy.github.io/ui/#/theming). Skip it to keep your own palette.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/bl-theme.json{% endcommand %}
 {% endstep %}
 
 {% step %}
@@ -121,9 +129,11 @@ Run `init` in the project root with the React Aria base. It writes `components.j
 {% step %}
 ### Add BL UI
 
-The `bl-ui` base item installs `@brett_lamy/ui`, imports its stylesheet and adds the BL token utilities to your Tailwind theme. Every other BL UI item depends on it, so adding any component brings it along.
+The `bl-ui` base item installs `@brett_lamy/ui`, imports its stylesheet and registers BL UI's extra color utilities. Every other BL UI item depends on it, so adding any component brings it along. For the iOS look, also add the `bl-theme` (it overwrites your palette's variables — leave it out to keep yours).
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/bl-ui.json{% endcommand %}
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/bl-theme.json{% endcommand %}
 
 Then add what you need and import it from your alias:
 
@@ -139,13 +149,14 @@ import {
 {% step %}
 ### Or: install the package without shadcn
 
-Everything is exported from the package root. Import the stylesheet once at your app's entry:
+Everything is exported from the package root. Import the stylesheet once at your app's entry — and the bl-theme if you want the iOS palette (without it, define shadcn's CSS variables yourself):
 
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
 ```tsx
 // src/main.tsx
 import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/theme.css' // optional: the iOS palette
 ```
 
 ```tsx
@@ -160,7 +171,8 @@ import { BLProvider, NavigationStack, SplitView } from '@brett_lamy/ui'
 
 | Item | Installs |
 | --- | --- |
-| `bl-ui` | `@brett_lamy/ui`, its stylesheet, and the BL token utilities (added automatically by every other item) |
+| `bl-ui` | `@brett_lamy/ui`, its stylesheet, and BL UI's extra color utilities (added automatically by every other item) |
+| `bl-theme` | Optional: the iOS palette on your shadcn variables, plus the Workbench, terminal and chat theme scopes |
 | `composer`, `split-view`, `list`, … | `components/ui/<name>.tsx`, a thin re-export — one per component page |
 | `github-clone`, `apple-mail`, … | A whole app in `components/blocks/<name>/` — see [Blocks](https://blamy.github.io/ui/#/blocks) |
 
@@ -175,7 +187,7 @@ The index is [`registry.json`](https://blamy.github.io/ui/r/registry.json).
 
 ## Provider
 
-Wrap UI surfaces that use the core `--bl-*` theme tokens. Workbench supplies its dark `--wb-*` tokens from `WorkbenchShell`.
+`BLProvider` gives an iOS surface its appearance (`light` / `dark`), tint, font and safe area, and hosts overlays. `WorkbenchShell` and `ChatShell` open their own theme scopes. See [Theming](https://blamy.github.io/ui/#/theming).
 
 ```tsx
 <BLProvider tint="#0A84FF">
@@ -186,7 +198,8 @@ Wrap UI surfaces that use the core `--bl-*` theme tokens. Workbench supplies its
 ## Requirements
 
 - React and React DOM 18 or 19
-- Tailwind CSS v4 (for shadcn items and the token utilities)
+- Tailwind CSS v4 (for shadcn items and the color utilities)
+- shadcn's CSS variables — from your shadcn theme or the bl-theme
 - A bundler that resolves ESM package exports and CSS imports (Vite, Next.js, React Router, …)
 - Browser APIs such as ResizeObserver for container-aware shells
 

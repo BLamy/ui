@@ -5,7 +5,7 @@ export const focusRing = 'outline-none data-focus-visible:ring-[3px] data-focus-
 
 /** Floating surface for popovers, menus and select/combobox lists. */
 export const popoverSurface =
-  'rounded-[14px] bg-popover text-popover-foreground shadow-[0_12px_40px_rgba(0,0,0,.2),0_0_0_.5px_var(--border)] outline-none';
+  'rounded-[14px] bg-popover text-popover-foreground shadow-[0_12px_40px_--alpha(black/20%),0_0_0_.5px_var(--border)] outline-none';
 
 /** Enter/exit for anchored overlays: grows out of the trigger (scale from the anchor point, drifting a few px
     away from it) on the snappy spring; exits are quicker. */

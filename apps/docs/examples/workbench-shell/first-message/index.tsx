@@ -89,8 +89,8 @@ function NewThread() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function NewThreadExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

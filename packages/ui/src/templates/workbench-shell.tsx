@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { ToggleButtonGroup } from 'react-aria-components';
 import { AdaptivePane, type AdaptivePaneMode } from '../components/adaptive-pane';
 import { useContainerWidth } from '../lib/container';
-import { cn } from '../lib/workbench/util';
+import { cn, wbPress } from '../lib/workbench/util';
 import { tick, vib } from '../lib/workbench/haptics';
-import { WIcon, IconBtn, type WIconName } from '../lib/workbench/icons';
+import { IconBtn } from '../lib/workbench/icons';
+import { Icon, type IconName } from '../lib/icon';
 import { ToggleButton } from '../lib/workbench/press';
 import type { Appearance } from '../lib/theme';
 import { useWorkbenchAppearance, WorkbenchAppearanceProvider } from '../lib/workbench/theme';
@@ -167,6 +168,8 @@ export function WorkbenchShell({
 
 /* Drawers over a light shell: a lighter scrim and a softer shadow than EdgeDrawer's dark defaults. */
 const LIGHT_DRAWER = { scrim: 'rgba(0,0,0,.22)', shadow: '0 0 36px rgba(0,0,0,.14)' };
+/* The panel drawer's shadow over a dark shell. */
+const DARK_PANEL_SHADOW = '0 0 44px rgba(0,0,0,.55)';
 
 /* ── Sidebar ── */
 export interface WorkbenchSidebarProps {
@@ -212,7 +215,7 @@ export function WorkbenchSidebarTrigger({ onPress, className, style }: TriggerPr
   const compact = !!shell?.compact;
   return (
     <IconBtn
-      name={compact ? 'hamburger' : 'sidebar'}
+      name={compact ? 'line-3-horizontal' : 'sidebar-left'}
       label={compact ? 'Menu' : 'Toggle sidebar'}
       active={!compact && shell ? !shell.sidebarOpen : false}
       className={className}
@@ -230,7 +233,7 @@ export function WorkbenchSidebarClose({ onPress, className, style }: TriggerProp
   const shell = useOptionalWorkbenchShell();
   if (!shell?.compact) return null;
   return (
-    <IconBtn name="x" label="Close sidebar" className={cn('ml-auto', className)} style={style} onPress={onPress ?? (() => shell.setSidebarOpen(false))} />
+    <IconBtn name="xmark-large" label="Close sidebar" className={cn('ml-auto', className)} style={style} onPress={onPress ?? (() => shell.setSidebarOpen(false))} />
   );
 }
 
@@ -259,15 +262,15 @@ export function WorkbenchHeader({ className, style, children }: { className?: st
 export interface WorkbenchTitleProps {
   /** crumb before the title, e.g. the project */
   project?: React.ReactNode;
-  icon?: WIconName;
+  icon?: IconName | (string & {});
   children?: React.ReactNode;
   className?: string;
 }
 /** `folder project / title` — fills the header's free space so the actions sit at its end. */
-export function WorkbenchTitle({ project, icon = 'folder', children, className }: WorkbenchTitleProps) {
+export function WorkbenchTitle({ project, icon = 'folder-closed', children, className }: WorkbenchTitleProps) {
   return (
     <div data-slot="workbench-title" className={cn('ml-1 flex min-w-0 flex-1 items-center gap-1.5', className)}>
-      <WIcon name={icon} size={14} sw={1.9} className="text-tertiary-foreground" />
+      <Icon name={icon} size={14} sw={1.9} className="text-tertiary-foreground" />
       {project != null ? (
         <>
           <span className="shrink-0 text-[12.5px] text-tertiary-foreground">{project}</span>
@@ -286,7 +289,7 @@ export function WorkbenchActions({ className, children }: { className?: string; 
   );
 }
 /** A header icon button that thumps like the rest of the chrome. */
-export function WorkbenchAction({ icon, label, onPress, active, className }: { icon: WIconName; label: string; onPress?: () => void; active?: boolean; className?: string }) {
+export function WorkbenchAction({ icon, label, onPress, active, className }: { icon: IconName | (string & {}); label: string; onPress?: () => void; active?: boolean; className?: string }) {
   return (
     <IconBtn
       name={icon}
@@ -324,9 +327,15 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
   const drag = React.useRef<{ y0: number; h0: number } | null>(null);
   if (shell?.compact) {
     return (
-      // The dock is a `terminal` theme scope: dark in both appearances.
+      // The dock is a `terminal` theme scope: dark in both appearances. Its shadow still follows the shell.
       <ThemeScope scope="terminal" className="contents text-foreground">
-        <SnapSheet open={shell.dockOpen} onClose={() => shell.setDockOpen(false)} snaps={snaps} bg="var(--background)" className={className} style={style}>
+        <SnapSheet
+          open={shell.dockOpen}
+          onClose={() => shell.setDockOpen(false)}
+          snaps={snaps}
+          className={cn('bg-background', shell.appearance === 'light' && 'dark:shadow-black/8', className)}
+          style={style}
+        >
           {children}
         </SnapSheet>
       </ThemeScope>
@@ -369,7 +378,7 @@ export function WorkbenchDockTrigger({ onPress, className, style }: TriggerProps
   const shell = useOptionalWorkbenchShell();
   return (
     <IconBtn
-      name="panelB"
+      name="panel-bottom"
       label="Toggle terminal"
       active={!!shell?.dockOpen}
       className={className}
@@ -383,7 +392,7 @@ export function WorkbenchDockTrigger({ onPress, className, style }: TriggerProps
   );
 }
 /** Closes the dock (inline or sheet). */
-export function WorkbenchDockClose({ icon = 'trash', label = 'Close terminal', size = 15, onPress, className }: TriggerProps & { icon?: WIconName; label?: string; size?: number }) {
+export function WorkbenchDockClose({ icon = 'bin', label = 'Close terminal', size = 15, onPress, className }: TriggerProps & { icon?: IconName | (string & {}); label?: string; size?: number }) {
   const shell = useOptionalWorkbenchShell();
   return (
     <IconBtn
@@ -432,7 +441,7 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
       columnStyle={{ gridColumn: 3, gridRow: 1, borderLeft: '1px solid var(--border)' }}
       drawerWidth="min(420px, 94%)"
       zIndex={mode === 'cover' ? 60 : 58}
-      shadow={light ? LIGHT_DRAWER.shadow : '0 0 44px rgba(0,0,0,.55)'}
+      shadow={light ? LIGHT_DRAWER.shadow : DARK_PANEL_SHADOW}
       {...(light ? { scrim: LIGHT_DRAWER.scrim } : null)}
       className="border-l border-border"
     >
@@ -448,7 +457,7 @@ export function WorkbenchPanelTrigger({ onPress, className, style }: TriggerProp
   if (shell?.compact) return null;
   return (
     <IconBtn
-      name="panelR"
+      name="sidebar-right"
       label="Toggle right panel"
       active={!!shell?.panelOpen}
       className={className}
@@ -473,10 +482,10 @@ export function WorkbenchPanelHeader({ className, style, children }: { className
   );
 }
 /** Icon + name; fills the header so the controls after it sit at its end. */
-export function WorkbenchPanelTitle({ icon, className, children }: { icon?: WIconName; className?: string; children?: React.ReactNode }) {
+export function WorkbenchPanelTitle({ icon, className, children }: { icon?: IconName | (string & {}); className?: string; children?: React.ReactNode }) {
   return (
     <div data-slot="workbench-panel-title" className={cn('mr-0.5 flex min-w-0 flex-1 items-center gap-2', className)}>
-      {icon ? <WIcon name={icon} size={15} sw={1.8} className="text-muted-foreground" /> : null}
+      {icon ? <Icon name={icon} size={15} sw={1.8} className="text-muted-foreground" /> : null}
       <span className="truncate text-[13px] font-[650]">{children}</span>
     </div>
   );
@@ -488,7 +497,7 @@ export function WorkbenchPanelFullscreen({ active, onPress, className }: Trigger
   const full = active ?? !!shell?.panelFullscreen;
   return (
     <IconBtn
-      name={full ? 'restore' : 'expand'}
+      name={full ? 'arrows-collapse' : 'arrows-expand'}
       label={full ? 'Exit full screen' : 'Full screen'}
       size={16}
       active={full}
@@ -506,7 +515,7 @@ export function WorkbenchPanelClose({ onPress, className }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
   return (
     <IconBtn
-      name="x"
+      name="xmark-large"
       label="Close panel"
       size={16}
       className={className}
@@ -560,14 +569,14 @@ export function WorkbenchTabBar({ value, onValueChange, mainTab = 'chat', classN
     </TabBarContext.Provider>
   );
 }
-export function WorkbenchTab({ id, icon, className, children }: { id: string; icon: WIconName; className?: string; children?: React.ReactNode }) {
+export function WorkbenchTab({ id, icon, className, children }: { id: string; icon: IconName | (string & {}); className?: string; children?: React.ReactNode }) {
   const shell = useOptionalWorkbenchShell();
   const { mainTab, onValueChange } = React.useContext(TabBarContext);
   return (
     <ToggleButton
       id={id}
       className={cn(
-        'wb-btn flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-tertiary-foreground data-selected:text-primary',
+        wbPress, 'flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-tertiary-foreground data-selected:text-primary',
         className,
       )}
       onPress={() => {
@@ -577,7 +586,7 @@ export function WorkbenchTab({ id, icon, className, children }: { id: string; ic
         shell?.setPanelOpen(id !== mainTab);
       }}
     >
-      <WIcon name={icon} size={20} sw={1.8} />
+      <Icon name={icon} size={20} sw={1.8} />
       <span className="text-[9.5px] font-semibold tracking-[.2px]">{children}</span>
     </ToggleButton>
   );

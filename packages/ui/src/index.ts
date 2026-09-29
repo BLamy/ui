@@ -24,7 +24,7 @@ export {
 } from './lib/theme';
 export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName } from './lib/theme';
 export { useContainerWidth, useContainerSize, defineSlot, collectSlots } from './lib/container';
-export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL, SHEET_OPEN_THRESHOLD } from './lib/sheet-drag';
+export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL } from './lib/sheet-drag';
 export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
 export type { SlotComponent, SlotProps, ContainerSize } from './lib/container';
 export { Icon, IC, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS, ICON_WEIGHTS } from './lib/icon';
@@ -45,11 +45,9 @@ export { SearchField } from './components/search-field';
 export type { SearchFieldProps } from './components/search-field';
 export { Button, buttonVariants } from './components/button';
 export type { ButtonProps } from './components/button';
-export { PillButton } from './components/pill-button';
-export type { PillButtonProps } from './components/pill-button';
 export { QRSvg } from './components/qr-svg';
 export type { QRSvgProps } from './components/qr-svg';
-export { List, ListSection, ListRow } from './components/list';
+export { List, ListSection, ListRow, listRowVariants } from './components/list';
 export type { ListProps, ListSectionProps, ListRowProps, ListRowAction } from './components/list';
 export { IndexBar, AL, indexBarVariants } from './components/index-bar';
 export type { IndexBarProps, IndexBarItem, IndexBarKey } from './components/index-bar';
@@ -68,22 +66,22 @@ export type {
 export { EditBar } from './components/edit-bar';
 export type { EditBarProps } from './components/edit-bar';
 export { NavigationStack, ScreenWrap } from './components/navigation-stack';
-export type { NavigationStackProps, Screen, ScreenWrapProps } from './components/navigation-stack';
+export type { NavigationStackProps, NavigationStackRootBack, Screen, ScreenWrapProps } from './components/navigation-stack';
 export {
   SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail, SplitViewHeader, SplitViewContent, SplitViewToggle,
-  SplitViewItem, SplitViewEmpty, useSplitView, useSplitViewColumn,
-  SplitViewSection, SplitViewStack, useSplitViewStack,
+  SplitViewItem, SplitViewEmpty, useSplitView, useSplitViewColumn, useSplitViewBack,
+  SplitViewSection, SplitViewStack, useSplitViewStack, splitViewItemVariants, splitViewSectionLabelVariants,
 } from './components/split-view';
 export type {
   SplitViewProps, SplitViewColumnProps, SplitViewHeaderProps, SplitViewToggleProps, SplitViewItemProps, SplitViewEmptyProps,
   SplitViewState, SplitViewColumn, SplitViewWidthClass, SplitViewSidebarBehavior, SplitViewSelection,
   SplitViewSectionProps, SplitViewStackProps, SplitViewStackApi, SplitViewItemTint,
 } from './components/split-view';
-export { Credenza } from './components/credenza';
+export { Credenza, credenzaVariants } from './components/credenza';
 export type { CredenzaProps } from './components/credenza';
-export { SideDrawer } from './components/side-drawer';
+export { SideDrawer, sideDrawerVariants } from './components/side-drawer';
 export type { SideDrawerProps } from './components/side-drawer';
-export { EdgeDrawer } from './components/edge-drawer';
+export { EdgeDrawer, edgeDrawerVariants } from './components/edge-drawer';
 export type { EdgeDrawerProps } from './components/edge-drawer';
 export { AdaptivePane } from './components/adaptive-pane';
 export {
@@ -163,7 +161,7 @@ export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectSe
 export type { SelectProps, SelectTriggerProps, SelectContentProps } from './components/select';
 export { ComboBox, ComboBoxInput, ComboBoxContent, ComboBoxItem, ComboBoxSection } from './components/combobox';
 export type { ComboBoxProps, ComboBoxInputProps, ComboBoxContentProps } from './components/combobox';
-export { Slider, SliderTrack, SliderThumb } from './components/slider';
+export { Slider, SliderTrack, SliderThumb, sliderVariants } from './components/slider';
 export type { SliderProps, SliderTone } from './components/slider';
 export { ListBox, ListBoxItem, ListBoxSection, ListBoxHeader, listBoxVariants, listBoxItemVariants } from './components/list-box';
 export type { ListBoxProps, ListBoxItemProps, ListBoxSectionProps } from './components/list-box';
@@ -189,15 +187,13 @@ export type { SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, Synta
 // ── end shadcn primitives ──
 
 // ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
-// (EASE is the same curve as the core EASE above.)
-export { WFONT, MONO } from './lib/workbench/util';
 export {
   useWorkbenchAppearance,
   WorkbenchTheme,
   type WorkbenchThemeProps,
 } from './lib/workbench/theme';
 export { vib, tick } from './lib/workbench/haptics';
-export { WIcon, IconBtn, iconBtnVariants, type WIconName, type WIconProps, type IconBtnProps } from './lib/workbench/icons';
+export { IconBtn, iconBtnVariants, type IconBtnProps } from './lib/workbench/icons';
 export {
   MarkdownView,
   FbMd,
@@ -210,7 +206,6 @@ export {
 } from './components/workbench/markdown';
 export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './components/workbench/message-scroller';
 export { SnapSheet, type SnapSheetProps } from './components/workbench/snap-sheet';
-export { useSpringSheetDrag, MorphText, type SpringSheetDragOptions, type SpringSheetDragState, type MorphTextProps } from './lib/workbench/motion';
 export {
   ThreadSidebar,
   ThreadSidebarHeader,
@@ -240,6 +235,7 @@ export {
   TerminalAction,
   fakeShell,
   TERM_FILES,
+  TERMINAL_COLORS,
   type TermLine,
   type TerminalHeaderProps,
   type TerminalBodyProps,
@@ -606,14 +602,10 @@ export {
 
 // PencilKit — freehand drawing on perfect-freehand (formerly @brett_lamy/pencilkit)
 export {
-  PFONT,
-  PMONO,
   PK_TOOLS,
   PK_INKS,
   PK_W,
-  PKI,
-  PK_LIGHT,
-  PK_DARK,
+  PK_TOOL_ICONS,
 } from './lib/pencilkit/constants';
 export type {
   PencilTool,
@@ -621,10 +613,7 @@ export type {
   PencilToolDef,
   PencilPoint,
   PencilStroke,
-  PKIconName,
 } from './lib/pencilkit/constants';
-export { PKIcon } from './components/pencilkit/pk-icon';
-export type { PKIconProps } from './components/pencilkit/pk-icon';
 export { outlinePath, StrokePath, MemoStroke } from './components/pencilkit/stroke-path';
 export type { StrokePathProps } from './components/pencilkit/stroke-path';
 export { PencilCanvas } from './components/pencilkit/pencil-canvas';
@@ -651,17 +640,17 @@ export { usePencilHistory } from './components/pencilkit/use-pencil-history';
 export type { PencilHistory } from './components/pencilkit/use-pencil-history';
 export { PencilKitAnnotator } from './components/pencilkit/pencilkit-annotator';
 export { demoStrokes } from './demos/pencilkit/demo-strokes';
-export { PencilKitDemo } from './demos/pencilkit/pencilkit-demo';
+export { PencilKitDemo, pencilPaperClassName } from './demos/pencilkit/pencilkit-demo';
 export type { PencilKitDemoProps } from './demos/pencilkit/pencilkit-demo';
 
 // ── feedback, media and morph primitives ──
 export {
-  Toaster, ToastProvider, ToastQueue, toast, toastApi, useToast, createToastQueue, defaultToastQueue,
+  Toaster, ToastProvider, ToastQueue, toast, toastApi, useToast, createToastQueue, defaultToastQueue, toastVariants, toastIconVariants,
 } from './components/toast';
 export type {
   ToastData, ToastOptions, ToastVariant, ToastTone, ToastApi, ToasterProps, ToasterPlacement,
 } from './components/toast';
-export { ProgressRing, CountdownRing, useCountdown } from './components/progress-ring';
+export { ProgressRing, CountdownRing, useCountdown, progressRingVariants } from './components/progress-ring';
 export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, UseCountdownOptions } from './components/progress-ring';
 export { NowPlayingBars } from './components/now-playing-bars';
 export type { NowPlayingBarsProps } from './components/now-playing-bars';

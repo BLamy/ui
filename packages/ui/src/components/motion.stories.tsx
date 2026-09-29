@@ -89,7 +89,7 @@ export const TrayHeight: Story = {
     const dir = useDirection(step);
     const s = STEPS[step];
     return (
-      <div className="rounded-[24px] bg-card p-1 shadow-[0_12px_40px_rgba(0,0,0,.14),0_0_0_1px_var(--border)]">
+      <div className="rounded-[24px] bg-card p-1 shadow-[0_12px_40px_--alpha(black/14%),0_0_0_1px_var(--border)]">
         <AnimatedHeight>
           <ContentSwap id={step} direction={dir}>
             <div className="p-4">

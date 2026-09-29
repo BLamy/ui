@@ -28,7 +28,7 @@ import { cn } from '../lib/utils';
 export { DialogTrigger };
 
 export const dialogVariants = cva(
-  'relative box-border flex max-h-full flex-col overflow-hidden bg-card text-card-foreground shadow-[0_24px_80px_rgba(0,0,0,.3),0_0_0_.5px_var(--border)] outline-none',
+  'relative box-border flex max-h-full flex-col overflow-hidden bg-card text-card-foreground shadow-[0_24px_80px_--alpha(black/30%),0_0_0_.5px_var(--border)] outline-none',
   {
     variants: {
       size: {

@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 /** The sliding selected card (react-aria's SelectionIndicator), shared by Segmented, Tabs and ToggleGroup. It sits
     behind the labels (the group is `isolate`), and width/height transition too, so it resizes between unequal items. */
 export const segmentIndicator =
-  'absolute top-0 left-0 -z-1 size-full rounded-[inherit] bg-card shadow-[0_1px_4px_rgba(0,0,0,.14)] transition-[translate,width,height] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none';
+  'absolute top-0 left-0 -z-1 size-full rounded-[inherit] bg-card shadow-[0_1px_4px_black] shadow-black/14 transition-[translate,width,height] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none';
 
 export interface SegmentedOption {
   id: string;

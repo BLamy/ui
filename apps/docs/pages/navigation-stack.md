@@ -112,3 +112,9 @@ The stack is an array of keys in state: rows push by appending, `onPop` drops th
 `leading` and `trailing` hold bar buttons, and `onRefresh` adds pull-to-refresh with a spinner and a success haptic. Compose pushes a screen; Send pops it by clearing state.
 
 {% demo src="navigation-stack/inbox-actions" %}
+
+### Inside a collapsed SplitView
+
+When a SplitView collapses to one column, a `NavigationStack` in a later column shows a back button on its root screen that returns to the column before it, labelled with that column's title. Pass `rootBack` to set it yourself, or `rootBack={false}` to hide it.
+
+{% demo src="navigation-stack/in-split-view" %}

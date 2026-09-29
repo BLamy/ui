@@ -1,8 +1,9 @@
 import {
-  createContext, forwardRef, useContext, useMemo, useRef, type CSSProperties, type MouseEvent, type ReactNode,
+  Children, createContext, forwardRef, isValidElement, useContext, useMemo, useRef,
+  type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode,
 } from 'react';
 import {
-  AnimatePresence, LayoutGroup, MotionConfig, motion, useReducedMotion, type PanInfo, type Transition,
+  AnimatePresence, LayoutGroup, MotionConfig, motion, useDragControls, useReducedMotion, type PanInfo, type Transition,
 } from 'framer-motion';
 import { springs, type SpringName } from '../lib/motion';
 import { cn } from '../lib/utils';
@@ -65,7 +66,8 @@ export interface MorphProps {
   radius?: number;
   /** Element to render (default `div`). */
   as?: MorphTag;
-  /** Follow a downward drag and dismiss past `dismissDistance` or on a flick. */
+  /** Follow a downward drag and dismiss past `dismissDistance` or on a flick. A drag never starts inside a
+      `[data-no-drag]` descendant (a scrubber, a slider, a scrolling list) — nor on form controls. */
   dragToDismiss?: boolean;
   /** Called when a drag-to-dismiss completes (or pass `onDismiss` alone and wire your own close button). */
   onDismiss?: () => void;
@@ -106,8 +108,16 @@ export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
   const transition = ctx?.transition ?? (reduced ? { duration: 0 } : springs.smooth);
   const M = motion[as] as typeof motion.div;
   const drag = dragToDismiss && !reduced;
+  const controls = useDragControls();
   const onDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.y > dismissDistance || info.velocity.y > 650) onDismiss?.();
+  };
+  const userPointerDown = (rest as { onPointerDown?: (e: ReactPointerEvent) => void }).onPointerDown;
+  const onPointerDown = (e: ReactPointerEvent) => {
+    userPointerDown?.(e);
+    const t = e.target as Element | null;
+    if (e.defaultPrevented || t?.closest('[data-no-drag],input,textarea,select,[role=slider]')) return;
+    controls.start(e);
   };
   return (
     <M
@@ -127,10 +137,13 @@ export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
           dragConstraints: { top: 0, bottom: 0 },
           dragElastic: { top: 0.08, bottom: 0.9 },
           dragSnapToOrigin: true,
+          dragListener: false,
+          dragControls: controls,
           onDragEnd,
         }
         : null)}
       {...(rest as object)}
+      {...(drag ? { onPointerDown } : null)}
     >
       {children}
     </M>
@@ -139,14 +152,22 @@ export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
 
 export interface MorphPresenceProps {
   children?: ReactNode;
-  /** `popLayout` (default) lets the leaving layout get out of the way of the arriving one. */
-  mode?: 'sync' | 'wait' | 'popLayout';
+  /** `popLayout` lets the leaving layout get out of the way of the arriving one; it needs children that take a
+      ref (a `Morph`, a DOM element). `auto` (default) uses `popLayout` when every child does, else `sync` — so
+      any component works as a child without forwarding a ref. */
+  mode?: 'auto' | 'sync' | 'wait' | 'popLayout';
 }
+
+const REF_TYPES = new Set<unknown>([Symbol.for('react.forward_ref'), Symbol.for('react.memo')]);
+/** A child popLayout can measure: a DOM element, a Morph, or a forwardRef component. */
+const takesRef = (c: ReactNode) =>
+  isValidElement(c) && (typeof c.type === 'string' || c.type === Morph || REF_TYPES.has((c.type as { $$typeof?: unknown }).$$typeof));
 
 /** Wrap conditionally rendered Morph content so parts without a partner (the full player's controls) can fade out
     as the morph runs, instead of vanishing. Optional: a plain swap already morphs the shared elements. */
-export function MorphPresence({ children, mode = 'popLayout' }: MorphPresenceProps) {
-  return <AnimatePresence initial={false} mode={mode}>{children}</AnimatePresence>;
+export function MorphPresence({ children, mode = 'auto' }: MorphPresenceProps) {
+  const m = mode === 'auto' ? (Children.toArray(children).every(takesRef) ? 'popLayout' : 'sync') : mode;
+  return <AnimatePresence initial={false} mode={m}>{children}</AnimatePresence>;
 }
 
 /** The group's transition (for your own motion elements that should move with the morph). */

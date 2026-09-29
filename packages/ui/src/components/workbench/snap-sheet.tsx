@@ -14,11 +14,12 @@ export interface SnapSheetProps {
   onClose: () => void;
   snaps?: number[];
   children?: React.ReactNode;
-  bg?: string;
+  /** Classes for the sheet surface (the panel), merged last — e.g. `bg-background` for a surface other than `bg-card`. */
   className?: string;
+  /** Styles for the sheet surface (the panel). */
   style?: React.CSSProperties;
 }
-export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, className, style }: SnapSheetProps) {
+export function SnapSheet({ open, onClose, snaps: snapsProp, children, className, style }: SnapSheetProps) {
   const snaps = snapsProp || [0.55, 0.94];
   const maxS = Math.max(...snaps);
   const [vis, setVis] = useState(false);
@@ -109,12 +110,16 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, class
     springTo(restTy(best), v * 1000);
   };
   return (
-    <div ref={wrap} data-slot="snap-sheet" className={cn('absolute inset-0 z-70 overflow-hidden', className)} style={style}>
-      <motion.div data-slot="snap-sheet-scrim" onClick={onClose} className="absolute inset-0 bg-[rgba(0,0,0,.45)]" style={{ opacity: fade }} />
+    <div ref={wrap} data-slot="snap-sheet" className="absolute inset-0 z-70 overflow-hidden">
+      <motion.div data-slot="snap-sheet-scrim" onClick={onClose} className="absolute inset-0 bg-black/45" style={{ opacity: fade }} />
       <motion.div
         data-slot="snap-sheet-panel"
-        className="absolute right-0 bottom-0 left-0 flex h-(--sheet-h) touch-none flex-col rounded-t-2xl border-x border-t border-border bg-(--sheet-bg) shadow-[0_-12px_40px_black] shadow-black/8 dark:shadow-black/50"
-        style={{ y, '--sheet-h': maxS * 100 + '%', '--sheet-bg': bg || 'var(--card)' } as never}
+        className={cn(
+          'absolute right-0 bottom-0 left-0 flex h-(--sheet-h) touch-none flex-col rounded-t-2xl border-x border-t border-border bg-card shadow-[0_-12px_40px_black] shadow-black/8 dark:shadow-black/50',
+          className,
+        )}
+        // y is the gesture's motion value; the height comes from the snap points
+        style={{ ...style, y, '--sheet-h': maxS * 100 + '%' } as never}
       >
         <div
           data-slot="snap-sheet-handle"

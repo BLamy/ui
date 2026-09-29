@@ -9,8 +9,12 @@ import { Switch } from '../components/switch';
    calls Haptics inside the live gesture. On Android each detent vibrates; iOS/macOS Safari can only tick on a tap,
    a key press or a native range's input events, so the pointer-driven drags are silent there (see lib/haptics). ══ */
 
+/** Settings-icon tile colors (content: the system colors iOS paints these tiles in, in either appearance). */
+const SETTINGS_TILE_COLORS = { purple: '#BF5AF2' } as const;
+
 const sq = (color: string, icon: string) => (
-  <span className="grid size-[29px] shrink-0 place-items-center rounded-[7px]" style={{ background: color }}>
+  // The tile color is data.
+  <span className="grid size-[29px] shrink-0 place-items-center rounded-[7px] bg-(--tile)" style={{ '--tile': color } as CSSProperties}>
     <Icon name={icon} size={17} sw={2} className="text-white" />
   </span>
 );
@@ -31,7 +35,7 @@ export function HapticsEnabledRow() {
     if (v) Haptics.impact('light');
   };
   return (
-    <ListRow leading={sq('#BF5AF2', 'wave')} title="Haptics" divider={false}
+    <ListRow leading={sq(SETTINGS_TILE_COLORS.purple, 'wave')} title="Haptics" divider={false}
       subtitle={on ? 'On for this device · Haptics.enabled' : 'Off — no ticks, no events'}
       trailing={<Switch checked={on} onChange={toggle} aria-label="Haptics" />} />
   );
@@ -54,8 +58,9 @@ export function BrightnessSlider() {
       onPointerMove={(e) => { if (e.buttons) move(e); }}
       onKeyDown={(e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { setV((x) => Math.min(1, Math.max(0, x + (e.key === 'ArrowRight' ? 0.0625 : -0.0625)))); Haptics.selection(); e.preventDefault(); } }}
       className="relative h-[64px] cursor-ew-resize touch-none overflow-hidden rounded-[18px] bg-secondary-strong">
-      <div className="absolute inset-y-0 left-0 bg-[rgba(255,255,255,.94)]" style={{ width: (v * 100) + '%' }} />
-      <span className="absolute top-1/2 left-4 grid -translate-y-1/2 text-[rgba(60,60,67,.62)]"><Sun size={22} /></span>
+      <div className="absolute inset-y-0 left-0 w-(--level) bg-white/94" style={{ '--level': (v * 100) + '%' } as CSSProperties} />
+      {/* The glyph sits on the white fill in either appearance: the light palette's secondary label. */}
+      <span className="light absolute top-1/2 left-4 grid -translate-y-1/2 text-muted-foreground"><Sun size={22} /></span>
     </div>
   );
 }
@@ -98,7 +103,7 @@ export function SlideToUnlock() {
     } else { xr.current = 0; setX(0); det.current = 0; }
   };
   return (
-    <div ref={ref} className="relative h-[56px] overflow-hidden rounded-[28px] bg-secondary shadow-[inset_0_1px_3px_rgba(0,0,0,.12)]">
+    <div ref={ref} className="relative h-[56px] overflow-hidden rounded-[28px] bg-secondary shadow-[inset_0_1px_3px_black] shadow-black/12">
       <span aria-hidden="true"
         className={cn('absolute inset-0 grid place-items-center text-[17px] tracking-[.4px]', done ? 'font-semibold text-success' : 'bl-shimmer font-normal')}
         // The hint fades as the knob travels.
@@ -109,12 +114,12 @@ export function SlideToUnlock() {
         onPointerMove={(e) => { if (drag) move(e); }}
         onPointerUp={up} onPointerCancel={up}
         className={cn(
-          'bl-btn absolute top-1 grid size-[48px] cursor-grab touch-none place-items-center rounded-[24px] border-0 bg-card p-0 shadow-[0_2px_6px_rgba(0,0,0,.22)]',
+          'bl-btn absolute top-1 left-(--knob-x) grid size-[48px] cursor-grab touch-none place-items-center rounded-[24px] border-0 bg-card p-0 shadow-[0_2px_6px_black] shadow-black/22',
           done ? 'text-success' : 'text-muted-foreground',
           !drag && 'transition-[left] duration-spring-smooth ease-spring-smooth',
         )}
         // Knob position follows the drag.
-        style={{ left: 4 + x * travel() }}>
+        style={{ '--knob-x': 4 + x * travel() + 'px' } as CSSProperties}>
         <Icon name={done ? 'check' : 'chev'} size={22} sw={2.4} /></button>
     </div>
   );
@@ -163,9 +168,9 @@ export function WheelDrum({ n, init, label }: { n: number; init?: number; label:
         onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { settle(clampHard((Math.round(-off / H) + (e.key === 'ArrowDown' ? 1 : -1)) * -H)); e.preventDefault(); } }}
         className="relative h-[170px] w-[52px] shrink-0 cursor-ns-resize touch-none overflow-hidden">
         <div className="absolute -inset-x-1 top-[68px] h-[34px] rounded-[9px] bg-secondary" />
-        <div className={cn('absolute inset-x-0 top-[68px]', anim && 'transition-transform duration-spring-snappy ease-spring-snappy')}
+        <div className={cn('absolute inset-x-0 top-[68px] [transform:translateY(var(--drum-y))]', anim && 'transition-transform duration-spring-snappy ease-spring-snappy')}
           // Drum offset follows the drag / momentum.
-          style={{ transform: 'translateY(' + off + 'px)' }}>
+          style={{ '--drum-y': off + 'px' } as CSSProperties}>
           {Array.from({ length: n }, (_, i) => {
             const dist = Math.min(2.6, Math.abs(i - idx));
             return (

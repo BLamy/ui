@@ -3,6 +3,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SnapSheet } from './snap-sheet';
 import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
 import { WorkbenchTheme } from '../../lib/workbench/theme';
+import { ThemeScope } from '../../lib/theme';
+import { Button } from '../../lib/workbench/press';
+import { cn, wbPress } from '../../lib/workbench/util';
 import { TERMINAL_SEED } from './fixtures';
 import '../../styles.css';
 
@@ -19,28 +22,30 @@ type Story = StoryObj<typeof SnapSheet>;
 function SheetDemo({ open: initialOpen }: { open: boolean }) {
   const [open, setOpen] = useState(initialOpen);
   return (
-    <WorkbenchTheme style={{ minHeight: 760, padding: 20, display: 'grid', placeItems: 'center' }}>
-      <div style={{ position: 'relative', width: 390, height: 720, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--background)' }}>
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: 'var(--tertiary-foreground)', fontSize: 13, padding: 24, textAlign: 'center' }}>
+    <WorkbenchTheme className="grid min-h-[760px] place-items-center p-5">
+      <div className="relative h-[720px] w-[390px] overflow-hidden rounded-xl border border-border bg-background">
+        <div className="absolute inset-0 grid place-items-center p-6 text-center text-[13px] text-tertiary-foreground">
           <div>
-            <div style={{ marginBottom: 14 }}>compact-width terminal presentation</div>
-            <button
-              className="wb-btn"
-              onClick={() => setOpen(true)}
-              style={{ border: 0, borderRadius: 9, background: 'var(--primary)', color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 16px', cursor: 'pointer' }}
+            <div className="mb-3.5">compact-width terminal presentation</div>
+            <Button
+              className={cn(wbPress, 'cursor-pointer rounded-[9px] border-0 bg-primary px-4 py-[9px] text-[13px] font-semibold text-primary-foreground')}
+              onPress={() => setOpen(true)}
             >
               Open terminal drawer
-            </button>
+            </Button>
           </div>
         </div>
-        <SnapSheet open={open} onClose={() => setOpen(false)} snaps={[0.52, 0.93]} bg="#0C0C10">
-          <TerminalHeader title="zsh — cookbook">
-            <TerminalAction icon="split" label="Split terminal" />
-            <TerminalAction icon="plus" label="New terminal" />
-            <TerminalAction icon="trash" label="Close terminal" onPress={() => setOpen(false)} />
-          </TerminalHeader>
-          <TerminalBody seed={TERMINAL_SEED} />
-        </SnapSheet>
+        {/* The drawer holds a terminal: a `terminal` theme scope, dark in either appearance. */}
+        <ThemeScope scope="terminal" className="contents">
+          <SnapSheet open={open} onClose={() => setOpen(false)} snaps={[0.52, 0.93]} className="bg-background">
+            <TerminalHeader title="zsh — cookbook">
+              <TerminalAction icon="rectangle-split" label="Split terminal" />
+              <TerminalAction icon="plus" label="New terminal" />
+              <TerminalAction icon="bin" label="Close terminal" onPress={() => setOpen(false)} />
+            </TerminalHeader>
+            <TerminalBody seed={TERMINAL_SEED} />
+          </SnapSheet>
+        </ThemeScope>
       </div>
     </WorkbenchTheme>
   );

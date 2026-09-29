@@ -1,13 +1,26 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from '../lib/icon';
 import { cn } from '../lib/utils';
+import { EdgeDrawer } from './edge-drawer';
 
 /* ══ SideDrawer — one panel, three hosts ══
    mode="fixed": docks as a column beside the detail view (extra-wide). mode="overlay": shadcn-style sheet from
-   the right, scrim click dismisses (desktop/tablet). On phones, compose the same content as a pushed screen. */
+   the right, scrim click dismisses (desktop/tablet) — an EdgeDrawer configuration. On phones, compose the same
+   content as a pushed screen. */
 
-export interface SideDrawerProps {
+/** The fixed column (its width springs between 0 and `width`). The overlay host is an EdgeDrawer. */
+export const sideDrawerVariants = cva('', {
+  variants: {
+    mode: {
+      fixed: 'w-(--side-drawer-w) shrink-0 overflow-hidden bg-background transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+      overlay: 'absolute inset-0 z-350 pointer-events-none',
+    },
+  },
+});
+
+export interface SideDrawerProps extends VariantProps<typeof sideDrawerVariants> {
   mode: 'fixed' | 'overlay';
   open: boolean;
   onClose?: () => void;
@@ -32,21 +45,23 @@ export function SideDrawer({ mode, open, onClose, title, width, children, classN
   const col = <>{head}<div className="bl-scroll min-h-0 flex-1 overflow-y-auto">{children}</div></>;
   if (mode === 'fixed') {
     return (
-      <div data-slot="side-drawer" aria-hidden={!open}
-        className={cn('shrink-0 overflow-hidden bg-background transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none', open && '[border-left:1px_solid_var(--border)]', className)}
-        style={{ width: open ? width : 0, ...style }}>
-        <div className="box-border flex h-full flex-col" style={{ width }}>{col}</div>
+      <div data-slot="side-drawer" data-mode="fixed" aria-hidden={!open}
+        className={cn(sideDrawerVariants({ mode }), open ? '[border-left:1px_solid_var(--border)]' : 'w-0', className)}
+        style={{ '--side-drawer-w': width + 'px', ...style } as CSSProperties}>
+        <div className="box-border flex h-full w-(--side-drawer-w) flex-col">{col}</div>
       </div>
     );
   }
   return (
-    <div data-slot="side-drawer" aria-hidden={!open}
-      className={cn('absolute inset-0 z-350', open ? 'pointer-events-auto' : 'pointer-events-none', className)} style={style}>
-      <div onClick={onClose} className={cn('absolute inset-0 bg-overlay transition-opacity duration-spring-smooth ease-spring-smooth', open ? 'opacity-100' : 'opacity-0')} />
-      <div className={cn(
-        'absolute inset-y-0 right-0 flex flex-col [border-left:1px_solid_var(--border)] bg-background transition-[translate,box-shadow] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
-        open ? 'shadow-[-16px_0_48px_rgba(0,0,0,.25)]' : 'translate-x-[106%]',
-      )} style={{ width: 'min(' + width + 'px, 88%)' }}>{col}</div>
+    <div data-slot="side-drawer" data-mode="overlay" className={cn(sideDrawerVariants({ mode }), className)} style={style}>
+      <EdgeDrawer side="right" open={open} onClose={onClose} zIndex={0} width={`min(${width}px, 88%)`}
+        scrimClassName="bg-overlay"
+        className={cn(
+          'flex flex-col [border-left:1px_solid_var(--border)] bg-background data-[open=false]:translate-x-[106%]',
+          open && 'shadow-[-16px_0_48px_black] shadow-black/25',
+        )}>
+        {col}
+      </EdgeDrawer>
     </div>
   );
 }

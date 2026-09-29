@@ -121,7 +121,7 @@ function ChatWithDiff() {
         </WorkbenchMain>
         <WorkbenchPanel>
           <WorkbenchPanelHeader>
-            <WorkbenchPanelTitle icon="diff">Changes</WorkbenchPanelTitle>
+            <WorkbenchPanelTitle icon="doc-text">Changes</WorkbenchPanelTitle>
             <WorkbenchPanelFullscreen />
             <WorkbenchPanelClose />
           </WorkbenchPanelHeader>
@@ -135,8 +135,8 @@ function ChatWithDiff() {
   )
 }
 
-// Workbench parts read the --wb-* tokens WorkbenchTheme sets; it follows the
-// app's light / dark appearance.
+// WorkbenchTheme is a `workbench` theme scope; it follows the app's light / dark
+// appearance.
 export default function ChatWithDiffExample() {
   return (
     <WorkbenchTheme style={{ padding: 18 }}>

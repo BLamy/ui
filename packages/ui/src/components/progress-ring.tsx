@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ProgressBar, type ProgressBarProps } from 'react-aria-components';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../lib/utils';
 import { NumberMorph } from './number-morph';
 
@@ -20,13 +21,32 @@ const SIZES: Record<RingSize, { px: number; stroke: number; font: number }> = {
   lg: { px: 44, stroke: 3.5, font: 13 },
   xl: { px: 72, stroke: 5, font: 20 },
 };
-const TONES = {
-  default: 'var(--primary)',
-  success: 'var(--success)',
-  warning: 'var(--warning)',
-  destructive: 'var(--destructive)',
-} as const;
-export type ProgressRingTone = keyof typeof TONES;
+/** The ring's box and arc color. Geometry (px, stroke, font) is computed and fed in as --ring-* variables; a
+ *  `color` / `trackColor` prop overrides --ring-color / --ring-track. */
+export const progressRingVariants = cva(
+  'relative inline-grid size-(--ring-px) shrink-0 place-items-center align-middle',
+  {
+    variants: {
+      tone: {
+        default: '[--ring-color:var(--primary)]',
+        success: '[--ring-color:var(--success)]',
+        warning: '[--ring-color:var(--warning)]',
+        destructive: '[--ring-color:var(--destructive)]',
+      },
+    },
+    defaultVariants: { tone: 'default' },
+  },
+);
+export type ProgressRingTone = NonNullable<VariantProps<typeof progressRingVariants>['tone']>;
+
+/** Runtime ring geometry and caller colors as CSS variables. */
+const ringVars = (d: { px: number; font: number }, color?: string, trackColor?: string, style?: CSSProperties) => ({
+  '--ring-px': d.px + 'px',
+  ...(d.font ? { '--ring-font': d.font + 'px' } : null),
+  ...(color ? { '--ring-color': color } : null),
+  ...(trackColor ? { '--ring-track': trackColor } : null),
+  ...style,
+}) as CSSProperties;
 
 function dims(size: RingSize | number | undefined, thickness: number | undefined) {
   const s = typeof size === 'number' ? { px: size, stroke: Math.max(2, size / 12), font: size >= 26 ? size * 0.36 : 0 } : SIZES[size ?? 'md'];
@@ -36,34 +56,34 @@ function dims(size: RingSize | number | undefined, thickness: number | undefined
 }
 
 interface RingSvgProps {
-  px: number; stroke: number; r: number; c: number; fraction: number; color: string;
-  trackColor?: string; transition: string; spin?: boolean;
+  px: number; stroke: number; r: number; c: number; fraction: number;
+  /** Classes for the arc's transition. */
+  transition: string; spin?: boolean;
 }
 
-function RingSvg({ px, stroke, r, c, fraction, color, trackColor, transition, spin }: RingSvgProps) {
+function RingSvg({ px, stroke, r, c, fraction, transition, spin }: RingSvgProps) {
   const f = Math.min(1, Math.max(0, fraction));
   return (
     <svg width={px} height={px} viewBox={`0 0 ${px} ${px}`} aria-hidden="true"
       className={cn('block -rotate-90', spin && 'animate-spin [animation-duration:900ms] motion-reduce:animate-none')}>
-      <circle cx={px / 2} cy={px / 2} r={r} fill="none" stroke={trackColor ?? 'var(--secondary-strong)'} strokeWidth={stroke} />
+      <circle cx={px / 2} cy={px / 2} r={r} fill="none" strokeWidth={stroke} className="stroke-(--ring-track,var(--secondary-strong))" />
       <circle
         data-slot="progress-ring-arc"
         cx={px / 2} cy={px / 2} r={r} fill="none" strokeWidth={stroke} strokeLinecap="round"
-        stroke={color} strokeDasharray={c} strokeDashoffset={c * (1 - f)}
+        strokeDasharray={c} strokeDashoffset={c * (1 - f)}
         // A zero-length round cap still draws a dot; hide the arc when empty.
         opacity={f <= 0 ? 0 : 1}
-        style={{ transition }}
+        className={cn('stroke-(--ring-color)', transition)}
       />
     </svg>
   );
 }
 
-export interface ProgressRingProps extends Omit<ProgressBarProps, 'children' | 'className' | 'style'> {
+export interface ProgressRingProps extends Omit<ProgressBarProps, 'children' | 'className' | 'style'>, VariantProps<typeof progressRingVariants> {
   /** `sm` 20 · `md` 28 · `lg` 44 · `xl` 72 px, or a number of px. */
   size?: RingSize | number;
   /** Stroke width in px (defaults scale with the size). */
   thickness?: number;
-  tone?: ProgressRingTone;
   /** Any CSS color for the arc (overrides `tone`). */
   color?: string;
   /** Any CSS color for the track. */
@@ -77,7 +97,7 @@ export interface ProgressRingProps extends Omit<ProgressBarProps, 'children' | '
 }
 
 export function ProgressRing({
-  size, thickness, tone = 'default', color, trackColor, showValue, children, className, style, ...props
+  size, thickness, tone, color, trackColor, showValue, children, className, style, ...props
 }: ProgressRingProps) {
   const d = dims(size, thickness);
   const plainPercent = props.valueLabel == null && props.formatOptions == null;
@@ -85,22 +105,19 @@ export function ProgressRing({
     <ProgressBar
       data-slot="progress-ring"
       {...props}
-      className={cn('relative inline-grid shrink-0 place-items-center align-middle', className)}
-      style={{ width: d.px, height: d.px, ...style }}
+      className={cn(progressRingVariants({ tone }), className)}
+      style={ringVars(d, color, trackColor, style)}
     >
       {({ percentage, valueText, isIndeterminate }) => (
         <>
           <RingSvg
             {...d}
             fraction={isIndeterminate ? 0.25 : (percentage ?? 0) / 100}
-            color={color ?? TONES[tone]}
-            trackColor={trackColor}
             spin={isIndeterminate}
-            transition="stroke-dashoffset var(--duration-spring-smooth) var(--ease-spring-smooth), stroke .3s, opacity .15s"
+            transition="[transition:stroke-dashoffset_var(--duration-spring-smooth)_var(--ease-spring-smooth),stroke_.3s,opacity_.15s]"
           />
           {children != null || (showValue && !isIndeterminate && d.font) ? (
-            <span className="absolute inset-0 grid place-items-center font-semibold tabular-nums text-foreground"
-              style={{ fontSize: d.font || undefined }}>
+            <span className={cn('absolute inset-0 grid place-items-center font-semibold tabular-nums text-foreground', d.font ? 'text-(length:--ring-font)' : '')}>
               {children ?? (plainPercent ? <NumberMorph value={(percentage ?? 0) / 100} format={{ style: 'percent' }} /> : valueText)}
             </span>
           ) : null}
@@ -144,7 +161,6 @@ export function CountdownRing({
   // Counting up means the period restarted: jump, don't drain backwards through the turnover.
   const jump = left > prev.current;
   useEffect(() => { prev.current = left; }, [left]);
-  const warnC = warnColor ?? 'var(--destructive)';
   const label_ = showLabel ?? d.font > 0;
   return (
     <span
@@ -152,19 +168,24 @@ export function CountdownRing({
       data-warning={warn || undefined}
       role="timer"
       aria-label={label ?? `${left} second${left === 1 ? '' : 's'} left`}
-      className={cn('relative inline-grid shrink-0 place-items-center align-middle', className)}
-      style={{ width: d.px, height: d.px, ...style }}
+      className={cn(
+        progressRingVariants(),
+        '[--ring-warn:var(--destructive)] data-warning:[--ring-color:var(--ring-warn)]',
+        className,
+      )}
+      style={ringVars({ px: d.px, font: d.font || Math.max(9, d.px * 0.36) }, color,
+        trackColor, warnColor ? { '--ring-warn': warnColor, ...style } as CSSProperties : style)}
     >
       <RingSvg
         {...d}
         fraction={left / duration}
-        color={warn ? warnC : color ?? 'var(--primary)'}
-        trackColor={trackColor}
-        transition={jump ? 'none' : 'stroke-dashoffset 1s linear, stroke .3s'}
+        transition={jump ? '[transition:none]' : '[transition:stroke-dashoffset_1s_linear,stroke_.3s]'}
       />
       {label_ ? (
-        <span aria-hidden="true" className="absolute inset-0 grid place-items-center font-semibold tabular-nums transition-colors duration-300"
-          style={{ fontSize: d.font || Math.max(9, d.px * 0.36), color: warn ? warnC : 'var(--muted-foreground)' }}>
+        <span aria-hidden="true" className={cn(
+          'absolute inset-0 grid place-items-center text-(length:--ring-font) font-semibold tabular-nums transition-colors duration-300',
+          warn ? 'text-(--ring-warn)' : 'text-muted-foreground',
+        )}>
           <NumberMorph value={left} />
         </span>
       ) : null}

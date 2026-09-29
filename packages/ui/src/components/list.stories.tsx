@@ -105,7 +105,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
               title={<span>{c.f} <span style={{ fontWeight: 600 }}>{c.l}</span></span>}
               subtitle={c.role + (c.com ? ' · ' + c.com : '')}
               leading={<Avatar c={c} />}
-              trailing={favs.has(c.id) ? <Icon name="starF" size={13} style={{ color: '#FF9F0A' }} /> : null}
+              trailing={favs.has(c.id) ? <Icon name="starF" size={13} className="text-warning" /> : null}
               accessory={edit ? undefined : 'chevron'}
               edit={edit} checked={pick.has(c.id)}
               onPress={() => { if (edit) togglePick(c.id); else Haptics.selection(); }}

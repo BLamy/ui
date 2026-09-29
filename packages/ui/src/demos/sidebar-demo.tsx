@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { cn } from '../lib/utils';
-import { ThemeScope } from '../lib/theme';
+import { themeScopeProps } from '../lib/theme';
 import { SidebarInset, SidebarNav, SidebarProvider, SidebarTrigger, type SidebarVariant } from '../components/sidebar';
 
 const VARIANTS: SidebarVariant[] = ['docked', 'rail', 'float', 'overlay'];
@@ -11,7 +11,7 @@ function Chip({ active, onPress, children }: { active: boolean; onPress: () => v
       onPress={onPress}
       className={cn(
         'cursor-pointer rounded-[999px] border-0 px-[11px] py-[5px] font-ios text-[12px] font-semibold',
-        active ? 'bg-primary text-white' : 'bg-secondary-strong text-foreground',
+        active ? 'bg-primary text-primary-foreground' : 'bg-secondary-strong text-foreground',
       )}
     >
       {children}
@@ -23,8 +23,10 @@ function Chip({ active, onPress, children }: { active: boolean; onPress: () => v
 export function SidebarDemo({ variant: initial = 'docked' }: { variant?: SidebarVariant }) {
   const [variant, setVariant] = useState<SidebarVariant>(initial);
   const [narrow, setNarrow] = useState(false);
+  const scope = themeScopeProps({ scope: 'workbench', appearance: 'dark' });
   return (
-    <ThemeScope scope="workbench" appearance="dark" className="grid justify-items-center gap-3 bg-background p-4 font-ios">
+    // A plain element (not <ThemeScope>): the demo's own chrome keeps content-box sizing.
+    <div {...scope} className={cn(scope.className, 'grid justify-items-center gap-3 bg-background p-4 font-ios')}>
       <div className="flex flex-wrap justify-center gap-1.5">
         {VARIANTS.map((v) => <Chip key={v} active={variant === v} onPress={() => setVariant(v)}>{v}</Chip>)}
         <Chip active={narrow} onPress={() => setNarrow((n) => !n)}>narrow container</Chip>
@@ -47,6 +49,6 @@ export function SidebarDemo({ variant: initial = 'docked' }: { variant?: Sidebar
           </SidebarInset>
         </SidebarProvider>
       </div>
-    </ThemeScope>
+    </div>
   );
 }
