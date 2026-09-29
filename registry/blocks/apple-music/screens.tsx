@@ -1,13 +1,13 @@
 /* Every screen the app pushes: Listen Now, Browse, Radio, Search, the Library and its sections, and the album,
-   artist and playlist pages. `screensFor` turns a stack of pages into NavigationStack screens, so the phone's
-   tabs and the wide layout's detail column push the same pages the same way. */
-import { useState, type CSSProperties, type ReactNode } from 'react';
-import { Haptics, SearchField, cn, type Screen } from '@brett_lamy/ui';
+   artist and playlist pages. `PageView` draws one; the phone's tabs push them as NavigationStack screens
+   (`screensFor`) and the wide layout's detail column as SplitViewStack pages. Pages read the player and
+   `open` from `MusicContext`, so a pushed page stays live. */
+import { createContext, useContext, useState, type CSSProperties, type ReactNode } from 'react';
+import { Haptics, Icon, NowPlayingBars, SearchField, cn, type IconName, type IconShape, type Screen } from '@brett_lamy/ui';
 import { ArtistArt, Artwork, PlaylistArt } from './artwork';
 import {
   ALBUM, ALBUMS, ALL_SONGS, ARTISTS, PLAYLISTS, STATIONS, albumSongs, fmt, minutes, playlistSongs, type Album, type Song,
 } from './data';
-import { Bars, Glyph, type GlyphName } from './glyphs';
 import type { Player } from './player';
 
 export type Page =
@@ -29,25 +29,28 @@ export function pageTitle(p: Page) {
 }
 
 export interface Ctx { player: Player; open: (p: Page) => void; wide: boolean; dark: boolean }
+export const MusicContext = createContext<Ctx | null>(null);
 
-export function screensFor(pages: Page[], ctx: Ctx, rootLeading?: ReactNode, bottomInset = 0): Screen[] {
-  return pages.map((page, i) => {
-    const detail = page.kind === 'album' || page.kind === 'artist' || page.kind === 'playlist';
-    return {
-      key: pageKey(page) + ':' + i,
-      title: pageTitle(page),
-      largeTitle: !detail,
-      titleOnScroll: detail,
-      hideChromeOnScroll: false,
-      leading: i === 0 ? rootLeading : undefined,
-      bottomInset,
-      maxW: ctx.wide ? 1180 : undefined,
-      content: <PageView page={page} ctx={ctx} />,
-    };
-  });
+export const isDetail = (p: Page) => p.kind === 'album' || p.kind === 'artist' || p.kind === 'playlist';
+
+/** The album icon (a record in its sleeve) — drawn here; the library set has no album glyph. */
+export const ALBUM_ICON: readonly IconShape[] = [{ r: [4, 4, 16, 16, 2.4] }, { c: [12, 12, 3.6] }, { c: [12, 12, 1], f: 1 }];
+
+/** The phone's NavigationStack screens for one tab's stack of pages. */
+export function screensFor(pages: Page[], bottomInset: number): Screen[] {
+  return pages.map((page, i) => ({
+    key: pageKey(page) + ':' + i,
+    title: pageTitle(page),
+    largeTitle: !isDetail(page),
+    titleOnScroll: isDetail(page),
+    hideChromeOnScroll: false,
+    bottomInset,
+    content: <PageView page={page} />,
+  }));
 }
 
-function PageView({ page, ctx }: { page: Page; ctx: Ctx }) {
+export function PageView({ page }: { page: Page }) {
+  const ctx = useContext(MusicContext)!;
   return <div className="@container"><PageBody page={page} ctx={ctx} /></div>;
 }
 
@@ -76,7 +79,7 @@ function Shelf({ title, children, onMore }: { title: string; children: ReactNode
     <section aria-label={title} className="pt-5">
       <button type="button" onClick={onMore} disabled={!onMore}
         className="bl-btn flex items-center gap-1 border-0 bg-transparent px-4 pb-2.5 [font-family:inherit] text-[21px] font-bold tracking-[-.3px] text-foreground enabled:cursor-pointer">
-        {title}{onMore ? <Glyph name="chevron" size={17} sw={2.6} className="text-muted-foreground" /> : null}
+        {title}{onMore ? <Icon name="chevron-right" size={17} weight="bold" className="text-muted-foreground" /> : null}
       </button>
       <div className="bl-scroll flex snap-x snap-mandatory scroll-px-4 gap-3.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">{children}</div>
     </section>
@@ -99,8 +102,8 @@ function PillButtons({ onPlay, onShuffle }: { onPlay: () => void; onShuffle: () 
   const pill = 'bl-btn flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[11px] border-0 bg-bl-fill [font-family:inherit] text-[16px] font-semibold text-primary transition-[scale,background-color] duration-spring-snappy ease-spring-snappy hover:bg-bl-fill2 active:scale-[.97]';
   return (
     <div className="flex w-full max-w-[420px] gap-3">
-      <button type="button" className={pill} onClick={onPlay}><Glyph name="play" size={18} />Play</button>
-      <button type="button" className={pill} onClick={onShuffle}><Glyph name="shuffle" size={19} sw={2.2} />Shuffle</button>
+      <button type="button" className={pill} onClick={onPlay}><Icon name="play" size={18} />Play</button>
+      <button type="button" className={pill} onClick={onShuffle}><Icon name="shuffle" size={19} weight="semibold" />Shuffle</button>
     </div>
   );
 }
@@ -114,23 +117,23 @@ function SongRow({ s, i, songs, ctx, art, number }: { s: Song; i: number; songs:
       {art ? (
         <span className="relative shrink-0">
           <Artwork album={s.album} size={44} rounded={5} />
-          {current ? <span className="absolute inset-0 grid place-items-center rounded-[5px] bg-black/35 text-white"><Bars playing={ctx.player.playing} /></span> : null}
+          {current ? <span className="absolute inset-0 grid place-items-center rounded-[5px] bg-black/35 text-white"><NowPlayingBars playing={ctx.player.playing} /></span> : null}
         </span>
       ) : (
         <span className="grid w-6 shrink-0 place-items-center text-[15px] tabular-nums text-muted-foreground">
-          {current ? <Bars playing={ctx.player.playing} className="text-primary" /> : number}
+          {current ? <NowPlayingBars playing={ctx.player.playing} className="text-primary" /> : number}
         </span>
       )}
       <span className={cn('flex min-w-0 flex-1 items-center gap-2 py-3 shadow-[inset_0_-1px_0_var(--bl-sep)]', art && 'py-2')}>
         <span className="min-w-0 flex-1">
           <span className={cn('flex items-center gap-1.5 truncate text-[16px]', current && 'text-primary')}>
             <span className="truncate">{s.track.title}</span>
-            {s.track.explicit ? <Glyph name="explicit" size={14} className="text-muted-foreground" /> : null}
+            {s.track.explicit ? <Icon name="e-square-fill" size={14} aria-label="Explicit" className="text-muted-foreground" /> : null}
           </span>
           {art ? <span className="block truncate text-[13px] text-muted-foreground">{s.album.artist}</span> : null}
         </span>
         <span className="text-[13px] tabular-nums text-muted-foreground">{fmt(s.track.dur)}</span>
-        <Glyph name="more" size={18} className="text-muted-foreground opacity-70" />
+        <Icon name="ellipsis" size={18} className="text-muted-foreground opacity-70" />
       </span>
     </button>
   );
@@ -239,7 +242,7 @@ function Radio({ ctx }: { ctx: Ctx }) {
           style={{ background: `linear-gradient(120deg, ${a.colors[0]}, ${a.colors[1]})` }}>
           <Artwork album={a} rounded={10} className="absolute top-1/2 right-[6%] h-[72%] w-auto -translate-y-1/2 shadow-[0_12px_40px_rgba(0,0,0,.35)]" />
           <span className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-[15px] font-semibold text-black">
-            <Glyph name="play" size={15} /> Listen Now
+            <Icon name="play" size={15} /> Listen Now
           </span>
           <span className="absolute top-5 left-5 text-left text-[30px] leading-none font-black tracking-[-.5px] text-white">TIDEWATER<br />RADIO</span>
         </button>
@@ -250,7 +253,7 @@ function Radio({ ctx }: { ctx: Ctx }) {
             className="bl-btn w-[164px] shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
             <span className="relative block">
               <Artwork album={ALBUM[s.album]} size={164} />
-              <Glyph name="radio" size={22} className="absolute top-2 right-2 text-white [filter:drop-shadow(0_1px_2px_rgba(0,0,0,.4))]" />
+              <Icon name="radiowaves" size={22} className="absolute top-2 right-2 text-white [filter:drop-shadow(0_1px_2px_rgba(0,0,0,.4))]" />
             </span>
             <div className="mt-1.5 truncate text-[14px] font-medium">{s.title}</div>
             <div className="truncate text-[13px] text-muted-foreground">{s.subtitle}</div>
@@ -312,19 +315,23 @@ function Search({ ctx }: { ctx: Ctx }) {
 
 /* ── Library ── */
 
-const LIBRARY_LINKS: [Page, GlyphName][] = [[{ kind: 'artists' }, 'mic'], [{ kind: 'albums' }, 'album'], [{ kind: 'songs' }, 'note']];
+type Sym = { name?: IconName; shapes?: readonly IconShape[] };
+const LIBRARY_LINKS: [Page, Sym][] = [
+  [{ kind: 'artists' }, { name: 'mic' }], [{ kind: 'albums' }, { shapes: ALBUM_ICON }], [{ kind: 'songs' }, { name: 'music-notes' }],
+  ...PLAYLISTS.slice(0, 2).map((p): [Page, Sym] => [{ kind: 'playlist', id: p.id }, { name: 'music-note-list' }]),
+];
 
 function LibraryHome({ ctx }: { ctx: Ctx }) {
   return (
     <div className="pb-4">
       <div className="pl-4">
-        {[...LIBRARY_LINKS, ...PLAYLISTS.slice(0, 2).map((p) => [{ kind: 'playlist', id: p.id } as Page, 'playlist'] as [Page, GlyphName])].map(([page, icon]) => (
+        {LIBRARY_LINKS.map(([page, icon]) => (
           <button key={pageKey(page)} type="button" onClick={() => { Haptics.selection(); ctx.open(page); }}
             className="bl-btn flex w-full cursor-pointer items-center gap-3.5 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
-            <Glyph name={icon} size={24} className="text-primary" />
+            <Icon {...icon} size={24} className="text-primary" />
             <span className="flex flex-1 items-center py-3 text-[20px] shadow-[inset_0_-1px_0_var(--bl-sep)]">
               <span className="flex-1">{pageTitle(page)}</span>
-              <Glyph name="chevron" size={16} sw={2.4} className="text-bl-label3" />
+              <Icon name="chevron-right" size={16} weight="bold" className="text-bl-label3" />
             </span>
           </button>
         ))}
@@ -359,7 +366,7 @@ function ArtistList({ ctx }: { ctx: Ctx }) {
           <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={44} />
           <span className="flex flex-1 items-center py-3.5 text-[17px] shadow-[inset_0_-1px_0_var(--bl-sep)]">
             <span className="flex-1">{name}</span>
-            <Glyph name="chevron" size={15} sw={2.4} className="text-bl-label3" />
+            <Icon name="chevron-right" size={15} weight="bold" className="text-bl-label3" />
           </span>
         </button>
       ))}

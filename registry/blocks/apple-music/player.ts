@@ -35,7 +35,6 @@ export function usePlayer(initial?: { queue: Song[]; index: number; position?: n
     if (!playing || position < current.track.dur) return;
     if (repeat === 'one') setPosition(0);
     else go(index + 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [position]);
 
   return {
