@@ -11,7 +11,7 @@
     "components/chat-users.tsx",
     "components/chat-avatar.tsx",
     "components/rich-text.tsx",
-    "components/workspace-tile.tsx",
+    "components/workspace-rail.tsx",
     "components/server-header.tsx",
     "components/channel-list.tsx",
     "components/user-panel.tsx",

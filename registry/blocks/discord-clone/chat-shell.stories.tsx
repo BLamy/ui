@@ -34,7 +34,7 @@ import { Message, MessageAuthor, MessageAvatar, MessageBody, MessageContent, Mes
 import { DateDivider, MessageList, TypingIndicator } from './components/message-list';
 import { ServerHeader } from './components/server-header';
 import { ThreadHeader } from './components/thread-preview';
-import { WorkspaceTile } from './components/workspace-tile';
+import { WorkspaceTile } from './components/workspace-rail';
 import { FixtureSidebar, FixtureUserPanel, USERS } from './chat.fixtures';
 
 /* ChatShell (a library template) composed with the discord-clone block's parts. */

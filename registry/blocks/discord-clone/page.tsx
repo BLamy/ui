@@ -34,7 +34,7 @@ import { MemberGroup, MemberItem, MemberList } from './components/member-list';
 import { ChannelIntro, DateDivider, MessageList, TypingIndicator } from './components/message-list';
 import { ServerHeader } from './components/server-header';
 import { UserPanel, UserPanelAction, UserPanelInfo, UserPanelName, UserPanelStatus } from './components/user-panel';
-import { WorkspaceTile } from './components/workspace-tile';
+import { WorkspaceTile } from './components/workspace-rail';
 import { ChannelMessage } from './channel-message';
 import { ThreadView } from './thread-view';
 import { BOT_REPLY, CHANNELS, ME, PRESENCE, USERS, WORKSPACES, type Channel, type MessageData } from './data';
@@ -57,6 +57,9 @@ export interface DiscordCloneProps {
   style?: CSSProperties;
 }
 
+/** The default accent (iOS blue). */
+const DEFAULT_TINT = '#0A84FF';
+
 const groups = [...new Set(CHANNELS.map((c) => c.group))];
 
 /** react-aria's tabs drop `title`, so the rail's tooltips go on through a ref. */
@@ -65,7 +68,7 @@ const titleRef = (title: string) => (el: HTMLElement | null) => {
 };
 
 export default function DiscordClone({
-  tint = '#0A84FF',
+  tint = DEFAULT_TINT,
   appearance,
   showMembers = true,
   defaultThread = null,

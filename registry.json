@@ -1736,9 +1736,9 @@
           "target": "components/blocks/discord-clone/components/rich-text.tsx"
         },
         {
-          "path": "registry/blocks/discord-clone/components/workspace-tile.tsx",
+          "path": "registry/blocks/discord-clone/components/workspace-rail.tsx",
           "type": "registry:component",
-          "target": "components/blocks/discord-clone/components/workspace-tile.tsx"
+          "target": "components/blocks/discord-clone/components/workspace-rail.tsx"
         },
         {
           "path": "registry/blocks/discord-clone/components/server-header.tsx",
