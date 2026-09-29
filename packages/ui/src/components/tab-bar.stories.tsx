@@ -22,7 +22,7 @@ export const Interactive: Story = {
     const [tab, setTab] = useState('contacts');
     return (
       <>
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 15, color: 'var(--bl-label2)' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 15, color: 'var(--muted-foreground)' }}>
           Selected: {tab}
         </div>
         <TabBar items={items} selected={tab} onSelect={setTab} />

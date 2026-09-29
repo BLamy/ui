@@ -54,7 +54,7 @@ export function ChatComposer({ onSend, placeholder, autoFocus, value: valueProp,
     <ChatComposerContext.Provider value={{ value, setValue, send }}>
       <div
         data-slot="chat-composer"
-        className={cn('flex items-center gap-[8px] rounded-[12px] border border-ck-sep bg-ck-card py-[4px] pr-[4px] pl-[13px]', className)}
+        className={cn('flex items-center gap-[8px] rounded-[12px] border border-border bg-card py-[4px] pr-[4px] pl-[13px]', className)}
         {...props}
       >
         {children ?? (
@@ -79,9 +79,8 @@ export function ChatComposerInput({ className, onKeyDown, ...props }: Omit<Compo
         if (e.key === 'Enter') send();
         onKeyDown?.(e);
       }}
-      // The base sheet styles input::placeholder with --bl-label3 (unlayered); point it at the chat's muted ink.
       className={composeRenderProps(className, (c) =>
-        cn('min-w-0 flex-1 border-0 bg-transparent px-0 py-[7px] font-ios text-[13.5px] text-ck-label outline-none [--bl-label3:var(--ck-mut3,rgba(235,235,245,.35))]', c),
+        cn('min-w-0 flex-1 border-0 bg-transparent px-0 py-[7px] font-ios text-[13.5px] text-foreground outline-none', c),
       )}
       {...props}
     />
@@ -105,7 +104,7 @@ export function ChatComposerSend({ className, children, ...props }: ChatComposer
       className={composeRenderProps(className, (c) =>
         cn(
           'grid size-[32px] shrink-0 cursor-pointer place-items-center rounded-[9px] border-0 [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-pressed:scale-[.94] motion-reduce:transition-none',
-          ready ? 'bg-ck-tint text-white' : 'bg-ck-fill2 text-ck-on-fill',
+          ready ? 'bg-primary text-white' : 'bg-secondary-strong text-secondary-foreground',
           c,
         ),
       )}
@@ -122,7 +121,7 @@ export function ChatComposerAction({ className, ...props }: ComponentProps<typeo
     <Button
       data-slot="chat-composer-action"
       className={composeRenderProps(className, (c) =>
-        cn('-ml-[5px] grid size-[28px] shrink-0 cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent text-ck-mut3 data-hovered:text-ck-mut', c),
+        cn('-ml-[5px] grid size-[28px] shrink-0 cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent text-tertiary-foreground data-hovered:text-muted-foreground', c),
       )}
       {...props}
     />

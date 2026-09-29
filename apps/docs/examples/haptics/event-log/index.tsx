@@ -17,9 +17,9 @@ function Window({ width, children }: { width: number; children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >
@@ -90,18 +90,18 @@ export default function HapticLog() {
                 key={i}
                 style={{
                   padding: '6px 0',
-                  borderBottom: '1px solid var(--bl-sep)',
+                  borderBottom: '1px solid var(--border)',
                   opacity: 1 - i * 0.16,
                 }}
               >
                 {e.label}{' '}
-                <span style={{ color: 'var(--bl-label3)' }}>
+                <span style={{ color: 'var(--tertiary-foreground)' }}>
                   · weight {e.w}
                 </span>
               </li>
             ))
           ) : (
-            <li style={{ color: 'var(--bl-label2)' }}>Press a button…</li>
+            <li style={{ color: 'var(--muted-foreground)' }}>Press a button…</li>
           )}
         </ol>
         {/* The pill the Contacts demo shows: last event + active engine */}

@@ -16,6 +16,10 @@
     "./styles.css": {
       "@org/source": "./src/styles.css",
       "default": "./dist/index.css"
+    },
+    "./theme.css": {
+      "@org/source": "./src/theme.css",
+      "default": "./dist/theme.css"
     }
   },
   "dependencies": {

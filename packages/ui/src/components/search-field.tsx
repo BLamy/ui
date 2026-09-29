@@ -35,7 +35,7 @@ export function SearchField({
       <Input placeholder={placeholder}
         className="min-w-0 flex-1 appearance-none border-none bg-transparent p-0 [font-family:inherit] text-[17px] text-foreground outline-none select-text [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none" />
       {q ? (
-        <AriaButton aria-label="Clear search" className="bl-btn grid cursor-pointer border-0 bg-transparent p-0 text-bl-label3">
+        <AriaButton aria-label="Clear search" className="bl-btn grid cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground">
           <Icon name="xcirc" size={18} />
         </AriaButton>
       ) : null}

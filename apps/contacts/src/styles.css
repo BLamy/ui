@@ -2,6 +2,7 @@
    package source, like registry/styles.css: Tailwind's @import resolver ignores the workspace `@org/source`
    export condition (the package's default export is the built dist sheet). */
 @import "../../../packages/ui/src/styles.css";
+@import "../../../packages/ui/src/theme.css";
 @source "./";
 
 html, body, #root { height: 100%; margin: 0; }

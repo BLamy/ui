@@ -28,7 +28,7 @@ export function Switch({ checked, onChange, className, style, ...rest }: SwitchP
     >
       <span
         data-slot="switch-track"
-        className="absolute inset-0 rounded-2xl bg-bl-fill2 transition-[background-color] duration-spring-smooth ease-spring-smooth group-data-selected:bg-bl-green"
+        className="absolute inset-0 rounded-2xl bg-secondary-strong transition-[background-color] duration-spring-smooth ease-spring-smooth group-data-selected:bg-success"
       />
       <span
         data-slot="switch-thumb"

@@ -17,12 +17,12 @@ const ACTIONS = [
 
 /** A row inside a Card: label on the left, a control or value on the right. */
 function CardRow({ children }: { children: ReactNode }) {
-  return <div className="flex min-h-[46px] items-center gap-3 px-4 text-[17px] not-last:shadow-[inset_0_-1px_0_var(--bl-sep)]">{children}</div>;
+  return <div className="flex min-h-[46px] items-center gap-3 px-4 text-[17px] not-last:shadow-[inset_0_-1px_0_var(--border)]">{children}</div>;
 }
 
 function Field({ label, value, tint }: { label: string; value: ReactNode; tint?: boolean }) {
   return (
-    <div className="px-4 py-2 not-last:shadow-[inset_0_-1px_0_var(--bl-sep)]">
+    <div className="px-4 py-2 not-last:shadow-[inset_0_-1px_0_var(--border)]">
       <div className="text-[12.5px] text-muted-foreground">{label}</div>
       <div className={tint ? 'truncate text-[16.5px] text-primary' : 'truncate text-[16.5px]'}>{value}</div>
     </div>
@@ -65,7 +65,7 @@ function ContactCard({ c, contacts, onShare }: { c: Contact; contacts: ContactsS
           </Select>
         </CardRow>
         <CardRow>
-          <Icon name={fav ? 'starF' : 'star'} size={21} className={fav ? 'text-[#FF9F0A]' : 'text-bl-label3'} />
+          <Icon name={fav ? 'starF' : 'star'} size={21} className={fav ? 'text-[#FF9F0A]' : 'text-tertiary-foreground'} />
           <span className="flex-1">Favorite</span>
           <Switch aria-label="Favorite" checked={fav} onChange={(on) => contacts.setFavorite([c.id], on)} />
         </CardRow>
@@ -111,7 +111,7 @@ function Activity({ c }: { c: Contact }) {
       <ListSection>
         {rows.map(([icon, title, detail], i) => (
           <ListRow key={i} title={title} subtitle={detail} divider={i < rows.length - 1}
-            leading={<span className="grid size-[30px] place-items-center rounded-lg bg-bl-fill text-primary"><Icon name={icon} size={16} sw={2} /></span>} />
+            leading={<span className="grid size-[30px] place-items-center rounded-lg bg-secondary text-primary"><Icon name={icon} size={16} sw={2} /></span>} />
         ))}
       </ListSection>
       {NOTES[c.id] ? (
@@ -136,7 +136,7 @@ export function ContactDetail({ contacts, activity, onActivity, onShare }: {
       <SplitViewHeader title={c ? `${c.f} ${c.l}` : undefined}
         trailing={c ? (
           <Button variant="ghost" size="icon" aria-label="Activity" onPress={() => { Haptics.impact('light'); onActivity(!activity); }}
-            className="rounded-[10px] text-primary data-hovered:bg-bl-fill">
+            className="rounded-[10px] text-primary data-hovered:bg-secondary">
             <Icon name="clock" size={22} sw={2} />
           </Button>
         ) : null} />

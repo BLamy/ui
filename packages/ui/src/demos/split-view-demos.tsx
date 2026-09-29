@@ -56,7 +56,7 @@ export function DemoGlyph({ name, size = 20, sw = 1.9 }: { name: string; size?: 
 function BarButton({ label, children, onPress }: { label: string; children: ReactNode; onPress?: () => void }) {
   return (
     <AriaButton aria-label={label} onPress={onPress}
-      className="bl-btn grid cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent px-2.5 py-2 text-primary outline-none transition-[background,transform] duration-150 data-[hovered]:bg-bl-fill data-[pressed]:scale-[.94] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+      className="bl-btn grid cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent px-2.5 py-2 text-primary outline-none transition-[background,transform] duration-150 data-[hovered]:bg-secondary data-[pressed]:scale-[.94] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
       {children}
     </AriaButton>
   );
@@ -344,19 +344,19 @@ export function SplitViewResizableDemo({ children, initial = 900, min = 320, max
     <div ref={host} data-slot="split-view-resizable-demo" className="flex w-full flex-col items-start gap-2.5">
       <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground tabular-nums">
         {(['compact', 'medium', 'regular'] as const).map((c) => (
-          <span key={c} className={cn('rounded-full px-2.5 py-1 font-semibold transition-colors duration-200', c === wc ? 'bg-primary text-primary-foreground' : 'bg-bl-fill')}>{c}</span>
+          <span key={c} className={cn('rounded-full px-2.5 py-1 font-semibold transition-colors duration-200', c === wc ? 'bg-primary text-primary-foreground' : 'bg-secondary')}>{c}</span>
         ))}
         <span className="ml-1">{Math.round(w)}px</span>
       </div>
       <div className="relative flex max-w-full">
-        <div className="relative overflow-hidden rounded-[14px] shadow-[0_0_0_1px_var(--bl-sep),0_10px_30px_rgba(0,0,0,.12)]" style={{ width: w, height }}>
+        <div className="relative overflow-hidden rounded-[14px] shadow-[0_0_0_1px_var(--border),0_10px_30px_rgba(0,0,0,.12)]" style={{ width: w, height }}>
           {children}
         </div>
         <div role="separator" aria-orientation="vertical" aria-label="Resize frame" aria-valuenow={Math.round(w)} aria-valuemin={min} aria-valuemax={hi}
           tabIndex={0} {...mergeProps(moveProps, focusProps)}
           className="group grid w-5 shrink-0 cursor-col-resize touch-none place-items-center outline-none">
           <span className={cn('h-12 w-[5px] rounded-full transition-[background,transform] duration-150',
-            dragging || isFocusVisible ? 'scale-y-110 bg-primary' : 'bg-bl-label3 group-hover:bg-bl-label2')} />
+            dragging || isFocusVisible ? 'scale-y-110 bg-primary' : 'bg-tertiary-foreground group-hover:bg-muted-foreground')} />
         </div>
       </div>
     </div>
@@ -408,10 +408,10 @@ function RemindersList({ scrolled }: { scrolled?: boolean }) {
           {l.items.map((t) => (
             <label key={t} className="flex cursor-pointer items-center gap-3 pl-4">
               <input type="checkbox" className="peer sr-only" checked={!!done[t]} onChange={(e) => setDone((d) => ({ ...d, [t]: e.target.checked }))} />
-              <span aria-hidden="true" className="grid size-[22px] shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1.6px_var(--bl-label3)] peer-checked:bg-(--c) peer-checked:shadow-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring" style={{ '--c': l.color } as CSSProperties}>
+              <span aria-hidden="true" className="grid size-[22px] shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)] peer-checked:bg-(--c) peer-checked:shadow-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring" style={{ '--c': l.color } as CSSProperties}>
                 {done[t] ? <span className="size-2 rounded-full bg-white" /> : null}
               </span>
-              <span className="min-w-0 flex-1 truncate py-[11px] pr-4 text-[17px] shadow-[inset_0_-1px_0_var(--bl-sep)] peer-checked:text-muted-foreground">{t}</span>
+              <span className="min-w-0 flex-1 truncate py-[11px] pr-4 text-[17px] shadow-[inset_0_-1px_0_var(--border)] peer-checked:text-muted-foreground">{t}</span>
             </label>
           ))}
         </div>
@@ -499,10 +499,10 @@ function AlbumPage({ a }: { a: Album }) {
           <div className="mt-6">
             {a.tracks.map((t, i) => (
               <AriaButton key={t} onPress={() => stack.push(<TrackPage a={a} track={t} />, { key: `${a.id}-${i}` })}
-                className="bl-btn flex w-full cursor-pointer items-center gap-4 border-0 bg-transparent px-1 py-3 text-left [font-family:inherit] text-[16px] text-foreground shadow-[inset_0_-1px_0_var(--bl-sep)] outline-none data-[pressed]:bg-bl-press data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+                className="bl-btn flex w-full cursor-pointer items-center gap-4 border-0 bg-transparent px-1 py-3 text-left [font-family:inherit] text-[16px] text-foreground shadow-[inset_0_-1px_0_var(--border)] outline-none data-[pressed]:bg-accent data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
                 <span className="w-5 text-right text-[14px] text-muted-foreground tabular-nums">{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate">{t}</span>
-                <Icon name="chev" size={14} sw={2.6} className="text-bl-label3" />
+                <Icon name="chev" size={14} sw={2.6} className="text-tertiary-foreground" />
               </AriaButton>
             ))}
           </div>
@@ -601,7 +601,7 @@ function GalleryDetail() {
               <AriaButton key={x.id} onPress={() => { s.select('supplementary', x.id); s.setSupplementaryVisible(true); }}
                 className="bl-btn flex cursor-pointer flex-col items-stretch gap-2 border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground outline-none data-[focus-visible]:rounded-[12px] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
                 <span className={cn('block h-[150px] overflow-hidden rounded-[12px] bg-card p-3 text-[11px] leading-[1.45] text-muted-foreground',
-                  x.id === s.selection.supplementary ? 'shadow-[0_0_0_2.5px_var(--bl-tint)]' : 'shadow-[0_0_0_1px_var(--bl-sep)]')}>
+                  x.id === s.selection.supplementary ? 'shadow-[0_0_0_2.5px_var(--primary)]' : 'shadow-[0_0_0_1px_var(--border)]')}>
                   <span className="mb-1 block text-[12px] font-semibold text-foreground">{x.title}</span>{x.body}
                 </span>
                 <span className="px-1 text-center">

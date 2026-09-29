@@ -38,7 +38,7 @@ function ContactsList() {
       style={{
         position: 'relative',
         height: 400,
-        background: 'var(--bl-card)',
+        background: 'var(--card)',
       }}
     >
       <div
@@ -84,7 +84,7 @@ function ContactsList() {
 // centered.
 function Window({
   width,
-  bg = 'var(--bl-bg)',
+  bg = 'var(--background)',
   children,
 }: {
   width?: number
@@ -101,8 +101,8 @@ function Window({
         borderRadius: 14,
         overflow: 'hidden',
         background: bg,
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

@@ -20,7 +20,7 @@ export default function ActivityDrawer({
     setOpen(mode === 'fixed')
   }, [mode])
   return (
-    <Frame height={330} bg="var(--bl-bg)">
+    <Frame height={330} bg="var(--background)">
       <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
         <div
           style={{
@@ -47,7 +47,7 @@ export default function ActivityDrawer({
               <div
                 style={{
                   fontSize: 12.5,
-                  color: 'var(--bl-label2)',
+                  color: 'var(--muted-foreground)',
                   marginTop: 6,
                   lineHeight: 1.5,
                 }}
@@ -74,8 +74,8 @@ export default function ActivityDrawer({
               style={{
                 padding: '11px 16px',
                 fontSize: 13,
-                borderBottom: '1px solid var(--bl-sep)',
-                color: 'var(--bl-label2)',
+                borderBottom: '1px solid var(--border)',
+                color: 'var(--muted-foreground)',
               }}
             >
               {t}
@@ -128,7 +128,7 @@ function TintButton({
       style={{
         border: 0,
         borderRadius: 10,
-        background: 'var(--bl-tint, #0A84FF)',
+        background: 'var(--primary)',
         color: '#fff',
         fontFamily: 'inherit',
         fontWeight: 600,

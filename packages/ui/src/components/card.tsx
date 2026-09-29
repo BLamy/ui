@@ -9,9 +9,9 @@ export const cardVariants = cva('flex flex-col overflow-hidden rounded-[14px] te
       /** Inset-grouped: a card on the grouped (bg2) background. */
       default: 'bg-card',
       /** Floating: lifts off any background. */
-      elevated: 'bg-card shadow-[0_6px_24px_rgba(0,0,0,.1),0_0_0_.5px_var(--bl-sep)]',
+      elevated: 'bg-card shadow-[0_6px_24px_rgba(0,0,0,.1),0_0_0_.5px_var(--border)]',
       /** Hairline outline, no fill. */
-      outline: 'bg-transparent shadow-[inset_0_0_0_1px_var(--bl-sep)]',
+      outline: 'bg-transparent shadow-[inset_0_0_0_1px_var(--border)]',
     },
   },
   defaultVariants: { variant: 'default' },

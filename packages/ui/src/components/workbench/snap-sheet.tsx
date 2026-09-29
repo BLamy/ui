@@ -113,8 +113,8 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, class
       <motion.div data-slot="snap-sheet-scrim" onClick={onClose} className="absolute inset-0 bg-[rgba(0,0,0,.45)]" style={{ opacity: fade }} />
       <motion.div
         data-slot="snap-sheet-panel"
-        className="absolute right-0 bottom-0 left-0 flex h-(--sheet-h) touch-none flex-col rounded-t-2xl border-x border-t border-wb-sep bg-(--sheet-bg) shadow-[0_-12px_40px_var(--wb-shadow,rgba(0,0,0,.5))]"
-        style={{ y, '--sheet-h': maxS * 100 + '%', '--sheet-bg': bg || 'var(--wb-card)' } as never}
+        className="absolute right-0 bottom-0 left-0 flex h-(--sheet-h) touch-none flex-col rounded-t-2xl border-x border-t border-border bg-(--sheet-bg) shadow-[0_-12px_40px_black] shadow-black/8 dark:shadow-black/50"
+        style={{ y, '--sheet-h': maxS * 100 + '%', '--sheet-bg': bg || 'var(--card)' } as never}
       >
         <div
           data-slot="snap-sheet-handle"
@@ -124,7 +124,7 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, bg, class
           onPointerCancel={up}
           className="shrink-0 cursor-grab touch-none pt-2 pb-1"
         >
-          <div className="mx-auto h-[5px] w-[38px] rounded-[3px] bg-wb-handle" />
+          <div className="mx-auto h-[5px] w-[38px] rounded-[3px] bg-handle" />
         </div>
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </motion.div>

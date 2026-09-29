@@ -282,10 +282,10 @@ function Region({ state, placement, inline, offset, className, style, onSettled,
 }
 
 const TONE_COLOR: Record<ToastTone, string> = {
-  default: 'var(--bl-tint)',
-  success: 'var(--bl-green, #34C759)',
-  warning: 'var(--bl-orange, #FF9F0A)',
-  destructive: 'var(--bl-red, #FF3B30)',
+  default: 'var(--primary)',
+  success: 'var(--success)',
+  warning: 'var(--warning)',
+  destructive: 'var(--destructive)',
 };
 /* HUDs use the bare glyph (on the dark pill); banners the filled circle SF uses in notifications. */
 const TONE_ICON: Record<ToastVariant, Record<ToastTone, string | null>> = {
@@ -339,10 +339,10 @@ function ToastItem({ toast: t, state, fromTop }: { toast: QueuedToast<Entry>; st
         data-variant={data.variant}
         data-tone={data.tone ?? 'default'}
         className={cn(
-          'outline-none data-[focus-visible]:ring-2 focus-visible:ring-2 focus-visible:ring-[var(--bl-tint)]',
+          'outline-none data-[focus-visible]:ring-2 focus-visible:ring-2 focus-visible:ring-[var(--primary)]',
           hud
             ? 'flex items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_8px_30px_rgba(0,0,0,.25)] backdrop-blur-xl backdrop-saturate-150'
-            : 'flex w-[min(360px,calc(100vw-32px))] items-start gap-3 rounded-2xl bg-bl-card px-3.5 py-3 text-foreground shadow-[0_10px_34px_rgba(0,0,0,.16),0_0_0_.5px_var(--bl-sep)]',
+            : 'flex w-[min(360px,calc(100vw-32px))] items-start gap-3 rounded-2xl bg-card px-3.5 py-3 text-foreground shadow-[0_10px_34px_rgba(0,0,0,.16),0_0_0_.5px_var(--border)]',
         )}
       >
         <ToastIcon data={data} size={hud ? 16 : 20} />
@@ -357,7 +357,7 @@ function ToastItem({ toast: t, state, fromTop }: { toast: QueuedToast<Entry>; st
         {!hud && data.action ? (
           <AriaButton
             onPress={() => { if (data.action!.onAction() !== false) state.close(t.key); }}
-            className="bl-btn shrink-0 cursor-pointer self-center rounded-full border-0 bg-bl-fill px-3 py-1.5 text-[13.5px] font-semibold text-primary outline-none transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-bl-fill2 active:scale-95 data-[focus-visible]:ring-2 data-[focus-visible]:ring-[var(--bl-tint)]"
+            className="bl-btn shrink-0 cursor-pointer self-center rounded-full border-0 bg-secondary px-3 py-1.5 text-[13.5px] font-semibold text-primary outline-none transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong active:scale-95 data-[focus-visible]:ring-2 data-[focus-visible]:ring-[var(--primary)]"
           >
             {data.action.label}
           </AriaButton>
@@ -366,7 +366,7 @@ function ToastItem({ toast: t, state, fromTop }: { toast: QueuedToast<Entry>; st
           <AriaButton
             {...closeAria}
             onPress={close}
-            className="bl-btn -mt-0.5 -mr-1 grid size-7 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground outline-none transition-colors hover:bg-bl-fill hover:text-foreground data-[focus-visible]:ring-2 data-[focus-visible]:ring-[var(--bl-tint)]"
+            className="bl-btn -mt-0.5 -mr-1 grid size-7 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground data-[focus-visible]:ring-2 data-[focus-visible]:ring-[var(--primary)]"
           >
             <Icon name="x" size={14} sw={2.2} />
           </AriaButton>

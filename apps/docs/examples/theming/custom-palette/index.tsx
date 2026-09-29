@@ -12,20 +12,20 @@ import {
 // A brand palette defined for both appearances: override any --bl-* token.
 const sepia: Record<'light' | 'dark', Record<string, string>> = {
   light: {
-    '--bl-bg2': '#F4ECDD',
-    '--bl-card': '#FBF6EC',
-    '--bl-label': '#3B2F20',
-    '--bl-label2': 'rgba(59,47,32,.62)',
-    '--bl-sep': 'rgba(59,47,32,.16)',
-    '--bl-fill': 'rgba(122,94,56,.12)',
+    '--muted': '#F4ECDD',
+    '--card': '#FBF6EC',
+    '--foreground': '#3B2F20',
+    '--muted-foreground': 'rgba(59,47,32,.62)',
+    '--border': 'rgba(59,47,32,.16)',
+    '--secondary': 'rgba(122,94,56,.12)',
   },
   dark: {
-    '--bl-bg2': '#1C1712',
-    '--bl-card': '#28211A',
-    '--bl-label': '#F1E6D2',
-    '--bl-label2': 'rgba(241,230,210,.6)',
-    '--bl-sep': 'rgba(241,230,210,.14)',
-    '--bl-fill': 'rgba(241,230,210,.1)',
+    '--muted': '#1C1712',
+    '--card': '#28211A',
+    '--foreground': '#F1E6D2',
+    '--muted-foreground': 'rgba(241,230,210,.6)',
+    '--border': 'rgba(241,230,210,.14)',
+    '--secondary': 'rgba(241,230,210,.1)',
   },
 }
 

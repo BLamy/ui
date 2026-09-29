@@ -43,7 +43,7 @@ function DocsSidebar() {
           </Sidebar.Content>
         </Sidebar>
         <SidebarInset>
-          <article style={{ padding: '18px 22px', color: 'var(--wb-label)' }}>
+          <article style={{ padding: '18px 22px', color: 'var(--foreground)' }}>
             <SidebarTrigger style={{ marginLeft: -6 }} />
             <h2 style={{ margin: '8px 0 6px', fontSize: 22 }}>{page}</h2>
             <p
@@ -51,7 +51,7 @@ function DocsSidebar() {
                 margin: 0,
                 fontSize: 13.5,
                 lineHeight: 1.6,
-                color: 'var(--wb-label2)',
+                color: 'var(--muted-foreground)',
               }}
             >
               The floating card suits documentation and settings, where the
@@ -84,7 +84,7 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--wb-sep)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       {children}

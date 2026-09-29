@@ -22,7 +22,7 @@ function Player({ initial = false, dark }: { initial?: boolean; dark?: boolean }
       <div className="absolute inset-0 bg-background p-5 text-foreground">
         <div className="text-[30px] font-bold tracking-[-.4px]">Listen Now</div>
         <div className="mt-4 grid grid-cols-2 gap-3">
-          {[0, 1, 2, 3].map((i) => <div key={i} className="aspect-square rounded-xl bg-bl-fill" />)}
+          {[0, 1, 2, 3].map((i) => <div key={i} className="aspect-square rounded-xl bg-secondary" />)}
         </div>
       </div>
       <MorphGroup>
@@ -51,7 +51,7 @@ function Player({ initial = false, dark }: { initial?: boolean; dark?: boolean }
             </Morph>
           ) : (
             <Morph key="mini" id="player" radius={14} onClick={() => setOpen(true)} role="button" tabIndex={0} aria-label="Open Now Playing"
-              className="absolute right-3 bottom-3 left-3 z-10 flex h-16 cursor-pointer items-center gap-3 overflow-hidden bg-bl-bar pr-4 pl-2 text-foreground shadow-[0_6px_24px_rgba(0,0,0,.16),0_0_0_.5px_var(--bl-sep)] backdrop-blur-xl">
+              className="absolute right-3 bottom-3 left-3 z-10 flex h-16 cursor-pointer items-center gap-3 overflow-hidden bg-bar pr-4 pl-2 text-foreground shadow-[0_6px_24px_rgba(0,0,0,.16),0_0_0_.5px_var(--border)] backdrop-blur-xl">
               <Morph id="art" radius={8} className="size-12 shrink-0" style={{ background: ART }} />
               <Morph id="title" layout="position" className="min-w-0 flex-1">
                 <div className="truncate text-[15px] font-medium">Golden Hour</div>

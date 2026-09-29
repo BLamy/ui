@@ -37,9 +37,9 @@ export default function NotesWithPreview() {
           padding: '12px 16px',
           boxSizing: 'border-box',
           borderRadius: 14,
-          background: 'var(--bl-bg)',
-          color: 'var(--bl-label)',
-          boxShadow: '0 0 0 1px var(--bl-sep)',
+          background: 'var(--background)',
+          color: 'var(--foreground)',
+          boxShadow: '0 0 0 1px var(--border)',
         }}
       >
         <MarkdownView markdown={markdown} />

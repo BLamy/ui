@@ -37,7 +37,7 @@ const palettes: Record<string, CSSProperties> = {
     '--bl-syntax-comment': '#6272a4',
     '--bl-syntax-highlight': 'rgba(255,121,198,.14)',
     '--bl-syntax-highlight-bar': '#ff79c6',
-    '--bl-label': '#d7dcff',
+    '--foreground': '#d7dcff',
   } as CSSProperties,
 }
 

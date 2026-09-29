@@ -50,7 +50,7 @@ export default function VerifyCode() {
         <div
           style={{
             textAlign: 'center',
-            color: 'var(--bl-green)',
+            color: 'var(--success)',
             fontWeight: 600,
           }}
         >

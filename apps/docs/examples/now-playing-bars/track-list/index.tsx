@@ -19,8 +19,8 @@ export default function TrackList() {
         width: 'min(360px, 100%)',
         margin: '0 auto',
         borderRadius: 14,
-        background: 'var(--bl-card)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--card)',
+        boxShadow: '0 0 0 1px var(--border)',
         overflow: 'hidden',
       }}
     >
@@ -41,13 +41,13 @@ export default function TrackList() {
               height: 48,
               padding: '0 16px',
               border: 0,
-              borderTop: i ? '1px solid var(--bl-sep)' : 0,
+              borderTop: i ? '1px solid var(--border)' : 0,
               background: 'transparent',
               font: 'inherit',
               fontSize: 16,
               textAlign: 'left',
               cursor: 'pointer',
-              color: on ? 'var(--bl-tint)' : 'var(--bl-label)',
+              color: on ? 'var(--primary)' : 'var(--foreground)',
             }}
           >
             <span
@@ -55,14 +55,14 @@ export default function TrackList() {
                 width: 18,
                 display: 'grid',
                 placeItems: 'center',
-                color: 'var(--bl-label2)',
+                color: 'var(--muted-foreground)',
                 fontSize: 14,
               }}
             >
               {on ? (
                 <NowPlayingBars
                   playing={playing}
-                  style={{ color: 'var(--bl-tint)' }}
+                  style={{ color: 'var(--primary)' }}
                   aria-label={playing ? 'Now playing' : 'Paused'}
                 />
               ) : (
@@ -75,7 +75,7 @@ export default function TrackList() {
             <span
               style={{
                 fontSize: 14,
-                color: 'var(--bl-label2)',
+                color: 'var(--muted-foreground)',
                 fontVariantNumeric: 'tabular-nums',
               }}
             >

@@ -5,7 +5,7 @@ const panel: CSSProperties = {
   height: '100%',
   padding: 16,
   boxSizing: 'border-box',
-  background: 'var(--bl-card)',
+  background: 'var(--card)',
   fontSize: 13.5,
 }
 
@@ -32,11 +32,11 @@ export default function PaneModes({
           columnWidth={200}
           drawerWidth={240}
           zIndex={20}
-          columnStyle={{ borderRight: '1px solid var(--bl-sep)' }}
+          columnStyle={{ borderRight: '1px solid var(--border)' }}
         >
           <div style={panel}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Pane</div>
-            <div style={{ color: 'var(--bl-label2)' }}>
+            <div style={{ color: 'var(--muted-foreground)' }}>
               Same children, mode: {mode}
             </div>
           </div>
@@ -52,7 +52,7 @@ export default function PaneModes({
           }}
         >
           <div
-            style={{ fontSize: 13, color: 'var(--bl-label2)', lineHeight: 1.5 }}
+            style={{ fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.5 }}
           >
             A shell picks the mode from its measured width; the pane never
             remounts its children within a mode. Switch modes in the header.
@@ -78,7 +78,7 @@ export default function PaneModes({
         >
           <div style={panel}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>EdgeDrawer</div>
-            <div style={{ color: 'var(--bl-label2)' }}>
+            <div style={{ color: 'var(--muted-foreground)' }}>
               Headless scrim + panel. Tap the scrim to close.
             </div>
           </div>
@@ -97,7 +97,7 @@ function Frame({ height, children }: { height: number; children?: ReactNode }) {
         height,
         borderRadius: 12,
         overflow: 'hidden',
-        background: 'var(--bl-bg2)',
+        background: 'var(--muted)',
         boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.05)',
       }}
     >
@@ -119,7 +119,7 @@ function TintButton({
       style={{
         border: 0,
         borderRadius: 10,
-        background: 'var(--bl-tint, #0A84FF)',
+        background: 'var(--primary)',
         color: '#fff',
         fontFamily: 'inherit',
         fontWeight: 600,

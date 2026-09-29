@@ -25,7 +25,7 @@ export interface ProgressStepperProps {
 }
 
 export const progressStepperVariants = cva(
-  'm-0 flex list-none p-0 [--ck-stepper-accent:var(--bl-tint,#0a84ff)] [--ck-stepper-idle:var(--bl-fill,rgba(120,120,128,.2))]',
+  'm-0 flex list-none p-0 [--ck-stepper-accent:var(--primary)] [--ck-stepper-idle:var(--secondary)]',
   { variants: { variant: { bars: 'gap-[6px]', line: 'gap-0' } }, defaultVariants: { variant: 'bars' } },
 );
 
@@ -85,7 +85,7 @@ export function ProgressStepper({
               data-slot="progress-step-icon"
               className={cn(
                 'grid size-[28px] place-items-center [transition:color_var(--duration-spring-smooth)_var(--ease-spring-smooth),transform_var(--duration-spring-bouncy)_var(--ease-spring-bouncy)] motion-reduce:transition-none',
-                state === 'todo' ? 'text-[color:var(--bl-label3,rgba(60,60,67,.3))]' : 'text-(--ck-stepper-accent)',
+                state === 'todo' ? 'text-[color:var(--tertiary-foreground)]' : 'text-(--ck-stepper-accent)',
                 state === 'active' && '[transform:scale(1.1)]',
               )}
               aria-hidden="true"
@@ -106,7 +106,7 @@ export function ProgressStepper({
                 labels
                   ? cn(
                       'max-w-full truncate text-[11px] font-semibold',
-                      state === 'active' ? 'text-[color:var(--bl-label,#1c1c1e)]' : 'text-[color:var(--bl-label2,rgba(60,60,67,.6))]',
+                      state === 'active' ? 'text-[color:var(--foreground)]' : 'text-[color:var(--muted-foreground)]',
                     )
                   : 'sr-only'
               }

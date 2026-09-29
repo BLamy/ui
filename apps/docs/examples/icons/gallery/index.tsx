@@ -52,7 +52,7 @@ export default function IconGallery() {
         gap: 12,
         width: '100%',
         maxWidth: 640,
-        color: 'var(--bl-label)',
+        color: 'var(--foreground)',
       }}
     >
       <style>{`
@@ -62,19 +62,20 @@ export default function IconGallery() {
           padding: 12px 4px 9px; border-radius: 12px; cursor: pointer;
           min-width: 0; transition: background .15s;
         }
-        .ig-tile:hover { background: var(--bl-fill); }
+        .ig-tile:hover { background: var(--secondary); }
         .ig-tile:focus-visible {
-          outline: 2px solid var(--bl-tint); outline-offset: -2px;
+          outline: 2px solid var(--primary); outline-offset: -2px;
         }
         .ig-chip {
           all: unset; cursor: pointer; padding: 5px 11px; border-radius: 999px;
-          font-size: 13px; font-weight: 500; color: var(--bl-label2);
+          font-size: 13px; font-weight: 500; color: var(--muted-foreground);
           white-space: nowrap;
         }
         .ig-chip[aria-pressed='true'] {
-          background: var(--bl-label); color: var(--bl-card);
+          background: var(--foreground); color: var(--card);
         }
-        .ig-chip:focus-visible { outline: 2px solid var(--bl-tint); }
+        .ig-chip:focus-visible { outline: 2px solid var(--primary); }
+        .ig-search::placeholder { color: var(--tertiary-foreground); }
       `}</style>
 
       <label
@@ -84,8 +85,8 @@ export default function IconGallery() {
           gap: 8,
           padding: '9px 12px',
           borderRadius: 12,
-          background: 'var(--bl-fill)',
-          color: 'var(--bl-label2)',
+          background: 'var(--secondary)',
+          color: 'var(--muted-foreground)',
         }}
       >
         <Icon name="magnifyingglass" size={17} weight="semibold" />
@@ -94,6 +95,7 @@ export default function IconGallery() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder={`Search ${ICON_NAMES.length} icons`}
           aria-label="Search icons"
+          className="ig-search"
           style={{
             flex: 1,
             minWidth: 0,
@@ -102,7 +104,7 @@ export default function IconGallery() {
             background: 'transparent',
             font: 'inherit',
             fontSize: 15,
-            color: 'var(--bl-label)',
+            color: 'var(--foreground)',
           }}
         />
         {query ? (
@@ -142,8 +144,8 @@ export default function IconGallery() {
       <div
         style={{
           borderRadius: 16,
-          background: 'var(--bl-card)',
-          boxShadow: '0 0 0 .5px var(--bl-sep)',
+          background: 'var(--card)',
+          boxShadow: '0 0 0 .5px var(--border)',
           overflow: 'hidden',
         }}
       >
@@ -154,9 +156,9 @@ export default function IconGallery() {
             justifyContent: 'space-between',
             gap: 8,
             padding: '8px 10px 8px 14px',
-            borderBottom: '.5px solid var(--bl-sep)',
+            borderBottom: '.5px solid var(--border)',
             fontSize: 12.5,
-            color: 'var(--bl-label2)',
+            color: 'var(--muted-foreground)',
           }}
         >
           <span
@@ -210,7 +212,7 @@ export default function IconGallery() {
                 style={{
                   fontSize: 10.5,
                   lineHeight: 1.25,
-                  color: 'var(--bl-label2)',
+                  color: 'var(--muted-foreground)',
                   textAlign: 'center',
                   overflowWrap: 'anywhere',
                 }}
@@ -225,7 +227,7 @@ export default function IconGallery() {
                 gridColumn: '1 / -1',
                 padding: 40,
                 textAlign: 'center',
-                color: 'var(--bl-label2)',
+                color: 'var(--muted-foreground)',
                 fontSize: 14,
               }}
             >

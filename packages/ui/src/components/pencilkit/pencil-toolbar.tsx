@@ -228,7 +228,7 @@ export function WidthPicker({ value, onChange, widths = PK_W, className, style, 
           key={i}
           id={String(i)}
           aria-label={'Width ' + (i + 1)}
-          className="grid size-7 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 data-selected:bg-bl-fill2"
+          className="grid size-7 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 data-selected:bg-secondary-strong"
           onPress={() => {
             if (onChange) onChange(i);
             Haptics.selection();

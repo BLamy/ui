@@ -62,7 +62,7 @@ export function DropdownMenuContent<T extends object>({
 export const dropdownMenuItemVariants = cva(
   [
     'bl-btn relative box-border flex min-h-11 cursor-pointer items-center gap-3 py-[11px] pr-4 pl-4 text-[17px] leading-[22px] outline-none',
-    'data-focused:bg-accent data-pressed:bg-bl-fill2 data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40',
+    'data-focused:bg-accent data-pressed:bg-secondary-strong data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40',
     // Hairline between rows — not under the last row, nor above a section band.
     'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border last:after:hidden [&:has(+[role=separator])]:after:hidden',
   ],
@@ -144,7 +144,7 @@ export function DropdownMenuLabel({ className, ...props }: ComponentProps<typeof
 
 /** iOS menu group break: a thick band, not a hairline. */
 export function DropdownMenuSeparator({ className, ...props }: SeparatorProps) {
-  return <Separator data-slot="dropdown-menu-separator" className={cn('m-0 h-2 border-0 bg-bl-fill', className)} {...props} />;
+  return <Separator data-slot="dropdown-menu-separator" className={cn('m-0 h-2 border-0 bg-secondary', className)} {...props} />;
 }
 
 export function DropdownMenuShortcut({ className, ...props }: ComponentProps<'span'>) {

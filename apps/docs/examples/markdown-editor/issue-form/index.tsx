@@ -59,7 +59,7 @@ export default function IssueForm() {
           style={{
             padding: '0 4px',
             fontSize: 13,
-            color: invalid ? 'var(--bl-red)' : 'var(--bl-label2)',
+            color: invalid ? 'var(--destructive)' : 'var(--muted-foreground)',
           }}
         >
           {invalid
@@ -76,7 +76,7 @@ export default function IssueForm() {
             margin: 0,
             fontSize: 12,
             whiteSpace: 'pre-wrap',
-            color: 'var(--bl-label2)',
+            color: 'var(--muted-foreground)',
           }}
         >
           {JSON.stringify(submitted, null, 2)}

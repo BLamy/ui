@@ -3,4 +3,6 @@
    would re-emit shared classes after the first one's responsive variants). Consumer apps compile block files
    with their own Tailwind instead — see the `bl-ui` registry item. */
 @import "../packages/ui/src/styles.css";
+/* The bl-theme: the iOS palette on shadcn's variables. */
+@import "../packages/ui/src/theme.css";
 @source "./blocks";

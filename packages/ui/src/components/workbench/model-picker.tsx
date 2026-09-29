@@ -70,11 +70,11 @@ function useMaybeControlled<T>(value: T | undefined, initial: T, onChange?: (v: 
 }
 
 export const modelRowVariants = cva(
-  'group/row mx-1.5 flex cursor-pointer items-center gap-2.5 rounded-[10px] px-2.5 py-[7px] text-wb-label outline-none data-hovered:bg-wb-fill data-focused:bg-wb-fill data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/50 data-[current]:bg-wb-fill2',
+  'group/row mx-1.5 flex cursor-pointer items-center gap-2.5 rounded-[10px] px-2.5 py-[7px] text-foreground outline-none data-hovered:bg-secondary data-focused:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-primary/50 data-[current]:bg-secondary-strong',
 );
 
 const railTab =
-  'relative grid size-8 cursor-pointer place-items-center rounded-[9px] text-[16px] text-wb-label2 outline-none [transition:color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:bg-wb-fill data-hovered:text-wb-label data-selected:text-wb-label data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/50';
+  'relative grid size-8 cursor-pointer place-items-center rounded-[9px] text-[16px] text-muted-foreground outline-none [transition:color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:bg-secondary data-hovered:text-foreground data-selected:text-foreground data-focus-visible:ring-2 data-focus-visible:ring-primary/50';
 
 /** The selected rail tab's fill and accent bar: one element that slides between tabs (a shared layout). */
 function RailIndicator({ group, selected }: { group: string; selected: boolean }) {
@@ -84,10 +84,10 @@ function RailIndicator({ group, selected }: { group: string; selected: boolean }
       layoutId={`${group}-rail`}
       aria-hidden="true"
       data-slot="model-picker-rail-indicator"
-      className="absolute inset-0 -z-1 rounded-[9px] bg-wb-fill"
+      className="absolute inset-0 -z-1 rounded-[9px] bg-secondary"
       transition={springs.snappy}
     >
-      <span className="absolute top-1/2 -left-[7px] h-4 w-[3px] -translate-y-1/2 rounded-r-[3px] bg-wb-tint" />
+      <span className="absolute top-1/2 -left-[7px] h-4 w-[3px] -translate-y-1/2 rounded-r-[3px] bg-primary" />
     </motion.span>
   );
 }
@@ -184,7 +184,7 @@ export function ModelPicker({
             onChange={setQuery}
             autoFocus
             data-slot="model-picker-search"
-            className="relative flex h-10 shrink-0 items-center gap-2 border-b border-wb-sep px-3 after:absolute after:inset-x-0 after:-bottom-px after:h-[1.5px] after:bg-transparent after:transition-colors after:content-[''] focus-within:after:bg-wb-tint"
+            className="relative flex h-10 shrink-0 items-center gap-2 border-b border-border px-3 after:absolute after:inset-x-0 after:-bottom-px after:h-[1.5px] after:bg-transparent after:transition-colors after:content-[''] focus-within:after:bg-primary"
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -192,10 +192,10 @@ export function ModelPicker({
               }
             }}
           >
-            <WIcon name="search" size={14} sw={2} className="text-wb-label3" />
+            <WIcon name="search" size={14} sw={2} className="text-tertiary-foreground" />
             <Input
               placeholder="Search models…"
-              className="min-w-0 flex-1 border-0 bg-transparent p-0 font-ios text-[13px] text-wb-label outline-none placeholder:text-wb-label3! [&::-webkit-search-cancel-button]:hidden"
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 font-ios text-[13px] text-foreground outline-none placeholder:text-tertiary-foreground! [&::-webkit-search-cancel-button]:hidden"
             />
           </SearchField>
           <Tabs
@@ -209,8 +209,8 @@ export function ModelPicker({
             }}
             className="flex h-[292px] min-h-0"
           >
-            <TabList aria-label="Providers" data-slot="model-picker-rail" className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-wb-sep py-2">
-              <Tab id={FAVORITES} aria-label="Favorites" className={cn(railTab, 'isolate mb-1.5 after:absolute after:-bottom-[5px] after:h-px after:w-6 after:bg-wb-sep after:content-[""]')}>
+            <TabList aria-label="Providers" data-slot="model-picker-rail" className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-border py-2">
+              <Tab id={FAVORITES} aria-label="Favorites" className={cn(railTab, 'isolate mb-1.5 after:absolute after:-bottom-[5px] after:h-px after:w-6 after:bg-border after:content-[""]')}>
                 {({ isSelected }) => (
                   <>
                     <RailIndicator group={group} selected={isSelected} />
@@ -230,7 +230,7 @@ export function ModelPicker({
               ))}
             </TabList>
             <TabPanel id={tab} className="wb-scroll relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-1.5 outline-none">
-              {q ? <div className="px-4 pt-1 pb-1.5 text-[11px] font-semibold tracking-[.04em] text-wb-label3 uppercase">Results</div> : null}
+              {q ? <div className="px-4 pt-1 pb-1.5 text-[11px] font-semibold tracking-[.04em] text-tertiary-foreground uppercase">Results</div> : null}
               <AnimatePresence mode="popLayout" initial={false} custom={travel}>
               <motion.div
                 key={q ? 'search' : tab}
@@ -249,7 +249,7 @@ export function ModelPicker({
                 onAction={(key: Key) => choose(String(key))}
                 className="flex flex-col gap-px outline-none"
                 renderEmptyState={() => (
-                  <div className="px-4 py-8 text-center text-[12.5px] text-wb-label3">
+                  <div className="px-4 py-8 text-center text-[12.5px] text-tertiary-foreground">
                     {q ? 'No models match.' : tab === FAVORITES ? 'Star a model to keep it here.' : 'No models.'}
                   </div>
                 )}
@@ -269,26 +269,26 @@ export function ModelPicker({
                         <span className="flex min-w-0 items-center gap-1.5">
                           <span className="truncate text-[13.5px] font-semibold">{m.name}</span>
                           {m.badge ? (
-                            <span className="shrink-0 rounded-[5px] border border-wb-tint px-[5px] py-px text-[9.5px] leading-[12px] font-bold tracking-[.05em] text-wb-tint">
+                            <span className="shrink-0 rounded-[5px] border border-primary px-[5px] py-px text-[9.5px] leading-[12px] font-bold tracking-[.05em] text-primary">
                               {m.badge}
                             </span>
                           ) : null}
                         </span>
-                        <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12px] text-wb-label2">
+                        <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12px] text-muted-foreground">
                           <span className="grid shrink-0 place-items-center text-[11px]">{p?.icon}</span>
                           <span className="truncate">{p?.name}</span>
-                          {m.legacy ? <span className="text-wb-label3">· legacy</span> : null}
+                          {m.legacy ? <span className="text-tertiary-foreground">· legacy</span> : null}
                         </span>
                       </span>
                       {m.shortcut ? (
-                        <kbd className="shrink-0 rounded-[5px] bg-wb-fill px-1.5 py-px font-ios text-[11px] leading-[16px] text-wb-label2">⌘{m.shortcut}</kbd>
+                        <kbd className="shrink-0 rounded-[5px] bg-secondary px-1.5 py-px font-ios text-[11px] leading-[16px] text-muted-foreground">⌘{m.shortcut}</kbd>
                       ) : null}
                       <Button
                         aria-label={fav ? `Unfavorite ${m.name}` : `Favorite ${m.name}`}
                         onPress={() => toggleFavorite(m.id)}
                         className={cn(
-                          'grid size-6 shrink-0 cursor-pointer place-items-center rounded-[6px] border-0 bg-transparent p-0 outline-none data-hovered:bg-wb-fill2 data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/50',
-                          fav ? 'text-[#FFB020]' : 'text-wb-label3 opacity-0 group-data-focused/row:opacity-100 group-data-hovered/row:opacity-100 data-focus-visible:opacity-100',
+                          'grid size-6 shrink-0 cursor-pointer place-items-center rounded-[6px] border-0 bg-transparent p-0 outline-none data-hovered:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-primary/50',
+                          fav ? 'text-[#FFB020]' : 'text-tertiary-foreground opacity-0 group-data-focused/row:opacity-100 group-data-hovered/row:opacity-100 data-focus-visible:opacity-100',
                         )}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill={fav ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
@@ -304,16 +304,16 @@ export function ModelPicker({
             </TabPanel>
           </Tabs>
           {legacy.length ? (
-            <Menu aria-label="More models" data-slot="model-picker-more" className="shrink-0 border-t border-wb-sep p-1.5 outline-none">
+            <Menu aria-label="More models" data-slot="model-picker-more" className="shrink-0 border-t border-border p-1.5 outline-none">
               <SubmenuTrigger>
                 <MenuItem
                   textValue="Legacy models"
-                  className="flex cursor-pointer items-center gap-2 rounded-[9px] px-2.5 py-2 text-[13px] text-wb-label outline-none data-focused:bg-wb-fill data-open:bg-wb-fill"
+                  className="flex cursor-pointer items-center gap-2 rounded-[9px] px-2.5 py-2 text-[13px] text-foreground outline-none data-focused:bg-secondary data-open:bg-secondary"
                 >
-                  <WIcon name="clock" size={14} sw={2} className="text-wb-label2" />
+                  <WIcon name="clock" size={14} sw={2} className="text-muted-foreground" />
                   <span className="flex-1 font-medium">Legacy models</span>
-                  <span className="text-[12px] text-wb-label3">{legacy.length} models</span>
-                  <WIcon name="chevR" size={12} sw={2.4} className="text-wb-label3" />
+                  <span className="text-[12px] text-tertiary-foreground">{legacy.length} models</span>
+                  <WIcon name="chevR" size={12} sw={2.4} className="text-tertiary-foreground" />
                 </MenuItem>
                 <WbPopover offset={4} className="min-w-[220px] p-1">
                   <Menu aria-label="Legacy models" className="outline-none" onAction={(k) => choose(String(k))}>
@@ -322,11 +322,11 @@ export function ModelPicker({
                         key={m.id}
                         id={m.id}
                         textValue={m.name}
-                        className="flex cursor-pointer items-center gap-2 rounded-[8px] px-2.5 py-[7px] text-[13px] text-wb-label outline-none data-focused:bg-wb-fill"
+                        className="flex cursor-pointer items-center gap-2 rounded-[8px] px-2.5 py-[7px] text-[13px] text-foreground outline-none data-focused:bg-secondary"
                       >
-                        <span className="grid w-3.5 shrink-0 place-items-center text-[12px] text-wb-label2">{providerOf(m)?.icon}</span>
+                        <span className="grid w-3.5 shrink-0 place-items-center text-[12px] text-muted-foreground">{providerOf(m)?.icon}</span>
                         <span className="flex-1 truncate">{m.name}</span>
-                        {m.id === value ? <WIcon name="check" size={13} sw={2.6} className="text-wb-tint" /> : null}
+                        {m.id === value ? <WIcon name="check" size={13} sw={2.6} className="text-primary" /> : null}
                       </MenuItem>
                     ))}
                   </Menu>

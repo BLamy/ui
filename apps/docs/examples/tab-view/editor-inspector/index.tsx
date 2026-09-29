@@ -11,24 +11,24 @@ import {
 
 function EditorInspector() {
   return (
-    <div style={{ display: 'flex', height: 360, background: 'var(--bl-bg)' }}>
+    <div style={{ display: 'flex', height: 360, background: 'var(--background)' }}>
       <main
         style={{
           flex: 1,
           minWidth: 0,
           padding: 24,
-          background: 'var(--bl-bg2)',
+          background: 'var(--muted)',
         }}
       >
         <div
           style={{
             height: '100%',
             borderRadius: 12,
-            background: 'var(--bl-card)',
-            boxShadow: '0 0 0 1px var(--bl-sep)',
+            background: 'var(--card)',
+            boxShadow: '0 0 0 1px var(--border)',
             display: 'grid',
             placeItems: 'center',
-            color: 'var(--bl-label2)',
+            color: 'var(--muted-foreground)',
           }}
         >
           Canvas
@@ -39,7 +39,7 @@ function EditorInspector() {
       <TabView
         placement="end"
         defaultSelectedKey="info"
-        style={{ width: 300, borderLeft: '1px solid var(--bl-sep)' }}
+        style={{ width: 300, borderLeft: '1px solid var(--border)' }}
       >
         <TabViewBar style={{ width: 56 }}>
           <TabViewList aria-label="Inspector">
@@ -52,17 +52,17 @@ function EditorInspector() {
         <TabViewPanels>
           <TabViewPanel id="info" style={{ padding: 16, fontSize: 13.5 }}>
             <strong>Frame 12</strong>
-            <p style={{ color: 'var(--bl-label2)' }}>390 × 844 · Auto layout</p>
+            <p style={{ color: 'var(--muted-foreground)' }}>390 × 844 · Auto layout</p>
           </TabViewPanel>
           <TabViewPanel id="comments" style={{ padding: 16, fontSize: 13.5 }}>
             <strong>2 comments</strong>
-            <p style={{ color: 'var(--bl-label2)' }}>
+            <p style={{ color: 'var(--muted-foreground)' }}>
               “Tighten the header spacing.”
             </p>
           </TabViewPanel>
           <TabViewPanel id="history" style={{ padding: 16, fontSize: 13.5 }}>
             <strong>Version history</strong>
-            <p style={{ color: 'var(--bl-label2)' }}>Autosaved 2 minutes ago</p>
+            <p style={{ color: 'var(--muted-foreground)' }}>Autosaved 2 minutes ago</p>
           </TabViewPanel>
         </TabViewPanels>
       </TabView>
@@ -80,9 +80,9 @@ function Window({ children }: { children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

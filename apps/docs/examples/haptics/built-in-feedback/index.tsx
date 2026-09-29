@@ -20,7 +20,7 @@ export default function BuiltInFeedback() {
           title="Text size"
           footer="Segmented: one selection tick per change."
         >
-          <div style={{ padding: 10, background: 'var(--bl-card)' }}>
+          <div style={{ padding: 10, background: 'var(--card)' }}>
             <Segmented
               aria-label="Text size"
               value={size}
@@ -46,7 +46,7 @@ export default function BuiltInFeedback() {
               />
             }
           />
-          <div style={{ padding: '12px 16px', background: 'var(--bl-card)' }}>
+          <div style={{ padding: '12px 16px', background: 'var(--card)' }}>
             <Slider
               label="Playback speed"
               showValue

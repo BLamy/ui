@@ -84,7 +84,7 @@ const surfaceGlass =
   'border-[color:rgba(var(--ck-sheet-line),var(--ck-sheet-border-alpha,.12))] bg-[color:rgba(var(--ck-sheet-surface),var(--ck-sheet-bg-alpha,.28))] bg-[linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.018)_34%,rgba(255,255,255,.026))] [box-shadow:inset_0_1px_0_rgba(255,255,255,.14),inset_0_-1px_0_rgba(255,255,255,.03),0_2px_10px_rgba(0,0,0,.12),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]';
 /** Opaque system sheet: card colour, no glass highlights, a soft shadow that deepens as it grows. */
 const surfaceSheet =
-  'border-[color:rgba(var(--ck-sheet-line),calc(var(--ck-sheet-border-alpha,.12)_*_.5))] bg-[color:var(--bl-card,#fff)] [box-shadow:0_-1px_0_rgba(var(--ck-sheet-line),.04),0_2px_10px_rgba(0,0,0,.08),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]';
+  'border-[color:rgba(var(--ck-sheet-line),calc(var(--ck-sheet-border-alpha,.12)_*_.5))] bg-[color:var(--card)] [box-shadow:0_-1px_0_rgba(var(--ck-sheet-line),.04),0_2px_10px_rgba(0,0,0,.08),0_var(--ck-sheet-shadow-y,14px)_var(--ck-sheet-shadow-blur,34px)_-12px_rgba(0,0,0,var(--ck-sheet-shadow-alpha,.22))]';
 const surfaceResting = '[transform:translateX(-50%)]';
 const surfaceHidden = 'pointer-events-none opacity-0';
 /** Where the folded FAB rests. The bottom-center FAB keeps 20px from the host edge even when docked edge to edge. */
@@ -316,7 +316,7 @@ export function FloatingSheet({
         data-minimized={minimized || undefined}
         // ck-floating-sheet keys the tone token maps and the body/peek rules in styles.css.
         className={cn(
-          'ck-floating-sheet pointer-events-none absolute inset-0 z-40 text-[color:var(--bl-label,#f5f5f7)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)] [--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
+          'ck-floating-sheet pointer-events-none absolute inset-0 z-40 text-[color:var(--foreground)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)] [--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
           className,
         )}
         style={{
@@ -392,7 +392,7 @@ export function FloatingSheet({
             type="button"
             data-slot="floating-sheet-cap"
             className={cn(
-              'group/cap box-border grid h-[18px] w-full shrink-0 touch-none place-items-center border-0 bg-transparent p-0 text-inherit opacity-[calc(1_-_var(--ck-sheet-minimize,0))] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--bl-tint,#0a84ff)]',
+              'group/cap box-border grid h-[18px] w-full shrink-0 touch-none place-items-center border-0 bg-transparent p-0 text-inherit opacity-[calc(1_-_var(--ck-sheet-minimize,0))] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--primary)]',
               dragging ? 'cursor-grabbing' : 'cursor-grab',
             )}
             data-open={open || undefined}
@@ -407,8 +407,8 @@ export function FloatingSheet({
               className={cn(
                 'block h-[4px] rounded-[999px] [transition:width_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:[transition:none]',
                 open
-                  ? 'w-[40px] bg-[color:var(--bl-label2,rgba(235,235,245,.62))]'
-                  : 'w-[32px] bg-[color:var(--bl-label3,rgba(235,235,245,.32))] group-focus-visible/cap:w-[40px] group-focus-visible/cap:bg-[color:var(--bl-label2,rgba(235,235,245,.62))] group-[:hover]/cap:w-[40px] group-[:hover]/cap:bg-[color:var(--bl-label2,rgba(235,235,245,.62))]',
+                  ? 'w-[40px] bg-[color:var(--muted-foreground)]'
+                  : 'w-[32px] bg-[color:var(--tertiary-foreground)] group-focus-visible/cap:w-[40px] group-focus-visible/cap:bg-[color:var(--muted-foreground)] group-[:hover]/cap:w-[40px] group-[:hover]/cap:bg-[color:var(--muted-foreground)]',
               )}
             />
           </button>
@@ -455,13 +455,13 @@ export function FloatingSheet({
           <Button
             data-slot="floating-sheet-fab"
             className={cn(
-              'absolute inset-0 grid h-full w-full cursor-pointer place-items-center rounded-[50%] border-0 bg-transparent p-0 text-[color:var(--bl-label,#f5f5f7)] opacity-[var(--ck-sheet-minimize,0)]',
+              'absolute inset-0 grid h-full w-full cursor-pointer place-items-center rounded-[50%] border-0 bg-transparent p-0 text-[color:var(--foreground)] opacity-[var(--ck-sheet-minimize,0)]',
               minimized ? 'pointer-events-auto' : 'pointer-events-none',
             )}
             aria-label="Open"
             onPress={restore}
           >
-            {fabIcon ?? slots.fab ?? <span className="block size-[10px] rounded-[50%] bg-[color:var(--bl-tint,#0a84ff)]" />}
+            {fabIcon ?? slots.fab ?? <span className="block size-[10px] rounded-[50%] bg-[color:var(--primary)]" />}
           </Button>
         </div>
       </div>

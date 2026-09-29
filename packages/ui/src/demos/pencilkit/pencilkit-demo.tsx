@@ -29,7 +29,7 @@ export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes
   const ambient = useAppearance();
   const dark = darkProp != null ? darkProp === true || darkProp === 'true' : (appearance ?? ambient) === 'dark';
   const vars: Record<string, string> = { ...(dark ? PK_DARK : PK_LIGHT) };
-  if (tint) vars['--bl-tint'] = tint;
+  if (tint) vars["--primary"] = tint;
 
   const [tool, setTool] = useState<PencilTool>('pen');
   const [ink, setInk] = useState(dark ? 1 : 0);

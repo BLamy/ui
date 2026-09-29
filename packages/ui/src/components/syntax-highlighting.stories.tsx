@@ -47,7 +47,7 @@ const SAMPLES: { language: string; title: string; code: string }[] = [
     code: `.button {
   padding: 8px 14px;
   border-radius: 10px;
-  background: var(--bl-tint, #0a84ff);
+  background: var(--primary);
 }
 .button:hover { opacity: 0.9; }`,
   },
@@ -159,7 +159,7 @@ export const Composed: Story = {
   render: () => (
     <SyntaxHighlighting code={SAMPLES[1].code} language="json">
       <SyntaxHighlightingHeader>
-        <span className="rounded-md bg-bl-fill px-1.5 py-0.5 font-mono text-[11px] text-bl-label2">JSON</span>
+        <span className="rounded-md bg-secondary px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">JSON</span>
         <SyntaxHighlightingTitle>package.json</SyntaxHighlightingTitle>
         <SyntaxHighlightingCopyButton />
       </SyntaxHighlightingHeader>

@@ -85,8 +85,8 @@ export function WIcon({ name, size, sw, className, style }: WIconProps) {
 export const iconBtnVariants = cva('wb-btn wb-hl grid cursor-pointer place-items-center rounded-[7px] border-0 p-[5px]', {
   variants: {
     active: {
-      true: 'bg-wb-fill text-wb-label',
-      false: 'bg-transparent text-wb-label2',
+      true: 'bg-secondary text-foreground',
+      false: 'bg-transparent text-muted-foreground',
     },
   },
   defaultVariants: { active: false },

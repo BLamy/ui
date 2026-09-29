@@ -46,7 +46,7 @@ export function useArtifactChatContainer(): ArtifactChatContainerContextValue {
 export type ArtifactChatContainerSlotChildren = ReactNode;
 
 /** ck-artifact-chat__content stays as a hook for hosts that restyle the artifact pane. */
-const contentClass = 'ck-artifact-chat__content min-h-0 min-w-0 overflow-auto bg-[color:var(--bl-bg,#fff)]';
+const contentClass = 'ck-artifact-chat__content min-h-0 min-w-0 overflow-auto bg-[color:var(--background)]';
 export type ArtifactChatFabPosition = FloatingChatFabPosition;
 
 export interface ArtifactChatContainerProps {
@@ -214,7 +214,7 @@ export function ArtifactChatContainer({
         data-tone={resolvedTone === 'light' || resolvedTone === 'dark' ? resolvedTone : undefined}
         // ck-artifact-chat carries the --wb-* token map (styles.css) and is a hook for hosts.
         className={cn(
-          'ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-[color:var(--bl-bg,#fff)] text-[color:var(--bl-label,#111)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]',
+          'ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-[color:var(--background)] text-[color:var(--foreground)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]',
           compact ? 'block' : 'grid grid-cols-[minmax(0,var(--ck-artifact-chat-width,400px))_minmax(0,1fr)]',
           className,
         )}

@@ -31,7 +31,7 @@ export default function Springs() {
               position: 'relative',
               height: 30,
               borderRadius: 15,
-              background: 'var(--bl-fill)',
+              background: 'var(--secondary)',
             }}
           >
             <span
@@ -42,7 +42,7 @@ export default function Springs() {
                 width: 24,
                 height: 24,
                 borderRadius: 12,
-                background: 'var(--bl-tint)',
+                background: 'var(--primary)',
                 transition: springCss('left', p.id),
               }}
             />
@@ -57,7 +57,7 @@ export default function Springs() {
       <div
         style={{
           fontSize: 12.5,
-          color: 'var(--bl-label2)',
+          color: 'var(--muted-foreground)',
           textAlign: 'center',
           lineHeight: 1.5,
         }}

@@ -13,7 +13,7 @@ type Story = StoryObj<typeof QRSvg>;
 
 const Card = ({ children, style, label }: { children: ReactNode; style?: CSSProperties; label?: string }) => (
   <div style={{ display: 'inline-grid', justifyItems: 'center', gap: 8 }}>
-    <div style={{ display: 'inline-grid', placeItems: 'center', padding: 16, borderRadius: 20, background: '#fff', color: '#111', boxShadow: '0 0 0 1px var(--bl-sep)', ...style }}>
+    <div style={{ display: 'inline-grid', placeItems: 'center', padding: 16, borderRadius: 20, background: '#fff', color: '#111', boxShadow: '0 0 0 1px var(--border)', ...style }}>
       {children}
     </div>
     {label ? <span style={{ fontSize: 12, color: 'var(--bl-label-2, #888)' }}>{label}</span> : null}
@@ -56,7 +56,7 @@ export const RoundedVsSquare: Story = {
 export const Colors: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 16 }}>
-      <Card label="tint"><QRSvg value="https://example.com" color="var(--bl-tint, #007aff)" /></Card>
+      <Card label="tint"><QRSvg value="https://example.com" color="var(--primary)" /></Card>
       <Card label="white on dark" style={{ background: '#1c1c1e' }}><QRSvg value="https://example.com" color="#fff" /></Card>
       <Card label="margin + background" style={{ padding: 0, overflow: 'hidden' }}>
         <QRSvg value="https://example.com" background="#fff" margin={2} />

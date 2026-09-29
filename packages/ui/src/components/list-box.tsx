@@ -33,11 +33,11 @@ export const listBoxItemVariants = cva(
         inset: [
           'min-h-11 px-4 py-[11px] text-[17px] leading-[22px]',
           'after:pointer-events-none after:absolute after:right-0 after:bottom-0 after:left-4 after:h-px after:bg-border last:after:hidden',
-          'data-hovered:bg-bl-press data-pressed:bg-bl-press data-focus-visible:bg-bl-press',
+          'data-hovered:bg-accent data-pressed:bg-accent data-focus-visible:bg-accent',
         ],
         popup: [
           'min-h-9 rounded-[8px] py-[7px] pr-3 pl-2 text-[15px] leading-5',
-          'data-focused:bg-accent data-pressed:bg-bl-fill2',
+          'data-focused:bg-accent data-pressed:bg-secondary-strong',
         ],
       },
     },
@@ -123,7 +123,7 @@ export interface ListBoxSectionProps<T> extends AriaListBoxSectionProps<T> {
 
 export function ListBoxSection<T extends object>({ className, title, children, items, ...props }: ListBoxSectionProps<T>) {
   return (
-    <AriaListBoxSection data-slot="list-box-section" className={cn('not-first:mt-1.5 not-first:pt-1.5 not-first:shadow-[inset_0_1px_0_var(--bl-sep)]', className)} {...props}>
+    <AriaListBoxSection data-slot="list-box-section" className={cn('not-first:mt-1.5 not-first:pt-1.5 not-first:shadow-[inset_0_1px_0_var(--border)]', className)} {...props}>
       {title ? <ListBoxHeader>{title}</ListBoxHeader> : null}
       <Collection items={items}>{children}</Collection>
     </AriaListBoxSection>

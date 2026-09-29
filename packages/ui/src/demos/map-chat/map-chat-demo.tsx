@@ -149,7 +149,7 @@ function ToolRow({ call, chrome }: { call: ToolCallState; chrome: Chrome }) {
       data-slot="map-chat-tool"
       data-status={call.status}
       className={cn(
-        'flex min-w-0 animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none items-center gap-2 rounded-[10px] border py-[5px] pr-2.5 pl-2 text-[12.5px] leading-[1.3] text-bl-label2',
+        'flex min-w-0 animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none items-center gap-2 rounded-[10px] border py-[5px] pr-2.5 pl-2 text-[12.5px] leading-[1.3] text-muted-foreground',
         chrome.tool,
       )}
     >
@@ -161,7 +161,7 @@ function ToolRow({ call, chrome }: { call: ToolCallState; chrome: Chrome }) {
       >
         <Icon name={meta.icon} size={14} />
       </span>
-      <span className="shrink-0 font-semibold text-bl-label">{meta.label}</span>
+      <span className="shrink-0 font-semibold text-foreground">{meta.label}</span>
       <span className="min-w-0 flex-1 overflow-hidden font-[family-name:var(--bl-mono,ui-monospace,SFMono-Regular,Menlo,monospace)] text-[11.5px] text-ellipsis whitespace-nowrap">
         {summarizeArgs(call.args)}
       </span>
@@ -454,12 +454,12 @@ export function MapChatDemo({
               )}
               data-map-ui
             >
-              <span className="grid size-[34px] shrink-0 place-items-center rounded-[50%] bg-bl-tint text-white">
+              <span className="grid size-[34px] shrink-0 place-items-center rounded-[50%] bg-primary text-white">
                 <Icon name={savedTrips.some((t) => t.id === trip.id) ? 'bookmark' : 'walk'} size={18} />
               </span>
               <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-[13px] leading-[1.25]">
                 <strong className="overflow-hidden text-[14px] font-[650] text-ellipsis whitespace-nowrap">{trip.name}</strong>
-                <span className="text-bl-label2">
+                <span className="text-muted-foreground">
                   {trip.stops.length} {trip.stops.length === 1 ? 'stop' : 'stops'} · {formatMinutes(trip.totalMinutes)} · {formatDistance(trip.totalMeters)}
                 </span>
               </span>
@@ -486,7 +486,7 @@ export function MapChatDemo({
             turn.role === 'user' ? (
               <div
                 key={turn.id}
-                className="max-w-[82%] animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none self-end rounded-[18px_18px_6px_18px] bg-bl-tint px-[13px] py-2 text-[14.5px] leading-[1.35] [word-break:break-word] whitespace-pre-wrap text-white"
+                className="max-w-[82%] animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none self-end rounded-[18px_18px_6px_18px] bg-primary px-[13px] py-2 text-[14.5px] leading-[1.35] [word-break:break-word] whitespace-pre-wrap text-white"
               >
                 {turn.text}
               </div>
@@ -528,7 +528,7 @@ export function MapChatDemo({
                     <div key={s} role="listitem" className="contents">
                       <Button
                         className={cn(
-                          'shrink-0 cursor-pointer rounded-[999px] border px-3 py-1.5 text-[13px] leading-[1.2] font-medium whitespace-nowrap text-bl-label',
+                          'shrink-0 cursor-pointer rounded-[999px] border px-3 py-1.5 text-[13px] leading-[1.2] font-medium whitespace-nowrap text-foreground',
                           FONT_INHERIT,
                           '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
                           chrome.chip,

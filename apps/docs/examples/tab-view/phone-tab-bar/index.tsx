@@ -76,7 +76,7 @@ function PhoneApp() {
                     title={
                       <span
                         style={{
-                          color: c.missed ? 'var(--bl-red)' : undefined,
+                          color: c.missed ? 'var(--destructive)' : undefined,
                         }}
                       >
                         {c.f} {c.l}
@@ -84,7 +84,7 @@ function PhoneApp() {
                     }
                     subtitle={c.kind}
                     trailing={
-                      <span style={{ fontSize: 14, color: 'var(--bl-label2)' }}>
+                      <span style={{ fontSize: 14, color: 'var(--muted-foreground)' }}>
                         {c.time}
                       </span>
                     }
@@ -119,7 +119,7 @@ function PhoneApp() {
               style={{
                 margin: '40px 20px',
                 textAlign: 'center',
-                color: 'var(--bl-label2)',
+                color: 'var(--muted-foreground)',
               }}
             >
               No voicemail
@@ -138,7 +138,7 @@ function PhoneApp() {
 function Window({
   width,
   children,
-  bg = 'var(--bl-bg)',
+  bg = 'var(--background)',
 }: {
   width?: number
   children: ReactNode
@@ -154,8 +154,8 @@ function Window({
         borderRadius: 14,
         overflow: 'hidden',
         background: bg,
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >
@@ -166,7 +166,7 @@ function Window({
 
 export default function PhoneTabBar() {
   return (
-    <Window width={390} bg="var(--bl-bg2)">
+    <Window width={390} bg="var(--muted)">
       <PhoneApp />
     </Window>
   )

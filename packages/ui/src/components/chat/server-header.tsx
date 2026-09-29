@@ -18,18 +18,18 @@ export function ServerHeader({ action, onClose, className, children, ...props }:
   return (
     <div
       data-slot="server-header"
-      className={cn('flex items-center gap-[8px] border-b border-ck-sep px-[14px] pt-[13px] pb-[9px]', className)}
+      className={cn('flex items-center gap-[8px] border-b border-border px-[14px] pt-[13px] pb-[9px]', className)}
       {...props}
     >
-      <span className="flex-1 truncate text-[13.5px] font-extrabold tracking-[-.1px] text-ck-label">{children}</span>
+      <span className="flex-1 truncate text-[13.5px] font-extrabold tracking-[-.1px] text-foreground">{children}</span>
       {action !== undefined ? (
         action
       ) : close ? (
-        <Button onPress={close} aria-label="Close channels" className="grid cursor-pointer border-0 bg-transparent p-[4px] text-ck-mut3">
+        <Button onPress={close} aria-label="Close channels" className="grid cursor-pointer border-0 bg-transparent p-[4px] text-tertiary-foreground">
           <ChatIcon d={chatIconPaths.x} size={14} />
         </Button>
       ) : (
-        <span className="grid text-ck-mut3">
+        <span className="grid text-tertiary-foreground">
           <ChatIcon d={chatIconPaths.chev} size={13} className="[transform:rotate(90deg)]" />
         </span>
       )}

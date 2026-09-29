@@ -45,22 +45,22 @@ export function SurfacePicker({
     <div data-slot="surface-picker" className={cn('wb-scroll flex min-h-0 flex-1 flex-col justify-center-safe overflow-y-auto px-5 py-[26px]', className)}>
       <div className="mb-5 text-center">
         <div className="text-[16.5px] font-[650]">{title}</div>
-        <div className="mt-[3px] text-[12.5px] text-wb-label2">{description}</div>
+        <div className="mt-[3px] text-[12.5px] text-muted-foreground">{description}</div>
       </div>
       <div className="mx-auto grid w-full max-w-[420px] grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5">
         {surfaces.map((s) => (
           <Button
             key={s.k}
             data-slot="surface-card"
-            className="wb-btn wb-hl cursor-pointer rounded-[13px] border border-wb-sep bg-wb-card px-3.5 py-[15px] text-left text-wb-label"
+            className="wb-btn wb-hl cursor-pointer rounded-[13px] border border-border bg-card px-3.5 py-[15px] text-left text-foreground"
             onPress={() => {
               vib([8]);
               onPick(s.k);
             }}
           >
-            <WIcon name={s.icon} size={21} sw={1.6} className="text-wb-label2" />
+            <WIcon name={s.icon} size={21} sw={1.6} className="text-muted-foreground" />
             <div className="mt-2.5 text-[13.5px] font-[650]">{s.name}</div>
-            <div className="mt-[3px] text-[11.5px] leading-[1.45] text-wb-label2">{s.blurb}</div>
+            <div className="mt-[3px] text-[11.5px] leading-[1.45] text-muted-foreground">{s.blurb}</div>
           </Button>
         ))}
       </div>
@@ -78,15 +78,15 @@ export interface SurfaceBrowserProps {
 export function SurfaceBrowser({ url, children, className }: SurfaceBrowserProps) {
   return (
     <div data-slot="surface-browser" className={cn('flex min-h-0 flex-1 flex-col', className)}>
-      <div className="flex shrink-0 items-center gap-1.5 border-b border-wb-sep px-2.5 py-[7px]">
-        <WIcon name="chevR" size={14} sw={2} className="-scale-x-100 text-wb-label3" />
-        <WIcon name="chevR" size={14} sw={2} className="text-wb-label3 opacity-40" />
-        <div className="flex flex-1 items-center gap-1.5 rounded-[7px] bg-wb-fill px-[9px] py-1 font-mono text-[12px] text-wb-label2">
-          <span className="size-1.5 rounded-[50%] bg-wb-green" />
+      <div className="flex shrink-0 items-center gap-1.5 border-b border-border px-2.5 py-[7px]">
+        <WIcon name="chevR" size={14} sw={2} className="-scale-x-100 text-tertiary-foreground" />
+        <WIcon name="chevR" size={14} sw={2} className="text-tertiary-foreground opacity-40" />
+        <div className="flex flex-1 items-center gap-1.5 rounded-[7px] bg-secondary px-[9px] py-1 font-mono text-[12px] text-muted-foreground">
+          <span className="size-1.5 rounded-[50%] bg-success" />
           {url}
         </div>
       </div>
-      <div className="grid min-h-0 flex-1 place-items-center bg-wb-well p-5">{children}</div>
+      <div className="grid min-h-0 flex-1 place-items-center bg-muted p-5">{children}</div>
     </div>
   );
 }
@@ -94,14 +94,14 @@ export function SurfaceBrowser({ url, children, className }: SurfaceBrowserProps
 export function SurfaceAppPreview({ name, detail }: { name: React.ReactNode; detail?: React.ReactNode }) {
   return (
     <div data-slot="surface-app-preview" className="text-center">
-      <span className="inline-grid size-10 place-items-center rounded-[10px] bg-[linear-gradient(135deg,var(--wb-tint),#5E5CE6)]">
+      <span className="inline-grid size-10 place-items-center rounded-[10px] bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]">
         <WIcon name="spark" size={20} sw={2} className="text-white" />
       </span>
       <div className="mt-3 text-[13.5px] font-[650]">{name}</div>
-      {detail != null ? <div className="mt-[3px] font-mono text-[12px] text-wb-label3">{detail}</div> : null}
+      {detail != null ? <div className="mt-[3px] font-mono text-[12px] text-tertiary-foreground">{detail}</div> : null}
       <div className="mt-4 flex justify-center gap-1.5">
         {['w-[52px]', 'w-[76px]', 'w-[40px]'].map((w, i) => (
-          <span key={i} className={cn('h-2 rounded-sm bg-wb-fill2', w)} />
+          <span key={i} className={cn('h-2 rounded-sm bg-secondary-strong', w)} />
         ))}
       </div>
     </div>
@@ -110,9 +110,9 @@ export function SurfaceAppPreview({ name, detail }: { name: React.ReactNode; det
 
 /* @pierre/trees reads its colors from these custom properties on the tree host. */
 const TREE_VARS = {
-  '--trees-fg-override': 'var(--wb-label)',
-  '--trees-border-color-override': 'var(--wb-sep)',
-  '--trees-selected-bg-override': 'var(--wb-fill2)',
+  '--trees-fg-override': 'var(--foreground)',
+  '--trees-border-color-override': 'var(--border)',
+  '--trees-selected-bg-override': 'var(--secondary-strong)',
 } as React.CSSProperties;
 export interface SurfaceFilesProps {
   paths: string[];
@@ -156,7 +156,7 @@ export function SurfaceDiff({ oldFile, newFile, className }: { oldFile: SurfaceD
   const options = React.useMemo(() => ({ ...surfaceDiffOptions, themeType: appearance }), [appearance]);
   return (
     <div data-slot="surface-diff" data-renderer="pierre-diffs" className={cn('wb-scroll min-h-0 flex-1 overflow-y-auto px-3 py-2.5', className)}>
-      <div className="overflow-hidden rounded-[9px] border border-wb-sep">
+      <div className="overflow-hidden rounded-[9px] border border-border">
         <MultiFileDiff oldFile={oldFile} newFile={newFile} options={options} />
       </div>
     </div>
@@ -169,20 +169,20 @@ export interface SurfaceAgent {
   detail?: string;
 }
 /* status → dot background / label color */
-const AGENT_DOT: Record<string, string> = { running: 'bg-wb-tint animate-[wbPulse_1.2s_infinite]', passed: 'bg-wb-green', failed: 'bg-wb-red' };
-const AGENT_TEXT: Record<string, string> = { running: 'text-wb-tint', passed: 'text-wb-green', failed: 'text-wb-red' };
+const AGENT_DOT: Record<string, string> = { running: 'bg-primary animate-[wbPulse_1.2s_infinite]', passed: 'bg-success', failed: 'bg-destructive' };
+const AGENT_TEXT: Record<string, string> = { running: 'text-primary', passed: 'text-success', failed: 'text-destructive' };
 /** Subagent / workflow runs with live status dots. */
 export function SurfaceAgents({ agents, className }: { agents: SurfaceAgent[]; className?: string }) {
   return (
     <div data-slot="surface-agents" className={cn('wb-scroll min-h-0 flex-1 overflow-y-auto px-3 py-2.5', className)}>
       {agents.map((a) => (
-        <div key={a.name} className="mb-1 flex items-center gap-2.5 rounded-[10px] border border-wb-sep bg-wb-card px-2.5 py-[9px]">
-          <span className={cn('size-2 shrink-0 rounded-[50%]', AGENT_DOT[a.status] ?? 'bg-wb-label3')} />
+        <div key={a.name} className="mb-1 flex items-center gap-2.5 rounded-[10px] border border-border bg-card px-2.5 py-[9px]">
+          <span className={cn('size-2 shrink-0 rounded-[50%]', AGENT_DOT[a.status] ?? 'bg-tertiary-foreground')} />
           <div className="min-w-0 flex-1">
             <div className="font-mono text-[12.5px] font-[650]">{a.name}</div>
-            {a.detail ? <div className="mt-px text-[11.5px] text-wb-label2">{a.detail}</div> : null}
+            {a.detail ? <div className="mt-px text-[11.5px] text-muted-foreground">{a.detail}</div> : null}
           </div>
-          <span className={cn('text-[10.5px] font-bold tracking-[.5px] uppercase', AGENT_TEXT[a.status] ?? 'text-wb-label3')}>{a.status}</span>
+          <span className={cn('text-[10.5px] font-bold tracking-[.5px] uppercase', AGENT_TEXT[a.status] ?? 'text-tertiary-foreground')}>{a.status}</span>
         </div>
       ))}
     </div>
@@ -191,5 +191,5 @@ export function SurfaceAgents({ agents, className }: { agents: SurfaceAgent[]; c
 
 /** A terminal well for the panel (put a `TerminalBody` in it). */
 export function SurfaceTerminal({ className, children }: { className?: string; children?: React.ReactNode }) {
-  return <div data-slot="surface-terminal" className={cn('wb-term flex min-h-0 flex-1 flex-col bg-wb-term', className)}>{children}</div>;
+  return <div data-slot="surface-terminal" data-theme-scope="terminal" className={cn('dark scheme-dark flex min-h-0 flex-1 flex-col bg-background text-foreground', className)}>{children}</div>;
 }

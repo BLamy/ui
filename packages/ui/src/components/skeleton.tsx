@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
    `height`; `shape` picks the corners. SkeletonText stacks text lines with a shorter last line. Placeholders are
    aria-hidden — mark the region that is loading with aria-busy (and a label) instead. ══ */
 export const skeletonVariants = cva(
-  'block bg-bl-fill2 [background-image:linear-gradient(90deg,transparent_25%,color-mix(in_oklab,var(--bl-card)_55%,transparent)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none',
+  'block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25%,color-mix(in_oklab,var(--card)_55%,transparent)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none',
   {
     variants: {
       shape: {

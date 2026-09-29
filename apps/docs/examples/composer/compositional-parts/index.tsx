@@ -114,7 +114,7 @@ function Transcript({
           style={{
             fontSize: 12,
             fontWeight: 600,
-            color: 'var(--wb-label3)',
+            color: 'var(--tertiary-foreground)',
             textAlign: 'center',
             padding: '2px 0 6px',
           }}
@@ -132,7 +132,7 @@ function Transcript({
                   maxWidth: '78%',
                   padding: '8px 12px',
                   borderRadius: '14px 14px 4px 14px',
-                  background: 'var(--wb-fill2)',
+                  background: 'var(--secondary-strong)',
                   fontSize: 13.5,
                   lineHeight: 1.5,
                 }}
@@ -146,7 +146,7 @@ function Transcript({
               style={{
                 fontSize: 13.5,
                 lineHeight: 1.6,
-                color: 'var(--wb-label)',
+                color: 'var(--foreground)',
                 padding: '2px 2px 4px',
               }}
             >
@@ -214,7 +214,7 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
                 width: 7,
                 height: 7,
                 borderRadius: 99,
-                background: 'var(--wb-green)',
+                background: 'var(--success)',
               }}
             />
             <ComposerText className="flex-1">

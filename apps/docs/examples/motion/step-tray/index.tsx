@@ -21,7 +21,7 @@ function Step({ step }: { step: number }) {
     return (
       <div style={{ padding: '18px 18px 4px' }}>
         <div style={{ fontSize: 19, fontWeight: 750 }}>Send</div>
-        <div style={{ fontSize: 14, color: 'var(--bl-label2)', marginTop: 4 }}>
+        <div style={{ fontSize: 14, color: 'var(--muted-foreground)', marginTop: 4 }}>
           To Wei Chen
         </div>
       </div>
@@ -40,7 +40,7 @@ function Step({ step }: { step: number }) {
         >
           $120.00
         </div>
-        <div style={{ fontSize: 13, color: 'var(--bl-label2)' }}>
+        <div style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
           Balance $2,480.00
         </div>
       </div>
@@ -56,10 +56,10 @@ function Step({ step }: { step: number }) {
             justifyContent: 'space-between',
             padding: '10px 0',
             fontSize: 15,
-            boxShadow: i ? 'inset 0 1px 0 var(--bl-sep)' : undefined,
+            boxShadow: i ? 'inset 0 1px 0 var(--border)' : undefined,
           }}
         >
-          <span style={{ color: 'var(--bl-label2)' }}>{a}</span>
+          <span style={{ color: 'var(--muted-foreground)' }}>{a}</span>
           <span>{b}</span>
         </div>
       ))}
@@ -80,7 +80,7 @@ export default function SendTray() {
         height: 380,
         borderRadius: 12,
         overflow: 'hidden',
-        background: 'var(--bl-bg2)',
+        background: 'var(--muted)',
         boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.05)',
       }}
     >
@@ -95,7 +95,7 @@ export default function SendTray() {
         }}
         className={
           'rounded-[28px] bg-card ' +
-          'shadow-[0_24px_80px_rgba(0,0,0,.18),0_0_0_1px_var(--bl-sep)]'
+          'shadow-[0_24px_80px_rgba(0,0,0,.18),0_0_0_1px_var(--border)]'
         }
       >
         <AnimatedHeight>

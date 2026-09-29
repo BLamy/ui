@@ -40,7 +40,7 @@ function ChatTranscript() {
               maxWidth: '80%',
               padding: '8px 13px',
               borderRadius: '16px 16px 4px 16px',
-              background: 'var(--wb-tint)',
+              background: 'var(--primary)',
               color: '#fff',
               fontSize: 14,
             }}

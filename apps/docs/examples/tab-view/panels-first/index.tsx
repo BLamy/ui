@@ -31,8 +31,8 @@ export default function PanelsFirst() {
         height: 240,
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--background)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <TabViewPanels style={{ order: 2 }}>
@@ -43,7 +43,7 @@ export default function PanelsFirst() {
                 style={{
                   fontSize: 22,
                   fontWeight: 700,
-                  color: 'var(--bl-label)',
+                  color: 'var(--foreground)',
                 }}
               >
                 {s.title}
@@ -51,7 +51,7 @@ export default function PanelsFirst() {
               <div
                 style={{
                   fontSize: 14,
-                  color: 'var(--bl-label2)',
+                  color: 'var(--muted-foreground)',
                   marginTop: 6,
                 }}
               >
@@ -68,11 +68,11 @@ export default function PanelsFirst() {
           alignItems: 'center',
           gap: 12,
           padding: '12px 16px 0',
-          boxShadow: 'inset 0 -1px 0 var(--bl-sep)',
+          boxShadow: 'inset 0 -1px 0 var(--border)',
         }}
       >
         <span
-          style={{ fontSize: 15, fontWeight: 700, color: 'var(--bl-label)' }}
+          style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)' }}
         >
           Address Book
         </span>
@@ -92,8 +92,8 @@ export default function PanelsFirst() {
                         fontSize: 14,
                         fontWeight: 600,
                         color: isSelected
-                          ? 'var(--bl-tint)'
-                          : 'var(--bl-label3)',
+                          ? 'var(--primary)'
+                          : 'var(--tertiary-foreground)',
                       }}
                     >
                       {s.title}

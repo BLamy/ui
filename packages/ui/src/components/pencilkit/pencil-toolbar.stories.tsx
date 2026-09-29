@@ -20,8 +20,8 @@ function Frame({ dark, children }: { dark?: boolean; children: React.ReactNode }
         width: 620,
         height: 120,
         borderRadius: 12,
-        background: 'var(--bl-bg2)',
-        color: 'var(--bl-label)',
+        background: 'var(--muted)',
+        color: 'var(--foreground)',
         fontFamily: PFONT,
         colorScheme: dark ? 'dark' : 'light',
       }}

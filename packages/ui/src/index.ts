@@ -19,9 +19,10 @@ export { Celebrate } from './components/celebrate';
 export type { CelebrateProps } from './components/celebrate';
 export {
   BLProvider, BLSafeCtx, BLStickyCtx, chromeStore, useChromeHidden, chromeOffset,
-  AppearanceContext, AppearanceProvider, useAppearance, darkVars as blDarkVars, lightVars as blLightVars,
+  AppearanceContext, AppearanceProvider, useAppearance,
+  ThemeScope, themeScopeProps, themeScopeClass, tintVars, readThemeVars, THEME_VARS,
 } from './lib/theme';
-export type { BLProviderProps, Appearance } from './lib/theme';
+export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName } from './lib/theme';
 export { useContainerWidth, useContainerSize, defineSlot, collectSlots } from './lib/container';
 export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL, SHEET_OPEN_THRESHOLD } from './lib/sheet-drag';
 export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
@@ -96,7 +97,7 @@ export type {
 export type { AdaptivePaneProps, AdaptivePaneMode } from './components/adaptive-pane';
 
 // demos
-export { SidebarDemo, sidebarDarkVars } from './demos/sidebar-demo';
+export { SidebarDemo } from './demos/sidebar-demo';
 export {
   SplitViewMailDemo, SplitViewNotesDemo, SplitViewSettingsDemo, SplitViewResizableDemo, DemoGlyph,
   SplitViewRemindersDemo, SplitViewLibraryDemo, SplitViewGalleryDemo,
@@ -191,8 +192,6 @@ export type { SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, Synta
 // (EASE is the same curve as the core EASE above.)
 export { WFONT, MONO } from './lib/workbench/util';
 export {
-  workbenchVars,
-  workbenchAppearanceClass,
   useWorkbenchAppearance,
   WorkbenchTheme,
   type WorkbenchThemeProps,
@@ -348,7 +347,7 @@ export {
   stripAttachmentRefs,
   type WorkbenchComposerProps,
 } from './components/workbench/workbench-composer';
-export { WbPopover, readWbTokens, type WbPopoverProps } from './components/workbench/wb-popover';
+export { WbPopover, type WbPopoverProps } from './components/workbench/wb-popover';
 export {
   Conversation,
   ConversationEmpty,
@@ -408,18 +407,6 @@ export {
 
 // ── Chat: ChatShell and its team-chat primitives, floating/artifact chat containers ──
 export { ChatIcon, chatIconPaths, type ChatIconProps } from './lib/chat/chat-icon';
-export {
-  chatTokens,
-  chatTokenVars,
-  chatLightTokens,
-  chatLightTokenVars,
-  chatVars,
-  K,
-  KFONT,
-  KMONO,
-  KEASE,
-  type ChatTokens,
-} from './lib/chat/chat-tokens';
 export { kvib } from './lib/chat/kvib';
 export {
   ChatUsersProvider,

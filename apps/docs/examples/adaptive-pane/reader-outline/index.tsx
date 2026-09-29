@@ -29,7 +29,7 @@ function Reader() {
         position: 'relative',
         display: 'flex',
         height: 360,
-        background: 'var(--bl-bg)',
+        background: 'var(--background)',
       }}
     >
       <AdaptivePane
@@ -38,14 +38,14 @@ function Reader() {
         onClose={() => setOpen(false)}
         columnWidth={190}
         drawerWidth={230}
-        columnStyle={{ borderRight: '1px solid var(--bl-sep)' }}
+        columnStyle={{ borderRight: '1px solid var(--border)' }}
       >
         <aside
           style={{
             height: '100%',
             padding: '16px 14px',
             boxSizing: 'border-box',
-            background: 'var(--bl-bg2)',
+            background: 'var(--muted)',
             fontSize: 13.5,
           }}
         >
@@ -54,7 +54,7 @@ function Reader() {
               fontSize: 11.5,
               fontWeight: 700,
               letterSpacing: '.06em',
-              color: 'var(--bl-label2)',
+              color: 'var(--muted-foreground)',
               marginBottom: 8,
             }}
           >
@@ -65,7 +65,7 @@ function Reader() {
               key={h}
               style={{
                 padding: '6px 0',
-                color: i === 2 ? 'var(--bl-tint)' : 'var(--bl-label)',
+                color: i === 2 ? 'var(--primary)' : 'var(--foreground)',
                 fontWeight: i === 2 ? 600 : 400,
               }}
             >
@@ -107,7 +107,7 @@ function Reader() {
           style={{
             margin: 0,
             lineHeight: 1.65,
-            color: 'var(--bl-label2)',
+            color: 'var(--muted-foreground)',
             maxWidth: 520,
           }}
         >
@@ -141,9 +141,9 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

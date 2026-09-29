@@ -309,7 +309,7 @@ export default function SplitToFloating({
           style={{
             border: 0,
             background: 'none',
-            color: 'var(--bl-tint)',
+            color: 'var(--primary)',
             font: 'inherit',
             fontSize: 12,
             cursor: 'pointer',

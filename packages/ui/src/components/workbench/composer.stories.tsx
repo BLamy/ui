@@ -143,16 +143,16 @@ function T3Composer({ open, defaultOpen, attachments = true, streaming = true, c
     >
       {topBump ? <ComposerBump side="top" draggable open={open} defaultOpen={defaultOpen} maxReveal={220}>
         <ComposerBumpContent label="Monitor output">
-          <div className="flex flex-col gap-1.5 px-3.5 pt-3 pb-2 font-mono text-[11.5px] leading-[1.5] text-wb-label2">
-            <div><span className="text-wb-green">✓</span> vite v6 ready in 412 ms</div>
-            <div><span className="text-wb-green">✓</span> 287 stories indexed</div>
-            <div><span className="text-wb-label3">…</span> watching packages/workbench/src</div>
-            <div className="text-wb-label">→ composer.tsx changed, HMR update</div>
+          <div className="flex flex-col gap-1.5 px-3.5 pt-3 pb-2 font-mono text-[11.5px] leading-[1.5] text-muted-foreground">
+            <div><span className="text-success">✓</span> vite v6 ready in 412 ms</div>
+            <div><span className="text-success">✓</span> 287 stories indexed</div>
+            <div><span className="text-tertiary-foreground">…</span> watching packages/workbench/src</div>
+            <div className="text-foreground">→ composer.tsx changed, HMR update</div>
           </div>
         </ComposerBumpContent>
         <ComposerBumpHandle>
-          <span className="size-[7px] shrink-0 animate-[wbPulse_1.6s_infinite] rounded-full bg-wb-green" />
-          <ComposerText className="flex-1 text-wb-label">Monitoring <span className="text-wb-label3">· pnpm storybook</span></ComposerText>
+          <span className="size-[7px] shrink-0 animate-[wbPulse_1.6s_infinite] rounded-full bg-success" />
+          <ComposerText className="flex-1 text-foreground">Monitoring <span className="text-tertiary-foreground">· pnpm storybook</span></ComposerText>
           <ComposerButton variant="pill" className="py-[3px] text-[12px]">Stop</ComposerButton>
         </ComposerBumpHandle>
       </ComposerBump> : null}
@@ -162,7 +162,7 @@ function T3Composer({ open, defaultOpen, attachments = true, streaming = true, c
         <ComposerFooter className="gap-1 px-2.5 pb-2.5">
           {/* In the footer normally; in the bottom bump when compact. */}
           <ComposerOptions>
-            <ModelPicker models={WORKBENCH_MODELS} providers={WORKBENCH_PROVIDERS} defaultValue="claude-opus-5-5" tint={false} className="text-wb-label" />
+            <ModelPicker models={WORKBENCH_MODELS} providers={WORKBENCH_PROVIDERS} defaultValue="claude-opus-5-5" tint={false} className="text-foreground" />
             <ComposerSeparator />
             <ComposerSelect aria-label="Effort" options={EFFORTS} defaultValue="medium" />
             <ComposerSeparator />
@@ -233,14 +233,14 @@ function ChatThread({ scroller, bottomPad = 170 }: { scroller: React.RefObject<H
   return (
     <div ref={scroller} data-testid="scroller" className="wb-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: `24px 24px ${bottomPad}px` }}>
       <div style={{ maxWidth: 720, margin: '0 auto', display: 'grid', gap: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--wb-label3)', textAlign: 'center', padding: '4px 0 8px' }}>Thread · Fix the header overlap</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tertiary-foreground)', textAlign: 'center', padding: '4px 0 8px' }}>Thread · Fix the header overlap</div>
         {THREAD.map((m, i) =>
           m.who === 'me' ? (
             <div key={i} style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <div className="rounded-[14px_14px_4px_14px] bg-wb-fill2" style={{ padding: '9px 13px', fontSize: 14, lineHeight: 1.5, maxWidth: '78%' }}>{m.text}</div>
+              <div className="rounded-[14px_14px_4px_14px] bg-secondary-strong" style={{ padding: '9px 13px', fontSize: 14, lineHeight: 1.5, maxWidth: '78%' }}>{m.text}</div>
             </div>
           ) : (
-            <div key={i} style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--wb-label)', padding: '2px 2px 6px' }}>{m.text}</div>
+            <div key={i} style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--foreground)', padding: '2px 2px 6px' }}>{m.text}</div>
           ),
         )}
       </div>
@@ -338,7 +338,7 @@ export const Bumps: Story = {
           <ComposerFooter><ComposerSpacer /><ComposerSend /></ComposerFooter>
         </ComposerCard>
         <ComposerBump side="top">
-          <ComposerBumpHandle><span className="size-[7px] rounded-full bg-wb-tint" /><ComposerText className="flex-1">attached top bump (tucked)</ComposerText></ComposerBumpHandle>
+          <ComposerBumpHandle><span className="size-[7px] rounded-full bg-primary" /><ComposerText className="flex-1">attached top bump (tucked)</ComposerText></ComposerBumpHandle>
         </ComposerBump>
         <ComposerBump side="bottom" variant="detached">
           <ComposerBumpHandle><ComposerText icon="doc">detached bottom bump</ComposerText></ComposerBumpHandle>

@@ -52,14 +52,14 @@ function InboxTabs() {
       placement="top"
       selectedKey={tab}
       onSelectionChange={(k) => setTab(String(k))}
-      style={{ height: 360, background: 'var(--bl-card)' }}
+      style={{ height: 360, background: 'var(--card)' }}
     >
       <TabViewBar
         variant="plain"
         style={{
           alignItems: 'center',
           padding: '0 10px',
-          borderBottom: '1px solid var(--bl-sep)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
         <TabViewList aria-label="Inbox">
@@ -82,8 +82,8 @@ function InboxTabs() {
                   <span
                     style={{
                       color: isSelected
-                        ? 'var(--bl-label)'
-                        : 'var(--bl-label2)',
+                        ? 'var(--foreground)'
+                        : 'var(--muted-foreground)',
                     }}
                   >
                     {t.label}
@@ -130,7 +130,7 @@ function InboxTabs() {
                               width: 9,
                               height: 9,
                               borderRadius: 9,
-                              background: 'var(--bl-tint)',
+                              background: 'var(--primary)',
                             }}
                           />
                         ) : null
@@ -156,9 +156,9 @@ function Window({ children }: { children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

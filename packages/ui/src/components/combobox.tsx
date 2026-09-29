@@ -49,14 +49,14 @@ export function ComboBoxInput({ className, groupClassName, ...props }: ComboBoxI
       data-slot="combobox-input"
       className={cn(
         'box-border flex h-11 w-full items-center rounded-[10px] bg-input transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy',
-        'data-focus-within:bg-transparent data-focus-within:shadow-[inset_0_0_0_1.5px_var(--bl-tint)]',
-        'group-data-invalid:shadow-[inset_0_0_0_1.5px_var(--bl-red)] data-disabled:opacity-50',
+        'data-focus-within:bg-transparent data-focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)]',
+        'group-data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:opacity-50',
         groupClassName,
       )}
     >
       <AriaInput
         className={composeRenderProps(className, (cls) => cn(
-          'h-full min-w-0 flex-1 border-0 bg-transparent pr-1 pl-3 [font-family:inherit] text-[17px] text-foreground outline-none placeholder:text-bl-label3',
+          'h-full min-w-0 flex-1 border-0 bg-transparent pr-1 pl-3 [font-family:inherit] text-[17px] text-foreground outline-none placeholder:text-tertiary-foreground',
           selectableText, cls,
         ))}
         {...props}

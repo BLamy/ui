@@ -32,7 +32,7 @@ function Loaded() {
   return (
     <div style={{ padding: 18 }}>
       <div style={{ fontSize: 19, fontWeight: 750 }}>{order.title}</div>
-      <div style={{ fontSize: 13, color: 'var(--bl-green)', marginTop: 3 }}>
+      <div style={{ fontSize: 13, color: 'var(--success)', marginTop: 3 }}>
         {order.status}
       </div>
       {order.lines.map(([name, price]) => (
@@ -43,11 +43,11 @@ function Loaded() {
             justifyContent: 'space-between',
             padding: '9px 0',
             fontSize: 15,
-            boxShadow: 'inset 0 -1px 0 var(--bl-sep)',
+            boxShadow: 'inset 0 -1px 0 var(--border)',
           }}
         >
           <span>{name}</span>
-          <span style={{ color: 'var(--bl-label2)' }}>{price}</span>
+          <span style={{ color: 'var(--muted-foreground)' }}>{price}</span>
         </div>
       ))}
       <div
@@ -81,8 +81,8 @@ export default function LoadingSwap() {
       <AnimatedHeight
         style={{
           borderRadius: 16,
-          background: 'var(--bl-card)',
-          boxShadow: '0 0 0 1px var(--bl-sep)',
+          background: 'var(--card)',
+          boxShadow: '0 0 0 1px var(--border)',
         }}
       >
         <div aria-busy={loading} aria-live="polite">

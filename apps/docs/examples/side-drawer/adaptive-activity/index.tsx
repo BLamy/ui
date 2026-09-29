@@ -22,7 +22,7 @@ function Activity() {
           style={{
             padding: '11px 16px',
             fontSize: 14,
-            borderBottom: '1px solid var(--bl-sep)',
+            borderBottom: '1px solid var(--border)',
           }}
         >
           {a}
@@ -51,7 +51,7 @@ function AdaptiveActivity() {
       <Button size="sm" variant="secondary" onPress={() => setOpen(!open)}>
         {open ? 'Hide' : 'Show'} activity
       </Button>
-      <div style={{ marginTop: 12, fontSize: 12.5, color: 'var(--bl-label2)' }}>
+      <div style={{ marginTop: 12, fontSize: 12.5, color: 'var(--muted-foreground)' }}>
         Presentation: {presentation}
       </div>
     </div>
@@ -79,7 +79,7 @@ function AdaptiveActivity() {
         position: 'relative',
         display: 'flex',
         height: 340,
-        background: 'var(--bl-bg)',
+        background: 'var(--background)',
       }}
     >
       {presentation === 'pushed' ? (
@@ -136,9 +136,9 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

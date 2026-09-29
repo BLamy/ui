@@ -5,8 +5,7 @@ import { AdaptivePane } from '../components/adaptive-pane';
 import { SideDrawer } from '../components/side-drawer';
 import { useContainerWidth } from '../lib/container';
 import { Haptics } from '../lib/haptics';
-import { useAppearance, type Appearance } from '../lib/theme';
-import { chatVars } from '../lib/chat/chat-tokens';
+import { useAppearance, themeScopeProps, type Appearance } from '../lib/theme';
 import { ChatIcon, chatIconPaths } from '../lib/chat/chat-icon';
 import { ChatShellContext, useChatShell, type ChatShellContextValue } from '../lib/chat/chat-shell-context';
 import { cn } from '../lib/utils';
@@ -37,7 +36,7 @@ export interface ChatShellProps extends Omit<ComponentProps<'div'>, 'ref'> {
   onNavOpenChange?: (open: boolean) => void;
   /** Light or dark palette. Defaults to the ambient `AppearanceProvider` value, else dark. */
   appearance?: Appearance;
-  /** accent for unread dots, mention pills, own reactions, the send button (`--ck-tint`) */
+  /** accent for unread dots, mention pills, own reactions, the send button (--primary). Defaults to the theme primary. */
   tint?: string;
 }
 
@@ -47,7 +46,7 @@ export function ChatShell({
   navOpen: navOpenProp,
   onNavOpenChange,
   appearance: appearanceProp,
-  tint = '#0A84FF',
+  tint,
   children,
   className,
   style,
@@ -68,6 +67,7 @@ export function ChatShell({
     return () => setNavs((n) => n - 1);
   }, []);
   const ctx: ChatShellContextValue = { width, compact: width < breakpoint, navOpen, setNavOpen, hasNav: navs > 0, registerNav };
+  const scope = themeScopeProps({ scope: 'chat', appearance, tint });
   return (
     <ChatShellContext.Provider value={ctx}>
       <div
@@ -75,13 +75,10 @@ export function ChatShell({
         data-slot="chat-shell"
         data-appearance={appearance}
         data-compact={ctx.compact || undefined}
-        className={cn(
-          'relative flex h-full w-full overflow-hidden bg-ck-bg font-ios text-ck-label',
-          appearance === 'light' ? '[color-scheme:light]' : '[color-scheme:dark]',
-          className,
-        )}
-        // The chat tokens as --ck-* custom properties, for everything rendered inside the shell.
-        style={{ ...chatVars(appearance), '--ck-tint': tint, ...style } as CSSProperties}
+        // A `chat` theme scope: the bl-theme's team-chat palette for everything inside the shell.
+        data-theme-scope={scope['data-theme-scope']}
+        className={cn('relative flex h-full w-full overflow-hidden bg-background font-ios text-foreground', scope.className, className)}
+        style={{ ...scope.style, ...style }}
         {...props}
       >
         {children}
@@ -112,7 +109,7 @@ export function ChatShellNav({ children, className, style }: ChatShellNavProps) 
       side="left"
       open={navOpen}
       onClose={() => setNavOpen(false)}
-      scrim="var(--ck-scrim, rgba(0,0,0,.5))"
+      scrim="var(--overlay)"
       columnStyle={{ ...navColumnStyle, ...style }}
       className={cn('flex', className)}
     >
@@ -139,7 +136,7 @@ export function ChatShellNavTrigger({ className, children, onPress, ...props }: 
         setNavOpen(true);
         onPress?.(e);
       }}
-      className={composeRenderProps(className, (c) => cn('grid cursor-pointer border-0 bg-transparent p-1 text-ck-mut', c))}
+      className={composeRenderProps(className, (c) => cn('grid cursor-pointer border-0 bg-transparent p-1 text-muted-foreground', c))}
       {...props}
     >
       {children ?? <ChatIcon d={chatIconPaths.menu} size={17} sw={2} />}
@@ -152,7 +149,7 @@ export function ChatShellSidebar({ className, ...props }: ComponentProps<'div'>)
   return (
     <div
       data-slot="chat-shell-sidebar"
-      className={cn('box-border flex h-full w-[222px] shrink-0 flex-col border-r border-ck-sep bg-ck-side font-ios [--ck-avatar-ring:var(--ck-side)]', className)}
+      className={cn('box-border flex h-full w-[222px] shrink-0 flex-col border-r border-border bg-sidebar font-ios [--ck-avatar-ring:var(--sidebar)]', className)}
       {...props}
     />
   );
@@ -169,7 +166,7 @@ export function ChatShellHeader({ className, ...props }: ComponentProps<'div'>) 
   return (
     <div
       data-slot="chat-shell-header"
-      className={cn('flex h-[46px] shrink-0 items-center gap-[9px] border-b border-ck-sep px-4', className)}
+      className={cn('flex h-[46px] shrink-0 items-center gap-[9px] border-b border-border px-4', className)}
       {...props}
     />
   );
@@ -178,7 +175,7 @@ export function ChatShellHeader({ className, ...props }: ComponentProps<'div'>) 
 /** Leading glyph of the header; a # by default. */
 export function ChatShellHeaderIcon({ className, children, ...props }: ComponentProps<'span'>) {
   return (
-    <span data-slot="chat-shell-header-icon" className={cn('grid text-ck-mut3', className)} {...props}>
+    <span data-slot="chat-shell-header-icon" className={cn('grid text-tertiary-foreground', className)} {...props}>
       {children ?? <ChatIcon d={chatIconPaths.hash} size={15} sw={2.2} />}
     </span>
   );
@@ -193,7 +190,7 @@ export function ChatShellDescription({ className, ...props }: ComponentProps<'sp
   return (
     <span
       data-slot="chat-shell-description"
-      className={cn('flex-1 overflow-hidden text-[11.5px] text-ellipsis whitespace-nowrap text-ck-mut3', className)}
+      className={cn('flex-1 overflow-hidden text-[11.5px] text-ellipsis whitespace-nowrap text-tertiary-foreground', className)}
       {...props}
     />
   );
@@ -208,9 +205,9 @@ export const chatShellHeaderActionVariants = cva('shrink-0 cursor-pointer bg-tra
   variants: {
     variant: {
       /** an icon button; `isActive` tints it */
-      icon: 'grid border-0 p-1 text-ck-mut3 data-hovered:text-ck-mut data-[active]:text-ck-tint',
+      icon: 'grid border-0 p-1 text-tertiary-foreground data-hovered:text-muted-foreground data-[active]:text-primary',
       /** a small outlined text button */
-      outline: 'rounded-[8px] border border-ck-sep px-2.5 py-1 text-[11.5px] font-semibold text-ck-mut data-hovered:bg-ck-hover',
+      outline: 'rounded-[8px] border border-border px-2.5 py-1 text-[11.5px] font-semibold text-muted-foreground data-hovered:bg-accent',
     },
   },
   defaultVariants: { variant: 'icon' },
@@ -253,7 +250,7 @@ export function ChatShellBack({ className, children, onPress, ...props }: ChatSh
         onPress?.(e);
       }}
       className={composeRenderProps(className, (c) =>
-        cn('flex shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent py-1 pr-1.5 pl-0 font-ios text-[13px] font-[650] text-ck-tint', c),
+        cn('flex shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent py-1 pr-1.5 pl-0 font-ios text-[13px] font-[650] text-primary', c),
       )}
       {...props}
     >
@@ -285,7 +282,7 @@ export function ChatShellAside({ minWidth = 1320, open = true, className, ...pro
   return (
     <aside
       data-slot="chat-shell-aside"
-      className={cn('box-border w-[168px] shrink-0 border-l border-ck-sep bg-ck-side [--ck-avatar-ring:var(--ck-side)]', className)}
+      className={cn('box-border w-[168px] shrink-0 border-l border-border bg-sidebar [--ck-avatar-ring:var(--sidebar)]', className)}
       {...props}
     />
   );
@@ -315,9 +312,9 @@ export function ChatShellPanel({ open, onOpenChange, title = 'Thread', dockWidth
       onClose={() => onOpenChange?.(false)}
       title={title}
       width={width ?? Math.min(360, w - 60)}
-      // SideDrawer paints with the BL palette (surface, scrim, hairline, close button); point it at the chat's.
+      // Inside the chat scope the drawer already paints with the chat palette; its close button takes the stronger fill.
       className={cn(
-        '[--bl-bg:var(--ck-bg)] [--bl-fill:var(--ck-fill2)] [--bl-label2:var(--ck-mut)] [--bl-label:var(--ck-label)] [--bl-scrim:var(--ck-scrim)] [--bl-sep:var(--ck-sep)]',
+        '[--secondary:var(--secondary-strong)]',
         className,
       )}
       style={style}

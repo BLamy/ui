@@ -48,7 +48,7 @@ function Scaled({
           transformOrigin: 'top left',
           borderRadius: 14 / scale,
           overflow: 'hidden',
-          boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.12)',
+          boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.12)',
         }}
       >
         {children}
@@ -62,7 +62,7 @@ function Caption({ children }: { children: ReactNode }) {
     <div
       style={{
         fontSize: 12.5,
-        color: 'var(--bl-label2)',
+        color: 'var(--muted-foreground)',
         textAlign: 'center',
         marginTop: 10,
         lineHeight: 1.45,

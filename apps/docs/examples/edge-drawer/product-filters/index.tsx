@@ -28,7 +28,7 @@ function ProductFilters() {
         position: 'relative',
         height: 450,
         overflow: 'hidden',
-        background: 'var(--bl-bg2)',
+        background: 'var(--muted)',
       }}
     >
       <div
@@ -55,8 +55,8 @@ function ProductFilters() {
             style={{
               height: 120,
               borderRadius: 12,
-              background: 'var(--bl-card)',
-              boxShadow: '0 0 0 1px var(--bl-sep)',
+              background: 'var(--card)',
+              boxShadow: '0 0 0 1px var(--border)',
             }}
           />
         ))}
@@ -73,7 +73,7 @@ function ProductFilters() {
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
-            background: 'var(--bl-bg2)',
+            background: 'var(--muted)',
           }}
         >
           <div
@@ -84,7 +84,7 @@ function ProductFilters() {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             <List inset>
               <ListSection title="Sort by">
-                <div style={{ padding: 10, background: 'var(--bl-card)' }}>
+                <div style={{ padding: 10, background: 'var(--card)' }}>
                   <Segmented
                     aria-label="Sort by"
                     options={sorts}
@@ -108,7 +108,7 @@ function ProductFilters() {
               </ListSection>
               <ListSection title={`Under $${maxPrice}`}>
                 <div
-                  style={{ padding: '14px 16px', background: 'var(--bl-card)' }}
+                  style={{ padding: '14px 16px', background: 'var(--card)' }}
                 >
                   <Slider
                     aria-label="Maximum price"
@@ -127,7 +127,7 @@ function ProductFilters() {
               display: 'flex',
               gap: 8,
               padding: 16,
-              borderTop: '1px solid var(--bl-sep)',
+              borderTop: '1px solid var(--border)',
             }}
           >
             <Button
@@ -161,9 +161,9 @@ function Window({ children }: { children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

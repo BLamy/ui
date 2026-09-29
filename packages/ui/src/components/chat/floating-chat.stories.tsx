@@ -45,7 +45,7 @@ function Transcript() {
       {LINES.map(([author, copy], index) => (
         // The newest lines hug the composer so they are what peeks out of the closed chat.
         <div key={copy} style={{ marginBottom: 16, marginTop: index === 0 ? 'auto' : undefined }}>
-          <div style={{ color: index % 2 ? '#68A7FF' : 'var(--bl-label2)', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{author}</div>
+          <div style={{ color: index % 2 ? '#68A7FF' : 'var(--muted-foreground)', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{author}</div>
           <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>{copy}</div>
         </div>
       ))}

@@ -30,7 +30,7 @@ export function ContactList({ contacts }: { contacts: ContactsState }) {
         leading={<SplitViewToggle />}
         trailing={
           <Button variant="ghost" onPress={() => { contacts.setEditing(!editing); Haptics.impact('light'); }}
-            className="px-2.5 text-[17px] font-normal text-primary data-hovered:bg-bl-fill">
+            className="px-2.5 text-[17px] font-normal text-primary data-hovered:bg-secondary">
             {editing ? 'Done' : 'Select'}
           </Button>
         } />

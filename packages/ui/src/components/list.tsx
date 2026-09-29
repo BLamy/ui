@@ -46,7 +46,7 @@ function ListBase({ children, inset, header, stickyTop, className, style }: List
     <BLStickyCtx.Provider value={top}>
       <div data-slot="list" className={cn(inset ? 'px-4 py-0' : 'p-0', className)} style={style}>
         {header ? (
-          <div ref={hRef} className="sticky z-24 bg-bl-stick backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
+          <div ref={hRef} className="sticky z-24 bg-sticky backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
             style={{ top: chromeOffset(above, chromeHid) }}>{header}</div>
         ) : null}
         {children}
@@ -95,7 +95,7 @@ export function ListSection({
   return (
     <div ref={innerRef} data-slot="list-section" className={cn(className)} style={style}>
       {title != null ? (sticky
-        ? <div className="sticky z-20 bg-bl-stick px-4 py-[3px] text-[13.5px] font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
+        ? <div className="sticky z-20 bg-sticky px-4 py-[3px] text-[13.5px] font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
             style={{ top }}>{title}</div>
         : <div className="px-4 pt-1 pb-[7px] text-[12.5px] font-medium tracking-[.4px] text-muted-foreground uppercase">{title}</div>) : null}
       <div className={cn('overflow-hidden', sticky ? 'rounded-none' : 'rounded-[12px]')}>
@@ -426,7 +426,7 @@ export function ListRow(p: ListRowProps) {
                 side === 'leading' ? 'justify-end' : 'justify-start',
               )}
               style={{
-                background: a.tint || (a.destructive ? 'var(--bl-red)' : 'var(--bl-tint)'),
+                background: a.tint || (a.destructive ? 'var(--destructive)' : 'var(--primary)'),
                 flexGrow: full ? (i === 0 ? 1 : 0) : actionW(a), flexBasis: 0, flexShrink: 1,
               }}>
               {/* Content keeps its slot width, pinned to the row's edge, so it slides out from under the row. */}
@@ -452,7 +452,7 @@ export function ListRow(p: ListRowProps) {
         className={cn(
           // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row.
           'relative box-border flex min-h-[46px] w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-[17px] leading-[normal] tracking-[normal] outline-none',
-          'focus-visible:[box-shadow:inset_0_0_0_2px_var(--bl-tint)]',
+          'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]',
           // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent).
           'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]',
           p.destructive ? 'text-destructive' : 'text-foreground',
@@ -471,7 +471,7 @@ export function ListRow(p: ListRowProps) {
             aria-keyshortcuts={hint ? 'ArrowRight ArrowLeft Delete' : undefined}
             onKeyDown={onRowKey}
             onClick={() => p.onPress && p.onPress()}
-            className="bl-btn bl-hl absolute inset-0 cursor-pointer border-0 bg-transparent p-0 outline-none focus-visible:[box-shadow:inset_0_0_0_2px_var(--bl-tint)]" />
+            className="bl-btn bl-hl absolute inset-0 cursor-pointer border-0 bg-transparent p-0 outline-none focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]" />
         ) : null}
         {inEdit ? (
           <span aria-hidden="true" className={cn(
@@ -480,7 +480,7 @@ export function ListRow(p: ListRowProps) {
           )}>
             <span className={cn(
               'box-border grid size-[22px] shrink-0 place-items-center rounded-[50%] transition-[background-color,scale] duration-spring-snappy ease-spring-bouncy',
-              p.checked ? 'border-none bg-primary' : '[border:1.6px_solid_var(--bl-label3)] bg-transparent',
+              p.checked ? 'border-none bg-primary' : '[border:1.6px_solid_var(--tertiary-foreground)] bg-transparent',
             )}>
               {p.checked ? <Icon name="check" size={13} sw={3} className="text-white transition-[scale,opacity] duration-spring-snappy ease-spring-bouncy starting:scale-50 starting:opacity-0" /> : null}
             </span>
@@ -489,7 +489,7 @@ export function ListRow(p: ListRowProps) {
         {p.leading ? <span className="pointer-events-none relative flex shrink-0 items-center">{p.leading}</span> : null}
         <div data-slot="list-row-body" className={cn(
           'pointer-events-none relative flex min-h-[46px] min-w-0 flex-1 items-center gap-2.5 px-0 py-[7px]',
-          p.divider !== false && '[box-shadow:inset_0_-1px_0_var(--bl-sep)]',
+          p.divider !== false && '[box-shadow:inset_0_-1px_0_var(--border)]',
           p.center ? 'justify-center' : 'justify-start',
         )}>
           <div className={cn('min-w-0', p.center ? 'flex-none' : 'flex-1')}>
@@ -501,7 +501,7 @@ export function ListRow(p: ListRowProps) {
               {labelled(p.trailing, titleId)}
             </span>
           ) : null}
-          {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} className="text-bl-label3" />
+          {p.accessory === 'chevron' ? <Icon name="chev" size={15} sw={2.6} className="text-tertiary-foreground" />
             : p.accessory === 'check' ? <span className="w-[22px] shrink-0">{p.checked ? <Icon name="check" size={20} sw={2.4} className="text-primary" /> : null}</span>
             : control ? <span data-row-control="" className="pointer-events-auto flex min-w-0 shrink-0 items-center">{labelled(control, titleId)}</span>
             : null}
@@ -517,7 +517,7 @@ export function ListRow(p: ListRowProps) {
                 }
               }}
               className={cn(
-                'bl-btn pointer-events-auto -mr-2 grid h-[44px] w-[40px] shrink-0 cursor-grab touch-none place-items-center rounded-[8px] border-0 bg-transparent p-0 text-bl-label3 outline-none focus-visible:[box-shadow:inset_0_0_0_2px_var(--bl-tint)]',
+                'bl-btn pointer-events-auto -mr-2 grid h-[44px] w-[40px] shrink-0 cursor-grab touch-none place-items-center rounded-[8px] border-0 bg-transparent p-0 text-tertiary-foreground outline-none focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]',
                 slot.dragging && 'cursor-grabbing',
               )}>
               <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true">

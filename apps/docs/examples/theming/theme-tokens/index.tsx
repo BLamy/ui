@@ -24,7 +24,7 @@ export default function Appearance() {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <BLProvider dark={dark} tint={tint}>
@@ -83,7 +83,7 @@ export default function Appearance() {
               margin: '12px auto 0',
               border: 0,
               borderRadius: 10,
-              background: 'var(--bl-tint, #0A84FF)',
+              background: 'var(--primary)',
               color: '#fff',
               fontFamily: 'inherit',
               fontWeight: 600,

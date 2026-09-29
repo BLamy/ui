@@ -27,8 +27,25 @@
   --dk-code: rgba(20, 20, 40, 0.035);
   --dk-success: #1E9E48;
 }
+:root:not([data-theme="dark"]) {
+  /* The shadcn variables Docstream reads, pinned to its light defaults: the bl-theme (loaded for the demos) sets
+     them on :root too, and the docs chrome keeps its own look. */
+  --background: #fff;
+  --foreground: #18181b;
+  --card: #fff;
+  --card-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --primary: #4f46e5;
+  --primary-foreground: #fafafa;
+  --link: #0A84FF;
+}
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --link: #0A84FF;
   --dk-bg: #0E0E11;
   --dk-fg: #ECECF1;
   --dk-side: #141418;
@@ -144,7 +161,16 @@ a:hover {
   margin: 18px 0 6px;
 }
 .dk-doc .wb-md :where(th) {
+  color: #8E8E98;
   font-size: 11.5px;
+}
+/* Table heads and quotes keep the docs' muted ink (MarkdownView reads --muted-foreground, which the docs chrome
+   pins to Docstream's palette). */
+.dk-doc .wb-md :where(blockquote) {
+  color: #8E8E98;
+}
+:root[data-theme="dark"] .dk-doc .wb-md :where(th, blockquote) {
+  color: #9C9CA6;
 }
 .dk-doc .wb-md :where(pre) {
   font-size: 12.5px;
@@ -301,31 +327,27 @@ a:hover {
   box-shadow: 0 1px 3px var(--dk-shadow);
 }
 
-/* Every demo renders on a BL UI surface: the --bl-* tokens for the docs' appearance, the system font, and a padded
-   block layout (bleed demos bring their own frame; Workbench demos root themselves in WorkbenchTheme). */
+/* Every demo renders on a BL UI surface: demos.ts wraps each one in a ThemeScope for the docs' appearance (the
+   bl-theme's light / dark variables), the system font, and a padded block layout (bleed demos bring their own frame;
+   Workbench demos root themselves in WorkbenchTheme). The canvas is the grouped background (--dk-demo). */
 :root .docs-demo-canvas {
-  --bl-bg: #fff; --bl-bg2: #F2F2F7; --bl-card: #fff; --bl-label: #0B0B0F;
-  --bl-label2: rgba(60,60,67,.6); --bl-label3: rgba(60,60,67,.36); --bl-sep: rgba(60,60,67,.22);
-  --bl-fill: rgba(120,120,128,.13); --bl-fill2: rgba(120,120,128,.24); --bl-press: rgba(120,120,128,.16);
-  --bl-tint: #0A84FF; --bl-green: #34C759; --bl-red: #FF3B30;
-  --bl-bar: rgba(250,250,252,.85); --bl-stick: rgba(244,244,248,.92); --bl-side: #ECECF1;
-  --bl-scrim: rgba(0,0,0,.38);
   position: relative;
   overflow: hidden;
   padding: 18px;
-  background: var(--bl-bg2);
-  color: var(--bl-label);
+  background: var(--dk-demo);
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 :root[data-theme="dark"] .docs-demo-canvas {
-  --bl-bg: #000; --bl-bg2: #0A0A0C; --bl-card: #1C1C1E; --bl-label: #F5F5F7;
-  --bl-label2: rgba(235,235,245,.62); --bl-label3: rgba(235,235,245,.3); --bl-sep: rgba(84,84,88,.48);
-  --bl-fill: rgba(120,120,128,.22); --bl-fill2: rgba(120,120,128,.34); --bl-press: rgba(120,120,128,.22);
-  --bl-tint: #0A84FF; --bl-green: #30D158; --bl-red: #FF453A;
-  --bl-bar: rgba(16,16,18,.82); --bl-stick: rgba(18,18,20,.9); --bl-side: #111114;
-  --bl-scrim: rgba(0,0,0,.5);
   color-scheme: dark;
+}
+/* The theme wrapper (demo-theme.tsx) is display: contents; Docstream's child rules apply to the demo root inside it. */
+:where(.docs-demo-canvas) > [data-docs-demo-theme] > * {
+  max-width: 100%;
+  text-align: start;
+}
+:where(.docs-demo-canvas-bleed) > [data-docs-demo-theme] > * {
+  max-width: none;
 }
 :root .docs-demo-canvas.docs-demo-canvas-bleed {
   padding: 0;

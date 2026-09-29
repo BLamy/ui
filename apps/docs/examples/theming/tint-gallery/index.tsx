@@ -58,7 +58,7 @@ export default function TintGallery() {
           style={{
             height: 'auto',
             borderRadius: 14,
-            boxShadow: '0 0 0 1px var(--bl-sep)',
+            boxShadow: '0 0 0 1px var(--border)',
           }}
         >
           <Sample name={a.name} />

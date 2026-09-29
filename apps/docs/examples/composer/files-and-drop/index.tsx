@@ -75,7 +75,7 @@ function FilesAndDrop() {
           </ComposerFooter>
         </ComposerCard>
       </Composer>
-      <p style={{ fontSize: 12, color: 'var(--wb-label2)', textAlign: 'center', margin: '12px 0 0' }}>
+      <p style={{ fontSize: 12, color: 'var(--muted-foreground)', textAlign: 'center', margin: '12px 0 0' }}>
         {sent || 'Drop files on the card, paste them, or press +. Backspace on a focused tile removes it.'}
       </p>
     </div>

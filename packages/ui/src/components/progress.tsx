@@ -7,7 +7,7 @@ import { NumberMorph } from './number-morph';
 /* ══ Progress — react-aria's ProgressBar (role=progressbar, aria-valuenow / valuetext), iOS progress view look.
    Omit `value` or pass `isIndeterminate` for the sliding bar. The fill springs to each new value and the
    default percentage label rolls its digits (NumberMorph). ══ */
-export const progressVariants = cva('relative w-full overflow-hidden rounded-full bg-bl-fill2', {
+export const progressVariants = cva('relative w-full overflow-hidden rounded-full bg-secondary-strong', {
   variants: {
     size: {
       sm: 'h-1',

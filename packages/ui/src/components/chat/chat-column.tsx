@@ -15,7 +15,7 @@ export function ChatColumn({ className, ...props }: ChatColumnProps) {
     <aside
       data-slot="chat-column"
       // ck-artifact-chat__chat stays as a hook for hosts that restyle the docked column.
-      className={cn('ck-artifact-chat__chat z-2 flex min-h-0 min-w-0 flex-col border-r border-[color:var(--bl-sep,rgba(60,60,67,.22))] bg-[color:var(--bl-card,#fff)]', className)}
+      className={cn('ck-artifact-chat__chat z-2 flex min-h-0 min-w-0 flex-col border-r border-[color:var(--border)] bg-[color:var(--card)]', className)}
       {...props}
     />
   );

@@ -201,13 +201,13 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle, re
       <div className="absolute inset-x-0 top-0 z-30 box-border flex items-end px-1.5 transition-transform duration-spring-smooth ease-spring-smooth"
         style={{ height: barH, paddingTop: safeTop, transform: hid ? 'translateY(' + (-(barH - safeTop)) + 'px)' : 'none' }}>
         <div className={cn(
-          'absolute inset-0 [border-bottom:1px_solid_var(--bl-sep)] bg-bl-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-opacity duration-spring-snappy ease-spring-snappy',
+          'absolute inset-0 [border-bottom:1px_solid_var(--border)] bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-opacity duration-spring-snappy ease-spring-snappy',
           scr ? 'opacity-100' : 'opacity-0',
         )} />
         {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
         {safeTop ? (
           <div className={cn(
-            'absolute inset-x-0 top-0 bg-bl-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
+            'absolute inset-x-0 top-0 bg-bar backdrop-blur-[18px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
             scr || hid ? 'opacity-100' : 'opacity-0',
           )} style={{ height: safeTop, transform: hid ? 'translateY(' + (barH - safeTop) + 'px)' : 'none' }} />
         ) : null}

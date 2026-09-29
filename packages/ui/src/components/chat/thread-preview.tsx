@@ -28,15 +28,15 @@ export function ThreadPreview({ title, count, className, children, onPress, ...p
       }}
       className={composeRenderProps(className, (c) =>
         cn(
-          'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-[10px] border border-ck-sep bg-ck-card px-[11px] py-[8px] text-left font-ios [transition:border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:border-ck-fill2 motion-reduce:transition-none',
+          'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-[10px] border border-border bg-card px-[11px] py-[8px] text-left font-ios [transition:border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:border-secondary-strong motion-reduce:transition-none',
           c,
         ),
       )}
       {...props}
     >
       <span className="flex items-center gap-[7px] text-[12.5px]">
-        <span className="font-[650] text-ck-label">{title}</span>
-        <span className="font-semibold whitespace-nowrap text-ck-tint">
+        <span className="font-[650] text-foreground">{title}</span>
+        <span className="font-semibold whitespace-nowrap text-primary">
           {count} {count === 1 ? 'message' : 'messages'} ›
         </span>
       </span>
@@ -53,7 +53,7 @@ export interface ThreadPreviewReplyProps {
 
 export function ThreadPreviewReply({ user, children, className }: ThreadPreviewReplyProps) {
   return (
-    <span data-slot="thread-preview-reply" className={cn('mt-[4px] flex min-w-0 items-center gap-[6px] text-[12px] text-ck-mut', className)}>
+    <span data-slot="thread-preview-reply" className={cn('mt-[4px] flex min-w-0 items-center gap-[6px] text-[12px] text-muted-foreground', className)}>
       <ChatAvatar user={user} size={15} />
       <span className="truncate">
         {user.name}: {children}
@@ -71,9 +71,9 @@ export interface ThreadHeaderProps extends Omit<ComponentProps<'div'>, 'title'> 
 /** Title block at the top of an open thread. */
 export function ThreadHeader({ title, description, className, ...props }: ThreadHeaderProps) {
   return (
-    <div data-slot="thread-header" className={cn('border-b border-ck-sep px-4 pt-1.5 pb-3', className)} {...props}>
-      <div className="text-[16px] leading-[1.3] font-[750] text-ck-label">{title}</div>
-      {description != null && <div className="mt-[3px] text-[11.5px] text-ck-mut3">{description}</div>}
+    <div data-slot="thread-header" className={cn('border-b border-border px-4 pt-1.5 pb-3', className)} {...props}>
+      <div className="text-[16px] leading-[1.3] font-[750] text-foreground">{title}</div>
+      {description != null && <div className="mt-[3px] text-[11.5px] text-tertiary-foreground">{description}</div>}
     </div>
   );
 }

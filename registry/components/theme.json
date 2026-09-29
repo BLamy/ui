@@ -1,19 +1,20 @@
 {
   "name": "theme",
   "title": "Theme",
-  "description": "BLProvider and the appearance context: the iOS light/dark token palette every BL UI component reads.",
+  "description": "BLProvider, ThemeScope and the appearance context: pick light/dark, a tint and a theme scope for a subtree. Colors are shadcn variables (see the bl-theme item for the iOS palette).",
   "page": "theming",
   "exports": [
     "BLProvider",
+    "ThemeScope",
     "AppearanceProvider",
     "useAppearance",
     "WorkbenchTheme",
     "useWorkbenchAppearance",
-    "blLightVars",
-    "blDarkVars"
+    "readThemeVars"
   ],
   "imports": [
     "BLProvider",
+    "ThemeScope",
     "AppearanceProvider",
     "useAppearance"
   ]

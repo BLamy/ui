@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
 import { cn, BARH } from './utils';
 
@@ -33,8 +33,8 @@ export const chromeOffset = (top: number, hidden: boolean) => (hidden ? Math.max
 
 /* ══ Appearance ══
    Ambient light/dark choice for a subtree. Hosts (a docs site, an app's settings) set it once; every themed
-   surface below — BLProvider, WorkbenchShell, ChatShell — follows unless given an explicit prop. `undefined`
-   means "no preference", so each surface keeps its own default (BL light, Workbench dark). */
+   surface below — BLProvider, ThemeScope, WorkbenchShell, ChatShell — follows unless given an explicit prop.
+   `undefined` means "no preference", so each surface keeps its own default (BL light, Workbench/chat dark). */
 export type Appearance = 'light' | 'dark';
 export const AppearanceContext = createContext<Appearance | undefined>(undefined);
 export function AppearanceProvider({ value, children }: { value: Appearance | undefined; children?: ReactNode }) {
@@ -42,24 +42,77 @@ export function AppearanceProvider({ value, children }: { value: Appearance | un
 }
 export const useAppearance = () => useContext(AppearanceContext);
 
-export const darkVars = (tint: string): Record<string, string> => ({
-  '--bl-bg': '#000', '--bl-bg2': '#0A0A0C', '--bl-card': '#1C1C1E', '--bl-label': '#F5F5F7',
-  '--bl-label2': 'rgba(235,235,245,.62)', '--bl-label3': 'rgba(235,235,245,.3)', '--bl-sep': 'rgba(84,84,88,.48)',
-  '--bl-fill': 'rgba(120,120,128,.22)', '--bl-fill2': 'rgba(120,120,128,.34)', '--bl-bar': 'rgba(16,16,18,.82)',
-  '--bl-press': 'rgba(120,120,128,.22)', '--bl-stick': 'rgba(18,18,20,.9)', '--bl-side': '#111114',
-  '--bl-red': '#FF453A', '--bl-green': '#30D158', '--bl-scrim': 'rgba(0,0,0,.5)', '--bl-tint': tint, '--bl-on-tint': '#fff',
-});
-export const lightVars = (tint: string): Record<string, string> => ({
-  '--bl-bg': '#fff', '--bl-bg2': '#F2F2F7', '--bl-card': '#fff', '--bl-label': '#0B0B0F',
-  '--bl-label2': 'rgba(60,60,67,.6)', '--bl-label3': 'rgba(60,60,67,.33)', '--bl-sep': 'rgba(60,60,67,.22)',
-  '--bl-fill': 'rgba(120,120,128,.13)', '--bl-fill2': 'rgba(120,120,128,.24)', '--bl-bar': 'rgba(250,250,252,.85)',
-  '--bl-press': 'rgba(120,120,128,.16)', '--bl-stick': 'rgba(244,244,248,.92)', '--bl-side': '#ECECF1',
-  '--bl-red': '#FF3B30', '--bl-green': '#34C759', '--bl-scrim': 'rgba(0,0,0,.38)', '--bl-tint': tint, '--bl-on-tint': '#fff',
-});
+/* ══ Theme scopes ══
+   Colors are shadcn's CSS variables. A theme (the app's own, or BL UI's bl-theme — `@brett_lamy/ui/theme.css`)
+   defines them for light (`:root` / `.light`) and dark (`.dark`). BLProvider and ThemeScope only pick which values
+   apply below them: they put `light` or `dark` on their root, and `data-theme-scope` names a surface the bl-theme
+   restyles with the same variables (the Workbench, its always-dark terminal, team chat). A `tint` overrides
+   --primary / --ring for the subtree. */
+export type ThemeScopeName = 'workbench' | 'chat' | 'terminal';
+
+/** Root classes for an appearance: shadcn's `dark` (or `light`) plus the matching color-scheme. */
+export const themeScopeClass = (appearance: Appearance) => (appearance === 'dark' ? 'dark scheme-dark' : 'light scheme-light');
+
+/** --primary / --ring for a tint (nothing when no tint is given, so the theme's primary applies). */
+export const tintVars = (tint?: string): CSSProperties =>
+  (tint ? { '--primary': tint, '--ring': tint } : {}) as CSSProperties;
+
+/** The props a scope root carries: `data-theme-scope`, the appearance class and the tint. */
+export function themeScopeProps({ scope, appearance, tint }: { scope?: ThemeScopeName; appearance: Appearance; tint?: string }) {
+  return { 'data-theme-scope': scope, className: themeScopeClass(appearance), style: tintVars(tint) };
+}
+
+/** The theme variables a portalled overlay copies from the element that opened it, so it keeps that surface's
+    palette wherever it renders. */
+export const THEME_VARS = [
+  'background', 'foreground', 'card', 'card-foreground', 'popover', 'popover-foreground', 'primary', 'primary-foreground',
+  'secondary', 'secondary-foreground', 'muted', 'muted-foreground', 'accent', 'accent-foreground', 'destructive', 'border',
+  'input', 'ring', 'success', 'warning', 'tertiary-foreground', 'secondary-strong', 'overlay', 'bar', 'sticky', 'handle',
+  'link', 'code', 'code-foreground',
+] as const;
+
+/** The resolved theme variables (and color-scheme) at an element, as a style object. */
+export function readThemeVars(el: Element | null | undefined): CSSProperties {
+  if (!el || typeof getComputedStyle === 'undefined') return {};
+  const cs = getComputedStyle(el);
+  const out: Record<string, string> = {};
+  for (const name of THEME_VARS) {
+    const v = cs.getPropertyValue('--' + name).trim();
+    if (v) out['--' + name] = v;
+  }
+  if (cs.colorScheme && cs.colorScheme !== 'normal') out.colorScheme = cs.colorScheme;
+  return out as CSSProperties;
+}
+
+export interface ThemeScopeProps extends HTMLAttributes<HTMLDivElement> {
+  /** The surface palette the bl-theme defines: `workbench`, `chat` or `terminal`. Omit for the plain theme. */
+  scope?: ThemeScopeName;
+  /** Defaults to the ambient `AppearanceProvider` value, else light (the terminal scope is always dark). */
+  appearance?: Appearance;
+  /** Accent for the subtree (--primary / --ring). */
+  tint?: string;
+}
+
+/** A subtree with its own appearance, accent and (optionally) surface palette. */
+export function ThemeScope({ scope, appearance: appearanceProp, tint, className, style, ...props }: ThemeScopeProps) {
+  const ambient = useAppearance();
+  const appearance: Appearance = scope === 'terminal' ? 'dark' : (appearanceProp ?? ambient ?? 'light');
+  const p = themeScopeProps({ scope, appearance, tint });
+  return (
+    <div
+      data-slot="theme-scope"
+      {...props}
+      data-theme-scope={p['data-theme-scope']}
+      className={cn(p.className, className)}
+      style={{ ...p.style, ...style }}
+    />
+  );
+}
 
 export interface BLProviderProps {
   /** Defaults to the ambient `AppearanceProvider` value, else light. */
   dark?: boolean;
+  /** Accent for everything below: sets --primary and --ring. Defaults to the theme's primary. */
   tint?: string;
   /** Dynamic Island floor. `true` → 59px, a number → that many px. */
   safeTop?: boolean | number;
@@ -68,13 +121,12 @@ export interface BLProviderProps {
   style?: CSSProperties;
 }
 
-export function BLProvider({ dark: darkProp, tint = '#0A84FF', safeTop, children, className, style }: BLProviderProps) {
+export function BLProvider({ dark: darkProp, tint, safeTop, children, className, style }: BLProviderProps) {
   const appearance = useAppearance();
   const dark = darkProp ?? appearance === 'dark';
   const safe = safeTop === true ? 59 : typeof safeTop === 'number' ? safeTop : 0;
-  const vars = dark ? darkVars(tint) : lightVars(tint);
   /* react-aria overlays (Popover, Modal, Tooltip) portal into this root instead of document.body, so they
-     inherit the --bl-* tokens, font and color scheme. null until mounted → overlays wait one commit. */
+     inherit the theme variables, font and color scheme. null until mounted → overlays wait one commit. */
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   const getContainer = useCallback(() => root, [root]);
   return (
@@ -83,11 +135,10 @@ export function BLProvider({ dark: darkProp, tint = '#0A84FF', safeTop, children
       data-slot="bl-provider"
       className={cn(
         'relative h-full w-full overflow-hidden bg-muted font-ios text-foreground select-none transition-[background] duration-spring-smooth ease-spring-smooth',
-        dark ? 'scheme-dark' : 'scheme-light',
+        themeScopeClass(dark ? 'dark' : 'light'),
         className,
       )}
-      // The palette depends on `dark` and `tint`, so the tokens are set per render.
-      style={{ ...vars, '--bl-safe-top': safe + 'px', ...style } as CSSProperties}
+      style={{ ...tintVars(tint), '--bl-safe-top': safe + 'px', ...style } as CSSProperties}
     >
       <UNSAFE_PortalProvider getContainer={getContainer}>
         <BLSafeCtx.Provider value={safe}>{children}</BLSafeCtx.Provider>

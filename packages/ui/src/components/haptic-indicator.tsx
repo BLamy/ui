@@ -36,7 +36,7 @@ export function HapticIndicator({ visible, bottom, className, style }: HapticInd
       {visible && shown && ev ? (
         <motion.div key="haptic" data-slot="haptic-indicator"
           className={cn(
-            'pointer-events-none absolute left-3 z-900 flex items-center gap-[9px] rounded-[99px] bg-card py-1.5 pr-3 pl-2 shadow-[0_6px_24px_rgba(0,0,0,.22),0_0_0_1px_var(--bl-sep)]',
+            'pointer-events-none absolute left-3 z-900 flex items-center gap-[9px] rounded-[99px] bg-card py-1.5 pr-3 pl-2 shadow-[0_6px_24px_rgba(0,0,0,.22),0_0_0_1px_var(--border)]',
             className,
           )}
           style={{ bottom, ...style }}
@@ -48,11 +48,11 @@ export function HapticIndicator({ visible, bottom, className, style }: HapticInd
             {/* Dot size tracks the haptic's weight. */}
             <motion.span className="rounded-full bg-primary" initial={false}
               animate={{ width: 8 + ev.w * 2, height: 8 + ev.w * 2 }} transition={springs.bouncy} />
-            <span key={ev.n} className="absolute inset-0 rounded-full [border:2px_solid_var(--bl-tint)] animate-[blRing_.6s_ease-out_forwards] motion-reduce:hidden" />
+            <span key={ev.n} className="absolute inset-0 rounded-full [border:2px_solid_var(--primary)] animate-[blRing_.6s_ease-out_forwards] motion-reduce:hidden" />
           </span>
           <span>
             <span className="block [font-family:ui-monospace,Menlo,monospace] text-[11.5px] font-bold text-foreground"><TextMorph>{ev.label}</TextMorph></span>
-            <span className="block [font-family:ui-monospace,Menlo,monospace] text-[9.5px] text-bl-label3">{eng}</span>
+            <span className="block [font-family:ui-monospace,Menlo,monospace] text-[9.5px] text-tertiary-foreground">{eng}</span>
           </span>
         </motion.div>
       ) : null}

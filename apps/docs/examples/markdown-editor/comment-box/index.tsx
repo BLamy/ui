@@ -84,7 +84,7 @@ export default function CommentBox() {
             }
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ flex: 1, fontSize: 12, color: 'var(--bl-label3)' }}>
+            <span style={{ flex: 1, fontSize: 12, color: 'var(--tertiary-foreground)' }}>
               ⌘↵ to post · {attachments.length} attachment
               {attachments.length === 1 ? '' : 's'}
             </span>

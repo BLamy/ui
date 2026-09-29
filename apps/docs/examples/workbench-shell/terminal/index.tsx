@@ -13,7 +13,7 @@ function Terminal() {
         borderRadius: 12,
         overflow: 'hidden',
         background: 'var(--wb-term)',
-        boxShadow: '0 0 0 1px var(--wb-sep)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <div

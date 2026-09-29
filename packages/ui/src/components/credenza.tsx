@@ -120,7 +120,7 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
       <Icon name={icon} size={15} sw={2.6} />
     </AriaButton>
   );
-  const card = 'box-border overflow-hidden outline-none bg-card text-foreground shadow-[0_24px_80px_rgba(0,0,0,.34),0_0_0_1px_var(--bl-sep)]';
+  const card = 'box-border overflow-hidden outline-none bg-card text-foreground shadow-[0_24px_80px_rgba(0,0,0,.34),0_0_0_1px_var(--border)]';
   const m = FM.motion as any, AP = FM.AnimatePresence;
   const spring = reduced ? { duration: 0 } : springs.tray;
   const header = (
@@ -169,7 +169,7 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
             drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: .02, bottom: .55 }}
             onDragEnd={(_ev: unknown, inf: any) => { if (inf.offset.y > 120 || inf.velocity.y > 500) { Haptics.impact('light'); closeRef.current(); } }}
             style={style}>
-            <div aria-hidden="true" className="absolute top-[7px] left-1/2 z-3 h-[5px] w-[38px] -translate-x-1/2 rounded-[3px] bg-bl-fill2" />
+            <div aria-hidden="true" className="absolute top-[7px] left-1/2 z-3 h-[5px] w-[38px] -translate-x-1/2 rounded-[3px] bg-secondary-strong" />
             {header}{body}
           </m.div>
         : <m.div key="dlg" data-slot="credenza" {...a11y}

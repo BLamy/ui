@@ -12,11 +12,11 @@ import { cn } from '../lib/utils';
 
 const BLUE = '#0A84FF';
 /* Muted label colours with the workbench-dark fallbacks the sidebar has always carried. */
-const mut = 'text-[color:var(--wb-label2,rgba(235,235,245,.6))]';
-const mut3 = 'text-[color:var(--wb-label3,rgba(235,235,245,.34))]';
-/* --wb-sep has no fallback: when unset the whole border drops, as the original `1px solid var(--wb-sep)` did. */
-const sepR = '[border-right:1px_solid_var(--wb-sep)]';
-const sideBg = 'bg-[var(--wb-side,#101015)]';
+const mut = 'text-[color:var(--muted-foreground)]';
+const mut3 = 'text-[color:var(--tertiary-foreground)]';
+/* Sidebar hairline. */
+const sepR = '[border-right:1px_solid_var(--border)]';
+const sideBg = 'bg-[var(--sidebar)]';
 /** Haptic tap (no-ops where navigator.vibrate is unavailable; the Haptics engine patches it on iOS Safari). */
 const vib = (pattern: number | number[]) => {
   try {
@@ -89,7 +89,7 @@ export function SidebarProvider({ defaultOpen = true, breakpoint = 560, children
       <div
         ref={ref}
         data-slot="sidebar-provider"
-        className={cn('relative flex h-full overflow-hidden bg-[var(--wb-bg,#141419)] font-ios', className)}
+        className={cn('relative flex h-full overflow-hidden bg-[var(--background)] font-ios', className)}
         style={style}
       >
         {children}
@@ -143,7 +143,7 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
       <div
         className={cn(
           'box-border h-full',
-          float && cn(sideBg, 'overflow-hidden rounded-[14px] [border:1px_solid_var(--wb-sep,rgba(255,255,255,.08))] font-ios'),
+          float && cn(sideBg, 'overflow-hidden rounded-[14px] [border:1px_solid_var(--border)] font-ios'),
         )}
         style={{ width: (collapsed ? railWidth : width) - (float ? 20 : 0) }}
       >
@@ -172,7 +172,7 @@ export function SidebarContent({ children }: { children?: ReactNode }) {
 }
 export function SidebarFooter({ children }: { children?: ReactNode }) {
   return (
-    <div data-slot="sidebar-footer" className="shrink-0 p-2 [border-top:1px_solid_var(--wb-sep)]">
+    <div data-slot="sidebar-footer" className="shrink-0 p-2 [border-top:1px_solid_var(--border)]">
       {children}
     </div>
   );
@@ -195,7 +195,7 @@ export function SidebarWorkspace({ name, detail, initial }: SidebarWorkspaceProp
       </span>
       {!collapsed && (
         <div className="min-w-0 leading-[1.15]">
-          <div className="text-[12.5px] font-bold whitespace-nowrap text-wb-label">{name}</div>
+          <div className="text-[12.5px] font-bold whitespace-nowrap text-foreground">{name}</div>
           {detail && <div className={cn('text-[10.5px] whitespace-nowrap', mut3)}>{detail}</div>}
         </div>
       )}
@@ -223,14 +223,14 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
   return (
     <AriaButton
       data-slot="sidebar-search"
-      className="bl-sidebar-hl mx-0 mt-0.5 mb-1 flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 bg-wb-fill px-[9px] py-1.5 font-ios"
+      className="bl-sidebar-hl mx-0 mt-0.5 mb-1 flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 bg-secondary px-[9px] py-1.5 font-ios"
       onPress={onPress}
     >
       <span className={cn('grid', mut3)}>
         <BIcon d={P['search']} size={13} />
       </span>
       <span className={cn('flex-1 text-left text-[12px]', mut3)}>{placeholder}</span>
-      <span className={cn('rounded-[4px] px-1 py-0 font-mono text-[10px] [border:1px_solid_var(--wb-sep)]', mut3)}>
+      <span className={cn('rounded-[4px] px-1 py-0 font-mono text-[10px] [border:1px_solid_var(--border)]', mut3)}>
         /
       </span>
     </AriaButton>
@@ -247,7 +247,7 @@ export function SidebarSection({ title, children }: SidebarSectionProps) {
     <div data-slot="sidebar-section">
       {title ? (
         collapsed ? (
-          <div className="mx-1.5 my-2 h-px bg-wb-sep" />
+          <div className="mx-1.5 my-2 h-px bg-border" />
         ) : (
           <div className={cn('px-[9px] pt-2.5 pb-1 text-[10px] font-bold tracking-[.6px] whitespace-nowrap uppercase', mut3)}>
             {title}
@@ -276,8 +276,8 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
       className={cn(
         'bl-sidebar-hl mx-0 my-px flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] border-0 text-left font-ios text-[13px]',
         collapsed ? 'justify-center px-0 py-2' : 'justify-start px-[9px] py-1.5',
-        active ? 'bg-wb-fill2' : 'bg-transparent',
-        !tone && (active ? 'text-wb-label' : mut),
+        active ? 'bg-secondary-strong' : 'bg-transparent',
+        !tone && (active ? 'text-foreground' : mut),
         tone ? 'font-semibold' : 'font-normal',
       )}
       render={(props) => <button {...props} title={label} />}

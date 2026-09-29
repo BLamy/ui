@@ -2,6 +2,7 @@
    `{% demo src="blocks/<slug>" %}` → registry/blocks/<slug>/ (entry page.tsx). What renders and what readers see are
    the same files. `?demo=<src>` renders one demo alone (main.tsx). */
 import { createGlobDemoResolver, demoHref, type DemoMeta, type DemoResolver } from '@brett_lamy/docstream';
+import { themed } from './demo-theme';
 
 const href: DemoResolver['href'] = (src, options) =>
   demoHref(src, { base: import.meta.env.BASE_URL, variant: options?.variant });
@@ -36,7 +37,7 @@ export const demoResolver: DemoResolver = {
   list: () => [...examples.list!(), ...blocks.list!()],
   meta: (src) => pick(src).meta(src),
   files: (src) => pick(src).files(src),
-  load: (src) => pick(src).load(src),
+  load: (src) => pick(src).load(src).then(themed),
   href,
 };
 

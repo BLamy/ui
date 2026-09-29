@@ -30,7 +30,7 @@ const meta: Meta<typeof ThreadSidebar> = {
   decorators: [
     (Story) => (
       <WorkbenchTheme style={{ minHeight: 640, padding: 24, display: 'grid', placeItems: 'center' }}>
-        <div style={{ width: 242, height: 560, border: '1px solid var(--wb-sep)', borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ width: 242, height: 560, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
           <Story />
         </div>
       </WorkbenchTheme>

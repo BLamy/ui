@@ -129,7 +129,7 @@ const SCHEME = {
 } as const;
 
 const CONTROL =
-  'grid size-10 cursor-pointer place-items-center p-0 [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--bl-tint,#0a84ff)]';
+  'grid size-10 cursor-pointer place-items-center p-0 [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--primary)]';
 const PIN_SHADOW_RAISED = 'shadow-[0_4px_12px_rgba(0,0,0,.5),0_0_0_1px_rgba(0,0,0,.25)]';
 
 const FLY_MS = 900;
@@ -422,7 +422,7 @@ export function TileMap({
             strokeWidth={4.5}
             strokeLinecap="round"
             strokeLinejoin="round"
-            {...(route.color ? { stroke: route.color } : { className: 'stroke-[color:var(--bl-tint,#0a84ff)]' })}
+            {...(route.color ? { stroke: route.color } : { className: 'stroke-[color:var(--primary)]' })}
             points={routePoints}
           />
         </svg>
@@ -447,7 +447,7 @@ export function TileMap({
                 )}
                 style={{
                   transform: `translate3d(${s.x}px, ${s.y}px, 0)`,
-                  '--ck-pin-color': pin.color ?? (kind === 'stop' ? 'var(--bl-tint,#0a84ff)' : '#0a84ff'),
+                  '--ck-pin-color': pin.color ?? (kind === 'stop' ? 'var(--primary)' : '#0a84ff'),
                 } as CSSProperties}
                 aria-label={pin.label ?? pin.id}
                 onClick={(e) => {

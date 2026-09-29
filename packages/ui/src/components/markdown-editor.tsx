@@ -57,11 +57,11 @@ export const markdownEditorVariants = cva(
       variant: {
         /** A filled field, like Input and Textarea: tint ring while editing. */
         default:
-          'rounded-[10px] bg-input focus-within:bg-transparent focus-within:shadow-[inset_0_0_0_1.5px_var(--bl-tint)] data-readonly:focus-within:bg-input data-readonly:focus-within:shadow-none data-invalid:shadow-[inset_0_0_0_1.5px_var(--bl-red)]',
+          'rounded-[10px] bg-input focus-within:bg-transparent focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-readonly:focus-within:bg-input data-readonly:focus-within:shadow-none data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
         /** No chrome: text on the surface it sits on (inline notes, full-page documents). */
         ghost: 'rounded-none bg-transparent',
         /** A raised card with a hairline, for editors that stand on their own. */
-        card: 'rounded-[14px] bg-card shadow-[0_0_0_1px_var(--bl-sep),0_1px_2px_rgba(0,0,0,.04)] focus-within:shadow-[0_0_0_1.5px_var(--bl-tint),0_1px_2px_rgba(0,0,0,.04)] data-readonly:focus-within:shadow-[0_0_0_1px_var(--bl-sep),0_1px_2px_rgba(0,0,0,.04)] data-invalid:shadow-[0_0_0_1.5px_var(--bl-red)]',
+        card: 'rounded-[14px] bg-card shadow-[0_0_0_1px_var(--border),0_1px_2px_rgba(0,0,0,.04)] focus-within:shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_rgba(0,0,0,.04)] data-readonly:focus-within:shadow-[0_0_0_1px_var(--border),0_1px_2px_rgba(0,0,0,.04)] data-invalid:shadow-[0_0_0_1.5px_var(--destructive)]',
       },
       size: {
         sm: 'bl-mde-sm',

@@ -25,7 +25,7 @@ function CommentsDrawer() {
         position: 'relative',
         height: 380,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
+        background: 'var(--background)',
       }}
     >
       <article
@@ -41,7 +41,7 @@ function CommentsDrawer() {
             <Icon name="message" size={16} /> {comments.length}
           </Button>
         </div>
-        <p style={{ lineHeight: 1.6, color: 'var(--bl-label2)' }}>
+        <p style={{ lineHeight: 1.6, color: 'var(--muted-foreground)' }}>
           Today we are shipping the new workspace. It is faster, it syncs
           everywhere, and it finally has dark mode.
         </p>
@@ -61,13 +61,13 @@ function CommentsDrawer() {
               display: 'flex',
               gap: 10,
               padding: '10px 14px',
-              borderBottom: '1px solid var(--bl-sep)',
+              borderBottom: '1px solid var(--border)',
             }}
           >
             <Avatar c={c} size={30} />
             <div style={{ fontSize: 13.5, lineHeight: 1.45 }}>
               <strong>{c.f}</strong>{' '}
-              <span style={{ color: 'var(--bl-label3)' }}>{c.time}</span>
+              <span style={{ color: 'var(--tertiary-foreground)' }}>{c.time}</span>
               <div>{c.text}</div>
             </div>
           </div>
@@ -99,9 +99,9 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

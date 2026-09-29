@@ -117,7 +117,7 @@ function ShareSheet() {
 // centered.
 function Window({
   width,
-  bg = 'var(--bl-bg)',
+  bg = 'var(--background)',
   children,
 }: {
   width?: number
@@ -134,8 +134,8 @@ function Window({
         borderRadius: 14,
         overflow: 'hidden',
         background: bg,
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >
@@ -146,7 +146,7 @@ function Window({
 
 export default function ShareAlbum() {
   return (
-    <Window width={430} bg="var(--bl-bg2)">
+    <Window width={430} bg="var(--muted)">
       <ShareSheet />
     </Window>
   )

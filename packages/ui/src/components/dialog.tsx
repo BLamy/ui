@@ -28,7 +28,7 @@ import { cn } from '../lib/utils';
 export { DialogTrigger };
 
 export const dialogVariants = cva(
-  'relative box-border flex max-h-full flex-col overflow-hidden bg-card text-card-foreground shadow-[0_24px_80px_rgba(0,0,0,.3),0_0_0_.5px_var(--bl-sep)] outline-none',
+  'relative box-border flex max-h-full flex-col overflow-hidden bg-card text-card-foreground shadow-[0_24px_80px_rgba(0,0,0,.3),0_0_0_.5px_var(--border)] outline-none',
   {
     variants: {
       size: {
@@ -144,9 +144,9 @@ export function DialogFooter({ className, orientation = 'horizontal', ...props }
       data-orientation={orientation}
       className={cn(
         size === 'alert'
-          ? cn('flex shadow-[inset_0_1px_0_var(--bl-sep)]', orientation === 'vertical'
-            ? 'flex-col [&>*+*]:shadow-[inset_0_1px_0_var(--bl-sep)]'
-            : '[&>*]:flex-1 [&>*+*]:shadow-[inset_1px_0_0_var(--bl-sep)]')
+          ? cn('flex shadow-[inset_0_1px_0_var(--border)]', orientation === 'vertical'
+            ? 'flex-col [&>*+*]:shadow-[inset_0_1px_0_var(--border)]'
+            : '[&>*]:flex-1 [&>*+*]:shadow-[inset_1px_0_0_var(--border)]')
           : 'flex items-center justify-end gap-2 px-5 pt-3 pb-5',
         className,
       )}
@@ -193,7 +193,7 @@ export function DialogClose({ className, ...props }: AriaButtonProps) {
       slot="close"
       aria-label="Close"
       className={composeRenderProps(className, (cls) => cn(
-        'bl-btn absolute top-4 right-4 grid size-[30px] cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground data-pressed:bg-bl-fill2',
+        'bl-btn absolute top-4 right-4 grid size-[30px] cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground data-pressed:bg-secondary-strong',
         focusRing, cls,
       ))}
       {...props}

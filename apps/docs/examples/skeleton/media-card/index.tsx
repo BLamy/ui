@@ -9,8 +9,8 @@ function CardPlaceholder() {
       style={{
         overflow: 'hidden',
         borderRadius: 16,
-        background: 'var(--bl-card)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--card)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <Skeleton shape="rect" style={{ aspectRatio: '16 / 9', width: '100%' }} />

@@ -64,7 +64,7 @@ function ImageChips() {
       <p
         style={{
           fontSize: 12,
-          color: 'var(--wb-label2)',
+          color: 'var(--muted-foreground)',
           textAlign: 'center',
           margin: '12px 0 0',
         }}

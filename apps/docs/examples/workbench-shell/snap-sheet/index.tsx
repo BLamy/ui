@@ -23,13 +23,13 @@ function TerminalSheet() {
         margin: '0 auto',
         borderRadius: 12,
         overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--wb-sep)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <div style={{ padding: 18, display: 'grid', gap: 12 }}>
         <div style={{ fontSize: 15, fontWeight: 700 }}>cookbook · main</div>
         <div
-          style={{ fontSize: 13, color: 'var(--wb-label2)', lineHeight: 1.5 }}
+          style={{ fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.5 }}
         >
           Open the terminal, then drag its handle: a slow drag settles at the
           nearest snap, a flick carries on to the next — or down past the lowest
@@ -43,7 +43,7 @@ function TerminalSheet() {
             justifySelf: 'start',
             border: 0,
             borderRadius: 9,
-            background: 'var(--wb-tint)',
+            background: 'var(--primary)',
             color: '#fff',
             font: 'inherit',
             fontWeight: 600,

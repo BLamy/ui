@@ -10,8 +10,8 @@ export default function SignaturePad() {
         margin: '0 auto',
         padding: 16,
         borderRadius: 16,
-        background: 'var(--bl-card)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--card)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <div style={{ fontWeight: 650, marginBottom: 10 }}>
@@ -24,8 +24,8 @@ export default function SignaturePad() {
           position: 'relative',
           height: 150,
           borderRadius: 12,
-          background: 'var(--bl-bg2)',
-          color: 'var(--bl-label)',
+          background: 'var(--muted)',
+          color: 'var(--foreground)',
         }}
       >
         <PencilCanvas
@@ -41,7 +41,7 @@ export default function SignaturePad() {
             left: 20,
             right: 20,
             bottom: 34,
-            borderTop: '1px dashed var(--bl-label3)',
+            borderTop: '1px dashed var(--tertiary-foreground)',
             pointerEvents: 'none',
           }}
         />

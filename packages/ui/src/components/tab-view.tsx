@@ -165,9 +165,9 @@ export const tabViewBarVariants = cva('box-border', {
   variants: {
     variant: {
       /** iOS bottom tab bar — translucent, pinned over the content, hides with the scroll. */
-      bar: 'absolute inset-x-0 bottom-0 z-120 flex h-[62px] [border-top:1px_solid_var(--bl-sep)] bg-bl-bar pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
+      bar: 'absolute inset-x-0 bottom-0 z-120 flex h-[62px] [border-top:1px_solid_var(--border)] bg-bar pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
       /** Vertical side rail — icons over labels. */
-      rail: 'relative flex w-[76px] shrink-0 flex-col gap-1 bg-bl-bar py-2 data-[placement=end]:[border-left:1px_solid_var(--bl-sep)] data-[placement=start]:[border-right:1px_solid_var(--bl-sep)]',
+      rail: 'relative flex w-[76px] shrink-0 flex-col gap-1 bg-bar py-2 data-[placement=end]:[border-left:1px_solid_var(--border)] data-[placement=start]:[border-right:1px_solid_var(--border)]',
       /** No chrome: the host styles the bar (see the Discord-style rail). */
       plain: 'flex shrink-0 data-[orientation=vertical]:flex-col',
     },
@@ -227,8 +227,8 @@ export function TabViewList<T extends object>({ className, ...props }: AriaTabLi
 export const tabViewTabVariants = cva('relative cursor-pointer outline-none', {
   variants: {
     variant: {
-      bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 text-center leading-[normal] [font-family:inherit] text-bl-label3 transition-[color] duration-spring-snappy ease-spring-snappy data-selected:text-primary data-focus-visible:rounded-[12px] data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset',
-      rail: 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-[12px] px-1 pt-[7px] pb-1.5 text-center leading-[normal] text-bl-label3 transition-[color,background-color] duration-spring-snappy ease-spring-snappy data-hovered:bg-bl-fill/60 data-hovered:text-bl-label2 data-pressed:bg-bl-fill data-selected:bg-primary/12 data-selected:text-primary data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
+      bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 text-center leading-[normal] [font-family:inherit] text-tertiary-foreground transition-[color] duration-spring-snappy ease-spring-snappy data-selected:text-primary data-focus-visible:rounded-[12px] data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset',
+      rail: 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-[12px] px-1 pt-[7px] pb-1.5 text-center leading-[normal] text-tertiary-foreground transition-[color,background-color] duration-spring-snappy ease-spring-snappy data-hovered:bg-secondary/60 data-hovered:text-muted-foreground data-pressed:bg-secondary data-selected:bg-primary/12 data-selected:text-primary data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
       plain: 'data-disabled:cursor-default',
     },
   },
@@ -332,7 +332,7 @@ const SeparatorItem = createLeafComponent('separator', (props: SeparatorProps & 
   const { orientation } = useContext(TabViewCtx);
   return (
     <div ref={ref as never} role="presentation" data-slot="tab-view-separator" data-orientation={orientation}
-      className={cn('shrink-0 self-center bg-bl-sep', orientation === 'vertical' ? 'h-px w-8' : 'h-6 w-px', props.className)}
+      className={cn('shrink-0 self-center bg-border', orientation === 'vertical' ? 'h-px w-8' : 'h-6 w-px', props.className)}
       style={props.style} />
   );
 });
@@ -344,8 +344,8 @@ export function TabViewSeparator(props: SeparatorProps) {
 export const tabViewActionVariants = cva('cursor-pointer outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring/45', {
   variants: {
     variant: {
-      bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-bl-label3 data-pressed:opacity-60',
-      rail: 'bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-[12px] border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inherit] text-bl-label3 data-hovered:bg-bl-fill/60 data-pressed:bg-bl-fill',
+      bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-tertiary-foreground data-pressed:opacity-60',
+      rail: 'bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-[12px] border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inherit] text-tertiary-foreground data-hovered:bg-secondary/60 data-pressed:bg-secondary',
       plain: 'bl-btn border-0 bg-transparent p-0 [font-family:inherit]',
     },
   },

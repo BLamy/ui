@@ -25,7 +25,7 @@ export interface MemberGroupProps extends ComponentProps<'div'> {
 export function MemberGroup({ label, count, className, children, ...props }: MemberGroupProps) {
   return (
     <div data-slot="member-group" role="group" className={cn('[&+&]:mt-4', className)} {...props}>
-      <div className="mb-2 text-[10px] font-bold tracking-[.7px] text-ck-mut3 uppercase">
+      <div className="mb-2 text-[10px] font-bold tracking-[.7px] text-tertiary-foreground uppercase">
         {label}
         {count != null && <> — {count}</>}
       </div>

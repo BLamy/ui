@@ -59,11 +59,11 @@ function CrmSidebar() {
               alignItems: 'center',
               gap: 8,
               padding: '9px 12px',
-              borderBottom: '1px solid var(--wb-sep)',
+              borderBottom: '1px solid var(--border)',
             }}
           >
             <SidebarTrigger />
-            <strong style={{ fontSize: 14, color: 'var(--wb-label)' }}>
+            <strong style={{ fontSize: 14, color: 'var(--foreground)' }}>
               {page}
             </strong>
           </header>
@@ -75,12 +75,12 @@ function CrmSidebar() {
                   display: 'flex',
                   padding: '10px 6px',
                   fontSize: 13,
-                  borderBottom: '1px solid var(--wb-sep)',
-                  color: 'var(--wb-label)',
+                  borderBottom: '1px solid var(--border)',
+                  color: 'var(--foreground)',
                 }}
               >
                 <span style={{ flex: 1 }}>{d.name}</span>
-                <span style={{ width: 110, color: 'var(--wb-label2)' }}>
+                <span style={{ width: 110, color: 'var(--muted-foreground)' }}>
                   {d.stage}
                 </span>
                 <strong>{d.value}</strong>
@@ -113,7 +113,7 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--wb-sep)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       {children}

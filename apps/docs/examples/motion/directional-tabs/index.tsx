@@ -56,7 +56,7 @@ export default function Wallet({
           <TabPanel key={t.id} id={t.id}>
             <div
               style={{
-                background: 'var(--bl-card)',
+                background: 'var(--card)',
                 borderRadius: 14,
                 overflow: 'hidden',
               }}
@@ -69,11 +69,11 @@ export default function Wallet({
                     justifyContent: 'space-between',
                     padding: '12px 14px',
                     fontSize: 15,
-                    boxShadow: i ? 'inset 0 1px 0 var(--bl-sep)' : undefined,
+                    boxShadow: i ? 'inset 0 1px 0 var(--border)' : undefined,
                   }}
                 >
                   <span>{a}</span>
-                  <span style={{ color: 'var(--bl-label2)' }}>{b}</span>
+                  <span style={{ color: 'var(--muted-foreground)' }}>{b}</span>
                 </div>
               ))}
             </div>

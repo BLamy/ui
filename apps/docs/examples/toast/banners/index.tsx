@@ -81,7 +81,7 @@ export default function Banners() {
         boxSizing: 'border-box',
         overflow: 'hidden',
         borderRadius: 14,
-        background: 'var(--bl-bg)',
+        background: 'var(--background)',
       }}
     >
       <Toaster queue={queue} placement="top" inline offset={16}>

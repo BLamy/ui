@@ -12,8 +12,8 @@ export default meta;
 type Story = StoryObj<typeof Icon>;
 
 const mono = { fontFamily: 'ui-monospace,Menlo,monospace' };
-const cell = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: 'var(--bl-label)', minWidth: 0 } as const;
-const label = { ...mono, fontSize: 9.5, lineHeight: 1.25, color: 'var(--bl-label2)', maxWidth: '100%', textAlign: 'center', overflowWrap: 'anywhere' } as const;
+const cell = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: 'var(--foreground)', minWidth: 0 } as const;
+const label = { ...mono, fontSize: 9.5, lineHeight: 1.25, color: 'var(--muted-foreground)', maxWidth: '100%', textAlign: 'center', overflowWrap: 'anywhere' } as const;
 
 /** Every canonical icon, alphabetical. */
 export const Gallery: Story = {
@@ -32,7 +32,7 @@ export const Gallery: Story = {
 
 export const Sizes: Story = {
   render: () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: 'var(--bl-tint)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: 'var(--primary)' }}>
       {[14, 18, 22, 28, 36, 48].map((s) => <Icon key={s} name="star" size={s} />)}
     </div>
   ),
@@ -48,12 +48,12 @@ function SearchGallery() {
   });
   return (
     <div style={{ display: 'grid', gap: 12 }}>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 10, background: 'var(--bl-fill)', color: 'var(--bl-label2)' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 10, background: 'var(--secondary)', color: 'var(--muted-foreground)' }}>
         <Icon name="magnifyingglass" size={17} weight="semibold" />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${ICON_NAMES.length} icons`} aria-label="Search icons"
-          style={{ flex: 1, border: 0, outline: 0, background: 'transparent', font: 'inherit', fontSize: 15, color: 'var(--bl-label)' }} />
+          style={{ flex: 1, border: 0, outline: 0, background: 'transparent', font: 'inherit', fontSize: 15, color: 'var(--foreground)' }} />
       </label>
-      <div style={{ ...mono, fontSize: 11, color: 'var(--bl-label2)', minHeight: 14 }}>
+      <div style={{ ...mono, fontSize: 11, color: 'var(--muted-foreground)', minHeight: 14 }}>
         {copied ? `Copied <Icon name="${copied}" />` : `${hits.length} icons · click to copy`}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px 4px', maxHeight: 330, overflow: 'auto' }}>
@@ -79,7 +79,7 @@ const WEIGHT_ICONS = ['star', 'heart', 'bell', 'magnifyingglass', 'gear', 'check
 export const Weights: Story = {
   parameters: { padW: 460 },
   render: () => (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Object.keys(ICON_WEIGHTS).length}, 1fr)`, gap: '12px 8px', color: 'var(--bl-label)' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Object.keys(ICON_WEIGHTS).length}, 1fr)`, gap: '12px 8px', color: 'var(--foreground)' }}>
       {(Object.keys(ICON_WEIGHTS) as IconWeight[]).map((w) => (
         <div key={w} style={{ ...label, textAlign: 'center' }}>{w}<br />{ICON_WEIGHTS[w]}</div>
       ))}
@@ -104,10 +104,10 @@ export const Categories: Story = {
     <div style={{ display: 'grid', gap: 16 }}>
       {(Object.keys(ICON_CATEGORIES) as IconCategory[]).map((cat) => (
         <section key={cat}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--bl-label2)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 8 }}>
             {CATEGORY_TITLES[cat]} <span style={{ fontWeight: 400 }}>· {ICON_CATEGORIES[cat].length}</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: 10, color: 'var(--bl-label)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: 10, color: 'var(--foreground)' }}>
             {ICON_CATEGORIES[cat].map((name) => (
               <span key={name} title={name} style={{ display: 'grid', placeItems: 'center' }}><Icon name={name} size={22} /></span>
             ))}

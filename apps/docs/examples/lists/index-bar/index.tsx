@@ -122,7 +122,7 @@ export default function IndexBarExample({
   }
   return (
     <div>
-      <Frame h={340} bg="var(--bl-bg)">
+      <Frame h={340} bg="var(--background)">
         <div
           ref={scroller}
           style={
@@ -190,13 +190,13 @@ export default function IndexBarExample({
                         textWrap: 'pretty',
                         background:
                           t.role === 'user'
-                            ? 'var(--bl-tint)'
-                            : 'var(--bl-card)',
-                        color: t.role === 'user' ? '#fff' : 'var(--bl-label)',
+                            ? 'var(--primary)'
+                            : 'var(--card)',
+                        color: t.role === 'user' ? '#fff' : 'var(--foreground)',
                         boxShadow:
                           t.role === 'user'
                             ? 'none'
-                            : '0 0 0 1px var(--bl-sep)',
+                            : '0 0 0 1px var(--border)',
                       } as CSSProperties
                     }
                   >
@@ -241,7 +241,7 @@ export default function IndexBarExample({
       <div
         style={{
           fontSize: 12,
-          color: 'var(--bl-label2)',
+          color: 'var(--muted-foreground)',
           textAlign: 'center',
           marginTop: 8,
         }}

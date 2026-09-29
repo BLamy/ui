@@ -28,8 +28,8 @@ function QuickSettings() {
         font: 'inherit',
         fontWeight: 600,
         textAlign: 'left',
-        background: on ? 'var(--bl-tint)' : 'var(--bl-fill)',
-        color: on ? '#fff' : 'var(--bl-label)',
+        background: on ? 'var(--primary)' : 'var(--secondary)',
+        color: on ? '#fff' : 'var(--foreground)',
       }}
     >
       <Icon name={icon} size={20} /> {label}
@@ -71,7 +71,7 @@ function QuickSettings() {
             display: 'grid',
             gap: 10,
             alignContent: 'start',
-            background: 'color-mix(in srgb, var(--bl-card) 72%, transparent)',
+            background: 'color-mix(in srgb, var(--card) 72%, transparent)',
             backdropFilter: 'blur(24px) saturate(1.6)',
             boxShadow: open ? '0 20px 60px rgba(0,0,0,.25)' : 'none',
           }}
@@ -97,9 +97,9 @@ function Window({ children }: { children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

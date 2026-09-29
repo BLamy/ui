@@ -1,6 +1,6 @@
 @layer theme, base, components, utilities;
 @layer components.bl-editor, components.bl-mde;
-@import "./theme.css";
+@import "./tokens.css";
 /* Utilities only — no preflight, so a host app's base styles are left alone. */
 @import "tailwindcss/utilities.css" layer(utilities);
 /* The Docstream editor's sheet (MarkdownEditor, Composer), layered under the kit's own editor rules and every
@@ -30,20 +30,20 @@
 .bl-scroll::-webkit-scrollbar-thumb{background:rgba(128,128,140,.35);border-radius:2px}
 .bl-scroll::-webkit-scrollbar-track{background:transparent}
 .bl-btn{-webkit-tap-highlight-color:transparent}
-.bl-hl:active{background:var(--bl-press)!important}
+.bl-hl:active{background:var(--accent)!important}
 /* ListRow: its content lets presses through to the row button beneath, except on the controls it holds. */
 [data-swiping] .bl-hl:active{background:transparent!important}
 [data-row-control] :is(button,input,select,textarea,a,label,[role=switch],[role=slider],[role=checkbox],[data-slot=slider]){pointer-events:auto}
-input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
+input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var(--tertiary-foreground)}
 @keyframes blShimmer{from{background-position:200% 0}to{background-position:0% 0}}
-.bl-shimmer{background:linear-gradient(90deg,var(--bl-label3) 40%,var(--bl-label) 50%,var(--bl-label3) 60%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:blShimmer 2.4s linear infinite}
+.bl-shimmer{background:linear-gradient(90deg,var(--tertiary-foreground) 40%,var(--foreground) 50%,var(--tertiary-foreground) 60%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:blShimmer 2.4s linear infinite}
 .bl-range{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
-.bl-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(var(--bl-tint),var(--bl-tint)) 0/var(--bl-range-fill,50%) 100% no-repeat,var(--bl-fill2)}
+.bl-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(var(--primary),var(--primary)) 0/var(--bl-range-fill,50%) 100% no-repeat,var(--secondary-strong)}
 .bl-range::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28),0 0 1px rgba(0,0,0,.22);margin-top:-11px}
-.bl-range::-moz-range-track{height:4px;border-radius:2px;background:var(--bl-fill2)}
-.bl-range::-moz-range-progress{height:4px;border-radius:2px;background:var(--bl-tint)}
+.bl-range::-moz-range-track{height:4px;border-radius:2px;background:var(--secondary-strong)}
+.bl-range::-moz-range-progress{height:4px;border-radius:2px;background:var(--primary)}
 .bl-range::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28)}
-.bl-sidebar-hl:hover{background:var(--wb-fill,rgba(255,255,255,.06))!important}
+.bl-sidebar-hl:hover{background:var(--secondary)!important}
 
 /* ── shadcn primitives (badge … form): overlay enter/exit keyframes for react-aria's data-entering /
    data-exiting, exposed as animate-bl-* utilities. Exit animations must end (react-aria keeps the overlay
@@ -109,19 +109,19 @@ input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
 /* ── ArtifactChatContainer ─────────────────────────────────────────────────────────────────
    Layout lives in utilities on the component. This is the --wb-* token map that keeps an embedded
    Workbench Composer matched to the chat; .ck-artifact-chat, __chat and __content remain as host hooks. */
-.ck-artifact-chat{--wb-bg:#111116;--wb-card:rgba(31,31,39,.86);--wb-sep:rgba(255,255,255,.13);--wb-label:#ededf2;--wb-label2:rgba(235,235,245,.68);--wb-label3:rgba(235,235,245,.4);--wb-fill:rgba(255,255,255,.08);--wb-fill2:rgba(255,255,255,.15);--wb-tint:var(--bl-tint,#0a84ff)}
+.ck-artifact-chat{--background:#111116;--card:rgba(31,31,39,.86);--border:rgba(255,255,255,.13);--foreground:#ededf2;--muted-foreground:rgba(235,235,245,.68);--tertiary-foreground:rgba(235,235,245,.4);--secondary:rgba(255,255,255,.08);--secondary-strong:rgba(255,255,255,.15)}
 /* An explicit or ambient appearance (data-tone) also gives the chat surfaces their own --bl-* palette;
    without one they inherit the host's tokens. --bl-bg and --bl-tint (the artifact's) stay the host's. */
-.ck-artifact-chat[data-tone="dark"]{color-scheme:dark;--bl-card:#16161c;--bl-card2:#1f1f26;--bl-label:#f5f5f7;--bl-label2:rgba(235,235,245,.62);--bl-label3:rgba(235,235,245,.32);--bl-sep:rgba(255,255,255,.1);--bl-fill:rgba(120,120,128,.24);--bl-fill2:rgba(120,120,128,.36)}
-.ck-artifact-chat[data-tone="light"]{color-scheme:light;--bl-card:#fff;--bl-card2:#f2f2f7;--bl-label:#1c1c1e;--bl-label2:rgba(60,60,67,.62);--bl-label3:rgba(60,60,67,.32);--bl-sep:rgba(60,60,67,.18);--bl-fill:rgba(120,120,128,.12);--bl-fill2:rgba(120,120,128,.2);--wb-bg:#fff;--wb-card:#fff;--wb-card2:#f2f2f5;--wb-sep:rgba(0,0,0,.1);--wb-label:#1c1c1e;--wb-label2:rgba(60,60,67,.68);--wb-label3:rgba(60,60,67,.4);--wb-fill:rgba(0,0,0,.05);--wb-fill2:rgba(0,0,0,.09);--wb-shadow:rgba(0,0,0,.07);--wb-handle:rgba(0,0,0,.18);--mdc-code:rgba(0,0,0,.06);--mdc-pre:#f4f4f7;--mdc-pre-fg:#24242b;--mdc-border:rgba(0,0,0,.1);--mdc-mut:#6b6b76}
+.ck-artifact-chat[data-tone="dark"]{color-scheme:dark;--card:#16161c;--popover:#1f1f26;--foreground:#f5f5f7;--muted-foreground:rgba(235,235,245,.62);--tertiary-foreground:rgba(235,235,245,.32);--border:rgba(255,255,255,.1);--secondary:rgba(120,120,128,.24);--secondary-strong:rgba(120,120,128,.36)}
+.ck-artifact-chat[data-tone="light"]{color-scheme:light;--card:#fff;--popover:#f2f2f7;--foreground:#1c1c1e;--muted-foreground:rgba(60,60,67,.62);--tertiary-foreground:rgba(60,60,67,.32);--border:rgba(60,60,67,.18);--secondary:rgba(120,120,128,.12);--secondary-strong:rgba(120,120,128,.2);--background:#fff;--card:#fff;--popover:#f2f2f5;--border:rgba(0,0,0,.1);--foreground:#1c1c1e;--muted-foreground:rgba(60,60,67,.68);--tertiary-foreground:rgba(60,60,67,.4);--secondary:rgba(0,0,0,.05);--secondary-strong:rgba(0,0,0,.09);--wb-shadow:rgba(0,0,0,.07);--handle:rgba(0,0,0,.18);--mdc-code:rgba(0,0,0,.06);--mdc-pre:#f4f4f7;--mdc-pre-fg:#24242b;--mdc-border:rgba(0,0,0,.1);--mdc-mut:#6b6b76}
 
 /* ── FloatingSheet ─────────────────────────────────────────────────────────────────────────
    Geometry and surface styling live in utilities on the component, driven by the --ck-sheet-*
    variables the gesture writes. What stays here: the tone token maps (tone="dark|light" lets the sheet
    disagree with its host), the rules for whatever the host puts in the body, and the peek masks.
    --ck-sheet-surface / --ck-sheet-line are RGB triplets the glass mixes its alphas into. */
-.ck-floating-sheet[data-tone="dark"]{--bl-label:#f5f5f7;--bl-label2:rgba(235,235,245,.62);--bl-label3:rgba(235,235,245,.32);--bl-card:#1c1c1e;--bl-card2:#2c2c2e;--bl-sep:rgba(84,84,88,.6);--bl-fill:rgba(120,120,128,.24);--bl-fill2:rgba(120,120,128,.36);color:#f5f5f7;--ck-sheet-surface:18,18,22;--ck-sheet-line:255,255,255}
-.ck-floating-sheet[data-tone="light"]{--bl-label:#1c1c1e;--bl-label2:rgba(60,60,67,.6);--bl-label3:rgba(60,60,67,.3);--bl-card:#fff;--bl-card2:#f2f2f7;--bl-sep:rgba(60,60,67,.24);--bl-fill:rgba(120,120,128,.14);--bl-fill2:rgba(120,120,128,.22);color:#1c1c1e;--ck-sheet-surface:250,250,252;--ck-sheet-line:0,0,0}
+.ck-floating-sheet[data-tone="dark"]{--foreground:#f5f5f7;--muted-foreground:rgba(235,235,245,.62);--tertiary-foreground:rgba(235,235,245,.32);--card:#1c1c1e;--popover:#2c2c2e;--border:rgba(84,84,88,.6);--secondary:rgba(120,120,128,.24);--secondary-strong:rgba(120,120,128,.36);color:#f5f5f7;--ck-sheet-surface:18,18,22;--ck-sheet-line:255,255,255}
+.ck-floating-sheet[data-tone="light"]{--foreground:#1c1c1e;--muted-foreground:rgba(60,60,67,.6);--tertiary-foreground:rgba(60,60,67,.3);--card:#fff;--popover:#f2f2f7;--border:rgba(60,60,67,.24);--secondary:rgba(120,120,128,.14);--secondary-strong:rgba(120,120,128,.22);color:#1c1c1e;--ck-sheet-surface:250,250,252;--ck-sheet-line:0,0,0}
 .ck-floating-sheet__body>*{box-sizing:border-box;width:100%;min-height:100%;background:transparent!important}
 /* Bottom-anchored bodies let short content sit against the foot so the newest lines peek out. */
 .ck-floating-sheet[data-body-align="end"] .ck-floating-sheet__body>*{min-height:0;max-height:100%}
@@ -135,11 +135,11 @@ input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
    The host's Workbench Composer floating over content, with the transcript on a draggable top bump
    (utilities on the component). What stays here: the --wb-* / --bl-* token maps that match the composer
    and the bump to the tone, the glass blur, and the rule that lets a transcript sit on the glass. */
-.ck-floating-chat{--wb-bg:#111116;--wb-card:rgba(31,31,39,.86);--wb-sep:rgba(255,255,255,.13);--wb-label:#ededf2;--wb-label2:rgba(235,235,245,.68);--wb-label3:rgba(235,235,245,.4);--wb-fill:rgba(255,255,255,.08);--wb-fill2:rgba(255,255,255,.15);--wb-tint:var(--bl-tint,#0a84ff)}
-.ck-floating-chat[data-tone="dark"]{--bl-label:#f5f5f7;--bl-label2:rgba(235,235,245,.62);--bl-label3:rgba(235,235,245,.32);--bl-card:#1c1c1e;--bl-card2:#2c2c2e;--bl-sep:rgba(84,84,88,.6);--bl-fill:rgba(120,120,128,.24);--bl-fill2:rgba(120,120,128,.36);color:#f5f5f7;--ck-sheet-surface:18,18,22;--ck-sheet-line:255,255,255}
-.ck-floating-chat[data-tone="light"]{--bl-label:#1c1c1e;--bl-label2:rgba(60,60,67,.6);--bl-label3:rgba(60,60,67,.3);--bl-card:#fff;--bl-card2:#f2f2f7;--bl-sep:rgba(60,60,67,.24);--bl-fill:rgba(120,120,128,.14);--bl-fill2:rgba(120,120,128,.22);color:#1c1c1e;--ck-sheet-surface:250,250,252;--ck-sheet-line:0,0,0;--wb-bg:#fff;--wb-card:rgba(255,255,255,.86);--wb-sep:rgba(0,0,0,.1);--wb-label:#1c1c1e;--wb-label2:rgba(60,60,67,.68);--wb-label3:rgba(60,60,67,.4);--wb-fill:rgba(0,0,0,.05);--wb-fill2:rgba(0,0,0,.1);--wb-shadow:rgba(0,0,0,.07);--wb-card2:#f2f2f5;--wb-handle:rgba(0,0,0,.18)}
+.ck-floating-chat{--background:#111116;--card:rgba(31,31,39,.86);--border:rgba(255,255,255,.13);--foreground:#ededf2;--muted-foreground:rgba(235,235,245,.68);--tertiary-foreground:rgba(235,235,245,.4);--secondary:rgba(255,255,255,.08);--secondary-strong:rgba(255,255,255,.15)}
+.ck-floating-chat[data-tone="dark"]{--foreground:#f5f5f7;--muted-foreground:rgba(235,235,245,.62);--tertiary-foreground:rgba(235,235,245,.32);--card:#1c1c1e;--popover:#2c2c2e;--border:rgba(84,84,88,.6);--secondary:rgba(120,120,128,.24);--secondary-strong:rgba(120,120,128,.36);color:#f5f5f7;--ck-sheet-surface:18,18,22;--ck-sheet-line:255,255,255}
+.ck-floating-chat[data-tone="light"]{--foreground:#1c1c1e;--muted-foreground:rgba(60,60,67,.6);--tertiary-foreground:rgba(60,60,67,.3);--card:#fff;--popover:#f2f2f7;--border:rgba(60,60,67,.24);--secondary:rgba(120,120,128,.14);--secondary-strong:rgba(120,120,128,.22);color:#1c1c1e;--ck-sheet-surface:250,250,252;--ck-sheet-line:0,0,0;--background:#fff;--card:rgba(255,255,255,.86);--border:rgba(0,0,0,.1);--foreground:#1c1c1e;--muted-foreground:rgba(60,60,67,.68);--tertiary-foreground:rgba(60,60,67,.4);--secondary:rgba(0,0,0,.05);--secondary-strong:rgba(0,0,0,.1);--wb-shadow:rgba(0,0,0,.07);--popover:#f2f2f5;--handle:rgba(0,0,0,.18)}
 .ck-floating-chat[data-appearance="glass"] :is(.ck-floating-chat__composer [data-slot="composer-card"],[data-slot="floating-chat-working"],.ck-floating-chat__bump){-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
-.ck-floating-chat[data-appearance="sheet"] .ck-floating-chat__composer{--wb-card:var(--bl-card,#fff)}
+.ck-floating-chat[data-appearance="sheet"] .ck-floating-chat__composer{--card:var(--popover)}
 .ck-floating-chat__bump [data-slot="composer-bump-body"]>*,.ck-floating-chat__bump [data-slot="floating-chat-transcript"]>[data-slot="artifact-chat-transcript"]>*{box-sizing:border-box;width:100%;min-height:0;max-height:100%;background:transparent!important}
 @keyframes ck-floating-working{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1)}}
 
@@ -150,14 +150,14 @@ input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
 /* ── MapChatDemo ───────────────────────────────────────────────────────────────────────────
    The demo's own elements use utilities. These rules theme the ArtifactChatContainer it wraps
    and restyle the Markdown it streams, so they must outrank those components' own rules. */
-.ck-artifact-chat.ck-map-chat{color-scheme:dark;--bl-bg:#0d0f14;--bl-card:#16161c;--bl-label:#f5f5f7;--bl-label2:rgba(235,235,245,.64);--bl-label3:rgba(235,235,245,.34);--bl-sep:rgba(255,255,255,.12);--bl-tint:#0a84ff;background:#0d0f14;color:#f5f5f7}
+.ck-artifact-chat.ck-map-chat{color-scheme:dark;--background:#0d0f14;--card:#16161c;--foreground:#f5f5f7;--muted-foreground:rgba(235,235,245,.64);--tertiary-foreground:rgba(235,235,245,.34);--border:rgba(255,255,255,.12);--primary:#0a84ff;background:#0d0f14;color:#f5f5f7}
 .ck-map-chat .ck-artifact-chat__content{background:#0d0f14;overflow:hidden}
 .ck-map-chat .ck-artifact-chat__chat{background:#101015;border-right-color:rgba(255,255,255,.1)}
 /* Light appearance: light basemap, light chat column (the demo picks the light tiles and chrome). */
-.ck-artifact-chat.ck-map-chat[data-tone="light"]{color-scheme:light;--bl-bg:#f2f2f7;--bl-card:#fff;--bl-label:#1c1c1e;--bl-label2:rgba(60,60,67,.66);--bl-label3:rgba(60,60,67,.38);--bl-sep:rgba(60,60,67,.16);background:#eef0f3;color:#1c1c1e}
+.ck-artifact-chat.ck-map-chat[data-tone="light"]{color-scheme:light;--background:#f2f2f7;--card:#fff;--foreground:#1c1c1e;--muted-foreground:rgba(60,60,67,.66);--tertiary-foreground:rgba(60,60,67,.38);--border:rgba(60,60,67,.16);background:#eef0f3;color:#1c1c1e}
 .ck-map-chat[data-tone="light"] .ck-artifact-chat__content{background:#eef0f3}
 .ck-map-chat[data-tone="light"] .ck-artifact-chat__chat{background:#fbfbfd;border-right-color:rgba(60,60,67,.14)}
-.ck-map-chat__md.wb-md{font-size:14.5px;line-height:1.45;color:var(--bl-label,#f5f5f7)}
+.ck-map-chat__md.wb-md{font-size:14.5px;line-height:1.45;color:var(--foreground)}
 .ck-map-chat__md.wb-md p{margin:0 0 8px}
 .ck-map-chat__md.wb-md p:last-child{margin-bottom:0}
 .ck-map-chat__md.wb-md ol,.ck-map-chat__md.wb-md ul{margin:4px 0 8px;padding-left:22px}
@@ -183,7 +183,7 @@ input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
 .wb-scroll::-webkit-scrollbar-track{background:transparent}
 .wb-btn{-webkit-tap-highlight-color:transparent;font-family:inherit}
 .wb-btn:hover{filter:brightness(1.12)}
-.wb-hl:hover{background:var(--wb-fill)!important}
+.wb-hl:hover{background:var(--secondary)!important}
 .wb-md{line-height:1.6;font-size:14px}
 .wb-md :where(h1){font-size:20px;font-weight:700;margin:18px 0 8px;letter-spacing:-.2px}
 .wb-md :where(h2){font-size:16.5px;font-weight:650;margin:18px 0 6px}
@@ -195,11 +195,11 @@ input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
 .wb-md :where(pre){background:var(--mdc-pre,#101014);color:var(--mdc-pre-fg,#D8D8E2);border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
 .wb-md :where(pre code){background:none;padding:0;font-size:inherit;color:inherit}
 .wb-md :where(table){border-collapse:collapse;margin:10px 0;width:100%;font-size:13.5px}
-.wb-md :where(th){text-align:left;font-weight:600;color:var(--mdc-mut,#8E8E98);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+.wb-md :where(th){text-align:left;font-weight:600;color:var(--muted-foreground);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
 .wb-md :where(th,td){padding:7px 12px 7px 0;border-bottom:1px solid var(--mdc-border,rgba(128,128,145,.22))}
-.wb-md :where(blockquote){margin:10px 0;padding:2px 14px;border-left:3px solid var(--mdc-border,rgba(128,128,145,.3));color:var(--mdc-mut,#8E8E98)}
+.wb-md :where(blockquote){margin:10px 0;padding:2px 14px;border-left:3px solid var(--mdc-border,rgba(128,128,145,.3));color:var(--muted-foreground)}
 .wb-md :where(hr){border:0;border-top:1px solid var(--mdc-border,rgba(128,128,145,.22));margin:16px 0}
-.wb-md :where(a){color:var(--wb-tint,#0A84FF);text-decoration:none}
+.wb-md :where(a){color:var(--link,var(--primary));text-decoration:none}
 .wb-md :where(a:hover){text-decoration:underline}
 .wb-md :where(img){max-width:100%;border-radius:8px}
 .wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name){color:#C792EA}
@@ -211,46 +211,41 @@ input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
 .wb-md :where(.hljs-deletion){color:#FF6B6B}
 .wb-md :where(.hljs-addition){color:#69DB7C}
 
-/* ── Light appearance (.wb-light on WorkbenchShell / WorkbenchTheme) ──
+/* ── Light appearance ([data-theme-scope="workbench"].light on WorkbenchShell / WorkbenchTheme) ──
    Code blocks sit on a light well, so syntax colors switch to a One Light-style palette. The HlPre token
    classes read --wb-hl-* (dark fallbacks inline). */
-.wb-light{--wb-hl-kw:#A626A4;--wb-hl-str:#3E8B3A;--wb-hl-num:#986801;--wb-hl-com:#9A9AA3;--wb-hl-fn:#3563D9;--wb-hl-tag:#D2403A;--wb-hl-attr:#B06A00;--wb-hl-punc:#0B7FA8;--wb-hl-id:#24242B}
-.wb-light .wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name){color:#A626A4}
-.wb-light .wb-md :where(.hljs-string,.hljs-attr,.hljs-symbol,.hljs-bullet){color:#3E8B3A}
-.wb-light .wb-md :where(.hljs-title,.hljs-section,.hljs-function .hljs-title){color:#3563D9}
-.wb-light .wb-md :where(.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable){color:#986801}
-.wb-light .wb-md :where(.hljs-comment,.hljs-quote,.hljs-meta){color:#9A9AA3}
-.wb-light .wb-md :where(.hljs-operator,.hljs-punctuation){color:#0B7FA8}
-.wb-light .wb-md :where(.hljs-deletion){color:#D2403A}
-.wb-light .wb-md :where(.hljs-addition){color:#2F8F46}
-.wb-light .wb-scroll{scrollbar-color:rgba(0,0,0,.2) transparent}
-.wb-light .wb-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.18)}
-.wb-light .wb-btn:hover{filter:brightness(.97)}
+[data-theme-scope="workbench"].light{--wb-hl-kw:#A626A4;--wb-hl-str:#3E8B3A;--wb-hl-num:#986801;--wb-hl-com:#9A9AA3;--wb-hl-fn:#3563D9;--wb-hl-tag:#D2403A;--wb-hl-attr:#B06A00;--wb-hl-punc:#0B7FA8;--wb-hl-id:#24242B}
+[data-theme-scope="workbench"].light .wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name){color:#A626A4}
+[data-theme-scope="workbench"].light .wb-md :where(.hljs-string,.hljs-attr,.hljs-symbol,.hljs-bullet){color:#3E8B3A}
+[data-theme-scope="workbench"].light .wb-md :where(.hljs-title,.hljs-section,.hljs-function .hljs-title){color:#3563D9}
+[data-theme-scope="workbench"].light .wb-md :where(.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable){color:#986801}
+[data-theme-scope="workbench"].light .wb-md :where(.hljs-comment,.hljs-quote,.hljs-meta){color:#9A9AA3}
+[data-theme-scope="workbench"].light .wb-md :where(.hljs-operator,.hljs-punctuation){color:#0B7FA8}
+[data-theme-scope="workbench"].light .wb-md :where(.hljs-deletion){color:#D2403A}
+[data-theme-scope="workbench"].light .wb-md :where(.hljs-addition){color:#2F8F46}
+[data-theme-scope="workbench"].light .wb-scroll{scrollbar-color:rgba(0,0,0,.2) transparent}
+[data-theme-scope="workbench"].light .wb-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.18)}
+[data-theme-scope="workbench"].light .wb-btn:hover{filter:brightness(.97)}
 /* The terminal stays dark in the light appearance, like an IDE's integrated terminal: its subtree gets the
    dark tokens back. */
-.wb-light .wb-term{color-scheme:dark;--wb-fill:rgba(255,255,255,.06);--wb-fill2:rgba(255,255,255,.11);--wb-sep:rgba(255,255,255,.08);--wb-label:#EDEDF2;--wb-label2:#9C9CA6;--wb-label3:#69696F;--wb-handle:rgba(255,255,255,.22);color:#EDEDF2}
-.wb-light .wb-term .wb-btn:hover{filter:brightness(1.12)}
-.wb-light .wb-term .wb-scroll{scrollbar-color:rgba(140,140,155,.3) transparent}
-.wb-light .wb-term .wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28)}
+/* (the terminal is a `terminal` theme scope — see the bl-theme) */
+[data-theme-scope="workbench"].light [data-theme-scope="terminal"] .wb-btn:hover{filter:brightness(1.12)}
+[data-theme-scope="workbench"].light [data-theme-scope="terminal"] .wb-scroll{scrollbar-color:rgba(140,140,155,.3) transparent}
+[data-theme-scope="workbench"].light [data-theme-scope="terminal"] .wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28)}
 
 /* Docstream editor compressed into the Workbench composer. The editor package defaults to a
    full document canvas, so this adapter supplies the same narrow, auto-growing surface used by
    the GitHub clone while keeping structured blocks and the slash menu available. */
 .wb-composer-doc.gb{
-  --card:var(--wb-card);
-  --background:var(--wb-card);
-  --foreground:var(--wb-label);
-  --muted:var(--wb-fill);
-  --muted-foreground:var(--wb-label2);
-  --border:var(--wb-sep);
-  --accent:var(--wb-fill2);
-  --accent-foreground:var(--wb-label);
-  --primary:var(--wb-tint);
+  --background:var(--card);
+  --muted:var(--secondary);
+  --accent:var(--secondary-strong);
+  --accent-foreground:var(--foreground);
   width:100%;max-width:none;max-height:120px;min-height:0;margin:0;padding:0 14px 2px;
-  box-sizing:border-box;overflow-y:auto;color:var(--wb-label);font-family:inherit;font-size:14px;line-height:1.5
+  box-sizing:border-box;overflow-y:auto;color:var(--foreground);font-family:inherit;font-size:14px;line-height:1.5
 }
 .wb-composer-doc.gb .ProseMirror{min-height:38px;padding:10px 34px 4px 0;outline:none;font-size:14px;line-height:1.5}
-.wb-composer-doc.gb,.wb-composer-doc.gb .ProseMirror{color:var(--wb-label);caret-color:var(--wb-tint)}
+.wb-composer-doc.gb,.wb-composer-doc.gb .ProseMirror{color:var(--foreground);caret-color:var(--primary)}
 .wb-composer-doc.gb .ProseMirror :where(h1,h2,h3,h4,h5,h6,p,li){color:inherit}
 .wb-composer-doc-wide.gb .ProseMirror{min-height:38px}
 .wb-composer-doc-expanded.gb{max-height:min(58vh,440px)}
@@ -258,7 +253,7 @@ input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
 .wb-composer-doc.gb .ProseMirror>*+*{margin-top:.4em}
 .wb-composer-doc.gb .ProseMirror p{margin:0}
 .wb-composer-doc.gb .ProseMirror p:is(.is-empty,.is-editor-empty):first-child:before{
-  content:attr(data-placeholder);float:left;height:0;color:var(--wb-label3);pointer-events:none
+  content:attr(data-placeholder);float:left;height:0;color:var(--tertiary-foreground);pointer-events:none
 }
 .wb-composer-doc.gb .gb-code{margin:.45em 0}
 
@@ -270,21 +265,21 @@ input:where(:not(.gb *))::placeholder{color:var(--bl-label3)}
 /* Docstream pads its article for standalone pages; a MarkdownView flows inside the host's own layout. */
 .wb-md .docs-article{max-width:none;margin:0;padding:0}
 .wb-md :is([data-docstream],.docs-article){
-  --gb-panel:var(--mdc-card,var(--bl-card,var(--card,#fff)));
+  --gb-panel:var(--card);
   --gb-panel-foreground:currentColor;
-  --gb-muted:var(--mdc-muted,var(--bl-fill,var(--muted,#f4f4f5)));
-  --gb-muted-foreground:var(--mdc-mut,var(--bl-label2,var(--muted-foreground,#71717a)));
-  --gb-border:var(--mdc-border,var(--bl-sep,var(--border,#e4e4e7)));
-  --gb-accent:var(--mdc-muted,var(--bl-fill2,var(--accent,#f4f4f5)));
+  --gb-muted:var(--secondary);
+  --gb-muted-foreground:var(--muted-foreground);
+  --gb-border:var(--mdc-border,var(--border));
+  --gb-accent:var(--secondary);
   --gb-accent-foreground:currentColor;
   --gb-code-fg:currentColor;
 }
 
 /* Attachment chips: the editor portals the hover card to <body>, outside the --wb-* tokens. While a chip in a dark
    composer is hovered or focused, the card takes the dark Workbench palette (the editor's defaults are light). */
-.wb-composer-doc.gb .gb-attachment{background:var(--wb-fill);border-color:var(--wb-sep)}
-.wb-composer-doc.gb .gb-attachment:hover{border-color:var(--wb-label3)}
-body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-chat:not([data-tone="light"])) [data-slot="composer-input"]:not(.wb-light *) .gb-attachment:is(:hover,:focus-visible)) .gb-attachment-card{--border:rgba(255,255,255,.12);--card:#1C1C23;--card-foreground:#EDEDF2;--foreground:#EDEDF2;--muted:#101014;--muted-foreground:#9C9CA6;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.wb-composer-doc.gb .gb-attachment{background:var(--secondary);border-color:var(--border)}
+.wb-composer-doc.gb .gb-attachment:hover{border-color:var(--tertiary-foreground)}
+body:has(:is([data-theme-scope="workbench"].dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-chat:not([data-tone="light"])) [data-slot="composer-input"]:not([data-theme-scope="workbench"].light *) .gb-attachment:is(:hover,:focus-visible)) .gb-attachment-card{--border:rgba(255,255,255,.12);--card:#1C1C23;--card-foreground:#EDEDF2;--foreground:#EDEDF2;--muted:#101014;--muted-foreground:#9C9CA6;box-shadow:0 14px 40px rgba(0,0,0,.5)}
 /* Compact composer: one row, the editor a single line beside the controls. */
 .wb-composer-doc-compact.gb{max-height:44px;padding-right:4px}
 .wb-composer-doc-compact.gb .ProseMirror{min-height:22px;padding:10px 0 9px}
@@ -295,12 +290,9 @@ body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-ch
    same resolved values are copied onto the popovers it portals to <body>. The editor itself is a flex column:
    the toolbar stays put, the writing area scrolls. */
 @layer components.bl-mde{
-.bl-mde{
-  --card:var(--bl-card,#fff);--popover:var(--bl-card,#fff);--background:var(--bl-card,#fff);
-  --foreground:var(--bl-label,#0B0B0F);--card-foreground:var(--bl-label,#0B0B0F);--popover-foreground:var(--bl-label,#0B0B0F);
-  --muted:var(--bl-fill,rgba(120,120,128,.13));--muted-foreground:var(--bl-label2,rgba(60,60,67,.6));
-  --border:var(--bl-sep,rgba(60,60,67,.22));--accent:var(--bl-press,rgba(120,120,128,.16));
-  --accent-foreground:var(--bl-label,#0B0B0F);--primary:var(--bl-tint,#0A84FF);
+.bl-mde{--popover:var(--card);--background:var(--card);--card-foreground:var(--foreground);--popover-foreground:var(--foreground);
+  --muted:var(--secondary);
+  --accent-foreground:var(--foreground);
   --mde-px:12px;--mde-py:10px
 }
 .bl-mde-sm{--mde-fs:14px;--mde-lh:1.5;--mde-min-h-d:64px;--mde-px:10px;--mde-py:8px}
@@ -313,8 +305,8 @@ body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-ch
   min-height:var(--mde-min-h,var(--mde-min-h-d));max-height:var(--mde-max-h,none);
   color:inherit;font-size:var(--mde-fs);line-height:var(--mde-lh);--gb-radius:10px
 }
-.bl-mde .bl-mde-doc>.gb-content{display:flex;flex:1 1 auto;flex-direction:column;min-height:0;overflow-y:auto;padding:var(--mde-py) var(--mde-px);scrollbar-width:thin;scrollbar-color:var(--bl-fill2,rgba(128,128,140,.35)) transparent}
-.bl-mde .bl-mde-doc .ProseMirror{flex:1 0 auto;min-height:0;font-size:inherit;line-height:inherit;color:inherit;caret-color:var(--bl-tint,#0A84FF)}
+.bl-mde .bl-mde-doc>.gb-content{display:flex;flex:1 1 auto;flex-direction:column;min-height:0;overflow-y:auto;padding:var(--mde-py) var(--mde-px);scrollbar-width:thin;scrollbar-color:var(--secondary-strong) transparent}
+.bl-mde .bl-mde-doc .ProseMirror{flex:1 0 auto;min-height:0;font-size:inherit;line-height:inherit;color:inherit;caret-color:var(--primary)}
 .bl-mde:is([data-readonly],[data-disabled]) .bl-mde-doc .ProseMirror{caret-color:transparent}
 .bl-mde[data-disabled] .bl-mde-doc{pointer-events:none}
 .bl-mde .bl-mde-doc .ProseMirror>*+*{margin-top:.6em}
@@ -325,19 +317,19 @@ body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-ch
 .bl-mde .bl-mde-doc .ProseMirror h2{font-size:1.25em;line-height:1.3;font-weight:650;margin-top:.9em;padding-bottom:0;border-bottom:0}
 .bl-mde .bl-mde-doc .ProseMirror h3{font-size:1.08em;line-height:1.35;font-weight:650;margin-top:.8em}
 .bl-mde .bl-mde-doc .ProseMirror>:first-child{margin-top:0}
-.bl-mde .bl-mde-doc .ProseMirror a{color:var(--bl-tint,#0A84FF);text-decoration:none}
+.bl-mde .bl-mde-doc .ProseMirror a{color:var(--primary);text-decoration:none}
 .bl-mde .bl-mde-doc .ProseMirror a:hover{text-decoration:underline}
 .bl-mde .bl-mde-doc .ProseMirror hr{margin:1.2em 0}
-.bl-mde .bl-mde-doc .ProseMirror :not(pre)>code{background:var(--bl-fill,rgba(120,120,128,.13));border-radius:5px;font-size:.86em;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
-.bl-mde .bl-mde-doc .ProseMirror p:is(.is-empty,.is-editor-empty):first-child::before{color:var(--bl-label3,rgba(60,60,67,.33))}
-.bl-mde .bl-mde-doc .ProseMirror ul[data-type="taskList"] input{accent-color:var(--bl-tint,#0A84FF)}
+.bl-mde .bl-mde-doc .ProseMirror :not(pre)>code{background:var(--secondary);border-radius:5px;font-size:.86em;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+.bl-mde .bl-mde-doc .ProseMirror p:is(.is-empty,.is-editor-empty):first-child::before{color:var(--tertiary-foreground)}
+.bl-mde .bl-mde-doc .ProseMirror ul[data-type="taskList"] input{accent-color:var(--primary)}
 /* Toolbar: a quiet strip above the writing area, divided by a hairline. */
-.bl-mde .bl-mde-doc .gb-toolbar{position:static;flex:none;margin:0;padding:5px 6px;gap:2px;border:0;border-bottom:1px solid var(--bl-sep,rgba(60,60,67,.22));border-radius:0;background:transparent;box-shadow:none}
-.bl-mde .bl-mde-doc .gb-tool{width:28px;height:28px;border-radius:7px;color:var(--bl-label2,rgba(60,60,67,.6));transition:background-color .12s ease,color .12s ease}
-.bl-mde .bl-mde-doc .gb-tool:hover{background:var(--bl-press,rgba(120,120,128,.16));color:var(--bl-label,#0B0B0F)}
-.bl-mde .bl-mde-doc .gb-tool-active{background:var(--bl-fill2,rgba(120,120,128,.24));color:var(--bl-label,#0B0B0F)}
-.bl-mde .bl-mde-doc .gb-toolbar-hint{font-size:12px;color:var(--bl-label3,rgba(60,60,67,.33))}
-.bl-mde .bl-mde-doc .gb-toolbar-hint kbd{border-color:var(--bl-sep,rgba(60,60,67,.22));background:transparent;font-family:inherit;color:var(--bl-label2,rgba(60,60,67,.6))}
+.bl-mde .bl-mde-doc .gb-toolbar{position:static;flex:none;margin:0;padding:5px 6px;gap:2px;border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent;box-shadow:none}
+.bl-mde .bl-mde-doc .gb-tool{width:28px;height:28px;border-radius:7px;color:var(--muted-foreground);transition:background-color .12s ease,color .12s ease}
+.bl-mde .bl-mde-doc .gb-tool:hover{background:var(--accent);color:var(--foreground)}
+.bl-mde .bl-mde-doc .gb-tool-active{background:var(--secondary-strong);color:var(--foreground)}
+.bl-mde .bl-mde-doc .gb-toolbar-hint{font-size:12px;color:var(--tertiary-foreground)}
+.bl-mde .bl-mde-doc .gb-toolbar-hint kbd{border-color:var(--border);background:transparent;font-family:inherit;color:var(--muted-foreground)}
 .bl-mde[data-variant="ghost"] .bl-mde-doc .gb-toolbar{padding-left:0;padding-right:0;margin-bottom:8px}
 /* The editor's popovers, dressed by the editor that opened them (tokens copied when they open). */
 [data-markdown-editor-portal] .slash-menu{border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.06)}
@@ -386,39 +378,39 @@ body:has(:is(.wb-dark,.ck-floating-chat:not([data-tone="light"]),.ck-artifact-ch
 .bl-tok-constant{color:var(--bl-syntax-constant,light-dark(#C8283F,#F07178))}
 .bl-tok-operator{color:var(--bl-syntax-operator,light-dark(#0B7285,#89DDFF))}
 .bl-tok-comment{color:var(--bl-syntax-comment,light-dark(#6E6E7A,#8A8A98));font-style:var(--bl-syntax-comment-style,italic)}
-.bl-syntax{--_bl-syn-surface:var(--bl-syntax-surface,var(--bl-card,Canvas));position:relative;min-width:0;color:var(--bl-syntax-fg,var(--bl-label,CanvasText))}
-.bl-syntax-card{box-sizing:border-box;border:1px solid var(--bl-syntax-border,var(--bl-sep,rgba(128,128,128,.25)));border-radius:var(--bl-syntax-radius,12px);background:var(--_bl-syn-surface);overflow:hidden}
+.bl-syntax{--_bl-syn-surface:var(--bl-syntax-surface,var(--card));position:relative;min-width:0;color:var(--bl-syntax-fg,var(--foreground))}
+.bl-syntax-card{box-sizing:border-box;border:1px solid var(--bl-syntax-border,var(--border));border-radius:var(--bl-syntax-radius,12px);background:var(--_bl-syn-surface);overflow:hidden}
 .bl-syntax-card>.bl-syntax-pre{border-radius:inherit}
 .bl-syntax-card>.bl-syntax-header+.bl-syntax-pre{border-top-left-radius:0;border-top-right-radius:0}
 .bl-syntax-ghost{--_bl-syn-surface:var(--bl-syntax-surface,transparent)}
 .bl-syntax-pre{margin:0;overflow:auto;padding:var(--bl-syntax-padding-y,12px) 0;font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-size:var(--bl-syntax-font-size,13px);line-height:var(--bl-syntax-line-height,1.6);tab-size:var(--bl-syntax-tab-size,2);color:inherit;background:none;outline:none;white-space:pre;text-align:left;-webkit-user-select:text;user-select:text}
-.bl-syntax-pre:focus-visible{box-shadow:inset 0 0 0 2px var(--bl-tint,Highlight)}
+.bl-syntax-pre:focus-visible{box-shadow:inset 0 0 0 2px var(--primary)}
 .bl-syntax-code{display:block;width:max-content;min-width:100%;font:inherit;color:inherit;background:none;padding:0;border-radius:0}
 .bl-syntax-pre[data-wrap] .bl-syntax-code{width:auto}
 .bl-syntax-chunk{display:block;content-visibility:auto}
 .bl-syntax-line{--_bl-syn-line:transparent;display:flex;background:var(--_bl-syn-line)}
-.bl-syntax-line[data-highlighted]{--_bl-syn-line:var(--bl-syntax-highlight,color-mix(in srgb,var(--bl-tint,#0A84FF) 13%,transparent))}
-.bl-syntax-line[data-highlighted]>:first-child{box-shadow:inset 3px 0 var(--bl-syntax-highlight-bar,var(--bl-tint,#0A84FF))}
+.bl-syntax-line[data-highlighted]{--_bl-syn-line:var(--bl-syntax-highlight,color-mix(in srgb,var(--primary) 13%,transparent))}
+.bl-syntax-line[data-highlighted]>:first-child{box-shadow:inset 3px 0 var(--bl-syntax-highlight-bar,var(--primary))}
 .bl-syntax-line[data-diff=add]{--_bl-syn-line:var(--bl-syntax-added,light-dark(rgba(52,199,89,.14),rgba(48,209,88,.15)))}
 .bl-syntax-line[data-diff=del]{--_bl-syn-line:var(--bl-syntax-removed,light-dark(rgba(255,59,48,.11),rgba(255,69,58,.15)))}
-.bl-syntax-ln{flex:none;position:sticky;left:0;z-index:1;box-sizing:border-box;width:calc(var(--bl-syntax-gutter-digits,2)*1ch + 28px);padding:0 12px 0 16px;text-align:right;color:var(--bl-syntax-line-number,var(--bl-label3,GrayText));background:linear-gradient(var(--_bl-syn-line),var(--_bl-syn-line)),var(--_bl-syn-surface);-webkit-user-select:none;user-select:none}
+.bl-syntax-ln{flex:none;position:sticky;left:0;z-index:1;box-sizing:border-box;width:calc(var(--bl-syntax-gutter-digits,2)*1ch + 28px);padding:0 12px 0 16px;text-align:right;color:var(--bl-syntax-line-number,var(--tertiary-foreground));background:linear-gradient(var(--_bl-syn-line),var(--_bl-syn-line)),var(--_bl-syn-surface);-webkit-user-select:none;user-select:none}
 .bl-syntax-ln::before{content:attr(data-n)}
 .bl-syntax-line[data-diff=add]>.bl-syntax-ln{--_bl-syn-line:var(--bl-syntax-added-gutter,light-dark(rgba(52,199,89,.26),rgba(48,209,88,.3)))}
 .bl-syntax-line[data-diff=del]>.bl-syntax-ln{--_bl-syn-line:var(--bl-syntax-removed-gutter,light-dark(rgba(255,59,48,.2),rgba(255,69,58,.3)))}
 .bl-syntax-lc{flex:1 0 auto;min-height:1lh;padding:0 16px}
 .bl-syntax-pre[data-line-numbers] .bl-syntax-lc{padding-left:8px}
 .bl-syntax-pre[data-wrap] .bl-syntax-lc{flex:1 1 0;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere}
-.bl-syntax-pre[data-diff] .bl-syntax-lc::before{content:'';display:inline-block;width:2ch;color:var(--bl-label2,GrayText);-webkit-user-select:none;user-select:none}
+.bl-syntax-pre[data-diff] .bl-syntax-lc::before{content:'';display:inline-block;width:2ch;color:var(--muted-foreground);-webkit-user-select:none;user-select:none}
 .bl-syntax-line[data-diff=add]>.bl-syntax-lc::before{content:'+'}
 .bl-syntax-line[data-diff=del]>.bl-syntax-lc::before{content:'\2212'}
-.bl-syntax-inline{font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-size:var(--bl-syntax-inline-font-size,.88em);padding:.12em .38em;border-radius:6px;background:var(--bl-syntax-inline-bg,var(--bl-fill,rgba(128,128,128,.14)));color:var(--bl-syntax-fg,var(--bl-label,inherit));white-space:pre-wrap;-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-user-select:text;user-select:text}
-.bl-syntax-header{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 6px 0 14px;box-sizing:border-box;border-bottom:1px solid var(--bl-sep,rgba(128,128,128,.25));background:var(--bl-syntax-header-bg,color-mix(in srgb,var(--bl-label,#000) 3.5%,transparent));font-size:12.5px;color:var(--bl-label2,GrayText)}
-.bl-syntax-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-weight:500;color:var(--bl-label,inherit)}
-.bl-syntax-copy{display:grid;flex:none;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--bl-label2,GrayText);cursor:pointer;outline:none;transition:background-color .15s,color .15s,opacity .15s}
-.bl-syntax-copy[data-hovered]{background:var(--bl-fill,rgba(128,128,128,.14));color:var(--bl-label,inherit)}
-.bl-syntax-copy[data-focus-visible]{box-shadow:0 0 0 2px var(--bl-tint,Highlight)}
-.bl-syntax-copy[data-copied]{color:var(--bl-green,#34C759)}
-.bl-syntax-copy-float{position:absolute;top:7px;right:7px;z-index:2;background:var(--_bl-syn-surface);box-shadow:inset 0 0 0 1px var(--bl-sep,rgba(128,128,128,.25));opacity:0}
+.bl-syntax-inline{font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-size:var(--bl-syntax-inline-font-size,.88em);padding:.12em .38em;border-radius:6px;background:var(--bl-syntax-inline-bg,var(--secondary));color:var(--bl-syntax-fg,var(--foreground));white-space:pre-wrap;-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-user-select:text;user-select:text}
+.bl-syntax-header{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 6px 0 14px;box-sizing:border-box;border-bottom:1px solid var(--border);background:var(--bl-syntax-header-bg,color-mix(in srgb,var(--foreground) 3.5%,transparent));font-size:12.5px;color:var(--muted-foreground)}
+.bl-syntax-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-weight:500;color:var(--foreground)}
+.bl-syntax-copy{display:grid;flex:none;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--muted-foreground);cursor:pointer;outline:none;transition:background-color .15s,color .15s,opacity .15s}
+.bl-syntax-copy[data-hovered]{background:var(--secondary);color:var(--foreground)}
+.bl-syntax-copy[data-focus-visible]{box-shadow:0 0 0 2px var(--primary)}
+.bl-syntax-copy[data-copied]{color:var(--success)}
+.bl-syntax-copy-float{position:absolute;top:7px;right:7px;z-index:2;background:var(--_bl-syn-surface);box-shadow:inset 0 0 0 1px var(--border);opacity:0}
 .bl-syntax:hover>.bl-syntax-copy-float,.bl-syntax-copy-float[data-focus-visible],.bl-syntax-copy-float[data-copied]{opacity:1}
 @media (hover:none){.bl-syntax-copy-float{opacity:1}}
 .bl-syntax-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}

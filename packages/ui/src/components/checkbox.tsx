@@ -11,7 +11,7 @@ import { cn } from '../lib/utils';
    One selection tick per change. ══ */
 export const checkboxVariants = cva(
   [
-    'box-border grid size-[22px] shrink-0 place-items-center border-[1.5px] border-bl-label3 text-white',
+    'box-border grid size-[22px] shrink-0 place-items-center border-[1.5px] border-tertiary-foreground text-white',
     'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
     'group-data-selected:border-primary group-data-selected:bg-primary',
     'group-data-indeterminate:border-primary group-data-indeterminate:bg-primary',

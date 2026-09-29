@@ -20,15 +20,15 @@ function Fields() {
             gap: 12,
             padding: '10px 12px 10px 16px',
             borderRadius: 12,
-            background: 'var(--bl-card)',
-            boxShadow: '0 0 0 1px var(--bl-sep)',
+            background: 'var(--card)',
+            boxShadow: '0 0 0 1px var(--border)',
           }}
         >
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12.5, color: 'var(--bl-label2)' }}>
+            <div style={{ fontSize: 12.5, color: 'var(--muted-foreground)' }}>
               {f.label}
             </div>
-            <div style={{ fontSize: 15, color: 'var(--bl-label)' }}>
+            <div style={{ fontSize: 15, color: 'var(--foreground)' }}>
               {f.value}
             </div>
           </div>
@@ -63,7 +63,7 @@ export default function CopyHud() {
         placeItems: 'center',
         overflow: 'hidden',
         borderRadius: 14,
-        background: 'var(--bl-bg)',
+        background: 'var(--background)',
       }}
     >
       <Toaster queue={queue} placement="bottom" inline offset={18}>

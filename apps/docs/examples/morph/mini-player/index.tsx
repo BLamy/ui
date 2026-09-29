@@ -25,8 +25,8 @@ export default function MiniPlayer() {
         margin: '0 auto',
         overflow: 'hidden',
         borderRadius: 22,
-        background: 'var(--bl-bg)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--background)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <div style={{ padding: 20 }}>
@@ -35,7 +35,7 @@ export default function MiniPlayer() {
             fontSize: 28,
             fontWeight: 700,
             letterSpacing: -0.4,
-            color: 'var(--bl-label)',
+            color: 'var(--foreground)',
           }}
         >
           Listen Now
@@ -54,7 +54,7 @@ export default function MiniPlayer() {
               style={{
                 aspectRatio: '1',
                 borderRadius: 12,
-                background: 'var(--bl-fill)',
+                background: 'var(--secondary)',
               }}
             />
           ))}
@@ -175,11 +175,11 @@ export default function MiniPlayer() {
                 textAlign: 'left',
                 cursor: 'pointer',
                 overflow: 'hidden',
-                color: 'var(--bl-label)',
-                background: 'var(--bl-bar)',
+                color: 'var(--foreground)',
+                background: 'var(--bar)',
                 backdropFilter: 'blur(24px) saturate(1.8)',
                 boxShadow:
-                  '0 6px 24px rgba(0,0,0,.16), 0 0 0 .5px var(--bl-sep)',
+                  '0 6px 24px rgba(0,0,0,.16), 0 0 0 .5px var(--border)',
               }}
             >
               <Morph
@@ -198,11 +198,11 @@ export default function MiniPlayer() {
                 style={{ flex: 1, minWidth: 0 }}
               >
                 <div style={{ fontSize: 15, fontWeight: 500 }}>Golden Hour</div>
-                <div style={{ fontSize: 13, color: 'var(--bl-label2)' }}>
+                <div style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
                   The Weekend Ensemble
                 </div>
               </Morph>
-              <NowPlayingBars style={{ color: 'var(--bl-tint)' }} />
+              <NowPlayingBars style={{ color: 'var(--primary)' }} />
             </Morph>
           )}
         </MorphPresence>

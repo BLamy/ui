@@ -80,15 +80,18 @@ function emit(path, content) {
 }
 
 /* ── bl-ui: the base item ── */
+// The extra color tokens BL UI registers next to shadcn's (see packages/ui/src/tokens.css and the Theming page).
+const EXTRA_COLORS = /^color-(success|warning|tertiary-foreground|secondary-strong|overlay|bar|sticky|handle|link|code|code-foreground)$/;
 function themeVars() {
-  // BL's own utilities from theme.css's `@theme inline`. The shadcn semantic names (background, primary, …) and
-  // font-mono are left out: in a consumer's app those belong to the app's own theme.
-  const css = read('packages/ui/src/theme.css');
+  // BL's own utilities from tokens.css's `@theme inline`: the extra colors (with their shadcn-derived fallbacks),
+  // the iOS font and the spring motion tokens. shadcn's own names (background, primary, …) and font-mono are left
+  // out: in a consumer's app those belong to the app's theme already.
+  const css = read('packages/ui/src/tokens.css');
   const block = css.slice(css.indexOf('@theme inline {'));
   const vars = {};
   for (const m of block.matchAll(/^\s*--([\w-]+):\s*([^;]+);/gm)) {
     const [, name, value] = m;
-    if (/^color-(bl|wb|ck)-/.test(name) || /^(font-ios|ease-ios|ease-spring-|duration-spring-|ease-exit|duration-exit|transition-duration-)/.test(name)) {
+    if (EXTRA_COLORS.test(name) || /^(font-ios|ease-ios|ease-spring-|duration-spring-|ease-exit|duration-exit|transition-duration-)/.test(name)) {
       vars[name] = value.trim();
     }
   }
@@ -100,13 +103,44 @@ const baseItem = {
   type: 'registry:style',
   title: 'BL UI',
   description:
-    'Installs @brett_lamy/ui, imports its stylesheet, and adds the BL token utilities (bg-bl-card, text-bl-label, border-bl-sep, …) to your Tailwind theme.',
+    "Installs @brett_lamy/ui, imports its stylesheet, and registers BL UI's extra color utilities (text-tertiary-foreground, bg-secondary-strong, bg-bar, text-success, …) next to shadcn's.",
   dependencies: [dep('@brett_lamy/ui')],
   cssVars: { theme: themeVars() },
   css: { '@import "@brett_lamy/ui/styles.css"': {} },
-  docs: 'BL UI components read their colors from a provider: wrap iOS-style parts in <BLProvider> and Workbench parts (Composer, MessageScroller, WorkbenchShell) in <WorkbenchTheme> — blocks already do. With Vite, pre-bundle the Markdown engine (it ships TypeScript source): optimizeDeps: { include: ["@brett_lamy/ui > @brett_lamy/docstream", "@brett_lamy/ui > @brett_lamy/docstream-editor"] }.',
+  docs: 'BL UI colors are your shadcn theme variables. For the iOS look add the bl-theme item (npx shadcn add …/r/bl-theme.json). With Vite, pre-bundle the Markdown engine (it ships TypeScript source): optimizeDeps: { include: ["@brett_lamy/ui > @brett_lamy/docstream", "@brett_lamy/ui > @brett_lamy/docstream-editor"] }.',
   files: [],
 };
+
+/* ── bl-theme: the iOS palette as a shadcn theme (opt-in) ── */
+// Parsed from packages/ui/src/theme.css: `:root` → cssVars.light, `.dark` → cssVars.dark, the scope rules → css.
+function parseRules(css) {
+  const rules = [];
+  for (const m of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const decls = {};
+    for (const d of m[2].matchAll(/(--[\w-]+|color-scheme)\s*:\s*([^;]+);/g)) decls[d[1]] = d[2].trim();
+    rules.push({ selector: m[1].trim().replace(/\s+/g, ' '), decls });
+  }
+  return rules;
+}
+function themeItem() {
+  const rules = parseRules(read('packages/ui/src/theme.css'));
+  const strip = (decls) => Object.fromEntries(Object.entries(decls).filter(([k]) => k.startsWith('--')).map(([k, v]) => [k.slice(2), v]));
+  const light = rules.find((r) => r.selector.startsWith(':root'));
+  const dark = rules.find((r) => r.selector.startsWith('.dark'));
+  const scopes = rules.filter((r) => r.selector.startsWith('[data-theme-scope'));
+  return {
+    name: 'bl-theme',
+    type: 'registry:theme',
+    title: 'BL theme',
+    description:
+      "BL UI's iOS look as a shadcn theme: sets your CSS variables (light and dark) to the iOS palette, plus the Workbench, terminal and chat theme scopes.",
+    cssVars: { light: strip(light.decls), dark: strip(dark.decls) },
+    // A nested light subtree (BLProvider / ThemeScope put `light` on their root) needs the light values back; the CLI
+    // only writes :root and .dark from cssVars.
+    css: { '.light:not([data-theme-scope])': light.decls, ...Object.fromEntries(scopes.map((r) => [r.selector, r.decls])) },
+    files: [],
+  };
+}
 
 /* ── components ── */
 const COMPONENTS_DIR = 'registry/components';
@@ -201,7 +235,7 @@ const registry = {
   $schema: 'https://ui.shadcn.com/schema/registry.json',
   name: 'bl-ui',
   homepage: URL_BASE.replace(/\/r$/, ''),
-  items: [baseItem, ...componentItems, ...blockItems],
+  items: [baseItem, themeItem(), ...componentItems, ...blockItems],
 };
 const registryJson = JSON.stringify(registry, null, 2) + '\n';
 

@@ -68,7 +68,7 @@ export const SwipeToDelete: Story = {
             onPress={() => undefined}
             divider={i < people.length - 1} />
         ))}
-        <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--bl-label2)', background: 'var(--bl-card)' }}>
+        <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--muted-foreground)', background: 'var(--card)' }}>
           Swipe a row left to reveal Delete; past 55% width it commits with a haptic.
         </div>
       </>
@@ -82,7 +82,7 @@ export const EditMode: Story = {
     const [picked, setPicked] = useState<Set<string>>(new Set(['Wei']));
     return (
       <>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 16px', background: 'var(--bl-card)' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 16px', background: 'var(--card)' }}>
           <Switch checked={edit} onChange={setEdit} aria-label="Edit mode" />
         </div>
         {[['Amelia', 'Adler'], ['Wei', 'Chen'], ['Anya', 'Kowalski']].map(([f, l], i) => (
@@ -113,7 +113,7 @@ function MailRows() {
     <>
       {rows.map(([from, subject], i) => {
         const leading: ListRowAction[] = [
-          { label: unread.has(from) ? 'Read' : 'Unread', icon: 'mail', tint: 'var(--bl-tint)', onAction: () => setUnread((u) => toggle(u, from)) },
+          { label: unread.has(from) ? 'Read' : 'Unread', icon: 'mail', tint: 'var(--primary)', onAction: () => setUnread((u) => toggle(u, from)) },
         ];
         const trailing: ListRowAction[] = [
           { label: 'Trash', icon: 'trash', destructive: true, onAction: () => setRows((r) => r.filter((x) => x[0] !== from)) },
@@ -122,13 +122,13 @@ function MailRows() {
         ];
         return (
           <ListRow key={from} title={<span style={{ fontWeight: unread.has(from) ? 600 : 400 }}>{from}</span>} subtitle={subject}
-            leading={<span aria-hidden style={{ width: 9, height: 9, borderRadius: 5, background: unread.has(from) ? 'var(--bl-tint)' : 'transparent' }} />}
+            leading={<span aria-hidden style={{ width: 9, height: 9, borderRadius: 5, background: unread.has(from) ? 'var(--primary)' : 'transparent' }} />}
             trailing={flag.has(from) ? <Icon name="starF" size={13} style={{ color: '#FF9F0A' }} /> : null}
             leadingActions={leading} trailingActions={trailing}
             onPress={() => undefined} divider={i < rows.length - 1} />
         );
       })}
-      <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--bl-label2)', background: 'var(--bl-card)' }}>
+      <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--muted-foreground)', background: 'var(--card)' }}>
         Swipe right for Unread, left for Trash / Flag / More. A long swipe runs the outermost action (a tick marks
         the threshold). Keyboard: focus a row, → or ← reveals its actions, Esc closes, Delete trashes.
       </div>

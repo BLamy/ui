@@ -19,7 +19,7 @@ export default function NowPlaying() {
               gap: 12,
               alignItems: 'center',
               padding: 16,
-              background: 'var(--bl-card)',
+              background: 'var(--card)',
             }}
           >
             <div
@@ -32,7 +32,7 @@ export default function NowPlaying() {
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 650 }}>Midnight City</div>
-              <div style={{ fontSize: 13, color: 'var(--bl-label2)' }}>
+              <div style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
                 M83 · {dark ? 'dark' : 'light'}
               </div>
               <Slider

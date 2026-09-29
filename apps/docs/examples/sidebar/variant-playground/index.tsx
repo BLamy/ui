@@ -28,7 +28,7 @@ function SidebarVariants() {
         justifyItems: 'center',
         gap: 12,
         padding: 16,
-        background: 'var(--wb-bg)',
+        background: 'var(--background)',
         fontFamily: font,
       }}
     >
@@ -56,7 +56,7 @@ function SidebarVariants() {
           height: 330,
           overflow: 'hidden',
           borderRadius: 14,
-          border: '1px solid var(--wb-sep)',
+          border: '1px solid var(--border)',
           transition:
             'width var(--duration-spring-smooth) var(--ease-spring-smooth)',
         }}
@@ -75,7 +75,7 @@ function SidebarVariants() {
                 alignItems: 'center',
                 gap: 8,
                 padding: '9px 12px',
-                borderBottom: '1px solid var(--wb-sep)',
+                borderBottom: '1px solid var(--border)',
               }}
             >
               {/* the hamburger toggles every variant */}
@@ -84,7 +84,7 @@ function SidebarVariants() {
                 style={{
                   fontSize: 12.5,
                   fontWeight: 650,
-                  color: 'var(--wb-label)',
+                  color: 'var(--foreground)',
                 }}
               >
                 Home
@@ -95,7 +95,7 @@ function SidebarVariants() {
                 padding: 16,
                 fontSize: 12.5,
                 lineHeight: 1.6,
-                color: 'var(--wb-label2)',
+                color: 'var(--muted-foreground)',
               }}
             >
               One API, four behaviors — the trigger toggles whichever variant is
@@ -163,8 +163,8 @@ function Chip({
         fontFamily: font,
         fontSize: 12,
         fontWeight: 600,
-        background: active ? 'var(--wb-tint)' : 'var(--wb-fill2)',
-        color: active ? '#fff' : 'var(--wb-label)',
+        background: active ? 'var(--primary)' : 'var(--secondary-strong)',
+        color: active ? '#fff' : 'var(--foreground)',
       }}
     >
       {children}

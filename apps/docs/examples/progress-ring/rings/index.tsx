@@ -24,7 +24,7 @@ export default function Rings() {
               name="check"
               size={18}
               sw={2.6}
-              style={{ color: 'var(--bl-green)' }}
+              style={{ color: 'var(--success)' }}
             />
           ) : (
             <span
@@ -32,7 +32,7 @@ export default function Rings() {
                 width: 11,
                 height: 11,
                 borderRadius: 2,
-                background: 'var(--bl-tint)',
+                background: 'var(--primary)',
               }}
             />
           )}

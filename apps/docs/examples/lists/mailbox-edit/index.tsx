@@ -34,7 +34,7 @@ function MailboxEdit() {
         position: 'relative',
         height: 400,
         overflow: 'hidden',
-        background: 'var(--bl-card)',
+        background: 'var(--card)',
       }}
     >
       <header
@@ -42,7 +42,7 @@ function MailboxEdit() {
           display: 'flex',
           alignItems: 'center',
           padding: '10px 16px',
-          borderBottom: '1px solid var(--bl-sep)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
         <strong style={{ flex: 1, fontSize: 17 }}>Inbox</strong>
@@ -68,7 +68,7 @@ function MailboxEdit() {
               title={m.subject}
               subtitle={`${m.f} ${m.l}`}
               trailing={
-                <span style={{ fontSize: 13, color: 'var(--bl-label2)' }}>
+                <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
                   {m.time}
                 </span>
               }
@@ -106,7 +106,7 @@ function MailboxEdit() {
 // centered.
 function Window({
   width,
-  bg = 'var(--bl-bg)',
+  bg = 'var(--background)',
   children,
 }: {
   width?: number
@@ -123,8 +123,8 @@ function Window({
         borderRadius: 14,
         overflow: 'hidden',
         background: bg,
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

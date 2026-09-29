@@ -217,7 +217,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
           >
             <Button
               data-slot="message-scroller-jump"
-              className="wb-btn flex cursor-pointer items-center overflow-hidden rounded-[99px] border border-wb-sep bg-wb-card p-[7px] text-[12.5px] font-semibold text-wb-label shadow-[0_4px_16px_var(--wb-shadow,rgba(0,0,0,.35))]"
+              className="wb-btn flex cursor-pointer items-center overflow-hidden rounded-[99px] border border-border bg-card p-[7px] text-[12.5px] font-semibold text-foreground shadow-[0_4px_16px_black] shadow-black/8 dark:shadow-black/35"
               onPress={() => {
                 toEnd(true);
                 tick();
@@ -234,7 +234,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
                     exit={{ width: 0, opacity: 0 }}
                     transition={springs.snappy}
                   >
-                    <span className="ml-1.5 size-[7px] shrink-0 animate-[wbPulse_1.1s_infinite] rounded-[50%] bg-wb-tint motion-reduce:animate-none" />
+                    <span className="ml-1.5 size-[7px] shrink-0 animate-[wbPulse_1.1s_infinite] rounded-[50%] bg-primary motion-reduce:animate-none" />
                     <span className="pr-[7px]">Streaming</span>
                   </motion.span>
                 ) : null}

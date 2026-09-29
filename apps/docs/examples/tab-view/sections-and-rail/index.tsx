@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import {
-  chatVars,
+  themeScopeProps,
   Icon,
   TabView,
   TabViewBar,
@@ -56,7 +56,7 @@ function Frame({ children }: { children: ReactNode }) {
         height: 330,
         borderRadius: 12,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
+        background: 'var(--background)',
         boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.05)',
       }}
     >
@@ -87,8 +87,8 @@ function Panel({ id, horizontal }: { id: string; horizontal: boolean }) {
             width: 46,
             height: 46,
             borderRadius: 13,
-            background: 'var(--bl-fill)',
-            color: 'var(--bl-tint)',
+            background: 'var(--secondary)',
+            color: 'var(--primary)',
           }}
         >
           <Icon name={cur.icon} size={25} />
@@ -99,7 +99,7 @@ function Panel({ id, horizontal }: { id: string; horizontal: boolean }) {
         <div
           style={{
             fontSize: 13,
-            color: 'var(--bl-label2)',
+            color: 'var(--muted-foreground)',
             marginTop: 4,
             lineHeight: 1.5,
           }}
@@ -123,17 +123,17 @@ function ServerRail({
     server === 'home'
       ? 'Direct Messages'
       : servers.find((s) => s.id === server)?.title
-  // WorkspaceRail reads the chat --ck-* tokens; chatVars follows light / dark.
+  // A chat theme scope that follows light / dark.
   const appearance = useAppearance() ?? 'light'
   return (
     <div
+      {...themeScopeProps({ scope: 'chat', appearance })}
       style={{
-        ...chatVars(appearance),
         position: 'absolute',
         inset: 0,
         display: 'flex',
-        background: 'var(--ck-bg)',
-        color: 'var(--ck-label)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
       }}
     >
       <WorkspaceRail selectedKey={server} onSelectionChange={setServer}>
@@ -151,14 +151,14 @@ function ServerRail({
           padding: '22px 24px',
           fontSize: 13,
           lineHeight: 1.5,
-          color: 'var(--ck-mut)',
+          color: 'var(--muted-foreground)',
         }}
       >
         <div
           style={{
             fontSize: 16.5,
             fontWeight: 650,
-            color: 'var(--ck-label)',
+            color: 'var(--foreground)',
             marginBottom: 4,
           }}
         >

@@ -29,12 +29,12 @@ function Demo({ side, dark, open = true }: { side: 'bottom' | 'top' | 'left' | '
                   <SheetDescription>Narrow the list of messages.</SheetDescription>
                 </SheetHeader>
                 <SheetBody className="flex flex-col gap-3">
-                  <ListBox aria-label="Mailbox" selectionMode="single" defaultSelectedKeys={['all']} className="bg-bl-bg2">
+                  <ListBox aria-label="Mailbox" selectionMode="single" defaultSelectedKeys={['all']} className="bg-muted">
                     <ListBoxItem id="all">All Mail</ListBoxItem>
                     <ListBoxItem id="unread">Unread</ListBoxItem>
                     <ListBoxItem id="flagged">Flagged</ListBoxItem>
                   </ListBox>
-                  <div className="flex items-center justify-between rounded-[12px] bg-bl-bg2 px-4 py-2 text-[17px] text-foreground">
+                  <div className="flex items-center justify-between rounded-[12px] bg-muted px-4 py-2 text-[17px] text-foreground">
                     Only with attachments <Switch checked onChange={() => {}} aria-label="Only with attachments" />
                   </div>
                 </SheetBody>

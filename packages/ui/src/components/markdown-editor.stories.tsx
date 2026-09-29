@@ -92,7 +92,7 @@ function ControlledDemo() {
     <>
       <MarkdownEditor aria-label="Controlled" value={markdown} onValueChange={setMarkdown} minHeight={120} />
       <Caption>Live Markdown</Caption>
-      <pre className="m-0 overflow-auto rounded-[10px] bg-card p-3 shadow-[0_0_0_1px_var(--bl-sep)] font-mono text-[12px] leading-[18px] whitespace-pre-wrap text-muted-foreground">
+      <pre className="m-0 overflow-auto rounded-[10px] bg-card p-3 shadow-[0_0_0_1px_var(--border)] font-mono text-[12px] leading-[18px] whitespace-pre-wrap text-muted-foreground">
         {markdown}
       </pre>
     </>
@@ -123,7 +123,7 @@ export const StyledParts: Story = {
       title: 'text-[26px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
       checklist: 'pl-0',
       checklistItem: 'gap-2.5 items-center',
-      checkbox: 'appearance-none m-0 size-[20px] rounded-full shadow-[inset_0_0_0_1.6px_var(--bl-label3)] checked:bg-primary checked:shadow-none',
+      checkbox: 'appearance-none m-0 size-[20px] rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground)] checked:bg-primary checked:shadow-none',
       table: 'text-[14px]',
       tableHeader: 'bg-transparent font-semibold border-border px-3 py-1.5',
       tableCell: 'border-border px-3 py-1.5',

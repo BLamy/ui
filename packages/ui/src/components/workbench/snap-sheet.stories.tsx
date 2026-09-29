@@ -20,14 +20,14 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
   const [open, setOpen] = useState(initialOpen);
   return (
     <WorkbenchTheme style={{ minHeight: 760, padding: 20, display: 'grid', placeItems: 'center' }}>
-      <div style={{ position: 'relative', width: 390, height: 720, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--wb-sep)', background: 'var(--wb-bg)' }}>
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: 'var(--wb-label3)', fontSize: 13, padding: 24, textAlign: 'center' }}>
+      <div style={{ position: 'relative', width: 390, height: 720, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--background)' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: 'var(--tertiary-foreground)', fontSize: 13, padding: 24, textAlign: 'center' }}>
           <div>
             <div style={{ marginBottom: 14 }}>compact-width terminal presentation</div>
             <button
               className="wb-btn"
               onClick={() => setOpen(true)}
-              style={{ border: 0, borderRadius: 9, background: 'var(--wb-tint)', color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 16px', cursor: 'pointer' }}
+              style={{ border: 0, borderRadius: 9, background: 'var(--primary)', color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 16px', cursor: 'pointer' }}
             >
               Open terminal drawer
             </button>

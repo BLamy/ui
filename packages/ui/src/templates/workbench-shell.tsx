@@ -8,7 +8,8 @@ import { tick, vib } from '../lib/workbench/haptics';
 import { WIcon, IconBtn, type WIconName } from '../lib/workbench/icons';
 import { ToggleButton } from '../lib/workbench/press';
 import type { Appearance } from '../lib/theme';
-import { workbenchVars, workbenchAppearanceClass, useWorkbenchAppearance, WorkbenchAppearanceProvider } from '../lib/workbench/theme';
+import { useWorkbenchAppearance, WorkbenchAppearanceProvider } from '../lib/workbench/theme';
+import { themeScopeProps, ThemeScope } from '../lib/theme';
 import { SnapSheet } from '../components/workbench/snap-sheet';
 
 /* ══ WorkbenchShell — a thin layout root and the parts that compose an IDE-style agent workspace ══
@@ -141,6 +142,7 @@ export function WorkbenchShell({
     panelFullscreen,
     setPanelFullscreen,
   };
+  const scope = themeScopeProps({ scope: 'workbench', appearance, tint });
   return (
     <WorkbenchAppearanceProvider value={appearance}>
       <WorkbenchShellContext.Provider value={ctx}>
@@ -148,12 +150,13 @@ export function WorkbenchShell({
           ref={rootRef}
           data-slot="workbench-shell"
           data-width-class={widthClass}
+          data-theme-scope={scope['data-theme-scope']}
           className={cn(
-            'relative grid h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-wb-bg font-ios text-wb-label antialiased',
-            workbenchAppearanceClass(appearance),
+            'relative grid h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-background font-ios text-foreground antialiased',
+            scope.className,
             className,
           )}
-          style={{ ...workbenchVars(tint, appearance), ...style }}
+          style={{ ...scope.style, ...style }}
         >
           {children}
         </div>
@@ -186,7 +189,7 @@ export function WorkbenchSidebar({ width = 242, drawerWidth = 280, children }: W
       open={compact && sidebarOpen}
       onClose={() => setSidebarOpen(false)}
       columnWidth={width}
-      columnStyle={{ gridColumn: 1, gridRow: 1, borderRight: '1px solid var(--wb-sep)' }}
+      columnStyle={{ gridColumn: 1, gridRow: 1, borderRight: '1px solid var(--border)' }}
       drawerWidth={drawerWidth}
       maxWidth="84%"
       zIndex={80}
@@ -237,7 +240,7 @@ export function WorkbenchMain({ className, style, children }: { className?: stri
     <div
       data-slot="workbench-main"
       // not positioned: the compact dock sheet inside it covers the whole shell
-      className={cn('col-start-2 row-start-1 flex min-h-0 min-w-0 flex-col bg-wb-bg', className)}
+      className={cn('col-start-2 row-start-1 flex min-h-0 min-w-0 flex-col bg-background', className)}
       style={style}
     >
       {children}
@@ -248,7 +251,7 @@ export function WorkbenchMain({ className, style, children }: { className?: stri
 /* ── Header ── */
 export function WorkbenchHeader({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
   return (
-    <div data-slot="workbench-header" className={cn('box-border flex h-11 shrink-0 items-center gap-1 border-b border-wb-sep px-2.5', className)} style={style}>
+    <div data-slot="workbench-header" className={cn('box-border flex h-11 shrink-0 items-center gap-1 border-b border-border px-2.5', className)} style={style}>
       {children}
     </div>
   );
@@ -264,11 +267,11 @@ export interface WorkbenchTitleProps {
 export function WorkbenchTitle({ project, icon = 'folder', children, className }: WorkbenchTitleProps) {
   return (
     <div data-slot="workbench-title" className={cn('ml-1 flex min-w-0 flex-1 items-center gap-1.5', className)}>
-      <WIcon name={icon} size={14} sw={1.9} className="text-wb-label3" />
+      <WIcon name={icon} size={14} sw={1.9} className="text-tertiary-foreground" />
       {project != null ? (
         <>
-          <span className="shrink-0 text-[12.5px] text-wb-label3">{project}</span>
-          <span className="text-[12.5px] text-wb-label3">/</span>
+          <span className="shrink-0 text-[12.5px] text-tertiary-foreground">{project}</span>
+          <span className="text-[12.5px] text-tertiary-foreground">/</span>
         </>
       ) : null}
       <span className="truncate text-[13px] font-[650]">{children}</span>
@@ -321,9 +324,12 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
   const drag = React.useRef<{ y0: number; h0: number } | null>(null);
   if (shell?.compact) {
     return (
-      <SnapSheet open={shell.dockOpen} onClose={() => shell.setDockOpen(false)} snaps={snaps} bg="var(--wb-term, #0C0C10)" className={cn('wb-term', className)} style={style}>
-        {children}
-      </SnapSheet>
+      // The dock is a `terminal` theme scope: dark in both appearances.
+      <ThemeScope scope="terminal" className="contents text-foreground">
+        <SnapSheet open={shell.dockOpen} onClose={() => shell.setDockOpen(false)} snaps={snaps} bg="var(--background)" className={className} style={style}>
+          {children}
+        </SnapSheet>
+      </ThemeScope>
     );
   }
   if (shell && !shell.dockOpen) return null;
@@ -333,7 +339,8 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
   return (
     <div
       data-slot="workbench-dock"
-      className={cn('wb-term relative flex h-(--dock-h) shrink-0 flex-col border-t border-wb-sep bg-wb-term', className)}
+      data-theme-scope="terminal"
+      className={cn('dark scheme-dark relative flex h-(--dock-h) shrink-0 flex-col border-t border-border bg-background text-foreground', className)}
       // the dock height is user-resized at runtime
       style={{ '--dock-h': h + 'px', ...style } as React.CSSProperties}
     >
@@ -402,12 +409,12 @@ export interface WorkbenchPanelProps {
 /**
  * The right region (an inspector: surfaces, a diff, a preview). A column at regular width, an EdgeDrawer at
  * medium width, and a cover over everything but the tab bar when fullscreen or on the compact panel page.
- * The children render in a `bg-wb-side` column either way, so their state survives every move.
+ * The children render in a `bg-sidebar` column either way, so their state survives every move.
  */
 export function WorkbenchPanel({ className, style, children }: WorkbenchPanelProps) {
   const shell = useOptionalWorkbenchShell();
   const body = (
-    <div data-slot="workbench-panel" className={cn('box-border flex h-full w-full flex-col bg-wb-side', className)} style={style}>
+    <div data-slot="workbench-panel" className={cn('box-border flex h-full w-full flex-col bg-sidebar', className)} style={style}>
       {children}
     </div>
   );
@@ -422,12 +429,12 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
       open={panelOpen}
       onClose={() => setPanelOpen(false)}
       columnWidth={`clamp(300px, ${width * 0.32}px, 420px)`}
-      columnStyle={{ gridColumn: 3, gridRow: 1, borderLeft: '1px solid var(--wb-sep)' }}
+      columnStyle={{ gridColumn: 3, gridRow: 1, borderLeft: '1px solid var(--border)' }}
       drawerWidth="min(420px, 94%)"
       zIndex={mode === 'cover' ? 60 : 58}
       shadow={light ? LIGHT_DRAWER.shadow : '0 0 44px rgba(0,0,0,.55)'}
       {...(light ? { scrim: LIGHT_DRAWER.scrim } : null)}
-      className="border-l border-wb-sep"
+      className="border-l border-border"
     >
       {body}
     </AdaptivePane>
@@ -458,7 +465,7 @@ export function WorkbenchPanelHeader({ className, style, children }: { className
   return (
     <div
       data-slot="workbench-panel-header"
-      className={cn('box-border flex min-h-10 shrink-0 items-center gap-0.5 border-b border-wb-sep py-1.5 pr-2 pl-3.5', className)}
+      className={cn('box-border flex min-h-10 shrink-0 items-center gap-0.5 border-b border-border py-1.5 pr-2 pl-3.5', className)}
       style={style}
     >
       {children}
@@ -469,7 +476,7 @@ export function WorkbenchPanelHeader({ className, style, children }: { className
 export function WorkbenchPanelTitle({ icon, className, children }: { icon?: WIconName; className?: string; children?: React.ReactNode }) {
   return (
     <div data-slot="workbench-panel-title" className={cn('mr-0.5 flex min-w-0 flex-1 items-center gap-2', className)}>
-      {icon ? <WIcon name={icon} size={15} sw={1.8} className="text-wb-label2" /> : null}
+      {icon ? <WIcon name={icon} size={15} sw={1.8} className="text-muted-foreground" /> : null}
       <span className="truncate text-[13px] font-[650]">{children}</span>
     </div>
   );
@@ -545,7 +552,7 @@ export function WorkbenchTabBar({ value, onValueChange, mainTab = 'chat', classN
         aria-label="Views"
         selectionMode="single"
         selectedKeys={selected ? [selected] : []}
-        className={cn('col-span-full row-start-2 flex shrink-0 border-t border-wb-sep bg-wb-side', className)}
+        className={cn('col-span-full row-start-2 flex shrink-0 border-t border-border bg-sidebar', className)}
         style={style}
       >
         {children}
@@ -560,7 +567,7 @@ export function WorkbenchTab({ id, icon, className, children }: { id: string; ic
     <ToggleButton
       id={id}
       className={cn(
-        'wb-btn flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-wb-label3 data-selected:text-wb-tint',
+        'wb-btn flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-tertiary-foreground data-selected:text-primary',
         className,
       )}
       onPress={() => {

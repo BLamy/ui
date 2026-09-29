@@ -26,7 +26,7 @@ function MailNavigation() {
         position: 'relative',
         height: 380,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
+        background: 'var(--background)',
       }}
     >
       <header
@@ -35,7 +35,7 @@ function MailNavigation() {
           alignItems: 'center',
           gap: 6,
           padding: '8px 10px',
-          borderBottom: '1px solid var(--bl-sep)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
         <Button
@@ -48,7 +48,7 @@ function MailNavigation() {
         </Button>
         <strong style={{ fontSize: 17 }}>{current.label}</strong>
       </header>
-      <p style={{ padding: '24px 20px', color: 'var(--bl-label2)' }}>
+      <p style={{ padding: '24px 20px', color: 'var(--muted-foreground)' }}>
         {current.count || 'No'} messages in {current.label}.
       </p>
       <EdgeDrawer
@@ -61,7 +61,7 @@ function MailNavigation() {
         <nav
           style={{
             height: '100%',
-            background: 'var(--bl-bg2)',
+            background: 'var(--muted)',
             paddingTop: 18,
           }}
         >
@@ -79,7 +79,7 @@ function MailNavigation() {
                     <Icon
                       name={f.icon}
                       size={20}
-                      style={{ color: 'var(--bl-tint)' }}
+                      style={{ color: 'var(--primary)' }}
                     />
                   }
                   title={f.label}
@@ -87,7 +87,7 @@ function MailNavigation() {
                   divider={i < folders.length - 1}
                   trailing={
                     f.count ? (
-                      <span style={{ color: 'var(--bl-label2)' }}>
+                      <span style={{ color: 'var(--muted-foreground)' }}>
                         {f.count}
                       </span>
                     ) : null
@@ -120,9 +120,9 @@ function Window({ width, children }: { width?: number; children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

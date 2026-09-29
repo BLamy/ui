@@ -14,17 +14,17 @@ export default function LogTable() {
         style={{
           borderCollapse: 'collapse',
           font: '12.5px/1.7 var(--font-mono)',
-          color: 'var(--bl-label)',
+          color: 'var(--foreground)',
         }}
       >
         <tbody>
           {lines.map((tokens, i) => (
             <tr
               key={i}
-              style={{ borderTop: i ? '1px solid var(--bl-sep)' : undefined }}
+              style={{ borderTop: i ? '1px solid var(--border)' : undefined }}
             >
               <td
-                style={{ padding: '2px 12px 2px 0', color: 'var(--bl-label3)' }}
+                style={{ padding: '2px 12px 2px 0', color: 'var(--tertiary-foreground)' }}
               >
                 #{i + 1}
               </td>
@@ -35,7 +35,7 @@ export default function LogTable() {
           ))}
         </tbody>
       </table>
-      <span style={{ fontSize: 12, color: 'var(--bl-label2)' }}>
+      <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
         highlighter: {highlighter}
       </span>
     </div>

@@ -26,7 +26,7 @@ function CitySearch() {
   const hits = cities.filter((c) => c.toLowerCase().includes(q.toLowerCase()))
   return (
     <div
-      style={{ height: 400, overflowY: 'auto', background: 'var(--bl-bg2)' }}
+      style={{ height: 400, overflowY: 'auto', background: 'var(--muted)' }}
     >
       {/* `header` sticks to the top of the list; sections would stick below
           it */}
@@ -59,13 +59,13 @@ function CitySearch() {
             <Icon
               name="search"
               size={40}
-              style={{ margin: '0 auto', color: 'var(--bl-label3)' }}
+              style={{ margin: '0 auto', color: 'var(--tertiary-foreground)' }}
             />
             <div style={{ fontSize: 19, fontWeight: 700, marginTop: 12 }}>
               No Results
             </div>
             <div
-              style={{ fontSize: 14, color: 'var(--bl-label2)', marginTop: 4 }}
+              style={{ fontSize: 14, color: 'var(--muted-foreground)', marginTop: 4 }}
             >
               Nothing matches “{q}”.
             </div>
@@ -88,7 +88,7 @@ function CitySearch() {
 // centered.
 function Window({
   width,
-  bg = 'var(--bl-bg)',
+  bg = 'var(--background)',
   children,
 }: {
   width?: number
@@ -105,8 +105,8 @@ function Window({
         borderRadius: 14,
         overflow: 'hidden',
         background: bg,
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >
@@ -117,7 +117,7 @@ function Window({
 
 export default function Cities() {
   return (
-    <Window width={430} bg="var(--bl-bg2)">
+    <Window width={430} bg="var(--muted)">
       <CitySearch />
     </Window>
   )

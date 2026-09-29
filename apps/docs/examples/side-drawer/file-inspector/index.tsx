@@ -36,7 +36,7 @@ function FileInspector() {
   const [open, setOpen] = useState(true)
   const [sel, setSel] = useState(files[0])
   return (
-    <div style={{ display: 'flex', height: 360, background: 'var(--bl-bg)' }}>
+    <div style={{ display: 'flex', height: 360, background: 'var(--background)' }}>
       <div
         style={{
           flex: 1,
@@ -50,7 +50,7 @@ function FileInspector() {
             display: 'flex',
             alignItems: 'center',
             padding: '10px 14px',
-            borderBottom: '1px solid var(--bl-sep)',
+            borderBottom: '1px solid var(--border)',
           }}
         >
           <strong style={{ flex: 1 }}>Documents</strong>
@@ -71,7 +71,7 @@ function FileInspector() {
                   <Icon
                     name={f.icon}
                     size={22}
-                    style={{ color: 'var(--bl-tint)' }}
+                    style={{ color: 'var(--primary)' }}
                   />
                 }
                 title={f.name}
@@ -98,8 +98,8 @@ function FileInspector() {
               placeItems: 'center',
               height: 96,
               borderRadius: 12,
-              background: 'var(--bl-fill)',
-              color: 'var(--bl-tint)',
+              background: 'var(--secondary)',
+              color: 'var(--primary)',
             }}
           >
             <Icon name={sel.icon} size={40} />
@@ -117,10 +117,10 @@ function FileInspector() {
               style={{
                 display: 'flex',
                 padding: '7px 0',
-                borderTop: '1px solid var(--bl-sep)',
+                borderTop: '1px solid var(--border)',
               }}
             >
-              <span style={{ flex: 1, color: 'var(--bl-label2)' }}>{k}</span>
+              <span style={{ flex: 1, color: 'var(--muted-foreground)' }}>{k}</span>
               {v}
             </div>
           ))}
@@ -152,9 +152,9 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

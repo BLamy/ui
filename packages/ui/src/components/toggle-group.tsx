@@ -17,7 +17,7 @@ export const toggleGroupVariants = cva('isolate inline-flex w-fit items-center',
       default: 'gap-1',
       filled: 'gap-0.5 rounded-[11px] bg-secondary p-0.5',
       /** Joined buttons sharing a hairline frame. */
-      outline: 'gap-0 overflow-hidden rounded-[10px] shadow-[inset_0_0_0_1px_var(--bl-sep)]',
+      outline: 'gap-0 overflow-hidden rounded-[10px] shadow-[inset_0_0_0_1px_var(--border)]',
     },
   },
   defaultVariants: { variant: 'default' },
@@ -57,7 +57,7 @@ export function ToggleGroupItem({ className, variant, size, children, ...props }
         v === 'filled' && (slide
           ? 'relative rounded-[9px] data-selected:bg-transparent data-selected:text-foreground data-selected:data-pressed:bg-transparent'
           : 'rounded-[9px] data-selected:bg-card data-selected:text-foreground data-selected:shadow-[0_1px_4px_rgba(0,0,0,.14)] data-selected:data-pressed:bg-card'),
-        v === 'outline' && 'rounded-none shadow-none not-first:shadow-[inset_1px_0_0_var(--bl-sep)] data-selected:shadow-none data-selected:not-first:shadow-[inset_1px_0_0_var(--bl-sep)]',
+        v === 'outline' && 'rounded-none shadow-none not-first:shadow-[inset_1px_0_0_var(--border)] data-selected:shadow-none data-selected:not-first:shadow-[inset_1px_0_0_var(--border)]',
         cls,
       ))}
       {...props}

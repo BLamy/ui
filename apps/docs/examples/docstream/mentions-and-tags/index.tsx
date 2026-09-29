@@ -13,9 +13,9 @@ export default function MentionsAndTags() {
       style={{
         padding: '6px 22px 16px',
         borderRadius: 14,
-        background: 'var(--bl-card)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--card)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       {/* @mentions and #tags render as chips; clicks come back to you */}
@@ -26,13 +26,13 @@ export default function MentionsAndTags() {
           alignItems: 'center',
           gap: 10,
           fontSize: 13,
-          color: 'var(--bl-label2)',
+          color: 'var(--muted-foreground)',
         }}
       >
         {picked ? (
           <>
             Clicked <code>{picked.kind}</code>{' '}
-            <strong style={{ color: 'var(--bl-label)' }}>
+            <strong style={{ color: 'var(--foreground)' }}>
               {picked.label ?? picked.id}
             </strong>
           </>

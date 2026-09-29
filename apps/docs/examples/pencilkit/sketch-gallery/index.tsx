@@ -28,8 +28,8 @@ function Thumbnail({ strokes }: { strokes: PencilStroke[] }) {
         padding: 6,
         boxSizing: 'border-box',
         borderRadius: 10,
-        background: 'var(--bl-card)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--card)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <svg
@@ -60,8 +60,8 @@ export default function SketchGallery() {
           position: 'relative',
           height: 220,
           borderRadius: 14,
-          background: 'var(--bl-card)',
-          boxShadow: '0 0 0 1px var(--bl-sep)',
+          background: 'var(--card)',
+          boxShadow: '0 0 0 1px var(--border)',
         }}
       >
         <PencilCanvas

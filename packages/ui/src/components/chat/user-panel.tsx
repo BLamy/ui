@@ -17,7 +17,7 @@ export function UserPanel({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       data-slot="user-panel"
-      className={cn('flex items-center gap-[8px] border-t border-ck-sep px-[12px] py-[9px]', className)}
+      className={cn('flex items-center gap-[8px] border-t border-border px-[12px] py-[9px]', className)}
       {...props}
     />
   );
@@ -28,7 +28,7 @@ export function UserPanelInfo({ className, ...props }: ComponentProps<'div'>) {
 }
 
 export function UserPanelName({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="user-panel-name" className={cn('truncate text-[12px] font-bold text-ck-label', className)} {...props} />;
+  return <div data-slot="user-panel-name" className={cn('truncate text-[12px] font-bold text-foreground', className)} {...props} />;
 }
 
 export type ChatPresence = 'online' | 'idle' | 'dnd' | 'offline';
@@ -41,10 +41,10 @@ export const presenceLabel: Record<ChatPresence, string> = {
 };
 
 const presenceText: Record<ChatPresence, string> = {
-  online: 'text-ck-green',
-  idle: 'text-ck-orange',
-  dnd: 'text-ck-red',
-  offline: 'text-ck-mut3',
+  online: 'text-success',
+  idle: 'text-warning',
+  dnd: 'text-destructive',
+  offline: 'text-tertiary-foreground',
 };
 
 export interface UserPanelStatusProps extends ComponentProps<'div'> {
@@ -72,7 +72,7 @@ export function UserPanelAction({ className, onPress, ...props }: ComponentProps
         onPress?.(e);
       }}
       className={composeRenderProps(className, (c) =>
-        cn('grid cursor-pointer border-0 bg-transparent p-0 text-ck-mut3 data-hovered:text-ck-mut', c),
+        cn('grid cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground data-hovered:text-muted-foreground', c),
       )}
       {...props}
     />

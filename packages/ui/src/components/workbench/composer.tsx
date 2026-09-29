@@ -784,7 +784,7 @@ function playShape(root: HTMLElement | null, snap: ShapeSnapshot) {
 
 /* ── FAB ── */
 export const composerFabVariants = cva(
-  'wb-btn z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-wb-sep bg-wb-card p-0 text-wb-label shadow-[0_10px_30px_-8px_rgba(0,0,0,.45),0_2px_8px_rgba(0,0,0,.14)] outline-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60',
+  'wb-btn z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-border bg-card p-0 text-foreground shadow-[0_10px_30px_-8px_rgba(0,0,0,.45),0_2px_8px_rgba(0,0,0,.14)] outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
 );
 
 export interface ComposerFabProps extends Omit<ButtonProps, 'children'> {
@@ -847,14 +847,14 @@ export function ComposerOptionsOutlet({ className }: { className?: string }) {
 export const composerCardVariants = cva(
   // Addons order themselves (block-start → inline-start → input → inline-end → block-end), so hosts can place
   // them in any order. z-1 keeps the card over a tucked top bump.
-  'relative z-1 box-border flex min-w-0 flex-wrap items-center border border-wb-sep bg-wb-card',
+  'relative z-1 box-border flex min-w-0 flex-wrap items-center border border-border bg-card',
   {
     variants: {
       size: {
         /** The Workbench composer: 15px corners and a lifted shadow. */
-        default: 'rounded-[15px] shadow-[0_6px_24px_var(--wb-shadow,rgba(0,0,0,.28))]',
+        default: 'rounded-[15px] shadow-[0_6px_24px_black] shadow-black/8 dark:shadow-black/28',
         /** A rounder, flatter card (T3 Code). */
-        lg: 'rounded-[22px] shadow-[0_8px_30px_var(--wb-shadow,rgba(0,0,0,.22))]',
+        lg: 'rounded-[22px] shadow-[0_8px_30px_black] shadow-black/8 dark:shadow-black/22',
       },
     },
     defaultVariants: { size: 'default' },
@@ -958,10 +958,10 @@ function ComposerDropOverlay({ state, label, hint }: { state: 'drop' | 'focus' |
           data-state={state}
           aria-hidden="true"
           className={cn(
-            'pointer-events-none absolute -inset-px z-4 flex items-center justify-center overflow-hidden rounded-[inherit] border-2 border-wb-tint',
+            'pointer-events-none absolute -inset-px z-4 flex items-center justify-center overflow-hidden rounded-[inherit] border-2 border-primary',
             state === 'drop'
-              ? 'bg-[color-mix(in_srgb,var(--wb-tint)_11%,var(--wb-card))]'
-              : 'border-dashed bg-[color-mix(in_srgb,var(--wb-tint)_6%,var(--wb-card))]',
+              ? 'bg-[color-mix(in_srgb,var(--primary)_11%,var(--card))]'
+              : 'border-dashed bg-[color-mix(in_srgb,var(--primary)_6%,var(--card))]',
           )}
           initial={{ opacity: 0, scale: 0.985 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -976,7 +976,7 @@ function ComposerDropOverlay({ state, label, hint }: { state: 'drop' | 'focus' |
             transition={springs.bouncy}
           >
             <motion.span
-              className="grid size-8 shrink-0 place-items-center rounded-full bg-wb-tint text-white shadow-[0_4px_14px_-4px_var(--wb-tint)] group-data-[collapsed=compact]/composer:size-6"
+              className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-white shadow-[0_4px_14px_-4px_var(--primary)] group-data-[collapsed=compact]/composer:size-6"
               initial={{ scale: 0.4, rotate: -90 }}
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0.4, rotate: -90 }}
@@ -985,10 +985,10 @@ function ComposerDropOverlay({ state, label, hint }: { state: 'drop' | 'focus' |
               <WIcon name="plus" size={16} sw={2.6} />
             </motion.span>
             <span className="flex min-w-0 flex-col">
-              <span className="truncate text-[13.5px] font-semibold text-wb-label">
+              <span className="truncate text-[13.5px] font-semibold text-foreground">
                 {state === 'focus' ? 'Paste or drop files' : (label ?? 'Drop to attach')}
               </span>
-              <span className="truncate text-[11.5px] text-wb-label2 group-data-[collapsed=compact]/composer:hidden">{hint}</span>
+              <span className="truncate text-[11.5px] text-muted-foreground group-data-[collapsed=compact]/composer:hidden">{hint}</span>
             </span>
           </motion.div>
         </motion.div>
@@ -1041,7 +1041,7 @@ export function ComposerCard({ size, dropZone = true, dropLabel, className, ref,
           aria-hidden={!folded || undefined}
           excludeFromTabOrder={!folded}
           onPress={fab.restore}
-          className="wb-btn absolute inset-0 z-3 grid cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-wb-label outline-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60"
+          className="wb-btn absolute inset-0 z-3 grid cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60"
         >
           {fab.icon ?? <WIcon name="compose" size={21} sw={1.9} />}
         </Button>
@@ -1101,7 +1101,7 @@ export function ComposerSeparator({ className, ...props }: React.HTMLAttributes<
       data-slot="composer-separator"
       role="separator"
       aria-orientation="vertical"
-      className={cn('mx-0.5 h-4 w-px shrink-0 bg-wb-sep', className)}
+      className={cn('mx-0.5 h-4 w-px shrink-0 bg-border', className)}
       {...props}
     />
   );
@@ -1115,7 +1115,7 @@ export function ComposerText({
   ...props
 }: React.HTMLAttributes<HTMLSpanElement> & { icon?: WIconName }) {
   return (
-    <span data-slot="composer-text" className={cn('flex min-w-0 items-center gap-[7px] text-[12px] text-wb-label2', className)} {...props}>
+    <span data-slot="composer-text" className={cn('flex min-w-0 items-center gap-[7px] text-[12px] text-muted-foreground', className)} {...props}>
       {icon ? <WIcon name={icon} size={13.5} sw={1.9} /> : null}
       {children}
     </span>
@@ -1124,25 +1124,25 @@ export function ComposerText({
 
 /* ── Buttons ── */
 export const composerButtonVariants = cva(
-  'wb-btn flex shrink-0 cursor-pointer items-center justify-center border-0 font-ios outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60',
+  'wb-btn flex shrink-0 cursor-pointer items-center justify-center border-0 font-ios outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
   {
     variants: {
       variant: {
         /** Transparent until hovered. */
-        ghost: 'wb-hl bg-transparent text-wb-label2',
+        ghost: 'wb-hl bg-transparent text-muted-foreground',
         /** Option pill: label + chevron (model, effort, access). */
-        pill: 'wb-hl gap-[5px] rounded-[7px] bg-transparent px-[7px] py-[5px] text-[12.5px] font-semibold text-wb-label2',
+        pill: 'wb-hl gap-[5px] rounded-[7px] bg-transparent px-[7px] py-[5px] text-[12.5px] font-semibold text-muted-foreground',
         /** Filled accent circle (send). */
-        primary: 'rounded-[50%] bg-wb-tint text-white [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
+        primary: 'rounded-[50%] bg-primary text-white [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
         /** Filled red circle (stop). */
-        destructive: 'rounded-[50%] bg-wb-red text-white',
+        destructive: 'rounded-[50%] bg-destructive text-white',
       },
       size: {
         icon: 'size-7 rounded-[7px] p-0',
         round: 'size-[30px] rounded-[50%] p-0',
         pill: '',
       },
-      tint: { true: 'text-wb-tint', false: '' },
+      tint: { true: 'text-primary', false: '' },
     },
     compoundVariants: [{ variant: 'primary', tint: true, className: 'text-white' }],
     defaultVariants: { variant: 'ghost', size: 'icon', tint: false },
@@ -1202,7 +1202,7 @@ export interface ComposerSelectProps {
 }
 
 export const composerMenuItemVariants = cva(
-  'relative flex cursor-pointer items-center gap-2 rounded-[8px] px-2.5 py-[7px] text-[13px] text-wb-label outline-none data-focused:bg-wb-fill data-pressed:bg-wb-fill2 data-disabled:cursor-default data-disabled:opacity-40',
+  'relative flex cursor-pointer items-center gap-2 rounded-[8px] px-2.5 py-[7px] text-[13px] text-foreground outline-none data-focused:bg-secondary data-pressed:bg-secondary-strong data-disabled:cursor-default data-disabled:opacity-40',
 );
 
 export function ComposerMenuItem({ className, children, ...props }: MenuItemProps & { className?: string; children?: React.ReactNode }) {
@@ -1211,7 +1211,7 @@ export function ComposerMenuItem({ className, children, ...props }: MenuItemProp
       {composeRenderProps(children, (kids, { isSelected, selectionMode }) => (
         <>
           {selectionMode !== 'none' ? (
-            <span className="grid w-3.5 shrink-0 place-items-center text-wb-tint">
+            <span className="grid w-3.5 shrink-0 place-items-center text-primary">
               <AnimatePresence initial={false}>
                 {isSelected ? (
                   <motion.span
@@ -1272,7 +1272,7 @@ export function ComposerSelect({
             <ComposerMenuItem key={o.id} id={o.id} textValue={o.label}>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-medium">{o.label}</span>
-                {o.description ? <span className="truncate text-[11.5px] text-wb-label2">{o.description}</span> : null}
+                {o.description ? <span className="truncate text-[11.5px] text-muted-foreground">{o.description}</span> : null}
               </span>
             </ComposerMenuItem>
           ))}
@@ -1294,8 +1294,8 @@ export interface ComposerStopProps extends Omit<ComposerButtonProps, 'variant'> 
 function StopRing() {
   return (
     <svg width="30" height="30" viewBox="0 0 30 30" className="absolute inset-0 animate-[wbSpin_1s_linear_infinite] motion-reduce:animate-none">
-      <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--wb-fill2)" strokeWidth="2.5" />
-      <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--wb-tint)" strokeWidth="2.5" strokeDasharray="24 55" strokeLinecap="round" />
+      <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--secondary-strong)" strokeWidth="2.5" />
+      <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeDasharray="24 55" strokeLinecap="round" />
     </svg>
   );
 }
@@ -1330,7 +1330,7 @@ export function ComposerStop({ variant = 'ring', forceMount, className, ...props
     ) : (
       <Button
         data-slot="composer-stop"
-        className={cn('wb-btn relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-wb-label', className)}
+        className={cn('wb-btn relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-foreground', className)}
         onPress={stop}
         aria-label="Stop"
         {...props}
@@ -1380,9 +1380,9 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
       isDisabled={stopping ? false : !canSend || streaming}
       onPress={stopping ? stop : send}
       className={cn(
-        'wb-btn relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-ios text-white outline-none data-disabled:cursor-default data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60',
+        'wb-btn relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-ios text-white outline-none data-disabled:cursor-default data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
         '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
-        !stopping ? 'bg-wb-tint data-disabled:opacity-35' : stopVariant === 'solid' ? 'bg-wb-red' : 'bg-transparent text-wb-label',
+        !stopping ? 'bg-primary data-disabled:opacity-35' : stopVariant === 'solid' ? 'bg-destructive' : 'bg-transparent text-foreground',
         className,
       )}
       {...props}
@@ -1486,7 +1486,7 @@ export function ComposerExpand({ className }: { className?: string }) {
     <ToggleButton
       data-slot="composer-expand"
       className={cn(
-        'wb-btn wb-hl absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-wb-label2',
+        'wb-btn wb-hl absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground',
         // Compact: fades out of the way rather than vanishing.
         'group-data-[collapsed=compact]/composer:pointer-events-none group-data-[collapsed=compact]/composer:scale-75 group-data-[collapsed=compact]/composer:opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
         className,
@@ -1509,13 +1509,13 @@ export function ComposerExpand({ className }: { className?: string }) {
 /* ── Attachments strip ── */
 /** Each kind's glyph and colour on its tile. */
 const KIND_FACE: Record<ComposerAttachmentKind, { icon: string; color: string; label: string }> = {
-  image: { icon: 'photo', color: 'var(--wb-green)', label: 'Image' },
+  image: { icon: 'photo', color: 'var(--success)', label: 'Image' },
   video: { icon: 'video', color: '#AF52DE', label: 'Video' },
   audio: { icon: 'music-note', color: '#FF2D55', label: 'Audio' },
-  pdf: { icon: 'doc', color: 'var(--wb-red)', label: 'PDF' },
-  text: { icon: 'doc', color: 'var(--wb-tint)', label: 'Text' },
+  pdf: { icon: 'doc', color: 'var(--destructive)', label: 'PDF' },
+  text: { icon: 'doc', color: 'var(--primary)', label: 'Text' },
   archive: { icon: 'archivebox', color: '#A2845E', label: 'Archive' },
-  other: { icon: 'doc', color: 'var(--wb-label2)', label: 'File' },
+  other: { icon: 'doc', color: 'var(--muted-foreground)', label: 'File' },
 };
 
 /** "PDF · 1.2 MB" — the extension (or the kind) and the size. */
@@ -1562,7 +1562,7 @@ function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttach
   if (kind === 'text' && a.excerpt) {
     return (
       <span className="relative block h-[58px] w-[112px] text-left">
-        <span className="block h-full overflow-hidden px-[7px] pt-[6px] font-mono text-[6px] leading-[8px] whitespace-pre text-wb-label2 [mask-image:linear-gradient(to_bottom,#000_45%,transparent_92%)]">
+        <span className="block h-full overflow-hidden px-[7px] pt-[6px] font-mono text-[6px] leading-[8px] whitespace-pre text-muted-foreground [mask-image:linear-gradient(to_bottom,#000_45%,transparent_92%)]">
           {a.excerpt}
         </span>
         {ext ? <TileBadge>{ext}</TileBadge> : null}
@@ -1579,8 +1579,8 @@ function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttach
         <Icon name={face.icon} size={20} sw={1.8} />
       </span>
       <span className="flex min-w-0 flex-col gap-px">
-        <span className="truncate text-[12.5px] leading-[16px] font-medium text-wb-label">{a.name}</span>
-        <span className="truncate text-[11px] leading-[14px] text-wb-label2">{attachmentMeta(a, kind)}</span>
+        <span className="truncate text-[12.5px] leading-[16px] font-medium text-foreground">{a.name}</span>
+        <span className="truncate text-[11px] leading-[14px] text-muted-foreground">{attachmentMeta(a, kind)}</span>
       </span>
     </span>
   );
@@ -1653,12 +1653,12 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                           onKeyDown={onTileKey(a.id)}
                           title={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
                           aria-label={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
-                          className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-wb-term p-0"
+                          className="block cursor-pointer overflow-hidden rounded-[10px] border border-border bg-(--scope-terminal-background) p-0"
                         >
                           {a.src ? (
                             <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
                           ) : (
-                            <span className="grid h-[58px] w-[72px] place-items-center text-wb-label3">
+                            <span className="grid h-[58px] w-[72px] place-items-center text-tertiary-foreground">
                               <WIcon name="doc" size={18} />
                             </span>
                           )}
@@ -1679,7 +1679,7 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                         onKeyDown={onTileKey(a.id)}
                         title={`${a.name}${meta ? ` · ${meta}` : ''}`}
                         aria-label={`Open ${a.name}${meta ? `, ${meta}` : ''}`}
-                        className="block cursor-pointer overflow-hidden rounded-[10px] border border-wb-sep bg-wb-fill p-0 font-ios outline-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60"
+                        className="block cursor-pointer overflow-hidden rounded-[10px] border border-border bg-secondary p-0 font-ios outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60"
                       >
                         <FileTileFace a={a} kind={kind} />
                       </Button>
@@ -1690,7 +1690,7 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                         removeAttachment(a.id);
                       }}
                       aria-label={`Remove ${a.name}`}
-                      className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-wb-sep bg-wb-card2 p-0 text-[10px] leading-none text-wb-label2"
+                      className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-border bg-popover p-0 text-[10px] leading-none text-muted-foreground"
                     >
                       ✕
                     </Button>
@@ -1834,7 +1834,7 @@ export function ComposerInput({
 }
 
 /* ── Bumps ── */
-export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-col text-[12px] text-wb-label2', {
+export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-col text-[12px] text-muted-foreground', {
   variants: {
     side: {
       top: 'order-[-1]',
@@ -1842,9 +1842,9 @@ export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-c
     },
     variant: {
       /** Attached to the card: inset, same border, tucked behind the card's edge. */
-      attached: 'border border-wb-sep bg-wb-card2',
+      attached: 'border border-border bg-popover',
       /** A separate rounded strip with a gap (the Workbench checkout bar). */
-      detached: 'rounded-[9px] bg-wb-fill',
+      detached: 'rounded-[9px] bg-secondary',
       /** No chrome — just a row (suggestions, hints). */
       flush: '',
     },
@@ -2118,12 +2118,12 @@ export function ComposerBumpHandle({ grip = true, label, className, children, ..
           aria-label={name}
           aria-expanded={bump.open}
           aria-controls={bump.contentId}
-          className="mx-auto grid h-3 w-16 shrink-0 cursor-[inherit] place-items-center border-0 bg-transparent p-0 outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-wb-tint"
+          className="mx-auto grid h-3 w-16 shrink-0 cursor-[inherit] place-items-center border-0 bg-transparent p-0 outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-primary"
         >
           <span
             className={cn(
               'block h-1 rounded-[999px] [transition:width_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
-              bump.open ? 'w-10 bg-wb-label2' : 'w-8 bg-wb-handle group-hover/handle:w-10 group-hover/handle:bg-wb-label3',
+              bump.open ? 'w-10 bg-muted-foreground' : 'w-8 bg-handle group-hover/handle:w-10 group-hover/handle:bg-tertiary-foreground',
             )}
           />
         </button>
@@ -2322,7 +2322,7 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
       onPress={onPress}
       className={cn(
         'cursor-pointer rounded-[9px] px-3.5 py-[7px] font-ios text-[12.5px] font-[650] text-white',
-        primary ? 'border-0 bg-[var(--wb-tint,#0A84FF)]' : 'border border-[rgba(255,255,255,.2)] bg-transparent',
+        primary ? 'border-0 bg-[var(--primary)]' : 'border border-[rgba(255,255,255,.2)] bg-transparent',
       )}
     >
       {label}
@@ -2372,7 +2372,7 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
       <Modal className="relative outline-none">
         <Dialog
           aria-label={preview ? 'Preview image' : 'Annotate image'}
-          className="flex max-w-[90vw] flex-col gap-2.5 outline-none [--bl-card:#1C1C23] [--bl-fill2:rgba(255,255,255,.14)] [--bl-fill:rgba(255,255,255,.07)] [--bl-label2:rgba(235,235,245,.6)] [--bl-label3:rgba(235,235,245,.35)] [--bl-label:#EDEDF2] [--bl-sep:rgba(255,255,255,.12)] [--bl-tint:var(--wb-tint,#0A84FF)] scheme-dark"
+          className="flex max-w-[90vw] flex-col gap-2.5 outline-none [--card:#1C1C23] [--secondary-strong:rgba(255,255,255,.14)] [--secondary:rgba(255,255,255,.07)] [--muted-foreground:rgba(235,235,245,.6)] [--tertiary-foreground:rgba(235,235,245,.35)] [--foreground:#EDEDF2] [--border:rgba(255,255,255,.12)] scheme-dark"
         >
           {Annotator ? <Annotator>{layout}</Annotator> : layout(canvas === undefined ? null : { canvas })}
         </Dialog>

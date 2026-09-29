@@ -22,7 +22,7 @@ function Frame({ children }: { children: ReactNode }) {
         height: 330,
         borderRadius: 12,
         overflow: 'hidden',
-        background: 'var(--bl-bg2)',
+        background: 'var(--muted)',
         boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.05)',
       }}
     >
@@ -71,7 +71,7 @@ export default function TeamsPush() {
           <div
             style={{
               fontSize: 13,
-              color: 'var(--bl-label2)',
+              color: 'var(--muted-foreground)',
               marginTop: 5,
               lineHeight: 1.5,
             }}

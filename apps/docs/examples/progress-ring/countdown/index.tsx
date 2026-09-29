@@ -29,12 +29,12 @@ export default function Countdown() {
           gap: 14,
           padding: '12px 16px',
           borderRadius: 14,
-          background: 'var(--bl-card)',
-          boxShadow: '0 0 0 1px var(--bl-sep)',
+          background: 'var(--card)',
+          boxShadow: '0 0 0 1px var(--border)',
         }}
       >
         <div>
-          <div style={{ fontSize: 12.5, color: 'var(--bl-label2)' }}>
+          <div style={{ fontSize: 12.5, color: 'var(--muted-foreground)' }}>
             Verification Code
           </div>
           <div
@@ -43,7 +43,7 @@ export default function Countdown() {
               gap: '.3em',
               fontSize: 24,
               fontWeight: 500,
-              color: 'var(--bl-label)',
+              color: 'var(--foreground)',
             }}
           >
             <NumberMorph value={Math.floor(code / 1000)} format={fmt} />

@@ -13,8 +13,8 @@ export default function ListRows() {
         margin: '0 auto',
         padding: '4px 0',
         borderRadius: 14,
-        background: 'var(--bl-bg2)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--muted)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <List inset>

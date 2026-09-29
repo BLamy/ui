@@ -9,7 +9,7 @@ import { cn } from '../lib/utils';
    behind it, then falls away.
    Reduced motion gets the ring only, as a soft fade. */
 
-const PALETTE = ['var(--bl-tint)', 'var(--bl-green)', '#FFD60A', '#FF375F', '#BF5AF2', '#FF9F0A'];
+const PALETTE = ['var(--primary)', 'var(--success)', '#FFD60A', '#FF375F', '#BF5AF2', '#FF9F0A'];
 
 /** Small deterministic PRNG so a burst looks the same each time it is replayed (and in screenshots). */
 function rand(seed: number) {
@@ -64,7 +64,7 @@ export function Celebrate({ fire, count = 22, spread = 100, colors = PALETTE, cl
       {bursts.map((id) => (
         <span key={id} className="relative size-0">
           <motion.span
-            className="absolute -top-6 -left-6 size-12 rounded-full [border:2px_solid_var(--bl-tint)]"
+            className="absolute -top-6 -left-6 size-12 rounded-full [border:2px_solid_var(--primary)]"
             initial={{ scale: 0.4, opacity: 0.8 }}
             animate={{ scale: reduced ? 1.2 : 2.6, opacity: 0 }}
             transition={{ duration: reduced ? 0.4 : 0.7, ease: [0.22, 1, 0.36, 1] }}

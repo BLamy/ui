@@ -64,7 +64,7 @@ export default function Backup() {
       <div
         style={{
           fontSize: 12.5,
-          color: 'var(--bl-label2)',
+          color: 'var(--muted-foreground)',
           textAlign: 'center',
           lineHeight: 1.5,
         }}

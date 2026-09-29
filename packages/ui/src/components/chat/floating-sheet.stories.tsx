@@ -77,7 +77,7 @@ function Demo(args: Args) {
         {args.withFoot && (
           <FloatingSheet.Foot>
             <div style={{ padding: '10px 16px 16px', display: 'flex', gap: 10 }}>
-              <button type="button" style={{ flex: 1, height: 44, border: 0, borderRadius: 999, background: 'var(--bl-tint,#0a84ff)', color: '#fff', fontWeight: 700, font: 'inherit' }}>
+              <button type="button" style={{ flex: 1, height: 44, border: 0, borderRadius: 999, background: 'var(--primary)', color: '#fff', fontWeight: 700, font: 'inherit' }}>
                 Continue
               </button>
             </div>

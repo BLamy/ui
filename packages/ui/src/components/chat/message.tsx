@@ -28,7 +28,7 @@ interface MessageContextValue {
 const MessageContext = createContext<MessageContextValue>({ variant: 'default' });
 
 export const messageVariants = cva(
-  'group/message relative flex gap-[11px] px-[18px] font-ios [&:hover]:bg-ck-hover',
+  'group/message relative flex gap-[11px] px-[18px] font-ios [&:hover]:bg-accent',
   {
     variants: {
       variant: {
@@ -105,20 +105,20 @@ export function MessageBadge({ className, ...props }: ComponentProps<'span'>) {
   return (
     <span
       data-slot="message-badge"
-      className={cn('rounded-[4px] bg-ck-tint px-[5px] py-px text-[9px] font-extrabold tracking-[.4px] text-white', className)}
+      className={cn('rounded-[4px] bg-primary px-[5px] py-px text-[9px] font-extrabold tracking-[.4px] text-white', className)}
       {...props}
     />
   );
 }
 
 export function MessageTimestamp({ className, ...props }: ComponentProps<'span'>) {
-  return <span data-slot="message-timestamp" className={cn('text-[10.5px] text-ck-mut3', className)} {...props} />;
+  return <span data-slot="message-timestamp" className={cn('text-[10.5px] text-tertiary-foreground', className)} {...props} />;
 }
 
 /** The message text. A string child is rendered as RichText (so @mentions become chips). */
 export function MessageContent({ className, children, ...props }: ComponentProps<'div'>) {
   return (
-    <div data-slot="message-content" className={cn('mt-px text-[13.5px] leading-[1.55] wrap-break-word text-ck-label', className)} {...props}>
+    <div data-slot="message-content" className={cn('mt-px text-[13.5px] leading-[1.55] wrap-break-word text-foreground', className)} {...props}>
       {typeof children === 'string' ? <RichText text={children} /> : children}
     </div>
   );
@@ -147,15 +147,15 @@ export function MessageReaction({ emoji, count, mine, className, onChange, ...pr
       }}
       className={composeRenderProps(className, (c) =>
         cn(
-          'inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border px-[8px] py-[2px] font-ios text-[12px] text-ck-label',
-          mine ? 'border-ck-tint bg-ck-mine' : 'border-ck-sep bg-ck-fill',
+          'inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border px-[8px] py-[2px] font-ios text-[12px] text-foreground',
+          mine ? 'border-primary bg-primary/10 dark:bg-primary/14' : 'border-border bg-secondary',
           c,
         ),
       )}
       {...props}
     >
       {emoji}
-      <span className={cn('text-[11px]', mine ? 'text-ck-link' : 'text-ck-mut')}>{count}</span>
+      <span className={cn('text-[11px]', mine ? 'text-link' : 'text-muted-foreground')}>{count}</span>
     </ToggleButton>
   );
 }
@@ -166,7 +166,7 @@ export function MessageActions({ className, ...props }: ComponentProps<'div'>) {
     <div
       data-slot="message-actions"
       className={cn(
-        'absolute -top-[10px] right-[16px] flex gap-[2px] rounded-[9px] border border-ck-sep bg-ck-card p-[2px] opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover/message:opacity-100 has-data-focus-visible:opacity-100',
+        'absolute -top-[10px] right-[16px] flex gap-[2px] rounded-[9px] border border-border bg-card p-[2px] opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover/message:opacity-100 has-data-focus-visible:opacity-100',
         className,
       )}
       {...props}
@@ -190,7 +190,7 @@ export function MessageAction({ label, className, onPress, ...props }: MessageAc
         onPress?.(e);
       }}
       className={composeRenderProps(className, (c) =>
-        cn('grid cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-[13px] text-ck-mut data-hovered:bg-ck-fill', c),
+        cn('grid cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-[13px] text-muted-foreground data-hovered:bg-secondary', c),
       )}
       {...props}
     />

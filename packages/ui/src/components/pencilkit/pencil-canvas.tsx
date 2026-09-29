@@ -159,11 +159,11 @@ export function PencilCanvas({
       </svg>
       {hint && !strokes.length && !live.current ? (
         <div data-slot="pencil-canvas-hint" className="pointer-events-none absolute inset-x-0 top-0 bottom-[90px] grid place-items-center">
-          <div className="text-center text-bl-label3">{hint}</div>
+          <div className="text-center text-tertiary-foreground">{hint}</div>
         </div>
       ) : null}
       {status != null ? (
-        <div data-slot="pencil-canvas-status" className="pointer-events-none absolute top-2.5 right-3 font-mono text-[10.5px] text-bl-label3">
+        <div data-slot="pencil-canvas-status" className="pointer-events-none absolute top-2.5 right-3 font-mono text-[10.5px] text-tertiary-foreground">
           {status}
         </div>
       ) : null}

@@ -61,7 +61,7 @@ export function SheetContent({
     >
       <Modal data-slot="sheet" data-side={s} className={cn(sheetVariants({ side: s }), className)}>
         {s === 'bottom' && grabber ? (
-          <span data-slot="sheet-grabber" aria-hidden="true" className="mx-auto mt-[5px] mb-px block h-[5px] w-9 shrink-0 rounded-full bg-bl-fill2" />
+          <span data-slot="sheet-grabber" aria-hidden="true" className="mx-auto mt-[5px] mb-px block h-[5px] w-9 shrink-0 rounded-full bg-secondary-strong" />
         ) : null}
         <AriaDialog data-slot="sheet-content" aria-label={ariaLabel} className="relative flex min-h-0 flex-1 flex-col outline-none">
           {animateHeight

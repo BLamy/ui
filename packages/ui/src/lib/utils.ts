@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
-/* tailwind-merge only knows Tailwind's default palette; register ours so `text-bl-label2` resolves as a color
+/* tailwind-merge only knows Tailwind's default palette; register ours so `text-muted-foreground` resolves as a color
    (not a font size) and conflicting colors collapse correctly. */
 const BL = ['bg', 'bg2', 'card', 'card2', 'label', 'label2', 'label3', 'sep', 'fill', 'fill2', 'press', 'bar', 'stick', 'side', 'scrim', 'tint', 'red', 'green'];
 const WB = ['bg', 'side', 'card', 'fill', 'fill2', 'sep', 'label', 'label2', 'label3', 'tint', 'green', 'red'];

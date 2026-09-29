@@ -94,7 +94,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
   const content = (
     <div style={{ padding: grouped ? '0 16px' : 0 }}>
       {sections.length === 0 ? (
-        <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--bl-label2)', fontSize: 15 }}>
+        <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 15 }}>
           No results{ql ? ' for “' + q + '”' : ''}
         </div>
       ) : null}
@@ -115,7 +115,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
         </List.Section>
       ))}
       {sections.length ? (
-        <div style={{ padding: '16px 0 4px', textAlign: 'center', fontSize: 14.5, color: 'var(--bl-label2)' }}>
+        <div style={{ padding: '16px 0 4px', textAlign: 'center', fontSize: 14.5, color: 'var(--muted-foreground)' }}>
           {visible.length} Contact{visible.length === 1 ? '' : 's'}{gone.size ? ' · pull down to restore ' + gone.size + ' deleted' : ''}
         </div>
       ) : null}
@@ -131,7 +131,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
         trailing: (
           <button className="bl-btn" onClick={() => { edit ? exitEdit() : setEdit(true); Haptics.impact('light'); }}
             style={{
-              border: 0, background: 'none', cursor: 'pointer', color: 'var(--bl-tint)', fontFamily: 'inherit', fontSize: 17,
+              border: 0, background: 'none', cursor: 'pointer', color: 'var(--primary)', fontFamily: 'inherit', fontSize: 17,
               fontWeight: edit ? 700 : 400, padding: '8px 10px',
             }}>{edit ? 'Done' : 'Select'}</button>
         ),
@@ -177,7 +177,7 @@ export const StickySearchHeader: Story = {
     const sections = AL.map((L) => ({ L, items: visible.filter((c) => c.l[0].toUpperCase() === L) })).filter((s) => s.items.length);
     return (
       <Phone>
-        <div className="bl-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--bl-bg)' }}>
+        <div className="bl-scroll" style={{ position: 'absolute', inset: 0, overflowY: 'auto', background: 'var(--background)' }}>
           <List header={<div style={{ padding: '10px 16px' }}><SearchField value={q} onChange={setQ} /></div>}>
             {sections.map((s) => (
               <List.Section key={s.L} sticky title={s.L}>
@@ -259,7 +259,7 @@ export const EmptyState: Story = {
         key: 'empty', title: 'Contacts', largeTitle: true,
         subheader: <SearchField value="zzzz" onChange={() => undefined} />,
         content: (
-          <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--bl-label2)', fontSize: 15 }}>
+          <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--muted-foreground)', fontSize: 15 }}>
             No results for &ldquo;zzzz&rdquo;
           </div>
         ),
@@ -299,7 +299,7 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
   const add = () => setSongs((s) => { const next = PLAYLIST.find((t) => !s.includes(t)); return next ? [next, ...s] : s; });
   const bar = (label: string, on: () => void) => (
     <button className="bl-btn" onClick={on}
-      style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--bl-tint)', fontFamily: 'inherit', fontSize: 17, padding: '8px 10px' }}>{label}</button>
+      style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--primary)', fontFamily: 'inherit', fontSize: 17, padding: '8px 10px' }}>{label}</button>
   );
   return (
     <NavigationStack onPop={() => undefined} screens={[{

@@ -30,7 +30,7 @@ function TeamDirectory() {
         position: 'relative',
         display: 'flex',
         height: 340,
-        background: 'var(--bl-bg2)',
+        background: 'var(--muted)',
       }}
     >
       <main style={{ flex: 1, minWidth: 0, paddingTop: 14 }}>
@@ -55,14 +55,14 @@ function TeamDirectory() {
         side="right"
         columnWidth={260}
         zIndex={10}
-        columnStyle={{ borderLeft: '1px solid var(--bl-sep)' }}
+        columnStyle={{ borderLeft: '1px solid var(--border)' }}
       >
         <div
           style={{
             height: '100%',
             padding: 20,
             boxSizing: 'border-box',
-            background: 'var(--bl-bg)',
+            background: 'var(--background)',
             textAlign: 'center',
           }}
         >
@@ -84,7 +84,7 @@ function TeamDirectory() {
               <div
                 style={{
                   fontSize: 13.5,
-                  color: 'var(--bl-label2)',
+                  color: 'var(--muted-foreground)',
                   marginTop: 4,
                 }}
               >
@@ -92,7 +92,7 @@ function TeamDirectory() {
               </div>
             </>
           ) : (
-            <div style={{ marginTop: 40, color: 'var(--bl-label2)' }}>
+            <div style={{ marginTop: 40, color: 'var(--muted-foreground)' }}>
               Select a person
             </div>
           )}
@@ -135,9 +135,9 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

@@ -11,7 +11,7 @@ export const badgeVariants = cva(
         default: 'bg-primary text-primary-foreground',
         secondary: 'bg-secondary text-secondary-foreground',
         tinted: 'bg-primary/15 text-primary',
-        outline: 'text-foreground shadow-[inset_0_0_0_1px_var(--bl-sep)]',
+        outline: 'text-foreground shadow-[inset_0_0_0_1px_var(--border)]',
         destructive: 'bg-destructive text-white',
         success: 'bg-success text-white',
       },

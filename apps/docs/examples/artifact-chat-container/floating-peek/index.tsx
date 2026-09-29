@@ -25,8 +25,8 @@ function Transcript() {
         height: '100%',
         overflow: 'auto',
         padding: '18px 18px 14px',
-        background: 'var(--bl-card, #131318)',
-        color: 'var(--bl-label, #EDEDF2)',
+        background: 'var(--card)',
+        color: 'var(--foreground)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -38,7 +38,7 @@ function Transcript() {
         >
           <div
             style={{
-              color: i % 2 ? 'var(--bl-tint)' : 'var(--bl-label2)',
+              color: i % 2 ? 'var(--primary)' : 'var(--muted-foreground)',
               fontSize: 11,
               fontWeight: 700,
             }}
@@ -138,7 +138,7 @@ function Frame({ width, children }: { width: number; children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 12,
         overflow: 'hidden',
-        boxShadow: 'inset 0 0 0 1px var(--bl-sep)',
+        boxShadow: 'inset 0 0 0 1px var(--border)',
       }}
     >
       {children}
@@ -177,7 +177,7 @@ export default function FloatingPeek() {
           textAlign: 'center',
           marginTop: 8,
           fontSize: 12,
-          color: 'var(--bl-label2)',
+          color: 'var(--muted-foreground)',
         }}
       >
         Send a message to see the working pill; drag the grip up with a flick to

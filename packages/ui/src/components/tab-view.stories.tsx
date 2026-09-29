@@ -33,8 +33,8 @@ const sections = [
 function PanelBody({ title, body }: { title: string; body: string }) {
   return (
     <div className="box-border flex h-full flex-col gap-1.5 p-6">
-      <div className="text-[22px] font-bold tracking-[-.3px] text-bl-label">{title}</div>
-      <div className="text-[14px] text-bl-label2">{body}</div>
+      <div className="text-[22px] font-bold tracking-[-.3px] text-foreground">{title}</div>
+      <div className="text-[14px] text-muted-foreground">{body}</div>
     </div>
   );
 }
@@ -64,7 +64,7 @@ export const VerticalRail: Story = {
   argTypes: { placement: { control: 'inline-radio', options: ['start', 'end'] } },
   render: ({ placement, dark }) => (
     <Panel dark={dark}>
-      <TabView placement={placement} defaultSelectedKey="recents" className="absolute inset-0 bg-bl-bg">
+      <TabView placement={placement} defaultSelectedKey="recents" className="absolute inset-0 bg-background">
         <TabViewBar>
           <TabViewHeader className="mb-1 h-10">
             <div className="grid size-8 place-items-center rounded-[9px] bg-primary text-[15px] font-extrabold text-white">B</div>
@@ -83,7 +83,7 @@ export const VerticalRail: Story = {
             ))}
           </TabViewList>
           <TabViewFooter className="pt-1 pb-1">
-            <TabViewAction aria-label="Account" className="grid size-9 place-items-center rounded-full bg-bl-fill2 text-[13px] font-bold text-bl-label2 data-hovered:bg-bl-fill">
+            <TabViewAction aria-label="Account" className="grid size-9 place-items-center rounded-full bg-secondary-strong text-[13px] font-bold text-muted-foreground data-hovered:bg-secondary">
               BL
             </TabViewAction>
           </TabViewFooter>
@@ -107,10 +107,10 @@ const servers = [
 function RailTile({ color, children, badge }: { color: string; children: ReactNode; badge?: number }) {
   return (
     <span style={{ '--tile': color } as CSSProperties}
-      className="relative box-border grid size-10 place-items-center rounded-[14px] bg-bl-fill2 text-[14px] font-extrabold text-bl-label transition-[border-radius,background-color,color] duration-200 ease-ios group-data-hovered:rounded-[12px] group-data-selected:rounded-[12px] group-data-selected:bg-(--tile) group-data-selected:text-white group-data-hovered:bg-(--tile) group-data-hovered:text-white group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-primary">
+      className="relative box-border grid size-10 place-items-center rounded-[14px] bg-secondary-strong text-[14px] font-extrabold text-foreground transition-[border-radius,background-color,color] duration-200 ease-ios group-data-hovered:rounded-[12px] group-data-selected:rounded-[12px] group-data-selected:bg-(--tile) group-data-selected:text-white group-data-hovered:bg-(--tile) group-data-hovered:text-white group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-primary">
       {children}
       {!!badge && (
-        <span className="absolute -right-1.5 -bottom-1 box-border flex h-[19px] min-w-[19px] items-center justify-center rounded-full border-[3px] border-bl-bg2 bg-destructive px-[3px] text-[10px] leading-none font-bold text-white">
+        <span className="absolute -right-1.5 -bottom-1 box-border flex h-[19px] min-w-[19px] items-center justify-center rounded-full border-[3px] border-muted bg-destructive px-[3px] text-[10px] leading-none font-bold text-white">
           {badge}
         </span>
       )}
@@ -123,12 +123,12 @@ function DiscordRailDemo({ dark }: { dark: boolean }) {
   const current = sel === 'home' ? 'Direct Messages' : servers.find((s) => s.id === sel)?.title;
   return (
     <Panel dark={dark} w={520} h={440}>
-      <TabView orientation="vertical" selectedKey={sel} onSelectionChange={(k) => setSel(String(k))} className="absolute inset-0 bg-bl-bg">
-        <TabViewBar variant="plain" className="w-[64px] items-center gap-2 bg-bl-bg2 py-3 [border-right:1px_solid_var(--bl-sep)]">
+      <TabView orientation="vertical" selectedKey={sel} onSelectionChange={(k) => setSel(String(k))} className="absolute inset-0 bg-background">
+        <TabViewBar variant="plain" className="w-[64px] items-center gap-2 bg-muted py-3 [border-right:1px_solid_var(--border)]">
           <TabViewList aria-label="Servers" className="w-full items-center gap-2">
             <TabViewTab id="home" textValue="Direct Messages" className="group flex w-full justify-center">
               <TabViewIndicator variant="pill" className="h-0 data-hovered:h-4 data-selected:h-8" />
-              <RailTile color="var(--bl-tint)"><Icon name="message" size={20} /></RailTile>
+              <RailTile color="var(--primary)"><Icon name="message" size={20} /></RailTile>
             </TabViewTab>
             <TabViewSeparator className="h-0.5 w-6 rounded-full" />
             {servers.map((s) => (
@@ -139,13 +139,13 @@ function DiscordRailDemo({ dark }: { dark: boolean }) {
             ))}
           </TabViewList>
           <TabViewAction aria-label="Add a server"
-            className="group grid size-10 place-items-center rounded-[14px] bg-bl-fill2 text-[#32D74B] transition-[border-radius,background-color,color] duration-200 ease-ios data-hovered:rounded-[12px] data-hovered:bg-[#32D74B] data-hovered:text-white">
+            className="group grid size-10 place-items-center rounded-[14px] bg-secondary-strong text-[#32D74B] transition-[border-radius,background-color,color] duration-200 ease-ios data-hovered:rounded-[12px] data-hovered:bg-[#32D74B] data-hovered:text-white">
             <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M12 5.5v13M5.5 12h13" /></svg>
           </TabViewAction>
         </TabViewBar>
         <div className="box-border flex min-w-0 flex-1 flex-col gap-1.5 p-6">
-          <div className="text-[22px] font-bold tracking-[-.3px] text-bl-label">{current}</div>
-          <div className="text-[14px] text-bl-label2">Up/Down arrows move between servers; the separator and the add button aren’t tabs.</div>
+          <div className="text-[22px] font-bold tracking-[-.3px] text-foreground">{current}</div>
+          <div className="text-[14px] text-muted-foreground">Up/Down arrows move between servers; the separator and the add button aren’t tabs.</div>
         </div>
       </TabView>
     </Panel>
@@ -173,18 +173,18 @@ export const CustomTabs: Story = {
   args: { dark: false },
   render: ({ dark }) => (
     <Panel dark={dark} w={560} h={300}>
-      <TabView placement="top" defaultSelectedKey="unread" className="absolute inset-0 bg-bl-bg">
-        <TabViewBar variant="plain" className="gap-1 px-4 pt-3 shadow-[inset_0_-1px_0_var(--bl-sep)]">
+      <TabView placement="top" defaultSelectedKey="unread" className="absolute inset-0 bg-background">
+        <TabViewBar variant="plain" className="gap-1 px-4 pt-3 shadow-[inset_0_-1px_0_var(--border)]">
           <TabViewList aria-label="Inbox filters" className="gap-1">
             {filters.map((f) => (
               <TabViewTab key={f.id} id={f.id} textValue={f.title} className="group px-2.5 pt-1.5 pb-3">
                 {({ isSelected }) => (
                   <>
                     <span className={cn('flex items-center gap-1.5 text-[14px] font-semibold transition-colors duration-150',
-                      isSelected ? 'text-bl-label' : 'text-bl-label3 group-data-hovered:text-bl-label2')}>
+                      isSelected ? 'text-foreground' : 'text-tertiary-foreground group-data-hovered:text-muted-foreground')}>
                       {f.title}
                       <span className={cn('rounded-full px-1.5 py-px text-[11px] font-bold tabular-nums',
-                        isSelected ? 'bg-primary text-white' : 'bg-bl-fill text-bl-label2')}>{f.count}</span>
+                        isSelected ? 'bg-primary text-white' : 'bg-secondary text-muted-foreground')}>{f.count}</span>
                     </span>
                     <TabViewIndicator className="inset-x-2.5" />
                   </>
@@ -193,7 +193,7 @@ export const CustomTabs: Story = {
             ))}
           </TabViewList>
           <TabViewFooter>
-            <TabViewAction aria-label="Filter settings" className="grid size-8 place-items-center rounded-lg text-bl-label3 data-hovered:bg-bl-fill">
+            <TabViewAction aria-label="Filter settings" className="grid size-8 place-items-center rounded-lg text-tertiary-foreground data-hovered:bg-secondary">
               <Icon name="sliders" size={18} />
             </TabViewAction>
           </TabViewFooter>
@@ -235,16 +235,16 @@ export const PanelsFirst: Story = {
 export const PanelsFirstNested: Story = {
   render: () => (
     <Panel w={560} h={320}>
-      <TabView placement="top" defaultSelectedKey="recents" className="absolute inset-0 bg-bl-bg">
+      <TabView placement="top" defaultSelectedKey="recents" className="absolute inset-0 bg-background">
         <TabViewPanels className="order-2">
           {sections.map((s) => <TabViewPanel key={s.id} id={s.id}><PanelBody title={s.title} body={s.body} /></TabViewPanel>)}
         </TabViewPanels>
-        <div className="order-1 flex shrink-0 items-center gap-3 px-4 pt-3 shadow-[inset_0_-1px_0_var(--bl-sep)]">
-          <span className="text-[15px] font-bold text-bl-label">Address Book</span>
+        <div className="order-1 flex shrink-0 items-center gap-3 px-4 pt-3 shadow-[inset_0_-1px_0_var(--border)]">
+          <span className="text-[15px] font-bold text-foreground">Address Book</span>
           <TabViewBar variant="plain">
             <TabViewList aria-label="Sections" className="gap-1">
               {sections.map((s) => (
-                <TabViewTab key={s.id} id={s.id} className="relative px-3 py-2 text-[14px] font-semibold text-bl-label3 data-selected:text-primary">
+                <TabViewTab key={s.id} id={s.id} className="relative px-3 py-2 text-[14px] font-semibold text-tertiary-foreground data-selected:text-primary">
                   {s.title}
                   <TabViewIndicator />
                 </TabViewTab>

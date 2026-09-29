@@ -15,7 +15,7 @@ function AlphaExample() {
   const [last, setLast] = useState<string | null>(null);
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 15, color: 'var(--bl-label2)' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 15, color: 'var(--muted-foreground)' }}>
         {last ? 'Jumped to ' + last : 'Drag the rail →'}
       </div>
       <IndexBar avail={new Set(['A', 'B', 'C', 'H', 'K', 'S', 'W', 'Z'])} onLetter={setLast} top={12} bottom={12} />
@@ -38,7 +38,7 @@ function CustomItemsExample() {
   ];
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 15, color: 'var(--bl-label2)' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 15, color: 'var(--muted-foreground)' }}>
         {last ? 'Jumped to ' + last : 'Hover, drag, or use arrow keys →'}
       </div>
       <IndexBar items={items} onJump={(key) => setLast(key)} top={40} bottom={40} label="Jump to conversation event" />
@@ -80,7 +80,7 @@ function WaveExample({ side }: { side: 'left' | 'right' }) {
   const title = waveStops.find((s) => s.key === current)?.caption;
   return (
     <>
-      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 60, textAlign: 'center', fontSize: 15, color: 'var(--bl-label2)' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 60, textAlign: 'center', fontSize: 15, color: 'var(--muted-foreground)' }}>
         {title}
       </div>
       <IndexBar variant="wave" side={side} items={waveStops} value={current} onJump={(key) => setCurrent(key)}

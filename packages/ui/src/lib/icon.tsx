@@ -505,7 +505,7 @@ export interface IconProps {
 function shapeEl(e: IconShape, i: number, sw: number, mask: boolean) {
   const ink = mask ? 'black' : 'currentColor';
   const fill = e.f ? ink : 'none';
-  const stroke = e.f === 1 ? 'none' : e.bg ? 'var(--bl-bg,#fff)' : ink;
+  const stroke = e.f === 1 ? 'none' : e.bg ? 'var(--background)' : ink;
   const strokeWidth = e.bg ? 2 : sw * (e.w ?? 1);
   if (e.c) return <circle key={i} cx={e.c[0]} cy={e.c[1]} r={e.c[2]} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />;
   const common = { fill, stroke, strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round', fillRule: e.fr ? 'evenodd' : undefined } as const;

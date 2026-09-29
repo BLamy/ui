@@ -79,7 +79,7 @@ export const ActiveChannelThreadRows: Story = {
 export const CustomTitleNoFooter: Story = {
   render: function CustomTitle() {
     const [cur, setCur] = useState('general');
-    return <FixtureSidebar selected={cur} onSelect={setCur} title="Creamery" footer={null} style={{ '--ck-tint': '#BF5AF2' } as CSSProperties} />;
+    return <FixtureSidebar selected={cur} onSelect={setCur} title="Creamery" footer={null} style={{ '--primary': '#BF5AF2' } as CSSProperties} />;
   },
 };
 

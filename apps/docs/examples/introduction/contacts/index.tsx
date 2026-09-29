@@ -105,14 +105,14 @@ export default function Contacts() {
             {sel.f} {sel.l}
           </div>
           <div
-            style={{ fontSize: 13.5, color: 'var(--bl-label2)', marginTop: 3 }}
+            style={{ fontSize: 13.5, color: 'var(--muted-foreground)', marginTop: 3 }}
           >
             {sel.role}
           </div>
           <div
             style={{
               fontSize: 12.5,
-              color: 'var(--bl-label2)',
+              color: 'var(--muted-foreground)',
               marginTop: 22,
               lineHeight: 1.5,
             }}
@@ -148,7 +148,7 @@ export default function Contacts() {
                   <div
                     style={{
                       fontSize: 13,
-                      color: 'var(--bl-label2)',
+                      color: 'var(--muted-foreground)',
                       marginTop: 4,
                     }}
                   >

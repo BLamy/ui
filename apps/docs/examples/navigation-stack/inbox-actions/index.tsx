@@ -48,7 +48,7 @@ function InboxWithActions() {
           aria-label="New message"
           onPress={() => setComposing(true)}
         >
-          <Icon name="compose" size={22} style={{ color: 'var(--bl-tint)' }} />
+          <Icon name="compose" size={22} style={{ color: 'var(--primary)' }} />
         </Button>
       ),
       content: (
@@ -87,8 +87,8 @@ function InboxWithActions() {
           <div
             style={{
               padding: '10px 0',
-              borderBottom: '1px solid var(--bl-sep)',
-              color: 'var(--bl-label2)',
+              borderBottom: '1px solid var(--border)',
+              color: 'var(--muted-foreground)',
             }}
           >
             To: Design team
@@ -96,12 +96,12 @@ function InboxWithActions() {
           <div
             style={{
               padding: '10px 0',
-              borderBottom: '1px solid var(--bl-sep)',
+              borderBottom: '1px solid var(--border)',
             }}
           >
             Subject: Friday demo
           </div>
-          <p style={{ color: 'var(--bl-label2)' }}>
+          <p style={{ color: 'var(--muted-foreground)' }}>
             Send pops the screen by clearing the state that pushed it.
           </p>
         </div>
@@ -128,9 +128,9 @@ function Window({ width, children }: { width?: number; children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

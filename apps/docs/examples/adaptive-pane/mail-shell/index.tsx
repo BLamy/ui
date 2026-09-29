@@ -23,7 +23,7 @@ function MailShell() {
         position: 'relative',
         display: 'flex',
         height: 360,
-        background: 'var(--bl-bg)',
+        background: 'var(--background)',
       }}
     >
       <AdaptivePane
@@ -32,14 +32,14 @@ function MailShell() {
         onClose={() => setOpen(false)}
         columnWidth={200}
         drawerWidth={250}
-        columnStyle={{ borderRight: '1px solid var(--bl-sep)' }}
+        columnStyle={{ borderRight: '1px solid var(--border)' }}
       >
         <nav
           style={{
             height: '100%',
             padding: '14px 8px',
             boxSizing: 'border-box',
-            background: 'var(--bl-side)',
+            background: 'var(--sidebar)',
           }}
         >
           {boxes.map((b) => (
@@ -60,8 +60,8 @@ function MailShell() {
                 cursor: 'pointer',
                 font: 'inherit',
                 fontSize: 14,
-                color: 'var(--bl-label)',
-                background: b === box ? 'var(--bl-fill2)' : 'transparent',
+                color: 'var(--foreground)',
+                background: b === box ? 'var(--secondary-strong)' : 'transparent',
               }}
             >
               {b}
@@ -76,7 +76,7 @@ function MailShell() {
             alignItems: 'center',
             gap: 6,
             padding: '8px 12px',
-            borderBottom: '1px solid var(--bl-sep)',
+            borderBottom: '1px solid var(--border)',
           }}
         >
           {compact && (
@@ -94,7 +94,7 @@ function MailShell() {
             style={{
               marginLeft: 'auto',
               fontSize: 12,
-              color: 'var(--bl-label2)',
+              color: 'var(--muted-foreground)',
             }}
           >
             {Math.round(width)}px · {compact ? 'drawer' : 'column'}
@@ -153,9 +153,9 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

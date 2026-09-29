@@ -114,9 +114,9 @@ function Window({ width, children }: { width?: number; children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >
@@ -141,12 +141,12 @@ export default function MobileStack({
           <SplitView
             defaultSelection={{ sidebar: 'design' }}
             defaultCompactColumn="sidebar"
-            className="bg-ck-bg"
+            className="bg-background"
           >
-            <SplitViewSidebar width={240} className="bg-ck-side">
+            <SplitViewSidebar width={240} className="bg-sidebar">
               <Rooms />
             </SplitViewSidebar>
-            <SplitViewDetail className="bg-ck-bg">
+            <SplitViewDetail className="bg-background">
               <Room />
             </SplitViewDetail>
           </SplitView>

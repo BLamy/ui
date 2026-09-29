@@ -80,7 +80,7 @@ const GIFT_CARDS = [
 
 /** `font: inherit` for buttons, leaving size and weight to the caller. */
 const FONT_INHERIT = '[font-family:inherit] [font-style:inherit] [font-variant:inherit] [font-stretch:inherit] leading-[inherit]';
-const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bl-tint';
+const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
 const MAP_BUTTON = cn(
   'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-white p-0 text-[15px] font-semibold text-[#191919] shadow-[0_2px_10px_rgba(0,0,0,.14),0_0_0_1px_rgba(0,0,0,.04)] data-hovered:bg-[#f6f6f8]',
   FONT_INHERIT,
@@ -224,9 +224,9 @@ export function DeliveryTrackingDemo({
       className={cn(
         'relative h-full min-h-0 w-full overflow-hidden',
         dark
-          ? 'bg-[#0d0f14] text-[#f5f5f7] scheme-dark [--bl-bg:#000] [--bl-card:#1c1c1e] [--bl-card2:#2c2c2e] [--bl-label:#f5f5f7] [--bl-label2:rgba(235,235,245,.62)] [--bl-label3:rgba(235,235,245,.32)] [--bl-sep:rgba(84,84,88,.6)] [--bl-fill:rgba(120,120,128,.24)]'
-          : 'bg-[#eef0f3] text-[#191919] scheme-light [--bl-bg:#f2f2f7] [--bl-card:#fff] [--bl-card2:#f4f4f6] [--bl-label:#191919] [--bl-label2:rgba(60,60,67,.62)] [--bl-label3:rgba(60,60,67,.32)] [--bl-sep:rgba(60,60,67,.16)] [--bl-fill:rgba(120,120,128,.14)]',
-        '[--bl-tint:var(--ck-delivery-accent,#eb1700)]',
+          ? 'bg-[#0d0f14] text-[#f5f5f7] scheme-dark [--background:#000] [--card:#1c1c1e] [--popover:#2c2c2e] [--foreground:#f5f5f7] [--muted-foreground:rgba(235,235,245,.62)] [--tertiary-foreground:rgba(235,235,245,.32)] [--border:rgba(84,84,88,.6)] [--secondary:rgba(120,120,128,.24)]'
+          : 'bg-[#eef0f3] text-[#191919] scheme-light [--background:#f2f2f7] [--card:#fff] [--popover:#f4f4f6] [--foreground:#191919] [--muted-foreground:rgba(60,60,67,.62)] [--tertiary-foreground:rgba(60,60,67,.32)] [--border:rgba(60,60,67,.16)] [--secondary:rgba(120,120,128,.14)]',
+        '[--primary:var(--ck-delivery-accent,#eb1700)]',
         MAP_FONT,
         className,
       )}
@@ -287,13 +287,13 @@ export function DeliveryTrackingDemo({
                   </motion.span>
                 </AnimatePresence>
               </h2>
-              <p className="m-0 mt-1.5 text-[15px] text-bl-label2">
+              <p className="m-0 mt-1.5 text-[15px] text-muted-foreground">
                 Pickup at 12:13 PM · {STORE_ADDRESS}
               </p>
             </header>
 
             <ProgressStepper steps={steps} current={stageIndex} className="mb-3!" />
-            <p className="m-0 mb-[18px] flex items-center gap-[7px] text-[14px] text-bl-label2">
+            <p className="m-0 mb-[18px] flex items-center gap-[7px] text-[14px] text-muted-foreground">
               <Icon name="clock" size={15} />
               {/* The status moves forward with the stepper: the old line leaves up, the new one rises. */}
               <span className="relative min-w-0 flex-1 overflow-hidden">
@@ -312,9 +312,9 @@ export function DeliveryTrackingDemo({
               </span>
             </p>
 
-            <section className="rounded-[14px] bg-bl-card2 p-4">
+            <section className="rounded-[14px] bg-popover p-4">
               <h3 className="m-0 mb-1 text-[16px] font-bold">Pickup instructions</h3>
-              <p className="m-0 mb-3.5 text-[14px] leading-[1.4] text-bl-label2">
+              <p className="m-0 mb-3.5 text-[14px] leading-[1.4] text-muted-foreground">
                 Head to the counter and give your name. Orders are on the shelf to the right of the register.
               </p>
               <div className="flex gap-2.5">
@@ -329,7 +329,7 @@ export function DeliveryTrackingDemo({
                   <Icon name="message" size={17} />
                   I'm here
                 </Button>
-                <Button className={cn(ACTION_BUTTON, 'bg-[rgba(120,120,128,.16)] text-bl-label')} data-variant="secondary">
+                <Button className={cn(ACTION_BUTTON, 'bg-[rgba(120,120,128,.16)] text-foreground')} data-variant="secondary">
                   <Icon name="phone" size={17} />
                   Call store
                 </Button>
@@ -338,7 +338,7 @@ export function DeliveryTrackingDemo({
 
             <Button
               className={cn(
-                'm-0 mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-[999px] border border-bl-sep bg-transparent px-3.5 py-[9px] text-[14px] font-semibold text-bl-label data-hovered:bg-bl-fill',
+                'm-0 mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-[999px] border border-border bg-transparent px-3.5 py-[9px] text-[14px] font-semibold text-foreground data-hovered:bg-secondary',
                 FONT_INHERIT,
               )}
               aria-expanded={detailsOpen}
@@ -362,15 +362,15 @@ export function DeliveryTrackingDemo({
               <motion.ul
                 key="details"
                 id={detailsId}
-                className="m-0 mt-3 list-none overflow-hidden border-t border-bl-sep p-0 pt-1"
+                className="m-0 mt-3 list-none overflow-hidden border-t border-border p-0 pt-1"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={springs.tray}
               >
                 {ORDER_ITEMS.map((item) => (
-                  <li key={item.name} className="flex gap-2.5 border-b border-bl-sep py-[9px] text-[14px]">
-                    <span className="w-6 text-bl-label2">{item.qty}×</span>
+                  <li key={item.name} className="flex gap-2.5 border-b border-border py-[9px] text-[14px]">
+                    <span className="w-6 text-muted-foreground">{item.qty}×</span>
                     <span className="min-w-0 flex-1">{item.name}</span>
                     <span className="tabular-nums">${(item.qty * item.price).toFixed(2)}</span>
                   </li>
@@ -385,13 +385,13 @@ export function DeliveryTrackingDemo({
 
             <Button
               className={cn(
-                'm-0 mt-[18px] flex w-full cursor-pointer items-center gap-3 rounded-[14px] border-0 bg-bl-card2 px-3.5 py-3 text-left text-[15px] font-semibold text-bl-label',
+                'm-0 mt-[18px] flex w-full cursor-pointer items-center gap-3 rounded-[14px] border-0 bg-popover px-3.5 py-3 text-left text-[15px] font-semibold text-foreground',
                 dark ? 'data-hovered:bg-[#3a3a3c]' : 'data-hovered:bg-[#ededf0]',
                 FONT_INHERIT,
               )}
               onPress={() => setOpen(true)}
             >
-              <span className={cn('grid size-8 place-items-center rounded-[50%] text-[color:var(--ck-delivery-accent,#eb1700)] shadow-[0_0_0_1px_var(--bl-sep)]', dark ? 'bg-[#1c1c1e]' : 'bg-white')}>
+              <span className={cn('grid size-8 place-items-center rounded-[50%] text-[color:var(--ck-delivery-accent,#eb1700)] shadow-[0_0_0_1px_var(--border)]', dark ? 'bg-[#1c1c1e]' : 'bg-white')}>
                 <Icon name="gift" size={18} />
               </span>
               <span className="min-w-0 flex-1">Save up to $25 on gift cards</span>
@@ -422,7 +422,7 @@ export function DeliveryTrackingDemo({
                       style={{ '--ck-tile-bg': `hsl(${28 + i * 9} 62% ${66 - i * 4}%)` } as CSSProperties}
                     />
                     <span className="mt-1 text-[14px] font-semibold">{name}</span>
-                    <span className="text-[13px] text-bl-label2">${(4 + i * 1.5).toFixed(2)}</span>
+                    <span className="text-[13px] text-muted-foreground">${(4 + i * 1.5).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -440,7 +440,7 @@ function Section({ title, action, children }: { title: string; action?: string; 
       <header className="m-0 mb-3 flex items-center justify-between">
         <h3 className="m-0 text-[19px] font-bold tracking-[-.015em]">{title}</h3>
         {action && (
-          <Button className={cn('inline-flex cursor-pointer items-center gap-0.5 border-0 bg-transparent p-0 text-[14px] font-semibold text-bl-label2', FONT_INHERIT)}>
+          <Button className={cn('inline-flex cursor-pointer items-center gap-0.5 border-0 bg-transparent p-0 text-[14px] font-semibold text-muted-foreground', FONT_INHERIT)}>
             {action}
             <Icon name="chevronRight" size={15} />
           </Button>

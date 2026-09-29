@@ -105,11 +105,11 @@ export function SliderTrack({ className, children, ...props }: SliderTrackProps)
         const end = state.getThumbPercent(range ? state.values.length - 1 : 0);
         return (
           <>
-            <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--bl-slider-track,var(--bl-fill2))]" />
+            <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--bl-slider-track,var(--secondary-strong))]" />
             <span
               aria-hidden="true"
               data-slot="slider-range"
-              className="absolute top-1/2 left-(--start) h-1 w-(--len) -translate-y-1/2 rounded-full bg-[var(--bl-slider-fill,var(--bl-tint,var(--primary)))]"
+              className="absolute top-1/2 left-(--start) h-1 w-(--len) -translate-y-1/2 rounded-full bg-[var(--bl-slider-fill,var(--primary))]"
               style={{ '--start': `${start * 100}%`, '--len': `${(end - start) * 100}%` } as CSSProperties}
             />
             {kids}
@@ -128,7 +128,7 @@ export function SliderThumb({ className, ...props }: SliderThumbProps) {
         'top-1/2 size-[26px] rounded-full bg-[var(--bl-slider-thumb,#fff)] shadow-[0_1px_4px_rgba(0,0,0,.28),0_0_1px_rgba(0,0,0,.22)] outline-none',
         'group-data-[size=sm]:size-3 group-data-[size=sm]:shadow-[0_0_0_.5px_rgba(0,0,0,.18),0_1px_2px_rgba(0,0,0,.18)] group-data-[size=sm]:data-dragging:scale-150',
         'transition-[scale,box-shadow] duration-spring-snappy ease-spring-snappy data-dragging:scale-110 motion-reduce:transition-none',
-        'data-focus-visible:shadow-[0_1px_4px_rgba(0,0,0,.28),0_0_0_4px_color-mix(in_oklab,var(--bl-tint)_45%,transparent)]',
+        'data-focus-visible:shadow-[0_1px_4px_rgba(0,0,0,.28),0_0_0_4px_color-mix(in_oklab,var(--primary)_45%,transparent)]',
         cls,
       ))}
       {...props}

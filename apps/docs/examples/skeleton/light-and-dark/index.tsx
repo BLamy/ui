@@ -11,8 +11,8 @@ function Sample() {
         gap: 12,
         padding: 16,
         borderRadius: 14,
-        background: 'var(--bl-card)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--card)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -52,7 +52,7 @@ export default function LightAndDark() {
               fontWeight: 600,
               letterSpacing: '.04em',
               textTransform: 'uppercase',
-              color: 'var(--bl-label2)',
+              color: 'var(--muted-foreground)',
             }}
           >
             {dark ? 'Dark' : 'Light'}

@@ -41,7 +41,7 @@ function NewThread() {
         margin: '0 auto',
         borderRadius: 12,
         overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--wb-sep)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <div
@@ -49,7 +49,7 @@ function NewThread() {
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          background: 'var(--wb-bg)',
+          background: 'var(--background)',
         }}
       >
         <Conversation empty={empty}>

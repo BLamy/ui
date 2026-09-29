@@ -7,9 +7,9 @@ import { cn } from '../lib/utils';
 export const textareaVariants = cva(
   [
     'box-border block w-full min-w-0 resize-none rounded-[10px] border-0 bg-input px-3 py-2.5 [font-family:inherit] text-[17px] leading-[22px] text-foreground outline-none',
-    'transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy placeholder:text-bl-label3',
-    'data-focused:bg-transparent data-focused:shadow-[inset_0_0_0_1.5px_var(--bl-tint)]',
-    'data-invalid:shadow-[inset_0_0_0_1.5px_var(--bl-red)] data-disabled:cursor-not-allowed data-disabled:opacity-50',
+    'transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy placeholder:text-tertiary-foreground',
+    'data-focused:bg-transparent data-focused:shadow-[inset_0_0_0_1.5px_var(--primary)]',
+    'data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:cursor-not-allowed data-disabled:opacity-50',
     selectableText,
   ],
   {

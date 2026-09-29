@@ -20,7 +20,7 @@ export function RichText({ text, users }: RichTextProps) {
             <span
               key={i}
               data-slot="mention"
-              className="rounded-[4px] bg-ck-mention px-[3px] py-0 font-semibold text-ck-link"
+              className="rounded-[4px] bg-primary/12 dark:bg-primary/16 px-[3px] py-0 font-semibold text-link"
             >
               @{map[m[1]].name}
             </span>

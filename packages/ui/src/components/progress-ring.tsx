@@ -21,10 +21,10 @@ const SIZES: Record<RingSize, { px: number; stroke: number; font: number }> = {
   xl: { px: 72, stroke: 5, font: 20 },
 };
 const TONES = {
-  default: 'var(--bl-tint)',
-  success: 'var(--bl-green)',
-  warning: 'var(--bl-orange, #FF9F0A)',
-  destructive: 'var(--bl-red)',
+  default: 'var(--primary)',
+  success: 'var(--success)',
+  warning: 'var(--warning)',
+  destructive: 'var(--destructive)',
 } as const;
 export type ProgressRingTone = keyof typeof TONES;
 
@@ -45,7 +45,7 @@ function RingSvg({ px, stroke, r, c, fraction, color, trackColor, transition, sp
   return (
     <svg width={px} height={px} viewBox={`0 0 ${px} ${px}`} aria-hidden="true"
       className={cn('block -rotate-90', spin && 'animate-spin [animation-duration:900ms] motion-reduce:animate-none')}>
-      <circle cx={px / 2} cy={px / 2} r={r} fill="none" stroke={trackColor ?? 'var(--bl-fill2)'} strokeWidth={stroke} />
+      <circle cx={px / 2} cy={px / 2} r={r} fill="none" stroke={trackColor ?? 'var(--secondary-strong)'} strokeWidth={stroke} />
       <circle
         data-slot="progress-ring-arc"
         cx={px / 2} cy={px / 2} r={r} fill="none" strokeWidth={stroke} strokeLinecap="round"
@@ -144,7 +144,7 @@ export function CountdownRing({
   // Counting up means the period restarted: jump, don't drain backwards through the turnover.
   const jump = left > prev.current;
   useEffect(() => { prev.current = left; }, [left]);
-  const warnC = warnColor ?? 'var(--bl-red)';
+  const warnC = warnColor ?? 'var(--destructive)';
   const label_ = showLabel ?? d.font > 0;
   return (
     <span
@@ -158,13 +158,13 @@ export function CountdownRing({
       <RingSvg
         {...d}
         fraction={left / duration}
-        color={warn ? warnC : color ?? 'var(--bl-tint)'}
+        color={warn ? warnC : color ?? 'var(--primary)'}
         trackColor={trackColor}
         transition={jump ? 'none' : 'stroke-dashoffset 1s linear, stroke .3s'}
       />
       {label_ ? (
         <span aria-hidden="true" className="absolute inset-0 grid place-items-center font-semibold tabular-nums transition-colors duration-300"
-          style={{ fontSize: d.font || Math.max(9, d.px * 0.36), color: warn ? warnC : 'var(--bl-label2)' }}>
+          style={{ fontSize: d.font || Math.max(9, d.px * 0.36), color: warn ? warnC : 'var(--muted-foreground)' }}>
           <NumberMorph value={left} />
         </span>
       ) : null}

@@ -20,7 +20,7 @@ export const tabsListVariants = cva('isolate flex', {
   variants: {
     variant: {
       segmented: 'gap-0.5 rounded-[9px] bg-secondary p-0.5',
-      underline: 'gap-5 shadow-[inset_0_-1px_0_var(--bl-sep)]',
+      underline: 'gap-5 shadow-[inset_0_-1px_0_var(--border)]',
     },
   },
   defaultVariants: { variant: 'segmented' },

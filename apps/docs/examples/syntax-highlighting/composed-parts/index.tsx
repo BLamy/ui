@@ -18,7 +18,7 @@ export default function ComposedBlock() {
     <SyntaxHighlighting code={config} language="json">
       <SyntaxHighlightingHeader>
         <SyntaxHighlightingTitle>package.json</SyntaxHighlightingTitle>
-        <span style={{ fontSize: 11, color: 'var(--bl-label2)' }}>
+        <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>
           JSON · 6 lines
         </span>
         <SyntaxHighlightingCopyButton label="Copy package.json" />

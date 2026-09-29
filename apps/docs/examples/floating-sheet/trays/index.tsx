@@ -90,7 +90,7 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
             ? 'radial-gradient(circle at 70% 18%, #2b2f4a, #0f1017 62%)'
             : 'radial-gradient(circle at 70% 18%, #fff4e6, #e8ecf3 62%)',
           color: dark ? '#f5f5f7' : '#1c1c1e',
-          boxShadow: 'inset 0 0 0 1px var(--bl-sep)',
+          boxShadow: 'inset 0 0 0 1px var(--border)',
         }}
       >
         <div style={{ padding: 22 }}>

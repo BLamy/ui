@@ -51,7 +51,7 @@ function ConfirmDelete() {
               borderRadius: 10,
               background: c,
               opacity: i < 3 ? 1 : 0.45,
-              outline: i < 3 ? '3px solid var(--bl-tint)' : 'none',
+              outline: i < 3 ? '3px solid var(--primary)' : 'none',
               outlineOffset: 2,
             }}
           />
@@ -69,7 +69,7 @@ function ConfirmDelete() {
               margin: '0 0 16px',
               fontSize: 14.5,
               lineHeight: 1.45,
-              color: 'var(--bl-label2)',
+              color: 'var(--muted-foreground)',
             }}
           >
             They move to Recently Deleted and are removed for good after 30
@@ -105,7 +105,7 @@ function ConfirmDelete() {
 // centered.
 function Window({
   width,
-  bg = 'var(--bl-bg)',
+  bg = 'var(--background)',
   children,
 }: {
   width?: number
@@ -122,8 +122,8 @@ function Window({
         borderRadius: 14,
         overflow: 'hidden',
         background: bg,
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

@@ -31,7 +31,7 @@ type Story = StoryObj<typeof Conversation>;
 function Frame({ children, height = 640 }: { children: React.ReactNode; height?: number }) {
   return (
     <WorkbenchTheme style={{ padding: 24, display: 'grid', placeItems: 'center', minHeight: height + 48 }}>
-      <div style={{ width: 720, maxWidth: '100%', height, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--wb-sep)', display: 'flex', flexDirection: 'column', background: 'var(--wb-bg)' }}>
+      <div style={{ width: 720, maxWidth: '100%', height, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
         {children}
       </div>
     </WorkbenchTheme>

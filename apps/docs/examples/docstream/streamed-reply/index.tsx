@@ -34,7 +34,7 @@ function DemoButton({
       style={{
         border: 0,
         borderRadius: 10,
-        background: 'var(--bl-tint, #0A84FF)',
+        background: 'var(--primary)',
         color: '#fff',
         fontFamily: 'inherit',
         fontWeight: 600,
@@ -82,12 +82,12 @@ export default function StreamedReply() {
       />
       <div
         style={{
-          border: '1px solid var(--bl-sep)',
+          border: '1px solid var(--border)',
           borderRadius: 12,
           padding: '6px 16px',
           minHeight: 280,
-          background: 'var(--bl-card)',
-          color: 'var(--bl-label)',
+          background: 'var(--card)',
+          color: 'var(--foreground)',
         }}
       >
         <MarkdownView markdown={text} streaming={live} />

@@ -14,8 +14,8 @@ export default function Paragraph() {
         margin: '0 auto',
         padding: 20,
         borderRadius: 16,
-        background: 'var(--bl-card)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--card)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <Skeleton shape="text" height={12} width={90} />

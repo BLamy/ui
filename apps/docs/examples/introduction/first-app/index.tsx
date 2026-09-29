@@ -79,7 +79,7 @@ function FriendsTab() {
           style={{
             margin: 0,
             padding: '4px 20px 24px',
-            color: 'var(--bl-label2)',
+            color: 'var(--muted-foreground)',
           }}
         >
           {open?.f} will get a notification.
@@ -100,9 +100,9 @@ function Window({ width, children }: { width: number; children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >
@@ -132,7 +132,7 @@ export default function FirstApp() {
               <FriendsTab />
             </TabViewPanel>
             <TabViewPanel id="settings">
-              <p style={{ padding: 24, color: 'var(--bl-label2)' }}>
+              <p style={{ padding: 24, color: 'var(--muted-foreground)' }}>
                 Each tab keeps its own stack and state.
               </p>
             </TabViewPanel>

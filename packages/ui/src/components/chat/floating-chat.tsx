@@ -209,13 +209,13 @@ export function FloatingChat({
           <Button
             data-slot="floating-chat-working"
             // Swaps in for the card with a soft rise; the real card waits, mounted, underneath.
-            className="box-border flex min-h-[46px] w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-wb-sep bg-wb-card px-[15px] py-1.5 text-left [font:inherit] text-wb-label shadow-[0_6px_24px_var(--wb-shadow,rgba(0,0,0,.28))] outline-none motion-reduce:animate-none data-focus-visible:ring-2 data-focus-visible:ring-wb-tint/60"
+            className="box-border flex min-h-[46px] w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-border bg-card px-[15px] py-1.5 text-left [font:inherit] text-foreground shadow-[0_6px_24px_var(--wb-shadow,rgba(0,0,0,.28))] outline-none motion-reduce:animate-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60"
             onPress={() => revealRef.current()}
           >
-            <span className="grid animate-[ck-floating-working_1.8s_ease-in-out_infinite] place-items-center text-wb-label2 motion-reduce:animate-none" aria-hidden="true">
+            <span className="grid animate-[ck-floating-working_1.8s_ease-in-out_infinite] place-items-center text-muted-foreground motion-reduce:animate-none" aria-hidden="true">
               <ChatIcon d={chatIconPaths.spark} size={18} />
             </span>
-            <span className="min-w-0 flex-1 truncate text-[15px] font-[560] text-wb-label2">{labelRef.current}</span>
+            <span className="min-w-0 flex-1 truncate text-[15px] font-[560] text-muted-foreground">{labelRef.current}</span>
             <ChatIcon d={chatIconPaths.plus} size={20} />
             <span className="sr-only">Add something new</span>
           </Button>
@@ -255,7 +255,7 @@ export function FloatingChat({
         'ck-floating-chat__bump',
         glass
           ? 'border-[color:rgba(var(--ck-sheet-line),.14)] bg-[color:rgba(var(--ck-sheet-surface),calc(.5_+_.4_*_var(--bump-progress,0)))] [box-shadow:inset_0_1px_0_rgba(255,255,255,.12)]'
-          : 'border-[color:rgba(var(--ck-sheet-line),.1)] bg-[color:var(--bl-card,#fff)]',
+          : 'border-[color:rgba(var(--ck-sheet-line),.1)] bg-[color:var(--card)]',
       )}
     >
       <ComposerBumpContent label={label}>
@@ -299,7 +299,7 @@ export function FloatingChat({
         data-hidden={hidden || undefined}
         // ck-floating-chat keys the tone token maps (and the glass overrides for the composer) in styles.css.
         className={cn(
-          'ck-floating-chat pointer-events-none absolute inset-0 z-40 text-[color:var(--bl-label,#f5f5f7)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)] [--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
+          'ck-floating-chat pointer-events-none absolute inset-0 z-40 text-[color:var(--foreground)] [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)] [--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]',
           className,
         )}
         style={{ '--ck-chat-gutter': `${gutter}px`, '--ck-chat-fold': fold, ...style } as CSSProperties}
@@ -352,8 +352,8 @@ export function FloatingChat({
           data-slot="floating-chat-fab"
           aria-label="Open chat"
           className={cn(
-            'absolute border-[color:rgba(var(--ck-sheet-line),.14)] text-[color:var(--bl-label,#f5f5f7)]',
-            glass ? 'bg-[color:rgba(var(--ck-sheet-surface),.62)]' : 'bg-[color:var(--bl-card,#fff)]',
+            'absolute border-[color:rgba(var(--ck-sheet-line),.14)] text-[color:var(--foreground)]',
+            glass ? 'bg-[color:rgba(var(--ck-sheet-surface),.62)]' : 'bg-[color:var(--card)]',
             fabPlacement[fabPosition],
             minimized ? 'pointer-events-auto' : 'pointer-events-none',
           )}

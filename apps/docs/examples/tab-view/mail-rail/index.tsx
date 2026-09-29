@@ -47,7 +47,7 @@ function MailRail() {
     <TabView
       orientation="vertical"
       defaultSelectedKey="inbox"
-      style={{ height: 440, background: 'var(--bl-bg)' }}
+      style={{ height: 440, background: 'var(--background)' }}
     >
       <TabViewBar>
         <TabViewHeader style={{ padding: '6px 0 10px' }}>
@@ -58,7 +58,7 @@ function MailRail() {
               width: 36,
               height: 36,
               borderRadius: 10,
-              background: 'var(--bl-tint)',
+              background: 'var(--primary)',
               color: '#fff',
               fontWeight: 800,
             }}
@@ -117,9 +117,9 @@ function Window({ children }: { children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

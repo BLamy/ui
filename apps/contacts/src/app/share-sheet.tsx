@@ -11,7 +11,7 @@ function ShareBody({ c, view, go, onClose }: { c: Contact; view: ShareView; go: 
   if (view === 'qr') {
     return (
       <div className="px-5 pt-3 pb-5 text-center">
-        <div className="inline-grid place-items-center rounded-[20px] bg-white p-4 text-[#111] shadow-[0_0_0_1px_var(--bl-sep)]">
+        <div className="inline-grid place-items-center rounded-[20px] bg-white p-4 text-[#111] shadow-[0_0_0_1px_var(--border)]">
           <QRSvg seed={c.id} />
         </div>
         <p className="mx-0 mt-3 mb-3.5 text-[13px] leading-[1.45] text-muted-foreground">
@@ -25,9 +25,9 @@ function ShareBody({ c, view, go, onClose }: { c: Contact; view: ShareView; go: 
     const fields = [['Name', `${c.f} ${c.l}`], ['Mobile', c.ph], ['Email', c.em], ['Group', c.g || '—']];
     return (
       <div className="px-4 pt-3 pb-4">
-        <Card className="mb-3 bg-bl-fill">
+        <Card className="mb-3 bg-secondary">
           {fields.map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-3 px-3.5 py-2 text-[13.5px] not-last:shadow-[inset_0_-1px_0_var(--bl-sep)]">
+            <div key={k} className="flex justify-between gap-3 px-3.5 py-2 text-[13.5px] not-last:shadow-[inset_0_-1px_0_var(--border)]">
               <span className="shrink-0 text-muted-foreground">{k}</span>
               <span className="truncate font-semibold">{v}</span>
             </div>
@@ -41,7 +41,7 @@ function ShareBody({ c, view, go, onClose }: { c: Contact; view: ShareView; go: 
   if (view === 'done') {
     return (
       <div className="px-5 pt-[18px] pb-[22px] text-center">
-        <span className="mb-2.5 inline-grid size-[54px] place-items-center rounded-full bg-bl-green text-white"><Icon name="check" size={26} sw={3} /></span>
+        <span className="mb-2.5 inline-grid size-[54px] place-items-center rounded-full bg-success text-white"><Icon name="check" size={26} sw={3} /></span>
         <div className="text-[17px] font-bold">Card shared</div>
         <p className="mx-0 mt-1 mb-4 text-[13px] text-muted-foreground">{c.f} {c.l} is on the way.</p>
         <Button size="pill" onPress={onClose}>Done</Button>
@@ -59,7 +59,7 @@ function ShareBody({ c, view, go, onClose }: { c: Contact; view: ShareView; go: 
       <ListSection>
         {options.map(([to, icon, title, detail], i) => (
           <ListRow key={to} title={title} subtitle={detail} accessory="chevron" divider={i < options.length - 1} onPress={() => go(to)}
-            leading={<span className="grid size-[34px] place-items-center rounded-[10px] bg-bl-fill text-primary"><Icon name={icon} size={18} sw={2} /></span>} />
+            leading={<span className="grid size-[34px] place-items-center rounded-[10px] bg-secondary text-primary"><Icon name={icon} size={18} sw={2} /></span>} />
         ))}
       </ListSection>
     </div>

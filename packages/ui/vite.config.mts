@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
+import { copyFileSync } from 'fs';
 import pkg from './package.json' with { type: 'json' };
 
 export default defineConfig(() => ({
@@ -16,6 +17,8 @@ export default defineConfig(() => ({
       entryRoot: 'src',
       tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
     }),
+    // The bl-theme ships as plain CSS (`@brett_lamy/ui/theme.css`), copied as is.
+    { name: 'bl-theme-css', closeBundle: () => copyFileSync(path.join(import.meta.dirname, 'src/theme.css'), path.join(import.meta.dirname, 'dist/theme.css')) },
   ],
   // Uncomment this if you are using workers.
   // worker: {

@@ -21,9 +21,9 @@ export default function ReleaseNotes() {
       style={{
         padding: '6px 22px',
         borderRadius: 14,
-        background: 'var(--bl-card)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--card)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <MarkdownView markdown={notes} />

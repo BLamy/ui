@@ -36,7 +36,7 @@ export const Group: Story = {
       <Label variant="field">Notify me about</Label>
       <Card className="gap-0 px-4">
         {[['all', 'All new messages'], ['mentions', 'Mentions'], ['dms', 'Direct messages'], ['threads', 'Thread replies']].map(([v, t], i) => (
-          <Checkbox key={v} value={v} className={i ? 'py-[11px] shadow-[inset_0_1px_0_var(--bl-sep)]' : 'py-[11px]'}>{t}</Checkbox>
+          <Checkbox key={v} value={v} className={i ? 'py-[11px] shadow-[inset_0_1px_0_var(--border)]' : 'py-[11px]'}>{t}</Checkbox>
         ))}
       </Card>
     </CheckboxGroup>

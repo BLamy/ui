@@ -28,9 +28,9 @@ function Bubble({ mine, children }: { mine: boolean; children: ReactNode }) {
           padding: '11px 14px',
           borderRadius: 18,
           background: mine
-            ? 'color-mix(in oklab, var(--bl-tint) 16%, transparent)'
-            : 'var(--bl-card)',
-          boxShadow: mine ? undefined : '0 0 0 1px var(--bl-sep)',
+            ? 'color-mix(in oklab, var(--primary) 16%, transparent)'
+            : 'var(--card)',
+          boxShadow: mine ? undefined : '0 0 0 1px var(--border)',
         }}
       >
         {children}
@@ -51,8 +51,8 @@ export default function ChatMessages() {
         margin: '0 auto',
         padding: 16,
         borderRadius: 16,
-        background: 'var(--bl-bg2)',
-        boxShadow: '0 0 0 1px var(--bl-sep)',
+        background: 'var(--muted)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       {thread.map((m, i) => (

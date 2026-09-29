@@ -15,10 +15,10 @@ export interface ChatAvatarProps {
 
 /** Initial (or bot spark) on a diagonal gradient of the user's color. Size and color arrive as CSS variables. */
 const statusColor = {
-  online: 'bg-ck-green',
-  idle: 'bg-ck-orange',
-  dnd: 'bg-ck-red',
-  offline: 'bg-ck-mut3',
+  online: 'bg-success',
+  idle: 'bg-warning',
+  dnd: 'bg-destructive',
+  offline: 'bg-tertiary-foreground',
 } as const;
 
 export function ChatAvatar({ user, size = 36, square, status, className, style }: ChatAvatarProps) {
@@ -46,7 +46,7 @@ export function ChatAvatar({ user, size = 36, square, status, className, style }
           data-status={status}
           aria-label={status}
           className={cn(
-            'absolute -right-[2px] -bottom-[2px] box-border size-[max(10px,calc(var(--ck-avatar-size)*.36))] rounded-full border-[2.5px] border-(--ck-avatar-ring,var(--ck-bg,#131318))',
+            'absolute -right-[2px] -bottom-[2px] box-border size-[max(10px,calc(var(--ck-avatar-size)*.36))] rounded-full border-[2.5px] border-(--ck-avatar-ring,var(--background))',
             statusColor[status],
           )}
         />

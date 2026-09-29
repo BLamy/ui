@@ -63,7 +63,7 @@ export function TerminalBody({ seed, run: runProp, user = 'dev@workbench', cwd =
   }, [hist]);
   const prompt = (
     <span>
-      <span className="text-[#7EE0B8]">{user}</span> <span className="text-[#8AB4FF]">{cwd}</span> <span className="text-wb-label3">%</span>
+      <span className="text-[#7EE0B8]">{user}</span> <span className="text-[#8AB4FF]">{cwd}</span> <span className="text-tertiary-foreground">%</span>
     </span>
   );
   const run = () => {
@@ -77,8 +77,9 @@ export function TerminalBody({ seed, run: runProp, user = 'dev@workbench', cwd =
     <div
       ref={sc}
       data-slot="terminal-body"
+      data-theme-scope="terminal"
       className={cn(
-        'wb-term wb-scroll min-h-0 flex-1 cursor-text overflow-y-auto px-3.5 py-2.5 font-mono text-[12.5px] leading-[1.62] text-[#D4D4DE]',
+        'dark scheme-dark wb-scroll min-h-0 flex-1 cursor-text overflow-y-auto px-3.5 py-2.5 font-mono text-[12.5px] leading-[1.62] text-[#D4D4DE]',
         className,
       )}
       onClick={() => {
@@ -89,7 +90,7 @@ export function TerminalBody({ seed, run: runProp, user = 'dev@workbench', cwd =
       {hist.map((l, i) => (
         <div
           key={i}
-          className={cn('whitespace-pre-wrap', l.c ? 'text-(color:--term-c)' : l.p ? 'text-[#D4D4DE]' : 'text-wb-label2')}
+          className={cn('whitespace-pre-wrap', l.c ? 'text-(color:--term-c)' : l.p ? 'text-[#D4D4DE]' : 'text-muted-foreground')}
           // a line's own color comes with the data
           style={l.c ? ({ '--term-c': l.c } as React.CSSProperties) : undefined}
         >
@@ -128,9 +129,9 @@ export interface TerminalHeaderProps {
 /** Session title bar: icon, title, actions. */
 export function TerminalHeader({ title = 'zsh', children, className, style }: TerminalHeaderProps) {
   return (
-    <div data-slot="terminal-header" className={cn('flex shrink-0 items-center gap-1 border-b border-wb-sep py-[5px] pr-2 pl-3.5', className)} style={style}>
-      <WIcon name="term" size={14} sw={1.8} className="text-wb-label3" />
-      <span className="ml-1 text-[12px] font-semibold text-wb-label2">{title}</span>
+    <div data-slot="terminal-header" className={cn('flex shrink-0 items-center gap-1 border-b border-border py-[5px] pr-2 pl-3.5', className)} style={style}>
+      <WIcon name="term" size={14} sw={1.8} className="text-tertiary-foreground" />
+      <span className="ml-1 text-[12px] font-semibold text-muted-foreground">{title}</span>
       <span className="flex-1" />
       {children}
     </div>

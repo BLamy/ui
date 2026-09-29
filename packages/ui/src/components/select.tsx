@@ -34,9 +34,9 @@ export function Select<T extends object, M extends 'single' | 'multiple' = 'sing
 export const selectTriggerVariants = cva(
   [
     'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 px-3 text-left [font-family:inherit] text-foreground outline-none',
-    'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy data-pressed:bg-bl-fill2',
-    'data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 group-data-open:shadow-[inset_0_0_0_1.5px_var(--bl-tint)]',
-    'group-data-invalid:shadow-[inset_0_0_0_1.5px_var(--bl-red)] data-disabled:cursor-default data-disabled:opacity-50',
+    'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy data-pressed:bg-secondary-strong',
+    'data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 group-data-open:shadow-[inset_0_0_0_1.5px_var(--primary)]',
+    'group-data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:cursor-default data-disabled:opacity-50',
   ],
   {
     variants: {
@@ -88,7 +88,7 @@ export function SelectValue<T extends object>({ className, ...props }: SelectVal
   return (
     <AriaSelectValue<T>
       data-slot="select-value"
-      className={composeRenderProps(className, (cls) => cn('min-w-0 flex-1 truncate data-placeholder:text-bl-label3', cls))}
+      className={composeRenderProps(className, (cls) => cn('min-w-0 flex-1 truncate data-placeholder:text-tertiary-foreground', cls))}
       {...props}
     />
   );

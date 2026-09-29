@@ -71,16 +71,16 @@ export interface ChannelIntroProps extends Omit<ComponentProps<'div'>, 'title'> 
 export function ChannelIntro({ title, icon, className, children, ...props }: ChannelIntroProps) {
   return (
     <div data-slot="channel-intro" className={cn('px-[18px] pb-2.5', className)} {...props}>
-      <div className="mb-2 grid size-10 place-items-center rounded-[12px] bg-ck-fill2 text-ck-mut">
+      <div className="mb-2 grid size-10 place-items-center rounded-[12px] bg-secondary-strong text-muted-foreground">
         {icon ?? <ChatIcon d={chatIconPaths.hash} size={20} sw={2.2} />}
       </div>
       <div className="text-[15.5px] font-[750]">{title}</div>
-      {children != null && <div className="mt-0.5 text-[12px] text-ck-mut3">{children}</div>}
+      {children != null && <div className="mt-0.5 text-[12px] text-tertiary-foreground">{children}</div>}
     </div>
   );
 }
 
-export const messageDividerVariants = cva('flex items-center gap-2 px-[18px] text-[10.5px] text-ck-mut3', {
+export const messageDividerVariants = cva('flex items-center gap-2 px-[18px] text-[10.5px] text-tertiary-foreground', {
   variants: {
     variant: {
       /** a day boundary */
@@ -98,9 +98,9 @@ export interface MessageDividerProps extends ComponentProps<'div'>, VariantProps
 export function MessageDivider({ variant, className, children, ...props }: MessageDividerProps) {
   return (
     <div data-slot="message-divider" className={cn(messageDividerVariants({ variant }), className)} {...props}>
-      <span className="h-px flex-1 bg-ck-sep" />
+      <span className="h-px flex-1 bg-border" />
       {children}
-      <span className="h-px flex-1 bg-ck-sep" />
+      <span className="h-px flex-1 bg-border" />
     </div>
   );
 }
@@ -112,7 +112,7 @@ export function DateDivider(props: Omit<MessageDividerProps, 'variant'>) {
 
 /** Placeholder text for an empty transcript or thread. */
 export function MessageListEmpty({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="message-list-empty" className={cn('px-[18px] py-3.5 text-[12.5px] text-ck-mut3', className)} {...props} />;
+  return <div data-slot="message-list-empty" className={cn('px-[18px] py-3.5 text-[12.5px] text-tertiary-foreground', className)} {...props} />;
 }
 
 /** "Stitch is typing…" with three dots taking turns. */
@@ -122,12 +122,12 @@ export function TypingIndicator({ className, children, ...props }: ComponentProp
       data-slot="typing-indicator"
       role="status"
       className={cn(
-        'flex items-center gap-[8px] px-[18px] py-1.5 text-[11.5px] text-ck-mut animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none',
+        'flex items-center gap-[8px] px-[18px] py-1.5 text-[11.5px] text-muted-foreground animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none',
         className,
       )}
       {...props}
     >
-      <span aria-hidden className="flex items-center gap-[3px] rounded-full bg-ck-fill px-[7px] py-[5px]">
+      <span aria-hidden className="flex items-center gap-[3px] rounded-full bg-secondary px-[7px] py-[5px]">
         {[0, 1, 2].map((i) => (
           <span
             key={i}

@@ -63,7 +63,7 @@ function Scaled({
         position: 'relative',
         overflow: 'hidden',
         borderRadius: 12,
-        boxShadow: '0 0 0 1px var(--wb-sep)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       <div

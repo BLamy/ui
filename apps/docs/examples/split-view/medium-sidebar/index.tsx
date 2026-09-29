@@ -11,7 +11,7 @@ export default function MediumSidebar() {
   return (
     <div>
       <div
-        style={{ fontSize: 12.5, color: 'var(--bl-label2)', marginBottom: 8 }}
+        style={{ fontSize: 12.5, color: 'var(--muted-foreground)', marginBottom: 8 }}
       >
         Parent state: sidebar <b>{visible ? 'visible' : 'hidden'}</b>
       </div>

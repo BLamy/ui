@@ -27,7 +27,7 @@ interface Msg {
 const bubble = (m: Msg) =>
   m.role === 'user' ? (
     <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '8px 0' }}>
-      <div style={{ maxWidth: '80%', background: 'var(--wb-fill2)', borderRadius: '12px 12px 4px 12px', padding: '8px 12px', fontSize: 13.5 }}>{m.text}</div>
+      <div style={{ maxWidth: '80%', background: 'var(--secondary-strong)', borderRadius: '12px 12px 4px 12px', padding: '8px 12px', fontSize: 13.5 }}>{m.text}</div>
     </div>
   ) : (
     <div style={{ margin: '4px 0 12px', fontSize: 13.5, lineHeight: 1.55 }}>{m.text}</div>
@@ -63,13 +63,13 @@ function ScrollerDemo() {
   };
   const items = msgs.map((m) => ({ id: m.id, anchor: m.role === 'user', node: bubble(m) }));
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 340, width: 420, borderRadius: 12, overflow: 'hidden', background: 'var(--wb-bg)', border: '1px solid var(--wb-sep)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 340, width: 420, borderRadius: 12, overflow: 'hidden', background: 'var(--background)', border: '1px solid var(--border)' }}>
       <MessageScroller items={items} streaming={false} threadKey="live" />
-      <div style={{ padding: 10, borderTop: '1px solid var(--wb-sep)', flexShrink: 0 }}>
+      <div style={{ padding: 10, borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         <button
           className="wb-btn"
           onClick={add}
-          style={{ width: '100%', border: 0, borderRadius: 9, background: 'var(--wb-tint)', color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 0', cursor: 'pointer' }}
+          style={{ width: '100%', border: 0, borderRadius: 9, background: 'var(--primary)', color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 0', cursor: 'pointer' }}
         >
           Send a turn
         </button>
@@ -109,13 +109,13 @@ function StreamingDemo() {
   };
   const items = msgs.map((m) => ({ id: m.id, anchor: m.role === 'user', node: bubble(m) }));
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 340, width: 420, borderRadius: 12, overflow: 'hidden', background: 'var(--wb-bg)', border: '1px solid var(--wb-sep)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 340, width: 420, borderRadius: 12, overflow: 'hidden', background: 'var(--background)', border: '1px solid var(--border)' }}>
       <MessageScroller items={items} streaming={streaming} threadKey="stream" />
-      <div style={{ padding: 10, borderTop: '1px solid var(--wb-sep)', flexShrink: 0 }}>
+      <div style={{ padding: 10, borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         <button
           className="wb-btn"
           onClick={start}
-          style={{ width: '100%', border: 0, borderRadius: 9, background: 'var(--wb-tint)', color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 0', cursor: 'pointer' }}
+          style={{ width: '100%', border: 0, borderRadius: 9, background: 'var(--primary)', color: '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, padding: '9px 0', cursor: 'pointer' }}
         >
           {streaming ? 'Streaming… scroll up to release' : 'Replay stream'}
         </button>
@@ -140,7 +140,7 @@ function LastAnchorDemo() {
   ];
   const items = msgs.map((m) => ({ id: m.id, anchor: m.role === 'user', node: bubble(m) }));
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 380, width: 420, borderRadius: 12, overflow: 'hidden', background: 'var(--wb-bg)', border: '1px solid var(--wb-sep)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 380, width: 420, borderRadius: 12, overflow: 'hidden', background: 'var(--background)', border: '1px solid var(--border)' }}>
       <MessageScroller items={items} streaming={false} threadKey="anchored" />
     </div>
   );

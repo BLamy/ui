@@ -37,7 +37,7 @@ type Story = StoryObj<typeof WorkbenchPanel>;
 function Frame({ children }: { children: React.ReactNode }) {
   return (
     <WorkbenchTheme style={{ minHeight: 520, padding: 24, display: 'grid', placeItems: 'center' }}>
-      <div style={{ width: 380, height: 460, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--wb-sep)' }}>{children}</div>
+      <div style={{ width: 380, height: 460, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>{children}</div>
     </WorkbenchTheme>
   );
 }
@@ -94,7 +94,7 @@ function TabBarDemo() {
   const [active, setActive] = useState('chat');
   return (
     <WorkbenchTheme style={{ minHeight: 200, display: 'grid', placeItems: 'center' }}>
-      <div style={{ width: 390, border: '1px solid var(--wb-sep)', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ width: 390, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         <WorkbenchTabBar value={active} onValueChange={setActive}>
           <WorkbenchTab id="chat" icon="msg">
             Chat

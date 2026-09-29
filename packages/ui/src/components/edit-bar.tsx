@@ -17,7 +17,7 @@ export function EditBar({ count, allFav, onFav, onDelete, className, style }: Ed
   return (
     <div data-slot="edit-bar"
       className={cn(
-        'absolute inset-x-0 bottom-0 z-130 box-border flex h-[62px] items-center [border-top:1px_solid_var(--bl-sep)] bg-bl-bar px-4 pt-0 pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7]',
+        'absolute inset-x-0 bottom-0 z-130 box-border flex h-[62px] items-center [border-top:1px_solid_var(--border)] bg-bar px-4 pt-0 pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7]',
         className,
       )}
       style={style}>

@@ -44,9 +44,9 @@ function Demo({ safeTop, withRefresh }: { safeTop?: boolean; withRefresh?: boole
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 0 18px' }}>
           <Avatar c={{ f: PEOPLE[sel][0], l: PEOPLE[sel][1] }} size={92} />
           <div style={{ fontSize: 26, fontWeight: 700, marginTop: 12, letterSpacing: '-.3px' }}>{PEOPLE[sel][0]} {PEOPLE[sel][1]}</div>
-          <div style={{ fontSize: 14.5, color: 'var(--bl-label2)', marginTop: 3 }}>{PEOPLE[sel][2]}</div>
+          <div style={{ fontSize: 14.5, color: 'var(--muted-foreground)', marginTop: 3 }}>{PEOPLE[sel][2]}</div>
         </div>
-        <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--bl-label2)', padding: '0 2px' }}>
+        <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--muted-foreground)', padding: '0 2px' }}>
           Pop with the back button, an edge-swipe from the left, or Esc.
         </div>
       </div>

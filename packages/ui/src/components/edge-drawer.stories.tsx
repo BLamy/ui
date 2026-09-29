@@ -12,9 +12,9 @@ export default meta;
 type Story = StoryObj<typeof EdgeDrawer>;
 
 const panel = (label: string) => (
-  <div style={{ height: '100%', padding: 18, boxSizing: 'border-box', background: 'var(--bl-card)', color: 'var(--bl-label)' }}>
+  <div style={{ height: '100%', padding: 18, boxSizing: 'border-box', background: 'var(--card)', color: 'var(--foreground)' }}>
     <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 10 }}>{label}</div>
-    <div style={{ fontSize: 14, color: 'var(--bl-label2)', lineHeight: 1.5 }}>Headless: the children are the whole panel. Tap the scrim to close.</div>
+    <div style={{ fontSize: 14, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>Headless: the children are the whole panel. Tap the scrim to close.</div>
   </div>
 );
 

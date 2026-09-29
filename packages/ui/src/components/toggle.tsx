@@ -8,7 +8,7 @@ export const toggleVariants = cva(
   [
     'bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-1.5 border-0 [font-family:inherit] font-semibold whitespace-nowrap text-foreground outline-none',
     'transition-[background-color,color,box-shadow,scale] duration-spring-snappy ease-spring-snappy data-pressed:not-aria-expanded:scale-[.96] motion-reduce:transition-none [&_svg]:shrink-0',
-    'data-hovered:bg-accent data-pressed:bg-bl-fill2',
+    'data-hovered:bg-accent data-pressed:bg-secondary-strong',
     'data-selected:bg-primary/15 data-selected:text-primary data-selected:data-pressed:bg-primary/25',
     'data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
   ],
@@ -18,7 +18,7 @@ export const toggleVariants = cva(
         default: 'bg-transparent',
         /** Filled resting state, for toggles standing alone on a card. */
         filled: 'bg-secondary',
-        outline: 'bg-transparent shadow-[inset_0_0_0_1px_var(--bl-sep)] data-selected:shadow-[inset_0_0_0_1px_transparent]',
+        outline: 'bg-transparent shadow-[inset_0_0_0_1px_var(--border)] data-selected:shadow-[inset_0_0_0_1px_transparent]',
       },
       size: {
         sm: 'h-8 min-w-8 rounded-lg px-2 text-[13px]',

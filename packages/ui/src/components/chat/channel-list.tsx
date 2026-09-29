@@ -49,7 +49,7 @@ export interface ChannelGroupProps extends ComponentProps<'div'> {
 export function ChannelGroup({ label, className, children, ...props }: ChannelGroupProps) {
   return (
     <div data-slot="channel-group" role="group" aria-label={typeof label === 'string' ? label : undefined} className={className} {...props}>
-      <div className="px-[8px] pt-[11px] pb-[4px] text-[10px] font-bold tracking-[.7px] text-ck-mut3 uppercase">{label}</div>
+      <div className="px-[8px] pt-[11px] pb-[4px] text-[10px] font-bold tracking-[.7px] text-tertiary-foreground uppercase">{label}</div>
       {children}
     </div>
   );
@@ -59,7 +59,7 @@ function MentionPill({ n }: { n: number }) {
   return (
     <span
       data-slot="channel-item-mentions"
-      className="box-border flex h-[16px] min-w-[16px] shrink-0 items-center justify-center rounded-full bg-ck-red px-[4px] text-[10px] leading-none font-bold text-white"
+      className="box-border flex h-[16px] min-w-[16px] shrink-0 items-center justify-center rounded-full bg-destructive px-[4px] text-[10px] leading-none font-bold text-white"
     >
       {n > 99 ? '99+' : n}
     </span>
@@ -98,16 +98,16 @@ export function ChannelItem({ id, icon, unread, mentions, isActive, className, c
       className={composeRenderProps(className, (c) =>
         cn(
           'flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 px-[8px] py-[5px] text-left font-ios text-[13.5px] [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
-          on ? 'bg-ck-fill2' : 'bg-transparent data-hovered:bg-ck-hover',
-          on || unread ? 'font-[650] text-ck-label' : 'font-normal text-ck-mut',
+          on ? 'bg-secondary-strong' : 'bg-transparent data-hovered:bg-accent',
+          on || unread ? 'font-[650] text-foreground' : 'font-normal text-muted-foreground',
           c,
         ),
       )}
       {...props}
     >
-      <span className="grid text-ck-mut3">{icon ?? <ChatIcon d={chatIconPaths.hash} size={13} sw={2} />}</span>
+      <span className="grid text-tertiary-foreground">{icon ?? <ChatIcon d={chatIconPaths.hash} size={13} sw={2} />}</span>
       <span className="flex-1 truncate">{children}</span>
-      {mentions ? <MentionPill n={mentions} /> : unread && !on && <span className="size-[7px] rounded-[50%] bg-ck-tint" />}
+      {mentions ? <MentionPill n={mentions} /> : unread && !on && <span className="size-[7px] rounded-[50%] bg-primary" />}
     </Button>
   );
 }
@@ -134,13 +134,13 @@ export function ChannelThreadItem({ isActive, className, children, onPress, ...p
       className={composeRenderProps(className, (c) =>
         cn(
           'flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 py-[3px] pr-[8px] pl-[24px] text-left font-ios text-[12px]',
-          isActive ? 'bg-ck-fill font-semibold text-ck-label' : 'bg-transparent text-ck-mut3 data-hovered:text-ck-mut',
+          isActive ? 'bg-secondary font-semibold text-foreground' : 'bg-transparent text-tertiary-foreground data-hovered:text-muted-foreground',
           c,
         ),
       )}
       {...props}
     >
-      <span className="-mt-[6px] size-[8px] shrink-0 rounded-[0_0_0_4px] border-b-[1.5px] border-l-[1.5px] border-ck-sep" />
+      <span className="-mt-[6px] size-[8px] shrink-0 rounded-[0_0_0_4px] border-b-[1.5px] border-l-[1.5px] border-border" />
       <span className="truncate">{children}</span>
     </Button>
   );

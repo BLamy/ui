@@ -44,11 +44,11 @@ function EditorRail() {
               alignItems: 'center',
               gap: 8,
               padding: '9px 12px',
-              borderBottom: '1px solid var(--wb-sep)',
+              borderBottom: '1px solid var(--border)',
             }}
           >
             <SidebarTrigger />
-            <strong style={{ fontSize: 13.5, color: 'var(--wb-label)' }}>
+            <strong style={{ fontSize: 13.5, color: 'var(--foreground)' }}>
               {panel}
             </strong>
           </header>
@@ -58,7 +58,7 @@ function EditorRail() {
               padding: 16,
               fontSize: 12.5,
               lineHeight: 1.6,
-              color: 'var(--wb-label2)',
+              color: 'var(--muted-foreground)',
             }}
           >
             {'export function App() {\n  return <Sidebar variant="rail" />\n}'}
@@ -89,7 +89,7 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--wb-sep)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       {children}

@@ -8,7 +8,7 @@ export function Kbd({ className, ...props }: ComponentProps<typeof Keyboard>) {
     <Keyboard
       data-slot="kbd"
       className={cn(
-        'pointer-events-none box-border inline-flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-[5px] bg-bl-fill px-1.5 font-ios text-[12px] leading-none font-medium text-muted-foreground shadow-[inset_0_-1px_0_var(--bl-sep)] select-none [&_svg]:size-3',
+        'pointer-events-none box-border inline-flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-[5px] bg-secondary px-1.5 font-ios text-[12px] leading-none font-medium text-muted-foreground shadow-[inset_0_-1px_0_var(--border)] select-none [&_svg]:size-3',
         className,
       )}
       {...props}

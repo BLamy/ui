@@ -7,7 +7,7 @@ export default function InlineCode() {
         margin: 0,
         fontSize: 15,
         lineHeight: 1.7,
-        color: 'var(--bl-label)',
+        color: 'var(--foreground)',
       }}
     >
       Create the queue with{' '}

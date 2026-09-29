@@ -53,7 +53,7 @@ export function BrightnessSlider() {
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); move(e); }}
       onPointerMove={(e) => { if (e.buttons) move(e); }}
       onKeyDown={(e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { setV((x) => Math.min(1, Math.max(0, x + (e.key === 'ArrowRight' ? 0.0625 : -0.0625)))); Haptics.selection(); e.preventDefault(); } }}
-      className="relative h-[64px] cursor-ew-resize touch-none overflow-hidden rounded-[18px] bg-bl-fill2">
+      className="relative h-[64px] cursor-ew-resize touch-none overflow-hidden rounded-[18px] bg-secondary-strong">
       <div className="absolute inset-y-0 left-0 bg-[rgba(255,255,255,.94)]" style={{ width: (v * 100) + '%' }} />
       <span className="absolute top-1/2 left-4 grid -translate-y-1/2 text-[rgba(60,60,67,.62)]"><Sun size={22} /></span>
     </div>
@@ -174,8 +174,8 @@ export function WheelDrum({ n, init, label }: { n: number; init?: number; label:
             );
           })}
         </div>
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[47.6px] bg-[linear-gradient(var(--bl-card),transparent)]" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[47.6px] bg-[linear-gradient(transparent,var(--bl-card))]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[47.6px] bg-[linear-gradient(var(--card),transparent)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[47.6px] bg-[linear-gradient(transparent,var(--card))]" />
       </div>
       <span className="text-[13px] font-semibold text-muted-foreground">{label}</span>
     </div>
@@ -186,8 +186,8 @@ export function HapticsPlayground() {
   return (
     <List inset>
       <div className="px-1 pt-0.5 pb-3.5 text-[15px] leading-[1.5] text-muted-foreground">
-        Tap, slide and spin. On Android every detent vibrates. In Safari on an iPhone, or a Mac with a Force Touch trackpad, taps tick and so does the native haptic slider. <span className="text-bl-label3">(iOS can't tick mid-drag, so the custom drags are silent there.)</span></div>
-      <div className="px-1 pt-0 pb-4 [font-family:ui-monospace,Menlo,monospace] text-[12px] text-bl-label3">engine: {Haptics.engine}</div>
+        Tap, slide and spin. On Android every detent vibrates. In Safari on an iPhone, or a Mac with a Force Touch trackpad, taps tick and so does the native haptic slider. <span className="text-tertiary-foreground">(iOS can't tick mid-drag, so the custom drags are silent there.)</span></div>
+      <div className="px-1 pt-0 pb-4 [font-family:ui-monospace,Menlo,monospace] text-[12px] text-tertiary-foreground">engine: {Haptics.engine}</div>
       <ListSection><HapticsEnabledRow /></ListSection>
       <ListSection title="Brightness">
         <div className="rounded-[12px] bg-card p-3.5"><BrightnessSlider /></div>

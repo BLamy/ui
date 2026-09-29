@@ -14,7 +14,7 @@ interface Args {
 const meta: Meta<Args> = {
   title: 'Molecules/Composer',
   args: { tint: '#0A84FF' },
-  render: ({ tint, ...args }) => <ChatComposer {...args} onSend={() => {}} style={{ '--ck-tint': tint } as CSSProperties} />,
+  render: ({ tint, ...args }) => <ChatComposer {...args} onSend={() => {}} style={{ '--primary': tint } as CSSProperties} />,
   decorators: [
     (Story) => (
       <div

@@ -23,7 +23,7 @@ export default function AnnotateScreenshot() {
         height: 400,
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg2)',
+        background: 'var(--muted)',
       }}
     >
       {/* Anything underneath: the canvas is transparent and fills its
@@ -34,8 +34,8 @@ export default function AnnotateScreenshot() {
           inset: '20px 20px 80px',
           borderRadius: 12,
           padding: 18,
-          background: 'var(--bl-card)',
-          boxShadow: '0 0 0 1px var(--bl-sep)',
+          background: 'var(--card)',
+          boxShadow: '0 0 0 1px var(--border)',
         }}
       >
         <div
@@ -43,7 +43,7 @@ export default function AnnotateScreenshot() {
             width: '45%',
             height: 14,
             borderRadius: 7,
-            background: 'var(--bl-fill2)',
+            background: 'var(--secondary-strong)',
           }}
         />
         {[92, 80, 86, 60].map((w, i) => (
@@ -54,7 +54,7 @@ export default function AnnotateScreenshot() {
               height: 10,
               borderRadius: 5,
               marginTop: 14,
-              background: 'var(--bl-fill)',
+              background: 'var(--secondary)',
             }}
           />
         ))}
@@ -64,7 +64,7 @@ export default function AnnotateScreenshot() {
               width: 110,
               height: 34,
               borderRadius: 9,
-              background: 'var(--bl-tint)',
+              background: 'var(--primary)',
             }}
           />
           <div
@@ -72,7 +72,7 @@ export default function AnnotateScreenshot() {
               width: 90,
               height: 34,
               borderRadius: 9,
-              background: 'var(--bl-fill)',
+              background: 'var(--secondary)',
             }}
           />
         </div>

@@ -36,7 +36,7 @@ function useCloseDrawer() {
 
 export function ThreadSidebar({ className, style, children }: Div) {
   return (
-    <nav data-slot="thread-sidebar" aria-label="Threads" className={cn('box-border flex h-full w-full flex-col bg-wb-side', className)} style={style}>
+    <nav data-slot="thread-sidebar" aria-label="Threads" className={cn('box-border flex h-full w-full flex-col bg-sidebar', className)} style={style}>
       {children}
     </nav>
   );
@@ -55,7 +55,7 @@ export function ThreadSidebarBrand({ icon, children, className }: { icon?: React
   return (
     <>
       {icon ?? (
-        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-[linear-gradient(135deg,var(--wb-tint),#5E5CE6)]">
+        <span className="grid size-[22px] shrink-0 place-items-center rounded-md bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]">
           <WIcon name="spark" size={13} sw={2.2} className="text-white" />
         </span>
       )}
@@ -82,14 +82,14 @@ export interface ThreadSearchProps {
 }
 export function ThreadSearch({ value, onChange, placeholder = 'Search', className }: ThreadSearchProps) {
   return (
-    <div data-slot="thread-search" className={cn('flex flex-1 items-center gap-1.5 rounded-lg bg-wb-fill px-2 py-[5px]', className)}>
-      <WIcon name="search" size={14} sw={2} className="text-wb-label3" />
+    <div data-slot="thread-search" className={cn('flex flex-1 items-center gap-1.5 rounded-lg bg-secondary px-2 py-[5px]', className)}>
+      <WIcon name="search" size={14} sw={2} className="text-tertiary-foreground" />
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label="Search threads"
-        className="min-w-0 flex-1 border-0 bg-transparent text-[12.5px] [font-family:inherit] text-wb-label outline-none"
+        className="min-w-0 flex-1 border-0 bg-transparent text-[12.5px] [font-family:inherit] text-foreground outline-none"
       />
     </div>
   );
@@ -124,7 +124,7 @@ export function ProjectSwitcher({ children = 'All projects', onPress, className 
   return (
     <Button
       data-slot="project-switcher"
-      className={cn(rowBtn, 'mx-2 bg-transparent px-2 py-1.5 text-[12.5px] font-semibold text-wb-label2', className)}
+      className={cn(rowBtn, 'mx-2 bg-transparent px-2 py-1.5 text-[12.5px] font-semibold text-muted-foreground', className)}
       onPress={() => {
         tick();
         onPress?.();
@@ -133,7 +133,7 @@ export function ProjectSwitcher({ children = 'All projects', onPress, className 
       <WIcon name="folder" size={15} sw={1.8} />
       <span className="flex-1 truncate">{children}</span>
       <WIcon name="chevD" size={13} sw={2.2} />
-      <WIcon name="folderP" size={15} sw={1.8} className="text-wb-label3" />
+      <WIcon name="folderP" size={15} sw={1.8} className="text-tertiary-foreground" />
     </Button>
   );
 }
@@ -161,8 +161,8 @@ export interface ThreadGroupProps {
 export function ThreadGroup({ label, collapsible, defaultOpen = true, open: openProp, onOpenChange, className, children }: ThreadGroupProps) {
   const [ownOpen, setOwnOpen] = useState(defaultOpen);
   const open = openProp ?? ownOpen;
-  const labelEl = <span className="text-[11px] font-semibold tracking-[.4px] text-wb-label3">{label}</span>;
-  const line = <span className="h-px flex-1 bg-wb-sep" />;
+  const labelEl = <span className="text-[11px] font-semibold tracking-[.4px] text-tertiary-foreground">{label}</span>;
+  const line = <span className="h-px flex-1 bg-border" />;
   return (
     <div data-slot="thread-group" role="group" className={className}>
       {collapsible ? (
@@ -177,7 +177,7 @@ export function ThreadGroup({ label, collapsible, defaultOpen = true, open: open
         >
           {labelEl}
           {line}
-          <WIcon name={open ? 'chevU' : 'chevD'} size={12} sw={2.2} className="text-wb-label3" />
+          <WIcon name={open ? 'chevU' : 'chevD'} size={12} sw={2.2} className="text-tertiary-foreground" />
         </Button>
       ) : (
         <div className="flex items-center gap-2 px-2 pt-2.5 pb-1">
@@ -223,7 +223,7 @@ export function ThreadItem({ active, status = 'idle', meta, icon = 'msg', onPres
       data-slot="thread-item"
       data-status={status}
       aria-current={active ? 'page' : undefined}
-      className={cn(rowBtn, 'box-border w-full px-2 py-1.5 text-[13px] text-wb-label', active ? 'bg-wb-fill2' : 'bg-transparent', className)}
+      className={cn(rowBtn, 'box-border w-full px-2 py-1.5 text-[13px] text-foreground', active ? 'bg-secondary-strong' : 'bg-transparent', className)}
       onPress={() => {
         tick();
         onPress?.();
@@ -232,16 +232,16 @@ export function ThreadItem({ active, status = 'idle', meta, icon = 'msg', onPres
     >
       {status === 'running' ? (
         <span className="grid size-[15px] shrink-0 place-items-center" aria-label="Running">
-          <span className="size-[7px] animate-[wbPulse_1.2s_infinite] rounded-full bg-wb-tint motion-reduce:animate-none" />
+          <span className="size-[7px] animate-[wbPulse_1.2s_infinite] rounded-full bg-primary motion-reduce:animate-none" />
         </span>
       ) : (
         <span className="contents" aria-label={status === 'error' ? 'Failed' : undefined}>
-          <WIcon name={icon} size={15} sw={1.8} className={status === 'error' ? 'text-wb-red' : 'text-wb-label3'} />
+          <WIcon name={icon} size={15} sw={1.8} className={status === 'error' ? 'text-destructive' : 'text-tertiary-foreground'} />
         </span>
       )}
       <span className={cn('min-w-0 flex-1 truncate', status === 'unread' && 'font-semibold')}>{children}</span>
-      {status === 'unread' ? <span aria-label="Unread" className="size-1.5 shrink-0 rounded-full bg-wb-tint" /> : null}
-      {meta != null ? <span className="shrink-0 text-[11.5px] text-wb-label3">{meta}</span> : null}
+      {status === 'unread' ? <span aria-label="Unread" className="size-1.5 shrink-0 rounded-full bg-primary" /> : null}
+      {meta != null ? <span className="shrink-0 text-[11.5px] text-tertiary-foreground">{meta}</span> : null}
     </Button>
   );
 }
@@ -251,7 +251,7 @@ export function ThreadShowMore({ count, onPress, className }: { count: number; o
   return (
     <Button
       data-slot="thread-show-more"
-      className={cn(rowBtn, 'w-full bg-transparent px-2 py-1.5 text-[12.5px] text-wb-label3', className)}
+      className={cn(rowBtn, 'w-full bg-transparent px-2 py-1.5 text-[12.5px] text-tertiary-foreground', className)}
       onPress={() => {
         tick();
         onPress?.();
@@ -265,7 +265,7 @@ export function ThreadShowMore({ count, onPress, className }: { count: number; o
 
 export function ThreadSidebarFooter({ className, style, children }: Div) {
   return (
-    <div data-slot="thread-sidebar-footer" className={cn('border-t border-wb-sep px-2.5 pt-2 pb-2.5', className)} style={style}>
+    <div data-slot="thread-sidebar-footer" className={cn('border-t border-border px-2.5 pt-2 pb-2.5', className)} style={style}>
       {children}
     </div>
   );
@@ -275,16 +275,16 @@ export function ThreadSidebarFooter({ className, style, children }: Div) {
 export function SidebarNotice({ icon = 'dl', onPress, onDismiss, className, children }: { icon?: WIconName; onPress?: () => void; onDismiss?: () => void; className?: string; children?: React.ReactNode }) {
   return (
     <div data-slot="sidebar-notice" className={cn('mb-1.5 flex items-center gap-2 rounded-[9px] bg-[rgba(10,132,255,.12)] px-2.5 py-[7px]', className)}>
-      <WIcon name={icon} size={14} sw={2} className="text-wb-tint" />
+      <WIcon name={icon} size={14} sw={2} className="text-primary" />
       {onPress ? (
-        <Button className="wb-btn flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-wb-tint" onPress={onPress}>
+        <Button className="wb-btn flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[12.5px] font-semibold text-primary" onPress={onPress}>
           {children}
         </Button>
       ) : (
-        <span className="flex-1 text-[12.5px] font-semibold text-wb-tint">{children}</span>
+        <span className="flex-1 text-[12.5px] font-semibold text-primary">{children}</span>
       )}
       {onDismiss !== undefined ? (
-        <Button aria-label="Dismiss" className="wb-btn grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-wb-label3" onPress={onDismiss}>
+        <Button aria-label="Dismiss" className="wb-btn grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-tertiary-foreground" onPress={onDismiss}>
           <WIcon name="x" size={13} sw={2} />
         </Button>
       ) : null}
@@ -297,7 +297,7 @@ export function SidebarFooterItem({ icon, onPress, className, children }: { icon
   return (
     <Button
       data-slot="sidebar-footer-item"
-      className={cn(rowBtn, 'w-full bg-transparent px-2 py-[7px] text-[13px] text-wb-label2', className)}
+      className={cn(rowBtn, 'w-full bg-transparent px-2 py-[7px] text-[13px] text-muted-foreground', className)}
       onPress={() => {
         tick();
         onPress?.();
@@ -338,15 +338,15 @@ export function SidebarUser({ name, detail, avatar, onPress, className }: Sideba
       {avatar ? (
         <img src={avatar} alt="" className="size-7 shrink-0 rounded-full object-cover" />
       ) : (
-        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--wb-tint),#5E5CE6)] text-[11px] font-bold text-white">
+        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--primary),#5E5CE6)] text-[11px] font-bold text-white">
           {initials}
         </span>
       )}
       <span className="grid min-w-0 flex-1 leading-tight">
-        <span className="truncate text-[13px] font-semibold text-wb-label">{name}</span>
-        {detail != null ? <span className="truncate text-[11.5px] text-wb-label3">{detail}</span> : null}
+        <span className="truncate text-[13px] font-semibold text-foreground">{name}</span>
+        {detail != null ? <span className="truncate text-[11.5px] text-tertiary-foreground">{detail}</span> : null}
       </span>
-      <WIcon name="chevD" size={13} sw={2.2} className="text-wb-label3" />
+      <WIcon name="chevD" size={13} sw={2.2} className="text-tertiary-foreground" />
     </Button>
   );
 }

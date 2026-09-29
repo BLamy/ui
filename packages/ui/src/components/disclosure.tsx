@@ -48,7 +48,7 @@ export function Disclosure({ className, ...props }: AriaDisclosureProps) {
     <AriaDisclosure
       data-slot="disclosure"
       className={composeRenderProps(className, (cls) =>
-        cn('group/disclosure relative text-foreground not-last:shadow-[inset_0_-1px_0_var(--bl-sep)]', cls))}
+        cn('group/disclosure relative text-foreground not-last:shadow-[inset_0_-1px_0_var(--border)]', cls))}
       {...props}
     />
   );
@@ -78,7 +78,7 @@ export function DisclosureTrigger({ className, children, level = 3 }: Disclosure
           name="chev"
           size={17}
           sw={2.4}
-          className="shrink-0 text-bl-label3 transition-transform duration-spring-snappy ease-spring-snappy group-data-expanded/disclosure:rotate-90 motion-reduce:transition-none"
+          className="shrink-0 text-tertiary-foreground transition-transform duration-spring-snappy ease-spring-snappy group-data-expanded/disclosure:rotate-90 motion-reduce:transition-none"
         />
       </Button>
     </Heading>

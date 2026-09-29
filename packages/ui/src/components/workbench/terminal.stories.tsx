@@ -17,7 +17,7 @@ type Story = StoryObj<typeof WorkbenchDock>;
 export const Dock: Story = {
   render: () => (
     <WorkbenchTheme style={{ height: 480, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, minHeight: 0, display: 'grid', placeItems: 'center', color: 'var(--wb-label3)', fontSize: 13 }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'grid', placeItems: 'center', color: 'var(--tertiary-foreground)', fontSize: 13 }}>
         editor area — drag the dock's top edge to resize
       </div>
       <WorkbenchDock>
@@ -35,7 +35,7 @@ export const Dock: Story = {
 export const HeaderAndBody: Story = {
   render: () => (
     <WorkbenchTheme style={{ minHeight: 420, padding: 24, display: 'grid', placeItems: 'center' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', height: 300, width: 520, borderRadius: 12, overflow: 'hidden', background: '#0C0C10', border: '1px solid var(--wb-sep)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 300, width: 520, borderRadius: 12, overflow: 'hidden', background: '#0C0C10', border: '1px solid var(--border)' }}>
         <TerminalHeader title="zsh — cookbook">
           <TerminalAction icon="split" label="Split terminal" />
           <TerminalAction icon="plus" label="New terminal" />

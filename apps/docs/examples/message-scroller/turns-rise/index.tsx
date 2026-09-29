@@ -13,7 +13,7 @@ function UserBubble({ children }: { children: ReactNode }) {
       <div
         style={{
           maxWidth: '80%',
-          background: 'var(--wb-fill2)',
+          background: 'var(--secondary-strong)',
           borderRadius: '12px 12px 4px 12px',
           padding: '8px 12px',
           fontSize: 13.5,
@@ -88,15 +88,15 @@ function TurnsRise() {
         height: 340,
         borderRadius: 12,
         overflow: 'hidden',
-        background: 'var(--wb-bg)',
-        border: '1px solid var(--wb-sep)',
+        background: 'var(--background)',
+        border: '1px solid var(--border)',
       }}
     >
       <MessageScroller items={items} threadKey="turns" />
       <div
         style={{
           padding: 10,
-          borderTop: '1px solid var(--wb-sep)',
+          borderTop: '1px solid var(--border)',
           flexShrink: 0,
         }}
       >
@@ -108,7 +108,7 @@ function TurnsRise() {
             width: '100%',
             border: 0,
             borderRadius: 9,
-            background: 'var(--wb-tint)',
+            background: 'var(--primary)',
             color: '#fff',
             font: 'inherit',
             fontWeight: 600,

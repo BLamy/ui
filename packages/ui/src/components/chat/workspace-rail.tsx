@@ -43,7 +43,7 @@ export function WorkspaceRail({ selectedKey, defaultSelectedKey, onSelectionChan
         data-slot="workspace-rail"
         variant="plain"
         className={cn(
-          'box-border flex w-[52px] shrink-0 flex-col items-center gap-[8px] border-r border-ck-sep bg-ck-rail px-0 py-[10px]',
+          'box-border flex w-[52px] shrink-0 flex-col items-center gap-[8px] border-r border-border bg-muted px-0 py-[10px]',
           className,
         )}
         style={style}
@@ -72,12 +72,12 @@ export function WorkspaceRailList({ 'aria-label': ariaLabel = 'Workspaces', chil
 /* Discord's rail: a tile is a circle at rest and morphs to a rounded square when hovered or selected, while the
    pill on the leading edge grows (nub → half → full). Corners, colours and the pill ride springs; a press dips. */
 const tileClass =
-  'relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-ck-fill2 font-ios text-[14px] leading-[normal] font-extrabold text-ck-on-fill [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--ck-ws-color) group-data-selected:bg-(--ck-ws-color) group-data-selected:text-white group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-ck-link';
+  'relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-ios text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--ck-ws-color) group-data-selected:bg-(--ck-ws-color) group-data-selected:text-white group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-link';
 
 function MentionBadge({ n }: { n?: number }) {
   if (!n) return null;
   return (
-    <span className="absolute -right-[7px] -bottom-[6px] box-border flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-[3px] border-ck-rail bg-ck-red px-[3px] font-ios text-[10px] leading-none font-bold text-white">
+    <span className="absolute -right-[7px] -bottom-[6px] box-border flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-[3px] border-muted bg-destructive px-[3px] font-ios text-[10px] leading-none font-bold text-white">
       {n > 99 ? '99+' : n}
     </span>
   );
@@ -101,11 +101,11 @@ export interface WorkspaceRailItemProps {
 }
 
 /** One workspace tile. */
-export function WorkspaceRailItem({ id, label, color = 'var(--ck-tint, #0A84FF)', title, unread, mentions, children, className }: WorkspaceRailItemProps) {
+export function WorkspaceRailItem({ id, label, color = 'var(--primary)', title, unread, mentions, children, className }: WorkspaceRailItemProps) {
   const name = title ?? label ?? id;
   return (
     <TabViewTab id={id} textValue={name} ref={titleRef(name)} className="group flex w-full justify-center">
-      <TabViewIndicator variant="pill" attention={unread} className="bg-ck-label duration-(--duration-spring-bouncy) ease-(--ease-spring-bouncy)" />
+      <TabViewIndicator variant="pill" attention={unread} className="bg-foreground duration-(--duration-spring-bouncy) ease-(--ease-spring-bouncy)" />
       <span data-slot="workspace-rail-item" className={cn(tileClass, className)} style={{ '--ck-ws-color': color } as CSSProperties}>
         {children ?? label}
         <MentionBadge n={mentions} />
@@ -127,7 +127,7 @@ export function WorkspaceRailHome({ id = 'home', title = 'Direct Messages', chil
 
 /** A short rule between tiles (under Home). Arrow keys skip it. */
 export function WorkspaceRailSeparator({ className }: { className?: string }) {
-  return <TabViewSeparator className={cn('my-[-1px] h-[2px] w-[20px] rounded-full bg-ck-sep', className)} />;
+  return <TabViewSeparator className={cn('my-[-1px] h-[2px] w-[20px] rounded-full bg-border', className)} />;
 }
 
 export interface WorkspaceRailActionProps {
@@ -148,7 +148,7 @@ export function WorkspaceRailAction({ 'aria-label': ariaLabel = 'Add workspace',
         onPress?.();
       }}
       className={cn(
-        'grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[17px] border border-dashed border-ck-sep bg-transparent text-ck-mut3 [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:rounded-[11px] data-hovered:text-ck-mut data-pressed:scale-[.94] motion-reduce:transition-none',
+        'grid size-[34px] shrink-0 cursor-pointer place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-tertiary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:rounded-[11px] data-hovered:text-muted-foreground data-pressed:scale-[.94] motion-reduce:transition-none',
         className,
       )}
     >

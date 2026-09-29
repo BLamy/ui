@@ -7,7 +7,7 @@ import {
   WorkspaceRailItem,
   WorkspaceRailList,
   WorkspaceRailSeparator,
-  chatVars,
+  themeScopeProps,
 } from '@brett_lamy/ui'
 
 const servers = [
@@ -30,16 +30,16 @@ const channels: Record<string, string[]> = {
 
 function ChatWorkspaces() {
   const [server, setServer] = useState('design')
-  // WorkspaceRail reads the chat --ck-* tokens; chatVars follows light / dark.
+  // A chat theme scope that follows light / dark.
   const appearance = useAppearance() ?? 'light'
   return (
     <div
+      {...themeScopeProps({ scope: 'chat', appearance })}
       style={{
-        ...chatVars(appearance),
         display: 'flex',
         height: 340,
-        background: 'var(--ck-bg)',
-        color: 'var(--ck-label)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
       }}
     >
       <WorkspaceRail selectedKey={server} onSelectionChange={setServer}>
@@ -56,8 +56,8 @@ function ChatWorkspaces() {
         style={{
           width: 190,
           padding: '14px 8px',
-          background: 'var(--ck-side)',
-          borderRight: '1px solid var(--ck-sep)',
+          background: 'var(--sidebar)',
+          borderRight: '1px solid var(--border)',
         }}
       >
         <div style={{ padding: '0 8px 10px', fontWeight: 700 }}>
@@ -72,8 +72,8 @@ function ChatWorkspaces() {
               padding: '6px 8px',
               borderRadius: 7,
               fontSize: 13.5,
-              background: i === 0 ? 'var(--ck-fill2)' : undefined,
-              color: i === 0 ? 'var(--ck-label)' : 'var(--ck-mut)',
+              background: i === 0 ? 'var(--secondary-strong)' : undefined,
+              color: i === 0 ? 'var(--foreground)' : 'var(--muted-foreground)',
             }}
           >
             {server === 'home' ? c : `# ${c}`}
@@ -81,7 +81,7 @@ function ChatWorkspaces() {
         ))}
       </nav>
       <main
-        style={{ flex: 1, padding: 20, fontSize: 13.5, color: 'var(--ck-mut)' }}
+        style={{ flex: 1, padding: 20, fontSize: 13.5, color: 'var(--muted-foreground)' }}
       >
         Up / Down moves between workspaces; the pill marks unread, hover and
         selection.
@@ -100,9 +100,9 @@ function Window({ children }: { children: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-bg)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

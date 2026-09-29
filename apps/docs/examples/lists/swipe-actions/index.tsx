@@ -78,7 +78,7 @@ function Mail() {
                     height: 9,
                     borderRadius: 5,
                     background: unread.has(m.id)
-                      ? 'var(--bl-tint)'
+                      ? 'var(--primary)'
                       : 'transparent',
                   }}
                 />
@@ -93,7 +93,7 @@ function Mail() {
                 <span
                   style={{
                     fontSize: 13,
-                    color: flagged.has(m.id) ? '#FF9F0A' : 'var(--bl-label2)',
+                    color: flagged.has(m.id) ? '#FF9F0A' : 'var(--muted-foreground)',
                   }}
                 >
                   {flagged.has(m.id) ? '★ ' : ''}
@@ -133,9 +133,9 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        background: 'var(--bl-card)',
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        background: 'var(--card)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >

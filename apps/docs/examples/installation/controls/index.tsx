@@ -33,7 +33,7 @@ export default function Controls() {
         <Switch aria-label="Demo switch" checked={on} onChange={setOn} />
         <Spinner />
       </div>
-      <div style={{ fontSize: 12.5, color: 'var(--bl-label2)' }}>
+      <div style={{ fontSize: 12.5, color: 'var(--muted-foreground)' }}>
         @brett_lamy/ui is live — every control ticks.
       </div>
     </div>

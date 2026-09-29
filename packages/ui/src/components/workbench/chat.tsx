@@ -81,12 +81,12 @@ export function ConversationGreeting({ title, description, icon, className }: Co
   return (
     <div data-slot="conversation-greeting" className={cn('mb-[18px] text-center', className)}>
       {icon ?? (
-        <span className="inline-grid size-10 place-items-center rounded-[11px] bg-[linear-gradient(135deg,var(--wb-tint),#5E5CE6)]">
+        <span className="inline-grid size-10 place-items-center rounded-[11px] bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]">
           <WIcon name="spark" size={21} sw={2.1} className="text-white" />
         </span>
       )}
       <div className="mt-3 text-[21px] font-bold tracking-[-.3px]">{title}</div>
-      {description != null ? <div className="mt-1 text-[13.5px] text-wb-label2">{description}</div> : null}
+      {description != null ? <div className="mt-1 text-[13.5px] text-muted-foreground">{description}</div> : null}
     </div>
   );
 }
@@ -181,7 +181,7 @@ export function Suggestion({ onPress, className, children }: { onPress?: () => v
   return (
     <Button
       data-slot="suggestion"
-      className={cn('wb-btn wb-hl cursor-pointer rounded-[99px] border border-wb-sep bg-transparent px-[13px] py-1.5 text-[12.5px] text-wb-label2', className)}
+      className={cn('wb-btn wb-hl cursor-pointer rounded-[99px] border border-border bg-transparent px-[13px] py-1.5 text-[12.5px] text-muted-foreground', className)}
       onPress={() => {
         vib([8]);
         onPress?.();
@@ -208,12 +208,12 @@ export function UserMessage({ images, className, children }: UserMessageProps) {
         {images && images.length ? (
           <div className="flex flex-wrap justify-end gap-1.5">
             {images.map((s, j) => (
-              <img key={j} src={s} alt="attachment" className="h-[110px] max-w-[210px] rounded-xl border border-wb-sep object-cover" />
+              <img key={j} src={s} alt="attachment" className="h-[110px] max-w-[210px] rounded-xl border border-border object-cover" />
             ))}
           </div>
         ) : null}
         {children != null && children !== '' ? (
-          <div className="rounded-[14px_14px_4px_14px] bg-wb-fill2 px-[13px] py-[9px] text-[14px] leading-[1.5] whitespace-pre-wrap">{children}</div>
+          <div className="rounded-[14px_14px_4px_14px] bg-secondary-strong px-[13px] py-[9px] text-[14px] leading-[1.5] whitespace-pre-wrap">{children}</div>
         ) : null}
       </div>
     </div>
@@ -234,7 +234,7 @@ export function ConversationTyping({ className }: { className?: string }) {
   return (
     <div data-slot="typing-indicator" role="status" aria-label="Thinking" className={cn('flex gap-[5px] py-1.5', className)}>
       {DOT_ANIM.map((anim, j) => (
-        <span key={j} className={cn('size-1.5 rounded-[50%] bg-wb-label3 motion-reduce:animate-none', anim)} />
+        <span key={j} className={cn('size-1.5 rounded-[50%] bg-tertiary-foreground motion-reduce:animate-none', anim)} />
       ))}
     </div>
   );
@@ -263,7 +263,7 @@ export interface WorkLogProps {
 export function WorkLog({ summary, defaultOpen = false, children, className }: WorkLogProps) {
   const [open, setOpen] = useState(defaultOpen);
   const has = React.Children.count(children) > 0;
-  const row = 'flex items-center gap-[5px] text-[12px] text-wb-label3';
+  const row = 'flex items-center gap-[5px] text-[12px] text-tertiary-foreground';
   const chevron = (
     <motion.span className="grid" animate={{ rotate: open ? 90 : 0 }} transition={springs.snappy}>
       <WIcon name="chevR" size={11} sw={2.4} />
@@ -301,7 +301,7 @@ export function WorkLog({ summary, defaultOpen = false, children, className }: W
             transition={springs.smooth}
             className="overflow-hidden"
           >
-            <div className="mt-1.5 mb-1 ml-[5px] grid gap-1.5 border-l border-wb-sep pl-3">{children}</div>
+            <div className="mt-1.5 mb-1 ml-[5px] grid gap-1.5 border-l border-border pl-3">{children}</div>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -323,19 +323,19 @@ export interface ToolCallProps {
 /** One step in a WorkLog. */
 export function ToolCall({ icon = 'check', title, detail, code, status = 'done', className }: ToolCallProps) {
   return (
-    <div data-slot="tool-call" data-status={status} className={cn('grid gap-1 text-[12.5px] text-wb-label2', className)}>
+    <div data-slot="tool-call" data-status={status} className={cn('grid gap-1 text-[12.5px] text-muted-foreground', className)}>
       <div className="flex min-w-0 items-center gap-2">
         {status === 'running' ? (
           <span className="grid size-[13px] shrink-0 place-items-center">
-            <span className="size-[7px] animate-[wbPulse_1.2s_infinite] rounded-full bg-wb-tint motion-reduce:animate-none" />
+            <span className="size-[7px] animate-[wbPulse_1.2s_infinite] rounded-full bg-primary motion-reduce:animate-none" />
           </span>
         ) : (
-          <WIcon name={status === 'error' ? 'x' : icon} size={13} sw={2} className={status === 'error' ? 'text-wb-red' : 'text-wb-label3'} />
+          <WIcon name={status === 'error' ? 'x' : icon} size={13} sw={2} className={status === 'error' ? 'text-destructive' : 'text-tertiary-foreground'} />
         )}
         <span className="min-w-0 truncate">{title}</span>
-        {detail != null ? <span className="min-w-0 truncate text-[11.5px] text-wb-label3">{detail}</span> : null}
+        {detail != null ? <span className="min-w-0 truncate text-[11.5px] text-tertiary-foreground">{detail}</span> : null}
       </div>
-      {code ? <pre className="wb-scroll m-0 overflow-x-auto rounded-lg bg-wb-well px-2.5 py-2 font-mono text-[11.5px] leading-[1.55] text-wb-label2">{code}</pre> : null}
+      {code ? <pre className="wb-scroll m-0 overflow-x-auto rounded-lg bg-muted px-2.5 py-2 font-mono text-[11.5px] leading-[1.55] text-muted-foreground">{code}</pre> : null}
     </div>
   );
 }
@@ -359,16 +359,16 @@ export function SettledBanner({
   return (
     <div
       data-slot="settled-banner"
-      className={cn('mb-2.5 flex items-center gap-[11px] rounded-xl border border-wb-sep bg-wb-card px-3 py-2.5', className)}
+      className={cn('mb-2.5 flex items-center gap-[11px] rounded-xl border border-border bg-card px-3 py-2.5', className)}
       style={style}
     >
-      <WIcon name="checkC" size={20} sw={1.8} className="text-wb-green" />
+      <WIcon name="checkC" size={20} sw={1.8} className="text-success" />
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-[650]">{title}</div>
-        <div className="mt-px text-[12px] text-wb-label2">{description}</div>
+        <div className="mt-px text-[12px] text-muted-foreground">{description}</div>
       </div>
       <Button
-        className="wb-btn wb-hl shrink-0 cursor-pointer rounded-lg border border-wb-sep bg-transparent px-3 py-1.5 text-[12.5px] font-semibold text-wb-label"
+        className="wb-btn wb-hl shrink-0 cursor-pointer rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12.5px] font-semibold text-foreground"
         onPress={() => {
           tick();
           onUnsettle();

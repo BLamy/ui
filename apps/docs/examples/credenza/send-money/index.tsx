@@ -57,7 +57,7 @@ function SendMoneyTray() {
                 width: 52,
                 height: 52,
                 borderRadius: 52,
-                background: 'var(--bl-green)',
+                background: 'var(--success)',
                 color: '#fff',
               }}
             >
@@ -85,7 +85,7 @@ function SendMoneyTray() {
             <ListRow title="Amount" trailing={<strong>${amount}</strong>} />
             <ListRow
               title="Fee"
-              trailing={<span style={{ color: 'var(--bl-label2)' }}>Free</span>}
+              trailing={<span style={{ color: 'var(--muted-foreground)' }}>Free</span>}
               divider={false}
             />
             <Button size="pill" style={{ marginTop: 12 }} onPress={send}>
@@ -128,7 +128,7 @@ function SendMoneyTray() {
 // centered.
 function Window({
   width,
-  bg = 'var(--bl-bg)',
+  bg = 'var(--background)',
   children,
 }: {
   width?: number
@@ -145,8 +145,8 @@ function Window({
         borderRadius: 14,
         overflow: 'hidden',
         background: bg,
-        color: 'var(--bl-label)',
-        boxShadow: '0 0 0 1px var(--bl-sep), 0 10px 30px rgba(0,0,0,.06)',
+        color: 'var(--foreground)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 30px rgba(0,0,0,.06)',
         isolation: 'isolate',
       }}
     >
@@ -157,7 +157,7 @@ function Window({
 
 export default function SendMoney() {
   return (
-    <Window width={430} bg="var(--bl-bg2)">
+    <Window width={430} bg="var(--muted)">
       <SendMoneyTray />
     </Window>
   )

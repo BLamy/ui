@@ -37,7 +37,7 @@ export default function ShareContact() {
                 background: 'rgba(52,199,89,.15)',
                 display: 'inline-grid',
                 placeItems: 'center',
-                color: 'var(--bl-green)',
+                color: 'var(--success)',
               }}
             >
               <Icon name="check" size={24} sw={2.4} />
@@ -46,7 +46,7 @@ export default function ShareContact() {
               Contact shared
             </div>
             <div
-              style={{ fontSize: 13, color: 'var(--bl-label2)', marginTop: 3 }}
+              style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 3 }}
             >
               The card spring-morphs its height to each state.
             </div>

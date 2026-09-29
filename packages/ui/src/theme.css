@@ -1,117 +1,243 @@
-/* BL UI Tailwind theme. Colors resolve to the runtime tokens BLProvider (--bl-*) and WorkbenchShell (--wb-*) set,
-   so every utility follows light/dark and tint changes without a rebuild.
-   shadcn's semantic names map onto the iOS palette; the bl-* / wb-* colors expose the rest of it.
-   The semantic names fall back to the host's shadcn variables (--background, --primary, …): this sheet's
-   compiled `bg-background` / `border-border` / `text-primary-foreground` rules ship to apps that also use shadcn,
-   so outside a BLProvider they must resolve to the app's own palette rather than to nothing. */
-@import "tailwindcss/theme.css" layer(theme);
+/* bl-theme — BL UI's iOS look as a shadcn theme (`@brett_lamy/ui/theme.css`, or the `bl-theme` registry item).
+   It sets shadcn's CSS variables (plus BL UI's few extras) for light (`:root`, `.light`) and dark (`.dark`), and
+   the theme scopes: surfaces that restyle a subtree with the same variables — the Workbench, its always-dark
+   terminal, and team chat. `<ThemeScope scope="workbench">` (WorkbenchShell, ChatShell … render one) marks a
+   scope; BLProvider / ThemeScope put `light` or `dark` on their root. A scope sets only the variables its surface
+   changes — the rest (primary, overlay, bars, …) come from around it — so the plain `.light` / `.dark` rules skip
+   scope roots. Plain CSS — no Tailwind needed. */
 
-@theme inline {
-  --color-background: var(--bl-bg, var(--background));
-  --color-foreground: var(--bl-label, var(--foreground));
-  --color-card: var(--bl-card, var(--card));
-  --color-card-foreground: var(--bl-label, var(--card-foreground));
-  --color-popover: var(--bl-card, var(--popover));
-  --color-popover-foreground: var(--bl-label, var(--popover-foreground));
-  --color-primary: var(--bl-tint, var(--primary));
-  --color-primary-foreground: var(--bl-on-tint, var(--primary-foreground, #fff));
-  --color-secondary: var(--bl-fill, var(--secondary));
-  --color-secondary-foreground: var(--bl-label, var(--secondary-foreground));
-  --color-muted: var(--bl-bg2, var(--muted));
-  --color-muted-foreground: var(--bl-label2, var(--muted-foreground));
-  --color-accent: var(--bl-press, var(--accent));
-  --color-accent-foreground: var(--bl-label, var(--accent-foreground));
-  --color-destructive: var(--bl-red, var(--destructive));
-  --color-success: var(--bl-green);
-  --color-border: var(--bl-sep, var(--border));
-  --color-input: var(--bl-fill, var(--input));
-  --color-ring: var(--bl-tint, var(--ring));
-  --color-overlay: var(--bl-scrim);
+:root,
+.light:not([data-theme-scope]) {
+  color-scheme: light;
+  --background: #fff;
+  --foreground: #0B0B0F;
+  --card: #fff;
+  --card-foreground: #0B0B0F;
+  --popover: #fff;
+  --popover-foreground: #0B0B0F;
+  --primary: #0A84FF;
+  --primary-foreground: #fff;
+  --secondary: rgba(120, 120, 128, .13);
+  --secondary-foreground: #0B0B0F;
+  --muted: #F2F2F7;
+  --muted-foreground: rgba(60, 60, 67, .6);
+  --accent: rgba(120, 120, 128, .16);
+  --accent-foreground: #0B0B0F;
+  --destructive: #FF3B30;
+  --border: rgba(60, 60, 67, .22);
+  --input: rgba(120, 120, 128, .13);
+  --ring: #0A84FF;
+  --chart-1: #0A84FF;
+  --chart-2: #34C759;
+  --chart-3: #FF9500;
+  --chart-4: #FF3B30;
+  --chart-5: #AF52DE;
+  --radius: .625rem;
+  --sidebar: #ECECF1;
+  --sidebar-foreground: #0B0B0F;
+  --sidebar-primary: #0A84FF;
+  --sidebar-primary-foreground: #fff;
+  --sidebar-accent: rgba(120, 120, 128, .16);
+  --sidebar-accent-foreground: #0B0B0F;
+  --sidebar-border: rgba(60, 60, 67, .22);
+  --sidebar-ring: #0A84FF;
+  /* BL UI extras */
+  --success: #34C759;
+  --warning: #FF9F0A;
+  --tertiary-foreground: rgba(60, 60, 67, .33);
+  --secondary-strong: rgba(120, 120, 128, .24);
+  --overlay: rgba(0, 0, 0, .38);
+  --bar: rgba(250, 250, 252, .85);
+  --sticky: rgba(244, 244, 248, .92);
+  --handle: rgba(120, 120, 128, .24);
+  --link: var(--primary);
+  --code: #101014;
+  --code-foreground: #D8D8E2;
+}
 
-  --color-bl-bg: var(--bl-bg);
-  --color-bl-bg2: var(--bl-bg2);
-  --color-bl-card: var(--bl-card);
-  --color-bl-card2: var(--bl-card2);
-  --color-bl-label: var(--bl-label);
-  --color-bl-label2: var(--bl-label2);
-  --color-bl-label3: var(--bl-label3);
-  --color-bl-sep: var(--bl-sep);
-  --color-bl-fill: var(--bl-fill);
-  --color-bl-fill2: var(--bl-fill2);
-  --color-bl-press: var(--bl-press);
-  --color-bl-bar: var(--bl-bar);
-  --color-bl-stick: var(--bl-stick);
-  --color-bl-side: var(--bl-side);
-  --color-bl-scrim: var(--bl-scrim);
-  --color-bl-tint: var(--bl-tint);
-  --color-bl-red: var(--bl-red);
-  --color-bl-green: var(--bl-green);
+.dark:not([data-theme-scope]) {
+  color-scheme: dark;
+  --background: #000;
+  --foreground: #F5F5F7;
+  --card: #1C1C1E;
+  --card-foreground: #F5F5F7;
+  --popover: #1C1C1E;
+  --popover-foreground: #F5F5F7;
+  --primary: #0A84FF;
+  --primary-foreground: #fff;
+  --secondary: rgba(120, 120, 128, .22);
+  --secondary-foreground: #F5F5F7;
+  --muted: #0A0A0C;
+  --muted-foreground: rgba(235, 235, 245, .62);
+  --accent: rgba(120, 120, 128, .22);
+  --accent-foreground: #F5F5F7;
+  --destructive: #FF453A;
+  --border: rgba(84, 84, 88, .48);
+  --input: rgba(120, 120, 128, .22);
+  --ring: #0A84FF;
+  --chart-1: #0A84FF;
+  --chart-2: #30D158;
+  --chart-3: #FF9F0A;
+  --chart-4: #FF453A;
+  --chart-5: #BF5AF2;
+  --sidebar: #111114;
+  --sidebar-foreground: #F5F5F7;
+  --sidebar-primary: #0A84FF;
+  --sidebar-primary-foreground: #fff;
+  --sidebar-accent: rgba(120, 120, 128, .22);
+  --sidebar-accent-foreground: #F5F5F7;
+  --sidebar-border: rgba(84, 84, 88, .48);
+  --sidebar-ring: #0A84FF;
+  --success: #30D158;
+  --warning: #FF9F0A;
+  --tertiary-foreground: rgba(235, 235, 245, .3);
+  --secondary-strong: rgba(120, 120, 128, .34);
+  --overlay: rgba(0, 0, 0, .5);
+  --bar: rgba(16, 16, 18, .82);
+  --sticky: rgba(18, 18, 20, .9);
+  --handle: rgba(120, 120, 128, .34);
+  --link: var(--primary);
+  --code: #101014;
+  --code-foreground: #D8D8E2;
+}
 
-  --color-wb-bg: var(--wb-bg);
-  --color-wb-side: var(--wb-side);
-  --color-wb-card: var(--wb-card);
-  --color-wb-fill: var(--wb-fill);
-  --color-wb-fill2: var(--wb-fill2);
-  --color-wb-sep: var(--wb-sep);
-  --color-wb-label: var(--wb-label);
-  --color-wb-label2: var(--wb-label2);
-  --color-wb-label3: var(--wb-label3);
-  --color-wb-tint: var(--wb-tint);
-  --color-wb-green: var(--wb-green);
-  --color-wb-red: var(--wb-red);
-  /* Workbench tokens the light palette adds; the fallbacks are the dark literals, so hosts that only set the
-     original --wb-* map (ArtifactChatContainer, FloatingChat) render unchanged. */
-  --color-wb-card2: var(--wb-card2, #26262E);
-  --color-wb-well: var(--wb-well, #101014);
-  --color-wb-term: var(--wb-term, #0C0C10);
-  --color-wb-handle: var(--wb-handle, rgba(255, 255, 255, .22));
+/* ── Workbench scope (WorkbenchShell, WorkbenchTheme, Composer surfaces): dark-first IDE palette ── */
+[data-theme-scope="workbench"] {
+  color-scheme: light;
+  --background: #FFFFFF;
+  --foreground: #17171C;
+  --card: #FFFFFF;
+  --card-foreground: #17171C;
+  --popover: #F2F2F5;
+  --popover-foreground: #17171C;
+  --secondary: rgba(0, 0, 0, .05);
+  --secondary-foreground: #17171C;
+  --muted: #F7F7F9;
+  --muted-foreground: #6B6B76;
+  --accent: rgba(0, 0, 0, .05);
+  --accent-foreground: #17171C;
+  --destructive: #FF3B30;
+  --border: rgba(0, 0, 0, .08);
+  --input: rgba(0, 0, 0, .05);
+  --sidebar: #F7F7F9;
+  --sidebar-foreground: #17171C;
+  --sidebar-accent: rgba(0, 0, 0, .05);
+  --sidebar-accent-foreground: #17171C;
+  --sidebar-border: rgba(0, 0, 0, .08);
+  --success: #34C759;
+  --tertiary-foreground: #9A9AA3;
+  --secondary-strong: rgba(0, 0, 0, .09);
+  --handle: rgba(0, 0, 0, .18);
+  --code: #F4F4F7;
+  --code-foreground: #24242B;
+  --link: var(--primary);
+  --scope-terminal-background: #1A1A1F;
+}
+[data-theme-scope="workbench"].dark {
+  color-scheme: dark;
+  --background: #141419;
+  --foreground: #EDEDF2;
+  --card: #1C1C23;
+  --card-foreground: #EDEDF2;
+  --popover: #26262E;
+  --popover-foreground: #EDEDF2;
+  --secondary: rgba(255, 255, 255, .06);
+  --secondary-foreground: #EDEDF2;
+  --muted: #101014;
+  --muted-foreground: #9C9CA6;
+  --accent: rgba(255, 255, 255, .06);
+  --accent-foreground: #EDEDF2;
+  --destructive: #FF453A;
+  --border: rgba(255, 255, 255, .08);
+  --input: rgba(255, 255, 255, .06);
+  --sidebar: #101015;
+  --sidebar-foreground: #EDEDF2;
+  --sidebar-accent: rgba(255, 255, 255, .06);
+  --sidebar-accent-foreground: #EDEDF2;
+  --sidebar-border: rgba(255, 255, 255, .08);
+  --success: #30D158;
+  --tertiary-foreground: #69696F;
+  --secondary-strong: rgba(255, 255, 255, .11);
+  --handle: rgba(255, 255, 255, .22);
+  --code: #0C0C10;
+  --code-foreground: #D8D8E2;
+  --link: var(--primary);
+  --scope-terminal-background: #0C0C10;
+}
 
-  /* ChatKit tokens. ChatShell sets --ck-* for its appearance; the fallbacks are the dark palette, so chat
-     primitives rendered outside a shell keep their original look. */
-  --color-ck-bg: var(--ck-bg, #131318);
-  --color-ck-rail: var(--ck-rail, #0D0D11);
-  --color-ck-side: var(--ck-side, #101015);
-  --color-ck-card: var(--ck-card, #1B1B22);
-  --color-ck-fill: var(--ck-fill, rgba(255, 255, 255, .055));
-  --color-ck-fill2: var(--ck-fill2, rgba(255, 255, 255, .1));
-  --color-ck-hover: var(--ck-hover, rgba(255, 255, 255, .035));
-  --color-ck-sep: var(--ck-sep, rgba(255, 255, 255, .07));
-  --color-ck-label: var(--ck-label, #EDEDF2);
-  --color-ck-mut: var(--ck-mut, rgba(235, 235, 245, .6));
-  --color-ck-mut3: var(--ck-mut3, rgba(235, 235, 245, .35));
-  --color-ck-link: var(--ck-link, #7EB6FF);
-  --color-ck-mention: var(--ck-mention, rgba(10, 132, 255, .16));
-  --color-ck-mine: var(--ck-mine, rgba(10, 132, 255, .14));
-  --color-ck-on-fill: var(--ck-on-fill, #fff);
-  --color-ck-green: var(--ck-green, #32D74B);
-  --color-ck-red: var(--ck-red, #FF453A);
-  --color-ck-orange: var(--ck-orange, #FF9F0A);
-  /* The accent: ChatShell's `tint` prop sets --ck-tint. */
-  --color-ck-tint: var(--ck-tint, #0A84FF);
+/* ── Terminal scope: the Workbench's integrated terminal stays dark in both appearances ── */
+[data-theme-scope="terminal"] {
+  color-scheme: dark;
+  --background: var(--scope-terminal-background, #0C0C10);
+  --foreground: #EDEDF2;
+  --card-foreground: #EDEDF2;
+  --secondary: rgba(255, 255, 255, .06);
+  --secondary-foreground: #EDEDF2;
+  --muted-foreground: #9C9CA6;
+  --accent: rgba(255, 255, 255, .06);
+  --accent-foreground: #EDEDF2;
+  --border: rgba(255, 255, 255, .08);
+  --tertiary-foreground: #69696F;
+  --secondary-strong: rgba(255, 255, 255, .11);
+  --handle: rgba(255, 255, 255, .22);
+}
 
-  --font-ios: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --ease-ios: cubic-bezier(.32, .72, 0, 1);
-
-  /* Motion — springs sampled to CSS linear() from the same physics as `springs` in lib/motion.ts.
-     Use the pair: transition: transform var(--duration-spring-smooth) var(--ease-spring-smooth). */
-  --ease-spring-snappy: linear(0.0017, 0.0315, 0.0996, 0.1865, 0.2645, 0.3583, 0.4476, 0.5297, 0.5916, 0.6577, 0.7152, 0.7644, 0.7997, 0.8359, 0.8661, 0.8912, 0.9088, 0.9264, 0.9407, 0.9525, 0.9605, 0.9685, 0.9749, 0.9801, 0.9836, 0.987, 0.9898, 0.992, 0.9934, 0.9948, 0.996, 0.9969, 0.9974, 0.998, 0.9985, 0.9988, 0.999, 0.9993, 0.9994, 0.9996, 1);
-  --duration-spring-snappy: 383ms;
-  --ease-spring-smooth: linear(0.0011, 0.0397, 0.1132, 0.2029, 0.2972, 0.4001, 0.4846, 0.5608, 0.6282, 0.6936, 0.7431, 0.7854, 0.8212, 0.8547, 0.8795, 0.9002, 0.9174, 0.9334, 0.945, 0.9547, 0.9626, 0.9699, 0.9753, 0.9796, 0.9832, 0.9865, 0.9889, 0.9909, 0.9927, 0.994, 0.9951, 0.996, 0.9968, 0.9973, 0.9978, 0.9982, 0.9986, 0.9988, 0.999, 0.9992, 1);
-  --duration-spring-smooth: 550ms;
-  --ease-spring-bouncy: linear(0.0014, 0.0574, 0.188, 0.355, 0.5301, 0.6935, 0.8331, 0.9431, 1.0225, 1.0736, 1.1007, 1.1091, 1.104, 1.0905, 1.0725, 1.0534, 1.0354, 1.0198, 1.0074, 0.9984, 0.993, 0.9895, 0.9882, 0.9884, 0.9897, 0.9916, 0.9937, 0.9957, 0.9975, 0.9989, 1, 1.0007, 1.0011, 1.0013, 1.0013, 1.0011, 1.0009, 1.0007, 1.0005, 1.0003, 1);
-  --duration-spring-bouncy: 597ms;
-  --ease-spring-tray: linear(0.0014, 0.0348, 0.0976, 0.1763, 0.2617, 0.3476, 0.4434, 0.5192, 0.5879, 0.6493, 0.7032, 0.7574, 0.7969, 0.8307, 0.8594, 0.8836, 0.907, 0.9236, 0.9374, 0.9488, 0.9582, 0.9672, 0.9733, 0.9784, 0.9826, 0.9859, 0.9891, 0.9912, 0.993, 0.9944, 0.9955, 0.9966, 0.9973, 0.9978, 0.9983, 0.9986, 0.999, 0.9992, 0.9994, 0.9995, 1);
-  --duration-spring-tray: 413ms;
-  /* Exits: quicker than entries, a plain ease-in (matches `fades.out` in lib/motion.ts). */
-  --ease-exit: cubic-bezier(.4, 0, 1, 1);
-  --duration-exit: 140ms;
-  --duration-exit-tray: 240ms;
-  --duration-exit-slow: 280ms;
-  --transition-duration-exit: 140ms;
-  /* The same durations as Tailwind utilities: `duration-spring-smooth ease-spring-smooth`. */
-  --transition-duration-spring-snappy: 383ms;
-  --transition-duration-spring-smooth: 550ms;
-  --transition-duration-spring-bouncy: 597ms;
-  --transition-duration-spring-tray: 413ms;
+/* ── Chat scope (ChatShell): the team-chat palette ── */
+[data-theme-scope="chat"] {
+  color-scheme: light;
+  --background: #FFFFFF;
+  --foreground: #17171C;
+  --card: #F4F4F7;
+  --card-foreground: #17171C;
+  --popover: #F4F4F7;
+  --popover-foreground: #17171C;
+  --secondary: rgba(0, 0, 0, .045);
+  --secondary-foreground: #3C3C43;
+  --muted: #ECECF0;
+  --muted-foreground: rgba(60, 60, 67, .72);
+  --accent: rgba(0, 0, 0, .025);
+  --accent-foreground: #17171C;
+  --destructive: #E0352B;
+  --border: rgba(0, 0, 0, .08);
+  --input: rgba(0, 0, 0, .045);
+  --sidebar: #F7F7F9;
+  --sidebar-foreground: #17171C;
+  --sidebar-accent: rgba(0, 0, 0, .025);
+  --sidebar-accent-foreground: #17171C;
+  --sidebar-border: rgba(0, 0, 0, .08);
+  --success: #1F9D45;
+  --warning: #C76A00;
+  --tertiary-foreground: rgba(60, 60, 67, .46);
+  --secondary-strong: rgba(0, 0, 0, .08);
+  --overlay: rgba(0, 0, 0, .25);
+  --link: #0A64D6;
+}
+[data-theme-scope="chat"].dark {
+  color-scheme: dark;
+  --background: #131318;
+  --foreground: #EDEDF2;
+  --card: #1B1B22;
+  --card-foreground: #EDEDF2;
+  --popover: #1B1B22;
+  --popover-foreground: #EDEDF2;
+  --secondary: rgba(255, 255, 255, .055);
+  --secondary-foreground: #fff;
+  --muted: #0D0D11;
+  --muted-foreground: rgba(235, 235, 245, .6);
+  --accent: rgba(255, 255, 255, .035);
+  --accent-foreground: #EDEDF2;
+  --destructive: #FF453A;
+  --border: rgba(255, 255, 255, .07);
+  --input: rgba(255, 255, 255, .055);
+  --sidebar: #101015;
+  --sidebar-foreground: #EDEDF2;
+  --sidebar-accent: rgba(255, 255, 255, .035);
+  --sidebar-accent-foreground: #EDEDF2;
+  --sidebar-border: rgba(255, 255, 255, .07);
+  --success: #32D74B;
+  --warning: #FF9F0A;
+  --tertiary-foreground: rgba(235, 235, 245, .35);
+  --secondary-strong: rgba(255, 255, 255, .1);
+  --overlay: rgba(0, 0, 0, .5);
+  --link: #7EB6FF;
 }

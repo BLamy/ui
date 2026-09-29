@@ -80,11 +80,11 @@ function MobileMenu() {
               alignItems: 'center',
               gap: 8,
               padding: '9px 12px',
-              borderBottom: '1px solid var(--wb-sep)',
+              borderBottom: '1px solid var(--border)',
             }}
           >
             <SidebarTrigger />
-            <strong style={{ fontSize: 14, color: 'var(--wb-label)' }}>
+            <strong style={{ fontSize: 14, color: 'var(--foreground)' }}>
               {page}
             </strong>
           </header>
@@ -93,7 +93,7 @@ function MobileMenu() {
               padding: '4px 16px',
               fontSize: 13.5,
               lineHeight: 1.6,
-              color: 'var(--wb-label2)',
+              color: 'var(--muted-foreground)',
             }}
           >
             This pane is narrower than the breakpoint, so the docked sidebar
@@ -125,7 +125,7 @@ function Window({ width, children }: { width?: number; children?: ReactNode }) {
         margin: '0 auto',
         borderRadius: 14,
         overflow: 'hidden',
-        boxShadow: '0 0 0 1px var(--wb-sep)',
+        boxShadow: '0 0 0 1px var(--border)',
       }}
     >
       {children}
