@@ -751,6 +751,10 @@ export function CommandInput({ placeholder = 'Search…', backButton = true, pag
   const reduced = useReducedMotion();
   const ph = meta?.placeholder ?? (depth > 0 ? 'Search…' : placeholder);
   const back = backButton && depth > 0;
+  // Focus on mount without scrolling the page to it (a palette embedded low on a page must not yank the reader).
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus({ preventScroll: true });
+  }, [autoFocus, inputRef]);
   return (
     <div data-slot="command-input-wrapper" className="flex h-[52px] shrink-0 items-center gap-2.5 px-4">
       {back ? (
@@ -798,7 +802,6 @@ export function CommandInput({ placeholder = 'Search…', backButton = true, pag
         autoComplete="off"
         autoCorrect="off"
         spellCheck={false}
-        autoFocus={autoFocus}
         placeholder={ph}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
