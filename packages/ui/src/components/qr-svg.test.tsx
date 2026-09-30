@@ -178,7 +178,8 @@ describe('encodeQR', () => {
         expect(decodeMatrix(qr.modules)).toBe(text);
       }
     }
-  });
+    // Exhaustive and CPU-bound (about 5 s on a CI runner), so it gets more than vitest's 5 s default.
+  }, 30_000);
 
   it('is deterministic', () => {
     expect(encodeQR(SAMPLES.url)).toEqual(encodeQR(SAMPLES.url));
