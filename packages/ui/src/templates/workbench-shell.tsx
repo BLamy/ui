@@ -252,7 +252,7 @@ export function WorkbenchMain({ className, style, children }: { className?: stri
 /* ── Header ── */
 export function WorkbenchHeader({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
   return (
-    <div data-slot="workbench-header" className={cn('box-border flex h-11 shrink-0 items-center gap-1 border-b border-border px-2.5', className)} style={style}>
+    <div data-slot="workbench-header" className={cn('box-border flex h-toolbar shrink-0 items-center gap-1 border-b border-border px-2.5', className)} style={style}>
       {children}
     </div>
   );

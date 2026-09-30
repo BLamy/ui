@@ -256,7 +256,7 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
         {/* The bar: a NavigationStack screen's — back on the leading edge, the title centred. */}
         <div data-slot="side-drawer-bar"
           className="relative box-border flex h-(--side-drawer-bar-h) shrink-0 items-end px-1.5 pt-(--side-drawer-safe-top) [border-bottom:1px_solid_var(--border)] bg-background/86 backdrop-blur-[18px] backdrop-saturate-[1.7]">
-          <div className="flex h-[52px] w-full items-center">
+          <div className="flex h-toolbar w-full items-center">
             <AriaButton onPress={onClose} aria-label={typeof backLabel === 'string' ? backLabel : 'Back'}
               className="bl-btn relative z-1 flex max-w-[30%] cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary">
               <Icon name="chevL" size={24} sw={2.4} />

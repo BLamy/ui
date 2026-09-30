@@ -57,6 +57,9 @@
   --color-code: var(--code, var(--muted));
   --color-code-foreground: var(--code-foreground, var(--foreground));
 
+  /* Every app toolbar (SplitView and NavigationStack bars, shell headers, chat bars) is one height: `h-toolbar`. */
+  --spacing-toolbar: 52px;
+
   --font-ios: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --ease-ios: cubic-bezier(.32, .72, 0, 1);

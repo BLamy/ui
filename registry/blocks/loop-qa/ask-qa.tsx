@@ -33,7 +33,7 @@ export function AskQA() {
   const empty = qa.messages.length === 0;
   return (
     <div data-slot="ask-qa" className="flex h-full min-h-0 flex-col text-[14px] text-foreground">
-      <div className="flex shrink-0 items-center gap-2 border-b border-border py-2 pr-2 pl-3.5">
+      <div className="box-border flex h-toolbar shrink-0 items-center gap-2 border-b border-border pr-2 pl-3.5">
         <AskTitle />
         <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-secondary px-2 py-0.5 text-[12px] text-muted-foreground">
           <span className="size-2 shrink-0 rounded-[3px] bg-(--brand)" style={{ '--brand': project.brand } as CSSProperties} />

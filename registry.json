@@ -24,6 +24,7 @@
           "color-link": "var(--link, var(--primary))",
           "color-code": "var(--code, var(--muted))",
           "color-code-foreground": "var(--code-foreground, var(--foreground))",
+          "spacing-toolbar": "52px",
           "font-ios": "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
           "ease-ios": "cubic-bezier(.32, .72, 0, 1)",
           "ease-spring-snappy": "linear(0.0017, 0.0315, 0.0996, 0.1865, 0.2645, 0.3583, 0.4476, 0.5297, 0.5916, 0.6577, 0.7152, 0.7644, 0.7997, 0.8359, 0.8661, 0.8912, 0.9088, 0.9264, 0.9407, 0.9525, 0.9605, 0.9685, 0.9749, 0.9801, 0.9836, 0.987, 0.9898, 0.992, 0.9934, 0.9948, 0.996, 0.9969, 0.9974, 0.998, 0.9985, 0.9988, 0.999, 0.9993, 0.9994, 0.9996, 1)",

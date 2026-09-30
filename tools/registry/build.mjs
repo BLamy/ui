@@ -91,7 +91,7 @@ function themeVars() {
   const vars = {};
   for (const m of block.matchAll(/^\s*--([\w-]+):\s*([^;]+);/gm)) {
     const [, name, value] = m;
-    if (EXTRA_COLORS.test(name) || /^(font-ios|ease-ios|ease-spring-|duration-spring-|ease-exit|duration-exit|transition-duration-)/.test(name)) {
+    if (EXTRA_COLORS.test(name) || /^(spacing-toolbar|font-ios|ease-ios|ease-spring-|duration-spring-|ease-exit|duration-exit|transition-duration-)/.test(name)) {
       vars[name] = value.trim();
     }
   }

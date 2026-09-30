@@ -166,7 +166,7 @@ export function ChatShellHeader({ className, ...props }: ComponentProps<'div'>) 
   return (
     <div
       data-slot="chat-shell-header"
-      className={cn('flex h-[46px] shrink-0 items-center gap-[9px] border-b border-border px-4', className)}
+      className={cn('box-border flex h-toolbar shrink-0 items-center gap-[9px] border-b border-border px-4', className)}
       {...props}
     />
   );

@@ -752,7 +752,7 @@ export function CommandInput({ placeholder = 'Search…', backButton = true, pag
     if (autoFocus) inputRef.current?.focus({ preventScroll: true });
   }, [autoFocus, inputRef]);
   return (
-    <div data-slot="command-input-wrapper" className="flex h-[52px] shrink-0 items-center gap-2.5 px-4">
+    <div data-slot="command-input-wrapper" className="flex h-toolbar shrink-0 items-center gap-2.5 px-4">
       {back ? (
         <button
           type="button"

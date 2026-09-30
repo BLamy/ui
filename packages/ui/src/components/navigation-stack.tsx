@@ -243,7 +243,7 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
             hid ? '[transform:translateY(calc(var(--screen-bar-h)-var(--screen-safe-top)))]' : '[transform:none]',
           )} />
         ) : null}
-        <div ref={rowRef} className={cn('flex h-[52px] w-full items-center transition-opacity duration-spring-snappy ease-spring-snappy', hid ? 'opacity-0' : 'opacity-100')}>
+        <div ref={rowRef} className={cn('flex h-toolbar w-full items-center transition-opacity duration-spring-snappy ease-spring-snappy', hid ? 'opacity-0' : 'opacity-100')}>
           <div className="relative z-1 flex min-w-[44px] items-center">
             {hasBack
               ? <AriaButton className="bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary"

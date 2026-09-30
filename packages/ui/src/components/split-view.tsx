@@ -733,7 +733,7 @@ export function SplitViewHeader({
   return (
     <>
       <div ref={head} data-slot="split-view-header" data-large-title={large || undefined}
-        className={cn('relative z-30 flex h-[52px] shrink-0 items-center px-1.5', !fading && 'shadow-[inset_0_-1px_0_var(--border)]', className)} style={style}>
+        className={cn('relative z-30 flex h-toolbar shrink-0 items-center px-1.5', !fading && 'shadow-[inset_0_-1px_0_var(--border)]', className)} style={style}>
         <div className="relative z-1 flex min-w-[44px] items-center">
           {showBack ? (
             <AriaButton onPress={onBack} data-slot="split-view-back" aria-label={label === 'Back' ? undefined : `Back to ${label}`}
