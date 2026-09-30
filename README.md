@@ -15,6 +15,7 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
   output, and are ignored once they no longer fit an edited node.
 - Syntax-highlighted code blocks through `gpu-lexer`; Mermaid diagrams and KaTeX math load on first use.
 - GitBook block support for hints, tabs, expandables, steppers, embeds, content refs, columns, figures, tables, math, dividers, updates, and OpenAPI operations.
+- Embed blocks render YouTube/direct video URLs through the built-in `VideoEmbed` and public Loop QA task, journey, exploration, or test-run URLs through `ReplayPreview`.
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.
 - Attribute-aware direct video embeds for muted, looping inline clips in long-form posts.
 - Optional `VizEmbed` integration for mounting deterministic `@brett_lamy/viz-engine` scenes in a document.
@@ -117,6 +118,25 @@ import { MarkdownContent } from "@brett_lamy/docstream"
 export function Preview({ markdown }: { markdown: string }) {
   return <MarkdownContent markdown={markdown} />
 }
+```
+
+## Video and Replay QA embeds
+
+`embed` blocks accept direct `.mp4`, `.webm`, and `.ogg` assets, YouTube URLs,
+and public Loop QA project URLs. Loop QA project URLs are converted to the
+chrome-free `/p/...` route automatically:
+
+```md
+{% embed url="https://loop-qa.replay.io/projects/project-id/journeys/journey-id" /%}
+```
+
+The replay component is also available directly when a document needs a
+custom source or native rrweb events:
+
+```tsx
+import { ReplayPreview } from "@brett_lamy/docstream"
+
+<ReplayPreview source="https://loop-qa.replay.io/projects/project-id/tasks/task-id" />
 ```
 
 ## GitBook Syntax
@@ -605,6 +625,8 @@ You can also resolve paths yourself with `resolveAsset`.
 - `GitbookStreamdown`: Parses and renders markdown for read-only stream output.
 - `DocsRenderer`: Renders a parsed `DocumentNode`.
 - `MarkdownContent`: Parses and renders a markdown string.
+- `ReplayPreview` / `ReplayEmbed`: Embeds public Loop QA pages or plays CORS-enabled rrweb event data.
+- `VideoEmbed`: Renders direct video assets or hosted video players.
 - `OpenApiOperation`: Renders a parsed OpenAPI operation block.
 - `SourcePreview`: Imports and renders a mounted component or CSF story export.
 - `createViteSourceClient`: Reads, writes, and imports files exposed by the Vite plugin.
