@@ -1,0 +1,18 @@
+{
+  "name": "replay-preview",
+  "title": "ReplayPreview",
+  "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
+  "page": "replay-preview",
+  "exports": [
+    "ReplayPreview",
+    "replayPreviewVariants",
+    "replayMarkerVariants",
+    "formatReplayTime",
+    "getReplayMarkers",
+    "getReplayMeta",
+    "getReplayPointerTrack",
+    "replayPointerAt"
+  ],
+  "imports": ["ReplayPreview"],
+  "types": ["ReplayEvent", "ReplayMarker", "ReplayMarkerKind", "ReplayMeta", "ReplayPointerTrack"]
+}

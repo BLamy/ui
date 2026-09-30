@@ -28,6 +28,7 @@
       "pages": [
         { "id": "composer", "title": "Composer" },
         { "id": "toast", "title": "Toast" },
+        { "id": "replay-preview", "title": "ReplayPreview" },
         { "id": "morph", "title": "Morph" },
         { "id": "tab-view", "title": "TabView" },
         { "id": "edge-drawer", "title": "EdgeDrawer" }

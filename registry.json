@@ -1023,6 +1023,38 @@
       }
     },
     {
+      "name": "replay-preview",
+      "type": "registry:ui",
+      "title": "ReplayPreview",
+      "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
+      "dependencies": [
+        "@brett_lamy/ui@^2.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/components/replay-preview.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-preview.tsx"
+        }
+      ],
+      "meta": {
+        "page": "replay-preview",
+        "exports": [
+          "ReplayPreview",
+          "replayPreviewVariants",
+          "replayMarkerVariants",
+          "formatReplayTime",
+          "getReplayMarkers",
+          "getReplayMeta",
+          "getReplayPointerTrack",
+          "replayPointerAt"
+        ]
+      }
+    },
+    {
       "name": "side-drawer",
       "type": "registry:ui",
       "title": "SideDrawer",
@@ -1949,6 +1981,130 @@
       ],
       "meta": {
         "entry": "components/blocks/github-clone/page.tsx"
+      }
+    },
+    {
+      "name": "loop-qa",
+      "type": "registry:block",
+      "title": "Loop QA",
+      "description": "An agentic QA workspace after Loop QA / Replay QA. Projects (a URL under test) with drawn site thumbnails, bug trends and live-run state; per project an Overview (tiles, the live run, an exploration replay carousel, latest findings), a filterable Bugs table (severity, status, kind, environment; copy, download and connect an issue tracker), a Site map tree with coverage, Test runs and generated Playwright tests with highlighted source. A bug opens to its session replay (ReplayPreview: scrubber markers for the failed request and the error, a drawn cursor with click ripples), network and console logs that seek the replay, expected vs actual, a chronology whose evidence frames are the replay frozen at each step, and the root cause; a run to its findings, coverage, exploration and journeys. The Ask QA agent docks beside every page: tool calls in a work log, streamed Markdown answers, and runs that report live in a card. ⌘K jumps to any project, bug or run and runs commands (start a run, copy reports, change a bug's status or severity, connect a tracker, switch the theme) across nested pages with a bug preview pane. One SplitView at every size — tiled on a desktop, a floating sidebar on a tablet, a stack on a phone; light and dark.",
+      "categories": [
+        "application",
+        "dashboard",
+        "ai",
+        "command-menu"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^2.0.0",
+        "class-variance-authority"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/loop-qa/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/page.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/state.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/state.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/sidebar.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/header.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/header.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/projects-home.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/projects-home.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/project-page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/project-page.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/overview.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/overview.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/bugs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/bugs.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/site-map.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/site-map.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/runs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/runs.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/tests.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/tests.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/run-detail.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/run-detail.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/bug-detail.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/bug-detail.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/ask-qa.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/ask-qa.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/commands.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/commands.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/dialogs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/dialogs.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/parts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/loop-qa/agent.ts",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/agent.ts"
+        },
+        {
+          "path": "registry/blocks/loop-qa/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/data.ts"
+        },
+        {
+          "path": "registry/blocks/loop-qa/recordings.ts",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/recordings.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/loop-qa/page.tsx"
       }
     },
     {
