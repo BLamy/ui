@@ -1,0 +1,14 @@
+{
+  "name": "form",
+  "title": "Form",
+  "description": "react-aria Form with native constraint validation and server-error mapping, plus FormSection for iOS-style grouped fields.",
+  "page": "form",
+  "exports": [
+    "Form",
+    "FormSection"
+  ],
+  "imports": [
+    "Form",
+    "FormSection"
+  ]
+}

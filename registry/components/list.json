@@ -6,8 +6,6 @@
   "exports": [
     "List",
     "ListSection",
-    "ListRow",
-    "IndexBar",
-    "AL"
+    "ListRow"
   ]
 }

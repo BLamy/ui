@@ -4,7 +4,6 @@
   "description": "A chat transcript scroller anchored to the newest message, with streaming-aware autoscroll.",
   "page": "message-scroller",
   "exports": [
-    "MessageScroller",
-    "WorkbenchTheme"
+    "MessageScroller"
   ]
 }

@@ -1,0 +1,13 @@
+{
+  "name": "separator",
+  "title": "Separator",
+  "description": "A hairline rule, horizontal or vertical, with an inset option that indents like an iOS list separator.",
+  "page": "separator",
+  "exports": [
+    "Separator",
+    "separatorVariants"
+  ],
+  "imports": [
+    "Separator"
+  ]
+}

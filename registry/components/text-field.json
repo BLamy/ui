@@ -1,0 +1,16 @@
+{
+  "name": "text-field",
+  "title": "TextField",
+  "description": "react-aria's TextField restyled: the wrapper that links a Label, an Input or Textarea, a FieldDescription and a FieldError, and runs validation.",
+  "page": "text-field",
+  "exports": [
+    "TextField",
+    "FieldDescription",
+    "FieldError"
+  ],
+  "imports": [
+    "TextField",
+    "FieldDescription",
+    "FieldError"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "toggle-group",
+  "title": "ToggleGroup",
+  "description": "react-aria ToggleButtonGroup with single or multiple selection, roving arrow-key focus, and filled, outline and default looks.",
+  "page": "toggle-group",
+  "exports": [
+    "ToggleGroup",
+    "ToggleGroupItem",
+    "toggleGroupVariants"
+  ],
+  "imports": [
+    "ToggleGroup",
+    "ToggleGroupItem"
+  ]
+}

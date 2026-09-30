@@ -1,0 +1,14 @@
+{
+  "name": "animated-height",
+  "title": "AnimatedHeight",
+  "description": "Trays that change size instead of cutting: AnimatedHeight springs its height to its content, and ContentSwap replaces content by key in the direction of travel.",
+  "page": "animated-height",
+  "exports": [
+    "AnimatedHeight",
+    "ContentSwap"
+  ],
+  "imports": [
+    "AnimatedHeight",
+    "ContentSwap"
+  ]
+}

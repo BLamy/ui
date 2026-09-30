@@ -1,0 +1,15 @@
+{
+  "name": "popover",
+  "title": "Popover",
+  "description": "A floating panel anchored to a trigger: Popover is the styled surface, PopoverContent a padded dialog for arbitrary content, PopoverTrigger opens it.",
+  "page": "popover",
+  "exports": [
+    "Popover",
+    "PopoverTrigger",
+    "PopoverContent"
+  ],
+  "imports": [
+    "PopoverTrigger",
+    "PopoverContent"
+  ]
+}

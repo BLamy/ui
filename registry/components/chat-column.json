@@ -1,0 +1,16 @@
+{
+  "name": "chat-column",
+  "title": "ChatColumn",
+  "description": "The docked half of a chat: a bordered column with a transcript that scrolls above a pinned composer.",
+  "page": "chat-column",
+  "exports": [
+    "ChatColumn",
+    "ChatColumnTranscript",
+    "ChatColumnComposer"
+  ],
+  "imports": [
+    "ChatColumn",
+    "ChatColumnTranscript",
+    "ChatColumnComposer"
+  ]
+}

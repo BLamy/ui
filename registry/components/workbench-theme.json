@@ -1,0 +1,15 @@
+{
+  "name": "workbench-theme",
+  "title": "WorkbenchTheme",
+  "description": "A `workbench` theme scope with the Workbench's base styling, for transcript, composer and code parts used outside a full workbench shell.",
+  "page": "workbench-theme",
+  "exports": [
+    "WorkbenchTheme",
+    "useWorkbenchAppearance",
+    "WorkbenchAppearanceProvider"
+  ],
+  "imports": [
+    "WorkbenchTheme",
+    "useWorkbenchAppearance"
+  ]
+}

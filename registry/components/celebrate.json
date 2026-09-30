@@ -1,0 +1,12 @@
+{
+  "name": "celebrate",
+  "title": "Celebrate",
+  "description": "A confetti burst and pulsing ring for rare moments, fired each time a value changes.",
+  "page": "celebrate",
+  "exports": [
+    "Celebrate"
+  ],
+  "imports": [
+    "Celebrate"
+  ]
+}

@@ -301,7 +301,7 @@ flex flex-col
 | `default` (default) | — |
 | `inset` | `overflow-hidden rounded-panel bg-card px-4` |
 
-## Dropdown Menu
+## DropdownMenu
 
 ### `dropdownMenuItemVariants`
 
@@ -351,7 +351,7 @@ absolute inset-y-0 z-(--edge-drawer-z) transition-[translate,box-shadow] duratio
 
 3 compound variants — see the source.
 
-## Floating Chat
+## FloatingChat
 
 ### `floatingChatVariants`
 
@@ -467,7 +467,7 @@ ck-floating-sheet pointer-events-none absolute inset-0 z-40 text-foreground [fon
 | `dark` | `[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]` |
 | `light` | `[--ck-sheet-line:0,0,0] [--ck-sheet-surface:250,250,252]` |
 
-## Icon Button
+## IconButton
 
 ### `iconButtonVariants`
 
@@ -484,7 +484,7 @@ cn(pressable, 'grid cursor-pointer place-items-center rounded-[7px] border-0 p-[
 | `true` | `bg-secondary text-foreground` |
 | `false` (default) | `bg-transparent text-muted-foreground` |
 
-## Index Bar
+## IndexBar
 
 ### `indexBarVariants`
 
@@ -581,7 +581,7 @@ Defined in `@/components/ui/list`. Base classes:
 | `true` | `cursor-pointer` |
 | `false` (default) | `cursor-default` |
 
-## List Box
+## ListBox
 
 ### `listBoxVariants`
 
@@ -734,7 +734,7 @@ absolute inset-0 grid place-items-center font-semibold tabular-nums transition-c
 | `false` (default) | `text-muted-foreground` |
 | `true` | `text-(--ring-warn)` |
 
-## Progress Stepper
+## ProgressStepper
 
 ### `progressStepperVariants`
 
@@ -751,7 +751,7 @@ m-0 flex list-none p-0 [--ck-stepper-accent:var(--primary)] [--ck-stepper-idle:v
 | `bars` (default) | `gap-[6px]` |
 | `line` | `gap-0` |
 
-## Radio Group
+## RadioGroup
 
 ### `radioGroupVariants`
 
@@ -778,7 +778,7 @@ Defined in `@/components/ui/radio-group`. Base classes:
 
 No variants.
 
-## Scroll Area
+## ScrollArea
 
 ### `scrollAreaVariants`
 
@@ -1214,7 +1214,7 @@ Defined in `@/components/ui/toggle`. Base classes:
 | `default` (default) | `h-9 min-w-9 rounded-ctl px-2.5 text-subhead` |
 | `lg` | `h-11 min-w-11 rounded-xl px-3.5 text-body` |
 
-## Toggle Group
+## ToggleGroup
 
 ### `toggleGroupVariants`
 

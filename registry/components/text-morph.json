@@ -1,0 +1,12 @@
+{
+  "name": "text-morph",
+  "title": "TextMorph",
+  "description": "A text label that morphs into the next one: shared letters slide to their new places, the rest blur out and in, and the box springs to the new width.",
+  "page": "text-morph",
+  "exports": [
+    "TextMorph"
+  ],
+  "imports": [
+    "TextMorph"
+  ]
+}

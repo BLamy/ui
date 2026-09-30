@@ -1,0 +1,21 @@
+{
+  "name": "card",
+  "title": "Card",
+  "description": "An inset-grouped panel with header, title, description, content and footer parts, in default, elevated and outline variants.",
+  "page": "card",
+  "exports": [
+    "Card",
+    "CardHeader",
+    "CardTitle",
+    "CardDescription",
+    "CardContent",
+    "CardFooter",
+    "cardVariants"
+  ],
+  "imports": [
+    "Card",
+    "CardHeader",
+    "CardTitle",
+    "CardContent"
+  ]
+}

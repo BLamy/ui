@@ -4,13 +4,12 @@ UITableView's vocabulary: plain or inset-grouped lists, sticky section headers, 
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/list.json https://blamy.github.io/ui/r/index-bar.json{% endcommand %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/list.json{% endcommand %}
 
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
 import { List, ListSection, ListRow } from '@/components/ui/list'
-import { IndexBar } from '@/components/ui/index-bar'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -21,7 +20,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { List, ListSection, ListRow, IndexBar } from '@brett_lamy/ui'
+import { List, ListSection, ListRow } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
@@ -195,6 +194,8 @@ const [query, setQuery] = useState('')
 Migrating: the old `q` / `setQ` props are now `value` / `onChange`.
 
 ## IndexBar
+
+The full reference, with more examples, is on the [IndexBar](https://blamy.github.io/ui/#/index-bar) page.
 
 A reusable jump rail. Give it application-defined string or numeric keys and optional React previews; omit `items` to keep the familiar A-Z fallback.
 

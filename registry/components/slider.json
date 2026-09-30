@@ -1,0 +1,15 @@
+{
+  "name": "slider",
+  "title": "Slider",
+  "description": "react-aria Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light tones and a small scrubber size.",
+  "page": "slider",
+  "exports": [
+    "Slider",
+    "SliderTrack",
+    "SliderThumb",
+    "sliderVariants"
+  ],
+  "imports": [
+    "Slider"
+  ]
+}

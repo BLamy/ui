@@ -1,0 +1,13 @@
+{
+  "name": "toggle",
+  "title": "Toggle",
+  "description": "Two-state button on react-aria's ToggleButton: tinted when on, in default, filled and outline variants.",
+  "page": "toggle",
+  "exports": [
+    "Toggle",
+    "toggleVariants"
+  ],
+  "imports": [
+    "Toggle"
+  ]
+}

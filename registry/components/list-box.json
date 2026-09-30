@@ -1,0 +1,18 @@
+{
+  "name": "list-box",
+  "title": "ListBox",
+  "description": "A keyboard-navigable list with single or multiple selection: an iOS inset-grouped list with trailing checks, or the compact popup list used inside Select and ComboBox.",
+  "page": "list-box",
+  "exports": [
+    "ListBox",
+    "ListBoxItem",
+    "ListBoxSection",
+    "ListBoxHeader",
+    "listBoxVariants",
+    "listBoxItemVariants"
+  ],
+  "imports": [
+    "ListBox",
+    "ListBoxItem"
+  ]
+}

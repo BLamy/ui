@@ -1,0 +1,12 @@
+{
+  "name": "snap-sheet",
+  "title": "SnapSheet",
+  "description": "A bottom sheet you drag between snap points, with velocity-aware release, a scrim that follows the panel and drag-down to dismiss.",
+  "page": "snap-sheet",
+  "exports": [
+    "SnapSheet"
+  ],
+  "imports": [
+    "SnapSheet"
+  ]
+}

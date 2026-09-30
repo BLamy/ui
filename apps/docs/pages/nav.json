@@ -11,7 +11,8 @@
         { "id": "optimization", "title": "Optimization" },
         { "id": "styling", "title": "Styling and variants" },
         { "id": "variants", "title": "Variants reference" },
-        { "id": "motion", "title": "Motion" }
+        { "id": "motion", "title": "Motion" },
+        { "id": "utilities", "title": "Utilities" }
       ]
     },
     {
@@ -23,7 +24,25 @@
         { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
         { "id": "progress-ring", "title": "ProgressRing" },
         { "id": "now-playing-bars", "title": "NowPlayingBars" },
-        { "id": "skeleton", "title": "Skeleton" }
+        { "id": "skeleton", "title": "Skeleton" },
+        { "id": "button", "title": "Button" },
+        { "id": "icon-button", "title": "IconButton" },
+        { "id": "plain-button", "title": "PlainButton" },
+        { "id": "badge", "title": "Badge" },
+        { "id": "avatar", "title": "Avatar" },
+        { "id": "kbd", "title": "Kbd" },
+        { "id": "label", "title": "Label" },
+        { "id": "separator", "title": "Separator" },
+        { "id": "spinner", "title": "Spinner" },
+        { "id": "progress", "title": "Progress" },
+        { "id": "progress-stepper", "title": "ProgressStepper" },
+        { "id": "celebrate", "title": "Celebrate" },
+        { "id": "text-morph", "title": "TextMorph" },
+        { "id": "number-morph", "title": "NumberMorph" },
+        { "id": "icon-swap", "title": "IconSwap" },
+        { "id": "animated-height", "title": "AnimatedHeight" },
+        { "id": "qr-svg", "title": "QrSvg" },
+        { "id": "workbench-theme", "title": "WorkbenchTheme" }
       ]
     },
     {
@@ -34,7 +53,45 @@
         { "id": "replay-preview", "title": "ReplayPreview" },
         { "id": "morph", "title": "Morph" },
         { "id": "tab-view", "title": "TabView" },
-        { "id": "edge-drawer", "title": "EdgeDrawer" }
+        { "id": "edge-drawer", "title": "EdgeDrawer" },
+        { "id": "card", "title": "Card" },
+        { "id": "disclosure", "title": "Disclosure" },
+        { "id": "tabs", "title": "Tabs" },
+        { "id": "tab-bar", "title": "TabBar" },
+        { "id": "edit-bar", "title": "EditBar" },
+        { "id": "index-bar", "title": "IndexBar" },
+        { "id": "scroll-area", "title": "ScrollArea" }
+      ]
+    },
+    {
+      "section": "Inputs",
+      "pages": [
+        { "id": "input", "title": "Input" },
+        { "id": "textarea", "title": "Textarea" },
+        { "id": "text-field", "title": "TextField" },
+        { "id": "search-field", "title": "SearchField" },
+        { "id": "checkbox", "title": "Checkbox" },
+        { "id": "radio-group", "title": "RadioGroup" },
+        { "id": "switch", "title": "Switch" },
+        { "id": "toggle", "title": "Toggle" },
+        { "id": "toggle-group", "title": "ToggleGroup" },
+        { "id": "slider", "title": "Slider" },
+        { "id": "segmented", "title": "Segmented" },
+        { "id": "form", "title": "Form" }
+      ]
+    },
+    {
+      "section": "Menus and overlays",
+      "pages": [
+        { "id": "select", "title": "Select" },
+        { "id": "combobox", "title": "ComboBox" },
+        { "id": "list-box", "title": "ListBox" },
+        { "id": "dropdown-menu", "title": "DropdownMenu" },
+        { "id": "tooltip", "title": "Tooltip" },
+        { "id": "popover", "title": "Popover" },
+        { "id": "dialog", "title": "Dialog" },
+        { "id": "sheet", "title": "Sheet" },
+        { "id": "snap-sheet", "title": "SnapSheet" }
       ]
     },
     {
@@ -50,7 +107,10 @@
         { "id": "adaptive-pane", "title": "AdaptivePane" },
         { "id": "message-scroller", "title": "MessageScroller" },
         { "id": "floating-sheet", "title": "FloatingSheet" },
-        { "id": "pencilkit", "title": "PencilKit" }
+        { "id": "pencilkit", "title": "PencilKit" },
+        { "id": "conversation", "title": "Conversation" },
+        { "id": "chat-column", "title": "ChatColumn" },
+        { "id": "floating-chat", "title": "FloatingChat" }
       ]
     },
     {

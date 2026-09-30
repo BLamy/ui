@@ -1,0 +1,14 @@
+{
+  "name": "tooltip",
+  "title": "Tooltip",
+  "description": "A small inverted label that names a control on hover or keyboard focus, with a warm-up delay and an arrow toward the trigger; touch never opens it.",
+  "page": "tooltip",
+  "exports": [
+    "Tooltip",
+    "TooltipTrigger"
+  ],
+  "imports": [
+    "Tooltip",
+    "TooltipTrigger"
+  ]
+}

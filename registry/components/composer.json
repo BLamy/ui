@@ -33,8 +33,7 @@
     "ComposerAnnotatorProvider",
     "useComposer",
     "useComposerBump",
-    "useComposerAnnotator",
-    "WorkbenchTheme"
+    "useComposerAnnotator"
   ],
   "imports": [
     "Composer",

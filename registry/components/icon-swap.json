@@ -1,0 +1,14 @@
+{
+  "name": "icon-swap",
+  "title": "IconSwap",
+  "description": "Icons that change in place: IconSwap shrinks and blurs one glyph out as the next grows in, and Chevron turns to face a new direction.",
+  "page": "icon-swap",
+  "exports": [
+    "IconSwap",
+    "Chevron"
+  ],
+  "imports": [
+    "IconSwap",
+    "Chevron"
+  ]
+}

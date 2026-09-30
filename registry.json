@@ -1372,6 +1372,34 @@
       }
     },
     {
+      "name": "animated-height",
+      "type": "registry:ui",
+      "title": "AnimatedHeight",
+      "description": "Trays that change size instead of cutting: AnimatedHeight springs its height to its content, and ContentSwap replaces content by key in the direction of travel.",
+      "dependencies": [
+        "framer-motion@^13.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/animated-height.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/animated-height.tsx"
+        }
+      ],
+      "meta": {
+        "page": "animated-height",
+        "exports": [
+          "AnimatedHeight",
+          "ContentSwap"
+        ]
+      }
+    },
+    {
       "name": "artifact-chat-container",
       "type": "registry:ui",
       "title": "ArtifactChatContainer",
@@ -1403,6 +1431,232 @@
         "exports": [
           "ArtifactChatContainer",
           "useArtifactChatContainer"
+        ]
+      }
+    },
+    {
+      "name": "avatar",
+      "type": "registry:ui",
+      "title": "Avatar",
+      "description": "A round initials avatar whose gradient is derived from the person's name, at any pixel size.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/avatar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/avatar.tsx"
+        }
+      ],
+      "meta": {
+        "page": "avatar",
+        "exports": [
+          "Avatar"
+        ]
+      }
+    },
+    {
+      "name": "badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "A small iOS capsule for a status, count or tag, in default, secondary, tinted, outline, destructive and success variants.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/badge.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/badge.tsx"
+        }
+      ],
+      "meta": {
+        "page": "badge",
+        "exports": [
+          "Badge",
+          "badgeVariants"
+        ]
+      }
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "The labelled action button: a react-aria Button with default, secondary, ghost, destructive and link variants, five sizes including the full-width iOS pill, a press that sinks on a spring, and a text label that morphs into the next one.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/button.tsx"
+        }
+      ],
+      "meta": {
+        "page": "button",
+        "exports": [
+          "Button",
+          "buttonVariants"
+        ]
+      }
+    },
+    {
+      "name": "card",
+      "type": "registry:ui",
+      "title": "Card",
+      "description": "An inset-grouped panel with header, title, description, content and footer parts, in default, elevated and outline variants.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/card.tsx"
+        }
+      ],
+      "meta": {
+        "page": "card",
+        "exports": [
+          "Card",
+          "CardHeader",
+          "CardTitle",
+          "CardDescription",
+          "CardContent",
+          "CardFooter",
+          "cardVariants"
+        ]
+      }
+    },
+    {
+      "name": "celebrate",
+      "type": "registry:ui",
+      "title": "Celebrate",
+      "description": "A confetti burst and pulsing ring for rare moments, fired each time a value changes.",
+      "dependencies": [
+        "framer-motion@^13.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/celebrate.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/celebrate.tsx"
+        }
+      ],
+      "meta": {
+        "page": "celebrate",
+        "exports": [
+          "Celebrate"
+        ]
+      }
+    },
+    {
+      "name": "chat-column",
+      "type": "registry:ui",
+      "title": "ChatColumn",
+      "description": "The docked half of a chat: a bordered column with a transcript that scrolls above a pinned composer.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/chat-column.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/chat-column.tsx"
+        }
+      ],
+      "meta": {
+        "page": "chat-column",
+        "exports": [
+          "ChatColumn",
+          "ChatColumnTranscript",
+          "ChatColumnComposer"
+        ]
+      }
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "react-aria Checkbox and CheckboxGroup with a round iOS selection mark (or a square one), a drawn-on tick and an indeterminate state.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/checkbox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/checkbox.tsx"
+        }
+      ],
+      "meta": {
+        "page": "checkbox",
+        "exports": [
+          "Checkbox",
+          "CheckboxGroup",
+          "checkboxVariants"
+        ]
+      }
+    },
+    {
+      "name": "combobox",
+      "type": "registry:ui",
+      "title": "ComboBox",
+      "description": "A filterable text field with a suggestion list: type to narrow the options, arrow keys to move, Enter to commit, with optional custom values.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/list-box.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/combobox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/combobox.tsx"
+        }
+      ],
+      "meta": {
+        "page": "combobox",
+        "exports": [
+          "ComboBox",
+          "ComboBoxInput",
+          "ComboBoxContent",
+          "ComboBoxItem",
+          "ComboBoxSection"
         ]
       }
     },
@@ -1536,8 +1790,51 @@
           "ComposerAnnotatorProvider",
           "useComposer",
           "useComposerBump",
-          "useComposerAnnotator",
-          "WorkbenchTheme"
+          "useComposerAnnotator"
+        ]
+      }
+    },
+    {
+      "name": "conversation",
+      "type": "registry:ui",
+      "title": "Conversation",
+      "description": "The parts of an agent thread: an empty state whose composer flies down to its dock when the first message arrives, then a MessageScroller of user and assistant turns with streaming markdown, a work log and tool calls.",
+      "dependencies": [
+        "framer-motion@^13.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/markdown-view.json",
+        "https://blamy.github.io/ui/r/message-scroller.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/conversation.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/conversation.tsx"
+        }
+      ],
+      "meta": {
+        "page": "conversation",
+        "exports": [
+          "Conversation",
+          "ConversationEmpty",
+          "ConversationGreeting",
+          "ConversationMessages",
+          "ConversationComposer",
+          "ConversationSuggestions",
+          "Suggestion",
+          "UserMessage",
+          "AssistantMessage",
+          "MessageMarkdown",
+          "ConversationTyping",
+          "WorkLog",
+          "ToolCall",
+          "SettledBanner"
         ]
       }
     },
@@ -1572,6 +1869,121 @@
       }
     },
     {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "A modal dialog on react-aria: the centered iOS alert card or a general dialog with header, scrolling body and footer actions.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dialog.tsx"
+        }
+      ],
+      "meta": {
+        "page": "dialog",
+        "exports": [
+          "DialogTrigger",
+          "DialogContent",
+          "DialogHeader",
+          "DialogTitle",
+          "DialogDescription",
+          "DialogBody",
+          "DialogFooter",
+          "DialogAction",
+          "DialogClose",
+          "Dialog",
+          "dialogVariants",
+          "dialogActionVariants",
+          "dialogOverlayClass"
+        ]
+      }
+    },
+    {
+      "name": "disclosure",
+      "type": "registry:ui",
+      "title": "Disclosure",
+      "description": "Expandable sections on react-aria: a Disclosure with a trigger and an animated panel, grouped into an accordion (also exported under shadcn's Accordion names).",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/disclosure.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/disclosure.tsx"
+        }
+      ],
+      "meta": {
+        "page": "disclosure",
+        "exports": [
+          "Disclosure",
+          "DisclosureGroup",
+          "DisclosureTrigger",
+          "DisclosurePanel",
+          "disclosureGroupVariants",
+          "Accordion",
+          "AccordionItem",
+          "AccordionTrigger",
+          "AccordionContent"
+        ]
+      }
+    },
+    {
+      "name": "dropdown-menu",
+      "type": "registry:ui",
+      "title": "DropdownMenu",
+      "description": "An iOS pull-down menu: rows with trailing icons, descriptions and shortcuts, section bands, selectable items and submenus.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/dropdown-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dropdown-menu.tsx"
+        }
+      ],
+      "meta": {
+        "page": "dropdown-menu",
+        "exports": [
+          "DropdownMenu",
+          "DropdownMenuContent",
+          "DropdownMenuItem",
+          "DropdownMenuSection",
+          "DropdownMenuLabel",
+          "DropdownMenuSeparator",
+          "DropdownMenuShortcut",
+          "DropdownMenuSub",
+          "dropdownMenuItemVariants"
+        ]
+      }
+    },
+    {
       "name": "edge-drawer",
       "type": "registry:ui",
       "title": "EdgeDrawer",
@@ -1594,6 +2006,67 @@
         "page": "edge-drawer",
         "exports": [
           "EdgeDrawer"
+        ]
+      }
+    },
+    {
+      "name": "edit-bar",
+      "type": "registry:ui",
+      "title": "EditBar",
+      "description": "The bottom action bar of an iOS list in edit mode: Favorite, a selection count and Delete.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/edit-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/edit-bar.tsx"
+        }
+      ],
+      "meta": {
+        "page": "edit-bar",
+        "exports": [
+          "EditBar"
+        ]
+      }
+    },
+    {
+      "name": "floating-chat",
+      "type": "registry:ui",
+      "title": "FloatingChat",
+      "description": "A Composer that floats over any positioned host, with the transcript on a draggable top bump that grows over a scrim and folds into a FAB.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/floating-sheet.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/persistent-host.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/floating-chat.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/floating-chat.tsx"
+        }
+      ],
+      "meta": {
+        "page": "floating-chat",
+        "exports": [
+          "FloatingChat",
+          "useFloatingChat"
         ]
       }
     },
@@ -1626,6 +2099,91 @@
         "exports": [
           "FloatingSheet",
           "useFloatingSheet"
+        ]
+      }
+    },
+    {
+      "name": "form",
+      "type": "registry:ui",
+      "title": "Form",
+      "description": "react-aria Form with native constraint validation and server-error mapping, plus FormSection for iOS-style grouped fields.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/form.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/form.tsx"
+        }
+      ],
+      "meta": {
+        "page": "form",
+        "exports": [
+          "Form",
+          "FormSection"
+        ]
+      }
+    },
+    {
+      "name": "icon-button",
+      "type": "registry:ui",
+      "title": "IconButton",
+      "description": "A square, icon-only button that stays transparent until hovered and fills while active; its label is required and becomes both the aria-label and the tooltip.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/icon-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/icon-button.tsx"
+        }
+      ],
+      "meta": {
+        "page": "icon-button",
+        "exports": [
+          "IconButton",
+          "iconButtonVariants"
+        ]
+      }
+    },
+    {
+      "name": "icon-swap",
+      "type": "registry:ui",
+      "title": "IconSwap",
+      "description": "Icons that change in place: IconSwap shrinks and blurs one glyph out as the next grows in, and Chevron turns to face a new direction.",
+      "dependencies": [
+        "framer-motion@^13.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/icon-swap.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/icon-swap.tsx"
+        }
+      ],
+      "meta": {
+        "page": "icon-swap",
+        "exports": [
+          "IconSwap",
+          "Chevron"
         ]
       }
     },
@@ -1675,6 +2233,151 @@
       }
     },
     {
+      "name": "index-bar",
+      "type": "registry:ui",
+      "title": "IndexBar",
+      "description": "A jump rail for long scrollers: the UIKit A-Z index, custom stops with previews, or a Dock-style wave of dashes with an outline panel.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/index-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/index-bar.tsx"
+        }
+      ],
+      "meta": {
+        "page": "index-bar",
+        "exports": [
+          "IndexBar",
+          "AL",
+          "indexBarVariants"
+        ]
+      }
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input",
+      "description": "iOS filled text input on react-aria's Input: three sizes, a primary focus ring, and red invalid and dimmed disabled states; inside a TextField it is wired to its label, description and error.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input.tsx"
+        }
+      ],
+      "meta": {
+        "page": "input",
+        "exports": [
+          "Input",
+          "inputVariants"
+        ]
+      }
+    },
+    {
+      "name": "kbd",
+      "type": "registry:ui",
+      "title": "Kbd",
+      "description": "A keycap for keyboard shortcuts, with a group wrapper for chords; inside a menu item it becomes the item's shortcut.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/kbd.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/kbd.tsx"
+        }
+      ],
+      "meta": {
+        "page": "kbd",
+        "exports": [
+          "Kbd",
+          "KbdGroup"
+        ]
+      }
+    },
+    {
+      "name": "label",
+      "type": "registry:ui",
+      "title": "Label",
+      "description": "A field label built on react-aria's Label, which wires itself to the field it sits in, in a default and an iOS grouped-form variant.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/label.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/label.tsx"
+        }
+      ],
+      "meta": {
+        "page": "label",
+        "exports": [
+          "Label",
+          "labelVariants"
+        ]
+      }
+    },
+    {
+      "name": "list-box",
+      "type": "registry:ui",
+      "title": "ListBox",
+      "description": "A keyboard-navigable list with single or multiple selection: an iOS inset-grouped list with trailing checks, or the compact popup list used inside Select and ComboBox.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/list-box.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/list-box.tsx"
+        }
+      ],
+      "meta": {
+        "page": "list-box",
+        "exports": [
+          "ListBox",
+          "ListBoxItem",
+          "ListBoxSection",
+          "ListBoxHeader",
+          "listBoxVariants",
+          "listBoxItemVariants"
+        ]
+      }
+    },
+    {
       "name": "list",
       "type": "registry:ui",
       "title": "List",
@@ -1703,9 +2406,7 @@
         "exports": [
           "List",
           "ListSection",
-          "ListRow",
-          "IndexBar",
-          "AL"
+          "ListRow"
         ]
       }
     },
@@ -1793,8 +2494,7 @@
       "meta": {
         "page": "message-scroller",
         "exports": [
-          "MessageScroller",
-          "WorkbenchTheme"
+          "MessageScroller"
         ]
       }
     },
@@ -1926,6 +2626,33 @@
       }
     },
     {
+      "name": "number-morph",
+      "type": "registry:ui",
+      "title": "NumberMorph",
+      "description": "A formatted number whose digits roll and whose separators slide as the value changes, using Intl.NumberFormat for currency, percent and compact notation.",
+      "dependencies": [
+        "framer-motion@^13.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/number-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/number-morph.tsx"
+        }
+      ],
+      "meta": {
+        "page": "number-morph",
+        "exports": [
+          "NumberMorph"
+        ]
+      }
+    },
+    {
       "name": "pencilkit",
       "type": "registry:ui",
       "title": "PencilKit",
@@ -1991,6 +2718,62 @@
       }
     },
     {
+      "name": "plain-button",
+      "type": "registry:ui",
+      "title": "PlainButton",
+      "description": "React-aria buttons with no styling of their own, for surfaces that draw their own pressables; they keep the title tooltip that react-aria drops.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/plain-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/plain-button.tsx"
+        }
+      ],
+      "meta": {
+        "page": "plain-button",
+        "exports": [
+          "PlainButton",
+          "PlainToggleButton"
+        ]
+      }
+    },
+    {
+      "name": "popover",
+      "type": "registry:ui",
+      "title": "Popover",
+      "description": "A floating panel anchored to a trigger: Popover is the styled surface, PopoverContent a padded dialog for arbitrary content, PopoverTrigger opens it.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/popover.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/popover.tsx"
+        }
+      ],
+      "meta": {
+        "page": "popover",
+        "exports": [
+          "Popover",
+          "PopoverTrigger",
+          "PopoverContent"
+        ]
+      }
+    },
+    {
       "name": "progress-ring",
       "type": "registry:ui",
       "title": "ProgressRing",
@@ -2021,6 +2804,118 @@
       }
     },
     {
+      "name": "progress-stepper",
+      "type": "registry:ui",
+      "title": "ProgressStepper",
+      "description": "A row of milestones for a multi-step process, as filling bars or a joined line, with done, active and to-do states.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/progress-stepper.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/progress-stepper.tsx"
+        }
+      ],
+      "meta": {
+        "page": "progress-stepper",
+        "exports": [
+          "ProgressStepper",
+          "progressStepperVariants"
+        ]
+      }
+    },
+    {
+      "name": "progress",
+      "type": "registry:ui",
+      "title": "Progress",
+      "description": "iOS progress bar on react-aria's ProgressBar: a label, a springing fill with a rolling percentage, three sizes, tones and an indeterminate sliding bar.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/progress.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/progress.tsx"
+        }
+      ],
+      "meta": {
+        "page": "progress",
+        "exports": [
+          "Progress",
+          "progressVariants",
+          "progressIndicatorVariants"
+        ]
+      }
+    },
+    {
+      "name": "qr-svg",
+      "type": "registry:ui",
+      "title": "QRSvg",
+      "description": "A real, scannable QR code rendered as SVG paths, with rounded or square modules, four error-correction levels and any colors.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/qr.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/qr-svg.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/qr-svg.tsx"
+        }
+      ],
+      "meta": {
+        "page": "qr-svg",
+        "exports": [
+          "QRSvg"
+        ]
+      }
+    },
+    {
+      "name": "radio-group",
+      "type": "registry:ui",
+      "title": "RadioGroup",
+      "description": "react-aria RadioGroup and Radio: round radios with arrow-key selection, vertical or horizontal.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/radio-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/radio-group.tsx"
+        }
+      ],
+      "meta": {
+        "page": "radio-group",
+        "exports": [
+          "RadioGroup",
+          "Radio",
+          "radioGroupVariants",
+          "radioVariants"
+        ]
+      }
+    },
+    {
       "name": "replay-preview",
       "type": "registry:ui",
       "title": "ReplayPreview",
@@ -2047,6 +2942,188 @@
           "getReplayMeta",
           "getReplayPointerTrack",
           "replayPointerAt"
+        ]
+      }
+    },
+    {
+      "name": "scroll-area",
+      "type": "registry:ui",
+      "title": "ScrollArea",
+      "description": "A scroll container with the kit's thin scrollbars, keyboard focusable, with native momentum kept.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/scroll-area.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/scroll-area.tsx"
+        }
+      ],
+      "meta": {
+        "page": "scroll-area",
+        "exports": [
+          "ScrollArea",
+          "scrollAreaVariants"
+        ]
+      }
+    },
+    {
+      "name": "search-field",
+      "type": "registry:ui",
+      "title": "SearchField",
+      "description": "iOS search field on react-aria's SearchField: magnifier, clear button, Esc to clear, controlled or uncontrolled.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/search-field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/search-field.tsx"
+        }
+      ],
+      "meta": {
+        "page": "search-field",
+        "exports": [
+          "SearchField"
+        ]
+      }
+    },
+    {
+      "name": "segmented",
+      "type": "registry:ui",
+      "title": "Segmented",
+      "description": "The iOS segmented control: a radio group whose selected card slides between segments.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/segmented.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/segmented.tsx"
+        }
+      ],
+      "meta": {
+        "page": "segmented",
+        "exports": [
+          "Segmented"
+        ]
+      }
+    },
+    {
+      "name": "select",
+      "type": "registry:ui",
+      "title": "Select",
+      "description": "A pop-up button that opens a list of options: react-aria's Select with a filled or plain trigger, sectioned items and typeahead on the closed button.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/list-box.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/select.tsx"
+        }
+      ],
+      "meta": {
+        "page": "select",
+        "exports": [
+          "Select",
+          "SelectTrigger",
+          "SelectValue",
+          "SelectContent",
+          "SelectItem",
+          "SelectSection",
+          "selectTriggerVariants"
+        ]
+      }
+    },
+    {
+      "name": "separator",
+      "type": "registry:ui",
+      "title": "Separator",
+      "description": "A hairline rule, horizontal or vertical, with an inset option that indents like an iOS list separator.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/separator.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/separator.tsx"
+        }
+      ],
+      "meta": {
+        "page": "separator",
+        "exports": [
+          "Separator",
+          "separatorVariants"
+        ]
+      }
+    },
+    {
+      "name": "sheet",
+      "type": "registry:ui",
+      "title": "Sheet",
+      "description": "A modal panel pinned to an edge: the iOS card sheet with a grabber at the bottom, side panels on the left and right, or a drop-down from the top.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/sheet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sheet.tsx"
+        }
+      ],
+      "meta": {
+        "page": "sheet",
+        "exports": [
+          "Sheet",
+          "SheetContent",
+          "SheetHeader",
+          "SheetTitle",
+          "SheetDescription",
+          "SheetBody",
+          "SheetFooter",
+          "SheetClose",
+          "sheetVariants"
         ]
       }
     },
@@ -2151,6 +3228,88 @@
       }
     },
     {
+      "name": "slider",
+      "type": "registry:ui",
+      "title": "Slider",
+      "description": "react-aria Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light tones and a small scrubber size.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/row-label.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/slider.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/slider.tsx"
+        }
+      ],
+      "meta": {
+        "page": "slider",
+        "exports": [
+          "Slider",
+          "SliderTrack",
+          "SliderThumb",
+          "sliderVariants"
+        ]
+      }
+    },
+    {
+      "name": "snap-sheet",
+      "type": "registry:ui",
+      "title": "SnapSheet",
+      "description": "A bottom sheet you drag between snap points, with velocity-aware release, a scrim that follows the panel and drag-down to dismiss.",
+      "dependencies": [
+        "framer-motion@^13.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/snap-sheet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/snap-sheet.tsx"
+        }
+      ],
+      "meta": {
+        "page": "snap-sheet",
+        "exports": [
+          "SnapSheet"
+        ]
+      }
+    },
+    {
+      "name": "spinner",
+      "type": "registry:ui",
+      "title": "Spinner",
+      "description": "iOS activity indicator: eight fading spokes that turn in discrete steps, drawn in currentColor and growing in when it mounts.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/spinner.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/spinner.tsx"
+        }
+      ],
+      "meta": {
+        "page": "spinner",
+        "exports": [
+          "Spinner"
+        ]
+      }
+    },
+    {
       "name": "split-view",
       "type": "registry:ui",
       "title": "SplitView",
@@ -2198,6 +3357,33 @@
       }
     },
     {
+      "name": "switch",
+      "type": "registry:ui",
+      "title": "Switch",
+      "description": "iOS switch on react-aria's Switch: a 51 by 31 track, a thumb that springs across and stretches while pressed.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/row-label.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/switch.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/switch.tsx"
+        }
+      ],
+      "meta": {
+        "page": "switch",
+        "exports": [
+          "Switch"
+        ]
+      }
+    },
+    {
       "name": "syntax-highlighting",
       "type": "registry:ui",
       "title": "SyntaxHighlighting",
@@ -2236,6 +3422,30 @@
           "probeWebGPU",
           "languageFromPath",
           "tokenizeLines"
+        ]
+      }
+    },
+    {
+      "name": "tab-bar",
+      "type": "registry:ui",
+      "title": "TabBar",
+      "description": "The iOS bottom tab bar in one component: icons over labels, a sliding indicator, hiding on scroll.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/tab-view.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/tab-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tab-bar.tsx"
+        }
+      ],
+      "meta": {
+        "page": "tab-bar",
+        "exports": [
+          "TabBar"
         ]
       }
     },
@@ -2282,6 +3492,124 @@
       }
     },
     {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "Tabs on react-aria with a sliding selection indicator and directional panels, in an iOS segmented look or a tinted underline.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tabs.tsx"
+        }
+      ],
+      "meta": {
+        "page": "tabs",
+        "exports": [
+          "Tabs",
+          "TabList",
+          "Tab",
+          "TabPanel",
+          "tabsListVariants",
+          "tabVariants"
+        ]
+      }
+    },
+    {
+      "name": "text-field",
+      "type": "registry:ui",
+      "title": "TextField",
+      "description": "react-aria's TextField restyled: the wrapper that links a Label, an Input or Textarea, a FieldDescription and a FieldError, and runs validation.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/text-field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/text-field.tsx"
+        }
+      ],
+      "meta": {
+        "page": "text-field",
+        "exports": [
+          "TextField",
+          "FieldDescription",
+          "FieldError"
+        ]
+      }
+    },
+    {
+      "name": "text-morph",
+      "type": "registry:ui",
+      "title": "TextMorph",
+      "description": "A text label that morphs into the next one: shared letters slide to their new places, the rest blur out and in, and the box springs to the new width.",
+      "dependencies": [
+        "framer-motion@^13.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/text-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/text-morph.tsx"
+        }
+      ],
+      "meta": {
+        "page": "text-morph",
+        "exports": [
+          "TextMorph"
+        ]
+      }
+    },
+    {
+      "name": "textarea",
+      "type": "registry:ui",
+      "title": "Textarea",
+      "description": "Multi-line sibling of Input on react-aria's TextArea, with three minimum heights and the same focus, invalid and disabled states.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/textarea.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/textarea.tsx"
+        }
+      ],
+      "meta": {
+        "page": "textarea",
+        "exports": [
+          "Textarea",
+          "textareaVariants"
+        ]
+      }
+    },
+    {
       "name": "theme",
       "type": "registry:lib",
       "title": "Theme",
@@ -2308,7 +3636,6 @@
           "ThemeScope",
           "AppearanceProvider",
           "useAppearance",
-          "WorkbenchTheme",
           "useWorkbenchAppearance",
           "readThemeVars"
         ]
@@ -2354,981 +3681,10 @@
       }
     },
     {
-      "name": "animated-height",
-      "type": "registry:ui",
-      "title": "Animated Height",
-      "description": "Animated Height — part of BL UI's library (components/animated-height.tsx).",
-      "dependencies": [
-        "framer-motion@^13.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/animated-height.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/animated-height.tsx"
-        }
-      ]
-    },
-    {
-      "name": "avatar",
-      "type": "registry:ui",
-      "title": "Avatar",
-      "description": "Avatar — part of BL UI's library (components/avatar.tsx).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/avatar.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/avatar.tsx"
-        }
-      ]
-    },
-    {
-      "name": "badge",
-      "type": "registry:ui",
-      "title": "Badge",
-      "description": "Badge — part of BL UI's library (components/badge.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/badge.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/badge.tsx"
-        }
-      ]
-    },
-    {
-      "name": "button",
-      "type": "registry:ui",
-      "title": "Button",
-      "description": "Button — part of BL UI's library (components/button.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/text-morph.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/button.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/button.tsx"
-        }
-      ]
-    },
-    {
-      "name": "card",
-      "type": "registry:ui",
-      "title": "Card",
-      "description": "Card — part of BL UI's library (components/card.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/card.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/card.tsx"
-        }
-      ]
-    },
-    {
-      "name": "celebrate",
-      "type": "registry:ui",
-      "title": "Celebrate",
-      "description": "Celebrate — part of BL UI's library (components/celebrate.tsx).",
-      "dependencies": [
-        "framer-motion@^13.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/celebrate.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/celebrate.tsx"
-        }
-      ]
-    },
-    {
-      "name": "chat-column",
-      "type": "registry:ui",
-      "title": "Chat Column",
-      "description": "Chat Column — part of BL UI's library (components/chat-column.tsx).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/chat-column.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/chat-column.tsx"
-        }
-      ]
-    },
-    {
-      "name": "checkbox",
-      "type": "registry:ui",
-      "title": "Checkbox",
-      "description": "Checkbox — part of BL UI's library (components/checkbox.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/checkbox.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/checkbox.tsx"
-        }
-      ]
-    },
-    {
-      "name": "combobox",
-      "type": "registry:ui",
-      "title": "Combobox",
-      "description": "Combobox — part of BL UI's library (components/combobox.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/list-box.json",
-        "https://blamy.github.io/ui/r/popover.json",
-        "https://blamy.github.io/ui/r/primitives.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/combobox.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/combobox.tsx"
-        }
-      ]
-    },
-    {
-      "name": "conversation",
-      "type": "registry:ui",
-      "title": "Conversation",
-      "description": "Conversation — part of BL UI's library (components/conversation.tsx).",
-      "dependencies": [
-        "framer-motion@^13.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/markdown-view.json",
-        "https://blamy.github.io/ui/r/message-scroller.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/plain-button.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/conversation.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/conversation.tsx"
-        }
-      ]
-    },
-    {
-      "name": "dialog",
-      "type": "registry:ui",
-      "title": "Dialog",
-      "description": "Dialog — part of BL UI's library (components/dialog.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/primitives.json",
-        "https://blamy.github.io/ui/r/theme.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/dialog.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/dialog.tsx"
-        }
-      ]
-    },
-    {
-      "name": "disclosure",
-      "type": "registry:ui",
-      "title": "Disclosure",
-      "description": "Disclosure — part of BL UI's library (components/disclosure.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/disclosure.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/disclosure.tsx"
-        }
-      ]
-    },
-    {
-      "name": "dropdown-menu",
-      "type": "registry:ui",
-      "title": "Dropdown Menu",
-      "description": "Dropdown Menu — part of BL UI's library (components/dropdown-menu.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/popover.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/dropdown-menu.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/dropdown-menu.tsx"
-        }
-      ]
-    },
-    {
-      "name": "edit-bar",
-      "type": "registry:ui",
-      "title": "Edit Bar",
-      "description": "Edit Bar — part of BL UI's library (components/edit-bar.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/edit-bar.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/edit-bar.tsx"
-        }
-      ]
-    },
-    {
-      "name": "floating-chat",
-      "type": "registry:ui",
-      "title": "Floating Chat",
-      "description": "Floating Chat — part of BL UI's library (components/floating-chat.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/composer.json",
-        "https://blamy.github.io/ui/r/container.json",
-        "https://blamy.github.io/ui/r/floating-sheet.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/persistent-host.json",
-        "https://blamy.github.io/ui/r/theme.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/floating-chat.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/floating-chat.tsx"
-        }
-      ]
-    },
-    {
-      "name": "form",
-      "type": "registry:ui",
-      "title": "Form",
-      "description": "Form — part of BL UI's library (components/form.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/form.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/form.tsx"
-        }
-      ]
-    },
-    {
-      "name": "icon-button",
-      "type": "registry:ui",
-      "title": "Icon Button",
-      "description": "Icon Button — part of BL UI's library (components/icon-button.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/plain-button.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/icon-button.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/icon-button.tsx"
-        }
-      ]
-    },
-    {
-      "name": "icon-swap",
-      "type": "registry:ui",
-      "title": "Icon Swap",
-      "description": "Icon Swap — part of BL UI's library (components/icon-swap.tsx).",
-      "dependencies": [
-        "framer-motion@^13.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/icon-swap.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/icon-swap.tsx"
-        }
-      ]
-    },
-    {
-      "name": "index-bar",
-      "type": "registry:ui",
-      "title": "Index Bar",
-      "description": "Index Bar — part of BL UI's library (components/index-bar.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/index-bar.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/index-bar.tsx"
-        }
-      ]
-    },
-    {
-      "name": "input",
-      "type": "registry:ui",
-      "title": "Input",
-      "description": "Input — part of BL UI's library (components/input.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/primitives.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/input.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/input.tsx"
-        }
-      ]
-    },
-    {
-      "name": "kbd",
-      "type": "registry:ui",
-      "title": "Kbd",
-      "description": "Kbd — part of BL UI's library (components/kbd.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/kbd.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/kbd.tsx"
-        }
-      ]
-    },
-    {
-      "name": "label",
-      "type": "registry:ui",
-      "title": "Label",
-      "description": "Label — part of BL UI's library (components/label.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/label.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/label.tsx"
-        }
-      ]
-    },
-    {
-      "name": "list-box",
-      "type": "registry:ui",
-      "title": "List Box",
-      "description": "List Box — part of BL UI's library (components/list-box.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/list-box.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/list-box.tsx"
-        }
-      ]
-    },
-    {
-      "name": "measure-h",
-      "type": "registry:ui",
-      "title": "Measure H",
-      "description": "Measure H — part of BL UI's library (components/measure-h.tsx).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/measure-h.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/measure-h.tsx"
-        }
-      ]
-    },
-    {
-      "name": "number-morph",
-      "type": "registry:ui",
-      "title": "Number Morph",
-      "description": "Number Morph — part of BL UI's library (components/number-morph.tsx).",
-      "dependencies": [
-        "framer-motion@^13.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/number-morph.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/number-morph.tsx"
-        }
-      ]
-    },
-    {
-      "name": "plain-button",
-      "type": "registry:ui",
-      "title": "Plain Button",
-      "description": "Plain Button — part of BL UI's library (components/plain-button.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/plain-button.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/plain-button.tsx"
-        }
-      ]
-    },
-    {
-      "name": "popover",
-      "type": "registry:ui",
-      "title": "Popover",
-      "description": "Popover — part of BL UI's library (components/popover.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/primitives.json",
-        "https://blamy.github.io/ui/r/theme.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/popover.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/popover.tsx"
-        }
-      ]
-    },
-    {
-      "name": "progress-stepper",
-      "type": "registry:ui",
-      "title": "Progress Stepper",
-      "description": "Progress Stepper — part of BL UI's library (components/progress-stepper.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/progress-stepper.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/progress-stepper.tsx"
-        }
-      ]
-    },
-    {
-      "name": "progress",
-      "type": "registry:ui",
-      "title": "Progress",
-      "description": "Progress — part of BL UI's library (components/progress.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/number-morph.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/progress.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/progress.tsx"
-        }
-      ]
-    },
-    {
-      "name": "qr-svg",
-      "type": "registry:ui",
-      "title": "Qr Svg",
-      "description": "Qr Svg — part of BL UI's library (components/qr-svg.tsx).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/qr.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/qr-svg.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/qr-svg.tsx"
-        }
-      ]
-    },
-    {
-      "name": "radio-group",
-      "type": "registry:ui",
-      "title": "Radio Group",
-      "description": "Radio Group — part of BL UI's library (components/radio-group.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/radio-group.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/radio-group.tsx"
-        }
-      ]
-    },
-    {
-      "name": "scroll-area",
-      "type": "registry:ui",
-      "title": "Scroll Area",
-      "description": "Scroll Area — part of BL UI's library (components/scroll-area.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/scroll-area.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/scroll-area.tsx"
-        }
-      ]
-    },
-    {
-      "name": "search-field",
-      "type": "registry:ui",
-      "title": "Search Field",
-      "description": "Search Field — part of BL UI's library (components/search-field.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/search-field.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/search-field.tsx"
-        }
-      ]
-    },
-    {
-      "name": "segmented",
-      "type": "registry:ui",
-      "title": "Segmented",
-      "description": "Segmented — part of BL UI's library (components/segmented.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/segmented.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/segmented.tsx"
-        }
-      ]
-    },
-    {
-      "name": "select",
-      "type": "registry:ui",
-      "title": "Select",
-      "description": "Select — part of BL UI's library (components/select.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/list-box.json",
-        "https://blamy.github.io/ui/r/popover.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/select.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/select.tsx"
-        }
-      ]
-    },
-    {
-      "name": "separator",
-      "type": "registry:ui",
-      "title": "Separator",
-      "description": "Separator — part of BL UI's library (components/separator.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/separator.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/separator.tsx"
-        }
-      ]
-    },
-    {
-      "name": "sheet",
-      "type": "registry:ui",
-      "title": "Sheet",
-      "description": "Sheet — part of BL UI's library (components/sheet.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/animated-height.json",
-        "https://blamy.github.io/ui/r/dialog.json",
-        "https://blamy.github.io/ui/r/primitives.json",
-        "https://blamy.github.io/ui/r/theme.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/sheet.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/sheet.tsx"
-        }
-      ]
-    },
-    {
-      "name": "slider",
-      "type": "registry:ui",
-      "title": "Slider",
-      "description": "Slider — part of BL UI's library (components/slider.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/row-label.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/slider.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/slider.tsx"
-        }
-      ]
-    },
-    {
-      "name": "snap-sheet",
-      "type": "registry:ui",
-      "title": "Snap Sheet",
-      "description": "Snap Sheet — part of BL UI's library (components/snap-sheet.tsx).",
-      "dependencies": [
-        "framer-motion@^13.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/snap-sheet.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/snap-sheet.tsx"
-        }
-      ]
-    },
-    {
-      "name": "spinner",
-      "type": "registry:ui",
-      "title": "Spinner",
-      "description": "Spinner — part of BL UI's library (components/spinner.tsx).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/spinner.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/spinner.tsx"
-        }
-      ]
-    },
-    {
-      "name": "switch",
-      "type": "registry:ui",
-      "title": "Switch",
-      "description": "Switch — part of BL UI's library (components/switch.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/row-label.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/switch.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/switch.tsx"
-        }
-      ]
-    },
-    {
-      "name": "tab-bar",
-      "type": "registry:ui",
-      "title": "Tab Bar",
-      "description": "Tab Bar — part of BL UI's library (components/tab-bar.tsx).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/tab-view.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/tab-bar.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/tab-bar.tsx"
-        }
-      ]
-    },
-    {
-      "name": "tabs",
-      "type": "registry:ui",
-      "title": "Tabs",
-      "description": "Tabs — part of BL UI's library (components/tabs.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/segmented.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/tabs.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/tabs.tsx"
-        }
-      ]
-    },
-    {
-      "name": "text-field",
-      "type": "registry:ui",
-      "title": "Text Field",
-      "description": "Text Field — part of BL UI's library (components/text-field.tsx).",
-      "dependencies": [
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/text-field.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/text-field.tsx"
-        }
-      ]
-    },
-    {
-      "name": "text-morph",
-      "type": "registry:ui",
-      "title": "Text Morph",
-      "description": "Text Morph — part of BL UI's library (components/text-morph.tsx).",
-      "dependencies": [
-        "framer-motion@^13.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/text-morph.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/text-morph.tsx"
-        }
-      ]
-    },
-    {
-      "name": "textarea",
-      "type": "registry:ui",
-      "title": "Textarea",
-      "description": "Textarea — part of BL UI's library (components/textarea.tsx).",
-      "dependencies": [
-        "class-variance-authority@^0.7.1",
-        "react-aria-components@^1.20.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/primitives.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/textarea.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/textarea.tsx"
-        }
-      ]
-    },
-    {
       "name": "toggle-group",
       "type": "registry:ui",
-      "title": "Toggle Group",
-      "description": "Toggle Group — part of BL UI's library (components/toggle-group.tsx).",
+      "title": "ToggleGroup",
+      "description": "react-aria ToggleButtonGroup with single or multiple selection, roving arrow-key focus, and filled, outline and default looks.",
       "dependencies": [
         "class-variance-authority@^0.7.1",
         "react-aria-components@^1.20.0"
@@ -3345,13 +3701,21 @@
           "type": "registry:ui",
           "target": "components/ui/toggle-group.tsx"
         }
-      ]
+      ],
+      "meta": {
+        "page": "toggle-group",
+        "exports": [
+          "ToggleGroup",
+          "ToggleGroupItem",
+          "toggleGroupVariants"
+        ]
+      }
     },
     {
       "name": "toggle",
       "type": "registry:ui",
       "title": "Toggle",
-      "description": "Toggle — part of BL UI's library (components/toggle.tsx).",
+      "description": "Two-state button on react-aria's ToggleButton: tinted when on, in default, filled and outline variants.",
       "dependencies": [
         "class-variance-authority@^0.7.1",
         "react-aria-components@^1.20.0"
@@ -3366,13 +3730,20 @@
           "type": "registry:ui",
           "target": "components/ui/toggle.tsx"
         }
-      ]
+      ],
+      "meta": {
+        "page": "toggle",
+        "exports": [
+          "Toggle",
+          "toggleVariants"
+        ]
+      }
     },
     {
       "name": "tooltip",
       "type": "registry:ui",
       "title": "Tooltip",
-      "description": "Tooltip — part of BL UI's library (components/tooltip.tsx).",
+      "description": "A small inverted label that names a control on hover or keyboard focus, with a warm-up delay and an arrow toward the trigger; touch never opens it.",
       "dependencies": [
         "react-aria-components@^1.20.0"
       ],
@@ -3388,13 +3759,52 @@
           "type": "registry:ui",
           "target": "components/ui/tooltip.tsx"
         }
-      ]
+      ],
+      "meta": {
+        "page": "tooltip",
+        "exports": [
+          "Tooltip",
+          "TooltipTrigger"
+        ]
+      }
+    },
+    {
+      "name": "utils",
+      "type": "registry:lib",
+      "title": "Utilities",
+      "description": "BL UI's class-name helpers: cn (clsx + tailwind-merge that knows the token utilities), the pressable and brandTile class fragments, and the FONT, EASE and BARH constants.",
+      "dependencies": [
+        "clsx@^2.1.1",
+        "tailwind-merge@^3.6.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/tokens.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/utils.ts",
+          "type": "registry:lib",
+          "target": "lib/utils.ts"
+        }
+      ],
+      "meta": {
+        "page": "utilities",
+        "exports": [
+          "cn",
+          "pressable",
+          "brandTile",
+          "FONT",
+          "BARH",
+          "EASE"
+        ]
+      }
     },
     {
       "name": "workbench-theme",
       "type": "registry:ui",
-      "title": "Workbench Theme",
-      "description": "Workbench Theme — part of BL UI's library (components/workbench-theme.tsx).",
+      "title": "WorkbenchTheme",
+      "description": "A `workbench` theme scope with the Workbench's base styling, for transcript, composer and code parts used outside a full workbench shell.",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3406,6 +3816,31 @@
           "path": "packages/ui/src/components/workbench-theme.tsx",
           "type": "registry:ui",
           "target": "components/ui/workbench-theme.tsx"
+        }
+      ],
+      "meta": {
+        "page": "workbench-theme",
+        "exports": [
+          "WorkbenchTheme",
+          "useWorkbenchAppearance",
+          "WorkbenchAppearanceProvider"
+        ]
+      }
+    },
+    {
+      "name": "measure-h",
+      "type": "registry:ui",
+      "title": "Measure H",
+      "description": "Measure H — part of BL UI's library (components/measure-h.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/measure-h.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/measure-h.tsx"
         }
       ]
     },
@@ -3548,27 +3983,6 @@
           "path": "packages/ui/src/lib/tokens.generated.ts",
           "type": "registry:lib",
           "target": "lib/tokens.generated.ts"
-        }
-      ]
-    },
-    {
-      "name": "utils",
-      "type": "registry:lib",
-      "title": "Utils",
-      "description": "Utils — part of BL UI's library (lib/utils.ts).",
-      "dependencies": [
-        "clsx@^2.1.1",
-        "tailwind-merge@^3.6.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/tokens.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/utils.ts",
-          "type": "registry:lib",
-          "target": "lib/utils.ts"
         }
       ]
     },

@@ -1,0 +1,12 @@
+{
+  "name": "qr-svg",
+  "title": "QRSvg",
+  "description": "A real, scannable QR code rendered as SVG paths, with rounded or square modules, four error-correction levels and any colors.",
+  "page": "qr-svg",
+  "exports": [
+    "QRSvg"
+  ],
+  "imports": [
+    "QRSvg"
+  ]
+}

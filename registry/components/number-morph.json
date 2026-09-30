@@ -1,0 +1,12 @@
+{
+  "name": "number-morph",
+  "title": "NumberMorph",
+  "description": "A formatted number whose digits roll and whose separators slide as the value changes, using Intl.NumberFormat for currency, percent and compact notation.",
+  "page": "number-morph",
+  "exports": [
+    "NumberMorph"
+  ],
+  "imports": [
+    "NumberMorph"
+  ]
+}

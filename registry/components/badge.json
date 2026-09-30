@@ -1,0 +1,13 @@
+{
+  "name": "badge",
+  "title": "Badge",
+  "description": "A small iOS capsule for a status, count or tag, in default, secondary, tinted, outline, destructive and success variants.",
+  "page": "badge",
+  "exports": [
+    "Badge",
+    "badgeVariants"
+  ],
+  "imports": [
+    "Badge"
+  ]
+}

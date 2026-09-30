@@ -1,0 +1,12 @@
+{
+  "name": "segmented",
+  "title": "Segmented",
+  "description": "The iOS segmented control: a radio group whose selected card slides between segments.",
+  "page": "segmented",
+  "exports": [
+    "Segmented"
+  ],
+  "imports": [
+    "Segmented"
+  ]
+}

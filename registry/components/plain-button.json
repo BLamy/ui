@@ -1,0 +1,14 @@
+{
+  "name": "plain-button",
+  "title": "PlainButton",
+  "description": "React-aria buttons with no styling of their own, for surfaces that draw their own pressables; they keep the title tooltip that react-aria drops.",
+  "page": "plain-button",
+  "exports": [
+    "PlainButton",
+    "PlainToggleButton"
+  ],
+  "imports": [
+    "PlainButton",
+    "PlainToggleButton"
+  ]
+}

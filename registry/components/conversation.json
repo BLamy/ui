@@ -1,0 +1,28 @@
+{
+  "name": "conversation",
+  "title": "Conversation",
+  "description": "The parts of an agent thread: an empty state whose composer flies down to its dock when the first message arrives, then a MessageScroller of user and assistant turns with streaming markdown, a work log and tool calls.",
+  "page": "conversation",
+  "exports": [
+    "Conversation",
+    "ConversationEmpty",
+    "ConversationGreeting",
+    "ConversationMessages",
+    "ConversationComposer",
+    "ConversationSuggestions",
+    "Suggestion",
+    "UserMessage",
+    "AssistantMessage",
+    "MessageMarkdown",
+    "ConversationTyping",
+    "WorkLog",
+    "ToolCall",
+    "SettledBanner"
+  ],
+  "imports": [
+    "Conversation",
+    "ConversationMessages",
+    "UserMessage",
+    "AssistantMessage"
+  ]
+}

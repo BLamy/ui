@@ -1,0 +1,16 @@
+{
+  "name": "radio-group",
+  "title": "RadioGroup",
+  "description": "react-aria RadioGroup and Radio: round radios with arrow-key selection, vertical or horizontal.",
+  "page": "radio-group",
+  "exports": [
+    "RadioGroup",
+    "Radio",
+    "radioGroupVariants",
+    "radioVariants"
+  ],
+  "imports": [
+    "RadioGroup",
+    "Radio"
+  ]
+}

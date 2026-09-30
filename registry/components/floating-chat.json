@@ -1,0 +1,14 @@
+{
+  "name": "floating-chat",
+  "title": "FloatingChat",
+  "description": "A Composer that floats over any positioned host, with the transcript on a draggable top bump that grows over a scrim and folds into a FAB.",
+  "page": "floating-chat",
+  "exports": [
+    "FloatingChat",
+    "useFloatingChat"
+  ],
+  "imports": [
+    "FloatingChat",
+    "useFloatingChat"
+  ]
+}

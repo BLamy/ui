@@ -1,0 +1,19 @@
+{
+  "name": "combobox",
+  "title": "ComboBox",
+  "description": "A filterable text field with a suggestion list: type to narrow the options, arrow keys to move, Enter to commit, with optional custom values.",
+  "page": "combobox",
+  "exports": [
+    "ComboBox",
+    "ComboBoxInput",
+    "ComboBoxContent",
+    "ComboBoxItem",
+    "ComboBoxSection"
+  ],
+  "imports": [
+    "ComboBox",
+    "ComboBoxInput",
+    "ComboBoxContent",
+    "ComboBoxItem"
+  ]
+}

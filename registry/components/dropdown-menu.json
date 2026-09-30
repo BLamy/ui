@@ -1,0 +1,23 @@
+{
+  "name": "dropdown-menu",
+  "title": "DropdownMenu",
+  "description": "An iOS pull-down menu: rows with trailing icons, descriptions and shortcuts, section bands, selectable items and submenus.",
+  "page": "dropdown-menu",
+  "exports": [
+    "DropdownMenu",
+    "DropdownMenuContent",
+    "DropdownMenuItem",
+    "DropdownMenuSection",
+    "DropdownMenuLabel",
+    "DropdownMenuSeparator",
+    "DropdownMenuShortcut",
+    "DropdownMenuSub",
+    "dropdownMenuItemVariants"
+  ],
+  "imports": [
+    "DropdownMenu",
+    "DropdownMenuContent",
+    "DropdownMenuItem",
+    "DropdownMenuSeparator"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "index-bar",
+  "title": "IndexBar",
+  "description": "A jump rail for long scrollers: the UIKit A-Z index, custom stops with previews, or a Dock-style wave of dashes with an outline panel.",
+  "page": "index-bar",
+  "exports": [
+    "IndexBar",
+    "AL",
+    "indexBarVariants"
+  ],
+  "imports": [
+    "IndexBar"
+  ]
+}

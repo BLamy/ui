@@ -1,0 +1,21 @@
+{
+  "name": "select",
+  "title": "Select",
+  "description": "A pop-up button that opens a list of options: react-aria's Select with a filled or plain trigger, sectioned items and typeahead on the closed button.",
+  "page": "select",
+  "exports": [
+    "Select",
+    "SelectTrigger",
+    "SelectValue",
+    "SelectContent",
+    "SelectItem",
+    "SelectSection",
+    "selectTriggerVariants"
+  ],
+  "imports": [
+    "Select",
+    "SelectTrigger",
+    "SelectContent",
+    "SelectItem"
+  ]
+}

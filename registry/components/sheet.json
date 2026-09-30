@@ -1,0 +1,23 @@
+{
+  "name": "sheet",
+  "title": "Sheet",
+  "description": "A modal panel pinned to an edge: the iOS card sheet with a grabber at the bottom, side panels on the left and right, or a drop-down from the top.",
+  "page": "sheet",
+  "exports": [
+    "Sheet",
+    "SheetContent",
+    "SheetHeader",
+    "SheetTitle",
+    "SheetDescription",
+    "SheetBody",
+    "SheetFooter",
+    "SheetClose",
+    "sheetVariants"
+  ],
+  "imports": [
+    "Sheet",
+    "SheetContent",
+    "SheetHeader",
+    "SheetTitle"
+  ]
+}

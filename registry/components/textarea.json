@@ -1,0 +1,13 @@
+{
+  "name": "textarea",
+  "title": "Textarea",
+  "description": "Multi-line sibling of Input on react-aria's TextArea, with three minimum heights and the same focus, invalid and disabled states.",
+  "page": "textarea",
+  "exports": [
+    "Textarea",
+    "textareaVariants"
+  ],
+  "imports": [
+    "Textarea"
+  ]
+}

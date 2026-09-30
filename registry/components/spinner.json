@@ -1,0 +1,12 @@
+{
+  "name": "spinner",
+  "title": "Spinner",
+  "description": "iOS activity indicator: eight fading spokes that turn in discrete steps, drawn in currentColor and growing in when it mounts.",
+  "page": "spinner",
+  "exports": [
+    "Spinner"
+  ],
+  "imports": [
+    "Spinner"
+  ]
+}

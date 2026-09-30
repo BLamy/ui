@@ -1,0 +1,13 @@
+{
+  "name": "scroll-area",
+  "title": "ScrollArea",
+  "description": "A scroll container with the kit's thin scrollbars, keyboard focusable, with native momentum kept.",
+  "page": "scroll-area",
+  "exports": [
+    "ScrollArea",
+    "scrollAreaVariants"
+  ],
+  "imports": [
+    "ScrollArea"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "disclosure",
+  "title": "Disclosure",
+  "description": "Expandable sections on react-aria: a Disclosure with a trigger and an animated panel, grouped into an accordion (also exported under shadcn's Accordion names).",
+  "page": "disclosure",
+  "exports": [
+    "Disclosure",
+    "DisclosureGroup",
+    "DisclosureTrigger",
+    "DisclosurePanel",
+    "disclosureGroupVariants",
+    "Accordion",
+    "AccordionItem",
+    "AccordionTrigger",
+    "AccordionContent"
+  ],
+  "imports": [
+    "Accordion",
+    "AccordionItem",
+    "AccordionTrigger",
+    "AccordionContent"
+  ]
+}

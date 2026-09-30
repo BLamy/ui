@@ -1,0 +1,27 @@
+{
+  "name": "dialog",
+  "title": "Dialog",
+  "description": "A modal dialog on react-aria: the centered iOS alert card or a general dialog with header, scrolling body and footer actions.",
+  "page": "dialog",
+  "exports": [
+    "DialogTrigger",
+    "DialogContent",
+    "DialogHeader",
+    "DialogTitle",
+    "DialogDescription",
+    "DialogBody",
+    "DialogFooter",
+    "DialogAction",
+    "DialogClose",
+    "Dialog",
+    "dialogVariants",
+    "dialogActionVariants",
+    "dialogOverlayClass"
+  ],
+  "imports": [
+    "DialogTrigger",
+    "DialogContent",
+    "DialogHeader",
+    "DialogTitle"
+  ]
+}

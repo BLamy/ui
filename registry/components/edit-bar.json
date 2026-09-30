@@ -1,0 +1,12 @@
+{
+  "name": "edit-bar",
+  "title": "EditBar",
+  "description": "The bottom action bar of an iOS list in edit mode: Favorite, a selection count and Delete.",
+  "page": "edit-bar",
+  "exports": [
+    "EditBar"
+  ],
+  "imports": [
+    "EditBar"
+  ]
+}

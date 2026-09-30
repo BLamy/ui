@@ -1,0 +1,12 @@
+{
+  "name": "search-field",
+  "title": "SearchField",
+  "description": "iOS search field on react-aria's SearchField: magnifier, clear button, Esc to clear, controlled or uncontrolled.",
+  "page": "search-field",
+  "exports": [
+    "SearchField"
+  ],
+  "imports": [
+    "SearchField"
+  ]
+}

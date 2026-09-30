@@ -1,0 +1,13 @@
+{
+  "name": "button",
+  "title": "Button",
+  "description": "The labelled action button: a react-aria Button with default, secondary, ghost, destructive and link variants, five sizes including the full-width iOS pill, a press that sinks on a spring, and a text label that morphs into the next one.",
+  "page": "button",
+  "exports": [
+    "Button",
+    "buttonVariants"
+  ],
+  "imports": [
+    "Button"
+  ]
+}

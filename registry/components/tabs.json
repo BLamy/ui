@@ -1,0 +1,20 @@
+{
+  "name": "tabs",
+  "title": "Tabs",
+  "description": "Tabs on react-aria with a sliding selection indicator and directional panels, in an iOS segmented look or a tinted underline.",
+  "page": "tabs",
+  "exports": [
+    "Tabs",
+    "TabList",
+    "Tab",
+    "TabPanel",
+    "tabsListVariants",
+    "tabVariants"
+  ],
+  "imports": [
+    "Tabs",
+    "TabList",
+    "Tab",
+    "TabPanel"
+  ]
+}

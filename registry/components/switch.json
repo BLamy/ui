@@ -1,0 +1,12 @@
+{
+  "name": "switch",
+  "title": "Switch",
+  "description": "iOS switch on react-aria's Switch: a 51 by 31 track, a thumb that springs across and stretches while pressed.",
+  "page": "switch",
+  "exports": [
+    "Switch"
+  ],
+  "imports": [
+    "Switch"
+  ]
+}

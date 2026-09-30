@@ -1,0 +1,13 @@
+{
+  "name": "label",
+  "title": "Label",
+  "description": "A field label built on react-aria's Label, which wires itself to the field it sits in, in a default and an iOS grouped-form variant.",
+  "page": "label",
+  "exports": [
+    "Label",
+    "labelVariants"
+  ],
+  "imports": [
+    "Label"
+  ]
+}

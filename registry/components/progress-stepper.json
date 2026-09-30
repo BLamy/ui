@@ -1,0 +1,13 @@
+{
+  "name": "progress-stepper",
+  "title": "ProgressStepper",
+  "description": "A row of milestones for a multi-step process, as filling bars or a joined line, with done, active and to-do states.",
+  "page": "progress-stepper",
+  "exports": [
+    "ProgressStepper",
+    "progressStepperVariants"
+  ],
+  "imports": [
+    "ProgressStepper"
+  ]
+}

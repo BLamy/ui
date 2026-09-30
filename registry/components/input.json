@@ -1,0 +1,13 @@
+{
+  "name": "input",
+  "title": "Input",
+  "description": "iOS filled text input on react-aria's Input: three sizes, a primary focus ring, and red invalid and dimmed disabled states; inside a TextField it is wired to its label, description and error.",
+  "page": "input",
+  "exports": [
+    "Input",
+    "inputVariants"
+  ],
+  "imports": [
+    "Input"
+  ]
+}

@@ -258,7 +258,7 @@ export default function App() {
         </div>
       </div>
       {hasToc ? (
-        <div style={{ width: 198, flexShrink: 0, padding: '36px 20px 20px', borderLeft: '1px solid var(--dk-border2)' }}>
+        <div className="dk-scroll" style={{ width: 198, flexShrink: 0, minHeight: 0, overflowY: 'auto', boxSizing: 'border-box', padding: '36px 20px 20px', borderLeft: '1px solid var(--dk-border2)' }}>
           <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-muted)', marginBottom: 8 }}>On this page</div>
           {toc.map((t, i) => (
             <button key={i} className="dk-toc" onClick={() => jumpHead(i)} style={t.h3 ? { paddingLeft: 12 } : undefined}>{t.text}</button>

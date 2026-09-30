@@ -1,0 +1,14 @@
+{
+  "name": "kbd",
+  "title": "Kbd",
+  "description": "A keycap for keyboard shortcuts, with a group wrapper for chords; inside a menu item it becomes the item's shortcut.",
+  "page": "kbd",
+  "exports": [
+    "Kbd",
+    "KbdGroup"
+  ],
+  "imports": [
+    "Kbd",
+    "KbdGroup"
+  ]
+}
