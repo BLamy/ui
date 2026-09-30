@@ -1,6 +1,12 @@
 {
   "sections": [
     {
+      "section": "Workspace",
+      "pages": [
+        { "id": "projects", "title": "Projects" }
+      ]
+    },
+    {
       "section": "Getting started",
       "pages": [
         { "id": "introduction", "title": "Introduction" },
