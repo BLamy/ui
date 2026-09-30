@@ -3,10 +3,14 @@
    of what happened — each step's evidence is the replay frozen at that instant — the root cause, and a details
    column with the report actions. */
 import { useEffect, useRef, useState, type Key, type ReactNode } from 'react';
-import {
-  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, Icon, MarkdownView, ReplayPreview, SplitViewContent, SplitViewHeader, Tab,
-  TabList, TabPanel, Tabs, cn, formatReplayTime, replayDemoEvents, type ReplayPreviewHandle,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { MarkdownView } from '@/components/ui/markdown-view';
+import { ReplayPreview, formatReplayTime, replayDemoEvents, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
+import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { StatusMenu } from './bugs';
 import {
   BUG_CONSOLE, BUG_NETWORK, FEATURED_BUG, PROJECTS, SEVERITIES, SEVERITY_LABEL, TRACKERS, bugReport, dateTime, relativeTime,

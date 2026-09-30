@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CountdownRing, ProgressRing, useCountdown } from './progress-ring';
-import { Button } from './button';
-import { Icon } from '../lib/icon';
+import { CountdownRing, ProgressRing, useCountdown } from '@/components/ui/progress-ring';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/lib/icon';
 import { Caption, Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof ProgressRing> = {

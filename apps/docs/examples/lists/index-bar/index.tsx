@@ -1,5 +1,6 @@
 import { useRef, type CSSProperties, type ReactNode } from 'react'
-import { IndexBar, List, ListRow, ListSection } from '@brett_lamy/ui'
+import { IndexBar } from '@/components/ui/index-bar'
+import { List, ListRow, ListSection } from '@/components/ui/list'
 
 const turns = [
   {

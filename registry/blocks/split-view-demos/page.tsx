@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { BLProvider, Segmented } from '@brett_lamy/ui';
+import { Segmented } from '@/components/ui/segmented';
+import { BLProvider } from '@/lib/theme';
 import {
   SplitViewGalleryDemo, SplitViewLibraryDemo, SplitViewMailDemo, SplitViewNotesDemo, SplitViewRemindersDemo, SplitViewSettingsDemo,
 } from './demos';

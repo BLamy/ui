@@ -1,6 +1,7 @@
 /* The wide layout's sidebar, as on iPad and Mac: Apple Music, Library and Playlists sections. Each row is a
    SplitViewItem, so picking one selects it in the SplitView (and closes the sidebar when it floats). */
-import { Icon, SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, type IconName, type IconShape } from '@brett_lamy/ui';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection } from '@/components/ui/split-view';
+import { Icon, type IconName, type IconShape } from '@/lib/icon';
 import { PlaylistArt } from './artwork';
 import { PLAYLISTS } from './data';
 import { ALBUM_ICON } from './screens';

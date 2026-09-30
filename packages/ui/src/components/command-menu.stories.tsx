@@ -3,9 +3,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   CommandEmpty, CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage,
   useCommandActive, type CommandMenuProps,
-} from './command-menu';
-import { Badge } from './badge';
-import { Button } from './button';
+} from '@/components/ui/command-menu';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof CommandMenu> = {

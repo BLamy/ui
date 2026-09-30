@@ -1,4 +1,4 @@
-import { SyntaxHighlighting } from '@brett_lamy/ui'
+import { SyntaxHighlighting } from '@/components/ui/syntax-highlighting'
 
 const change = `export function delay(attempt: number) {
   return Math.min(base * 2 ** (attempt - 1), maxDelay)

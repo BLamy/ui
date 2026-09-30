@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Label } from './label';
-import { Input } from './input';
-import { TextField } from './text-field';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { TextField } from '@/components/ui/text-field';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Label> = {

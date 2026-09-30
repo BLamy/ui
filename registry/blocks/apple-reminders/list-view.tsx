@@ -1,10 +1,13 @@
 /* The open list: large colored title and count, the "N Completed · Clear / Show" bar, sections of reminders, an
    inline composer and the New Reminder button. Clearing the last open reminder bursts a small celebration. */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import {
-  Button, Celebrate, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, NumberMorph,
-  Icon, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, cn, useSplitView,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { Celebrate } from '@/components/ui/celebrate';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { SYSTEM, type Reminder } from './data';
 import { ReminderRow } from './reminder-row';
 import { useReminders } from './store';

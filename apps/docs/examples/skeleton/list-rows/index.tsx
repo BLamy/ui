@@ -1,4 +1,5 @@
-import { List, ListRow, ListSection, Skeleton } from '@brett_lamy/ui'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Real ListRows with placeholders in their slots: the rows keep their height,
 // insets and dividers, so nothing jumps when the names arrive.

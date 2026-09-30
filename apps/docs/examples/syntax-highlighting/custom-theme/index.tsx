@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { SyntaxHighlighting } from '@brett_lamy/ui'
+import { SyntaxHighlighting } from '@/components/ui/syntax-highlighting'
 
 // Lines 7–11 of src/queue.ts
 const excerpt = `

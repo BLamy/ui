@@ -1,4 +1,4 @@
-import type { IconShape } from '../icon';
+import type { IconShape } from '@/lib/icon';
 
 /** Icon geometry merged in from the former PencilKit icon set (`PKI`; 2.0: one `Icon`). Canonical kebab-case
     names — none of these match an existing icon's geometry, so each is new. PencilKit draws them at `sw={1.7}`. */

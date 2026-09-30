@@ -1,4 +1,4 @@
-import type { IconShape } from '../icon';
+import type { IconShape } from '@/lib/icon';
 
 /** Icon geometry merged in from the former Workbench icon set (`WIcon`; 2.0: one `Icon`). Canonical kebab-case
     names. Only `plus` matched an existing icon exactly; every other shape differs from its namesake, so it is new.

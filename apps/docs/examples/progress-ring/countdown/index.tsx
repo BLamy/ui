@@ -1,10 +1,7 @@
 import { useState } from 'react'
-import {
-  Button,
-  CountdownRing,
-  NumberMorph,
-  useCountdown,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { NumberMorph } from '@/components/ui/number-morph'
+import { CountdownRing, useCountdown } from '@/components/ui/progress-ring'
 
 // A verification code that rotates every 30 seconds. The ring drains once a
 // second and turns red for the last five; when the period restarts it jumps

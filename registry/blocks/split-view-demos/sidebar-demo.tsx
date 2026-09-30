@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
-import { cn, themeScopeProps, SidebarInset, SidebarNav, SidebarProvider, SidebarTrigger, type SidebarVariant } from '@brett_lamy/ui';
+import { SidebarInset, SidebarNav, SidebarProvider, SidebarTrigger, type SidebarVariant } from '@/components/ui/sidebar';
+import { themeScopeProps } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 const VARIANTS: SidebarVariant[] = ['docked', 'rail', 'float', 'overlay'];
 function Chip({ active, onPress, children }: { active: boolean; onPress: () => void; children: string }) {

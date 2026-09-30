@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSection, DropdownMenuSeparator, DropdownMenuSub,
-} from './dropdown-menu';
-import { Button } from './button';
-import { Kbd, KbdGroup } from './kbd';
-import { Icon } from '../lib/icon';
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Icon } from '@/lib/icon';
 import { Screen } from '../stories/primitive-frame';
 
 const meta: Meta<typeof DropdownMenuContent> = {

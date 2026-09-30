@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { getStroke } from 'perfect-freehand';
-import { PK_TOOLS, type PencilStroke } from '../../lib/pencilkit/constants';
+import { PK_TOOLS, type PencilStroke } from '@/components/ui/pencilkit/constants';
 
 export function outlinePath(pts: number[][]): string {
   if (!pts || pts.length < 3) return '';

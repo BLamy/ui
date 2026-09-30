@@ -1,13 +1,8 @@
 import { useState } from 'react'
-import {
-  BLProvider,
-  Icon,
-  List,
-  ListRow,
-  ListSection,
-  Switch,
-  useAppearance,
-} from '@brett_lamy/ui'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { Switch } from '@/components/ui/switch'
+import { Icon } from '@/lib/icon'
+import { BLProvider, useAppearance } from '@/lib/theme'
 
 const tints = ['#0A84FF', '#5E5CE6', '#34C759', '#FF9F0A', '#FF375F']
 

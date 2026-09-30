@@ -4,12 +4,12 @@ import {
 } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { animate, type AnimationPlaybackControls } from 'framer-motion';
-import { Icon } from '../lib/icon';
-import { chromeStore, BLSafeCtx, BLStickyCtx } from '../lib/theme';
-import { cn, BARH } from '../lib/utils';
-import { springCss, springs } from '../lib/motion';
-import { Spinner } from './spinner';
-import { useSplitViewBack } from './split-view';
+import { Icon } from '@/lib/icon';
+import { chromeStore, BLSafeCtx, BLStickyCtx } from '@/lib/theme';
+import { cn, BARH } from '@/lib/utils';
+import { springCss, springs } from '@/lib/motion';
+import { Spinner } from '@/components/ui/spinner';
+import { useSplitViewBack } from '@/components/ui/split-view';
 
 /** Screen descriptor consumed by NavigationStack. */
 export interface Screen {

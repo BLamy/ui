@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Label, ProgressBar, type ProgressBarProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
-import { NumberMorph } from './number-morph';
+import { cn } from '@/lib/utils';
+import { NumberMorph } from '@/components/ui/number-morph';
 
 /* ══ Progress — react-aria's ProgressBar (role=progressbar, aria-valuenow / valuetext), iOS progress view look.
    Omit `value` or pass `isIndeterminate` for the sliding bar. The fill springs to each new value and the

@@ -11,11 +11,11 @@ import {
 } from 'react';
 import { Button } from 'react-aria-components';
 import { cva } from 'class-variance-authority';
-import { themeScopeClass, useAppearance, useChromeHidden } from '../../lib/theme';
-import { collectSlots, defineSlot } from '../../lib/container';
-import { springCss } from '../../lib/motion';
-import { useSheetDrag } from '../../lib/sheet-drag';
-import { cn } from '../../lib/utils';
+import { themeScopeClass, useAppearance, useChromeHidden } from '@/lib/theme';
+import { collectSlots, defineSlot } from '@/lib/container';
+import { springCss } from '@/lib/motion';
+import { useSheetDrag } from '@/lib/sheet-drag';
+import { cn } from '@/lib/utils';
 
 export type FloatingSheetFabPosition =
   | 'top-left'

@@ -1,10 +1,12 @@
 /* The Alfred bar: an inline CommandMenu — a big input, the current page's results, a preview pane beside them
    on wide bars (clipboard, snippets, emoji, files), and a footer whose legend follows the page's keys. */
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import {
-  CommandEmpty, CommandFooter, CommandInput, CommandList, CommandMenu, ContentSwap, Icon, IconSwap, TextMorph, cn, useCommandActive,
-  useCommandMenu, type CommandLegendItem, type CommandMenuApi,
-} from '@brett_lamy/ui';
+import { ContentSwap } from '@/components/ui/animated-height';
+import { CommandEmpty, CommandFooter, CommandInput, CommandList, CommandMenu, useCommandActive, useCommandMenu, type CommandLegendItem, type CommandMenuApi } from '@/components/ui/command-menu';
+import { IconSwap } from '@/components/ui/icon-swap';
+import { TextMorph } from '@/components/ui/text-morph';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { SNIPPETS, nodeAt, pathOf } from './data';
 import { ALL_EMOJI, APPS, appTile, renderPage } from './pages';
 import { ClipGlyph, FileGlyph, Hat, fileKindLabel } from './parts';

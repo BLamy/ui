@@ -1,12 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Button,
-  Icon,
-  List,
-  ListRow,
-  ListSection,
-  SideDrawer,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { SideDrawer } from '@/components/ui/side-drawer'
+import { Icon } from '@/lib/icon'
 
 const files = [
   {

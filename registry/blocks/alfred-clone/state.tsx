@@ -1,7 +1,7 @@
 /* The launcher's shared state: the clipboard history, calculator history, Trash, appearance, the power overlay,
    workflow drafts, and the "Copied" HUD — one context, so any page can act on it. */
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { toastApi, type ToastApi, type ToastQueue } from '@brett_lamy/ui';
+import { toastApi, type ToastApi, type ToastQueue } from '@/components/ui/toast';
 import { CLIPS, REPOS, TRASH, type Clip } from './data';
 
 export type PowerState = 'lock' | 'sleep' | 'restart' | 'off' | null;

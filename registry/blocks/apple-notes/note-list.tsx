@@ -3,7 +3,11 @@
    pinned (or edited to the top of Today) glides to its new place on the smooth spring instead of jumping;
    new notes grow in, deleted ones collapse out. Swipe right to pin, left to lock or delete (ListRow actions). */
 import { useRef, type ReactNode } from 'react';
-import { Icon, ListRow, cn, springs, useMotion, useSplitView } from '@brett_lamy/ui';
+import { ListRow } from '@/components/ui/list';
+import { useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { springs, useMotion } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 import { FOLDERS, shortDate, snippet, title, type Note } from './data';
 import type { NotesState } from './use-notes';
 

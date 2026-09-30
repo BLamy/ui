@@ -4,7 +4,11 @@
    and the album's colors wash in. Drag the full player down (or press Esc) and it folds back into the bar.
    Render <MiniPlayer> where the bar belongs and <FullPlayer> over the block, both inside one <MorphGroup>. */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Icon, IconSwap, Morph, Slider, cn, type IconName } from '@brett_lamy/ui';
+import { IconSwap } from '@/components/ui/icon-swap';
+import { Morph } from '@/components/ui/morph';
+import { Slider } from '@/components/ui/slider';
+import { Icon, type IconName } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { Artwork } from './artwork';
 import { fmt, lyricsFor, type Album } from './data';
 import type { Player } from './player';

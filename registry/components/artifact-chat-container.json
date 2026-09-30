@@ -5,8 +5,7 @@
   "page": "artifact-chat-container",
   "exports": [
     "ArtifactChatContainer",
-    "useArtifactChatContainer",
-    "WorkbenchTheme"
+    "useArtifactChatContainer"
   ],
   "imports": [
     "ArtifactChatContainer",

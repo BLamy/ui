@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AppearanceProvider } from '@brett_lamy/ui';
+import { AppearanceProvider } from '@/lib/theme';
 import DiscordClone, { type ThreadState } from '@brett_lamy/registry/blocks/discord-clone/page';
 
 /* The Discord clone block (registry/blocks/discord-clone), at the sizes the old ChatDemo stories used. */

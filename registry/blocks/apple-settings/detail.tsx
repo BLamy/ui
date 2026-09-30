@@ -2,9 +2,12 @@
    the direction you went. Tablet and phone: an iOS navigation stack — drill-downs push inside the column; on a
    phone its root screen goes back to the Settings list. */
 import { useLayoutEffect, useRef } from 'react';
-import {
-  Button, ContentSwap, Icon, NavigationStack, SplitViewDetail, TextMorph, useSplitView, type Screen,
-} from '@brett_lamy/ui';
+import { ContentSwap } from '@/components/ui/animated-height';
+import { Button } from '@/components/ui/button';
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import { SplitViewDetail, useSplitView } from '@/components/ui/split-view';
+import { TextMorph } from '@/components/ui/text-morph';
+import { Icon } from '@/lib/icon';
 import { getPane } from './data';
 import { PaneView } from './rows';
 import { trailOf, useSettings } from './state';

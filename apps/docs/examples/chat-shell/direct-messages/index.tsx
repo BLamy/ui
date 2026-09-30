@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { Avatar, Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, SidebarContent, SidebarHeader, SidebarItem, SidebarSection } from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { SidebarContent, SidebarHeader, SidebarItem, SidebarSection } from '@/components/ui/sidebar'
 import { ChatShell, ChatShellFooter, ChatShellHeader, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellSidebar, ChatShellTitle } from '@/components/blocks/discord-clone/components/chat-shell'
 import { useChatShell } from '@/components/blocks/discord-clone/components/chat-shell-context'
 

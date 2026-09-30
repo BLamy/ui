@@ -5,9 +5,9 @@ import {
   TooltipTrigger as AriaTooltipTrigger, type TooltipTriggerComponentProps,
   composeRenderProps,
 } from 'react-aria-components';
-import { overlayZ, popoverMotion } from '../lib/primitives';
-import { cn } from '../lib/utils';
-import { useThemeScopeProps } from '../lib/theme';
+import { overlayZ, popoverMotion } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
+import { useThemeScopeProps } from '@/lib/theme';
 
 /* ══ Tooltip — react-aria's TooltipTrigger / Tooltip: hover (with warm-up delay) and keyboard focus open it,
    Esc closes it, touch never does (as on iOS). Portals into BLProvider's root.

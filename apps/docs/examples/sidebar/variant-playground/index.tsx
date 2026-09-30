@@ -1,12 +1,6 @@
 import { useState } from 'react'
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-  type SidebarVariant,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, type SidebarVariant } from '@/components/ui/sidebar'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 const font =
   "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, " +

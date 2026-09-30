@@ -1,12 +1,4 @@
-import {
-  SplitView,
-  SplitViewContent,
-  SplitViewDetail,
-  SplitViewHeader,
-  SplitViewItem,
-  SplitViewSection,
-  SplitViewSidebar,
-} from '@brett_lamy/ui'
+import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar } from '@/components/ui/split-view'
 
 const reminders = [
   'Book the cabin ferry',

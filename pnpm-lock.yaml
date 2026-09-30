@@ -153,6 +153,9 @@ importers:
       nx:
         specifier: 23.1.1
         version: 23.1.1(@swc-node/register@1.11.1(@swc/core@1.15.8(@swc/helpers@0.5.18))(@swc/types@0.1.28)(typescript@6.0.3))(@swc/core@1.15.8(@swc/helpers@0.5.18))
+      postcss:
+        specifier: ^8.5.26
+        version: 8.5.26
       prettier:
         specifier: ^3.8.1
         version: 3.9.6

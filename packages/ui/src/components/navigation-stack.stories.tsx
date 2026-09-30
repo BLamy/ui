@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Avatar } from './avatar';
-import { List } from './list';
-import { NavigationStack, type Screen } from './navigation-stack';
-import { TabBar } from './tab-bar';
+import { Avatar } from '@/components/ui/avatar';
+import { List } from '@/components/ui/list';
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import { TabBar } from '@/components/ui/tab-bar';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof NavigationStack> = {

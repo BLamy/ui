@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { RadioGroup, Radio } from './radio-group';
-import { Label } from './label';
-import { FieldDescription } from './text-field';
+import { RadioGroup, Radio } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { FieldDescription } from '@/components/ui/text-field';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof RadioGroup> = {

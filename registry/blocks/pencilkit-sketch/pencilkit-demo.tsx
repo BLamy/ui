@@ -1,6 +1,11 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { cn, themeScopeProps, useAppearance, type Appearance, PK_INKS, PK_W, type PencilStroke, type PencilTool, PencilCanvas, InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker, WidthPicker, usePencilHistory } from '@brett_lamy/ui';
+import { PK_INKS, PK_W, type PencilStroke, type PencilTool } from '@/components/ui/pencilkit/constants';
+import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
+import { InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker, WidthPicker } from '@/components/ui/pencilkit/pencil-toolbar';
+import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history';
+import { themeScopeProps, useAppearance, type Appearance } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 /** Dotted paper: the theme's muted surface with a 22px grid of muted-foreground dots. */
 export const pencilPaperClassName =

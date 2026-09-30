@@ -9,10 +9,10 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Icon } from '../lib/icon';
-import { focusRing, overlayZ } from '../lib/primitives';
-import { cn } from '../lib/utils';
-import { useThemeScopeProps } from '../lib/theme';
+import { Icon } from '@/lib/icon';
+import { focusRing, overlayZ } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
+import { useThemeScopeProps } from '@/lib/theme';
 
 /* ══ Dialog — react-aria's DialogTrigger / ModalOverlay / Modal / Dialog (focus trap, Esc, focus return,
    aria-modal). `alert` is the iOS centered alert card; `default`/`lg` are general-purpose dialogs.

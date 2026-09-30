@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { FloatingSheet, useAppearance, useFloatingSheet } from '@brett_lamy/ui'
+import { FloatingSheet, useFloatingSheet } from '@/components/ui/floating-sheet'
+import { useAppearance } from '@/lib/theme'
 
 /** A 430×560 host with colour for the glass to blur; follows the appearance. */
 function Host({ children, note }: { children?: ReactNode; note: string }) {

@@ -2,10 +2,13 @@
    Test runs · Playwright tests). The underline is one element that slides to the chosen tab, and panels move in
    the direction of travel. Rows push the bug, run or test page onto the column's stack. */
 import type { ReactNode } from 'react';
-import {
-  ContentSwap, Icon, NumberMorph, SplitViewContent, SplitViewHeader, TabView, TabViewBar, TabViewIndicator, TabViewList, TabViewTab,
-  cn, useDirection,
-} from '@brett_lamy/ui';
+import { ContentSwap } from '@/components/ui/animated-height';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import { TabView, TabViewBar, TabViewIndicator, TabViewList, TabViewTab } from '@/components/ui/tab-view';
+import { Icon } from '@/lib/icon';
+import { useDirection } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 import { isOpen } from './agent';
 import { BugsTab } from './bugs';
 import { host, relativeTime, type Project } from './data';

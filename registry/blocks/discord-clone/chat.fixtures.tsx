@@ -1,6 +1,8 @@
 /* Story fixtures for the block's chat parts (stories only — not a block file, so not installed). */
 import { Fragment, type CSSProperties, type ReactNode } from 'react';
-import { Icon, cn, themeScopeProps, type Appearance } from '@brett_lamy/ui';
+import { Icon } from '@/lib/icon';
+import { themeScopeProps, type Appearance } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 import { ChatShellSidebar } from './components/chat-shell';
 import type { ChatUsers } from './components/chat-users';
 import { ChatAvatar } from './components/chat-avatar';

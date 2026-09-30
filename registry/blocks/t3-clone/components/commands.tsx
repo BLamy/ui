@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { matchesHotkey, type Appearance } from '@brett_lamy/ui';
+import { matchesHotkey } from '@/components/ui/command-menu';
+import { type Appearance } from '@/lib/theme';
 import { useWorkbenchShell } from './workbench/workbench-shell';
 import { CommandPalette } from './command-palette';
 import { ThemeEditor } from './theme-editor';

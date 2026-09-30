@@ -1,13 +1,8 @@
 import { useState, type CSSProperties } from 'react'
-import {
-  Avatar,
-  BLProvider,
-  List,
-  ListRow,
-  ListSection,
-  Switch,
-  useAppearance,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { Switch } from '@/components/ui/switch'
+import { BLProvider, useAppearance } from '@/lib/theme'
 
 // A brand palette defined for both appearances: override any --bl-* token.
 const sepia: Record<'light' | 'dark', Record<string, string>> = {

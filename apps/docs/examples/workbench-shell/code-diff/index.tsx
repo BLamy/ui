@@ -1,4 +1,4 @@
-import { WorkbenchTheme } from '@brett_lamy/ui'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { SurfaceDiff } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 
 function Change() {

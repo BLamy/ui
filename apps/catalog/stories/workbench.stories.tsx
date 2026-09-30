@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AppearanceProvider } from '@brett_lamy/ui';
+import { AppearanceProvider } from '@/lib/theme';
 import T3Clone from '@brett_lamy/registry/blocks/t3-clone/page';
 
 /* The t3-clone registry block (registry/blocks/t3-clone), composed from the WorkbenchShell primitives. */

@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, Icon, MessageMarkdown, SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSection, SidebarWorkspace, UserMessage, WorkbenchTheme } from '@brett_lamy/ui'
+import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, UserMessage } from '@/components/ui/conversation'
+import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSection, SidebarWorkspace } from '@/components/ui/sidebar'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { Icon } from '@/lib/icon'
 import { stripAttachmentRefs, WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 import { useWorkbenchShell, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 

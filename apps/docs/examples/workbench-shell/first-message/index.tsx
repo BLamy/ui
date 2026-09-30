@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, UserMessage, WorkbenchTheme } from '@brett_lamy/ui'
+import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, UserMessage } from '@/components/ui/conversation'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { stripAttachmentRefs, WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 function NewThread() {

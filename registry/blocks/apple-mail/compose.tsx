@@ -2,7 +2,12 @@
    so replies carry the quoted message as a real quote block). A card sheet on the phone, a centered form sheet
    on wider screens. Cancelling keeps anything you wrote in Drafts. */
 import { useRef, type ReactNode } from 'react';
-import { Button, Icon, MarkdownEditor, SheetContent, TextMorph, cn } from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { MarkdownEditor } from '@/components/ui/markdown-editor';
+import { SheetContent } from '@/components/ui/sheet';
+import { TextMorph } from '@/components/ui/text-morph';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { ME } from './data';
 import type { MailState } from './use-mail';
 

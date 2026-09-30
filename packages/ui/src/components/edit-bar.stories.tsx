@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { EditBar } from './edit-bar';
+import { EditBar } from '@/components/ui/edit-bar';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof EditBar> = {

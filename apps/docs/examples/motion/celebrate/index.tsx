@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import {
-  Button,
-  Celebrate,
-  Icon,
-  IconSwap,
-  Spinner,
-  TextMorph,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { Celebrate } from '@/components/ui/celebrate'
+import { IconSwap } from '@/components/ui/icon-swap'
+import { Spinner } from '@/components/ui/spinner'
+import { TextMorph } from '@/components/ui/text-morph'
+import { Icon } from '@/lib/icon'
 
 // Rare moments may celebrate: the backup finishing is worth a burst. Tab
 // switches are not.

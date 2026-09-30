@@ -1,7 +1,15 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { ToggleButtonGroup } from 'react-aria-components';
-import { AdaptivePane, type AdaptivePaneMode, useContainerWidth, cn, pressable, IconButton, Icon, type IconName, PlainToggleButton as ToggleButton, type Appearance, themeScopeProps, ThemeScope, SnapSheet, useWorkbenchAppearance, WorkbenchAppearanceProvider} from '@brett_lamy/ui';
+import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane';
+import { IconButton } from '@/components/ui/icon-button';
+import { PlainToggleButton as ToggleButton } from '@/components/ui/plain-button';
+import { SnapSheet } from '@/components/ui/snap-sheet';
+import { useWorkbenchAppearance, WorkbenchAppearanceProvider } from '@/components/ui/workbench-theme';
+import { useContainerWidth } from '@/lib/container';
+import { Icon, type IconName } from '@/lib/icon';
+import { type Appearance, themeScopeProps, ThemeScope } from '@/lib/theme';
+import { cn, pressable } from '@/lib/utils';
 
 
 /* ══ WorkbenchShell — a thin layout root and the parts that compose an IDE-style agent workspace ══

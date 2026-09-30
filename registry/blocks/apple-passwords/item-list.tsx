@@ -1,6 +1,9 @@
 /* The middle column: the selected category's items with search. Rows are SplitViewItems, so they select the
    detail beside them — or push it on a phone. */
-import { Icon, SearchField, SplitViewContent, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewToggle, cn } from '@brett_lamy/ui';
+import { SearchField } from '@/components/ui/search-field';
+import { SplitViewContent, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewToggle } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { SEVERITY } from './data';
 import { CodeValue, SiteTile, WifiTile, type CodeClock } from './parts';
 import { categoryTitle, type Entry, type EntrySection, type Selection } from './vault';

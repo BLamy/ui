@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ EdgeDrawer — headless scrim + panel that slides in from one edge of a positioned host ══
    No chrome of its own: the children are the whole panel. Tapping the scrim calls onClose. SideDrawer's overlay

@@ -1,6 +1,8 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PK_INKS, ThemeScope, PencilCanvas } from '@brett_lamy/ui';
+import { PK_INKS } from '@/components/ui/pencilkit/constants';
+import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
+import { ThemeScope } from '@/lib/theme';
 import { demoStrokes } from './demo-strokes';
 
 function Frame({ dark, children }: { dark?: boolean; children: React.ReactNode }) {

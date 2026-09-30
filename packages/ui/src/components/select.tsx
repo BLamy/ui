@@ -5,9 +5,9 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
-import { ListBox, ListBoxItem, ListBoxSection, type ListBoxItemProps, type ListBoxProps } from './list-box';
-import { Popover, type PopoverProps } from './popover';
+import { cn } from '@/lib/utils';
+import { ListBox, ListBoxItem, ListBoxSection, type ListBoxItemProps, type ListBoxProps } from '@/components/ui/list-box';
+import { Popover, type PopoverProps } from '@/components/ui/popover';
 
 /* ══ Select — react-aria's Select: a button that opens a ListBox in a Popover (arrow keys / typeahead on the
    closed button too, Esc closes, focus returns).

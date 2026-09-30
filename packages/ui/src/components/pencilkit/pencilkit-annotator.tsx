@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import type { ComposerAnnotatorProps } from '../composer/annotator';
-import { PK_INKS, type PencilTool } from '../../lib/pencilkit/constants';
-import { PencilCanvas } from './pencil-canvas';
-import { InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker } from './pencil-toolbar';
-import { usePencilHistory } from './use-pencil-history';
+import type { ComposerAnnotatorProps } from '@/components/ui/composer/annotator';
+import { PK_INKS, type PencilTool } from '@/components/ui/pencilkit/constants';
+import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
+import { InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker } from '@/components/ui/pencilkit/pencil-toolbar';
+import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history';
 
 /**
  * The Composer's default image annotator, on PencilKit: a canvas over the image, and the tool / ink / undo bar

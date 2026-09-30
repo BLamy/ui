@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { Icon, List, ListRow, ListSection, Slider, Switch } from '@brett_lamy/ui'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
+import { Icon } from '@/lib/icon'
 
 /** Your own switch component: ListRow still names it after the row title. */
 function SettingSwitch(props: { on: boolean; onChange: (v: boolean) => void }) {

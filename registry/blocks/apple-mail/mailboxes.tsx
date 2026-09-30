@@ -1,9 +1,9 @@
 /* Mailboxes: Favorites, Smart Mailboxes and the iCloud account, each a collapsible section with unread counts
    that roll when they change. Tiled or floating beside the list on wide screens; on the phone it is the root
    of the stack (with a large title), and picking a mailbox pushes its list. */
-import {
-  Icon, NumberMorph, SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView,
-} from '@brett_lamy/ui';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
 import { FAVORITES, ICLOUD, SMART } from './data';
 import { BarButton } from './parts';
 import type { MailState } from './use-mail';

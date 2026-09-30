@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { cn } from '@brett_lamy/ui';
+import { cn } from '@/lib/utils';
 import { Button } from 'react-aria-components';
 import { MAP_ICONS, type MapIconName } from './map-icons';
 import {

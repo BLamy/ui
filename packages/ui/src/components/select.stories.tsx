@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectSection } from './select';
-import { Label } from './label';
-import { FieldError } from './text-field';
-import { Card } from './card';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectSection } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { FieldError } from '@/components/ui/text-field';
+import { Card } from '@/components/ui/card';
 import { Screen } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Select> = {

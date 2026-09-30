@@ -1,10 +1,10 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
-import { Icon } from '../lib/icon';
-import { fades, springs, useMotion } from '../lib/motion';
+import { Icon } from '@/lib/icon';
+import { fades, springs, useMotion } from '@/lib/motion';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
-import { MeasureH } from './measure-h';
+import { cn } from '@/lib/utils';
+import { MeasureH } from '@/components/ui/measure-h';
 
 /** The card: a centered dialog, or (`compact`) a bottom tray you can drag down. */
 export const credenzaVariants = cva(

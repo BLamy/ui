@@ -1,7 +1,11 @@
 /* A message: sender header with avatar, subject, body with quoted text drawn as Mail's tinted quote bar,
    attachment tiles, and the earlier messages of the conversation as cards that expand in place. */
 import { useState, type ReactNode } from 'react';
-import { AnimatedHeight, Avatar, Chevron, Icon, cn } from '@brett_lamy/ui';
+import { AnimatedHeight } from '@/components/ui/animated-height';
+import { Avatar } from '@/components/ui/avatar';
+import { Chevron } from '@/components/ui/icon-swap';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { ME, initials, longTime, relativeTime, type Attachment, type Message, type Person, type ThreadEntry } from './data';
 
 const names = (xs: Person[]) => xs.map((x) => (x.email === ME.email ? 'Me' : x.name)).join(', ');

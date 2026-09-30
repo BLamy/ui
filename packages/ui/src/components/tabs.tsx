@@ -8,9 +8,9 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { useDirection } from '../lib/motion';
-import { cn } from '../lib/utils';
-import { segmentIndicator } from './segmented';
+import { useDirection } from '@/lib/motion';
+import { cn } from '@/lib/utils';
+import { segmentIndicator } from '@/components/ui/segmented';
 
 /* ══ Tabs — react-aria's Tabs (arrow keys move, automatic activation). `segmented` is the iOS segmented look,
    `underline` a tinted underline bar. ══ */

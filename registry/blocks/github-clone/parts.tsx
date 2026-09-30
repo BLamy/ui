@@ -2,9 +2,12 @@
    underline tabs, a line-numbered code view, a unified diff view and a file tree. Code is highlighted by the
    library's SyntaxHighlighting (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import {
-  Avatar, Icon, SyntaxHighlighting, SyntaxTokens, TabViewIndicator, TabViewPanel, TabViewTab, cn, languageFromPath, useSyntaxTokens, type IconName,
-} from '@brett_lamy/ui';
+import { Avatar } from '@/components/ui/avatar';
+import { SyntaxHighlighting, SyntaxTokens, useSyntaxTokens } from '@/components/ui/syntax-highlighting';
+import { TabViewIndicator, TabViewPanel, TabViewTab } from '@/components/ui/tab-view';
+import { Icon, type IconName } from '@/lib/icon';
+import { languageFromPath } from '@/lib/syntax';
+import { cn } from '@/lib/utils';
 import type { FileNode, Label, PullRequest, User } from './data';
 
 /* ── Palette ──

@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Avatar } from './avatar';
-import { EditBar } from './edit-bar';
-import { IndexBar, AL } from './index-bar';
-import { List } from './list';
-import { NavigationStack } from './navigation-stack';
-import { SearchField } from './search-field';
-import { Icon } from '../lib/icon';
-import { BARH } from '../lib/utils';
+import { Avatar } from '@/components/ui/avatar';
+import { EditBar } from '@/components/ui/edit-bar';
+import { IndexBar, AL } from '@/components/ui/index-bar';
+import { List } from '@/components/ui/list';
+import { NavigationStack } from '@/components/ui/navigation-stack';
+import { SearchField } from '@/components/ui/search-field';
+import { Icon } from '@/lib/icon';
+import { BARH } from '@/lib/utils';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof List> = {

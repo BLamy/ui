@@ -1,13 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import {
-  AdaptivePane,
-  Button,
-  Icon,
-  List,
-  ListRow,
-  ListSection,
-  useContainerWidth,
-} from '@brett_lamy/ui'
+import { AdaptivePane } from '@/components/ui/adaptive-pane'
+import { Button } from '@/components/ui/button'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { useContainerWidth } from '@/lib/container'
+import { Icon } from '@/lib/icon'
 
 const boxes = ['Inbox', 'Drafts', 'Sent', 'Archive']
 

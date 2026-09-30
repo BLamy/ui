@@ -8,10 +8,10 @@
    ⌘K palette · ⌘J Ask QA · ⇧⌘↵ start a run · ⇧⌘C copy open bug reports · ⇧⌘L light/dark · ⌘. change status of
    the open bug. */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import {
-  CommandEmpty, CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage, ContentSwap,
-  cn, matchesHotkey, useCommandActive, useCommandMenu, useContainerWidth,
-} from '@brett_lamy/ui';
+import { ContentSwap } from '@/components/ui/animated-height';
+import { CommandEmpty, CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage, matchesHotkey, useCommandActive, useCommandMenu } from '@/components/ui/command-menu';
+import { useContainerWidth } from '@/lib/container';
+import { cn } from '@/lib/utils';
 import { isOpen } from './agent';
 import {
   PROJECTS, SEVERITIES, SEVERITY_LABEL, STATUSES, STATUS_LABEL, TRACKERS, host, relativeTime, severityRank, type Bug,

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Avatar } from './avatar';
-import { Icon } from '../lib/icon';
-import { ListRow } from './list';
-import { Switch } from './switch';
-import { Slider } from './slider';
-import { Button } from './button';
-import { type ListRowAction } from './list';
+import { Avatar } from '@/components/ui/avatar';
+import { Icon } from '@/lib/icon';
+import { ListRow } from '@/components/ui/list';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
+import { type ListRowAction } from '@/components/ui/list';
 import { Pad } from '../stories/frame';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 const meta: Meta<typeof ListRow> = {
   title: 'Molecules/ListRow',

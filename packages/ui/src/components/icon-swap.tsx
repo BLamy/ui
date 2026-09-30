@@ -1,8 +1,8 @@
 import { useRef, type CSSProperties, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { fades, springs } from '../lib/motion';
-import { Icon } from '../lib/icon';
-import { cn } from '../lib/utils';
+import { fades, springs } from '@/lib/motion';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 
 /* ══ IconSwap / Chevron — icons change in place rather than cut ══
    IconSwap: when `id` changes, the old glyph shrinks and blurs out while the new one grows in, stacked in the

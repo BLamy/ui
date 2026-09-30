@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Separator } from './separator';
-import { Card } from './card';
+import { Separator } from '@/components/ui/separator';
+import { Card } from '@/components/ui/card';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Separator> = {

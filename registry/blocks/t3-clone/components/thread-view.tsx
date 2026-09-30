@@ -1,4 +1,4 @@
-import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions, MessageMarkdown, SettledBanner, Suggestion, ToolCall, UserMessage, WorkLog } from '@brett_lamy/ui';
+import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions, MessageMarkdown, SettledBanner, Suggestion, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation';
 import { WorkbenchComposer, stripAttachmentRefs } from './workbench/workbench-composer';
 import { SUGGESTIONS } from '../lib/data';
 import type { ThreadsState } from '../lib/use-threads';

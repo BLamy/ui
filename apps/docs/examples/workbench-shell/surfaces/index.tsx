@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { WorkbenchTheme } from '@brett_lamy/ui'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { SurfaceAgents, SurfaceAppPreview, SurfaceBrowser, SurfaceDiff, SurfaceFiles, SurfacePicker, SURFACES, SurfaceTerminal, type SurfaceKind } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 import { TerminalBody } from '@/components/blocks/t3-clone/components/workbench/terminal'
 import { WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelHeader, WorkbenchPanelTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'

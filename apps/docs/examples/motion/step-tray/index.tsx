@@ -1,11 +1,8 @@
 import { useState } from 'react'
-import {
-  AnimatedHeight,
-  Button,
-  ContentSwap,
-  Icon,
-  useDirection,
-} from '@brett_lamy/ui'
+import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height'
+import { Button } from '@/components/ui/button'
+import { Icon } from '@/lib/icon'
+import { useDirection } from '@/lib/motion'
 
 const REVIEW = [
   ['To', 'Wei Chen'],

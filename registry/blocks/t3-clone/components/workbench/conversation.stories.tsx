@@ -1,22 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Conversation,
-  ConversationEmpty,
-  ConversationGreeting,
-  ConversationMessages,
-  ConversationComposer,
-  ConversationSuggestions,
-  Suggestion,
-  UserMessage,
-  AssistantMessage,
-  MessageMarkdown,
-  WorkLog,
-  ToolCall,
-  SettledBanner,
-  WorkbenchTheme } from '@brett_lamy/ui';
+import { Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion, UserMessage, AssistantMessage, MessageMarkdown, WorkLog, ToolCall, SettledBanner } from '@/components/ui/conversation';
+import { WorkbenchTheme } from '@/components/ui/workbench-theme';
 import { WorkbenchComposer } from './workbench-composer';
 import { SUGGESTIONS, THREADS, type Thread as ThreadData } from './fixtures';
-import '@brett_lamy/ui/styles.css';
 
 const meta: Meta<typeof Conversation> = {
   title: 'Organisms/ChatView',

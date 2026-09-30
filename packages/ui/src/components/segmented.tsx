@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Radio, RadioGroup, SelectionIndicator, SelectionIndicatorContext } from 'react-aria-components';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /** The sliding selected card (react-aria's SelectionIndicator), shared by Segmented, Tabs and ToggleGroup. It sits
     behind the labels (the group is `isolate`), and width/height transition too, so it resizes between unequal items. */

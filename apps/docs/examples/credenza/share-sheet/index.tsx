@@ -1,12 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Avatar,
-  Button,
-  Credenza,
-  Icon,
-  ListRow,
-  QRSvg,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Credenza } from '@/components/ui/credenza'
+import { ListRow } from '@/components/ui/list'
+import { QRSvg } from '@/components/ui/qr-svg'
+import { Icon } from '@/lib/icon'
 
 const recipients = [
   { f: 'Maya', l: 'Lindqvist' },

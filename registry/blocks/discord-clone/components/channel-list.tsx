@@ -1,6 +1,7 @@
 import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
-import { Icon, cn } from '@brett_lamy/ui';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { useOptionalChatShell } from './chat-shell-context';
 import { cva } from 'class-variance-authority';
 

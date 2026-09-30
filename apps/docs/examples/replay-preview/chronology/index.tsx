@@ -1,13 +1,7 @@
 import { useRef, useState } from 'react'
-import {
-  Button,
-  Icon,
-  ReplayPreview,
-  formatReplayTime,
-  getReplayMarkers,
-  replayDemoEvents,
-  type ReplayPreviewHandle,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { ReplayPreview, formatReplayTime, getReplayMarkers, replayDemoEvents, type ReplayPreviewHandle } from '@/components/ui/replay-preview'
+import { Icon } from '@/lib/icon'
 
 // The recording's own moments (minus clicks) as a chronology beside the player:
 // `playerRef` seeks it, `onTimeUpdate` marks the steps already played.

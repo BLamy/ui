@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { cn, IconButton, Icon, type IconName } from '@brett_lamy/ui';
+import { IconButton } from '@/components/ui/icon-button';
+import { Icon, type IconName } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 
 /* ══ Terminal parts ══
    <TerminalHeader title="zsh — cookbook"><TerminalAction icon="rectangle-split"/><WorkbenchDockClose/></TerminalHeader>

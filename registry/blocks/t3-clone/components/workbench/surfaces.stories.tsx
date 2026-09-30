@@ -21,9 +21,9 @@ import {
   WorkbenchTabBar,
   WorkbenchTab,
 } from './workbench-shell';
-import { IconButton, WorkbenchTheme} from '@brett_lamy/ui';
+import { IconButton } from '@/components/ui/icon-button';
+import { WorkbenchTheme } from '@/components/ui/workbench-theme';
 import { AGENTS, DIFF, FILES } from './fixtures';
-import '@brett_lamy/ui/styles.css';
 
 const meta: Meta<typeof WorkbenchPanel> = {
   title: 'Organisms/SurfacePanel',

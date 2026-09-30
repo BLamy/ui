@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { TextField, FieldDescription, FieldError } from './text-field';
-import { Label } from './label';
-import { Input } from './input';
-import { Textarea } from './textarea';
+import { TextField, FieldDescription, FieldError } from '@/components/ui/text-field';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof TextField> = {

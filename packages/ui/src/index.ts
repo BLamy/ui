@@ -268,15 +268,15 @@ export {
   type FloatingSheetFabPosition,
   type FloatingSheetAppearance,
   type FloatingSheetTone,
-} from './components/chat/floating-sheet';
+} from './components/floating-sheet';
 export {
   FloatingChat,
   useFloatingChat,
   type FloatingChatProps,
   type FloatingChatContextValue,
   type FloatingChatFabPosition,
-} from './components/chat/floating-chat';
-export { ChatColumn, ChatColumnTranscript, ChatColumnComposer, type ChatColumnProps } from './components/chat/chat-column';
+} from './components/floating-chat';
+export { ChatColumn, ChatColumnTranscript, ChatColumnComposer, type ChatColumnProps } from './components/chat-column';
 export {
   ArtifactChatContainer,
   useArtifactChatContainer,
@@ -285,8 +285,8 @@ export {
   type ArtifactChatContainerSlotChildren,
   type ArtifactChatFabPosition,
   type ArtifactChatLayout,
-} from './templates/artifact-chat-container';
-export { ProgressStepper, progressStepperVariants, type ProgressStepperProps, type ProgressStep, type ProgressStepState } from './components/chat/progress-stepper';
+} from './components/artifact-chat-container';
+export { ProgressStepper, progressStepperVariants, type ProgressStepperProps, type ProgressStep, type ProgressStepState } from './components/progress-stepper';
 
 // PencilKit — freehand drawing on perfect-freehand (formerly @brett_lamy/pencilkit)
 export {
@@ -294,14 +294,14 @@ export {
   PK_INKS,
   PK_W,
   PK_TOOL_ICONS,
-} from './lib/pencilkit/constants';
+} from './components/pencilkit/constants';
 export type {
   PencilTool,
   PencilDrawTool,
   PencilToolDef,
   PencilPoint,
   PencilStroke,
-} from './lib/pencilkit/constants';
+} from './components/pencilkit/constants';
 export { outlinePath, StrokePath, MemoStroke } from './components/pencilkit/stroke-path';
 export type { StrokePathProps } from './components/pencilkit/stroke-path';
 export { PencilCanvas } from './components/pencilkit/pencil-canvas';

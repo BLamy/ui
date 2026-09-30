@@ -1,10 +1,12 @@
 /* Playwright tests Loop QA generated from bugs: a list with each test's state, and the selected test's source
    (SyntaxHighlighting) beside it — or, in a narrow container, on its own pushed page. */
 import { useState } from 'react';
-import {
-  Button, Icon, SplitViewContent, SplitViewHeader, SyntaxHighlighting, SyntaxHighlightingContent, SyntaxHighlightingCopyButton,
-  SyntaxHighlightingHeader, SyntaxHighlightingTitle, cn, useContainerWidth,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import { SyntaxHighlighting, SyntaxHighlightingContent, SyntaxHighlightingCopyButton, SyntaxHighlightingHeader, SyntaxHighlightingTitle } from '@/components/ui/syntax-highlighting';
+import { useContainerWidth } from '@/lib/container';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { PLAYWRIGHT_TESTS, relativeTime, type PlaywrightTest, type Project } from './data';
 import { PageActions } from './header';
 import { Empty, Pill, type PillTone, Pressable } from './parts';

@@ -1,4 +1,5 @@
-import { BLProvider, Skeleton, SkeletonText } from '@brett_lamy/ui'
+import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
+import { BLProvider } from '@/lib/theme'
 
 // The fill and the sweep are drawn from the --bl-* tokens (fill2 under a
 // card-coloured highlight), so the same placeholder sits right on light and

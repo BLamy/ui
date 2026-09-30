@@ -3,7 +3,8 @@
    One SplitView at every size: three tiled columns at regular width (≥1024), list · note with the folders
    floating over them on an iPad, and a stack with large titles and back buttons on an iPhone. */
 import { useState, type CSSProperties } from 'react';
-import { AppearanceProvider, BLProvider, SplitView, useAppearance, type Appearance } from '@brett_lamy/ui';
+import { SplitView } from '@/components/ui/split-view';
+import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { ListColumn, NoteColumn } from './columns';
 import { FoldersSidebar } from './folders';
 import { useNotes, type NotesView } from './use-notes';

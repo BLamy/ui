@@ -10,6 +10,7 @@
       "vite/client"
     ],
     "rootDir": "src",
+    "noUnusedParameters": true,
     "jsx": "react-jsx",
     "tsBuildInfoFile": "out-tsc/lib/tsconfig.lib.tsbuildinfo"
   },

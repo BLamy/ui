@@ -1,20 +1,11 @@
 import { useState, type ReactNode } from 'react';
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  Icon,
-  IconButton,
-  Spinner,
-  SplitViewContent,
-  SplitViewHeader,
-  SplitViewItem,
-  SplitViewSection,
-  SplitViewSidebar,
-  cn,
-  useSplitView,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { IconButton } from '@/components/ui/icon-button';
+import { Spinner } from '@/components/ui/spinner';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { PROJECTS, type Chat } from '../lib/data';
 import type { CodexState } from '../lib/use-codex';
 import { DotOrb } from './dot-orb';

@@ -1,4 +1,5 @@
-import { ThemeScope, WorkbenchTheme } from '@brett_lamy/ui'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { ThemeScope } from '@/lib/theme'
 import { TerminalAction, TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
 
 function Terminal() {

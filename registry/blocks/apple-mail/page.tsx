@@ -3,7 +3,8 @@
    (≥1024), list · message with the mailboxes floating over them on an iPad, and a stack with large titles and
    back buttons on an iPhone. */
 import { useState } from 'react';
-import { AppearanceProvider, BLProvider, SplitView, useAppearance, type Appearance } from '@brett_lamy/ui';
+import { SplitView } from '@/components/ui/split-view';
+import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { ListColumn, MessageColumn } from './columns';
 import { ComposeSheet } from './compose';
 import { MailboxesSidebar } from './mailboxes';

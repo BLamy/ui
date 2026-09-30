@@ -1,14 +1,5 @@
 import { useState } from 'react'
-import {
-  CommandFooter,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandMenu,
-  CommandPage,
-  useCommandMenu,
-} from '@brett_lamy/ui'
+import { CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage, useCommandMenu } from '@/components/ui/command-menu'
 
 /** + − × ÷ and parentheses, without eval. Returns null until the input is a whole expression. */
 function evaluate(src: string): number | null {

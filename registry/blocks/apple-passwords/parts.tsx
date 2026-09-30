@@ -1,7 +1,13 @@
 /* Pieces the columns share: site and Wi-Fi tiles, the grouped card and its rows, copy buttons (confirmed by the
    block's "Copied" HUD), the password that reveals by morphing, and the verification code with its countdown ring. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CountdownRing, Icon, IconSwap, NumberMorph, TextMorph, cn, useCountdown, useToast } from '@brett_lamy/ui';
+import { IconSwap } from '@/components/ui/icon-swap';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { CountdownRing, useCountdown } from '@/components/ui/progress-ring';
+import { TextMorph } from '@/components/ui/text-morph';
+import { useToast } from '@/components/ui/toast';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { codeFor } from './data';
 
 /* ── Clock ──

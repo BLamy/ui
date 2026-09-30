@@ -1,10 +1,4 @@
-import {
-  SyntaxHighlighting,
-  SyntaxHighlightingContent,
-  SyntaxHighlightingCopyButton,
-  SyntaxHighlightingHeader,
-  SyntaxHighlightingTitle,
-} from '@brett_lamy/ui'
+import { SyntaxHighlighting, SyntaxHighlightingContent, SyntaxHighlightingCopyButton, SyntaxHighlightingHeader, SyntaxHighlightingTitle } from '@/components/ui/syntax-highlighting'
 
 const config = `{
   "name": "@acme/queue",

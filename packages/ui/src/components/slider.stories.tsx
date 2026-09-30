@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Slider } from './slider';
+import { Slider } from '@/components/ui/slider';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Slider> = {

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Disclosure, DisclosurePanel, DisclosureTrigger } from './disclosure';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Disclosure, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Disclosure> = {

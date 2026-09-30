@@ -8,8 +8,8 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
-import { useRowLabel } from '../lib/row-label';
+import { cn } from '@/lib/utils';
+import { useRowLabel } from '@/lib/row-label';
 
 /* ══ Slider — react-aria's Slider with the iOS look of `.bl-range`: 4px track, tint fill, 26px white thumb.
    Arrow keys / Page keys / Home / End from react-aria; one or two thumbs (pass an array for a range). ══ */

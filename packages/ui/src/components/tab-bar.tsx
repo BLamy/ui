@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { TabView, TabViewBar, TabViewList, TabViewTab } from './tab-view';
+import { TabView, TabViewBar, TabViewList, TabViewTab } from '@/components/ui/tab-view';
 
 export interface TabBarItem {
   id: string;

@@ -1,7 +1,12 @@
 import { useCallback, useLayoutEffect, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { AdaptivePane, SideDrawer, useContainerWidth, useAppearance, themeScopeProps, type Appearance, Icon, cn } from '@brett_lamy/ui';
+import { AdaptivePane } from '@/components/ui/adaptive-pane';
+import { SideDrawer } from '@/components/ui/side-drawer';
+import { useContainerWidth } from '@/lib/container';
+import { Icon } from '@/lib/icon';
+import { useAppearance, themeScopeProps, type Appearance } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 import { ChatShellContext, useChatShell, useOptionalChatShell, type ChatShellContextValue } from './chat-shell-context';
 

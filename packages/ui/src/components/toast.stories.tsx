@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Toaster, createToastQueue, useToast, type ToastQueue, type ToasterPlacement } from './toast';
-import { Button } from './button';
+import { Toaster, createToastQueue, useToast, type ToastQueue, type ToasterPlacement } from '@/components/ui/toast';
+import { Button } from '@/components/ui/button';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof Toaster> = {

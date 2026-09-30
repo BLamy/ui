@@ -1,14 +1,5 @@
 import { useState } from 'react'
-import {
-  CommandEmpty,
-  CommandFooter,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandMenu,
-  useCommandActive,
-} from '@brett_lamy/ui'
+import { CommandEmpty, CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu, useCommandActive } from '@/components/ui/command-menu'
 
 const smileys: [string, string][] = [
   ['😀', 'grinning'], ['😂', 'joy'], ['🥹', 'holding back tears'], ['😍', 'heart eyes'], ['🤔', 'thinking'],

@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { cn, useAppearance, type Appearance, Composer, ComposerAddon, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, MarkdownView, type ReferenceNode, ArtifactChatContainer, type ArtifactChatContainerProps } from '@brett_lamy/ui';
+import { ArtifactChatContainer, type ArtifactChatContainerProps } from '@/components/ui/artifact-chat-container';
+import { Composer, ComposerAddon, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
+import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view';
+import { useAppearance, type Appearance } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 import { Button } from 'react-aria-components';
 

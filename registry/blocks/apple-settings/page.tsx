@@ -3,7 +3,8 @@
    Compact: the sidebar is the large-title root list and panes push over it. Display & Brightness → Appearance
    switches light/dark live. */
 import { useState } from 'react';
-import { BLProvider, SplitView, useAppearance, type Appearance } from '@brett_lamy/ui';
+import { SplitView } from '@/components/ui/split-view';
+import { BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { SettingsDetail } from './detail';
 import { SettingsSidebar } from './sidebar';
 import { SettingsCtx, trailOf, useSettingsState } from './state';

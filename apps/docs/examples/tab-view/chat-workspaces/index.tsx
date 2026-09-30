@@ -1,17 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
-import {
-  Icon,
-  TabView,
-  TabViewAction,
-  TabViewBar,
-  TabViewFooter,
-  TabViewIndicator,
-  TabViewList,
-  TabViewSeparator,
-  TabViewTab,
-  themeScopeProps,
-  useAppearance,
-} from '@brett_lamy/ui'
+import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view'
+import { Icon } from '@/lib/icon'
+import { themeScopeProps, useAppearance } from '@/lib/theme'
 
 const servers = [
   { id: 'design', label: 'D', color: '#0A84FF', title: 'Design Team' },

@@ -1,14 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import {
-  AdaptivePane,
-  Avatar,
-  Button,
-  List,
-  ListRow,
-  ListSection,
-  useContainerWidth,
-  type AdaptivePaneMode,
-} from '@brett_lamy/ui'
+import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { useContainerWidth } from '@/lib/container'
 
 const team = [
   { f: 'Maya', l: 'Lindqvist', role: 'Industrial design' },

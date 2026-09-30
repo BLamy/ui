@@ -1,15 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Avatar,
-  Button,
-  Icon,
-  List,
-  ListRow,
-  ListSection,
-  NavigationStack,
-  SearchField,
-  type Screen,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import { SearchField } from '@/components/ui/search-field'
+import { Icon } from '@/lib/icon'
 
 const contacts = [
   {

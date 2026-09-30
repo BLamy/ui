@@ -1,9 +1,14 @@
 /* The detail column: an account (username, password, passkey, verification code, websites, notes, edit
    mode), a security recommendation on top of its account, a deleted item, or a Wi-Fi network with its QR code. */
 import { useState, type ReactNode } from 'react';
-import {
-  AnimatedHeight, Button, Icon, Input, QRSvg, SplitViewContent, SplitViewEmpty, SplitViewHeader, Textarea, cn,
-} from '@brett_lamy/ui';
+import { AnimatedHeight } from '@/components/ui/animated-height';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { QRSvg } from '@/components/ui/qr-svg';
+import { SplitViewContent, SplitViewEmpty, SplitViewHeader } from '@/components/ui/split-view';
+import { Textarea } from '@/components/ui/textarea';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { GROUPS, SEVERITY, type Account, type WifiNetwork } from './data';
 import {
   Card, CodeValue, CopyButton, DetailHeader, Field, PasswordValue, RevealButton, SiteTile, WifiTile, useCode, type CodeClock,

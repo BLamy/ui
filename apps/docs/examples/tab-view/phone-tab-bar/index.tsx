@@ -1,16 +1,7 @@
 import { type ReactNode } from 'react'
-import {
-  Avatar,
-  List,
-  ListRow,
-  ListSection,
-  TabView,
-  TabViewBar,
-  TabViewList,
-  TabViewPanel,
-  TabViewPanels,
-  TabViewTab,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab } from '@/components/ui/tab-view'
 
 const recents = [
   { f: 'Maya', l: 'Lindqvist', kind: 'mobile', time: '9:41 AM', missed: false },

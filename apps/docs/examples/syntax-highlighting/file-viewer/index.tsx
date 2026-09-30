@@ -1,4 +1,4 @@
-import { SyntaxHighlighting } from '@brett_lamy/ui'
+import { SyntaxHighlighting } from '@/components/ui/syntax-highlighting'
 
 const queue = `import type { Adapter, JobRecord } from './adapters/types'
 import { defaultRetry, type RetryPolicy } from './retry'

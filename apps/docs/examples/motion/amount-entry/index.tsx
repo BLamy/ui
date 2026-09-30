@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Button, Icon, NumberMorph } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { NumberMorph } from '@/components/ui/number-morph'
+import { Icon } from '@/lib/icon'
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫']
 const MAX = 9_999_999_999

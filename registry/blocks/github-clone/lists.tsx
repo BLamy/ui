@@ -1,6 +1,8 @@
 /* Shared pieces of the Issues and Pull requests lists: search toolbar, Open/Closed toggle, filter menus, rows. */
 import { type ReactNode } from 'react';
-import { Button, SearchField, cn } from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { SearchField } from '@/components/ui/search-field';
+import { cn } from '@/lib/utils';
 import { LABELS, type Label } from './data';
 import { AvatarStack, Counter, LabelChip, Oct, StateIcon, ghButton, type OctName, type StateKind, type Layout, type Nav } from './parts';
 

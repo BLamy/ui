@@ -1,4 +1,5 @@
-import { MarkdownView, WorkbenchTheme } from '@brett_lamy/ui'
+import { MarkdownView } from '@/components/ui/markdown-view'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 const turns = [
   { role: 'user', text: 'How do I keep a panel’s state while it is hidden?' },

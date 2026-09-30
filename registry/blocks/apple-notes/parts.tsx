@@ -1,10 +1,12 @@
 /* Toolbar pieces shared by the columns at every width: tinted bar buttons, the list/gallery toggle,
    and the Share and note (…) pull-down menus. */
 import type { ReactNode } from 'react';
-import {
-  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSection, DropdownMenuSeparator, Icon, IconSwap,
-  Segmented, cn,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSection, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { IconSwap } from '@/components/ui/icon-swap';
+import { Segmented } from '@/components/ui/segmented';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { MOVE_TARGETS, type Note } from './data';
 import type { NotesState, NotesView } from './use-notes';
 

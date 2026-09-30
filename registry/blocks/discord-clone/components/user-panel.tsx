@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
-import { cn } from '@brett_lamy/ui';
+import { cn } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
 
 /* ══ UserPanel — the signed-in user at the foot of the channel sidebar ══

@@ -2,9 +2,16 @@
    Credenza (a centred dialog, or a bottom tray on a phone): switching between them morphs the card's height and
    slides the views, and the tracker view is one step "into" settings, so it comes back the way it went. */
 import { useState } from 'react';
-import {
-  Button, Credenza, Icon, Input, Label, List, ListRow, Segmented, Switch, TextField, cn,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { Credenza } from '@/components/ui/credenza';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { List, ListRow } from '@/components/ui/list';
+import { Segmented } from '@/components/ui/segmented';
+import { Switch } from '@/components/ui/switch';
+import { TextField } from '@/components/ui/text-field';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { PROJECTS, TRACKERS, host } from './data';
 import { Avatar } from './parts';
 import { useLoopQA, type DialogName } from './state';

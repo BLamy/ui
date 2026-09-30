@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Morph, MorphGroup, MorphPresence } from './morph';
-import { NowPlayingBars } from './now-playing-bars';
-import { Slider } from './slider';
-import { Icon } from '../lib/icon';
+import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph';
+import { NowPlayingBars } from '@/components/ui/now-playing-bars';
+import { Slider } from '@/components/ui/slider';
+import { Icon } from '@/lib/icon';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof MorphGroup> = {

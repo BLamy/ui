@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonText } from '@brett_lamy/ui'
+import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
 
 // SkeletonText stacks `lines` text bars and shortens the last one, so the
 // block reads as a paragraph. Size the headline with a taller text line.

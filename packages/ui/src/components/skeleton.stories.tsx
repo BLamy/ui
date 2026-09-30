@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Skeleton, SkeletonText } from './skeleton';
-import { Card, CardContent } from './card';
+import { Skeleton, SkeletonText } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Skeleton> = {

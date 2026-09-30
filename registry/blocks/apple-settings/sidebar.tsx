@@ -2,9 +2,10 @@
    on a phone it is the root list and every row pushes — and macOS System Settings (window controls, compact
    search, dense rows with small icons) on desktop. Rows select panes in the SplitView. */
 import type { CSSProperties } from 'react';
-import {
-  Avatar, Icon, SearchField, SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView,
-} from '@brett_lamy/ui';
+import { Avatar } from '@/components/ui/avatar';
+import { SearchField } from '@/components/ui/search-field';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
 import { ACCOUNT, GROUPS, getPane, type Row, type Values } from './data';
 import { RowView, SearchResults, Tile } from './rows';
 import { useSettings } from './state';

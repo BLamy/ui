@@ -1,15 +1,6 @@
 import { useState } from 'react'
-import {
-  Badge,
-  CommandEmpty,
-  CommandFooter,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandMenu,
-  CommandPage,
-} from '@brett_lamy/ui'
+import { Badge } from '@/components/ui/badge'
+import { CommandEmpty, CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage } from '@/components/ui/command-menu'
 
 const projects = [
   { name: 'ui', path: '~/Code/ui', color: '#30D158' },

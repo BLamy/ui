@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MarkdownEditor, type MarkdownEditorAttachment } from './markdown-editor';
+import { MarkdownEditor, type MarkdownEditorAttachment } from '@/components/ui/markdown-editor';
 import { Panel, Caption } from '../stories/primitive-frame';
 
 const meta: Meta<typeof MarkdownEditor> = {

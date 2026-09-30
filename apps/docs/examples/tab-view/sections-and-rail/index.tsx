@@ -1,19 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
-import {
-  themeScopeProps,
-  Icon,
-  TabView,
-  TabViewAction,
-  TabViewBar,
-  TabViewFooter,
-  TabViewIndicator,
-  TabViewList,
-  TabViewPanel,
-  TabViewPanels,
-  TabViewSeparator,
-  TabViewTab,
-  useAppearance,
-} from '@brett_lamy/ui'
+import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewPanel, TabViewPanels, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view'
+import { Icon } from '@/lib/icon'
+import { themeScopeProps, useAppearance } from '@/lib/theme'
 
 const items = [
   { id: 'contacts', icon: 'person', title: 'Contacts' },

@@ -1,4 +1,4 @@
-import { IconButton } from '@brett_lamy/ui';
+import { IconButton } from '@/components/ui/icon-button';
 import { SURFACES, SurfaceAgents, SurfaceAppPreview, SurfaceBrowser, SurfaceDiff, SurfaceFiles, SurfacePicker, SurfaceTerminal } from './workbench/surfaces';
 import { WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelFullscreen, WorkbenchPanelHeader, WorkbenchPanelTitle } from './workbench/workbench-shell';
 import { AGENTS, DIFF, FILES } from '../lib/data';

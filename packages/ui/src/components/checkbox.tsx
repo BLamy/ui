@@ -4,7 +4,7 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ Checkbox — react-aria's Checkbox. Round by default (iOS selection circle), square like shadcn on request. ══ */
 export const checkboxVariants = cva(

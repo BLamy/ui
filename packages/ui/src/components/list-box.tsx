@@ -8,8 +8,8 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Icon } from '../lib/icon';
-import { cn } from '../lib/utils';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 
 /* ══ ListBox — react-aria's ListBox: arrow-key navigation, typeahead, single/multiple selection.
    `inset` is an iOS inset-grouped list with trailing checkmarks; `popup` is the compact list used inside

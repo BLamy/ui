@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { IconButton, cn, type Appearance } from '@brett_lamy/ui';
+import { IconButton } from '@/components/ui/icon-button';
+import { type Appearance } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 import { TINTS } from '../lib/data';
 
 /** A small floating card ("Toggle theme editor" / ⌥⇧⌘T): appearance and accent, applied live. */

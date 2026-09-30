@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ Celebrate — a burst for rare moments ══
    Family's delight curve: the less often a moment happens, the more it may celebrate. A backup finishing,

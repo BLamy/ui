@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AppearanceProvider, BLProvider, type Appearance } from '../lib/theme';
-import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '../components/composer/composer';
+import { AppearanceProvider, BLProvider, type Appearance } from '@/lib/theme';
+import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
 import '../styles.css';
-import { ArtifactChatContainer, type ArtifactChatFabPosition } from './artifact-chat-container';
-import { ThemeScope } from '../lib/theme';
+import { ArtifactChatContainer, type ArtifactChatFabPosition } from '@/components/ui/artifact-chat-container';
+import { ThemeScope } from '@/lib/theme';
 
 /** The assistant's name colour (content). */
 const ASSISTANT_INK = '#68A7FF';

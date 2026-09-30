@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Segmented } from './segmented';
+import { Segmented } from '@/components/ui/segmented';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof Segmented> = {

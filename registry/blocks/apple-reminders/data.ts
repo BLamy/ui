@@ -1,6 +1,6 @@
 /* Reminders data: lists (name, color, icon, sections), reminders (due day as an offset from "today", time, notes,
    flag, priority, subtasks) and the smart lists that filter them. "Today" is pinned so the data never goes stale. */
-import type { IconName } from '@brett_lamy/ui';
+import { type IconName } from '@/lib/icon';
 
 export const TODAY = new Date(2026, 8, 28); // Monday, September 28, 2026
 

@@ -6,7 +6,15 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { useMove, useFocusRing, mergeProps } from 'react-aria';
-import { Avatar, ListRow, ListSection, SearchField, SplitView, SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, SplitViewStack, SplitViewSupplementary, SplitViewToggle, useSplitView, useSplitViewStack, type SplitViewProps, Switch, SIDEBAR_ICONS, Icon, cn, useContainerWidth } from '@brett_lamy/ui';
+import { Avatar } from '@/components/ui/avatar';
+import { ListRow, ListSection } from '@/components/ui/list';
+import { SearchField } from '@/components/ui/search-field';
+import { SIDEBAR_ICONS } from '@/components/ui/sidebar';
+import { SplitView, SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, SplitViewStack, SplitViewSupplementary, SplitViewToggle, useSplitView, useSplitViewStack, type SplitViewProps } from '@/components/ui/split-view';
+import { Switch } from '@/components/ui/switch';
+import { useContainerWidth } from '@/lib/container';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 
 /** iOS system colors the demo's app icons and lists are painted in (content, fixed in both appearances). */
 const SYSTEM = {

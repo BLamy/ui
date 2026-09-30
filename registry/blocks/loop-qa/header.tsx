@@ -1,9 +1,11 @@
 /* Header items shared by every page: the sidebar toggle, and on the trailing edge ⌘K, Share / Settings for a
    project, the primary "Run tests", and the Ask QA toggle. Narrow widths fold the secondary ones into a menu. */
 import type { ReactNode } from 'react';
-import {
-  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, Icon, SplitViewToggle, cn, useSplitView,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { BarButton } from './parts';
 import { useLoopQA } from './state';
 

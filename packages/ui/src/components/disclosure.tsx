@@ -8,8 +8,8 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Icon } from '../lib/icon';
-import { cn } from '../lib/utils';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 
 /* ══ Disclosure / Accordion — react-aria's Disclosure, DisclosureGroup and DisclosurePanel (button + region
    wiring, Enter/Space, `hidden="until-found"` so find-in-page opens panels). The panel animates its height

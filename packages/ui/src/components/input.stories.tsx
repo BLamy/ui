@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Input } from './input';
-import { Textarea } from './textarea';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Input> = {

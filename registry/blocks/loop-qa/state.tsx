@@ -3,7 +3,10 @@
    (replies stream in), the palette and the dialogs. Pages read it with useLoopQA() — the detail stack keeps
    pushed pages as elements, so they must read live data from here rather than from props captured at push time. */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { createToastQueue, toastApi, useReducedMotion, type Appearance, type SplitViewState, type ToastApi } from '@brett_lamy/ui';
+import { type SplitViewState } from '@/components/ui/split-view';
+import { createToastQueue, toastApi, type ToastApi } from '@/components/ui/toast';
+import { useReducedMotion } from '@/lib/motion';
+import { type Appearance } from '@/lib/theme';
 import { chunks, replyTo, SEED_CHAT, isOpen, type ChatMessage } from './agent';
 import {
   BUGS, LIVE_PLAN, NOW, PROJECTS, RUNS, bugReport, type Bug, type BugStatus, type Project, type Run, type Severity,

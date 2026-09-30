@@ -1,12 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Avatar,
-  Button,
-  Credenza,
-  Icon,
-  ListRow,
-  Segmented,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Credenza } from '@/components/ui/credenza'
+import { ListRow } from '@/components/ui/list'
+import { Segmented } from '@/components/ui/segmented'
+import { Icon } from '@/lib/icon'
 
 type Step = 'amount' | 'review' | 'sent'
 const titles: Record<Step, string> = {

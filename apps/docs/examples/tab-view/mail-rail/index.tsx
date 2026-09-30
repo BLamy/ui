@@ -1,19 +1,7 @@
 import { type ReactNode } from 'react'
-import {
-  Avatar,
-  List,
-  ListRow,
-  ListSection,
-  TabView,
-  TabViewAction,
-  TabViewBar,
-  TabViewFooter,
-  TabViewHeader,
-  TabViewList,
-  TabViewPanel,
-  TabViewPanels,
-  TabViewTab,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewHeader, TabViewList, TabViewPanel, TabViewPanels, TabViewTab } from '@/components/ui/tab-view'
 
 const mailboxes = [
   {

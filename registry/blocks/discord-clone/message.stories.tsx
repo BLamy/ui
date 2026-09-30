@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Icon } from '@brett_lamy/ui';
+import { Icon } from '@/lib/icon';
 import { ChatUsersProvider } from './components/chat-users';
 import {
   Message,

@@ -4,9 +4,9 @@ import {
   Popover as AriaPopover, type PopoverProps as AriaPopoverProps,
   composeRenderProps,
 } from 'react-aria-components';
-import { overlayZ, popoverMotion, popoverSurface } from '../lib/primitives';
-import { cn } from '../lib/utils';
-import { useThemeScopeProps } from '../lib/theme';
+import { overlayZ, popoverMotion, popoverSurface } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
+import { useThemeScopeProps } from '@/lib/theme';
 
 /* ══ Popover — react-aria's Popover (positioning, flipping, Esc / outside-press dismissal, focus return).
    Portals into BLProvider's root (see BLProvider) so it keeps the theme tokens.

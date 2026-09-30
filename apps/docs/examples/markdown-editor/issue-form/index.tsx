@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import {
-  Button,
-  Form,
-  Input,
-  Label,
-  MarkdownEditor,
-  TextField,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { Form } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { MarkdownEditor } from '@/components/ui/markdown-editor'
+import { TextField } from '@/components/ui/text-field'
 
 export default function IssueForm() {
   const [submitted, setSubmitted] = useState<Record<string, string> | null>(

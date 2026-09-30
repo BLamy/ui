@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SearchField } from './search-field';
+import { SearchField } from '@/components/ui/search-field';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof SearchField> = {

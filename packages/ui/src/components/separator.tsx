@@ -1,6 +1,6 @@
 import { Separator as AriaSeparator, type SeparatorProps as AriaSeparatorProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ Separator — hairline rule on react-aria's Separator ══ */
 export const separatorVariants = cva('m-0 shrink-0 border-0 bg-border', {

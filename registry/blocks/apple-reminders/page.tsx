@@ -1,7 +1,8 @@
 /* Apple Reminders — smart lists and your lists in a SplitView. Wide: sidebar + list side by side (the sidebar
    toggles away). Phone: the lists screen pushes the open list. Everything tints with the open list's color. */
 import { useState } from 'react';
-import { BLProvider, SplitView, useAppearance, type SplitViewSelection } from '@brett_lamy/ui';
+import { SplitView, type SplitViewSelection } from '@/components/ui/split-view';
+import { BLProvider, useAppearance } from '@/lib/theme';
 import { SMART, SYSTEM } from './data';
 import { DetailsSheet } from './details';
 import { ListView } from './list-view';

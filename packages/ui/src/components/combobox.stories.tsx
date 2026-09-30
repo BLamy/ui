@@ -1,8 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ComboBox, ComboBoxInput, ComboBoxContent, ComboBoxItem } from './combobox';
-import { Label } from './label';
-import { FieldDescription } from './text-field';
+import { ComboBox, ComboBoxInput, ComboBoxContent, ComboBoxItem } from '@/components/ui/combobox';
+import { Label } from '@/components/ui/label';
+import { FieldDescription } from '@/components/ui/text-field';
 import { Screen } from '../stories/primitive-frame';
 
 const meta: Meta<typeof ComboBox> = {

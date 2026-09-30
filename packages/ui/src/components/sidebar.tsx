@@ -7,10 +7,10 @@ import * as React from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
-import { EdgeDrawer } from './edge-drawer';
-import { useContainerWidth } from '../lib/container';
-import { cn } from '../lib/utils';
-import { brandTile } from '../lib/utils';
+import { EdgeDrawer } from '@/components/ui/edge-drawer';
+import { useContainerWidth } from '@/lib/container';
+import { cn } from '@/lib/utils';
+import { brandTile } from '@/lib/utils';
 
 /** The overlay drawer's shadow (EdgeDrawer takes a CSS box-shadow). */
 const DRAWER_SHADOW = '0 0 44px rgba(0,0,0,.4)';

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, ToolCall, UserMessage, WorkLog, WorkbenchTheme } from '@brett_lamy/ui'
+import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { SurfaceDiff } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 import { WorkbenchActions, WorkbenchHeader, WorkbenchMain, WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelFullscreen, WorkbenchPanelHeader, WorkbenchPanelTitle, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 import { WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'

@@ -6,11 +6,9 @@
    place. The transcript and the composer are rendered once, so a draft or a streaming reply survives the switch
    between docked and floating. */
 import type { CSSProperties } from 'react';
-import {
-  AssistantMessage, Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText,
-  Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions,
-  MessageMarkdown, Suggestion, ToolCall, UserMessage, WorkLog, useArtifactChatContainer,
-} from '@brett_lamy/ui';
+import { useArtifactChatContainer } from '@/components/ui/artifact-chat-container';
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer';
+import { AssistantMessage, Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation';
 import { SUGGESTIONS } from './agent';
 import { PROJECTS } from './data';
 import { BarButton, LoopMark } from './parts';

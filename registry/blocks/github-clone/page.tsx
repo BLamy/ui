@@ -2,10 +2,13 @@
    PR lists, a pull request conversation with a comment composer, and a "Files changed" diff.
    Wide: GitHub's desktop layout with sidebars. Phone: a NavigationStack pushes folders, files and PRs. */
 import { useState } from 'react';
-import {
-  Avatar, BLProvider, NavigationStack, TabView, TabViewBar, TabViewList, TabViewPanels, WorkbenchTheme, cn, useAppearance,
-  useContainerWidth, type Screen,
-} from '@brett_lamy/ui';
+import { Avatar } from '@/components/ui/avatar';
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import { TabView, TabViewBar, TabViewList, TabViewPanels } from '@/components/ui/tab-view';
+import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { useContainerWidth } from '@/lib/container';
+import { BLProvider, useAppearance } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 import { ISSUE_COUNTS, ME, PR_COUNTS, REPO } from './data';
 import { Box, FlowPanel, Oct, UnderlineTab, ghButton, GITHUB_THEME, GITHUB_TINT, type OctName, type Layout, type Nav } from './parts';
 import { ActionsView } from './actions-tab';

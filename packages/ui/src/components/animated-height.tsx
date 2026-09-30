@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { fades, springs, type SpringName } from '../lib/motion';
-import { cn } from '../lib/utils';
+import { fades, springs, type SpringName } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 /* ══ AnimatedHeight / ContentSwap — trays that change size instead of cutting ══
    AnimatedHeight measures its content and springs its own height to match, so a tray going from a two-line

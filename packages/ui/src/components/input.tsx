@@ -1,7 +1,7 @@
 import { Input as AriaInput, type InputProps as AriaInputProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { selectableText } from '../lib/primitives';
-import { cn } from '../lib/utils';
+import { selectableText } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
 
 /* ══ Input — iOS filled text field on react-aria's Input ══
    Inside a <TextField> it picks up the label, description and validation wiring automatically. */

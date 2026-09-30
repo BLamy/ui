@@ -1,12 +1,12 @@
 import { use, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Icon } from '../lib/icon';
-import { springCss } from '../lib/motion';
-import { BLSafeCtx } from '../lib/theme';
-import { cn, BARH } from '../lib/utils';
-import { EdgeDrawer } from './edge-drawer';
-import { navigationPush } from './navigation-stack';
+import { Icon } from '@/lib/icon';
+import { springCss } from '@/lib/motion';
+import { BLSafeCtx } from '@/lib/theme';
+import { cn, BARH } from '@/lib/utils';
+import { EdgeDrawer } from '@/components/ui/edge-drawer';
+import { navigationPush } from '@/components/ui/navigation-stack';
 
 /* ══ SideDrawer — one panel, three hosts ══
    mode="fixed": docks as a column beside the detail view (extra-wide). mode="overlay": shadcn-style sheet from

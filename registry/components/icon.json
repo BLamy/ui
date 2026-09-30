@@ -14,5 +14,11 @@
   ],
   "imports": [
     "Icon"
+  ],
+  "files": [
+    "lib/icon.tsx",
+    "lib/icon-shapes/chat.ts",
+    "lib/icon-shapes/pencilkit.ts",
+    "lib/icon-shapes/workbench.ts"
   ]
 }

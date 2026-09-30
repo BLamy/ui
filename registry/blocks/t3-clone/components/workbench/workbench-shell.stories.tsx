@@ -23,19 +23,10 @@ import {
   WorkbenchTab,
   useOptionalWorkbenchShell,
 } from './workbench-shell';
-import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSearch, SidebarSection, SidebarWorkspace, Icon, IconButton, Conversation,
-  ConversationEmpty,
-  ConversationGreeting,
-  ConversationMessages,
-  ConversationComposer,
-  ConversationSuggestions,
-  Suggestion,
-  UserMessage,
-  AssistantMessage,
-  MessageMarkdown,
-  WorkLog,
-  ToolCall,
-  SettledBanner,} from '@brett_lamy/ui';
+import { Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion, UserMessage, AssistantMessage, MessageMarkdown, WorkLog, ToolCall, SettledBanner } from '@/components/ui/conversation';
+import { IconButton } from '@/components/ui/icon-button';
+import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSearch, SidebarSection, SidebarWorkspace } from '@/components/ui/sidebar';
+import { Icon } from '@/lib/icon';
 
 import { WorkbenchComposer } from './workbench-composer';
 import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
@@ -52,7 +43,6 @@ import {
 } from './surfaces';
 
 import { AGENTS, DIFF, FILES, SUGGESTIONS, TERMINAL_SEED, THREADS, type Thread } from './fixtures';
-import '@brett_lamy/ui/styles.css';
 
 const meta: Meta = {
   title: 'Templates/WorkbenchShell',

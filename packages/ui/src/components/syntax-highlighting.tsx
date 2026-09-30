@@ -4,12 +4,12 @@ import {
 } from 'react';
 import { Button as AriaButton, type ButtonProps as AriaButtonProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
-import { useAppearance } from '../lib/theme';
+import { cn } from '@/lib/utils';
+import { useAppearance } from '@/lib/theme';
 import {
   PLAIN_LANGUAGES, lexSyntax, peekSyntax, fallbackResult, tokenizeLines, webgpuSupported,
   type SyntaxEngine, type SyntaxHighlighter, type SyntaxResult, type SyntaxToken,
-} from '../lib/syntax';
+} from '@/lib/syntax';
 
 /* ══ SyntaxHighlighting — code highlighted by gpu-lexer on WebGPU ══
    Plain text renders first and keeps its exact layout; token colors swap in when the shared GPU lexer returns

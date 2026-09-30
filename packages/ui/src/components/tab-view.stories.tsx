@@ -3,10 +3,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewHeader, TabViewIndicator, TabViewList, TabViewPanel,
   TabViewPanels, TabViewSeparator, TabViewTab, type TabViewPlacement,
-} from './tab-view';
-import { Icon } from '../lib/icon';
-import { BLProvider, ThemeScope } from '../lib/theme';
-import { cn } from '../lib/utils';
+} from '@/components/ui/tab-view';
+import { Icon } from '@/lib/icon';
+import { BLProvider, ThemeScope } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 import { Phone } from '../stories/frame';
 
 interface Args { placement?: TabViewPlacement; dark?: boolean }

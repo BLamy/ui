@@ -7,11 +7,11 @@ import {
   AnimatePresence, MotionConfig, Reorder, animate, motion, useDragControls, useMotionValue, useReducedMotion, useTransform,
   type AnimationPlaybackControls, type DragControls,
 } from 'framer-motion';
-import { Icon, IC } from '../lib/icon';
-import { springs } from '../lib/motion';
-import { chromeOffset, BLStickyCtx, useChromeHidden } from '../lib/theme';
-import { cn } from '../lib/utils';
-import { RowLabelContext } from '../lib/row-label';
+import { Icon, IC } from '@/lib/icon';
+import { springs } from '@/lib/motion';
+import { chromeOffset, BLStickyCtx, useChromeHidden } from '@/lib/theme';
+import { cn } from '@/lib/utils';
+import { RowLabelContext } from '@/lib/row-label';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 /* ══ List primitives (prototype BLList / BLSection / BLRow) ══

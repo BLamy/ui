@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import {
-  MessageScroller,
-  type MessageScrollerItem,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { MessageScroller, type MessageScrollerItem } from '@/components/ui/message-scroller'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 function UserBubble({ children }: { children: ReactNode }) {
   return (

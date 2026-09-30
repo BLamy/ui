@@ -1,6 +1,7 @@
 /* Actions tab: workflows sidebar and workflow runs. */
 import { useState, type ReactNode } from 'react';
-import { Button, cn } from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { RUNS, WORKFLOWS, type WorkflowRun } from './data';
 import { Box, Oct, ghButton, Branch, type Layout } from './parts';
 import { FilterMenus } from './lists';

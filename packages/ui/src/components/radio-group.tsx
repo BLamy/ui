@@ -4,7 +4,7 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ RadioGroup — generic round radios on react-aria's RadioGroup (arrows move + select).
    For the iOS segmented look use <Segmented>. ══ */

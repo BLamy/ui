@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { BLProvider, Badge, Button, Segmented, Switch } from '@brett_lamy/ui'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Segmented } from '@/components/ui/segmented'
+import { Switch } from '@/components/ui/switch'
+import { BLProvider } from '@/lib/theme'
 
 const accents = [
   { name: 'Blue', tint: '#0A84FF' },

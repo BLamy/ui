@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ScrollArea } from './scroll-area';
-import { Separator } from './separator';
-import { Card } from './card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Card } from '@/components/ui/card';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof ScrollArea> = {

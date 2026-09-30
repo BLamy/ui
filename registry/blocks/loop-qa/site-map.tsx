@@ -1,7 +1,12 @@
 /* Site map: every page Loop QA has found, as a tree — how often the agents visited it, and whether it has open
    bugs or hasn't been reached yet. Branches fold on a spring; a page with bugs jumps to them. */
 import { useState, type CSSProperties } from 'react';
-import { AnimatedHeight, Chevron, Icon, NumberMorph, ProgressRing, cn } from '@brett_lamy/ui';
+import { AnimatedHeight } from '@/components/ui/animated-height';
+import { Chevron } from '@/components/ui/icon-swap';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { SITE_MAP, type Project, type SiteNode } from './data';
 import { Empty, Panel, Pill, Pressable } from './parts';
 import { useLoopQA } from './state';

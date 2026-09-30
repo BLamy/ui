@@ -5,4 +5,6 @@
 @import "../packages/ui/src/styles.css";
 /* The bl-theme: the iOS palette on shadcn's variables. */
 @import "../packages/ui/src/theme.css";
+/* Block palettes (a block imports its own next to its page; the workspace sheet carries them for stories). */
+@import "./blocks/discord-clone/chat-theme.css";
 @source "./blocks";

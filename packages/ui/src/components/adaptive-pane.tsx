@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { EdgeDrawer, type EdgeDrawerProps } from './edge-drawer';
+import { EdgeDrawer, type EdgeDrawerProps } from '@/components/ui/edge-drawer';
 
 /* ══ AdaptivePane — one region, four presentations ══
    mode="column" docks it beside its siblings in a flex row, mode="drawer" moves the same children into an

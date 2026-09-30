@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonText } from '@brett_lamy/ui'
+import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
 
 // Profile headers at three sizes: a `circle` for the avatar beside a name and
 // a handle, then a short bio.

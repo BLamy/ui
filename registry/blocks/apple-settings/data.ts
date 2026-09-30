@@ -1,6 +1,6 @@
 /* Everything Settings shows, as data: panes (title, icon, sections of rows), the sidebar groups, the account
    and every setting's starting value. The renderers in rows.tsx turn each row kind into the matching control. */
-import type { IconName, IconShape } from '@brett_lamy/ui';
+import { type IconName, type IconShape } from '@/lib/icon';
 
 /** Apple app marks the library icon set has no symbol for, drawn with the same 24px stroke system. */
 export const MARKS = {

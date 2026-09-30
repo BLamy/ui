@@ -3,10 +3,13 @@
    opening a card shows the note there with a way back. On the phone SplitView stacks the columns — the gallery
    takes the list's place — and the toolbars move to bottom bars. */
 import { useRef, useState } from 'react';
-import {
-  Chevron, Icon, NumberMorph, SearchField, SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader,
-  SplitViewSupplementary, SplitViewToggle, cn, useSplitView, type MarkdownEditorHandle,
-} from '@brett_lamy/ui';
+import { Chevron } from '@/components/ui/icon-swap';
+import { type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { SearchField } from '@/components/ui/search-field';
+import { SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { NoteGallery, NoteList } from './note-list';
 import { EditorTools, NoteEditor } from './note-editor';
 import { BarButton, BottomBar, LockButton, NoteMenu, ShareMenu, ViewToggle } from './parts';

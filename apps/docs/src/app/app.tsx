@@ -1,6 +1,6 @@
 /* BL UI documentation shell — a port of the original HTML design prototype. */
 import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
-import { AppearanceProvider, type Appearance } from '@brett_lamy/ui';
+import { AppearanceProvider, type Appearance } from '@/lib/theme';
 import { GitbookStreamdown } from '@brett_lamy/docstream';
 import { BLOCK_COUNT, demoResolver } from '../demos';
 import { NAV, PAGES, PAGE_ORDER, pageMdPath, pageSource, pageUrl, SITE_URL } from '../pages';

@@ -1,5 +1,8 @@
 /* The site header (desktop) and the repository header: owner / name, visibility, Watch / Fork / Star. */
-import { Avatar, Badge, Button, cn } from '@brett_lamy/ui';
+import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { ME, REPO } from './data';
 import { Counter, Mark, Oct, ghButton, type OctName, type Layout } from './parts';
 

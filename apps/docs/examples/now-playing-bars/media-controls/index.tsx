@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Icon, NowPlayingBars, Slider } from '@brett_lamy/ui'
+import { NowPlayingBars } from '@/components/ui/now-playing-bars'
+import { Slider } from '@/components/ui/slider'
+import { Icon } from '@/lib/icon'
 
 const fmt = (s: number) =>
   `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`

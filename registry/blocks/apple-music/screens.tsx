@@ -3,7 +3,11 @@
    (`screensFor`) and the wide layout's detail column as SplitViewStack pages. Pages read the player and
    `open` from `MusicContext`, so a pushed page stays live. */
 import { createContext, useContext, useState, type CSSProperties, type ReactNode } from 'react';
-import { Icon, NowPlayingBars, SearchField, cn, type IconName, type IconShape, type Screen } from '@brett_lamy/ui';
+import { type Screen } from '@/components/ui/navigation-stack';
+import { NowPlayingBars } from '@/components/ui/now-playing-bars';
+import { SearchField } from '@/components/ui/search-field';
+import { Icon, type IconName, type IconShape } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { ArtistArt, Artwork, PlaylistArt } from './artwork';
 import {
   ALBUM, ALBUMS, ALL_SONGS, ARTISTS, PLAYLISTS, STATIONS, albumSongs, fmt, minutes, playlistSongs, type Album, type Song,

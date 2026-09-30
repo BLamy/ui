@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { Icon, List, ListRow, ListSection, Switch } from '@brett_lamy/ui'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { Switch } from '@/components/ui/switch'
+import { Icon } from '@/lib/icon'
 
 function Tile({ icon, color }: { icon: string; color: string }) {
   return (

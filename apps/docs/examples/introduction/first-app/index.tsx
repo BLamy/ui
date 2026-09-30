@@ -1,21 +1,11 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Avatar,
-  BLProvider,
-  Button,
-  Credenza,
-  List,
-  ListRow,
-  ListSection,
-  NavigationStack,
-  TabView,
-  TabViewBar,
-  TabViewList,
-  TabViewPanel,
-  TabViewPanels,
-  TabViewTab,
-  type Screen,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Credenza } from '@/components/ui/credenza'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import { TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab } from '@/components/ui/tab-view'
+import { BLProvider } from '@/lib/theme'
 
 const friends = [
   { f: 'Maya', l: 'Lindqvist', city: 'Stockholm' },

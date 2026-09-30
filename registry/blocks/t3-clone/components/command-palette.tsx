@@ -1,17 +1,6 @@
 import type { ReactNode } from 'react';
-import {
-  Badge,
-  CommandEmpty,
-  CommandFooter,
-  CommandGroup,
-  CommandHighlight,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandMenu,
-  CommandPage,
-  useCommandMenu,
-} from '@brett_lamy/ui';
+import { Badge } from '@/components/ui/badge';
+import { CommandEmpty, CommandFooter, CommandGroup, CommandHighlight, CommandInput, CommandItem, CommandList, CommandMenu, CommandPage, useCommandMenu } from '@/components/ui/command-menu';
 import {
   CONTENT_INDEX,
   FILES,

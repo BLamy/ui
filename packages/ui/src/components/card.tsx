@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ Card — shadcn's card as an iOS inset-grouped panel ══ */
 export const cardVariants = cva('flex flex-col overflow-hidden rounded-[14px] text-card-foreground', {

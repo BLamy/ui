@@ -3,9 +3,9 @@ import {
   SelectionIndicator, ToggleButtonGroup, type ToggleButtonGroupProps, type ToggleButtonProps, composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
-import { Toggle, toggleVariants } from './toggle';
-import { segmentIndicator } from './segmented';
+import { cn } from '@/lib/utils';
+import { Toggle, toggleVariants } from '@/components/ui/toggle';
+import { segmentIndicator } from '@/components/ui/segmented';
 
 /* ══ ToggleGroup — react-aria's ToggleButtonGroup (single or multiple selection, arrow-key roving focus).
    Items inherit the group's variant and size. In a single-selection `filled`

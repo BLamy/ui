@@ -2,7 +2,11 @@
    round checklist circles that fill with the tint, hairline tables. Locked notes show the lock screen until
    you choose View Note; the note blurs in where the lock was. */
 import { useRef, type RefObject } from 'react';
-import { Button, ContentSwap, Icon, MarkdownEditor, cn, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@brett_lamy/ui';
+import { ContentSwap } from '@/components/ui/animated-height';
+import { Button } from '@/components/ui/button';
+import { MarkdownEditor, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { longDate, type Note } from './data';
 import type { NotesState } from './use-notes';
 

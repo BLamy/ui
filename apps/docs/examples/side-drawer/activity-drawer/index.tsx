@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { SideDrawer } from '@brett_lamy/ui'
+import { SideDrawer } from '@/components/ui/side-drawer'
 
 const rows = [
   'Outgoing call · 2 min',

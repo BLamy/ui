@@ -1,6 +1,10 @@
 /* Credenzas: the Clone dialog ("Code ▾") and the label filter — a dialog when wide, a tray on phone. */
 import { useState } from 'react';
-import { Button, Credenza, List, ListRow, Segmented, cn } from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { Credenza } from '@/components/ui/credenza';
+import { List, ListRow } from '@/components/ui/list';
+import { Segmented } from '@/components/ui/segmented';
+import { cn } from '@/lib/utils';
 import { LABELS, REPO } from './data';
 import { Oct, ghButton } from './parts';
 

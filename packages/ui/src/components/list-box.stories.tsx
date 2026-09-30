@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ListBox, ListBoxItem } from './list-box';
-import { Icon } from '../lib/icon';
+import { ListBox, ListBoxItem } from '@/components/ui/list-box';
+import { Icon } from '@/lib/icon';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof ListBox> = {

@@ -2,7 +2,7 @@
    written in Markdown (the first line is the title, as in Notes; checklists and tables included). Dates are
    relative to a fixed "now" so the date groups read the same on every render. */
 
-import type { IconName } from '@brett_lamy/ui';
+import { type IconName } from '@/lib/icon';
 
 /** The clock the block reads: Sunday, September 27 2026, 9:41 AM. */
 export const NOW = new Date(2026, 8, 27, 9, 41);

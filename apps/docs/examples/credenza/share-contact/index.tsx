@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { Button, Credenza, Icon, ListRow } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { Credenza } from '@/components/ui/credenza'
+import { ListRow } from '@/components/ui/list'
+import { Icon } from '@/lib/icon'
 
 export default function ShareContact() {
   const [view, setView] = useState<'menu' | 'done' | null>(null)

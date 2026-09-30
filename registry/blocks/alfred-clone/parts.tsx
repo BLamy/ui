@@ -1,7 +1,10 @@
 /* Alfred's pieces that aren't the menu: app tiles and file glyphs, the hat, the desktop (wallpaper, menu bar,
    dock) and the power overlays (lock screen, sleep, restart, shut down). */
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { Icon, IconSwap, NumberMorph, cn } from '@brett_lamy/ui';
+import { IconSwap } from '@/components/ui/icon-swap';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import type { ClipKind, FileKind } from './data';
 import { useAlfred, type PowerState, type RunningTimer } from './state';
 

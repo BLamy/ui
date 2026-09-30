@@ -2,35 +2,13 @@ import * as React from 'react';
 import { useRef, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { userEvent, within, expect, waitFor, screen } from 'storybook/test';
-import { AppearanceProvider, type Appearance, AnnotateLightbox,
-  Composer,
-  ComposerAdd,
-  ComposerAddon,
-  ComposerAttach,
-  ComposerAttachments,
-  ComposerBump,
-  ComposerBumpContent,
-  ComposerBumpHandle,
-  ComposerButton,
-  ComposerCard,
-  ComposerExpand,
-  ComposerFooter,
-  ComposerInput,
-  ComposerOptions,
-  ComposerOptionsOutlet,
-  ComposerSelect,
-  ComposerSend,
-  ComposerSeparator,
-  ComposerSpacer,
-  ComposerStop,
-  ComposerText,
-  type ComposerAttachment,
-  type ComposerCollapse,
-  Icon, WorkbenchTheme} from '@brett_lamy/ui';
+import { AnnotateLightbox, Composer, ComposerAdd, ComposerAddon, ComposerAttach, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerButton, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText, type ComposerAttachment, type ComposerCollapse } from '@/components/ui/composer/composer';
+import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { Icon } from '@/lib/icon';
+import { AppearanceProvider, type Appearance } from '@/lib/theme';
 import { ModelPicker } from './model-picker';
 import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from './models';
 import { WorkbenchComposer } from './workbench-composer';
-import '@brett_lamy/ui/styles.css';
 
 /* ── frame ── */
 function Frame({ appearance = 'dark', width = 560, height = 420, children }: { appearance?: Appearance; width?: number; height?: number; children: ReactNode }) {

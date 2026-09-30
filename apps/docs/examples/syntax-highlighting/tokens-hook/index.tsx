@@ -1,4 +1,4 @@
-import { SyntaxTokens, useSyntaxTokens } from '@brett_lamy/ui'
+import { SyntaxTokens, useSyntaxTokens } from '@/components/ui/syntax-highlighting'
 
 const log = `12:00:01 INFO  worker started (concurrency=4)
 12:00:02 WARN  job 8123 retry 2/5 in 4000ms

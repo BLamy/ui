@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Checkbox, CheckboxGroup } from './checkbox';
-import { Label } from './label';
-import { Card } from './card';
+import { Checkbox, CheckboxGroup } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Checkbox> = {

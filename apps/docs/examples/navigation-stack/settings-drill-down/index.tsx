@@ -1,13 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Icon,
-  List,
-  ListRow,
-  ListSection,
-  NavigationStack,
-  Switch,
-  type Screen,
-} from '@brett_lamy/ui'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import { Switch } from '@/components/ui/switch'
+import { Icon } from '@/lib/icon'
 
 function SettingsDrillDown() {
   // The path is the stack: push by appending, pop by dropping the last entry.

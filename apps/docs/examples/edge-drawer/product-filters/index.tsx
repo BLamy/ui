@@ -1,15 +1,11 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Button,
-  EdgeDrawer,
-  Icon,
-  List,
-  ListRow,
-  ListSection,
-  Segmented,
-  Slider,
-  Switch,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { EdgeDrawer } from '@/components/ui/edge-drawer'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { Segmented } from '@/components/ui/segmented'
+import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
+import { Icon } from '@/lib/icon'
 
 const sorts = [
   { id: 'new', label: 'Newest' },

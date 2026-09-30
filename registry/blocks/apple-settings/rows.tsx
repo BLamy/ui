@@ -1,10 +1,16 @@
 /* Row renderers: one component per row kind, drawn as an iOS inset-grouped ListRow on phone and tablet and as a
    dense macOS System Settings row on desktop. PaneView lays a pane's sections out; SearchResults lists hits. */
 import { useState, type ReactNode } from 'react';
-import {
-  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, IC, Icon, ListRow, ListSection, Segmented, Slider, Switch,
-  TextMorph, cn, type Appearance, type IconProps, type ListRowProps,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { ListRow, ListSection, type ListRowProps } from '@/components/ui/list';
+import { Segmented } from '@/components/ui/segmented';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { TextMorph } from '@/components/ui/text-morph';
+import { IC, Icon, type IconProps } from '@/lib/icon';
+import { type Appearance } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 import { MARKS, SEARCH, getPane, iconFor, notifSummary, pathTo, type Glyph, type Pane, type Row, type Section, type Values } from './data';
 import { useSettings } from './state';
 

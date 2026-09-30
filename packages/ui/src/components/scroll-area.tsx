@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ ScrollArea — overflow container with the kit's thin .bl-scroll scrollbars ══
    Native scrolling (momentum, overscroll) is kept; only the scrollbar is styled. */

@@ -1,5 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { Avatar, Button, Icon, SideDrawer } from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { SideDrawer } from '@/components/ui/side-drawer'
+import { Icon } from '@/lib/icon'
 
 const comments = [
   {

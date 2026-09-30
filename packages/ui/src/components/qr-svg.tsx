@@ -1,6 +1,6 @@
 import { useMemo, type CSSProperties } from 'react';
-import { cn } from '../lib/utils';
-import { encodeQR, type QRLevel } from '../lib/qr';
+import { cn } from '@/lib/utils';
+import { encodeQR, type QRLevel } from '@/lib/qr';
 
 export interface QRSvgProps {
   /** Text to encode (UTF-8, byte mode): a URL, a `WIFI:S:…;T:WPA;P:…;;` string, plain text… */

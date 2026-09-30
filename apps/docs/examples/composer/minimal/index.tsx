@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  Composer,
-  ComposerCard,
-  ComposerFooter,
-  ComposerInput,
-  ComposerSend,
-  ComposerSpacer,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 /**
  * Replies for a few seconds after each send, so the send ↔ stop morph can be

@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DeliveryTrackingDemo, type DeliveryTrackingDemoProps } from './delivery-tracking-demo';
-import '@brett_lamy/ui/styles.css';
 
 interface Args extends DeliveryTrackingDemoProps {
   width: number;

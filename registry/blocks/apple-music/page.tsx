@@ -4,11 +4,13 @@
    Wide: a SplitView sidebar beside a pushed detail stack. Phone: the iOS tab bar with the mini player above it.
    All artists, albums and songs are invented; artwork is generated. */
 import { useContext, useEffect, useRef, useState, type CSSProperties } from 'react';
-import {
-  BLProvider, Icon, MorphGroup, MorphPresence, NavigationStack, SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader,
-  SplitViewSidebar, SplitViewStack, SplitViewToggle, TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab,
-  useAppearance, useContainerSize, useSplitView, useSplitViewStack, type IconName,
-} from '@brett_lamy/ui';
+import { MorphGroup, MorphPresence } from '@/components/ui/morph';
+import { NavigationStack } from '@/components/ui/navigation-stack';
+import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSidebar, SplitViewStack, SplitViewToggle, useSplitView, useSplitViewStack } from '@/components/ui/split-view';
+import { TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewTab } from '@/components/ui/tab-view';
+import { useContainerSize } from '@/lib/container';
+import { Icon, type IconName } from '@/lib/icon';
+import { BLProvider, useAppearance } from '@/lib/theme';
 import { ALBUM, albumSongs } from './data';
 import { FullPlayer, MiniPlayer } from './now-playing';
 import { usePlayer } from './player';

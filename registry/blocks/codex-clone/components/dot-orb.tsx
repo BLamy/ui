@@ -1,4 +1,4 @@
-import { cn } from '@brett_lamy/ui';
+import { cn } from '@/lib/utils';
 
 /** dot's mark: a soft ring around a dark centre. */
 export function DotOrb({ size = 28, className }: { size?: number; className?: string }) {

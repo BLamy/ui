@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useRef, useState } from 'react';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/utils';
 import {
   PK_INKS,
   PK_TOOLS,
@@ -8,8 +8,8 @@ import {
   type PencilPoint,
   type PencilStroke,
   type PencilTool,
-} from '../../lib/pencilkit/constants';
-import { MemoStroke, StrokePath } from './stroke-path';
+} from '@/components/ui/pencilkit/constants';
+import { MemoStroke, StrokePath } from '@/components/ui/pencilkit/stroke-path';
 
 export type PencilStrokesChangeSource = 'draw' | 'erase';
 

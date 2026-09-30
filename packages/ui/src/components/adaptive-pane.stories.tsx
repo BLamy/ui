@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Segmented } from './segmented';
-import { AdaptivePane, type AdaptivePaneMode } from './adaptive-pane';
+import { Segmented } from '@/components/ui/segmented';
+import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof AdaptivePane> = {

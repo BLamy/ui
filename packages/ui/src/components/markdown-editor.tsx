@@ -4,7 +4,7 @@ import type { EditorAttachment } from '@brett_lamy/docstream-editor';
 import { astToTiptap } from '@brett_lamy/docstream-editor/convert';
 import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ MarkdownEditor — a themed field over the Docstream (TipTap) editor ══
 

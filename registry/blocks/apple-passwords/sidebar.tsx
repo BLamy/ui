@@ -1,9 +1,11 @@
 /* The sidebar: Passwords' category tiles (icon, count, name) over the shared groups. Tiles and group rows
    select into the SplitView's sidebar column, so on a phone they push the list. */
 import type { CSSProperties } from 'react';
-import {
-  Avatar, Icon, NumberMorph, SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, cn, useSplitView, type IconName,
-} from '@brett_lamy/ui';
+import { Avatar } from '@/components/ui/avatar';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, useSplitView } from '@/components/ui/split-view';
+import { Icon, type IconName } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { GROUPS, type CategoryId } from './data';
 import { counts, type Vault } from './vault';
 

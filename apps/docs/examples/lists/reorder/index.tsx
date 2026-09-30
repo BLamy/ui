@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { Button, List, ListRow, ListSection } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { List, ListRow, ListSection } from '@/components/ui/list'
 
 const LIBRARY = [
   'Golden Hour',

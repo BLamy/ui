@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonText } from '@brett_lamy/ui'
+import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
 
 // A card placeholder: a `rect` for the artwork (media keeps square-ish
 // corners), text lines for the title and blurb, a `rounded` block for the

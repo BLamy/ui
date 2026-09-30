@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react'
-import {
-  AnimatedHeight,
-  Button,
-  ContentSwap,
-  Skeleton,
-  SkeletonText,
-} from '@brett_lamy/ui'
+import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height'
+import { Button } from '@/components/ui/button'
+import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
 
 const order = {
   title: 'Order #4821',

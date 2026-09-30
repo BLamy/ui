@@ -1,4 +1,4 @@
-import type { ReplayEvent } from '@brett_lamy/ui';
+import { type ReplayEvent } from '@/components/ui/replay-preview';
 
 /* The exploration run's recording (37 events, ~6 s, 1280×800): the QA agent tours the Northwind storefront —
    header navigation, every product card, adds two items and opens the cart — dropping a `checkpoint` custom

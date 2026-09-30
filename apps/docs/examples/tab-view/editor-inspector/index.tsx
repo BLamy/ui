@@ -1,13 +1,5 @@
 import { type ReactNode } from 'react'
-import {
-  TabView,
-  TabViewBar,
-  TabViewList,
-  TabViewPanel,
-  TabViewPanels,
-  TabViewSeparator,
-  TabViewTab,
-} from '@brett_lamy/ui'
+import { TabView, TabViewBar, TabViewList, TabViewPanel, TabViewPanels, TabViewSeparator, TabViewTab } from '@/components/ui/tab-view'
 
 function EditorInspector() {
   return (

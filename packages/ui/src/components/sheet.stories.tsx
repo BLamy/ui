@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter, SheetClose } from './sheet';
-import { Button } from './button';
-import { ListBox, ListBoxItem } from './list-box';
-import { Switch } from './switch';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetBody, SheetFooter, SheetClose } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { ListBox, ListBoxItem } from '@/components/ui/list-box';
+import { Switch } from '@/components/ui/switch';
 import { Screen } from '../stories/primitive-frame';
 
 const meta: Meta<typeof SheetContent> = {

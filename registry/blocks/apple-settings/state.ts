@@ -1,7 +1,8 @@
 /* Settings state: every setting's value, the navigation path (panes pushed so far) and search. One context so
    any row can read or change a value, or push a pane. The layout follows the SplitView's width class. */
 import { createContext, useContext, useMemo, useState } from 'react';
-import { useSplitView, type Appearance, type SplitViewWidthClass } from '@brett_lamy/ui';
+import { useSplitView, type SplitViewWidthClass } from '@/components/ui/split-view';
+import { type Appearance } from '@/lib/theme';
 import { DEFAULTS, type Value, type Values } from './data';
 
 export type Layout = 'phone' | 'tablet' | 'desktop';

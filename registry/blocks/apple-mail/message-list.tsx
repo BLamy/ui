@@ -3,7 +3,11 @@
    edit mode whose check circles slide in from the leading edge. Rows spring in and collapse out as mail
    arrives, moves or gets filtered; the selection highlight glides between rows. */
 import { useRef } from 'react';
-import { Icon, ListRow, cn, springs, useMotion, useSplitView } from '@brett_lamy/ui';
+import { ListRow } from '@/components/ui/list';
+import { useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { springs, useMotion } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 import { preview, relativeTime, type Message } from './data';
 import type { MailState } from './use-mail';
 

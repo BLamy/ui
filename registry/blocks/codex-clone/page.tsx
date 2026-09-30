@@ -1,4 +1,5 @@
-import { AppearanceProvider, BLProvider, SplitView, useAppearance, type Appearance } from '@brett_lamy/ui';
+import { SplitView } from '@/components/ui/split-view';
+import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { ChatPane } from './components/chat-pane';
 import { ChatSidebar } from './components/chat-sidebar';
 import { DetailPane } from './components/detail-pane';

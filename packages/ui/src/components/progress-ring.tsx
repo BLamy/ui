@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ProgressBar, type ProgressBarProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
-import { NumberMorph } from './number-morph';
+import { cn } from '@/lib/utils';
+import { NumberMorph } from '@/components/ui/number-morph';
 
 /* ══ ProgressRing / CountdownRing — circular progress, iOS style ══
    ProgressRing is react-aria's ProgressBar (role=progressbar, aria-valuenow / valuetext) drawn as a ring: a

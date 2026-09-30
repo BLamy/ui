@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Button, TextMorph } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { TextMorph } from '@/components/ui/text-morph'
 
 // A string child morphs on change: shared letters (C, o, n, i) slide into
 // place, the rest blur out and in, and the button springs to its new width.

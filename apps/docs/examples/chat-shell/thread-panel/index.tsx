@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { Avatar, Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, Icon } from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { Icon } from '@/lib/icon'
 import { ChatShell, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderIcon, ChatShellMain, ChatShellPanel, ChatShellTitle } from '@/components/blocks/discord-clone/components/chat-shell'
 
 type Person = { f: string; l: string; bot?: boolean }

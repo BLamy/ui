@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import jsQR from 'jsqr';
-import { QRSvg } from './qr-svg';
-import { encodeQR, numDataCodewords, type QRLevel } from '../lib/qr';
+import { QRSvg } from '@/components/ui/qr-svg';
+import { encodeQR, numDataCodewords, type QRLevel } from '@/lib/qr';
 
 type Pt = [number, number];
 

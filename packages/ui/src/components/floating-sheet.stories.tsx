@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from './floating-sheet';
-import { ProgressStepper } from './progress-stepper';
-import '../../styles.css';
+import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from '@/components/ui/floating-sheet';
+import { ProgressStepper } from '@/components/ui/progress-stepper';
+import '../styles.css';
 
 interface Args {
   width: number;

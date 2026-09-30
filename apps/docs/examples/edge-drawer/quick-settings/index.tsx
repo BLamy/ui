@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { Button, EdgeDrawer, Icon } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { EdgeDrawer } from '@/components/ui/edge-drawer'
+import { Icon } from '@/lib/icon'
 
 function QuickSettings() {
   const [open, setOpen] = useState(true)

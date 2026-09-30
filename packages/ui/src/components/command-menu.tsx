@@ -6,14 +6,14 @@ import {
 import { Dialog as AriaDialog, Modal, ModalOverlay } from 'react-aria-components';
 import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { AnimatedHeight, ContentSwap } from './animated-height';
-import { IconSwap } from './icon-swap';
-import { Kbd } from './kbd';
-import { Icon } from '../lib/icon';
-import { fades, springs } from '../lib/motion';
-import { overlayZ, selectableText } from '../lib/primitives';
-import { cn } from '../lib/utils';
-import { useThemeScopeProps } from '../lib/theme';
+import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height';
+import { IconSwap } from '@/components/ui/icon-swap';
+import { Kbd } from '@/components/ui/kbd';
+import { Icon } from '@/lib/icon';
+import { fades, springs } from '@/lib/motion';
+import { overlayZ, selectableText } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
+import { useThemeScopeProps } from '@/lib/theme';
 
 /* ══ CommandMenu — a cmdk-style palette on react-aria ══
    <CommandMenu variant="dialog" isOpen={open} onOpenChange={setOpen} hotkey="mod+k" aria-label="Command menu">

@@ -1,7 +1,9 @@
 /* A reminder: the completion circle, title with priority marks, notes, due date (red when overdue), link, tags,
    flag, subtasks that fold open, and the info button that opens the details sheet. Also the list icon. */
 import { useState, type CSSProperties } from 'react';
-import { Chevron, Icon, cn, type IconName } from '@brett_lamy/ui';
+import { Chevron } from '@/components/ui/icon-swap';
+import { Icon, type IconName } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { SYSTEM, dueLabel, type Reminder } from './data';
 import { useReminders } from './store';
 

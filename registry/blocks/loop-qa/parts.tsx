@@ -2,7 +2,12 @@
    environment), the site thumbnails on project cards, sparklines and severity bars, stat tiles and panels. */
 import type { CSSProperties, ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Button, Icon, NumberMorph, Spinner, TooltipTrigger, Tooltip, cn, type ButtonProps } from '@brett_lamy/ui';
+import { Button, type ButtonProps } from '@/components/ui/button';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { Spinner } from '@/components/ui/spinner';
+import { TooltipTrigger, Tooltip } from '@/components/ui/tooltip';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import {
   SEVERITY_LABEL, STATUS_LABEL, type BugKind, type BugStatus, type Environment, type RunStatus, type Severity, type SiteKind,
 } from './data';

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Avatar, IconButton } from '@brett_lamy/ui';
+import { Avatar } from '@/components/ui/avatar';
+import { IconButton } from '@/components/ui/icon-button';
 
 const ITEMS = [
   { id: 'home', icon: 'house', label: 'Home' },

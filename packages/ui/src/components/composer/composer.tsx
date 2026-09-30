@@ -25,14 +25,14 @@ import { useFocusRing } from 'react-aria/useFocusRing';
 import { mergeProps } from 'react-aria/mergeProps';
 import { Extension } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
-import { PlainButton as Button, PlainToggleButton as ToggleButton, type PlainButtonProps as ButtonProps } from '../plain-button';
-import { cn, pressable } from '../../lib/utils';
-import { Icon, type IconName } from '../../lib/icon';
-import { WbPopover } from './composer-popover';
-import { looksLikeMarkdown, insertMarkdown } from '../markdown-editor';
-import { useComposerAnnotator, type ComposerAnnotator, type ComposerAnnotatorSurface } from './annotator';
+import { PlainButton as Button, PlainToggleButton as ToggleButton, type PlainButtonProps as ButtonProps } from '@/components/ui/plain-button';
+import { cn, pressable } from '@/lib/utils';
+import { Icon, type IconName } from '@/lib/icon';
+import { WbPopover } from '@/components/ui/composer/composer-popover';
+import { looksLikeMarkdown, insertMarkdown } from '@/components/ui/markdown-editor';
+import { useComposerAnnotator, type ComposerAnnotator, type ComposerAnnotatorSurface } from '@/components/ui/composer/annotator';
 import { animate, AnimatePresence, motion } from 'framer-motion';
-import { useToast } from '../toast';
+import { useToast } from '@/components/ui/toast';
 import {
   acceptsFile,
   attachmentFileName,
@@ -44,11 +44,11 @@ import {
   textExcerpt,
   videoPoster,
   type ComposerAttachmentKind,
-} from './composer-files';
-import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '../../lib/motion';
-import { useSheetDrag, type SheetDragState } from '../../lib/sheet-drag';
-import { TextMorph } from '../text-morph';
-import { themeScopeProps } from '../../lib/theme';
+} from '@/components/ui/composer/composer-files';
+import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '@/lib/motion';
+import { useSheetDrag, type SheetDragState } from '@/lib/sheet-drag';
+import { TextMorph } from '@/components/ui/text-morph';
+import { themeScopeProps } from '@/lib/theme';
 
 /* ══ Composer — a compositional prompt box, in the spirit of shadcn's InputGroup ══
 
@@ -70,7 +70,7 @@ import { themeScopeProps } from '../../lib/theme';
    from `useComposer()`. `ComposerOutlet` lets an ancestor add parts to (or wrap the card of) the Composer
    inside it — ArtifactChatContainer uses it to hang its transcript off a draggable top bump. */
 
-export type { ComposerAttachmentKind } from './composer-files';
+export type { ComposerAttachmentKind } from '@/components/ui/composer/composer-files';
 
 /**
  * A file in the draft. Images are data URLs (they chip into the editor and can be annotated); other files keep

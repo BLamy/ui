@@ -1,4 +1,4 @@
-import { Tab, TabList, TabPanel, Tabs } from '@brett_lamy/ui'
+import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs'
 
 const TABS = [
   {

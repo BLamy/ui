@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { cn } from '@brett_lamy/ui';
+import { cn } from '@/lib/utils';
 import { ChatShellFooter } from './components/chat-shell';
 import { ChatComposer } from './components/chat-composer';
 import { useChatUsers } from './components/chat-users';

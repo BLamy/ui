@@ -1,14 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { TextArea, TextField } from 'react-aria-components';
-import {
-  Button,
-  Icon,
-  IconButton,
-  IndexBar,
-  SplitViewHeader,
-  cn,
-  useSplitView,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { IndexBar } from '@/components/ui/index-bar';
+import { SplitViewHeader, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import type { Chat, ChatItem } from '../lib/data';
 import type { CodexState } from '../lib/use-codex';
 import { Typing } from './chat-pane';

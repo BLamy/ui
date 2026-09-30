@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { useAppearance, themeScopeProps, type Appearance } from '../lib/theme';
-import { cn } from '../lib/utils';
+import { useAppearance, themeScopeProps, type Appearance } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 
 /* ══ The Workbench theme scope ══
    The Workbench's palette is the bl-theme's `workbench` scope (dark-first IDE colors; light is an

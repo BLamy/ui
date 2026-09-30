@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { FONT, MarkdownView } from '@brett_lamy/ui'
+import { MarkdownView } from '@/components/ui/markdown-view'
+import { FONT } from '@/lib/utils'
 
 const reply = `Both servers are now running detached and won't be killed by the
 tool's session limits.

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fallbackSpans, normalizeSpans, type SyntaxSpan } from './syntax';
+import { fallbackSpans, normalizeSpans, type SyntaxSpan } from '@/lib/syntax';
 
 /** Label every span of `code` as [text, type] for readable assertions. */
 const labels = (code: string, spans: SyntaxSpan[]) => spans.map((s) => [code.slice(s.start, s.end), s.type]);
@@ -115,7 +115,7 @@ describe('probeWebGPU', () => {
   const load = async (gpu: unknown) => {
     vi.resetModules();
     vi.stubGlobal('navigator', gpu === undefined ? {} : { gpu });
-    return import('./syntax');
+    return import('@/lib/syntax');
   };
 
   it('reports none without navigator.gpu, and the fallback engine is used', async () => {

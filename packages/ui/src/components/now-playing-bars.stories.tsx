@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { NowPlayingBars } from './now-playing-bars';
-import { Button } from './button';
+import { NowPlayingBars } from '@/components/ui/now-playing-bars';
+import { Button } from '@/components/ui/button';
 import { Caption, Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof NowPlayingBars> = {

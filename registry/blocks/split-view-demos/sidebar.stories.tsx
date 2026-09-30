@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Sidebar } from '@brett_lamy/ui';
+import { Sidebar } from '@/components/ui/sidebar';
 import { SidebarDemo } from './sidebar-demo';
 
 const meta: Meta<typeof Sidebar> = {

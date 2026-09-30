@@ -1,12 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Avatar,
-  Button,
-  NavigationStack,
-  SideDrawer,
-  useContainerWidth,
-  type Screen,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import { SideDrawer } from '@/components/ui/side-drawer'
+import { useContainerWidth } from '@/lib/container'
 
 function Activity() {
   return (

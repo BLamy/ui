@@ -1,10 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import {
-  MarkdownView,
-  MessageScroller,
-  type MessageScrollerItem,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { MarkdownView } from '@/components/ui/markdown-view'
+import { MessageScroller, type MessageScrollerItem } from '@/components/ui/message-scroller'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 const answer =
   'The scroller anchors each new turn near the top, then **follows the live ' +

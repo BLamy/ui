@@ -1,7 +1,13 @@
 /* The Details sheet (Credenza: a centered dialog on wide screens, a bottom tray on phones): title, notes and URL,
    date and time with quick picks, flag, priority, list, and subtasks you can check off or add to. */
 import { useRef, useState, type ReactNode } from 'react';
-import { Button, Credenza, Icon, ListRow, ListSection, Segmented, Switch, useSplitView, type IconName } from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { Credenza } from '@/components/ui/credenza';
+import { ListRow, ListSection } from '@/components/ui/list';
+import { Segmented } from '@/components/ui/segmented';
+import { useSplitView } from '@/components/ui/split-view';
+import { Switch } from '@/components/ui/switch';
+import { Icon, type IconName } from '@/lib/icon';
 import { SYSTEM, dueLabel, type Reminder } from './data';
 import { CheckCircle, ListIcon } from './reminder-row';
 import { useReminders } from './store';

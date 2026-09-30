@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { ToggleButtonGroup, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../../lib/utils';
-import { PK_INKS, PK_TOOL_ICONS, PK_W, type PencilTool } from '../../lib/pencilkit/constants';
-import { Icon, type IconName } from '../../lib/icon';
-import { PlainButton as Button, PlainToggleButton as ToggleButton, type PlainButtonProps as ButtonProps } from '../plain-button';
+import { cn } from '@/lib/utils';
+import { PK_INKS, PK_TOOL_ICONS, PK_W, type PencilTool } from '@/components/ui/pencilkit/constants';
+import { Icon, type IconName } from '@/lib/icon';
+import { PlainButton as Button, PlainToggleButton as ToggleButton, type PlainButtonProps as ButtonProps } from '@/components/ui/plain-button';
 
 /* ---------------------------------- button ---------------------------------- */
 

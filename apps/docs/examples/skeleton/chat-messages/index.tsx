@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Skeleton } from '@brett_lamy/ui'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // A thread loading: bubble-shaped placeholders on both sides, with varied
 // widths so it reads as a conversation rather than a grid.

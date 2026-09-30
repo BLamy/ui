@@ -1,13 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Button,
-  Icon,
-  List,
-  ListRow,
-  ListSection,
-  NavigationStack,
-  type Screen,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import { Icon } from '@/lib/icon'
 
 const seed = [
   { id: 3, from: 'Nadia Brooks', subject: 'Launch checklist' },

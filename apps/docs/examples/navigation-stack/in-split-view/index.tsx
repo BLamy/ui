@@ -1,14 +1,6 @@
 import { useState } from 'react'
-import {
-  NavigationStack,
-  SplitView,
-  SplitViewContent,
-  SplitViewDetail,
-  SplitViewHeader,
-  SplitViewItem,
-  SplitViewSidebar,
-  type Screen,
-} from '@brett_lamy/ui'
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSidebar } from '@/components/ui/split-view'
 
 /**
  * A NavigationStack in a SplitView's detail column. Collapsed (a phone-width

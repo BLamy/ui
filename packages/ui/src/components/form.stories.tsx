@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Form, FormSection } from './form';
-import { TextField, FieldDescription, FieldError } from './text-field';
-import { Label } from './label';
-import { Input } from './input';
-import { Textarea } from './textarea';
-import { Checkbox } from './checkbox';
-import { RadioGroup, Radio } from './radio-group';
-import { Select, SelectTrigger, SelectContent, SelectItem } from './select';
-import { Button } from './button';
+import { Form, FormSection } from '@/components/ui/form';
+import { TextField, FieldDescription, FieldError } from '@/components/ui/text-field';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, Radio } from '@/components/ui/radio-group';
+import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Screen } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Form> = {

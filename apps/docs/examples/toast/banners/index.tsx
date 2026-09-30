@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Button, Toaster, createToastQueue, useToast } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { Toaster, createToastQueue, useToast } from '@/components/ui/toast'
 
 function Controls() {
   const toast = useToast()

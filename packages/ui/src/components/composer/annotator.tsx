@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PencilKitAnnotator } from '../pencilkit/pencilkit-annotator';
+import { PencilKitAnnotator } from '@/components/ui/pencilkit/pencilkit-annotator';
 
 /* ══ Image annotation — pluggable ══
    An annotator is a component that hands the AnnotateLightbox a drawing surface (laid over the image) and optional

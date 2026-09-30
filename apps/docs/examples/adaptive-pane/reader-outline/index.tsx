@@ -1,10 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import {
-  AdaptivePane,
-  Button,
-  Segmented,
-  type AdaptivePaneMode,
-} from '@brett_lamy/ui'
+import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane'
+import { Button } from '@/components/ui/button'
+import { Segmented } from '@/components/ui/segmented'
 
 const outlineModes = [
   { id: 'column', label: 'Docked' },

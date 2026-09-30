@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button } from './button';
-import { TextMorph } from './text-morph';
-import { NumberMorph } from './number-morph';
-import { Chevron, IconSwap, type ChevronDirection } from './icon-swap';
-import { AnimatedHeight, ContentSwap } from './animated-height';
-import { Celebrate } from './celebrate';
-import { Icon } from '../lib/icon';
-import { useDirection } from '../lib/motion';
+import { Button } from '@/components/ui/button';
+import { TextMorph } from '@/components/ui/text-morph';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { Chevron, IconSwap, type ChevronDirection } from '@/components/ui/icon-swap';
+import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height';
+import { Celebrate } from '@/components/ui/celebrate';
+import { Icon } from '@/lib/icon';
+import { useDirection } from '@/lib/motion';
 import { Pad } from '../stories/frame';
 
 /* Motion primitives — the pieces the kit's animated components are built from (see lib/motion.ts). */

@@ -2,7 +2,7 @@ import type { ComponentProps, CSSProperties, ReactNode } from 'react';
 import { ChatAvatar } from './chat-avatar';
 import type { ChatPresence } from './user-panel';
 import type { ChatUser } from './chat-users';
-import { cn } from '@brett_lamy/ui';
+import { cn } from '@/lib/utils';
 
 /* ══ Member list — who's in the channel, usually inside a ChatShellAside ══
    <MemberList>

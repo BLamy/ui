@@ -1,9 +1,6 @@
 import { useRef } from 'react'
-import {
-  Button,
-  MarkdownEditor,
-  type MarkdownEditorHandle,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { MarkdownEditor, type MarkdownEditorHandle } from '@/components/ui/markdown-editor'
 
 const blocks: { label: string; markdown: string }[] = [
   {

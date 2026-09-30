@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { QRSvg } from './qr-svg';
+import { QRSvg } from '@/components/ui/qr-svg';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof QRSvg> = {

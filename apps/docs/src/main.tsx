@@ -8,7 +8,7 @@ import '@brett_lamy/registry/styles.css';
 // inside ui's stylesheet — an unlayered copy here would outrank the kit's editor rules and every utility.)
 import '@brett_lamy/docstream/styles.css';
 import { DemoFullscreen, demoFromSearch } from '@brett_lamy/docstream';
-import { AppearanceProvider } from '@brett_lamy/ui';
+import { AppearanceProvider } from '@/lib/theme';
 import App from './app/app';
 import RenderPage from './app/render-page';
 import { demoResolver } from './demos';

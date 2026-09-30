@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
-import { COLOR_TOKENS, TEXT_TOKENS, RADIUS_TOKENS, SHADOW_TOKENS, SPACING_TOKENS, FONT_TOKENS } from './tokens.generated';
+import { COLOR_TOKENS, TEXT_TOKENS, RADIUS_TOKENS, SHADOW_TOKENS, SPACING_TOKENS, FONT_TOKENS } from '@/lib/tokens.generated';
 
 /* tailwind-merge only knows Tailwind's default theme; register ours (generated from tokens.css by
    tools/tokens/build.mjs) so `text-muted-foreground` resolves as a color and `text-footnote` as a size — a conflict

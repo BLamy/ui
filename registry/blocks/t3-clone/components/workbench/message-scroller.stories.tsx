@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MessageScroller, pressable, WorkbenchTheme} from '@brett_lamy/ui';
-import '@brett_lamy/ui/styles.css';
+import { MessageScroller } from '@/components/ui/message-scroller';
+import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { pressable } from '@/lib/utils';
 
 const meta: Meta<typeof MessageScroller> = {
   title: 'Organisms/MessageScroller',

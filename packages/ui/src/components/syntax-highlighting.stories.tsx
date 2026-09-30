@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   SyntaxHighlighting, SyntaxHighlightingContent, SyntaxHighlightingCopyButton, SyntaxHighlightingHeader, SyntaxHighlightingTitle,
-} from './syntax-highlighting';
+} from '@/components/ui/syntax-highlighting';
 import { Caption, Panel } from '../stories/primitive-frame';
 
 const TS = `import { useEffect, useState } from 'react'

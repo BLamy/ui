@@ -1,12 +1,4 @@
-import {
-  TabView,
-  TabViewBar,
-  TabViewIndicator,
-  TabViewList,
-  TabViewPanel,
-  TabViewPanels,
-  TabViewTab,
-} from '@brett_lamy/ui'
+import { TabView, TabViewBar, TabViewIndicator, TabViewList, TabViewPanel, TabViewPanels, TabViewTab } from '@/components/ui/tab-view'
 
 const sections = [
   { id: 'contacts', title: 'Contacts', body: 'Everyone you know, A to Z.' },

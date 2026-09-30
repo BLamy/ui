@@ -1,11 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import {
-  List,
-  ListRow,
-  ListSection,
-  NavigationStack,
-  type Screen,
-} from '@brett_lamy/ui'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
 
 // Titles of different lengths, so the back label shows each case: the full
 // previous title, an ellipsized one, and "Back" once the centered title leaves

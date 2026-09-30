@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { AppearanceProvider } from '@brett_lamy/ui';
+import { AppearanceProvider } from '@/lib/theme';
 import LoopQA from './page';
 
 const meta: Meta<typeof LoopQA> = {

@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import {
-  Button,
-  FloatingSheet,
-  useAppearance,
-  useFloatingSheet,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { FloatingSheet, useFloatingSheet } from '@/components/ui/floating-sheet'
+import { useAppearance } from '@/lib/theme'
 
 /**
  * Lays a fixed-size composition out at its design width, scaled down (never up)

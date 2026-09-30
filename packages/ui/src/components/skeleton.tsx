@@ -1,6 +1,6 @@
 import type { ComponentProps, CSSProperties } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ Skeleton — loading placeholder. A soft highlight sweeps across it (left to right, the reading direction)
    instead of the whole block pulsing; reduced motion gets a still block. Size it with classes or `width` /

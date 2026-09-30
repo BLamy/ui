@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { MarkdownEditor, MarkdownView } from '@brett_lamy/ui'
+import { MarkdownEditor } from '@/components/ui/markdown-editor'
+import { MarkdownView } from '@/components/ui/markdown-view'
 
 const spec = `## Release 2.4
 

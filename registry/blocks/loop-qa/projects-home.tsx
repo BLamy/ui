@@ -2,9 +2,13 @@
    status, open bugs by severity, the bug trend over recent runs and when it last ran. Cards reflow from four
    columns to one; filtering morphs them into place. */
 import { useMemo, useState, type CSSProperties } from 'react';
-import {
-  Button, Icon, Morph, MorphGroup, MorphPresence, NumberMorph, SearchField, Segmented, SplitViewContent, SplitViewHeader,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { SearchField } from '@/components/ui/search-field';
+import { Segmented } from '@/components/ui/segmented';
+import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
 import { isOpen } from './agent';
 import { CREDITS, PROJECTS, SEVERITIES, host, relativeTime, type Project, type Severity } from './data';
 import { Leading, PageActions } from './header';

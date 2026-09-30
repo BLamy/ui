@@ -1,8 +1,8 @@
 import { useId, type CSSProperties } from 'react';
-import { cn } from './utils';
-import { WORKBENCH_SHAPES } from './icon-shapes/workbench';
-import { CHAT_SHAPES } from './icon-shapes/chat';
-import { PENCILKIT_SHAPES } from './icon-shapes/pencilkit';
+import { cn } from '@/lib/utils';
+import { WORKBENCH_SHAPES } from '@/lib/icon-shapes/workbench';
+import { CHAT_SHAPES } from '@/lib/icon-shapes/chat';
+import { PENCILKIT_SHAPES } from '@/lib/icon-shapes/pencilkit';
 
 /**
  * One piece of an icon, drawn on a 24px grid in `currentColor`.

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ICON_CATEGORIES, ICON_KEYWORDS, ICON_NAMES, ICON_WEIGHTS, Icon, type IconCategory, type IconWeight } from './icon';
+import { ICON_CATEGORIES, ICON_KEYWORDS, ICON_NAMES, ICON_WEIGHTS, Icon, type IconCategory, type IconWeight } from '@/lib/icon';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof Icon> = {

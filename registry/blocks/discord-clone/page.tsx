@@ -1,6 +1,8 @@
 import './chat-theme.css';
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Icon, TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewTab, type Appearance } from '@brett_lamy/ui';
+import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewTab } from '@/components/ui/tab-view';
+import { Icon } from '@/lib/icon';
+import { type Appearance } from '@/lib/theme';
 import { ChatShell, ChatShellAside, ChatShellBack, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderAction, ChatShellHeaderActions, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
 import { useChatShell } from './components/chat-shell-context';
 import { ChannelGroup, ChannelItem, ChannelList, ChannelThreadItem } from './components/channel-list';

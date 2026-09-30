@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ Badge — shadcn's badge as an iOS capsule ══ */
 export const badgeVariants = cva(

@@ -1,5 +1,9 @@
 import type { ReactNode } from 'react'
-import { Avatar, Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, Icon, SidebarContent, SidebarHeader, SidebarItem, SidebarSection, SplitView, SplitViewDetail, SplitViewSidebar, useSplitView } from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { SidebarContent, SidebarHeader, SidebarItem, SidebarSection } from '@/components/ui/sidebar'
+import { SplitView, SplitViewDetail, SplitViewSidebar, useSplitView } from '@/components/ui/split-view'
+import { Icon } from '@/lib/icon'
 import { ChatShell, ChatShellBack, ChatShellFooter, ChatShellHeader, ChatShellHeaderIcon, ChatShellMain, ChatShellSidebar, ChatShellTitle } from '@/components/blocks/discord-clone/components/chat-shell'
 
 const rooms = [

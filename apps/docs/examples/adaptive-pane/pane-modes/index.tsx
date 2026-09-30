@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { AdaptivePane, EdgeDrawer, type AdaptivePaneMode } from '@brett_lamy/ui'
+import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane'
+import { EdgeDrawer } from '@/components/ui/edge-drawer'
 
 const panel: CSSProperties = {
   height: '100%',

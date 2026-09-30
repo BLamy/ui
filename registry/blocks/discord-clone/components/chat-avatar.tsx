@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
-import { Icon, cn } from '@brett_lamy/ui';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import type { ChatUser } from './chat-users';
 import { cva } from 'class-variance-authority';
 

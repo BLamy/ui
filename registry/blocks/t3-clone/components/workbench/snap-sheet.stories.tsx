@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SnapSheet, ThemeScope, PlainButton as Button, cn, pressable, WorkbenchTheme} from '@brett_lamy/ui';
+import { PlainButton as Button } from '@/components/ui/plain-button';
+import { SnapSheet } from '@/components/ui/snap-sheet';
+import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { ThemeScope } from '@/lib/theme';
+import { cn, pressable } from '@/lib/utils';
 import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
 import { TERMINAL_SEED } from './fixtures';
-import '@brett_lamy/ui/styles.css';
 
 const meta: Meta<typeof SnapSheet> = {
   title: 'Organisms/SnapSheet',

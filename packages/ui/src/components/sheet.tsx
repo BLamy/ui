@@ -5,11 +5,11 @@ import {
   Modal, ModalOverlay, type ModalOverlayProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { overlayZ } from '../lib/primitives';
-import { cn } from '../lib/utils';
-import { useThemeScopeProps } from '../lib/theme';
-import { AnimatedHeight } from './animated-height';
-import { DialogBody, DialogClose, DialogDescription, DialogHeader, DialogTitle } from './dialog';
+import { overlayZ } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
+import { useThemeScopeProps } from '@/lib/theme';
+import { AnimatedHeight } from '@/components/ui/animated-height';
+import { DialogBody, DialogClose, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 /* ══ Sheet — a react-aria Modal pinned to an edge (shadcn's Sheet). Bottom is the iOS card sheet with a grabber;
    left/right are side panels; top drops down. Esc, outside press, focus trap and focus return come from

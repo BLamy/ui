@@ -5,11 +5,11 @@ import { createPortal } from 'react-dom';
 import { useToast as useAriaToast, useToastRegion } from 'react-aria';
 import { Button as AriaButton, UNSTABLE_ToastQueue as AriaToastQueue, type QueuedToast, type ToastState } from 'react-aria-components';
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from 'framer-motion';
-import { Icon } from '../lib/icon';
-import { fades, springs } from '../lib/motion';
+import { Icon } from '@/lib/icon';
+import { fades, springs } from '@/lib/motion';
 import { cva } from 'class-variance-authority';
-import { cn } from '../lib/utils';
-import { TextMorph } from './text-morph';
+import { cn } from '@/lib/utils';
+import { TextMorph } from '@/components/ui/text-morph';
 
 /* ══ Toast — HUDs and banners ══
    Two looks, one queue:

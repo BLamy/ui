@@ -1,4 +1,4 @@
-import { SplitViewDetail } from '@brett_lamy/ui';
+import { SplitViewDetail } from '@/components/ui/split-view';
 import type { CodexState } from '../lib/use-codex';
 import { DocContent } from './doc-pane';
 import { ThreadContent } from './thread-page';

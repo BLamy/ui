@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Credenza } from './credenza';
-import { Icon } from '../lib/icon';
-import { Button } from './button';
-import { QRSvg } from './qr-svg';
+import { Credenza } from '@/components/ui/credenza';
+import { Icon } from '@/lib/icon';
+import { Button } from '@/components/ui/button';
+import { QRSvg } from '@/components/ui/qr-svg';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof Credenza> = {

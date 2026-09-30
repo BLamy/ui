@@ -1,9 +1,9 @@
 /* The list and message columns (the mailboxes column lives in mailboxes.tsx). The same columns serve every
    width: on the phone SplitView stacks them, the headers trade their leading items for a back button, and the
    message's actions move to a bottom bar. */
-import {
-  Icon, SearchField, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView,
-} from '@brett_lamy/ui';
+import { SearchField } from '@/components/ui/search-field';
+import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
 import { MessageList } from './message-list';
 import { MessageView, NoMessage } from './message-view';
 import { BarButton, BottomBar, FlagButton, ListBar, MoveMenu, ReplyMenu } from './parts';

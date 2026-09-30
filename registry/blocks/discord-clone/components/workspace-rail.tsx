@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { cn } from '@brett_lamy/ui';
+import { cn } from '@/lib/utils';
 
 /* ══ WorkspaceTile — a server tile for a `TabViewBar variant="workspace"` rail ══
    <TabView orientation="vertical" defaultSelectedKey="blui">

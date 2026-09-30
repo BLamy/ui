@@ -1,11 +1,7 @@
 import { useState } from 'react'
-import {
-  Avatar,
-  List,
-  ListRow,
-  ListSection,
-  Switch,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { Switch } from '@/components/ui/switch'
 
 const people = [
   { f: 'Maya', l: 'Lindqvist', role: 'Industrial design' },

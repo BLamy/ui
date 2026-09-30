@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { PlainButton as Button } from './plain-button';
-import { cn, pressable } from '../lib/utils';
-import { Icon } from '../lib/icon';
+import { PlainButton as Button } from '@/components/ui/plain-button';
+import { cn, pressable } from '@/lib/utils';
+import { Icon } from '@/lib/icon';
 import { AnimatePresence, animate, motion, type AnimationPlaybackControls } from 'framer-motion';
-import { prefersReducedMotion, springs } from '../lib/motion';
+import { prefersReducedMotion, springs } from '@/lib/motion';
 
 /* ══ MessageScroller — shadcn message-scroller semantics ══
    Anchors new turns near the top (peek of the previous item), follows the live edge only while the

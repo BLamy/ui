@@ -1,7 +1,11 @@
 /* Test runs: the run card (a live run's ring fills journey by journey; used in the Overview and in Ask QA), and
    the project's run history as a list whose rows push the run's page. */
 import type { ReactNode } from 'react';
-import { Icon, NumberMorph, ProgressRing, TextMorph, cn } from '@brett_lamy/ui';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { TextMorph } from '@/components/ui/text-morph';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { LIVE_PLAN, relativeTime, type Project, type Run } from './data';
 import { Empty, RunStatusBadge, SectionLabel, Pressable } from './parts';
 import { useLoopQA } from './state';

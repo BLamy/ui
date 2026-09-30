@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
 import { WorkbenchDock, WorkbenchDockClose } from './workbench-shell';
 import { TERMINAL_SEED } from './fixtures';
-import { themeScopeProps, WorkbenchTheme} from '@brett_lamy/ui';
-import '@brett_lamy/ui/styles.css';
+import { WorkbenchTheme } from '@/components/ui/workbench-theme';
+import { themeScopeProps } from '@/lib/theme';
 
 const TERMINAL = themeScopeProps({ scope: 'terminal', appearance: 'dark' });
 

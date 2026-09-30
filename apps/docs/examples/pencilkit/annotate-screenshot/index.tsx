@@ -1,14 +1,8 @@
 import { useState } from 'react'
-import {
-  InkPicker,
-  PencilActions,
-  PencilCanvas,
-  PencilToolbar,
-  PencilToolbarDivider,
-  ToolPicker,
-  usePencilHistory,
-  type PencilTool,
-} from '@brett_lamy/ui'
+import { type PencilTool } from '@/components/ui/pencilkit/constants'
+import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas'
+import { InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker } from '@/components/ui/pencilkit/pencil-toolbar'
+import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history'
 
 const highlighters = ['#FFD60A', '#FF375F', '#30D158']
 

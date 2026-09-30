@@ -7,10 +7,11 @@
    the root of a stack on a phone; each project's pages push onto the detail column's stack. Ask QA docks as a
    column when there's room and slides over the page when there isn't. */
 import { useEffect, useRef, type ReactNode } from 'react';
-import {
-  AppearanceProvider, ArtifactChatContainer, BLProvider, SplitView, SplitViewDetail, SplitViewStack, Toaster, useAppearance, useContainerWidth,
-  useSplitView, useSplitViewStack, type Appearance,
-} from '@brett_lamy/ui';
+import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container';
+import { SplitView, SplitViewDetail, SplitViewStack, useSplitView, useSplitViewStack } from '@/components/ui/split-view';
+import { Toaster } from '@/components/ui/toast';
+import { useContainerWidth } from '@/lib/container';
+import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { AskComposer, AskQA } from './ask-qa';
 import { BugPage } from './bug-detail';
 import { Commands } from './commands';

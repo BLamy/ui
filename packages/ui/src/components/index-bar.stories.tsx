@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { IndexBar } from './index-bar';
+import { IndexBar } from '@/components/ui/index-bar';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof IndexBar> = {

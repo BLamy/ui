@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 const hue = (s: string) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
 

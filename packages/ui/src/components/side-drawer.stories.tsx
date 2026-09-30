@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button } from './button';
-import { SideDrawer } from './side-drawer';
+import { Button } from '@/components/ui/button';
+import { SideDrawer } from '@/components/ui/side-drawer';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof SideDrawer> = {

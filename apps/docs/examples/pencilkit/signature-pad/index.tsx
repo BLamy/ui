@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Button, PencilCanvas, type PencilStroke } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { type PencilStroke } from '@/components/ui/pencilkit/constants'
+import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas'
 
 export default function SignaturePad() {
   const [strokes, setStrokes] = useState<PencilStroke[]>([])

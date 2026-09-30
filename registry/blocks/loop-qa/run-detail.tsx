@@ -1,9 +1,16 @@
 /* A run: its ring and status, what it found (findings), what it covered, the exploration it recorded, and its
    journeys grouped by outcome — a journey with bugs unfolds to list them. A live run fills in as it goes. */
 import { useState, type ReactNode } from 'react';
-import {
-  AnimatedHeight, Button, Chevron, Icon, MarkdownView, ProgressRing, ReplayPreview, SplitViewContent, SplitViewHeader, Spinner, cn,
-} from '@brett_lamy/ui';
+import { AnimatedHeight } from '@/components/ui/animated-height';
+import { Button } from '@/components/ui/button';
+import { Chevron } from '@/components/ui/icon-swap';
+import { MarkdownView } from '@/components/ui/markdown-view';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { ReplayPreview } from '@/components/ui/replay-preview';
+import { Spinner } from '@/components/ui/spinner';
+import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { LIVE_PLAN, dateTime, relativeTime, type Journey, type Run } from './data';
 import { PageActions } from './header';
 import { EnvBadge, Panel, RunStatusBadge, SectionLabel, SeverityBadge, Pressable } from './parts';

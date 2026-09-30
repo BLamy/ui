@@ -1,12 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 interface MenuItemProps {
   icon: string

@@ -5,10 +5,10 @@ import {
   Input as AriaInput, type InputProps as AriaInputProps,
   composeRenderProps,
 } from 'react-aria-components';
-import { selectableText } from '../lib/primitives';
-import { cn } from '../lib/utils';
-import { ListBox, ListBoxItem, ListBoxSection, type ListBoxItemProps, type ListBoxProps } from './list-box';
-import { Popover, type PopoverProps } from './popover';
+import { selectableText } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
+import { ListBox, ListBoxItem, ListBoxSection, type ListBoxItemProps, type ListBoxProps } from '@/components/ui/list-box';
+import { Popover, type PopoverProps } from '@/components/ui/popover';
 
 /* ══ ComboBox — react-aria's ComboBox: a filterable text field with a ListBox popover (arrow keys open and move,
    Enter commits, Esc reverts/closes).

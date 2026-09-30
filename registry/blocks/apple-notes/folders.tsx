@@ -1,9 +1,10 @@
 /* Folders: iCloud (with All iCloud and Recently Deleted) and On My Mac, each collapsible, with note counts,
    plus tags. Tiled or floating beside the list on wide screens; on the phone it is the root of the stack (with a
    large title and a bottom bar), and picking a folder or a tag pushes its notes. */
-import {
-  Icon, NumberMorph, SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, cn, useSplitView,
-} from '@brett_lamy/ui';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { ICLOUD, ON_MY_MAC, TAGS } from './data';
 import { BarButton, BottomBar } from './parts';
 import type { NotesState } from './use-notes';

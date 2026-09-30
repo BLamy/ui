@@ -4,7 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { ChatAvatar } from './chat-avatar';
 import { RichText } from './rich-text';
 import type { ChatUser } from './chat-users';
-import { cn } from '@brett_lamy/ui';
+import { cn } from '@/lib/utils';
 
 /* ══ Message — one row of a transcript, from parts ══
    <Message user={ada}>

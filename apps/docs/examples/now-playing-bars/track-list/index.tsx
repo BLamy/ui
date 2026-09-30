@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NowPlayingBars } from '@brett_lamy/ui'
+import { NowPlayingBars } from '@/components/ui/now-playing-bars'
 
 const tracks = [
   { title: 'Golden Hour', time: '3:41' },

@@ -1,10 +1,13 @@
 /* The sidebar: the mark, a search field that opens ⌘K, All projects, every project with its open-bug count (a
    spinner while a run is live on it), and a footer with the credit meter, notifications and the account. Tiled at
    regular width, floating over the page on a tablet, the root of the stack on a phone. */
-import {
-  Icon, Kbd, KbdGroup, NumberMorph, PopoverContent, PopoverTrigger, Spinner, SplitViewContent, SplitViewHeader, SplitViewItem,
-  SplitViewSection, SplitViewSidebar, cn, useSplitView,
-} from '@brett_lamy/ui';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Spinner } from '@/components/ui/spinner';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import type { CSSProperties } from 'react';
 import { isOpen } from './agent';
 import { CREDITS, ME, NOTIFICATIONS, PROJECTS, relativeTime } from './data';

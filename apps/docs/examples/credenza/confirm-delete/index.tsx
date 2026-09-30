@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { Button, Credenza, Icon } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { Credenza } from '@/components/ui/credenza'
+import { Icon } from '@/lib/icon'
 
 const photos = [
   '#FF9F0A',

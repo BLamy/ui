@@ -1,7 +1,7 @@
 /* Generated album artwork: each album's two-stop gradient under one of a handful of patterns, with the title
    set small in a corner the way real covers do. Pure SVG, so it's crisp at 40px and at full screen. */
 import { useId, type CSSProperties } from 'react';
-import { cn } from '@brett_lamy/ui';
+import { cn } from '@/lib/utils';
 import { ALBUM, type Album, type Playlist } from './data';
 
 function PatternArt({ album: a, uid }: { album: Album; uid: string }) {

@@ -1,7 +1,7 @@
 import { TextArea as AriaTextArea, type TextAreaProps as AriaTextAreaProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { selectableText } from '../lib/primitives';
-import { cn } from '../lib/utils';
+import { selectableText } from '@/lib/primitives';
+import { cn } from '@/lib/utils';
 
 /* ══ Textarea — multi-line sibling of Input on react-aria's TextArea ══ */
 export const textareaVariants = cva(

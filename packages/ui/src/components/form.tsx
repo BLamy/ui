@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Form as AriaForm, type FormProps as AriaFormProps } from 'react-aria-components';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ Form — react-aria's Form: native submit + constraint validation, with react-aria fields' errors shown on
    submit (validationBehavior="native") or live ("aria"). `validationErrors` maps server errors onto fields by

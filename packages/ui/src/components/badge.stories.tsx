@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Badge } from './badge';
+import { Badge } from '@/components/ui/badge';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Badge> = {

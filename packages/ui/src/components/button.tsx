@@ -1,8 +1,8 @@
 import { Button as AriaButton, type ButtonProps as AriaButtonProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { JSX } from 'react';
-import { cn } from '../lib/utils';
-import { TextMorph } from './text-morph';
+import { cn } from '@/lib/utils';
+import { TextMorph } from '@/components/ui/text-morph';
 
 /* ══ Button — shadcn's button on react-aria's Button ══
    Press, hover, and focus-visible come from react-aria as data attributes; variants are cva. A press sinks the

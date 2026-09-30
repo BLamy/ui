@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { PopoverTrigger, PopoverContent } from './popover';
-import { Button } from './button';
+import { PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 import { Heading } from 'react-aria-components';
-import { TextField } from './text-field';
-import { Label } from './label';
-import { Input } from './input';
-import { Slider } from './slider';
+import { TextField } from '@/components/ui/text-field';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { Screen } from '../stories/primitive-frame';
 
 const meta: Meta<typeof PopoverContent> = {

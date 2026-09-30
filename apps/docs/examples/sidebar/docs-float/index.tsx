@@ -1,11 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 const guides = ['Introduction', 'Installation', 'Theming']
 const components = ['Button', 'List', 'NavigationStack', 'Sidebar', 'TabView']

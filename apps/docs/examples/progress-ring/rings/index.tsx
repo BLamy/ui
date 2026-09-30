@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Button, Icon, ProgressRing } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { ProgressRing } from '@/components/ui/progress-ring'
+import { Icon } from '@/lib/icon'
 
 // The arc springs to each new value and the percentage rolls its digits.
 export default function Rings() {

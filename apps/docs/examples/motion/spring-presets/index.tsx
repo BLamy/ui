@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Button, springCss, type SpringName } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { springCss, type SpringName } from '@/lib/motion'
 
 const PRESETS: { id: SpringName; use: string }[] = [
   { id: 'snappy', use: 'small controls, presses, indicators' },

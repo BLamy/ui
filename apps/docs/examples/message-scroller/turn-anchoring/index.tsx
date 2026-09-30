@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { MessageScroller, WorkbenchTheme } from '@brett_lamy/ui'
+import { MessageScroller } from '@/components/ui/message-scroller'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 function TurnAnchoring() {
   const [msgs, setMsgs] = useState([

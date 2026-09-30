@@ -11,15 +11,15 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, animate, motion } from 'framer-motion';
-import { collectSlots, defineSlot, useContainerWidth } from '../lib/container';
-import { springs } from '../lib/motion';
-import { useAppearance } from '../lib/theme';
-import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from '../components/chat/chat-column';
-import { cn } from '../lib/utils';
-import { FloatingChat, glassScopeProps, type FloatingChatFabPosition, type FloatingChatProps } from '../components/chat/floating-chat';
-import { sheetToneProps } from '../components/chat/floating-sheet';
+import { collectSlots, defineSlot, useContainerWidth } from '@/lib/container';
+import { springs } from '@/lib/motion';
+import { useAppearance } from '@/lib/theme';
+import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from '@/components/ui/chat-column';
+import { cn } from '@/lib/utils';
+import { FloatingChat, glassScopeProps, type FloatingChatFabPosition, type FloatingChatProps } from '@/components/ui/floating-chat';
+import { sheetToneProps } from '@/components/ui/floating-sheet';
 import { cva } from 'class-variance-authority';
-import { ChatHostContext, ComposerPortal, createOutletStore, useAttachHost, usePersistentHost } from '../lib/chat/persistent-host';
+import { ChatHostContext, ComposerPortal, createOutletStore, useAttachHost, usePersistentHost } from '@/lib/persistent-host';
 
 export type ArtifactChatLayout = 'split' | 'floating';
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Tabs, TabList, Tab, TabPanel } from './tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
+import { Tabs, TabList, Tab, TabPanel } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Tabs> = {

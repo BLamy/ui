@@ -1,6 +1,12 @@
 /* Code tab: branch toolbar, file table, README and About sidebar; folders and files with GitHub's file-tree sidebar. */
 import { useState, type ReactNode } from 'react';
-import { Avatar, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, MarkdownView, Segmented, SyntaxHighlightingCopyButton, cn } from '@brett_lamy/ui';
+import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { MarkdownView } from '@/components/ui/markdown-view';
+import { Segmented } from '@/components/ui/segmented';
+import { SyntaxHighlightingCopyButton } from '@/components/ui/syntax-highlighting';
+import { cn } from '@/lib/utils';
 import { README_MD, REPO, TREE, findNode, type FileNode } from './data';
 import { Box, CodeView, Counter, FileTree, Oct, ghButton, githubMarkdown, type OctName, type Layout, type Nav } from './parts';
 

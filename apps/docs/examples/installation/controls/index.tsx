@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { Avatar, Segmented, Spinner, Switch } from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Segmented } from '@/components/ui/segmented'
+import { Spinner } from '@/components/ui/spinner'
+import { Switch } from '@/components/ui/switch'
 
 const ranges = [
   { id: 'day', label: 'Day' },

@@ -1,4 +1,4 @@
-import { Icon } from '@brett_lamy/ui';
+import { Icon } from '@/lib/icon';
 import { useChatUsers } from './components/chat-users';
 import {
   Message,

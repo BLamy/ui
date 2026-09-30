@@ -1,16 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import {
-  ArtifactChatContainer,
-  Composer,
-  ComposerAttach,
-  ComposerAttachments,
-  ComposerCard,
-  ComposerExpand,
-  ComposerFooter,
-  ComposerInput,
-  ComposerSend,
-  ComposerSpacer,
-} from '@brett_lamy/ui'
+import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container'
+import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
 
 const messages = [
   ['You', 'Compare conversion by region.'],

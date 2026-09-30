@@ -4,7 +4,11 @@
    commands (lock, sleep, empty Trash, dark mode, restart…), Web Search, and multi-step Workflows. ⌥Space hides
    and shows the bar; Esc clears, then hides. All sample data is invented; the clock is fixed at 9:41. */
 import { useCallback, useRef, useState } from 'react';
-import { BLProvider, Toaster, cn, createToastQueue, useAppearance, useContainerSize, useHotkey, type CommandMenuApi } from '@brett_lamy/ui';
+import { useHotkey, type CommandMenuApi } from '@/components/ui/command-menu';
+import { Toaster, createToastQueue } from '@/components/ui/toast';
+import { useContainerSize } from '@/lib/container';
+import { BLProvider, useAppearance } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 import { Launcher } from './launcher';
 import { Dock, Hat, MenuBar, PowerOverlay, Wallpaper } from './parts';
 import { AlfredProvider, useAlfred } from './state';

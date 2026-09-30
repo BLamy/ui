@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Kbd, KbdGroup } from './kbd';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Kbd> = {

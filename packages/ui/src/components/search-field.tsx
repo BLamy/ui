@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { Button as AriaButton, Input, SearchField as AriaSearchField } from 'react-aria-components';
-import { Icon } from '../lib/icon';
-import { cn } from '../lib/utils';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 
 export interface SearchFieldProps {
   /** Controlled query. */

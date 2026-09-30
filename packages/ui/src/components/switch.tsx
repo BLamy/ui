@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Switch as AriaSwitch } from 'react-aria-components';
-import { cn } from '../lib/utils';
-import { useRowLabel } from '../lib/row-label';
+import { cn } from '@/lib/utils';
+import { useRowLabel } from '@/lib/row-label';
 
 export interface SwitchProps {
   checked: boolean;

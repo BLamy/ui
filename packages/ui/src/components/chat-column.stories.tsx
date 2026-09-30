@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '../composer/composer';
-import '../../styles.css';
-import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from './chat-column';
-import { ThemeScope } from '../../lib/theme';
+import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
+import '../styles.css';
+import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from '@/components/ui/chat-column';
+import { ThemeScope } from '@/lib/theme';
 
 /* The chat composer: the Workbench Composer parts, trimmed to editor + send. */
 function ChatComposer({ placeholder, onSubmit }: { placeholder: string; onSubmit?: () => void }) {

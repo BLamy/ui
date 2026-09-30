@@ -1,16 +1,7 @@
 import { useState } from 'react'
-import {
-  Button,
-  CommandEmpty,
-  CommandFooter,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandMenu,
-  Kbd,
-  KbdGroup,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { CommandEmpty, CommandFooter, CommandGroup, CommandInput, CommandItem, CommandList, CommandMenu } from '@/components/ui/command-menu'
+import { Kbd, KbdGroup } from '@/components/ui/kbd'
 
 const pages = ['Introduction', 'Installation', 'Theming', 'Motion', 'Composer', 'Toast', 'NavigationStack', 'SplitView', 'CommandMenu']
 

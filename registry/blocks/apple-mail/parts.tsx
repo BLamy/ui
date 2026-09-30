@@ -1,7 +1,11 @@
 /* Toolbar pieces shared by the columns at every width: tinted bar buttons, the Move / Reply / Mark
    pull-down menus, and the translucent bottom bar. */
 import type { ReactNode } from 'react';
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, Icon, IconSwap, cn } from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { IconSwap } from '@/components/ui/icon-swap';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { MOVE_TARGETS, type Message } from './data';
 import type { MailState } from './use-mail';
 

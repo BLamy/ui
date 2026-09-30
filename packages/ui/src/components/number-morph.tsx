@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
-import { fades, springs } from '../lib/motion';
-import { cn } from '../lib/utils';
+import { fades, springs } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 /* ══ NumberMorph — a formatted number whose digits roll and whose separators slide (NumberFlow-style) ══
    The value is formatted with Intl.NumberFormat and every part keeps its identity by place: the units digit

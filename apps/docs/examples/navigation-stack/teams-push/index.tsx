@@ -1,12 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Icon,
-  List,
-  ListRow,
-  ListSection,
-  NavigationStack,
-  type Screen,
-} from '@brett_lamy/ui'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import { Icon } from '@/lib/icon'
 
 const teams = ['Design', 'Engineering', 'Research']
 

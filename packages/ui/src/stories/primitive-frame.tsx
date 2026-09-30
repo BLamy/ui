@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 import { Pad, Phone } from './frame';
 
 /** Story-only: the shadcn primitives shown on an iOS grouped screen (Phone) or a padded card (Pad). */

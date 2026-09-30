@@ -1,12 +1,8 @@
 import { useState } from 'react'
-import {
-  Icon,
-  Morph,
-  MorphGroup,
-  MorphPresence,
-  NowPlayingBars,
-  Slider,
-} from '@brett_lamy/ui'
+import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph'
+import { NowPlayingBars } from '@/components/ui/now-playing-bars'
+import { Slider } from '@/components/ui/slider'
+import { Icon } from '@/lib/icon'
 
 const art = 'linear-gradient(135deg,#ff7a59 0%,#ff3d7f 45%,#7b3dff 100%)'
 

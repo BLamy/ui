@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { BLProvider } from '../lib/theme';
+import { BLProvider } from '@/lib/theme';
 
 /** Story-only helpers: sized frames wrapping BLProvider (BL UI containers are absolutely positioned). */
 

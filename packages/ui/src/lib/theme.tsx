@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
-import { cn, BARH } from './utils';
-import { THEME_VARS, type ThemeVar } from './tokens.generated';
+import { cn, BARH } from '@/lib/utils';
+import { THEME_VARS, type ThemeVar } from '@/lib/tokens.generated';
 
 export { THEME_VARS, type ThemeVar };
 

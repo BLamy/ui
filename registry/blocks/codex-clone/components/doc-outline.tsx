@@ -1,4 +1,4 @@
-import { IndexBar } from '@brett_lamy/ui';
+import { IndexBar } from '@/components/ui/index-bar';
 
 export interface OutlineItem {
   text: string;

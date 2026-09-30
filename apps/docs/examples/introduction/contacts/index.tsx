@@ -1,16 +1,11 @@
 import { useRef, useState } from 'react'
-import {
-  Avatar,
-  BLProvider,
-  IndexBar,
-  List,
-  ListRow,
-  ListSection,
-  NavigationStack,
-  SearchField,
-  TabBar,
-  type Screen,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { IndexBar } from '@/components/ui/index-bar'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack'
+import { SearchField } from '@/components/ui/search-field'
+import { TabBar } from '@/components/ui/tab-bar'
+import { BLProvider } from '@/lib/theme'
 
 type Person = { f: string; l: string; role: string }
 

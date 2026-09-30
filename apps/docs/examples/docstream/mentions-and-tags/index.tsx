@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Button, MarkdownView, type ReferenceNode } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view'
 
 const answer = `@maya shipped the tray drag in #credenza last week, and @jonas
 tuned the springs in #feedback.

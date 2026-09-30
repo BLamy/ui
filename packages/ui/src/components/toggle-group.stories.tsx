@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ToggleGroup, ToggleGroupItem } from './toggle-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof ToggleGroup> = {

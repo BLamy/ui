@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Spinner } from './spinner';
+import { Spinner } from '@/components/ui/spinner';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof Spinner> = {

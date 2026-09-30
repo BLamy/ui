@@ -3,10 +3,9 @@
    recommendations, and Wi-Fi networks with a QR code. Wide: three tiled columns. Tablet: list + detail with
    the sidebar floating. Phone: one column at a time, pushed like iOS. All sample data is invented. */
 import { useState } from 'react';
-import {
-  BLProvider, SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, Toaster, createToastQueue, useAppearance,
-  type SplitViewSelection,
-} from '@brett_lamy/ui';
+import { SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, type SplitViewSelection } from '@/components/ui/split-view';
+import { Toaster, createToastQueue } from '@/components/ui/toast';
+import { BLProvider, useAppearance } from '@/lib/theme';
 import type { CategoryId } from './data';
 import { Detail } from './detail';
 import { ItemList } from './item-list';

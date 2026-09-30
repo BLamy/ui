@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Toaster, createToastQueue, toastApi, type Appearance } from '@brett_lamy/ui';
+import { Toaster, createToastQueue, toastApi } from '@/components/ui/toast';
+import { type Appearance } from '@/lib/theme';
 import { SURFACES, type SurfaceKind } from './components/workbench/surfaces';
 import { WorkbenchAction, WorkbenchActions, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarTrigger, WorkbenchTab, WorkbenchTabBar, WorkbenchTitle } from './components/workbench/workbench-shell';
 import { AppSidebar } from './components/app-sidebar';

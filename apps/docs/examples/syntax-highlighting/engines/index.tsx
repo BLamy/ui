@@ -1,4 +1,4 @@
-import { SyntaxHighlighting } from '@brett_lamy/ui'
+import { SyntaxHighlighting } from '@/components/ui/syntax-highlighting'
 
 const snippet = `def backoff(attempt: int, base: float = 1.0) -> float:
     """Exponential backoff in seconds, capped at a minute."""

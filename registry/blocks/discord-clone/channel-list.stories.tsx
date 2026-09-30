@@ -1,4 +1,3 @@
-import './chat-theme.css';
 import { useState, type CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ChannelGroup, ChannelItem, ChannelList } from './components/channel-list';

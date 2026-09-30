@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ NowPlayingBars — the equaliser that bounces beside the track that is playing ══
    A few bars scale from the bottom on staggered, slightly different periods, so they never fall into step.

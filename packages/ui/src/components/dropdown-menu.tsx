@@ -13,9 +13,9 @@ import {
   useSlottedContext,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Icon } from '../lib/icon';
-import { cn } from '../lib/utils';
-import { Popover, type PopoverProps } from './popover';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
+import { Popover, type PopoverProps } from '@/components/ui/popover';
 
 /* ══ DropdownMenu — react-aria's MenuTrigger / Menu / MenuItem / MenuSection / SubmenuTrigger, drawn as an
    iOS pull-down menu: 17px rows, trailing icons, thick gaps between sections, checkmarks on the leading edge

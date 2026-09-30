@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, type ComponentProps, type ReactNode } from 'react';
 import { Button, Input, composeRenderProps } from 'react-aria-components';
-import { Icon, cn } from '@brett_lamy/ui';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { cva } from 'class-variance-authority';
 
 /* ══ ChatComposer — the message field ══

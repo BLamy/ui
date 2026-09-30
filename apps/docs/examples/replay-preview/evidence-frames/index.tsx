@@ -1,4 +1,4 @@
-import { ReplayPreview, formatReplayTime, replayDemoEvents } from '@brett_lamy/ui'
+import { ReplayPreview, formatReplayTime, replayDemoEvents } from '@/components/ui/replay-preview'
 
 // `chrome="none"` and `controls={false}` turn the player into a still frame
 // of the recording at `initialTime` — screenshot evidence that is the page

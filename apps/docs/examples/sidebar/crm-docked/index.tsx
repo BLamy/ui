@@ -1,12 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Avatar,
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 
 const deals = [
   { name: 'Northwind renewal', stage: 'Negotiation', value: '$48k' },

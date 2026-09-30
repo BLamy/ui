@@ -1,20 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Avatar,
-  Badge,
-  Button,
-  List,
-  ListRow,
-  ListSection,
-  TabView,
-  TabViewBar,
-  TabViewFooter,
-  TabViewIndicator,
-  TabViewList,
-  TabViewPanel,
-  TabViewPanels,
-  TabViewTab,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { List, ListRow, ListSection } from '@/components/ui/list'
+import { TabView, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewPanel, TabViewPanels, TabViewTab } from '@/components/ui/tab-view'
 
 const inboxTabs = [
   { id: 'all', label: 'All', count: 0 },

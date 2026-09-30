@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { PencilStroke } from '../../lib/pencilkit/constants';
-import type { PencilStrokesChangeSource } from './pencil-canvas';
+import type { PencilStroke } from '@/components/ui/pencilkit/constants';
+import type { PencilStrokesChangeSource } from '@/components/ui/pencilkit/pencil-canvas';
 
 export interface PencilHistory {
   strokes: PencilStroke[];

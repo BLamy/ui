@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import '@brett_lamy/ui/styles.css';
-import { AppearanceProvider } from '@brett_lamy/ui';
+import { AppearanceProvider } from '@/lib/theme';
 import { MapChatDemo, type MapChatDemoProps } from './map-chat-demo';
 
 interface Args extends MapChatDemoProps {

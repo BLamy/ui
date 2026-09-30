@@ -2,9 +2,11 @@
    search, and the bulk actions (copy every report as Markdown, download them, connect an issue tracker). The
    table's rows open the bug; the status column is a menu of its own. Narrow containers stack each row. */
 import { useMemo, useState, type CSSProperties, type Key } from 'react';
-import {
-  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, Icon, SearchField, cn,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { SearchField } from '@/components/ui/search-field';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import {
   ENVIRONMENTS, KINDS, SEVERITIES, SEVERITY_LABEL, STATUSES, STATUS_LABEL, bugReport, relativeTime, severityRank,
   type Bug, type BugStatus, type Project,

@@ -1,15 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  Composer,
-  ComposerAddon,
-  ComposerButton,
-  ComposerCard,
-  ComposerInput,
-  ComposerSelect,
-  ComposerSend,
-  Icon,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { Composer, ComposerAddon, ComposerButton, ComposerCard, ComposerInput, ComposerSelect, ComposerSend } from '@/components/ui/composer/composer'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+import { Icon } from '@/lib/icon'
 
 const tones = [
   { id: 'neutral', label: 'Neutral' },

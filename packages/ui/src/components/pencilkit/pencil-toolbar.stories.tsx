@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { type PencilTool } from '../../lib/pencilkit/constants';
-import { ThemeScope } from '../../lib/theme';
+import { type PencilTool } from '@/components/ui/pencilkit/constants';
+import { ThemeScope } from '@/lib/theme';
 import {
   InkPicker,
   PencilActions,
@@ -10,7 +10,7 @@ import {
   PencilToolbarDivider,
   ToolPicker,
   WidthPicker,
-} from './pencil-toolbar';
+} from '@/components/ui/pencilkit/pencil-toolbar';
 
 function Frame({ dark, children }: { dark?: boolean; children: React.ReactNode }) {
   return (

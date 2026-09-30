@@ -2,9 +2,13 @@
    (one player that seeks from exploration to exploration while the caption slides the way you paged), the
    latest run's findings and the newest open bugs. */
 import { useRef, useState } from 'react';
-import {
-  Button, ContentSwap, Icon, MarkdownView, ProgressRing, ReplayPreview, formatReplayTime, useDirection, type ReplayPreviewHandle,
-} from '@brett_lamy/ui';
+import { ContentSwap } from '@/components/ui/animated-height';
+import { Button } from '@/components/ui/button';
+import { MarkdownView } from '@/components/ui/markdown-view';
+import { ProgressRing } from '@/components/ui/progress-ring';
+import { ReplayPreview, formatReplayTime, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
+import { Icon } from '@/lib/icon';
+import { useDirection } from '@/lib/motion';
 import { isOpen } from './agent';
 import { EXPLORATIONS, PLAYWRIGHT_TESTS, relativeTime, type Bug, type Project } from './data';
 import { BarButton, Panel, SeverityBadge, SeverityBar, StatTile, Pressable } from './parts';

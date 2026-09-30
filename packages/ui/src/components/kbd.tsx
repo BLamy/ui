@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import { Keyboard } from 'react-aria-components';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ Kbd — keycap. react-aria's Keyboard, so inside a menu item it becomes the item's shortcut slot. ══ */
 export function Kbd({ className, ...props }: ComponentProps<typeof Keyboard>) {

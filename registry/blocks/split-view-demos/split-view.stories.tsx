@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, NavigationStack, type Screen, BLProvider } from '@brett_lamy/ui';
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar } from '@/components/ui/split-view';
+import { BLProvider } from '@/lib/theme';
 
 import {
   SplitViewGalleryDemo, SplitViewLibraryDemo, SplitViewMailDemo, SplitViewNotesDemo, SplitViewRemindersDemo,

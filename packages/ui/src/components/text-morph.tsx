@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
-import { springs } from '../lib/motion';
-import { cn } from '../lib/utils';
+import { springs } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 /* ══ TextMorph — a label that morphs into the next one, Family-style ══
    "Continue" → "Confirm": the letters the two words share ("C", "o", "n", "i") slide to their new places, the

@@ -1,12 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Avatar,
-  Button,
-  EditBar,
-  List,
-  ListRow,
-  ListSection,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { EditBar } from '@/components/ui/edit-bar'
+import { List, ListRow, ListSection } from '@/components/ui/list'
 
 const initialMail = [
   { id: 1, f: 'Nadia', l: 'Brooks', subject: 'Launch checklist', time: '9:41' },

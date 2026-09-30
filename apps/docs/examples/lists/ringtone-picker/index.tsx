@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { List, ListRow, ListSection } from '@brett_lamy/ui'
+import { List, ListRow, ListSection } from '@/components/ui/list'
 
 const tones = ['Radar', 'Apex', 'Chimes', 'Signal', 'Silk']
 

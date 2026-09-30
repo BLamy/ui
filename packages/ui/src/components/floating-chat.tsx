@@ -11,15 +11,15 @@ import {
   type RefObject,
 } from 'react';
 import { Button } from 'react-aria-components';
-import { collectSlots, defineSlot } from '../../lib/container';
-import { springCss } from '../../lib/motion';
-import { themeScopeClass, useAppearance, useChromeHidden } from '../../lib/theme';
+import { collectSlots, defineSlot } from '@/lib/container';
+import { springCss } from '@/lib/motion';
+import { themeScopeClass, useAppearance, useChromeHidden } from '@/lib/theme';
 import { cva } from 'class-variance-authority';
-import { ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerFab, ComposerOutlet, type ComposerBumpProgress } from '../composer/composer';
-import { Icon } from '../../lib/icon';
-import { cn } from '../../lib/utils';
-import { sheetToneProps, type FloatingSheetAppearance, type FloatingSheetFabPosition, type FloatingSheetTone } from './floating-sheet';
-import { ChatHostContext } from '../../lib/chat/persistent-host';
+import { ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerFab, ComposerOutlet, type ComposerBumpProgress } from '@/components/ui/composer/composer';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
+import { sheetToneProps, type FloatingSheetAppearance, type FloatingSheetFabPosition, type FloatingSheetTone } from '@/components/ui/floating-sheet';
+import { ChatHostContext } from '@/lib/persistent-host';
 
 export type FloatingChatFabPosition = FloatingSheetFabPosition;
 

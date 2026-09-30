@@ -1,30 +1,30 @@
 #!/usr/bin/env node
-/* Builds the shadcn registry.
+/* Builds the shadcn registry — source-copy items, computed from the code.
  *
- *   node tools/registry/build.mjs            → registry/components/<name>.tsx + registry.json (repo root)
+ *   node tools/registry/build.mjs            → registry.json (repo root)
  *   node tools/registry/build.mjs --static   → …then `shadcn build` into apps/docs/public/r (served at /ui/r)
  *   node tools/registry/build.mjs --static --url http://localhost:4500/r --out /tmp/r
  *                                            → a static registry for another host (local testing); the
  *                                              committed registry.json is left alone
  *   node tools/registry/build.mjs --check    → fail if the committed files are stale (CI)
  *
- * Items:
- *   bl-ui            registry:style — installs @brett_lamy/ui, imports its stylesheet, adds the BL token utilities
- *                    (bg-bl-card, text-bl-label, …) to the app's Tailwind theme. Everything else depends on it.
- *   <component>      registry:ui — one per registry/components/<name>.json: a thin `@/components/ui/<name>`
- *                    re-export of the component's parts.
- *   <block>          registry:block — one per registry/blocks/<slug>/meta.json; files land together in
- *                    components/blocks/<slug>/ so their relative imports keep working.
+ * Items (see graph.mjs for how library modules are grouped and their dependencies computed from imports):
+ *   bl-ui            registry:style — the tokens (tokens.css → cssVars.theme) and framework CSS (styles.css → css).
+ *                    Every other item depends on it. No npm package is installed.
+ *   bl-theme         registry:theme — the iOS palette (theme.css), opt-in.
+ *   <component>      registry:ui / registry:lib — the module's real source, installed at components/ui/… or lib/….
+ *                    registryDependencies point at our own items by URL (never shadcn's stock ones of the same name).
+ *   <block>          registry:block — registry/blocks/<slug>/meta.json; files land in components/blocks/<slug>/.
  */
 import { posix } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import postcss from 'postcss';
 import ts from 'typescript';
+import { ROOT, SRC, buildGraph, importsOf, resolveModule, npmVersion, moduleExports } from './graph.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
 const opt = (name) => {
@@ -40,29 +40,8 @@ const CHECK = flag('--check');
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 const readJson = (p) => JSON.parse(read(p));
 const rel = (p) => relative(ROOT, p).split('\\').join('/');
-
-/* ── the packages' public exports, parsed from their index.ts ── */
-function publicExports(indexPath) {
-  const src = read(indexPath);
-  const values = new Set();
-  const types = new Set();
-  for (const m of src.matchAll(/export\s+(type\s+)?\{([^}]*)\}\s*from/g)) {
-    for (let spec of m[2].split(',')) {
-      spec = spec.replace(/\/\/.*$/gm, '').trim();
-      if (!spec) continue;
-      const isType = !!m[1] || spec.startsWith('type ');
-      const name = spec.replace(/^type\s+/, '').split(/\s+as\s+/).pop().trim();
-      (isType ? types : values).add(name);
-    }
-  }
-  return { values, types };
-}
-
-const PACKAGES = {
-  '@brett_lamy/ui': { ...publicExports('packages/ui/src/index.ts'), version: readJson('packages/ui/package.json').version },
-};
-const dep = (pkg) => `${pkg}@^${PACKAGES[pkg].version}`;
-const BASE_ITEM = `${URL_BASE}/bl-ui.json`;
+const itemUrl = (name) => `${URL_BASE}/${name}.json`;
+const BASE_ITEM = itemUrl('bl-ui');
 
 const errors = [];
 const written = [];
@@ -79,40 +58,66 @@ function emit(path, content) {
   written.push(path);
 }
 
-/* ── bl-ui: the base item ── */
-// The extra color tokens BL UI registers next to shadcn's (see packages/ui/src/tokens.css and the Theming page).
-const EXTRA_COLORS = /^color-(success|warning|tertiary-foreground|secondary-strong|overlay|bar|sticky|handle|link|code|code-foreground)$/;
+/* ── CSS → the registry's `css` object ── */
+// Converts a stylesheet to shadcn's nested-object form: rules → { selector: { prop: value } }, at-rules with a body →
+// { '@name params': { … } }. Imports, layer-order statements and `@source` are skipped (the app owns those).
+function cssToRegistry(css) {
+  const convert = (container) => {
+    const out = {};
+    container.each((node) => {
+      if (node.type === 'decl') out[node.prop] = node.important ? `${node.value} !important` : node.value;
+      else if (node.type === 'rule') {
+        const body = convert(node);
+        out[node.selector.replace(/\s+/g, ' ')] = { ...(out[node.selector.replace(/\s+/g, ' ')] ?? {}), ...body };
+      } else if (node.type === 'atrule') {
+        if (['import', 'source', 'plugin', 'theme'].includes(node.name)) return;
+        if (!node.nodes) {
+          if (node.name === 'custom-variant') out[`@custom-variant ${node.params}`] = {};
+          return; // `@layer a, b;`
+        }
+        out[`@${node.name} ${node.params}`.trim()] = convert(node);
+      }
+    });
+    return out;
+  };
+  return convert(postcss.parse(css));
+}
+
+/* ── bl-ui: the base item — tokens and framework CSS ── */
+// Colors shadcn's own theme already maps (`--color-background: var(--background)` …): left out, they belong to the app.
+const SHADCN_COLORS = /^color-(background|foreground|card|card-foreground|popover|popover-foreground|primary|primary-foreground|secondary|secondary-foreground|muted|muted-foreground|accent|accent-foreground|destructive|border|input|ring|chart-\d|sidebar(-[a-z-]+)?)$/;
 function themeVars() {
-  // BL's own utilities from tokens.css's `@theme inline`: the extra colors (with their shadcn-derived fallbacks),
-  // the iOS font and the spring motion tokens. shadcn's own names (background, primary, …) and font-mono are left
-  // out: in a consumer's app those belong to the app's theme already.
   const css = read('packages/ui/src/tokens.css');
-  const block = css.slice(css.indexOf('@theme inline {'));
   const vars = {};
-  for (const m of block.matchAll(/^\s*--([\w-]+):\s*([^;]+);/gm)) {
-    const [, name, value] = m;
-    if (EXTRA_COLORS.test(name) || /^(spacing-toolbar|font-ios|ease-ios|ease-spring-|duration-spring-|ease-exit|duration-exit|transition-duration-)/.test(name)) {
-      vars[name] = value.trim();
+  for (const block of css.matchAll(/@theme(?:\s+inline)?\s*\{([\s\S]*?)\n\}/g)) {
+    for (const m of block[1].replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/^\s*--([\w-]+):\s*([^;]+);/gm)) {
+      if (!SHADCN_COLORS.test(m[1])) vars[m[1]] = m[2].trim();
     }
   }
   return vars;
 }
 
-const baseItem = {
-  name: 'bl-ui',
-  type: 'registry:style',
-  title: 'BL UI',
-  description:
-    "Installs @brett_lamy/ui, imports its stylesheet, and registers BL UI's extra color utilities (text-tertiary-foreground, bg-secondary-strong, bg-bar, text-success, …) next to shadcn's.",
-  dependencies: [dep('@brett_lamy/ui')],
-  cssVars: { theme: themeVars() },
-  css: { '@import "@brett_lamy/ui/styles.css"': {} },
-  docs: 'BL UI colors are your shadcn theme variables. For the iOS look add the bl-theme item (npx shadcn add …/r/bl-theme.json). With Vite, pre-bundle the Markdown engine (it ships TypeScript source): optimizeDeps: { include: ["@brett_lamy/ui > @brett_lamy/docstream", "@brett_lamy/ui > @brett_lamy/docstream-editor"] }.',
-  files: [],
-};
+function baseItem() {
+  const tokens = read('packages/ui/src/tokens.css');
+  const customVariant = tokens.match(/@custom-variant\s+dark\s+([^;]+);/)?.[1];
+  const css = {
+    ...(customVariant ? { [`@custom-variant dark ${customVariant}`]: {} } : {}),
+    ...cssToRegistry(read('packages/ui/src/styles.css')),
+  };
+  return {
+    name: 'bl-ui',
+    type: 'registry:style',
+    title: 'BL UI',
+    description:
+      "BL UI's tokens and framework CSS: registers its extra color utilities (text-tertiary-foreground, bg-bar, text-success, …), the radius, text-size, shadow and size scales and the spring motion tokens next to shadcn's, plus the keyframes and scrollbar rules the parts use. Every other item depends on it.",
+    cssVars: { theme: themeVars() },
+    css,
+    docs: 'BL UI reads your shadcn theme variables (and --radius, --font-sans). For the iOS look add the bl-theme item. The "dark" variant is redefined to also match the element that carries .dark, so a ThemeScope root can restyle itself.',
+    files: [],
+  };
+}
 
 /* ── bl-theme: the iOS palette as a shadcn theme (opt-in) ── */
-// Parsed from packages/ui/src/theme.css: `:root` → cssVars.light, `.dark` → cssVars.dark, the scope rules → css.
 function parseRules(css) {
   const rules = [];
   for (const m of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
@@ -133,7 +138,7 @@ function themeItem() {
     type: 'registry:theme',
     title: 'BL theme',
     description:
-      "BL UI's iOS look as a shadcn theme: sets your CSS variables (light and dark) to the iOS palette, plus the Workbench, terminal and chat theme scopes.",
+      "BL UI's iOS look as a shadcn theme: sets your CSS variables (light and dark) to the iOS palette, plus the Workbench, terminal, sheet and glass theme scopes the Composer and floating chats use.",
     cssVars: { light: strip(light.decls), dark: strip(dark.decls) },
     // A nested light subtree (BLProvider / ThemeScope put `light` on their root) needs the light values back; the CLI
     // only writes :root and .dark from cssVars.
@@ -142,60 +147,40 @@ function themeItem() {
   };
 }
 
-/* ── components ── */
-const COMPONENTS_DIR = 'registry/components';
-const components = readdirSync(join(ROOT, COMPONENTS_DIR))
-  .filter((f) => f.endsWith('.json'))
-  .sort()
-  .map((f) => readJson(`${COMPONENTS_DIR}/${f}`));
+/* ── components: one item per group of library modules ── */
+const graph = buildGraph({ errors });
+const titleOf = (name) => name.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+const depsField = (npm) => npm.map(([n, v]) => (v ? `${n}@${v}` : n));
 
-function importBlock(keyword, names, from) {
-  if (!names.length) return '';
-  const one = `export ${keyword}{ ${names.join(', ')} } from '${from}';`;
-  if (one.length <= 110) return one + '\n';
-  return `export ${keyword}{\n${names.map((n) => `  ${n},`).join('\n')}\n} from '${from}';\n`;
+const definedAnywhere = new Set();
+for (const mod of graph.modules) {
+  const ex = moduleExports(`${SRC}/${mod}`);
+  for (const v of [...ex.values, ...ex.types]) definedAnywhere.add(v);
 }
-
-const componentItems = components.map((c) => {
-  const from = c.from || '@brett_lamy/ui';
-  const pkg = PACKAGES[from];
-  if (!pkg) errors.push(`${c.name}: unknown package ${from}`);
-  for (const e of c.exports) if (pkg && !pkg.values.has(e)) errors.push(`${c.name}: ${from} has no export ${e}`);
-  for (const t of c.types || []) if (pkg && !pkg.types.has(t)) errors.push(`${c.name}: ${from} has no type ${t}`);
-  for (const i of c.imports || []) if (!c.exports.includes(i)) errors.push(`${c.name}: imports lists ${i}, which isn't in exports`);
-  // Types named after one of the parts (ComposerProps, ComposerBumpProgress…): the longest value export that
-  // prefixes the type must be in this entry, so `List` doesn't pick up `ListBoxProps`.
-  const owner = (t) => [...pkg.values].filter((v) => /^[A-Z]/.test(v) && t.startsWith(v)).sort((a, b) => b.length - a.length)[0];
-  const auto = pkg ? [...pkg.types].filter((t) => c.exports.includes(owner(t))) : [];
-  const types = [...new Set([...(c.types || []), ...auto])].sort();
-  const file = `${COMPONENTS_DIR}/${c.name}.tsx`;
-  emit(
-    file,
-    `// Generated by tools/registry/build.mjs from ${c.name}.json — do not edit.\n` +
-      `// ${c.title}: ${c.description}\n` +
-      importBlock('', c.exports, from) +
-      importBlock('type ', types, from),
-  );
+const componentItems = [...graph.items.values()].map((it) => {
+  const m = it.manifest ?? {};
+  const type = it.kind === 'lib' ? 'registry:lib' : 'registry:ui';
+  for (const e of m.exports ?? []) if (!definedAnywhere.has(e)) errors.push(`registry/components/${it.name}.json: nothing in the library exports "${e}"`);
   return {
-    name: c.name,
-    type: 'registry:ui',
-    title: c.title,
-    description: c.description,
-    dependencies: [...new Set([dep('@brett_lamy/ui'), dep(from)])],
-    registryDependencies: [BASE_ITEM],
-    files: [{ path: file, type: 'registry:ui', target: `components/ui/${c.name}.tsx` }],
-    meta: { page: c.page, exports: c.exports },
+    name: it.name,
+    type,
+    title: m.title ?? titleOf(it.name),
+    description: m.description ?? `${titleOf(it.name)} — part of BL UI's library (${it.files.join(', ')}).`,
+    dependencies: depsField(it.npm),
+    registryDependencies: [BASE_ITEM, ...it.deps.map(itemUrl)],
+    ...(m.css ? { css: m.css } : {}),
+    files: it.files.map((f) => ({
+      path: `${SRC}/${f}`,
+      type,
+      target: f.startsWith('components/') ? `components/ui/${f.slice('components/'.length)}` : f,
+    })),
+    ...(m.page ? { meta: { page: m.page, exports: m.exports } } : {}),
   };
 });
 
 /* ── blocks ── */
 const BLOCKS_DIR = 'registry/blocks';
-// A relative import that stays inside the block's folder (e.g. `./data`, `../lib/data` from `components/`).
-function isOwnFile(slug, from, spec) {
-  if (!spec.startsWith('./') && !spec.startsWith('../')) return false;
-  const base = posix.join('/', posix.dirname(from));
-  return posix.normalize(posix.join(base, spec)).startsWith('/') && !posix.relative('/', posix.join(base, spec)).startsWith('..');
-}
+const isOwnFile = (from, spec) => spec.startsWith('.') && !posix.relative('/', posix.join('/', posix.dirname(from), spec)).startsWith('..');
 
 const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
   .filter((d) => d.isDirectory() && existsSync(join(ROOT, BLOCKS_DIR, d.name, 'meta.json')))
@@ -204,19 +189,23 @@ const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
   .map((slug) => {
     const meta = readJson(`${BLOCKS_DIR}/${slug}/meta.json`);
     if (meta.name !== slug) errors.push(`${BLOCKS_DIR}/${slug}/meta.json: name must be "${slug}"`);
+    const deps = new Set();
     const files = meta.files.map((f) => {
       const path = `${BLOCKS_DIR}/${slug}/${f}`;
+      const isCode = /\.tsx?$/.test(f);
       if (!existsSync(join(ROOT, path))) errors.push(`${path} is listed in meta.json but missing`);
-      else {
-        const src = read(path);
-        // Real import specifiers only (TypeScript's scanner), not strings inside sample data.
-        for (const { fileName: spec } of ts.preProcessFile(src, true, true).importedFiles) {
-          if (!(spec === 'react' || spec.startsWith('react/') || isOwnFile(slug, f, spec) || spec in PACKAGES || (meta.dependencies || []).some((d) => spec === d || spec.startsWith(d + '/')))) {
-            errors.push(`${path}: imports "${spec}" — blocks may import only react, @brett_lamy/ui, their own files and meta.dependencies`);
+      else if (isCode) {
+        for (const spec of importsOf(path)) {
+          const target = spec.startsWith('@/') ? resolveModule('', spec, graph.all) : null;
+          if (target) deps.add(graph.owner.get(target));
+          else if (spec.startsWith('@/components/ui/') || spec.startsWith('@/lib/')) errors.push(`${path}: "${spec}" is not a library module`);
+          else if (spec.startsWith('@/')) errors.push(`${path}: "${spec}" — blocks import library parts by @/components/ui/… or @/lib/…`);
+          else if (!(spec === 'react' || spec.startsWith('react/') || isOwnFile(f, spec) || (meta.dependencies || []).some((d) => spec === d || spec.startsWith(d + '/')))) {
+            errors.push(`${path}: imports "${spec}" — blocks may import only react, @/components/ui/…, @/lib/…, their own files and meta.dependencies`);
           }
         }
       }
-      return { path, type: 'registry:component', target: `components/blocks/${slug}/${f}` };
+      return { path, type: isCode ? 'registry:component' : 'registry:file', target: `components/blocks/${slug}/${f}` };
     });
     return {
       name: slug,
@@ -224,8 +213,8 @@ const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
       title: meta.title,
       description: meta.description,
       categories: meta.categories,
-      dependencies: [dep('@brett_lamy/ui'), ...(meta.dependencies || [])],
-      registryDependencies: [BASE_ITEM],
+      dependencies: (meta.dependencies || []).map((n) => (npmVersion(n) ? `${n}@${npmVersion(n)}` : n)),
+      registryDependencies: [BASE_ITEM, ...[...deps].sort().map(itemUrl)],
       files,
       meta: { entry: `components/blocks/${slug}/page.tsx` },
     };
@@ -235,7 +224,7 @@ const registry = {
   $schema: 'https://ui.shadcn.com/schema/registry.json',
   name: 'bl-ui',
   homepage: URL_BASE.replace(/\/r$/, ''),
-  items: [baseItem, themeItem(), ...componentItems, ...blockItems],
+  items: [baseItem(), themeItem(), ...componentItems, ...blockItems],
 };
 const registryJson = JSON.stringify(registry, null, 2) + '\n';
 
@@ -250,6 +239,10 @@ else {
   // Another host: build from a temporary registry.json, leaving the committed one alone.
   registryFile = join(mkdtempSync(join(tmpdir(), 'bl-registry-')), 'registry.json');
   writeFileSync(registryFile, registryJson);
+}
+if (errors.length) {
+  console.error(errors.map((e) => '✗ ' + e).join('\n'));
+  process.exit(1);
 }
 console.log(
   `registry: ${registry.items.length} items (${componentItems.length} components, ${blockItems.length} blocks)` +

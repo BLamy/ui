@@ -5,8 +5,8 @@ import {
 import {
   AnimatePresence, LayoutGroup, MotionConfig, motion, useDragControls, useReducedMotion, type PanInfo, type Transition,
 } from 'framer-motion';
-import { springs, type SpringName } from '../lib/motion';
-import { cn } from '../lib/utils';
+import { springs, type SpringName } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 /* ══ Morph — one element, two layouts (a shared-element transition) ══
    The mini player that becomes the full player; the thumbnail that becomes the detail's hero; the pill that

@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { BLProvider, Button, Icon, Slider } from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { Slider } from '@/components/ui/slider'
+import { Icon } from '@/lib/icon'
+import { BLProvider } from '@/lib/theme'
 
 export default function NowPlaying() {
   const [volume, setVolume] = useState(60)

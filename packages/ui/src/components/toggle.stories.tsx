@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Toggle } from './toggle';
-import { Icon } from '../lib/icon';
+import { Toggle } from '@/components/ui/toggle';
+import { Icon } from '@/lib/icon';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Toggle> = {

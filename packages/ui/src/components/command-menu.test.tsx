@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { commandMatch, matchesHotkey } from './command-menu';
+import { commandMatch, matchesHotkey } from '@/components/ui/command-menu';
 
 const ev = (p: Partial<{ key: string; code: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }>) => ({
   key: '', code: '', metaKey: false, ctrlKey: false, altKey: false, shiftKey: false, ...p,

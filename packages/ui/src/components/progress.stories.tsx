@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Progress } from './progress';
+import { Progress } from '@/components/ui/progress';
 import { Panel } from '../stories/primitive-frame';
 
 const meta: Meta<typeof Progress> = {

@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
-import { PlainButton as Button } from './plain-button';
-import { cn, pressable, brandTile } from '../lib/utils';
-import { Icon, type IconName } from '../lib/icon';
-import { prefersReducedMotion, springs } from '../lib/motion';
-import { MarkdownView } from './markdown-view';
-import { MessageScroller, type MessageScrollerItem } from './message-scroller';
+import { PlainButton as Button } from '@/components/ui/plain-button';
+import { cn, pressable, brandTile } from '@/lib/utils';
+import { Icon, type IconName } from '@/lib/icon';
+import { prefersReducedMotion, springs } from '@/lib/motion';
+import { MarkdownView } from '@/components/ui/markdown-view';
+import { MessageScroller, type MessageScrollerItem } from '@/components/ui/message-scroller';
 
 /* ══ Conversation parts — an agent thread ══
    <Conversation empty={!thread}>

@@ -1,4 +1,4 @@
-import { SyntaxHighlighting } from '@brett_lamy/ui'
+import { SyntaxHighlighting } from '@/components/ui/syntax-highlighting'
 
 export default function InlineCode() {
   return (

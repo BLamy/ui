@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, Toaster, createToastQueue, WorkbenchTheme } from '@brett_lamy/ui'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { Toaster, createToastQueue } from '@/components/ui/toast'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { type ComposerAttachment } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 // Stand-ins so the example opens with one of each kind of tile.

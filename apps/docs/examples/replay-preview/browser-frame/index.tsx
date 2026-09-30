@@ -1,4 +1,4 @@
-import { ReplayPreview, replayDemoEvents } from '@brett_lamy/ui'
+import { ReplayPreview, replayDemoEvents } from '@/components/ui/replay-preview'
 
 // The browser frame, paused just before checkout fails. Press play (or Space),
 // scrub, press a marker on the rail to jump to it, change speed with the 1×

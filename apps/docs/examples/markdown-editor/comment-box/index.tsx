@@ -1,11 +1,8 @@
 import { useState } from 'react'
-import {
-  Avatar,
-  Button,
-  MarkdownEditor,
-  MarkdownView,
-  type MarkdownEditorAttachment,
-} from '@brett_lamy/ui'
+import { Avatar } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { MarkdownEditor, type MarkdownEditorAttachment } from '@/components/ui/markdown-editor'
+import { MarkdownView } from '@/components/ui/markdown-view'
 
 interface Comment {
   id: number

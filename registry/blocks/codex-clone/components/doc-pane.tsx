@@ -1,20 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Input, TextField } from 'react-aria-components';
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  Icon,
-  IconButton,
-  MarkdownEditor,
-  SplitViewEmpty,
-  SplitViewHeader,
-  cn,
-  useSplitView,
-  type MarkdownEditorClassNames,
-  type MarkdownEditorHandle,
-} from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { IconButton } from '@/components/ui/icon-button';
+import { MarkdownEditor, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
+import { SplitViewEmpty, SplitViewHeader, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import type { Doc } from '../lib/data';
 import type { CodexState } from '../lib/use-codex';
 import { DocOutline, outlineOf } from './doc-outline';

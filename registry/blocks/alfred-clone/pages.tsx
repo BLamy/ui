@@ -1,9 +1,12 @@
 /* Alfred's pages. Each is a <CommandPage> with its own items and, where it needs one, its own keys
    (`onKeyDown` runs before the menu's; preventDefault takes a key over). The launcher renders the current one. */
 import type { KeyboardEvent, ReactNode } from 'react';
-import {
-  CommandGroup, CommandItem, CommandPage, Icon, IconSwap, Kbd, NumberMorph, cn, useCommandActive, useCommandMenu,
-} from '@brett_lamy/ui';
+import { CommandGroup, CommandItem, CommandPage, useCommandActive, useCommandMenu } from '@/components/ui/command-menu';
+import { IconSwap } from '@/components/ui/icon-swap';
+import { Kbd } from '@/components/ui/kbd';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { evaluate, formatResult, looksLikeMath, plainResult, prettyExpression } from './calc';
 import {
   EMOJI_GROUPS, ENGINES, HOME, LABELS, REPOS, SNIPPETS, TIMERS, TRASH, descendants, nodeAt, pathOf, type Engine, type FileNode,

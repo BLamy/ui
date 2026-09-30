@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { TabBar } from './tab-bar';
+import { TabBar } from '@/components/ui/tab-bar';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof TabBar> = {

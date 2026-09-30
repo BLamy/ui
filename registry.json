@@ -7,10 +7,7 @@
       "name": "bl-ui",
       "type": "registry:style",
       "title": "BL UI",
-      "description": "Installs @brett_lamy/ui, imports its stylesheet, and registers BL UI's extra color utilities (text-tertiary-foreground, bg-secondary-strong, bg-bar, text-success, …) next to shadcn's.",
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "description": "BL UI's tokens and framework CSS: registers its extra color utilities (text-tertiary-foreground, bg-bar, text-success, …), the radius, text-size, shadow and size scales and the spring motion tokens next to shadcn's, plus the keyframes and scrollbar rules the parts use. Every other item depends on it.",
       "cssVars": {
         "theme": {
           "color-success": "var(--success, oklch(0.723 0.191 149.6))",
@@ -26,6 +23,7 @@
           "color-code-foreground": "var(--code-foreground, var(--foreground))",
           "spacing-toolbar": "52px",
           "font-ios": "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+          "font-mono": "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
           "ease-ios": "cubic-bezier(.32, .72, 0, 1)",
           "ease-spring-snappy": "linear(0.0017, 0.0315, 0.0996, 0.1865, 0.2645, 0.3583, 0.4476, 0.5297, 0.5916, 0.6577, 0.7152, 0.7644, 0.7997, 0.8359, 0.8661, 0.8912, 0.9088, 0.9264, 0.9407, 0.9525, 0.9605, 0.9685, 0.9749, 0.9801, 0.9836, 0.987, 0.9898, 0.992, 0.9934, 0.9948, 0.996, 0.9969, 0.9974, 0.998, 0.9985, 0.9988, 0.999, 0.9993, 0.9994, 0.9996, 1)",
           "duration-spring-snappy": "383ms",
@@ -47,16 +45,997 @@
         }
       },
       "css": {
-        "@import \"@brett_lamy/ui/styles.css\"": {}
+        "@custom-variant dark (&:where(.dark, .dark *))": {},
+        "@layer base": {
+          ":where([data-slot]),:where([data-slot])::before,:where([data-slot])::after, :where([data-slot]) *,:where([data-slot]) ::before,:where([data-slot]) ::after": {
+            "box-sizing": "border-box"
+          }
+        },
+        "@keyframes blSpin": {
+          "to": {
+            "transform": "rotate(360deg)"
+          }
+        },
+        "@keyframes blRing": {
+          "from": {
+            "transform": "scale(.35)",
+            "opacity": ".85"
+          },
+          "to": {
+            "transform": "scale(2.4)",
+            "opacity": "0"
+          }
+        },
+        "@keyframes blHapIn": {
+          "0%": {
+            "opacity": "0",
+            "transform": "translateY(8px)"
+          },
+          "10%": {
+            "opacity": "1",
+            "transform": "none"
+          },
+          "72%": {
+            "opacity": "1"
+          },
+          "100%": {
+            "opacity": "0",
+            "transform": "translateY(-4px)"
+          }
+        },
+        "@keyframes blBub": {
+          "from": {
+            "transform": "scale(.5)",
+            "opacity": "0"
+          },
+          "to": {
+            "transform": "scale(1)",
+            "opacity": "1"
+          }
+        },
+        "@keyframes blWaveCard": {
+          "from": {
+            "scale": ".94",
+            "opacity": "0"
+          }
+        },
+        ".bl-scroll": {
+          "scrollbar-width": "thin",
+          "scrollbar-color": "rgba(128,128,140,.35) transparent"
+        },
+        ".bl-scroll::-webkit-scrollbar": {
+          "width": "3px"
+        },
+        ".bl-scroll::-webkit-scrollbar-thumb": {
+          "background": "rgba(128,128,140,.35)",
+          "border-radius": "2px"
+        },
+        ".bl-scroll::-webkit-scrollbar-track": {
+          "background": "transparent"
+        },
+        ".bl-btn": {
+          "-webkit-tap-highlight-color": "transparent"
+        },
+        ".bl-hl:active": {
+          "background": "var(--accent) !important"
+        },
+        "[data-swiping] .bl-hl:active": {
+          "background": "transparent !important"
+        },
+        "[data-row-control] :is(button,input,select,textarea,a,label,[role=switch],[role=slider],[role=checkbox],[data-slot=slider])": {
+          "pointer-events": "auto"
+        },
+        "input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder": {
+          "color": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))"
+        },
+        "@keyframes blShimmer": {
+          "from": {
+            "background-position": "200% 0"
+          },
+          "to": {
+            "background-position": "0% 0"
+          }
+        },
+        ".bl-shimmer": {
+          "background": "linear-gradient(90deg,var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent)) 40%,var(--foreground) 50%,var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent)) 60%) 0 0/200% 100%",
+          "-webkit-background-clip": "text",
+          "background-clip": "text",
+          "color": "transparent",
+          "animation": "blShimmer 2.4s linear infinite"
+        },
+        ".bl-range": {
+          "-webkit-appearance": "none",
+          "appearance": "none",
+          "width": "100%",
+          "height": "28px",
+          "background": "transparent",
+          "margin": "0",
+          "cursor": "pointer"
+        },
+        ".bl-range::-webkit-slider-runnable-track": {
+          "height": "4px",
+          "border-radius": "2px",
+          "background": "linear-gradient(var(--primary),var(--primary)) 0/var(--bl-range-fill,50%) 100% no-repeat,var(--secondary-strong, var(--accent))"
+        },
+        ".bl-range::-webkit-slider-thumb": {
+          "-webkit-appearance": "none",
+          "width": "26px",
+          "height": "26px",
+          "border-radius": "50%",
+          "background": "#fff",
+          "box-shadow": "0 1px 4px rgba(0,0,0,.28),0 0 1px rgba(0,0,0,.22)",
+          "margin-top": "-11px"
+        },
+        ".bl-range::-moz-range-track": {
+          "height": "4px",
+          "border-radius": "2px",
+          "background": "var(--secondary-strong, var(--accent))"
+        },
+        ".bl-range::-moz-range-progress": {
+          "height": "4px",
+          "border-radius": "2px",
+          "background": "var(--primary)"
+        },
+        ".bl-range::-moz-range-thumb": {
+          "width": "26px",
+          "height": "26px",
+          "border": "0",
+          "border-radius": "50%",
+          "background": "#fff",
+          "box-shadow": "0 1px 4px rgba(0,0,0,.28)"
+        },
+        "@keyframes bl-fade-in": {
+          "from": {
+            "opacity": "0"
+          }
+        },
+        "@keyframes bl-fade-out": {
+          "to": {
+            "opacity": "0"
+          }
+        },
+        "@keyframes bl-pop-in": {
+          "from": {
+            "opacity": "0",
+            "transform": "translate(var(--bl-pop-x,0),var(--bl-pop-y,0)) scale(.9)"
+          }
+        },
+        "@keyframes bl-pop-out": {
+          "to": {
+            "opacity": "0",
+            "transform": "scale(.96)"
+          }
+        },
+        "@keyframes bl-alert-in": {
+          "from": {
+            "opacity": "0",
+            "transform": "scale(1.14)"
+          }
+        },
+        "@keyframes bl-alert-out": {
+          "to": {
+            "opacity": "0",
+            "transform": "scale(.98)"
+          }
+        },
+        "@keyframes bl-sheet-in-bottom": {
+          "from": {
+            "transform": "translateY(100%)"
+          }
+        },
+        "@keyframes bl-sheet-out-bottom": {
+          "to": {
+            "transform": "translateY(100%)"
+          }
+        },
+        "@keyframes bl-sheet-in-top": {
+          "from": {
+            "transform": "translateY(-100%)"
+          }
+        },
+        "@keyframes bl-sheet-out-top": {
+          "to": {
+            "transform": "translateY(-100%)"
+          }
+        },
+        "@keyframes bl-sheet-in-left": {
+          "from": {
+            "transform": "translateX(-100%)"
+          }
+        },
+        "@keyframes bl-sheet-out-left": {
+          "to": {
+            "transform": "translateX(-100%)"
+          }
+        },
+        "@keyframes bl-sheet-in-right": {
+          "from": {
+            "transform": "translateX(100%)"
+          }
+        },
+        "@keyframes bl-sheet-out-right": {
+          "to": {
+            "transform": "translateX(100%)"
+          }
+        },
+        "@keyframes bl-shimmer": {
+          "from": {
+            "background-position": "150% 0"
+          },
+          "to": {
+            "background-position": "-50% 0"
+          }
+        },
+        "@keyframes bl-panel-in": {
+          "from": {
+            "opacity": "0",
+            "translate": "calc(var(--bl-dx,0)*28px) calc(var(--bl-dy,0)*28px)"
+          }
+        },
+        "@keyframes bl-panel-out": {
+          "to": {
+            "opacity": "0",
+            "translate": "calc(var(--bl-dx,0)*-28px) calc(var(--bl-dy,0)*-28px)"
+          }
+        },
+        "@keyframes bl-progress-indeterminate": {
+          "from": {
+            "transform": "translateX(-100%)"
+          },
+          "to": {
+            "transform": "translateX(250%)"
+          }
+        },
+        "[data-theme-scope=\"chat\"].light .ck-role": {
+          "color": "color-mix(in srgb,var(--ck-role) 58%,#000)"
+        },
+        ".ck-scroll": {
+          "scrollbar-width": "thin",
+          "scrollbar-color": "rgba(140,140,155,.28) transparent"
+        },
+        ".ck-scroll::-webkit-scrollbar": {
+          "width": "8px"
+        },
+        ".ck-scroll::-webkit-scrollbar-thumb": {
+          "background": "rgba(140,140,155,.25)",
+          "border-radius": "4px",
+          "border": "2px solid transparent",
+          "background-clip": "padding-box"
+        },
+        "@keyframes ck-in": {
+          "from": {
+            "opacity": "0",
+            "transform": "translateY(8px) scale(.985)"
+          },
+          "to": {
+            "opacity": "1",
+            "transform": "none"
+          }
+        },
+        "@keyframes ck-typing": {
+          "0%,60%,100%": {
+            "opacity": ".35",
+            "transform": "none"
+          },
+          "30%": {
+            "opacity": "1",
+            "transform": "translateY(-2px)"
+          }
+        },
+        ".ck-floating-sheet__body>*": {
+          "box-sizing": "border-box",
+          "width": "100%",
+          "min-height": "100%",
+          "background": "transparent !important"
+        },
+        ".ck-floating-sheet[data-body-align=\"end\"] .ck-floating-sheet__body>*": {
+          "min-height": "0",
+          "max-height": "100%"
+        },
+        ".ck-floating-sheet[data-body-align=\"end\"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal": {
+          "-webkit-mask-image": "linear-gradient(to bottom,transparent,#000 34px)",
+          "mask-image": "linear-gradient(to bottom,transparent,#000 34px)"
+        },
+        ".ck-floating-sheet[data-body-align=\"start\"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal": {
+          "-webkit-mask-image": "linear-gradient(to top,transparent,#000 28px)",
+          "mask-image": "linear-gradient(to top,transparent,#000 28px)"
+        },
+        ".ck-floating-sheet[data-body-align=\"start\"][data-appearance=\"sheet\"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal": {
+          "-webkit-mask-image": "none",
+          "mask-image": "none"
+        },
+        ".ck-floating-chat": {
+          "--ck-host-background": "var(--background)",
+          "--ck-host-foreground": "var(--foreground)",
+          "--ck-host-card": "var(--card)",
+          "--ck-host-card-foreground": "var(--card-foreground)",
+          "--ck-host-popover": "var(--popover)",
+          "--ck-host-popover-foreground": "var(--popover-foreground)",
+          "--ck-host-secondary": "var(--secondary)",
+          "--ck-host-secondary-foreground": "var(--secondary-foreground)",
+          "--ck-host-muted": "var(--muted)",
+          "--ck-host-muted-foreground": "var(--muted-foreground)",
+          "--ck-host-accent": "var(--accent)",
+          "--ck-host-accent-foreground": "var(--accent-foreground)",
+          "--ck-host-destructive": "var(--destructive)",
+          "--ck-host-border": "var(--border)",
+          "--ck-host-input": "var(--input)",
+          "--ck-host-success": "var(--success, oklch(0.723 0.191 149.6))",
+          "--ck-host-tertiary-foreground": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))",
+          "--ck-host-secondary-strong": "var(--secondary-strong, var(--accent))",
+          "--ck-host-handle": "var(--handle, var(--secondary-strong, var(--accent)))",
+          "--ck-host-code": "var(--code, var(--muted))",
+          "--ck-host-code-foreground": "var(--code-foreground, var(--foreground))",
+          "--ck-host-link": "var(--link, var(--primary))"
+        },
+        ".ck-floating-chat__transcript": {
+          "--background": "var(--ck-host-background)",
+          "--foreground": "var(--ck-host-foreground)",
+          "--card": "var(--ck-host-card)",
+          "--card-foreground": "var(--ck-host-card-foreground)",
+          "--popover": "var(--ck-host-popover)",
+          "--popover-foreground": "var(--ck-host-popover-foreground)",
+          "--secondary": "var(--ck-host-secondary)",
+          "--secondary-foreground": "var(--ck-host-secondary-foreground)",
+          "--muted": "var(--ck-host-muted)",
+          "--muted-foreground": "var(--ck-host-muted-foreground)",
+          "--accent": "var(--ck-host-accent)",
+          "--accent-foreground": "var(--ck-host-accent-foreground)",
+          "--destructive": "var(--ck-host-destructive)",
+          "--border": "var(--ck-host-border)",
+          "--input": "var(--ck-host-input)",
+          "--success": "var(--ck-host-success)",
+          "--tertiary-foreground": "var(--ck-host-tertiary-foreground)",
+          "--secondary-strong": "var(--ck-host-secondary-strong)",
+          "--handle": "var(--ck-host-handle)",
+          "--code": "var(--ck-host-code)",
+          "--code-foreground": "var(--ck-host-code-foreground)",
+          "--link": "var(--ck-host-link)"
+        },
+        ".ck-floating-chat__bump [data-slot=\"composer-bump-body\"]>*,.ck-floating-chat__transcript.contents>*,.ck-floating-chat__bump [data-slot=\"floating-chat-transcript\"]>[data-slot=\"artifact-chat-transcript\"]>*": {
+          "box-sizing": "border-box",
+          "width": "100%",
+          "min-height": "0",
+          "max-height": "100%",
+          "background": "transparent !important"
+        },
+        "@keyframes ck-floating-working": {
+          "0%,100%": {
+            "opacity": ".55",
+            "transform": "scale(.92)"
+          },
+          "50%": {
+            "opacity": "1",
+            "transform": "scale(1)"
+          }
+        },
+        "@keyframes ck-tile-map-pulse": {
+          "0%": {
+            "box-shadow": "0 0 0 4px rgba(10,132,255,.32),0 2px 6px rgba(0,0,0,.45)"
+          },
+          "70%": {
+            "box-shadow": "0 0 0 16px rgba(10,132,255,0),0 2px 6px rgba(0,0,0,.45)"
+          },
+          "100%": {
+            "box-shadow": "0 0 0 16px rgba(10,132,255,0),0 2px 6px rgba(0,0,0,.45)"
+          }
+        },
+        ".ck-map-chat__md.wb-md": {
+          "font-size": "14.5px",
+          "line-height": "1.45"
+        },
+        ".ck-map-chat__md.wb-md p": {
+          "margin": "0 0 8px"
+        },
+        ".ck-map-chat__md.wb-md p:last-child": {
+          "margin-bottom": "0"
+        },
+        ".ck-map-chat__md.wb-md ol,.ck-map-chat__md.wb-md ul": {
+          "margin": "4px 0 8px",
+          "padding-left": "22px"
+        },
+        ".ck-map-chat__md.wb-md li": {
+          "margin": "3px 0"
+        },
+        "@keyframes ck-map-chat-spin": {
+          "to": {
+            "transform": "rotate(360deg)"
+          }
+        },
+        "@keyframes ck-stepper-sweep": {
+          "0%": {
+            "transform": "translateX(0)"
+          },
+          "100%": {
+            "transform": "translateX(200%)"
+          }
+        },
+        "@keyframes wbBlink": {
+          "0%,55%": {
+            "opacity": "1"
+          },
+          "56%,100%": {
+            "opacity": "0"
+          }
+        },
+        "@keyframes wbPulse": {
+          "0%,100%": {
+            "opacity": "1"
+          },
+          "50%": {
+            "opacity": ".35"
+          }
+        },
+        "@keyframes wbSpin": {
+          "to": {
+            "transform": "rotate(360deg)"
+          }
+        },
+        "@keyframes wb-pop-in": {
+          "from": {
+            "opacity": "0",
+            "transform": "scale(.88)",
+            "filter": "blur(2px)"
+          }
+        },
+        "@keyframes wb-pop-out": {
+          "to": {
+            "opacity": "0",
+            "transform": "scale(.96)"
+          }
+        },
+        ".wb-scroll": {
+          "scrollbar-width": "thin",
+          "scrollbar-color": "rgba(140,140,155,.3) transparent"
+        },
+        ".wb-scroll::-webkit-scrollbar": {
+          "width": "8px",
+          "height": "8px"
+        },
+        ".wb-scroll::-webkit-scrollbar-thumb": {
+          "background": "rgba(140,140,155,.28)",
+          "border-radius": "4px",
+          "border": "2px solid transparent",
+          "background-clip": "padding-box"
+        },
+        ".wb-scroll::-webkit-scrollbar-track": {
+          "background": "transparent"
+        },
+        "[data-theme-scope=\"workbench\"].light .wb-scroll": {
+          "scrollbar-color": "rgba(0,0,0,.2) transparent"
+        },
+        "[data-theme-scope=\"workbench\"].light .wb-scroll::-webkit-scrollbar-thumb": {
+          "background": "rgba(0,0,0,.18)"
+        },
+        "[data-theme-scope=\"workbench\"].light [data-theme-scope=\"terminal\"] .wb-scroll": {
+          "scrollbar-color": "rgba(140,140,155,.3) transparent"
+        },
+        "[data-theme-scope=\"workbench\"].light [data-theme-scope=\"terminal\"] .wb-scroll::-webkit-scrollbar-thumb": {
+          "background": "rgba(140,140,155,.28)"
+        },
+        ".wb-md": {
+          "line-height": "1.6",
+          "font-size": "14px",
+          "--foreground": "currentColor"
+        },
+        ".wb-md :where(h1)": {
+          "font-size": "20px",
+          "font-weight": "700",
+          "margin": "18px 0 8px",
+          "letter-spacing": "-.2px"
+        },
+        ".wb-md :where(h2)": {
+          "font-size": "16.5px",
+          "font-weight": "650",
+          "margin": "18px 0 6px"
+        },
+        ".wb-md :where(h3)": {
+          "font-size": "14.5px",
+          "font-weight": "650",
+          "margin": "14px 0 4px"
+        },
+        ".wb-md :where(p)": {
+          "margin": "8px 0"
+        },
+        ".wb-md :where(ul,ol)": {
+          "margin": "8px 0",
+          "padding-left": "22px"
+        },
+        ".wb-md :where(li)": {
+          "margin": "3px 0"
+        },
+        ".wb-md :where(code)": {
+          "font-family": "ui-monospace,'SF Mono',Menlo,Consolas,monospace",
+          "font-size": ".86em",
+          "background": "var(--secondary)",
+          "padding": "2px 5px",
+          "border-radius": "5px"
+        },
+        ".wb-md :where(pre)": {
+          "background": "var(--code, var(--muted))",
+          "color": "var(--code-foreground, var(--foreground))",
+          "border-radius": "10px",
+          "padding": "12px 14px",
+          "overflow": "auto",
+          "font-size": "12.5px",
+          "line-height": "1.55",
+          "margin": "10px 0"
+        },
+        ".wb-md :where(pre code)": {
+          "background": "none",
+          "padding": "0",
+          "font-size": "inherit",
+          "color": "inherit"
+        },
+        ".wb-md :where(table)": {
+          "border-collapse": "collapse",
+          "margin": "10px 0",
+          "width": "100%",
+          "font-size": "13.5px"
+        },
+        ".wb-md :where(th)": {
+          "text-align": "left",
+          "font-weight": "600",
+          "color": "var(--muted-foreground)",
+          "font-size": "12px",
+          "text-transform": "uppercase",
+          "letter-spacing": ".4px"
+        },
+        ".wb-md :where(th,td)": {
+          "padding": "7px 12px 7px 0",
+          "border-bottom": "1px solid var(--border)"
+        },
+        ".wb-md :where(blockquote)": {
+          "margin": "10px 0",
+          "padding": "2px 14px",
+          "border-left": "3px solid var(--border)",
+          "color": "var(--muted-foreground)"
+        },
+        ".wb-md :where(hr)": {
+          "border": "0",
+          "border-top": "1px solid var(--border)",
+          "margin": "16px 0"
+        },
+        ".wb-md :where(a)": {
+          "color": "var(--link,var(--primary))",
+          "text-decoration": "none"
+        },
+        ".wb-md :where(a:hover)": {
+          "text-decoration": "underline"
+        },
+        ".wb-md :where(img)": {
+          "max-width": "100%",
+          "border-radius": "8px"
+        },
+        ":root,[data-theme-scope=\"workbench\"].dark": {
+          "--_wb-code-keyword": "#C792EA",
+          "--_wb-code-string": "#A5D6A7",
+          "--_wb-code-number": "#F78C6C",
+          "--_wb-code-comment": "#777784",
+          "--_wb-code-function": "#82AAFF",
+          "--_wb-code-constant": "#F07178",
+          "--_wb-code-type": "#FFCB6B",
+          "--_wb-code-operator": "#89DDFF",
+          "--_wb-code-deleted": "#FF6B6B",
+          "--_wb-code-added": "#69DB7C\n"
+        },
+        "[data-theme-scope=\"workbench\"].light": {
+          "--_wb-code-keyword": "#A626A4",
+          "--_wb-code-string": "#3E8B3A",
+          "--_wb-code-number": "#986801",
+          "--_wb-code-comment": "#9A9AA3",
+          "--_wb-code-function": "#3563D9",
+          "--_wb-code-constant": "#D2403A",
+          "--_wb-code-type": "#B06A00",
+          "--_wb-code-operator": "#0B7FA8",
+          "--_wb-code-deleted": "#D2403A",
+          "--_wb-code-added": "#2F8F46\n"
+        },
+        ".wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name),.wb-tok-keyword": {
+          "color": "var(--bl-syntax-keyword,var(--_wb-code-keyword))"
+        },
+        ".wb-md :where(.hljs-string,.hljs-attr,.hljs-symbol,.hljs-bullet),.wb-tok-string": {
+          "color": "var(--bl-syntax-string,var(--_wb-code-string))"
+        },
+        ".wb-md :where(.hljs-title,.hljs-section,.hljs-function .hljs-title),.wb-tok-function": {
+          "color": "var(--bl-syntax-function,var(--_wb-code-function))"
+        },
+        ".wb-md :where(.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable),.wb-tok-number": {
+          "color": "var(--bl-syntax-number,var(--_wb-code-number))"
+        },
+        ".wb-md :where(.hljs-comment,.hljs-quote,.hljs-meta)": {
+          "color": "var(--bl-syntax-comment,var(--_wb-code-comment))",
+          "font-style": "italic"
+        },
+        ".wb-tok-comment": {
+          "color": "var(--bl-syntax-comment,var(--_wb-code-comment))"
+        },
+        ".wb-md :where(.hljs-operator,.hljs-punctuation),.wb-tok-operator": {
+          "color": "var(--bl-syntax-operator,var(--_wb-code-operator))"
+        },
+        ".wb-md :where(.hljs-deletion)": {
+          "color": "var(--_wb-code-deleted)"
+        },
+        ".wb-md :where(.hljs-addition)": {
+          "color": "var(--_wb-code-added)"
+        },
+        ".wb-tok-constant": {
+          "color": "var(--bl-syntax-constant,var(--_wb-code-constant))"
+        },
+        ".wb-tok-type": {
+          "color": "var(--bl-syntax-type,var(--_wb-code-type))"
+        },
+        ".wb-tok-text": {
+          "color": "var(--bl-syntax-fg,var(--code-foreground, var(--foreground)))"
+        },
+        ".wb-composer-doc.gb": {
+          "--background": "var(--card)",
+          "--muted": "var(--secondary)",
+          "--accent": "var(--secondary-strong, var(--accent))",
+          "--accent-foreground": "var(--foreground)",
+          "width": "100%",
+          "max-width": "none",
+          "max-height": "120px",
+          "min-height": "0",
+          "margin": "0",
+          "padding": "0 14px 2px",
+          "box-sizing": "border-box",
+          "overflow-y": "auto",
+          "color": "var(--foreground)",
+          "font-family": "inherit",
+          "font-size": "14px",
+          "line-height": "1.5"
+        },
+        ".wb-composer-doc.gb .ProseMirror": {
+          "min-height": "38px",
+          "padding": "10px 34px 4px 0",
+          "outline": "none",
+          "font-size": "14px",
+          "line-height": "1.5"
+        },
+        ".wb-composer-doc.gb,.wb-composer-doc.gb .ProseMirror": {
+          "color": "var(--foreground)",
+          "caret-color": "var(--primary)"
+        },
+        ".wb-composer-doc.gb .ProseMirror :where(h1,h2,h3,h4,h5,h6,p,li)": {
+          "color": "inherit"
+        },
+        ".wb-composer-doc-wide.gb .ProseMirror": {
+          "min-height": "38px"
+        },
+        ".wb-composer-doc-expanded.gb": {
+          "max-height": "min(58vh,440px)"
+        },
+        ".wb-composer-doc-expanded.gb .ProseMirror": {
+          "min-height": "min(52vh,400px)"
+        },
+        ".wb-composer-doc.gb .ProseMirror>*+*": {
+          "margin-top": ".4em"
+        },
+        ".wb-composer-doc.gb .ProseMirror p": {
+          "margin": "0"
+        },
+        ".wb-composer-doc.gb .ProseMirror p:is(.is-empty,.is-editor-empty):first-child:before": {
+          "content": "attr(data-placeholder)",
+          "float": "left",
+          "height": "0",
+          "color": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))",
+          "pointer-events": "none"
+        },
+        ".wb-composer-doc.gb .gb-code": {
+          "margin": ".45em 0"
+        },
+        ".wb-md .docs-article": {
+          "max-width": "none",
+          "margin": "0",
+          "padding": "0"
+        },
+        ".wb-md :is([data-docstream],.docs-article)": {
+          "--gb-panel": "var(--card)",
+          "--gb-panel-foreground": "currentColor",
+          "--gb-muted": "var(--secondary)",
+          "--gb-muted-foreground": "var(--muted-foreground)",
+          "--gb-border": "var(--border)",
+          "--gb-accent": "var(--secondary)",
+          "--gb-accent-foreground": "currentColor",
+          "--gb-code-fg": "currentColor"
+        },
+        ".wb-composer-doc.gb .gb-attachment": {
+          "background": "var(--secondary)",
+          "border-color": "var(--border)"
+        },
+        ".wb-composer-doc.gb .gb-attachment:hover": {
+          "border-color": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))"
+        },
+        "body:has(:is([data-theme-scope=\"workbench\"].dark,[data-theme-scope=\"glass\"].dark) [data-slot=\"composer-input\"]:not([data-theme-scope=\"workbench\"].light *) .gb-attachment:is(:hover,:focus-visible)) .gb-attachment-card": {
+          "--border": "rgba(255,255,255,.12)",
+          "--card": "#1C1C23",
+          "--card-foreground": "#EDEDF2",
+          "--foreground": "#EDEDF2",
+          "--muted": "#101014",
+          "--muted-foreground": "#9C9CA6",
+          "box-shadow": "0 14px 40px rgba(0,0,0,.5)"
+        },
+        ".wb-composer-doc-compact.gb": {
+          "max-height": "44px",
+          "padding-right": "4px"
+        },
+        ".wb-composer-doc-compact.gb .ProseMirror": {
+          "min-height": "22px",
+          "padding": "10px 0 9px"
+        },
+        "@layer components.bl-mde": {
+          ".bl-mde": {
+            "--popover": "var(--card)",
+            "--background": "var(--card)",
+            "--card-foreground": "var(--foreground)",
+            "--popover-foreground": "var(--foreground)",
+            "--muted": "var(--secondary)",
+            "--accent-foreground": "var(--foreground)",
+            "--mde-px": "12px",
+            "--mde-py": "10px\n"
+          },
+          ".bl-mde-sm": {
+            "--mde-fs": "14px",
+            "--mde-lh": "1.5",
+            "--mde-min-h-d": "64px",
+            "--mde-px": "10px",
+            "--mde-py": "8px"
+          },
+          ".bl-mde-md": {
+            "--mde-fs": "15px",
+            "--mde-lh": "1.55",
+            "--mde-min-h-d": "96px"
+          },
+          ".bl-mde-lg": {
+            "--mde-fs": "17px",
+            "--mde-lh": "1.55",
+            "--mde-min-h-d": "144px"
+          },
+          ".bl-mde[data-variant=\"card\"]": {
+            "--mde-px": "16px",
+            "--mde-py": "14px"
+          },
+          ".bl-mde[data-variant=\"ghost\"]": {
+            "--mde-px": "0px",
+            "--mde-py": "0px"
+          },
+          ".bl-mde .bl-mde-doc.gb": {
+            "display": "flex",
+            "flex-direction": "column",
+            "flex": "1 1 auto",
+            "width": "100%",
+            "max-width": "none",
+            "margin": "0",
+            "padding": "0",
+            "box-sizing": "border-box",
+            "min-height": "var(--mde-min-h,var(--mde-min-h-d))",
+            "max-height": "var(--mde-max-h,none)",
+            "color": "inherit",
+            "font-size": "var(--mde-fs)",
+            "line-height": "var(--mde-lh)",
+            "--gb-radius": "10px\n"
+          },
+          ".bl-mde .bl-mde-doc>.gb-content": {
+            "display": "flex",
+            "flex": "1 1 auto",
+            "flex-direction": "column",
+            "min-height": "0",
+            "overflow-y": "auto",
+            "padding": "var(--mde-py) var(--mde-px)",
+            "scrollbar-width": "thin",
+            "scrollbar-color": "var(--secondary-strong, var(--accent)) transparent"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror": {
+            "flex": "1 0 auto",
+            "min-height": "0",
+            "font-size": "inherit",
+            "line-height": "inherit",
+            "color": "inherit",
+            "caret-color": "var(--primary)"
+          },
+          ".bl-mde:is([data-readonly],[data-disabled]) .bl-mde-doc .ProseMirror": {
+            "caret-color": "transparent"
+          },
+          ".bl-mde[data-disabled] .bl-mde-doc": {
+            "pointer-events": "none"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror>*+*": {
+            "margin-top": ".6em"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror p": {
+            "margin": "0"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror :where(blockquote,ul,ol,figure)": {
+            "margin-inline": "0",
+            "margin-bottom": "0"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror :where(h1,h2,h3,h4,h5,h6)": {
+            "color": "inherit",
+            "letter-spacing": "-.01em"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror h1": {
+            "font-size": "1.5em",
+            "line-height": "1.25",
+            "font-weight": "700",
+            "margin-top": ".8em"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror h2": {
+            "font-size": "1.25em",
+            "line-height": "1.3",
+            "font-weight": "650",
+            "margin-top": ".9em",
+            "padding-bottom": "0",
+            "border-bottom": "0"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror h3": {
+            "font-size": "1.08em",
+            "line-height": "1.35",
+            "font-weight": "650",
+            "margin-top": ".8em"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror>:first-child": {
+            "margin-top": "0"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror a": {
+            "color": "var(--primary)",
+            "text-decoration": "none"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror a:hover": {
+            "text-decoration": "underline"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror hr": {
+            "margin": "1.2em 0"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror :not(pre)>code": {
+            "background": "var(--secondary)",
+            "border-radius": "5px",
+            "font-size": ".86em",
+            "font-family": "ui-monospace,'SF Mono',Menlo,Consolas,monospace"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror p:is(.is-empty,.is-editor-empty):first-child::before": {
+            "color": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))"
+          },
+          ".bl-mde .bl-mde-doc .ProseMirror ul[data-type=\"taskList\"] input": {
+            "accent-color": "var(--primary)"
+          },
+          ".bl-mde .bl-mde-doc .gb-toolbar": {
+            "position": "static",
+            "flex": "none",
+            "margin": "0",
+            "padding": "5px 6px",
+            "gap": "2px",
+            "border": "0",
+            "border-bottom": "1px solid var(--border)",
+            "border-radius": "0",
+            "background": "transparent",
+            "box-shadow": "none"
+          },
+          ".bl-mde .bl-mde-doc .gb-tool": {
+            "width": "28px",
+            "height": "28px",
+            "border-radius": "7px",
+            "color": "var(--muted-foreground)",
+            "transition": "background-color .12s ease,color .12s ease"
+          },
+          ".bl-mde .bl-mde-doc .gb-tool:hover": {
+            "background": "var(--accent)",
+            "color": "var(--foreground)"
+          },
+          ".bl-mde .bl-mde-doc .gb-tool-active": {
+            "background": "var(--secondary-strong, var(--accent))",
+            "color": "var(--foreground)"
+          },
+          ".bl-mde .bl-mde-doc .gb-toolbar-hint": {
+            "font-size": "12px",
+            "color": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))"
+          },
+          ".bl-mde .bl-mde-doc .gb-toolbar-hint kbd": {
+            "border-color": "var(--border)",
+            "background": "transparent",
+            "font-family": "inherit",
+            "color": "var(--muted-foreground)"
+          },
+          ".bl-mde[data-variant=\"ghost\"] .bl-mde-doc .gb-toolbar": {
+            "padding-left": "0",
+            "padding-right": "0",
+            "margin-bottom": "8px"
+          },
+          "[data-markdown-editor-portal] .slash-menu": {
+            "border-radius": "12px",
+            "box-shadow": "0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.06)"
+          },
+          "[data-markdown-editor-portal] .slash-item": {
+            "border-radius": "8px"
+          },
+          "[data-markdown-editor-portal][data-scheme=\"dark\"] .slash-menu,.gb-attachment-card[data-markdown-editor-portal][data-scheme=\"dark\"]": {
+            "box-shadow": "0 14px 40px rgba(0,0,0,.5)"
+          }
+        },
+        ".gb .ProseMirror": {
+          "white-space": "pre-wrap"
+        },
+        ".gb .ProseMirror :is(h1,h2,h3,h4,h5,h6,p,ul,ol,li,blockquote,table,thead,tbody,tr,th,td,hr,input,label,a,:not(pre)>code)": {
+          "all": "revert-layer"
+        },
+        "@layer components": {
+          "[data-slot=\"now-playing-bars\"][data-playing]>.bl-eq-bar": {
+            "animation": "blEq var(--bl-eq-dur,.7s) ease-in-out var(--bl-eq-delay,0s) infinite alternate"
+          },
+          "@media (prefers-reduced-motion:reduce)": {
+            "[data-slot=\"now-playing-bars\"][data-playing]>.bl-eq-bar": {
+              "animation": "none"
+            }
+          }
+        },
+        "[data-slot=\"composer-card\"]>[data-slot=\"composer-fab\"]": {
+          "opacity": "0",
+          "pointer-events": "none",
+          "transform": "scale(.6)",
+          "transition": "opacity .12s ease,transform var(--duration-spring-snappy) var(--ease-spring-snappy)"
+        },
+        "[data-slot=\"composer\"][data-collapsed=\"fab\"] [data-slot=\"composer-card\"][data-folded]": {
+          "width": "52px",
+          "height": "52px",
+          "border-radius": "26px",
+          "overflow": "hidden",
+          "flex-wrap": "nowrap",
+          "box-shadow": "0 10px 30px -8px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.14)"
+        },
+        "[data-slot=\"composer\"][data-collapsed=\"fab\"] [data-slot=\"composer-card\"][data-folded]>[data-slot=\"composer-card-body\"]>*": {
+          "opacity": "0 !important",
+          "filter": "blur(4px)",
+          "pointer-events": "none",
+          "transition": "opacity .1s ease,filter .1s ease"
+        },
+        "[data-slot=\"composer\"][data-collapsed=\"fab\"] [data-slot=\"composer-card\"][data-folded]>[data-slot=\"composer-fab\"]": {
+          "opacity": "1",
+          "pointer-events": "auto",
+          "transform": "none",
+          "transition": "opacity .2s ease .14s,transform var(--duration-spring-bouncy) var(--ease-spring-bouncy) .1s"
+        },
+        "[data-slot=\"composer\"][data-fab-position=\"end\"][data-collapsed=\"fab\"] [data-slot=\"composer-card\"][data-folded]": {
+          "align-self": "flex-end"
+        },
+        "[data-slot=\"composer\"][data-fab-position=\"center\"][data-collapsed=\"fab\"] [data-slot=\"composer-card\"][data-folded]": {
+          "align-self": "center"
+        },
+        "[data-slot=\"composer\"][data-fab-position=\"start\"][data-collapsed=\"fab\"] [data-slot=\"composer-card\"][data-folded]": {
+          "align-self": "flex-start"
+        },
+        "[data-slot=\"composer\"][data-collapsed=\"fab\"]:has([data-folded])>[data-slot=\"composer-stack\"]>[data-slot=\"composer-bump\"]": {
+          "height": "0",
+          "min-height": "0",
+          "margin-block": "0",
+          "padding-block": "0",
+          "border-width": "0",
+          "opacity": "0",
+          "overflow": "hidden",
+          "pointer-events": "none",
+          "transition": "opacity .1s ease"
+        },
+        "@media (prefers-reduced-motion:reduce)": {
+          "[data-slot=\"composer-card\"],[data-slot=\"composer-card-body\"]>*,[data-slot=\"composer-card\"]>[data-slot=\"composer-fab\"],[data-slot=\"composer-stack\"]>[data-slot=\"composer-bump\"]": {
+            "transition": "none !important"
+          }
+        },
+        "@keyframes blEq": {
+          "from": {
+            "transform": "scaleY(.25)"
+          },
+          "to": {
+            "transform": "scaleY(1)"
+          }
+        }
       },
-      "docs": "BL UI colors are your shadcn theme variables. For the iOS look add the bl-theme item (npx shadcn add …/r/bl-theme.json). With Vite, pre-bundle the Markdown engine (it ships TypeScript source): optimizeDeps: { include: [\"@brett_lamy/ui > @brett_lamy/docstream\", \"@brett_lamy/ui > @brett_lamy/docstream-editor\"] }.",
+      "docs": "BL UI reads your shadcn theme variables (and --radius, --font-sans). For the iOS look add the bl-theme item. The \"dark\" variant is redefined to also match the element that carries .dark, so a ThemeScope root can restyle itself.",
       "files": []
     },
     {
       "name": "bl-theme",
       "type": "registry:theme",
       "title": "BL theme",
-      "description": "BL UI's iOS look as a shadcn theme: sets your CSS variables (light and dark) to the iOS palette, plus the Workbench, terminal and chat theme scopes.",
+      "description": "BL UI's iOS look as a shadcn theme: sets your CSS variables (light and dark) to the iOS palette, plus the Workbench, terminal, sheet and glass theme scopes the Composer and floating chats use.",
       "cssVars": {
         "light": {
           "background": "#fff",
@@ -355,15 +1334,14 @@
       "type": "registry:ui",
       "title": "AdaptivePane",
       "description": "One pane presented as a column, sheet or pushed page depending on the room it has.",
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/edge-drawer.json"
       ],
       "files": [
         {
-          "path": "registry/components/adaptive-pane.tsx",
+          "path": "packages/ui/src/components/adaptive-pane.tsx",
           "type": "registry:ui",
           "target": "components/ui/adaptive-pane.tsx"
         }
@@ -381,14 +1359,23 @@
       "title": "ArtifactChatContainer",
       "description": "Chat docked beside an artifact when wide; a floating glass Composer over the artifact when narrow.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "framer-motion@^12 || ^13"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/chat-column.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/floating-chat.json",
+        "https://blamy.github.io/ui/r/floating-sheet.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/persistent-host.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/artifact-chat-container.tsx",
+          "path": "packages/ui/src/components/artifact-chat-container.tsx",
           "type": "registry:ui",
           "target": "components/ui/artifact-chat-container.tsx"
         }
@@ -397,8 +1384,7 @@
         "page": "artifact-chat-container",
         "exports": [
           "ArtifactChatContainer",
-          "useArtifactChatContainer",
-          "WorkbenchTheme"
+          "useArtifactChatContainer"
         ]
       }
     },
@@ -408,14 +1394,24 @@
       "title": "CommandMenu",
       "description": "A cmdk-style command palette on react-aria: nested pages, fuzzy ranking with highlight, grid groups, ⌘1–9 and a keyboard legend.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "framer-motion@^12 || ^13",
+        "react-aria@^3.51.0",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/kbd.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/command-menu.tsx",
+          "path": "packages/ui/src/components/command-menu.tsx",
           "type": "registry:ui",
           "target": "components/ui/command-menu.tsx"
         }
@@ -447,16 +1443,47 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "@brett_lamy/docstream-editor@1.7.0",
+        "@tiptap/core@3.30.5",
+        "@tiptap/pm@3.30.5",
+        "class-variance-authority@^0.7",
+        "framer-motion@^12 || ^13",
+        "react-aria@^3.51.0",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/markdown-editor.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/pencilkit.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/sheet-drag.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toast.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/composer.tsx",
+          "path": "packages/ui/src/components/composer/annotator.tsx",
           "type": "registry:ui",
-          "target": "components/ui/composer.tsx"
+          "target": "components/ui/composer/annotator.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/composer/composer-files.ts",
+          "type": "registry:ui",
+          "target": "components/ui/composer/composer-files.ts"
+        },
+        {
+          "path": "packages/ui/src/components/composer/composer-popover.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/composer/composer-popover.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/composer/composer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/composer/composer.tsx"
         }
       ],
       "meta": {
@@ -502,14 +1529,19 @@
       "title": "Credenza",
       "description": "A dialog on wide screens and a draggable tray on phones, from one composition.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/measure-h.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/credenza.tsx",
+          "path": "packages/ui/src/components/credenza.tsx",
           "type": "registry:ui",
           "target": "components/ui/credenza.tsx"
         }
@@ -527,14 +1559,15 @@
       "title": "EdgeDrawer",
       "description": "A drawer that follows the finger from any edge, with rubber-banding and velocity-aware snapping.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/edge-drawer.tsx",
+          "path": "packages/ui/src/components/edge-drawer.tsx",
           "type": "registry:ui",
           "target": "components/ui/edge-drawer.tsx"
         }
@@ -552,14 +1585,20 @@
       "title": "FloatingSheet",
       "description": "A floating card that grows into the full page along one drag, over a map or canvas.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/sheet-drag.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/floating-sheet.tsx",
+          "path": "packages/ui/src/components/floating-sheet.tsx",
           "type": "registry:ui",
           "target": "components/ui/floating-sheet.tsx"
         }
@@ -574,20 +1613,34 @@
     },
     {
       "name": "icon",
-      "type": "registry:ui",
+      "type": "registry:lib",
       "title": "Icons",
       "description": "An SF Symbols-style icon set on a 24px grid: round-capped strokes in six weights, filled variants, and custom shapes.",
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/icon.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/icon.tsx"
+          "path": "packages/ui/src/lib/icon-shapes/chat.ts",
+          "type": "registry:lib",
+          "target": "lib/icon-shapes/chat.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/icon-shapes/pencilkit.ts",
+          "type": "registry:lib",
+          "target": "lib/icon-shapes/pencilkit.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/icon-shapes/workbench.ts",
+          "type": "registry:lib",
+          "target": "lib/icon-shapes/workbench.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/icon.tsx",
+          "type": "registry:lib",
+          "target": "lib/icon.tsx"
         }
       ],
       "meta": {
@@ -609,14 +1662,20 @@
       "title": "List",
       "description": "Inset-grouped and plain lists with rows, sections, swipe actions and an A-Z IndexBar.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "framer-motion@^12 || ^13"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/row-label.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/list.tsx",
+          "path": "packages/ui/src/components/list.tsx",
           "type": "registry:ui",
           "target": "components/ui/list.tsx"
         }
@@ -638,14 +1697,17 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "@brett_lamy/docstream@1.7.0",
+        "@brett_lamy/docstream-editor@1.7.0",
+        "class-variance-authority@^0.7"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/markdown-editor.tsx",
+          "path": "packages/ui/src/components/markdown-editor.tsx",
           "type": "registry:ui",
           "target": "components/ui/markdown-editor.tsx"
         }
@@ -666,14 +1728,15 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "@brett_lamy/docstream@1.7.0"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/markdown-view.tsx",
+          "path": "packages/ui/src/components/markdown-view.tsx",
           "type": "registry:ui",
           "target": "components/ui/markdown-view.tsx"
         }
@@ -693,14 +1756,18 @@
       "title": "MessageScroller",
       "description": "A chat transcript scroller anchored to the newest message, with streaming-aware autoscroll.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "framer-motion@^12 || ^13"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/message-scroller.tsx",
+          "path": "packages/ui/src/components/message-scroller.tsx",
           "type": "registry:ui",
           "target": "components/ui/message-scroller.tsx"
         }
@@ -719,14 +1786,16 @@
       "title": "Morph",
       "description": "Shared-element transitions: one element springs between two layouts (mini player → full player), drag-to-dismiss friendly, reduced-motion aware.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "framer-motion@^12 || ^13"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/morph.tsx",
+          "path": "packages/ui/src/components/morph.tsx",
           "type": "registry:ui",
           "target": "components/ui/morph.tsx"
         }
@@ -743,20 +1812,20 @@
     },
     {
       "name": "motion",
-      "type": "registry:ui",
+      "type": "registry:lib",
       "title": "Motion",
       "description": "Springs and the motion vocabulary: TextMorph, NumberMorph, IconSwap, Chevron, AnimatedHeight, ContentSwap, Celebrate.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "framer-motion@^12 || ^13"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
         {
-          "path": "registry/components/motion.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/motion.tsx"
+          "path": "packages/ui/src/lib/motion.ts",
+          "type": "registry:lib",
+          "target": "lib/motion.ts"
         }
       ],
       "meta": {
@@ -784,14 +1853,21 @@
       "title": "NavigationStack",
       "description": "A controlled push/pop stack with large titles and edge-swipe back.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "framer-motion@^12 || ^13",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/navigation-stack.tsx",
+          "path": "packages/ui/src/components/navigation-stack.tsx",
           "type": "registry:ui",
           "target": "components/ui/navigation-stack.tsx"
         }
@@ -809,15 +1885,14 @@
       "type": "registry:ui",
       "title": "NowPlayingBars",
       "description": "The animated equaliser beside the track that's playing — still when paused and under reduced motion — plus the Slider tones for media controls.",
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/now-playing-bars.tsx",
+          "path": "packages/ui/src/components/now-playing-bars.tsx",
           "type": "registry:ui",
           "target": "components/ui/now-playing-bars.tsx"
         }
@@ -838,16 +1913,47 @@
       "title": "PencilKit",
       "description": "Pressure-aware drawing (perfect-freehand) with the PencilKit tool picker, and the Composer image annotator.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "perfect-freehand@^1.2.2",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/pencilkit.tsx",
+          "path": "packages/ui/src/components/pencilkit/constants.ts",
           "type": "registry:ui",
-          "target": "components/ui/pencilkit.tsx"
+          "target": "components/ui/pencilkit/constants.ts"
+        },
+        {
+          "path": "packages/ui/src/components/pencilkit/pencil-canvas.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/pencilkit/pencil-canvas.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/pencilkit/pencil-toolbar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/pencilkit/pencil-toolbar.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/pencilkit/pencilkit-annotator.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/pencilkit/pencilkit-annotator.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/pencilkit/stroke-path.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/pencilkit/stroke-path.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/pencilkit/use-pencil-history.ts",
+          "type": "registry:ui",
+          "target": "components/ui/pencilkit/use-pencil-history.ts"
         }
       ],
       "meta": {
@@ -872,14 +1978,17 @@
       "title": "ProgressRing",
       "description": "Circular progress: a determinate ring that springs to each value with a rolling percentage, and a CountdownRing that drains second by second and turns red near the end.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/progress-ring.tsx",
+          "path": "packages/ui/src/components/progress-ring.tsx",
           "type": "registry:ui",
           "target": "components/ui/progress-ring.tsx"
         }
@@ -899,14 +2008,14 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "@brett_lamy/docstream@1.7.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
         {
-          "path": "registry/components/replay-preview.tsx",
+          "path": "packages/ui/src/components/replay-preview.tsx",
           "type": "registry:ui",
           "target": "components/ui/replay-preview.tsx"
         }
@@ -929,14 +2038,21 @@
       "title": "SideDrawer",
       "description": "An inspector column: docked beside the content, or an overlay sheet with a scrim.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/edge-drawer.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/side-drawer.tsx",
+          "path": "packages/ui/src/components/side-drawer.tsx",
           "type": "registry:ui",
           "target": "components/ui/side-drawer.tsx"
         }
@@ -954,14 +2070,17 @@
       "title": "Sidebar",
       "description": "Docked, rail, floating or overlay navigation with workspace, search, sections and items.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/edge-drawer.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/sidebar.tsx",
+          "path": "packages/ui/src/components/sidebar.tsx",
           "type": "registry:ui",
           "target": "components/ui/sidebar.tsx"
         }
@@ -991,14 +2110,15 @@
       "title": "Skeleton",
       "description": "Loading placeholders with a soft left-to-right sweep instead of a pulse: text lines, circles, rects and rounded blocks, and a SkeletonText paragraph with a shorter last line.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/skeleton.tsx",
+          "path": "packages/ui/src/components/skeleton.tsx",
           "type": "registry:ui",
           "target": "components/ui/skeleton.tsx"
         }
@@ -1018,14 +2138,23 @@
       "title": "SplitView",
       "description": "An adaptive sidebar / supplementary / detail split that collapses by its own measured width.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "framer-motion@^12 || ^13",
+        "react-aria@^3.51.0",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/split-view.tsx",
+          "path": "packages/ui/src/components/split-view.tsx",
           "type": "registry:ui",
           "target": "components/ui/split-view.tsx"
         }
@@ -1056,14 +2185,18 @@
       "title": "SyntaxHighlighting",
       "description": "Code highlighted on the GPU by gpu-lexer: file header, copy button, line numbers, highlighted and diff lines, inline code.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/syntax.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/syntax-highlighting.tsx",
+          "path": "packages/ui/src/components/syntax-highlighting.tsx",
           "type": "registry:ui",
           "target": "components/ui/syntax-highlighting.tsx"
         }
@@ -1094,14 +2227,19 @@
       "title": "TabView",
       "description": "Tabs as parts: a bar at any edge, sliding indicator, directional panels, swipe between panels.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/tabs.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/tab-view.tsx",
+          "path": "packages/ui/src/components/tab-view.tsx",
           "type": "registry:ui",
           "target": "components/ui/tab-view.tsx"
         }
@@ -1127,20 +2265,22 @@
     },
     {
       "name": "theme",
-      "type": "registry:ui",
+      "type": "registry:lib",
       "title": "Theme",
       "description": "BLProvider, ThemeScope and the appearance context: pick light/dark, a tint and a theme scope for a subtree. Colors are shadcn variables (see the bl-theme item for the iOS palette).",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "react-aria@^3.51.0"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/tokens.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/theme.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/theme.tsx"
+          "path": "packages/ui/src/lib/theme.tsx",
+          "type": "registry:lib",
+          "target": "lib/theme.tsx"
         }
       ],
       "meta": {
@@ -1162,14 +2302,21 @@
       "title": "Toast",
       "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, stacking banners with actions, springs, auto-dismiss and announcements.",
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
+        "class-variance-authority@^0.7",
+        "framer-motion@^12 || ^13",
+        "react-aria@^3.51.0",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
-          "path": "registry/components/toast.tsx",
+          "path": "packages/ui/src/components/toast.tsx",
           "type": "registry:ui",
           "target": "components/ui/toast.tsx"
         }
@@ -1189,6 +2336,1225 @@
       }
     },
     {
+      "name": "animated-height",
+      "type": "registry:ui",
+      "title": "Animated Height",
+      "description": "Animated Height — part of BL UI's library (components/animated-height.tsx).",
+      "dependencies": [
+        "framer-motion@^12 || ^13"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/animated-height.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/animated-height.tsx"
+        }
+      ]
+    },
+    {
+      "name": "avatar",
+      "type": "registry:ui",
+      "title": "Avatar",
+      "description": "Avatar — part of BL UI's library (components/avatar.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/avatar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/avatar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "Badge — part of BL UI's library (components/badge.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/badge.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/badge.tsx"
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "Button — part of BL UI's library (components/button.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:ui",
+      "title": "Card",
+      "description": "Card — part of BL UI's library (components/card.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/card.tsx"
+        }
+      ]
+    },
+    {
+      "name": "celebrate",
+      "type": "registry:ui",
+      "title": "Celebrate",
+      "description": "Celebrate — part of BL UI's library (components/celebrate.tsx).",
+      "dependencies": [
+        "framer-motion@^12 || ^13"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/celebrate.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/celebrate.tsx"
+        }
+      ]
+    },
+    {
+      "name": "chat-column",
+      "type": "registry:ui",
+      "title": "Chat Column",
+      "description": "Chat Column — part of BL UI's library (components/chat-column.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/chat-column.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/chat-column.tsx"
+        }
+      ]
+    },
+    {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "Checkbox — part of BL UI's library (components/checkbox.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/checkbox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/checkbox.tsx"
+        }
+      ]
+    },
+    {
+      "name": "combobox",
+      "type": "registry:ui",
+      "title": "Combobox",
+      "description": "Combobox — part of BL UI's library (components/combobox.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/list-box.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/combobox.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/combobox.tsx"
+        }
+      ]
+    },
+    {
+      "name": "conversation",
+      "type": "registry:ui",
+      "title": "Conversation",
+      "description": "Conversation — part of BL UI's library (components/conversation.tsx).",
+      "dependencies": [
+        "framer-motion@^12 || ^13"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/markdown-view.json",
+        "https://blamy.github.io/ui/r/message-scroller.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/conversation.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/conversation.tsx"
+        }
+      ]
+    },
+    {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "Dialog — part of BL UI's library (components/dialog.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "disclosure",
+      "type": "registry:ui",
+      "title": "Disclosure",
+      "description": "Disclosure — part of BL UI's library (components/disclosure.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/disclosure.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/disclosure.tsx"
+        }
+      ]
+    },
+    {
+      "name": "dropdown-menu",
+      "type": "registry:ui",
+      "title": "Dropdown Menu",
+      "description": "Dropdown Menu — part of BL UI's library (components/dropdown-menu.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/dropdown-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/dropdown-menu.tsx"
+        }
+      ]
+    },
+    {
+      "name": "edit-bar",
+      "type": "registry:ui",
+      "title": "Edit Bar",
+      "description": "Edit Bar — part of BL UI's library (components/edit-bar.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/edit-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/edit-bar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "floating-chat",
+      "type": "registry:ui",
+      "title": "Floating Chat",
+      "description": "Floating Chat — part of BL UI's library (components/floating-chat.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/floating-sheet.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/persistent-host.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/floating-chat.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/floating-chat.tsx"
+        }
+      ]
+    },
+    {
+      "name": "form",
+      "type": "registry:ui",
+      "title": "Form",
+      "description": "Form — part of BL UI's library (components/form.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/form.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/form.tsx"
+        }
+      ]
+    },
+    {
+      "name": "icon-button",
+      "type": "registry:ui",
+      "title": "Icon Button",
+      "description": "Icon Button — part of BL UI's library (components/icon-button.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/icon-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/icon-button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "icon-swap",
+      "type": "registry:ui",
+      "title": "Icon Swap",
+      "description": "Icon Swap — part of BL UI's library (components/icon-swap.tsx).",
+      "dependencies": [
+        "framer-motion@^12 || ^13"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/icon-swap.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/icon-swap.tsx"
+        }
+      ]
+    },
+    {
+      "name": "index-bar",
+      "type": "registry:ui",
+      "title": "Index Bar",
+      "description": "Index Bar — part of BL UI's library (components/index-bar.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/index-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/index-bar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input",
+      "description": "Input — part of BL UI's library (components/input.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "kbd",
+      "type": "registry:ui",
+      "title": "Kbd",
+      "description": "Kbd — part of BL UI's library (components/kbd.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/kbd.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/kbd.tsx"
+        }
+      ]
+    },
+    {
+      "name": "label",
+      "type": "registry:ui",
+      "title": "Label",
+      "description": "Label — part of BL UI's library (components/label.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/label.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/label.tsx"
+        }
+      ]
+    },
+    {
+      "name": "list-box",
+      "type": "registry:ui",
+      "title": "List Box",
+      "description": "List Box — part of BL UI's library (components/list-box.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/list-box.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/list-box.tsx"
+        }
+      ]
+    },
+    {
+      "name": "measure-h",
+      "type": "registry:ui",
+      "title": "Measure H",
+      "description": "Measure H — part of BL UI's library (components/measure-h.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/measure-h.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/measure-h.tsx"
+        }
+      ]
+    },
+    {
+      "name": "number-morph",
+      "type": "registry:ui",
+      "title": "Number Morph",
+      "description": "Number Morph — part of BL UI's library (components/number-morph.tsx).",
+      "dependencies": [
+        "framer-motion@^12 || ^13"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/number-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/number-morph.tsx"
+        }
+      ]
+    },
+    {
+      "name": "plain-button",
+      "type": "registry:ui",
+      "title": "Plain Button",
+      "description": "Plain Button — part of BL UI's library (components/plain-button.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/plain-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/plain-button.tsx"
+        }
+      ]
+    },
+    {
+      "name": "popover",
+      "type": "registry:ui",
+      "title": "Popover",
+      "description": "Popover — part of BL UI's library (components/popover.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/popover.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/popover.tsx"
+        }
+      ]
+    },
+    {
+      "name": "progress-stepper",
+      "type": "registry:ui",
+      "title": "Progress Stepper",
+      "description": "Progress Stepper — part of BL UI's library (components/progress-stepper.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/progress-stepper.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/progress-stepper.tsx"
+        }
+      ]
+    },
+    {
+      "name": "progress",
+      "type": "registry:ui",
+      "title": "Progress",
+      "description": "Progress — part of BL UI's library (components/progress.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/progress.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/progress.tsx"
+        }
+      ]
+    },
+    {
+      "name": "qr-svg",
+      "type": "registry:ui",
+      "title": "Qr Svg",
+      "description": "Qr Svg — part of BL UI's library (components/qr-svg.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/qr.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/qr-svg.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/qr-svg.tsx"
+        }
+      ]
+    },
+    {
+      "name": "radio-group",
+      "type": "registry:ui",
+      "title": "Radio Group",
+      "description": "Radio Group — part of BL UI's library (components/radio-group.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/radio-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/radio-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "scroll-area",
+      "type": "registry:ui",
+      "title": "Scroll Area",
+      "description": "Scroll Area — part of BL UI's library (components/scroll-area.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/scroll-area.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/scroll-area.tsx"
+        }
+      ]
+    },
+    {
+      "name": "search-field",
+      "type": "registry:ui",
+      "title": "Search Field",
+      "description": "Search Field — part of BL UI's library (components/search-field.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/search-field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/search-field.tsx"
+        }
+      ]
+    },
+    {
+      "name": "segmented",
+      "type": "registry:ui",
+      "title": "Segmented",
+      "description": "Segmented — part of BL UI's library (components/segmented.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/segmented.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/segmented.tsx"
+        }
+      ]
+    },
+    {
+      "name": "select",
+      "type": "registry:ui",
+      "title": "Select",
+      "description": "Select — part of BL UI's library (components/select.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/list-box.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/select.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/select.tsx"
+        }
+      ]
+    },
+    {
+      "name": "separator",
+      "type": "registry:ui",
+      "title": "Separator",
+      "description": "Separator — part of BL UI's library (components/separator.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/separator.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/separator.tsx"
+        }
+      ]
+    },
+    {
+      "name": "sheet",
+      "type": "registry:ui",
+      "title": "Sheet",
+      "description": "Sheet — part of BL UI's library (components/sheet.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/sheet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sheet.tsx"
+        }
+      ]
+    },
+    {
+      "name": "slider",
+      "type": "registry:ui",
+      "title": "Slider",
+      "description": "Slider — part of BL UI's library (components/slider.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/row-label.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/slider.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/slider.tsx"
+        }
+      ]
+    },
+    {
+      "name": "snap-sheet",
+      "type": "registry:ui",
+      "title": "Snap Sheet",
+      "description": "Snap Sheet — part of BL UI's library (components/snap-sheet.tsx).",
+      "dependencies": [
+        "framer-motion@^12 || ^13"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/snap-sheet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/snap-sheet.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spinner",
+      "type": "registry:ui",
+      "title": "Spinner",
+      "description": "Spinner — part of BL UI's library (components/spinner.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/spinner.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/spinner.tsx"
+        }
+      ]
+    },
+    {
+      "name": "switch",
+      "type": "registry:ui",
+      "title": "Switch",
+      "description": "Switch — part of BL UI's library (components/switch.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/row-label.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/switch.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/switch.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tab-bar",
+      "type": "registry:ui",
+      "title": "Tab Bar",
+      "description": "Tab Bar — part of BL UI's library (components/tab-bar.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/tab-view.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/tab-bar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tab-bar.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "Tabs — part of BL UI's library (components/tabs.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/tabs.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tabs.tsx"
+        }
+      ]
+    },
+    {
+      "name": "text-field",
+      "type": "registry:ui",
+      "title": "Text Field",
+      "description": "Text Field — part of BL UI's library (components/text-field.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/text-field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/text-field.tsx"
+        }
+      ]
+    },
+    {
+      "name": "text-morph",
+      "type": "registry:ui",
+      "title": "Text Morph",
+      "description": "Text Morph — part of BL UI's library (components/text-morph.tsx).",
+      "dependencies": [
+        "framer-motion@^12 || ^13"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/text-morph.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/text-morph.tsx"
+        }
+      ]
+    },
+    {
+      "name": "textarea",
+      "type": "registry:ui",
+      "title": "Textarea",
+      "description": "Textarea — part of BL UI's library (components/textarea.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/textarea.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/textarea.tsx"
+        }
+      ]
+    },
+    {
+      "name": "toggle-group",
+      "type": "registry:ui",
+      "title": "Toggle Group",
+      "description": "Toggle Group — part of BL UI's library (components/toggle-group.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/toggle.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/toggle-group.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/toggle-group.tsx"
+        }
+      ]
+    },
+    {
+      "name": "toggle",
+      "type": "registry:ui",
+      "title": "Toggle",
+      "description": "Toggle — part of BL UI's library (components/toggle.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/toggle.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/toggle.tsx"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "Tooltip — part of BL UI's library (components/tooltip.tsx).",
+      "dependencies": [
+        "react-aria-components@^1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/tooltip.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tooltip.tsx"
+        }
+      ]
+    },
+    {
+      "name": "workbench-theme",
+      "type": "registry:ui",
+      "title": "Workbench Theme",
+      "description": "Workbench Theme — part of BL UI's library (components/workbench-theme.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/workbench-theme.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/workbench-theme.tsx"
+        }
+      ]
+    },
+    {
+      "name": "container",
+      "type": "registry:lib",
+      "title": "Container",
+      "description": "Container — part of BL UI's library (lib/container.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/container.ts",
+          "type": "registry:lib",
+          "target": "lib/container.ts"
+        }
+      ]
+    },
+    {
+      "name": "persistent-host",
+      "type": "registry:lib",
+      "title": "Persistent Host",
+      "description": "Persistent Host — part of BL UI's library (lib/persistent-host.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/composer.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/persistent-host.tsx",
+          "type": "registry:lib",
+          "target": "lib/persistent-host.tsx"
+        }
+      ]
+    },
+    {
+      "name": "primitives",
+      "type": "registry:lib",
+      "title": "Primitives",
+      "description": "Primitives — part of BL UI's library (lib/primitives.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/primitives.ts",
+          "type": "registry:lib",
+          "target": "lib/primitives.ts"
+        }
+      ]
+    },
+    {
+      "name": "qr",
+      "type": "registry:lib",
+      "title": "Qr",
+      "description": "Qr — part of BL UI's library (lib/qr.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/qr.ts",
+          "type": "registry:lib",
+          "target": "lib/qr.ts"
+        }
+      ]
+    },
+    {
+      "name": "row-label",
+      "type": "registry:lib",
+      "title": "Row Label",
+      "description": "Row Label — part of BL UI's library (lib/row-label.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/row-label.ts",
+          "type": "registry:lib",
+          "target": "lib/row-label.ts"
+        }
+      ]
+    },
+    {
+      "name": "sheet-drag",
+      "type": "registry:lib",
+      "title": "Sheet Drag",
+      "description": "Sheet Drag — part of BL UI's library (lib/sheet-drag.ts).",
+      "dependencies": [
+        "framer-motion@^12 || ^13"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/sheet-drag.ts",
+          "type": "registry:lib",
+          "target": "lib/sheet-drag.ts"
+        }
+      ]
+    },
+    {
+      "name": "syntax",
+      "type": "registry:lib",
+      "title": "Syntax",
+      "description": "Syntax — part of BL UI's library (lib/syntax.ts).",
+      "dependencies": [
+        "gpu-lexer@0.0.3"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/syntax.ts",
+          "type": "registry:lib",
+          "target": "lib/syntax.ts"
+        }
+      ]
+    },
+    {
+      "name": "tokens",
+      "type": "registry:lib",
+      "title": "Tokens",
+      "description": "Tokens — part of BL UI's library (lib/tokens.generated.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/tokens.generated.ts",
+          "type": "registry:lib",
+          "target": "lib/tokens.generated.ts"
+        }
+      ]
+    },
+    {
+      "name": "utils",
+      "type": "registry:lib",
+      "title": "Utils",
+      "description": "Utils — part of BL UI's library (lib/utils.ts).",
+      "dependencies": [
+        "clsx@^2",
+        "tailwind-merge@^3"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/tokens.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/utils.ts",
+          "type": "registry:lib",
+          "target": "lib/utils.ts"
+        }
+      ]
+    },
+    {
       "name": "alfred-clone",
       "type": "registry:block",
       "title": "Alfred",
@@ -1198,11 +3564,20 @@
         "productivity",
         "command-menu"
       ],
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/command-menu.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/kbd.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toast.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1255,11 +3630,25 @@
         "productivity",
         "application"
       ],
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/markdown-editor.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/sheet.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1321,11 +3710,21 @@
         "application",
         "media"
       ],
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/morph.json",
+        "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/now-playing-bars.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/slider.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/tab-view.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1378,11 +3777,23 @@
         "productivity",
         "application"
       ],
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/markdown-editor.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1439,11 +3850,25 @@
         "application",
         "security"
       ],
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/progress-ring.json",
+        "https://blamy.github.io/ui/r/qr-svg.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/textarea.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toast.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1495,11 +3920,23 @@
         "application",
         "productivity"
       ],
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/celebrate.json",
+        "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/switch.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1556,11 +3993,24 @@
         "application",
         "settings"
       ],
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/slider.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/switch.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1610,11 +4060,21 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0",
-        "react-aria-components"
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-button.json",
+        "https://blamy.github.io/ui/r/index-bar.json",
+        "https://blamy.github.io/ui/r/markdown-editor.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1688,13 +4148,17 @@
         "maps"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0",
-        "class-variance-authority",
-        "framer-motion",
-        "react-aria-components"
+        "class-variance-authority@^0.7",
+        "framer-motion@^12 || ^13",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/floating-sheet.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/progress-stepper.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1722,12 +4186,18 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0",
-        "class-variance-authority",
-        "react-aria-components"
+        "class-variance-authority@^0.7",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/adaptive-pane.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/side-drawer.json",
+        "https://blamy.github.io/ui/r/tab-view.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -1812,7 +4282,7 @@
         },
         {
           "path": "registry/blocks/discord-clone/chat-theme.css",
-          "type": "registry:component",
+          "type": "registry:file",
           "target": "components/blocks/discord-clone/chat-theme.css"
         },
         {
@@ -1839,11 +4309,29 @@
         "application",
         "dashboard"
       ],
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/markdown-view.json",
+        "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/progress.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/syntax.json",
+        "https://blamy.github.io/ui/r/syntax-highlighting.json",
+        "https://blamy.github.io/ui/r/tab-view.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/workbench-theme.json"
       ],
       "files": [
         {
@@ -1918,11 +4406,46 @@
         "command-menu"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0",
-        "class-variance-authority"
+        "class-variance-authority@^0.7"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/artifact-chat-container.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/command-menu.json",
+        "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/conversation.json",
+        "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/kbd.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/markdown-view.json",
+        "https://blamy.github.io/ui/r/morph.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/progress-ring.json",
+        "https://blamy.github.io/ui/r/replay-preview.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/switch.json",
+        "https://blamy.github.io/ui/r/syntax-highlighting.json",
+        "https://blamy.github.io/ui/r/tab-view.json",
+        "https://blamy.github.io/ui/r/tabs.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toast.json",
+        "https://blamy.github.io/ui/r/tooltip.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -2041,11 +4564,15 @@
         "maps"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0",
-        "react-aria-components"
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/artifact-chat-container.json",
+        "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/markdown-view.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -2097,11 +4624,12 @@
         "drawing",
         "application"
       ],
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/pencilkit.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -2134,12 +4662,22 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0",
-        "react-aria",
-        "react-aria-components"
+        "react-aria@^3.51.0",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/sidebar.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/switch.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -2174,15 +4712,29 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/ui@^2.1.0",
-        "@pierre/diffs",
-        "@pierre/trees",
-        "class-variance-authority",
-        "framer-motion",
-        "react-aria-components"
+        "@pierre/diffs@^1.3.6",
+        "@pierre/trees@1.0.0-beta.6",
+        "class-variance-authority@^0.7",
+        "framer-motion@^12 || ^13",
+        "react-aria-components@^1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/adaptive-pane.json",
+        "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/command-menu.json",
+        "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/conversation.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-button.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/snap-sheet.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toast.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/workbench-theme.json"
       ],
       "files": [
         {

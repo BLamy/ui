@@ -1,11 +1,8 @@
 import type { ReactNode } from 'react'
-import {
-  Button,
-  FloatingSheet,
-  ProgressStepper,
-  useAppearance,
-  type FloatingSheetAppearance,
-} from '@brett_lamy/ui'
+import { Button } from '@/components/ui/button'
+import { FloatingSheet, type FloatingSheetAppearance } from '@/components/ui/floating-sheet'
+import { ProgressStepper } from '@/components/ui/progress-stepper'
+import { useAppearance } from '@/lib/theme'
 
 const steps = [
   { id: 'placed', label: 'Placed' },

@@ -26,12 +26,12 @@ import { animate, motion, useMotionValue, type MotionValue } from 'framer-motion
 import { Button as AriaButton } from 'react-aria-components';
 import { useFocusRing, useHover, useMove, mergeProps } from 'react-aria';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Icon } from '../lib/icon';
-import { useContainerWidth } from '../lib/container';
-import { AnimatedHeight } from './animated-height';
-import { Chevron } from './icon-swap';
-import { fades, springs, useReducedMotion } from '../lib/motion';
-import { cn } from '../lib/utils';
+import { Icon } from '@/lib/icon';
+import { useContainerWidth } from '@/lib/container';
+import { AnimatedHeight } from '@/components/ui/animated-height';
+import { Chevron } from '@/components/ui/icon-swap';
+import { fades, springs, useReducedMotion } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 export type SplitViewColumn = 'sidebar' | 'supplementary' | 'detail';
 export type SplitViewWidthClass = 'compact' | 'medium' | 'regular';
@@ -75,10 +75,10 @@ function computeLayout(o: {
   const { W, wc, present, specs, widths, sidebarVisible, behavior, top, swipe, hidden = [] } = o;
   const out: Partial<Record<SplitViewColumn, ColumnLayout>> = {};
   let scrim = 0;
-  const off = (c: SplitViewColumn, x: number, width: number): ColumnLayout =>
+  const off = (x: number, width: number): ColumnLayout =>
     ({ x, width, z: 0, dim: 0, inert: true, lifted: false, resizable: false, hairline: true });
   if (wc === 'compact') {
-    hidden.forEach((c) => { out[c] = off(c, W + 24, W); });
+    hidden.forEach((c) => { out[c] = off(W + 24, W); });
     const t = Math.max(0, present.indexOf(top));
     const p = W ? clamp(swipe / W, 0, 1) : 0;
     present.forEach((c, i) => {
@@ -113,7 +113,7 @@ function computeLayout(o: {
   hidden.forEach((c) => {
     const s = spec(c);
     const w = clamp(widths[c] ?? s.width, s.minWidth, s.maxWidth);
-    out[c] = off(c, shift - w - 1, w);
+    out[c] = off(shift - w - 1, w);
   });
   let x = shift;
   rest.forEach((c, i) => {

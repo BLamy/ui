@@ -1,6 +1,9 @@
 /* The lists column: search, the smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts,
    and My Lists. On a phone it's the root screen and search results show right here. */
-import { Icon, NumberMorph, SearchField, SplitViewContent, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@brett_lamy/ui';
+import { NumberMorph } from '@/components/ui/number-morph';
+import { SearchField } from '@/components/ui/search-field';
+import { SplitViewContent, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
 import { SMART, SYSTEM, TODAY_NUMBER, type RList, type Smart } from './data';
 import { ListIcon, ReminderRow } from './reminder-row';
 import { useReminders } from './store';

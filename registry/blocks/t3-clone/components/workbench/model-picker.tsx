@@ -18,7 +18,12 @@ import {
 } from 'react-aria-components';
 import { cva } from 'class-variance-authority';
 import { AnimatePresence, motion } from 'framer-motion';
-import { direction, springs, PlainButton as Button, cn, Icon, WbPopover, ComposerButton, ComposerPillLabel } from '@brett_lamy/ui';
+import { WbPopover } from '@/components/ui/composer/composer-popover';
+import { ComposerButton, ComposerPillLabel } from '@/components/ui/composer/composer';
+import { PlainButton as Button } from '@/components/ui/plain-button';
+import { Icon } from '@/lib/icon';
+import { direction, springs } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 import type { ModelOption, ModelProvider } from './models';
 

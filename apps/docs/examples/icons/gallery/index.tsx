@@ -1,11 +1,5 @@
 import { useMemo, useState } from 'react'
-import {
-  ICON_CATEGORIES,
-  ICON_KEYWORDS,
-  ICON_NAMES,
-  Icon,
-} from '@brett_lamy/ui'
-import type { IconCategory, IconWeight } from '@brett_lamy/ui'
+import { ICON_CATEGORIES, ICON_KEYWORDS, ICON_NAMES, Icon, type IconCategory, type IconWeight } from '@/lib/icon'
 
 const TABS: { id: 'all' | IconCategory; label: string }[] = [
   { id: 'all', label: 'All' },

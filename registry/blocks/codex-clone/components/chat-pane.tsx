@@ -1,6 +1,10 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Input, TextField } from 'react-aria-components';
-import { Button, Icon, IconButton, SplitViewHeader, SplitViewSupplementary, cn, useSplitView } from '@brett_lamy/ui';
+import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
+import { SplitViewHeader, SplitViewSupplementary, useSplitView } from '@/components/ui/split-view';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import type { ChatItem } from '../lib/data';
 import type { CodexState } from '../lib/use-codex';
 import { DotOrb } from './dot-orb';

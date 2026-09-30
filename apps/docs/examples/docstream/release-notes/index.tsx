@@ -1,4 +1,4 @@
-import { MarkdownView } from '@brett_lamy/ui'
+import { MarkdownView } from '@/components/ui/markdown-view'
 
 const notes = `## Release 2.4
 

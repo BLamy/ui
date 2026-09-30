@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter, DialogAction, DialogClose,
-} from './dialog';
-import { Button } from './button';
-import { TextField } from './text-field';
-import { Label } from './label';
-import { Input } from './input';
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { TextField } from '@/components/ui/text-field';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Screen } from '../stories/primitive-frame';
 
 const meta: Meta<typeof DialogContent> = {

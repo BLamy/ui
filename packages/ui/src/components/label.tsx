@@ -1,6 +1,6 @@
 import { Label as AriaLabel, type LabelProps as AriaLabelProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 
 /* ══ Label — react-aria's Label (auto-wired to its field) ══ */
 export const labelVariants = cva('inline-flex items-center gap-1.5 font-medium group-data-disabled:opacity-50', {

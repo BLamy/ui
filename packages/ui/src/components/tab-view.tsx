@@ -15,10 +15,10 @@ import {
   composeRenderProps, createLeafComponent,
 } from 'react-aria-components';
 import { cva } from 'class-variance-authority';
-import { Icon } from '../lib/icon';
-import { useChromeHidden } from '../lib/theme';
-import { cn } from '../lib/utils';
-import { TabDirection, useTabPanelDirection } from './tabs';
+import { Icon } from '@/lib/icon';
+import { useChromeHidden } from '@/lib/theme';
+import { cn } from '@/lib/utils';
+import { TabDirection, useTabPanelDirection } from '@/components/ui/tabs';
 
 /* ══ TabView — a compositional tab container on react-aria's Tabs.
 

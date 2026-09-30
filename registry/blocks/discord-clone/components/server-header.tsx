@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button } from 'react-aria-components';
-import { Icon, cn } from '@brett_lamy/ui';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { useOptionalChatShell } from './chat-shell-context';
 
 export interface ServerHeaderProps extends ComponentProps<'div'> {

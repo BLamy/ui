@@ -1,4 +1,4 @@
-import type { IconShape } from '../icon';
+import type { IconShape } from '@/lib/icon';
 
 /** Icon geometry merged in from the former chat icon set (2.0: one `Icon`). Canonical kebab-case names.
     Former `chatIconPaths` keys: hash → `number`, chev → `chevron-right-compact`, x → `xmark-large`,

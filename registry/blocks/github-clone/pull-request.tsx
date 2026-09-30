@@ -1,9 +1,13 @@
 /* A pull request: title and state, then Conversation (timeline, merge box, comment composer), Commits, Checks and
    Files changed. */
 import { useState, type ReactNode } from 'react';
-import {
-  Avatar, Button, Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText, MarkdownView, Progress, TabView, TabViewBar, TabViewFooter, TabViewList, TabViewPanels, cn,
-} from '@brett_lamy/ui';
+import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer';
+import { MarkdownView } from '@/components/ui/markdown-view';
+import { Progress } from '@/components/ui/progress';
+import { TabView, TabViewBar, TabViewFooter, TabViewList, TabViewPanels } from '@/components/ui/tab-view';
+import { cn } from '@/lib/utils';
 import { ME, PR_CHECKS, PR_COMMITS, PR_FILES, PR_TIMELINE, PULLS, USERS, type FileNode, type PullRequest, type TimelineItem } from './data';
 import { AvatarStack, Box, DiffStat, DiffView, FileTree, FlowPanel, LabelChip, Oct, StatePill, UnderlineTab, ghButton, githubMarkdown, Branch, PR_STATE, type OctName, type Layout, type Nav } from './parts';
 
