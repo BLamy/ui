@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "publishConfig": {
     "access": "public"
@@ -113,7 +113,6 @@
     "lucide-react": "^1.17.0",
     "mermaid": "^11.15.0",
     "react-aria": "^3.52.1",
-    "rrweb": "2.0.0-alpha.20",
     "yaml": "^2.9.0"
   },
   "peerDependencies": {
@@ -121,6 +120,7 @@
     "@brett_lamy/viz-engine": ">=0.2.0",
     "react": ">=18",
     "react-dom": ">=18",
+    "rrweb": "2.0.0-alpha.20",
     "vite": ">=5"
   },
   "peerDependenciesMeta": {
@@ -131,6 +131,9 @@
       "optional": true
     },
     "vite": {
+      "optional": true
+    },
+    "rrweb": {
       "optional": true
     }
   },
@@ -145,6 +148,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.7",
     "happy-dom": "^20.14.5",
+    "rrweb": "2.0.0-alpha.20",
     "typescript": "^5.5.4",
     "vite": "^7.0.0",
     "vitest": "^3.2.4"

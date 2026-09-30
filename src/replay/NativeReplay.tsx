@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EventType, Replayer } from 'rrweb';
 import type { eventWithTime } from 'rrweb';
 import { sanitizeReplayEvent } from './sanitize';
+import type { ReplayEvent } from './types';
 import 'rrweb/dist/style.css';
 
 const DEFAULT_SPEEDS = [0.5, 1, 2, 4, 8];
@@ -15,7 +16,7 @@ export default function NativeReplay({
   loop = false,
   speeds = DEFAULT_SPEEDS,
 }: {
-  events: eventWithTime[];
+  events: ReplayEvent[];
   autoplay?: boolean;
   loop?: boolean;
   speeds?: number[];
@@ -36,7 +37,10 @@ export default function NativeReplay({
   const autoplayRef = useRef(autoplay);
 
   const prepared = useMemo(
-    () => events.map((event) => sanitizeReplayEvent(event)).sort((a, b) => a.timestamp - b.timestamp),
+    () =>
+      events
+        .map((event) => sanitizeReplayEvent(event))
+        .sort((a, b) => a.timestamp - b.timestamp) as unknown as eventWithTime[],
     [events],
   );
   const hasSnapshot = prepared.some((event) => event.type === EventType.FullSnapshot);

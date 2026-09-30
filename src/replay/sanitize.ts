@@ -1,5 +1,4 @@
-import { EventType, IncrementalSource } from 'rrweb';
-import type { eventWithTime } from 'rrweb';
+import { ReplayEventType as EventType, ReplayIncrementalSource as IncrementalSource, type ReplayEvent } from './types';
 
 const TRANSPARENT_PIXEL =
   'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
@@ -57,7 +56,7 @@ function walkNode(node: unknown): void {
 }
 
 /** Prevent a replay iframe from making the viewer fetch localhost/private assets. */
-export function sanitizeReplayEvent(event: eventWithTime): eventWithTime {
+export function sanitizeReplayEvent<T extends ReplayEvent>(event: T): T {
   try {
     if (event.type === EventType.FullSnapshot) {
       walkNode((event.data as { node?: unknown }).node);

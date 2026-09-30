@@ -34,7 +34,7 @@ function resolveFile(from: string, spec: string): string | null {
   return null
 }
 
-function graph(entry: string): { files: string[]; bare: Set<string> } {
+function graph(entry: string, { dynamic = true } = {}): { files: string[]; bare: Set<string> } {
   const seen = new Set<string>()
   const bare = new Set<string>()
   const queue = [resolve(root, entry)]
@@ -45,6 +45,7 @@ function graph(entry: string): { files: string[]; bare: Set<string> } {
     seen.add(file)
     const source = readFileSync(file, "utf8")
     for (const match of source.matchAll(file.endsWith(".css") ? CSS_IMPORT : IMPORT)) {
+      if (!dynamic && match[2]) continue
       const spec = match[1] ?? match[2] ?? match[3]
       if (!spec) continue
       if (spec.startsWith(".")) {
@@ -90,7 +91,8 @@ describe("entry boundaries", () => {
         if (spec.startsWith("node:")) continue
         const id = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0]!
         expect(declared.has(id), `${name} imports ${spec}`).toBe(true)
-        if (pkg.peerDependenciesMeta[id]?.optional && id !== "vite") {
+        // rrweb is lazy (checked below), so the replay chrome can live in any entry.
+        if (pkg.peerDependenciesMeta[id]?.optional && id !== "vite" && id !== "rrweb") {
           expect(name, `${name} imports optional peer ${id}`).toBe(`./${id === "@brett_lamy/viz-engine" ? "viz" : id}`)
         }
       }
@@ -106,6 +108,15 @@ describe("entry boundaries", () => {
       .map(([name]) => `@brett_lamy/docstream${name.slice(1)}`)
     const script = `for (const s of ${JSON.stringify(specs)}) await import(s)`
     expect(() => execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: root, stdio: "pipe" })).not.toThrow()
+  })
+
+  it.each(entries)("%s (%s) loads rrweb only through a dynamic import", (_name, target) => {
+    expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "rrweb" || spec.startsWith("rrweb/"))).toEqual([])
+  })
+
+  it("keeps rrweb an optional peer", () => {
+    expect(pkg.peerDependenciesMeta.rrweb?.optional).toBe(true)
+    expect(pkg.dependencies.rrweb).toBeUndefined()
   })
 
   it("keeps almost-node an optional peer", () => {

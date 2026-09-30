@@ -42,7 +42,7 @@ The package ships TypeScript source with subpath exports so hosts only pull what
 | \`@brett_lamy/docstream/streamdown\` | \`GitbookStreamdown\` plus the few helpers it needs. |
 | \`@brett_lamy/docstream/assets\` | \`setAssetBase\` / \`resolveAsset\`. |
 | \`@brett_lamy/docstream/openapi\` | \`OpenApiOperation\`. |
-| \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, URL helpers, source types. |
+| \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, the headless \`ReplayStage\`, marker/pointer helpers, URL helpers, source types. Native playback needs the optional \`rrweb\` peer. |
 | \`@brett_lamy/docstream/video\` | \`VideoEmbed\`. |
 | \`@brett_lamy/docstream/playground\` | Live React demos (\`PlaygroundStreamdown\`, \`ReactDemo\`, almost-node runtime + helpers). Needs \`@agent-wasm/core\`. |
 | \`@brett_lamy/docstream/viz\` | \`VizEmbed\`. Needs \`@brett_lamy/viz-engine\`. |
@@ -204,7 +204,7 @@ Embeds session replays. \`ReplayEmbed\` is a semantic alias of \`ReplayPreview\`
 | \`ReplaySource\` shape | Behavior |
 | --- | --- |
 | \`string\` | Treated as a page URL; rendered as an iframe of the public embed route. |
-| \`eventWithTime[]\` | In-memory rrweb events, played natively with the built-in player. |
+| \`ReplayEvent[]\` | In-memory rrweb events, played natively with the built-in player. |
 | \`{ kind: "url", url, title? }\` | Explicit page-URL source (iframe). |
 | \`{ kind: "events", events }\` | Explicit rrweb event source (native player). |
 | \`{ kind: "events-url", url, fetchInit? }\` | Fetches a JSON event array (or \`{ events }\`) then plays natively. |
@@ -220,6 +220,14 @@ Embeds session replays. \`ReplayEmbed\` is a semantic alias of \`ReplayPreview\`
 | \`className\` | \`string\` | — | Appended to \`replay-preview\`. |
 
 The native player sanitizes events (\`sanitizeReplayEvent\` is exported from \`@brett_lamy/docstream/replay\`), skips idle periods over 5 s, scales to fit, and offers play/pause, restart, scrubbing, and speed selection.
+
+### Headless stage and timeline helpers
+
+\`ReplayStage\` is the player without chrome: the recorded page fitted to its box (\`fit="width"\` or \`"contain"\`), driven through a ref (\`play\`, \`pause\`, \`seek\`, \`toggle\`, \`getCurrentTime\`, \`getDuration\`) and callbacks (\`onReady\`, \`onTimeUpdate\`, \`onPlayingChange\`, \`onFinish\`, \`onLayout\`). \`overlay\` renders in recorded-viewport coordinates (with \`var(--replay-scale)\`), and \`showMouse={false}\` hides rrweb's cursor so a host can draw its own. rrweb loads on first render (\`preloadReplayStage()\` warms it).
+
+The pure helpers read an event list without loading rrweb: \`getReplayMeta\` (duration, viewport, first URL), \`getReplayMarkers\` (clicks, console errors, failed requests, navigations and custom events, for scrubber markers), \`getReplayPointerTrack\` + \`replayPointerAt\` (the pointer path, for a cursor overlay).
+
+\`rrweb\` is an optional peer dependency (\`npm i rrweb@2.0.0-alpha.20\`); only the lazily loaded player chunk imports it, so pages that just embed Loop QA URLs never need it.
 
 ### URL helpers
 

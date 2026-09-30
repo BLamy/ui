@@ -76,6 +76,7 @@ export type {
   ReplayPreviewProps,
   ReplaySource,
 } from "./replay/ReplayPreview"
+export type { ReplayEvent } from "./replay/types"
 export { isReplayQaUrl, normalizeReplayEmbedUrl } from "./replay/url"
 export { VideoEmbed } from "./video"
 export type { VideoEmbedProps } from "./video"

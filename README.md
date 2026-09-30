@@ -139,6 +139,20 @@ import { ReplayPreview } from "@brett_lamy/docstream"
 <ReplayPreview source="https://loop-qa.replay.io/projects/project-id/tasks/task-id" />
 ```
 
+Native rrweb playback needs the optional `rrweb` peer (`npm i rrweb@2.0.0-alpha.20`);
+it is imported only by the lazily loaded player chunk. To build custom player chrome, use
+the headless `ReplayStage` (the fitted page, driven through a ref and callbacks) with the
+pure timeline helpers, none of which load rrweb:
+
+```tsx
+import { ReplayStage, getReplayMarkers, getReplayPointerTrack, replayPointerAt } from "@brett_lamy/docstream/replay"
+
+const stage = useRef<ReplayStageHandle>(null)
+<ReplayStage ref={stage} events={events} fit="contain" showMouse={false}
+  onTimeUpdate={setTime} onPlayingChange={setPlaying} overlay={<MyCursor at={replayPointerAt(track, time)} />} />
+// markers: getReplayMarkers(events) → clicks, console errors, failed requests, navigations, custom events
+```
+
 ## GitBook Syntax
 
 The parser supports normal Markdown plus GitBook-style block tags.

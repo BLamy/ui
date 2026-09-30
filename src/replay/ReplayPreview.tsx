@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
-import type { eventWithTime } from 'rrweb';
+import type { ReplayEvent } from './types';
 import { normalizeReplayEmbedUrl } from './url';
 
 export interface ReplayPageSource {
@@ -10,7 +10,7 @@ export interface ReplayPageSource {
 
 export interface ReplayEventsSource {
   kind: 'events';
-  events: eventWithTime[];
+  events: ReplayEvent[];
 }
 
 export interface ReplayEventsUrlSource {
@@ -21,7 +21,7 @@ export interface ReplayEventsUrlSource {
 
 export type ReplaySource =
   | string
-  | eventWithTime[]
+  | ReplayEvent[]
   | ReplayPageSource
   | ReplayEventsSource
   | ReplayEventsUrlSource;
@@ -84,7 +84,7 @@ function ReplayFrame({ source, title }: { source: ReplayPageSource; title?: stri
 // rrweb (and its stylesheet) load on first use of an event-based source.
 const LazyNativeReplay = lazy(() => import('./NativeReplay'));
 
-function NativeReplay(props: { events: eventWithTime[]; autoplay?: boolean; loop?: boolean; speeds?: number[] }) {
+function NativeReplay(props: { events: ReplayEvent[]; autoplay?: boolean; loop?: boolean; speeds?: number[] }) {
   return (
     <Suspense fallback={<div className="replay-preview__empty">Loading replay…</div>}>
       <LazyNativeReplay {...props} />
@@ -103,7 +103,7 @@ function RemoteReplay({
   loop?: boolean;
   speeds?: number[];
 }) {
-  const [events, setEvents] = useState<eventWithTime[] | null>(null);
+  const [events, setEvents] = useState<ReplayEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -120,7 +120,7 @@ function RemoteReplay({
             ? (body as { events: unknown[] }).events
             : null;
         if (!value) throw new Error('Replay event endpoint must return an event array or { events }');
-        return value as eventWithTime[];
+        return value as ReplayEvent[];
       })
       .then(setEvents)
       .catch((reason: unknown) => {
