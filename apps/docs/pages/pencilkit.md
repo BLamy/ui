@@ -70,7 +70,7 @@ import { PencilKitDemo, demoStrokes } from '@brett_lamy/ui'
 </div>
 ```
 
-`PencilCanvas` is the raw surface — mount it inside any `--bl-*` themed container. `PencilKitDemo` wraps it with tokens and the dotted paper. Full page: [PencilKit demo](https://github.com/BLamy/ui/blob/main/project/PencilKit%20Demo.dc.html).
+`PencilCanvas` is the raw surface — mount it inside any `--bl-*` themed container. `PencilKitDemo` wraps it with tokens and the dotted paper. Full page: [PencilKit demo](https://github.com/BLamy/ui/blob/main/packages/ui/src/demos/pencilkit/pencilkit-demo.tsx).
 
 ## Examples
 

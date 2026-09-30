@@ -7,18 +7,6 @@
       "path": "./packages/ui"
     },
     {
-      "path": "./apps/contacts"
-    },
-    {
-      "path": "./apps/workbench-app"
-    },
-    {
-      "path": "./apps/chat"
-    },
-    {
-      "path": "./apps/pencil"
-    },
-    {
       "path": "./apps/docs"
     },
     {

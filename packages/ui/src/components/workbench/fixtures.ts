@@ -27,8 +27,6 @@ export interface Thread {
   messages: Message[];
 }
 
-export const PROJECT = 'cookbook';
-
 const REPLY_SERVERS = `Both servers are now running detached and won't be killed by the tool's session limits.
 
 | App | URL | PID | Log |
@@ -74,9 +72,6 @@ Checked the haptics path end to end:
 ---
 
 Next: run **Settings → Haptics Playground** on the device and read the \`engine:\` line — it now reports exactly which path is live.`;
-
-/** Canned replies the fake agent streams, in turn. */
-export const REPLIES = [REPLY_SERVERS, REPLY_COMPONENT, REPLY_REVIEW];
 
 export const SUGGESTIONS = ['Get the demo servers running', 'Explain the haptics engine', 'Diff my last change'];
 

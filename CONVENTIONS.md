@@ -2,7 +2,7 @@
 
 BL UI is an iOS-flavored React component framework, distributed as one workspace package:
 
-- `@brett_lamy/ui` — theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar), the team-chat parts and ChatShell (`src/components/chat`, `src/templates`), the IDE workbench parts and WorkbenchShell (`src/components/workbench`, `src/templates`), and PencilKit freehand drawing on perfect-freehand (`src/components/pencilkit`, `src/lib/pencilkit`; `PencilKitAnnotator` is the Composer's default image annotator). Demo apps live in `src/demos`.
+- `@brett_lamy/ui` — theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar), the team-chat parts and ChatShell (`src/components/chat`, `src/templates`), the IDE workbench parts and WorkbenchShell (`src/components/workbench`, `src/templates`), and PencilKit freehand drawing on perfect-freehand (`src/components/pencilkit`, `src/lib/pencilkit`; `PencilKitAnnotator` is the Composer's default image annotator). Full demo pages live in `src/demos`.
 
 Every component is built **shadcn-style on react-aria-components, styled with Tailwind v4**. Visual output must not change while code moves onto that base: the visual-regression suite (below) is the source of truth, at zero pixel tolerance.
 
@@ -32,10 +32,11 @@ Stories live next to components: `packages/<pkg>/src/**/*.stories.tsx`. Use CSF3
 - `Molecules/…` — ListRow, SectionHeader, IndexBar, TabBar, EditBar, Composer… (block parts keep their ids too: Message, ThreadPreview)
 - `Organisms/…` — List, NavigationStack, SplitView, Credenza, SideDrawer, Sidebar, ChannelNav, TerminalDock, SurfacePanel, agent tables…
 - `Templates/…` — ChatShell, WorkbenchShell, SplitView layouts…
-- `Pages/…` — full demo apps (Contacts, Chat, Workbench, PencilKit).
+- `Pages/…` — full demo pages (Chat, Workbench, PencilKit, MapChat, DeliveryTracking, Haptics Playground).
+- `Blocks/…` — registry blocks (`registry/blocks`).
 
 Wrap every story in `BLProvider` (use a decorator; dark for the chat and workbench parts). Give container stories an explicit sized frame (e.g. 390×720 phone frame or 100%×640 panel) since BL UI containers are absolutely-positioned within their host. Include a story per meaningful prop/composition variant, with `args` wired so controls work.
 
 ## Apps
 
-Apps consume ONLY package public APIs (`import { … } from '@brett_lamy/ui'`) — this proves distributability. Each app recreates its prototype demo page faithfully (frame switcher headers etc. simplified is fine; the component under demo must be pixel-faithful).
+The workspace has two apps: `apps/docs` (the documentation site) and `apps/catalog` (Storybook). Apps consume ONLY package public APIs (`import { … } from '@brett_lamy/ui'`) — this proves distributability.
