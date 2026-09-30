@@ -171,6 +171,19 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
     const el = host.current;
     return () => pageOf(el).forEach((p) => { p.style.transition = ''; p.style.translate = ''; });
   }, [host]);
+  // A pushed page takes focus (so Escape and the keyboard land in it); popping hands it back to where it came from.
+  const returnTo = useRef<HTMLElement | null>(null);
+  const focusedOpen = useRef(open);
+  useEffect(() => {
+    if (focusedOpen.current === open) return;
+    focusedOpen.current = open;
+    if (open) {
+      returnTo.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      panel.current?.focus({ preventScroll: true });
+    } else if (panel.current?.contains(document.activeElement)) {
+      returnTo.current?.focus({ preventScroll: true });
+    }
+  }, [open]);
 
   const down = (e: React.PointerEvent) => {
     if (e.button || !open) return;
@@ -231,12 +244,12 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
           'absolute inset-0 bg-black transition-opacity duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
           open ? 'pointer-events-auto opacity-12' : 'pointer-events-none opacity-0',
         )} />
-      <div ref={panel} data-slot="side-drawer-panel" role="dialog" aria-label={typeof title === 'string' ? title : undefined}
+      <div ref={panel} data-slot="side-drawer-panel" role="dialog" tabIndex={-1} aria-label={typeof title === 'string' ? title : undefined}
         aria-hidden={!open} inert={!open || undefined}
         onPointerDownCapture={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
         onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); onClose?.(); } }}
         className={cn(
-          'absolute inset-0 flex touch-pan-y flex-col overflow-hidden bg-background will-change-transform [transform:translateX(var(--side-drawer-x))] transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+          'absolute inset-0 flex touch-pan-y flex-col overflow-hidden bg-background outline-none will-change-transform [transform:translateX(var(--side-drawer-x))] transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
           open ? 'pointer-events-auto' : 'pointer-events-none',
           (open || shown) && 'shadow-[-10px_0_30px_black] shadow-black/16',
           !open && !shown && 'invisible',
