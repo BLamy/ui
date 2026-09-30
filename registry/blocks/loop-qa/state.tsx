@@ -31,6 +31,8 @@ export interface LoopQAOptions {
   liveRunAt?: number;
   /** Start with an empty Ask QA thread. */
   emptyChat?: boolean;
+  /** Floating Ask QA starts with its transcript open (default: `askOpen`). */
+  chatExpanded?: boolean;
 }
 
 export function useLoopQAState(o: LoopQAOptions) {
@@ -42,10 +44,17 @@ export function useLoopQAState(o: LoopQAOptions) {
     o.push ? { ...o.push, section: o.project ?? projectOf(o.push) ?? 'projects' } : null);
   const [bugs, setBugs] = useState<Bug[]>(BUGS);
   const [runs, setRuns] = useState<Run[]>(() => (o.liveRunAt != null ? [liveRun(o.liveRunAt), ...RUNS] : RUNS));
-  // Ask QA opens by default only where it can dock beside the page (see `wide`); the toggle then decides.
-  const [askPref, setAskOpen] = useState<boolean | null>(o.askOpen ?? null);
+  // Ask QA opens by default only where it can dock beside the page (see `wide`); the toggle then decides. Closed,
+  // it is folded into its FAB. Where it floats, `chatOpen` is its whole transcript grown over the page (the toggle
+  // opens it that far; dragged down, it rests as the composer with the newest reply peeking).
+  const [askPref, setAskPref] = useState<boolean | null>(o.askOpen ?? null);
   const [wide, setWide] = useState(true);
   const askOpen = askPref ?? wide;
+  const [chatOpen, setChatOpen] = useState(o.chatExpanded ?? !!o.askOpen);
+  const setAskOpen = useCallback((v: boolean) => {
+    setAskPref(v);
+    setChatOpen(v && !wide);
+  }, [wide]);
   const [messages, setMessages] = useState<ChatMessage[]>(() => (o.emptyChat ? [] : SEED_CHAT));
   const [streaming, setStreaming] = useState<string | null>(null);
   const [palette, setPalette] = useState<PaletteState>(() => ({ open: !!o.palette, pages: Array.isArray(o.palette) ? o.palette : undefined, key: 0 }));
@@ -161,7 +170,7 @@ export function useLoopQAState(o: LoopQAOptions) {
     look, setLook, section, setSection, openSection, split, wide, setWide, project, tab, setTab, pending, open, consumePending,
     bugs, setBugStatus, setBugSeverity, copyBugReport, copyBugReports, copy,
     runs, startRun, nextRunId, trackers, connectTracker,
-    askOpen, setAskOpen, messages, streaming, send, stopStreaming, newChat,
+    askOpen, setAskOpen, setAskPref, chatOpen, setChatOpen, messages, streaming, send, stopStreaming, newChat,
     palette, setPalette, openPalette, dialog, setDialog, currentBug, setCurrentBug, toast, hud,
   };
 }

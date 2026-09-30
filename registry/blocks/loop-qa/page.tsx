@@ -8,10 +8,10 @@
    column when there's room and slides over the page when there isn't. */
 import { useEffect, useRef, type ReactNode } from 'react';
 import {
-  AppearanceProvider, BLProvider, SideDrawer, SplitView, SplitViewDetail, SplitViewStack, Toaster, useAppearance, useContainerWidth,
+  AppearanceProvider, ArtifactChatContainer, BLProvider, SplitView, SplitViewDetail, SplitViewStack, Toaster, useAppearance, useContainerWidth,
   useSplitView, useSplitViewStack, type Appearance,
 } from '@brett_lamy/ui';
-import { AskQA, AskTitle } from './ask-qa';
+import { AskComposer, AskQA } from './ask-qa';
 import { BugPage } from './bug-detail';
 import { Commands } from './commands';
 import { Dialogs } from './dialogs';
@@ -40,11 +40,14 @@ export interface LoopQAProps {
   liveRunAt?: number;
   /** Start Ask QA with an empty thread. */
   emptyChat?: boolean;
+  /** Where Ask QA floats (tablet, phone): start with the whole transcript over the page (the default when
+   *  `askOpen`), or `false` to rest as the composer with the newest reply peeking. */
+  chatExpanded?: boolean;
 }
 
-export default function LoopQA({ appearance, initialProject, initialTab, initialPage, askOpen, palette, liveRunAt, emptyChat }: LoopQAProps) {
+export default function LoopQA({ appearance, initialProject, initialTab, initialPage, askOpen, palette, liveRunAt, emptyChat, chatExpanded }: LoopQAProps) {
   const ambient = useAppearance();
-  const qa = useLoopQAState({ appearance, project: initialProject, tab: initialTab, push: initialPage, askOpen, palette, liveRunAt, emptyChat });
+  const qa = useLoopQAState({ appearance, project: initialProject, tab: initialTab, push: initialPage, askOpen, palette, liveRunAt, emptyChat, chatExpanded });
   const dark = (qa.look ?? appearance ?? ambient) === 'dark';
   const mode = dark ? 'dark' : 'light';
   const [ref, width] = useContainerWidth<HTMLDivElement>(1280);
@@ -58,25 +61,39 @@ export default function LoopQA({ appearance, initialProject, initialTab, initial
       <BLProvider tint={LOOP_TINT[mode]} style={LOOP_THEME[mode]} className="min-h-0 bg-background">
         <LoopQAProvider value={qa}>
           <div ref={ref} data-slot="loop-qa" className="relative flex h-full min-h-0 w-full bg-background text-[14px] text-foreground">
-            <div className="relative min-w-0 flex-1">
-              <SplitView
-                aria-label="Loop QA"
-                selection={{ sidebar: qa.section }}
-                onSelectionChange={(s) => { if (s.sidebar) qa.setSection(s.sidebar); }}
-                defaultCompactColumn={initialProject || initialPage ? 'detail' : 'sidebar'}
-              >
-                <SplitBridge />
-                <AppSidebar />
-                <SplitViewDetail aria-label="Page">
-                  <SplitViewStack resetKey={qa.section}>
-                    <StackBridge>{qa.project ? <ProjectPage project={qa.project} /> : <ProjectsHome />}</StackBridge>
-                  </SplitViewStack>
-                </SplitViewDetail>
-              </SplitView>
-            </div>
-            <SideDrawer mode={dock ? 'fixed' : 'overlay'} open={qa.askOpen} onClose={() => qa.setAskOpen(false)} title={<AskTitle />} width={phone ? width : 384}>
-              <AskQA />
-            </SideDrawer>
+            <ArtifactChatContainer
+              layout={dock && qa.askOpen ? 'split' : 'floating'}
+              chatSide="right"
+              chatWidth={384}
+              chatOpen={!dock && qa.askOpen && qa.chatOpen}
+              onChatOpenChange={qa.setChatOpen}
+              minimized={!qa.askOpen}
+              onMinimizedChange={(m) => qa.setAskPref(!m)}
+              peek={phone ? 0 : 168}
+              fabPosition="bottom-right"
+              className="min-w-0 flex-1"
+            >
+              <ArtifactChatContainer.Content>
+                <div className="relative h-full min-h-0">
+                  <SplitView
+                    aria-label="Loop QA"
+                    selection={{ sidebar: qa.section }}
+                    onSelectionChange={(s) => { if (s.sidebar) qa.setSection(s.sidebar); }}
+                    defaultCompactColumn={initialProject || initialPage ? 'detail' : 'sidebar'}
+                  >
+                    <SplitBridge />
+                    <AppSidebar />
+                    <SplitViewDetail aria-label="Page">
+                      <SplitViewStack resetKey={qa.section}>
+                        <StackBridge>{qa.project ? <ProjectPage project={qa.project} /> : <ProjectsHome />}</StackBridge>
+                      </SplitViewStack>
+                    </SplitViewDetail>
+                  </SplitView>
+                </div>
+              </ArtifactChatContainer.Content>
+              <ArtifactChatContainer.Chat><AskQA /></ArtifactChatContainer.Chat>
+              <ArtifactChatContainer.Composer><AskComposer /></ArtifactChatContainer.Composer>
+            </ArtifactChatContainer>
             <Commands />
             <Dialogs compact={phone} />
             <Toaster queue={qa.hud} inline aria-label="Loop QA notifications" />

@@ -101,7 +101,7 @@ export const CommandMenuBugs: Story = {
   render: (args) => <Full><LoopQA {...args} /></Full>,
 };
 
-/** iPad: the sidebar floats in from its button; Ask QA slides over. */
+/** iPad: the sidebar floats in from its button; Ask QA waits as a FAB. */
 export const Tablet: Story = {
   args: { initialProject: 'northwind', askOpen: false },
   render: (args) => <Device width={834} height={860}><LoopQA {...args} /></Device>,
@@ -112,6 +112,29 @@ export const Phone: Story = { args: { askOpen: false }, render: (args) => <Devic
 export const PhoneBug: Story = {
   args: { initialProject: 'northwind', initialPage: { kind: 'bug', id: 'NW-142' }, askOpen: false },
   render: (args) => dark(<Device width={390} height={844}><LoopQA {...args} /></Device>),
+};
+
+/** iPad: Ask QA floats over the page as the composer, with the newest reply (the run card) peeking above it. */
+export const TabletAskQA: Story = {
+  args: { initialProject: 'northwind', askOpen: true, chatExpanded: false },
+  render: (args) => <Device width={834} height={860}><LoopQA {...args} /></Device>,
+};
+
+export const TabletAskQADark: Story = {
+  args: { initialProject: 'northwind', askOpen: true, chatExpanded: false },
+  render: (args) => dark(<Device width={834} height={860}><LoopQA {...args} /></Device>),
+};
+
+/** Phone, dark: the whole transcript grown over a bug, the composer under it. */
+export const PhoneAskQADark: Story = {
+  args: { initialProject: 'northwind', initialPage: { kind: 'bug', id: 'NW-142' }, askOpen: true },
+  render: (args) => dark(<Device width={390} height={844}><LoopQA {...args} /></Device>),
+};
+
+/** Phone: the composer floats over the page (no peek on a phone); drag its grip up for the transcript. */
+export const PhoneAskQAComposer: Story = {
+  args: { initialProject: 'northwind', askOpen: true, chatExpanded: false },
+  render: (args) => <Device width={390} height={844}><LoopQA {...args} /></Device>,
 };
 
 export const PhoneAskQA: Story = {
