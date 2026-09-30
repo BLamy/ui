@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ComposerAnnotatorProps } from '../workbench/annotator';
+import type { ComposerAnnotatorProps } from '../composer/annotator';
 import { PK_INKS, type PencilTool } from '../../lib/pencilkit/constants';
 import { PencilCanvas } from './pencil-canvas';
 import { InkPicker, PencilActions, PencilToolbar, PencilToolbarDivider, ToolPicker } from './pencil-toolbar';

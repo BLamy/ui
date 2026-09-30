@@ -267,64 +267,6 @@
           "--secondary-strong": "rgba(255, 255, 255, .11)",
           "--handle": "rgba(255, 255, 255, .22)"
         },
-        "[data-theme-scope=\"chat\"]": {
-          "color-scheme": "light",
-          "--background": "#FFFFFF",
-          "--foreground": "#17171C",
-          "--card": "#F4F4F7",
-          "--card-foreground": "#17171C",
-          "--popover": "#F4F4F7",
-          "--popover-foreground": "#17171C",
-          "--secondary": "rgba(0, 0, 0, .045)",
-          "--secondary-foreground": "#3C3C43",
-          "--muted": "#ECECF0",
-          "--muted-foreground": "rgba(60, 60, 67, .72)",
-          "--accent": "rgba(0, 0, 0, .025)",
-          "--accent-foreground": "#17171C",
-          "--destructive": "#E0352B",
-          "--border": "rgba(0, 0, 0, .08)",
-          "--input": "rgba(0, 0, 0, .045)",
-          "--sidebar": "#F7F7F9",
-          "--sidebar-foreground": "#17171C",
-          "--sidebar-accent": "rgba(0, 0, 0, .025)",
-          "--sidebar-accent-foreground": "#17171C",
-          "--sidebar-border": "rgba(0, 0, 0, .08)",
-          "--success": "#1F9D45",
-          "--warning": "#C76A00",
-          "--tertiary-foreground": "rgba(60, 60, 67, .46)",
-          "--secondary-strong": "rgba(0, 0, 0, .08)",
-          "--overlay": "rgba(0, 0, 0, .25)",
-          "--link": "#0A64D6"
-        },
-        "[data-theme-scope=\"chat\"].dark": {
-          "color-scheme": "dark",
-          "--background": "#131318",
-          "--foreground": "#EDEDF2",
-          "--card": "#1B1B22",
-          "--card-foreground": "#EDEDF2",
-          "--popover": "#1B1B22",
-          "--popover-foreground": "#EDEDF2",
-          "--secondary": "rgba(255, 255, 255, .055)",
-          "--secondary-foreground": "#fff",
-          "--muted": "#0D0D11",
-          "--muted-foreground": "rgba(235, 235, 245, .6)",
-          "--accent": "rgba(255, 255, 255, .035)",
-          "--accent-foreground": "#EDEDF2",
-          "--destructive": "#FF453A",
-          "--border": "rgba(255, 255, 255, .07)",
-          "--input": "rgba(255, 255, 255, .055)",
-          "--sidebar": "#101015",
-          "--sidebar-foreground": "#EDEDF2",
-          "--sidebar-accent": "rgba(255, 255, 255, .035)",
-          "--sidebar-accent-foreground": "#EDEDF2",
-          "--sidebar-border": "rgba(255, 255, 255, .07)",
-          "--success": "#32D74B",
-          "--warning": "#FF9F0A",
-          "--tertiary-foreground": "rgba(235, 235, 245, .35)",
-          "--secondary-strong": "rgba(255, 255, 255, .1)",
-          "--overlay": "rgba(0, 0, 0, .5)",
-          "--link": "#7EB6FF"
-        },
         "[data-theme-scope=\"sheet\"].dark": {
           "color-scheme": "dark",
           "--foreground": "#F5F5F7",
@@ -461,48 +403,6 @@
       }
     },
     {
-      "name": "chat-shell",
-      "type": "registry:ui",
-      "title": "ChatShell",
-      "description": "A team-chat scaffold: an optional workspace rail and channel sidebar beside the conversation, one drawer when narrow.",
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "registry/components/chat-shell.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/chat-shell.tsx"
-        }
-      ],
-      "meta": {
-        "page": "chat-shell",
-        "exports": [
-          "ChatShell",
-          "ChatShellNav",
-          "ChatShellNavTrigger",
-          "ChatShellSidebar",
-          "ChatShellMain",
-          "ChatShellHeader",
-          "ChatShellHeaderIcon",
-          "ChatShellTitle",
-          "ChatShellDescription",
-          "ChatShellHeaderActions",
-          "chatShellHeaderActionVariants",
-          "ChatShellHeaderAction",
-          "ChatShellBack",
-          "ChatShellFooter",
-          "ChatShellAside",
-          "ChatShellPanel",
-          "useChatShell",
-          "useOptionalChatShell"
-        ]
-      }
-    },
-    {
       "name": "command-menu",
       "type": "registry:ui",
       "title": "CommandMenu",
@@ -592,9 +492,6 @@
           "useComposer",
           "useComposerBump",
           "useComposerAnnotator",
-          "ModelPicker",
-          "WORKBENCH_MODELS",
-          "WORKBENCH_PROVIDERS",
           "WorkbenchTheme"
         ]
       }
@@ -1018,8 +915,6 @@
         "page": "replay-preview",
         "exports": [
           "ReplayPreview",
-          "replayPreviewVariants",
-          "replayMarkerVariants",
           "formatReplayTime",
           "getReplayMarkers",
           "getReplayMeta",
@@ -1290,81 +1185,6 @@
           "ToastProvider",
           "toastApi",
           "defaultToastQueue"
-        ]
-      }
-    },
-    {
-      "name": "workbench-shell",
-      "type": "registry:ui",
-      "title": "WorkbenchShell",
-      "description": "An IDE scaffold that owns the width class and region visibility; compose regions into its slots.",
-      "dependencies": [
-        "@brett_lamy/ui@^2.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "registry/components/workbench-shell.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/workbench-shell.tsx"
-        }
-      ],
-      "meta": {
-        "page": "workbench-shell",
-        "exports": [
-          "workbenchWidthClass",
-          "useWorkbenchShell",
-          "useOptionalWorkbenchShell",
-          "WorkbenchShell",
-          "WorkbenchSidebar",
-          "WorkbenchSidebarTrigger",
-          "WorkbenchSidebarClose",
-          "WorkbenchMain",
-          "WorkbenchHeader",
-          "WorkbenchTitle",
-          "WorkbenchActions",
-          "WorkbenchAction",
-          "WorkbenchDock",
-          "WorkbenchDockTrigger",
-          "WorkbenchDockClose",
-          "WorkbenchPanel",
-          "WorkbenchPanelTrigger",
-          "WorkbenchPanelHeader",
-          "WorkbenchPanelTitle",
-          "WorkbenchPanelFullscreen",
-          "WorkbenchPanelClose",
-          "WorkbenchTabBar",
-          "WorkbenchTab",
-          "Conversation",
-          "ConversationEmpty",
-          "ConversationGreeting",
-          "ConversationMessages",
-          "ConversationComposer",
-          "ConversationSuggestions",
-          "Suggestion",
-          "UserMessage",
-          "AssistantMessage",
-          "ConversationTyping",
-          "MessageMarkdown",
-          "WorkLog",
-          "ToolCall",
-          "SettledBanner",
-          "fakeShell",
-          "TERM_FILES",
-          "TerminalBody",
-          "TerminalHeader",
-          "TerminalAction",
-          "SURFACES",
-          "SurfacePicker",
-          "SurfaceBrowser",
-          "SurfaceAppPreview",
-          "SurfaceFiles",
-          "SurfaceDiff",
-          "SurfaceAgents",
-          "SurfaceTerminal",
-          "WorkbenchTheme"
         ]
       }
     },
@@ -1858,6 +1678,41 @@
       }
     },
     {
+      "name": "delivery-tracking",
+      "type": "registry:block",
+      "title": "Delivery tracking",
+      "description": "An order card resting over a live map: a ProgressStepper walks through the delivery stages while the chat below answers questions about the order. Composed from ArtifactChatContainer, FloatingSheet and ProgressStepper.",
+      "categories": [
+        "ai",
+        "chat",
+        "maps"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^2.1.0",
+        "class-variance-authority",
+        "framer-motion",
+        "react-aria-components"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/delivery-tracking/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/delivery-tracking/page.tsx"
+        },
+        {
+          "path": "registry/blocks/delivery-tracking/delivery-tracking-demo.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/delivery-tracking/delivery-tracking-demo.tsx"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/delivery-tracking/page.tsx"
+      }
+    },
+    {
       "name": "discord-clone",
       "type": "registry:block",
       "title": "Discord clone",
@@ -1954,6 +1809,21 @@
           "path": "registry/blocks/discord-clone/components/chat-composer.tsx",
           "type": "registry:component",
           "target": "components/blocks/discord-clone/components/chat-composer.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/chat-theme.css",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/chat-theme.css"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/chat-shell.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/chat-shell.tsx"
+        },
+        {
+          "path": "registry/blocks/discord-clone/components/chat-shell-context.ts",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/chat-shell-context.ts"
         }
       ],
       "meta": {
@@ -2161,6 +2031,138 @@
       }
     },
     {
+      "name": "map-chat",
+      "type": "registry:block",
+      "title": "Map chat",
+      "description": "An always-floating chat over a slippy map: the guide answers with tool calls that pan, zoom, pin and route the map (walking times, distances, saved trips). Composed from ArtifactChatContainer and a small tile-map renderer with its own geo maths, places and tool-planning agent. Needs network for the map tiles.",
+      "categories": [
+        "ai",
+        "chat",
+        "maps"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^2.1.0",
+        "react-aria-components"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/map-chat/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/map-chat/page.tsx"
+        },
+        {
+          "path": "registry/blocks/map-chat/map-chat-demo.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/map-chat/map-chat-demo.tsx"
+        },
+        {
+          "path": "registry/blocks/map-chat/tile-map.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/map-chat/tile-map.tsx"
+        },
+        {
+          "path": "registry/blocks/map-chat/geo.ts",
+          "type": "registry:component",
+          "target": "components/blocks/map-chat/geo.ts"
+        },
+        {
+          "path": "registry/blocks/map-chat/map-agent.ts",
+          "type": "registry:component",
+          "target": "components/blocks/map-chat/map-agent.ts"
+        },
+        {
+          "path": "registry/blocks/map-chat/places.ts",
+          "type": "registry:component",
+          "target": "components/blocks/map-chat/places.ts"
+        },
+        {
+          "path": "registry/blocks/map-chat/map-icons.ts",
+          "type": "registry:component",
+          "target": "components/blocks/map-chat/map-icons.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/map-chat/page.tsx"
+      }
+    },
+    {
+      "name": "pencilkit-sketch",
+      "type": "registry:block",
+      "title": "PencilKit sketch pad",
+      "description": "A freehand sketch pad: dotted paper, a PencilCanvas and the floating PencilToolbar (tools, inks, widths, undo and redo). Composed from PencilCanvas, PencilToolbar and usePencilHistory.",
+      "categories": [
+        "drawing",
+        "application"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^2.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/pencilkit-sketch/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/pencilkit-sketch/page.tsx"
+        },
+        {
+          "path": "registry/blocks/pencilkit-sketch/pencilkit-demo.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/pencilkit-sketch/pencilkit-demo.tsx"
+        },
+        {
+          "path": "registry/blocks/pencilkit-sketch/demo-strokes.ts",
+          "type": "registry:component",
+          "target": "components/blocks/pencilkit-sketch/demo-strokes.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/pencilkit-sketch/page.tsx"
+      }
+    },
+    {
+      "name": "split-view-demos",
+      "type": "registry:block",
+      "title": "SplitView compositions",
+      "description": "Six compositions of SplitView in one switcher: Mail (three columns), Notes (two columns), Settings (sidebar and detail), Reminders (tinted rows, large titles), Music library (a push/pop stack inside the detail) and a Notes gallery whose list steps aside. Each is a plain composition of the public SplitView parts.",
+      "categories": [
+        "navigation",
+        "application"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^2.1.0",
+        "react-aria",
+        "react-aria-components"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/split-view-demos/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/split-view-demos/page.tsx"
+        },
+        {
+          "path": "registry/blocks/split-view-demos/demos.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/split-view-demos/demos.tsx"
+        },
+        {
+          "path": "registry/blocks/split-view-demos/sidebar-demo.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/split-view-demos/sidebar-demo.tsx"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/split-view-demos/page.tsx"
+      }
+    },
+    {
       "name": "t3-clone",
       "type": "registry:block",
       "title": "T3 Code clone",
@@ -2173,6 +2175,9 @@
       ],
       "dependencies": [
         "@brett_lamy/ui@^2.1.0",
+        "@pierre/diffs",
+        "@pierre/trees",
+        "class-variance-authority",
         "framer-motion",
         "react-aria-components"
       ],
@@ -2239,6 +2244,41 @@
           "path": "registry/blocks/t3-clone/lib/use-workspaces.ts",
           "type": "registry:component",
           "target": "components/blocks/t3-clone/lib/use-workspaces.ts"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/workbench/fixtures.ts",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/workbench/fixtures.ts"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/workbench/model-picker.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/workbench/model-picker.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/workbench/models.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/workbench/models.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/workbench/surfaces.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/workbench/surfaces.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/workbench/terminal.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/workbench/terminal.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/workbench/workbench-composer.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/workbench/workbench-composer.tsx"
+        },
+        {
+          "path": "registry/blocks/t3-clone/components/workbench/workbench-shell.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/workbench/workbench-shell.tsx"
         }
       ],
       "meta": {

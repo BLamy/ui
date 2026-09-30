@@ -6,6 +6,7 @@ import {
 } from 'react-aria-components';
 import { overlayZ, popoverMotion, popoverSurface } from '../lib/primitives';
 import { cn } from '../lib/utils';
+import { useThemeScopeProps } from '../lib/theme';
 
 /* ══ Popover — react-aria's Popover (positioning, flipping, Esc / outside-press dismissal, focus return).
    Portals into BLProvider's root (see BLProvider) so it keeps the theme tokens.
@@ -20,12 +21,15 @@ export const PopoverTrigger = DialogTrigger;
 export interface PopoverProps extends AriaPopoverProps {}
 
 /** The styled floating surface. Select, ComboBox and DropdownMenu render their lists inside it. */
-export function Popover({ className, offset = 8, ...props }: PopoverProps) {
+export function Popover({ className, style, offset = 8, ...props }: PopoverProps) {
+  const scope = useThemeScopeProps();
   return (
     <AriaPopover
       data-slot="popover"
+      data-theme-scope={scope['data-theme-scope']}
       offset={offset}
-      className={composeRenderProps(className, (cls) => cn(popoverSurface, popoverMotion, overlayZ, 'min-w-(--trigger-width)', cls))}
+      className={composeRenderProps(className, (cls) => cn(popoverSurface, popoverMotion, overlayZ, 'min-w-(--trigger-width)', scope.className, cls))}
+      style={composeRenderProps(style, (s) => ({ ...scope.style, ...s }))}
       {...props}
     />
   );

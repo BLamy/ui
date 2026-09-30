@@ -1,6 +1,8 @@
 import type { StorybookConfig } from '@storybook/react-vite';
 import { defaultClientConditions } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
+// @ts-expect-error plain ESM helper shared with the Vite configs
+import { aliases } from '../../../tools/alias.mjs';
 
 const config: StorybookConfig = {
   // package stories, block stories, and catalog stories that render registry blocks (packages can't depend on the registry)
@@ -9,6 +11,7 @@ const config: StorybookConfig = {
   async viteFinal(cfg) {
     cfg.plugins = [...(cfg.plugins ?? []), tailwindcss()];
     cfg.resolve = cfg.resolve ?? {};
+    (cfg.resolve as any).alias = [...((cfg.resolve as any).alias ?? []), ...aliases];
     // consume package TS source via the workspace custom condition, keeping vite's defaults
     (cfg.resolve as any).conditions = ['@org/source', ...defaultClientConditions];
     (cfg.resolve as any).dedupe = ['react', 'react-dom'];

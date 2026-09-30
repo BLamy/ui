@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { SurfaceKind, TermLine } from '@brett_lamy/ui';
+import type { SurfaceKind } from '../components/workbench/surfaces';
+import type { TermLine } from '../components/workbench/terminal';
 import { WORKSPACES, blankTerminal, blankWorkspace, type ThreadWorkspace } from './data';
 
 /** Where a thread that doesn't exist yet keeps its terminals and panel. */

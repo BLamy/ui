@@ -15,7 +15,7 @@ import { collectSlots, defineSlot } from '../../lib/container';
 import { springCss } from '../../lib/motion';
 import { themeScopeClass, useAppearance, useChromeHidden } from '../../lib/theme';
 import { cva } from 'class-variance-authority';
-import { ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerFab, ComposerOutlet, type ComposerBumpProgress } from '../workbench/composer';
+import { ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerFab, ComposerOutlet, type ComposerBumpProgress } from '../composer/composer';
 import { Icon } from '../../lib/icon';
 import { cn } from '../../lib/utils';
 import { sheetToneProps, type FloatingSheetAppearance, type FloatingSheetFabPosition, type FloatingSheetTone } from './floating-sheet';

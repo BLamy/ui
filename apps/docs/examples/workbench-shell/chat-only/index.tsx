@@ -1,30 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import {
-  AssistantMessage,
-  Conversation,
-  ConversationComposer,
-  ConversationMessages,
-  Icon,
-  MessageMarkdown,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarItem,
-  SidebarSection,
-  SidebarWorkspace,
-  stripAttachmentRefs,
-  useWorkbenchShell,
-  UserMessage,
-  WorkbenchComposer,
-  WorkbenchHeader,
-  WorkbenchMain,
-  WorkbenchShell,
-  WorkbenchSidebar,
-  WorkbenchSidebarClose,
-  WorkbenchSidebarTrigger,
-  WorkbenchTitle,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, Icon, MessageMarkdown, SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSection, SidebarWorkspace, UserMessage, WorkbenchTheme } from '@brett_lamy/ui'
+import { stripAttachmentRefs, WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
+import { useWorkbenchShell, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 
 const RECENT = [
   'Onboarding checklist',

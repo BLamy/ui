@@ -1,4 +1,5 @@
-import { SurfaceFiles, WorkbenchTheme } from '@brett_lamy/ui'
+import { WorkbenchTheme } from '@brett_lamy/ui'
+import { SurfaceFiles } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 
 const PATHS = [
   'cookbook/src/components/Credenza.tsx',

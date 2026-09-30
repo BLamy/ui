@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SplitViewResizableDemo, SplitViewSettingsDemo } from '@brett_lamy/ui'
+import { SplitViewResizableDemo, SplitViewSettingsDemo } from '@/components/blocks/split-view-demos/demos'
 
 // sidebarVisibility gives each width class its own starting visibility; the
 // sidebar resets to it whenever the class changes, and onSidebarVisibleChange

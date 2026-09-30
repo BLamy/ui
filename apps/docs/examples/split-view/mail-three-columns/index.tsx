@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { SplitViewMailDemo } from '@brett_lamy/ui'
+import { SplitViewMailDemo } from '@/components/blocks/split-view-demos/demos'
 
 // The same composition at three device widths; SplitView measures its own box.
 const sizes = [

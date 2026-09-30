@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { aliases } from '../../tools/alias.mjs';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -16,7 +17,7 @@ export default defineConfig(() => ({
     host: 'localhost',
   },
   plugins: [react(), tailwindcss()],
-  resolve: { conditions: ['@org/source'] },
+  resolve: { conditions: ['@org/source'], alias: aliases },
   optimizeDeps: {
     include: [
       '@tiptap/core',

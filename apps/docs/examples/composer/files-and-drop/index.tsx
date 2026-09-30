@@ -1,18 +1,6 @@
 import { useState } from 'react'
-import {
-  Composer,
-  ComposerAdd,
-  ComposerAttachments,
-  ComposerCard,
-  ComposerFooter,
-  ComposerInput,
-  ComposerSend,
-  ComposerSpacer,
-  Toaster,
-  createToastQueue,
-  type ComposerAttachment,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, Toaster, createToastQueue, WorkbenchTheme } from '@brett_lamy/ui'
+import { type ComposerAttachment } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 // Stand-ins so the example opens with one of each kind of tile.
 const svg = (body: string, w: number, h: number) =>

@@ -1,0 +1,14 @@
+{
+  "name": "pencilkit-sketch",
+  "title": "PencilKit sketch pad",
+  "description": "A freehand sketch pad: dotted paper, a PencilCanvas and the floating PencilToolbar (tools, inks, widths, undo and redo). Composed from PencilCanvas, PencilToolbar and usePencilHistory.",
+  "categories": [
+    "drawing",
+    "application"
+  ],
+  "files": [
+    "page.tsx",
+    "pencilkit-demo.tsx",
+    "demo-strokes.ts"
+  ]
+}

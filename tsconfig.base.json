@@ -23,6 +23,11 @@
     "customConditions": [
       "@org/source"
     ],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@/components/ui/*": ["./packages/ui/src/components/*"],
+      "@/lib/*": ["./packages/ui/src/lib/*"],
+      "@/components/blocks/*": ["./registry/blocks/*"]
+    }
   }
 }

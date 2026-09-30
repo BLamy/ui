@@ -18,7 +18,7 @@ import {
   SidebarUser,
   type ThreadStatus,
 } from './components/thread-sidebar';
-import { IconButton, WorkbenchTheme } from '@brett_lamy/ui';
+import { IconButton, WorkbenchTheme} from '@brett_lamy/ui';
 import { THREADS } from './lib/data';
 
 const meta: Meta<typeof ThreadSidebar> = {

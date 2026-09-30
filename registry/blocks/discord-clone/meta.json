@@ -2,7 +2,10 @@
   "name": "discord-clone",
   "title": "Discord clone",
   "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell and TabView, with its own channel, message, member and composer parts.",
-  "categories": ["chat", "application"],
+  "categories": [
+    "chat",
+    "application"
+  ],
   "files": [
     "page.tsx",
     "channel-message.tsx",
@@ -19,7 +22,13 @@
     "components/message-list.tsx",
     "components/thread-preview.tsx",
     "components/member-list.tsx",
-    "components/chat-composer.tsx"
+    "components/chat-composer.tsx",
+    "chat-theme.css",
+    "components/chat-shell.tsx",
+    "components/chat-shell-context.ts"
   ],
-  "dependencies": ["class-variance-authority", "react-aria-components"]
+  "dependencies": [
+    "class-variance-authority",
+    "react-aria-components"
+  ]
 }

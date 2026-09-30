@@ -1,0 +1,19 @@
+{
+  "name": "delivery-tracking",
+  "title": "Delivery tracking",
+  "description": "An order card resting over a live map: a ProgressStepper walks through the delivery stages while the chat below answers questions about the order. Composed from ArtifactChatContainer, FloatingSheet and ProgressStepper.",
+  "categories": [
+    "ai",
+    "chat",
+    "maps"
+  ],
+  "files": [
+    "page.tsx",
+    "delivery-tracking-demo.tsx"
+  ],
+  "dependencies": [
+    "class-variance-authority",
+    "framer-motion",
+    "react-aria-components"
+  ]
+}

@@ -2,7 +2,8 @@ import * as React from 'react';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from 'react-aria-components';
-import { Icon, IconButton, cn, springs, useOptionalWorkbenchShell, type IconName } from '@brett_lamy/ui';
+import { Icon, IconButton, cn, springs, type IconName } from '@brett_lamy/ui';
+import { useOptionalWorkbenchShell } from './workbench/workbench-shell';
 
 /* ══ Thread sidebar parts ══
    <ThreadSidebar>

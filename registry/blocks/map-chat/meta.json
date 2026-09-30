@@ -1,0 +1,22 @@
+{
+  "name": "map-chat",
+  "title": "Map chat",
+  "description": "An always-floating chat over a slippy map: the guide answers with tool calls that pan, zoom, pin and route the map (walking times, distances, saved trips). Composed from ArtifactChatContainer and a small tile-map renderer with its own geo maths, places and tool-planning agent. Needs network for the map tiles.",
+  "categories": [
+    "ai",
+    "chat",
+    "maps"
+  ],
+  "files": [
+    "page.tsx",
+    "map-chat-demo.tsx",
+    "tile-map.tsx",
+    "geo.ts",
+    "map-agent.ts",
+    "places.ts",
+    "map-icons.ts"
+  ],
+  "dependencies": [
+    "react-aria-components"
+  ]
+}

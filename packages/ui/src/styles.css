@@ -1,4 +1,4 @@
-@layer theme, base, components, utilities;
+@layer theme, base, components, docstream, utilities;
 @layer components.bl-editor, components.bl-mde;
 @import "./tokens.css";
 /* Utilities only — no preflight, so a host app's base styles are left alone. */

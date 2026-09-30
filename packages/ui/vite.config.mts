@@ -6,10 +6,12 @@ import dts from 'vite-plugin-dts';
 import * as path from 'path';
 import { copyFileSync } from 'fs';
 import pkg from './package.json' with { type: 'json' };
+import { aliases } from '../../tools/alias.mjs';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/packages/ui',
+  resolve: { alias: aliases },
   plugins: [
     react(),
     tailwindcss(),

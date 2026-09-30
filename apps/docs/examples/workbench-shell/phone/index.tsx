@@ -1,34 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import {
-  AssistantMessage,
-  Conversation,
-  ConversationComposer,
-  ConversationMessages,
-  Icon,
-  MessageMarkdown,
-  SidebarContent,
-  SidebarHeader,
-  SidebarItem,
-  SidebarSection,
-  SidebarWorkspace,
-  TerminalBody,
-  TerminalHeader,
-  useWorkbenchShell,
-  UserMessage,
-  WorkbenchActions,
-  WorkbenchComposer,
-  WorkbenchDock,
-  WorkbenchDockClose,
-  WorkbenchDockTrigger,
-  WorkbenchHeader,
-  WorkbenchMain,
-  WorkbenchShell,
-  WorkbenchSidebar,
-  WorkbenchSidebarClose,
-  WorkbenchSidebarTrigger,
-  WorkbenchTitle,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, Icon, MessageMarkdown, SidebarContent, SidebarHeader, SidebarItem, SidebarSection, SidebarWorkspace, UserMessage, WorkbenchTheme } from '@brett_lamy/ui'
+import { TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
+import { useWorkbenchShell, WorkbenchActions, WorkbenchDock, WorkbenchDockClose, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
+import { WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 const BUILD_LOG = [
   { t: 'pnpm build', p: true },

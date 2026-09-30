@@ -1,30 +1,9 @@
+import './chat-theme.css';
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import {
-  ChatShell,
-  ChatShellAside,
-  ChatShellDescription,
-  ChatShellFooter,
-  ChatShellHeader,
-  ChatShellHeaderAction,
-  ChatShellHeaderActions,
-  ChatShellHeaderIcon,
-  ChatShellMain,
-  ChatShellNav,
-  ChatShellNavTrigger,
-  ChatShellPanel,
-  ChatShellSidebar,
-  ChatShellTitle,
-  Icon,
-  TabView,
-  TabViewAction,
-  TabViewBar,
-  TabViewFooter,
-  TabViewIndicator,
-  TabViewList,
-  TabViewTab,
-  useChatShell,
-} from '@brett_lamy/ui';
+import { Icon, TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewTab } from '@brett_lamy/ui';
+import { ChatShell, ChatShellAside, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderAction, ChatShellHeaderActions, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
+import { useChatShell } from './components/chat-shell-context';
 import { ChatUsersProvider, type ChatUser } from './components/chat-users';
 import { ChatAvatar } from './components/chat-avatar';
 import { ChannelGroup, ChannelItem, ChannelList } from './components/channel-list';

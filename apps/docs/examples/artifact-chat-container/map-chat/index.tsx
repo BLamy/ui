@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { MapChatDemo } from '@brett_lamy/ui'
+import { MapChatDemo } from '@/components/blocks/map-chat/map-chat-demo'
 
 /**
  * Lays a fixed-size composition out at its design width, scaled down (never up)

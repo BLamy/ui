@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '../workbench/composer';
+import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '../composer/composer';
 import '../../styles.css';
 import { FloatingChat, type FloatingChatFabPosition } from './floating-chat';
 import { ThemeScope } from '../../lib/theme';

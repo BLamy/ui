@@ -1,6 +1,6 @@
 import { createContext, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ComposerOutlet, type ComposerOutletProps } from '../../components/workbench/composer';
+import { ComposerOutlet, type ComposerOutletProps } from '../../components/composer/composer';
 
 /* ══ Persistent hosts — one element, many homes ══
    ArtifactChatContainer moves its chat between a docked column and a floating sheet. Rendering the composer

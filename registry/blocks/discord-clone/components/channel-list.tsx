@@ -1,6 +1,7 @@
 import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
-import { Icon, cn, useOptionalChatShell } from '@brett_lamy/ui';
+import { Icon, cn } from '@brett_lamy/ui';
+import { useOptionalChatShell } from './chat-shell-context';
 import { cva } from 'class-variance-authority';
 
 /* ══ Channel navigation ══

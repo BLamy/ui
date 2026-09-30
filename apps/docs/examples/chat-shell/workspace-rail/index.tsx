@@ -1,16 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
-import {
-  ChatShell,
-  Icon,
-  TabView,
-  TabViewAction,
-  TabViewBar,
-  TabViewFooter,
-  TabViewIndicator,
-  TabViewList,
-  TabViewSeparator,
-  TabViewTab,
-} from '@brett_lamy/ui'
+import { Icon, TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, TabViewList, TabViewSeparator, TabViewTab } from '@brett_lamy/ui'
+import { ChatShell } from '@/components/blocks/discord-clone/components/chat-shell'
 
 const WORKSPACE_COLORS: Record<string, string> = {
   blui: '#0A84FF',

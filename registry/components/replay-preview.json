@@ -5,14 +5,20 @@
   "page": "replay-preview",
   "exports": [
     "ReplayPreview",
-    "replayPreviewVariants",
-    "replayMarkerVariants",
     "formatReplayTime",
     "getReplayMarkers",
     "getReplayMeta",
     "getReplayPointerTrack",
     "replayPointerAt"
   ],
-  "imports": ["ReplayPreview"],
-  "types": ["ReplayEvent", "ReplayMarker", "ReplayMarkerKind", "ReplayMeta", "ReplayPointerTrack"]
+  "imports": [
+    "ReplayPreview"
+  ],
+  "types": [
+    "ReplayEvent",
+    "ReplayMarker",
+    "ReplayMarkerKind",
+    "ReplayMeta",
+    "ReplayPointerTrack"
+  ]
 }

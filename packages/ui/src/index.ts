@@ -19,9 +19,9 @@ export type { CelebrateProps } from './components/celebrate';
 export {
   BLProvider, BLSafeCtx, BLStickyCtx, chromeStore, useChromeHidden, chromeOffset,
   AppearanceContext, AppearanceProvider, useAppearance,
-  ThemeScope, themeScopeProps, themeScopeClass, tintVars, readThemeVars, THEME_VARS,
+  ThemeScope, ThemeScopeContext, useThemeScopeProps, themeScopeProps, themeScopeClass, tintVars, themeVarStyle, readThemeVars, THEME_VARS,
 } from './lib/theme';
-export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName } from './lib/theme';
+export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName, ThemeScopeState, ThemeVars, ThemeVar } from './lib/theme';
 export { useContainerWidth, useContainerSize, defineSlot, collectSlots } from './lib/container';
 export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL } from './lib/sheet-drag';
 export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
@@ -91,13 +91,6 @@ export type {
 } from './components/sidebar';
 export type { AdaptivePaneProps, AdaptivePaneMode } from './components/adaptive-pane';
 
-// demos
-export { SidebarDemo } from './demos/sidebar-demo';
-export {
-  SplitViewMailDemo, SplitViewNotesDemo, SplitViewSettingsDemo, SplitViewResizableDemo, DemoGlyph,
-  SplitViewRemindersDemo, SplitViewLibraryDemo, SplitViewGalleryDemo,
-} from './demos/split-view-demos';
-export type { SplitViewResizableDemoProps } from './demos/split-view-demos';
 
 // ── shadcn primitives (react-aria-components + Tailwind + cva) ──
 export { Badge, badgeVariants } from './components/badge';
@@ -181,11 +174,6 @@ export type { SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, Synta
 // ── end shadcn primitives ──
 
 // ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
-export {
-  useWorkbenchAppearance,
-  WorkbenchTheme,
-  type WorkbenchThemeProps,
-} from './lib/workbench/theme';
 export { IconButton, iconButtonVariants, type IconButtonProps } from './components/icon-button';
 export { PlainButton, PlainToggleButton, type PlainButtonProps, type PlainToggleButtonProps } from './components/plain-button';
 export {
@@ -197,37 +185,9 @@ export {
   type MarkdownViewProps,
   type DocstreamRefContextValue,
   type ReferenceNode,
-} from './components/workbench/markdown';
-export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './components/workbench/message-scroller';
-export { SnapSheet, type SnapSheetProps } from './components/workbench/snap-sheet';
-export {
-  TerminalHeader,
-  TerminalBody,
-  TerminalAction,
-  fakeShell,
-  TERM_FILES,
-  TERMINAL_COLORS,
-  type TermLine,
-  type TerminalHeaderProps,
-  type TerminalBodyProps,
-} from './components/workbench/terminal';
-export {
-  SURFACES,
-  SurfacePicker,
-  SurfaceBrowser,
-  SurfaceAppPreview,
-  SurfaceFiles,
-  SurfaceDiff,
-  SurfaceAgents,
-  SurfaceTerminal,
-  type SurfaceKind,
-  type SurfaceMeta,
-  type SurfacePickerProps,
-  type SurfaceBrowserProps,
-  type SurfaceFilesProps,
-  type SurfaceDiffFile,
-  type SurfaceAgent,
-} from './components/workbench/surfaces';
+} from './components/markdown-view';
+export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './components/message-scroller';
+export { SnapSheet, type SnapSheetProps } from './components/snap-sheet';
 export {
   Composer,
   ComposerOutlet,
@@ -289,118 +249,17 @@ export {
   type ComposerBumpHandleProps,
   type ComposerBumpContentProps,
   type AnnotateLightboxProps,
-} from './components/workbench/composer';
+} from './components/composer/composer';
 export {
   ComposerAnnotatorProvider,
   useComposerAnnotator,
   type ComposerAnnotator,
   type ComposerAnnotatorProps,
   type ComposerAnnotatorSurface,
-} from './components/workbench/annotator';
-export { ModelPicker, modelRowVariants, type ModelPickerProps } from './components/workbench/model-picker';
-export {
-  AnthropicGlyph,
-  OpenAIGlyph,
-  SparkleGlyph,
-  WORKBENCH_MODELS,
-  WORKBENCH_PROVIDERS,
-  type ModelOption,
-  type ModelProvider,
-} from './components/workbench/models';
-export {
-  WorkbenchComposer,
-  WORKBENCH_EFFORTS,
-  WORKBENCH_ACCESS,
-  stripAttachmentRefs,
-  type WorkbenchComposerProps,
-} from './components/workbench/workbench-composer';
-export { WbPopover, type WbPopoverProps } from './components/workbench/wb-popover';
-export {
-  Conversation,
-  ConversationEmpty,
-  ConversationGreeting,
-  ConversationMessages,
-  ConversationComposer,
-  ConversationSuggestions,
-  Suggestion,
-  UserMessage,
-  AssistantMessage,
-  MessageMarkdown,
-  ConversationTyping,
-  WorkLog,
-  ToolCall,
-  SettledBanner,
-  type ConversationProps,
-  type ConversationGreetingProps,
-  type ConversationMessagesProps,
-  type UserMessageProps,
-  type WorkLogProps,
-  type ToolCallProps,
-  type SettledBannerProps,
-} from './components/workbench/chat';
-export {
-  WorkbenchShell,
-  useWorkbenchShell,
-  useOptionalWorkbenchShell,
-  workbenchWidthClass,
-  WorkbenchSidebar,
-  WorkbenchSidebarTrigger,
-  WorkbenchSidebarClose,
-  WorkbenchMain,
-  WorkbenchHeader,
-  WorkbenchTitle,
-  WorkbenchActions,
-  WorkbenchAction,
-  WorkbenchDock,
-  WorkbenchDockTrigger,
-  WorkbenchDockClose,
-  WorkbenchPanel,
-  WorkbenchPanelTrigger,
-  WorkbenchPanelHeader,
-  WorkbenchPanelTitle,
-  WorkbenchPanelFullscreen,
-  WorkbenchPanelClose,
-  WorkbenchTabBar,
-  WorkbenchTab,
-  type WorkbenchShellProps,
-  type WorkbenchShellContextValue,
-  type WorkbenchWidthClass,
-  type WorkbenchSidebarProps,
-  type WorkbenchTitleProps,
-  type WorkbenchDockProps,
-  type WorkbenchPanelProps,
-  type WorkbenchTabBarProps,
-} from './templates/workbench-shell';
+} from './components/composer/annotator';
+export { WbPopover, type WbPopoverProps } from './components/composer/composer-popover';
 
-// ── Chat: ChatShell, floating/artifact chat containers (the Discord-style parts live in the discord-clone block) ──
-export {
-  ChatShell,
-  ChatShellNav,
-  ChatShellNavTrigger,
-  ChatShellSidebar,
-  ChatShellMain,
-  ChatShellHeader,
-  ChatShellHeaderIcon,
-  ChatShellTitle,
-  ChatShellDescription,
-  ChatShellHeaderActions,
-  ChatShellHeaderAction,
-  ChatShellBack,
-  ChatShellFooter,
-  ChatShellAside,
-  ChatShellPanel,
-  chatShellHeaderActionVariants,
-  useChatShell,
-  useOptionalChatShell,
-  type ChatShellProps,
-  type ChatShellContextValue,
-  type ChatShellNavProps,
-  type ChatShellNavTriggerProps,
-  type ChatShellHeaderActionProps,
-  type ChatShellBackProps,
-  type ChatShellAsideProps,
-  type ChatShellPanelProps,
-} from './templates/chat-shell';
+// ── Chat: floating/artifact chat containers (ChatShell and the Discord-style parts live in the discord-clone block) ──
 export {
   FloatingSheet,
   useFloatingSheet,
@@ -427,56 +286,7 @@ export {
   type ArtifactChatFabPosition,
   type ArtifactChatLayout,
 } from './templates/artifact-chat-container';
-export {
-  TileMap,
-  esriDarkGrayTiles,
-  esriLightGrayTiles,
-  ESRI_ATTRIBUTION,
-  osmTiles,
-  OSM_ATTRIBUTION,
-  cartoDarkTiles,
-  cartoVoyagerTiles,
-  CARTO_ATTRIBUTION,
-  type TileMapProps,
-  type MapPin,
-  type MapRoute,
-  type TileUrlFn,
-} from './demos/map-chat/tile-map';
-export {
-  project,
-  unproject,
-  resolveView,
-  distanceMeters,
-  walkingMinutes,
-  formatDistance,
-  formatMinutes,
-  type LatLng,
-  type MapView,
-  type MapTarget,
-  type MapBoundsTarget,
-  type MapPadding,
-} from './demos/map-chat/geo';
-export { MAP_ICONS, type MapIconName } from './demos/map-chat/map-icons';
-export { PLACES, PLACE_BY_ID, AREAS, CATEGORY_META, USER_POSITION, type Place, type PlaceCategory } from './demos/map-chat/places';
-export {
-  planTurn,
-  SUGGESTIONS,
-  TOOL_META,
-  type MapToolName,
-  type MapToolHost,
-  type AgentToolStep,
-  type AgentTurnPlan,
-  type AgentMemory,
-  type Trip,
-} from './demos/map-chat/map-agent';
-export { MapChatDemo, type MapChatDemoProps } from './demos/map-chat/map-chat-demo';
 export { ProgressStepper, progressStepperVariants, type ProgressStepperProps, type ProgressStep, type ProgressStepState } from './components/chat/progress-stepper';
-export {
-  DeliveryTrackingDemo,
-  DELIVERY_STAGES,
-  type DeliveryTrackingDemoProps,
-  type DeliveryStage,
-} from './demos/delivery/delivery-tracking-demo';
 
 // PencilKit — freehand drawing on perfect-freehand (formerly @brett_lamy/pencilkit)
 export {
@@ -517,9 +327,6 @@ export type {
 export { usePencilHistory } from './components/pencilkit/use-pencil-history';
 export type { PencilHistory } from './components/pencilkit/use-pencil-history';
 export { PencilKitAnnotator } from './components/pencilkit/pencilkit-annotator';
-export { demoStrokes } from './demos/pencilkit/demo-strokes';
-export { PencilKitDemo, pencilPaperClassName } from './demos/pencilkit/pencilkit-demo';
-export type { PencilKitDemoProps } from './demos/pencilkit/pencilkit-demo';
 
 // ── feedback, media and morph primitives ──
 export {
@@ -530,11 +337,13 @@ export type {
 } from './components/toast';
 export { ProgressRing, CountdownRing, useCountdown, progressRingVariants, countdownRingLabelVariants } from './components/progress-ring';
 export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, CountdownRingLabelSize, UseCountdownOptions, Countdown } from './components/progress-ring';
-export { ReplayPreview, replayPreviewVariants, replayMarkerVariants, formatReplayTime } from './components/replay-preview';
-export type { ReplayPreviewProps, ReplayPreviewHandle } from './components/replay-preview';
-export { replayDemoEvents } from './demos/replay/replay-demo-events';
-export { getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from '@brett_lamy/docstream/replay';
-export type { ReplayEvent, ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack } from '@brett_lamy/docstream/replay';
+// ReplayPreview lives in docstream; re-exported here (see components/replay-preview.tsx)
+export {
+  ReplayPreview, formatReplayTime, replayDemoEvents, getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt,
+} from './components/replay-preview';
+export type {
+  ReplayPreviewHandle, ReplayPreviewProps, ReplayEvent, ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack,
+} from './components/replay-preview';
 export { NowPlayingBars } from './components/now-playing-bars';
 export type { NowPlayingBarsProps } from './components/now-playing-bars';
 export { MorphGroup, Morph, MorphPresence, useMorphTransition } from './components/morph';
@@ -549,3 +358,12 @@ export type {
   CommandMenuProps, CommandInputProps, CommandListProps, CommandPageProps, CommandGroupProps, CommandItemProps,
   CommandFooterProps, CommandLegendItem, CommandMenuApi, CommandMatch,
 } from './components/command-menu';
+
+// ── Workbench surface theme and AI transcript parts (used by the Composer, FloatingChat and several blocks) ──
+export { useWorkbenchAppearance, WorkbenchTheme, WorkbenchAppearanceProvider, type WorkbenchThemeProps } from './components/workbench-theme';
+export {
+  Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationComposer, ConversationSuggestions,
+  Suggestion, UserMessage, AssistantMessage, MessageMarkdown, ConversationTyping, WorkLog, ToolCall, SettledBanner,
+  type ConversationProps, type ConversationGreetingProps, type ConversationMessagesProps, type UserMessageProps,
+  type WorkLogProps, type ToolCallProps, type SettledBannerProps,
+} from './components/conversation';

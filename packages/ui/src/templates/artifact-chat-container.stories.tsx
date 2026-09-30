@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AppearanceProvider, BLProvider, type Appearance } from '../lib/theme';
-import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '../components/workbench/composer';
+import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '../components/composer/composer';
 import '../styles.css';
 import { ArtifactChatContainer, type ArtifactChatFabPosition } from './artifact-chat-container';
 import { ThemeScope } from '../lib/theme';

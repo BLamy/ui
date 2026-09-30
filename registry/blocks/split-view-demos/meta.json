@@ -1,0 +1,18 @@
+{
+  "name": "split-view-demos",
+  "title": "SplitView compositions",
+  "description": "Six compositions of SplitView in one switcher: Mail (three columns), Notes (two columns), Settings (sidebar and detail), Reminders (tinted rows, large titles), Music library (a push/pop stack inside the detail) and a Notes gallery whose list steps aside. Each is a plain composition of the public SplitView parts.",
+  "categories": [
+    "navigation",
+    "application"
+  ],
+  "files": [
+    "page.tsx",
+    "demos.tsx",
+    "sidebar-demo.tsx"
+  ],
+  "dependencies": [
+    "react-aria",
+    "react-aria-components"
+  ]
+}

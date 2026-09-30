@@ -1,4 +1,5 @@
-import type { SurfaceAgent, SurfaceDiffFile, SurfaceKind, TermLine } from '@brett_lamy/ui';
+import type { SurfaceAgent, SurfaceDiffFile, SurfaceKind } from '../components/workbench/surfaces';
+import type { TermLine } from '../components/workbench/terminal';
 
 /* Sample workspace for the T3 Code clone. Swap these for your agent backend. */
 

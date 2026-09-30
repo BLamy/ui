@@ -7,6 +7,7 @@ import {
 import { cva, type VariantProps } from 'class-variance-authority';
 import { overlayZ } from '../lib/primitives';
 import { cn } from '../lib/utils';
+import { useThemeScopeProps } from '../lib/theme';
 import { AnimatedHeight } from './animated-height';
 import { DialogBody, DialogClose, DialogDescription, DialogHeader, DialogTitle } from './dialog';
 
@@ -52,11 +53,14 @@ export function SheetContent({
   className, overlayClassName, side = 'bottom', children, grabber = true, animateHeight, isDismissable = true, 'aria-label': ariaLabel, ...props
 }: SheetContentProps) {
   const s = side ?? 'bottom';
+  const scope = useThemeScopeProps();
   return (
     <ModalOverlay
       data-slot="sheet-overlay"
+      data-theme-scope={scope['data-theme-scope']}
       isDismissable={isDismissable}
-      className={cn('absolute inset-0 bg-overlay data-entering:animate-bl-fade-in data-exiting:animate-bl-fade-out-slow', overlayZ, overlayClassName)}
+      className={cn('absolute inset-0 bg-overlay data-entering:animate-bl-fade-in data-exiting:animate-bl-fade-out-slow', overlayZ, scope.className, overlayClassName)}
+      style={scope.style}
       {...props}
     >
       <Modal data-slot="sheet" data-side={s} className={cn(sheetVariants({ side: s }), className)}>

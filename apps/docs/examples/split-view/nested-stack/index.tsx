@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { SplitViewLibraryDemo } from '@brett_lamy/ui'
+import { SplitViewLibraryDemo } from '@/components/blocks/split-view-demos/demos'
 
 /**
  * Lays a composition out at a real device width, scaled down (never up) to fit,

@@ -1,5 +1,6 @@
 import { Tab, TabList, Tabs } from 'react-aria-components';
-import { TerminalAction, TerminalBody, TerminalHeader, WorkbenchDock, WorkbenchDockClose } from '@brett_lamy/ui';
+import { TerminalAction, TerminalBody, TerminalHeader } from './workbench/terminal';
+import { WorkbenchDock, WorkbenchDockClose } from './workbench/workbench-shell';
 import type { Workspace } from '../lib/use-workspaces';
 
 /** The active terminal of a thread's workspace. Keyed by thread and terminal, so each keeps its own prompt. */

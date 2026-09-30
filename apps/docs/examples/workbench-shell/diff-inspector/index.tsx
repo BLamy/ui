@@ -1,28 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import {
-  AssistantMessage,
-  Conversation,
-  ConversationComposer,
-  ConversationMessages,
-  MessageMarkdown,
-  SurfaceDiff,
-  ToolCall,
-  UserMessage,
-  WorkbenchActions,
-  WorkbenchComposer,
-  WorkbenchHeader,
-  WorkbenchMain,
-  WorkbenchPanel,
-  WorkbenchPanelClose,
-  WorkbenchPanelFullscreen,
-  WorkbenchPanelHeader,
-  WorkbenchPanelTitle,
-  WorkbenchPanelTrigger,
-  WorkbenchShell,
-  WorkbenchTitle,
-  WorkLog,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, ToolCall, UserMessage, WorkLog, WorkbenchTheme } from '@brett_lamy/ui'
+import { SurfaceDiff } from '@/components/blocks/t3-clone/components/workbench/surfaces'
+import { WorkbenchActions, WorkbenchHeader, WorkbenchMain, WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelFullscreen, WorkbenchPanelHeader, WorkbenchPanelTitle, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
+import { WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 const BEFORE = `export function total(items) {
   return items.reduce((sum, i) => sum + i.price, 0)

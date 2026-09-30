@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { PencilKitDemo, demoStrokes } from '@brett_lamy/ui'
+import { PencilKitDemo } from '@/components/blocks/pencilkit-sketch/pencilkit-demo'
+import { demoStrokes } from '@/components/blocks/pencilkit-sketch/demo-strokes'
 
 // Canvas, tool picker, inks, widths, undo/redo. Compose your own from
 // PencilCanvas, PencilToolbar, and usePencilHistory.

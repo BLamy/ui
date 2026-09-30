@@ -1,16 +1,5 @@
-import {
-  Composer,
-  ComposerAttach,
-  ComposerAttachments,
-  ComposerCard,
-  ComposerExpand,
-  ComposerFooter,
-  ComposerInput,
-  ComposerSend,
-  ComposerSpacer,
-  type ComposerAttachment,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { Composer, ComposerAttach, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, WorkbenchTheme } from '@brett_lamy/ui'
+import { type ComposerAttachment } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 // A stand-in "pasted screenshot" so the example has an image to start with.
 const shot =

@@ -1,30 +1,6 @@
 import type { ReactNode } from 'react'
-import {
-  Avatar,
-  ChatShell,
-  ChatShellBack,
-  ChatShellFooter,
-  ChatShellHeader,
-  ChatShellHeaderIcon,
-  ChatShellMain,
-  ChatShellSidebar,
-  ChatShellTitle,
-  Composer,
-  ComposerCard,
-  ComposerFooter,
-  ComposerInput,
-  ComposerSend,
-  ComposerSpacer,
-  Icon,
-  SidebarContent,
-  SidebarHeader,
-  SidebarItem,
-  SidebarSection,
-  SplitView,
-  SplitViewDetail,
-  SplitViewSidebar,
-  useSplitView,
-} from '@brett_lamy/ui'
+import { Avatar, Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, Icon, SidebarContent, SidebarHeader, SidebarItem, SidebarSection, SplitView, SplitViewDetail, SplitViewSidebar, useSplitView } from '@brett_lamy/ui'
+import { ChatShell, ChatShellBack, ChatShellFooter, ChatShellHeader, ChatShellHeaderIcon, ChatShellMain, ChatShellSidebar, ChatShellTitle } from '@/components/blocks/discord-clone/components/chat-shell'
 
 const rooms = [
   { id: 'general', name: 'general', last: 'Morning! Docs are up.' },

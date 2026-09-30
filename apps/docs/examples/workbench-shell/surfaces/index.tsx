@@ -1,21 +1,8 @@
 import { useState } from 'react'
-import {
-  SurfaceAgents,
-  SurfaceAppPreview,
-  SurfaceBrowser,
-  SurfaceDiff,
-  SurfaceFiles,
-  SurfacePicker,
-  SURFACES,
-  SurfaceTerminal,
-  TerminalBody,
-  WorkbenchPanel,
-  WorkbenchPanelClose,
-  WorkbenchPanelHeader,
-  WorkbenchPanelTitle,
-  type SurfaceKind,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { WorkbenchTheme } from '@brett_lamy/ui'
+import { SurfaceAgents, SurfaceAppPreview, SurfaceBrowser, SurfaceDiff, SurfaceFiles, SurfacePicker, SURFACES, SurfaceTerminal, type SurfaceKind } from '@/components/blocks/t3-clone/components/workbench/surfaces'
+import { TerminalBody } from '@/components/blocks/t3-clone/components/workbench/terminal'
+import { WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelHeader, WorkbenchPanelTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 
 function Surfaces() {
   // null shows the surface picker

@@ -1,12 +1,6 @@
 import { useState } from 'react'
-import {
-  Button,
-  PencilCanvas,
-  StrokePath,
-  demoStrokes,
-  usePencilHistory,
-  type PencilStroke,
-} from '@brett_lamy/ui'
+import { Button, PencilCanvas, StrokePath, usePencilHistory, type PencilStroke } from '@brett_lamy/ui'
+import { demoStrokes } from '@/components/blocks/pencilkit-sketch/demo-strokes'
 
 /** Fits any strokes into a thumbnail by their bounding box. */
 function Thumbnail({ strokes }: { strokes: PencilStroke[] }) {

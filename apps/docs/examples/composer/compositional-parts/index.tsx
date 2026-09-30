@@ -5,30 +5,9 @@ import {
   useState,
   type RefObject,
 } from 'react'
-import {
-  Composer,
-  ComposerAttach,
-  ComposerAttachments,
-  ComposerBump,
-  ComposerBumpContent,
-  ComposerBumpHandle,
-  ComposerCard,
-  ComposerExpand,
-  ComposerFooter,
-  ComposerInput,
-  ComposerOptions,
-  ComposerOptionsOutlet,
-  ComposerSelect,
-  ComposerSend,
-  ComposerSeparator,
-  ComposerSpacer,
-  ComposerStop,
-  ComposerText,
-  ModelPicker,
-  WORKBENCH_MODELS,
-  WORKBENCH_PROVIDERS,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { Composer, ComposerAttach, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText, WorkbenchTheme } from '@brett_lamy/ui'
+import { ModelPicker } from '@/components/blocks/t3-clone/components/workbench/model-picker'
+import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from '@/components/blocks/t3-clone/components/workbench/models'
 
 const efforts = [
   { id: 'low', label: 'Low' },

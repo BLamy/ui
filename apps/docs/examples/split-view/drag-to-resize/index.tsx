@@ -1,4 +1,4 @@
-import { SplitViewNotesDemo, SplitViewResizableDemo } from '@brett_lamy/ui'
+import { SplitViewNotesDemo, SplitViewResizableDemo } from '@/components/blocks/split-view-demos/demos'
 
 // SplitView measures its own box, so the frame is all it needs. Drag the
 // handle: regular tiles both columns, medium floats the list over the editor,

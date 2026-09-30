@@ -23,10 +23,8 @@
     }
   },
   "dependencies": {
-    "@brett_lamy/docstream": "1.6.1",
-    "@brett_lamy/docstream-editor": "1.6.1",
-    "@pierre/diffs": "^1.3.6",
-    "@pierre/trees": "1.0.0-beta.6",
+    "@brett_lamy/docstream": "1.7.0",
+    "@brett_lamy/docstream-editor": "1.7.0",
     "@tiptap/core": "3.30.5",
     "@tiptap/extension-code-block": "3.30.5",
     "@tiptap/extension-list": "3.30.5",
@@ -49,7 +47,7 @@
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19"
   },
-  "description": "iOS-flavored React components — containers, lists, tokens, plus the workbench (composer, chat, terminal, surfaces), team-chat shells and PencilKit drawing (react-aria base, shadcn conventions)",
+  "description": "iOS-flavored React components \u2014 containers, lists, tokens, plus the workbench (composer, chat, terminal, surfaces), team-chat shells and PencilKit drawing (react-aria base, shadcn conventions)",
   "license": "MIT",
   "sideEffects": [
     "*.css"

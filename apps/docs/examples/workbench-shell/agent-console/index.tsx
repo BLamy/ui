@@ -1,31 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import {
-  AssistantMessage,
-  Conversation,
-  ConversationComposer,
-  ConversationMessages,
-  MessageMarkdown,
-  SurfaceAgents,
-  TerminalBody,
-  TerminalHeader,
-  ToolCall,
-  WorkbenchAction,
-  WorkbenchActions,
-  WorkbenchComposer,
-  WorkbenchDock,
-  WorkbenchDockTrigger,
-  WorkbenchHeader,
-  WorkbenchMain,
-  WorkbenchPanel,
-  WorkbenchPanelClose,
-  WorkbenchPanelHeader,
-  WorkbenchPanelTitle,
-  WorkbenchPanelTrigger,
-  WorkbenchShell,
-  WorkbenchTitle,
-  WorkLog,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, ToolCall, WorkLog, WorkbenchTheme } from '@brett_lamy/ui'
+import { SurfaceAgents } from '@/components/blocks/t3-clone/components/workbench/surfaces'
+import { TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
+import { WorkbenchAction, WorkbenchActions, WorkbenchDock, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelHeader, WorkbenchPanelTitle, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
+import { WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
 const RUNS = [
   { name: 'migrate-db', status: 'passed', detail: '3 migrations · 12s' },

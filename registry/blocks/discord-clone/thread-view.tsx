@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
-import { ChatShellFooter, cn } from '@brett_lamy/ui';
+import { cn } from '@brett_lamy/ui';
+import { ChatShellFooter } from './components/chat-shell';
 import { ChatComposer } from './components/chat-composer';
 import { useChatUsers } from './components/chat-users';
 import { MessageDivider, MessageList, MessageListEmpty } from './components/message-list';

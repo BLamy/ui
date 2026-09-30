@@ -1,16 +1,6 @@
 import type { ReactNode } from 'react'
-import {
-  Avatar,
-  ChatShell,
-  ChatShellHeaderAction,
-  ChatShellSidebar,
-  Icon,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarItem,
-  SidebarSection,
-} from '@brett_lamy/ui'
+import { Avatar, Icon, SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSection } from '@brett_lamy/ui'
+import { ChatShell, ChatShellHeaderAction, ChatShellSidebar } from '@/components/blocks/discord-clone/components/chat-shell'
 
 const me = { f: 'Ada', l: 'Lovelace' }
 

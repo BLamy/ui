@@ -2,8 +2,6 @@
 // ReplayPreview: An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.
 export {
   ReplayPreview,
-  replayPreviewVariants,
-  replayMarkerVariants,
   formatReplayTime,
   getReplayMarkers,
   getReplayMeta,

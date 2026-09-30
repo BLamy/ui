@@ -1,12 +1,6 @@
 import { useState } from 'react'
-import {
-  SnapSheet,
-  TerminalAction,
-  TerminalBody,
-  TerminalHeader,
-  ThemeScope,
-  WorkbenchTheme,
-} from '@brett_lamy/ui'
+import { SnapSheet, ThemeScope, WorkbenchTheme } from '@brett_lamy/ui'
+import { TerminalAction, TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
 
 // The sheet needs a phone-sized, positioned host; the terminal stays dark in
 // light mode.

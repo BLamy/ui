@@ -1,24 +1,7 @@
 import { useState } from 'react';
-import {
-  SURFACES,
-  Toaster,
-  WorkbenchAction,
-  WorkbenchActions,
-  WorkbenchDockTrigger,
-  WorkbenchHeader,
-  WorkbenchMain,
-  WorkbenchPanelTrigger,
-  WorkbenchShell,
-  WorkbenchSidebar,
-  WorkbenchSidebarTrigger,
-  WorkbenchTab,
-  WorkbenchTabBar,
-  WorkbenchTitle,
-  createToastQueue,
-  toastApi,
-  type Appearance,
-  type SurfaceKind,
-} from '@brett_lamy/ui';
+import { Toaster, createToastQueue, toastApi, type Appearance } from '@brett_lamy/ui';
+import { SURFACES, type SurfaceKind } from './components/workbench/surfaces';
+import { WorkbenchAction, WorkbenchActions, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarTrigger, WorkbenchTab, WorkbenchTabBar, WorkbenchTitle } from './components/workbench/workbench-shell';
 import { AppSidebar } from './components/app-sidebar';
 import { Commands, type PaletteState } from './components/commands';
 import { SurfacePanel } from './components/surface-panel';

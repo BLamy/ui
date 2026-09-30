@@ -1,6 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
 import { cn, BARH } from './utils';
+import { THEME_VARS, type ThemeVar } from './tokens.generated';
+
+export { THEME_VARS, type ThemeVar };
 
 /* ══ Chrome coordination ══
    Nav bar and tab bar hide together on scroll-down and come back on scroll-up. The scrolling screen
@@ -61,7 +64,18 @@ export function useAppearance(): Appearance | undefined {
    apply below them: they put `light` or `dark` on their root, and `data-theme-scope` names a surface the bl-theme
    restyles with the same variables (the Workbench, its always-dark terminal, team chat). A `tint` overrides
    --primary / --ring for the subtree. */
-export type ThemeScopeName = 'workbench' | 'chat' | 'terminal' | 'sheet' | 'glass';
+export type ThemeScopeName = 'workbench' | 'chat' | 'terminal' | 'sheet' | 'glass' | (string & {});
+
+/** Variables to set on a scope, by name without the leading `--`: `{ radius: '0.25rem', primary: '#f43' }`. Names are
+    the theme variables (tokens.css), so they autocomplete; anything else is a custom property of your own. */
+export type ThemeVars = { [K in ThemeVar]?: string } & { [custom: string]: string | undefined };
+
+/** The inline style for a `vars` object: `{ radius: '0.25rem' }` → `{ '--radius': '0.25rem' }`. */
+export const themeVarStyle = (vars?: ThemeVars): CSSProperties => {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(vars ?? {})) if (v != null) out['--' + k.replace(/^--/, '')] = v;
+  return out as CSSProperties;
+};
 
 /** Root classes for an appearance: shadcn's `dark` (or `light`) plus the matching color-scheme. */
 export const themeScopeClass = (appearance: Appearance | undefined) =>
@@ -72,18 +86,25 @@ export const tintVars = (tint?: string): CSSProperties =>
   (tint ? { '--primary': tint, '--ring': tint } : {}) as CSSProperties;
 
 /** The props a scope root carries: `data-theme-scope`, the appearance class and the tint. */
-export function themeScopeProps({ scope, appearance, tint }: { scope?: ThemeScopeName; appearance?: Appearance; tint?: string }) {
-  return { 'data-theme-scope': scope, className: themeScopeClass(appearance), style: tintVars(tint) };
+export function themeScopeProps({ scope, appearance, tint, vars }: { scope?: ThemeScopeName; appearance?: Appearance; tint?: string; vars?: ThemeVars }) {
+  return { 'data-theme-scope': scope, className: themeScopeClass(appearance), style: { ...tintVars(tint), ...themeVarStyle(vars) } as CSSProperties };
 }
 
-/** The theme variables a portalled overlay copies from the element that opened it, so it keeps that surface's
-    palette wherever it renders. */
-export const THEME_VARS = [
-  'background', 'foreground', 'card', 'card-foreground', 'popover', 'popover-foreground', 'primary', 'primary-foreground',
-  'secondary', 'secondary-foreground', 'muted', 'muted-foreground', 'accent', 'accent-foreground', 'destructive', 'border',
-  'input', 'ring', 'success', 'warning', 'tertiary-foreground', 'secondary-strong', 'overlay', 'bar', 'sticky', 'handle',
-  'link', 'code', 'code-foreground',
-] as const;
+/* ── The scope an overlay opened inside should wear ──
+   Popovers, menus, dialogs and tooltips render in a portal (BLProvider's root, else <body>), outside the scope's DOM,
+   so CSS inheritance no longer reaches them. ThemeScope publishes its scope here and the overlay primitives spread
+   `useThemeScopeProps()` onto their root — the overlay gets the same `data-theme-scope`, appearance class, tint and
+   vars as the surface that opened it. Nothing is applied outside a scope. */
+export interface ThemeScopeState { scope?: ThemeScopeName; appearance?: Appearance; tint?: string; vars?: ThemeVars }
+export const ThemeScopeContext = createContext<ThemeScopeState | null>(null);
+
+/** Props (`data-theme-scope`, `className`, `style`) that carry the surrounding ThemeScope onto a portalled overlay. */
+export function useThemeScopeProps(): { 'data-theme-scope'?: string; className?: string; style?: CSSProperties } {
+  const state = useContext(ThemeScopeContext);
+  if (!state) return {};
+  const p = themeScopeProps(state);
+  return { 'data-theme-scope': p['data-theme-scope'], className: p.className || undefined, style: p.style };
+}
 
 /** The resolved theme variables (and color-scheme) at an element, as a style object. */
 export function readThemeVars(el: Element | null | undefined): CSSProperties {
@@ -99,28 +120,34 @@ export function readThemeVars(el: Element | null | undefined): CSSProperties {
 }
 
 export interface ThemeScopeProps extends HTMLAttributes<HTMLDivElement> {
-  /** The surface palette the bl-theme defines: `workbench`, `chat`, `terminal`, `sheet` (a floating chat surface's tone) or `glass` (the Composer floating over content). Omit for the plain theme. */
+  /** A named surface palette — `[data-theme-scope="name"] { … }` in your CSS, or one the bl-theme and the blocks define (`workbench`, `chat`, `terminal`, `sheet`, `glass`). Omit for the plain theme. */
   scope?: ThemeScopeName;
   /** Defaults to the ambient `AppearanceProvider` value; without one a plain scope inherits the page's `.dark` / light,
       a surface scope is light (the terminal scope is always dark). */
   appearance?: Appearance;
   /** Accent for the subtree (--primary / --ring). */
   tint?: string;
+  /** Theme variables for the subtree, by name without `--`: `{ radius: '0.25rem', card: '#111' }`. Wins over `tint`. */
+  vars?: ThemeVars;
 }
 
-/** A subtree with its own appearance, accent and (optionally) surface palette. */
-export function ThemeScope({ scope, appearance: appearanceProp, tint, className, style, ...props }: ThemeScopeProps) {
+/** A subtree with its own appearance, accent, variables and (optionally) named surface palette. Overlays opened inside
+    it (popovers, menus, dialogs, tooltips) wear the same scope. Scopes nest; the nearest one wins. */
+export function ThemeScope({ scope, appearance: appearanceProp, tint, vars, className, style, ...props }: ThemeScopeProps) {
   const ambient = useAppearance();
   const appearance: Appearance | undefined = scope === 'terminal' ? 'dark' : (appearanceProp ?? ambient ?? (scope ? 'light' : undefined));
-  const p = themeScopeProps({ scope, appearance, tint });
+  const p = themeScopeProps({ scope, appearance, tint, vars });
+  const state = useMemo<ThemeScopeState>(() => ({ scope, appearance, tint, vars }), [scope, appearance, tint, vars]);
   return (
-    <div
-      data-slot="theme-scope"
-      {...props}
-      data-theme-scope={p['data-theme-scope']}
-      className={cn(p.className, className)}
-      style={{ ...p.style, ...style }}
-    />
+    <ThemeScopeContext.Provider value={state}>
+      <div
+        data-slot="theme-scope"
+        {...props}
+        data-theme-scope={p['data-theme-scope']}
+        className={cn(p.className, className)}
+        style={{ ...p.style, ...style }}
+      />
+    </ThemeScopeContext.Provider>
   );
 }
 

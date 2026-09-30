@@ -1,3 +1,4 @@
+import './chat-theme.css';
 import type { CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Icon } from '@brett_lamy/ui';

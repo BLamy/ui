@@ -1,26 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import {
-  Avatar,
-  ChatShell,
-  ChatShellFooter,
-  ChatShellHeader,
-  ChatShellMain,
-  ChatShellNav,
-  ChatShellNavTrigger,
-  ChatShellSidebar,
-  ChatShellTitle,
-  Composer,
-  ComposerCard,
-  ComposerFooter,
-  ComposerInput,
-  ComposerSend,
-  ComposerSpacer,
-  SidebarContent,
-  SidebarHeader,
-  SidebarItem,
-  SidebarSection,
-  useChatShell,
-} from '@brett_lamy/ui'
+import { Avatar, Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, SidebarContent, SidebarHeader, SidebarItem, SidebarSection } from '@brett_lamy/ui'
+import { ChatShell, ChatShellFooter, ChatShellHeader, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellSidebar, ChatShellTitle } from '@/components/blocks/discord-clone/components/chat-shell'
+import { useChatShell } from '@/components/blocks/discord-clone/components/chat-shell-context'
 
 type Person = { f: string; l: string }
 

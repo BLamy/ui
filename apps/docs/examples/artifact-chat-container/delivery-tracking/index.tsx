@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { DeliveryTrackingDemo } from '@brett_lamy/ui'
+import { DeliveryTrackingDemo } from '@/components/blocks/delivery-tracking/delivery-tracking-demo'
 
 /**
  * Lays a fixed-size composition out at its design width, scaled down (never up)

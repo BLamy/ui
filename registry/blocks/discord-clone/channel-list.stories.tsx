@@ -1,9 +1,10 @@
+import './chat-theme.css';
 import { useState, type CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ChannelGroup, ChannelItem, ChannelList } from './components/channel-list';
 import { ChatAvatar } from './components/chat-avatar';
 import { ServerHeader } from './components/server-header';
-import { ChatShellSidebar } from '@brett_lamy/ui';
+import { ChatShellSidebar } from './components/chat-shell';
 import { ChatUsersProvider } from './components/chat-users';
 import { FixtureSidebar, FixtureUserPanel, USERS, ChatFrame } from './chat.fixtures';
 

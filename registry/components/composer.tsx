@@ -31,9 +31,6 @@ export {
   useComposer,
   useComposerBump,
   useComposerAnnotator,
-  ModelPicker,
-  WORKBENCH_MODELS,
-  WORKBENCH_PROVIDERS,
   WorkbenchTheme,
 } from '@brett_lamy/ui';
 export type {
@@ -66,8 +63,5 @@ export type {
   ComposerSelectProps,
   ComposerSendProps,
   ComposerStopProps,
-  ModelOption,
-  ModelPickerProps,
-  ModelProvider,
   WorkbenchThemeProps,
 } from '@brett_lamy/ui';

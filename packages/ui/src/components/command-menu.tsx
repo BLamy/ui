@@ -13,6 +13,7 @@ import { Icon } from '../lib/icon';
 import { fades, springs } from '../lib/motion';
 import { overlayZ, selectableText } from '../lib/primitives';
 import { cn } from '../lib/utils';
+import { useThemeScopeProps } from '../lib/theme';
 
 /* ══ CommandMenu — a cmdk-style palette on react-aria ══
    <CommandMenu variant="dialog" isOpen={open} onOpenChange={setOpen} hotkey="mod+k" aria-label="Command menu">
@@ -450,6 +451,7 @@ export function CommandMenu({
   const setOpen = useCallback((o: boolean) => { if (openProp === undefined) setOpenState(o); onOpenChange?.(o); }, [openProp, onOpenChange]);
   useHotkey(variant === 'dialog' ? hotkey : undefined, () => setOpen(!open));
 
+  const scope = useThemeScopeProps();
   const inner = (
     <CommandRoot
       variant={variant} open={open} setOpen={setOpen} queryProp={queryProp} onQueryChange={onQueryChange} defaultPages={defaultPages} onPageChange={onPageChange}
@@ -463,6 +465,8 @@ export function CommandMenu({
   const modal = (
     <ModalOverlay
       data-slot="command-overlay"
+      data-theme-scope={scope['data-theme-scope']}
+      style={scope.style}
       isOpen={open}
       onOpenChange={setOpen}
       isDismissable
@@ -473,6 +477,7 @@ export function CommandMenu({
         // top rather than centring, so its height can spring between pages without the input moving.
         'absolute inset-0 flex items-start justify-center bg-overlay px-4 pt-[min(14vh,120px)] data-entering:animate-bl-fade-in data-exiting:animate-bl-fade-out',
         overlayZ,
+        scope.className,
         overlayClassName,
       )}
     >

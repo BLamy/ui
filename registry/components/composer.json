@@ -34,9 +34,6 @@
     "useComposer",
     "useComposerBump",
     "useComposerAnnotator",
-    "ModelPicker",
-    "WORKBENCH_MODELS",
-    "WORKBENCH_PROVIDERS",
     "WorkbenchTheme"
   ],
   "imports": [
@@ -46,8 +43,5 @@
     "ComposerFooter",
     "ComposerSend"
   ],
-  "types": [
-    "ModelOption",
-    "ModelProvider"
-  ]
+  "types": []
 }

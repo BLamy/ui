@@ -9,4 +9,10 @@ export {
   useWorkbenchAppearance,
   readThemeVars,
 } from '@brett_lamy/ui';
-export type { BLProviderProps, ThemeScopeName, ThemeScopeProps, WorkbenchThemeProps } from '@brett_lamy/ui';
+export type {
+  BLProviderProps,
+  ThemeScopeName,
+  ThemeScopeProps,
+  ThemeScopeState,
+  WorkbenchThemeProps,
+} from '@brett_lamy/ui';

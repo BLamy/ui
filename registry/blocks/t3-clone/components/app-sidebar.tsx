@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { WorkbenchSidebarClose } from '@brett_lamy/ui';
+import { WorkbenchSidebarClose } from './workbench/workbench-shell';
 import {
   ProjectSwitcher,
   SidebarFooterItem,

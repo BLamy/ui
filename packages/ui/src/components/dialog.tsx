@@ -12,6 +12,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from '../lib/icon';
 import { focusRing, overlayZ } from '../lib/primitives';
 import { cn } from '../lib/utils';
+import { useThemeScopeProps } from '../lib/theme';
 
 /* ══ Dialog — react-aria's DialogTrigger / ModalOverlay / Modal / Dialog (focus trap, Esc, focus return,
    aria-modal). `alert` is the iOS centered alert card; `default`/`lg` are general-purpose dialogs.
@@ -62,11 +63,14 @@ export function DialogContent({
   className, overlayClassName, size = 'default', children, role, isDismissable, 'aria-label': ariaLabel, ...props
 }: DialogContentProps) {
   const s = size ?? 'default';
+  const scope = useThemeScopeProps();
   return (
     <ModalOverlay
       data-slot="dialog-overlay"
+      data-theme-scope={scope['data-theme-scope']}
       isDismissable={isDismissable ?? s !== 'alert'}
-      className={cn(dialogOverlayClass, overlayClassName)}
+      className={cn(dialogOverlayClass, scope.className, overlayClassName)}
+      style={scope.style}
       {...props}
     >
       <Modal data-slot="dialog-content" data-size={s} className={cn(dialogVariants({ size: s }), className)}>
