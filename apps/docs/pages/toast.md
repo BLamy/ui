@@ -71,7 +71,6 @@ const [queue] = useState(() => createToastQueue())
 - The region is a landmark ("Notifications"), reachable with `F6`; each toast is an `alertdialog` whose content is announced as an alert — including when a HUD's label updates in place. When the last toast closes, focus returns to where it was.
 - Enter: a short rise with a blur-in and a snappy spring (HUDs grow from 85%); exit: a quicker fade; the remaining banners slide into place on the smooth spring.
 - With `prefers-reduced-motion`, toasts fade in and out without moving, and swiping is off.
-- `tone` plays the matching haptic (`success`, `warning`, `error`) on devices that have one; pass `haptic: 'none'` to skip it.
 
 ## API
 
@@ -82,13 +81,12 @@ const [queue] = useState(() => createToastQueue())
 | `variant` | `banner` | `hud` or `banner` (`toast.hud()` sets `hud`). |
 | `description` | — | A second line (banners). |
 | `icon` | from the tone | An [Icon](https://blamy.github.io/ui/#/icons) name or any node. |
-| `tone` | `default` | `success`, `warning` or `destructive` color the icon and pick the haptic. |
+| `tone` | `default` | `success`, `warning` or `destructive` color the icon. |
 | `action` | — | `{ label, onAction }` — one button (banners). |
 | `dismissible` | `true` | The close button (banners). |
 | `id` | generated | Show with a visible toast's id to update it in place. |
 | `timeout` | 1600 (HUD) / 5000 (banner) | Milliseconds before it closes; `0` keeps it until closed. |
 | `onClose` | — | Called when it closes. |
-| `haptic` | from the tone | `success`, `warning`, `error` or `none`. |
 
 `toast.hud`, `toast.success`, `toast.warning`, `toast.error` and `toast.loading` preset the variant or tone; `toast.update(id, patch)` patches a visible toast; `toast.dismiss(id?)` closes one or all. Every call returns the toast's id.
 

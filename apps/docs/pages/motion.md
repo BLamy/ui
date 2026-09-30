@@ -110,7 +110,7 @@ Exits are quicker than entrances: what leaves gets out of the way, what arrives 
 
 ## A rare moment
 
-`Celebrate` bursts confetti and a ring out of its parent's centre whenever `fire` changes. Save it for moments that happen rarely and mean something — a completed backup, a first payment. Pair it with `Haptics.notification('success')`.
+`Celebrate` bursts confetti and a ring out of its parent's centre whenever `fire` changes. Save it for moments that happen rarely and mean something — a completed backup, a first payment.
 
 {% demo src="motion/celebrate" %}
 
@@ -134,4 +134,3 @@ Exits are quicker than entrances: what leaves gets out of the way, what arrives 
 | `Progress` | fill springs to value; percentage rolls |
 | `Skeleton` | a highlight sweeps across instead of pulsing |
 | `Spinner` | grows in when it appears |
-| `HapticIndicator` | one pill that stays while haptics keep coming, morphing its label |

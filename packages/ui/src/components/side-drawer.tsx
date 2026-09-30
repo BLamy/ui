@@ -1,7 +1,6 @@
 import { use, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { springCss } from '../lib/motion';
 import { BLSafeCtx } from '../lib/theme';
@@ -219,7 +218,6 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
     s.style.transition = springCss('opacity', 'tray');
     d.page.forEach((el) => { el.style.transition = springCss('translate', 'tray'); });
     if (commit) {
-      Haptics.impact('light');
       p.style.transform = `translateX(${navigationPush.off})`;
       s.style.opacity = '0';
       d.page.forEach((el) => { el.style.translate = ''; });

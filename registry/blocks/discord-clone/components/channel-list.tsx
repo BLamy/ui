@@ -1,6 +1,6 @@
 import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
-import { Haptics, Icon, cn, useOptionalChatShell } from '@brett_lamy/ui';
+import { Icon, cn, useOptionalChatShell } from '@brett_lamy/ui';
 import { cva } from 'class-variance-authority';
 
 /* ══ Channel navigation ══
@@ -111,7 +111,6 @@ export function ChannelItem({ id, icon, unread, mentions, isActive, className, c
       data-unread={unread || undefined}
       aria-current={on ? 'page' : undefined}
       onPress={(e) => {
-        Haptics.selection();
         list.onSelectionChange?.(id);
         onPress?.(e);
         shell?.setNavOpen(false);
@@ -143,7 +142,6 @@ export function ChannelThreadItem({ isActive, className, children, onPress, ...p
       data-active={isActive || undefined}
       aria-current={isActive ? 'page' : undefined}
       onPress={(e) => {
-        Haptics.selection();
         onPress?.(e);
         shell?.setNavOpen(false);
       }}

@@ -180,7 +180,7 @@ The index is [`registry.json`](https://blamy.github.io/ui/r/registry.json).
 
 | Area | Contents |
 | --- | --- |
-| Core | Theme, haptics, lists, navigation, IndexBar, Credenza, SideDrawer, Sidebar, layout primitives |
+| Core | Theme, lists, navigation, IndexBar, Credenza, SideDrawer, Sidebar, layout primitives |
 | Chat | ChatShell, channel navigation, messages, thread previews, FloatingSheet, ArtifactChatContainer |
 | Workbench | WorkbenchShell, Composer, MessageScroller, terminal, surfaces, MarkdownView |
 | PencilKit | PencilKit-style drawing canvas and toolbar, and `PencilKitAnnotator` — the Composer's default image annotator |

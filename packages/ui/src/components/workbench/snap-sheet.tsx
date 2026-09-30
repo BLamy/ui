@@ -2,7 +2,6 @@ import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { animate, motion, useMotionValue, useTransform, type AnimationPlaybackControls } from 'framer-motion';
 import { cn } from '../../lib/workbench/util';
-import { vib, tick } from '../../lib/workbench/haptics';
 import { prefersReducedMotion, springs } from '../../lib/workbench/motion';
 
 /* ══ SnapSheet — vaul-style bottom drawer (drag handle, snap points, velocity release) ══
@@ -23,7 +22,6 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, className
   const snaps = snapsProp || [0.55, 0.94];
   const maxS = Math.max(...snaps);
   const [vis, setVis] = useState(false);
-  const [snap, setSnap] = useState(0);
   const wrap = useRef<HTMLDivElement>(null);
   const y = useMotionValue(10000); // px the panel is pushed down from its tallest snap
   const anim = useRef<AnimationPlaybackControls | null>(null);
@@ -49,7 +47,6 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, className
   useEffect(() => {
     if (open) {
       setVis(true);
-      setSnap(0);
     } else if (vis) {
       springTo(ch() * maxS, 0, () => setVis(false));
     }
@@ -100,13 +97,10 @@ export function SnapSheet({ open, onClose, snaps: snapsProp, children, className
       }
     });
     if (Math.abs(proj - H * maxS) < bd || proj > H * (maxS - Math.min(...snaps)) + H * 0.12) {
-      vib([6]);
       springTo(H * maxS, v * 1000);
       onClose();
       return;
     }
-    if (best !== snap) tick();
-    setSnap(best);
     springTo(restTy(best), v * 1000);
   };
   return (

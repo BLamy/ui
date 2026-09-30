@@ -1,6 +1,6 @@
 # @brett_lamy/ui
 
-Touch-first React components inspired by UIKit container patterns. Colors come from your shadcn theme (CSS variables); the iOS look ships as an optional theme. The package includes haptics, lists, navigation, adaptive split views, drawers, sheets, and a reusable jump rail — plus a team-chat scaffold (`ChatShell`, `ArtifactChatContainer`, `FloatingSheet`), an IDE workbench (`WorkbenchShell`, `Composer`, `MessageScroller`, terminal dock, surfaces, `MarkdownView`) and PencilKit drawing (`PencilCanvas`, pickers, `usePencilHistory`, on perfect-freehand).
+Touch-first React components inspired by UIKit container patterns. Colors come from your shadcn theme (CSS variables); the iOS look ships as an optional theme. The package includes lists, navigation, adaptive split views, drawers, sheets, and a reusable jump rail — plus a team-chat scaffold (`ChatShell`, `ArtifactChatContainer`, `FloatingSheet`), an IDE workbench (`WorkbenchShell`, `Composer`, `MessageScroller`, terminal dock, surfaces, `MarkdownView`) and PencilKit drawing (`PencilCanvas`, pickers, `usePencilHistory`, on perfect-freehand).
 
 ## Install
 
@@ -27,7 +27,7 @@ export function App() {
 }
 ```
 
-React 18 and 19 are supported peer dependencies. Upgrading from 1.x: see [Migrating to 2.0](https://blamy.github.io/ui/#/migrating-to-2).
+React 18 and 19 are supported peer dependencies.
 
 ## IndexBar
 
@@ -63,12 +63,12 @@ If `items` is omitted or empty, the component retains its A-Z form:
 
 - Containers: `NavigationStack`, `SplitView`, `Credenza`, `SideDrawer`, `EdgeDrawer`, `AdaptivePane`, `Sidebar`
 - Lists and navigation: `List`, `List.Section`, `List.Row`, `IndexBar`, `TabBar`, `TabView`, `EditBar`
-- Inputs and feedback: `SearchField`, `Switch`, `Segmented`, `Haptics`, `HapticIndicator`, plus shadcn-style primitives (`Button`, `Dialog`, `Sheet`, `Select`, `ComboBox`, `Tabs`, …)
+- Inputs and feedback: `SearchField`, `Switch`, `Segmented`, plus shadcn-style primitives (`Button`, `Dialog`, `Sheet`, `Select`, `ComboBox`, `Tabs`, …)
 - Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `ContentSwap`, `Celebrate`
 - Foundations: `BLProvider`, `ThemeScope`, `AppearanceProvider`, `Icon`, `Avatar`, `Spinner`
 - Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer` (the Discord parts — channels, messages, threads, members — live in the `discord-clone` registry block)
 - Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `SnapSheet`, `MarkdownView`
-- Demo apps: `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo`, `HapticsPlayground` (full apps — Discord, T3 Code, GitHub — are registry blocks)
+- Demo apps: `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo` (full apps — Discord, T3 Code, GitHub — are registry blocks)
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.
 

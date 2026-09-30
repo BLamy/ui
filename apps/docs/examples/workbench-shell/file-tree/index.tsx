@@ -3,7 +3,7 @@ import { SurfaceFiles, WorkbenchTheme } from '@brett_lamy/ui'
 const PATHS = [
   'cookbook/src/components/Credenza.tsx',
   'cookbook/src/components/SideDrawer.tsx',
-  'cookbook/src/haptics.ts',
+  'cookbook/src/buzz.ts',
   'cookbook/src/App.tsx',
   'cookbook/package.json',
   'cookbook/vite.config.js',

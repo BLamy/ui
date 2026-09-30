@@ -6,7 +6,6 @@ import { IndexBar, AL } from './index-bar';
 import { List } from './list';
 import { NavigationStack } from './navigation-stack';
 import { SearchField } from './search-field';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { BARH } from '../lib/utils';
 import { Phone } from '../stories/frame';
@@ -87,7 +86,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
     s.scrollTop = s.scrollTop + el.getBoundingClientRect().top - s.getBoundingClientRect().top - BARH + 1;
   };
   const togglePick = (id: string) => {
-    const n = new Set(pick); n.has(id) ? n.delete(id) : n.add(id); setPick(n); Haptics.selection();
+    const n = new Set(pick); n.has(id) ? n.delete(id) : n.add(id); setPick(n);
   };
   const exitEdit = () => { setEdit(false); setPick(new Set()); };
   const selN = pick.size;
@@ -108,7 +107,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
               trailing={favs.has(c.id) ? <Icon name="starF" size={13} className="text-warning" /> : null}
               accessory={edit ? undefined : 'chevron'}
               edit={edit} checked={pick.has(c.id)}
-              onPress={() => { if (edit) togglePick(c.id); else Haptics.selection(); }}
+              onPress={() => { if (edit) togglePick(c.id); }}
               onDelete={edit ? undefined : () => setGone((g) => new Set([...g, c.id]))}
               divider={i < s.items.length - 1} />
           ))}
@@ -129,7 +128,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
         largeTitle: true, grouped,
         subheader: <SearchField value={q} onChange={setQ} aria-label="Search contacts" />,
         trailing: (
-          <button className="bl-btn" onClick={() => { edit ? exitEdit() : setEdit(true); Haptics.impact('light'); }}
+          <button className="bl-btn" onClick={() => { edit ? exitEdit() : setEdit(true); }}
             style={{
               border: 0, background: 'none', cursor: 'pointer', color: 'var(--primary)', fontFamily: 'inherit', fontSize: 17,
               fontWeight: edit ? 700 : 400, padding: '8px 10px',
@@ -137,21 +136,21 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
         ),
         content,
         overlay: <IndexBar avail={avail} onLetter={jump} top={BARH + 4} bottom={10} />,
-        onRefresh: () => { if (gone.size) { setGone(new Set()); Haptics.notification('success'); } },
+        onRefresh: () => { if (gone.size) { setGone(new Set()); } },
       }]} />
       {edit ? (
         <EditBar count={selN} allFav={selN > 0 && [...pick].every((id) => favs.has(id))}
           onFav={() => {
             const all = [...pick].every((id) => favs.has(id)); const n = new Set(favs);
-            pick.forEach((id) => { all ? n.delete(id) : n.add(id); }); setFavs(n); Haptics.impact('light');
+            pick.forEach((id) => { all ? n.delete(id) : n.add(id); }); setFavs(n);
           }}
-          onDelete={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); Haptics.notification('warning'); }} />
+          onDelete={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); }} />
       ) : null}
     </>
   );
 }
 
-/** Flagship: plain sticky sections + wired IndexBar (scrub or click a letter to jump — with a haptic tick),
+/** Flagship: plain sticky sections + wired IndexBar (scrub or click a letter to jump),
  *  sticky large-title search subheader, swipe-to-delete rows, Select → edit mode with EditBar,
  *  pull-to-refresh restores deleted rows. */
 export const ContactsWithIndexBar: Story = {
@@ -194,7 +193,7 @@ export const StickySearchHeader: Story = {
   },
 };
 
-/** Drag a row left: past 55% width commits (medium tick); a slower release past half the action width parks Delete open. */
+/** Drag a row left: past 55% width commits; a slower release past half the action width parks Delete open. */
 export const SwipeToDelete: Story = {
   render: function SwipeToDeleteStory() {
     const [gone, setGone] = useState<Set<string>>(() => new Set());
@@ -226,7 +225,7 @@ export const EditModeWithEditBar: Story = {
     const [gone, setGone] = useState<Set<string>>(() => new Set());
     const items = CONTACTS.slice(0, 9).filter((c) => !gone.has(c.id));
     const toggle = (id: string) => {
-      const n = new Set(pick); n.has(id) ? n.delete(id) : n.add(id); setPick(n); Haptics.selection();
+      const n = new Set(pick); n.has(id) ? n.delete(id) : n.add(id); setPick(n);
     };
     return (
       <Phone h={560}>
@@ -244,8 +243,7 @@ export const EditModeWithEditBar: Story = {
           ),
         }]} />
         <EditBar count={pick.size} allFav={false}
-          onFav={() => Haptics.impact('light')}
-          onDelete={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); Haptics.notification('warning'); }} />
+          onDelete={() => { setGone((g) => new Set([...g, ...pick])); setPick(new Set()); }} />
       </Phone>
     );
   },
@@ -305,11 +303,11 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
     <NavigationStack onPop={() => undefined} screens={[{
       key: 'up-next', title: 'Up Next', largeTitle: true, grouped: true,
       leading: bar('Add', add),
-      trailing: bar(edit ? 'Done' : 'Edit', () => { setEdit(!edit); Haptics.impact('light'); }),
+      trailing: bar(edit ? 'Done' : 'Edit', () => setEdit(!edit)),
       content: (
         <List inset>
           <List.Section animate onReorder={edit ? move : undefined}
-            footer={edit ? 'Drag a grip, or focus it and press ↑/↓. Each new slot ticks.' : 'Add inserts at the top; swipe a row to remove it.'}>
+            footer={edit ? 'Drag a grip, or focus it and press ↑/↓.' : 'Add inserts at the top; swipe a row to remove it.'}>
             {songs.map((t, i) => (
               <List.Row key={t} title={t} subtitle={`Track ${PLAYLIST.indexOf(t) + 1}`}
                 leading={<span aria-hidden style={{ width: 34, height: 34, borderRadius: 7, background: `hsl(${PLAYLIST.indexOf(t) * 45} 70% 60%)` }} />}
@@ -324,6 +322,6 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
 }
 
 /** `List.Section animate`: keyed rows spring in, collapse out and slide on reorder. `onReorder` adds a grip to
- *  every row — drag it (a selection tick per slot) or focus it and press ↑/↓. */
+ *  every row — drag it or focus it and press ↑/↓. */
 export const AnimatedReorder: Story = { render: () => <Phone h={600}><ReorderDemo /></Phone> };
 export const AnimatedReorderDark: Story = { render: () => <Phone h={600} dark><ReorderDemo /></Phone> };

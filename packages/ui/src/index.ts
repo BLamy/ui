@@ -2,8 +2,6 @@ import './styles.css';
 
 // lib
 export { cn, FONT, EASE, BARH } from './lib/utils';
-export { Haptics, PAT } from './lib/haptics';
-export type { HapticEvent, HapticImpactStyle, HapticNotificationKind } from './lib/haptics';
 export {
   loadMotion, useMotion, springs, springCss, direction, useDirection, fades, useSpringTransition, useReducedMotion, type SpringName,
 } from './lib/motion';
@@ -39,8 +37,6 @@ export { Segmented } from './components/segmented';
 export type { SegmentedProps, SegmentedOption } from './components/segmented';
 export { Spinner } from './components/spinner';
 export type { SpinnerProps } from './components/spinner';
-export { HapticIndicator } from './components/haptic-indicator';
-export type { HapticIndicatorProps } from './components/haptic-indicator';
 export { SearchField } from './components/search-field';
 export type { SearchFieldProps } from './components/search-field';
 export { Button, buttonVariants } from './components/button';
@@ -101,9 +97,6 @@ export {
   SplitViewRemindersDemo, SplitViewLibraryDemo, SplitViewGalleryDemo,
 } from './demos/split-view-demos';
 export type { SplitViewResizableDemoProps } from './demos/split-view-demos';
-export {
-  HapticsPlayground, HapticsEnabledRow, ShowMagicRow, BrightnessSlider, HapticSlider, SlideToUnlock, WheelDrum, Sun,
-} from './demos/haptics-playground';
 
 // ── shadcn primitives (react-aria-components + Tailwind + cva) ──
 export { Badge, badgeVariants } from './components/badge';
@@ -192,7 +185,6 @@ export {
   WorkbenchTheme,
   type WorkbenchThemeProps,
 } from './lib/workbench/theme';
-export { vib, tick } from './lib/workbench/haptics';
 export { IconBtn, iconBtnVariants, type IconBtnProps } from './lib/workbench/icons';
 export {
   MarkdownView,

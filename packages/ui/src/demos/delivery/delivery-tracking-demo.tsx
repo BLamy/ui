@@ -1,6 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
-import { Haptics } from '../../lib/haptics';
 import { springs, useReducedMotion } from '../../lib/motion';
 import { themeScopeProps, useAppearance } from '../../lib/theme';
 import { cva } from 'class-variance-authority';
@@ -336,7 +335,6 @@ export function DeliveryTrackingDemo({
                   className={cn(ACTION_BUTTON, 'bg-[color:var(--ck-delivery-accent)] text-white data-hovered:[filter:brightness(1.06)]')}
                   data-variant="primary"
                   onPress={() => {
-                    Haptics.selection();
                     if (controlledStage == null) setUncontrolledStage(3);
                   }}
                 >
@@ -358,7 +356,6 @@ export function DeliveryTrackingDemo({
               aria-expanded={detailsOpen}
               aria-controls={detailsOpen ? detailsId : undefined}
               onPress={() => {
-                Haptics.selection();
                 setDetailsOpen((v) => !v);
               }}
             >

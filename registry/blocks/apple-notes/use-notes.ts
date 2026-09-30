@@ -1,8 +1,6 @@
 /* Notes state: the notes, the open folder or tag, the selected note, search, list/gallery view, and which
-   locked notes are unlocked this session. Shared by every column; each action plays
-   its haptic next to the change it confirms. */
+   locked notes are unlocked this session. Shared by every column. */
 import { useMemo, useState } from 'react';
-import { Haptics } from '@brett_lamy/ui';
 import { FOLDERS, NOTES, NOW, dateGroup, title, type Folder, type Note } from './data';
 
 export type NotesView = 'list' | 'gallery';
@@ -60,9 +58,8 @@ export function useNotes({ folder: initialFolder = 'all', note: initialNote = 'n
       setTag(null);
       if (id === folderId) return;
       setFolderId(id); setQuery('');
-      Haptics.selection();
     },
-    openTag(t: string | null) { setTag(t); setQuery(''); Haptics.selection(); },
+    openTag(t: string | null) { setTag(t); setQuery(''); },
     select(id: string | null) { setSelectedId(id); },
     setView(v: NotesView) { setView(v); },
     /** Typing in the editor: the note jumps to the top of Today, as it does in Notes. */
@@ -72,13 +69,11 @@ export function useNotes({ folder: initialFolder = 'all', note: initialNote = 'n
       const n: Note = { id: `new-${Date.now()}`, folder: target, body: '', updated: stamp() };
       setNotes((all) => [n, ...all]);
       setSelectedId(n.id); setQuery('');
-      Haptics.impact('light');
       return n.id;
     },
     togglePin(id: string) {
       const n = notes.find((x) => x.id === id);
       patch(id, { pinned: !n?.pinned });
-      Haptics.impact('light');
     },
     toggleLock(id: string) {
       const n = notes.find((x) => x.id === id);
@@ -86,13 +81,11 @@ export function useNotes({ folder: initialFolder = 'all', note: initialNote = 'n
       // Adding a lock leaves the note open until you lock it (Lock Now); removing one is immediate.
       patch(id, { locked: !n.locked });
       setUnlocked((s) => { const x = new Set(s); if (n.locked) x.delete(id); else x.add(id); return x; });
-      Haptics.impact(n.locked ? 'light' : 'medium');
     },
     relock(id: string) {
       setUnlocked((s) => { const x = new Set(s); x.delete(id); return x; });
-      Haptics.impact('medium');
     },
-    unlock(id: string) { setUnlocked((s) => new Set(s).add(id)); Haptics.notification('success'); },
+    unlock(id: string) { setUnlocked((s) => new Set(s).add(id)); },
     /** Deleting moves to Recently Deleted; deleting from there is final. */
     remove(id: string) {
       const n = notes.find((x) => x.id === id);
@@ -104,9 +97,8 @@ export function useNotes({ folder: initialFolder = 'all', note: initialNote = 'n
       }
       if (n.folder === 'deleted') setNotes((all) => all.filter((x) => x.id !== id));
       else patch(id, { folder: 'deleted', deletedFrom: n.folder, pinned: false });
-      Haptics.impact('medium');
     },
-    moveTo(id: string, folderTo: string) { patch(id, { folder: folderTo, deletedFrom: undefined }); Haptics.impact('light'); },
+    moveTo(id: string, folderTo: string) { patch(id, { folder: folderTo, deletedFrom: undefined }); },
   };
 }
 

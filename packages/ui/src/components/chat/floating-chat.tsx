@@ -11,7 +11,6 @@ import {
   type RefObject,
 } from 'react';
 import { Button } from 'react-aria-components';
-import { Haptics } from '../../lib/haptics';
 import { collectSlots, defineSlot } from '../../lib/container';
 import { springCss } from '../../lib/motion';
 import { themeScopeClass, useAppearance, useChromeHidden } from '../../lib/theme';
@@ -250,7 +249,6 @@ export function FloatingChat({
   const fold = bump.minimize;
 
   const revealComposer = () => {
-    Haptics.selection();
     setComposing(true);
     onAdd?.();
   };
@@ -434,7 +432,6 @@ export function FloatingChat({
             ...(glass ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } : null),
           }}
           onPress={() => {
-            Haptics.selection();
             setOpen(false);
             setMinimized(false);
           }}

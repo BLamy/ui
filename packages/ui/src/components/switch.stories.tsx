@@ -25,7 +25,7 @@ export const InRow: Story = {
     const [b, setB] = useState(false);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {[['Haptics', a, setA] as const, ['Dark Mode', b, setB] as const].map(([label, v, set]) => (
+        {[['Sounds', a, setA] as const, ['Dark Mode', b, setB] as const].map(([label, v, set]) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 17 }}>
             <span>{label}</span>
             <Switch checked={v} onChange={set} aria-label={label} />

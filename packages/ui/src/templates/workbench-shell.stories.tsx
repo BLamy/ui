@@ -309,7 +309,7 @@ export const ChatWithInspector: Story = {
       <WorkbenchShell appearance="light">
         <WorkbenchMain>
           <WorkbenchHeader>
-            <WorkbenchTitle project="cookbook">haptics boot order</WorkbenchTitle>
+            <WorkbenchTitle project="cookbook">boot order</WorkbenchTitle>
             <WorkbenchActions>
               <WorkbenchPanelTrigger />
             </WorkbenchActions>

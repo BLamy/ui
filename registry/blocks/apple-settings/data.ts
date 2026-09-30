@@ -69,7 +69,7 @@ export const DEFAULTS: Values = {
   'standby.on': true, 'standby.night': true,
   'notif.previews': 'When Unlocked', 'notif.style': 'Stack', 'notif.summary': false, 'notif.sharing': true,
   'sound.volume': 68, 'sound.buttons': false, 'sound.ringtone': 'Reflection', 'sound.text': 'Note', 'sound.keyboard': true,
-  'sound.lock': true, 'sound.system': true, 'sound.silent': true,
+  'sound.lock': true,
   'focus.share': true, 'focus.dnd': false, 'focus.sleep': true, 'focus.personal': false, 'focus.work': false,
   'st.share': true, 'st.downtime': false, 'st.limits': true, 'st.distance': true,
   'face.unlock': true, 'face.store': true, 'face.pay': true, 'face.autofill': true, 'face.attention': true, 'face.stolen': true,
@@ -350,18 +350,16 @@ const BASE: Pane[] = [
     ],
   },
   {
-    id: 'sounds', title: 'Sounds & Haptics', glyph: 'speaker-high-fill', color: C.pink,
-    blurb: 'Change the sounds and vibrations you hear for calls, alerts, and system interactions.',
+    id: 'sounds', title: 'Sounds', glyph: 'speaker-high-fill', color: C.pink,
+    blurb: 'Change the sounds you hear for calls, alerts, and system interactions.',
     sections: [
       { title: 'Ringtone and Alert Volume', rows: [{ t: 'slider', id: 'sound.volume', lo: 'speaker-fill', hi: 'speaker-high-fill' }, { t: 'toggle', id: 'sound.buttons', title: 'Change with Buttons' }],
         footer: 'The volume of the ringer and alerts can be adjusted using the volume buttons.' },
-      { title: 'Sounds and Haptic Patterns', rows: [
+      { title: 'Sounds and Patterns', rows: [
         { t: 'select', id: 'sound.ringtone', title: 'Ringtone', options: ['Reflection', 'Radar', 'Opening', 'Chimes', 'Silk', 'Uplift'] },
         { t: 'select', id: 'sound.text', title: 'Text Tone', options: ['Note', 'Aurora', 'Bamboo', 'Chord', 'Tri-tone'] },
       ] },
       { rows: [{ t: 'toggle', id: 'sound.keyboard', title: 'Keyboard Feedback' }, { t: 'toggle', id: 'sound.lock', title: 'Lock Sound' }] },
-      { title: 'Haptics', rows: [{ t: 'toggle', id: 'sound.system', title: 'System Haptics' }, { t: 'toggle', id: 'sound.silent', title: 'Play Haptics in Silent Mode' }],
-        footer: 'Play haptics for system controls and interactions.' },
     ],
   },
   {

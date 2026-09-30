@@ -4,7 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { ChatAvatar } from './chat-avatar';
 import { RichText } from './rich-text';
 import type { ChatUser } from './chat-users';
-import { Haptics, cn } from '@brett_lamy/ui';
+import { cn } from '@brett_lamy/ui';
 
 /* ══ Message — one row of a transcript, from parts ══
    <Message user={ada}>
@@ -150,15 +150,11 @@ export interface MessageReactionProps extends Omit<ComponentProps<typeof ToggleB
 }
 
 /** A reaction pill; a toggle (react-aria ToggleButton) that is on when it's yours. */
-export function MessageReaction({ emoji, count, mine, className, onChange, ...props }: MessageReactionProps) {
+export function MessageReaction({ emoji, count, mine, className, ...props }: MessageReactionProps) {
   return (
     <ToggleButton
       data-slot="message-reaction"
       isSelected={!!mine}
-      onChange={(v) => {
-        Haptics.impact('light');
-        onChange?.(v);
-      }}
       className={composeRenderProps(className, (c) =>
         cn(messageReactionVariants({ mine: !!mine }), c),
       )}
@@ -189,16 +185,12 @@ export interface MessageActionProps extends ComponentProps<typeof Button> {
   label: string;
 }
 
-export function MessageAction({ label, className, onPress, ...props }: MessageActionProps) {
+export function MessageAction({ label, className, ...props }: MessageActionProps) {
   return (
     <Button
       data-slot="message-action"
       aria-label={label}
       ref={titleRef(label)}
-      onPress={(e) => {
-        Haptics.impact('light');
-        onPress?.(e);
-      }}
       className={composeRenderProps(className, (c) =>
         cn('grid cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-[13px] text-muted-foreground data-hovered:bg-secondary', c),
       )}

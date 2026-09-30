@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from 'react-aria-components';
-import { Haptics, Icon, IconBtn, cn, springs, useOptionalWorkbenchShell, type IconName } from '@brett_lamy/ui';
+import { Icon, IconBtn, cn, springs, useOptionalWorkbenchShell, type IconName } from '@brett_lamy/ui';
 
 /* ══ Thread sidebar parts ══
    <ThreadSidebar>
@@ -109,7 +109,6 @@ export function ThreadNewButton({ onPress, label = 'New thread', className }: { 
       size={17}
       className={className}
       onPress={() => {
-        Haptics.impact('light');
         onPress?.();
         close();
       }}
@@ -129,10 +128,7 @@ export function ProjectSwitcher({ children = 'All projects', onPress, className 
     <Button
       data-slot="project-switcher"
       className={cn(rowBtn, 'mx-2 bg-transparent px-2 py-1.5 text-[12.5px] font-semibold text-muted-foreground', className)}
-      onPress={() => {
-        Haptics.selection();
-        onPress?.();
-      }}
+      onPress={() => onPress?.()}
     >
       <Icon name="folder-closed" size={15} sw={1.8} />
       <span className="flex-1 truncate">{children}</span>
@@ -174,7 +170,6 @@ export function ThreadGroup({ label, collapsible, defaultOpen = true, open: open
           aria-expanded={open}
           className={cn(press, 'box-border flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 pt-2.5 pb-1')}
           onPress={() => {
-            Haptics.selection();
             setOwnOpen(!open);
             onOpenChange?.(!open);
           }}
@@ -229,7 +224,6 @@ export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left'
       aria-current={active ? 'page' : undefined}
       className={cn(rowBtn, 'box-border w-full px-2 py-1.5 text-[13px] text-foreground', active ? 'bg-secondary-strong' : 'bg-transparent', className)}
       onPress={() => {
-        Haptics.selection();
         onPress?.();
         close();
       }}
@@ -256,10 +250,7 @@ export function ThreadShowMore({ count, onPress, className }: { count: number; o
     <Button
       data-slot="thread-show-more"
       className={cn(rowBtn, 'w-full bg-transparent px-2 py-1.5 text-[12.5px] text-tertiary-foreground', className)}
-      onPress={() => {
-        Haptics.selection();
-        onPress?.();
-      }}
+      onPress={() => onPress?.()}
     >
       <Icon name="plus" size={13} sw={2} />
       <span>Show {count} more</span>
@@ -302,10 +293,7 @@ export function SidebarFooterItem({ icon, onPress, className, children }: { icon
     <Button
       data-slot="sidebar-footer-item"
       className={cn(rowBtn, 'w-full bg-transparent px-2 py-[7px] text-[13px] text-muted-foreground', className)}
-      onPress={() => {
-        Haptics.selection();
-        onPress?.();
-      }}
+      onPress={() => onPress?.()}
     >
       <Icon name={icon} size={16} sw={1.7} />
       <span>{children}</span>
@@ -334,10 +322,7 @@ export function SidebarUser({ name, detail, avatar, onPress, className }: Sideba
     <Button
       data-slot="sidebar-user"
       className={cn(rowBtn, 'w-full bg-transparent px-2 py-1.5', className)}
-      onPress={() => {
-        Haptics.selection();
-        onPress?.();
-      }}
+      onPress={() => onPress?.()}
     >
       {avatar ? (
         <img src={avatar} alt="" className="size-7 shrink-0 rounded-full object-cover" />

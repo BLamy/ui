@@ -157,7 +157,7 @@ The smallest shell is just `ChatShellMain`: a header, a transcript and a compose
 
 ### The rail
 
-A vertical `TabView` with `TabViewBar variant="workspace"`, tiles in Discord's style: a tile is a circle at rest and morphs into a rounded square when hovered or selected, and the pill on its leading edge grows from the unread nub to half height on hover and full height when selected — corners and pill on springs, a small dip on press, one selection tick per change.
+A vertical `TabView` with `TabViewBar variant="workspace"`, tiles in Discord's style: a tile is a circle at rest and morphs into a rounded square when hovered or selected, and the pill on its leading edge grows from the unread nub to half height on hover and full height when selected — corners and pill on springs, a small dip on press.
 
 {% demo src="chat-shell/workspace-rail" %}
 

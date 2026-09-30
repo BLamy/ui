@@ -12,7 +12,7 @@ import {
 
 const team = [
   { f: 'Maya', l: 'Lindqvist', role: 'Industrial design' },
-  { f: 'Jonas', l: 'Ito', role: 'Haptics engineering' },
+  { f: 'Jonas', l: 'Ito', role: 'Motion engineering' },
   { f: 'Priya', l: 'Raman', role: 'Research' },
 ]
 

@@ -4,7 +4,6 @@ import {
 } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { animate, type AnimationPlaybackControls } from 'framer-motion';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { chromeStore, BLSafeCtx, BLStickyCtx } from '../lib/theme';
 import { cn, BARH } from '../lib/utils';
@@ -169,14 +168,13 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
     if (c) { c.style.transition = 'none'; c.style.transform = `translateY(${t}px)`; }
     if (sp) { sp.style.opacity = String(Math.min(1, t / 58)); sp.style.transform = `translateX(-50%) rotate(${t * 3.2}deg) scale(${Math.min(1, .5 + t / 90)})`; }
     const armed = t > 54;
-    if (armed && !d.armed) { d.armed = true; Haptics.impact('light'); }
-    if (!armed && d.armed) d.armed = false;
+    d.armed = armed;
   };
   const pEnd = () => {
     const d = pl.current; if (!d) return; pl.current = null; if (!d.on) return;
     const c = inner.current, sp = spin.current;
     if (d.armed) {
-      setRefr(true); Haptics.impact('medium');
+      setRefr(true);
       if (c) { c.style.transition = springCss('transform', 'snappy'); c.style.transform = 'translateY(52px)'; }
       if (sp) { sp.style.opacity = '1'; sp.style.transform = 'translateX(-50%)'; }
       setTimeout(() => {
@@ -488,7 +486,6 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
     const c = d.flight && flight.current === d.flight ? d.flight : null;
     if (c) c.run = animate(p, commit ? 1 : 0, { ...springs.tray, onUpdate: c.f.set, onComplete: () => { if (flight.current === c) endFlight(); } });
     if (commit) {
-      Haptics.impact('light');
       d.topR.el.style.transition = ease; d.topR.el.style.transform = 'translateX(104%)';
       d.undR.el.style.transition = ease; d.undR.el.style.transform = 'translateX(0%)';
       if (d.undR.dim) { d.undR.dim.style.transition = springCss('opacity', 'tray'); d.undR.dim.style.opacity = '0'; }

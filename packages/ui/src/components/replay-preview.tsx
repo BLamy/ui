@@ -9,7 +9,6 @@ import {
   ReplayStage, getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt,
   type ReplayEvent, type ReplayMarker, type ReplayMarkerKind, type ReplayPointerTrack, type ReplayStageHandle,
 } from '@brett_lamy/docstream/replay';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { fades, springs, useReducedMotion } from '../lib/motion';
 import { cn } from '../lib/utils';
@@ -184,18 +183,16 @@ export function ReplayPreview({
   const onTime = useCallback((ms: number) => { setTime(ms); onTimeUpdate?.(ms); }, [onTimeUpdate]);
   const onPlaying = useCallback((p: boolean) => { setPlaying(p); onPlayingChange?.(p); }, [onPlayingChange]);
 
-  const toggle = () => { Haptics.impact('light'); handle.toggle(); };
+  const toggle = () => handle.toggle();
   const seekBy = (d: number) => handle.seek(Math.max(0, Math.min(duration, time + d)));
-  const cycleSpeed = (d = 1) => { Haptics.selection(); setSpeedIndex((i) => (i + d + speeds.length) % speeds.length); };
+  const cycleSpeed = (d = 1) => setSpeedIndex((i) => (i + d + speeds.length) % speeds.length);
   const toggleFullscreen = () => {
     const el = rootRef.current;
     if (!el) return;
-    Haptics.impact('light');
     if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {});
     else void el.requestFullscreen?.().catch(() => {});
   };
   const jumpTo = (m: ReplayMarker) => {
-    Haptics.selection();
     handle.seek(Math.max(0, m.time - 250));
     onMarkerPress?.(m);
   };

@@ -1,7 +1,7 @@
 /* The Details sheet (Credenza: a centered dialog on wide screens, a bottom tray on phones): title, notes and URL,
    date and time with quick picks, flag, priority, list, and subtasks you can check off or add to. */
 import { useRef, useState, type ReactNode } from 'react';
-import { Button, Credenza, Haptics, Icon, ListRow, ListSection, Segmented, Switch, useSplitView, type IconName } from '@brett_lamy/ui';
+import { Button, Credenza, Icon, ListRow, ListSection, Segmented, Switch, useSplitView, type IconName } from '@brett_lamy/ui';
 import { SYSTEM, dueLabel, type Reminder } from './data';
 import { CheckCircle, ListIcon } from './reminder-row';
 import { useReminders } from './store';
@@ -30,7 +30,6 @@ function Body({ r }: { r: Reminder }) {
     if (!sub.trim()) return;
     up({ subtasks: [...(r.subtasks ?? []), { id: `${r.id}-s${Date.now()}`, title: sub.trim() }] });
     setSub('');
-    Haptics.impact('light');
   };
   return (
     <div className="bl-scroll max-h-[min(620px,calc(100vh-150px))] overflow-y-auto px-4 pt-2 pb-4">

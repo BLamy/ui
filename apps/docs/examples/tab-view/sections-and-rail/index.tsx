@@ -23,7 +23,7 @@ const items = [
 const blurb: Record<string, string> = {
   contacts: 'Each tab keeps its own stack — pushes slide under this bar.',
   recents: 'Tab state survives switching away and back.',
-  settings: 'Every selection fires Haptics.selection().',
+  settings: 'Arrow keys move between tabs.',
 }
 const servers = [
   { id: 'blui', label: 'T', color: '#0A84FF', title: 'BL UI HQ' },

@@ -81,14 +81,14 @@ export const PencilRedThin: Story = {
   ),
 };
 
-/** Stroke eraser over pre-seeded strokes — drag across a stroke to delete it whole (hit-test + haptic tick). */
+/** Stroke eraser over pre-seeded strokes — drag across a stroke to delete it whole (hit-test). */
 export const Eraser: Story = {
   args: { tool: 'eraser', defaultStrokes: demoStrokes() },
   parameters: {
     docs: {
       description: {
         story:
-          'Whole-stroke eraser: press/drag over any pre-seeded stroke to remove it (radius 12 + half the stroke size; every other sample point is tested). Each erased stroke fires Haptics.selection().',
+          'Whole-stroke eraser: press/drag over any pre-seeded stroke to remove it (radius 12 + half the stroke size; every other sample point is tested).',
       },
     },
   },

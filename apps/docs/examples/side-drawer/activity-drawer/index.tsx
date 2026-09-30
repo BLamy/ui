@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { Haptics, SideDrawer } from '@brett_lamy/ui'
+import { SideDrawer } from '@brett_lamy/ui'
 
 const rows = [
   'Outgoing call · 2 min',
@@ -37,10 +37,7 @@ export default function ActivityDrawer({
             {mode === 'overlay' ? (
               <TintButton
                 label="Show Activity"
-                onPress={() => {
-                  Haptics.impact('light')
-                  setOpen(true)
-                }}
+                onPress={() => setOpen(true)}
                 style={{ marginTop: 12, fontSize: 13, padding: '8px 14px' }}
               />
             ) : (

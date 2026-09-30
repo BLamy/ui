@@ -31,7 +31,7 @@ function CustomItemsExample() {
   const [last, setLast] = useState<string | null>(null);
   const items = [
     { key: 'm1', label: '', caption: 'Question', preview: 'Why is the build slow on CI but not locally?' },
-    { key: 'm2', label: '', caption: 'Decision', preview: 'We will ship the haptics engine behind a flag.' },
+    { key: 'm2', label: '', caption: 'Decision', preview: 'We will ship the new rail behind a flag.' },
     { key: 'm3', label: '●', caption: 'Pinned', preview: 'Design review moved to Thursday 2pm.' },
     { key: 'm4', label: '', preview: 'Can someone rerun the flaky index-bar test?' },
     { key: 'm5', label: '', dim: true, preview: 'Archived: old branch cleanup thread.' },
@@ -52,9 +52,9 @@ export const CustomItemsWithPreviews: Story = {
 
 const THREAD = [
   ['Flaky CI on the index-bar test', 'Why does the index-bar test only fail on CI and never on my machine?'],
-  ['Pointer capture vs. the shim', 'Capturing the pointer starves the haptics shim of move events during a scrub.'],
+  ['Pointer capture', 'Capturing the pointer starves the window of move events during a scrub.'],
   ['Window listeners for scrubbing', 'Track the drag with window listeners instead, and clean them up on pointercancel.'],
-  ['Haptic tick per stop', 'Only tick when the stop actually changes, otherwise a slow drag buzzes constantly.'],
+  ['Highlight per stop', 'Only update when the stop actually changes, otherwise a slow drag flickers constantly.'],
   ['Reduced motion', 'Keep the active state visible but drop the width transitions when motion is reduced.'],
   ['Rail spacing', 'Ten pixels per stop reads as a calm column of dashes, even with forty turns.'],
   ['Dock-style falloff', 'A raised cosine over three stops feels closer to the Dock than a gaussian did.'],

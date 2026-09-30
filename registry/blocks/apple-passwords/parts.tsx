@@ -1,7 +1,7 @@
 /* Pieces the columns share: site and Wi-Fi tiles, the grouped card and its rows, copy buttons (confirmed by the
    block's "Copied" HUD), the password that reveals by morphing, and the verification code with its countdown ring. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CountdownRing, Haptics, Icon, IconSwap, NumberMorph, TextMorph, cn, useCountdown, useToast } from '@brett_lamy/ui';
+import { CountdownRing, Icon, IconSwap, NumberMorph, TextMorph, cn, useCountdown, useToast } from '@brett_lamy/ui';
 import { codeFor } from './data';
 
 /* ── Clock ──
@@ -97,7 +97,7 @@ export function PasswordValue({ password, revealed }: { password: string; reveal
 export function RevealButton({ revealed, onToggle }: { revealed: boolean; onToggle: () => void }) {
   return (
     <button type="button" aria-label={revealed ? 'Hide password' : 'Show password'} aria-pressed={revealed}
-      onClick={() => { Haptics.selection(); onToggle(); }}
+      onClick={() => onToggle()}
       className="bl-btn grid size-8 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
       <IconSwap id={revealed ? 'off' : 'on'}><Icon name={revealed ? 'eye-slash' : 'eye'} size={18} /></IconSwap>
     </button>

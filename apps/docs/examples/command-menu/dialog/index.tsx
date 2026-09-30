@@ -12,7 +12,7 @@ import {
   KbdGroup,
 } from '@brett_lamy/ui'
 
-const pages = ['Introduction', 'Installation', 'Theming', 'Motion', 'Haptics', 'Composer', 'Toast', 'NavigationStack', 'SplitView', 'CommandMenu']
+const pages = ['Introduction', 'Installation', 'Theming', 'Motion', 'Composer', 'Toast', 'NavigationStack', 'SplitView', 'CommandMenu']
 
 export default function DialogPalette() {
   const [open, setOpen] = useState(false)

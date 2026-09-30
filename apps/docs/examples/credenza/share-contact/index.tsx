@@ -1,22 +1,12 @@
 import { useState } from 'react'
-import { Button, Credenza, Haptics, Icon, ListRow } from '@brett_lamy/ui'
+import { Button, Credenza, Icon, ListRow } from '@brett_lamy/ui'
 
 export default function ShareContact() {
   const [view, setView] = useState<'menu' | 'done' | null>(null)
-  const done = () => {
-    Haptics.notification('success')
-    setView('done')
-  }
+  const done = () => setView('done')
   return (
     <div style={{ display: 'grid', placeItems: 'center', minHeight: 210 }}>
-      <Button
-        onPress={() => {
-          Haptics.impact('light')
-          setView('menu')
-        }}
-      >
-        Share Contact…
-      </Button>
+      <Button onPress={() => setView('menu')}>Share Contact…</Button>
       {/* `view` keys each state; the card spring-morphs its height between
           them */}
       <Credenza

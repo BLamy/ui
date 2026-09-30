@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react'
 import {
-  Haptics,
   Icon,
   List,
   ListRow,
@@ -48,10 +47,7 @@ export default function TeamsPush() {
                 title={t}
                 accessory="chevron"
                 divider={i < teams.length - 1}
-                onPress={() => {
-                  Haptics.impact('light')
-                  setTeam(t)
-                }}
+                onPress={() => setTeam(t)}
               />
             ))}
           </ListSection>

@@ -1,7 +1,6 @@
 /* Reminders state: the lists and reminders, completion (a just-toggled reminder stays on screen for a beat, then
    collapses away, as in Reminders), per-list "show completed", search and the open details sheet. */
 import { createContext, useContext, useMemo, useRef, useState } from 'react';
-import { Haptics } from '@brett_lamy/ui';
 import { COLORS, LISTS, REMINDERS, type Reminder, type RList } from './data';
 
 /** `hold`: just toggled, still shown in place. `leave`: collapsing out of a view it no longer belongs to. */
@@ -55,7 +54,6 @@ export function useRemindersState(): RemindersApi {
       toggle(id) {
         const done = !itemsRef.current.find((x) => x.id === id)?.done;
         setItems((xs) => xs.map((x) => (x.id === id ? { ...x, done } : x)));
-        if (done) Haptics.impact('light'); else Haptics.selection();
         (timers.current[id] ?? []).forEach(clearTimeout);
         setRecent((r) => ({ ...r, [id]: 'hold' }));
         timers.current[id] = [
@@ -64,7 +62,6 @@ export function useRemindersState(): RemindersApi {
         ];
       },
       toggleSubtask(id, sub) {
-        Haptics.selection();
         setItems((xs) => xs.map((x) => (x.id === id ? { ...x, subtasks: x.subtasks?.map((s) => (s.id === sub ? { ...s, done: !s.done } : s)) } : x)));
       },
       add(r) {
@@ -74,7 +71,6 @@ export function useRemindersState(): RemindersApi {
         setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
       },
       remove(id) {
-        Haptics.notification('warning');
         setItems((xs) => xs.filter((x) => x.id !== id));
       },
       addList() {
@@ -83,11 +79,9 @@ export function useRemindersState(): RemindersApi {
         return id;
       },
       clearCompleted(list) {
-        Haptics.impact('medium');
         setItems((xs) => xs.filter((x) => !(x.done && x.list === list)));
       },
       setShowCompleted(list, v) {
-        Haptics.selection();
         setShown((s) => ({ ...s, [list]: v }));
       },
     };

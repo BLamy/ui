@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
   Avatar,
-  Haptics,
   List,
   ListRow,
   ListSection,
@@ -10,7 +9,7 @@ import {
 
 const people = [
   { f: 'Maya', l: 'Lindqvist', role: 'Industrial design' },
-  { f: 'Jonas', l: 'Ito', role: 'Haptics engineering' },
+  { f: 'Jonas', l: 'Ito', role: 'Motion engineering' },
 ]
 
 export default function TeamList() {
@@ -29,7 +28,7 @@ export default function TeamList() {
               title={`${p.f} ${p.l}`}
               subtitle={p.role}
               accessory="chevron"
-              onPress={() => Haptics.impact('light')}
+              onPress={() => {}}
             />
           ))}
           <ListRow

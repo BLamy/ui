@@ -91,21 +91,21 @@ import {
 | `ComposerInput` | The Docstream WYSIWYG editor (slash menu, Markdown paste, image chips). |
 | `ComposerAttachments` | The tile strip (block-start): image thumbnails (click to annotate, or preview with `annotator={null}`), a video's first frame, code's first lines, a glyph with name and size for other files (click to open). ✕, or Backspace / Delete on a focused tile, removes one. |
 | `ComposerButton` | `variant="ghost" \| "pill" \| "primary" \| "destructive"`, plus `tint`. `ComposerPillLabel` draws icon + label + chevron. |
-| `ComposerSelect` | An option pill that opens a react-aria `Menu`; ticks on selection. `options: { id, label, short?, description? }[]`. |
+| `ComposerSelect` | An option pill that opens a react-aria `Menu`. `options: { id, label, short?, description? }[]`. |
 | `ComposerSend` / `ComposerStop` | Send circle, disabled while empty. It morphs into the stop control while `streaming` (`morph={false}` keeps it; pair it with `<ComposerStop variant="solid" />`). |
 | `ComposerAdd` | The "+" button: a react-aria `FileTrigger` → attachments. `acceptedFileTypes` (defaults to the Composer's), `allowsMultiple` (default `true`), `acceptDirectory`, `defaultCamera`, `icon`, `label`. |
 | `ComposerAttach` | The paperclip: `ComposerAdd` with a clip glyph (its old `accept="image/*"` string still works). |
 | `ComposerExpand` | Toggles the tall drafting mode; sits in the card's top-right corner. |
 | `ComposerSeparator`, `ComposerSpacer`, `ComposerText` | Footer rule, flex spacer, muted text with an icon. |
 | `ComposerBump` | A strip attached above (`side="top"`, tucked behind the card) or below the card. `variant="attached" \| "detached" \| "flush"`. Bumps lay out by `side` wherever they are placed. |
-| `ComposerBumpHandle` / `ComposerBumpContent` | With `draggable`, the handle pulls the content open one-to-one with the pointer; release snaps open or closed with a tick; a tap toggles, Escape closes. `open` / `onOpenChange`, `peek`, `maxReveal` or `bounds`, `minimizable`, and `onProgressChange({ progress, reveal, minimize, dragging })` let a host drive a sheet from it. |
+| `ComposerBumpHandle` / `ComposerBumpContent` | With `draggable`, the handle pulls the content open one-to-one with the pointer; release snaps open or closed; a tap toggles, Escape closes. `open` / `onOpenChange`, `peek`, `maxReveal` or `bounds`, `minimizable`, and `onProgressChange({ progress, reveal, minimize, dragging })` let a host drive a sheet from it. |
 | `ComposerOutlet` | Lets an ancestor add parts to the Composer inside it, or wrap its card. `ArtifactChatContainer` uses it to hang its transcript off a draggable top bump. |
 | `ComposerOptions` / `ComposerOptionsOutlet` | Wrap the option pills in `ComposerOptions`; while the composer is `compact` they move (same elements, menus keep their state) into the `ComposerOptionsOutlet`, usually in the bottom bump. |
 | `ComposerFab` | The round button a composer folds into (`collapsed="fab"`); `FloatingChat` reuses it for its minimized chat. |
 
 ## Compact, FAB, and scroll-linked collapse
 
-`collapsed` (`'none' | 'compact' | 'fab'`, with `defaultCollapsed` / `onCollapsedChange`) folds the same composition — and it is the *same* composition throughout: the card is one element that springs between shapes, never a second copy cross-fading in. **Compact** is a single-row pill in the style of T3 Code: the editor on the left, the footer's attach / stop / send inline on the right, and the `ComposerOptions` pills moved into the bottom bump — `📁 Local checkout | Claude Opus 5.5 | Medium · 1M | Full access … main`. **FAB** folds everything into a round button: the card itself shrinks into the circle (its content fading, the bumps folding away) and grows back out of it; tapping it restores the composer and focuses the editor, with a tick. Going compact, the option pills fly from the footer into the bottom bump as the same elements.
+`collapsed` (`'none' | 'compact' | 'fab'`, with `defaultCollapsed` / `onCollapsedChange`) folds the same composition — and it is the *same* composition throughout: the card is one element that springs between shapes, never a second copy cross-fading in. **Compact** is a single-row pill in the style of T3 Code: the editor on the left, the footer's attach / stop / send inline on the right, and the `ComposerOptions` pills moved into the bottom bump — `📁 Local checkout | Claude Opus 5.5 | Medium · 1M | Full access … main`. **FAB** folds everything into a round button: the card itself shrinks into the circle (its content fading, the bumps folding away) and grows back out of it; tapping it restores the composer and focuses the editor. Going compact, the option pills fly from the footer into the bottom bump as the same elements.
 
 ```tsx
 <Composer collapseOnScroll={scrollerRef} collapseTo="fab">
@@ -216,7 +216,7 @@ function StampAnnotator({ children }: ComposerAnnotatorProps) {
 
 ## ModelPicker
 
-A searchable model menu in the style of T3 Code, and the footer's model pill. Search across every model; a vertical provider rail (favorites first) switches the list; rows show the name, a `NEW` badge, the provider, a `⌘N` shortcut and a favorite star; **Legacy models** opens a submenu. Arrow keys, typeahead, and ⌘1…⌘9 work while it is open, and every pick ticks. It is built on react-aria `DialogTrigger`, `SearchField`, vertical `Tabs`, `GridList`, and `SubmenuTrigger`, and it reads the Workbench palette off its trigger, so it matches light and dark surfaces.
+A searchable model menu in the style of T3 Code, and the footer's model pill. Search across every model; a vertical provider rail (favorites first) switches the list; rows show the name, a `NEW` badge, the provider, a `⌘N` shortcut and a favorite star; **Legacy models** opens a submenu. Arrow keys, typeahead, and ⌘1…⌘9 work while it is open. It is built on react-aria `DialogTrigger`, `SearchField`, vertical `Tabs`, `GridList`, and `SubmenuTrigger`, and it reads the Workbench palette off its trigger, so it matches light and dark surfaces.
 
 ```tsx
 <ModelPicker

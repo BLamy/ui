@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties, type ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   Label,
   Slider as AriaSlider, type SliderProps as AriaSliderProps,
@@ -8,13 +8,11 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 import { useRowLabel } from '../lib/row-label';
 
 /* ══ Slider — react-aria's Slider with the iOS look of `.bl-range`: 4px track, tint fill, 26px white thumb.
-   Arrow keys / Page keys / Home / End from react-aria; one or two thumbs (pass an array for a range).
-   Haptics: a selection tick at each detent — every step when there are ≤ 16, else sixteenths of the range. ══ */
+   Arrow keys / Page keys / Home / End from react-aria; one or two thumbs (pass an array for a range). ══ */
 
 /** Root layout plus the tone's track / fill colors (as --bl-slider-* knobs the track and thumb read). */
 export const sliderVariants = cva('group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disabled:opacity-40', {
@@ -50,13 +48,10 @@ export interface SliderProps<T extends number | number[]> extends AriaSliderProp
 export type SliderTone = 'default' | 'onDark' | 'onLight';
 
 export function Slider<T extends number | number[]>({
-  className, label, showValue, children, onChange, minValue = 0, maxValue = 100, step = 1,
+  className, label, showValue, children, minValue = 0, maxValue = 100, step = 1,
   tone = 'default', size = 'default', trackColor, fillColor, thumbColor, style, ...props
 }: SliderProps<T>) {
-  const detents = Math.max(1, Math.min(16, Math.round((maxValue - minValue) / step)));
-  const last = useRef<number[] | null>(null);
   const rowLabel = useRowLabel(props);
-  const detentOf = (v: number) => Math.round(((v - minValue) / (maxValue - minValue || 1)) * detents);
   return (
     <AriaSlider<T>
       data-slot="slider"
@@ -65,12 +60,6 @@ export function Slider<T extends number | number[]>({
       minValue={minValue}
       maxValue={maxValue}
       step={step}
-      onChange={(v) => {
-        const d = ((Array.isArray(v) ? v : [v]) as number[]).map(detentOf);
-        if (last.current && d.some((x, i) => x !== last.current![i])) Haptics.selection();
-        last.current = d;
-        onChange?.(v);
-      }}
       className={composeRenderProps(className, (cls) => cn(sliderVariants({ tone, size }), cls))}
       // Caller-picked colors are runtime values, fed in as the --bl-slider-* knobs.
       style={composeRenderProps(style, (st) => {
@@ -85,7 +74,6 @@ export function Slider<T extends number | number[]>({
       aria-labelledby={label ? props['aria-labelledby'] : rowLabel}
     >
       {composeRenderProps(children, (kids, { state }) => {
-        if (last.current == null) last.current = state.values.map(detentOf);
         return kids ?? (
           <>
             {label ? <Label className="text-[15px] font-medium text-foreground">{label}</Label> : null}

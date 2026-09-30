@@ -34,7 +34,7 @@ export default function Controls() {
         <Spinner />
       </div>
       <div style={{ fontSize: 12.5, color: 'var(--muted-foreground)' }}>
-        @brett_lamy/ui is live — every control ticks.
+        @brett_lamy/ui is live.
       </div>
     </div>
   )

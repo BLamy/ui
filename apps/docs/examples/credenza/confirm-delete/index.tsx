@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Button, Credenza, Haptics, Icon } from '@brett_lamy/ui'
+import { Button, Credenza, Icon } from '@brett_lamy/ui'
 
 const photos = [
   '#FF9F0A',
@@ -87,7 +87,6 @@ function ConfirmDelete() {
               variant="destructive"
               style={{ flex: 1 }}
               onPress={() => {
-                Haptics.notification('warning')
                 setLeft((l) => (l.length > 3 ? l.slice(3) : photos))
                 setConfirming(false)
               }}

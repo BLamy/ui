@@ -55,8 +55,6 @@ const outline = getStroke(points, {
 | Pencil | 4.5 | 0.72 | 0.42 | 0.34 | 22px taper, both ends |
 | Eraser | — | — | — | — | removes whole strokes it touches |
 
-Every palette pick ticks with `Haptics.selection()`; undo and redo thump lightly; clear lands a medium impact.
-
 ## Usage
 
 ```tsx

@@ -1,14 +1,13 @@
 import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { cva } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 
-/* ══ IndexBar — generic jump rail (haptic tick per stop) ══
+/* ══ IndexBar — generic jump rail ══
    Give it jump points of your own:
      <IndexBar items={[{key:'m4', label:'●', preview:'Why is the build slow?'}]} onJump={key => …}/>
    …or give it nothing but `avail` and it falls back to the UIKit A–Z form:
      <IndexBar avail={new Set(['A','B'])} onLetter={L => …}/>
-   Hover peeks the stop under the cursor (no tick, no jump); drag commits it.
+   Hover peeks the stop under the cursor (no jump); drag commits it.
    variant="wave" draws one dash per stop that swells around the pointer like the macOS Dock, with a
    title + preview card beside the rail: <IndexBar variant="wave" side="left" value={current} items={…}/>
    A right-side rail publishes how far list rows run under it as --bl-index-bar-inset on its parent (the element
@@ -136,14 +135,13 @@ export function IndexBar<K extends IndexBarKey = string>({
   const fire = (i: number) => {
     const p = ptsRef.current[i];
     if (!p || i === act.current) return;
-    act.current = i; setCur(i); Haptics.selection();
+    act.current = i; setCur(i);
     if (onJump) onJump(p.key as K, p as IndexBarItem<K>, i); else if (onLetter) onLetter(String(p.key));
   };
   const down = (e: React.PointerEvent) => {
     if (e.button) return;
     measure(); setOn(true); setHov(-1); fire(at(e.clientY)); along(e.clientY);
-    // Window listeners track the scrub (they keep working if the finger leaves the rail). Ticks from pointermove
-    // play on Android; iOS Safari has no user gesture mid-drag, so the scrub is silent there.
+    // Window listeners track the scrub (they keep working if the finger leaves the rail).
     const mm = (ev: PointerEvent) => { fire(at(ev.clientY)); along(ev.clientY); };
     const uu = () => {
       window.removeEventListener('pointermove', mm); window.removeEventListener('pointerup', uu);

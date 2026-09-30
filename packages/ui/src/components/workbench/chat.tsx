@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
 import { Button } from '../../lib/workbench/press';
 import { cn, wbPress, wbBrandTile } from '../../lib/workbench/util';
-import { vib, tick } from '../../lib/workbench/haptics';
 import { Icon, type IconName } from '../../lib/icon';
 import { prefersReducedMotion, springs } from '../../lib/workbench/motion';
 import { MarkdownView } from './markdown';
@@ -183,7 +182,6 @@ export function Suggestion({ onPress, className, children }: { onPress?: () => v
       data-slot="suggestion"
       className={cn(wbPress, 'cursor-pointer rounded-[99px] border border-border bg-transparent px-[13px] py-1.5 text-[12.5px] text-muted-foreground hover:bg-secondary!', className)}
       onPress={() => {
-        vib([8]);
         onPress?.();
       }}
     >
@@ -276,7 +274,6 @@ export function WorkLog({ summary, defaultOpen = false, children, className }: W
           aria-expanded={open}
           className={cn(row, wbPress, 'cursor-pointer border-0 bg-transparent p-0 leading-[inherit]')}
           onPress={() => {
-            tick();
             setOpen(!open);
           }}
         >
@@ -370,7 +367,6 @@ export function SettledBanner({
       <Button
         className={cn(wbPress, 'shrink-0 cursor-pointer rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12.5px] font-semibold text-foreground hover:bg-secondary!')}
         onPress={() => {
-          tick();
           onUnsettle();
         }}
       >

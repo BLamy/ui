@@ -44,7 +44,6 @@ Each state (`menu → qr → vcard → done`) is measured, and the card **spring
 
 - Drag down to dismiss, with velocity-aware release
 - The card floats inset from the edges — a tray, not an edge-to-edge sheet
-- Success states fire `Haptics.notification('success')`
 
 Try it in the Contacts demo: open any contact → **Share Contact**.
 

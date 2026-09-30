@@ -4,7 +4,7 @@
    and the album's colors wash in. Drag the full player down (or press Esc) and it folds back into the bar.
    Render <MiniPlayer> where the bar belongs and <FullPlayer> over the block, both inside one <MorphGroup>. */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Haptics, Icon, IconSwap, Morph, Slider, cn, type IconName } from '@brett_lamy/ui';
+import { Icon, IconSwap, Morph, Slider, cn, type IconName } from '@brett_lamy/ui';
 import { Artwork } from './artwork';
 import { fmt, lyricsFor, type Album } from './data';
 import type { Player } from './player';
@@ -19,7 +19,7 @@ export function MiniPlayer({ player: p, phone, onOpen, className, style }: {
   return (
     <Morph id="player" radius={14}
       className={cn('absolute z-[300] flex items-center gap-3 overflow-hidden bg-bar pr-2 pl-2 text-foreground backdrop-blur-[24px] backdrop-saturate-[1.8] shadow-[0_6px_24px_black] ring-[.5px] shadow-black/16 ring-border', phone ? 'h-14' : 'h-16', className)} style={style}>
-      <button type="button" aria-label={`Open Now Playing: ${p.current.track.title}`} onClick={() => { Haptics.impact('light'); onOpen(); }}
+      <button type="button" aria-label={`Open Now Playing: ${p.current.track.title}`} onClick={() => onOpen()}
         className="bl-btn absolute inset-0 cursor-pointer border-0 bg-transparent" />
       <Morph id="art" radius={7} className="pointer-events-none shrink-0 overflow-hidden" style={{ width: art, height: art }}>
         <Artwork album={p.current.album} rounded={0} className="size-full" />
@@ -47,7 +47,7 @@ const wash = (a: Album) =>
 
 export function FullPlayer({ player: p, phone, height, onClose }: { player: Player; phone: boolean; height: number; onClose: () => void }) {
   const [panel, setPanel] = useState<Panel>('none');
-  const togglePanel = (k: Panel) => { Haptics.selection(); setPanel(panel === k ? 'none' : k); };
+  const togglePanel = (k: Panel) => setPanel(panel === k ? 'none' : k);
   const compact = panel !== 'none';
 
   useEffect(() => {
@@ -85,7 +85,7 @@ export function FullPlayer({ player: p, phone, height, onClose }: { player: Play
       </div>
       <div className="flex items-center justify-around px-6">
         <ToggleButton label="Lyrics" icon="quote-bubble" on={panel === 'lyrics'} onPress={() => togglePanel('lyrics')} />
-        <ToggleButton label="AirPlay" icon="airplay" on={false} onPress={() => Haptics.selection()} />
+        <ToggleButton label="AirPlay" icon="airplay" on={false} />
         <ToggleButton label="Playing Next" icon="queue" on={panel === 'queue'} onPress={() => togglePanel('queue')} />
       </div>
     </Morph>
@@ -168,7 +168,7 @@ function Transport({ p }: { p: Player }) {
   );
 }
 
-function ToggleButton({ label, icon, on, onPress }: { label: string; icon: IconName; on: boolean; onPress: () => void }) {
+function ToggleButton({ label, icon, on, onPress }: { label: string; icon: IconName; on: boolean; onPress?: () => void }) {
   return (
     <button type="button" aria-label={label} aria-pressed={on} onClick={onPress}
       className={cn(
@@ -204,7 +204,7 @@ function Lyrics({ p }: { p: Player }) {
   return (
     <div ref={box} className="bl-scroll absolute inset-0 overflow-y-auto px-7 py-6 [mask-image:linear-gradient(transparent,#000_12%,#000_85%,transparent)]">
       {lines.map((l, i) => (
-        <button key={i} type="button" data-line={i} onClick={() => { Haptics.selection(); p.seek(Math.ceil(l.at)); }}
+        <button key={i} type="button" data-line={i} onClick={() => p.seek(Math.ceil(l.at))}
           className={cn(
             'bl-btn block w-full cursor-pointer border-0 bg-transparent py-2 text-left [font-family:inherit] text-[26px] leading-[1.2] font-bold text-white',
             'transition-[opacity,filter,scale] duration-spring-smooth ease-spring-smooth origin-left',

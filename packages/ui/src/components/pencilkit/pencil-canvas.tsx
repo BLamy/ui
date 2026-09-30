@@ -1,7 +1,6 @@
 import * as React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from '../../lib/utils';
-import { Haptics } from '../../lib/haptics';
 import {
   PK_INKS,
   PK_TOOLS,
@@ -58,10 +57,6 @@ export function PencilCanvas({
   const live = useRef<PencilStroke | null>(null);
   const box = useRef<HTMLDivElement | null>(null);
   const erasing = useRef(false);
-
-  useEffect(() => {
-    if (erasing.current) Haptics.selection();
-  }, [strokes.length]);
 
   const commit = (fn: (prev: PencilStroke[]) => PencilStroke[], source: PencilStrokesChangeSource) => {
     const next = fn(strokesRef.current);

@@ -3,7 +3,6 @@ import { MultiFileDiff } from '@pierre/diffs/react';
 import { FileTree, useFileTree } from '@pierre/trees/react';
 import { Button } from '../../lib/workbench/press';
 import { cn, wbPress, wbBrandTile } from '../../lib/workbench/util';
-import { vib, tick } from '../../lib/workbench/haptics';
 import { Icon, type IconName } from '../../lib/icon';
 import { useWorkbenchAppearance } from '../../lib/workbench/theme';
 
@@ -54,7 +53,6 @@ export function SurfacePicker({
             data-slot="surface-card"
             className={cn(wbPress, 'cursor-pointer rounded-[13px] border border-border bg-card px-3.5 py-[15px] text-left text-foreground hover:bg-secondary!')}
             onPress={() => {
-              vib([8]);
               onPick(s.k);
             }}
           >
@@ -128,7 +126,6 @@ export function SurfaceFiles({ paths, selected, onSelect, title = 'Project files
     initialExpansion: 'open',
     initialSelectedPaths: selected,
     onSelectionChange: (p: readonly string[]) => {
-      tick();
       onSelect?.([...p]);
     },
     search: true,

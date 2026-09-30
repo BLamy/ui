@@ -48,7 +48,7 @@ import {
 | `subheader` | pinned element under the bar (search fields) |
 | `overlay` | floats above content (index bars, tab bars) |
 | `bottomInset` | reserves room for bars riding the screen |
-| `onRefresh` | pull-to-refresh with spinner + success haptic |
+| `onRefresh` | pull-to-refresh with spinner |
 
 ## Back gestures
 
@@ -109,7 +109,7 @@ The stack is an array of keys in state: rows push by appending, `onPop` drops th
 
 ### Bar buttons and pull to refresh
 
-`leading` and `trailing` hold bar buttons, and `onRefresh` adds pull-to-refresh with a spinner and a success haptic. Compose pushes a screen; Send pops it by clearing state.
+`leading` and `trailing` hold bar buttons, and `onRefresh` adds pull-to-refresh with a spinner. Compose pushes a screen; Send pops it by clearing state.
 
 {% demo src="navigation-stack/inbox-actions" %}
 

@@ -70,7 +70,7 @@ export const SwipeToDelete: Story = {
             divider={i < people.length - 1} />
         ))}
         <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--muted-foreground)', background: 'var(--card)' }}>
-          Swipe a row left to reveal Delete; past 55% width it commits with a haptic.
+          Swipe a row left to reveal Delete; past 55% width it commits.
         </div>
       </>
     );
@@ -130,8 +130,8 @@ function MailRows() {
         );
       })}
       <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--muted-foreground)', background: 'var(--card)' }}>
-        Swipe right for Unread, left for Trash / Flag / More. A long swipe runs the outermost action (a tick marks
-        the threshold). Keyboard: focus a row, → or ← reveals its actions, Esc closes, Delete trashes.
+        Swipe right for Unread, left for Trash / Flag / More. A long swipe runs the outermost action (the
+        threshold is 55% of the row width). Keyboard: focus a row, → or ← reveals its actions, Esc closes, Delete trashes.
       </div>
     </>
   );

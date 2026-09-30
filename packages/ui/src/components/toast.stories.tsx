@@ -26,7 +26,7 @@ function Frame({ dark, placement = 'bottom', seed, children, h = 420 }: {
   );
 }
 
-const hudSeed = (q: ToastQueue) => { q.show({ id: 'hud', variant: 'hud', title: 'Password Copied', tone: 'success' }, { timeout: 0, haptic: 'none' }); };
+const hudSeed = (q: ToastQueue) => { q.show({ id: 'hud', variant: 'hud', title: 'Password Copied', tone: 'success' }, { timeout: 0 }); };
 
 /** The "Copied" pill. */
 export const Hud: Story = { render: () => <Frame seed={hudSeed} /> };
@@ -34,7 +34,7 @@ export const Hud: Story = { render: () => <Frame seed={hudSeed} /> };
 const bannerSeed = (q: ToastQueue) => {
   q.show({ id: 'a', title: 'Uploading 3 photos…', loading: true }, { timeout: 0 });
   q.show({ id: 'b', title: 'Note moved to Trash', action: { label: 'Undo', onAction: () => {} } }, { timeout: 0 });
-  q.show({ id: 'c', title: 'Backup complete', description: 'Your iPhone was backed up to iCloud at 9:41.', tone: 'success' }, { timeout: 0, haptic: 'none' });
+  q.show({ id: 'c', title: 'Backup complete', description: 'Your iPhone was backed up to iCloud at 9:41.', tone: 'success' }, { timeout: 0 });
 };
 
 /** Banners stack newest-first nearest the edge; each can carry a description and one action. */

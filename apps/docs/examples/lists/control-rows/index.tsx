@@ -29,7 +29,7 @@ function Tile({ icon, color }: { icon: string; color: string }) {
 
 function Controls() {
   const [bluetooth, setBluetooth] = useState(true)
-  const [haptics, setHaptics] = useState(true)
+  const [sounds, setSounds] = useState(true)
   const [volume, setVolume] = useState(60)
   const [queued, setQueued] = useState(0)
   return (
@@ -46,9 +46,9 @@ function Controls() {
           />
           <ListRow
             leading={<Tile icon="wave" color="#FF2D55" />}
-            title="System Haptics"
+            title="Sound Effects"
             divider={false}
-            accessory={<Switch checked={haptics} onChange={setHaptics} />}
+            accessory={<Switch checked={sounds} onChange={setSounds} />}
           />
         </ListSection>
         <ListSection title="Sounds">

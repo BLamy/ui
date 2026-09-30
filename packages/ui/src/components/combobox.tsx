@@ -5,15 +5,13 @@ import {
   Input as AriaInput, type InputProps as AriaInputProps,
   composeRenderProps,
 } from 'react-aria-components';
-import { useRef } from 'react';
-import { Haptics } from '../lib/haptics';
 import { selectableText } from '../lib/primitives';
 import { cn } from '../lib/utils';
 import { ListBox, ListBoxItem, ListBoxSection, type ListBoxItemProps, type ListBoxProps } from './list-box';
 import { Popover, type PopoverProps } from './popover';
 
 /* ══ ComboBox — react-aria's ComboBox: a filterable text field with a ListBox popover (arrow keys open and move,
-   Enter commits, Esc reverts/closes). One selection tick per committed change.
+   Enter commits, Esc reverts/closes).
    <ComboBox>
      <Label variant="field">City</Label>
      <ComboBoxInput placeholder="Search cities" />
@@ -22,16 +20,10 @@ import { Popover, type PopoverProps } from './popover';
 
 export interface ComboBoxProps<T extends object> extends AriaComboBoxProps<T> {}
 
-export function ComboBox<T extends object>({ className, onSelectionChange, ...props }: ComboBoxProps<T>) {
-  const last = useRef(props.selectedKey ?? props.defaultSelectedKey ?? null);
+export function ComboBox<T extends object>({ className, ...props }: ComboBoxProps<T>) {
   return (
     <AriaComboBox<T>
       data-slot="combobox"
-      onSelectionChange={(key) => {
-        if (key != null && key !== last.current) Haptics.selection();
-        last.current = key;
-        onSelectionChange?.(key);
-      }}
       className={composeRenderProps(className, (cls) => cn('group flex flex-col gap-1.5', cls))}
       {...props}
     />
@@ -82,7 +74,7 @@ export interface ComboBoxContentProps<T> extends Omit<ListBoxProps<T>, 'variant'
 export function ComboBoxContent<T extends object>({ placement = 'bottom start', popoverClassName, className, ...props }: ComboBoxContentProps<T>) {
   return (
     <Popover data-slot="combobox-content" placement={placement} className={cn('w-(--trigger-width)', popoverClassName)}>
-      <ListBox<T> variant="popup" haptics={false} className={className} {...props} />
+      <ListBox<T> variant="popup" className={className} {...props} />
     </Popover>
   );
 }

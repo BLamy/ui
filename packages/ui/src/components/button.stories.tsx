@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './button';
-import { Haptics } from '../lib/haptics';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof Button> = {
@@ -37,13 +36,13 @@ export const Pill: Story = {
   ),
 };
 
-/** Each press counts once and ticks once — the haptics check taps this in iOS-Safari mode. */
+/** Each press counts once. */
 export const PressCounter: Story = {
   render: function PressCounterStory() {
     const [n, setN] = useState(0);
     return (
       <div className="flex items-center gap-4">
-        <Button data-testid="press" onPress={() => { Haptics.impact('light'); setN((v) => v + 1); }}>Press</Button>
+        <Button data-testid="press" onPress={() => setN((v) => v + 1)}>Press</Button>
         <span data-testid="count" className="text-[15px] text-foreground">Pressed {n}</span>
       </div>
     );

@@ -26,7 +26,6 @@ import { animate, motion, useMotionValue, type MotionValue } from 'framer-motion
 import { Button as AriaButton } from 'react-aria-components';
 import { useFocusRing, useHover, useMove, mergeProps } from 'react-aria';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { useContainerWidth } from '../lib/container';
 import { AnimatedHeight } from './animated-height';
@@ -332,7 +331,7 @@ export function SplitView({
   }, []);
   const back = useCallback(() => {
     const p = presentRef.current; const i = p.indexOf(topRef.current);
-    if (i > 0) { show(p[i - 1]); Haptics.impact('light'); }
+    if (i > 0) show(p[i - 1]);
   }, [show]);
 
   const behaviorRef = useRef(behavior); behaviorRef.current = behavior;
@@ -371,7 +370,7 @@ export function SplitView({
   const widthOnly = W !== prevBox.current.W && wc === prevBox.current.wc;
   useLayoutEffect(() => { prevBox.current = { W, wc }; });
 
-  const toggleSidebar = useCallback(() => { setSidebarVisible(!sidebarVisible); Haptics.impact('light'); }, [sidebarVisible, setSidebarVisible]);
+  const toggleSidebar = useCallback(() => setSidebarVisible(!sidebarVisible), [sidebarVisible, setSidebarVisible]);
   const idFor = useCallback((c: SplitViewColumn) => `${uid}-${c}`, [uid]);
   const tIdx = present.indexOf(top);
 
@@ -886,7 +885,7 @@ export function SplitViewItem({ id, title, subtitle, icon, badge, children, vari
   return (
     <AriaButton data-split-item="" data-slot="split-view-item" data-selected={selected || undefined} aria-current={selected || undefined}
       data-tinted={tinted || undefined}
-      onPress={() => { Haptics.selection(); s.select(column, id); onPress?.(); }}
+      onPress={() => { s.select(column, id); onPress?.(); }}
       onKeyDown={onKeyDown}
       className={cn(splitViewItemVariants({ variant: v, selected, tinted }), className)}
       // The item's own tint is a runtime color.
@@ -945,7 +944,7 @@ export function SplitViewSection({
   const uid = useId();
   const [openState, setOpen] = useState(defaultExpanded);
   const open = !collapsible || (expanded ?? openState);
-  const toggle = () => { const n = !open; setOpen(n); onExpandedChange?.(n); Haptics.selection(); };
+  const toggle = () => { const n = !open; setOpen(n); onExpandedChange?.(n); };
   const labelCls = cn(splitViewSectionLabelVariants({ variant }), labelClassName);
   const items = <div className="flex flex-col gap-px">{children}</div>;
   return (
@@ -1022,7 +1021,6 @@ export function SplitViewStack({ children, resetKey, onDepthChange, className, s
   const depthRef = useRef(depth); depthRef.current = depth;
   const pop = useCallback(() => {
     if (depthRef.current < 2) return;
-    Haptics.impact('light');
     setPages((ps) => {
       let i = ps.length - 1;
       while (i >= 0 && ps[i].leaving) i--;

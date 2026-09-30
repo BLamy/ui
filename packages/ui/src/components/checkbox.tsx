@@ -4,11 +4,9 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 
-/* ══ Checkbox — react-aria's Checkbox. Round by default (iOS selection circle), square like shadcn on request.
-   One selection tick per change. ══ */
+/* ══ Checkbox — react-aria's Checkbox. Round by default (iOS selection circle), square like shadcn on request. ══ */
 export const checkboxVariants = cva(
   [
     'box-border grid size-[22px] shrink-0 place-items-center border-[1.5px] border-tertiary-foreground text-white',
@@ -31,11 +29,10 @@ export const checkboxVariants = cva(
 
 export interface CheckboxProps extends AriaCheckboxProps, VariantProps<typeof checkboxVariants> {}
 
-export function Checkbox({ className, shape, children, onChange, ...props }: CheckboxProps) {
+export function Checkbox({ className, shape, children, ...props }: CheckboxProps) {
   return (
     <AriaCheckbox
       data-slot="checkbox"
-      onChange={(v) => { Haptics.selection(); onChange?.(v); }}
       className={composeRenderProps(className, (cls) =>
         cn('group relative inline-flex cursor-pointer items-center gap-3 text-[17px] text-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40', cls))}
       {...props}
@@ -64,7 +61,7 @@ export function Checkbox({ className, shape, children, onChange, ...props }: Che
 
 export interface CheckboxGroupProps extends AriaCheckboxGroupProps {}
 
-/** Group of checkboxes sharing a value array; put a <Label> first. Each Checkbox ticks its own change. */
+/** Group of checkboxes sharing a value array; put a <Label> first. */
 export function CheckboxGroup({ className, ...props }: CheckboxGroupProps) {
   return (
     <AriaCheckboxGroup

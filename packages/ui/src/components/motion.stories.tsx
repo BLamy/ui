@@ -7,7 +7,6 @@ import { Chevron, IconSwap, type ChevronDirection } from './icon-swap';
 import { AnimatedHeight, ContentSwap } from './animated-height';
 import { Celebrate } from './celebrate';
 import { Icon } from '../lib/icon';
-import { Haptics } from '../lib/haptics';
 import { useDirection } from '../lib/motion';
 import { Pad } from '../stories/frame';
 
@@ -62,7 +61,7 @@ export const IconsInPlace: Story = {
     const [d, setD] = useState(0);
     return (
       <div className="flex items-center gap-4">
-        <Button variant="secondary" onPress={() => { setCopied((c) => !c); Haptics.selection(); }}>
+        <Button variant="secondary" onPress={() => setCopied((c) => !c)}>
           <IconSwap id={copied ? 'check' : 'copy'}>
             <Icon name={copied ? 'check' : 'layers'} size={18} sw={2.2} />
           </IconSwap>
@@ -114,7 +113,7 @@ export const CelebrateBurst: Story = {
     return (
       <div className="grid place-items-center py-10">
         <span className="relative isolate">
-          <Button size="lg" onPress={() => { setN((x) => x + 1); Haptics.notification('success'); }}>Back up wallet</Button>
+          <Button size="lg" onPress={() => setN((x) => x + 1)}>Back up wallet</Button>
           <Celebrate fire={n} />
         </span>
       </div>

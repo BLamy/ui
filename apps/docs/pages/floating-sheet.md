@@ -60,7 +60,7 @@ The tone follows the nearest `AppearanceProvider`, so these examples switch with
 ## Drag behavior
 
 - **The cap is the handle.** Dragging it moves the surface one-to-one with the pointer; there is no second card fading in.
-- **Release keeps its momentum.** The pointer's velocity is projected forward: a flick goes to the next stop in the direction it was thrown, a slow drag settles at the nearest stop, and a spring carries the surface there *from the finger's speed* (grab it mid-flight and it stops under your finger). Each change of state ticks `Haptics.selection()`.
+- **Release keeps its momentum.** The pointer's velocity is projected forward: a flick goes to the next stop in the direction it was thrown, a slow drag settles at the nearest stop, and a spring carries the surface there *from the finger's speed* (grab it mid-flight and it stops under your finger).
 - **Detents.** `detents={[0.5]}` adds resting heights between the peek and full (fractions of the grown body).
 - **Tap toggles.** A plain tap on the cap (under 4px of travel) opens or closes it. `Escape` and the scrim close it.
 - **Drag below rest to minimize.** With `minimizable` (the default), dragging below the resting height first closes the peek, then folds the surface into a round FAB at `fabPosition`. Tapping the FAB restores the resting sheet.

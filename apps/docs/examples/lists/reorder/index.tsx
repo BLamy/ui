@@ -66,7 +66,7 @@ function UpNext() {
           onReorder={editing ? move : undefined}
           footer={
             editing
-              ? 'Drag a grip — each new slot ticks.'
+              ? 'Drag a grip to move a song.'
               : 'Swipe a song left to remove it.'
           }
         >

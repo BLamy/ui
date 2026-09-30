@@ -1,7 +1,7 @@
 {
   "name": "apple-reminders",
   "title": "Apple Reminders",
-  "description": "Apple Reminders: smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts, colored lists with sections, circular checkboxes that spring filled with a haptic tick, inline add, a details sheet (notes, date and time, flag, priority, subtasks), show/clear completed, search, and a small burst when a list is cleared. Sidebar and list side by side on wide screens; the lists screen pushes the list on phones. Large list titles fold into the bar as you scroll; tints with each list's color, light and dark.",
+  "description": "Apple Reminders: smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts, colored lists with sections, circular checkboxes that spring filled, inline add, a details sheet (notes, date and time, flag, priority, subtasks), show/clear completed, search, and a small burst when a list is cleared. Sidebar and list side by side on wide screens; the lists screen pushes the list on phones. Large list titles fold into the bar as you scroll; tints with each list's color, light and dark.",
   "categories": ["application", "productivity"],
   "files": ["page.tsx", "sidebar.tsx", "list-view.tsx", "reminder-row.tsx", "details.tsx", "views.ts", "store.ts", "data.ts"]
 }

@@ -2,7 +2,7 @@
    select into the SplitView's sidebar column, so on a phone they push the list. */
 import type { CSSProperties } from 'react';
 import {
-  Avatar, Haptics, Icon, NumberMorph, SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, cn, useSplitView, type IconName,
+  Avatar, Icon, NumberMorph, SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, cn, useSplitView, type IconName,
 } from '@brett_lamy/ui';
 import { GROUPS, type CategoryId } from './data';
 import { counts, type Vault } from './vault';
@@ -50,7 +50,7 @@ function Tile({ id, label, icon, color, count }: { id: CategoryId; label: string
   const selected = sv.isSelected('sidebar', id);
   return (
     <button type="button" aria-current={selected || undefined}
-      onClick={() => { Haptics.selection(); sv.select('sidebar', id); }}
+      onClick={() => sv.select('sidebar', id)}
       className={cn(
         'bl-btn group flex cursor-pointer flex-col gap-2 rounded-[12px] border-0 p-2.5 text-left [font-family:inherit] outline-none',
         'transition-[background-color,scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.97]',

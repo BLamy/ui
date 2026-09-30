@@ -91,7 +91,7 @@ const MAIL: Record<string, Msg[]> = {
     { id: 'm2', from: ['Wei', 'Chen'], subject: 'SplitView review', preview: 'Columns persist between size classes now — the detail slides into the stack instead of remounting.', time: '9:12', unread: true },
     { id: 'm3', from: ['Anya', 'Kowalski'], subject: 'Dark mode hairlines', preview: 'Separators at 48% read a touch heavy on the sidebar tint. Could we try the fill token instead?', time: '8:03', unread: true },
     { id: 'm4', from: ['Hana', 'Sato'], subject: 'Offsite agenda', preview: 'Tuesday is prototyping, Wednesday is the motion review. Bring your gnarliest interruptions.', time: 'Yesterday', unread: true },
-    { id: 'm5', from: ['Luca', 'Moretti'], subject: 'Re: Haptics on Android', preview: 'Vibration patterns are fine but selection ticks feel mushy below 10ms. Numbers attached.', time: 'Yesterday' },
+    { id: 'm5', from: ['Luca', 'Moretti'], subject: 'Re: Animation timing on Android', preview: 'Spring curves are fine but the settle feels mushy below 10ms. Numbers attached.', time: 'Yesterday' },
     { id: 'm6', from: ['Noor', 'Haddad'], subject: 'Docs screenshots', preview: 'Light and dark captures for every live example are in the shared folder.', time: 'Mon' },
     { id: 'm7', from: ['Tomás', 'Ruiz'], subject: 'Keyboard support', preview: 'Arrow keys resize the dividers now, Home and End snap to the limits.', time: 'Sun' },
   ],
@@ -258,7 +258,7 @@ function NotesEditor() {
 const SETTINGS = [
   { id: 'wifi', title: 'Wi-Fi', icon: 'wifi', color: SYSTEM.blue, value: 'Studio' },
   { id: 'notifications', title: 'Notifications', icon: 'bell', color: SYSTEM.red },
-  { id: 'sounds', title: 'Sounds & Haptics', icon: 'sound', color: SYSTEM.pink },
+  { id: 'sounds', title: 'Sounds', icon: 'sound', color: SYSTEM.pink },
   { id: 'focus', title: 'Focus', icon: 'moon', color: SYSTEM.indigo },
   { id: 'display', title: 'Display & Brightness', icon: 'display', color: SYSTEM.blue },
   { id: 'privacy', title: 'Privacy & Security', icon: 'lock', color: SYSTEM.green },
@@ -380,7 +380,7 @@ const RLISTS: Record<string, RList> = {
     title: 'Groceries', color: SYSTEM.green, icon: 'list',
     items: ['Oat milk', 'Lemons', 'Sourdough', 'Basil', 'Parmesan', 'Coffee beans', 'Olive oil', 'Tomatoes', 'Garlic', 'Rigatoni', 'Sparkling water', 'Dark chocolate', 'Eggs', 'Butter', 'Honey', 'Yogurt'],
   },
-  work: { title: 'Work', color: SYSTEM.purple, icon: 'list', items: ['Motion review notes', 'Docs screenshots', 'Haptics numbers', 'Hiring loop'] },
+  work: { title: 'Work', color: SYSTEM.purple, icon: 'list', items: ['Motion review notes', 'Docs screenshots', 'Latency numbers', 'Hiring loop'] },
   travel: { title: 'Travel', color: SYSTEM.pink, icon: 'list', items: ['Adapter', 'Tokyo rail pass', 'Hotel confirmation'] },
 };
 

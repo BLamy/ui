@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
 import { ChatAvatar } from './chat-avatar';
 import type { ChatUser } from './chat-users';
-import { Haptics, cn } from '@brett_lamy/ui';
+import { cn } from '@brett_lamy/ui';
 
 /* ══ ThreadPreview — the card under a message that opens its thread ══
    <ThreadPreview title="More relevant bugs" count={2} onPress={open}>
@@ -17,14 +17,10 @@ export interface ThreadPreviewProps extends Omit<ComponentProps<typeof Button>, 
   children?: ReactNode;
 }
 
-export function ThreadPreview({ title, count, className, children, onPress, ...props }: ThreadPreviewProps) {
+export function ThreadPreview({ title, count, className, children, ...props }: ThreadPreviewProps) {
   return (
     <Button
       data-slot="thread-preview"
-      onPress={(e) => {
-        Haptics.impact('light');
-        onPress?.(e);
-      }}
       className={composeRenderProps(className, (c) =>
         cn(
           'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-[10px] border border-border bg-card px-[11px] py-[8px] text-left font-ios [transition:border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:border-secondary-strong motion-reduce:transition-none',

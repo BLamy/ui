@@ -49,7 +49,7 @@
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19"
   },
-  "description": "iOS-flavored React components — containers, lists, haptics, tokens, plus the workbench (composer, chat, terminal, surfaces), team-chat shells and PencilKit drawing (react-aria base, shadcn conventions)",
+  "description": "iOS-flavored React components — containers, lists, tokens, plus the workbench (composer, chat, terminal, surfaces), team-chat shells and PencilKit drawing (react-aria base, shadcn conventions)",
   "license": "MIT",
   "sideEffects": [
     "*.css"

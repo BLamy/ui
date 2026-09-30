@@ -16,18 +16,18 @@ function Change() {
       <div style={{ height: 330, overflow: 'auto' }}>
         <SurfaceDiff
           oldFile={{
-            name: 'src/haptics.ts',
+            name: 'src/buzz.ts',
             contents: [
-              'export async function bootHaptics() {',
+              'export async function bootBuzz() {',
               '  if (navigator.vibrate) return',
               "  await import('buzzkit')",
               '}',
             ].join('\n'),
           }}
           newFile={{
-            name: 'src/haptics.ts',
+            name: 'src/buzz.ts',
             contents: [
-              'export async function bootHaptics() {',
+              'export async function bootBuzz() {',
               '  if (isBlockingStub(navigator.vibrate)) ' +
                 'delete navigator.vibrate',
               "  await import('buzzkit@3.0.3')",

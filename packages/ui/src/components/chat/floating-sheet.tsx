@@ -11,7 +11,6 @@ import {
 } from 'react';
 import { Button } from 'react-aria-components';
 import { cva } from 'class-variance-authority';
-import { Haptics } from '../../lib/haptics';
 import { themeScopeClass, useAppearance, useChromeHidden } from '../../lib/theme';
 import { collectSlots, defineSlot } from '../../lib/container';
 import { springCss } from '../../lib/motion';
@@ -319,7 +318,6 @@ export function FloatingSheet({
   const hasFoot = slots.foot != null && slots.foot !== false;
 
   const restore = () => {
-    Haptics.selection();
     setOpen(false);
     setMinimized(false);
   };

@@ -1,5 +1,4 @@
-import { createContext, useContext, useRef, type CSSProperties, type ReactNode } from 'react';
-import type { Key } from 'react-aria-components';
+import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
 import {
   Tab as AriaTab, type TabProps as AriaTabProps,
   TabList as AriaTabList, type TabListProps as AriaTabListProps,
@@ -9,13 +8,12 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { useDirection } from '../lib/motion';
 import { cn } from '../lib/utils';
 import { segmentIndicator } from './segmented';
 
 /* ══ Tabs — react-aria's Tabs (arrow keys move, automatic activation). `segmented` is the iOS segmented look,
-   `underline` a tinted underline bar. One selection tick per change. ══ */
+   `underline` a tinted underline bar. ══ */
 export const tabsListVariants = cva('isolate flex', {
   variants: {
     variant: {
@@ -65,18 +63,11 @@ export interface TabsProps extends AriaTabsProps {
   variant?: TabsVariant;
 }
 
-export function Tabs({ className, variant = 'segmented', onSelectionChange, children, ...props }: TabsProps) {
-  // react-aria reports its automatic first selection too; only user changes tick.
-  const last = useRef<Key | null>(props.selectedKey ?? props.defaultSelectedKey ?? null);
+export function Tabs({ className, variant = 'segmented', children, ...props }: TabsProps) {
   return (
     <TabsCtx.Provider value={variant}>
       <AriaTabs
         data-slot="tabs"
-        onSelectionChange={(key) => {
-          if (last.current != null && key !== last.current) Haptics.selection();
-          last.current = key;
-          onSelectionChange?.(key);
-        }}
         className={composeRenderProps(className, (cls) => cn('flex flex-col gap-4 data-[orientation=vertical]:flex-row', cls))}
         {...props}
       >

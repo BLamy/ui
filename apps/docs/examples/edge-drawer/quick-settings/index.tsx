@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Button, EdgeDrawer, Haptics, Icon } from '@brett_lamy/ui'
+import { Button, EdgeDrawer, Icon } from '@brett_lamy/ui'
 
 function QuickSettings() {
   const [open, setOpen] = useState(true)
@@ -13,10 +13,7 @@ function QuickSettings() {
   ) => (
     <button
       type="button"
-      onClick={() => {
-        Haptics.impact('light')
-        toggle()
-      }}
+      onClick={toggle}
       style={{
         display: 'flex',
         alignItems: 'center',

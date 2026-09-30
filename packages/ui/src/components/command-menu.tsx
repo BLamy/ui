@@ -9,7 +9,6 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AnimatedHeight, ContentSwap } from './animated-height';
 import { IconSwap } from './icon-swap';
 import { Kbd } from './kbd';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { fades, springs } from '../lib/motion';
 import { overlayZ, selectableText } from '../lib/primitives';
@@ -556,7 +555,6 @@ function CommandRoot({
   }, [store, writeQuery]);
 
   const push = useCallback((id: string) => {
-    Haptics.selection();
     const st = stackRef.current;
     const here = { ...st[st.length - 1], query: queryRef.current, active: store.active ? (store.items.get(store.active)?.value ?? null) : null, scroll: store.scroller?.scrollTop ?? 0 };
     goTo([...st.slice(0, -1), here, { id, query: '', active: null, scroll: 0 }], 1);
@@ -565,7 +563,6 @@ function CommandRoot({
   const pop = useCallback(() => {
     const st = stackRef.current;
     if (st.length < 2) return false;
-    Haptics.selection();
     goTo(st.slice(0, -1), -1);
     return true;
   }, [goTo]);
@@ -574,7 +571,6 @@ function CommandRoot({
     const st = stackRef.current;
     const at = st.map((p) => p.id).lastIndexOf(id);
     if (at < 0 || at === st.length - 1) return false;
-    Haptics.selection();
     goTo(st.slice(0, at + 1), -1);
     return true;
   }, [goTo]);
@@ -1020,7 +1016,6 @@ export function CommandItem({
   selectRef.current = () => {
     if (disabled) return;
     if (pushes) { menu.push(pushes); onSelect?.(value); return; }
-    Haptics.impact('light');
     onSelect?.(value);
     if (closeOnSelect ?? menu.closeOnSelect) menu.close();
   };

@@ -13,7 +13,6 @@ import {
   useSlottedContext,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { cn } from '../lib/utils';
 import { Popover, type PopoverProps } from './popover';
@@ -40,18 +39,14 @@ export interface DropdownMenuContentProps<T> extends MenuProps<T> {
 }
 
 export function DropdownMenuContent<T extends object>({
-  className, placement, popoverClassName, onAction, onSelectionChange, ...props
+  className, placement, popoverClassName, ...props
 }: DropdownMenuContentProps<T>) {
   // Placement comes from react-aria (bottom start for a menu, end top for a submenu); submenus overlap their row.
   const isSubmenu = useSlottedContext(PopoverContext)?.trigger === 'SubmenuTrigger';
-  const selects = props.selectionMode != null && props.selectionMode !== 'none';
   return (
     <Popover data-slot="dropdown-menu" placement={placement} offset={isSubmenu ? -6 : 8} className={cn('min-w-[230px]', popoverClassName)}>
       <Menu<T>
         data-slot="dropdown-menu-content"
-        // A selectable item is a selection (tick), anything else a confirmation (light impact) — never both.
-        onAction={(...args) => { if (!selects) Haptics.impact('light'); onAction?.(...args); }}
-        onSelectionChange={(keys) => { Haptics.selection(); onSelectionChange?.(keys); }}
         className={cn('bl-scroll box-border max-h-[inherit] overflow-y-auto py-1 outline-none', className)}
         {...props}
       />

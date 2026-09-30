@@ -2,7 +2,7 @@
 
 BL UI is an iOS-flavored React component framework, distributed as one workspace package:
 
-- `@brett_lamy/ui` — theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar), the team-chat parts and ChatShell (`src/components/chat`, `src/templates`), the IDE workbench parts and WorkbenchShell (`src/components/workbench`, `src/templates`), and PencilKit freehand drawing on perfect-freehand (`src/components/pencilkit`, `src/lib/pencilkit`; `PencilKitAnnotator` is the Composer's default image annotator). Full demo pages live in `src/demos`.
+- `@brett_lamy/ui` — theme/tokens, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar), the team-chat parts and ChatShell (`src/components/chat`, `src/templates`), the IDE workbench parts and WorkbenchShell (`src/components/workbench`, `src/templates`), and PencilKit freehand drawing on perfect-freehand (`src/components/pencilkit`, `src/lib/pencilkit`; `PencilKitAnnotator` is the Composer's default image annotator). Full demo pages live in `src/demos`.
 
 Every component is built **shadcn-style on react-aria-components, styled with Tailwind v4**. Visual output must not change while code moves onto that base: the visual-regression suite (below) is the source of truth, at zero pixel tolerance.
 
@@ -14,14 +14,12 @@ Every component is built **shadcn-style on react-aria-components, styled with Ta
 4. **Tailwind, not inline styles.** Style with utility classes. `style={{…}}` is only for values computed at runtime (gesture offsets, measured sizes, animation progress) — prefer feeding those in as CSS variables (`style={{ '--x': px }}` + `translate-x-(--x)`). Colors come from the theme — shadcn's variables only: `bg-background`, `text-foreground`, `text-muted-foreground`, `bg-primary`, `border-border`, `bg-card`, `bg-destructive`, plus BL UI's extras (`text-tertiary-foreground`, `bg-secondary-strong`, `bg-bar`, `bg-sticky`, `bg-overlay`, `bg-handle`, `text-success`, `text-warning`, `text-link`, `bg-code`, `text-code-foreground`). Surface palettes (Workbench, terminal, chat) are theme scopes (`ThemeScope` / `themeScopeProps`) whose values live only in `src/theme.css` (the bl-theme). No hex/rgba literals except named content constants. Interaction states use react-aria's data attributes (`data-pressed:`, `data-hovered:`, `data-selected:`, `data-focus-visible:`, `data-disabled:`, `group-data-selected:`).
 5. **Exact metrics.** Tailwind v4's named text sizes also set line-height — use `text-[15px]` when the original only set a font size. Keep the original easing (`ease-ios` = `cubic-bezier(.32,.72,0,1)`), radii, shadows (`shadow-[…]`), and durations. `font-family: inherit` is `[font-family:inherit]`.
 6. **CSS files** hold only what utilities can't express (keyframes, scrollbars, range thumbs, third-party overrides). The package's `src/styles.css` pulls in the Tailwind token map (`packages/ui/src/tokens.css`) and Tailwind's utilities layer; `src/theme.css` is the optional bl-theme (`@brett_lamy/ui/theme.css`) — no preflight, so host apps keep their base styles.
-7. **Haptics** go through `Haptics` from `@brett_lamy/ui` (or workbench's `vib`/`tick`). Call them synchronously inside the event that caused them (`onPress`, `onChange`, a keydown) — on iOS/macOS Safari a tick needs a live user gesture; press-time requests are held for the following click, anything later than ~350ms is dropped. Mid-drag ticks (pointermove, momentum) are Android-only; never add overlays or intercept events to get more.
-8. **Demo data and compositions** live in apps or stories. Packages export reusable components only; showcase components named `*Demo` may live under `src/demos/`.
-9. The package `src/index.ts` re-exports everything public, named exports only.
+7. **Demo data and compositions** live in apps or stories. Packages export reusable components only; showcase components named `*Demo` may live under `src/demos/`.
+8. The package `src/index.ts` re-exports everything public, named exports only.
 
 ## Checks — run before every commit
 
 - `pnpm vr --project stories` (Storybook on :6006) and `pnpm vr --project docs` (docs dev server on :4417): every screenshot must match its baseline exactly. Inspect a failure with `node tools/vr/zoom.mjs <story-id>` (expected left, actual right). Only re-baseline (`pnpm vr:update`) for an intended visual change, and say why in the commit.
-- `pnpm test:haptics`: taps in iOS-Safari mode must tick once per request, and Chromium must call `navigator.vibrate` per request.
 - `pnpm nx run-many -t typecheck,build`.
 
 ## Storybook (apps/catalog)
@@ -32,7 +30,7 @@ Stories live next to components: `packages/<pkg>/src/**/*.stories.tsx`. Use CSF3
 - `Molecules/…` — ListRow, SectionHeader, IndexBar, TabBar, EditBar, Composer… (block parts keep their ids too: Message, ThreadPreview)
 - `Organisms/…` — List, NavigationStack, SplitView, Credenza, SideDrawer, Sidebar, ChannelNav, TerminalDock, SurfacePanel, agent tables…
 - `Templates/…` — ChatShell, WorkbenchShell, SplitView layouts…
-- `Pages/…` — full demo pages (Chat, Workbench, PencilKit, MapChat, DeliveryTracking, Haptics Playground).
+- `Pages/…` — full demo pages (Chat, Workbench, PencilKit, MapChat, DeliveryTracking).
 - `Blocks/…` — registry blocks (`registry/blocks`).
 
 Wrap every story in `BLProvider` (use a decorator; dark for the chat and workbench parts). Give container stories an explicit sized frame (e.g. 390×720 phone frame or 100%×640 panel) since BL UI containers are absolutely-positioned within their host. Include a story per meaningful prop/composition variant, with `args` wired so controls work.

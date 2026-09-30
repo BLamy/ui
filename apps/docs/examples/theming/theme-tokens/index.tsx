@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import {
   BLProvider,
-  Haptics,
   Icon,
   List,
   ListRow,
@@ -40,10 +39,7 @@ export default function Appearance() {
             {tints.map((c) => (
               <button
                 key={c}
-                onClick={() => {
-                  setTint(c)
-                  Haptics.selection()
-                }}
+                onClick={() => setTint(c)}
                 aria-label={'Tint ' + c}
                 style={{
                   width: 23,
@@ -77,7 +73,6 @@ export default function Appearance() {
           </List>
           {/* A plain button reading the tint token */}
           <button
-            onClick={() => Haptics.impact('light')}
             style={{
               display: 'block',
               margin: '12px auto 0',

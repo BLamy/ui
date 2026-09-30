@@ -3,7 +3,6 @@ import {
   AnimatedHeight,
   Button,
   ContentSwap,
-  Haptics,
   Icon,
   useDirection,
 } from '@brett_lamy/ui'
@@ -116,10 +115,7 @@ export default function SendTray() {
           <Button
             size="lg"
             className="flex-1"
-            onPress={() => {
-              Haptics.impact(last ? 'medium' : 'light')
-              setStep(last ? 0 : step + 1)
-            }}
+            onPress={() => setStep(last ? 0 : step + 1)}
           >
             {last ? 'Confirm' : 'Continue'}
           </Button>

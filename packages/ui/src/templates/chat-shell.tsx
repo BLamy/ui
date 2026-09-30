@@ -4,7 +4,6 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { AdaptivePane } from '../components/adaptive-pane';
 import { SideDrawer } from '../components/side-drawer';
 import { useContainerWidth } from '../lib/container';
-import { Haptics } from '../lib/haptics';
 import { useAppearance, themeScopeProps, type Appearance } from '../lib/theme';
 import { Icon } from '../lib/icon';
 import { ChatShellContext, useChatShell, useOptionalChatShell, type ChatShellContextValue } from '../lib/chat/chat-shell-context';
@@ -134,7 +133,6 @@ export function ChatShellNavTrigger({ className, children, onPress, ...props }: 
       data-slot="chat-shell-nav-trigger"
       aria-label="Channels"
       onPress={(e) => {
-        Haptics.impact('light');
         setNavOpen(true);
         onPress?.(e);
       }}
@@ -222,16 +220,12 @@ export interface ChatShellHeaderActionProps
   isActive?: boolean;
 }
 
-export function ChatShellHeaderAction({ variant, isActive, className, onPress, ...props }: ChatShellHeaderActionProps) {
+export function ChatShellHeaderAction({ variant, isActive, className, ...props }: ChatShellHeaderActionProps) {
   return (
     <Button
       data-slot="chat-shell-header-action"
       data-active={isActive || undefined}
       aria-pressed={isActive}
-      onPress={(e) => {
-        Haptics.impact('light');
-        onPress?.(e);
-      }}
       className={composeRenderProps(className, (c) => cn(chatShellHeaderActionVariants({ variant }), c))}
       {...props}
     />
@@ -243,14 +237,10 @@ export interface ChatShellBackProps extends Omit<ComponentProps<typeof Button>, 
 }
 
 /** A tinted "‹ #channel" back button, for a view (a full-width thread) that replaces the channel. */
-export function ChatShellBack({ className, children, onPress, ...props }: ChatShellBackProps) {
+export function ChatShellBack({ className, children, ...props }: ChatShellBackProps) {
   return (
     <Button
       data-slot="chat-shell-back"
-      onPress={(e) => {
-        Haptics.impact('light');
-        onPress?.(e);
-      }}
       className={composeRenderProps(className, (c) =>
         cn('flex shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent py-1 pr-1.5 pl-0 font-ios text-[13px] font-[650] text-primary', c),
       )}

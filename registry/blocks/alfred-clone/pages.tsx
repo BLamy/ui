@@ -2,7 +2,7 @@
    (`onKeyDown` runs before the menu's; preventDefault takes a key over). The launcher renders the current one. */
 import type { KeyboardEvent, ReactNode } from 'react';
 import {
-  CommandGroup, CommandItem, CommandPage, Haptics, Icon, IconSwap, Kbd, NumberMorph, cn, useCommandActive, useCommandMenu,
+  CommandGroup, CommandItem, CommandPage, Icon, IconSwap, Kbd, NumberMorph, cn, useCommandActive, useCommandMenu,
 } from '@brett_lamy/ui';
 import { evaluate, formatResult, looksLikeMath, plainResult, prettyExpression } from './calc';
 import {
@@ -117,8 +117,8 @@ export function CalculatorPage() {
     if (e.key !== 'Tab') return;
     e.preventDefault();
     const h = active?.startsWith('h:') ? a.history[Number(active.slice(2))] : null;
-    if (h) { Haptics.selection(); setQuery(h.result); }
-    else if (value !== null) { Haptics.selection(); setQuery(plainResult(value)); }
+    if (h) setQuery(h.result);
+    else if (value !== null) setQuery(plainResult(value));
   };
   const big = value !== null && Math.abs(value) < 1e15;
   return (
@@ -172,11 +172,9 @@ export function ClipboardPage() {
     if (e.key === 'Backspace') {
       // The menu hands the selection to the deleted row's neighbour.
       e.preventDefault();
-      Haptics.impact('medium');
       a.removeClip(clip.id);
     } else if (e.key.toLowerCase() === 'p') {
       e.preventDefault();
-      Haptics.selection();
       a.togglePin(clip.id);
       a.hud(clip.pinned ? 'Unpinned' : 'Pinned', clip.pinned ? 'pushpin-slash' : 'pushpin-fill');
     }
@@ -278,7 +276,6 @@ export function FolderPage({ path }: { path: string }) {
       pop();
     } else if (e.key === 'Enter' && isMod(e) && target) {
       e.preventDefault();
-      Haptics.impact('light');
       a.hud(`Revealed ${target.name} in Finder`, 'folder-fill');
     }
   };

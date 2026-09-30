@@ -3,7 +3,6 @@ import {
   Avatar,
   Button,
   Credenza,
-  Haptics,
   Icon,
   ListRow,
   Segmented,
@@ -24,10 +23,7 @@ const amounts = [
 function SendMoneyTray() {
   const [step, setStep] = useState<Step | null>('amount')
   const [amount, setAmount] = useState('50')
-  const send = () => {
-    Haptics.notification('success')
-    setStep('sent')
-  }
+  const send = () => setStep('sent')
   return (
     <div
       style={{

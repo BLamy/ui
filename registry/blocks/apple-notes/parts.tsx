@@ -2,7 +2,7 @@
    and the Share and note (…) pull-down menus. */
 import type { ReactNode } from 'react';
 import {
-  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSection, DropdownMenuSeparator, Haptics, Icon, IconSwap,
+  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSection, DropdownMenuSeparator, Icon, IconSwap,
   Segmented, cn,
 } from '@brett_lamy/ui';
 import { MOVE_TARGETS, type Note } from './data';
@@ -35,7 +35,7 @@ export function ShareMenu({ n }: { n: Note }) {
   return (
     <DropdownMenu>
       <BarButton label="Share" isDisabled={!n}><Icon name="share" /></BarButton>
-      <DropdownMenuContent aria-label="Share" placement="bottom end" onAction={() => Haptics.notification('success')}>
+      <DropdownMenuContent aria-label="Share" placement="bottom end">
         <DropdownMenuItem id="collaborate" icon={<Icon name="people" size={20} />} description="Invite people to edit">Collaborate</DropdownMenuItem>
         <DropdownMenuItem id="copy" icon={<Icon name="link" size={20} />}>Copy Link</DropdownMenuItem>
         <DropdownMenuSeparator />

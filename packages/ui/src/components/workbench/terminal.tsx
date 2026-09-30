@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '../../lib/workbench/util';
-import { tick } from '../../lib/workbench/haptics';
 import { IconBtn } from '../../lib/workbench/icons';
 import { Icon, type IconName } from '../../lib/icon';
 
@@ -78,7 +77,6 @@ export function TerminalBody({ seed, run: runProp, user = 'dev@workbench', cwd =
     if (out === 'CLEAR') setHist([]);
     else setHist((h) => [...h, { t: val, p: true }, ...out]);
     setVal('');
-    tick();
   };
   return (
     <div
@@ -154,7 +152,6 @@ export function TerminalAction({ icon, label, onPress, className }: { icon: Icon
       size={15}
       className={className}
       onPress={() => {
-        tick();
         onPress?.();
       }}
     />

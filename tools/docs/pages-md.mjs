@@ -52,7 +52,7 @@ try {
   const llms = [
     '# BL UI',
     '',
-    '> iOS-flavored React components (containers, lists, haptics, tokens, a workbench composer and chat shells) on react-aria-components, Tailwind v4 and shadcn conventions. Install with `npm i @brett_lamy/ui`, or add items from the shadcn registry at https://blamy.github.io/ui/r/<item>.json.',
+    '> iOS-flavored React components (containers, lists, tokens, a workbench composer and chat shells) on react-aria-components, Tailwind v4 and shadcn conventions. Install with `npm i @brett_lamy/ui`, or add items from the shadcn registry at https://blamy.github.io/ui/r/<item>.json.',
     '',
     ...sections.flatMap((s) => [
       `## ${s}`,

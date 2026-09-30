@@ -75,8 +75,6 @@ Descendants read the root with `useTabView()` (`orientation`, `placement`, `vari
 <TabView placement="end">       // vertical rail on the trailing edge
 ```
 
-Selecting a tab fires `Haptics.selection()` — once per change; react-aria's automatic first selection doesn't tick.
-
 ## Order
 
 The bar and the panels may be written either way round. react-aria mints the ids the panels point at while it renders the tablist, so the tablist has to render first: a `TabViewBar` (or `TabViewList`) that is a direct child of `TabView` is moved ahead of the panels — which also keeps `placement` right — and when the bar is nested deeper and comes after the panels, `TabViewPanels` leaves a box-less placeholder where you wrote it and the panels render after the tablist, into that placeholder.

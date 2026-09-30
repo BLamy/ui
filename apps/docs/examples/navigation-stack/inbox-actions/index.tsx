@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import {
   Button,
-  Haptics,
   Icon,
   List,
   ListRow,
@@ -28,7 +27,6 @@ function InboxWithActions() {
       },
       ...m,
     ])
-    Haptics.notification('success')
   }
   const screens: Screen[] = [
     {

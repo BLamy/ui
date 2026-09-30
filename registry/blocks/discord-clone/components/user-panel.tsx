@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
-import { Haptics, cn } from '@brett_lamy/ui';
+import { cn } from '@brett_lamy/ui';
 import { cva } from 'class-variance-authority';
 
 /* ══ UserPanel — the signed-in user at the foot of the channel sidebar ══
@@ -64,14 +64,10 @@ export function UserPanelStatus({ status = 'online', className, children, ...pro
 }
 
 /** An icon button in the panel (mute, deafen, settings…). */
-export function UserPanelAction({ className, onPress, ...props }: ComponentProps<typeof Button>) {
+export function UserPanelAction({ className, ...props }: ComponentProps<typeof Button>) {
   return (
     <Button
       data-slot="user-panel-action"
-      onPress={(e) => {
-        Haptics.impact('light');
-        onPress?.(e);
-      }}
       className={composeRenderProps(className, (c) =>
         cn('grid cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground data-hovered:text-muted-foreground', c),
       )}

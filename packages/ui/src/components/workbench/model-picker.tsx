@@ -21,7 +21,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { direction, springs } from '../../lib/motion';
 import { Button } from '../../lib/workbench/press';
 import { cn } from '../../lib/workbench/util';
-import { tick } from '../../lib/workbench/haptics';
 import { Icon } from '../../lib/icon';
 import { WbPopover } from './wb-popover';
 import { ComposerButton, ComposerPillLabel } from './composer';
@@ -30,7 +29,7 @@ import type { ModelOption, ModelProvider } from './models';
 /* ══ ModelPicker — a searchable, provider-railed model menu (T3 Code style) ══
    Trigger pill → popover: search field; a vertical provider rail (favorites, then providers) as react-aria
    Tabs; the provider's models as a react-aria GridList (arrow keys, typeahead, a favorite star per row);
-   "Legacy models" as a react-aria SubmenuTrigger. ⌘1…⌘9 pick while open. Every pick ticks. */
+   "Legacy models" as a react-aria SubmenuTrigger. ⌘1…⌘9 pick while open. */
 
 const FAVORITES = '__favorites';
 
@@ -133,12 +132,10 @@ export function ModelPicker({
   const [travel, setTravel] = useState(0);
 
   const choose = (id: string) => {
-    tick();
     setValue(id);
     setOpen(false);
   };
   const toggleFavorite = (id: string) => {
-    tick();
     setFavorites(favorites.includes(id) ? favorites.filter((f) => f !== id) : [...favorites, id]);
   };
 
@@ -205,7 +202,6 @@ export function ModelPicker({
             orientation="vertical"
             selectedKey={tab}
             onSelectionChange={(k) => {
-              tick();
               setTravel(direction(railOrder.indexOf(tab), railOrder.indexOf(String(k))));
               setTab(String(k));
               setQuery('');

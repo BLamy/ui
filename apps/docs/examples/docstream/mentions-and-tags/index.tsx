@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button, MarkdownView, type ReferenceNode } from '@brett_lamy/ui'
 
 const answer = `@maya shipped the tray drag in #credenza last week, and @jonas
-tuned the haptics in #feedback.
+tuned the springs in #feedback.
 
 Ask either of them before changing the release threshold.`
 

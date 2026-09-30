@@ -5,13 +5,12 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 import { ListBox, ListBoxItem, ListBoxSection, type ListBoxItemProps, type ListBoxProps } from './list-box';
 import { Popover, type PopoverProps } from './popover';
 
 /* ══ Select — react-aria's Select: a button that opens a ListBox in a Popover (arrow keys / typeahead on the
-   closed button too, Esc closes, focus returns). One selection tick per change.
+   closed button too, Esc closes, focus returns).
    <Select placeholder="Choose…">
      <Label variant="field">Repeat</Label>
      <SelectTrigger />
@@ -20,11 +19,10 @@ import { Popover, type PopoverProps } from './popover';
 
 export interface SelectProps<T extends object, M extends 'single' | 'multiple' = 'single'> extends AriaSelectProps<T, M> {}
 
-export function Select<T extends object, M extends 'single' | 'multiple' = 'single'>({ className, onChange, ...props }: SelectProps<T, M>) {
+export function Select<T extends object, M extends 'single' | 'multiple' = 'single'>({ className, ...props }: SelectProps<T, M>) {
   return (
     <AriaSelect<T, M>
       data-slot="select"
-      onChange={(v) => { Haptics.selection(); onChange?.(v); }}
       className={composeRenderProps(className, (cls) => cn('group flex flex-col gap-1.5', cls))}
       {...props}
     />
@@ -103,7 +101,7 @@ export interface SelectContentProps<T> extends Omit<ListBoxProps<T>, 'variant'> 
 export function SelectContent<T extends object>({ placement = 'bottom start', popoverClassName, className, ...props }: SelectContentProps<T>) {
   return (
     <Popover data-slot="select-content" placement={placement} className={cn('min-w-[max(var(--trigger-width),200px)]', popoverClassName)}>
-      <ListBox<T> variant="popup" haptics={false} className={className} {...props} />
+      <ListBox<T> variant="popup" className={className} {...props} />
     </Popover>
   );
 }

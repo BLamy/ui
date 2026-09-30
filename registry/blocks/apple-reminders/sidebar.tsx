@@ -1,6 +1,6 @@
 /* The lists column: search, the smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts,
    and My Lists. On a phone it's the root screen and search results show right here. */
-import { Haptics, Icon, NumberMorph, SearchField, SplitViewContent, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@brett_lamy/ui';
+import { Icon, NumberMorph, SearchField, SplitViewContent, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@brett_lamy/ui';
 import { SMART, SYSTEM, TODAY_NUMBER, type RList, type Smart } from './data';
 import { ListIcon, ReminderRow } from './reminder-row';
 import { useReminders } from './store';
@@ -69,7 +69,7 @@ function InlineResults() {
 export function ListsSidebar() {
   const api = useReminders();
   const s = useSplitView();
-  const addList = () => { Haptics.impact('light'); s.select('sidebar', api.addList()); };
+  const addList = () => s.select('sidebar', api.addList());
   return (
     <SplitViewSidebar aria-label="Lists" width={330} minWidth={280} maxWidth={400} className="bg-muted">
       <SplitViewContent className="px-4 pb-4">

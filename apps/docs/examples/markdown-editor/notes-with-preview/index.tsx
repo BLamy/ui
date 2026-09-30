@@ -5,7 +5,7 @@ const draft = `# Standup notes
 
 Shipped the **tray drag** — the release threshold stays at \`0.4\`.
 
-- [x] Haptics on detents
+- [x] Spring on detents
 - [ ] Reduced-motion pass
 
 > Next: the docs page.

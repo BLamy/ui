@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Haptics, Icon, NumberMorph } from '@brett_lamy/ui'
+import { Button, Icon, NumberMorph } from '@brett_lamy/ui'
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫']
 const MAX = 9_999_999_999
@@ -7,17 +7,12 @@ const MAX = 9_999_999_999
 export default function Amount() {
   const [cents, setCents] = useState(123456)
   const press = (k: string) => {
-    Haptics.selection()
     setCents((c) => {
       const next =
         k === '⌫'
           ? Math.floor(c / 10)
           : c * (k === '00' ? 100 : 10) + (k === '00' ? 0 : Number(k))
-      if (next > MAX) {
-        Haptics.notification('warning')
-        return c
-      }
-      return next
+      return next > MAX ? c : next
     })
   }
   return (

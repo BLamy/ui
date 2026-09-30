@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ComponentProps, type ReactNode } from 'react';
 import { Button, Input, composeRenderProps } from 'react-aria-components';
-import { Haptics, Icon, cn } from '@brett_lamy/ui';
+import { Icon, cn } from '@brett_lamy/ui';
 import { cva } from 'class-variance-authority';
 
 /* ══ ChatComposer — the message field ══
@@ -45,7 +45,6 @@ export function ChatComposer({ onSend, placeholder, autoFocus, value: valueProp,
   };
   const send = () => {
     if (!value.trim()) return;
-    Haptics.impact('medium');
     onSend(value.trim());
     setValue('');
   };

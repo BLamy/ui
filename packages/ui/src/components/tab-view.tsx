@@ -13,10 +13,8 @@ import {
   TabListStateContext,
   Tabs as AriaTabs, type TabsProps as AriaTabsProps,
   composeRenderProps, createLeafComponent,
-  type Key,
 } from 'react-aria-components';
 import { cva } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { useChromeHidden } from '../lib/theme';
 import { cn } from '../lib/utils';
@@ -38,7 +36,7 @@ import { TabDirection, useTabPanelDirection } from './tabs';
      <TabViewPanels><TabViewPanel id="a">…</TabViewPanel>…</TabViewPanels>
    </TabView>
 
-   Placement `top`/`bottom` is horizontal, `start`/`end` vertical. One selection tick per user change.
+   Placement `top`/`bottom` is horizontal, `start`/`end` vertical.
 
    Order doesn't matter: the bar and the panels may be written either way round. react-aria needs the tablist
    to render before any panel (it mints the ids panels point at, on every render), so TabView moves a bar/list
@@ -134,11 +132,9 @@ export interface TabViewProps extends Omit<AriaTabsProps, 'orientation'> {
   orientation?: TabViewOrientation;
 }
 
-export function TabView({ placement, orientation, className, onSelectionChange, children, ...props }: TabViewProps) {
+export function TabView({ placement, orientation, className, children, ...props }: TabViewProps) {
   const place: TabViewPlacement = placement ?? (orientation === 'vertical' ? 'start' : 'bottom');
   const orient: TabViewOrientation = orientation ?? (place === 'start' || place === 'end' ? 'vertical' : 'horizontal');
-  // react-aria reports its automatic first selection too; only user changes tick.
-  const last = useRef<Key | null>(props.selectedKey ?? props.defaultSelectedKey ?? null);
   const [store] = useState(createPanelsStore);
   return (
     <TabViewCtx.Provider value={{ orientation: orient, placement: place, variant: orient === 'vertical' ? 'rail' : 'bar' }}>
@@ -146,11 +142,6 @@ export function TabView({ placement, orientation, className, onSelectionChange, 
         data-slot="tab-view"
         data-placement={place}
         orientation={orient}
-        onSelectionChange={(key) => {
-          if (last.current != null && key !== last.current) Haptics.selection();
-          last.current = key;
-          onSelectionChange?.(key);
-        }}
         className={composeRenderProps(className, (cls) => cn(tabViewVariants({ placement: place }), cls))}
         {...props}
       >

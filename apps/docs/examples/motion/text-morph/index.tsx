@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Haptics, TextMorph } from '@brett_lamy/ui'
+import { Button, TextMorph } from '@brett_lamy/ui'
 
 // A string child morphs on change: shared letters (C, o, n, i) slide into
 // place, the rest blur out and in, and the button springs to its new width.
@@ -16,10 +16,7 @@ export default function SendButton() {
     >
       <Button
         size="lg"
-        onPress={() => {
-          setReady((r) => !r)
-          Haptics.impact('light')
-        }}
+        onPress={() => setReady((r) => !r)}
       >
         {ready ? 'Confirm' : 'Continue'}
       </Button>

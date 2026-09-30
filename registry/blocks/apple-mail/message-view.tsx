@@ -1,7 +1,7 @@
 /* A message: sender header with avatar, subject, body with quoted text drawn as Mail's tinted quote bar,
    attachment tiles, and the earlier messages of the conversation as cards that expand in place. */
 import { useState, type ReactNode } from 'react';
-import { AnimatedHeight, Avatar, Chevron, Haptics, Icon, cn } from '@brett_lamy/ui';
+import { AnimatedHeight, Avatar, Chevron, Icon, cn } from '@brett_lamy/ui';
 import { ME, initials, longTime, relativeTime, type Attachment, type Message, type Person, type ThreadEntry } from './data';
 
 const names = (xs: Person[]) => xs.map((x) => (x.email === ME.email ? 'Me' : x.name)).join(', ');
@@ -32,7 +32,7 @@ const ATTACHMENT_TONE: Record<Attachment['kind'], string> = { pdf: '#FF3B30', im
 
 function AttachmentTile({ a }: { a: Attachment }) {
   return (
-    <button type="button" onClick={() => Haptics.impact('light')}
+    <button type="button"
       className="bl-btn flex min-w-0 cursor-pointer items-center gap-2.5 rounded-[12px] border-0 bg-secondary px-3 py-2.5 text-left [font-family:inherit] text-foreground transition-colors hover:bg-secondary-strong">
       <span className="grid size-9 shrink-0 place-items-center rounded-[8px] text-white" style={{ background: ATTACHMENT_TONE[a.kind] }}>
         <Icon name={a.kind === 'image' ? 'photo' : a.kind === 'zip' ? 'archivebox' : 'doc'} size={20} sw={1.9} />
@@ -66,7 +66,7 @@ function EarlierMessage({ e }: { e: ThreadEntry }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-[14px] bg-card shadow-[0_0_0_1px_var(--border)]">
-      <button type="button" aria-expanded={open} onClick={() => { setOpen((o) => !o); Haptics.selection(); }}
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)}
         className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3 text-left [font-family:inherit] text-foreground">
         <Avatar c={initials(e.from)} size={30} />
         <span className="min-w-0 flex-1">

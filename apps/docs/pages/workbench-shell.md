@@ -172,13 +172,13 @@ A new thread is a `Conversation` with `empty`: the greeting, the composer centre
 
 ### The compact terminal on its own
 
-`SnapSheet` is also usable directly. A slow drag settles at the nearest snap; a flick carries on to the next — or down past the lowest to close. Settling ticks; dismissal thumps.
+`SnapSheet` is also usable directly. A slow drag settles at the nearest snap; a flick carries on to the next — or down past the lowest to close.
 
 {% demo src="workbench-shell/snap-sheet" %}
 
 ## Terminal
 
-`TerminalBody` is a tiny echo shell for demos — `ls`, `pwd`, `echo`, `whoami`, `npm run dev`, `clear`, `help` — or pass `run` to drive it yourself. Enter runs with a tick. Click into it and type:
+`TerminalBody` is a tiny echo shell for demos — `ls`, `pwd`, `echo`, `whoami`, `npm run dev`, `clear`, `help` — or pass `run` to drive it yourself. Click into it and type:
 
 {% demo src="workbench-shell/terminal" %}
 
@@ -190,7 +190,7 @@ A `WorkbenchPanel` works outside a shell too. The picker, then any surface — t
 
 ## File tree
 
-Every workspace file tree in BL UI is rendered by **[Pierre Trees](https://trees.software/)** (`@pierre/trees`). `SurfaceFiles` supplies BL UI tokens and haptics while Pierre owns path-first selection, expansion, search, keyboard navigation, and virtualization.
+Every workspace file tree in BL UI is rendered by **[Pierre Trees](https://trees.software/)** (`@pierre/trees`). `SurfaceFiles` supplies BL UI tokens while Pierre owns path-first selection, expansion, search, keyboard navigation, and virtualization.
 
 {% command %}npm install @pierre/trees{% endcommand %}
 

@@ -3,13 +3,12 @@ import {
   SelectionIndicator, ToggleButtonGroup, type ToggleButtonGroupProps, type ToggleButtonProps, composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 import { Toggle, toggleVariants } from './toggle';
 import { segmentIndicator } from './segmented';
 
 /* ══ ToggleGroup — react-aria's ToggleButtonGroup (single or multiple selection, arrow-key roving focus).
-   Items inherit the group's variant and size; one selection tick per change. In a single-selection `filled`
+   Items inherit the group's variant and size. In a single-selection `filled`
    group the selected card is one element that slides between items. ══ */
 export const toggleGroupVariants = cva('isolate inline-flex w-fit items-center', {
   variants: {
@@ -28,13 +27,12 @@ const ToggleGroupCtx = createContext<ToggleGroupStyle & { single?: boolean }>({}
 
 export interface ToggleGroupProps extends ToggleButtonGroupProps, ToggleGroupStyle {}
 
-export function ToggleGroup({ className, variant, size, onSelectionChange, ...props }: ToggleGroupProps) {
+export function ToggleGroup({ className, variant, size, ...props }: ToggleGroupProps) {
   return (
     <ToggleGroupCtx.Provider value={{ variant, size, single: (props.selectionMode ?? 'single') === 'single' }}>
       <ToggleButtonGroup
         data-slot="toggle-group"
         data-variant={variant ?? 'default'}
-        onSelectionChange={(keys) => { Haptics.selection(); onSelectionChange?.(keys); }}
         className={composeRenderProps(className, (cls) => cn(toggleGroupVariants({ variant }), cls))}
         {...props}
       />

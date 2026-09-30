@@ -67,7 +67,7 @@ function SettingsList() {
           />
           <ListRow
             leading={<Tile icon="wave" color="#FF2D55" />}
-            title="Sounds & Haptics"
+            title="Sounds"
             accessory="chevron"
             onPress={() => {}}
           />

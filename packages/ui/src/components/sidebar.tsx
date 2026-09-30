@@ -16,14 +16,6 @@ import { wbBrandTile } from '../lib/workbench/util';
 const DRAWER_SHADOW = '0 0 44px rgba(0,0,0,.4)';
 /* Rows highlight on hover over their resting fill. */
 const hl = 'hover:bg-secondary!';
-/** Haptic tap (no-ops where navigator.vibrate is unavailable; the Haptics engine patches it on iOS Safari). */
-const vib = (pattern: number | number[]) => {
-  try {
-    navigator.vibrate?.(pattern);
-  } catch {
-    /* noop */
-  }
-};
 
 /** Sidebar item icons: 24×24 stroke paths, keyed by name. */
 export const SIDEBAR_ICONS: Record<string, string> = {
@@ -81,7 +73,6 @@ export function SidebarProvider({ defaultOpen = true, breakpoint = 560, children
   }, [narrow]);
   const toggle = () => {
     setOpen((o) => !o);
-    vib([6]);
   };
   return (
     <SBCtx.Provider value={{ open, setOpen, toggle, narrow }}>
@@ -281,10 +272,7 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
         tone ? 'font-semibold' : 'font-normal',
       )}
       render={(props) => <button {...props} title={label} />}
-      onPress={() => {
-        vib([5]);
-        onPress && onPress();
-      }}
+      onPress={() => onPress?.()}
       // A caller-chosen tone colour.
       style={tone ? { color: tone } : undefined}
     >

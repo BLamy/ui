@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom';
 import { useToast as useAriaToast, useToastRegion } from 'react-aria';
 import { Button as AriaButton, UNSTABLE_ToastQueue as AriaToastQueue, type QueuedToast, type ToastState } from 'react-aria-components';
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from 'framer-motion';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { fades, springs } from '../lib/motion';
 import { cva } from 'class-variance-authority';
@@ -54,8 +53,6 @@ export interface ToastOptions {
   /** Milliseconds before it closes (default 1600 for a HUD, 5000 for a banner; 0 = until closed). */
   timeout?: number;
   onClose?: () => void;
-  /** Haptic on show: `success` / `warning` / `error` notification, or none (default: from the tone). */
-  haptic?: 'success' | 'warning' | 'error' | 'none';
 }
 
 interface Entry { data: ToastData & { id: string }; rev: number }
@@ -91,8 +88,6 @@ export class ToastQueue {
     const id = input.id ?? (variant === 'hud' ? this.aria.visibleToasts.find((t) => t.content.data.variant === 'hud')?.content.data.id : undefined) ?? `t${++seq}`;
     const data = { ...input, variant, id };
     const timeout = data.loading ? 0 : options.timeout ?? DEFAULT_TIMEOUT[variant];
-    const haptic = options.haptic ?? (data.tone === 'success' ? 'success' : data.tone === 'warning' ? 'warning' : data.tone === 'destructive' ? 'error' : 'none');
-    if (haptic !== 'none' && !data.loading) Haptics.notification(haptic);
     const existing = this.find(id);
     if (existing) {
       existing.content = { data, rev: existing.content.rev + 1 };
@@ -110,7 +105,7 @@ export class ToastQueue {
   update(id: string, patch: Partial<ToastData>, options: ToastOptions = {}) {
     const t = this.find(id);
     if (!t) return;
-    this.show({ ...t.content.data, loading: false, ...patch, id }, { haptic: 'none', ...options, onClose: t.onClose });
+    this.show({ ...t.content.data, loading: false, ...patch, id }, { ...options, onClose: t.onClose });
   }
 
   /** Close one toast by id, or all of them. */
@@ -143,8 +138,8 @@ export interface ToastApi {
 }
 
 function split(o: (Partial<ToastData> & ToastOptions) | undefined): [Partial<ToastData>, ToastOptions] {
-  const { timeout, onClose, haptic, ...data } = o ?? {};
-  return [data, { timeout, onClose, haptic }];
+  const { timeout, onClose, ...data } = o ?? {};
+  return [data, { timeout, onClose }];
 }
 
 /** Bind the toast API to a queue. */

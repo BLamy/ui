@@ -72,10 +72,8 @@ const contacts: Record<string, string[]> = {
 const letters = Object.keys(contacts)
 
 const hints: Record<string, string> = {
-  stops: 'Hover a dot to peek the turn · drag to scrub with a tick per stop',
-  wave:
-    'variant="wave" side="left" · the dashes swell under the pointer, one ' +
-    'tick per turn',
+  stops: 'Hover a dot to peek the turn · drag to scrub through the stops',
+  wave: 'variant="wave" side="left" · the dashes swell under the pointer',
   az: 'No items → the A–Z rail, unchanged',
 }
 

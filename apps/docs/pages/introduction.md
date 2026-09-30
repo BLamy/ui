@@ -35,7 +35,6 @@ Twenty-odd lines of composition: a `TabView` with a bar, a `NavigationStack` ins
 | Sheets and trays | `Credenza` |
 | Inspector column | `SideDrawer` |
 | Sidebar | `Sidebar` — docked, rail, float, or overlay navigation |
-| Feedback generator | `Haptics` |
 | Canvas view | `PencilCanvas` |
 
 ## Atomic design
@@ -47,4 +46,4 @@ The docs follow the same tiers as Storybook. **Atoms** and **molecules** are the
 1. **Composition over configuration** — placement determines container behavior.
 2. **Controlled components** — state in, events out.
 3. **Container-aware adaptation** — shells measure themselves, not the viewport.
-4. **Interaction quality** — gestures, keyboard access, haptics, and responsive transitions are part of the component API.
+4. **Interaction quality** — gestures, keyboard access, and responsive transitions are part of the component API.

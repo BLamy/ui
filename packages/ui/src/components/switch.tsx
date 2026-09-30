@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import { Switch as AriaSwitch } from 'react-aria-components';
-import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 import { useRowLabel } from '../lib/row-label';
 
@@ -22,7 +21,7 @@ export function Switch({ checked, onChange, className, style, ...rest }: SwitchP
     <AriaSwitch
       data-slot="switch"
       isSelected={checked}
-      onChange={(v) => { Haptics.impact('light'); onChange(v); }}
+      onChange={onChange}
       aria-label={rest['aria-label'] || (labelledBy ? undefined : 'Toggle')}
       aria-labelledby={labelledBy}
       className={cn('group relative inline-block h-[31px] w-[51px] shrink-0 cursor-pointer', className)}

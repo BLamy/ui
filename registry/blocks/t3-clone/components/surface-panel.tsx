@@ -1,5 +1,4 @@
 import {
-  Haptics,
   IconBtn,
   SURFACES,
   SurfaceAgents,
@@ -31,10 +30,7 @@ export function SurfacePanel({ surface, onSurface, file }: { surface: SurfaceKin
             name="chevron-down-wide"
             label="Switch surface"
             size={15}
-            onPress={() => {
-              Haptics.selection();
-              onSurface(null);
-            }}
+            onPress={() => onSurface(null)}
           />
         )}
         <WorkbenchPanelFullscreen />

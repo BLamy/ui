@@ -21,7 +21,7 @@ const notes = `## Launch checklist
 
 Ship the **tray drag** behind a flag, then flip it for *everyone*.
 
-- [x] Haptics on detents
+- [x] Snap detents
 - [ ] Reduced-motion pass
 - [ ] Docs page
 

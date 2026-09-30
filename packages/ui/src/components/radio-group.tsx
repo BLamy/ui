@@ -4,10 +4,9 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 
-/* ══ RadioGroup — generic round radios on react-aria's RadioGroup (arrows move + select, one tick per change).
+/* ══ RadioGroup — generic round radios on react-aria's RadioGroup (arrows move + select).
    For the iOS segmented look use <Segmented>. ══ */
 export const radioGroupVariants = cva('group flex', {
   variants: {
@@ -21,12 +20,11 @@ export const radioGroupVariants = cva('group flex', {
 
 export interface RadioGroupProps extends AriaRadioGroupProps {}
 
-export function RadioGroup({ className, orientation = 'vertical', onChange, ...props }: RadioGroupProps) {
+export function RadioGroup({ className, orientation = 'vertical', ...props }: RadioGroupProps) {
   return (
     <AriaRadioGroup
       data-slot="radio-group"
       orientation={orientation}
-      onChange={(v) => { Haptics.selection(); onChange?.(v); }}
       className={composeRenderProps(className, (cls) => cn(radioGroupVariants({ orientation }), cls))}
       {...props}
     />

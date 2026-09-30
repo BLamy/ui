@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Haptics } from '../../lib/haptics';
 import type { PencilStroke } from '../../lib/pencilkit/constants';
 import type { PencilStrokesChangeSource } from './pencil-canvas';
 
@@ -14,7 +13,7 @@ export interface PencilHistory {
   canRedo: boolean;
 }
 
-/** Undo / redo / clear stack for PencilCanvas strokes, with the prototype's haptics. */
+/** Undo / redo / clear stack for PencilCanvas strokes. */
 export function usePencilHistory(initial: PencilStroke[] = []): PencilHistory {
   const [strokes, setStrokes] = useState<PencilStroke[]>(initial);
   const [redoStack, setRedoStack] = useState<PencilStroke[]>([]);
@@ -25,19 +24,16 @@ export function usePencilHistory(initial: PencilStroke[] = []): PencilHistory {
   };
   const undo = () => {
     if (!strokes.length) return;
-    Haptics.impact('light');
     setRedoStack([...redoStack, strokes[strokes.length - 1]]);
     setStrokes(strokes.slice(0, -1));
   };
   const redo = () => {
     if (!redoStack.length) return;
-    Haptics.impact('light');
     setStrokes([...strokes, redoStack[redoStack.length - 1]]);
     setRedoStack(redoStack.slice(0, -1));
   };
   const clear = () => {
     if (!strokes.length) return;
-    Haptics.impact('medium');
     setStrokes([]);
     setRedoStack([]);
   };

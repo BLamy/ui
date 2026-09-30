@@ -1,6 +1,6 @@
 /* The middle column: the selected category's items with search. Rows are SplitViewItems, so they select the
    detail beside them — or push it on a phone. */
-import { Haptics, Icon, SearchField, SplitViewContent, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewToggle, cn } from '@brett_lamy/ui';
+import { Icon, SearchField, SplitViewContent, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewToggle, cn } from '@brett_lamy/ui';
 import { SEVERITY } from './data';
 import { CodeValue, SiteTile, WifiTile, type CodeClock } from './parts';
 import { categoryTitle, type Entry, type EntrySection, type Selection } from './vault';
@@ -14,7 +14,7 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
     <>
       <SplitViewHeader title={categoryTitle(category)} leading={<SplitViewToggle />}
         trailing={canAdd ? (
-          <button type="button" aria-label="New password" onClick={() => { Haptics.impact('light'); onAdd(); }}
+          <button type="button" aria-label="New password" onClick={() => onAdd()}
             className="bl-btn grid size-9 cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent text-primary transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
             <Icon name="plus" size={21} weight="semibold" />
           </button>

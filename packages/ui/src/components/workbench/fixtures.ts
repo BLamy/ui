@@ -61,19 +61,19 @@ const REPLY_COMPONENT = `The scroller anchors each new turn near the top of the 
 
 const REPLY_REVIEW = `## Review notes
 
-Checked the haptics path end to end:
+Checked the scrub path end to end:
 
-- \`Haptics.boot()\` now runs at import, so the shim wraps the DOM **before** your first tap
-- the CDN import is pinned to \`buzzkit@3.0.3\` with a fallback host
-- a pre-existing \`navigator.vibrate\` stub is deleted on Safari — it was silently blocking the install gate
+- \`bootScrub()\` now runs at import, so the handlers attach **before** your first touch
+- the CDN import is pinned to \`scrubkit@3.0.3\` with a fallback host
+- a pre-existing \`window.scrub\` stub is deleted on Safari — it was silently blocking the install gate
 
-> On iOS 18.4+ only a real click grants vibration (~1s). Drags vibrate through the overlay-switch trick instead, so mid-scrub ticks keep working.
+> On iOS 18.4+ only a real click grants pointer capture (~1s). Drags fall back to window listeners instead, so mid-scrub updates keep working.
 
 ---
 
-Next: run **Settings → Haptics Playground** on the device and read the \`engine:\` line — it now reports exactly which path is live.`;
+Next: run **Settings → Scrub Playground** on the device and read the \`engine:\` line — it now reports exactly which path is live.`;
 
-export const SUGGESTIONS = ['Get the demo servers running', 'Explain the haptics engine', 'Diff my last change'];
+export const SUGGESTIONS = ['Get the demo servers running', 'Explain the scrub engine', 'Diff my last change'];
 
 const empty = (id: string, title: string, age: string): Thread => ({ id, title, age, settled: true, messages: [] });
 
@@ -101,11 +101,11 @@ export const THREADS: Thread[] = [
   },
   {
     id: 't2',
-    title: 'wire the A–Z index haptics',
+    title: 'wire the A–Z index scrub',
     age: '5d',
     settled: true,
     messages: [
-      { id: 't2u1', role: 'user', text: 'wire the A–Z index scrub to selection ticks' },
+      { id: 't2u1', role: 'user', text: 'wire the A–Z index scrub to letter changes' },
       {
         id: 't2a1',
         role: 'assistant',
@@ -113,8 +113,8 @@ export const THREADS: Thread[] = [
         summary: 'Worked for 42s',
         steps: [
           { title: 'Traced IndexBar pointer handlers' },
-          { title: 'Wired Haptics.selection() to letter changes', code: 'if (letter !== last.current) {\n  last.current = letter\n  Haptics.selection()\n}' },
-          { title: 'Debounced repeat ticks within one letter' },
+          { title: 'Wired jumpTo() to letter changes', code: 'if (letter !== last.current) {\n  last.current = letter\n  jumpTo(letter)\n}' },
+          { title: 'Debounced repeat jumps within one letter' },
         ],
       },
     ],
@@ -163,7 +163,7 @@ export const FILES = [
   'cookbook/src/components/Credenza.tsx',
   'cookbook/src/components/SideDrawer.tsx',
   'cookbook/src/components/MessageScroller.tsx',
-  'cookbook/src/haptics.ts',
+  'cookbook/src/scrub.ts',
   'cookbook/src/App.tsx',
   'cookbook/blui.jsx',
   'cookbook/workbench.jsx',
@@ -173,18 +173,18 @@ export const FILES = [
 
 export const DIFF: { before: SurfaceDiffFile; after: SurfaceDiffFile } = {
   before: {
-    name: 'src/haptics.ts',
-    contents: `export async function bootHaptics() {
-  if (navigator.vibrate) return
-  await import('https://esm.run/buzzkit')
+    name: 'src/scrub.ts',
+    contents: `export async function bootScrub() {
+  if (window.scrub) return
+  await import('https://esm.run/scrubkit')
 }`,
   },
   after: {
-    name: 'src/haptics.ts',
-    contents: `export async function bootHaptics() {
-  if (isBlockingStub(navigator.vibrate)) delete navigator.vibrate
-  await import('https://esm.sh/buzzkit@3.0.3')
-  window.addEventListener('bl-vib', reportHaptic)
+    name: 'src/scrub.ts',
+    contents: `export async function bootScrub() {
+  if (isBlockingStub(window.scrub)) delete window.scrub
+  await import('https://esm.sh/scrubkit@3.0.3')
+  window.addEventListener('bl-scrub', reportScrub)
 }`,
   },
 };

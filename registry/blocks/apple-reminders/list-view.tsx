@@ -2,7 +2,7 @@
    inline composer and the New Reminder button. Clearing the last open reminder bursts a small celebration. */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
-  Button, Celebrate, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, Haptics, NumberMorph,
+  Button, Celebrate, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, NumberMorph,
   Icon, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, cn, useSplitView,
 } from '@brett_lamy/ui';
 import { SYSTEM, type Reminder } from './data';
@@ -18,7 +18,6 @@ function useClearedBurst(view: View) {
     const p = prev.current;
     if (p.id === view.id && p.open > 0 && view.open === 0 && view.id !== 'completed' && view.id !== 'search') {
       setFire((f) => f + 1);
-      Haptics.notification('success');
     }
     prev.current = { id: view.id, open: view.open };
   }, [view.id, view.open]);
@@ -34,7 +33,7 @@ function Composer({ color, onAdd, onClose }: { color: string; onAdd: (title: str
       <input autoFocus value={text} placeholder="New Reminder" aria-label="New reminder"
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && text.trim()) { onAdd(text.trim()); setText(''); Haptics.impact('light'); }
+          if (e.key === 'Enter' && text.trim()) { onAdd(text.trim()); setText(''); }
           else if (e.key === 'Escape') onClose();
         }}
         onBlur={() => { if (text.trim()) onAdd(text.trim()); onClose(); }}

@@ -2,7 +2,7 @@
    mode), a security recommendation on top of its account, a deleted item, or a Wi-Fi network with its QR code. */
 import { useState, type ReactNode } from 'react';
 import {
-  AnimatedHeight, Button, Haptics, Icon, Input, QRSvg, SplitViewContent, SplitViewEmpty, SplitViewHeader, Textarea, cn,
+  AnimatedHeight, Button, Icon, Input, QRSvg, SplitViewContent, SplitViewEmpty, SplitViewHeader, Textarea, cn,
 } from '@brett_lamy/ui';
 import { GROUPS, SEVERITY, type Account, type WifiNetwork } from './data';
 import {
@@ -54,11 +54,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
         title: draft.title.trim() || a.title, username: draft.username, password: draft.password,
         websites: draft.websites.map((w) => w.trim()).filter(Boolean), notes: draft.notes,
       });
-      Haptics.notification('success');
-    } else {
-      setDraft(a);
-      Haptics.impact('light');
-    }
+    } else setDraft(a);
     onEditing(!edit);
   };
 
@@ -86,9 +82,9 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
               Recently deleted passwords can be recovered for 30 days. After that, they’re permanently removed from all your devices.
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onPress={() => { vault.recover(a.id); Haptics.notification('success'); }}>Recover</Button>
+              <Button size="sm" onPress={() => vault.recover(a.id)}>Recover</Button>
               <Button size="sm" variant="secondary" className="text-destructive"
-                onPress={() => { vault.purge(a.id); Haptics.notification('warning'); }}>Delete Now</Button>
+                onPress={() => vault.purge(a.id)}>Delete Now</Button>
             </div>
           </Card>
         ) : null}
@@ -140,7 +136,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
                 {edit ? (
                   <span className="flex items-center gap-2">
                     <button type="button" aria-label={`Remove ${w || 'website'}`}
-                      onClick={() => { Haptics.impact('light'); setDraft({ ...draft, websites: draft.websites.filter((_, j) => j !== i) }); }}
+                      onClick={() => setDraft({ ...draft, websites: draft.websites.filter((_, j) => j !== i) })}
                       className="bl-btn grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-destructive p-0 text-white">
                       <span className="h-[2px] w-2.5 rounded-full bg-white" />
                     </button>
@@ -189,7 +185,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
         <AnimatedHeight>
           {edit ? (
             <Button variant="secondary" size="pill" className="bg-card text-destructive"
-              onPress={() => { vault.remove(a.id); onEditing(false); Haptics.notification('warning'); }}>
+              onPress={() => { vault.remove(a.id); onEditing(false); }}>
               Delete Password
             </Button>
           ) : null}
@@ -223,7 +219,7 @@ function IssueCard({ account: a }: { account: Account }) {
       <div className="min-w-0 flex-1">
         <div className="text-[15px] font-semibold">{a.issue!.kind}</div>
         <div className="mt-1 text-[13.5px] leading-[1.45] text-muted-foreground">{a.issue!.detail}</div>
-        <Button size="sm" className="mt-3" onPress={() => Haptics.impact('light')}>Change Password on {a.websites[0]}</Button>
+        <Button size="sm" className="mt-3">Change Password on {a.websites[0]}</Button>
       </div>
       <span className="h-fit shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-[.3px] uppercase"
         style={{ color: s.badge, background: `color-mix(in oklab, ${s.color} 16%, transparent)` }}>
@@ -253,7 +249,7 @@ function WifiDetail({ network: n }: { network: WifiNetwork }) {
         </Card>
         <Card>
           <button type="button" aria-expanded={qr}
-            onClick={() => { Haptics.impact('light'); setQr((v) => !v); }}
+            onClick={() => setQr((v) => !v)}
             className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3.5 text-left [font-family:inherit] text-[15px] text-primary">
             <Icon name="qrcode" size={20} />
             <span className="flex-1">{qr ? 'Hide Network QR Code' : 'Show Network QR Code'}</span>

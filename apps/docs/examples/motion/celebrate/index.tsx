@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   Button,
   Celebrate,
-  Haptics,
   Icon,
   IconSwap,
   Spinner,
@@ -19,7 +18,6 @@ export default function Backup() {
     setTimeout(() => {
       setState('done')
       setFired((n) => n + 1)
-      Haptics.notification('success')
     }, 1400)
   }
   return (

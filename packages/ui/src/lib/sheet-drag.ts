@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { animate, type AnimationPlaybackControls } from 'framer-motion';
-import { Haptics } from './haptics';
 import { springs, type SpringName } from './motion';
 import { prefersReducedMotion } from './workbench/motion';
 
@@ -63,7 +62,7 @@ const rubber = (over: number) => Math.pow(Math.max(0, over), 0.72);
  * the pointer one-to-one (rubber-banding past its ends); on release the pointer's velocity is projected
  * forward to pick a stop (peek, a detent, open, or the FAB) and a spring carries the body there *from that
  * velocity*, so a flick keeps its momentum. Grabbing mid-flight catches the body where it is. State changes
- * from outside (a tap, Escape, `peek` changing) spring too. Snaps tick.
+ * from outside (a tap, Escape, `peek` changing) spring too.
  */
 export function useSheetDrag({
   open,
@@ -201,8 +200,6 @@ export function useSheetDrag({
       reveal: v * 1000,
       minimize: minimizable && raw < peek ? (-v * 1000) / minimizeTravel : 0,
     };
-    const changed = nextOpen !== open || shouldMinimize !== minimized || nextDetent !== restDetent;
-    if (changed) Haptics.selection();
     setDetent(nextDetent);
     if (shouldMinimize !== minimized) onMinimizedChange?.(shouldMinimize);
     if (nextOpen !== open) onOpenChange(nextOpen);
@@ -229,7 +226,6 @@ export function useSheetDrag({
       drag.current.moved = false;
       return;
     }
-    Haptics.selection();
     setDetent(null);
     onMinimizedChange?.(false);
     onOpenChange(!open);

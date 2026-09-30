@@ -1,8 +1,7 @@
 /* Mail state: messages, the open mailbox and message, search, the unread filter, edit-mode selection and the
    compose draft — one hook shared by every column, so crossing a width class keeps
-   everything where it was. Every action plays its haptic here, next to the change it confirms. */
+   everything where it was. */
 import { useMemo, useState } from 'react';
-import { Haptics } from '@brett_lamy/ui';
 import { MAILBOXES, MESSAGES, ME, NOW, preview, type Mailbox, type Message, type Person } from './data';
 
 export interface Draft {
@@ -64,7 +63,6 @@ export function useMail({ mailbox: initialBox = 'inbox', message: initialMessage
       setMessages((all) => all.filter((m) => !ids.includes(m.id)));
     else patch(ids, () => ({ box: target, unread: false }));
     setChecked(new Set());
-    Haptics.impact(target === 'trash' ? 'medium' : 'light');
   };
 
   const open = (id: string | null) => {
@@ -81,31 +79,28 @@ export function useMail({ mailbox: initialBox = 'inbox', message: initialMessage
     openBox(id: string) {
       if (id === boxId) return;
       setBoxId(id); setQuery(''); setEditing(false); setChecked(new Set());
-      Haptics.selection();
     },
     open,
     /** Step through the list (the detail toolbar's up / down chevrons). */
     step(dir: 1 | -1) {
       const i = list.findIndex((m) => m.id === selectedId);
       const next = list[i + dir];
-      if (next) { open(next.id); Haptics.selection(); }
+      if (next) open(next.id);
     },
-    toggleUnreadFilter() { setUnreadOnly((v) => !v); Haptics.selection(); },
-    toggleFlag(id: string) { patch([id], (m) => ({ flagged: !m.flagged })); Haptics.impact('light'); },
-    toggleRead(id: string) { patch([id], (m) => ({ unread: !m.unread })); Haptics.impact('light'); },
+    toggleUnreadFilter() { setUnreadOnly((v) => !v); },
+    toggleFlag(id: string) { patch([id], (m) => ({ flagged: !m.flagged })); },
+    toggleRead(id: string) { patch([id], (m) => ({ unread: !m.unread })); },
     archive: (ids: string[]) => moveTo(ids, 'archive'),
     trash: (ids: string[]) => moveTo(ids, 'trash'),
     moveTo,
-    setEditing(on: boolean) { setEditing(on); setChecked(new Set()); Haptics.selection(); },
+    setEditing(on: boolean) { setEditing(on); setChecked(new Set()); },
     toggleChecked(id: string) {
       setChecked((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-      Haptics.selection();
     },
-    checkAll() { setChecked((s) => (s.size === list.length ? new Set() : new Set(list.map((m) => m.id)))); Haptics.selection(); },
-    markChecked(unread: boolean) { patch([...checked], () => ({ unread })); setChecked(new Set()); setEditing(false); Haptics.impact('light'); },
+    checkAll() { setChecked((s) => (s.size === list.length ? new Set() : new Set(list.map((m) => m.id)))); },
+    markChecked(unread: boolean) { patch([...checked], () => ({ unread })); setChecked(new Set()); setEditing(false); },
 
     compose(kind: 'new' | 'reply' | 'replyAll' | 'forward' = 'new', m: Message | null = null) {
-      Haptics.impact('light');
       if (!m || kind === 'new') { setDraft({ to: '', cc: '', subject: '', body: '' }); return; }
       const quoted = `\u00a0\n\n> On ${m.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}, ${m.from.name} wrote:\n>\n${m.body.filter((l) => !l.startsWith('>')).map((l) => `> ${l}`).join('\n>\n')}`;
       const prefix = kind === 'forward' ? 'Fwd: ' : 'Re: ';
@@ -131,8 +126,6 @@ export function useMail({ mailbox: initialBox = 'inbox', message: initialMessage
         subject: d.subject || '(No Subject)', date: new Date(NOW.getTime() + 60_000 * ++written), body,
       };
       setMessages((all) => [msg, ...all]);
-      if (action === 'send') Haptics.notification('success');
-      else Haptics.impact('light');
     },
   };
 }

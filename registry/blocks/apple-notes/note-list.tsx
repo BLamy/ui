@@ -3,7 +3,7 @@
    pinned (or edited to the top of Today) glides to its new place on the smooth spring instead of jumping;
    new notes grow in, deleted ones collapse out. Swipe right to pin, left to lock or delete (ListRow actions). */
 import { useRef, type ReactNode } from 'react';
-import { Haptics, Icon, ListRow, cn, springs, useMotion, useSplitView } from '@brett_lamy/ui';
+import { Icon, ListRow, cn, springs, useMotion, useSplitView } from '@brett_lamy/ui';
 import { FOLDERS, shortDate, snippet, title, type Note } from './data';
 import type { NotesState } from './use-notes';
 
@@ -23,7 +23,7 @@ function NoteRow({ notes, n, selected, inset, first, last, isEdge, onOpen }: {
   const locked = !!n.locked;
   const showFolder = !!notes.folder.match || !!notes.tag || !!notes.query;
   return (
-    <ListRow divider={false} isEdge={isEdge} onPress={() => { Haptics.selection(); onOpen(n.id); }}
+    <ListRow divider={false} isEdge={isEdge} onPress={() => onOpen(n.id)}
       className={cn(inset ? cn(first && 'rounded-t-[12px]', last && 'rounded-b-[12px]') : PLAIN)}
       // Index 0 is the outermost action: the one a long swipe fires.
       leadingActions={n.folder === 'deleted' ? undefined : [{
@@ -148,7 +148,7 @@ export function NoteGallery({ notes, onOpen, selected }: { notes: NotesState; on
                 return (
                   <motion.button key={n.id} type="button" layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }} transition={springs.smooth} data-note-card=""
-                    onClick={() => { Haptics.selection(); onOpen(n.id); }}
+                    onClick={() => onOpen(n.id)}
                     className="bl-btn flex min-w-0 cursor-pointer flex-col items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-foreground">
                     <span className={cn('block aspect-[4/3.3] w-full overflow-hidden rounded-[10px] bg-card p-2.5 text-left',
                       'shadow-[0_1px_3px_black] ring-1 shadow-black/6 ring-border transition-shadow duration-200',

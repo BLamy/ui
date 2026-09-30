@@ -2,7 +2,7 @@
    dense macOS System Settings row on desktop. PaneView lays a pane's sections out; SearchResults lists hits. */
 import { useState, type ReactNode } from 'react';
 import {
-  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, Haptics, IC, Icon, ListRow, ListSection, Segmented, Slider, Switch,
+  Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, IC, Icon, ListRow, ListSection, Segmented, Slider, Switch,
   TextMorph, cn, type Appearance, type IconProps, type ListRowProps,
 } from '@brett_lamy/ui';
 import { MARKS, SEARCH, getPane, iconFor, notifSummary, pathTo, type Glyph, type Pane, type Row, type Section, type Values } from './data';
@@ -136,7 +136,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
         : <Shell last={last} leading={tile(row.glyph, row.color)} title={row.title} trailing={<Detail>{String(v[row.id])}</Detail>} accessory="chevron" onPress={() => s.open('choose:' + row.id)} />;
     case 'option': {
       const on = v[row.id] === row.option;
-      return <Shell last={last} title={row.option} accessory="check" checked={on} onPress={() => { if (!on) { Haptics.selection(); s.set(row.id, row.option); } }} />;
+      return <Shell last={last} title={row.option} accessory="check" checked={on} onPress={() => { if (!on) s.set(row.id, row.option); }} />;
     }
     case 'slider':
       return <Plain last={last}><SliderRow row={row} /></Plain>;
@@ -148,7 +148,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
       );
     case 'network':
       return <Shell last={last} leading={<span className="w-[18px] shrink-0" />} title={row.name} trailing={<NetIcons secure={row.secure} bars={row.bars} />}
-        onPress={() => { Haptics.impact('light'); s.set('wifi.network', row.name); }} />;
+        onPress={() => s.set('wifi.network', row.name)} />;
     case 'connected':
       return <Shell last={last} leading={<Icon name="check" size={18} weight="bold" className="text-primary" />} title={String(v['wifi.network'])}
         trailing={<NetIcons secure bars={3} />} />;
@@ -156,10 +156,10 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
       const on = !!v['bt.' + row.name];
       return <Shell last={last} leading={s.layout === 'desktop' ? <SettingsIcon glyph={row.glyph} size={18} className="text-muted-foreground" /> : undefined} title={row.name}
         trailing={<><Detail>{on ? 'Connected' : 'Not Connected'}</Detail><Icon name="info" size={21} weight="light" className="text-primary" /></>}
-        onPress={() => { Haptics.impact('light'); s.set('bt.' + row.name, !on); }} />;
+        onPress={() => s.set('bt.' + row.name, !on)} />;
     }
     case 'action':
-      return <Shell last={last} center={row.destructive && s.layout !== 'desktop'} onPress={() => Haptics.impact('light')}
+      return <Shell last={last} center={row.destructive && s.layout !== 'desktop'}
         title={<span className={row.destructive ? 'text-destructive' : 'text-primary'}>{row.title}</span>} />;
     case 'appearance':
       return <Plain last={last}><AppearancePicker /></Plain>;
@@ -216,7 +216,7 @@ function AppearancePicker() {
       {opts.map(([k, label]) => {
         const on = (k === 'dark') === s.dark;
         return (
-          <button key={k} type="button" role="radio" aria-checked={on} onClick={() => { if (!on) { Haptics.selection(); s.setAppearance(k); } }}
+          <button key={k} type="button" role="radio" aria-checked={on} onClick={() => { if (!on) s.setAppearance(k); }}
             className="bl-btn flex cursor-pointer flex-col items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-foreground">
             <PhoneThumb dark={k === 'dark'} />
             <span className={s.layout === 'desktop' ? 'text-[13px]' : 'text-[15px]'}>{label}</span>
@@ -280,7 +280,7 @@ const LetterTile = ({ site, color, size }: { site: string; color: string; size: 
 function SecretRow({ title, value, last }: { title: string; value: string; last?: boolean }) {
   const [shown, setShown] = useState(false);
   return (
-    <Shell last={last} title={title} onPress={() => { Haptics.selection(); setShown((x) => !x); }}
+    <Shell last={last} title={title} onPress={() => setShown((x) => !x)}
       trailing={<span className="text-muted-foreground tabular-nums"><TextMorph>{shown ? value : '••••••••••••'}</TextMorph></span>} />
   );
 }
@@ -366,7 +366,7 @@ export function SearchResults({ onOpen }: { onOpen?: () => void }) {
         return (
           <Shell key={h.pane + h.title} last={i === hits.length - 1} title={h.title} subtitle={h.trail || undefined}
             leading={icon?.glyph && icon.color ? <Tile glyph={icon.glyph} color={icon.color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined}
-            accessory={s.layout !== 'desktop' ? 'chevron' : undefined} onPress={() => { Haptics.selection(); s.openPath(pathTo(h.pane)); onOpen?.(); }} />
+            accessory={s.layout !== 'desktop' ? 'chevron' : undefined} onPress={() => { s.openPath(pathTo(h.pane)); onOpen?.(); }} />
         );
       })}
     </Group>

@@ -1,7 +1,7 @@
 /* The launcher's shared state: the clipboard history, calculator history, Trash, appearance, the power overlay,
    workflow drafts, and the "Copied" HUD — one context, so any page can act on it. */
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { Haptics, toastApi, type ToastApi, type ToastQueue } from '@brett_lamy/ui';
+import { toastApi, type ToastApi, type ToastQueue } from '@brett_lamy/ui';
 import { CLIPS, REPOS, TRASH, type Clip } from './data';
 
 export type PowerState = 'lock' | 'sleep' | 'restart' | 'off' | null;
@@ -71,8 +71,7 @@ export function AlfredProvider({ queue, dark, toggleDark, reset, close, children
     hud: (title, icon) => { toast.hud(title, { tone: 'success', ...(icon ? { icon } : null) }); },
     copy: (text, hud = 'Copied to Clipboard', from = 'Alfred') => {
       try { void navigator.clipboard?.writeText(text).catch(() => undefined); } catch { /* not allowed here — the HUD still confirms */ }
-      Haptics.notification('success');
-      toast.hud(hud, { tone: 'success', haptic: 'none' });
+      toast.hud(hud, { tone: 'success' });
       setClips((cs) => {
         const existing = cs.find((c) => c.text === text);
         if (existing?.pinned) return cs;

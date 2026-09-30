@@ -8,13 +8,12 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { cn } from '../lib/utils';
 
 /* ══ ListBox — react-aria's ListBox: arrow-key navigation, typeahead, single/multiple selection.
    `inset` is an iOS inset-grouped list with trailing checkmarks; `popup` is the compact list used inside
-   Select / ComboBox popovers (leading checkmarks, rounded highlight). One selection tick per change. ══ */
+   Select / ComboBox popovers (leading checkmarks, rounded highlight). ══ */
 export const listBoxVariants = cva('outline-none', {
   variants: {
     variant: {
@@ -49,19 +48,15 @@ type ListBoxVariant = NonNullable<VariantProps<typeof listBoxVariants>['variant'
 /** Items follow their list's variant. */
 const ListBoxVariantCtx = createContext<ListBoxVariant>('inset');
 
-export interface ListBoxProps<T> extends AriaListBoxProps<T>, VariantProps<typeof listBoxVariants> {
-  /** Tick on selection change (default true). Select / ComboBox tick themselves and turn this off. */
-  haptics?: boolean;
-}
+export interface ListBoxProps<T> extends AriaListBoxProps<T>, VariantProps<typeof listBoxVariants> {}
 
-export function ListBox<T extends object>({ className, variant = 'inset', haptics = true, onSelectionChange, ...props }: ListBoxProps<T>) {
+export function ListBox<T extends object>({ className, variant = 'inset', ...props }: ListBoxProps<T>) {
   const v = variant ?? 'inset';
   return (
     <ListBoxVariantCtx.Provider value={v}>
       <AriaListBox
         data-slot="list-box"
         data-variant={v}
-        onSelectionChange={(keys) => { if (haptics) Haptics.selection(); onSelectionChange?.(keys); }}
         className={composeRenderProps(className, (cls) => cn(listBoxVariants({ variant: v }), cls))}
         {...props}
       />

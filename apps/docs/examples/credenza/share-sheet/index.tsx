@@ -3,7 +3,6 @@ import {
   Avatar,
   Button,
   Credenza,
-  Haptics,
   Icon,
   ListRow,
   QRSvg,
@@ -90,7 +89,6 @@ function ShareSheet() {
               leading={<Icon name="link" size={20} />}
               title={copied ? 'Copied' : 'Copy Link'}
               onPress={() => {
-                Haptics.notification('success')
                 setCopied(true)
               }}
             />

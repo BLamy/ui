@@ -1,6 +1,5 @@
 import { ToggleButton, type ToggleButtonProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 
 /* ══ Toggle — two-state button on react-aria's ToggleButton. On = tinted, like an iOS toolbar toggle. ══ */
@@ -32,11 +31,10 @@ export const toggleVariants = cva(
 
 export interface ToggleProps extends ToggleButtonProps, VariantProps<typeof toggleVariants> {}
 
-export function Toggle({ className, variant, size, onChange, ...props }: ToggleProps) {
+export function Toggle({ className, variant, size, ...props }: ToggleProps) {
   return (
     <ToggleButton
       data-slot="toggle"
-      onChange={(v) => { Haptics.selection(); onChange?.(v); }}
       className={composeRenderProps(className, (cls) => cn(toggleVariants({ variant, size }), cls))}
       {...props}
     />

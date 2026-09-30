@@ -9,7 +9,6 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { focusRing, overlayZ } from '../lib/primitives';
 import { cn } from '../lib/utils';
@@ -173,12 +172,11 @@ export const dialogActionVariants = cva(
 export interface DialogActionProps extends AriaButtonProps, VariantProps<typeof dialogActionVariants> {}
 
 /** iOS alert button. Closes the dialog by default (react-aria's `close` slot); pass `slot={null}` to keep it open. */
-export function DialogAction({ className, variant, onPress, slot = 'close', ...props }: DialogActionProps) {
+export function DialogAction({ className, variant, slot = 'close', ...props }: DialogActionProps) {
   return (
     <AriaButton
       data-slot="dialog-action"
       slot={slot}
-      onPress={(e) => { Haptics.impact('light'); onPress?.(e); }}
       className={composeRenderProps(className, (cls) => cn(dialogActionVariants({ variant }), cls))}
       {...props}
     />

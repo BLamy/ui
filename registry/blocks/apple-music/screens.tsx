@@ -3,7 +3,7 @@
    (`screensFor`) and the wide layout's detail column as SplitViewStack pages. Pages read the player and
    `open` from `MusicContext`, so a pushed page stays live. */
 import { createContext, useContext, useState, type CSSProperties, type ReactNode } from 'react';
-import { Haptics, Icon, NowPlayingBars, SearchField, cn, type IconName, type IconShape, type Screen } from '@brett_lamy/ui';
+import { Icon, NowPlayingBars, SearchField, cn, type IconName, type IconShape, type Screen } from '@brett_lamy/ui';
 import { ArtistArt, Artwork, PlaylistArt } from './artwork';
 import {
   ALBUM, ALBUMS, ALL_SONGS, ARTISTS, PLAYLISTS, STATIONS, albumSongs, fmt, minutes, playlistSongs, type Album, type Song,
@@ -88,7 +88,7 @@ function Shelf({ title, children, onMore }: { title: string; children: ReactNode
 
 function AlbumTile({ album: a, ctx, size = 164, caption }: { album: Album; ctx: Ctx; size?: number; caption?: string }) {
   return (
-    <button type="button" onClick={() => { Haptics.selection(); ctx.open({ kind: 'album', id: a.id }); }}
+    <button type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
       className="bl-btn group shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground"
       style={{ width: size }}>
       <Artwork album={a} size={size} className="transition-[scale,filter] duration-spring-snappy ease-spring-snappy group-hover:brightness-95 group-active:scale-[.97]" />
@@ -151,7 +151,7 @@ function ListenNow({ ctx }: { ctx: Ctx }) {
     <div className="pb-4">
       <Shelf title="Top Picks for You">
         {picks.map((a, i) => (
-          <button key={a.id} type="button" onClick={() => { Haptics.selection(); ctx.open({ kind: 'album', id: a.id }); }}
+          <button key={a.id} type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
             className="bl-btn shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit]">
             <div className="mb-1.5 text-[12.5px] text-muted-foreground">{['Made for You', 'New Release', 'Because You Listened to Juno Vale'][i]}</div>
             <div className="relative w-[250px] overflow-hidden rounded-[12px] shadow-[0_4px_16px_black] shadow-black/12"
@@ -170,7 +170,7 @@ function ListenNow({ ctx }: { ctx: Ctx }) {
       </Shelf>
       <Shelf title="Made for You">
         {PLAYLISTS.map((p) => (
-          <button key={p.id} type="button" onClick={() => { Haptics.selection(); ctx.open({ kind: 'playlist', id: p.id }); }}
+          <button key={p.id} type="button" onClick={() => ctx.open({ kind: 'playlist', id: p.id })}
             className="bl-btn w-[164px] shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
             <PlaylistArt playlist={p} size={164} />
             <div className="mt-1.5 truncate text-[14px] font-medium">{p.title}</div>
@@ -326,7 +326,7 @@ function LibraryHome({ ctx }: { ctx: Ctx }) {
     <div className="pb-4">
       <div className="pl-4">
         {LIBRARY_LINKS.map(([page, icon]) => (
-          <button key={pageKey(page)} type="button" onClick={() => { Haptics.selection(); ctx.open(page); }}
+          <button key={pageKey(page)} type="button" onClick={() => ctx.open(page)}
             className="bl-btn flex w-full cursor-pointer items-center gap-3.5 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
             <Icon {...icon} size={24} className="text-primary" />
             <span className="flex flex-1 items-center py-3 text-[20px] shadow-[inset_0_-1px_0_var(--border)]">
@@ -346,7 +346,7 @@ function AlbumGrid({ albums, ctx }: { albums: Album[]; ctx: Ctx }) {
   return (
     <div className="grid gap-x-4 gap-y-5 px-4 pt-1 pb-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${ctx.wide ? 170 : 150}px, 1fr))` }}>
       {albums.map((a) => (
-        <button key={a.id} type="button" onClick={() => { Haptics.selection(); ctx.open({ kind: 'album', id: a.id }); }}
+        <button key={a.id} type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
           className="bl-btn group min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
           <Artwork album={a} className="aspect-square w-full transition-[scale] duration-spring-snappy ease-spring-snappy group-active:scale-[.97]" />
           <div className="mt-1.5 truncate text-[14px] font-medium">{a.title}</div>
@@ -361,7 +361,7 @@ function ArtistList({ ctx }: { ctx: Ctx }) {
   return (
     <div className="pt-1 pl-4">
       {ARTISTS.map((name) => (
-        <button key={name} type="button" onClick={() => { Haptics.selection(); ctx.open({ kind: 'artist', name }); }}
+        <button key={name} type="button" onClick={() => ctx.open({ kind: 'artist', name })}
           className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
           <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={44} />
           <span className="flex flex-1 items-center py-3.5 text-[17px] shadow-[inset_0_-1px_0_var(--border)]">

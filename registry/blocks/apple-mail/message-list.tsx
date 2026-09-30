@@ -3,7 +3,7 @@
    edit mode whose check circles slide in from the leading edge. Rows spring in and collapse out as mail
    arrives, moves or gets filtered; the selection highlight glides between rows. */
 import { useRef } from 'react';
-import { Haptics, Icon, ListRow, cn, springs, useMotion, useSplitView } from '@brett_lamy/ui';
+import { Icon, ListRow, cn, springs, useMotion, useSplitView } from '@brett_lamy/ui';
 import { preview, relativeTime, type Message } from './data';
 import type { MailState } from './use-mail';
 
@@ -25,7 +25,7 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
   return (
     <ListRow edit={mail.editing} checked={mail.checked.has(m.id)} divider={false} isEdge={isEdge}
       className={cn(ROW, mail.editing ? '[&>[data-slot=list-row-content]]:pl-2' : '[&>[data-slot=list-row-content]]:pl-8')}
-      onPress={() => { if (mail.editing) mail.toggleChecked(m.id); else { Haptics.selection(); onOpen(m.id); } }}
+      onPress={() => { if (mail.editing) mail.toggleChecked(m.id); else onOpen(m.id); }}
       // Index 0 is the outermost action: the one a long swipe fires.
       leadingActions={[{ label: m.unread ? 'Read' : 'Unread', icon: m.unread ? 'envelope-open' : 'envelope-badge', onAction: () => mail.toggleRead(m.id) }]}
       trailingActions={[

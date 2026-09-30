@@ -4,7 +4,6 @@ import { ToggleButtonGroup } from 'react-aria-components';
 import { AdaptivePane, type AdaptivePaneMode } from '../components/adaptive-pane';
 import { useContainerWidth } from '../lib/container';
 import { cn, wbPress } from '../lib/workbench/util';
-import { tick, vib } from '../lib/workbench/haptics';
 import { IconBtn } from '../lib/workbench/icons';
 import { Icon, type IconName } from '../lib/icon';
 import { ToggleButton } from '../lib/workbench/press';
@@ -221,7 +220,6 @@ export function WorkbenchSidebarTrigger({ onPress, className, style }: TriggerPr
       className={className}
       style={style}
       onPress={() => {
-        tick();
         if (onPress) onPress();
         else shell?.toggleSidebar();
       }}
@@ -297,7 +295,6 @@ export function WorkbenchAction({ icon, label, onPress, active, className }: { i
       active={active}
       className={className}
       onPress={() => {
-        vib([8]);
         onPress?.();
       }}
     />
@@ -384,7 +381,6 @@ export function WorkbenchDockTrigger({ onPress, className, style }: TriggerProps
       className={className}
       style={style}
       onPress={() => {
-        tick();
         if (onPress) onPress();
         else shell?.toggleDock();
       }}
@@ -401,7 +397,6 @@ export function WorkbenchDockClose({ icon = 'bin', label = 'Close terminal', siz
       size={size}
       className={className}
       onPress={() => {
-        tick();
         if (onPress) onPress();
         else shell?.setDockOpen(false);
       }}
@@ -463,7 +458,6 @@ export function WorkbenchPanelTrigger({ onPress, className, style }: TriggerProp
       className={className}
       style={style}
       onPress={() => {
-        tick();
         if (onPress) onPress();
         else shell?.togglePanel();
       }}
@@ -503,7 +497,6 @@ export function WorkbenchPanelFullscreen({ active, onPress, className }: Trigger
       active={full}
       className={className}
       onPress={() => {
-        vib([8]);
         if (onPress) onPress();
         else shell?.setPanelFullscreen(!full);
       }}
@@ -520,7 +513,6 @@ export function WorkbenchPanelClose({ onPress, className }: TriggerProps) {
       size={16}
       className={className}
       onPress={() => {
-        tick();
         if (onPress) onPress();
         else shell?.setPanelOpen(false);
       }}
@@ -580,7 +572,6 @@ export function WorkbenchTab({ id, icon, className, children }: { id: string; ic
         className,
       )}
       onPress={() => {
-        tick();
         // In a shell the main tab just closes the panel page; on its own every tab reports its id.
         if (id !== mainTab || !shell) onValueChange?.(id);
         shell?.setPanelOpen(id !== mainTab);

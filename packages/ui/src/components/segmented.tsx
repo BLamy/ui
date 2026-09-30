@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Radio, RadioGroup, SelectionIndicator, SelectionIndicatorContext } from 'react-aria-components';
-import { Haptics } from '../lib/haptics';
 import { cn } from '../lib/utils';
 
 /** The sliding selected card (react-aria's SelectionIndicator), shared by Segmented, Tabs and ToggleGroup. It sits
@@ -22,7 +21,7 @@ export interface SegmentedProps {
   style?: CSSProperties;
 }
 
-/** iOS segmented control on react-aria's RadioGroup: arrows move and select, one tick per change. The selected
+/** iOS segmented control on react-aria's RadioGroup: arrows move and select. The selected
     card is one element that slides (and resizes) to the new segment on the smooth spring. */
 export function Segmented({ options, value, onChange, className, style, ...rest }: SegmentedProps) {
   return (
@@ -31,7 +30,7 @@ export function Segmented({ options, value, onChange, className, style, ...rest 
       aria-label={rest['aria-label'] || 'Segmented control'}
       orientation="horizontal"
       value={value}
-      onChange={(id) => { if (id === value) return; Haptics.selection(); onChange(id); }}
+      onChange={(id) => { if (id !== value) onChange(id); }}
       className={cn('isolate flex gap-0.5 rounded-[9px] bg-secondary p-0.5', className)}
       style={style}
     >

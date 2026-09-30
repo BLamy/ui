@@ -70,8 +70,8 @@ A `header` passed to `BLList` sticks to the top of the list itself and is measur
 ## Row behaviors
 
 - **Swipe actions**: `leadingActions` are revealed by swiping right, `trailingActions` by swiping left. A release springs open or shut from the finger's velocity; only one row stays open at a time.
-- **Full swipe**: past about half the row the outermost action (index 0) takes the whole strip, with a `Haptics.impact('medium')` detent as you cross the line. Turn it off with `fullSwipe={false}` (or limit it to `'leading'` / `'trailing'`).
-- **Edit mode** slides in radio checks; every toggle ticks with `Haptics.selection()`.
+- **Full swipe**: past about half the row the outermost action (index 0) takes the whole strip. Turn it off with `fullSwipe={false}` (or limit it to `'leading'` / `'trailing'`).
+- **Edit mode** slides in radio checks.
 - **Pressable rows** (`onPress`) are real `<button>`s with arrow-key navigation and visible focus rings. The button sits beneath the row's content, so a control in the row is its sibling — never nested inside it.
 - **Rows without `onPress`** are plain containers. A `Switch` or `Slider` in `accessory` (or `trailing`) is named by the row title, and pressing the row's label flips its switch (`labelToggles={false}` opts out).
 
@@ -102,7 +102,7 @@ A `header` passed to `BLList` sticks to the top of the list itself and is measur
 
 ## Animated sections
 
-`animate` on a section springs keyed rows in on insert, collapses them on remove and slides them when the order changes. `onReorder(from, to)` adds a grip to every row: drag it (a selection tick at each new slot) or focus it and press ↑ / ↓. It is called once per drop; reorder your array to match. Pass it only while reordering is allowed — the grips come and go with it.
+`animate` on a section springs keyed rows in on insert, collapses them on remove and slides them when the order changes. `onReorder(from, to)` adds a grip to every row: drag it or focus it and press ↑ / ↓. It is called once per drop; reorder your array to match. Pass it only while reordering is allowed — the grips come and go with it.
 
 ```tsx
 <ListSection animate onReorder={editing ? (from, to) => setSongs(move(songs, from, to)) : undefined}>
@@ -197,7 +197,7 @@ Migrating: the old `q` / `setQ` props are now `value` / `onChange`.
 
 ## IndexBar
 
-A reusable jump rail with a **selection tick per stop**. Give it application-defined string or numeric keys and optional React previews; omit `items` to keep the familiar A-Z fallback.
+A reusable jump rail. Give it application-defined string or numeric keys and optional React previews; omit `items` to keep the familiar A-Z fallback.
 
 ```tsx
 import { IndexBar, type IndexBarItem } from '@brett_lamy/ui'

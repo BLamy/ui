@@ -2,7 +2,6 @@ import * as React from 'react';
 import { ToggleButtonGroup, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
-import { Haptics } from '../../lib/haptics';
 import { PK_INKS, PK_TOOL_ICONS, PK_W, type PencilTool } from '../../lib/pencilkit/constants';
 import { Icon, type IconName } from '../../lib/icon';
 import { Button, ToggleButton, type ButtonProps } from '../../lib/workbench/press';
@@ -130,7 +129,7 @@ export function PencilToolbarDivider({ className, style, ...rest }: React.HTMLAt
 
 /* ---------------------------------- pickers ---------------------------------- */
 /* Pickers are single-select react-aria ToggleButtonGroups (radio semantics, arrow keys move focus).
-   Every press reports through onChange with a selection tick — including a press on the current value. */
+   Every press reports through onChange — including a press on the current value. */
 
 type PickerRootProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue' | 'dir'>;
 
@@ -158,10 +157,7 @@ export function ToolPicker({ value, onChange, tools = ['pen', 'marker', 'pencil'
           aria-label={t}
           title={t}
           className={pencilToolButtonVariants()}
-          onPress={() => {
-            if (onChange) onChange(t);
-            Haptics.selection();
-          }}
+          onPress={() => onChange?.(t)}
         >
           <PencilIcon name={PK_TOOL_ICONS[t]} />
         </ToggleButton>
@@ -201,10 +197,7 @@ export function InkPicker({ value, onChange, inks = PK_INKS, className, style, .
           )}
           // the swatch color is data
           style={{ '--ink': c } as React.CSSProperties}
-          onPress={() => {
-            if (onChange) onChange(i);
-            Haptics.selection();
-          }}
+          onPress={() => onChange?.(i)}
         />
       ))}
     </ToggleButtonGroup>
@@ -235,10 +228,7 @@ export function WidthPicker({ value, onChange, widths = PK_W, className, style, 
           id={String(i)}
           aria-label={'Width ' + (i + 1)}
           className="grid size-7 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 data-selected:bg-secondary-strong"
-          onPress={() => {
-            if (onChange) onChange(i);
-            Haptics.selection();
-          }}
+          onPress={() => onChange?.(i)}
         >
           {/* the dot diameter is data */}
           <span className="block size-(--dot) rounded-[50%] bg-foreground" style={{ '--dot': w.d + 'px' } as React.CSSProperties} />

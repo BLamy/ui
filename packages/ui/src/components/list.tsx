@@ -7,7 +7,6 @@ import {
   AnimatePresence, MotionConfig, Reorder, animate, motion, useDragControls, useMotionValue, useReducedMotion, useTransform,
   type AnimationPlaybackControls, type DragControls,
 } from 'framer-motion';
-import { Haptics } from '../lib/haptics';
 import { Icon, IC } from '../lib/icon';
 import { springs } from '../lib/motion';
 import { chromeOffset, BLStickyCtx, useChromeHidden } from '../lib/theme';
@@ -123,14 +122,14 @@ function AnimatedRows({ children, onReorder }: { children?: ReactNode; onReorder
   return (
     <MotionConfig reducedMotion="user">
       <Reorder.Group as="div" axis="y" values={live}
-        onReorder={(next: string[]) => { if (next.join() !== live.join()) { Haptics.selection(); setOrder(next); } }}>
+        onReorder={(next: string[]) => { if (next.join() !== live.join()) setOrder(next); }}>
         <AnimatePresence initial={false}>
           {live.map((k, i) => (
             <AnimatedRow key={k} value={k} index={i} count={live.length} reduced={!!reduced}
               reorder={onReorder ? { drop, move: (to) => {
                 const t = Math.max(0, Math.min(keys.length - 1, to));
                 if (t === i) return;
-                Haptics.selection(); onReorder(i, t);
+                onReorder(i, t);
               } } : undefined}>
               {byKey.get(k)}
             </AnimatedRow>
@@ -310,14 +309,12 @@ export function ListRow(p: ListRowProps) {
   const commit = (s: Side, a: ListRowAction) => {
     const w = el.current ? el.current.offsetWidth : 320;
     if (a.destructive) {
-      Haptics.notification('warning');
       setFull(true);
       to(s === 'trailing' ? -w : w);
       setClosing(wrap.current ? wrap.current.offsetHeight : null);
       requestAnimationFrame(() => requestAnimationFrame(() => setDead(true)));
       setTimeout(() => a.onAction(), reduced ? 0 : 460);
     } else {
-      Haptics.impact('light');
       a.onAction();
       setFull(false); to(0);
       focusEl.current?.focus({ preventScroll: true });
@@ -352,8 +349,8 @@ export function ListRow(p: ListRowProps) {
       const lim = canFull(s) ? Math.min(mag, w * 0.92) : mag <= ow ? mag : ow + (mag - ow) * 0.25;
       nx = sign * lim;
       const f = canFull(s) && lim > w * FULL;
-      // The full-swipe threshold is a detent: a tick crossing it, a lighter one backing out.
-      if (f && !d.fired) { d.fired = true; Haptics.impact('medium'); } else if (!f && d.fired) { d.fired = false; Haptics.impact('light'); }
+      // The full-swipe threshold is a detent: crossing it arms the first action, backing out disarms it.
+      d.fired = f;
       setFull(f);
     }
     x.set(nx);

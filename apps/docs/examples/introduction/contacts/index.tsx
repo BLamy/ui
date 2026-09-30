@@ -17,7 +17,7 @@ type Person = { f: string; l: string; role: string }
 const PEOPLE: Person[] = [
   { f: 'Ada', l: 'Lovelace', role: 'Analytical engines' },
   { f: 'Avi', l: 'Chen', role: 'Sound design' },
-  { f: 'Bea', l: 'Okafor', role: 'Haptics research' },
+  { f: 'Bea', l: 'Okafor', role: 'Motion research' },
   { f: 'Ben', l: 'Alvarez', role: 'Motion' },
   { f: 'Cal', l: 'Nguyen', role: 'Type systems' },
   { f: 'Dot', l: 'Kim', role: 'Interaction physics' },

@@ -27,7 +27,6 @@ import { Extension } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
 import { Button, ToggleButton, type ButtonProps } from '../../lib/workbench/press';
 import { cn, wbPress } from '../../lib/workbench/util';
-import { vib, tick } from '../../lib/workbench/haptics';
 import { Icon, type IconName } from '../../lib/icon';
 import { WbPopover } from './wb-popover';
 import { looksLikeMarkdown, insertMarkdown } from '../markdown-editor';
@@ -448,7 +447,6 @@ export function Composer({
       if (hit && editor.view.dom.contains(hit)) at = editor.view.posAtCoords({ left: point.x, top: point.y })?.pos;
     }
     insertChips(images, at);
-    vib([8]);
     setAnnouncement(`Attached ${files.length === 1 ? items[0].name : `${files.length} files`}.`);
     for (const { file, kind, id, name } of items) {
       const base: ComposerAttachment = { id, name, size: file.size, type: file.type, kind, file };
@@ -473,7 +471,6 @@ export function Composer({
 
   const send = () => {
     if (!canSend || streaming) return;
-    vib([8]);
     const markdown = valueRef.current.trim();
     const sent = attRef.current;
     // The receiver owns the sent files' URLs now; they stay valid until this Composer unmounts.
@@ -489,7 +486,6 @@ export function Composer({
     onSubmit?.(markdown, sent);
   };
   const stop = () => {
-    vib([8]);
     onStop?.();
   };
 
@@ -577,7 +573,6 @@ export function Composer({
   }, [shapeKey]);
 
   const restore = () => {
-    tick();
     setCollapsed('none');
     requestAnimationFrame(() => editor?.commands.focus('end'));
   };
@@ -1238,7 +1233,7 @@ export function ComposerMenuItem({ className, children, ...props }: MenuItemProp
   );
 }
 
-/** An option pill that opens a react-aria Menu of choices (effort, access, …). Ticks on selection. */
+/** An option pill that opens a react-aria Menu of choices (effort, access, …). */
 export function ComposerSelect({
   'aria-label': ariaLabel,
   options,
@@ -1266,7 +1261,6 @@ export function ComposerSelect({
           onSelectionChange={(keys) => {
             const k = [...(keys as Set<Key>)][0];
             if (k == null) return;
-            tick();
             setValue(String(k));
           }}
           className="outline-none"
@@ -1452,7 +1446,6 @@ export function ComposerAdd({
         aria-label={label}
         title={label}
         onPress={(e) => {
-          tick();
           onPress?.(e);
         }}
         className={className}
@@ -1499,7 +1492,6 @@ export function ComposerExpand({ className }: { className?: string }) {
       aria-label={label}
       isSelected={expanded}
       onPress={() => {
-        tick();
         setExpanded(!expanded);
       }}
       title={label}
@@ -1610,7 +1602,6 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
     const tiles = Array.from(strip.current?.querySelectorAll<HTMLElement>('[data-slot="composer-attachment-open"]') ?? []);
     const i = tiles.findIndex((t) => t.closest('[data-attachment-id]')?.getAttribute('data-attachment-id') === id);
     const next = tiles[i + 1] ?? tiles[i - 1];
-    tick();
     removeAttachment(id);
     if (next) next.focus();
     else editor?.commands.focus('end');
@@ -1657,7 +1648,6 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                         <Button
                           data-slot="composer-attachment-open"
                           onPress={() => {
-                            tick();
                             annotate(a.id);
                           }}
                           onKeyDown={onTileKey(a.id)}
@@ -1685,7 +1675,6 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                       <Button
                         data-slot="composer-attachment-open"
                         onPress={() => {
-                          tick();
                           if (a.src && typeof window !== 'undefined') window.open(a.src, '_blank', 'noopener');
                         }}
                         onKeyDown={onTileKey(a.id)}
@@ -1698,7 +1687,6 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                     )}
                     <Button
                       onPress={() => {
-                        tick();
                         removeAttachment(a.id);
                       }}
                       aria-label={`Remove ${a.name}`}
@@ -1811,7 +1799,6 @@ export function ComposerInput({
     [setEditor],
   );
   const onAttachmentOpen = React.useCallback((a: ComposerAttachment) => {
-    tick();
     latest.current.annotate(a.id);
   }, []);
 
@@ -1832,7 +1819,6 @@ export function ComposerInput({
         attachments={attachments}
         // Images the editor takes itself (a drop onto a card without a drop zone).
         onAttachmentAdd={({ file, ...attachment }) => {
-          vib([8]);
           addAttachment({ ...attachment, kind: 'image', file });
         }}
         // Chips deleted, cut or cleared in the editor drop their attachment.
@@ -1944,7 +1930,7 @@ export interface ComposerBumpProps extends Omit<React.HTMLAttributes<HTMLDivElem
 /**
  * A strip attached above (`side="top"`) or below the card. Bumps order themselves by side, so they can be
  * placed anywhere among the Composer's children. With `draggable`, a top bump is a sheet: its handle pulls
- * the content open one-to-one with the pointer and releases snap open or closed with a tick.
+ * the content open one-to-one with the pointer and releases snap open or closed.
  */
 export function ComposerBump({
   side = 'bottom',
@@ -2317,7 +2303,6 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
     if (!ctx) return close(onClose);
     ctx.drawImage(img, 0, 0, cv.width, cv.height);
     const fin = () => {
-      vib([12]);
       const url = cv.toDataURL('image/png');
       close(() => onSave(url));
     };

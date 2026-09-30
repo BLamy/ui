@@ -2,7 +2,6 @@ import * as React from 'react';
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Button } from '../../lib/workbench/press';
 import { cn, wbPress } from '../../lib/workbench/util';
-import { tick } from '../../lib/workbench/haptics';
 import { Icon } from '../../lib/icon';
 import { AnimatePresence, animate, motion, type AnimationPlaybackControls } from 'framer-motion';
 import { prefersReducedMotion, springs } from '../../lib/workbench/motion';
@@ -220,7 +219,6 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
               className={cn(wbPress, 'flex cursor-pointer items-center overflow-hidden rounded-[99px] border border-border bg-card p-[7px] text-[12.5px] font-semibold text-foreground shadow-[0_4px_16px_black] shadow-black/8 dark:shadow-black/35')}
               onPress={() => {
                 toEnd(true);
-                tick();
               }}
               aria-label="Jump to latest"
             >

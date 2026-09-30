@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Haptics, IconBtn, cn, type Appearance } from '@brett_lamy/ui';
+import { IconBtn, cn, type Appearance } from '@brett_lamy/ui';
 import { TINTS } from '../lib/data';
 
 /** A small floating card ("Toggle theme editor" / ⌥⇧⌘T): appearance and accent, applied live. */
@@ -52,10 +52,7 @@ export function ThemeEditor({
             key={a}
             type="button"
             aria-pressed={appearance === a}
-            onClick={() => {
-              Haptics.selection();
-              onAppearance(a);
-            }}
+            onClick={() => onAppearance(a)}
             className={cn(
               'h-7 cursor-pointer rounded-[7px] border-0 bg-transparent font-[inherit] text-[12.5px] font-medium text-muted-foreground capitalize transition-colors',
               appearance === a && 'bg-card text-foreground shadow-[0_1px_2px_color-mix(in_srgb,black_18%,transparent)]',
@@ -73,10 +70,7 @@ export function ThemeEditor({
             type="button"
             aria-label={`Accent ${t}`}
             aria-pressed={tint === t}
-            onClick={() => {
-              Haptics.selection();
-              onTint(t);
-            }}
+            onClick={() => onTint(t)}
             className={cn(
               'size-6 cursor-pointer rounded-full border-0 p-0 transition-[box-shadow,scale] duration-spring-snappy ease-spring-snappy active:scale-90',
               tint === t && 'shadow-[0_0_0_2px_var(--popover),0_0_0_4px_var(--foreground)]',

@@ -1,6 +1,5 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
-import { Haptics } from '../lib/haptics';
 import { Icon } from '../lib/icon';
 import { fades, springs, useMotion } from '../lib/motion';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -181,7 +180,7 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
       {open ? (compact
         ? <m.div key="tray" data-slot="credenza" {...a11y} className={cn(credenzaVariants({ compact: true }), className)} initial={{ y: '112%' }} animate={{ y: '0%' }} exit={{ y: '118%' }} transition={spring}
             drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: .02, bottom: .55 }}
-            onDragEnd={(_ev: unknown, inf: any) => { if (inf.offset.y > 120 || inf.velocity.y > 500) { Haptics.impact('light'); closeRef.current(); } }}
+            onDragEnd={(_ev: unknown, inf: any) => { if (inf.offset.y > 120 || inf.velocity.y > 500) closeRef.current(); }}
             style={style}>
             <div aria-hidden="true" className="absolute top-[7px] left-1/2 z-3 h-[5px] w-[38px] -translate-x-1/2 rounded-[3px] bg-secondary-strong" />
             {header}{body}

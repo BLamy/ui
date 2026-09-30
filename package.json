@@ -10,7 +10,6 @@
     "dev:docs": "vite --config apps/docs/vite.config.mts",
     "vr": "playwright test -c tools/vr/playwright.config.mjs",
     "vr:update": "playwright test -c tools/vr/playwright.config.mjs --update-snapshots",
-    "test:haptics": "node tools/haptics/probe.mjs && node tools/haptics/probe.mjs --chromium",
     "registry": "node tools/registry/build.mjs",
     "registry:static": "node tools/registry/build.mjs --static",
     "knip": "pnpm dlx knip@5"
