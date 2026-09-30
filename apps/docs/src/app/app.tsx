@@ -1,4 +1,4 @@
-/* BL UI documentation shell — pixel-faithful port of project/BL UI Docs.dc.html. */
+/* BL UI documentation shell — a port of the original HTML design prototype. */
 import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { AppearanceProvider, type Appearance } from '@brett_lamy/ui';
 import { GitbookStreamdown } from '@brett_lamy/docstream';

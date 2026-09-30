@@ -1,4 +1,4 @@
-/* BL UI Docs shell — ported from project/BL UI Docs.dc.html */
+/* BL UI Docs shell (originally ported from the pre-monorepo HTML design prototype). */
 
 /* Shell palette. Light values are the prototype's; `data-theme="dark"` on <html> flips the shell, and the
    shadcn tokens below retheme Docstream (which reads --card/--foreground/--border…). */
