@@ -85,6 +85,8 @@ The breakpoint measures the container, not the viewport. A tap on the bump's han
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `layout` | `auto` | `auto` splits above `breakpoint` and floats below it. `floating` always floats the chat over the content — the right choice for maps, canvases, and other full-bleed artifacts. `split` always docks. |
+| `chatSide` | `left` | The edge the docked column sits on. `right` puts an assistant beside an app's page (the Loop QA block docks Ask QA there); the column slides in from and out toward its own edge. |
+| `minimized` / `onMinimizedChange` | uncontrolled | Controls the floating chat's fold into its FAB. A host can switch `layout` to `floating` with `minimized` to hide a docked chat as a FAB; tapping the FAB reports `false`, and the composer flies back to the column when the host docks it again. |
 | `peek` | `0` | Height of transcript kept visible above the composer while the chat is closed, so the newest reply stays readable over the content. Growth is measured from the peek, so the glass keeps its compact shape until it is dragged past it. |
 | `appearance` | `glass` | `glass` blurs the content behind it; `sheet` is an opaque card. |
 | `tone` | `auto` | `auto` inherits the host's `--bl-*` tokens; `dark` and `light` override them so the surface can disagree with the page. |

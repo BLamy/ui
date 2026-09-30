@@ -67,6 +67,10 @@ export interface FloatingChatProps {
   scrollRef?: RefObject<HTMLElement | null>;
   /** Resting position after the chat is dragged down into its FAB. */
   fabPosition?: FloatingChatFabPosition;
+  /** Controlled fold into the FAB (dragging below rest folds it; the FAB unfolds it). */
+  minimized?: boolean;
+  defaultMinimized?: boolean;
+  onMinimizedChange?: (minimized: boolean) => void;
   /** Inset of the floating composer from the host edges. */
   gutter?: number;
   /**
@@ -186,6 +190,9 @@ export function FloatingChat({
   hideOnScroll = true,
   scrollRef,
   fabPosition = 'bottom-center',
+  minimized: controlledMinimized,
+  defaultMinimized = false,
+  onMinimizedChange,
   gutter = 16,
   peek = 0,
   appearance = 'glass',
@@ -202,13 +209,14 @@ export function FloatingChat({
   const layerRef = useRef<HTMLDivElement>(null);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const [uncontrolledComposing, setUncontrolledComposing] = useState(!working);
-  const [minimized, setMinimized] = useState(false);
+  const [uncontrolledMinimized, setUncontrolledMinimized] = useState(defaultMinimized);
   const [bump, setBump] = useState<ComposerBumpProgress>({ progress: 0, reveal: 0, minimize: 0, dragging: false, settling: false });
   // Inside ArtifactChatContainer the composer and transcript are shared with the docked layout: this chat
   // gives them docks and reports its outlet instead of rendering its own copies.
   const shared = useContext(ChatHostContext);
   const open = controlledOpen ?? uncontrolledOpen;
   const composing = controlledComposing ?? uncontrolledComposing;
+  const minimized = controlledMinimized ?? uncontrolledMinimized;
 
   const setOpen = (next: boolean) => {
     if (controlledOpen == null) setUncontrolledOpen(next);
@@ -218,13 +226,18 @@ export function FloatingChat({
     if (controlledComposing == null) setUncontrolledComposing(next);
     onComposingChange?.(next);
   };
+  const setMinimized = (next: boolean) => {
+    if (controlledMinimized == null) setUncontrolledMinimized(next);
+    onMinimizedChange?.(next);
+  };
 
   useEffect(() => {
     if (controlledComposing == null) setUncontrolledComposing(!working);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only resync when work starts or stops
   }, [working]);
   useEffect(() => {
-    if (open) setMinimized(false);
+    if (open && minimized) setMinimized(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- opening the chat unfolds it
   }, [open]);
 
   const slots = collectSlots(children);

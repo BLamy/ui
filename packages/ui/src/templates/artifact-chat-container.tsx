@@ -57,11 +57,16 @@ export const artifactChatContainerVariants = cva(
   {
     variants: {
       layout: {
-        split: 'grid grid-cols-[minmax(0,var(--ck-artifact-chat-width,400px))_minmax(0,1fr)]',
+        split: 'grid',
         floating: 'block',
       },
+      chatSide: { left: '', right: '' },
     },
-    defaultVariants: { layout: 'split' },
+    compoundVariants: [
+      { layout: 'split', chatSide: 'left', class: 'grid-cols-[minmax(0,var(--ck-artifact-chat-width,400px))_minmax(0,1fr)]' },
+      { layout: 'split', chatSide: 'right', class: 'grid-cols-[minmax(0,1fr)_minmax(0,var(--ck-artifact-chat-width,400px))]' },
+    ],
+    defaultVariants: { layout: 'split', chatSide: 'left' },
   },
 );
 export type ArtifactChatFabPosition = FloatingChatFabPosition;
@@ -77,6 +82,8 @@ export interface ArtifactChatContainerProps {
   breakpoint?: number;
   /** Width of the docked chat column. */
   chatWidth?: number | string;
+  /** Which edge the docked chat column sits on. Default `left`; `right` for an assistant beside an app's page. */
+  chatSide?: 'left' | 'right';
   /** Controlled state for the floating full-chat drawer. */
   chatOpen?: boolean;
   defaultChatOpen?: boolean;
@@ -90,6 +97,10 @@ export interface ArtifactChatContainerProps {
   hideOnScroll?: boolean;
   /** Resting position after the floating chat is dragged down into its FAB. */
   fabPosition?: ArtifactChatFabPosition;
+  /** Controlled fold of the floating chat into its FAB (dragging below rest folds it; the FAB unfolds it). */
+  minimized?: boolean;
+  defaultMinimized?: boolean;
+  onMinimizedChange?: (minimized: boolean) => void;
   /** Transcript height that stays visible above the floating composer while the chat is closed. */
   peek?: number;
   /** Floating surface style: glass over the content, or an opaque card. */
@@ -110,6 +121,7 @@ export function ArtifactChatContainer({
   layout: requestedLayout = 'auto',
   breakpoint = 760,
   chatWidth = 400,
+  chatSide = 'left',
   chatOpen: controlledChatOpen,
   defaultChatOpen = false,
   onChatOpenChange,
@@ -118,6 +130,9 @@ export function ArtifactChatContainer({
   onAdd,
   hideOnScroll = true,
   fabPosition = 'bottom-center',
+  minimized,
+  defaultMinimized,
+  onMinimizedChange,
   peek = 0,
   appearance,
   tone: toneProp,
@@ -136,6 +151,8 @@ export function ArtifactChatContainer({
   const layout: ArtifactChatLayout =
     requestedLayout === 'auto' ? (width < breakpoint ? 'floating' : 'split') : requestedLayout;
   const compact = layout === 'floating';
+  const right = chatSide === 'right';
+  const edge = right ? 1 : -1;
   const chatOpen = controlledChatOpen ?? uncontrolledOpen;
 
   const setChatOpen = (open: boolean) => {
@@ -232,7 +249,8 @@ export function ArtifactChatContainer({
         // light/dark: the bl-theme's `sheet` scope in that appearance; `auto` leaves the host's theme alone.
         data-tone={tone === 'auto' ? undefined : tone}
         data-theme-scope={toneProps['data-theme-scope']}
-        className={cn(artifactChatContainerVariants({ layout }), toneProps.className, className)}
+        data-chat-side={chatSide}
+        className={cn(artifactChatContainerVariants({ layout, chatSide }), toneProps.className, className)}
         style={{
           '--ck-artifact-chat-width': typeof chatWidth === 'number' ? `${chatWidth}px` : chatWidth,
           ...style,
@@ -244,13 +262,14 @@ export function ArtifactChatContainer({
             <motion.div
               key="column"
               data-slot="artifact-chat-column"
-              className="z-2 flex min-h-0 min-w-0"
-              initial={switched ? { x: -32, opacity: 0 } : false}
+              className={cn('z-2 flex min-h-0 min-w-0', right && 'col-start-2 row-start-1')}
+              // It slides in from, and back out toward, its own edge.
+              initial={switched ? { x: 32 * edge, opacity: 0 } : false}
               animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -48, opacity: 0 }}
+              exit={{ x: 48 * edge, opacity: 0 }}
               transition={springs.smooth}
             >
-              <ChatColumn className="flex-1">
+              <ChatColumn className={cn('flex-1', right && 'border-r-0 border-l')}>
                 <ChatColumnTranscript>
                   <div ref={setChatDock} data-slot="artifact-chat-transcript-dock" className="flex h-full min-h-0 min-w-0 flex-col" />
                 </ChatColumnTranscript>
@@ -274,7 +293,7 @@ export function ArtifactChatContainer({
             contentRef2.current = el;
           }}
           data-slot="artifact-chat-content"
-          className={cn(contentClass, compact ? 'absolute inset-0 pb-0' : 'relative')}
+          className={cn(contentClass, compact ? 'absolute inset-0 pb-0' : cn('relative', right && 'col-start-1 row-start-1'))}
         >
           {slots.content}
         </main>
@@ -291,6 +310,9 @@ export function ArtifactChatContainer({
               hideOnScroll={hideOnScroll}
               scrollRef={contentRef}
               fabPosition={fabPosition}
+              minimized={minimized}
+              defaultMinimized={defaultMinimized}
+              onMinimizedChange={onMinimizedChange}
               peek={peek}
               appearance={appearance}
               tone={tone}
