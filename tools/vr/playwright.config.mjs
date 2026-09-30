@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 /** Tests whose screens show SyntaxHighlighting (story ids / docs page ids). */
-const GPU = /syntaxhighlighting|syntax-highlighting|github-clone--(file-view|files-changed)/;
+const GPU = /syntaxhighlighting|syntax-highlighting|github-clone--(file-view|files-changed)|loop-qa--playwright-tests/;
 const GPU_USE = { channel: 'chromium', launchOptions: { args: ['--enable-unsafe-webgpu'] } };
 
 /* Visual regression for every Storybook story. Baselines are local (gitignored): take them on a clean

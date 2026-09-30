@@ -536,6 +536,11 @@ export type {
 } from './components/toast';
 export { ProgressRing, CountdownRing, useCountdown, progressRingVariants, countdownRingLabelVariants } from './components/progress-ring';
 export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, CountdownRingLabelSize, UseCountdownOptions, Countdown } from './components/progress-ring';
+export { ReplayPreview, replayPreviewVariants, replayMarkerVariants, formatReplayTime } from './components/replay-preview';
+export type { ReplayPreviewProps, ReplayPreviewHandle } from './components/replay-preview';
+export { replayDemoEvents } from './demos/replay/replay-demo-events';
+export { getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from '@brett_lamy/docstream/replay';
+export type { ReplayEvent, ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack } from '@brett_lamy/docstream/replay';
 export { NowPlayingBars } from './components/now-playing-bars';
 export type { NowPlayingBarsProps } from './components/now-playing-bars';
 export { MorphGroup, Morph, MorphPresence, useMorphTransition } from './components/morph';

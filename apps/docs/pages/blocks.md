@@ -42,6 +42,10 @@ Whole apps composed from BL UI parts, in the spirit of shadcn blocks. Each block
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-music.json{% endcommand %}
 
+{% demo src="blocks/loop-qa" layout="multi" %}
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/loop-qa.json{% endcommand %}
+
 {% hint style="info" %}
 **Blocks land in `components/blocks/<name>/`.** Render the default export from `page.tsx` in a sized container — blocks fill their parent and adapt to its width, not the window's.
 {% endhint %}
