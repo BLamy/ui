@@ -147,3 +147,23 @@ The card's fill is the `--command-surface` variable (default `--popover`); stick
 A calculator page: `filter={false}` because its rows are computed from the query, and its `onKeyDown` makes `=` commit like Enter. Backspace on the empty input goes back to the apps.
 
 {% demo src="command-menu/computed-results" %}
+
+## In the blocks
+
+Two blocks are built around CommandMenu end to end. Open the file list in either preview to read how the pages, hotkeys and actions are wired.
+
+### Alfred launcher
+
+An inline CommandMenu as a macOS launcher: eight apps you open with Enter, a click or ⌘1–⌘8 — Calculator, Clipboard, Emoji, Snippets, Files, System, Web search and Workflows — each a page with its own keys, a preview pane beside the list, and a footer legend that follows the page. Backspace on the empty input goes back; ⌥Space hides and shows the bar.
+
+{% demo src="blocks/alfred-clone" layout="multi" %}
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/alfred-clone.json{% endcommand %}
+
+### T3 Code palette
+
+The ⌘K dialog after T3 Code's: Actions at the root, "New thread in…" drilling into projects with ⌘1–⌘6, and "Add project" with sources dimmed behind a Setup Required badge. Click into the preview and press ⌘K, or use the search button in its header.
+
+{% demo src="blocks/t3-clone" layout="multi" %}
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/t3-clone.json{% endcommand %}
