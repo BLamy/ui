@@ -40,6 +40,40 @@ export const Fixed: Story = {
   },
 };
 
+/* ── Compact: the overlay as a pushed page ──
+   Below `compactBreakpoint` (520px) the overlay takes the whole host and is pushed like a NavigationStack screen:
+   the page before it parallaxes and dims, the bar has a back button, and an edge swipe pops it. */
+function CompactPage({ onOpen }: { onOpen: () => void }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, padding: '64px 20px 20px', background: 'var(--background)', color: 'var(--foreground)' }}>
+      <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5 }}>Maya Lindqvist</div>
+      <div style={{ fontSize: 14, color: 'var(--muted-foreground)', margin: '6px 0 22px' }}>Product design · Stockholm</div>
+      <Button size="pill" onPress={onOpen} className="w-[180px]">Show activity</Button>
+    </div>
+  );
+}
+
+function CompactStory({ initial, dark }: { initial: boolean; dark?: boolean }) {
+  const [open, setOpen] = useState(initial);
+  return (
+    <Phone w={390} h={720} dark={dark}>
+      <CompactPage onOpen={() => setOpen(true)} />
+      <SideDrawer mode="overlay" open={open} onClose={() => setOpen(false)} title="Activity" backLabel="Maya">
+        {content}
+      </SideDrawer>
+    </Phone>
+  );
+}
+
+/** A phone-width host: the drawer is a pushed page with a back button (tap it, press Esc, or swipe from the left
+    edge to pop it). */
+export const CompactPush: Story = { render: () => <CompactStory initial /> };
+
+export const CompactPushDark: Story = { render: () => <CompactStory initial dark /> };
+
+/** Closed: tap "Show activity" to push it; the page slides left under a dim, exactly as NavigationStack pushes. */
+export const CompactPushClosed: Story = { render: () => <CompactStory initial={false} /> };
+
 export const Overlay: Story = {
   render: function OverlayStory() {
     const [open, setOpen] = useState(true);

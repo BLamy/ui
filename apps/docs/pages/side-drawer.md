@@ -29,7 +29,7 @@ import { SideDrawer } from '@/components/ui/side-drawer'
 | --- | --- | --- |
 | `fixed` | docked column beside the detail view | ≥1280px, room to spare |
 | `overlay` | sheet from the right edge + scrim | desktop / tablet |
-| pushed page | compose the same content as a screen | phones |
+| `overlay`, compact | the whole host, pushed like a NavigationStack screen | phones (host < `compactBreakpoint`) |
 
 ```jsx
 // extra-wide: docked
@@ -44,11 +44,13 @@ import { SideDrawer } from '@/components/ui/side-drawer'
   <ActivityView c={contact}/>
 </SideDrawer>
 
-// phone: the same content, pushed
-screens.push({ key: 'activity', title: 'Activity', content: <ActivityView/> })
+// phone: the same overlay, now a pushed page with a back button
+<SideDrawer mode="overlay" open={act} onClose={close} title="Activity" backLabel="Maya">
+  <ActivityView c={contact}/>
+</SideDrawer>
 ```
 
-The content component doesn't know which presentation it's in — the Contacts demo picks per width class. The Workbench's [WorkbenchPanel](https://blamy.github.io/ui/#/workbench-shell) follows the same philosophy on desktop scales.
+The content component doesn't know which presentation it's in — the Contacts demo picks per width class. Inside a `NavigationStack` you can still push the content as a real screen instead. The Workbench's [WorkbenchPanel](https://blamy.github.io/ui/#/workbench-shell) follows the same philosophy on desktop scales.
 
 ## Live example
 
@@ -67,6 +69,31 @@ The content component doesn't know which presentation it's in — the Contacts d
 `mode="overlay"` slides over the content with a scrim; tapping the scrim or the close button calls `onClose`.
 
 {% demo src="side-drawer/comments" %}
+
+### Pushed on a phone
+
+In a compact host an overlay drawer is not a floating card with a scrim gap: it is a page pushed on the navigation stack. By default that happens when the host is narrower than `compactBreakpoint` (520px); pass `compact` to decide yourself.
+
+- It takes the host's full width, with a NavigationStack bar: a back button on the leading edge (`backLabel`, default "Back") and the title centred.
+- It slides in from the trailing edge on NavigationStack's own push: the same smooth spring, and the page underneath parallaxes to −28% of the host's width under a 12% dim (`navigationPush`, exported from the NavigationStack module, holds the shared numbers).
+- The back button, `Escape`, or a swipe from the left edge pops it. The swipe scrubs the panel, the parallax and the dim together, and commits past a third of the width or on a flick, settling on the tray spring, as NavigationStack's edge swipe does.
+- The page is everything **before** the drawer in its host, so put the drawer after the page and let the host clip (`overflow: hidden`). Reduced motion turns the slide off.
+
+```tsx
+<div style={{ position: 'relative', overflow: 'hidden' }}>
+  <Article />
+  <SideDrawer
+    mode="overlay" open={open} onClose={close}
+    title="Comments" backLabel="Article"
+  >
+    <Comments />
+  </SideDrawer>
+</div>
+```
+
+{% demo src="side-drawer/compact-push" %}
+
+Where this applies: `ChatShellPanel` (a thread panel) pushes on a phone. Leading-edge navigation stays a drawer: `Sidebar`'s compact overlay, `ChatShellNav` and `WorkbenchSidebar` slide in from the left over a scrim, as a hamburger menu should. `WorkbenchPanel` is already a page at compact width, switched by the Workbench tab bar rather than pushed.
 
 ### One content, three presentations
 

@@ -65,7 +65,7 @@ export type {
 } from './components/tab-view';
 export { EditBar } from './components/edit-bar';
 export type { EditBarProps } from './components/edit-bar';
-export { NavigationStack, ScreenWrap } from './components/navigation-stack';
+export { NavigationStack, ScreenWrap, navigationPush } from './components/navigation-stack';
 export type { NavigationStackProps, NavigationStackRootBack, Screen, ScreenWrapProps } from './components/navigation-stack';
 export {
   SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail, SplitViewHeader, SplitViewContent, SplitViewToggle,

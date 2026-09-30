@@ -66,6 +66,21 @@ export interface ScreenWrapProps {
   rootBack?: NavigationStackRootBack | null;
 }
 
+/** How NavigationStack pushes and pops, shared with anything that should feel like one (SideDrawer's compact push):
+ *  where the leaving/entering screen waits, where the one underneath parallaxes to and how far it dims, and the
+ *  edge swipe's zone, commit distance (fraction of the width) and flick velocity (px/ms). The motion itself is the
+ *  `smooth` spring (the `tray` spring when a swipe is released). */
+export const navigationPush = {
+  off: '103%',
+  under: '-28%',
+  underPct: -28,
+  dim: 0.12,
+  edge: 36,
+  commit: 0.32,
+  flick: 0.55,
+  settleMs: 580,
+} as const;
+
 export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: prevTitle, reg, defIns, z, rootBack: rootBackProp }: ScreenWrapProps) {
   const rootBack = depth === 0 && !ghost ? rootBackProp : null;
   const backTitle = rootBack ? rootBack.title ?? 'Back' : prevTitle;
@@ -107,7 +122,8 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
   }, [entering]);
   useEffect(() => { if (ghost) requestAnimationFrame(() => setOut(true)); }, [ghost]);
   const isUnder = !ghost && depth < top;
-  const tx = ghost ? (out ? '103%' : '0%') : (!in_ ? '103%' : isUnder ? '-28%' : '0%');
+  const { off, under } = navigationPush;
+  const tx = ghost ? (out ? off : '0%') : (!in_ ? off : isUnder ? under : '0%');
   const ins = sc.bottomInset != null ? sc.bottomInset : (defIns || 0);
   const barH = safeTop + BARH;
   const hideChrome = sc.hideChromeOnScroll !== false;
@@ -326,7 +342,7 @@ function titleFlight(cont: HTMLElement, from: HTMLElement, to: HTMLElement, toSc
 }
 
 /** Push/pop settle time: the smooth spring (--duration-spring-smooth) plus a frame. */
-const SETTLE_MS = 580;
+const SETTLE_MS = navigationPush.settleMs;
 
 /* Back-gesture history bridge: on touch devices the system edge-swipe would navigate the page itself away
    (blank screen). While any stack can pop we keep one history sentinel armed; the system gesture then lands
@@ -432,7 +448,7 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
   const down = (e: React.PointerEvent) => {
     if (e.button || anim.enter || anim.exit || screens.length < 2) return;
     const rect = contRef.current.getBoundingClientRect();
-    if (e.clientX - rect.left > 36) return;
+    if (e.clientX - rect.left > navigationPush.edge) return;
     const topR = regMap.current[screens[screens.length - 1].key];
     const undR = regMap.current[screens[screens.length - 2].key];
     if (!topR || !topR.el || !undR || !undR.el) return;
@@ -457,8 +473,8 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
     const p = dx / d.w;
     try {
       d.topR.el.style.transition = 'none'; d.topR.el.style.transform = `translateX(${dx}px)`;
-      d.undR.el.style.transition = 'none'; d.undR.el.style.transform = `translateX(${-28 * (1 - p)}%)`;
-      if (d.undR.dim) { d.undR.dim.style.transition = 'none'; d.undR.dim.style.opacity = String(.12 * (1 - p)); }
+      d.undR.el.style.transition = 'none'; d.undR.el.style.transform = `translateX(${navigationPush.underPct * (1 - p)}%)`;
+      if (d.undR.dim) { d.undR.dim.style.transition = 'none'; d.undR.dim.style.opacity = String(navigationPush.dim * (1 - p)); }
       if (d.flight && flight.current === d.flight) d.flight.f.set(p);
     } catch (err) { drag.current = null; }
   };
@@ -466,7 +482,7 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
     const d = drag.current; if (!d) return; drag.current = null;
     if (!d.moved || !d.on) { clean(d); return; }
     const p = (d.dx || 0) / d.w;
-    const commit = p > .32 || d.vel > .55;
+    const commit = p > navigationPush.commit || d.vel > navigationPush.flick;
     // Release continues on the tray spring from wherever the finger let go (the CSS spring retargets).
     const ease = springCss('transform', 'tray');
     const c = d.flight && flight.current === d.flight ? d.flight : null;
@@ -480,8 +496,8 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
       setTimeout(() => { onPopRef.current && onPopRef.current(); requestAnimationFrame(() => clean(d)); }, 380);
     } else {
       d.topR.el.style.transition = ease; d.topR.el.style.transform = 'translateX(0px)';
-      d.undR.el.style.transition = ease; d.undR.el.style.transform = 'translateX(-28%)';
-      if (d.undR.dim) { d.undR.dim.style.transition = springCss('opacity', 'tray'); d.undR.dim.style.opacity = '.12'; }
+      d.undR.el.style.transition = ease; d.undR.el.style.transform = `translateX(${navigationPush.under})`;
+      if (d.undR.dim) { d.undR.dim.style.transition = springCss('opacity', 'tray'); d.undR.dim.style.opacity = String(navigationPush.dim); }
       setTimeout(() => clean(d), 430);
     }
   };
