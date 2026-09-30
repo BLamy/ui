@@ -1,0 +1,90 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "duplicates": "off"
+  },
+  "workspaces": {
+    ".": {
+      "entry": [
+        "tools/**/*.mjs"
+      ],
+      "project": [
+        "tools/**/*.{mjs,mts,ts}"
+      ],
+      "ignoreDependencies": [
+        "clsx",
+        "tailwind-merge",
+        "perfect-freehand",
+        "tailwindcss",
+        "shadcn",
+        "@nx/devkit",
+        "@nx/workspace",
+        "@nx/web",
+        "@swc/helpers",
+        "ts-node",
+        "@eslint/js",
+        "typescript-eslint",
+        "jsonc-eslint-parser",
+        "eslint-plugin-import",
+        "eslint-plugin-jsx-a11y",
+        "eslint-plugin-playwright",
+        "eslint-plugin-react",
+        "eslint-plugin-react-hooks"
+      ],
+      "ignoreBinaries": [
+        "wait-on"
+      ]
+    },
+    "packages/ui": {
+      "entry": [
+        "src/**/*.stories.tsx",
+        "src/**/*.test.{ts,tsx}"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}"
+      ]
+    },
+    "registry": {
+      "entry": [
+        "blocks/*/page.tsx",
+        "blocks/**/*.stories.tsx",
+        "components/*.tsx",
+        "blocks/types.ts",
+        "components/types.ts"
+      ],
+      "project": [
+        "**/*.{ts,tsx}"
+      ]
+    },
+    "apps/docs": {
+      "entry": [
+        "src/page-export.ts",
+        "examples/*/*/index.tsx"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "examples/**/*.{ts,tsx}"
+      ],
+      "ignoreDependencies": [
+        "@brett_lamy/docstream-editor",
+        "@tiptap/.+",
+        "highlight.js",
+        "lowlight"
+      ]
+    },
+    "apps/catalog": {
+      "entry": [
+        "stories/**/*.stories.tsx",
+        ".storybook/*.{ts,tsx}"
+      ],
+      "project": [
+        "stories/**/*.{ts,tsx}"
+      ],
+      "ignoreDependencies": [
+        "highlight.js",
+        "use-sync-external-store"
+      ]
+    }
+  }
+}
