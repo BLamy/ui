@@ -1,6 +1,6 @@
 # BL UI
 
-BL UI is an iOS-flavored React component monorepo built with Nx and pnpm. It contains the component packages, demo applications, Storybook catalog, and a GitBook-style documentation app.
+BL UI is an iOS-flavored React component monorepo built with Nx and pnpm. It contains the component package, the shadcn registry, a Storybook catalog, and a GitBook-style documentation app.
 
 The core package is published as [`@brett_lamy/ui`](https://www.npmjs.com/package/@brett_lamy/ui). Install it with `npm i @brett_lamy/ui`.
 

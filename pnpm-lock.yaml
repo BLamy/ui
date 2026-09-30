@@ -233,21 +233,6 @@ importers:
         specifier: 1.6.0
         version: 1.6.0(react@19.0.0)
 
-  apps/chat:
-    dependencies:
-      '@brett_lamy/registry':
-        specifier: workspace:*
-        version: link:../../registry
-      '@brett_lamy/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-
-  apps/contacts:
-    dependencies:
-      '@brett_lamy/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-
   apps/docs:
     dependencies:
       '@brett_lamy/docstream':
@@ -295,21 +280,6 @@ importers:
       lowlight:
         specifier: 3.3.0
         version: 3.3.0
-
-  apps/pencil:
-    dependencies:
-      '@brett_lamy/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
-
-  apps/workbench-app:
-    dependencies:
-      '@brett_lamy/registry':
-        specifier: workspace:*
-        version: link:../../registry
-      '@brett_lamy/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
 
   packages/ui:
     dependencies:
