@@ -25,8 +25,8 @@ import { useFocusRing } from 'react-aria/useFocusRing';
 import { mergeProps } from 'react-aria/mergeProps';
 import { Extension } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
-import { Button, ToggleButton, type ButtonProps } from '../../lib/workbench/press';
-import { cn, wbPress } from '../../lib/workbench/util';
+import { PlainButton as Button, PlainToggleButton as ToggleButton, type PlainButtonProps as ButtonProps } from '../plain-button';
+import { cn, pressable } from '../../lib/utils';
 import { Icon, type IconName } from '../../lib/icon';
 import { WbPopover } from './wb-popover';
 import { looksLikeMarkdown, insertMarkdown } from '../markdown-editor';
@@ -45,7 +45,7 @@ import {
   videoPoster,
   type ComposerAttachmentKind,
 } from './composer-files';
-import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '../../lib/workbench/motion';
+import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '../../lib/motion';
 import { useSheetDrag, type SheetDragState } from '../../lib/sheet-drag';
 import { TextMorph } from '../text-morph';
 import { themeScopeProps } from '../../lib/theme';
@@ -781,7 +781,7 @@ function playShape(root: HTMLElement | null, snap: ShapeSnapshot) {
 
 /* ── FAB ── */
 export const composerFabVariants = cva([
-  wbPress,
+  pressable,
   'z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-border bg-card p-0 text-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,black_45%,transparent),0_2px_8px_color-mix(in_srgb,black_14%,transparent)] outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
 ]);
 
@@ -1039,7 +1039,7 @@ export function ComposerCard({ size, dropZone = true, dropLabel, className, ref,
           aria-hidden={!folded || undefined}
           excludeFromTabOrder={!folded}
           onPress={fab.restore}
-          className={cn(wbPress, 'absolute inset-0 z-3 grid cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60')}
+          className={cn(pressable, 'absolute inset-0 z-3 grid cursor-pointer place-items-center rounded-[inherit] border-0 bg-transparent p-0 text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60')}
         >
           {fab.icon ?? <Icon name="square-pencil" size={21} sw={1.9} />}
         </Button>
@@ -1122,7 +1122,7 @@ export function ComposerText({
 
 /* ── Buttons ── */
 export const composerButtonVariants = cva(
-  cn(wbPress, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-ios outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60'),
+  cn(pressable, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-ios outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60'),
   {
     variants: {
       variant: {
@@ -1327,7 +1327,7 @@ export function ComposerStop({ variant = 'ring', forceMount, className, ...props
     ) : (
       <Button
         data-slot="composer-stop"
-        className={cn(wbPress, 'relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-foreground', className)}
+        className={cn(pressable, 'relative grid size-[30px] cursor-pointer place-items-center border-0 bg-transparent text-foreground', className)}
         onPress={stop}
         aria-label="Stop"
         {...props}
@@ -1377,7 +1377,7 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
       isDisabled={stopping ? false : !canSend || streaming}
       onPress={stopping ? stop : send}
       className={cn(
-        wbPress,
+        pressable,
         'relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-ios text-white outline-none data-disabled:cursor-default data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
         '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
         !stopping ? 'bg-primary data-disabled:opacity-35' : stopVariant === 'solid' ? 'bg-destructive' : 'bg-transparent text-foreground',
@@ -1483,7 +1483,7 @@ export function ComposerExpand({ className }: { className?: string }) {
     <ToggleButton
       data-slot="composer-expand"
       className={cn(
-        wbPress,
+        pressable,
         'absolute top-[7px] right-2 z-2 grid size-7 cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent p-0 text-muted-foreground hover:bg-secondary!',
         // Compact: fades out of the way rather than vanishing.
         'group-data-[collapsed=compact]/composer:pointer-events-none group-data-[collapsed=compact]/composer:scale-75 group-data-[collapsed=compact]/composer:opacity-0 [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',

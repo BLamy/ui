@@ -10,7 +10,7 @@ import { Button as AriaButton } from 'react-aria-components';
 import { EdgeDrawer } from './edge-drawer';
 import { useContainerWidth } from '../lib/container';
 import { cn } from '../lib/utils';
-import { wbBrandTile } from '../lib/workbench/util';
+import { brandTile } from '../lib/utils';
 
 /** The overlay drawer's shadow (EdgeDrawer takes a CSS box-shadow). */
 const DRAWER_SHADOW = '0 0 44px rgba(0,0,0,.4)';
@@ -180,7 +180,7 @@ export function SidebarWorkspace({ name, detail, initial }: SidebarWorkspaceProp
       data-slot="sidebar-workspace"
       className={cn('flex items-center gap-2 px-0.5 pt-0 pb-1', collapsed ? 'justify-center' : 'justify-start')}
     >
-      <span className={cn(wbBrandTile, 'grid size-[26px] shrink-0 place-items-center rounded-[8px] text-[12px] font-extrabold text-white')}>
+      <span className={cn(brandTile, 'grid size-[26px] shrink-0 place-items-center rounded-[8px] text-[12px] font-extrabold text-white')}>
         {initial || (name || 'W')[0]}
       </span>
       {!collapsed && (

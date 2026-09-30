@@ -1779,6 +1779,85 @@
       }
     },
     {
+      "name": "codex-clone",
+      "type": "registry:block",
+      "title": "Codex clone",
+      "description": "A chat-and-documents workspace in the style of Codex: an icon rail and chat list (New chat, Priority for chats with replies waiting), a chat with dot — link chips and cover cards for the documents it writes, streaming replies, a composer — and a document pane with an editable Markdown page, a checklist you can tick and a section outline in its margin (ticks that open a card of headings on hover). Every chat has its own workspace: picking another switches the document pane to that chat's documents, back on the section you left, and links between documents open in place. The sidebar has two forms — with the inbox (Priority, then chats), or without it (Projects as folders of threads, then Recents) — and a project thread fills the chat and document columns with a wide transcript, a turn rail whose dashes open a card with the message and its reply, and the thread's panel (Changes, Sources). Three tiled columns on desktop; chats → chat → document as a stack on a phone. Composed from SplitView, MarkdownEditor, DropdownMenu and the Workbench icon buttons.",
+      "categories": [
+        "ai",
+        "chat",
+        "notes",
+        "application"
+      ],
+      "dependencies": [
+        "@brett_lamy/ui@^2.1.0",
+        "react-aria-components"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/codex-clone/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/page.tsx"
+        },
+        {
+          "path": "registry/blocks/codex-clone/components/rail.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/components/rail.tsx"
+        },
+        {
+          "path": "registry/blocks/codex-clone/components/dot-orb.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/components/dot-orb.tsx"
+        },
+        {
+          "path": "registry/blocks/codex-clone/components/chat-sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/components/chat-sidebar.tsx"
+        },
+        {
+          "path": "registry/blocks/codex-clone/components/chat-pane.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/components/chat-pane.tsx"
+        },
+        {
+          "path": "registry/blocks/codex-clone/components/detail-pane.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/components/detail-pane.tsx"
+        },
+        {
+          "path": "registry/blocks/codex-clone/components/doc-pane.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/components/doc-pane.tsx"
+        },
+        {
+          "path": "registry/blocks/codex-clone/components/thread-page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/components/thread-page.tsx"
+        },
+        {
+          "path": "registry/blocks/codex-clone/components/doc-outline.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/components/doc-outline.tsx"
+        },
+        {
+          "path": "registry/blocks/codex-clone/lib/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/lib/data.ts"
+        },
+        {
+          "path": "registry/blocks/codex-clone/lib/use-codex.ts",
+          "type": "registry:component",
+          "target": "components/blocks/codex-clone/lib/use-codex.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/codex-clone/page.tsx"
+      }
+    },
+    {
       "name": "discord-clone",
       "type": "registry:block",
       "title": "Discord clone",
@@ -2085,7 +2164,7 @@
       "name": "t3-clone",
       "type": "registry:block",
       "title": "T3 Code clone",
-      "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock, a surface panel (browser, terminal, files, diff, agents), and a ⌘K command palette with nested pages (new thread in a project, link pull requests, go to file, search contents, add a project from a local folder, Git URL or GitHub) plus a live theme editor. Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, conversation, terminal and surface primitives, with its own thread sidebar parts.",
+      "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock with tabs, a surface panel (browser, terminal, files, diff, agents) — every thread keeps its own terminals and panel surface, so picking another thread switches them too — and a ⌘K command palette with nested pages (new thread in a project, link pull requests, go to file, search contents, add a project from a local folder, Git URL or GitHub) plus a live theme editor. Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, conversation, terminal and surface primitives, with its own thread sidebar parts.",
       "categories": [
         "ai",
         "chat",
@@ -2127,6 +2206,11 @@
           "target": "components/blocks/t3-clone/components/surface-panel.tsx"
         },
         {
+          "path": "registry/blocks/t3-clone/components/terminal-dock.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/components/terminal-dock.tsx"
+        },
+        {
           "path": "registry/blocks/t3-clone/components/commands.tsx",
           "type": "registry:component",
           "target": "components/blocks/t3-clone/components/commands.tsx"
@@ -2150,6 +2234,11 @@
           "path": "registry/blocks/t3-clone/lib/use-threads.ts",
           "type": "registry:component",
           "target": "components/blocks/t3-clone/lib/use-threads.ts"
+        },
+        {
+          "path": "registry/blocks/t3-clone/lib/use-workspaces.ts",
+          "type": "registry:component",
+          "target": "components/blocks/t3-clone/lib/use-workspaces.ts"
         }
       ],
       "meta": {

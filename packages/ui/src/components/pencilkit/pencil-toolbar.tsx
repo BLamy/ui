@@ -4,7 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 import { PK_INKS, PK_TOOL_ICONS, PK_W, type PencilTool } from '../../lib/pencilkit/constants';
 import { Icon, type IconName } from '../../lib/icon';
-import { Button, ToggleButton, type ButtonProps } from '../../lib/workbench/press';
+import { PlainButton as Button, PlainToggleButton as ToggleButton, type PlainButtonProps as ButtonProps } from '../plain-button';
 
 /* ---------------------------------- button ---------------------------------- */
 

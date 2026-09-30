@@ -1,0 +1,20 @@
+{
+  "name": "codex-clone",
+  "title": "Codex clone",
+  "description": "A chat-and-documents workspace in the style of Codex: an icon rail and chat list (New chat, Priority for chats with replies waiting), a chat with dot — link chips and cover cards for the documents it writes, streaming replies, a composer — and a document pane with an editable Markdown page, a checklist you can tick and a section outline in its margin (ticks that open a card of headings on hover). Every chat has its own workspace: picking another switches the document pane to that chat's documents, back on the section you left, and links between documents open in place. The sidebar has two forms — with the inbox (Priority, then chats), or without it (Projects as folders of threads, then Recents) — and a project thread fills the chat and document columns with a wide transcript, a turn rail whose dashes open a card with the message and its reply, and the thread's panel (Changes, Sources). Three tiled columns on desktop; chats → chat → document as a stack on a phone. Composed from SplitView, MarkdownEditor, DropdownMenu and the Workbench icon buttons.",
+  "categories": ["ai", "chat", "notes", "application"],
+  "files": [
+    "page.tsx",
+    "components/rail.tsx",
+    "components/dot-orb.tsx",
+    "components/chat-sidebar.tsx",
+    "components/chat-pane.tsx",
+    "components/detail-pane.tsx",
+    "components/doc-pane.tsx",
+    "components/thread-page.tsx",
+    "components/doc-outline.tsx",
+    "lib/data.ts",
+    "lib/use-codex.ts"
+  ],
+  "dependencies": ["react-aria-components"]
+}

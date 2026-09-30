@@ -19,8 +19,8 @@ import {
 import { cva } from 'class-variance-authority';
 import { AnimatePresence, motion } from 'framer-motion';
 import { direction, springs } from '../../lib/motion';
-import { Button } from '../../lib/workbench/press';
-import { cn } from '../../lib/workbench/util';
+import { PlainButton as Button } from '../plain-button';
+import { cn } from '../../lib/utils';
 import { Icon } from '../../lib/icon';
 import { WbPopover } from './wb-popover';
 import { ComposerButton, ComposerPillLabel } from './composer';

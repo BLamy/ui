@@ -5,7 +5,7 @@ import {
   useSlottedContext,
   type PopoverProps as AriaPopoverProps,
 } from 'react-aria-components';
-import { cn } from '../../lib/workbench/util';
+import { cn } from '../../lib/utils';
 import { readThemeVars } from '../../lib/theme';
 
 /* ══ WbPopover — a react-aria Popover that keeps the surface's palette ══

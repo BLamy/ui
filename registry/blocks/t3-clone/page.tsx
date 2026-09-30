@@ -1,14 +1,9 @@
 import { useState } from 'react';
 import {
   SURFACES,
-  TerminalAction,
-  TerminalBody,
-  TerminalHeader,
   Toaster,
   WorkbenchAction,
   WorkbenchActions,
-  WorkbenchDock,
-  WorkbenchDockClose,
   WorkbenchDockTrigger,
   WorkbenchHeader,
   WorkbenchMain,
@@ -27,9 +22,11 @@ import {
 import { AppSidebar } from './components/app-sidebar';
 import { Commands, type PaletteState } from './components/commands';
 import { SurfacePanel } from './components/surface-panel';
+import { TerminalDock } from './components/terminal-dock';
 import { ThreadView } from './components/thread-view';
-import { PROJECTS, TERMINAL_SEED, TINTS, type Project } from './lib/data';
+import { PROJECTS, TINTS, type Project } from './lib/data';
 import { useThreads } from './lib/use-threads';
+import { DRAFT, useWorkspaces } from './lib/use-workspaces';
 
 export interface T3CloneProps {
   tint?: string;
@@ -37,7 +34,7 @@ export interface T3CloneProps {
   appearance?: Appearance;
   /** terminal dock: unset opens it at desktop widths, `false` keeps it closed */
   terminal?: boolean;
-  /** surface open in the right panel */
+  /** surface open in the right panel of the first thread (each sample thread has its own); `null` shows the picker */
   surface?: SurfaceKind | null;
   /** open the ⌘K palette on mount, optionally on a page (['projects'], ['add-project']) */
   palette?: boolean | string[];
@@ -45,13 +42,16 @@ export interface T3CloneProps {
 
 /**
  * T3 Code clone — thread sidebar · conversation · terminal dock · surface panel, and a ⌘K command palette.
+ * Each thread brings its own terminals and panel surface: picking another thread switches all three.
  * Desktop docks everything; tablet slides the panel over as a drawer; phones get a hamburger sidebar,
  * a bottom tab bar for surfaces, and the terminal in a snap sheet.
  */
-export default function T3Clone({ tint, appearance, terminal, surface: initialSurface = null, palette }: T3CloneProps) {
-  const threads = useThreads();
-  const [surface, setSurface] = useState<SurfaceKind | null>(initialSurface);
-  const [file, setFile] = useState('cookbook/src/App.tsx');
+export default function T3Clone({ tint, appearance, terminal, surface: initialSurface, palette }: T3CloneProps) {
+  const workspaces = useWorkspaces(initialSurface);
+  const threads = useThreads('t1', { onCreate: workspaces.adopt, onNew: workspaces.resetDraft });
+  // A thread that doesn't exist yet keeps its terminals and panel under DRAFT until its first message.
+  const threadKey = threads.current?.id ?? DRAFT;
+  const workspace = workspaces.of(threadKey);
   const [projects, setProjects] = useState<Project[]>(PROJECTS);
   const [project, setProject] = useState(PROJECTS[0].name);
   const [look, setLook] = useState<Appearance | undefined>(appearance);
@@ -87,19 +87,12 @@ export default function T3Clone({ tint, appearance, terminal, surface: initialSu
 
         <ThreadView state={threads} />
 
-        <WorkbenchDock>
-          <TerminalHeader title={`zsh — ${project}`}>
-            <TerminalAction icon="rectangle-split" label="Split terminal" />
-            <TerminalAction icon="plus" label="New terminal" />
-            <WorkbenchDockClose />
-          </TerminalHeader>
-          <TerminalBody seed={TERMINAL_SEED} />
-        </WorkbenchDock>
+        <TerminalDock threadKey={threadKey} workspace={workspace} />
       </WorkbenchMain>
 
-      <SurfacePanel surface={surface} onSurface={setSurface} file={file} />
+      <SurfacePanel threadKey={threadKey} workspace={workspace} />
 
-      <WorkbenchTabBar value={surface} onValueChange={(k) => setSurface(k as SurfaceKind)}>
+      <WorkbenchTabBar value={workspace.surface} onValueChange={(k) => workspace.setSurface(k as SurfaceKind)}>
         <WorkbenchTab id="chat" icon="bubble-left">
           Chat
         </WorkbenchTab>
@@ -125,8 +118,8 @@ export default function T3Clone({ tint, appearance, terminal, surface: initialSu
           setProject(p.name);
         }}
         onOpenFile={(path) => {
-          setFile(path);
-          setSurface('files');
+          workspace.setFile(path);
+          workspace.setSurface('files');
         }}
         onAppearance={setLook}
         tint={accent ?? TINTS[0]}

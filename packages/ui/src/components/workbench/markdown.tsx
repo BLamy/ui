@@ -3,7 +3,7 @@ import { GitbookStreamdown } from '@brett_lamy/docstream/streamdown';
 import { DocstreamRefContext, type DocstreamRefContextValue } from '@brett_lamy/docstream/reference';
 import type { ReferenceNode } from '@brett_lamy/docstream/gitbook';
 import '@brett_lamy/docstream/styles.css';
-import { cn } from '../../lib/workbench/util';
+import { cn } from '../../lib/utils';
 
 // Hosts handle chip clicks through MarkdownView props — no direct docstream import needed.
 export { DocstreamRefContext };

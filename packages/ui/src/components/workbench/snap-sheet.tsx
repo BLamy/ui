@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { animate, motion, useMotionValue, useTransform, type AnimationPlaybackControls } from 'framer-motion';
-import { cn } from '../../lib/workbench/util';
-import { prefersReducedMotion, springs } from '../../lib/workbench/motion';
+import { cn } from '../../lib/utils';
+import { prefersReducedMotion, springs } from '../../lib/motion';
 
 /* ══ SnapSheet — vaul-style bottom drawer (drag handle, snap points, velocity release) ══
    The panel's offset is a spring-driven motion value: it rises in on open, follows the finger one-to-one

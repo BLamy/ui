@@ -1,4 +1,4 @@
-import type { SurfaceAgent, SurfaceDiffFile, TermLine } from '@brett_lamy/ui';
+import type { SurfaceAgent, SurfaceDiffFile, SurfaceKind, TermLine } from '@brett_lamy/ui';
 
 /* Sample workspace for the T3 Code clone. Swap these for your agent backend. */
 
@@ -162,6 +162,109 @@ export const TERMINAL_SEED: TermLine[] = [
   { t: '  ➜  Local:   http://localhost:3000/', c: '#8AB4FF' },
   { t: '  ➜  Network: http://192.168.1.24:3000/', c: '#8AB4FF' },
 ];
+
+/* ── Per-thread workspace ──
+   A thread owns more than its messages: the terminals open beside it and the surface (browser, files, diff…)
+   showing in the right panel. Switching threads switches all of it. */
+
+export interface TerminalSession {
+  id: string;
+  title: string;
+  /** scrollback, kept here so a session survives thread switches and is shared by the dock and the panel */
+  lines: TermLine[];
+}
+export interface ThreadWorkspace {
+  terminals: TerminalSession[];
+  /** id of the terminal showing */
+  terminal: string;
+  /** surface open in the right panel; `null` shows the picker */
+  surface: SurfaceKind | null;
+  /** file selected in the Files surface */
+  file: string;
+}
+
+const G = '#7EE0B8';
+const B = '#8AB4FF';
+const R = '#FF8A80';
+const devServer = (name: string, port: number, pid: number): TermLine[] => [
+  { t: `nohup npm run dev --prefix ${name} > ${name}.log 2>&1 &`, p: true },
+  { t: `[1] ${pid}` },
+  { t: `tail -f ${name}.log`, p: true },
+  { t: '  VITE v6.0.3  ready in 388 ms', c: G },
+  { t: `  ➜  Local:   http://localhost:${port}/`, c: B },
+  { t: '  [vite] hot updated: /src/App.tsx' },
+];
+
+/** A shell with nothing in it yet: what a new thread — or a new terminal — starts with. */
+export const blankTerminal = (id: string, title = 'zsh'): TerminalSession => ({ id, title, lines: [] });
+export const blankWorkspace = (): ThreadWorkspace => ({ terminals: [blankTerminal('term-1')], terminal: 'term-1', surface: null, file: 'cookbook/src/App.tsx' });
+
+/** What each sample thread had open: its own terminals, surface and file. Threads not listed start blank. */
+export const WORKSPACES: Record<string, ThreadWorkspace> = {
+  t1: {
+    terminals: [{ id: 't1-dev', title: 'zsh — cookbook', lines: TERMINAL_SEED }],
+    terminal: 't1-dev',
+    surface: null,
+    file: 'cookbook/src/App.tsx',
+  },
+  t2: {
+    terminals: [
+      {
+        id: 't2-zsh',
+        title: 'zsh — index',
+        lines: [
+          { t: 'rg -n "selection" src/components/IndexBar.tsx', p: true },
+          { t: '41:  Haptics.selection()' },
+          { t: '58:  // one selection tick per letter change' },
+          { t: 'git status -s', p: true },
+          { t: ' M src/components/IndexBar.tsx', c: G },
+          { t: ' M src/haptics.ts', c: G },
+        ],
+      },
+      {
+        id: 't2-test',
+        title: 'vitest',
+        lines: [
+          { t: 'npx vitest run index-bar', p: true },
+          { t: ' ✓ IndexBar › ticks once per letter change (12ms)', c: G },
+          { t: ' ✓ IndexBar › debounces repeat ticks (9ms)', c: G },
+          { t: ' ✗ IndexBar › keyboard scrub does not tick twice', c: R },
+          { t: '' },
+          { t: ' Tests  2 passed | 1 failed (3)' },
+        ],
+      },
+    ],
+    terminal: 't2-zsh',
+    surface: 'diff',
+    file: 'cookbook/src/haptics.ts',
+  },
+  t3: {
+    terminals: [
+      {
+        id: 't3-sb',
+        title: 'storybook',
+        lines: [
+          { t: 'pnpm storybook', p: true },
+          { t: '  Storybook 10.5 started', c: G },
+          { t: '  Local:   http://localhost:6006/', c: B },
+          { t: '  ✓ Credenza/HeightMorph compiled in 1.2s' },
+        ],
+      },
+    ],
+    terminal: 't3-sb',
+    surface: 'files',
+    file: 'cookbook/src/components/Credenza.tsx',
+  },
+  t4: {
+    terminals: [
+      { id: 't4-zsh', title: 'zsh — split-view', lines: [{ t: 'rg -n "breakpoint" packages/ui/src/components/split-view.tsx', p: true }, { t: '112:  wc: SplitViewWidthClass' }] },
+      { id: 't4-web', title: 'docs :4417', lines: devServer('docs', 4417, 8121) },
+    ],
+    terminal: 't4-zsh',
+    surface: 'browser',
+    file: 'cookbook/src/App.tsx',
+  },
+};
 
 export const FILES = [
   'cookbook/src/components/Credenza.tsx',

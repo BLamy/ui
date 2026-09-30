@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { animate, type AnimationPlaybackControls } from 'framer-motion';
 import { springs, type SpringName } from './motion';
-import { prefersReducedMotion } from './workbench/motion';
+import { prefersReducedMotion } from './motion';
 
 const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 

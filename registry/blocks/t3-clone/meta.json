@@ -1,7 +1,7 @@
 {
   "name": "t3-clone",
   "title": "T3 Code clone",
-  "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock, a surface panel (browser, terminal, files, diff, agents), and a ⌘K command palette with nested pages (new thread in a project, link pull requests, go to file, search contents, add a project from a local folder, Git URL or GitHub) plus a live theme editor. Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, conversation, terminal and surface primitives, with its own thread sidebar parts.",
+  "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock with tabs, a surface panel (browser, terminal, files, diff, agents) — every thread keeps its own terminals and panel surface, so picking another thread switches them too — and a ⌘K command palette with nested pages (new thread in a project, link pull requests, go to file, search contents, add a project from a local folder, Git URL or GitHub) plus a live theme editor. Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, conversation, terminal and surface primitives, with its own thread sidebar parts.",
   "categories": ["ai", "chat", "ide", "application"],
   "files": [
     "page.tsx",
@@ -9,11 +9,13 @@
     "components/thread-sidebar.tsx",
     "components/thread-view.tsx",
     "components/surface-panel.tsx",
+    "components/terminal-dock.tsx",
     "components/commands.tsx",
     "components/command-palette.tsx",
     "components/theme-editor.tsx",
     "lib/data.ts",
-    "lib/use-threads.ts"
+    "lib/use-threads.ts",
+    "lib/use-workspaces.ts"
   ],
   "dependencies": ["framer-motion", "react-aria-components"]
 }

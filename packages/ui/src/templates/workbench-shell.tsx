@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { ToggleButtonGroup } from 'react-aria-components';
 import { AdaptivePane, type AdaptivePaneMode } from '../components/adaptive-pane';
 import { useContainerWidth } from '../lib/container';
-import { cn, wbPress } from '../lib/workbench/util';
-import { IconBtn } from '../lib/workbench/icons';
+import { cn, pressable } from '../lib/utils';
+import { IconButton } from '../components/icon-button';
 import { Icon, type IconName } from '../lib/icon';
-import { ToggleButton } from '../lib/workbench/press';
+import { PlainToggleButton as ToggleButton } from '../components/plain-button';
 import type { Appearance } from '../lib/theme';
 import { useWorkbenchAppearance, WorkbenchAppearanceProvider } from '../lib/workbench/theme';
 import { themeScopeProps, ThemeScope } from '../lib/theme';
@@ -213,7 +213,7 @@ export function WorkbenchSidebarTrigger({ onPress, className, style }: TriggerPr
   const shell = useOptionalWorkbenchShell();
   const compact = !!shell?.compact;
   return (
-    <IconBtn
+    <IconButton
       name={compact ? 'line-3-horizontal' : 'sidebar-left'}
       label={compact ? 'Menu' : 'Toggle sidebar'}
       active={!compact && shell ? !shell.sidebarOpen : false}
@@ -231,7 +231,7 @@ export function WorkbenchSidebarClose({ onPress, className, style }: TriggerProp
   const shell = useOptionalWorkbenchShell();
   if (!shell?.compact) return null;
   return (
-    <IconBtn name="xmark-large" label="Close sidebar" className={cn('ml-auto', className)} style={style} onPress={onPress ?? (() => shell.setSidebarOpen(false))} />
+    <IconButton name="xmark-large" label="Close sidebar" className={cn('ml-auto', className)} style={style} onPress={onPress ?? (() => shell.setSidebarOpen(false))} />
   );
 }
 
@@ -289,7 +289,7 @@ export function WorkbenchActions({ className, children }: { className?: string; 
 /** A header icon button that thumps like the rest of the chrome. */
 export function WorkbenchAction({ icon, label, onPress, active, className }: { icon: IconName | (string & {}); label: string; onPress?: () => void; active?: boolean; className?: string }) {
   return (
-    <IconBtn
+    <IconButton
       name={icon}
       label={label}
       active={active}
@@ -374,7 +374,7 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
 export function WorkbenchDockTrigger({ onPress, className, style }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
   return (
-    <IconBtn
+    <IconButton
       name="panel-bottom"
       label="Toggle terminal"
       active={!!shell?.dockOpen}
@@ -391,7 +391,7 @@ export function WorkbenchDockTrigger({ onPress, className, style }: TriggerProps
 export function WorkbenchDockClose({ icon = 'bin', label = 'Close terminal', size = 15, onPress, className }: TriggerProps & { icon?: IconName | (string & {}); label?: string; size?: number }) {
   const shell = useOptionalWorkbenchShell();
   return (
-    <IconBtn
+    <IconButton
       name={icon}
       label={label}
       size={size}
@@ -451,7 +451,7 @@ export function WorkbenchPanelTrigger({ onPress, className, style }: TriggerProp
   const shell = useOptionalWorkbenchShell();
   if (shell?.compact) return null;
   return (
-    <IconBtn
+    <IconButton
       name="sidebar-right"
       label="Toggle right panel"
       active={!!shell?.panelOpen}
@@ -490,7 +490,7 @@ export function WorkbenchPanelFullscreen({ active, onPress, className }: Trigger
   if (shell?.compact) return null;
   const full = active ?? !!shell?.panelFullscreen;
   return (
-    <IconBtn
+    <IconButton
       name={full ? 'arrows-collapse' : 'arrows-expand'}
       label={full ? 'Exit full screen' : 'Full screen'}
       size={16}
@@ -507,7 +507,7 @@ export function WorkbenchPanelFullscreen({ active, onPress, className }: Trigger
 export function WorkbenchPanelClose({ onPress, className }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
   return (
-    <IconBtn
+    <IconButton
       name="xmark-large"
       label="Close panel"
       size={16}
@@ -568,7 +568,7 @@ export function WorkbenchTab({ id, icon, className, children }: { id: string; ic
     <ToggleButton
       id={id}
       className={cn(
-        wbPress, 'flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-tertiary-foreground data-selected:text-primary',
+        pressable, 'flex min-h-[50px] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-[3px] border-0 bg-transparent pt-[7px] pb-1.5 text-tertiary-foreground data-selected:text-primary',
         className,
       )}
       onPress={() => {

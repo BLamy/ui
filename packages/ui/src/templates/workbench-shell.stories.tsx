@@ -53,7 +53,7 @@ import {
   SurfaceTerminal,
   type SurfaceKind,
 } from '../components/workbench/surfaces';
-import { IconBtn } from '../lib/workbench/icons';
+import { IconButton } from '../components/icon-button';
 import { AGENTS, DIFF, FILES, SUGGESTIONS, TERMINAL_SEED, THREADS, type Thread } from '../components/workbench/fixtures';
 import '../styles.css';
 
@@ -206,7 +206,7 @@ function ShellDemo({
         <WorkbenchPanel>
           <WorkbenchPanelHeader>
             <WorkbenchPanelTitle icon={surfaceMeta?.icon}>{surfaceMeta?.name ?? 'Surfaces'}</WorkbenchPanelTitle>
-            {surfaceMeta ? <IconBtn name="chevron-down-wide" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
+            {surfaceMeta ? <IconButton name="chevron-down-wide" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
             <WorkbenchPanelFullscreen />
             <WorkbenchPanelClose />
           </WorkbenchPanelHeader>

@@ -4,8 +4,8 @@ import { SnapSheet } from './snap-sheet';
 import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
 import { WorkbenchTheme } from '../../lib/workbench/theme';
 import { ThemeScope } from '../../lib/theme';
-import { Button } from '../../lib/workbench/press';
-import { cn, wbPress } from '../../lib/workbench/util';
+import { PlainButton as Button } from '../plain-button';
+import { cn, pressable } from '../../lib/utils';
 import { TERMINAL_SEED } from './fixtures';
 import '../../styles.css';
 
@@ -28,7 +28,7 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
           <div>
             <div className="mb-3.5">compact-width terminal presentation</div>
             <Button
-              className={cn(wbPress, 'cursor-pointer rounded-[9px] border-0 bg-primary px-4 py-[9px] text-[13px] font-semibold text-primary-foreground')}
+              className={cn(pressable, 'cursor-pointer rounded-[9px] border-0 bg-primary px-4 py-[9px] text-[13px] font-semibold text-primary-foreground')}
               onPress={() => setOpen(true)}
             >
               Open terminal drawer

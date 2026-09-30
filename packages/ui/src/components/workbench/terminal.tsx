@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { cn } from '../../lib/workbench/util';
-import { IconBtn } from '../../lib/workbench/icons';
+import { cn } from '../../lib/utils';
+import { IconButton } from '../icon-button';
 import { Icon, type IconName } from '../../lib/icon';
 
 /* ══ Terminal parts ══
@@ -46,8 +46,11 @@ export function fakeShell(cmd: string, files: string[]): TermLine[] | 'CLEAR' {
 export const TERM_FILES = ['package.json', 'src', 'blui.jsx', 'workbench.jsx', 'vite.config.js'];
 
 export interface TerminalBodyProps {
-  /** lines already in the scrollback */
+  /** lines already in the scrollback (uncontrolled) */
   seed?: TermLine[];
+  /** the scrollback, controlled — keep it in your own state to preserve a session across remounts and thread switches */
+  lines?: TermLine[];
+  onLinesChange?: (lines: TermLine[]) => void;
   /** runs a command; return lines to print, or `'CLEAR'`. Defaults to the demo `fakeShell`. */
   run?: (cmd: string) => TermLine[] | 'CLEAR';
   /** prompt: `user cwd %` */
@@ -58,8 +61,9 @@ export interface TerminalBodyProps {
   style?: React.CSSProperties;
 }
 /** A tiny interactive shell: scrollback, prompt, input. */
-export function TerminalBody({ seed, run: runProp, user = 'dev@workbench', cwd = 'cookbook', autoFocus, className, style }: TerminalBodyProps) {
-  const [hist, setHist] = useState<TermLine[]>(seed || []);
+export function TerminalBody({ seed, lines, onLinesChange, run: runProp, user = 'dev@workbench', cwd = 'cookbook', autoFocus, className, style }: TerminalBodyProps) {
+  const [own, setOwn] = useState<TermLine[]>(seed || []);
+  const hist = lines ?? own;
   const [val, setVal] = useState('');
   const sc = useRef<HTMLDivElement>(null),
     inp = useRef<HTMLInputElement>(null);
@@ -74,8 +78,9 @@ export function TerminalBody({ seed, run: runProp, user = 'dev@workbench', cwd =
   );
   const run = () => {
     const out = runProp ? runProp(val) : fakeShell(val, TERM_FILES);
-    if (out === 'CLEAR') setHist([]);
-    else setHist((h) => [...h, { t: val, p: true }, ...out]);
+    const next = out === 'CLEAR' ? [] : [...hist, { t: val, p: true }, ...out];
+    if (lines === undefined) setOwn(next);
+    onLinesChange?.(next);
     setVal('');
   };
   return (
@@ -146,7 +151,7 @@ export function TerminalHeader({ title = 'zsh', children, className, style }: Te
 
 export function TerminalAction({ icon, label, onPress, className }: { icon: IconName | (string & {}); label: string; onPress?: () => void; className?: string }) {
   return (
-    <IconBtn
+    <IconButton
       name={icon}
       label={label}
       size={15}

@@ -3,9 +3,10 @@ import { REPLIES, THREADS, type Thread } from './data';
 
 /**
  * Thread state plus a fake agent that streams canned replies word by word.
- * Replace `send` with a call to your agent backend.
+ * Replace `send` with a call to your agent backend. `onCreate` runs with the id of a thread the first
+ * message creates; `onNew` when the user starts a fresh one.
  */
-export function useThreads(initial: string | null = 't1') {
+export function useThreads(initial: string | null = 't1', { onCreate, onNew }: { onCreate?: (id: string) => void; onNew?: () => void } = {}) {
   const [threads, setThreads] = useState<Thread[]>(THREADS);
   const [currentId, setCurrentId] = useState<string | null>(initial);
   const [live, setLive] = useState<{ thread: string; message: string } | null>(null);
@@ -32,6 +33,7 @@ export function useThreads(initial: string | null = 't1') {
       const title = (text || 'Image').length > 44 ? (text || 'Image').slice(0, 42) + '…' : text || 'Image';
       setThreads((ts) => [{ id: id as string, title, age: 'now', settled: false, messages: [] }, ...ts]);
       setCurrentId(id);
+      onCreate?.(id);
     }
     const tid = id;
     const mid = 'a' + now;
@@ -63,7 +65,10 @@ export function useThreads(initial: string | null = 't1') {
     threads,
     current,
     select: setCurrentId,
-    newThread: () => setCurrentId(null),
+    newThread: () => {
+      setCurrentId(null);
+      onNew?.();
+    },
     streaming: !!current && live?.thread === current.id,
     send,
     stop,

@@ -1,9 +1,10 @@
 import './styles.css';
 
 // lib
-export { cn, FONT, EASE, BARH } from './lib/utils';
+export { cn, FONT, EASE, BARH, pressable, brandTile } from './lib/utils';
 export {
   loadMotion, useMotion, springs, springCss, direction, useDirection, fades, useSpringTransition, useReducedMotion, type SpringName,
+  prefersReducedMotion, flipSnapshot, flipPlay, type FlipSnapshot,
 } from './lib/motion';
 export { TextMorph } from './components/text-morph';
 export type { TextMorphProps } from './components/text-morph';
@@ -185,7 +186,8 @@ export {
   WorkbenchTheme,
   type WorkbenchThemeProps,
 } from './lib/workbench/theme';
-export { IconBtn, iconBtnVariants, type IconBtnProps } from './lib/workbench/icons';
+export { IconButton, iconButtonVariants, type IconButtonProps } from './components/icon-button';
+export { PlainButton, PlainToggleButton, type PlainButtonProps, type PlainToggleButtonProps } from './components/plain-button';
 export {
   MarkdownView,
   FbMd,

@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { Button } from '../../lib/workbench/press';
-import { cn, wbPress } from '../../lib/workbench/util';
+import { PlainButton as Button } from '../plain-button';
+import { cn, pressable } from '../../lib/utils';
 import { Icon } from '../../lib/icon';
 import { AnimatePresence, animate, motion, type AnimationPlaybackControls } from 'framer-motion';
-import { prefersReducedMotion, springs } from '../../lib/workbench/motion';
+import { prefersReducedMotion, springs } from '../../lib/motion';
 
 /* ══ MessageScroller — shadcn message-scroller semantics ══
    Anchors new turns near the top (peek of the previous item), follows the live edge only while the
@@ -263,7 +263,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
           >
             <Button
               data-slot="message-scroller-jump"
-              className={cn(wbPress, 'flex cursor-pointer items-center overflow-hidden rounded-[99px] border border-border bg-card p-[7px] text-[12.5px] font-semibold text-foreground shadow-[0_4px_16px_black] shadow-black/8 dark:shadow-black/35')}
+              className={cn(pressable, 'flex cursor-pointer items-center overflow-hidden rounded-[99px] border border-border bg-card p-[7px] text-[12.5px] font-semibold text-foreground shadow-[0_4px_16px_black] shadow-black/8 dark:shadow-black/35')}
               onPress={() => {
                 toEnd(true);
               }}

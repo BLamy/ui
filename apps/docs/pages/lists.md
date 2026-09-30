@@ -243,11 +243,25 @@ Pass no `items` (or an empty array) and the same component renders A-Z. Place it
 />
 ```
 
+Two ways to read a wave rail. With `preview`s, hovering a dash opens a card for that stop — a turn's title, its `preview` (`previewLines`, `previewWidth`) and a `trailing` glyph at the end of the title line. With `panel`, hovering the rail opens one card listing every stop as an outline (`panelTitle` on top, `level` nesting the stops, `value` marked); picking a row jumps like a dash does.
+
+```tsx
+<IndexBar
+  variant="wave"
+  side="left"
+  panel
+  panelTitle="Your Personal Scratchpad"
+  items={headings.map((h) => ({ key: h.id, caption: h.text, level: h.depth }))}
+  value={sectionInView}
+  onJump={(id) => scrollTo(id)}
+/>
+```
+
 ### Props
 
 | Prop | Type | Notes |
 | --- | --- | --- |
-| `items` | `(K \| {key?: K, label?, preview?, caption?, dim?})[]` | `K` is `string \| number`; primitive items are shorthand stops |
+| `items` | `(K \| {key?: K, label?, preview?, caption?, dim?, level?, trailing?})[]` | `K` is `string \| number`; primitive items are shorthand stops |
 | `onJump` | `(key: K, item, index) => void` | Fired on pointer or keyboard commit without coercing the key |
 | `avail` / `onLetter` | `Set<string>` / `(letter) => void` | Used only by the alphabet fallback |
 | `top` / `bottom` / `width` | `number \| string` / `number` | Rail sizing inside its positioned parent |
@@ -255,6 +269,8 @@ Pass no `items` (or an empty array) and the same component renders A-Z. Place it
 | `variant` | `'default' \| 'wave'` | `wave` renders dashes that swell around the pointer, with a title + preview card |
 | `side` | `'left' \| 'right'` | Edge the rail sits on (default `right`); previews open on the inner side |
 | `value` | `K` | Current stop; the wave draws it full length in the tint |
+| `panel` / `panelTitle` | `boolean` / `ReactNode` | `wave` only: hover opens a card listing every stop (an outline) instead of one stop's preview; the rail's listbox stays the accessible path |
+| `previewLines` / `previewWidth` | `number` / `number` | `wave` preview card: lines of `preview` (default 2) and its maximum width in px (default 260) |
 | `insetContent` | `boolean` | Default `true`: a right-side rail publishes how far list rows run under it as `--bl-index-bar-inset` on its parent (its width for an edge-to-edge list, little or nothing for inset-grouped cards), and `ListRow`s under that parent widen their trailing inset by it so chevrons and accessories stay clear of the rail |
 
 ### Interaction and accessibility

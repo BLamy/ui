@@ -21,7 +21,7 @@ import {
   WorkbenchTabBar,
   WorkbenchTab,
 } from '../../templates/workbench-shell';
-import { IconBtn } from '../../lib/workbench/icons';
+import { IconButton } from '../icon-button';
 import { WorkbenchTheme } from '../../lib/workbench/theme';
 import { AGENTS, DIFF, FILES } from './fixtures';
 import '../../styles.css';
@@ -51,7 +51,7 @@ function PanelDemo({ initial, full: initialFull = false, compact }: { initial: S
     <WorkbenchPanel>
       <WorkbenchPanelHeader>
         <WorkbenchPanelTitle icon={meta?.icon}>{meta ? meta.name : 'Surfaces'}</WorkbenchPanelTitle>
-        {meta ? <IconBtn name="chevron-down-wide" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
+        {meta ? <IconButton name="chevron-down-wide" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
         {!compact ? <WorkbenchPanelFullscreen active={full} onPress={() => setFull(!full)} /> : null}
         <WorkbenchPanelClose onPress={() => setKind(null)} />
       </WorkbenchPanelHeader>

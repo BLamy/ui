@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { IconBtn, cn, type Appearance } from '@brett_lamy/ui';
+import { IconButton, cn, type Appearance } from '@brett_lamy/ui';
 import { TINTS } from '../lib/data';
 
 /** A small floating card ("Toggle theme editor" / ⌥⇧⌘T): appearance and accent, applied live. */
@@ -44,7 +44,7 @@ export function ThemeEditor({
     >
       <div className="mb-2.5 flex items-center justify-between">
         <span className="font-semibold">Theme</span>
-        <IconBtn name="xmark-large" label="Close theme editor" size={12} onPress={onClose} />
+        <IconButton name="xmark-large" label="Close theme editor" size={12} onPress={onClose} />
       </div>
       <div className="mb-3 grid grid-cols-2 gap-1 rounded-[9px] bg-secondary p-0.5">
         {(['light', 'dark'] as const).map((a) => (

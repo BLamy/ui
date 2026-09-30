@@ -130,7 +130,7 @@ Widths are measured on the shell's own box (`useContainerWidth` → `workbenchWi
 
 | Part | Role |
 | --- | --- |
-| `TerminalHeader` · `TerminalAction` · `TerminalBody` | Session bar with actions, and a small interactive shell (`seed`, `run`, `user`, `cwd`). |
+| `TerminalHeader` · `TerminalAction` · `TerminalBody` | Session bar with actions, and a small interactive shell (`seed`, or `lines` + `onLinesChange` to own the scrollback, `run`, `user`, `cwd`). |
 | `SurfacePicker` | The panel's empty state: a card per surface. |
 | `SurfaceBrowser` · `SurfaceAppPreview` | URL bar over a page well, and a placeholder page. |
 | `SurfaceFiles` | A `@pierre/trees` file tree (`paths`, `selected`). |
@@ -178,7 +178,7 @@ A new thread is a `Conversation` with `empty`: the greeting, the composer centre
 
 ## Terminal
 
-`TerminalBody` is a tiny echo shell for demos — `ls`, `pwd`, `echo`, `whoami`, `npm run dev`, `clear`, `help` — or pass `run` to drive it yourself. Click into it and type:
+`TerminalBody` is a tiny echo shell for demos — `ls`, `pwd`, `echo`, `whoami`, `npm run dev`, `clear`, `help` — or pass `run` to drive it yourself. Hold the scrollback in your own state (`lines` / `onLinesChange`) to keep a session alive across remounts — the `t3-clone` block keeps one set of terminals per thread this way. Click into it and type:
 
 {% demo src="workbench-shell/terminal" %}
 

@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { cva } from 'class-variance-authority';
-import { Button } from './press';
-import { cn, wbPress } from './util';
-import { Icon, type IconName } from '../icon';
+import { PlainButton } from './plain-button';
+import { cn, pressable } from '../lib/utils';
+import { Icon, type IconName } from '../lib/icon';
 
 /** Square icon button: transparent until hovered, filled while `active`. */
-export const iconBtnVariants = cva(cn(wbPress, 'grid cursor-pointer place-items-center rounded-[7px] border-0 p-[5px] hover:bg-secondary!'), {
+export const iconButtonVariants = cva(cn(pressable, 'grid cursor-pointer place-items-center rounded-[7px] border-0 p-[5px] hover:bg-secondary!'), {
   variants: {
     active: {
       true: 'bg-secondary text-foreground',
@@ -15,7 +15,7 @@ export const iconBtnVariants = cva(cn(wbPress, 'grid cursor-pointer place-items-
   defaultVariants: { active: false },
 });
 
-export interface IconBtnProps {
+export interface IconButtonProps {
   /** An `Icon` name. */
   name: IconName | (string & {});
   label: string;
@@ -26,17 +26,17 @@ export interface IconBtnProps {
   className?: string;
   style?: React.CSSProperties;
 }
-export function IconBtn({ name, label, onPress, size, active, className, style }: IconBtnProps) {
+export function IconButton({ name, label, onPress, size, active, className, style }: IconButtonProps) {
   return (
-    <Button
-      data-slot="icon-btn"
-      className={cn(iconBtnVariants({ active: !!active }), className)}
+    <PlainButton
+      data-slot="icon-button"
+      className={cn(iconButtonVariants({ active: !!active }), className)}
       onPress={onPress}
       aria-label={label}
       title={label}
       style={style}
     >
       <Icon name={name} size={size || 18} sw={1.7} />
-    </Button>
+    </PlainButton>
   );
 }
