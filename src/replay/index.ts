@@ -1,9 +1,14 @@
-export { ReplayEmbed, ReplayPreview } from './ReplayPreview';
+export { ReplayEmbed, ReplayPreview, formatReplayTime } from './ReplayPreview';
 export type {
+  ReplayChrome,
   ReplayEventsSource,
   ReplayEventsUrlSource,
   ReplayPageSource,
+  ReplayPlayerOptions,
+  ReplayPreviewEventsProps,
+  ReplayPreviewHandle,
   ReplayPreviewProps,
+  ReplayPreviewSourceProps,
   ReplaySource,
 } from './ReplayPreview';
 export { ReplayStage, preloadReplayStage } from './ReplayStage';

@@ -1,6 +1,6 @@
 /* The headless rrweb stage: mounts rrweb's Replayer, fits the recorded viewport into its box
    and exposes an imperative handle, with no controls of its own. Loaded on demand through
-   `ReplayStage` (and by `NativeReplay`), so rrweb and its stylesheet stay out of the eager graph. */
+   `ReplayStage`, so rrweb and its stylesheet stay out of the eager graph. */
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Replayer } from 'rrweb'

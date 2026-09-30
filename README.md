@@ -130,14 +130,41 @@ chrome-free `/p/...` route automatically:
 {% embed url="https://loop-qa.replay.io/projects/project-id/journeys/journey-id" /%}
 ```
 
-The replay component is also available directly when a document needs a
-custom source or native rrweb events:
+The replay component is also available directly. `ReplayPreview` takes either
+`events` (an rrweb recording you hold: the full player) or `source` (a page URL, an
+event array, or an events endpoint):
 
 ```tsx
 import { ReplayPreview } from "@brett_lamy/docstream"
 
 <ReplayPreview source="https://loop-qa.replay.io/projects/project-id/tasks/task-id" />
+<ReplayPreview events={events} initialTime={6400} />
 ```
+
+The player is a browser frame (URL bar that follows the recording's navigations),
+a page-shaped poster until it is ready, play/pause, a scrubber with the recording's
+moments on a rail above it (clicks, console errors, failed requests, navigations,
+custom events; press one to jump), speed, fullscreen, and a drawn cursor whose clicks
+ripple. Keys work inside the player: Space/K, ←/→ (5 s), J/L (10 s), `<`/`>` speed,
+F fullscreen, Home/End. `chrome` is `"browser"` (default), `"minimal"` or `"none"`;
+`controls={false}` with `chrome="none"` is a still frame of the page at `initialTime`.
+`playerRef` gives `{ play, pause, seek, toggle, getCurrentTime }`. Other props: `url`,
+`title`, `trafficLights`, `autoplay`, `loop`, `speeds`, `markers`, `markerKinds`,
+`cursor`, `fit` (`"width"` | `"contain"`), `poster`, `lazy`, `onTimeUpdate`,
+`onPlayingChange`, `onMarkerPress`, `className`, `style`. `formatReplayTime(ms)` gives
+`m:ss`. `replayDemoEvents` (a small synthetic recording) is exported from
+`@brett_lamy/docstream/replay/demo`, outside the main entry.
+
+The player is styled by `styles.css` in plain CSS, inside the `docstream.replay` cascade
+layer and under zero-specificity `:where()` selectors, so your own rules (and utility
+classes such as `w-full` or `pointer-events-none`) override it; if your utilities layer
+is declared earlier than this stylesheet, put `@layer docstream.replay;` before it.
+Colors come from the shadcn-style tokens `--card`, `--background`, `--foreground`,
+`--muted`, `--muted-foreground`, `--border`, `--primary`, `--ring`, `--destructive`,
+`--success`, `--warning` and `--tertiary-foreground`, each with a neutral fallback.
+Parts are addressable as `[data-slot="replay-preview"]` (with `data-state`
+`loading | paused | playing` and `data-chrome`), `-bar`, `-stage`, `-poster`, `-pointer`,
+`-controls`, `-scrubber` and `-markers`.
 
 rrweb (and its stylesheet) is imported only by the lazily loaded player chunk, so pages
 that only embed Loop QA URLs never download it. To build custom player chrome, use
@@ -639,7 +666,7 @@ You can also resolve paths yourself with `resolveAsset`.
 - `GitbookStreamdown`: Parses and renders markdown for read-only stream output.
 - `DocsRenderer`: Renders a parsed `DocumentNode`.
 - `MarkdownContent`: Parses and renders a markdown string.
-- `ReplayPreview` / `ReplayEmbed`: Embeds public Loop QA pages or plays CORS-enabled rrweb event data.
+- `ReplayPreview` / `ReplayEmbed`: A session-replay player for rrweb `events`, or an embed of public Loop QA pages / CORS-enabled event data via `source`.
 - `VideoEmbed`: Renders direct video assets or hosted video players.
 - `OpenApiOperation`: Renders a parsed OpenAPI operation block.
 - `SourcePreview`: Imports and renders a mounted component or CSF story export.

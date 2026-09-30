@@ -2343,95 +2343,585 @@
   }
 }
 
-/* Replay embeds (ReplayPreview / ReplayEmbed). Part of the one package stylesheet so no
-   module imports CSS on the eager path: the root entry stays importable from Node
-   (SSR, vitest) without a CSS loader. */
-.replay-preview {
-  width: 100%;
-  min-width: 0;
-  color: var(--replay-preview-fg, #e5e7eb);
-  background: var(--replay-preview-bg, #0f172a);
-  border: 1px solid var(--replay-preview-border, rgba(148, 163, 184, 0.28));
-  border-radius: 12px;
-  overflow: hidden;
+/* ReplayPreview / ReplayEmbed: the session-replay player and its iframe embed. Part of the one package
+   stylesheet so no module imports CSS on the eager path: the root entry stays importable from Node
+   (SSR, vitest) without a CSS loader.
+
+   Everything sits in the `docstream.replay` cascade layer and under `:where()`, so a host's own rules win:
+   unlayered CSS always does, and Tailwind-style utilities (`w-full`, `pointer-events-none`, `h-full`) do as
+   long as their layer is declared after this one. If your utilities layer comes earlier in the layer order,
+   put `@layer docstream.replay;` before it. Colors read the shadcn-style tokens below and fall back to
+   neutral values: --card --background --foreground --muted --muted-foreground --border --primary --ring
+   --destructive --success --warning --tertiary-foreground. The root sets `--replay-ar` (recorded aspect
+   ratio) on the stage; the page and overlay run in recorded-viewport pixels with `--replay-scale` set. */
+@layer docstream.replay {
+  :where([data-slot="replay-preview"]) {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
+    outline: none;
+    color: var(--foreground, #18181b);
+    background: var(--card, #ffffff);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  :where([data-slot="replay-preview"] *, [data-slot="replay-preview"] *::before, [data-slot="replay-preview"] *::after) {
+    box-sizing: border-box;
+  }
+
+  :where([data-slot="replay-preview"][data-chrome="browser"]) {
+    border: 1px solid var(--border, #e4e4e7);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 18px 40px -18px rgba(0, 0, 0, 0.28);
+  }
+
+  :where([data-slot="replay-preview"][data-chrome="minimal"]) {
+    border: 1px solid var(--border, #e4e4e7);
+    border-radius: 12px;
+  }
+
+  :where([data-slot="replay-preview"][data-fit="contain"]) {
+    height: 100%;
+  }
+
+  :where([data-slot="replay-preview"][data-fullscreen]) {
+    border: 0;
+    border-radius: 0;
+  }
+
+  /* ── browser bar ─────────────────────────────────────────────── */
+  :where([data-slot="replay-preview-bar"]) {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 12px;
+    height: 40px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border, #e4e4e7);
+    background: color-mix(in srgb, var(--muted, #f4f4f5) 60%, transparent);
+  }
+
+  :where([data-slot="replay-preview-lights"]) {
+    display: flex;
+    flex-shrink: 0;
+    gap: 7px;
+  }
+
+  :where([data-slot="replay-preview-lights"] > span) {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--light);
+    box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+  }
+
+  :where([data-slot="replay-preview-lights-spacer"]) {
+    flex-shrink: 0;
+    width: 47px;
+  }
+
+  :where([data-slot="replay-preview-address"]) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    max-width: 460px;
+    min-width: 0;
+    height: 26px;
+    margin-inline: auto;
+    padding: 0 10px;
+    border-radius: 7px;
+    background: var(--background, #ffffff);
+    box-shadow: inset 0 0 0 1px var(--border, #e4e4e7);
+    font-size: 12px;
+  }
+
+  :where([data-slot="replay-preview-lock"]) {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 12px;
+    height: 12px;
+    color: var(--tertiary-foreground, #a1a1aa);
+  }
+
+  :where([data-slot="replay-preview-url"]) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :where([data-slot="replay-preview-url"] > :first-child) {
+    color: var(--foreground, #18181b);
+  }
+
+  :where([data-slot="replay-preview-url"] > :last-child) {
+    color: var(--muted-foreground, #71717a);
+  }
+
+  :where([data-slot="replay-preview-spinner"]) {
+    width: 11px;
+    height: 11px;
+    border: 1.5px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: docstream-replay-spin 0.7s linear infinite;
+  }
+
+  /* ── stage: the page, its poster, the pointer overlay ────────── */
+  :where([data-slot="replay-preview-stage"]) {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    aspect-ratio: var(--replay-ar, 16 / 9);
+    background: var(--muted, #f4f4f5);
+  }
+
+  :where([data-slot="replay-preview"][data-fit="contain"] > [data-slot="replay-preview-stage"]) {
+    flex: 1 1 0%;
+    aspect-ratio: auto;
+  }
+
+  /* ReplayStage sets its own inline size and position; the stage box overrides them to fill the frame. */
+  [data-slot="replay-preview-stage"] > .replay-preview__page {
+    position: absolute !important;
+    inset: 0 !important;
+  }
+
+  :where([data-slot="replay-preview-pointer"]) {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  :where([data-slot="replay-preview-ripple"]) {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    transform-origin: center;
+    border: 2px solid var(--primary, #4f46e5);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--primary, #4f46e5) 20%, transparent);
+  }
+
+  :where([data-slot="replay-preview-cursor"]) {
+    position: absolute;
+    transform-origin: top left;
+    filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
+  }
+
+  :where([data-slot="replay-preview-poster"]) {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    transition: opacity 0.22s ease-out;
+  }
+
+  :where([data-slot="replay-preview-poster"][data-leaving]) {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  :where([data-slot="replay-preview-skeleton"]) {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6%;
+    width: 100%;
+    height: 100%;
+    padding: 4%;
+    background: var(--background, #ffffff);
+  }
+
+  :where([data-slot="replay-preview-skeleton"] i) {
+    display: block;
+    height: 5%;
+    min-height: 8px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--muted-foreground, #71717a) 16%, transparent);
+    animation: docstream-replay-pulse 1.6s ease-in-out infinite;
+  }
+
+  :where([data-slot="replay-preview-skeleton"] i[data-tone="block"]) {
+    border-radius: 8px;
+    min-height: 12px;
+  }
+
+  :where([data-slot="replay-preview-skeleton"] [data-part="header"]) {
+    display: flex;
+    align-items: center;
+    gap: 3%;
+  }
+
+  :where([data-slot="replay-preview-skeleton"] [data-part="header"] > span) {
+    flex: 1;
+  }
+
+  :where([data-slot="replay-preview-skeleton"] [data-part="hero"]) {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  :where([data-slot="replay-preview-skeleton"] [data-part="hero"] i) {
+    min-height: 0;
+  }
+
+  :where([data-slot="replay-preview-skeleton"] [data-part="grid"]) {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2.5%;
+  }
+
+  :where([data-slot="replay-preview-skeleton"] [data-part="grid"] i) {
+    height: 70%;
+  }
+
+  :where([data-slot="replay-preview-skeleton"] [data-part="empty"]) {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  :where([data-slot="replay-preview-skeleton"] [data-part="empty"] > span) {
+    padding: 6px 12px;
+    border-radius: 999px;
+    color: var(--muted-foreground, #71717a);
+    background: var(--card, #ffffff);
+    box-shadow: 0 0 0 1px var(--border, #e4e4e7), 0 4px 16px rgba(0, 0, 0, 0.08);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+
+  /* ── the big play button ─────────────────────────────────────── */
+  :where([data-slot="replay-preview-center"]) {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+    scale: 1.15;
+    transition: opacity 0.16s ease-out, scale 0.2s ease-out, visibility 0s linear 0.2s;
+  }
+
+  :where([data-slot="replay-preview-center"][data-show]) {
+    visibility: visible;
+    opacity: 1;
+    scale: 1;
+    transition: opacity 0.2s ease-out, scale 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s;
+  }
+
+  :where([data-slot="replay-preview-center"] > button) {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    outline: none;
+    cursor: pointer;
+    pointer-events: auto;
+    appearance: none;
+    color: var(--background, #ffffff);
+    background: color-mix(in srgb, var(--foreground, #18181b) 72%, transparent);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    transition: scale 0.16s ease-out;
+  }
+
+  :where([data-slot="replay-preview-center"] > button:hover) {
+    scale: 1.05;
+  }
+
+  :where([data-slot="replay-preview-center"] > button:active) {
+    scale: 0.95;
+  }
+
+  :where([data-slot="replay-preview-center"] > button > svg) {
+    translate: 1px 0;
+  }
+
+  /* ── controls ────────────────────────────────────────────────── */
+  :where([data-slot="replay-preview-controls"]) {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 4px;
+    height: 44px;
+    padding: 0 6px;
+    border-top: 1px solid var(--border, #e4e4e7);
+    background: var(--card, #ffffff);
+  }
+
+  :where([data-slot="replay-preview-controls"] button) {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    height: 32px;
+    min-width: 32px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    color: var(--foreground, #18181b);
+    background: transparent;
+    font: inherit;
+    transition: background-color 0.12s ease-out;
+  }
+
+  :where([data-slot="replay-preview-controls"] button:hover:not(:disabled)) {
+    background: color-mix(in srgb, var(--foreground, #18181b) 8%, transparent);
+  }
+
+  :where([data-slot="replay-preview-controls"] button:disabled) {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  :where([data-slot="replay-preview-controls"] button:focus-visible) {
+    box-shadow: 0 0 0 2px var(--ring, #6366f1);
+  }
+
+  :where([data-slot="replay-preview-speed"]) {
+    height: 28px;
+    min-width: 42px;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  :where([data-slot="replay-preview-time"]) {
+    flex-shrink: 0;
+    width: 74px;
+    color: var(--muted-foreground, #71717a);
+    font-size: 11.5px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  :where([data-slot="replay-preview-time"] > span) {
+    color: var(--foreground, #18181b);
+  }
+
+  /* ── scrubber: a native range, with the markers' rail above it ─
+     (the thumb and track pseudo-elements can't sit inside :where(); the layer still lets hosts win) */
+  :where([data-slot="replay-preview-scrubber"]) {
+    position: relative;
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    justify-content: center;
+    align-self: stretch;
+    min-width: 0;
+    padding-inline: 4px;
+  }
+
+  :where([data-slot="replay-preview-markers"]) {
+    position: absolute;
+    inset-inline: 4px;
+    top: 13px;
+    height: 10px;
+    margin-inline: 6px;
+  }
+
+  :where([data-slot="replay-preview-scrubber"][data-markers] > input) {
+    transform: translateY(5px);
+  }
+
+  :where([data-slot="replay-preview-markers"] > button) {
+    position: absolute;
+    top: 50%;
+    box-sizing: border-box;
+    width: 8px;
+    height: 8px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background: var(--success, #22c55e);
+    box-shadow: 0 0 0 2px var(--card, #ffffff);
+    translate: -50% -50%;
+    transition: scale 0.16s ease-out;
+  }
+
+  :where([data-slot="replay-preview-markers"] > button:hover:not(:disabled)) {
+    scale: 1.5;
+  }
+
+  :where([data-slot="replay-preview-markers"] > button[data-kind="click"]) {
+    width: 3px;
+    height: 8px;
+    border-radius: 1.5px;
+    background: var(--tertiary-foreground, #a1a1aa);
+    box-shadow: none;
+  }
+
+  :where([data-slot="replay-preview-markers"] > button[data-kind="error"]) {
+    background: var(--destructive, #ef4444);
+  }
+
+  :where([data-slot="replay-preview-markers"] > button[data-kind="network"]) {
+    background: var(--warning, #f59e0b);
+  }
+
+  :where([data-slot="replay-preview-markers"] > button[data-kind="navigation"]) {
+    background: var(--primary, #4f46e5);
+  }
+
+  :where([data-slot="replay-preview-markers"] > button:focus-visible) {
+    box-shadow: 0 0 0 2px var(--card, #ffffff), 0 0 0 4px var(--ring, #6366f1);
+  }
+
+  :where([data-slot="replay-preview-scrubber"] > input[type="range"]) {
+    --replay-track: 4px;
+    --replay-thumb: 12px;
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    height: 20px;
+    margin: 0;
+    padding: 0;
+    outline: none;
+    cursor: pointer;
+    background: transparent;
+  }
+
+  :where([data-slot="replay-preview-scrubber"] > input[type="range"]:disabled) {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  [data-slot="replay-preview-scrubber"] > input[type="range"]::-webkit-slider-runnable-track {
+    height: var(--replay-track);
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      var(--primary, #4f46e5) var(--replay-progress, 0%),
+      color-mix(in srgb, var(--muted-foreground, #71717a) 26%, transparent) var(--replay-progress, 0%)
+    );
+  }
+
+  [data-slot="replay-preview-scrubber"] > input[type="range"]::-moz-range-track {
+    height: var(--replay-track);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--muted-foreground, #71717a) 26%, transparent);
+  }
+
+  [data-slot="replay-preview-scrubber"] > input[type="range"]::-moz-range-progress {
+    height: var(--replay-track);
+    border-radius: 999px;
+    background: var(--primary, #4f46e5);
+  }
+
+  [data-slot="replay-preview-scrubber"] > input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: var(--replay-thumb);
+    height: var(--replay-thumb);
+    margin-top: calc((var(--replay-track) - var(--replay-thumb)) / 2);
+    border: 0;
+    border-radius: 50%;
+    background: var(--primary, #4f46e5);
+    box-shadow: 0 0 0 2px var(--card, #ffffff), 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  [data-slot="replay-preview-scrubber"] > input[type="range"]::-moz-range-thumb {
+    width: var(--replay-thumb);
+    height: var(--replay-thumb);
+    border: 0;
+    border-radius: 50%;
+    background: var(--primary, #4f46e5);
+    box-shadow: 0 0 0 2px var(--card, #ffffff), 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  [data-slot="replay-preview-scrubber"] > input[type="range"]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 2px var(--card, #ffffff), 0 0 0 4px var(--ring, #6366f1);
+  }
+
+  [data-slot="replay-preview-scrubber"] > input[type="range"]:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 2px var(--card, #ffffff), 0 0 0 4px var(--ring, #6366f1);
+  }
+
+  /* ── iframe embeds (a public Loop QA page) and their notes ───── */
+  :where(.replay-preview__frame) {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: var(--background, #ffffff);
+  }
+
+  :where(.replay-preview__invalid, .replay-preview__empty, .replay-preview__error) {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: var(--muted-foreground, #71717a);
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  :where(.replay-preview__invalid) {
+    color: var(--primary, #4f46e5);
+  }
+
+  :where(.replay-preview__error) {
+    color: var(--destructive, #ef4444);
+  }
 }
 
-.replay-preview__frame {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border: 0;
-  background: #0f172a;
+@keyframes docstream-replay-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.replay-preview__invalid,
-.replay-preview__empty,
-.replay-preview__error {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 140px;
-  padding: 20px;
-  color: var(--replay-preview-muted, #94a3b8);
-  font: 13px/1.5 ui-sans-serif, system-ui, sans-serif;
-  text-align: center;
+@keyframes docstream-replay-pulse {
+  50% {
+    opacity: 0.55;
+  }
 }
 
-.replay-preview__invalid {
-  color: var(--replay-preview-link, #7dd3fc);
-}
+@media (prefers-reduced-motion: reduce) {
+  @layer docstream.replay {
+    :where([data-slot="replay-preview"] *) {
+      animation: none !important;
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+    }
 
-.replay-preview__error {
-  color: #fda4af;
-}
-
-.replay-preview__native {
-  width: 100%;
-  background: #0f172a;
-}
-
-.replay-preview__stage {
-  position: relative;
-  width: 100%;
-  min-height: 160px;
-  overflow: hidden;
-  background: #020617;
-}
-
-.replay-preview__scaler {
-  position: absolute;
-  inset: 0 auto auto 0;
-}
-
-.replay-preview__player {
-  position: relative;
-  overflow: hidden;
-}
-
-.replay-preview__controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-top: 1px solid rgba(148, 163, 184, 0.2);
-  background: #111827;
-  font: 12px/1.2 ui-sans-serif, system-ui, sans-serif;
-}
-
-.replay-preview__controls button,
-.replay-preview__controls select {
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  border-radius: 6px;
-  padding: 5px 8px;
-  color: inherit;
-  background: #1e293b;
-  cursor: pointer;
-}
-
-.replay-preview__controls input[type='range'] {
-  min-width: 60px;
-  flex: 1;
-  accent-color: #38bdf8;
+    :where([data-slot="replay-preview-center"]) {
+      scale: 1;
+    }
+  }
 }
 
 /* Keep every rendered table variant flush, after the shared block spacing rules. */

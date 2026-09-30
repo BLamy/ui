@@ -1,6 +1,6 @@
 /* rrweb's event shape and the numeric enums the replay helpers read, declared locally so the
    eager replay modules (and their published declarations) never import rrweb. rrweb is
-   lazy: only the player chunk (`ReplayStageImpl` / `NativeReplay`) imports it, so pages that
+   lazy: only the player chunk (`ReplayStageImpl`) imports it, so pages that
    never play native events never download it. */
 
 /** One recorded rrweb event. rrweb's own `eventWithTime` is assignable to it. */

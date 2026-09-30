@@ -42,7 +42,8 @@ The package ships TypeScript source with subpath exports so hosts only pull what
 | \`@brett_lamy/docstream/streamdown\` | \`GitbookStreamdown\` plus the few helpers it needs. |
 | \`@brett_lamy/docstream/assets\` | \`setAssetBase\` / \`resolveAsset\`. |
 | \`@brett_lamy/docstream/openapi\` | \`OpenApiOperation\`. |
-| \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, the headless \`ReplayStage\`, marker/pointer helpers, URL helpers, source types. |
+| \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, \`formatReplayTime\`, the headless \`ReplayStage\`, marker/pointer helpers, URL helpers, source types. |
+| \`@brett_lamy/docstream/replay/demo\` | \`replayDemoEvents\`, a small synthetic rrweb recording. |
 | \`@brett_lamy/docstream/video\` | \`VideoEmbed\`. |
 | \`@brett_lamy/docstream/playground\` | Live React demos (\`PlaygroundStreamdown\`, \`ReactDemo\`, almost-node runtime + helpers). Needs \`@agent-wasm/core\`. |
 | \`@brett_lamy/docstream/viz\` | \`VizEmbed\`. Needs \`@brett_lamy/viz-engine\`. |
@@ -199,27 +200,35 @@ Renders a direct media file (\`.mp4\` / \`.webm\` / \`.ogg\`, detected by extens
 
 ## ReplayPreview / ReplayEmbed
 
-Embeds session replays. \`ReplayEmbed\` is a semantic alias of \`ReplayPreview\`. The component accepts several source shapes via the \`source\` prop:
+Session replays in a browser frame. \`ReplayEmbed\` is a semantic alias of \`ReplayPreview\`. Pass either \`events\` (an rrweb recording you hold) or \`source\`, which accepts several shapes:
 
 | \`ReplaySource\` shape | Behavior |
 | --- | --- |
 | \`string\` | Treated as a page URL; rendered as an iframe of the public embed route. |
-| \`ReplayEvent[]\` | In-memory rrweb events, played natively with the built-in player. |
+| \`ReplayEvent[]\` | In-memory rrweb events, played with the built-in player. |
 | \`{ kind: "url", url, title? }\` | Explicit page-URL source (iframe). |
-| \`{ kind: "events", events }\` | Explicit rrweb event source (native player). |
-| \`{ kind: "events-url", url, fetchInit? }\` | Fetches a JSON event array (or \`{ events }\`) then plays natively. |
+| \`{ kind: "events", events }\` | Explicit rrweb event source (player). |
+| \`{ kind: "events-url", url, fetchInit? }\` | Fetches a JSON event array (or \`{ events }\`) then plays it. |
 
 | Prop | Type | Default | Purpose |
 | --- | --- | --- | --- |
-| \`source\` | \`ReplaySource\` | — | Required, see above. |
+| \`events\` / \`source\` | \`ReplayEvent[]\` / \`ReplaySource\` | — | One of the two is required. |
+| \`chrome\` | \`"browser" / "minimal" / "none"\` | \`"browser"\` (\`"minimal"\` for iframes) | Window with URL bar, a card, or no frame. |
+| \`controls\` | \`boolean\` | \`true\` | Play/pause, scrubber, speed and fullscreen. |
+| \`markers\` / \`markerKinds\` | \`boolean / ReplayMarker[]\` / \`ReplayMarkerKind[]\` | \`true\` / all | The scrubber rail; \`true\` reads it from the recording. |
+| \`cursor\` | \`boolean\` | \`true\` | Draw the recorded pointer and click ripples. |
+| \`url\` / \`trafficLights\` | \`string\` / \`boolean\` | recording's / \`true\` | Address in the URL bar; the window buttons. |
+| \`initialTime\` | \`number\` | \`0\` | Where the player starts (ms). |
+| \`autoplay\` / \`loop\` | \`boolean\` | \`false\` | Start on load; restart when finished. |
+| \`speeds\` | \`number[]\` | \`[1, 2, 4, 0.5]\` | What the speed button cycles through. |
+| \`fit\` | \`"width" / "contain"\` | \`"width"\` | The page sets the height, or fills a sized frame. |
+| \`poster\` / \`lazy\` | \`ReactNode\` / \`boolean\` | skeleton / \`true\` | Shown until ready; mount only near the viewport. |
+| \`playerRef\` | \`Ref<ReplayPreviewHandle>\` | — | \`play\`, \`pause\`, \`seek\`, \`toggle\`, \`getCurrentTime\`. |
+| \`onTimeUpdate\` / \`onPlayingChange\` / \`onMarkerPress\` | callbacks | — | Playhead (ms), play state, a pressed marker. |
 | \`active\` | \`boolean\` | \`true\` | When false, renders an inert placeholder (defer mounting rrweb). |
-| \`autoplay\` | \`boolean\` | \`false\` | Native playback starts automatically. |
-| \`loop\` | \`boolean\` | \`false\` | Restart when finished. |
-| \`speeds\` | \`number[]\` | \`[0.5, 1, 2, 4, 8]\` | Playback speed options. |
-| \`title\` | \`string\` | — | iframe title. |
-| \`className\` | \`string\` | — | Appended to \`replay-preview\`. |
+| \`title\` / \`className\` / \`style\` | | — | Accessible name / iframe title; appended to \`replay-preview\`. |
 
-The native player sanitizes events (\`sanitizeReplayEvent\` is exported from \`@brett_lamy/docstream/replay\`), skips idle periods over 5 s, scales to fit, and offers play/pause, restart, scrubbing, and speed selection.
+Keys inside the player: Space/K, ←/→ (5 s), J/L (10 s), \`<\`/\`>\` speed, F fullscreen, Home/End. The player sanitizes events (\`sanitizeReplayEvent\` is exported from \`@brett_lamy/docstream/replay\`), skips idle periods over 5 s and scales to fit. It is plain CSS in the \`docstream.replay\` layer (zero-specificity, so your classes win) reading the shadcn-style tokens \`--card\`, \`--background\`, \`--foreground\`, \`--muted\`, \`--muted-foreground\`, \`--border\`, \`--primary\`, \`--ring\`, \`--destructive\`, \`--success\`, \`--warning\`, \`--tertiary-foreground\` with fallbacks. \`formatReplayTime(ms)\` formats \`m:ss\`; \`replayDemoEvents\` (a small synthetic recording) lives at \`@brett_lamy/docstream/replay/demo\`.
 
 ### Headless stage and timeline helpers
 

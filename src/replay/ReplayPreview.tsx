@@ -1,6 +1,11 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { BrowserBar, ReplayPlayer } from './ReplayPlayer';
+import type { ReplayPlayerOptions, ReplayPreviewHandle } from './ReplayPlayer';
 import type { ReplayEvent } from './types';
 import { normalizeReplayEmbedUrl } from './url';
+
+export { formatReplayTime } from './ReplayPlayer';
+export type { ReplayChrome, ReplayPlayerOptions, ReplayPreviewHandle } from './ReplayPlayer';
 
 export interface ReplayPageSource {
   kind: 'url';
@@ -26,21 +31,25 @@ export type ReplaySource =
   | ReplayEventsSource
   | ReplayEventsUrlSource;
 
-export interface ReplayPreviewProps {
-  /** A public Loop QA URL, a public event endpoint, or an in-memory rrweb event list. */
-  source: ReplaySource;
-  /** Avoid mounting the rrweb player until the editor block is visible. */
+interface ReplayPreviewCommon extends ReplayPlayerOptions {
+  /** Keep the player unmounted (a placeholder frame) until true, e.g. until an editor block is visible. */
   active?: boolean;
-  /** Public-page embeds default to lazy loading; native rrweb playback defaults to paused. */
-  autoplay?: boolean;
-  loop?: boolean;
-  className?: string;
-  title?: string;
-  /** Playback speed options mirror the Loop QA player. */
-  speeds?: number[];
 }
 
-const DEFAULT_SPEEDS = [0.5, 1, 2, 4, 8];
+/** Play an rrweb recording you already hold. */
+export interface ReplayPreviewEventsProps extends ReplayPreviewCommon {
+  events: ReplayEvent[];
+  source?: undefined;
+}
+
+/** Embed a public Loop QA URL, a public event endpoint, or an in-memory rrweb event list. */
+export interface ReplayPreviewSourceProps extends ReplayPreviewCommon {
+  source: ReplaySource;
+  events?: undefined;
+}
+
+/** Pass `events` (the player API) or `source` (the embed API): both render the same player. */
+export type ReplayPreviewProps = ReplayPreviewEventsProps | ReplayPreviewSourceProps;
 
 function sourcePage(source: ReplaySource): ReplayPageSource | null {
   if (typeof source === 'string') return { kind: 'url', url: source };
@@ -59,50 +68,64 @@ function sourceEventsUrl(source: ReplaySource): ReplayEventsUrlSource | null {
   return source.kind === 'events-url' ? source : null;
 }
 
-function ReplayFrame({ source, title }: { source: ReplayPageSource; title?: string }) {
-  const url = normalizeReplayEmbedUrl(source.url);
-  if (!url) {
-    return (
-      <a className="replay-preview__invalid" href={source.url} target="_blank" rel="noreferrer">
-        Open replay
-      </a>
-    );
-  }
-  return (
-    <iframe
-      className="replay-preview__frame"
-      src={url}
-      title={title ?? source.title ?? 'Replay preview'}
-      loading="lazy"
-      allow="autoplay; fullscreen"
-      allowFullScreen
-      referrerPolicy="strict-origin-when-cross-origin"
-    />
-  );
-}
-
-// rrweb (and its stylesheet) load on first use of an event-based source.
-const LazyNativeReplay = lazy(() => import('./NativeReplay'));
-
-function NativeReplay(props: { events: ReplayEvent[]; autoplay?: boolean; loop?: boolean; speeds?: number[] }) {
-  return (
-    <Suspense fallback={<div className="replay-preview__empty">Loading replay…</div>}>
-      <LazyNativeReplay {...props} />
-    </Suspense>
-  );
-}
-
-function RemoteReplay({
-  source,
-  autoplay,
-  loop,
-  speeds,
+/** The frame around a non-player body (an iframe, a loading or error note): same root, same chrome hooks. */
+function Frame({
+  kind, chrome, className, title, href, trafficLights = true, ar, style, children,
 }: {
-  source: ReplayEventsUrlSource;
-  autoplay?: boolean;
-  loop?: boolean;
-  speeds?: number[];
+  kind: string;
+  chrome: NonNullable<ReplayPlayerOptions['chrome']>;
+  className?: string;
+  title?: string;
+  href?: string;
+  trafficLights?: boolean;
+  ar?: string;
+  style?: CSSProperties;
+  children: ReactNode;
 }) {
+  return (
+    <div
+      className={className ? `replay-preview ${className}` : 'replay-preview'}
+      data-slot="replay-preview"
+      data-replay-preview={kind}
+      data-chrome={chrome}
+      data-fit="width"
+      style={style}
+      {...(title ? { role: 'group', 'aria-label': title } : null)}
+    >
+      {chrome === 'browser' ? <BrowserBar href={href ?? ''} trafficLights={trafficLights} loading={false} /> : null}
+      <div data-slot="replay-preview-stage" style={ar ? ({ '--replay-ar': ar } as CSSProperties) : undefined}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ReplayFrame({
+  source, title, chrome = 'minimal', className, style, trafficLights,
+}: { source: ReplayPageSource } & Pick<ReplayPlayerOptions, 'title' | 'chrome' | 'className' | 'style' | 'trafficLights'>) {
+  const url = normalizeReplayEmbedUrl(source.url);
+  return (
+    <Frame kind="iframe" chrome={chrome} className={className} style={style} href={url ?? source.url} trafficLights={trafficLights} ar="16 / 9">
+      {url ? (
+        <iframe
+          className="replay-preview__frame"
+          src={url}
+          title={title ?? source.title ?? 'Replay preview'}
+          loading="lazy"
+          allow="autoplay; fullscreen"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      ) : (
+        <a className="replay-preview__invalid" href={source.url} target="_blank" rel="noreferrer">
+          Open replay
+        </a>
+      )}
+    </Frame>
+  );
+}
+
+function RemoteReplay({ source, options }: { source: ReplayEventsUrlSource; options: ReplayPlayerOptions }) {
   const [events, setEvents] = useState<ReplayEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -130,48 +153,51 @@ function RemoteReplay({
     return () => controller.abort();
   }, [source.url, source.fetchInit]);
 
-  if (error) return <div className="replay-preview__error" role="alert">{error}</div>;
-  if (!events) return <div className="replay-preview__empty">Loading replay…</div>;
-  return <NativeReplay events={events} autoplay={autoplay} loop={loop} speeds={speeds} />;
+  if (events) return <ReplayPlayer {...options} events={events} />;
+  return (
+    <Frame kind="rrweb" chrome={options.chrome ?? 'browser'} className={options.className} style={options.style} href={options.url} trafficLights={options.trafficLights} ar="16 / 9">
+      {error ? (
+        <div className="replay-preview__error" role="alert">{error}</div>
+      ) : (
+        <div className="replay-preview__empty">Loading replay…</div>
+      )}
+    </Frame>
+  );
 }
 
-export function ReplayPreview({
-  source,
-  active = true,
-  autoplay = false,
-  loop = false,
-  className,
-  title,
-  speeds = DEFAULT_SPEEDS,
-}: ReplayPreviewProps) {
-  if (!active) return <div className={`replay-preview ${className ?? ''}`.trim()} data-replay-preview="paused" />;
+/**
+ * A session replay in a browser frame. Pass `events` (an rrweb recording) to play it with the full player:
+ * URL bar, poster, scrubber with markers, pointer overlay, keyboard map, fullscreen. Or pass `source` (a
+ * public Loop QA URL, an events URL, or an event list), which renders the same player, or an iframe for
+ * page URLs. rrweb loads on first render of an event player, never for iframes.
+ */
+export function ReplayPreview(props: ReplayPreviewProps) {
+  const { active = true, source, events, ...options } = props;
+  const { chrome, className, style } = options;
+
+  if (!active) {
+    return (
+      <div
+        className={className ? `replay-preview ${className}` : 'replay-preview'}
+        data-slot="replay-preview"
+        data-replay-preview="paused"
+        data-chrome={chrome ?? 'minimal'}
+        style={style}
+      />
+    );
+  }
+
+  if (events) return <ReplayPlayer {...options} events={events} />;
+  if (source === undefined) return null;
 
   const page = sourcePage(source);
-  const events = sourceEvents(source);
-  const eventsUrl = sourceEventsUrl(source);
-  const rootClass = `replay-preview ${className ?? ''}`.trim();
-
   if (page) {
-    return (
-      <div className={rootClass} data-replay-preview="iframe">
-        <ReplayFrame source={page} title={title} />
-      </div>
-    );
+    return <ReplayFrame source={page} title={options.title} chrome={chrome} className={className} style={style} trafficLights={options.trafficLights} />;
   }
-  if (events) {
-    return (
-      <div className={rootClass} data-replay-preview="rrweb">
-        <NativeReplay events={events.events} autoplay={autoplay} loop={loop} speeds={speeds} />
-      </div>
-    );
-  }
-  if (eventsUrl) {
-    return (
-      <div className={rootClass} data-replay-preview="rrweb">
-        <RemoteReplay source={eventsUrl} autoplay={autoplay} loop={loop} speeds={speeds} />
-      </div>
-    );
-  }
+  const list = sourceEvents(source);
+  if (list) return <ReplayPlayer {...options} events={list.events} />;
+  const remote = sourceEventsUrl(source);
+  if (remote) return <RemoteReplay source={remote} options={options} />;
   return null;
 }
 

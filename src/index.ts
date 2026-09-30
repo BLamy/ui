@@ -68,11 +68,12 @@ export type {
 } from "./demo"
 export { CitationSources, DocstreamRefContext, InlineReference } from "./docs/reference"
 export type { CitationPreview, CitationPreviewResolver, DocstreamRefContextValue } from "./docs/reference"
-export { ReplayEmbed, ReplayPreview } from "./replay/ReplayPreview"
+export { ReplayEmbed, ReplayPreview, formatReplayTime } from "./replay/ReplayPreview"
 export type {
   ReplayEventsSource,
   ReplayEventsUrlSource,
   ReplayPageSource,
+  ReplayPreviewHandle,
   ReplayPreviewProps,
   ReplaySource,
 } from "./replay/ReplayPreview"
