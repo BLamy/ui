@@ -34,6 +34,31 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
     thread: undefined,
   });
   const [canDown, setCanDown] = useState(false);
+  // On a bump resting at its peek, only the bottom edge of the thread shows: drop the anchor spacer and sit at
+  // the live edge, so the peek is the newest reply rather than the blank room below it.
+  // (Read from the DOM: hosts portal the transcript onto the bump, so it isn't under the bump's context.)
+  const [resting, setResting] = useState(false);
+  const restingRef = useRef(resting);
+  restingRef.current = resting;
+  // The host can move the transcript onto a bump after it mounts, so look for the bump after every render.
+  const watched = useRef<{ body: Element | null; mo: MutationObserver | null }>({ body: null, mo: null });
+  useEffect(() => {
+    const body = vp.current?.closest('[data-slot="composer-bump-content"]') ?? null;
+    const w = watched.current;
+    if (body === w.body) return;
+    w.mo?.disconnect();
+    w.body = body;
+    w.mo = null;
+    if (!body || typeof MutationObserver === 'undefined') {
+      setResting(false);
+      return;
+    }
+    const read = () => setResting(body.hasAttribute('data-peeking'));
+    read();
+    w.mo = new MutationObserver(read);
+    w.mo.observe(body, { attributes: true, attributeFilter: ['data-peeking'] });
+  });
+  useEffect(() => () => watched.current.mo?.disconnect(), []);
   // Messages that arrive while the thread is open rise in; the ones it opened with are just there.
   const known = useRef<{ thread: string | null | undefined; ids: Set<string> }>({ thread: undefined, ids: new Set() });
   if (known.current.thread !== threadKey) known.current = { thread: threadKey, ids: new Set(items.map((i) => i.id)) };
@@ -70,7 +95,7 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
     let h = 0;
     const anchors = c.querySelectorAll<HTMLElement>('[data-anchor="1"]');
     const last = anchors[anchors.length - 1];
-    if (last) {
+    if (last && !restingRef.current) {
       const turnH = c.scrollHeight - s.offsetHeight - last.offsetTop;
       h = Math.max(0, el.clientHeight - peek - turnH);
     }
@@ -122,7 +147,9 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
       if (newAnchor)
         requestAnimationFrame(() => {
           layoutSpacer();
-          anchorTop(newAnchor.id, true);
+          // Peeking, the reader sees the bottom edge: follow the live edge instead of anchoring the turn.
+          if (restingRef.current) toEnd(true);
+          else anchorTop(newAnchor.id, true);
           st.current.follow = true;
         });
     }
@@ -143,6 +170,21 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
     return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const wasResting = useRef(resting);
+  useLayoutEffect(() => {
+    // Only a change of state re-lays the thread; how it opens is the thread effect's job.
+    if (wasResting.current === resting) return;
+    wasResting.current = resting;
+    layoutSpacer();
+    if (resting) {
+      toEnd(false);
+      return;
+    }
+    // Opened: back to the thread's layout, with the latest turn anchored near the top.
+    const anchors = items.filter((i) => i.anchor);
+    if (!(anchors.length && anchorTop(anchors[anchors.length - 1].id, false))) toEnd(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resting]);
   const intent = () => {
     scrollAnim.current?.stop();
     const el = vp.current;
@@ -159,7 +201,8 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
     <div data-slot="message-scroller" className={cn('relative min-h-0 flex-1', className)} style={style}>
       <div
         ref={vp}
-        className="wb-scroll absolute inset-0 overflow-y-auto overscroll-contain outline-none"
+        data-resting={resting || undefined}
+        className="wb-scroll absolute inset-0 flex flex-col overflow-y-auto overscroll-contain outline-none"
         role="region"
         aria-label="Messages"
         tabIndex={0}
@@ -177,7 +220,11 @@ export function MessageScroller({ items, streaming, threadKey, peek: peekProp, c
           role="log"
           aria-relevant="additions"
           aria-busy={!!streaming}
-          className="mx-auto box-border max-w-[780px] px-[22px] pt-4 pb-1"
+          className={cn(
+            'mx-auto box-border w-full max-w-[780px] shrink-0 px-[22px] pt-4 pb-1',
+            // Peeking, a short thread sits on the bottom edge (the part that shows), not at the top.
+            resting && 'mt-auto',
+          )}
         >
           {items.map((it) => {
             const arriving = !known.current.ids.has(it.id);
