@@ -11,7 +11,9 @@ import { evaluate, formatResult, looksLikeMath, plainResult, prettyExpression } 
 import {
   EMOJI_GROUPS, ENGINES, HOME, LABELS, REPOS, SNIPPETS, TIMERS, TRASH, descendants, nodeAt, pathOf, type Engine, type FileNode,
 } from './data';
-import { CalcGlyph, ClipGlyph, FileGlyph, Tile } from './parts';
+import { APPS as DESKTOP_APPS } from './apps';
+import { useDesktop } from './desktop';
+import { AppTile, CalcGlyph, ClipGlyph, FileGlyph, Tile } from './parts';
 import { useAlfred } from './state';
 
 const isMod = (e: KeyboardEvent) => e.metaKey || e.ctrlKey;
@@ -25,8 +27,18 @@ function Hint({ children, keys = '↵' }: { children: ReactNode; keys?: string }
   );
 }
 
+/** "Running" on an app that has a window open. */
+function RunningBadge() {
+  return (
+    <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 pl-3 text-[12.5px] text-muted-foreground">
+      <span aria-hidden="true" className="size-1.5 rounded-full bg-success" />Running
+    </span>
+  );
+}
+
 /* ══ Root ══ */
 
+/** Alfred's own features, each a page of the launcher. (The desktop's apps are `DESKTOP_APPS`, opened in windows.) */
 export const APPS = [
   { page: 'calc', title: 'Calculator', description: 'Type math anywhere — or = to start', tone: 'calc', keywords: ['math', 'calculate', '='] },
   { page: 'clipboard', title: 'Clipboard History', description: 'Everything you’ve copied, pinned first', tone: 'clipboard', icon: 'copy', keywords: ['paste', 'copy', 'history'] },
@@ -51,14 +63,31 @@ export function RootPage() {
   const math = looksLikeMath(q) ? evaluate(q) : null;
   const snippets = q.startsWith(';') ? SNIPPETS.filter((s) => s.keyword.startsWith(q.toLowerCase())) : [];
   const files = q && !q.startsWith(';') && math === null ? descendants('~') : [];
-  const apps = APPS.map((app) => (
+  const desktop = useDesktop();
+  const features = APPS.map((app) => (
     <CommandItem
       key={app.page} value={app.title} keywords={[...app.keywords]} icon={appTile(app.tone, 'icon' in app ? app.icon : undefined)}
       // The description is a node so it isn't searched ("dark" should find the command, not System's blurb).
       title={app.title} description={<span>{app.description}</span>} page={app.page}
     />
   ));
-  if (!q) return <CommandPage id="root" numbered><CommandGroup heading="Alfred">{apps}</CommandGroup></CommandPage>;
+  // The desktop's apps: Enter opens (or raises) its window and hides the bar.
+  const apps = DESKTOP_APPS.map((app) => (
+    <CommandItem
+      key={app.id} value={app.name} keywords={app.keywords} icon={<AppTile app={app} />}
+      title={app.name} description={<span>{app.description}</span>}
+      badge={desktop.isOpen(app.id) ? <RunningBadge /> : undefined}
+      onSelect={() => { desktop.open(app.id); a.close(); }}
+    />
+  ));
+  if (!q) {
+    return (
+      <CommandPage id="root" numbered>
+        <CommandGroup heading="Applications">{apps}</CommandGroup>
+        <CommandGroup heading="Alfred">{features}</CommandGroup>
+      </CommandPage>
+    );
+  }
   // Typing: one ranked list, like Alfred (a group ranks its own items by score; separate groups keep DOM order).
   // The calculator's row matches its own query exactly, so it leads; files follow, and web searches come last.
   return (
@@ -85,6 +114,7 @@ export function RootPage() {
           />
         ))}
         {apps}
+        {features}
         <SystemItems />
         <WorkflowItems />
       </CommandGroup>

@@ -23,6 +23,11 @@ export {
 } from './lib/theme';
 export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName, ThemeScopeState, ThemeVars, ThemeVar } from './lib/theme';
 export { useContainerWidth, useContainerSize, defineSlot, collectSlots } from './lib/container';
+export { LocalStreams, StreamFullError, pack, unpack } from './lib/append-stream';
+export { DurableStreamsClient, CloudSync, useCloud, deviceId } from './lib/durable-streams';
+export type { DurableStreamsConfig, CloudSettings, CloudStatus } from './lib/durable-streams';
+export { useSessionRecording, startSessionRecording, useSessions, useSessionCloud, sessionCloud, readSession, deleteSession, clearSessions, currentSessionId, storageUsage } from './lib/session-recorder';
+export type { SessionInfo, SessionRecordingOptions, RecordedEvent, IndexRecord } from './lib/session-recorder';
 export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL } from './lib/sheet-drag';
 export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
 export type { SlotComponent, SlotProps, ContainerSize } from './lib/container';

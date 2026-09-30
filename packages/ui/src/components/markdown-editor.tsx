@@ -145,6 +145,28 @@ const SLOT_SELECTORS: Record<Exclude<keyof MarkdownEditorClassNames, 'editor' | 
 
 const splitClasses = (c: string | undefined) => (c ? c.split(/\s+/).filter(Boolean) : []);
 
+/** The editor's DOM, or null while its view isn't mounted: TipTap throws on `view` before it mounts and after it
+    unmounts (the editor can arrive, through `onEditorReady`, before its content has mounted — under a Suspense
+    boundary, say). */
+function editorDom(editor: MarkdownEditorInstance): HTMLElement | null {
+  try { return editor.view.dom as HTMLElement; } catch { return null; }
+}
+
+/** Runs `fn` once the editor's view is mounted — now, or on its `mount` event. Returns the teardown (`fn`'s own, too). */
+function whenMounted(editor: MarkdownEditorInstance, fn: () => void | (() => void)): () => void {
+  let cleanup: void | (() => void);
+  let ran = false;
+  const go = () => {
+    if (ran) return;
+    ran = true;
+    editor.off('mount', go);
+    cleanup = fn();
+  };
+  if (editorDom(editor)) go();
+  else editor.on('mount', go);
+  return () => { editor.off('mount', go); cleanup?.(); };
+}
+
 /** Puts the slot classes on the editor's DOM. ProseMirror's DOM observer is paused meanwhile so the class changes
     don't read as edits; nodes it re-renders lose them and get them back on the next pass (every transaction). */
 function applySlotClasses(
@@ -152,8 +174,9 @@ function applySlotClasses(
   slots: MarkdownEditorClassNames,
   applied: Map<Element, string[]>,
 ) {
-  const view = editor.view as unknown as { dom: HTMLElement; domObserver?: { stop(): void; start(): void } };
-  const pm = view.dom;
+  const pm = editorDom(editor);
+  if (!pm) return;
+  const view = editor.view as unknown as { domObserver?: { stop(): void; start(): void } };
   const surface = pm.closest('.gb') ?? pm.parentElement;
   if (!surface) return;
   const want = new Map<Element, string[]>();
@@ -378,19 +401,22 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
 
   // ARIA on the contenteditable itself, so a <Label> / aria-describedby reach the field.
   React.useEffect(() => {
-    const dom = editor?.view.dom as HTMLElement | undefined;
-    if (!dom) return;
-    const attrs: Record<string, string | undefined> = {
-      id,
-      'aria-label': ariaLabel,
-      'aria-labelledby': ariaLabelledby,
-      'aria-describedby': ariaDescribedby,
-      'aria-invalid': invalid ? 'true' : undefined,
-      'aria-readonly': readOnly ? 'true' : undefined,
-      'aria-disabled': disabled ? 'true' : undefined,
-      'aria-placeholder': placeholder,
-    };
-    for (const [k, v] of Object.entries(attrs)) (v === undefined ? dom.removeAttribute(k) : dom.setAttribute(k, v));
+    if (!editor) return;
+    return whenMounted(editor, () => {
+      const dom = editorDom(editor);
+      if (!dom) return;
+      const attrs: Record<string, string | undefined> = {
+        id,
+        'aria-label': ariaLabel,
+        'aria-labelledby': ariaLabelledby,
+        'aria-describedby': ariaDescribedby,
+        'aria-invalid': invalid ? 'true' : undefined,
+        'aria-readonly': readOnly ? 'true' : undefined,
+        'aria-disabled': disabled ? 'true' : undefined,
+        'aria-placeholder': placeholder,
+      };
+      for (const [k, v] of Object.entries(attrs)) (v === undefined ? dom.removeAttribute(k) : dom.setAttribute(k, v));
+    });
   }, [editor, id, ariaLabel, ariaLabelledby, ariaDescribedby, invalid, readOnly, disabled, placeholder]);
 
   React.useEffect(() => {
@@ -447,27 +473,31 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
   const slotKey = JSON.stringify([contentClassName, classNames ?? null]);
   React.useEffect(() => {
     if (!editor) return;
-    const slots: MarkdownEditorClassNames = { ...classNames, content: cn(classNames?.content, contentClassName) || undefined };
-    const applied = new Map<Element, string[]>();
-    const run = () => { if (!editor.isDestroyed) applySlotClasses(editor, slots, applied); };
-    run();
-    // Node views that render on their own schedule (React ones, tables) add DOM outside a transaction: re-apply on
-    // the next frame after any child-list change (class changes are attribute mutations, so this doesn't loop).
-    // (A timeout rather than a frame: frames don't run in background tabs or under a paused clock.)
-    let raf: ReturnType<typeof setTimeout> | undefined;
-    const later = () => { clearTimeout(raf); raf = setTimeout(run, 16); };
-    const onTx = () => { run(); later(); };
-    editor.on('transaction', onTx);
-    const surface = (editor.view.dom as HTMLElement).closest('.gb') ?? editor.view.dom;
-    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => { run(); later(); });
-    mo?.observe(surface, { childList: true, subtree: true });
-    return () => {
-      editor.off('transaction', onTx);
-      mo?.disconnect();
-      clearTimeout(raf);
-      if (editor.isDestroyed) return;
-      applySlotClasses(editor, {}, applied);
-    };
+    return whenMounted(editor, () => {
+      const slots: MarkdownEditorClassNames = { ...classNames, content: cn(classNames?.content, contentClassName) || undefined };
+      const applied = new Map<Element, string[]>();
+      const dom = editorDom(editor);
+      if (!dom) return;
+      const run = () => { if (!editor.isDestroyed) applySlotClasses(editor, slots, applied); };
+      run();
+      // Node views that render on their own schedule (React ones, tables) add DOM outside a transaction: re-apply on
+      // the next frame after any child-list change (class changes are attribute mutations, so this doesn't loop).
+      // (A timeout rather than a frame: frames don't run in background tabs or under a paused clock.)
+      let raf: ReturnType<typeof setTimeout> | undefined;
+      const later = () => { clearTimeout(raf); raf = setTimeout(run, 16); };
+      const onTx = () => { run(); later(); };
+      editor.on('transaction', onTx);
+      const surface = dom.closest('.gb') ?? dom;
+      const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => { run(); later(); });
+      mo?.observe(surface, { childList: true, subtree: true });
+      return () => {
+        editor.off('transaction', onTx);
+        mo?.disconnect();
+        clearTimeout(raf);
+        if (editor.isDestroyed) return;
+        applySlotClasses(editor, {}, applied);
+      };
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, slotKey]);
 

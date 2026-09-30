@@ -1,11 +1,13 @@
-/* Alfred's pieces that aren't the menu: app tiles and file glyphs, the hat, the desktop (wallpaper, menu bar,
-   dock) and the power overlays (lock screen, sleep, restart, shut down). */
+/* The desktop's pieces that aren't the launcher's menu: app tiles and file glyphs, the hat, the desktop (wallpaper,
+   menu bar, dock) and the power overlays (lock screen, sleep, restart, shut down). */
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
+import { APPS, type DesktopApp } from './apps';
 import type { ClipKind, FileKind } from './data';
+import { useDesktop } from './desktop';
 import { useAlfred, type PowerState, type RunningTimer } from './state';
 
 /* ── Tiles: macOS-style app icons (a gradient squircle with a white glyph) ── */
@@ -38,9 +40,10 @@ export const TILE = {
 export type TileName = keyof typeof TILE;
 
 export function Tile({ tone, icon, glyph, size = 30, dark, className }: {
-  tone: TileName; icon?: string; glyph?: ReactNode; size?: number; /** A dark glyph (light tiles). */ dark?: boolean; className?: string;
+  /** A named tile, or its two gradient stops. */
+  tone: TileName | readonly [string, string]; icon?: string; glyph?: ReactNode; size?: number; /** A dark glyph (light tiles). */ dark?: boolean; className?: string;
 }) {
-  const [from, to] = TILE[tone];
+  const [from, to] = typeof tone === 'string' ? TILE[tone] : tone;
   return (
     <span
       aria-hidden="true"
@@ -54,6 +57,11 @@ export function Tile({ tone, icon, glyph, size = 30, dark, className }: {
       {glyph ?? (icon ? <Icon name={icon} size={Math.round(size * 0.6)} sw={2} /> : null)}
     </span>
   );
+}
+
+/** An app's icon: its gradient squircle and glyph. */
+export function AppTile({ app, size = 30, className }: { app: DesktopApp; size?: number; className?: string }) {
+  return <Tile tone={app.tile} icon={app.icon} size={size} dark={app.darkGlyph} className={className} />;
 }
 
 /** A calculator keypad glyph (no stock icon draws one). */
@@ -150,7 +158,7 @@ export function Wallpaper({ dark, children, className }: { dark: boolean; childr
     ].join(', '),
   };
   return (
-    <div data-slot="alfred-wallpaper" className={cn('relative h-full w-full overflow-hidden transition-[background-color] duration-spring-smooth ease-spring-smooth', className)} style={style}>
+    <div data-slot="macos-wallpaper" className={cn('relative h-full w-full overflow-hidden transition-[background-color] duration-spring-smooth ease-spring-smooth', className)} style={style}>
       {children}
     </div>
   );
@@ -168,21 +176,23 @@ function useCountdown(timer: RunningTimer | null) {
   return Math.max(0, Math.round(timer.minutes * 60 - (now - timer.startedAt) / 1000));
 }
 
-/** The menu bar: the frontmost app's menus and the status items. The clock is fixed (9:41). */
+/** The menu bar: the frontmost app's name and menus, and the status items. The clock is fixed (9:41). */
 export function MenuBar({ dark, compact, onAlfred }: { dark: boolean; compact: boolean; onAlfred: () => void }) {
   const { timer } = useAlfred();
+  const { front } = useDesktop();
+  const app = APPS.find((a) => a.id === front);
   const left = useCountdown(timer);
   return (
     <div
-      data-slot="alfred-menubar"
+      data-slot="macos-menubar"
       className={cn(
         'relative z-10 flex h-7 shrink-0 items-center gap-4 px-3.5 text-footnote backdrop-blur-xl backdrop-saturate-150',
         dark ? 'bg-black/25 text-white/90' : 'bg-white/35 text-black/85',
       )}
     >
       <Hat size={17} />
-      <span className="font-semibold">Finder</span>
-      {!compact ? ['File', 'Edit', 'View', 'Go', 'Window', 'Help'].map((m) => <span key={m} className="opacity-90">{m}</span>) : null}
+      <span className="font-semibold">{app?.name ?? 'Finder'}</span>
+      {!compact ? ['File', 'Edit', 'View', app ? 'Window' : 'Go', 'Help'].map((m) => <span key={m} className="opacity-90">{m}</span>) : null}
       <span className="ml-auto flex items-center gap-3.5">
         {timer && left !== null ? (
           <span className="inline-flex animate-bl-pop-in items-center gap-1 rounded-md bg-current/12 px-1.5 py-px font-medium tabular-nums motion-reduce:animate-bl-fade-in">
@@ -204,32 +214,53 @@ export function MenuBar({ dark, compact, onAlfred }: { dark: boolean; compact: b
   );
 }
 
-const DOCK: { name: string; tone: TileName; icon: string }[] = [
-  { name: 'Finder', tone: 'files', icon: 'folder-fill' },
-  { name: 'Safari', tone: 'web', icon: 'globe' },
-  { name: 'Mail', tone: 'sleep', icon: 'envelope-fill' },
-  { name: 'Notes', tone: 'emoji', icon: 'note' },
-  { name: 'Music', tone: 'youtube', icon: 'music-note' },
-  { name: 'Terminal', tone: 'github', icon: 'terminal' },
-  { name: 'Settings', tone: 'system', icon: 'gear' },
-];
-
-export function Dock({ dark }: { dark: boolean }) {
+/** The Dock: every app, a dot under the ones that are open, then Alfred and the Trash. Click an app to open it (or
+    bring it forward). `tile` is the icon size; the dock sizes it to fit the desktop's width. */
+export function Dock({ dark, tile, onAlfred }: { dark: boolean; tile: number; onAlfred: () => void }) {
   const { trash } = useAlfred();
+  const d = useDesktop();
+  const well = cn('grid place-items-center rounded-[27%]', dark ? 'bg-white/12 text-white/80' : 'bg-white/60 text-black/60');
+  const slot = 'group/dock relative grid cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform duration-spring-snappy ease-spring-snappy hover:-translate-y-1.5 hover:scale-110 active:scale-95 motion-reduce:transition-none';
   return (
     <div
-      data-slot="alfred-dock"
+      data-slot="macos-dock"
       className={cn(
-        'pointer-events-none absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-end gap-1.5 rounded-[20px] p-1.5 backdrop-blur-2xl backdrop-saturate-150',
+        'absolute bottom-2.5 left-1/2 z-10 flex -translate-x-1/2 items-end gap-1.5 rounded-[20px] p-1.5 backdrop-blur-2xl backdrop-saturate-150',
         dark ? 'bg-white/10 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.18),0_10px_30px_rgba(0,0,0,.35)]' : 'bg-white/35 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.6),0_10px_30px_rgba(0,0,0,.12)]',
       )}
     >
-      {DOCK.map((d) => <Tile key={d.name} tone={d.tone} icon={d.icon} size={42} />)}
-      <span className={cn('mx-0.5 h-10 w-px self-center', dark ? 'bg-white/20' : 'bg-black/12')} />
-      <span className={cn('grid size-[42px] place-items-center rounded-[27%]', dark ? 'bg-white/12 text-white/80' : 'bg-white/60 text-black/60')}>
-        <IconSwap id={trash ? 'full' : 'empty'}><Icon name={trash ? 'trash-fill' : 'trash'} size={24} sw={1.7} /></IconSwap>
+      {APPS.map((app) => (
+        <button key={app.id} type="button" aria-label={`${d.isOpen(app.id) ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={slot}>
+          <DockLabel dark={dark}>{app.name}</DockLabel>
+          <AppTile app={app} size={tile} />
+          {d.isOpen(app.id) ? <span aria-hidden="true" className={cn('absolute -bottom-1 size-1 rounded-full', dark ? 'bg-white/80' : 'bg-black/60')} /> : null}
+        </button>
+      ))}
+      <span aria-hidden="true" className={cn('mx-0.5 w-px self-center', dark ? 'bg-white/20' : 'bg-black/12')} style={{ height: tile - 4 }} />
+      <button type="button" aria-label="Alfred" onClick={onAlfred} className={slot}>
+        <DockLabel dark={dark}>Alfred</DockLabel>
+        <Tile tone="alfred" size={tile} glyph={<Hat size={Math.round(tile * 0.62)} />} />
+      </button>
+      <span aria-label="Trash" role="img" className={cn('group/dock relative', well)} style={{ width: tile, height: tile }}>
+        <IconSwap id={trash ? 'full' : 'empty'}><Icon name={trash ? 'trash-fill' : 'trash'} size={Math.round(tile * 0.57)} sw={1.7} /></IconSwap>
+        <DockLabel dark={dark}>Trash</DockLabel>
       </span>
     </div>
+  );
+}
+
+/** The name above a Dock icon, on hover or keyboard focus. */
+function DockLabel({ dark, children }: { dark: boolean; children: ReactNode }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 rounded-md px-2 py-1 text-caption font-medium whitespace-nowrap opacity-0 backdrop-blur-xl transition-opacity duration-150 group-hover/dock:opacity-100 group-focus-visible/dock:opacity-100',
+        dark ? 'bg-black/55 text-white/90' : 'bg-white/70 text-black/80 shadow-[0_2px_8px_rgba(0,0,0,.12)]',
+      )}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -264,7 +295,7 @@ export function PowerOverlay({ state, onWake, dark }: { state: PowerState; onWak
   if (state === 'lock') {
     return (
       <div
-        data-slot="alfred-lock"
+        data-slot="macos-lock"
         onClick={onWake}
         className={cn('absolute inset-0 z-30 flex animate-bl-fade-in cursor-pointer flex-col items-center backdrop-blur-2xl', dark ? 'bg-black/40 text-white' : 'bg-black/20 text-white')}
       >
@@ -281,7 +312,7 @@ export function PowerOverlay({ state, onWake, dark }: { state: PowerState; onWak
     );
   }
   return (
-    <div data-slot="alfred-power" onClick={state === 'restart' ? undefined : onWake} className="absolute inset-0 z-30 flex animate-bl-fade-in cursor-pointer flex-col items-center justify-center gap-6 bg-black text-white">
+    <div data-slot="macos-power" onClick={state === 'restart' ? undefined : onWake} className="absolute inset-0 z-30 flex animate-bl-fade-in cursor-pointer flex-col items-center justify-center gap-6 bg-black text-white">
       {state === 'restart' ? (
         <>
           <Hat size={64} />

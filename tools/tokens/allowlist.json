@@ -27,14 +27,14 @@
     "shadow": 0,
     "font": 0
   },
-  "registry/blocks/alfred-clone/pages.tsx": {
+  "registry/blocks/macos/pages.tsx": {
     "color": 2,
     "radius": 0,
     "text": 0,
     "shadow": 0,
     "font": 0
   },
-  "registry/blocks/alfred-clone/parts.tsx": {
+  "registry/blocks/macos/parts.tsx": {
     "color": 67,
     "radius": 0,
     "text": 0,

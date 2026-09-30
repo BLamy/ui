@@ -12,16 +12,18 @@ import { SettingsCtx, trailOf, useSettingsState } from './state';
 export interface AppleSettingsProps {
   /** Panes to open, top level first — e.g. ['general', 'about']. */
   initialPath?: string[];
+  /** Draw the macOS close / minimize / zoom dots in the sidebar (default true). Off when the app sits in a window that has its own. */
+  windowControls?: boolean;
 }
 
 /** Settings' accent: iOS system blue (light #007AFF, dark #0A84FF). */
 const SETTINGS_TINT = { light: '#007AFF', dark: '#0A84FF' } as const;
 
-export default function AppleSettings({ initialPath = [] }: AppleSettingsProps) {
+export default function AppleSettings({ initialPath = [], windowControls = true }: AppleSettingsProps) {
   const ambient = useAppearance();
   const [appearance, setAppearance] = useState<Appearance | null>(null);
   const dark = (appearance ?? ambient) === 'dark';
-  const settings = useSettingsState(initialPath, dark, setAppearance);
+  const settings = useSettingsState(initialPath, dark, setAppearance, windowControls);
 
   return (
     <BLProvider dark={dark} tint={SETTINGS_TINT[dark ? 'dark' : 'light']}>

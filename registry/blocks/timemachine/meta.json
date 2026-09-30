@@ -1,0 +1,7 @@
+{
+  "name": "timemachine",
+  "title": "Time Machine",
+  "description": "Every session of the macOS desktop, recorded and kept to watch again. Each page load is recorded with rrweb as an append-only stream in localStorage — private to the browser by default — and this app lists the sessions by day and plays any one in a ReplayPreview. Turn on Cloud sync to mirror the streams live to a Durable Streams server (Rivet) so another device can watch too. The app is marked rr-block and rr-ignore, so the recorder never records itself replaying.",
+  "categories": ["application", "productivity"],
+  "files": ["page.tsx", "detail.tsx", "cloud.tsx", "format.ts"]
+}

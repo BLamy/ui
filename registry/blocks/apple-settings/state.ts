@@ -23,6 +23,8 @@ export interface SettingsApi {
   setQuery: (q: string) => void;
   dark: boolean;
   setAppearance: (a: Appearance) => void;
+  /** The macOS sidebar draws its own close / minimize / zoom dots (off when a host window already has them). */
+  windowControls: boolean;
 }
 
 export const SettingsCtx = createContext<SettingsApi | null>(null);
@@ -41,7 +43,7 @@ export const trailOf = (path: string[]) => (path.length ? path : ['wifi']);
 
 interface Nav { path: string[]; dir: -1 | 0 | 1; fwd: string[] }
 
-export function useSettingsState(initialPath: string[], dark: boolean, setAppearance: (a: Appearance) => void): SettingsApi {
+export function useSettingsState(initialPath: string[], dark: boolean, setAppearance: (a: Appearance) => void, windowControls = true): SettingsApi {
   const [values, setValues] = useState<Values>(DEFAULTS);
   const [nav, setNav] = useState<Nav>({ path: initialPath, dir: 0, fwd: [] });
   const [query, setQuery] = useState('');
@@ -59,5 +61,6 @@ export function useSettingsState(initialPath: string[], dark: boolean, setAppear
     setQuery,
     dark,
     setAppearance,
-  }), [values, nav, query, dark, setAppearance]);
+    windowControls,
+  }), [values, nav, query, dark, setAppearance, windowControls]);
 }

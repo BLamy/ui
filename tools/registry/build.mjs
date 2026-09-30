@@ -15,6 +15,7 @@
  *   <component>      registry:ui / registry:lib — the module's real source, installed at components/ui/… or lib/….
  *                    registryDependencies point at our own items by URL (never shadcn's stock ones of the same name).
  *   <block>          registry:block — registry/blocks/<slug>/meta.json; files land in components/blocks/<slug>/.
+ *                    A block may import another's entry by ../<slug>/page; that block becomes a registryDependency.
  */
 import { posix } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -210,6 +211,8 @@ const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
     const meta = readJson(`${BLOCKS_DIR}/${slug}/meta.json`);
     if (meta.name !== slug) errors.push(`${BLOCKS_DIR}/${slug}/meta.json: name must be "${slug}"`);
     const deps = new Set();
+    // Other blocks this one opens (a desktop launching the example apps): installed first, by URL, like library items.
+    const blockDeps = new Set();
     const files = meta.files.map((f) => {
       const path = `${BLOCKS_DIR}/${slug}/${f}`;
       const isCode = /\.tsx?$/.test(f);
@@ -217,11 +220,18 @@ const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
       else if (isCode) {
         for (const spec of importsOf(path)) {
           const target = spec.startsWith('@/') ? resolveModule('', spec, graph.all) : null;
+          // A sibling block's entry, by relative path (../<slug>/page): the same from the repo and once installed.
+          const other = spec.startsWith('.') ? /^registry\/blocks\/([^/]+)\/page$/.exec(posix.normalize(posix.join(posix.dirname(path), spec)))?.[1] : undefined;
           if (target) deps.add(graph.owner.get(target));
+          else if (other) {
+            if (other === slug) errors.push(`${path}: a block cannot import itself`);
+            else if (!existsSync(join(ROOT, BLOCKS_DIR, other, 'meta.json'))) errors.push(`${path}: "${spec}" is not a block`);
+            else blockDeps.add(other);
+          }
           else if (spec.startsWith('@/components/ui/') || spec.startsWith('@/lib/')) errors.push(`${path}: "${spec}" is not a library module`);
-          else if (spec.startsWith('@/')) errors.push(`${path}: "${spec}" — blocks import library parts by @/components/ui/… or @/lib/…`);
+          else if (spec.startsWith('@/')) errors.push(`${path}: "${spec}" — blocks import library parts by @/components/ui/… or @/lib/…, and other blocks' entries by ../<slug>/page`);
           else if (!(spec === 'react' || spec.startsWith('react/') || isOwnFile(f, spec) || (meta.dependencies || []).some((d) => spec === d || spec.startsWith(d + '/')))) {
-            errors.push(`${path}: imports "${spec}" — blocks may import only react, @/components/ui/…, @/lib/…, their own files and meta.dependencies`);
+            errors.push(`${path}: imports "${spec}" — blocks may import only react, @/components/ui/…, @/lib/…, their own files, other blocks' entries (../<slug>/page) and meta.dependencies`);
           }
         }
       }
@@ -234,7 +244,7 @@ const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
       description: meta.description,
       categories: meta.categories,
       dependencies: (meta.dependencies || []).map((n) => (npmVersion(n) ? `${n}@${npmVersion(n)}` : n)),
-      registryDependencies: [BASE_ITEM, ...[...deps].sort().map(itemUrl)],
+      registryDependencies: [BASE_ITEM, ...[...deps].sort().map(itemUrl), ...[...blockDeps].sort().map(itemUrl)],
       files,
       meta: { entry: `components/blocks/${slug}/page.tsx` },
     };

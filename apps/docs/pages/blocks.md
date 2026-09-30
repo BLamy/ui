@@ -18,9 +18,11 @@ Whole apps composed from BL UI parts, in the spirit of shadcn blocks. A block is
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/codex-clone.json{% endcommand %}
 
-{% demo src="blocks/alfred-clone" layout="multi" %}
+{% demo src="blocks/macos" layout="multi" %}
 
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/alfred-clone.json{% endcommand %}
+The macOS block is a desktop whose apps are the blocks on this page — the Dock and Alfred open them in windows — so adding it also adds each of them; delete an entry from its `apps.ts` (and the block it imports) to trim the desktop.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/macos.json{% endcommand %}
 
 {% demo src="blocks/apple-reminders" layout="multi" %}
 
@@ -65,6 +67,18 @@ Whole apps composed from BL UI parts, in the spirit of shadcn blocks. A block is
 {% demo src="blocks/pencilkit-sketch" layout="multi" %}
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/pencilkit-sketch.json{% endcommand %}
+
+{% demo src="blocks/timemachine" layout="multi" %}
+
+Time Machine plays back the sessions the macOS block records. Each page load is an rrweb recording stored as an append-only stream in localStorage — private to the browser by default — via `useSessionRecording` (`@/lib/session-recorder`), built on `LocalStreams` (`@/lib/append-stream`). Switch on Cloud sync in the app and `CloudSync` (`@/lib/durable-streams`) mirrors the same streams live to a Durable Streams server, such as one on Rivet. The app is marked `rr-block rr-ignore`, so the recorder never records a replay of itself.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/timemachine.json{% endcommand %}
+
+{% demo src="blocks/freeform" layout="multi" %}
+
+Freeform is the PencilKit core grown into a whole app: boards in a gallery, and an infinite canvas of sticky notes, shapes, text, photos, links, connectors that stay glued to what they join, and freehand drawing (the core's strokes, inks and tool palette). Scroll to pan, pinch or ⌘-scroll to zoom, drag to move, and use the handles to resize and rotate.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/freeform.json{% endcommand %}
 
 {% demo src="blocks/split-view-demos" layout="multi" %}
 

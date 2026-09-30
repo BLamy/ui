@@ -3845,6 +3845,23 @@
       ]
     },
     {
+      "name": "append-stream",
+      "type": "registry:lib",
+      "title": "Append Stream",
+      "description": "Append Stream — part of BL UI's library (lib/append-stream.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/append-stream.ts",
+          "type": "registry:lib",
+          "target": "lib/append-stream.ts"
+        }
+      ]
+    },
+    {
       "name": "container",
       "type": "registry:lib",
       "title": "Container",
@@ -3858,6 +3875,24 @@
           "path": "packages/ui/src/lib/container.ts",
           "type": "registry:lib",
           "target": "lib/container.ts"
+        }
+      ]
+    },
+    {
+      "name": "durable-streams",
+      "type": "registry:lib",
+      "title": "Durable Streams",
+      "description": "Durable Streams — part of BL UI's library (lib/durable-streams.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/append-stream.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/durable-streams.ts",
+          "type": "registry:lib",
+          "target": "lib/durable-streams.ts"
         }
       ]
     },
@@ -3931,6 +3966,27 @@
       ]
     },
     {
+      "name": "session-recorder",
+      "type": "registry:lib",
+      "title": "Session Recorder",
+      "description": "Session Recorder — part of BL UI's library (lib/session-recorder.ts).",
+      "dependencies": [
+        "rrweb@2.0.0-alpha.20"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/append-stream.json",
+        "https://blamy.github.io/ui/r/durable-streams.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/session-recorder.ts",
+          "type": "registry:lib",
+          "target": "lib/session-recorder.ts"
+        }
+      ]
+    },
+    {
       "name": "sheet-drag",
       "type": "registry:lib",
       "title": "Sheet Drag",
@@ -3985,72 +4041,6 @@
           "target": "lib/tokens.generated.ts"
         }
       ]
-    },
-    {
-      "name": "alfred-clone",
-      "type": "registry:block",
-      "title": "Alfred",
-      "description": "A macOS Alfred-style launcher on the CommandMenu primitive, floating over a desktop with a menu bar and dock. Its features are nested pages, each with its own keys: a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Adapts to its container's width; light and dark.",
-      "categories": [
-        "application",
-        "productivity",
-        "command-menu"
-      ],
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/animated-height.json",
-        "https://blamy.github.io/ui/r/command-menu.json",
-        "https://blamy.github.io/ui/r/container.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/icon-swap.json",
-        "https://blamy.github.io/ui/r/kbd.json",
-        "https://blamy.github.io/ui/r/number-morph.json",
-        "https://blamy.github.io/ui/r/text-morph.json",
-        "https://blamy.github.io/ui/r/theme.json",
-        "https://blamy.github.io/ui/r/toast.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "registry/blocks/alfred-clone/page.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/alfred-clone/page.tsx"
-        },
-        {
-          "path": "registry/blocks/alfred-clone/launcher.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/alfred-clone/launcher.tsx"
-        },
-        {
-          "path": "registry/blocks/alfred-clone/pages.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/alfred-clone/pages.tsx"
-        },
-        {
-          "path": "registry/blocks/alfred-clone/parts.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/alfred-clone/parts.tsx"
-        },
-        {
-          "path": "registry/blocks/alfred-clone/state.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/alfred-clone/state.tsx"
-        },
-        {
-          "path": "registry/blocks/alfred-clone/calc.ts",
-          "type": "registry:component",
-          "target": "components/blocks/alfred-clone/calc.ts"
-        },
-        {
-          "path": "registry/blocks/alfred-clone/data.ts",
-          "type": "registry:component",
-          "target": "components/blocks/alfred-clone/data.ts"
-        }
-      ],
-      "meta": {
-        "entry": "components/blocks/alfred-clone/page.tsx"
-      }
     },
     {
       "name": "apple-mail",
@@ -4733,6 +4723,121 @@
       }
     },
     {
+      "name": "freeform",
+      "type": "registry:block",
+      "title": "Freeform",
+      "description": "An infinite whiteboard after Apple's Freeform: a gallery of boards, and a pannable, zoomable canvas of sticky notes, shapes, text, photos, links, connectors that follow what they're glued to, and freehand drawing on PencilKit. Select, move, resize, rotate, group, lock, align and arrange; alignment guides while you drag; Format panel for fills, borders, text, connectors and the board's background; undo and redo per board; scroll to pan, pinch or ⌘-scroll to zoom. Built on the PencilKit core (strokes, inks, tool palette).",
+      "categories": [
+        "drawing",
+        "application",
+        "productivity"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/pencilkit.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/slider.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/freeform/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/page.tsx"
+        },
+        {
+          "path": "registry/blocks/freeform/boards.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/boards.tsx"
+        },
+        {
+          "path": "registry/blocks/freeform/editor.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/editor.tsx"
+        },
+        {
+          "path": "registry/blocks/freeform/canvas.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/canvas.tsx"
+        },
+        {
+          "path": "registry/blocks/freeform/toolbar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/toolbar.tsx"
+        },
+        {
+          "path": "registry/blocks/freeform/inspector.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/inspector.tsx"
+        },
+        {
+          "path": "registry/blocks/freeform/items.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/items.tsx"
+        },
+        {
+          "path": "registry/blocks/freeform/store.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/store.tsx"
+        },
+        {
+          "path": "registry/blocks/freeform/geometry.ts",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/geometry.ts"
+        },
+        {
+          "path": "registry/blocks/freeform/handles.ts",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/handles.ts"
+        },
+        {
+          "path": "registry/blocks/freeform/camera.ts",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/camera.ts"
+        },
+        {
+          "path": "registry/blocks/freeform/shapes.ts",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/shapes.ts"
+        },
+        {
+          "path": "registry/blocks/freeform/model.ts",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/model.ts"
+        },
+        {
+          "path": "registry/blocks/freeform/glyphs.ts",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/glyphs.ts"
+        },
+        {
+          "path": "registry/blocks/freeform/glyph-views.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/glyph-views.tsx"
+        },
+        {
+          "path": "registry/blocks/freeform/palette.ts",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/palette.ts"
+        },
+        {
+          "path": "registry/blocks/freeform/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/freeform/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/freeform/page.tsx"
+      }
+    },
+    {
       "name": "github-clone",
       "type": "registry:block",
       "title": "GitHub clone",
@@ -4983,6 +5088,104 @@
       ],
       "meta": {
         "entry": "components/blocks/loop-qa/page.tsx"
+      }
+    },
+    {
+      "name": "macos",
+      "type": "registry:block",
+      "title": "macOS",
+      "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack; the menu bar follows the frontmost app. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Adapts to its container's width; light and dark.",
+      "categories": [
+        "application",
+        "productivity",
+        "command-menu"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/command-menu.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/kbd.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/session-recorder.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toast.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/apple-mail.json",
+        "https://blamy.github.io/ui/r/apple-music.json",
+        "https://blamy.github.io/ui/r/apple-notes.json",
+        "https://blamy.github.io/ui/r/apple-passwords.json",
+        "https://blamy.github.io/ui/r/apple-reminders.json",
+        "https://blamy.github.io/ui/r/apple-settings.json",
+        "https://blamy.github.io/ui/r/codex-clone.json",
+        "https://blamy.github.io/ui/r/delivery-tracking.json",
+        "https://blamy.github.io/ui/r/discord-clone.json",
+        "https://blamy.github.io/ui/r/freeform.json",
+        "https://blamy.github.io/ui/r/github-clone.json",
+        "https://blamy.github.io/ui/r/loop-qa.json",
+        "https://blamy.github.io/ui/r/map-chat.json",
+        "https://blamy.github.io/ui/r/t3-clone.json",
+        "https://blamy.github.io/ui/r/timemachine.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/macos/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/macos/page.tsx"
+        },
+        {
+          "path": "registry/blocks/macos/apps.ts",
+          "type": "registry:component",
+          "target": "components/blocks/macos/apps.ts"
+        },
+        {
+          "path": "registry/blocks/macos/desktop.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/macos/desktop.tsx"
+        },
+        {
+          "path": "registry/blocks/macos/windows.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/macos/windows.tsx"
+        },
+        {
+          "path": "registry/blocks/macos/launcher.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/macos/launcher.tsx"
+        },
+        {
+          "path": "registry/blocks/macos/pages.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/macos/pages.tsx"
+        },
+        {
+          "path": "registry/blocks/macos/parts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/macos/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/macos/state.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/macos/state.tsx"
+        },
+        {
+          "path": "registry/blocks/macos/calc.ts",
+          "type": "registry:component",
+          "target": "components/blocks/macos/calc.ts"
+        },
+        {
+          "path": "registry/blocks/macos/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/macos/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/macos/page.tsx"
       }
     },
     {
@@ -5267,6 +5470,55 @@
       ],
       "meta": {
         "entry": "components/blocks/t3-clone/page.tsx"
+      }
+    },
+    {
+      "name": "timemachine",
+      "type": "registry:block",
+      "title": "Time Machine",
+      "description": "Every session of the macOS desktop, recorded and kept to watch again. Each page load is recorded with rrweb as an append-only stream in localStorage — private to the browser by default — and this app lists the sessions by day and plays any one in a ReplayPreview. Turn on Cloud sync to mirror the streams live to a Durable Streams server (Rivet) so another device can watch too. The app is marked rr-block and rr-ignore, so the recorder never records itself replaying.",
+      "categories": [
+        "application",
+        "productivity"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/replay-preview.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/session-recorder.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/timemachine/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/timemachine/page.tsx"
+        },
+        {
+          "path": "registry/blocks/timemachine/detail.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/timemachine/detail.tsx"
+        },
+        {
+          "path": "registry/blocks/timemachine/cloud.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/timemachine/cloud.tsx"
+        },
+        {
+          "path": "registry/blocks/timemachine/format.ts",
+          "type": "registry:component",
+          "target": "components/blocks/timemachine/format.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/timemachine/page.tsx"
       }
     }
   ]

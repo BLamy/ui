@@ -1,0 +1,7 @@
+{
+  "name": "macos",
+  "title": "macOS",
+  "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack; the menu bar follows the frontmost app. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Adapts to its container's width; light and dark.",
+  "categories": ["application", "productivity", "command-menu"],
+  "files": ["page.tsx", "apps.ts", "desktop.tsx", "windows.tsx", "launcher.tsx", "pages.tsx", "parts.tsx", "state.tsx", "calc.ts", "data.ts"]
+}

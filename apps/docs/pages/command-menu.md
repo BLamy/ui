@@ -152,13 +152,13 @@ A calculator page: `filter={false}` because its rows are computed from the query
 
 Two blocks are built around CommandMenu end to end. Open the file list in either preview to read how the pages, hotkeys and actions are wired.
 
-### Alfred launcher
+### Alfred on a macOS desktop
 
-An inline CommandMenu as a macOS launcher: eight apps you open with Enter, a click or ⌘1–⌘8 — Calculator, Clipboard, Emoji, Snippets, Files, System, Web search and Workflows — each a page with its own keys, a preview pane beside the list, and a footer legend that follows the page. Backspace on the empty input goes back; ⌥Space hides and shows the bar.
+Alfred as the launcher of a macOS desktop: type an app's name — Reminders, Mail, Notes, Music, GitHub and the rest of the examples — and press Enter, and it opens in a window you can drag, resize, zoom and minimize (the Dock does the same on a click). Beyond apps it is eight pages you open with Enter, a click or ⌘1–⌘9 — Calculator, Clipboard, Emoji, Snippets, Files, System, Web search and Workflows — each with its own keys, a preview pane beside the list, and a footer legend that follows the page. Backspace on the empty input goes back; ⌥Space hides and shows the bar.
 
-{% demo src="blocks/alfred-clone" layout="multi" %}
+{% demo src="blocks/macos" layout="multi" %}
 
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/alfred-clone.json{% endcommand %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/macos.json{% endcommand %}
 
 ### T3 Code palette
 

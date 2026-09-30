@@ -57,9 +57,11 @@ export function SettingsSidebar() {
   if (s.layout === 'desktop') {
     return (
       <SplitViewSidebar aria-label="Settings" width={260} minWidth={220} maxWidth={320} style={s.dark ? MAC_SIDEBAR_DARK : undefined}>
-        <div aria-hidden="true" className="flex h-toolbar shrink-0 items-center gap-2 px-5">
-          {TRAFFIC_LIGHTS.map((c) => <span key={c} className="size-3 rounded-full shadow-[inset_0_0_0_.5px_black] shadow-black/18" style={{ background: c }} />)}
-        </div>
+        {s.windowControls ? (
+          <div aria-hidden="true" className="flex h-toolbar shrink-0 items-center gap-2 px-5">
+            {TRAFFIC_LIGHTS.map((c) => <span key={c} className="size-3 rounded-full shadow-[inset_0_0_0_.5px_black] shadow-black/18" style={{ background: c }} />)}
+          </div>
+        ) : <div aria-hidden="true" className="h-3 shrink-0" />}
         <div className="px-3 pb-2">
           <SearchField value={s.query} onChange={s.setQuery} aria-label="Search settings" className="gap-1.5 rounded-[7px] bg-secondary px-2 py-[5px] [&_input]:text-footnote [&_svg]:size-[14px]" />
         </div>
