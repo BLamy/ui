@@ -1,3 +1,4 @@
+'use client';
 import { createContext, useContext } from 'react';
 import {
   SelectionIndicator, ToggleButtonGroup, type ToggleButtonGroupProps, type ToggleButtonProps, composeRenderProps,
@@ -16,7 +17,7 @@ export const toggleGroupVariants = cva('isolate inline-flex w-fit items-center',
       default: 'gap-1',
       filled: 'gap-0.5 rounded-[11px] bg-secondary p-0.5',
       /** Joined buttons sharing a hairline frame. */
-      outline: 'gap-0 overflow-hidden rounded-[10px] shadow-[inset_0_0_0_1px_var(--border)]',
+      outline: 'gap-0 overflow-hidden rounded-ctl shadow-hairline',
     },
   },
   defaultVariants: { variant: 'default' },

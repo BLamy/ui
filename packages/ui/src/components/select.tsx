@@ -1,3 +1,4 @@
+'use client';
 import {
   Button as AriaButton, type ButtonProps as AriaButtonProps,
   Select as AriaSelect, type SelectProps as AriaSelectProps,
@@ -44,8 +45,8 @@ export const selectTriggerVariants = cva(
         plain: 'w-auto justify-end bg-transparent px-1 text-muted-foreground data-pressed:bg-transparent data-pressed:opacity-60 group-data-open:shadow-none',
       },
       size: {
-        sm: 'h-8 rounded-lg text-[15px]',
-        default: 'h-11 rounded-[10px] text-[17px]',
+        sm: 'h-8 rounded-lg text-subhead',
+        default: 'h-11 rounded-ctl text-body',
       },
     },
     defaultVariants: { variant: 'default', size: 'default' },

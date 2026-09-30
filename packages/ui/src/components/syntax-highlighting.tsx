@@ -1,3 +1,4 @@
+'use client';
 import {
   createContext, memo, useContext, useEffect, useMemo, useRef, useState,
   type CSSProperties, type ComponentProps, type HTMLAttributes, type ReactNode,

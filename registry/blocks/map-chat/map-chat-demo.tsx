@@ -119,13 +119,13 @@ function ToolRow({ call, chrome }: { call: ToolCallState; chrome: Chrome }) {
       data-slot="map-chat-tool"
       data-status={call.status}
       className={cn(
-        'flex min-w-0 animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none items-center gap-2 rounded-[10px] border py-[5px] pr-2.5 pl-2 text-[12.5px] leading-[1.3] text-muted-foreground',
+        'flex min-w-0 animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] motion-reduce:animate-none items-center gap-2 rounded-ctl border py-[5px] pr-2.5 pl-2 text-[12.5px] leading-[1.3] text-muted-foreground',
         chrome.tool,
       )}
     >
       <span
         className={cn(
-          'grid size-5 shrink-0 place-items-center rounded-[6px]',
+          'grid size-5 shrink-0 place-items-center rounded-md',
           done ? chrome.toolDone : chrome.toolRunning,
         )}
       >
@@ -425,8 +425,8 @@ export function MapChatDemo({
               <span className="grid size-[34px] shrink-0 place-items-center rounded-[50%] bg-primary text-white">
                 <Icon name={savedTrips.some((t) => t.id === trip.id) ? 'bookmark' : 'walk'} size={18} />
               </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-[13px] leading-[1.25]">
-                <strong className="overflow-hidden text-[14px] font-[650] text-ellipsis whitespace-nowrap">{trip.name}</strong>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-footnote leading-[1.25]">
+                <strong className="overflow-hidden text-detail font-[650] text-ellipsis whitespace-nowrap">{trip.name}</strong>
                 <span className="text-muted-foreground">
                   {trip.stops.length} {trip.stops.length === 1 ? 'stop' : 'stops'} · {formatMinutes(trip.totalMinutes)} · {formatDistance(trip.totalMeters)}
                 </span>
@@ -496,7 +496,7 @@ export function MapChatDemo({
                     <div key={s} role="listitem" className="contents">
                       <Button
                         className={cn(
-                          'shrink-0 cursor-pointer rounded-[999px] border px-3 py-1.5 text-[13px] leading-[1.2] font-medium whitespace-nowrap text-foreground',
+                          'shrink-0 cursor-pointer rounded-[999px] border px-3 py-1.5 text-footnote leading-[1.2] font-medium whitespace-nowrap text-foreground',
                           FONT_INHERIT,
                           '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
                           chrome.chip,

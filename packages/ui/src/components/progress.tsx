@@ -1,3 +1,4 @@
+'use client';
 import type { CSSProperties, ReactNode } from 'react';
 import { Label, ProgressBar, type ProgressBarProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -46,9 +47,9 @@ export function Progress({ className, size, tone, label, showValue, ...props }: 
     >
       {({ percentage, valueText, isIndeterminate }) => (
         <>
-          {label ? <Label className="text-[15px] font-medium text-foreground">{label}</Label> : null}
+          {label ? <Label className="text-subhead font-medium text-foreground">{label}</Label> : null}
           {showValue && !isIndeterminate ? (
-            <span className="col-start-2 text-[15px] text-muted-foreground tabular-nums">
+            <span className="col-start-2 text-subhead text-muted-foreground tabular-nums">
               {plainPercent ? <NumberMorph value={(percentage ?? 0) / 100} format={{ style: 'percent' }} /> : valueText}
             </span>
           ) : null}

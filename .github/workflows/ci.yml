@@ -9,7 +9,13 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm nx run-many -t build
+      - run: pnpm nx run-many -t typecheck,build,test
+      - name: Registry, tokens and variant docs
+        run: |
+          node tools/registry/build.mjs --check
+          node tools/tokens/build.mjs --check
+          node tools/tokens/check.mjs
+          node tools/docs/variants-md.mjs --check
       - run: pnpm exec playwright install chromium --with-deps
       - name: Storybook story smoke test
         run: |

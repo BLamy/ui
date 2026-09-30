@@ -22,7 +22,7 @@ function ListTop({ notes }: { notes: NotesState }) {
   const s = useSplitView();
   return (
     <div className="px-4 pb-2">
-      {s.collapsed ? null : <div className="-mt-2 mb-2.5 text-[14px] text-muted-foreground">{count(notes.list.length)}</div>}
+      {s.collapsed ? null : <div className="-mt-2 mb-2.5 text-detail text-muted-foreground">{count(notes.list.length)}</div>}
       <SearchField value={notes.query} onChange={notes.setQuery} aria-label="Search notes" />
     </div>
   );
@@ -48,7 +48,7 @@ export function ListColumn({ notes }: { notes: NotesState }) {
       {s.collapsed ? (
         <BottomBar>
           <span className="w-10" />
-          <span className="flex-1 text-center text-[12px] text-foreground capitalize">{count(notes.list.length)}</span>
+          <span className="flex-1 text-center text-caption text-foreground capitalize">{count(notes.list.length)}</span>
           <BarButton label="New note" onPress={create}><Icon name="compose" size={24} /></BarButton>
         </BottomBar>
       ) : null}
@@ -75,7 +75,7 @@ export function NoteColumn({ notes }: { notes: NotesState }) {
           {gallery ? <SplitViewToggle /> : null}
           {gallery && n ? (
             <BarButton label="Back to gallery" onPress={() => setOpen(false)} className="w-auto gap-0.5 pr-2 pl-1">
-              <Chevron direction="left" size={20} /><span className="text-[17px] font-normal">Gallery</span>
+              <Chevron direction="left" size={20} /><span className="text-body font-normal">Gallery</span>
             </BarButton>
           ) : null}
         </>}

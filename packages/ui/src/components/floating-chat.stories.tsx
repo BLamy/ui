@@ -60,7 +60,7 @@ function Transcript() {
 function Demo(args: Args) {
   const scrollRef = useRef<HTMLDivElement>(null);
   return (
-    <ThemeScope scope="chat" appearance="dark" className="relative overflow-hidden bg-background font-ios text-foreground" style={{ width: args.width, height: args.height }}>
+    <ThemeScope scope="chat" appearance="dark" className="relative overflow-hidden bg-background font-sans text-foreground" style={{ width: args.width, height: args.height }}>
       {/* Any scrolling host: the chat follows its scroll direction like a TabBar. */}
       <div ref={scrollRef} className="absolute inset-0 box-border overflow-auto p-5">
         <h1 className="mt-1 mb-4 text-[24px]">Release notes</h1>

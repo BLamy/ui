@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { animate, motion, useMotionValue, useTransform, type AnimationPlaybackControls } from 'framer-motion';

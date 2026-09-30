@@ -1,3 +1,4 @@
+'use client';
 import type { ComponentProps, ReactNode } from 'react';
 import {
   Collection,
@@ -56,7 +57,7 @@ export function DropdownMenuContent<T extends object>({
 
 export const dropdownMenuItemVariants = cva(
   [
-    'bl-btn relative box-border flex min-h-11 cursor-pointer items-center gap-3 py-[11px] pr-4 pl-4 text-[17px] leading-[22px] outline-none',
+    'bl-btn relative box-border flex min-h-11 cursor-pointer items-center gap-3 py-[11px] pr-4 pl-4 text-body leading-[22px] outline-none',
     'data-focused:bg-accent data-pressed:bg-secondary-strong data-open:bg-accent data-disabled:cursor-default data-disabled:opacity-40',
     // Hairline between rows — not under the last row, nor above a section band.
     'after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border last:after:hidden [&:has(+[role=separator])]:after:hidden',
@@ -100,7 +101,7 @@ export function DropdownMenuItem<T extends object>({
           ) : null}
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate">{kids}</span>
-            {description ? <span className="truncate text-[13px] leading-[18px] text-muted-foreground">{description}</span> : null}
+            {description ? <span className="truncate text-footnote leading-[18px] text-muted-foreground">{description}</span> : null}
           </span>
           {shortcut ? <span className="shrink-0">{shortcut}</span> : null}
           {hasSubmenu ? (
@@ -131,7 +132,7 @@ export function DropdownMenuLabel({ className, ...props }: ComponentProps<typeof
   return (
     <Header
       data-slot="dropdown-menu-label"
-      className={cn('px-4 pt-2 pb-1.5 text-[13px] leading-[18px] text-muted-foreground', className)}
+      className={cn('px-4 pt-2 pb-1.5 text-footnote leading-[18px] text-muted-foreground', className)}
       {...props}
     />
   );
@@ -143,7 +144,7 @@ export function DropdownMenuSeparator({ className, ...props }: SeparatorProps) {
 }
 
 export function DropdownMenuShortcut({ className, ...props }: ComponentProps<'span'>) {
-  return <span data-slot="dropdown-menu-shortcut" className={cn('text-[15px] tracking-[.08em] text-muted-foreground', className)} {...props} />;
+  return <span data-slot="dropdown-menu-shortcut" className={cn('text-subhead tracking-[.08em] text-muted-foreground', className)} {...props} />;
 }
 
 /** Wrap a DropdownMenuItem and a nested DropdownMenuContent to make a submenu. */

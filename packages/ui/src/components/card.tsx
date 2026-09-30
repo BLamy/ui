@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 /* ══ Card — shadcn's card as an iOS inset-grouped panel ══ */
-export const cardVariants = cva('flex flex-col overflow-hidden rounded-[14px] text-card-foreground', {
+export const cardVariants = cva('flex flex-col overflow-hidden rounded-card text-card-foreground', {
   variants: {
     variant: {
       /** Inset-grouped: a card on the grouped (bg2) background. */
@@ -11,7 +11,7 @@ export const cardVariants = cva('flex flex-col overflow-hidden rounded-[14px] te
       /** Floating: lifts off any background. */
       elevated: 'bg-card shadow-[0_6px_24px_--alpha(black/10%),0_0_0_.5px_var(--border)]',
       /** Hairline outline, no fill. */
-      outline: 'bg-transparent shadow-[inset_0_0_0_1px_var(--border)]',
+      outline: 'bg-transparent shadow-hairline',
     },
   },
   defaultVariants: { variant: 'default' },
@@ -31,18 +31,18 @@ export function CardTitle({ className, ...props }: ComponentProps<'h3'>) {
   return (
     <h3
       data-slot="card-title"
-      className={cn('m-0 text-[17px] leading-[22px] font-semibold tracking-[-.2px] text-foreground', className)}
+      className={cn('m-0 text-body leading-[22px] font-semibold tracking-[-.2px] text-foreground', className)}
       {...props}
     />
   );
 }
 
 export function CardDescription({ className, ...props }: ComponentProps<'p'>) {
-  return <p data-slot="card-description" className={cn('m-0 text-[13px] leading-[18px] text-muted-foreground', className)} {...props} />;
+  return <p data-slot="card-description" className={cn('m-0 text-footnote leading-[18px] text-muted-foreground', className)} {...props} />;
 }
 
 export function CardContent({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="card-content" className={cn('px-4 py-3 text-[15px] leading-[20px]', className)} {...props} />;
+  return <div data-slot="card-content" className={cn('px-4 py-3 text-subhead leading-[20px]', className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: ComponentProps<'div'>) {

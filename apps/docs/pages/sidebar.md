@@ -3,6 +3,17 @@
 One compositional API over every sidebar behavior — a **higher-level primitive than shadcn's sidebar**: the same children render as any variant, and every variant knows how to become a hamburger overlay on its own.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/sidebar.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  Sidebar, SidebarProvider, SidebarHeader, SidebarContent,
+} from '@/components/ui/sidebar'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -14,17 +25,6 @@ import '@brett_lamy/ui/styles.css'
 import {
   Sidebar, SidebarProvider, SidebarHeader, SidebarContent,
 } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/sidebar.json{% endcommand %}
-
-Adds `@/components/ui/sidebar.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  Sidebar, SidebarProvider, SidebarHeader, SidebarContent,
-} from '@/components/ui/sidebar'
 ```
 {% endtab %}
 {% endtabs %}

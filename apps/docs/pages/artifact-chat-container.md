@@ -3,6 +3,17 @@
 A container-aware chat and artifact composition. At larger widths the full chat docks on the left and the artifact fills the right. Below the breakpoint, the artifact keeps the whole canvas and your Workbench `Composer` floats above it on frosted glass. The transcript hangs off a **draggable top bump** of that composer: pull the bump's handle upward and the conversation tracks the pointer, then snaps fully open or closed on release. Continue dragging below the closed position to fold the chat into a single FAB; tapping that FAB restores only the compact Composer.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/artifact-chat-container.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  ArtifactChatContainer, useArtifactChatContainer,
+} from '@/components/ui/artifact-chat-container'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -16,26 +27,16 @@ import {
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/artifact-chat-container.json{% endcommand %}
-
-Adds `@/components/ui/artifact-chat-container.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  ArtifactChatContainer, useArtifactChatContainer,
-} from '@/components/ui/artifact-chat-container'
-```
-{% endtab %}
 {% endtabs %}
 
 The floating half is not special to this container: it is the standalone `FloatingChat`, which adds a `ComposerBump side="top" draggable` (handle + `ComposerBumpContent` holding the transcript) to whatever Composer you put in the slot, through a `ComposerOutlet`. `ArtifactChatContainer` only decides *when* to float it.
 
 ```tsx
+import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container'
 import {
-  ArtifactChatContainer, Composer, ComposerCard, ComposerInput, ComposerFooter,
+  Composer, ComposerCard, ComposerInput, ComposerFooter,
   ComposerSpacer, ComposerSend,
-} from '@brett_lamy/ui'
+} from '@/components/ui/composer/composer'
 
 <ArtifactChatContainer
   layout="auto"          // 'auto' | 'split' | 'floating'
@@ -68,7 +69,7 @@ import {
 | `ChatColumn` | The split layout's docked chat: `ChatColumn.Transcript` scrolls above `ChatColumn.Composer`. |
 | `FloatingChat` | The floating layout: the slot's Composer over the content, with the transcript on a draggable top bump (`ComposerOutlet` + `ComposerBump`). |
 
-Each piece is exported from `@brett_lamy/ui`, so a layout the container does not offer can be composed directly.
+Each piece is a library part (`@/components/ui/chat-column`, `@/components/ui/floating-chat`), so a layout the container does not offer can be composed directly.
 
 ## Responsive slots
 
@@ -89,7 +90,7 @@ The breakpoint measures the container, not the viewport. A tap on the bump's han
 | `minimized` / `onMinimizedChange` | uncontrolled | Controls the floating chat's fold into its FAB. A host can switch `layout` to `floating` with `minimized` to hide a docked chat as a FAB; tapping the FAB reports `false`, and the composer flies back to the column when the host docks it again. |
 | `peek` | `0` | Height of transcript kept visible above the composer while the chat is closed, so the newest reply stays readable over the content. Growth is measured from the peek, so the glass keeps its compact shape until it is dragged past it. |
 | `appearance` | `glass` | `glass` blurs the content behind it; `sheet` is an opaque card. |
-| `tone` | `auto` | `auto` inherits the host's `--bl-*` tokens; `dark` and `light` override them so the surface can disagree with the page. |
+| `tone` | `auto` | `auto` inherits the host's theme variables; `dark` and `light` override them so the surface can disagree with the page. |
 
 ## Working and scroll behavior
 
@@ -121,10 +122,14 @@ Full compositions built on the container and its floating surface. Each links to
 
 ### Map chat
 
-A chat that is always floating over a map and works by calling tools. The composition is `ArtifactChatContainer layout="floating"` with a `TileMap` in the `Content` slot and a `peek` so the guide's newest reply stays visible above the composer. Drag the cap up for the full transcript; drag it below the composer to fold the chat into a FAB and use the map alone.
+A chat that is always floating over a map and works by calling tools. It is the **map-chat** [block](https://blamy.github.io/ui/#/blocks): the composition is `ArtifactChatContainer layout="floating"` with a `TileMap` in the `Content` slot and a `peek` so the guide's newest reply stays visible above the composer. `TileMap`, the geography, the places and the tool-planning agent are block-local files, not library parts, and `npx shadcn add` copies them into your app.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/map-chat.json{% endcommand %} Drag the cap up for the full transcript; drag it below the composer to fold the chat into a FAB and use the map alone.
 
 ```tsx
-import { ArtifactChatContainer, TileMap, planTurn } from '@brett_lamy/ui'
+import { ArtifactChatContainer } from '@/components/ui/artifact-chat-container'
+import { TileMap } from '@/components/blocks/map-chat/tile-map'
+import { planTurn } from '@/components/blocks/map-chat/map-agent'
 
 <ArtifactChatContainer
   layout="floating" peek={236} working={busy} hideOnScroll={false}
@@ -156,7 +161,7 @@ Try: *Coffee near me*, *Plan an afternoon in SoHo*, *How far is the Empire State
 
 #### TileMap
 
-`TileMap` is a dependency-free slippy map: raster tiles at the nearest integer zoom scaled to the fractional camera, with pins and a route projected in an overlay. `view` accepts `{ center, zoom }` or `{ bounds, padding, maxZoom }` and flies to it whenever the object identity changes; gestures (drag, pinch, wheel, double-tap) move the camera without touching the prop. `tileUrl` swaps the tile set — key-free `esriDarkGrayTiles`, `esriLightGrayTiles`, and `osmTiles` are included, with `tileFilter` to deepen a grey basemap — and `scheme="light"` flips label and control colours to match. Pins take an icon, a colour, a numbered `badge`, or a `callout` bubble.
+`TileMap` (`import { TileMap } from '@/components/blocks/map-chat/tile-map'`) is a dependency-free slippy map: raster tiles at the nearest integer zoom scaled to the fractional camera, with pins and a route projected in an overlay. `view` accepts `{ center, zoom }` or `{ bounds, padding, maxZoom }` and flies to it whenever the object identity changes; gestures (drag, pinch, wheel, double-tap) move the camera without touching the prop. `tileUrl` swaps the tile set — key-free `esriDarkGrayTiles`, `esriLightGrayTiles`, and `osmTiles` are included, with `tileFilter` to deepen a grey basemap — and `scheme="light"` flips label and control colours to match. Pins take an icon, a colour, a numbered `badge`, or a `callout` bubble.
 
 #### Live example
 
@@ -166,12 +171,16 @@ Tiles load from Esri, so this block needs network. Open it full screen at [`?dem
 
 ### Delivery tracking
 
-An order tracker in the style of a food-delivery app, composed from the same primitives as the map chat: a light `TileMap` underneath and an opaque, edge-docked `FloatingSheet` carrying the order status. Resting, the sheet shows the headline, a `ProgressStepper`, the pickup instructions, and a promo row; drag the cap and the same surface grows into the full page with gift-card and menu carousels.
+An order tracker in the style of a food-delivery app, the **delivery-tracking** [block](https://blamy.github.io/ui/#/blocks). It is composed from the same primitives as the map chat: a light `TileMap` (the map-chat block's, above) underneath and an opaque, edge-docked `FloatingSheet` carrying the order status.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/delivery-tracking.json{% endcommand %} Resting, the sheet shows the headline, a `ProgressStepper`, the pickup instructions, and a promo row; drag the cap and the same surface grows into the full page with gift-card and menu carousels.
 
 ```tsx
+import { FloatingSheet } from '@/components/ui/floating-sheet'
+import { ProgressStepper } from '@/components/ui/progress-stepper'
 import {
-  FloatingSheet, ProgressStepper, TileMap, esriLightGrayTiles,
-} from '@brett_lamy/ui'
+  TileMap, esriLightGrayTiles,
+} from '@/components/blocks/map-chat/tile-map'
 
 <div style={{ position: 'relative' }}>
   <TileMap
@@ -201,7 +210,7 @@ import {
 | `peek`, `bodyAlign`, `minimizable` | `FloatingSheet` | How much rests over the map, which end of the body the window anchors to, and whether it can fold away. |
 | `variant`, `animated`, `labels` | `ProgressStepper` | Segment bars or a joined line, an active shimmer, optional labels. Every step exposes `data-state="done|active|todo"`. |
 | `scheme`, `tileUrl`, pin `callout` | `TileMap` | Light chrome over grey Esri tiles, and the ETA bubble on the car. |
-| `stage`, `autoAdvance`, `stageMs`, `accent` | `DeliveryTrackingDemo` | Drive the order stage yourself or let it advance; recolour the stepper, pins, and primary button. |
+| `stage`, `autoAdvance`, `stageMs`, `accent` | `DeliveryTrackingDemo` (block) | Drive the order stage yourself or let it advance; recolour the stepper, pins, and primary button. |
 
 The sheet body is ordinary content: the stepper, cards, disclosure, and carousels are siblings a host reorders or replaces. Nothing in it knows about the map.
 
@@ -214,3 +223,31 @@ Open it full screen at [`?demo=artifact-chat-container/delivery-tracking`](?demo
 ## FloatingSheet
 
 The map chat and delivery tracker float on `FloatingSheet`: glass or opaque, peeking or docked, with a drag that snaps open and folds into a FAB. The floating chat here shares the same velocity-aware gesture (`useSpringSheetDrag`) through the Composer's top bump. Its appearances, drag behavior, slots, and full props are documented on the [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) page.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `artifactChatContainerVariants`
+
+Defined in `@/components/ui/artifact-chat-container`. Base classes:
+
+```text
+ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden bg-background text-foreground [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]
+```
+
+**`layout`** — default `split`
+
+| Value | Adds |
+| --- | --- |
+| `split` (default) | `grid` |
+| `floating` | `block` |
+
+**`chatSide`** — default `left`
+
+| Value | Adds |
+| --- | --- |
+| `left` (default) | — |
+| `right` | — |
+
+2 compound variants — see the source.

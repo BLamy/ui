@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { getStroke } from 'perfect-freehand';
 import { PK_TOOLS, type PencilStroke } from '@/components/ui/pencilkit/constants';

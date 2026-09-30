@@ -21,9 +21,23 @@
           "color-link": "var(--link, var(--primary))",
           "color-code": "var(--code, var(--muted))",
           "color-code-foreground": "var(--code-foreground, var(--foreground))",
+          "radius-ctl": "calc(var(--radius, .625rem) * 1)",
+          "radius-panel": "calc(var(--radius, .625rem) * 1.2)",
+          "radius-card": "calc(var(--radius, .625rem) * 1.4)",
+          "radius-sheet": "calc(var(--radius, .625rem) * 1.8)",
+          "text-caption2": "11px",
+          "text-caption": "12px",
+          "text-footnote": "13px",
+          "text-detail": "14px",
+          "text-subhead": "15px",
+          "text-callout": "16px",
+          "text-body": "17px",
+          "text-title": "20px",
+          "shadow-hairline": "inset 0 0 0 1px var(--border)",
+          "shadow-hairline-t": "inset 0 1px 0 var(--border)",
+          "shadow-hairline-b": "inset 0 -1px 0 var(--border)",
           "spacing-toolbar": "52px",
-          "font-ios": "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
-          "font-mono": "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
+          "spacing-row": "46px",
           "ease-ios": "cubic-bezier(.32, .72, 0, 1)",
           "ease-spring-snappy": "linear(0.0017, 0.0315, 0.0996, 0.1865, 0.2645, 0.3583, 0.4476, 0.5297, 0.5916, 0.6577, 0.7152, 0.7644, 0.7997, 0.8359, 0.8661, 0.8912, 0.9088, 0.9264, 0.9407, 0.9525, 0.9605, 0.9685, 0.9749, 0.9801, 0.9836, 0.987, 0.9898, 0.992, 0.9934, 0.9948, 0.996, 0.9969, 0.9974, 0.998, 0.9985, 0.9988, 0.999, 0.9993, 0.9994, 0.9996, 1)",
           "duration-spring-snappy": "383ms",
@@ -1037,6 +1051,10 @@
       "title": "BL theme",
       "description": "BL UI's iOS look as a shadcn theme: sets your CSS variables (light and dark) to the iOS palette, plus the Workbench, terminal, sheet and glass theme scopes the Composer and floating chats use.",
       "cssVars": {
+        "theme": {
+          "font-sans": "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+          "font-mono": "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+        },
         "light": {
           "background": "#fff",
           "foreground": "#0B0B0F",
@@ -1359,8 +1377,8 @@
       "title": "ArtifactChatContainer",
       "description": "Chat docked beside an artifact when wide; a floating glass Composer over the artifact when narrow.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "framer-motion@^12 || ^13"
+        "class-variance-authority@^0.7.1",
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1394,9 +1412,9 @@
       "title": "CommandMenu",
       "description": "A cmdk-style command palette on react-aria: nested pages, fuzzy ranking with highlight, grid groups, ⌘1–9 and a keyboard legend.",
       "dependencies": [
-        "framer-motion@^12 || ^13",
+        "framer-motion@^13.1.0",
         "react-aria@^3.51.0",
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1446,10 +1464,10 @@
         "@brett_lamy/docstream-editor@1.7.0",
         "@tiptap/core@3.30.5",
         "@tiptap/pm@3.30.5",
-        "class-variance-authority@^0.7",
-        "framer-motion@^12 || ^13",
+        "class-variance-authority@^0.7.1",
+        "framer-motion@^13.1.0",
         "react-aria@^3.51.0",
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1529,8 +1547,8 @@
       "title": "Credenza",
       "description": "A dialog on wide screens and a draggable tray on phones, from one composition.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1559,7 +1577,7 @@
       "title": "EdgeDrawer",
       "description": "A drawer that follows the finger from any edge, with rubber-banding and velocity-aware snapping.",
       "dependencies": [
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1585,8 +1603,8 @@
       "title": "FloatingSheet",
       "description": "A floating card that grows into the full page along one drag, over a map or canvas.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1662,8 +1680,8 @@
       "title": "List",
       "description": "Inset-grouped and plain lists with rows, sections, swipe actions and an A-Z IndexBar.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "framer-motion@^12 || ^13"
+        "class-variance-authority@^0.7.1",
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1699,7 +1717,7 @@
       "dependencies": [
         "@brett_lamy/docstream@1.7.0",
         "@brett_lamy/docstream-editor@1.7.0",
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1756,7 +1774,7 @@
       "title": "MessageScroller",
       "description": "A chat transcript scroller anchored to the newest message, with streaming-aware autoscroll.",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1786,7 +1804,7 @@
       "title": "Morph",
       "description": "Shared-element transitions: one element springs between two layouts (mini player → full player), drag-to-dismiss friendly, reduced-motion aware.",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1816,7 +1834,7 @@
       "title": "Motion",
       "description": "Springs and the motion vocabulary: TextMorph, NumberMorph, IconSwap, Chevron, AnimatedHeight, ContentSwap, Celebrate.",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -1853,8 +1871,8 @@
       "title": "NavigationStack",
       "description": "A controlled push/pop stack with large titles and edge-swipe back.",
       "dependencies": [
-        "framer-motion@^12 || ^13",
-        "react-aria-components@^1"
+        "framer-motion@^13.1.0",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1913,9 +1931,9 @@
       "title": "PencilKit",
       "description": "Pressure-aware drawing (perfect-freehand) with the PencilKit tool picker, and the Composer image annotator.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "perfect-freehand@^1.2.2",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "perfect-freehand@^1.2.3",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1978,8 +1996,8 @@
       "title": "ProgressRing",
       "description": "Circular progress: a determinate ring that springs to each value with a rolling percentage, and a CountdownRing that drains second by second and turns red near the end.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2038,8 +2056,8 @@
       "title": "SideDrawer",
       "description": "An inspector column: docked beside the content, or an overlay sheet with a scrim.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2070,7 +2088,7 @@
       "title": "Sidebar",
       "description": "Docked, rail, floating or overlay navigation with workspace, search, sections and items.",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2110,7 +2128,7 @@
       "title": "Skeleton",
       "description": "Loading placeholders with a soft left-to-right sweep instead of a pulse: text lines, circles, rects and rounded blocks, and a SkeletonText paragraph with a shorter last line.",
       "dependencies": [
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2138,10 +2156,10 @@
       "title": "SplitView",
       "description": "An adaptive sidebar / supplementary / detail split that collapses by its own measured width.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "framer-motion@^12 || ^13",
+        "class-variance-authority@^0.7.1",
+        "framer-motion@^13.1.0",
         "react-aria@^3.51.0",
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2185,8 +2203,8 @@
       "title": "SyntaxHighlighting",
       "description": "Code highlighted on the GPU by gpu-lexer: file header, copy button, line numbers, highlighted and diff lines, inline code.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2227,8 +2245,8 @@
       "title": "TabView",
       "description": "Tabs as parts: a bar at any edge, sliding indicator, directional panels, swipe between panels.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2302,10 +2320,10 @@
       "title": "Toast",
       "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, stacking banners with actions, springs, auto-dismiss and announcements.",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "framer-motion@^12 || ^13",
+        "class-variance-authority@^0.7.1",
+        "framer-motion@^13.1.0",
         "react-aria@^3.51.0",
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2341,7 +2359,7 @@
       "title": "Animated Height",
       "description": "Animated Height — part of BL UI's library (components/animated-height.tsx).",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2380,7 +2398,7 @@
       "title": "Badge",
       "description": "Badge — part of BL UI's library (components/badge.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2400,8 +2418,8 @@
       "title": "Button",
       "description": "Button — part of BL UI's library (components/button.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2422,7 +2440,7 @@
       "title": "Card",
       "description": "Card — part of BL UI's library (components/card.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2442,7 +2460,7 @@
       "title": "Celebrate",
       "description": "Celebrate — part of BL UI's library (components/celebrate.tsx).",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2480,8 +2498,8 @@
       "title": "Checkbox",
       "description": "Checkbox — part of BL UI's library (components/checkbox.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2501,7 +2519,7 @@
       "title": "Combobox",
       "description": "Combobox — part of BL UI's library (components/combobox.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2524,7 +2542,7 @@
       "title": "Conversation",
       "description": "Conversation — part of BL UI's library (components/conversation.tsx).",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2549,8 +2567,8 @@
       "title": "Dialog",
       "description": "Dialog — part of BL UI's library (components/dialog.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2573,8 +2591,8 @@
       "title": "Disclosure",
       "description": "Disclosure — part of BL UI's library (components/disclosure.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2595,8 +2613,8 @@
       "title": "Dropdown Menu",
       "description": "Dropdown Menu — part of BL UI's library (components/dropdown-menu.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2618,7 +2636,7 @@
       "title": "Edit Bar",
       "description": "Edit Bar — part of BL UI's library (components/edit-bar.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2638,8 +2656,8 @@
       "title": "Floating Chat",
       "description": "Floating Chat — part of BL UI's library (components/floating-chat.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2666,7 +2684,7 @@
       "title": "Form",
       "description": "Form — part of BL UI's library (components/form.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2686,7 +2704,7 @@
       "title": "Icon Button",
       "description": "Icon Button — part of BL UI's library (components/icon-button.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2708,7 +2726,7 @@
       "title": "Icon Swap",
       "description": "Icon Swap — part of BL UI's library (components/icon-swap.tsx).",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2730,7 +2748,7 @@
       "title": "Index Bar",
       "description": "Index Bar — part of BL UI's library (components/index-bar.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2750,8 +2768,8 @@
       "title": "Input",
       "description": "Input — part of BL UI's library (components/input.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2772,7 +2790,7 @@
       "title": "Kbd",
       "description": "Kbd — part of BL UI's library (components/kbd.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2792,8 +2810,8 @@
       "title": "Label",
       "description": "Label — part of BL UI's library (components/label.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2813,8 +2831,8 @@
       "title": "List Box",
       "description": "List Box — part of BL UI's library (components/list-box.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2852,7 +2870,7 @@
       "title": "Number Morph",
       "description": "Number Morph — part of BL UI's library (components/number-morph.tsx).",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2873,7 +2891,7 @@
       "title": "Plain Button",
       "description": "Plain Button — part of BL UI's library (components/plain-button.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -2892,7 +2910,7 @@
       "title": "Popover",
       "description": "Popover — part of BL UI's library (components/popover.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2914,7 +2932,7 @@
       "title": "Progress Stepper",
       "description": "Progress Stepper — part of BL UI's library (components/progress-stepper.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2934,8 +2952,8 @@
       "title": "Progress",
       "description": "Progress — part of BL UI's library (components/progress.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2975,8 +2993,8 @@
       "title": "Radio Group",
       "description": "Radio Group — part of BL UI's library (components/radio-group.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -2996,7 +3014,7 @@
       "title": "Scroll Area",
       "description": "Scroll Area — part of BL UI's library (components/scroll-area.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3016,7 +3034,7 @@
       "title": "Search Field",
       "description": "Search Field — part of BL UI's library (components/search-field.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3037,7 +3055,7 @@
       "title": "Segmented",
       "description": "Segmented — part of BL UI's library (components/segmented.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3057,8 +3075,8 @@
       "title": "Select",
       "description": "Select — part of BL UI's library (components/select.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3080,8 +3098,8 @@
       "title": "Separator",
       "description": "Separator — part of BL UI's library (components/separator.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3101,8 +3119,8 @@
       "title": "Sheet",
       "description": "Sheet — part of BL UI's library (components/sheet.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3126,8 +3144,8 @@
       "title": "Slider",
       "description": "Slider — part of BL UI's library (components/slider.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3148,7 +3166,7 @@
       "title": "Snap Sheet",
       "description": "Snap Sheet — part of BL UI's library (components/snap-sheet.tsx).",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3187,7 +3205,7 @@
       "title": "Switch",
       "description": "Switch — part of BL UI's library (components/switch.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3226,8 +3244,8 @@
       "title": "Tabs",
       "description": "Tabs — part of BL UI's library (components/tabs.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3249,7 +3267,7 @@
       "title": "Text Field",
       "description": "Text Field — part of BL UI's library (components/text-field.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3269,7 +3287,7 @@
       "title": "Text Morph",
       "description": "Text Morph — part of BL UI's library (components/text-morph.tsx).",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3290,8 +3308,8 @@
       "title": "Textarea",
       "description": "Textarea — part of BL UI's library (components/textarea.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3312,8 +3330,8 @@
       "title": "Toggle Group",
       "description": "Toggle Group — part of BL UI's library (components/toggle-group.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3335,8 +3353,8 @@
       "title": "Toggle",
       "description": "Toggle — part of BL UI's library (components/toggle.tsx).",
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3356,7 +3374,7 @@
       "title": "Tooltip",
       "description": "Tooltip — part of BL UI's library (components/tooltip.tsx).",
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3483,7 +3501,7 @@
       "title": "Sheet Drag",
       "description": "Sheet Drag — part of BL UI's library (lib/sheet-drag.ts).",
       "dependencies": [
-        "framer-motion@^12 || ^13"
+        "framer-motion@^13.1.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3539,8 +3557,8 @@
       "title": "Utils",
       "description": "Utils — part of BL UI's library (lib/utils.ts).",
       "dependencies": [
-        "clsx@^2",
-        "tailwind-merge@^3"
+        "clsx@^2.1.1",
+        "tailwind-merge@^3.6.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4060,7 +4078,7 @@
         "application"
       ],
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4148,9 +4166,9 @@
         "maps"
       ],
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "framer-motion@^12 || ^13",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "framer-motion@^13.1.0",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4186,8 +4204,8 @@
         "application"
       ],
       "dependencies": [
-        "class-variance-authority@^0.7",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4406,7 +4424,7 @@
         "command-menu"
       ],
       "dependencies": [
-        "class-variance-authority@^0.7"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4564,7 +4582,7 @@
         "maps"
       ],
       "dependencies": [
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4663,7 +4681,7 @@
       ],
       "dependencies": [
         "react-aria@^3.51.0",
-        "react-aria-components@^1"
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4714,9 +4732,9 @@
       "dependencies": [
         "@pierre/diffs@^1.3.6",
         "@pierre/trees@1.0.0-beta.6",
-        "class-variance-authority@^0.7",
-        "framer-motion@^12 || ^13",
-        "react-aria-components@^1"
+        "class-variance-authority@^0.7.1",
+        "framer-motion@^13.1.0",
+        "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",

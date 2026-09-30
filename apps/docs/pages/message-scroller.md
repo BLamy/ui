@@ -3,6 +3,16 @@
 A chat transcript scroller that ports the shadcn `message-scroller` behaviors: it anchors turns, follows streams, and never moves the reader against their intent.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/message-scroller.json https://blamy.github.io/ui/r/workbench-theme.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { MessageScroller } from '@/components/ui/message-scroller'
+import { WorkbenchTheme } from '@/components/ui/workbench-theme'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,17 +22,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { MessageScroller, WorkbenchTheme } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/message-scroller.json{% endcommand %}
-
-Adds `@/components/ui/message-scroller.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  MessageScroller, WorkbenchTheme,
-} from '@/components/ui/message-scroller'
 ```
 {% endtab %}
 {% endtabs %}

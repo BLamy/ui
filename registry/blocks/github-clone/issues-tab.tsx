@@ -31,7 +31,7 @@ export function IssueList({ ui, nav, labelFilter }: { ui: Layout; nav: Nav; labe
         ))}
         {rows.length === 0 ? <div className="px-4 py-10 text-center text-muted-foreground">No results matched your search.</div> : null}
       </Box>
-      <p className="mt-4 text-center text-[12px] text-muted-foreground">
+      <p className="mt-4 text-center text-caption text-muted-foreground">
         <b className="font-semibold">ProTip!</b> Add <code className="rounded bg-secondary px-1 font-mono">no:assignee</code> to see everything that’s not assigned.
       </p>
     </div>

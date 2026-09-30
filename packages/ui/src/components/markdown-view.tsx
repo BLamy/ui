@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { GitbookStreamdown } from '@brett_lamy/docstream/streamdown';
 import { DocstreamRefContext, type DocstreamRefContextValue } from '@brett_lamy/docstream/reference';

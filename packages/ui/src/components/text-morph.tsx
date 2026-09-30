@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
 import { springs } from '@/lib/motion';

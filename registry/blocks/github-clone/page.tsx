@@ -74,7 +74,7 @@ export default function GithubClone({ initialTab, initialPullRequest, initialPat
   return (
     <BLProvider tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]} className="min-h-0 bg-background">
       <WorkbenchTheme appearance={appearance} tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]}
-        className="h-full w-full bg-background text-[14px] text-foreground select-text">
+        className="h-full w-full bg-background text-detail text-foreground select-text">
         <div ref={ref} className="relative flex h-full min-h-0 w-full flex-col">
           {ui.phone ? (
             <NavigationStack screens={screens} onPop={pop} />
@@ -127,7 +127,7 @@ function Placeholder({ icon, title, text }: { icon: OctName; title: string; text
   return (
     <Box className="grid place-items-center px-6 py-16 text-center">
       <Oct name={icon} size={24} className="text-muted-foreground" />
-      <h3 className="mt-3 mb-1 text-[20px] font-semibold">{title}</h3>
+      <h3 className="mt-3 mb-1 text-title font-semibold">{title}</h3>
       <p className="m-0 text-muted-foreground">{text}</p>
     </Box>
   );

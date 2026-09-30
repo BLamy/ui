@@ -1,3 +1,4 @@
+'use client';
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
 import {
   Tab as AriaTab, type TabProps as AriaTabProps,
@@ -18,7 +19,7 @@ export const tabsListVariants = cva('isolate flex', {
   variants: {
     variant: {
       segmented: 'gap-0.5 rounded-[9px] bg-secondary p-0.5',
-      underline: 'gap-5 shadow-[inset_0_-1px_0_var(--border)]',
+      underline: 'gap-5 shadow-hairline-b',
     },
   },
   defaultVariants: { variant: 'segmented' },
@@ -30,9 +31,9 @@ export const tabVariants = cva(
     variants: {
       variant: {
         segmented:
-          'flex-1 rounded-[7px] px-3 py-[5px] text-[13px] text-foreground data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45',
+          'flex-1 rounded-[7px] px-3 py-[5px] text-footnote text-foreground data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45',
         underline:
-          '-mb-px h-10 px-0.5 text-[15px] text-muted-foreground data-hovered:text-foreground data-selected:text-primary data-focus-visible:rounded-md data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45',
+          '-mb-px h-10 px-0.5 text-subhead text-muted-foreground data-hovered:text-foreground data-selected:text-primary data-focus-visible:rounded-md data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45',
       },
     },
     defaultVariants: { variant: 'segmented' },
@@ -117,7 +118,7 @@ export function TabPanel({ className, style, ...props }: AriaTabPanelProps) {
     <AriaTabPanel
       data-slot="tab-panel"
       className={composeRenderProps(className, (cls) =>
-        cn('rounded-[14px] outline-none data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 data-entering:animate-bl-panel-in motion-reduce:data-entering:animate-bl-fade-in', cls))}
+        cn('rounded-card outline-none data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 data-entering:animate-bl-panel-in motion-reduce:data-entering:animate-bl-fade-in', cls))}
       style={composeRenderProps(style, (st) => ({ ...dir, ...st }))}
       {...props}
     />

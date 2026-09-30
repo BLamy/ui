@@ -39,11 +39,11 @@ function Body({ r }: { r: Reminder }) {
   };
   return (
     <div className="bl-scroll max-h-[min(620px,calc(100vh-150px))] overflow-y-auto px-4 pt-2 pb-4">
-      <div className="mb-[22px] flex flex-col gap-2 rounded-[12px] bg-card px-4 py-3">
-        <input className={`${field} text-[17px] font-medium`} value={r.title} aria-label="Title" onChange={(e) => up({ title: e.target.value })} />
-        <textarea className={`${field} min-h-[44px] resize-none text-[15px] leading-[1.4]`} rows={2} placeholder="Notes" aria-label="Notes"
+      <div className="mb-[22px] flex flex-col gap-2 rounded-panel bg-card px-4 py-3">
+        <input className={`${field} text-body font-medium`} value={r.title} aria-label="Title" onChange={(e) => up({ title: e.target.value })} />
+        <textarea className={`${field} min-h-[44px] resize-none text-subhead leading-[1.4]`} rows={2} placeholder="Notes" aria-label="Notes"
           value={r.notes ?? ''} onChange={(e) => up({ notes: e.target.value || undefined })} />
-        <input className={`${field} text-[15px] text-primary`} placeholder="URL" aria-label="URL" value={r.url ?? ''} onChange={(e) => up({ url: e.target.value || undefined })} />
+        <input className={`${field} text-subhead text-primary`} placeholder="URL" aria-label="URL" value={r.url ?? ''} onChange={(e) => up({ url: e.target.value || undefined })} />
       </div>
 
       <ListSection>
@@ -79,14 +79,14 @@ function Body({ r }: { r: Reminder }) {
       <ListSection title="Subtasks">
         <div className="flex flex-col bg-card">
           {(r.subtasks ?? []).map((s) => (
-            <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 shadow-[inset_0_-1px_0_var(--border)]">
+            <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 shadow-hairline-b">
               <CheckCircle size={22} done={!!s.done} color={list?.color ?? SYSTEM.blue} label={`Subtask “${s.title}”`} onToggle={() => api.toggleSubtask(r.id, s.id)} />
-              <span className={s.done ? 'text-[17px] text-muted-foreground' : 'text-[17px]'}>{s.title}</span>
+              <span className={s.done ? 'text-body text-muted-foreground' : 'text-body'}>{s.title}</span>
             </div>
           ))}
           <div className="flex items-center gap-3 px-4 py-2.5">
             <span className="grid size-[22px] shrink-0 place-items-center rounded-full text-primary"><Icon name="plus" size={18} weight="bold" /></span>
-            <input className={`${field} text-[17px]`} placeholder="Add Subtask" aria-label="Add subtask" value={sub}
+            <input className={`${field} text-body`} placeholder="Add Subtask" aria-label="Add subtask" value={sub}
               onChange={(e) => setSub(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addSub(); }} onBlur={addSub} />
           </div>
         </div>

@@ -10,7 +10,7 @@ export function ListToolbar({ ui, nav, q, setQ, placeholder, newLabel }: { ui: L
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
       <SearchField value={q} onChange={setQ} placeholder={placeholder} aria-label="Search"
-        className="h-8 min-w-[200px] flex-1 rounded-md border border-border bg-muted px-2 py-0 text-[14px] [&_input]:text-[14px] [&_svg]:size-4" />
+        className="h-8 min-w-[200px] flex-1 rounded-md border border-border bg-muted px-2 py-0 text-detail [&_input]:text-detail [&_svg]:size-4" />
       <div className="flex">
         <Button className={cn(ghButton(), 'rounded-r-none')} onPress={nav.labels}><Oct name="tag" className="text-muted-foreground" />Labels{!ui.phone ? <Counter>{Object.keys(LABELS).length}</Counter> : null}</Button>
         <Button className={cn(ghButton(), '-ml-px rounded-l-none')}><Oct name="history" className="text-muted-foreground" />Milestones</Button>
@@ -25,7 +25,7 @@ export function StateToggle({ value, onChange, open, closed, closedIcon }: {
 }) {
   const item = (v: 'open' | 'closed', icon: OctName, n: number, label: string) => (
     <button type="button" onClick={() => onChange(v)} aria-pressed={value === v}
-      className={cn('flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-[14px] hover:bg-secondary',
+      className={cn('flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-detail hover:bg-secondary',
         value === v ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
       <Oct name={icon} />{n} {label}
     </button>
@@ -40,7 +40,7 @@ export function FilterMenus({ ui, names, onLabel }: { ui: Layout; names: string[
     <div className="ml-auto flex items-center text-muted-foreground">
       {shown.map((n) => (
         <button key={n} type="button" onClick={n === 'Labels' ? onLabel : undefined}
-          className="flex cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 py-1 text-[14px] text-muted-foreground hover:bg-secondary hover:text-foreground">
+          className="flex cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent px-2 py-1 text-detail text-muted-foreground hover:bg-secondary hover:text-foreground">
           {n}<Oct name="chevDown" size={12} />
         </button>
       ))}
@@ -58,21 +58,21 @@ export function ItemRow({ ui, state, title, labels, meta, assignees, comments, s
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <button type="button" onClick={onOpen}
-            className="cursor-pointer border-0 bg-transparent p-0 text-left text-[16px] leading-6 font-semibold text-foreground hover:text-primary">
+            className="cursor-pointer border-0 bg-transparent p-0 text-left text-callout leading-6 font-semibold text-foreground hover:text-primary">
             {title}
           </button>
           {status}
           {labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} />)}
         </div>
-        <div className="mt-1 text-[12px] text-muted-foreground">{meta}</div>
+        <div className="mt-1 text-caption text-muted-foreground">{meta}</div>
       </div>
       {!ui.phone ? (
         <div className="flex w-[120px] shrink-0 items-start justify-end gap-4 pt-1">
           {assignees.length ? <AvatarStack users={assignees} /> : null}
-          {comments ? <span className="flex items-center gap-1 text-[12px] text-muted-foreground hover:text-primary"><Oct name="comment" />{comments}</span> : null}
+          {comments ? <span className="flex items-center gap-1 text-caption text-muted-foreground hover:text-primary"><Oct name="comment" />{comments}</span> : null}
         </div>
       ) : comments ? (
-        <span className="flex shrink-0 items-center gap-1 pt-1 text-[12px] text-muted-foreground"><Oct name="comment" size={14} />{comments}</span>
+        <span className="flex shrink-0 items-center gap-1 pt-1 text-caption text-muted-foreground"><Oct name="comment" size={14} />{comments}</span>
       ) : null}
     </div>
   );

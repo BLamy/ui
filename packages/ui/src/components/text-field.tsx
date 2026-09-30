@@ -1,3 +1,4 @@
+'use client';
 import {
   FieldError as AriaFieldError, type FieldErrorProps as AriaFieldErrorProps,
   Text, type TextProps,
@@ -27,7 +28,7 @@ export function TextField({ className, ...props }: TextFieldProps) {
 
 /** Help text under a field (react-aria's `description` slot, announced with the field). */
 export function FieldDescription({ className, ...props }: TextProps) {
-  return <Text data-slot="field-description" slot="description" className={cn('px-1 text-[13px] leading-[18px] text-muted-foreground', className)} {...props} />;
+  return <Text data-slot="field-description" slot="description" className={cn('px-1 text-footnote leading-[18px] text-muted-foreground', className)} {...props} />;
 }
 
 /** Validation message; renders only while the field is invalid. */
@@ -35,7 +36,7 @@ export function FieldError({ className, ...props }: AriaFieldErrorProps) {
   return (
     <AriaFieldError
       data-slot="field-error"
-      className={composeRenderProps(className, (cls) => cn('px-1 text-[13px] leading-[18px] text-destructive', cls))}
+      className={composeRenderProps(className, (cls) => cn('px-1 text-footnote leading-[18px] text-destructive', cls))}
       {...props}
     />
   );

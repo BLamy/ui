@@ -143,7 +143,7 @@ export function LabelChip({ label, dark, className }: { label: Label; dark: bool
     ? { background: `rgba(${r},${g},${b},.18)`, color: `rgb(${lift(r)},${lift(g)},${lift(b)})`, boxShadow: `inset 0 0 0 1px rgba(${r},${g},${b},.4)` }
     : { background: label.color };
   return (
-    <span className={cn('inline-flex h-5 items-center rounded-full px-[7px] text-[12px] leading-none font-medium whitespace-nowrap',
+    <span className={cn('inline-flex h-5 items-center rounded-full px-[7px] text-caption leading-none font-medium whitespace-nowrap',
       !dark && (lum > 0.6 ? 'text-(--gh-ink)' : 'text-white'), className)} style={style}>
       {label.name}
     </span>
@@ -170,7 +170,7 @@ export function StateIcon({ state, className }: { state: StateKind; className?: 
 export function StatePill({ state }: { state: StateKind }) {
   const s = STATE[state];
   return (
-    <span className={cn('inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[14px] font-medium text-white', s.pill)}>
+    <span className={cn('inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-detail font-medium text-white', s.pill)}>
       <Oct name={s.icon} />
       {s.label}
     </span>
@@ -180,7 +180,7 @@ export function StatePill({ state }: { state: StateKind }) {
 /** A small gray count bubble (tab counts, button counts). */
 export function Counter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <span className={cn('inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-secondary-strong px-1.5 text-[12px] leading-none font-medium text-foreground', className)}>
+    <span className={cn('inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-secondary-strong px-1.5 text-caption leading-none font-medium text-foreground', className)}>
       {children}
     </span>
   );
@@ -201,7 +201,7 @@ export function AvatarStack({ users, size = 20 }: { users: User[]; size?: number
 export function UnderlineTab({ id, icon, label, count }: { id: string; icon?: OctName; label: string; count?: ReactNode }) {
   return (
     <TabViewTab id={id} textValue={label} className="group relative flex shrink-0 items-center py-2 outline-none data-selected:font-semibold">
-      <span className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[14px] leading-5 text-foreground group-data-hovered:bg-secondary group-data-focus-visible:ring-2 group-data-focus-visible:ring-primary">
+      <span className="flex items-center gap-2 rounded-md px-2 py-1.5 text-detail leading-5 text-foreground group-data-hovered:bg-secondary group-data-focus-visible:ring-2 group-data-focus-visible:ring-primary">
         {icon ? <Oct name={icon} className="text-muted-foreground" /> : null}
         <span className="whitespace-nowrap">{label}</span>
         {count != null ? <Counter>{count}</Counter> : null}
@@ -224,7 +224,7 @@ export function FlowPanel({ id, className, children }: { id: string; className?:
 export function Box({ header, children, className }: { header?: ReactNode; children?: ReactNode; className?: string }) {
   return (
     <div className={cn('overflow-hidden rounded-md border border-border bg-background', className)}>
-      {header ? <div className="flex min-h-[46px] items-center gap-2 border-b border-border bg-muted px-4 py-2 text-[14px]">{header}</div> : null}
+      {header ? <div className="flex min-h-row items-center gap-2 border-b border-border bg-muted px-4 py-2 text-detail">{header}</div> : null}
       {children}
     </div>
   );
@@ -233,7 +233,7 @@ export function Box({ header, children, className }: { header?: ReactNode; child
 /** Class string for GitHub's default (gray) button; add `primary` for the green one. */
 export const ghButton = (primary?: boolean) =>
   cn(
-    'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-[14px] font-medium outline-none whitespace-nowrap',
+    'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-detail font-medium outline-none whitespace-nowrap',
     'data-focus-visible:ring-2 data-focus-visible:ring-primary data-focus-visible:ring-offset-1',
     primary
       ? 'border-(--gh-merge-border) bg-(--gh-merge) text-white data-hovered:bg-(--gh-merge-hover)'
@@ -281,7 +281,7 @@ export function DiffStat({ add, del }: { add: number; del: number }) {
   const g = Math.round((add / total) * 5);
   const r = Math.min(5 - g, Math.round((del / total) * 5));
   return (
-    <span className="flex items-center gap-2 font-mono text-[12px] font-semibold">
+    <span className="flex items-center gap-2 font-mono text-caption font-semibold">
       <span className="text-[var(--gh-open)]">+{add}</span>
       <span className="text-[var(--gh-closed)]">−{del}</span>
       <span className="flex gap-px">
@@ -311,11 +311,11 @@ export function DiffView({ path, patch, add, del }: { path: string; patch: strin
           <Oct name={open ? 'chevDown' : 'chevRight'} />
         </button>
         <DiffStat add={add} del={del} />
-        <span className="min-w-0 truncate font-mono text-[12px] font-semibold text-foreground">{path}</span>
+        <span className="min-w-0 truncate font-mono text-caption font-semibold text-foreground">{path}</span>
         <Oct name="copy" size={14} className="shrink-0 text-muted-foreground" />
       </div>
       {open ? (
-        <div className="overflow-x-auto font-mono text-[12px] leading-5">
+        <div className="overflow-x-auto font-mono text-caption leading-5">
           <table className="w-full border-collapse" data-highlighter={highlighter} data-language={languageFromPath(path)}>
             <tbody>
               {rows.map((r, i) => (
@@ -365,7 +365,7 @@ function TreeItem({ node, selected, onSelect, depth, defaultOpen }: {
       <button type="button"
         onClick={() => (node.type === 'dir' ? setOpen(!open) : onSelect(node))}
         className={cn(
-          'relative flex h-8 w-full cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent pr-2 text-left text-[14px] text-foreground hover:bg-secondary',
+          'relative flex h-8 w-full cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent pr-2 text-left text-detail text-foreground hover:bg-secondary',
           active && 'bg-secondary before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-primary',
         )}
         style={{ paddingLeft: 8 + depth * 16 }}>
@@ -407,5 +407,5 @@ export const PR_STATE: Record<PullRequest['state'], StateKind> = { open: 'prOpen
 
 /** A branch name chip. */
 export function Branch({ children }: { children: ReactNode }) {
-  return <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[12px] text-primary">{children}</span>;
+  return <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-caption text-primary">{children}</span>;
 }

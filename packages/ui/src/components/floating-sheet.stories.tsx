@@ -38,7 +38,7 @@ function Host({ tone }: { tone: FloatingSheetTone }) {
 
 function Demo(args: Args) {
   return (
-    <div className="relative overflow-hidden font-ios" style={{ width: args.width, height: args.height }}>
+    <div className="relative overflow-hidden font-sans" style={{ width: args.width, height: args.height }}>
       <Host tone={args.tone} />
       <FloatingSheet
         appearance={args.appearance}

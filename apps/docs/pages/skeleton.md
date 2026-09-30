@@ -3,6 +3,15 @@
 Loading placeholders that hold the shape of the content on its way. A soft highlight sweeps across each block left to right — the reading direction — instead of the whole thing pulsing, and reduced motion gets a still block. `Skeleton` is one block with a `shape`; `SkeletonText` stacks text lines into a paragraph with a shorter last line.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/skeleton.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,15 +21,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { Skeleton, SkeletonText } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/skeleton.json{% endcommand %}
-
-Adds `@/components/ui/skeleton.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
 ```
 {% endtab %}
 {% endtabs %}
@@ -118,3 +118,25 @@ Placeholders are `aria-hidden`: they are decoration, not content. Mark the regio
 | `lineClassName` | — | Extra classes for each line. |
 
 `skeletonVariants({ shape })` returns the class list, for styling your own element as a placeholder. Blocks carry `data-slot="skeleton"` and `data-shape`; the paragraph is `data-slot="skeleton-text"`.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `skeletonVariants`
+
+Defined in `@/components/ui/skeleton`. Base classes:
+
+```text
+block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25%,color-mix(in_oklab,var(--card)_55%,transparent)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none
+```
+
+**`shape`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `rounded-ctl` |
+| `rounded` | `rounded-ctl` |
+| `rect` | `rounded-[3px]` |
+| `text` | `h-3.5 rounded-full` |
+| `circle` | `shrink-0 rounded-full` |

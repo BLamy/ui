@@ -66,7 +66,7 @@ function Shell({ last, ...p }: ShellProps) {
         : a}
     </>
   );
-  const cls = cn('relative flex min-h-[38px] w-full items-center gap-2.5 px-3 py-[7px] text-left text-[13px] text-foreground', macSep);
+  const cls = cn('relative flex min-h-[38px] w-full items-center gap-2.5 px-3 py-[7px] text-left text-footnote text-foreground', macSep);
   return p.onPress ? (
     <button type="button" onClick={p.onPress}
       className={cn(cls, 'bl-btn cursor-pointer border-0 bg-transparent [font-family:inherit] transition-colors duration-150 hover:bg-secondary/60 active:bg-accent')}>{body}</button>
@@ -77,7 +77,7 @@ function Shell({ last, ...p }: ShellProps) {
 function Plain({ children, last }: { children: ReactNode; last?: boolean }) {
   const { layout } = useSettings();
   return layout === 'desktop'
-    ? <div className={cn('relative px-3 py-3 text-[13px]', macSep)}>{children}</div>
+    ? <div className={cn('relative px-3 py-3 text-footnote', macSep)}>{children}</div>
     : <div className={cn('relative bg-card px-4 py-3', !last && 'after:absolute after:right-0 after:bottom-0 after:left-4 after:h-px after:bg-border')}>{children}</div>;
 }
 
@@ -94,12 +94,12 @@ function Popup({ id, title, options }: { id: string; title: string; options: str
   return (
     <DropdownMenu>
       <Button variant="ghost" size="sm" aria-label={`${title}: ${cur}`}
-        className="-my-1 h-[26px] gap-1 rounded-[6px] px-2 text-[13px] font-normal text-foreground shadow-[0_1px_1px_black] ring-[.5px] shadow-black/6 ring-border">
+        className="-my-1 h-[26px] gap-1 rounded-md px-2 text-footnote font-normal text-foreground shadow-[0_1px_1px_black] ring-[.5px] shadow-black/6 ring-border">
         {cur}<Icon name="chevron-up-down" size={12} weight="semibold" className="text-muted-foreground" />
       </Button>
       <DropdownMenuContent aria-label={title} placement="bottom end" selectionMode="single" selectedKeys={[cur]}
         onSelectionChange={(k) => { if (k !== 'all' && k.size) s.set(id, String([...k][0])); }}>
-        {options.map((o) => <DropdownMenuItem key={o} id={o} className="min-h-8 py-1.5 text-[13px]">{o}</DropdownMenuItem>)}
+        {options.map((o) => <DropdownMenuItem key={o} id={o} className="min-h-8 py-1.5 text-footnote">{o}</DropdownMenuItem>)}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -186,7 +186,7 @@ function SliderRow({ row }: { row: Extract<Row, { t: 'slider' }> }) {
   const s = useSettings();
   const end = (e: string, big: boolean) => IC[e]
     ? <Icon name={e} size={big ? 24 : 18} className="text-muted-foreground" />
-    : <span className={cn('w-5 text-center text-muted-foreground', big ? 'text-[22px]' : 'text-[13px]')}>{e}</span>;
+    : <span className={cn('w-5 text-center text-muted-foreground', big ? 'text-[22px]' : 'text-footnote')}>{e}</span>;
   return (
     <div className="flex items-center gap-2">
       {end(row.lo, false)}
@@ -207,9 +207,9 @@ function PhoneThumb({ dark }: { dark: boolean }) {
   return (
     <span className="relative block h-[112px] w-[56px] overflow-hidden rounded-[11px] shadow-[0_2px_6px_black] ring-1 shadow-black/12 ring-border"
       style={WALLPAPER[dark ? 'dark' : 'light']}>
-      <span className="absolute inset-x-0 top-2.5 text-center text-[14px] font-semibold tracking-[-.3px]">9:41</span>
-      <span className={cn('absolute inset-x-2 top-9 h-5 rounded-[6px]', dark ? 'bg-white/15' : 'bg-white/60')} />
-      <span className={cn('absolute inset-x-2 top-[62px] h-5 rounded-[6px]', dark ? 'bg-white/15' : 'bg-white/60')} />
+      <span className="absolute inset-x-0 top-2.5 text-center text-detail font-semibold tracking-[-.3px]">9:41</span>
+      <span className={cn('absolute inset-x-2 top-9 h-5 rounded-md', dark ? 'bg-white/15' : 'bg-white/60')} />
+      <span className={cn('absolute inset-x-2 top-[62px] h-5 rounded-md', dark ? 'bg-white/15' : 'bg-white/60')} />
     </span>
   );
 }
@@ -225,7 +225,7 @@ function AppearancePicker() {
           <button key={k} type="button" role="radio" aria-checked={on} onClick={() => { if (!on) s.setAppearance(k); }}
             className="bl-btn flex cursor-pointer flex-col items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-foreground">
             <PhoneThumb dark={k === 'dark'} />
-            <span className={s.layout === 'desktop' ? 'text-[13px]' : 'text-[15px]'}>{label}</span>
+            <span className={s.layout === 'desktop' ? 'text-footnote' : 'text-subhead'}>{label}</span>
             <span className={cn('grid size-[22px] place-items-center rounded-full text-white transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy',
               on ? 'bg-primary' : 'shadow-[inset_0_0_0_1.5px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))]')}>
               {on ? <Icon name="check" size={14} sw={3} className="transition-[scale] duration-spring-snappy ease-spring-bouncy starting:scale-40" /> : null}
@@ -242,20 +242,20 @@ function Usage({ row }: { row: Extract<Row, { t: 'usage' }> }) {
   const labels = row.days.length === 7 ? ['S', 'M', 'T', 'W', 'T', 'F', 'S'] : null;
   return (
     <div>
-      <div className="text-[13px] text-muted-foreground">{row.title}</div>
+      <div className="text-footnote text-muted-foreground">{row.title}</div>
       <div className="text-[28px] leading-[1.15] font-bold tracking-[-.5px]">{row.total}</div>
       <div className="mt-3 flex h-[92px] items-end gap-[6px]">
         {row.days.map((d, i) => (
-          <div key={i} className="flex flex-1 flex-col-reverse gap-px overflow-hidden rounded-[4px]" style={{ height: `${(d.reduce((a, b) => a + b, 0) / max) * 100}%` }}>
+          <div key={i} className="flex flex-1 flex-col-reverse gap-px overflow-hidden rounded-sm" style={{ height: `${(d.reduce((a, b) => a + b, 0) / max) * 100}%` }}>
             {d.map((x, j) => <div key={j} style={{ flexGrow: x, background: row.legend[j][1] }} />)}
           </div>
         ))}
       </div>
-      {labels ? <div className="mt-1 flex gap-[6px] text-[11px] text-muted-foreground">{labels.map((l, i) => <span key={i} className="flex-1 text-center">{l}</span>)}</div> : null}
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
+      {labels ? <div className="mt-1 flex gap-[6px] text-caption2 text-muted-foreground">{labels.map((l, i) => <span key={i} className="flex-1 text-center">{l}</span>)}</div> : null}
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-caption">
         {row.legend.map(([l, c]) => <span key={l} className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ background: c }} />{l}</span>)}
       </div>
-      <div className="mt-2 text-[12px] text-muted-foreground">{row.caption}</div>
+      <div className="mt-2 text-caption text-muted-foreground">{row.caption}</div>
     </div>
   );
 }
@@ -265,12 +265,12 @@ function Meter({ row }: { row: Extract<Row, { t: 'meter' }> }) {
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-semibold">{row.title}</span>
-        <span className="truncate text-[13px] text-muted-foreground">{row.used}</span>
+        <span className="truncate text-footnote text-muted-foreground">{row.used}</span>
       </div>
       <div className="mt-2.5 flex h-5 gap-px overflow-hidden rounded-[5px] bg-secondary">
         {row.parts.map(([l, c, n]) => <div key={l} style={{ width: `${(n / row.cap) * 100}%`, background: c }} />)}
       </div>
-      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted-foreground">
+      <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-caption text-muted-foreground">
         {row.parts.map(([l, c]) => <span key={l} className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ background: c }} />{l}</span>)}
       </div>
     </div>
@@ -307,8 +307,8 @@ export function Group({ title, footer, children }: { title?: ReactNode; footer?:
   if (layout !== 'desktop') return <ListSection title={title} footer={footer}>{children}</ListSection>;
   return (
     <div className="pb-5">
-      {title ? <div className="px-1 pb-1.5 text-[13px] font-semibold">{title}</div> : null}
-      <div className="overflow-hidden rounded-[10px] bg-secondary/40 shadow-[0_0_0_.5px_var(--border)]">{children}</div>
+      {title ? <div className="px-1 pb-1.5 text-footnote font-semibold">{title}</div> : null}
+      <div className="overflow-hidden rounded-ctl bg-secondary/40 shadow-[0_0_0_.5px_var(--border)]">{children}</div>
       {footer ? <div className="px-1 pt-1.5 text-[11.5px] leading-[1.4] text-muted-foreground">{footer}</div> : null}
     </div>
   );
@@ -329,18 +329,18 @@ function PaneHeader({ pane }: { pane: Pane }) {
   const { layout } = useSettings();
   if (!pane.glyph || !pane.color) return null;
   return layout === 'desktop' ? (
-    <div className="mb-5 flex items-center gap-3.5 rounded-[10px] bg-secondary/40 p-4 shadow-[0_0_0_.5px_var(--border)]">
+    <div className="mb-5 flex items-center gap-3.5 rounded-ctl bg-secondary/40 p-4 shadow-[0_0_0_.5px_var(--border)]">
       <Tile glyph={pane.glyph} color={pane.color} size={44} />
       <div className="min-w-0">
-        <div className="text-[15px] font-semibold">{pane.title}</div>
-        <div className="mt-0.5 text-[12px] leading-[1.4] text-muted-foreground">{pane.blurb} <span className="text-primary">Learn more…</span></div>
+        <div className="text-subhead font-semibold">{pane.title}</div>
+        <div className="mt-0.5 text-caption leading-[1.4] text-muted-foreground">{pane.blurb} <span className="text-primary">Learn more…</span></div>
       </div>
     </div>
   ) : (
-    <div className="mb-[22px] flex flex-col items-center rounded-[12px] bg-card px-5 pt-5 pb-4 text-center">
+    <div className="mb-[22px] flex flex-col items-center rounded-panel bg-card px-5 pt-5 pb-4 text-center">
       <Tile glyph={pane.glyph} color={pane.color} size={58} />
       <div className="mt-2.5 text-[22px] leading-tight font-bold tracking-[-.3px]">{pane.title}</div>
-      <p className="mt-1.5 mb-0 max-w-[420px] text-[14px] leading-[1.35] text-muted-foreground">{pane.blurb} <span className="text-primary">Learn more…</span></p>
+      <p className="mt-1.5 mb-0 max-w-[420px] text-detail leading-[1.35] text-muted-foreground">{pane.blurb} <span className="text-primary">Learn more…</span></p>
     </div>
   );
 }
@@ -363,7 +363,7 @@ export function SearchResults({ onOpen }: { onOpen?: () => void }) {
   const q = s.query.trim().toLowerCase();
   const hits = SEARCH.filter((h) => h.title.toLowerCase().includes(q)).slice(0, 40);
   if (!hits.length) {
-    return <div className="px-6 py-16 text-center"><div className="text-[20px] font-bold">No Results for “{s.query.trim()}”</div><div className="mt-1 text-[15px] text-muted-foreground">Check the spelling or try a new search.</div></div>;
+    return <div className="px-6 py-16 text-center"><div className="text-title font-bold">No Results for “{s.query.trim()}”</div><div className="mt-1 text-subhead text-muted-foreground">Check the spelling or try a new search.</div></div>;
   }
   return (
     <Group>

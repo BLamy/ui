@@ -24,8 +24,7 @@
         "inputs": [
           "{projectRoot}/**/*",
           "{workspaceRoot}/tools/registry/**/*",
-          "{workspaceRoot}/packages/ui/src/index.ts",
-          "{workspaceRoot}/packages/ui/src/theme.css",
+          "{workspaceRoot}/packages/ui/src/**/*",
           "{workspaceRoot}/packages/*/package.json"
         ],
         "outputs": [

@@ -15,7 +15,7 @@ import { trailOf, useSettings } from './state';
 function ToolButton({ label, icon, disabled, onPress }: { label: string; icon: 'chevron-left' | 'chevron-right'; disabled: boolean; onPress: () => void }) {
   return (
     <Button variant="ghost" size="icon" aria-label={label} isDisabled={disabled} onPress={onPress}
-      className="size-7 rounded-[6px] text-muted-foreground data-disabled:opacity-35">
+      className="size-7 rounded-md text-muted-foreground data-disabled:opacity-35">
       <Icon name={icon} size={16} weight="bold" />
     </Button>
   );
@@ -27,7 +27,7 @@ function BackToList() {
   const split = useSplitView();
   return (
     <button type="button" onClick={split.back} aria-label="Back to Settings"
-      className="bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary">
+      className="bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-body text-primary">
       <Icon name="chevL" size={24} sw={2.4} />Settings
     </button>
   );
@@ -46,10 +46,10 @@ export function SettingsDetail() {
     const title = getPane(id)?.title ?? '';
     return (
       <SplitViewDetail aria-label={title} className="bg-card">
-        <div className="flex h-[52px] shrink-0 items-center gap-0.5 px-3 shadow-[inset_0_-1px_0_var(--border)]">
+        <div className="flex h-toolbar shrink-0 items-center gap-0.5 px-3 shadow-hairline-b">
           <ToolButton label="Back" icon="chevron-left" disabled={trail.length < 2} onPress={s.back} />
           <ToolButton label="Forward" icon="chevron-right" disabled={!s.canForward} onPress={s.forward} />
-          <div className="ml-2 min-w-0 truncate text-[15px] font-semibold"><TextMorph>{title}</TextMorph></div>
+          <div className="ml-2 min-w-0 truncate text-subhead font-semibold"><TextMorph>{title}</TextMorph></div>
         </div>
         <div ref={scroller} className="bl-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
           <ContentSwap id={key} direction={s.dir}><PaneView id={id} /></ContentSwap>

@@ -3,6 +3,15 @@
 A responsive dialog that renders as a **centered dialog** on desktop and a **floating bottom tray** on phones — with Family-style morphing between stacked states.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/credenza.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { Credenza } from '@/components/ui/credenza'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,15 +21,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { Credenza } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/credenza.json{% endcommand %}
-
-Adds `@/components/ui/credenza.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import { Credenza } from '@/components/ui/credenza'
 ```
 {% endtab %}
 {% endtabs %}
@@ -80,3 +80,22 @@ Without `compact` it is a centered dialog. Keep the destructive action on the ri
 People to share with, actions as `ListRow`s, and a QR code as a second view.
 
 {% demo src="credenza/share-sheet" %}
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `credenzaVariants`
+
+Defined in `@/components/ui/credenza`. Base classes:
+
+```text
+z-401 box-border overflow-hidden bg-card text-foreground shadow-[0_24px_80px_--alpha(black/34%),0_0_0_1px_var(--border)] outline-none
+```
+
+**`compact`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `absolute inset-x-2.5 bottom-2.5 touch-none rounded-[28px]` |
+| `false` (default) | `absolute top-1/2 left-1/2 w-[400px] max-w-[calc(100%-44px)] rounded-[24px]` |

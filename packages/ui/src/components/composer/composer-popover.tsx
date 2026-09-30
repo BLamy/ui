@@ -1,3 +1,4 @@
+'use client';
 import {
   Popover as AriaPopover,
   PopoverContext,
@@ -23,7 +24,7 @@ export function isLightSurface(el: Element | null | undefined): boolean {
 }
 
 export const wbPopoverSurface =
-  'box-border rounded-[12px] border border-border bg-card font-ios text-foreground shadow-[0_14px_44px_color-mix(in_srgb,black_34%,transparent),0_2px_8px_color-mix(in_srgb,black_12%,transparent)] outline-none backdrop-blur-[18px] ' +
+  'box-border rounded-panel border border-border bg-card font-sans text-foreground shadow-[0_14px_44px_color-mix(in_srgb,black_34%,transparent),0_2px_8px_color-mix(in_srgb,black_12%,transparent)] outline-none backdrop-blur-[18px] ' +
   'origin-(--trigger-anchor-point) data-entering:animate-[wb-pop-in_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-exiting:animate-[wb-pop-out_.14s_ease-in_forwards] motion-reduce:animate-none';
 
 export interface WbPopoverProps extends AriaPopoverProps {}

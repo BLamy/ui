@@ -22,7 +22,7 @@ function DocLink({ codex, id }: { codex: CodexState; id: string }) {
   };
   return (
     <div className="mt-2 flex flex-col items-start gap-2">
-      <Button variant="secondary" onPress={open} className="h-auto rounded-full px-3.5 py-1.5 text-[14px] font-normal underline decoration-muted-foreground underline-offset-2">
+      <Button variant="secondary" onPress={open} className="h-auto rounded-full px-3.5 py-1.5 text-detail font-normal underline decoration-muted-foreground underline-offset-2">
         {doc.title}
       </Button>
       <Button
@@ -35,7 +35,7 @@ function DocLink({ codex, id }: { codex: CodexState; id: string }) {
         <span className="text-[22px] leading-none" aria-hidden="true">
           {doc.emoji}
         </span>
-        <span className="mt-1.5 font-serif text-[20px] leading-[1.05] font-bold whitespace-normal drop-shadow-[0_1px_2px_--alpha(black/45%)]">{doc.title}</span>
+        <span className="mt-1.5 font-serif text-title leading-[1.05] font-bold whitespace-normal drop-shadow-[0_1px_2px_--alpha(black/45%)]">{doc.title}</span>
       </Button>
     </div>
   );
@@ -55,7 +55,7 @@ function Bubble({ codex, m }: { codex: CodexState; m: Message }) {
   const mine = m.role === 'user';
   return (
     <div className={cn('flex flex-col', mine ? 'items-end' : 'items-start')}>
-      <div className={cn('max-w-[86%] rounded-[18px] px-3.5 py-2 text-[14.5px] leading-[1.4]', mine ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground')}>
+      <div className={cn('max-w-[86%] rounded-sheet px-3.5 py-2 text-[14.5px] leading-[1.4]', mine ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground')}>
         {m.text || !m.live ? m.text : <Typing />}
         {m.list && (
           <ul className="mt-1.5 list-disc space-y-1 pl-5">
@@ -66,7 +66,7 @@ function Bubble({ codex, m }: { codex: CodexState; m: Message }) {
         )}
       </div>
       {m.doc && <DocLink codex={codex} id={m.doc} />}
-      {m.read && <div className="mt-1 mr-1 text-[11px] text-muted-foreground">{m.read}</div>}
+      {m.read && <div className="mt-1 mr-1 text-caption2 text-muted-foreground">{m.read}</div>}
     </div>
   );
 }
@@ -81,7 +81,7 @@ function Composer({ onSend, disabled }: { onSend: (text: string) => void; disabl
   };
   return (
     <div className="shrink-0 px-3 pt-2 pb-3">
-      <div className="flex h-11 items-center gap-1 rounded-full bg-secondary pr-1.5 pl-1 shadow-[inset_0_0_0_1px_var(--border)]">
+      <div className="flex h-11 items-center gap-1 rounded-full bg-secondary pr-1.5 pl-1 shadow-hairline">
         <IconButton name="plus" label="Attach" size={18} className="size-8 rounded-full" />
         <TextField aria-label="Message" value={text} onChange={setText} className="min-w-0 flex-1">
           <Input
@@ -125,7 +125,7 @@ export function ChatPane({ codex }: { codex: CodexState }) {
         title={current.title}
         leading={
           s.collapsed ? undefined : (
-            <span className="flex items-center gap-2 pl-2 text-[14px] font-semibold">
+            <span className="flex items-center gap-2 pl-2 text-detail font-semibold">
               <DotOrb size={22} />
               dot
             </span>
@@ -146,14 +146,14 @@ export function ChatPane({ codex }: { codex: CodexState }) {
             <div className="grid flex-1 place-items-center py-16 text-center">
               <div>
                 <DotOrb size={56} className="mx-auto" />
-                <div className="mt-3 text-[15px] font-semibold">Start a chat with dot</div>
-                <div className="mt-1 text-[13px] text-muted-foreground">Ask anything — what dot writes up lands beside it.</div>
+                <div className="mt-3 text-subhead font-semibold">Start a chat with dot</div>
+                <div className="mt-1 text-footnote text-muted-foreground">Ask anything — what dot writes up lands beside it.</div>
               </div>
             </div>
           )}
           {current.items.map((i) =>
             i.kind === 'time' ? (
-              <div key={i.id} className="my-2 text-center text-[12px] text-muted-foreground">
+              <div key={i.id} className="my-2 text-center text-caption text-muted-foreground">
                 {i.label}
               </div>
             ) : (

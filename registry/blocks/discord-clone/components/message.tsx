@@ -31,7 +31,7 @@ const titleRef = (title: string) => (el: HTMLElement | null) => {
 };
 
 export const messageVariants = cva(
-  'group/message relative flex gap-[11px] px-[18px] font-ios [&:hover]:bg-accent',
+  'group/message relative flex gap-[11px] px-[18px] font-sans [&:hover]:bg-accent',
   {
     variants: {
       variant: {
@@ -108,7 +108,7 @@ export function MessageBadge({ className, ...props }: ComponentProps<'span'>) {
   return (
     <span
       data-slot="message-badge"
-      className={cn('rounded-[4px] bg-primary px-[5px] py-px text-[9px] font-extrabold tracking-[.4px] text-white', className)}
+      className={cn('rounded-sm bg-primary px-[5px] py-px text-[9px] font-extrabold tracking-[.4px] text-white', className)}
       {...props}
     />
   );
@@ -133,7 +133,7 @@ export function MessageReactions({ className, ...props }: ComponentProps<'div'>)
 
 /** A reaction pill; your own reaction is tinted. */
 export const messageReactionVariants = cva(
-  'inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border px-[8px] py-[2px] font-ios text-[12px] text-foreground',
+  'inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border px-[8px] py-[2px] font-sans text-caption text-foreground',
   {
     variants: {
       mine: { true: 'border-primary bg-primary/10 dark:bg-primary/14', false: 'border-border bg-secondary' },
@@ -161,7 +161,7 @@ export function MessageReaction({ emoji, count, mine, className, ...props }: Mes
       {...props}
     >
       {emoji}
-      <span className={cn('text-[11px]', mine ? 'text-link' : 'text-muted-foreground')}>{count}</span>
+      <span className={cn('text-caption2', mine ? 'text-link' : 'text-muted-foreground')}>{count}</span>
     </ToggleButton>
   );
 }
@@ -192,7 +192,7 @@ export function MessageAction({ label, className, ...props }: MessageActionProps
       aria-label={label}
       ref={titleRef(label)}
       className={composeRenderProps(className, (c) =>
-        cn('grid cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-[13px] text-muted-foreground data-hovered:bg-secondary', c),
+        cn('grid cursor-pointer place-items-center rounded-[7px] border-0 bg-transparent px-[6px] py-[3px] text-footnote text-muted-foreground data-hovered:bg-secondary', c),
       )}
       {...props}
     />

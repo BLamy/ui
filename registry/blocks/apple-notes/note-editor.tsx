@@ -26,7 +26,7 @@ const NOTES_PARTS: MarkdownEditorClassNames = {
     'checked:bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27white%27%20stroke-width=%273.2%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M6%2012.5l4%204%208-9%27/%3E%3C/svg%3E)]',
   ),
   // Tables: hairlines, no header fill.
-  table: 'text-[15px]',
+  table: 'text-subhead',
   tableHeader: 'bg-transparent font-semibold border-border px-3 py-2',
   tableCell: 'border-border px-3 py-2',
 };
@@ -36,8 +36,8 @@ function Locked({ onUnlock }: { onUnlock: () => void }) {
     <div className="grid min-h-[60vh] place-items-center px-6 text-center">
       <div className="flex flex-col items-center">
         <span className="mb-4 grid size-16 place-items-center rounded-full bg-secondary text-muted-foreground"><Icon name="lock-fill" size={30} /></span>
-        <div className="text-[20px] font-semibold">This note is locked.</div>
-        <div className="mt-1 max-w-[280px] text-[14px] text-muted-foreground">Use Touch ID or enter your password to view this note.</div>
+        <div className="text-title font-semibold">This note is locked.</div>
+        <div className="mt-1 max-w-[280px] text-detail text-muted-foreground">Use Touch ID or enter your password to view this note.</div>
         <Button variant="secondary" className="mt-5 text-primary" onPress={onUnlock}>View Note</Button>
       </div>
     </div>
@@ -54,12 +54,12 @@ export function NoteEditor({ notes, n, editorRef, format }: {
     <ContentSwap id={locked ? `locked-${n.id}` : n.id}>
       {locked ? <Locked onUnlock={() => notes.unlock(n.id)} /> : (
         <div className="mx-auto w-full max-w-[720px] px-6 pt-2 pb-28 select-text">
-          <div className="pb-3 text-center text-[13px] text-muted-foreground">{longDate(n.updated)}</div>
+          <div className="pb-3 text-center text-footnote text-muted-foreground">{longDate(n.updated)}</div>
           <MarkdownEditor key={n.id} ref={editorRef} variant="ghost" aria-label="Note" defaultValue={n.body}
             autoFocus={!n.body} placeholder="Title" toolbar={format} minHeight={320}
             onFocus={() => { focused.current = true; }} onBlur={() => { focused.current = false; }}
             onValueChange={(md) => { if (focused.current) notes.edit(n.id, md); }}
-            className="text-[17px] leading-[1.5]" classNames={NOTES_PARTS} />
+            className="text-body leading-[1.5]" classNames={NOTES_PARTS} />
         </div>
       )}
     </ContentSwap>
@@ -70,7 +70,7 @@ export function NoteEditor({ notes, n, editorRef, format }: {
 export function EditorTools({ editorRef, format, onFormat, disabled }: {
   editorRef: RefObject<MarkdownEditorHandle | null>; format: boolean; onFormat: () => void; disabled?: boolean;
 }) {
-  const tool = 'h-9 w-10 rounded-[10px] px-0 text-primary data-hovered:bg-secondary';
+  const tool = 'h-9 w-10 rounded-ctl px-0 text-primary data-hovered:bg-secondary';
   return (
     <>
       <Button variant="ghost" preventFocusOnPress aria-label="Format" aria-pressed={format} isDisabled={disabled} onPress={onFormat}

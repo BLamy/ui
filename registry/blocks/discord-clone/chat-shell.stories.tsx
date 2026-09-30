@@ -35,7 +35,7 @@ function Frame({ width, height, children }: { width: number; height: number; chi
 function DemoMain() {
   const { width, compact, setNavOpen } = useChatShell();
   return (
-    <ChatShellMain className="font-ios">
+    <ChatShellMain className="font-sans">
       <div className="flex h-[46px] shrink-0 items-center gap-[9px] border-b border-border px-4">
         {compact && (
           <button

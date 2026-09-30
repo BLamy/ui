@@ -1,3 +1,4 @@
+'use client';
 import type { ComponentProps, ReactNode } from 'react';
 import { Form as AriaForm, type FormProps as AriaFormProps } from 'react-aria-components';
 import { cn } from '@/lib/utils';
@@ -18,10 +19,10 @@ export function FormSection({ className, title, description, children, ...props 
   return (
     <fieldset data-slot="form-section" className={cn('m-0 flex min-w-0 flex-col gap-3 border-0 p-0', className)} {...props}>
       {title ? (
-        <legend className="mb-2 p-0 px-1 text-[13px] leading-[18px] font-normal tracking-[.02em] text-muted-foreground uppercase">{title}</legend>
+        <legend className="mb-2 p-0 px-1 text-footnote leading-[18px] font-normal tracking-[.02em] text-muted-foreground uppercase">{title}</legend>
       ) : null}
       {children}
-      {description ? <p className="m-0 px-1 text-[13px] leading-[18px] text-muted-foreground">{description}</p> : null}
+      {description ? <p className="m-0 px-1 text-footnote leading-[18px] text-muted-foreground">{description}</p> : null}
     </fieldset>
   );
 }

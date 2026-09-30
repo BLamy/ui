@@ -23,7 +23,7 @@ export function ThreadPreview({ title, count, className, children, ...props }: T
       data-slot="thread-preview"
       className={composeRenderProps(className, (c) =>
         cn(
-          'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-[10px] border border-border bg-card px-[11px] py-[8px] text-left font-ios [transition:border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:border-secondary-strong motion-reduce:transition-none',
+          'mt-[7px] block w-full max-w-[520px] cursor-pointer rounded-ctl border border-border bg-card px-[11px] py-[8px] text-left font-sans [transition:border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:border-secondary-strong motion-reduce:transition-none',
           c,
         ),
       )}
@@ -48,7 +48,7 @@ export interface ThreadPreviewReplyProps {
 
 export function ThreadPreviewReply({ user, children, className }: ThreadPreviewReplyProps) {
   return (
-    <span data-slot="thread-preview-reply" className={cn('mt-[4px] flex min-w-0 items-center gap-[6px] text-[12px] text-muted-foreground', className)}>
+    <span data-slot="thread-preview-reply" className={cn('mt-[4px] flex min-w-0 items-center gap-[6px] text-caption text-muted-foreground', className)}>
       <ChatAvatar user={user} size={15} />
       <span className="truncate">
         {user.name}: {children}
@@ -67,7 +67,7 @@ export interface ThreadHeaderProps extends Omit<ComponentProps<'div'>, 'title'> 
 export function ThreadHeader({ title, description, className, ...props }: ThreadHeaderProps) {
   return (
     <div data-slot="thread-header" className={cn('border-b border-border px-4 pt-1.5 pb-3', className)} {...props}>
-      <div className="text-[16px] leading-[1.3] font-[750] text-foreground">{title}</div>
+      <div className="text-callout leading-[1.3] font-[750] text-foreground">{title}</div>
       {description != null && <div className="mt-[3px] text-[11.5px] text-tertiary-foreground">{description}</div>}
     </div>
   );

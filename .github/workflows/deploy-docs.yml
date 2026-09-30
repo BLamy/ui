@@ -8,7 +8,7 @@ on:
       - 'packages/**'
       - 'registry/**'
       - 'registry.json'
-      - 'tools/registry/**'
+      - 'tools/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -47,8 +47,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check the committed registry is current
-        run: node tools/registry/build.mjs --check
+      - name: Check the committed registry, tokens and variant docs are current
+        run: |
+          node tools/registry/build.mjs --check
+          node tools/tokens/build.mjs --check
+          node tools/tokens/check.mjs
+          node tools/docs/variants-md.mjs --check
 
       # Also builds the shadcn registry into apps/docs/public/r (served at /ui/r/<item>.json) first.
       - name: Build docs

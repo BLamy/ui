@@ -1,3 +1,4 @@
+'use client';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 
 /** Internal: reports its rendered height (used by Credenza's morphing body). */

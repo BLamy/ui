@@ -86,7 +86,7 @@ const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus
 /** The round buttons over the map: the tone's card with a soft lift. */
 const mapButtonVariants = cva(
   cn(
-    'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-card p-0 text-[15px] font-semibold text-foreground data-hovered:bg-popover',
+    'pointer-events-auto inline-flex h-10 min-w-10 cursor-pointer items-center justify-center gap-1.5 rounded-[999px] border-0 bg-card p-0 text-subhead font-semibold text-foreground data-hovered:bg-popover',
     FONT_INHERIT,
     FOCUS_RING,
   ),
@@ -105,7 +105,7 @@ const DELIVERY_ACCENT = '#eb1700';
 /** The courier's pin and the route line, per basemap (content, like the tiles). */
 const DELIVERY_MAP_INK = { dark: { car: '#3a3a3c', route: '#f5f5f7' }, light: { car: '#1c1c1e', route: '#1c1c1e' } } as const;
 const ACTION_BUTTON = cn(
-  'inline-flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[999px] border-0 px-3.5 py-0 text-[15px] font-bold [transition:transform_var(--duration-spring-snappy)_var(--ease-spring-snappy),filter_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-pressed:[transform:scale(.97)]',
+  'inline-flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[999px] border-0 px-3.5 py-0 text-subhead font-bold [transition:transform_var(--duration-spring-snappy)_var(--ease-spring-snappy),filter_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-pressed:[transform:scale(.97)]',
   FONT_INHERIT,
   FOCUS_RING,
 );
@@ -302,13 +302,13 @@ export function DeliveryTrackingDemo({
                   </motion.span>
                 </AnimatePresence>
               </h2>
-              <p className="m-0 mt-1.5 text-[15px] text-muted-foreground">
+              <p className="m-0 mt-1.5 text-subhead text-muted-foreground">
                 Pickup at 12:13 PM · {STORE_ADDRESS}
               </p>
             </header>
 
             <ProgressStepper steps={steps} current={stageIndex} className="mb-3!" />
-            <p className="m-0 mb-[18px] flex items-center gap-[7px] text-[14px] text-muted-foreground">
+            <p className="m-0 mb-[18px] flex items-center gap-[7px] text-detail text-muted-foreground">
               <Icon name="clock" size={15} />
               {/* The status moves forward with the stepper: the old line leaves up, the new one rises. */}
               <span className="relative min-w-0 flex-1 overflow-hidden">
@@ -327,9 +327,9 @@ export function DeliveryTrackingDemo({
               </span>
             </p>
 
-            <section className="rounded-[14px] bg-popover p-4">
-              <h3 className="m-0 mb-1 text-[16px] font-bold">Pickup instructions</h3>
-              <p className="m-0 mb-3.5 text-[14px] leading-[1.4] text-muted-foreground">
+            <section className="rounded-card bg-popover p-4">
+              <h3 className="m-0 mb-1 text-callout font-bold">Pickup instructions</h3>
+              <p className="m-0 mb-3.5 text-detail leading-[1.4] text-muted-foreground">
                 Head to the counter and give your name. Orders are on the shelf to the right of the register.
               </p>
               <div className="flex gap-2.5">
@@ -352,7 +352,7 @@ export function DeliveryTrackingDemo({
 
             <Button
               className={cn(
-                'm-0 mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-[999px] border border-border bg-transparent px-3.5 py-[9px] text-[14px] font-semibold text-foreground data-hovered:bg-secondary',
+                'm-0 mt-4 inline-flex cursor-pointer items-center gap-1.5 rounded-[999px] border border-border bg-transparent px-3.5 py-[9px] text-detail font-semibold text-foreground data-hovered:bg-secondary',
                 FONT_INHERIT,
               )}
               aria-expanded={detailsOpen}
@@ -382,13 +382,13 @@ export function DeliveryTrackingDemo({
                 transition={springs.tray}
               >
                 {ORDER_ITEMS.map((item) => (
-                  <li key={item.name} className="flex gap-2.5 border-b border-border py-[9px] text-[14px]">
+                  <li key={item.name} className="flex gap-2.5 border-b border-border py-[9px] text-detail">
                     <span className="w-6 text-muted-foreground">{item.qty}×</span>
                     <span className="min-w-0 flex-1">{item.name}</span>
                     <span className="tabular-nums">${(item.qty * item.price).toFixed(2)}</span>
                   </li>
                 ))}
-                <li className="flex gap-2.5 py-[9px] text-[14px] font-bold" data-total>
+                <li className="flex gap-2.5 py-[9px] text-detail font-bold" data-total>
                   <span className="min-w-0 flex-1">Total</span>
                   <span className="tabular-nums">${total.toFixed(2)}</span>
                 </li>
@@ -398,7 +398,7 @@ export function DeliveryTrackingDemo({
 
             <Button
               className={cn(
-                'm-0 mt-[18px] flex w-full cursor-pointer items-center gap-3 rounded-[14px] border-0 bg-popover px-3.5 py-3 text-left text-[15px] font-semibold text-foreground',
+                'm-0 mt-[18px] flex w-full cursor-pointer items-center gap-3 rounded-card border-0 bg-popover px-3.5 py-3 text-left text-subhead font-semibold text-foreground',
                 'data-hovered:bg-secondary-strong',
                 FONT_INHERIT,
               )}
@@ -416,11 +416,11 @@ export function DeliveryTrackingDemo({
                 {GIFT_CARDS.map((card) => (
                   <Button
                     key={card.id}
-                    className="flex h-[104px] w-[168px] shrink-0 cursor-pointer snap-start flex-col justify-between rounded-[14px] border-0 [background:var(--ck-gift-bg)] px-3.5 py-3 text-left [font:inherit] text-white shadow-[0_6px_18px_black] shadow-black/14"
+                    className="flex h-[104px] w-[168px] shrink-0 cursor-pointer snap-start flex-col justify-between rounded-card border-0 [background:var(--ck-gift-bg)] px-3.5 py-3 text-left [font:inherit] text-white shadow-[0_6px_18px_black] shadow-black/14"
                     style={{ '--ck-gift-bg': card.gradient } as CSSProperties}
                   >
-                    <span className="text-[11px] font-bold tracking-[.06em] uppercase opacity-85">DoorDash</span>
-                    <span className="text-[17px] font-bold tracking-[-.01em]">{card.label}</span>
+                    <span className="text-caption2 font-bold tracking-[.06em] uppercase opacity-85">DoorDash</span>
+                    <span className="text-body font-bold tracking-[-.01em]">{card.label}</span>
                   </Button>
                 ))}
               </div>
@@ -431,11 +431,11 @@ export function DeliveryTrackingDemo({
                 {['Morning bun', 'Baguette', 'Olive focaccia', 'Seeded rye'].map((name, i) => (
                   <div key={name} className="flex w-[136px] shrink-0 snap-start flex-col gap-1">
                     <div
-                      className="aspect-[1.15] w-full rounded-[12px] [background:var(--ck-tile-bg)]"
+                      className="aspect-[1.15] w-full rounded-panel [background:var(--ck-tile-bg)]"
                       style={{ '--ck-tile-bg': `hsl(${28 + i * 9} 62% ${66 - i * 4}%)` } as CSSProperties}
                     />
-                    <span className="mt-1 text-[14px] font-semibold">{name}</span>
-                    <span className="text-[13px] text-muted-foreground">${(4 + i * 1.5).toFixed(2)}</span>
+                    <span className="mt-1 text-detail font-semibold">{name}</span>
+                    <span className="text-footnote text-muted-foreground">${(4 + i * 1.5).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -453,7 +453,7 @@ function Section({ title, action, children }: { title: string; action?: string; 
       <header className="m-0 mb-3 flex items-center justify-between">
         <h3 className="m-0 text-[19px] font-bold tracking-[-.015em]">{title}</h3>
         {action && (
-          <Button className={cn('inline-flex cursor-pointer items-center gap-0.5 border-0 bg-transparent p-0 text-[14px] font-semibold text-muted-foreground', FONT_INHERIT)}>
+          <Button className={cn('inline-flex cursor-pointer items-center gap-0.5 border-0 bg-transparent p-0 text-detail font-semibold text-muted-foreground', FONT_INHERIT)}>
             {action}
             <Icon name="chevronRight" size={15} />
           </Button>

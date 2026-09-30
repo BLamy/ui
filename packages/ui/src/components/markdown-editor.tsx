@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
 import type { EditorAttachment } from '@brett_lamy/docstream-editor';
@@ -57,11 +58,11 @@ export const markdownEditorVariants = cva(
       variant: {
         /** A filled field, like Input and Textarea: tint ring while editing. */
         default:
-          'rounded-[10px] bg-input focus-within:bg-transparent focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-readonly:focus-within:bg-input data-readonly:focus-within:shadow-none data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
+          'rounded-ctl bg-input focus-within:bg-transparent focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-readonly:focus-within:bg-input data-readonly:focus-within:shadow-none data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
         /** No chrome: text on the surface it sits on (inline notes, full-page documents). */
         ghost: 'rounded-none bg-transparent',
         /** A raised card with a hairline, for editors that stand on their own. */
-        card: 'rounded-[14px] bg-card shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] focus-within:shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_--alpha(black/4%)] data-readonly:focus-within:shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] data-invalid:shadow-[0_0_0_1.5px_var(--destructive)]',
+        card: 'rounded-card bg-card shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] focus-within:shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_--alpha(black/4%)] data-readonly:focus-within:shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] data-invalid:shadow-[0_0_0_1.5px_var(--destructive)]',
       },
       size: {
         sm: 'bl-mde-sm',

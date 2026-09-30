@@ -68,7 +68,7 @@ export function RootPage() {
           <CommandItem
             value={q}
             icon={appTile('calc')}
-            title={<span className="text-[17px] font-semibold tabular-nums">{formatResult(math)}</span>}
+            title={<span className="text-body font-semibold tabular-nums">{formatResult(math)}</span>}
             description={`${prettyExpression(q)} =`}
             badge={<Hint>Copy</Hint>}
             onSelect={() => {
@@ -100,7 +100,7 @@ export function RootPage() {
 }
 
 function KeywordChip({ children }: { children: ReactNode }) {
-  return <span className="ml-auto shrink-0 rounded-md bg-primary/12 px-1.5 py-0.5 font-mono text-[12px] font-medium text-primary">{children}</span>;
+  return <span className="ml-auto shrink-0 rounded-md bg-primary/12 px-1.5 py-0.5 font-mono text-caption font-medium text-primary">{children}</span>;
 }
 
 /* ══ Calculator ══ */
@@ -128,7 +128,7 @@ export function CalculatorPage() {
     <CommandPage id="calc" title="Calculator" placeholder="2^10, sqrt(2), 15% × 80, (1200 × 1.08) ÷ 12" filter={false} numbered onKeyDown={onKeyDown}>
       <div className="px-1 pt-2 pb-1">
         {value !== null ? (
-          <CommandItem value="result" className="min-h-[92px] rounded-[14px] px-4" onSelect={() => copyResult(value, prettyExpression(q))}>
+          <CommandItem value="result" className="min-h-[92px] rounded-card px-4" onSelect={() => copyResult(value, prettyExpression(q))}>
             <CalcDisplay expr={`${prettyExpression(q)} =`}>
               {big ? <NumberMorph value={Number(value.toPrecision(14))} format={{ maximumFractionDigits: 10 }} /> : formatResult(value)}
             </CalcDisplay>
@@ -156,7 +156,7 @@ export function CalculatorPage() {
 function CalcDisplay({ expr, muted, children }: { expr: string; muted?: boolean; children: ReactNode }) {
   return (
     <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-      <span className="truncate text-[13px] text-muted-foreground tabular-nums">{expr}</span>
+      <span className="truncate text-footnote text-muted-foreground tabular-nums">{expr}</span>
       <span className={cn('truncate text-[34px] leading-[40px] font-semibold tracking-tight tabular-nums', muted && 'text-tertiary-foreground')}>{children}</span>
     </span>
   );
@@ -194,7 +194,7 @@ export function ClipboardPage() {
     <CommandPage id="clipboard" title="Clipboard" placeholder="Search clipboard history…" numbered onKeyDown={onKeyDown}>
       <CommandGroup heading="Pinned">{pinned.map(item)}</CommandGroup>
       <CommandGroup heading="Recent">{rest.map(item)}</CommandGroup>
-      {!a.clips.length ? <div className="py-10 text-center text-[14px] text-muted-foreground">Clipboard history is empty</div> : null}
+      {!a.clips.length ? <div className="py-10 text-center text-detail text-muted-foreground">Clipboard history is empty</div> : null}
     </CommandPage>
   );
 }
@@ -210,7 +210,7 @@ export function EmojiPage({ columns }: { columns: number }) {
       {EMOJI_GROUPS.map((g) => (
         <CommandGroup key={g.heading} heading={g.heading} columns={columns} className="px-1">
           {g.items.map((em) => (
-            <CommandItem key={em.name} value={em.name} keywords={em.keywords} className="rounded-[12px]" onSelect={() => a.copy(em.char, `Copied ${em.char}`, 'Emoji')}>
+            <CommandItem key={em.name} value={em.name} keywords={em.keywords} className="rounded-panel" onSelect={() => a.copy(em.char, `Copied ${em.char}`, 'Emoji')}>
               <span className="text-[28px] leading-none select-none" aria-label={em.name}>{em.char}</span>
             </CommandItem>
           ))}
@@ -343,7 +343,7 @@ export function ConfirmPage({ id }: { id: ConfirmId }) {
     <CommandPage id={`confirm:${id}`} title={c.title} placeholder="Confirm or go back…" filter={false} numbered>
       <div className="flex items-center gap-3.5 px-3 pt-3 pb-2">
         <Tile tone={c.tone} icon={c.icon} size={40} />
-        <p className="m-0 text-[14px] leading-[20px] text-muted-foreground">{c.body}</p>
+        <p className="m-0 text-detail leading-[20px] text-muted-foreground">{c.body}</p>
       </div>
       <CommandGroup>
         <CommandItem value="confirm" title={<span className={id === 'trash' || id === 'shutdown' ? 'font-medium text-destructive' : 'font-medium'}>{c.action}</span>} icon={<Icon name="check-circle-fill" size={20} sw={1.8} />} onSelect={confirm} />
@@ -356,9 +356,9 @@ export function ConfirmPage({ id }: { id: ConfirmId }) {
 /* ══ Web search ══ */
 
 const ENGINE_TILE: Record<string, ReactNode> = {
-  google: <Tile tone="google" size={28} glyph={<span className="text-[17px] font-bold" style={{ color: '#4285F4' }}>G</span>} />,
+  google: <Tile tone="google" size={28} glyph={<span className="text-body font-bold" style={{ color: '#4285F4' }}>G</span>} />,
   github: <Tile tone="github" size={28} icon="branch" />,
-  wikipedia: <Tile tone="wikipedia" size={28} dark glyph={<span className="font-serif text-[17px] font-semibold">W</span>} />,
+  wikipedia: <Tile tone="wikipedia" size={28} dark glyph={<span className="font-serif text-body font-semibold">W</span>} />,
   youtube: <Tile tone="youtube" size={28} icon="play" />,
   maps: <Tile tone="maps" size={28} icon="mappin-fill" />,
   amazon: <Tile tone="amazon" size={28} icon="cart" />,
@@ -462,11 +462,11 @@ export function IssueConfirmPage() {
   const label = LABELS.find((l) => l.id === a.issue.label);
   return (
     <CommandPage id="gh-confirm" title="Confirm" placeholder="Create the issue?" filter={false} numbered>
-      <div className="mx-1 mt-2 mb-1 rounded-[12px] border border-border bg-background/50 p-3.5">
+      <div className="mx-1 mt-2 mb-1 rounded-panel border border-border bg-background/50 p-3.5">
         <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground"><Icon name="branch" size={14} sw={2} />{a.issue.repo}</div>
-        <div className="mt-1 text-[16px] leading-[22px] font-semibold">{a.issue.title}</div>
+        <div className="mt-1 text-callout leading-[22px] font-semibold">{a.issue.title}</div>
         {label ? (
-          <span className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] font-medium" style={{ color: label.color, background: `color-mix(in oklab, ${label.color} 16%, transparent)` }}>
+          <span className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-caption font-medium" style={{ color: label.color, background: `color-mix(in oklab, ${label.color} 16%, transparent)` }}>
             <span className="size-2 rounded-full" style={{ background: label.color }} />{label.name}
           </span>
         ) : null}
@@ -487,7 +487,7 @@ export function TimerPage() {
         {TIMERS.map((t) => (
           <CommandItem
             key={t.minutes} value={`${t.minutes} minutes`} keywords={[t.name]} title={`${t.minutes} minutes`} description={t.name}
-            icon={<Tile tone="timer" size={28} glyph={<span className="text-[12px] font-bold tabular-nums">{t.minutes}</span>} />}
+            icon={<Tile tone="timer" size={28} glyph={<span className="text-caption font-bold tabular-nums">{t.minutes}</span>} />}
             page="timer-name" onSelect={() => a.setTimerDraft(t.minutes)}
           />
         ))}

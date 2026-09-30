@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { useAppearance, themeScopeProps, type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -34,7 +35,7 @@ export function WorkbenchTheme({ tint, appearance: appearanceProp, className, st
     <div
       data-slot="workbench-theme"
       data-theme-scope={scope['data-theme-scope']}
-      className={cn('bg-background font-ios text-foreground antialiased', scope.className, className)}
+      className={cn('bg-background font-sans text-foreground antialiased', scope.className, className)}
       style={{ ...scope.style, ...style }}
       {...rest}
     >

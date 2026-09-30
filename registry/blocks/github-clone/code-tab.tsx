@@ -35,7 +35,7 @@ export function CodeHome({ ui, nav }: { ui: Layout; nav: Nav }) {
 export function Readme({ markdown, phone }: { markdown: string; phone: boolean }) {
   return (
     <MarkdownView markdown={markdown}
-      className={cn(githubMarkdown, 'text-[16px] leading-[1.5] [&_table]:text-[14px]', phone ? 'px-4 py-5' : 'px-8 py-6')} />
+      className={cn(githubMarkdown, 'text-callout leading-[1.5] [&_table]:text-detail', phone ? 'px-4 py-5' : 'px-8 py-6')} />
   );
 }
 
@@ -48,7 +48,7 @@ export function CodeToolbar({ ui, nav }: { ui: Layout; nav: Nav }) {
         <DropdownMenuContent aria-label="Switch branches" selectionMode="single" selectedKeys={[branch]}
           onSelectionChange={(keys) => setBranch(String([...(keys as Set<string>)][0] ?? branch))} className="py-1">
           {REPO.branches.map((b) => (
-            <DropdownMenuItem key={b} id={b} className="min-h-9 py-1.5 font-mono text-[13px]">{b}</DropdownMenuItem>
+            <DropdownMenuItem key={b} id={b} className="min-h-9 py-1.5 font-mono text-footnote">{b}</DropdownMenuItem>
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -61,7 +61,7 @@ export function CodeToolbar({ ui, nav }: { ui: Layout; nav: Nav }) {
       <span className="flex-1" />
       {ui.wide ? (
         <div className="flex h-8 w-[240px] items-center gap-2 rounded-md border border-border px-2 text-muted-foreground">
-          <Oct name="search" /><span className="flex-1">Go to file</span><kbd className="rounded border border-border px-1 font-mono text-[11px]">t</kbd>
+          <Oct name="search" /><span className="flex-1">Go to file</span><kbd className="rounded border border-border px-1 font-mono text-caption2">t</kbd>
         </div>
       ) : null}
       {!ui.phone ? <Button className={ghButton()}>Add file<Oct name="chevDown" size={12} /></Button> : null}
@@ -78,7 +78,7 @@ export function LastCommit({ ui, message = REPO.lastCommit.message, when = REPO.
       <b className="shrink-0 font-semibold">{c.author.login}</b>
       <span className="min-w-0 truncate text-muted-foreground">{message}</span>
       <span className="flex-1" />
-      {!ui.phone ? <span className="shrink-0 font-mono text-[12px] text-muted-foreground">{c.sha} · {when}</span> : null}
+      {!ui.phone ? <span className="shrink-0 font-mono text-caption text-muted-foreground">{c.sha} · {when}</span> : null}
       <span className="flex shrink-0 items-center gap-1.5 font-semibold"><Oct name="history" className="text-muted-foreground" />{ui.phone ? '' : REPO.commitCount + ' Commits'}</span>
     </div>
   );
@@ -104,7 +104,7 @@ export function FileRow({ ui, icon, name, commit, when, onOpen }: { ui: Layout; 
     <div className="flex h-10 items-center gap-3 border-t border-border px-4 first:border-t-0 hover:bg-muted">
       {icon}
       <button type="button" onClick={onOpen}
-        className={cn('min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-[14px] text-foreground hover:text-primary hover:underline', ui.phone ? 'flex-1' : 'w-[34%] shrink-0')}>
+        className={cn('min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-detail text-foreground hover:text-primary hover:underline', ui.phone ? 'flex-1' : 'w-[34%] shrink-0')}>
         {name}
       </button>
       {!ui.phone ? <span className="min-w-0 flex-1 truncate text-muted-foreground">{commit}</span> : null}
@@ -116,14 +116,14 @@ export function FileRow({ ui, icon, name, commit, when, onOpen }: { ui: Layout; 
 export function About() {
   const section = 'border-b border-border py-6 first:pt-0 last:border-0';
   return (
-    <aside className="w-[296px] shrink-0 text-[14px]">
+    <aside className="w-[296px] shrink-0 text-detail">
       <div className={section}>
-        <h2 className="mt-0 mb-4 text-[16px] font-semibold">About</h2>
-        <p className="m-0 text-[16px] leading-6">{REPO.description}</p>
+        <h2 className="mt-0 mb-4 text-callout font-semibold">About</h2>
+        <p className="m-0 text-callout leading-6">{REPO.description}</p>
         <p className="my-4 flex items-center gap-2 font-semibold text-primary"><Oct name="link" className="text-muted-foreground" />{REPO.homepage}</p>
         <div className="flex flex-wrap gap-1.5">
           {REPO.topics.map((t) => (
-            <span key={t} className="rounded-full bg-primary/10 px-2.5 py-[3px] text-[12px] leading-[18px] font-medium text-primary">{t}</span>
+            <span key={t} className="rounded-full bg-primary/10 px-2.5 py-[3px] text-caption leading-[18px] font-medium text-primary">{t}</span>
           ))}
         </div>
         <ul className="mt-4 mb-0 list-none space-y-2 p-0 text-muted-foreground">
@@ -133,26 +133,26 @@ export function About() {
         </ul>
       </div>
       <div className={section}>
-        <h2 className="mt-0 mb-3 flex items-center gap-2 text-[16px] font-semibold">Releases <Counter>{REPO.release.count}</Counter></h2>
+        <h2 className="mt-0 mb-3 flex items-center gap-2 text-callout font-semibold">Releases <Counter>{REPO.release.count}</Counter></h2>
         <div className="flex gap-2">
           <Oct name="tag" className="mt-0.5 text-[var(--gh-open)]" />
           <div>
             <div className="flex items-center gap-2"><b className="font-semibold">{REPO.release.tag}</b>
-              <span className="rounded-full border border-[var(--gh-open)] px-2 text-[12px] leading-[18px] font-medium text-[var(--gh-open)]">Latest</span></div>
-            <div className="text-[12px] text-muted-foreground">{REPO.release.when}</div>
+              <span className="rounded-full border border-[var(--gh-open)] px-2 text-caption leading-[18px] font-medium text-[var(--gh-open)]">Latest</span></div>
+            <div className="text-caption text-muted-foreground">{REPO.release.when}</div>
           </div>
         </div>
       </div>
       <div className={section}>
-        <h2 className="mt-0 mb-3 flex items-center gap-2 text-[16px] font-semibold">Contributors <Counter>{REPO.contributorCount}</Counter></h2>
+        <h2 className="mt-0 mb-3 flex items-center gap-2 text-callout font-semibold">Contributors <Counter>{REPO.contributorCount}</Counter></h2>
         <div className="flex flex-wrap gap-1">{REPO.contributors.map((u) => <Avatar key={u.login} c={u} size={32} />)}</div>
       </div>
       <div className={section}>
-        <h2 className="mt-0 mb-3 text-[16px] font-semibold">Languages</h2>
+        <h2 className="mt-0 mb-3 text-callout font-semibold">Languages</h2>
         <div className="flex h-2 gap-0.5 overflow-hidden rounded-full">
           {REPO.languages.map((l) => <span key={l.name} style={{ width: l.pct + '%', background: l.color }} />)}
         </div>
-        <ul className="mt-3 mb-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-[12px]">
+        <ul className="mt-3 mb-0 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-caption">
           {REPO.languages.map((l) => (
             <li key={l.name} className="flex items-center gap-1.5">
               <span className="size-2 rounded-full" style={{ background: l.color }} /><b className="font-semibold">{l.name}</b><span className="text-muted-foreground">{l.pct}%</span>
@@ -170,14 +170,14 @@ export function PathView({ ui, path, nav }: { ui: Layout; path: string; nav: Nav
   const parts = path.split('/');
   if (!node) return null;
   const crumbs = (
-    <div className="flex min-w-0 flex-wrap items-center gap-1 text-[16px]">
-      <button type="button" onClick={() => nav.openPath('')} className="cursor-pointer border-0 bg-transparent p-0 text-[16px] font-semibold text-primary hover:underline">{REPO.name}</button>
+    <div className="flex min-w-0 flex-wrap items-center gap-1 text-callout">
+      <button type="button" onClick={() => nav.openPath('')} className="cursor-pointer border-0 bg-transparent p-0 text-callout font-semibold text-primary hover:underline">{REPO.name}</button>
       {parts.map((p, i) => (
         <span key={i} className="flex items-center gap-1">
           <span className="text-tertiary-foreground">/</span>
           {i === parts.length - 1
             ? <b className="font-semibold">{p}</b>
-            : <button type="button" onClick={() => nav.openPath(parts.slice(0, i + 1).join('/'))} className="cursor-pointer border-0 bg-transparent p-0 text-[16px] text-primary hover:underline">{p}</button>}
+            : <button type="button" onClick={() => nav.openPath(parts.slice(0, i + 1).join('/'))} className="cursor-pointer border-0 bg-transparent p-0 text-callout text-primary hover:underline">{p}</button>}
         </span>
       ))}
       <Oct name="copy" size={14} className="ml-1 text-muted-foreground" />
@@ -188,7 +188,7 @@ export function PathView({ ui, path, nav }: { ui: Layout; path: string; nav: Nav
       {ui.wide ? (
         <aside className="w-[280px] shrink-0 border-r border-border pr-4">
           <div className="mb-3 flex items-center gap-2">
-            <Oct name="sidebar" className="text-muted-foreground" /><b className="text-[16px] font-semibold">Files</b>
+            <Oct name="sidebar" className="text-muted-foreground" /><b className="text-callout font-semibold">Files</b>
           </div>
           <div className="mb-3 flex h-8 items-center gap-2 rounded-md border border-border px-2 text-muted-foreground"><Oct name="search" />Go to file</div>
           <FileTree nodes={TREE} selected={path} onSelect={(n) => nav.openPath(n.path)} />
@@ -219,9 +219,9 @@ export function FileViewer({ ui, node }: { ui: Layout; node: FileNode }) {
       <div className="flex w-full items-center gap-3">
         <Segmented aria-label="View" value={view} onChange={setView} className="w-[150px] rounded-md"
           options={isMd ? [{ id: 'preview', label: 'Preview' }, { id: 'code', label: 'Code' }] : [{ id: 'code', label: 'Code' }, { id: 'blame', label: 'Blame' }]} />
-        {!ui.phone ? <span className="text-[12px] text-muted-foreground">{lines} lines · {(code.length / 1024).toFixed(1)} KB</span> : null}
+        {!ui.phone ? <span className="text-caption text-muted-foreground">{lines} lines · {(code.length / 1024).toFixed(1)} KB</span> : null}
         <span className="flex-1" />
-        <Button className={cn(ghButton(), 'h-7 px-2.5 text-[12px]')}>Raw</Button>
+        <Button className={cn(ghButton(), 'h-7 px-2.5 text-caption')}>Raw</Button>
         <SyntaxHighlightingCopyButton value={code} label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')} />
       </div>
     }>

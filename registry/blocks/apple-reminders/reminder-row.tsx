@@ -45,9 +45,9 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
           <div className="pt-[11px]">
             <CheckCircle done={!!r.done} color={color} label={r.done ? `Mark “${r.title}” incomplete` : `Complete “${r.title}”`} onToggle={() => api.toggle(r.id)} />
           </div>
-          <div className="min-w-0 flex-1 py-[11px] pr-3 shadow-[inset_0_-1px_0_var(--border)]" onDoubleClick={() => api.openDetails(r.id)}>
+          <div className="min-w-0 flex-1 py-[11px] pr-3 shadow-hairline-b" onDoubleClick={() => api.openDetails(r.id)}>
             <div className="flex items-start gap-2">
-              <div className={cn('min-w-0 flex-1 text-[17px] leading-[1.3] transition-colors duration-200', r.done && 'text-muted-foreground')}>
+              <div className={cn('min-w-0 flex-1 text-body leading-[1.3] transition-colors duration-200', r.done && 'text-muted-foreground')}>
                 {r.priority ? <span className="mr-1 font-semibold" style={{ color: r.done ? undefined : color }}>{'!'.repeat(r.priority)}</span> : null}
                 {r.title}
               </div>
@@ -58,21 +58,21 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
                 <Icon name="info" size={22} weight="light" />
               </button>
             </div>
-            {r.notes ? <div className="mt-0.5 line-clamp-2 text-[15px] leading-[1.35] text-muted-foreground">{r.notes}</div> : null}
+            {r.notes ? <div className="mt-0.5 line-clamp-2 text-subhead leading-[1.35] text-muted-foreground">{r.notes}</div> : null}
             {r.due != null || r.tags?.length ? (
-              <div className="mt-0.5 flex flex-wrap gap-x-2 text-[15px]">
+              <div className="mt-0.5 flex flex-wrap gap-x-2 text-subhead">
                 {r.due != null ? <span className={overdue ? 'text-destructive' : 'text-muted-foreground'}>{dueLabel(r)}</span> : null}
                 {r.tags?.map((t) => <span key={t} className={r.done ? 'text-muted-foreground' : 'text-primary'}>#{t}</span>)}
               </div>
             ) : null}
             {r.url ? (
-              <span className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-[8px] bg-secondary px-2 py-1 text-[13px] text-muted-foreground">
+              <span className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-lg bg-secondary px-2 py-1 text-footnote text-muted-foreground">
                 <Icon name="link" size={13} weight="semibold" /><span className="truncate">{r.url}</span>
               </span>
             ) : null}
             {subs.length ? (
               <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)}
-                className="bl-btn mt-1 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-[15px] text-muted-foreground">
+                className="bl-btn mt-1 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-muted-foreground">
                 {subsDone} of {subs.length} subtasks
                 <Chevron direction={open ? 'down' : 'right'} size={13} sw={2.6} />
               </button>
@@ -83,7 +83,7 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
                   {subs.map((s) => (
                     <div key={s.id} className="flex items-center gap-2.5">
                       <CheckCircle size={20} done={!!s.done} color={color} label={`Subtask “${s.title}”`} onToggle={() => api.toggleSubtask(r.id, s.id)} />
-                      <span className={cn('text-[16px]', s.done && 'text-muted-foreground')}>{s.title}</span>
+                      <span className={cn('text-callout', s.done && 'text-muted-foreground')}>{s.title}</span>
                     </div>
                   ))}
                 </div>

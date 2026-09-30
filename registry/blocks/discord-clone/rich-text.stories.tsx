@@ -7,7 +7,7 @@ const meta: Meta<typeof RichText> = {
   component: RichText,
   decorators: [
     (Story) => (
-      <ChatFrame className="w-[420px] rounded-[12px] p-6 font-ios text-[13.5px] leading-[1.55]">
+      <ChatFrame className="w-[420px] rounded-[12px] p-6 font-sans text-[13.5px] leading-[1.55]">
         <Story />
       </ChatFrame>
     ),

@@ -1,0 +1,149 @@
+{
+  "packages/ui/src/components/composer/composer.tsx": {
+    "color": 3,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "packages/ui/src/components/floating-chat.tsx": {
+    "color": 5,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "packages/ui/src/components/floating-sheet.tsx": {
+    "color": 4,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "packages/ui/src/components/toast.tsx": {
+    "color": 1,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/alfred-clone/pages.tsx": {
+    "color": 2,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/alfred-clone/parts.tsx": {
+    "color": 67,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/apple-mail/page.tsx": {
+    "color": 2,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/apple-music/screens.tsx": {
+    "color": 10,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/apple-passwords/page.tsx": {
+    "color": 2,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/apple-passwords/sidebar.tsx": {
+    "color": 6,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/apple-settings/page.tsx": {
+    "color": 2,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/apple-settings/rows.tsx": {
+    "color": 6,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/delivery-tracking/delivery-tracking-demo.tsx": {
+    "color": 8,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/discord-clone/chat.fixtures.tsx": {
+    "color": 10,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/discord-clone/components/workspace-rail.tsx": {
+    "color": 1,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/github-clone/parts.tsx": {
+    "color": 65,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/loop-qa/parts.tsx": {
+    "color": 41,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/map-chat/tile-map.tsx": {
+    "color": 26,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/split-view-demos/demos.tsx": {
+    "color": 8,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/t3-clone/components/command-palette.tsx": {
+    "color": 5,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  },
+  "registry/blocks/t3-clone/components/thread-sidebar.tsx": {
+    "color": 1,
+    "radius": 0,
+    "text": 0,
+    "shadow": 0,
+    "font": 0
+  }
+}

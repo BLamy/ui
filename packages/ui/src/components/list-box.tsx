@@ -1,3 +1,4 @@
+'use client';
 import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
 import {
   Collection,
@@ -17,7 +18,7 @@ import { cn } from '@/lib/utils';
 export const listBoxVariants = cva('outline-none', {
   variants: {
     variant: {
-      inset: 'overflow-hidden rounded-[12px] bg-card data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45',
+      inset: 'overflow-hidden rounded-panel bg-card data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45',
       popup: 'bl-scroll box-border max-h-[min(320px,var(--visual-viewport-height,320px))] overflow-y-auto p-1.5',
     },
   },
@@ -30,12 +31,12 @@ export const listBoxItemVariants = cva(
     variants: {
       variant: {
         inset: [
-          'min-h-11 px-4 py-[11px] text-[17px] leading-[22px]',
+          'min-h-11 px-4 py-[11px] text-body leading-[22px]',
           'after:pointer-events-none after:absolute after:right-0 after:bottom-0 after:left-4 after:h-px after:bg-border last:after:hidden',
           'data-hovered:bg-accent data-pressed:bg-accent data-focus-visible:bg-accent',
         ],
         popup: [
-          'min-h-9 rounded-[8px] py-[7px] pr-3 pl-2 text-[15px] leading-5',
+          'min-h-9 rounded-lg py-[7px] pr-3 pl-2 text-subhead leading-5',
           'data-focused:bg-accent data-pressed:bg-secondary-strong',
         ],
       },
@@ -91,7 +92,7 @@ export function ListBoxItem<T extends object>({ className, variant: variantProp,
         const label = (
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate">{kids}</span>
-            {description ? <span className="truncate text-[13px] leading-[18px] text-muted-foreground">{description}</span> : null}
+            {description ? <span className="truncate text-footnote leading-[18px] text-muted-foreground">{description}</span> : null}
           </span>
         );
         return variant === 'popup' ? (
@@ -118,7 +119,7 @@ export interface ListBoxSectionProps<T> extends AriaListBoxSectionProps<T> {
 
 export function ListBoxSection<T extends object>({ className, title, children, items, ...props }: ListBoxSectionProps<T>) {
   return (
-    <AriaListBoxSection data-slot="list-box-section" className={cn('not-first:mt-1.5 not-first:pt-1.5 not-first:shadow-[inset_0_1px_0_var(--border)]', className)} {...props}>
+    <AriaListBoxSection data-slot="list-box-section" className={cn('not-first:mt-1.5 not-first:pt-1.5 not-first:shadow-hairline-t', className)} {...props}>
       {title ? <ListBoxHeader>{title}</ListBoxHeader> : null}
       <Collection items={items}>{children}</Collection>
     </AriaListBoxSection>
@@ -129,7 +130,7 @@ export function ListBoxHeader({ className, ...props }: ComponentProps<typeof Hea
   return (
     <Header
       data-slot="list-box-header"
-      className={cn('px-2 pt-1 pb-1 text-[13px] leading-[18px] font-semibold text-muted-foreground', className)}
+      className={cn('px-2 pt-1 pb-1 text-footnote leading-[18px] font-semibold text-muted-foreground', className)}
       {...props}
     />
   );

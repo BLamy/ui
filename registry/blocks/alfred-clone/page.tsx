@@ -108,8 +108,8 @@ function Desktop({ dark, phase, setPhase, show, close, boot, menu, queue }: {
                   <Hat size={18} />
                   Press
                   <span className="inline-flex gap-1">
-                    <kbd className={cn('rounded-md px-1.5 py-0.5 font-[inherit] text-[12px]', dark ? 'bg-white/15' : 'bg-black/8')}>⌥</kbd>
-                    <kbd className={cn('rounded-md px-1.5 py-0.5 font-[inherit] text-[12px]', dark ? 'bg-white/15' : 'bg-black/8')}>Space</kbd>
+                    <kbd className={cn('rounded-md px-1.5 py-0.5 font-[inherit] text-caption', dark ? 'bg-white/15' : 'bg-black/8')}>⌥</kbd>
+                    <kbd className={cn('rounded-md px-1.5 py-0.5 font-[inherit] text-caption', dark ? 'bg-white/15' : 'bg-black/8')}>Space</kbd>
                   </span>
                   or click to show Alfred
                 </button>

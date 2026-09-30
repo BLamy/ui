@@ -96,14 +96,14 @@ function AlbumTile({ album: a, ctx, size = 164, caption }: { album: Album; ctx: 
       className="bl-btn group shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground"
       style={{ width: size }}>
       <Artwork album={a} size={size} className="transition-[scale,filter] duration-spring-snappy ease-spring-snappy group-hover:brightness-95 group-active:scale-[.97]" />
-      <div className="mt-1.5 truncate text-[14px] leading-tight font-medium">{a.title}</div>
-      <div className="truncate text-[13px] text-muted-foreground">{caption ?? a.artist}</div>
+      <div className="mt-1.5 truncate text-detail leading-tight font-medium">{a.title}</div>
+      <div className="truncate text-footnote text-muted-foreground">{caption ?? a.artist}</div>
     </button>
   );
 }
 
 function PillButtons({ onPlay, onShuffle }: { onPlay: () => void; onShuffle: () => void }) {
-  const pill = 'bl-btn flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[11px] border-0 bg-secondary [font-family:inherit] text-[16px] font-semibold text-primary transition-[scale,background-color] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong active:scale-[.97]';
+  const pill = 'bl-btn flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[11px] border-0 bg-secondary [font-family:inherit] text-callout font-semibold text-primary transition-[scale,background-color] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong active:scale-[.97]';
   return (
     <div className="flex w-full max-w-[420px] gap-3">
       <button type="button" className={pill} onClick={onPlay}><Icon name="play" size={18} />Play</button>
@@ -124,19 +124,19 @@ function SongRow({ s, i, songs, ctx, art, number }: { s: Song; i: number; songs:
           {current ? <span className="absolute inset-0 grid place-items-center rounded-[5px] bg-black/35 text-white"><NowPlayingBars playing={ctx.player.playing} /></span> : null}
         </span>
       ) : (
-        <span className="grid w-6 shrink-0 place-items-center text-[15px] tabular-nums text-muted-foreground">
+        <span className="grid w-6 shrink-0 place-items-center text-subhead tabular-nums text-muted-foreground">
           {current ? <NowPlayingBars playing={ctx.player.playing} className="text-primary" /> : number}
         </span>
       )}
-      <span className={cn('flex min-w-0 flex-1 items-center gap-2 py-3 shadow-[inset_0_-1px_0_var(--border)]', art && 'py-2')}>
+      <span className={cn('flex min-w-0 flex-1 items-center gap-2 py-3 shadow-hairline-b', art && 'py-2')}>
         <span className="min-w-0 flex-1">
-          <span className={cn('flex items-center gap-1.5 truncate text-[16px]', current && 'text-primary')}>
+          <span className={cn('flex items-center gap-1.5 truncate text-callout', current && 'text-primary')}>
             <span className="truncate">{s.track.title}</span>
             {s.track.explicit ? <Icon name="e-square-fill" size={14} aria-label="Explicit" className="text-muted-foreground" /> : null}
           </span>
-          {art ? <span className="block truncate text-[13px] text-muted-foreground">{s.album.artist}</span> : null}
+          {art ? <span className="block truncate text-footnote text-muted-foreground">{s.album.artist}</span> : null}
         </span>
-        <span className="text-[13px] tabular-nums text-muted-foreground">{fmt(s.track.dur)}</span>
+        <span className="text-footnote tabular-nums text-muted-foreground">{fmt(s.track.dur)}</span>
         <Icon name="ellipsis" size={18} className="text-muted-foreground opacity-70" />
       </span>
     </button>
@@ -158,12 +158,12 @@ function ListenNow({ ctx }: { ctx: Ctx }) {
           <button key={a.id} type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
             className="bl-btn shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit]">
             <div className="mb-1.5 text-[12.5px] text-muted-foreground">{['Made for You', 'New Release', 'Because You Listened to Juno Vale'][i]}</div>
-            <div className="relative w-[250px] overflow-hidden rounded-[12px] shadow-[0_4px_16px_black] shadow-black/12"
+            <div className="relative w-[250px] overflow-hidden rounded-panel shadow-[0_4px_16px_black] shadow-black/12"
               style={{ background: `linear-gradient(180deg, ${a.colors[0]}, ${a.colors[1]})` }}>
               <Artwork album={a} size={250} rounded={0} className="shadow-none" />
               <div className="px-3.5 pt-2.5 pb-3.5 text-white">
-                <div className="truncate text-[16px] font-semibold">{a.title}</div>
-                <div className="truncate text-[13px] text-white/70">{a.artist} · {a.year}</div>
+                <div className="truncate text-callout font-semibold">{a.title}</div>
+                <div className="truncate text-footnote text-white/70">{a.artist} · {a.year}</div>
               </div>
             </div>
           </button>
@@ -177,8 +177,8 @@ function ListenNow({ ctx }: { ctx: Ctx }) {
           <button key={p.id} type="button" onClick={() => ctx.open({ kind: 'playlist', id: p.id })}
             className="bl-btn w-[164px] shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
             <PlaylistArt playlist={p} size={164} />
-            <div className="mt-1.5 truncate text-[14px] font-medium">{p.title}</div>
-            <div className="truncate text-[13px] text-muted-foreground">{p.description}</div>
+            <div className="mt-1.5 truncate text-detail font-medium">{p.title}</div>
+            <div className="truncate text-footnote text-muted-foreground">{p.description}</div>
           </button>
         ))}
       </Shelf>
@@ -199,12 +199,12 @@ function Browse({ ctx }: { ctx: Ctx }) {
             className="bl-btn w-[min(520px,86%)] shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
             <div className="text-[11.5px] font-semibold tracking-[.4px] text-muted-foreground uppercase">{['New Album', 'Exclusive', 'Updated Playlist'][i]}</div>
             <div className="truncate text-[21px] font-semibold tracking-[-.2px]">{a.title}</div>
-            <div className="mb-2 truncate text-[16px] text-muted-foreground">{a.artist}</div>
-            <div className="relative aspect-[16/9] overflow-hidden rounded-[12px]" style={{ background: a.colors[0] }}>
+            <div className="mb-2 truncate text-callout text-muted-foreground">{a.artist}</div>
+            <div className="relative aspect-[16/9] overflow-hidden rounded-panel" style={{ background: a.colors[0] }}>
               <Artwork album={a} rounded={0} className="absolute top-1/2 right-0 h-[180%] w-auto -translate-y-1/2 shadow-none" />
               <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, ${a.colors[0]} 30%, transparent 75%)` }} />
               <div className="absolute inset-0 bg-linear-to-t/srgb from-black/50 to-transparent to-50%" />
-              <div className="absolute bottom-4 left-4 max-w-[55%] text-[14px] leading-snug font-medium text-white/90">
+              <div className="absolute bottom-4 left-4 max-w-[55%] text-detail leading-snug font-medium text-white/90">
                 {['A neon-lit, eight-bit love letter to late nights.', 'Harbour-front electronica, recorded on rooftops.', 'Sea spray, bonfires, and big choruses.'][i]}
               </div>
             </div>
@@ -219,10 +219,10 @@ function Browse({ ctx }: { ctx: Ctx }) {
             <button key={s.key} type="button" onClick={() => ctx.player.playFrom(top, i)}
               className="bl-btn flex cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-1.5 text-left [font-family:inherit] text-foreground hover:bg-secondary">
               <Artwork album={s.album} size={48} rounded={5} />
-              <span className="w-5 text-[16px] font-semibold text-muted-foreground tabular-nums">{i + 1}</span>
-              <span className="min-w-0 flex-1 py-1 shadow-[inset_0_-1px_0_var(--border)]">
-                <span className="block truncate text-[15px]">{s.track.title}</span>
-                <span className="block truncate pb-1.5 text-[13px] text-muted-foreground">{s.album.artist}</span>
+              <span className="w-5 text-callout font-semibold text-muted-foreground tabular-nums">{i + 1}</span>
+              <span className="min-w-0 flex-1 py-1 shadow-hairline-b">
+                <span className="block truncate text-subhead">{s.track.title}</span>
+                <span className="block truncate pb-1.5 text-footnote text-muted-foreground">{s.album.artist}</span>
               </span>
             </button>
           ))}
@@ -240,12 +240,12 @@ function Radio({ ctx }: { ctx: Ctx }) {
       <div className="px-4 pt-2">
         <div className="text-[11.5px] font-semibold tracking-[.4px] text-primary uppercase">Live · 9:00 PM</div>
         <div className="text-[21px] font-semibold">{live.title}</div>
-        <div className="mb-2 text-[16px] text-muted-foreground">Tonight: Harbor Lights take over the booth</div>
+        <div className="mb-2 text-callout text-muted-foreground">Tonight: Harbor Lights take over the booth</div>
         <button type="button" onClick={() => ctx.player.playFrom(albumSongs(a), 0)}
-          className="bl-btn relative block aspect-[2/1] w-full max-w-[760px] cursor-pointer overflow-hidden rounded-[14px] border-0 p-0"
+          className="bl-btn relative block aspect-[2/1] w-full max-w-[760px] cursor-pointer overflow-hidden rounded-card border-0 p-0"
           style={{ background: `linear-gradient(120deg, ${a.colors[0]}, ${a.colors[1]})` }}>
           <Artwork album={a} rounded={10} className="absolute top-1/2 right-[6%] h-[72%] w-auto -translate-y-1/2 shadow-[0_12px_40px_black] shadow-black/35" />
-          <span className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-[15px] font-semibold text-black">
+          <span className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-subhead font-semibold text-black">
             <Icon name="play" size={15} /> Listen Now
           </span>
           <span className="absolute top-5 left-5 text-left text-[30px] leading-none font-black tracking-[-.5px] text-white">TIDEWATER<br />RADIO</span>
@@ -259,8 +259,8 @@ function Radio({ ctx }: { ctx: Ctx }) {
               <Artwork album={ALBUM[s.album]} size={164} />
               <Icon name="radiowaves" size={22} className="absolute top-2 right-2 text-white drop-shadow-[0_1px_2px_black] drop-shadow-black/40" />
             </span>
-            <div className="mt-1.5 truncate text-[14px] font-medium">{s.title}</div>
-            <div className="truncate text-[13px] text-muted-foreground">{s.subtitle}</div>
+            <div className="mt-1.5 truncate text-detail font-medium">{s.title}</div>
+            <div className="truncate text-footnote text-muted-foreground">{s.subtitle}</div>
           </button>
         ))}
       </Shelf>
@@ -293,7 +293,7 @@ function Search({ ctx }: { ctx: Ctx }) {
                   className="bl-btn relative aspect-[1.55] cursor-pointer overflow-hidden rounded-[11px] border-0 p-0 text-left [font-family:inherit]"
                   style={{ background: color }}>
                   <Artwork album={a} size="46%" rounded={4} className="absolute right-[-6%] bottom-[-6%] rotate-[18deg] shadow-[0_4px_12px_black] shadow-black/25" />
-                  <span className="absolute bottom-2.5 left-3 text-[16px] font-bold text-white">{name}</span>
+                  <span className="absolute bottom-2.5 left-3 text-callout font-bold text-white">{name}</span>
                 </button>
               );
             })}
@@ -305,7 +305,7 @@ function Search({ ctx }: { ctx: Ctx }) {
             <button key={name} type="button" onClick={() => ctx.open({ kind: 'artist', name })}
               className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-2 text-left [font-family:inherit] text-foreground hover:bg-secondary">
               <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={48} />
-              <span className="flex-1"><span className="block text-[16px]">{name}</span><span className="block text-[13px] text-muted-foreground">Artist</span></span>
+              <span className="flex-1"><span className="block text-callout">{name}</span><span className="block text-footnote text-muted-foreground">Artist</span></span>
             </button>
           ))}
           {albums.length ? <Shelf title="Albums">{albums.map((a) => <AlbumTile key={a.id} album={a} ctx={ctx} size={140} />)}</Shelf> : null}
@@ -333,7 +333,7 @@ function LibraryHome({ ctx }: { ctx: Ctx }) {
           <button key={pageKey(page)} type="button" onClick={() => ctx.open(page)}
             className="bl-btn flex w-full cursor-pointer items-center gap-3.5 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
             <Icon {...icon} size={24} className="text-primary" />
-            <span className="flex flex-1 items-center py-3 text-[20px] shadow-[inset_0_-1px_0_var(--border)]">
+            <span className="flex flex-1 items-center py-3 text-title shadow-hairline-b">
               <span className="flex-1">{pageTitle(page)}</span>
               <Icon name="chevron-right" size={16} weight="bold" className="text-tertiary-foreground" />
             </span>
@@ -353,8 +353,8 @@ function AlbumGrid({ albums, ctx }: { albums: Album[]; ctx: Ctx }) {
         <button key={a.id} type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
           className="bl-btn group min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
           <Artwork album={a} className="aspect-square w-full transition-[scale] duration-spring-snappy ease-spring-snappy group-active:scale-[.97]" />
-          <div className="mt-1.5 truncate text-[14px] font-medium">{a.title}</div>
-          <div className="truncate text-[13px] text-muted-foreground">{a.artist}</div>
+          <div className="mt-1.5 truncate text-detail font-medium">{a.title}</div>
+          <div className="truncate text-footnote text-muted-foreground">{a.artist}</div>
         </button>
       ))}
     </div>
@@ -368,7 +368,7 @@ function ArtistList({ ctx }: { ctx: Ctx }) {
         <button key={name} type="button" onClick={() => ctx.open({ kind: 'artist', name })}
           className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
           <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={44} />
-          <span className="flex flex-1 items-center py-3.5 text-[17px] shadow-[inset_0_-1px_0_var(--border)]">
+          <span className="flex flex-1 items-center py-3.5 text-body shadow-hairline-b">
             <span className="flex-1">{name}</span>
             <Icon name="chevron-right" size={15} weight="bold" className="text-tertiary-foreground" />
           </span>
@@ -403,13 +403,13 @@ function AlbumPage({ album: a, ctx }: { album: Album; ctx: Ctx }) {
         <div className={cn('flex min-w-0 flex-col gap-1', ctx.wide ? 'items-start pb-1' : 'items-center')}>
           <h2 className="m-0 text-[24px] leading-tight font-bold tracking-[-.3px]">{a.title}</h2>
           <button type="button" onClick={() => ctx.open({ kind: 'artist', name: a.artist })}
-            className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[20px] text-primary">{a.artist}</button>
+            className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-title text-primary">{a.artist}</button>
           <div className="text-[12.5px] font-semibold tracking-[.3px] text-muted-foreground uppercase">{a.genre} · {a.year} · Lossless</div>
           <div className="mt-3.5 w-full"><PillButtons onPlay={() => ctx.player.playFrom(songs, 0)} onShuffle={() => ctx.player.playFrom(songs, (songs.length * 7) % songs.length)} /></div>
         </div>
       </div>
       <SongList songs={songs} ctx={ctx} />
-      <div className="px-4 pt-3 text-[13px] leading-relaxed text-muted-foreground">
+      <div className="px-4 pt-3 text-footnote leading-relaxed text-muted-foreground">
         {a.tracks.length} songs, {minutes(songs)} minutes<br />℗ {a.year} {a.label}
       </div>
       {more.length ? <Shelf title={`More by ${a.artist}`}>{more.map((x) => <AlbumTile key={x.id} album={x} ctx={ctx} caption={String(x.year)} />)}</Shelf> : null}
@@ -423,7 +423,7 @@ function ArtistPage({ name, ctx }: { name: string; ctx: Ctx }) {
   const a = albums[0];
   return (
     <div className="pb-6">
-      <div className="relative mx-4 mt-1 flex aspect-[2.2] max-h-[300px] w-[calc(100%-2rem)] items-end overflow-hidden rounded-[14px] p-5"
+      <div className="relative mx-4 mt-1 flex aspect-[2.2] max-h-[300px] w-[calc(100%-2rem)] items-end overflow-hidden rounded-card p-5"
         style={{ background: `linear-gradient(135deg, ${a.colors[0]}, ${a.colors[1]})` }}>
         <Artwork album={a} rounded={0} className="absolute inset-0 size-full scale-125 opacity-60 blur-[18px]" />
         <div className="relative flex items-center gap-4">
@@ -448,12 +448,12 @@ function PlaylistPage({ id, ctx }: { id: string; ctx: Ctx }) {
         <div className={cn('flex min-w-0 flex-col gap-1', ctx.wide ? 'items-start' : 'items-center')}>
           <h2 className="m-0 text-[24px] leading-tight font-bold">{p.title}</h2>
           <div className="text-[18px] text-primary">{p.curator}</div>
-          <div className="text-[14px] text-muted-foreground">{p.description}</div>
+          <div className="text-detail text-muted-foreground">{p.description}</div>
           <div className="mt-3.5 w-full"><PillButtons onPlay={() => ctx.player.playFrom(songs, 0)} onShuffle={() => ctx.player.playFrom(songs, 2)} /></div>
         </div>
       </div>
       <SongList songs={songs} ctx={ctx} art />
-      <div className="px-4 pt-3 text-[13px] text-muted-foreground">{songs.length} songs, {minutes(songs)} minutes</div>
+      <div className="px-4 pt-3 text-footnote text-muted-foreground">{songs.length} songs, {minutes(songs)} minutes</div>
     </div>
   );
 }

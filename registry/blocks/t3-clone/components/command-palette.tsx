@@ -205,7 +205,7 @@ function SearchOnly({ children }: { children: ReactNode }) {
 function ContentResults({ onOpen }: { onOpen: (path: string) => void }) {
   const { query } = useCommandMenu();
   const q = query.trim().toLowerCase();
-  if (!q) return <div className="px-3 py-8 text-center text-[14px] text-muted-foreground">Type to search {CONTENT_INDEX.length} indexed lines</div>;
+  if (!q) return <div className="px-3 py-8 text-center text-detail text-muted-foreground">Type to search {CONTENT_INDEX.length} indexed lines</div>;
   const hits = CONTENT_INDEX.filter((l) => l.text.toLowerCase().includes(q) || l.file.toLowerCase().includes(q));
   return (
     <CommandGroup heading={`${hits.length} result${hits.length === 1 ? '' : 's'}`}>
@@ -214,7 +214,7 @@ function ContentResults({ onOpen }: { onOpen: (path: string) => void }) {
           key={`${l.file}:${l.line}`}
           value={`${l.file}:${l.line}`}
           icon={<ContentSearchIcon />}
-          title={<span className="font-mono text-[13px]"><Exact text={l.text} query={q} /></span>}
+          title={<span className="font-mono text-footnote"><Exact text={l.text} query={q} /></span>}
           description={`${l.file}:${l.line}`}
           onSelect={() => onOpen(`cookbook/${l.file}`)}
         />
@@ -271,7 +271,7 @@ function SetupRequired() {
   return (
     <Badge
       variant="outline"
-      className="ml-auto h-7 rounded-md px-2.5 text-[13px] font-medium text-warning/85 shadow-[inset_0_0_0_1px_var(--border)]"
+      className="ml-auto h-7 rounded-md px-2.5 text-footnote font-medium text-warning/85 shadow-hairline"
     >
       Setup Required
     </Badge>

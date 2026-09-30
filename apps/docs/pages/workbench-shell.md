@@ -2,34 +2,24 @@
 
 An IDE-style agent workspace, built from parts. `WorkbenchShell` is a thin layout root: it measures itself, owns the region state, and provides it through context. Every region is a part you place yourself — the sidebar, main column, header, bottom dock, right panel, and compact tab bar — and each part picks its own presentation from the shell's width class. Nothing is configured through props or slot functions; leave a part out and its region simply isn't there.
 
-{% tabs title="Installation" sync="install" %}
-{% tab title="npm" %}
-{% command %}npm install @brett_lamy/ui{% endcommand %}
+## Installation
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+`WorkbenchShell` and its parts belong to the **t3-clone** [block](https://blamy.github.io/ui/#/blocks), not the library: an IDE-style workspace is the layout of one product, so it is copied into your app, where it is yours to change. The block also owns the terminal, the surface panels, the `ModelPicker` and the `WorkbenchComposer`. Adding it copies the library parts it is built from (AdaptivePane, SnapSheet, Conversation, Composer, MessageScroller, …).
 
-```tsx
-import '@brett_lamy/ui/styles.css'
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/t3-clone.json{% endcommand %}
 
-import {
-  WorkbenchShell, WorkbenchSidebar, WorkbenchMain,
-  WorkbenchHeader, Conversation,
-} from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/workbench-shell.json{% endcommand %}
-
-Adds `@/components/ui/workbench-shell.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
+The workbench lands in `components/blocks/t3-clone/components/workbench/`: `workbench-shell.tsx`, `terminal.tsx`, `surfaces.tsx`, `model-picker.tsx`, `models.tsx` and `workbench-composer.tsx`. Import from your alias:
 
 ```tsx
 import {
-  WorkbenchShell, WorkbenchSidebar, WorkbenchMain,
-  WorkbenchHeader, Conversation,
-} from '@/components/ui/workbench-shell'
+  WorkbenchShell, WorkbenchSidebar, WorkbenchMain, WorkbenchHeader,
+} from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
+import {
+  Conversation, ConversationMessages,
+} from '@/components/ui/conversation'
 ```
-{% endtab %}
-{% endtabs %}
+
+The shell opens the `workbench` [theme scope](https://blamy.github.io/ui/#/theming), which the bl-theme defines; without the bl-theme it wears your own theme. The conversation parts, `MessageScroller`, `SnapSheet` and `Composer` are library parts.
 
 ```tsx
 import {
@@ -37,7 +27,7 @@ import {
   WorkbenchSidebarTrigger, WorkbenchTitle, WorkbenchActions,
   WorkbenchDockTrigger, WorkbenchPanelTrigger, WorkbenchDock, WorkbenchPanel,
   WorkbenchTabBar, WorkbenchTab,
-} from '@brett_lamy/ui'
+} from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
 
 <WorkbenchShell tint="#0A84FF">
   <WorkbenchSidebar><Threads /></WorkbenchSidebar>
@@ -75,7 +65,7 @@ Every part at once: the `t3-clone` registry block — thread sidebar, a streamin
 | `WorkbenchSidebar` | Left region. `width` (242) for the column, `drawerWidth` (280) for the compact drawer. |
 | `WorkbenchSidebarTrigger` · `WorkbenchSidebarClose` | Header toggle (a hamburger when compact) · the drawer's × (renders only when compact). |
 | `WorkbenchMain` | Centre column: header, content, then the dock. |
-| `WorkbenchHeader` · `WorkbenchTitle` · `WorkbenchActions` · `WorkbenchAction` | The 44px title bar: `project / title` crumb that fills the free space, then a row of icon actions. |
+| `WorkbenchHeader` · `WorkbenchTitle` · `WorkbenchActions` · `WorkbenchAction` | The 52px title bar (`h-toolbar`): `project / title` crumb that fills the free space, then a row of icon actions. |
 | `WorkbenchDock` · `WorkbenchDockTrigger` · `WorkbenchDockClose` | Bottom dock, resizable from its top edge (`minHeight` 110, `maxHeight` 520); `snaps` for the compact sheet. |
 | `WorkbenchPanel` · `WorkbenchPanelTrigger` | Right region (an inspector) and its header toggle (hidden when compact). |
 | `WorkbenchPanelHeader` · `WorkbenchPanelTitle` · `WorkbenchPanelFullscreen` · `WorkbenchPanelClose` | The panel's bar: icon + name, full-screen toggle (hidden when compact), close. |
@@ -110,9 +100,11 @@ Widths are measured on the shell's own box (`useContainerWidth` → `workbenchWi
 
 ## The sidebar
 
-`WorkbenchSidebar` holds whatever navigation you give it. The generic [Sidebar](https://blamy.github.io/ui/#/sidebar) parts fit it — `SidebarHeader` with a `SidebarWorkspace` and a `WorkbenchSidebarClose`, `SidebarContent` › `SidebarSection` › `SidebarItem` for the threads, `SidebarFooter` — as the compositions below do; call `useWorkbenchShell().setSidebarOpen(false)` when a thread is picked so the compact drawer closes. T3 Code's own thread sidebar (search, project switcher, collapsible Active / Settled groups with running and unread states, "Show more", an update notice) is part of the **t3-clone** block above — `npx shadcn add` copies it into your app as `components/thread-sidebar.tsx`.
+`WorkbenchSidebar` holds whatever navigation you give it. The generic [Sidebar](https://blamy.github.io/ui/#/sidebar) parts fit it — `SidebarHeader` with a `SidebarWorkspace` and a `WorkbenchSidebarClose`, `SidebarContent` › `SidebarSection` › `SidebarItem` for the threads, `SidebarFooter` — as the compositions below do; call `useWorkbenchShell().setSidebarOpen(false)` when a thread is picked so the compact drawer closes. T3 Code's own thread sidebar (search, project switcher, collapsible Active / Settled groups with running and unread states, "Show more", an update notice) is part of the **t3-clone** block above — `npx shadcn add` copies it into your app as `components/blocks/t3-clone/components/thread-sidebar.tsx`.
 
 ## Conversation parts
+
+Library parts (`@/components/ui/conversation`), used by the block and by any chat.
 
 | Part | Role |
 | --- | --- |
@@ -127,6 +119,8 @@ Widths are measured on the shell's own box (`useContainerWidth` → `workbenchWi
 | `SettledBanner` | Above the composer of a settled thread. |
 
 ## Terminal and surface parts
+
+Block parts, in `components/blocks/t3-clone/components/workbench/terminal.tsx` and `surfaces.tsx`.
 
 | Part | Role |
 | --- | --- |

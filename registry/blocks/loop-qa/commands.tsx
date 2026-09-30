@@ -134,7 +134,7 @@ function Palette({ container }: { container: Element | null }) {
               <CommandGroup heading="Projects">
                 {PROJECTS.map((p) => (
                   <CommandItem key={p.id} value={p.name} keywords={[host(p.url)]} icon={<Swatch color={p.brand} />} title={p.name} description={host(p.url)}
-                    badge={<span className="text-[12px] text-muted-foreground tabular-nums">{qa.bugs.filter((b) => b.projectId === p.id && isOpen(b)).length} open</span>}
+                    badge={<span className="text-caption text-muted-foreground tabular-nums">{qa.bugs.filter((b) => b.projectId === p.id && isOpen(b)).length} open</span>}
                     onSelect={() => qa.openSection(p.id)} />
                 ))}
               </CommandGroup>
@@ -160,7 +160,7 @@ function Palette({ container }: { container: Element | null }) {
               <CommandGroup heading="Status">
                 {STATUSES.map((s) => (
                   <CommandItem key={s} value={STATUS_LABEL[s]} icon={<span className={cn('size-2.5 rounded-full', STATUS_DOT[s])} />} title={STATUS_LABEL[s]}
-                    badge={bug?.status === s ? <span className="text-[12px] text-muted-foreground">Current</span> : undefined}
+                    badge={bug?.status === s ? <span className="text-caption text-muted-foreground">Current</span> : undefined}
                     disabled={!bug} onSelect={() => { if (bug) { qa.setBugStatus(bug.id, s); qa.toast.hud(`${bug.id} → ${STATUS_LABEL[s]}`); } }} />
                 ))}
               </CommandGroup>
@@ -170,7 +170,7 @@ function Palette({ container }: { container: Element | null }) {
               <CommandGroup heading="Severity">
                 {SEVERITIES.map((s) => (
                   <CommandItem key={s} value={SEVERITY_LABEL[s]} icon={<Swatch color={SEVERITY_COLOR[s]} round />} title={SEVERITY_LABEL[s]}
-                    badge={bug?.severity === s ? <span className="text-[12px] text-muted-foreground">Current</span> : undefined}
+                    badge={bug?.severity === s ? <span className="text-caption text-muted-foreground">Current</span> : undefined}
                     disabled={!bug} onSelect={() => { if (bug) { qa.setBugSeverity(bug.id, s); qa.toast.hud(`${bug.id} → ${SEVERITY_LABEL[s]}`); } }} />
                 ))}
               </CommandGroup>
@@ -180,7 +180,7 @@ function Palette({ container }: { container: Element | null }) {
               <CommandGroup heading="Issue trackers">
                 {TRACKERS.map((t) => (
                   <CommandItem key={t.id} value={t.name} icon={<Swatch color={t.color} />} title={t.name} description={t.detail}
-                    badge={qa.trackers.includes(t.id) ? <span className="text-[12px] font-medium text-success">Connected</span> : undefined}
+                    badge={qa.trackers.includes(t.id) ? <span className="text-caption font-medium text-success">Connected</span> : undefined}
                     onSelect={() => qa.connectTracker(t.id, t.name)} />
                 ))}
               </CommandGroup>
@@ -214,15 +214,15 @@ function BugPreview({ wide }: { wide: boolean }) {
           {b ? (
             <div className="flex h-full flex-col gap-2.5 p-4">
               <div className="flex flex-wrap items-center gap-1.5"><SeverityBadge severity={b.severity} /><StatusBadge status={b.status} /><EnvBadge env={b.environment} /></div>
-              <div className="text-[14px] leading-[19px] font-semibold">{b.title}</div>
+              <div className="text-detail leading-[19px] font-semibold">{b.title}</div>
               <p className="m-0 line-clamp-5 text-[12.5px] leading-[18px] text-muted-foreground">{b.summary}</p>
-              <dl className="m-0 mt-auto grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 border-t border-border pt-3 text-[12px]">
-                <dt className="text-muted-foreground">Kind</dt><dd className="m-0"><KindLabel kind={b.kind} className="text-[12px]" /></dd>
+              <dl className="m-0 mt-auto grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 border-t border-border pt-3 text-caption">
+                <dt className="text-muted-foreground">Kind</dt><dd className="m-0"><KindLabel kind={b.kind} className="text-caption" /></dd>
                 <dt className="text-muted-foreground">Found</dt><dd className="m-0">{relativeTime(b.discovered)} · run #{b.runId.slice(4)}</dd>
                 <dt className="text-muted-foreground">Journey</dt><dd className="m-0 truncate">{b.journey}</dd>
               </dl>
             </div>
-          ) : <div className="grid h-full place-items-center text-[13px] text-tertiary-foreground">No bug selected</div>}
+          ) : <div className="grid h-full place-items-center text-footnote text-tertiary-foreground">No bug selected</div>}
         </ContentSwap>
       </div>
     </aside>
@@ -230,5 +230,5 @@ function BugPreview({ wide }: { wide: boolean }) {
 }
 
 function Swatch({ color, round }: { color: string; round?: boolean }) {
-  return <span className={round ? 'size-2.5 rounded-full bg-(--c)' : 'size-3 rounded-[4px] bg-(--c)'} style={{ '--c': color } as CSSProperties} />;
+  return <span className={round ? 'size-2.5 rounded-full bg-(--c)' : 'size-3 rounded-sm bg-(--c)'} style={{ '--c': color } as CSSProperties} />;
 }

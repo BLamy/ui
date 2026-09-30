@@ -58,14 +58,14 @@ export function DemoGlyph({ name, size = 20, sw = 1.9 }: { name: string; size?: 
 function BarButton({ label, children, onPress }: { label: string; children: ReactNode; onPress?: () => void }) {
   return (
     <AriaButton aria-label={label} onPress={onPress}
-      className="bl-btn grid cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent px-2.5 py-2 text-primary outline-none transition-[background,transform] duration-150 data-[hovered]:bg-secondary data-[pressed]:scale-[.94] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+      className="bl-btn grid cursor-pointer place-items-center rounded-ctl border-0 bg-transparent px-2.5 py-2 text-primary outline-none transition-[background,transform] duration-150 data-[hovered]:bg-secondary data-[pressed]:scale-[.94] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
       {children}
     </AriaButton>
   );
 }
 
 const SectionLabel = ({ children }: { children: ReactNode }) => (
-  <div className="px-3 pt-4 pb-1.5 text-[13px] font-semibold tracking-[-.1px] text-muted-foreground">{children}</div>
+  <div className="px-3 pt-4 pb-1.5 text-footnote font-semibold tracking-[-.1px] text-muted-foreground">{children}</div>
 );
 
 type DemoProps = Omit<SplitViewProps, 'children'> & { className?: string; style?: CSSProperties };
@@ -106,7 +106,7 @@ const MAIL: Record<string, Msg[]> = {
 function MailSidebar() {
   return (
     <SplitViewSidebar aria-label="Mailboxes">
-      <SplitViewHeader title="Mailboxes" trailing={<BarButton label="Edit mailboxes"><span className="text-[17px]">Edit</span></BarButton>} />
+      <SplitViewHeader title="Mailboxes" trailing={<BarButton label="Edit mailboxes"><span className="text-body">Edit</span></BarButton>} />
       <SplitViewContent className="px-2.5 pb-4">
         <SectionLabel>iCloud</SectionLabel>
         <div className="flex flex-col gap-px">
@@ -136,11 +136,11 @@ function MailList() {
             {m.unread ? <span aria-label="Unread" className="absolute top-[18px] left-2.5 size-[9px] rounded-full bg-primary" /> : null}
             <span className="min-w-0 flex-1">
               <span className="flex items-baseline gap-2">
-                <span className="min-w-0 flex-1 truncate text-[16px] font-semibold">{m.from.join(' ')}</span>
+                <span className="min-w-0 flex-1 truncate text-callout font-semibold">{m.from.join(' ')}</span>
                 {m.flagged ? <span className="text-warning"><DemoGlyph name="flag" size={13} sw={2.4} /></span> : null}
-                <span className="shrink-0 text-[14px] text-muted-foreground">{m.time}</span>
+                <span className="shrink-0 text-detail text-muted-foreground">{m.time}</span>
               </span>
-              <span className="mt-0.5 block truncate text-[15px]">{m.subject}</span>
+              <span className="mt-0.5 block truncate text-subhead">{m.subject}</span>
               <span className="mt-0.5 line-clamp-2 text-[14.5px] leading-[1.35] text-muted-foreground">{m.preview}</span>
             </span>
           </SplitViewItem>
@@ -169,14 +169,14 @@ function MailMessage() {
               <Avatar c={{ f: m.from[0], l: m.from[1] }} size={44} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
-                  <span className="min-w-0 flex-1 truncate text-[17px] font-semibold">{m.from.join(' ')}</span>
-                  <span className="shrink-0 text-[14px] text-muted-foreground">{m.time}</span>
+                  <span className="min-w-0 flex-1 truncate text-body font-semibold">{m.from.join(' ')}</span>
+                  <span className="shrink-0 text-detail text-muted-foreground">{m.time}</span>
                 </div>
-                <div className="truncate text-[14px] text-muted-foreground">To: Brett Lamy</div>
+                <div className="truncate text-detail text-muted-foreground">To: Brett Lamy</div>
               </div>
             </div>
             <h2 className="mt-5 mb-4 border-0 text-[24px] leading-[1.2] font-bold tracking-[-.4px]">{m.subject}</h2>
-            <div className="flex flex-col gap-3.5 text-[16px] leading-[1.55]">
+            <div className="flex flex-col gap-3.5 text-callout leading-[1.55]">
               <p className="m-0">Hi Brett,</p>
               <p className="m-0">{m.preview}</p>
               <p className="m-0">I tried it at every size: tiled at regular, floating over the list at medium, and as a stack on the phone. The column I was reading stays where it is and just changes shape, so nothing flashes and the scroll position survives.</p>
@@ -240,9 +240,9 @@ function NotesEditor() {
       {n ? (
         <SplitViewContent>
           <div className="mx-auto max-w-[680px] px-7 pt-4 pb-10">
-            <div className="text-center text-[13px] text-muted-foreground">{n.date}</div>
+            <div className="text-center text-footnote text-muted-foreground">{n.date}</div>
             <h2 className="mt-3 mb-3 text-[28px] leading-[1.15] font-bold tracking-[-.5px]">{n.title}</h2>
-            <p className="m-0 text-[17px] leading-[1.55]">{n.body}</p>
+            <p className="m-0 text-body leading-[1.55]">{n.body}</p>
           </div>
         </SplitViewContent>
       ) : <SplitViewEmpty icon={<DemoGlyph name="note" size={48} sw={1.2} />} title="No Note Selected" />}
@@ -274,10 +274,10 @@ function SettingsPane() {
       {cur ? (
         <SplitViewContent>
           <div className="mx-auto max-w-[620px] px-5 pt-5 pb-10">
-            <div className="mb-6 flex flex-col items-center rounded-[14px] bg-card px-6 py-6 text-center">
-              <span className="grid size-[58px] place-items-center rounded-[14px] bg-(--tile) text-white" style={{ '--tile': cur.color } as CSSProperties}><DemoGlyph name={cur.icon} size={32} sw={1.9} /></span>
+            <div className="mb-6 flex flex-col items-center rounded-card bg-card px-6 py-6 text-center">
+              <span className="grid size-[58px] place-items-center rounded-card bg-(--tile) text-white" style={{ '--tile': cur.color } as CSSProperties}><DemoGlyph name={cur.icon} size={32} sw={1.9} /></span>
               <div className="mt-3 text-[22px] font-bold tracking-[-.3px]">{cur.title}</div>
-              <div className="mt-1 max-w-[360px] text-[14px] leading-[1.4] text-muted-foreground">Adjust how {cur.title.toLowerCase()} behaves on this device and everywhere you’re signed in.</div>
+              <div className="mt-1 max-w-[360px] text-detail leading-[1.4] text-muted-foreground">Adjust how {cur.title.toLowerCase()} behaves on this device and everywhere you’re signed in.</div>
             </div>
             <ListSection>
               <ListRow title={cur.title} trailing={<Switch checked={on.a} onChange={flip('a')} aria-label={cur.title} />} />
@@ -302,9 +302,9 @@ export function SplitViewSettingsDemo({ defaultSelection, ...props }: DemoProps)
       <SplitViewSidebar aria-label="Settings" width={300}>
         <SplitViewHeader title="Settings" />
         <SplitViewContent className="px-2.5 pb-4">
-          <div className="my-3 flex items-center gap-3 rounded-[12px] bg-card px-3 py-2.5">
+          <div className="my-3 flex items-center gap-3 rounded-panel bg-card px-3 py-2.5">
             <Avatar c={{ f: 'Brett', l: 'Lamy' }} size={44} />
-            <div className="min-w-0"><div className="truncate text-[16px] font-semibold">Brett Lamy</div><div className="truncate text-[13px] text-muted-foreground">Account, iCloud, Media</div></div>
+            <div className="min-w-0"><div className="truncate text-callout font-semibold">Brett Lamy</div><div className="truncate text-footnote text-muted-foreground">Account, iCloud, Media</div></div>
           </div>
           <div className="flex flex-col gap-px">
             {SETTINGS.map((x) => <SplitViewItem key={x.id} id={x.id} title={x.title} icon={<Tile icon={x.icon} color={x.color} />} badge={x.value} />)}
@@ -351,7 +351,7 @@ export function SplitViewResizableDemo({ children, initial = 900, min = 320, max
         <span className="ml-1">{Math.round(w)}px</span>
       </div>
       <div className="relative flex max-w-full">
-        <div className="relative h-(--frame-h) w-(--frame-w) overflow-hidden rounded-[14px] shadow-[0_0_0_1px_var(--border),0_10px_30px_--alpha(black/12%)]"
+        <div className="relative h-(--frame-h) w-(--frame-w) overflow-hidden rounded-card shadow-[0_0_0_1px_var(--border),0_10px_30px_--alpha(black/12%)]"
           style={{ '--frame-w': w + 'px', '--frame-h': height + 'px' } as CSSProperties}>
           {children}
         </div>
@@ -414,7 +414,7 @@ function RemindersList({ scrolled }: { scrolled?: boolean }) {
               <span aria-hidden="true" className="grid size-[22px] shrink-0 place-items-center rounded-full shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))] peer-checked:bg-(--c) peer-checked:shadow-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring" style={{ '--c': l.color } as CSSProperties}>
                 {done[t] ? <span className="size-2 rounded-full bg-white" /> : null}
               </span>
-              <span className="min-w-0 flex-1 truncate py-[11px] pr-4 text-[17px] shadow-[inset_0_-1px_0_var(--border)] peer-checked:text-muted-foreground">{t}</span>
+              <span className="min-w-0 flex-1 truncate py-[11px] pr-4 text-body shadow-hairline-b peer-checked:text-muted-foreground">{t}</span>
             </label>
           ))}
         </div>
@@ -459,7 +459,7 @@ const SECTIONS_LIB = [
   { id: 'songs', title: 'Songs', short: 'Songs', icon: 'music' },
 ];
 const Cover = ({ a, className }: { a: Album; className?: string }) => (
-  <span aria-hidden="true" className={cn('block shrink-0 rounded-[8px] shadow-[0_2px_10px_black] shadow-black/18', className)}
+  <span aria-hidden="true" className={cn('block shrink-0 rounded-lg shadow-[0_2px_10px_black] shadow-black/18', className)}
     style={{ background: `linear-gradient(135deg, hsl(${a.hue} 80% 62%), hsl(${a.hue + 40} 70% 38%))` }} />
 );
 
@@ -470,7 +470,7 @@ function TrackPage({ a, track }: { a: Album; track: string }) {
       <SplitViewContent>
         <div className="mx-auto max-w-[560px] px-6 pt-6 pb-10">
           <div className="text-[22px] font-bold tracking-[-.3px]">{track}</div>
-          <div className="mt-1 mb-2 text-[15px] text-muted-foreground">{a.artist} · {a.title}</div>
+          <div className="mt-1 mb-2 text-subhead text-muted-foreground">{a.artist} · {a.title}</div>
           <ListSection title="Performed by">
             <ListRow title={a.artist} />
             <ListRow title="Strings — The Harbour Quartet" divider={false} />
@@ -496,14 +496,14 @@ function AlbumPage({ a }: { a: Album }) {
             <div className="min-w-0 pb-1">
               <div className="truncate text-[26px] leading-[1.15] font-bold tracking-[-.4px]">{a.title}</div>
               <div className="mt-1 truncate text-[18px] text-primary">{a.artist}</div>
-              <div className="mt-1 text-[13px] text-muted-foreground">{a.year} · {a.tracks.length} songs</div>
+              <div className="mt-1 text-footnote text-muted-foreground">{a.year} · {a.tracks.length} songs</div>
             </div>
           </div>
           <div className="mt-6">
             {a.tracks.map((t, i) => (
               <AriaButton key={t} onPress={() => stack.push(<TrackPage a={a} track={t} />, { key: `${a.id}-${i}` })}
-                className="bl-btn flex w-full cursor-pointer items-center gap-4 border-0 bg-transparent px-1 py-3 text-left [font-family:inherit] text-[16px] text-foreground shadow-[inset_0_-1px_0_var(--border)] outline-none data-[pressed]:bg-accent data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
-                <span className="w-5 text-right text-[14px] text-muted-foreground tabular-nums">{i + 1}</span>
+                className="bl-btn flex w-full cursor-pointer items-center gap-4 border-0 bg-transparent px-1 py-3 text-left [font-family:inherit] text-callout text-foreground shadow-hairline-b outline-none data-[pressed]:bg-accent data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+                <span className="w-5 text-right text-detail text-muted-foreground tabular-nums">{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate">{t}</span>
                 <Icon name="chev" size={14} sw={2.6} className="text-tertiary-foreground" />
               </AriaButton>
@@ -531,10 +531,10 @@ function LibraryRoot({ initialAlbum }: { initialAlbum?: string }) {
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-5 px-5 pt-5 pb-10">
           {ALBUMS.map((a) => (
             <AriaButton key={a.id} onPress={() => stack.push(<AlbumPage a={a} />, { key: a.id })}
-              className="bl-btn flex cursor-pointer flex-col items-stretch gap-1.5 rounded-[10px] border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground outline-none transition-transform duration-150 data-[pressed]:scale-[.97] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+              className="bl-btn flex cursor-pointer flex-col items-stretch gap-1.5 rounded-ctl border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground outline-none transition-transform duration-150 data-[pressed]:scale-[.97] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
               <Cover a={a} className="aspect-square w-full" />
-              <span className="mt-0.5 truncate text-[14px] font-medium">{a.title}</span>
-              <span className="-mt-1 truncate text-[13px] text-muted-foreground">{a.artist}</span>
+              <span className="mt-0.5 truncate text-detail font-medium">{a.title}</span>
+              <span className="-mt-1 truncate text-footnote text-muted-foreground">{a.artist}</span>
             </AriaButton>
           ))}
         </div>
@@ -602,14 +602,14 @@ function GalleryDetail() {
           <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-4 px-5 pt-5 pb-10">
             {NOTES.map((x) => (
               <AriaButton key={x.id} onPress={() => { s.select('supplementary', x.id); s.setSupplementaryVisible(true); }}
-                className="bl-btn flex cursor-pointer flex-col items-stretch gap-2 border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground outline-none data-[focus-visible]:rounded-[12px] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
-                <span className={cn('block h-[150px] overflow-hidden rounded-[12px] bg-card p-3 text-[11px] leading-[1.45] text-muted-foreground',
+                className="bl-btn flex cursor-pointer flex-col items-stretch gap-2 border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground outline-none data-[focus-visible]:rounded-panel data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+                <span className={cn('block h-[150px] overflow-hidden rounded-panel bg-card p-3 text-caption2 leading-[1.45] text-muted-foreground',
                   x.id === s.selection.supplementary ? 'shadow-[0_0_0_2.5px_var(--primary)]' : 'shadow-[0_0_0_1px_var(--border)]')}>
-                  <span className="mb-1 block text-[12px] font-semibold text-foreground">{x.title}</span>{x.body}
+                  <span className="mb-1 block text-caption font-semibold text-foreground">{x.title}</span>{x.body}
                 </span>
                 <span className="px-1 text-center">
-                  <span className="block truncate text-[13px] font-semibold">{x.title}</span>
-                  <span className="block text-[12px] text-muted-foreground">{x.date}</span>
+                  <span className="block truncate text-footnote font-semibold">{x.title}</span>
+                  <span className="block text-caption text-muted-foreground">{x.date}</span>
                 </span>
               </AriaButton>
             ))}
@@ -618,9 +618,9 @@ function GalleryDetail() {
       ) : n ? (
         <SplitViewContent>
           <div className="mx-auto max-w-[680px] px-7 pt-4 pb-10">
-            <div className="text-center text-[13px] text-muted-foreground">{n.date}</div>
+            <div className="text-center text-footnote text-muted-foreground">{n.date}</div>
             <h2 className="mt-3 mb-3 text-[28px] leading-[1.15] font-bold tracking-[-.5px]">{n.title}</h2>
-            <p className="m-0 text-[17px] leading-[1.55]">{n.body}</p>
+            <p className="m-0 text-body leading-[1.55]">{n.body}</p>
           </div>
         </SplitViewContent>
       ) : <SplitViewEmpty icon={<DemoGlyph name="note" size={48} sw={1.2} />} title="No Note Selected" />}

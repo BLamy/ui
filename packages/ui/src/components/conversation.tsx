@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
@@ -211,7 +212,7 @@ export function UserMessage({ images, className, children }: UserMessageProps) {
           </div>
         ) : null}
         {children != null && children !== '' ? (
-          <div className="rounded-[14px_14px_4px_14px] bg-secondary-strong px-[13px] py-[9px] text-[14px] leading-[1.5] whitespace-pre-wrap">{children}</div>
+          <div className="rounded-[14px_14px_4px_14px] bg-secondary-strong px-[13px] py-[9px] text-detail leading-[1.5] whitespace-pre-wrap">{children}</div>
         ) : null}
       </div>
     </div>
@@ -261,7 +262,7 @@ export interface WorkLogProps {
 export function WorkLog({ summary, defaultOpen = false, children, className }: WorkLogProps) {
   const [open, setOpen] = useState(defaultOpen);
   const has = React.Children.count(children) > 0;
-  const row = 'flex items-center gap-[5px] text-[12px] text-tertiary-foreground';
+  const row = 'flex items-center gap-[5px] text-caption text-tertiary-foreground';
   const chevron = (
     <motion.span className="grid" animate={{ rotate: open ? 90 : 0 }} transition={springs.snappy}>
       <Icon name="chevron-right-wide" size={11} sw={2.4} />
@@ -361,8 +362,8 @@ export function SettledBanner({
     >
       <Icon name="checkmark-circle" size={20} sw={1.8} className="text-success" />
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-[650]">{title}</div>
-        <div className="mt-px text-[12px] text-muted-foreground">{description}</div>
+        <div className="text-footnote font-[650]">{title}</div>
+        <div className="mt-px text-caption text-muted-foreground">{description}</div>
       </div>
       <Button
         className={cn(pressable, 'shrink-0 cursor-pointer rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12.5px] font-semibold text-foreground hover:bg-secondary!')}

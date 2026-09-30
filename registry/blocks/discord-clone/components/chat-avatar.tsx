@@ -16,7 +16,7 @@ export interface ChatAvatarProps {
 
 /** Initial (or bot spark) on a diagonal gradient of the user's color. Size and color arrive as CSS variables. */
 export const chatAvatarVariants = cva(
-  'grid size-(--ck-avatar-size) shrink-0 place-items-center bg-(image:--ck-avatar-bg) font-ios text-(length:--ck-avatar-font) font-extrabold text-white',
+  'grid size-(--ck-avatar-size) shrink-0 place-items-center bg-(image:--ck-avatar-bg) font-sans text-(length:--ck-avatar-font) font-extrabold text-white',
   {
     variants: {
       /** A rounded square (bots) instead of a circle. */

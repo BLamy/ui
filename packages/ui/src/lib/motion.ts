@@ -1,3 +1,4 @@
+'use client';
 /* Motion — one vocabulary for every animation in the kit, after Benji Taylor's "Family Values"
    (https://benji.org/family-values): simplicity, fluidity, delight.
 

@@ -1,3 +1,4 @@
+'use client';
 import { ToggleButton, type ToggleButtonProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
@@ -17,12 +18,12 @@ export const toggleVariants = cva(
         default: 'bg-transparent',
         /** Filled resting state, for toggles standing alone on a card. */
         filled: 'bg-secondary',
-        outline: 'bg-transparent shadow-[inset_0_0_0_1px_var(--border)] data-selected:shadow-[inset_0_0_0_1px_transparent]',
+        outline: 'bg-transparent shadow-hairline data-selected:shadow-[inset_0_0_0_1px_transparent]',
       },
       size: {
-        sm: 'h-8 min-w-8 rounded-lg px-2 text-[13px]',
-        default: 'h-9 min-w-9 rounded-[10px] px-2.5 text-[15px]',
-        lg: 'h-11 min-w-11 rounded-xl px-3.5 text-[17px]',
+        sm: 'h-8 min-w-8 rounded-lg px-2 text-footnote',
+        default: 'h-9 min-w-9 rounded-ctl px-2.5 text-subhead',
+        lg: 'h-11 min-w-11 rounded-xl px-3.5 text-body',
       },
     },
     defaultVariants: { variant: 'default', size: 'default' },

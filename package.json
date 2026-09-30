@@ -12,6 +12,8 @@
     "vr:update": "playwright test -c tools/vr/playwright.config.mjs --update-snapshots",
     "registry": "node tools/registry/build.mjs",
     "registry:static": "node tools/registry/build.mjs --static",
+    "tokens": "node tools/tokens/build.mjs && node tools/tokens/check.mjs",
+    "variants": "node tools/docs/variants-md.mjs",
     "knip": "pnpm dlx knip@5"
   },
   "private": false,

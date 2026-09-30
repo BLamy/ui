@@ -6,7 +6,8 @@ import { BLProvider, useAppearance } from '@/lib/theme'
 
 const tints = ['#0A84FF', '#5E5CE6', '#34C759', '#FF9F0A', '#FF375F']
 
-// BLProvider sets the --bl-* tokens every component below it reads.
+// BLProvider sets the theme variables (--primary for the tint, the light/dark
+// class) that every component below it reads.
 export default function Appearance() {
   const [dark, setDark] = useState(useAppearance() === 'dark')
   const [tint, setTint] = useState('#0A84FF')

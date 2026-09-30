@@ -1,3 +1,4 @@
+'use client';
 import { use, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -258,11 +259,11 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
           className="relative box-border flex h-(--side-drawer-bar-h) shrink-0 items-end px-1.5 pt-(--side-drawer-safe-top) [border-bottom:1px_solid_var(--border)] bg-background/86 backdrop-blur-[18px] backdrop-saturate-[1.7]">
           <div className="flex h-toolbar w-full items-center">
             <AriaButton onPress={onClose} aria-label={typeof backLabel === 'string' ? backLabel : 'Back'}
-              className="bl-btn relative z-1 flex max-w-[30%] cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary">
+              className="bl-btn relative z-1 flex max-w-[30%] cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-body text-primary">
               <Icon name="chevL" size={24} sw={2.4} />
               <span className="truncate">{backLabel}</span>
             </AriaButton>
-            <div className="pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-[17px] font-semibold text-foreground">{title}</div>
+            <div className="pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-body font-semibold text-foreground">{title}</div>
           </div>
         </div>
         {children}

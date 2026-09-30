@@ -1,3 +1,4 @@
+'use client';
 import { Input as AriaInput, type InputProps as AriaInputProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { selectableText } from '@/lib/primitives';
@@ -7,7 +8,7 @@ import { cn } from '@/lib/utils';
    Inside a <TextField> it picks up the label, description and validation wiring automatically. */
 export const inputVariants = cva(
   [
-    'box-border w-full min-w-0 rounded-[10px] border-0 bg-input px-3 [font-family:inherit] text-foreground outline-none',
+    'box-border w-full min-w-0 rounded-ctl border-0 bg-input px-3 [font-family:inherit] text-foreground outline-none',
     'transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy placeholder:text-tertiary-foreground',
     'data-focused:bg-transparent data-focused:shadow-[inset_0_0_0_1.5px_var(--primary)]',
     'data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:cursor-not-allowed data-disabled:opacity-50',
@@ -16,9 +17,9 @@ export const inputVariants = cva(
   {
     variants: {
       size: {
-        sm: 'h-8 text-[15px]',
-        default: 'h-11 text-[17px]',
-        lg: 'h-[50px] rounded-xl text-[17px]',
+        sm: 'h-8 text-subhead',
+        default: 'h-11 text-body',
+        lg: 'h-[50px] rounded-xl text-body',
       },
     },
     defaultVariants: { size: 'default' },

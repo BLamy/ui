@@ -38,7 +38,7 @@ export function ThemeEditor({
       inert={!open}
       data-open={open || undefined}
       className={cn(
-        'absolute right-4 bottom-4 z-40 w-[248px] origin-bottom-right rounded-[14px] border border-border bg-popover p-3 text-[13px] text-foreground shadow-[0_18px_50px_color-mix(in_srgb,black_30%,transparent)]',
+        'absolute right-4 bottom-4 z-40 w-[248px] origin-bottom-right rounded-card border border-border bg-popover p-3 text-footnote text-foreground shadow-[0_18px_50px_color-mix(in_srgb,black_30%,transparent)]',
         // Grows out of its corner on the smooth spring; leaves quicker than it arrives.
         'transition-[opacity,scale,translate] duration-spring-smooth ease-spring-smooth motion-reduce:transition-opacity',
         open ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-2 scale-[.96] opacity-0 duration-exit ease-exit',
@@ -64,7 +64,7 @@ export function ThemeEditor({
           </button>
         ))}
       </div>
-      <div className="mb-1.5 text-[12px] text-muted-foreground">Accent</div>
+      <div className="mb-1.5 text-caption text-muted-foreground">Accent</div>
       <div className="flex gap-2">
         {TINTS.map((t) => (
           <button

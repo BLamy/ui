@@ -11,6 +11,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SRC, aliasOf, buildGraph, moduleExports } from '../registry/graph.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const PAGES = join(ROOT, 'apps/docs/pages');
@@ -46,25 +47,43 @@ const command = (cmd) => `{% command %}${cmd}{% endcommand %}`;
 /** The import snippet: an untitled block (no header bar, floating copy) without line numbers. */
 const IMPORT_FENCE = '```tsx';
 
+// Which module defines each exported name, and which registry item owns each module (tools/registry/graph.mjs).
+const graph = buildGraph({ errors: [] });
+const definedIn = new Map();
+for (const mod of graph.modules) {
+  const ex = moduleExports(`${SRC}/${mod}`);
+  for (const v of [...ex.values, ...ex.types]) if (!definedIn.has(v)) definedIn.set(v, mod);
+}
+
 export function installSection(entry) {
-  const from = entry.from || '@brett_lamy/ui';
   const names = importNames(entry);
-  const pkgs = [...new Set(['@brett_lamy/ui', from])].join(' ');
+  // The shown names may live in several modules (List + IndexBar): one import line per module, one item per owner.
+  const byModule = new Map();
+  for (const n of names) {
+    const mod = definedIn.get(n);
+    if (!mod) throw new Error(`install-md: ${entry.name}: nothing exports "${n}"`);
+    byModule.set(mod, [...(byModule.get(mod) ?? []), n]);
+  }
+  const items = [entry.name, ...new Set([...byModule.keys()].map((m) => graph.owner.get(m)))].filter((v, i, a) => a.indexOf(v) === i);
+  const files = graph.items.get(entry.name)?.files ?? [];
+  const where = files.some((f) => f.startsWith('lib/')) ? '`lib/`' : '`components/ui/`';
   return [
     '{% tabs title="Installation" sync="install" %}',
+    '{% tab title="shadcn CLI" %}',
+    command(`npx shadcn@latest add ${items.map((i) => `${REGISTRY_URL}/${i}.json`).join(' ')}`),
+    '',
+    `Copies the source into your project's ${where} (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:`,
+    '',
+    IMPORT_FENCE,
+    [...byModule.entries()].map(([mod, ns]) => importLine(ns, aliasOf(mod))).join('\n'),
+    '```',
+    '{% endtab %}',
     '{% tab title="npm" %}',
-    command(`npm install ${pkgs}`),
+    command('npm install @brett_lamy/ui'),
     '',
     "Import the stylesheet once at your app's entry, then the parts from the package root:",
     '',
-    IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, '', importLine(names, from), '```',
-    '{% endtab %}',
-    '{% tab title="shadcn CLI" %}',
-    command(`npx shadcn@latest add ${REGISTRY_URL}/${entry.name}.json`),
-    '',
-    `Adds \`@/components/ui/${entry.name}.tsx\`, installs \`@brett_lamy/ui\`, and wires its stylesheet and tokens into your CSS. Import from your alias:`,
-    '',
-    IMPORT_FENCE, importLine(names, `@/components/ui/${entry.name}`), '```',
+    IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, '', importLine(names, '@brett_lamy/ui'), '```',
     '{% endtab %}',
     '{% endtabs %}',
   ].join('\n');

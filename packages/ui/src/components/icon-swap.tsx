@@ -1,3 +1,4 @@
+'use client';
 import { useRef, type CSSProperties, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { fades, springs } from '@/lib/motion';

@@ -17,7 +17,7 @@ import { useLoopQA } from './state';
 
 export function AskTitle() {
   return (
-    <span className="inline-flex shrink-0 items-center gap-2 text-[15px] font-semibold whitespace-nowrap">
+    <span className="inline-flex shrink-0 items-center gap-2 text-subhead font-semibold whitespace-nowrap">
       <LoopMark size={22} />Ask QA
     </span>
   );
@@ -30,10 +30,10 @@ export function AskQA() {
   const project = qa.project ?? PROJECTS[0]!;
   const empty = qa.messages.length === 0;
   return (
-    <div data-slot="ask-qa" className="flex h-full min-h-0 flex-col text-[14px] text-foreground">
+    <div data-slot="ask-qa" className="flex h-full min-h-0 flex-col text-detail text-foreground">
       <div className="box-border flex h-toolbar shrink-0 items-center gap-2 border-b border-border pr-2 pl-3.5">
         <AskTitle />
-        <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-secondary px-2 py-0.5 text-[12px] text-muted-foreground">
+        <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-secondary px-2 py-0.5 text-caption text-muted-foreground">
           <span className="size-2 shrink-0 rounded-[3px] bg-(--brand)" style={{ '--brand': project.brand } as CSSProperties} />
           <span className="truncate">{project.name}</span>
         </span>

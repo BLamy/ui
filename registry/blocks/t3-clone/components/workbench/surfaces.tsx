@@ -80,7 +80,7 @@ export function SurfaceBrowser({ url, children, className }: SurfaceBrowserProps
       <div className="flex shrink-0 items-center gap-1.5 border-b border-border px-2.5 py-[7px]">
         <Icon name="chevron-right-wide" size={14} sw={2} className="-scale-x-100 text-tertiary-foreground" />
         <Icon name="chevron-right-wide" size={14} sw={2} className="text-tertiary-foreground opacity-40" />
-        <div className="flex flex-1 items-center gap-1.5 rounded-[7px] bg-secondary px-[9px] py-1 font-mono text-[12px] text-muted-foreground">
+        <div className="flex flex-1 items-center gap-1.5 rounded-[7px] bg-secondary px-[9px] py-1 font-mono text-caption text-muted-foreground">
           <span className="size-1.5 rounded-[50%] bg-success" />
           {url}
         </div>
@@ -93,11 +93,11 @@ export function SurfaceBrowser({ url, children, className }: SurfaceBrowserProps
 export function SurfaceAppPreview({ name, detail }: { name: React.ReactNode; detail?: React.ReactNode }) {
   return (
     <div data-slot="surface-app-preview" className="text-center">
-      <span className={cn(brandTile, 'inline-grid size-10 place-items-center rounded-[10px]')}>
+      <span className={cn(brandTile, 'inline-grid size-10 place-items-center rounded-ctl')}>
         <Icon name="asterisk" size={20} sw={2} className="text-white" />
       </span>
       <div className="mt-3 text-[13.5px] font-[650]">{name}</div>
-      {detail != null ? <div className="mt-[3px] font-mono text-[12px] text-tertiary-foreground">{detail}</div> : null}
+      {detail != null ? <div className="mt-[3px] font-mono text-caption text-tertiary-foreground">{detail}</div> : null}
       <div className="mt-4 flex justify-center gap-1.5">
         {['w-[52px]', 'w-[76px]', 'w-[40px]'].map((w, i) => (
           <span key={i} className={cn('h-2 rounded-sm bg-secondary-strong', w)} />
@@ -174,7 +174,7 @@ export function SurfaceAgents({ agents, className }: { agents: SurfaceAgent[]; c
   return (
     <div data-slot="surface-agents" className={cn('wb-scroll min-h-0 flex-1 overflow-y-auto px-3 py-2.5', className)}>
       {agents.map((a) => (
-        <div key={a.name} className="mb-1 flex items-center gap-2.5 rounded-[10px] border border-border bg-card px-2.5 py-[9px]">
+        <div key={a.name} className="mb-1 flex items-center gap-2.5 rounded-ctl border border-border bg-card px-2.5 py-[9px]">
           <span className={cn('size-2 shrink-0 rounded-[50%]', AGENT_DOT[a.status] ?? 'bg-tertiary-foreground')} />
           <div className="min-w-0 flex-1">
             <div className="font-mono text-[12.5px] font-[650]">{a.name}</div>

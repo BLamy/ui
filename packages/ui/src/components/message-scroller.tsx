@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { PlainButton as Button } from '@/components/ui/plain-button';

@@ -3,6 +3,15 @@
 One inspector, three presentations — chosen by composition, not configuration.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/side-drawer.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { SideDrawer } from '@/components/ui/side-drawer'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,15 +21,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { SideDrawer } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/side-drawer.json{% endcommand %}
-
-Adds `@/components/ui/side-drawer.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import { SideDrawer } from '@/components/ui/side-drawer'
 ```
 {% endtab %}
 {% endtabs %}
@@ -100,3 +100,22 @@ Where this applies: `ChatShellPanel` (a thread panel) pushes on a phone. Leading
 The host measures itself with `useContainerWidth` and picks docked, overlay, or a pushed `NavigationStack` screen. `Activity` never knows which one it is in. Switch widths in the header.
 
 {% demo src="side-drawer/adaptive-activity" %}
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `sideDrawerVariants`
+
+Defined in `@/components/ui/side-drawer`. Base classes:
+
+```text
+(none)
+```
+
+**`mode`**
+
+| Value | Adds |
+| --- | --- |
+| `fixed` | `w-(--side-drawer-w) shrink-0 overflow-hidden bg-background transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none` |
+| `overlay` | `absolute inset-0 z-350 pointer-events-none` |

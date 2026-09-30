@@ -30,8 +30,8 @@ export function MiniPlayer({ player: p, phone, onOpen, className, style }: {
       </Morph>
       <Morph id="mini-row" fade layout="position" className="pointer-events-none flex min-w-0 flex-1 items-center gap-3">
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-medium leading-tight">{p.current.track.title}</div>
-          <div className="truncate text-[13px] text-muted-foreground">{p.current.album.artist}</div>
+          <div className="truncate text-subhead font-medium leading-tight">{p.current.track.title}</div>
+          <div className="truncate text-footnote text-muted-foreground">{p.current.album.artist}</div>
         </div>
         <RoundButton label={p.playing ? 'Pause' : 'Play'} onPress={p.toggle} className="pointer-events-auto size-10 text-foreground">
           <IconSwap id={p.playing ? 'pause' : 'play'}><Icon name={p.playing ? 'pause' : 'play'} size={22} /></IconSwap>
@@ -72,7 +72,7 @@ export function FullPlayer({ player: p, phone, height, onClose }: { player: Play
     <div className="flex items-center gap-3">
       <div className="min-w-0 flex-1">
         <div className="truncate text-[19px] font-semibold">{p.current.track.title}</div>
-        <div className="truncate text-[17px] text-white/60">{p.current.album.artist} — {p.current.album.title}</div>
+        <div className="truncate text-body text-white/60">{p.current.album.artist} — {p.current.album.title}</div>
       </div>
       <RoundButton label="Love" className="size-8 bg-white/15 text-white"><Icon name="heart" size={17} weight="medium" /></RoundButton>
       <RoundButton label="More" className="size-8 bg-white/15 text-white"><Icon name="ellipsis" size={17} /></RoundButton>
@@ -111,8 +111,8 @@ export function FullPlayer({ player: p, phone, height, onClose }: { player: Play
               <div className="flex shrink-0 items-center gap-3">
                 {art('size-16 shrink-0')}
                 <Morph id="np-title-small" fade className="min-w-0 flex-1">
-                  <div className="truncate text-[16px] font-semibold">{p.current.track.title}</div>
-                  <div className="truncate text-[15px] text-white/60">{p.current.album.artist}</div>
+                  <div className="truncate text-callout font-semibold">{p.current.track.title}</div>
+                  <div className="truncate text-subhead text-white/60">{p.current.album.artist}</div>
                 </Morph>
                 <RoundButton label="More" className="size-8 bg-white/15 text-white"><Icon name="ellipsis" size={17} /></RoundButton>
               </div>
@@ -152,7 +152,7 @@ function Scrubber({ p }: { p: Player }) {
     <div className="flex flex-col gap-1.5">
       <Slider aria-label="Playback position" tone="onDark" size="sm" minValue={0} maxValue={dur} step={1}
         value={Math.floor(p.position)} onChange={(v) => p.seek(v as number)} />
-      <div className="flex justify-between text-[12px] font-medium tabular-nums text-white/55">
+      <div className="flex justify-between text-caption font-medium tabular-nums text-white/55">
         <span>{fmt(p.position)}</span>
         <span>-{fmt(dur - p.position)}</span>
       </div>
@@ -227,24 +227,24 @@ function Queue({ p }: { p: Player }) {
     <div className="bl-scroll absolute inset-0 overflow-y-auto px-7 py-2">
       <div className="flex items-end justify-between gap-3 pb-2">
         <div>
-          <div className="text-[17px] font-semibold">Playing Next</div>
-          <div className="text-[13px] text-white/55">From {p.current.album.title}</div>
+          <div className="text-body font-semibold">Playing Next</div>
+          <div className="text-footnote text-white/55">From {p.current.album.title}</div>
         </div>
         <div className="flex gap-2">
           <ToggleButton label="Shuffle" icon="shuffle" on={p.shuffle} onPress={p.toggleShuffle} />
           <ToggleButton label={`Repeat: ${p.repeat}`} icon={p.repeat === 'one' ? 'repeat-1' : 'repeat'} on={p.repeat !== 'off'} onPress={p.cycleRepeat} />
         </div>
       </div>
-      {p.upNext.length === 0 ? <div className="py-8 text-center text-[14px] text-white/55">Nothing up next.</div> : null}
+      {p.upNext.length === 0 ? <div className="py-8 text-center text-detail text-white/55">Nothing up next.</div> : null}
       {p.upNext.map((s, i) => (
         <button key={s.key + i} type="button" onClick={() => p.jump(p.index + 1 + i)}
-          className="bl-btn flex w-full cursor-pointer items-center gap-3 rounded-[10px] border-0 bg-transparent px-2 py-2 text-left [font-family:inherit] text-white transition-colors hover:bg-white/10">
+          className="bl-btn flex w-full cursor-pointer items-center gap-3 rounded-ctl border-0 bg-transparent px-2 py-2 text-left [font-family:inherit] text-white transition-colors hover:bg-white/10">
           <Artwork album={s.album} size={42} rounded={5} />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px]">{s.track.title}</span>
-            <span className="block truncate text-[13px] text-white/55">{s.album.artist}</span>
+            <span className="block truncate text-subhead">{s.track.title}</span>
+            <span className="block truncate text-footnote text-white/55">{s.album.artist}</span>
           </span>
-          <span className="text-[13px] tabular-nums text-white/45">{fmt(s.track.dur)}</span>
+          <span className="text-footnote tabular-nums text-white/45">{fmt(s.track.dur)}</span>
         </button>
       ))}
     </div>

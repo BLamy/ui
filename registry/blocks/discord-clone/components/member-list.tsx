@@ -65,7 +65,7 @@ export function MemberItem({ user, status, badge, className, style, children, ..
         {children ?? user.name}
       </span>
       {tag != null && (
-        <span className="rounded-[4px] bg-(--member-tag) px-1 py-px text-[8.5px] font-extrabold text-white" style={{ '--member-tag': MEMBER_TAG_COLOR } as CSSProperties}>
+        <span className="rounded-sm bg-(--member-tag) px-1 py-px text-[8.5px] font-extrabold text-white" style={{ '--member-tag': MEMBER_TAG_COLOR } as CSSProperties}>
           {tag}
         </span>
       )}

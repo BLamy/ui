@@ -4,7 +4,7 @@ import { List, ListRow, ListSection } from '@/components/ui/list'
 import { Switch } from '@/components/ui/switch'
 import { BLProvider, useAppearance } from '@/lib/theme'
 
-// A brand palette defined for both appearances: override any --bl-* token.
+// A brand palette defined for both appearances: override any theme variable.
 const sepia: Record<'light' | 'dark', Record<string, string>> = {
   light: {
     '--muted': '#F4ECDD',

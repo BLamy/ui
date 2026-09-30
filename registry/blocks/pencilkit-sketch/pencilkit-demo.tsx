@@ -36,7 +36,7 @@ export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes
     <div
       data-slot="pencilkit-demo"
       className={cn(
-        'relative h-full w-full overflow-hidden font-ios text-foreground antialiased',
+        'relative h-full w-full overflow-hidden font-sans text-foreground antialiased',
         pencilPaperClassName,
         scope.className,
         className,

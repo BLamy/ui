@@ -1,3 +1,4 @@
+'use client';
 import type { CSSProperties } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { cn } from '@/lib/utils';
@@ -22,7 +23,7 @@ export function EditBar({ count, allFav, onFav, onDelete, className, style }: Ed
       )}
       style={style}>
       <AriaButton className={cn(action, 'text-primary')} isDisabled={!count} onPress={onFav}>{allFav ? 'Unfavorite' : 'Favorite'}</AriaButton>
-      <span className="flex-1 text-center text-[13px] text-muted-foreground">{count ? count + ' selected' : 'Select items'}</span>
+      <span className="flex-1 text-center text-footnote text-muted-foreground">{count ? count + ' selected' : 'Select items'}</span>
       <AriaButton className={cn(action, 'text-destructive')} isDisabled={!count} onPress={onDelete}>Delete</AriaButton>
     </div>
   );

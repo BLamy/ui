@@ -1,3 +1,4 @@
+'use client';
 import {
   Children, createContext, isValidElement, use, useEffect, useId, useLayoutEffect, useRef, useState,
   type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement,
@@ -97,7 +98,7 @@ export function ListSection({
         ? <div className="sticky top-(--list-section-top) z-20 bg-sticky px-4 py-[3px] text-[13.5px] font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
             style={{ '--list-section-top': top + 'px' } as CSSProperties}>{title}</div>
         : <div className="px-4 pt-1 pb-[7px] text-[12.5px] font-medium tracking-[.4px] text-muted-foreground uppercase">{title}</div>) : null}
-      <div className={cn('overflow-hidden', sticky ? 'rounded-none' : 'rounded-[12px]')}>
+      <div className={cn('overflow-hidden', sticky ? 'rounded-none' : 'rounded-panel')}>
         {animated ? <AnimatedRows onReorder={onReorder}>{children}</AnimatedRows> : children}
       </div>
       {footer ? <div className="px-4 pt-[7px] pb-0 text-[12.8px] leading-[1.45] text-muted-foreground">{footer}</div> : null}
@@ -190,7 +191,7 @@ const openRows = new Set<() => void>();
 export const listRowVariants = cva(
   [
     // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row.
-    'relative box-border flex min-h-[46px] w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-[17px] leading-[normal] tracking-[normal] outline-none',
+    'relative box-border flex min-h-row w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-body leading-[normal] tracking-[normal] outline-none',
     'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]',
     // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent).
     'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]',
@@ -459,7 +460,7 @@ export function ListRow(p: ListRowProps) {
               {/* Content keeps its slot width, pinned to the row's edge, so it slides out from under the row. */}
               <span className="flex h-full w-(--action-w) shrink-0 flex-col items-center justify-center gap-[3px] px-2">
                 {a.icon ? <ActionIcon icon={a.icon} /> : null}
-                <span className={cn('truncate font-semibold', a.icon ? 'text-[12px]' : 'text-[15px]')}>{a.label}</span>
+                <span className={cn('truncate font-semibold', a.icon ? 'text-caption' : 'text-subhead')}>{a.label}</span>
               </span>
             </button>
           ))}
@@ -513,7 +514,7 @@ export function ListRow(p: ListRowProps) {
         ) : null}
         {p.leading ? <span data-slot="list-row-leading" className="pointer-events-none relative flex shrink-0 items-center">{p.leading}</span> : null}
         <div data-slot="list-row-body" className={cn(
-          'pointer-events-none relative flex min-h-[46px] min-w-0 flex-1 items-center gap-2.5 px-0',
+          'pointer-events-none relative flex min-h-row min-w-0 flex-1 items-center gap-2.5 px-0',
           fullWidth ? 'py-3' : 'py-[7px]',
           p.divider !== false && '[box-shadow:inset_0_-1px_0_var(--border)]',
           p.center ? 'justify-center' : 'justify-start',
@@ -525,7 +526,7 @@ export function ListRow(p: ListRowProps) {
             ) : (
               <div className={cn('min-w-0', p.center ? 'flex-none' : 'flex-1')}>
                 <div id={titleId} className="truncate leading-[1.3]">{p.title}</div>
-                {p.subtitle ? <div id={subId} className="mt-px truncate text-[13px] text-muted-foreground">{p.subtitle}</div> : null}
+                {p.subtitle ? <div id={subId} className="mt-px truncate text-footnote text-muted-foreground">{p.subtitle}</div> : null}
               </div>
             )}
             {p.trailing ? (
@@ -548,7 +549,7 @@ export function ListRow(p: ListRowProps) {
                 }
               }}
               className={cn(
-                'bl-btn pointer-events-auto -mr-2 grid h-[44px] w-[40px] shrink-0 cursor-grab touch-none place-items-center rounded-[8px] border-0 bg-transparent p-0 text-tertiary-foreground outline-none focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]',
+                'bl-btn pointer-events-auto -mr-2 grid h-[44px] w-[40px] shrink-0 cursor-grab touch-none place-items-center rounded-lg border-0 bg-transparent p-0 text-tertiary-foreground outline-none focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]',
                 slot.dragging && 'cursor-grabbing',
               )}>
               <svg width="20" height="14" viewBox="0 0 20 14" aria-hidden="true">

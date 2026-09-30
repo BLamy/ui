@@ -1,3 +1,4 @@
+'use client';
 import type { ReactNode } from 'react';
 import {
   OverlayArrow,
@@ -32,7 +33,7 @@ export function Tooltip({ className, style, offset = 8, arrow = true, children, 
       offset={offset}
       style={composeRenderProps(style, (s) => ({ ...scope.style, ...s }))}
       className={composeRenderProps(className, (cls) => cn(
-        'box-border max-w-60 rounded-[9px] bg-foreground px-2.5 py-1.5 text-[13px] leading-[17px] font-medium text-background shadow-[0_4px_14px_black] shadow-black/18',
+        'box-border max-w-60 rounded-[9px] bg-foreground px-2.5 py-1.5 text-footnote leading-[17px] font-medium text-background shadow-[0_4px_14px_black] shadow-black/18',
         popoverMotion,
         overlayZ, scope.className, cls,
       ))}

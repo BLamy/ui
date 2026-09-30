@@ -49,27 +49,40 @@ export const COLOR_TOKENS = [
 
 /** Font-size utilities (text-*): `--text-<name>`. Size only — no line-height. */
 export const TEXT_TOKENS = [
-
+  'caption2',
+  'caption',
+  'footnote',
+  'detail',
+  'subhead',
+  'callout',
+  'body',
+  'title',
 ] as const;
 
 /** Radius utilities (rounded-*): `--radius-<name>`, all derived from the `--radius` variable. */
 export const RADIUS_TOKENS = [
-
+  'ctl',
+  'panel',
+  'card',
+  'sheet',
 ] as const;
 
 /** Shadow utilities (shadow-*): `--shadow-<name>`. */
 export const SHADOW_TOKENS = [
-
+  'hairline',
+  'hairline-t',
+  'hairline-b',
 ] as const;
 
 /** Spacing utilities (h-*, min-h-*, size-*…) added by BL UI: `--spacing-<name>`. */
 export const SPACING_TOKENS = [
   'toolbar',
+  'row',
 ] as const;
 
 /** Font-family utilities (font-*): `--font-<name>`. */
 export const FONT_TOKENS = [
-  'ios',
+  'sans',
   'mono',
 ] as const;
 

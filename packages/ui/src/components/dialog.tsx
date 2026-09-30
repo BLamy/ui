@@ -1,3 +1,4 @@
+'use client';
 import { createContext, useContext, type ComponentProps } from 'react';
 import {
   Button as AriaButton, type ButtonProps as AriaButtonProps,
@@ -32,7 +33,7 @@ export const dialogVariants = cva(
   {
     variants: {
       size: {
-        alert: 'w-[270px] rounded-[14px] data-entering:animate-bl-alert-in data-exiting:animate-bl-alert-out motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
+        alert: 'w-[270px] rounded-card data-entering:animate-bl-alert-in data-exiting:animate-bl-alert-out motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
         default: 'w-full max-w-[400px] rounded-[20px] data-entering:animate-bl-pop-in data-exiting:animate-bl-pop-out motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
         lg: 'w-full max-w-[560px] rounded-[20px] data-entering:animate-bl-pop-in data-exiting:animate-bl-pop-out motion-reduce:data-entering:animate-bl-fade-in motion-reduce:data-exiting:animate-bl-fade-out',
       },
@@ -111,7 +112,7 @@ export function DialogTitle({ className, ...props }: HeadingProps) {
     <Heading
       slot="title"
       data-slot="dialog-title"
-      className={cn('m-0 font-semibold text-foreground', size === 'alert' ? 'text-[17px] leading-[22px]' : 'pr-8 text-[20px] leading-[25px] tracking-[-.3px]', className)}
+      className={cn('m-0 font-semibold text-foreground', size === 'alert' ? 'text-body leading-[22px]' : 'pr-8 text-title leading-[25px] tracking-[-.3px]', className)}
       {...props}
     />
   );
@@ -123,7 +124,7 @@ export function DialogDescription({ className, ...props }: TextProps) {
     <Text
       elementType="p"
       data-slot="dialog-description"
-      className={cn('m-0 text-foreground', size === 'alert' ? 'text-[13px] leading-[18px]' : 'text-[15px] leading-[20px] text-muted-foreground', className)}
+      className={cn('m-0 text-foreground', size === 'alert' ? 'text-footnote leading-[18px]' : 'text-subhead leading-[20px] text-muted-foreground', className)}
       {...props}
     />
   );
@@ -131,7 +132,7 @@ export function DialogDescription({ className, ...props }: TextProps) {
 
 /** Scrollable body between header and footer (default / lg dialogs). */
 export function DialogBody({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="dialog-body" className={cn('bl-scroll min-h-0 flex-1 overflow-y-auto px-5 py-2 text-[15px]', className)} {...props} />;
+  return <div data-slot="dialog-body" className={cn('bl-scroll min-h-0 flex-1 overflow-y-auto px-5 py-2 text-subhead', className)} {...props} />;
 }
 
 export interface DialogFooterProps extends ComponentProps<'div'> {
@@ -147,8 +148,8 @@ export function DialogFooter({ className, orientation = 'horizontal', ...props }
       data-orientation={orientation}
       className={cn(
         size === 'alert'
-          ? cn('flex shadow-[inset_0_1px_0_var(--border)]', orientation === 'vertical'
-            ? 'flex-col [&>*+*]:shadow-[inset_0_1px_0_var(--border)]'
+          ? cn('flex shadow-hairline-t', orientation === 'vertical'
+            ? 'flex-col [&>*+*]:shadow-hairline-t'
             : '[&>*]:flex-1 [&>*+*]:shadow-[inset_1px_0_0_var(--border)]')
           : 'flex items-center justify-end gap-2 px-5 pt-3 pb-5',
         className,
@@ -159,7 +160,7 @@ export function DialogFooter({ className, orientation = 'horizontal', ...props }
 }
 
 export const dialogActionVariants = cva(
-  cn('bl-btn box-border flex h-11 cursor-pointer items-center justify-center border-0 bg-transparent px-3 [font-family:inherit] text-[17px] whitespace-nowrap text-primary transition-[background-color] duration-exit data-pressed:bg-accent data-disabled:cursor-default data-disabled:opacity-40', focusRing, 'data-focus-visible:ring-inset'),
+  cn('bl-btn box-border flex h-11 cursor-pointer items-center justify-center border-0 bg-transparent px-3 [font-family:inherit] text-body whitespace-nowrap text-primary transition-[background-color] duration-exit data-pressed:bg-accent data-disabled:cursor-default data-disabled:opacity-40', focusRing, 'data-focus-visible:ring-inset'),
   {
     variants: {
       variant: {

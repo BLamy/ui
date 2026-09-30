@@ -3,6 +3,15 @@
 A headless scrim and panel that slide in from one edge of a positioned host. It has no chrome of its own — the children are the whole panel — so it is the drawer inside [Sidebar](https://blamy.github.io/ui/#/sidebar)'s overlay variant, [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane)'s drawer mode, and every template's compact navigation.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/edge-drawer.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { EdgeDrawer } from '@/components/ui/edge-drawer'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,15 +21,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { EdgeDrawer } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/edge-drawer.json{% endcommand %}
-
-Adds `@/components/ui/edge-drawer.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import { EdgeDrawer } from '@/components/ui/edge-drawer'
 ```
 {% endtab %}
 {% endtabs %}
@@ -78,3 +78,38 @@ From the right edge with a scrolling body and a pinned footer. The drawer has no
 `scrim="transparent"` and `shadow="none"` turn it into a floating card: inset the content, give it a radius, and let `backdrop-filter` blur what is behind.
 
 {% demo src="edge-drawer/quick-settings" %}
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `edgeDrawerVariants`
+
+Defined in `@/components/ui/edge-drawer`. Base classes:
+
+```text
+absolute inset-y-0 z-(--edge-drawer-z) transition-[translate,box-shadow] duration-spring-tray ease-spring-tray motion-reduce:transition-none
+```
+
+**`side`** — default `left`
+
+| Value | Adds |
+| --- | --- |
+| `left` (default) | `left-0` |
+| `right` | `right-0` |
+
+**`open`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | — |
+| `false` (default) | — |
+
+**`lifted`** — default `true`
+
+| Value | Adds |
+| --- | --- |
+| `true` (default) | — |
+| `false` | — |
+
+3 compound variants — see the source.

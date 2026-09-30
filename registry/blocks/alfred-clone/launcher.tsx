@@ -61,7 +61,7 @@ export function Launcher({ initialPages, initialQuery = '', width, listHeight, a
           : '[--command-surface:color-mix(in_oklab,var(--popover)_80%,transparent)] shadow-[0_30px_80px_-12px_rgba(20,20,60,.35),0_0_0_.5px_rgba(0,0,0,.1),inset_0_.5px_0_rgba(255,255,255,.8)]',
         // The input: Alfred's big, light type.
         '[&_[data-slot=command-input-wrapper]]:h-[68px] [&_[data-slot=command-input-wrapper]]:gap-3 [&_[data-slot=command-input-wrapper]]:px-5',
-        '[&_[data-slot=command-page-title]]:h-7 [&_[data-slot=command-page-title]]:rounded-lg [&_[data-slot=command-page-title]]:bg-primary/14 [&_[data-slot=command-page-title]]:px-2.5 [&_[data-slot=command-page-title]]:text-[14px] [&_[data-slot=command-page-title]]:text-primary',
+        '[&_[data-slot=command-page-title]]:h-7 [&_[data-slot=command-page-title]]:rounded-lg [&_[data-slot=command-page-title]]:bg-primary/14 [&_[data-slot=command-page-title]]:px-2.5 [&_[data-slot=command-page-title]]:text-detail [&_[data-slot=command-page-title]]:text-primary',
         // Rows: app-sized icons, a tinted selection.
         '[&_[data-slot=command-item-icon]]:size-8 [&_[data-slot=command-item][data-active]]:bg-primary/14 [&_[data-slot=command-item]]:rounded-[11px]',
         // Small caps headings. They scroll with their rows (stickyHeadings={false}): a sticky band would stack a
@@ -132,7 +132,7 @@ function Preview({ kind }: { kind: PreviewKind }) {
 }
 
 function Blank() {
-  return <div className="m-auto text-[13px] text-tertiary-foreground">Nothing selected</div>;
+  return <div className="m-auto text-footnote text-tertiary-foreground">Nothing selected</div>;
 }
 
 function Meta({ rows }: { rows: [string, ReactNode][] }) {
@@ -154,23 +154,23 @@ function ClipPreview({ text }: { text: string }) {
   if (!c) return <Blank />;
   const body = c.kind === 'color' ? (
     <div className="flex flex-1 flex-col gap-3">
-      <div className="min-h-24 flex-1 rounded-[12px] shadow-[inset_0_0_0_.5px_rgba(0,0,0,.12)]" style={{ background: c.text }} />
-      <div className="font-mono text-[15px] font-semibold">{c.text}</div>
+      <div className="min-h-24 flex-1 rounded-panel shadow-[inset_0_0_0_.5px_rgba(0,0,0,.12)]" style={{ background: c.text }} />
+      <div className="font-mono text-subhead font-semibold">{c.text}</div>
     </div>
   ) : c.kind === 'image' && c.image ? (
     <div className="flex flex-1 items-center justify-center">
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[10px] shadow-[0_6px_20px_rgba(0,0,0,.18)]" style={{ backgroundImage: `linear-gradient(135deg, ${c.image.from}, ${c.image.to})` }}>
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-ctl shadow-[0_6px_20px_rgba(0,0,0,.18)]" style={{ backgroundImage: `linear-gradient(135deg, ${c.image.from}, ${c.image.to})` }}>
         <div className="absolute inset-x-3 top-3 h-2 rounded-full bg-white/50" />
         <div className="absolute inset-x-3 top-7 bottom-3 grid grid-cols-3 gap-2">{[0, 1, 2].map((i) => <div key={i} className="rounded-md bg-white/30" />)}</div>
       </div>
     </div>
   ) : c.kind === 'link' ? (
     <div className="flex flex-1 flex-col gap-2">
-      <div className="flex items-center gap-2 text-[13px] font-semibold"><Icon name="globe" size={16} sw={1.8} className="text-muted-foreground" />{new URL(c.text).host}</div>
+      <div className="flex items-center gap-2 text-footnote font-semibold"><Icon name="globe" size={16} sw={1.8} className="text-muted-foreground" />{new URL(c.text).host}</div>
       <div className="text-[13.5px] leading-[20px] break-all text-link">{c.text}</div>
     </div>
   ) : (
-    <pre className={cn('m-0 flex-1 overflow-hidden text-[13.5px] leading-[20px] whitespace-pre-wrap', c.kind === 'code' ? 'rounded-[10px] bg-code p-3 font-mono text-[12.5px] text-code-foreground' : 'font-[inherit]')}>{c.text}</pre>
+    <pre className={cn('m-0 flex-1 overflow-hidden text-[13.5px] leading-[20px] whitespace-pre-wrap', c.kind === 'code' ? 'rounded-ctl bg-code p-3 font-mono text-[12.5px] text-code-foreground' : 'font-[inherit]')}>{c.text}</pre>
   );
   return (
     <>
@@ -189,8 +189,8 @@ function SnippetPreview({ keyword }: { keyword: string }) {
   if (!s) return <Blank />;
   return (
     <>
-      <div className="text-[13px] font-semibold">{s.name}</div>
-      <pre className="m-0 mt-2 flex-1 overflow-hidden rounded-[10px] bg-background/60 p-3 font-[inherit] text-[13.5px] leading-[20px] whitespace-pre-wrap shadow-[inset_0_0_0_.5px_var(--border)]">{s.text}</pre>
+      <div className="text-footnote font-semibold">{s.name}</div>
+      <pre className="m-0 mt-2 flex-1 overflow-hidden rounded-ctl bg-background/60 p-3 font-[inherit] text-[13.5px] leading-[20px] whitespace-pre-wrap shadow-[inset_0_0_0_.5px_var(--border)]">{s.text}</pre>
       <Meta rows={[['Keyword', <span key="k" className="font-mono text-primary">{s.keyword}</span>], ['Collection', s.collection], ['Expands', 'Anywhere, as you type']]} />
     </>
   );
@@ -203,7 +203,7 @@ function EmojiPreview({ name }: { name: string }) {
   return (
     <>
       <div className="grid flex-1 place-items-center"><span className="text-[72px] leading-none">{em.char}</span></div>
-      <div className="text-center text-[14px] font-semibold">{em.name}</div>
+      <div className="text-center text-detail font-semibold">{em.name}</div>
       <Meta rows={[['Keywords', em.keywords.join(', ') || '—'], ['Unicode', <span key="u" className="font-mono">{code}</span>]]} />
     </>
   );
@@ -217,7 +217,7 @@ function FilePreview({ name }: { name: string }) {
   return (
     <>
       <div className="grid flex-1 place-items-center"><FileGlyph kind={n.kind} size={72} /></div>
-      <div className="truncate text-center text-[14px] font-semibold">{n.name}</div>
+      <div className="truncate text-center text-detail font-semibold">{n.name}</div>
       <Meta rows={[
         ['Kind', fileKindLabel(n.kind)],
         [n.kind === 'folder' ? 'Contains' : 'Size', n.kind === 'folder' ? `${n.children?.length ?? 0} items` : (n.size ?? '—')],

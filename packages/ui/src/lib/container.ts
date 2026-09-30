@@ -1,3 +1,4 @@
+'use client';
 import { Children, isValidElement, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 
 /* ══ Container primitives shared by every adaptive shell ══

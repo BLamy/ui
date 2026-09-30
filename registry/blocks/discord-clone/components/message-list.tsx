@@ -71,11 +71,11 @@ export interface ChannelIntroProps extends Omit<ComponentProps<'div'>, 'title'> 
 export function ChannelIntro({ title, icon, className, children, ...props }: ChannelIntroProps) {
   return (
     <div data-slot="channel-intro" className={cn('px-[18px] pb-2.5', className)} {...props}>
-      <div className="mb-2 grid size-10 place-items-center rounded-[12px] bg-secondary-strong text-muted-foreground">
+      <div className="mb-2 grid size-10 place-items-center rounded-panel bg-secondary-strong text-muted-foreground">
         {icon ?? <Icon name="number" size={20} sw={2.2} />}
       </div>
       <div className="text-[15.5px] font-[750]">{title}</div>
-      {children != null && <div className="mt-0.5 text-[12px] text-tertiary-foreground">{children}</div>}
+      {children != null && <div className="mt-0.5 text-caption text-tertiary-foreground">{children}</div>}
     </div>
   );
 }

@@ -3,6 +3,15 @@
 Brief, temporary feedback in two iOS looks: the dark **HUD** pill ("Password Copied") that appears for a moment in the middle of the bottom edge, and **banners** — cards with a title, a description and an action — that stack at an edge. Both come from one queue and one region built on react-aria's toast hooks, and every entrance, exit and restack runs on a spring.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/toast.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { Toaster, toast, useToast } from '@/components/ui/toast'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,15 +21,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { Toaster, toast, useToast } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/toast.json{% endcommand %}
-
-Adds `@/components/ui/toast.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import { Toaster, toast, useToast } from '@/components/ui/toast'
 ```
 {% endtab %}
 {% endtabs %}
@@ -101,3 +101,39 @@ const [queue] = useState(() => createToastQueue())
 | `aria-label` | "Notifications" | The landmark's label. |
 
 The region carries `data-slot="toaster"` and `data-placement`; each toast `data-slot="toast"`, `data-variant` and `data-tone`.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `toastVariants`
+
+Defined in `@/components/ui/toast`. Base classes:
+
+```text
+outline-none data-[focus-visible]:ring-2 focus-visible:ring-2 focus-visible:ring-[var(--primary)]
+```
+
+**`variant`** — default `banner`
+
+| Value | Adds |
+| --- | --- |
+| `hud` | `flex items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-detail font-semibold text-white shadow-[0_8px_30px_black] shadow-black/25 backdro…` |
+| `banner` (default) | `flex w-[min(360px,calc(100vw-32px))] items-start gap-3 rounded-2xl bg-card px-3.5 py-3 text-foreground shadow-[0_10px_34px_--alpha(black/16%),0_0_0_.5px_var(--…` |
+
+### `toastIconVariants`
+
+Defined in `@/components/ui/toast`. Base classes:
+
+```text
+grid shrink-0 place-items-center
+```
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `text-primary` |
+| `success` | `text-success` |
+| `warning` | `text-warning` |
+| `destructive` | `text-destructive` |

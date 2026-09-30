@@ -54,7 +54,7 @@ function Tile({ id, label, icon, color, count }: { id: CategoryId; label: string
     <button type="button" aria-current={selected || undefined}
       onClick={() => sv.select('sidebar', id)}
       className={cn(
-        'bl-btn group flex cursor-pointer flex-col gap-2 rounded-[12px] border-0 p-2.5 text-left [font-family:inherit] outline-none',
+        'bl-btn group flex cursor-pointer flex-col gap-2 rounded-panel border-0 p-2.5 text-left [font-family:inherit] outline-none',
         'transition-[background-color,scale,box-shadow] duration-spring-snappy ease-spring-snappy active:scale-[.97]',
         'focus-visible:ring-2 focus-visible:ring-ring',
         selected ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground shadow-[0_.5px_1.5px_black] shadow-black/8 hover:bg-[color-mix(in_oklab,var(--card)_92%,var(--foreground))]',
@@ -64,9 +64,9 @@ function Tile({ id, label, icon, color, count }: { id: CategoryId; label: string
           style={{ '--tile': color } as CSSProperties}>
           <Icon name={icon} size={18} weight="semibold" />
         </span>
-        <span className="pt-0.5 text-[20px] font-bold tabular-nums"><NumberMorph value={count} /></span>
+        <span className="pt-0.5 text-title font-bold tabular-nums"><NumberMorph value={count} /></span>
       </span>
-      <span className="text-[14px] font-semibold">{label}</span>
+      <span className="text-detail font-semibold">{label}</span>
     </button>
   );
 }

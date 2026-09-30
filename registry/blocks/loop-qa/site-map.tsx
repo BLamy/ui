@@ -23,7 +23,7 @@ export function SiteMapTab({ project }: { project: Project }) {
   const max = Math.max(...all.map((n) => n.visits));
   return (
     <div className="grid gap-5 @4xl:grid-cols-[1fr_240px]!">
-      <Panel title="Pages" icon="network" trailing={<span className="text-[12px] text-muted-foreground">{all.length} pages</span>} bodyClassName="py-2">
+      <Panel title="Pages" icon="network" trailing={<span className="text-caption text-muted-foreground">{all.length} pages</span>} bodyClassName="py-2">
         <ul className="m-0 list-none px-2 py-0" role="tree" aria-label="Site map">
           <Node node={SITE_MAP} depth={0} max={max} />
         </ul>
@@ -37,7 +37,7 @@ export function SiteMapTab({ project }: { project: Project }) {
           <Legend tone="bg-success" label="Covered" n={covered - withBugs} />
           <Legend tone="bg-destructive" label="Has open bugs" n={withBugs} />
           <Legend tone="bg-tertiary-foreground/40" label="Not reached yet" n={all.length - covered} />
-          <p className="m-0 mt-1 border-t border-border pt-2.5 text-[12px] text-muted-foreground">Account pages need a signed-in session — add test credentials in Settings to reach them.</p>
+          <p className="m-0 mt-1 border-t border-border pt-2.5 text-caption text-muted-foreground">Account pages need a signed-in session — add test credentials in Settings to reach them.</p>
         </Panel>
       </div>
     </div>
@@ -60,7 +60,7 @@ function Node({ node: n, depth, max }: { node: SiteNode; depth: number; max: num
   const kids = n.children ?? [];
   return (
     <li role="treeitem" aria-expanded={kids.length ? open : undefined} aria-selected={false} className="relative">
-      <div className="group flex min-h-10 items-center gap-2 rounded-[10px] pr-2 hover:bg-muted!" style={{ paddingLeft: 8 + depth * 22 } as CSSProperties}>
+      <div className="group flex min-h-10 items-center gap-2 rounded-ctl pr-2 hover:bg-muted!" style={{ paddingLeft: 8 + depth * 22 } as CSSProperties}>
         {kids.length ? (
           <Pressable aria-label={open ? `Collapse ${n.title}` : `Expand ${n.title}`} onPress={() => setOpen(!open)}
             className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-md p-0 text-muted-foreground data-hovered:bg-secondary-strong!">

@@ -1,3 +1,4 @@
+'use client';
 /* ══ Sidebar system — one compositional API over every sidebar variant ══
    <SidebarProvider> owns open state + container width (useContainerWidth); <Sidebar variant="docked|rail|float|overlay">
    renders the same children in any behavior, and ANY variant becomes a hamburger overlay (EdgeDrawer) below the
@@ -79,7 +80,7 @@ export function SidebarProvider({ defaultOpen = true, breakpoint = 560, children
       <div
         ref={ref}
         data-slot="sidebar-provider"
-        className={cn('relative flex h-full overflow-hidden bg-background font-ios', className)}
+        className={cn('relative flex h-full overflow-hidden bg-background font-sans', className)}
         style={style}
       >
         {children}
@@ -133,7 +134,7 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
       <div
         className={cn(
           'box-border h-full',
-          float && 'overflow-hidden rounded-[14px] border border-border bg-sidebar font-ios',
+          float && 'overflow-hidden rounded-card border border-border bg-sidebar font-sans',
         )}
         style={{ width: (collapsed ? railWidth : width) - (float ? 20 : 0) }}
       >
@@ -180,7 +181,7 @@ export function SidebarWorkspace({ name, detail, initial }: SidebarWorkspaceProp
       data-slot="sidebar-workspace"
       className={cn('flex items-center gap-2 px-0.5 pt-0 pb-1', collapsed ? 'justify-center' : 'justify-start')}
     >
-      <span className={cn(brandTile, 'grid size-[26px] shrink-0 place-items-center rounded-[8px] text-[12px] font-extrabold text-white')}>
+      <span className={cn(brandTile, 'grid size-[26px] shrink-0 place-items-center rounded-lg text-caption font-extrabold text-white')}>
         {initial || (name || 'W')[0]}
       </span>
       {!collapsed && (
@@ -203,7 +204,7 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
     return (
       <AriaButton
         data-slot="sidebar-search"
-        className={cn(hl, 'grid w-full cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent px-0 py-2 text-tertiary-foreground')}
+        className={cn(hl, 'grid w-full cursor-pointer place-items-center rounded-lg border-0 bg-transparent px-0 py-2 text-tertiary-foreground')}
         render={(props) => <button {...props} title={placeholder} />}
         onPress={onPress}
       >
@@ -213,14 +214,14 @@ export function SidebarSearch({ placeholder = 'Quick search', onPress }: Sidebar
   return (
     <AriaButton
       data-slot="sidebar-search"
-      className={cn(hl, 'mx-0 mt-0.5 mb-1 flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 bg-secondary px-[9px] py-1.5 font-ios')}
+      className={cn(hl, 'mx-0 mt-0.5 mb-1 flex w-full cursor-pointer items-center gap-[7px] rounded-lg border-0 bg-secondary px-[9px] py-1.5 font-sans')}
       onPress={onPress}
     >
       <span className="grid text-tertiary-foreground">
         <BIcon d={P['search']} size={13} />
       </span>
-      <span className="flex-1 text-left text-[12px] text-tertiary-foreground">{placeholder}</span>
-      <span className="rounded-[4px] border border-border px-1 py-0 font-mono text-[10px] text-tertiary-foreground">
+      <span className="flex-1 text-left text-caption text-tertiary-foreground">{placeholder}</span>
+      <span className="rounded-sm border border-border px-1 py-0 font-mono text-[10px] text-tertiary-foreground">
         /
       </span>
     </AriaButton>
@@ -265,7 +266,7 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
       data-slot="sidebar-item"
       className={cn(
         hl,
-        'mx-0 my-px flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] border-0 text-left font-ios text-[13px]',
+        'mx-0 my-px flex w-full cursor-pointer items-center gap-[9px] rounded-lg border-0 text-left font-sans text-footnote',
         collapsed ? 'justify-center px-0 py-2' : 'justify-start px-[9px] py-1.5',
         active ? 'bg-secondary-strong' : 'bg-transparent',
         !tone && (active ? 'text-foreground' : 'text-muted-foreground'),
@@ -281,7 +282,7 @@ export function SidebarItem({ icon, label, badge, active, tone, onPress }: Sideb
         <span className="flex-1 truncate">{label}</span>
       )}
       {!collapsed && badge != null && (
-        <span className="rounded-[6px] bg-primary/13 px-1.5 py-px font-mono text-[10.5px] text-primary">
+        <span className="rounded-md bg-primary/13 px-1.5 py-px font-mono text-[10.5px] text-primary">
           {badge}
         </span>
       )}
@@ -302,7 +303,7 @@ export function SidebarTrigger({ style, className }: { style?: CSSProperties; cl
   return (
     <AriaButton
       data-slot="sidebar-trigger"
-      className={cn('grid cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent p-1.5 text-muted-foreground', className)}
+      className={cn('grid cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-1.5 text-muted-foreground', className)}
       onPress={c.toggle}
       aria-label="Toggle sidebar"
       style={style}

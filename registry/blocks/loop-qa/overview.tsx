@@ -42,7 +42,7 @@ export function Overview({ project: p }: { project: Project }) {
         <StatTile label="Coverage" icon="network" onPress={() => qa.setTab('sitemap')} foot="of known pages and states">
           <div className="mt-2 flex items-center gap-3">
             <ProgressRing aria-label="Coverage" value={coverage} size="lg" showValue />
-            <span className="text-[12px] leading-4 text-muted-foreground">{latest ? `${latest.journeys.length} journeys in the last run` : '—'}</span>
+            <span className="text-caption leading-4 text-muted-foreground">{latest ? `${latest.journeys.length} journeys in the last run` : '—'}</span>
           </div>
         </StatTile>
       </div>
@@ -63,7 +63,7 @@ export function Overview({ project: p }: { project: Project }) {
           trailing={<Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px] text-muted-foreground" onPress={() => qa.setTab('bugs')}>All {open.length}<Icon name="chevron-right" size={12} sw={2.4} /></Button>}>
           <ul className="m-0 list-none p-1.5">
             {recent.map((b) => <BugLine key={b.id} bug={b} />)}
-            {!recent.length ? <li className="px-3 py-6 text-center text-[13px] text-muted-foreground">No open bugs.</li> : null}
+            {!recent.length ? <li className="px-3 py-6 text-center text-footnote text-muted-foreground">No open bugs.</li> : null}
           </ul>
         </Panel>
       </div>
@@ -76,10 +76,10 @@ function BugLine({ bug: b }: { bug: Bug }) {
   return (
     <li>
       <Pressable onPress={() => qa.open({ kind: 'bug', id: b.id })}
-        className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-[10px] px-2.5 py-2 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.99]">
+        className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-ctl px-2.5 py-2 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.99]">
         <SeverityBadge severity={b.severity} className="w-[66px] justify-center" />
         <span className="min-w-0 flex-1">
-          <span className="line-clamp-1 text-[13px] font-medium">{b.title}</span>
+          <span className="line-clamp-1 text-footnote font-medium">{b.title}</span>
           <span className="block text-[11.5px] text-muted-foreground"><span className="font-mono">{b.id}</span> · {relativeTime(b.discovered)}</span>
         </span>
       </Pressable>
@@ -104,7 +104,7 @@ function Exploration() {
       trailing={
         <span className="flex items-center gap-1">
           <BarButton label="Previous exploration" icon="chevron-left" onPress={() => go(-1)} className="size-7" />
-          <span className="min-w-9 text-center text-[12px] text-muted-foreground tabular-nums">{index + 1} / {EXPLORATIONS.length}</span>
+          <span className="min-w-9 text-center text-caption text-muted-foreground tabular-nums">{index + 1} / {EXPLORATIONS.length}</span>
           <BarButton label="Next exploration" icon="chevron-right" onPress={() => go(1)} className="size-7" />
         </span>
       }
@@ -115,14 +115,14 @@ function Exploration() {
         <div className="flex flex-col gap-3">
           <div>
             <div className="text-[11.5px] font-semibold tracking-[.06em] text-muted-foreground uppercase">Exploration {index + 1}</div>
-            <div className="mt-1 text-[15px] leading-5 font-semibold tracking-[-.01em]">{ex.title}</div>
-            <p className="m-0 mt-1.5 text-[13px] text-muted-foreground">{ex.summary}</p>
+            <div className="mt-1 text-subhead leading-5 font-semibold tracking-[-.01em]">{ex.title}</div>
+            <p className="m-0 mt-1.5 text-footnote text-muted-foreground">{ex.summary}</p>
           </div>
           <dl className="m-0 grid grid-cols-3 gap-2 text-center">
             {[['Pages', ex.pages], ['Actions', ex.actions], ['At', formatReplayTime(ex.initialTime)]].map(([k, v]) => (
-              <div key={k} className="rounded-[10px] bg-muted px-2 py-2">
-                <dd className="m-0 text-[15px] font-semibold tabular-nums">{v}</dd>
-                <dt className="text-[11px] text-muted-foreground">{k}</dt>
+              <div key={k} className="rounded-ctl bg-muted px-2 py-2">
+                <dd className="m-0 text-subhead font-semibold tabular-nums">{v}</dd>
+                <dt className="text-caption2 text-muted-foreground">{k}</dt>
               </div>
             ))}
           </dl>

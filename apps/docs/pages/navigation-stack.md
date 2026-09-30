@@ -3,6 +3,17 @@
 A controlled stack of screens: push by adding to the array, pop by removing. Edge-swipe back, large titles, sticky subheaders, and the pop is reported — never performed — by the component.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  NavigationStack, ScreenWrap,
+} from '@/components/ui/navigation-stack'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,17 +23,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { NavigationStack, ScreenWrap } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json{% endcommand %}
-
-Adds `@/components/ui/navigation-stack.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  NavigationStack, ScreenWrap,
-} from '@/components/ui/navigation-stack'
 ```
 {% endtab %}
 {% endtabs %}

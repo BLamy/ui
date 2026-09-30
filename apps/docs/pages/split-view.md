@@ -3,6 +3,18 @@
 `UISplitViewController` as composable parts. Up to three columns — **sidebar**, **supplementary** and **detail** — that tile when there is room, float the sidebar when there isn't, and collapse into a navigation stack on a phone. The SplitView measures its own box, so it works in a window, a pane or a resizable frame.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/split-view.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  SplitView, SplitViewSidebar, SplitViewSupplementary,
+  SplitViewDetail,
+} from '@/components/ui/split-view'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -15,18 +27,6 @@ import {
   SplitView, SplitViewSidebar, SplitViewSupplementary,
   SplitViewDetail,
 } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/split-view.json{% endcommand %}
-
-Adds `@/components/ui/split-view.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  SplitView, SplitViewSidebar, SplitViewSupplementary,
-  SplitViewDetail,
-} from '@/components/ui/split-view'
 ```
 {% endtab %}
 {% endtabs %}
@@ -181,3 +181,53 @@ const s = useSplitView()
 ```
 
 {% demo src="split-view/notes-gallery" %}
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `splitViewItemVariants`
+
+Defined in `@/components/ui/split-view`. Base classes:
+
+```text
+[ 'bl-btn group/item relative flex w-full cursor-pointer items-center gap-3 border-0 text-left [font-family:inherit] text-foreground outline-none', 'transition-[background-color,color] duration-150', 'data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring data-[focus-visible]:ring-inset', ]
+```
+
+**`variant`** — default `pill`
+
+| Value | Adds |
+| --- | --- |
+| `pill` (default) | `min-h-[40px] rounded-ctl px-2.5 py-1.5 text-[15.5px]` |
+| `row` | `min-h-row px-4 py-2.5 text-[15.5px]` |
+
+**`selected`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | — |
+| `false` (default) | `bg-transparent data-[hovered]:bg-secondary data-[pressed]:bg-accent` |
+
+**`tinted`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | — |
+| `false` (default) | — |
+
+4 compound variants — see the source.
+
+### `splitViewSectionLabelVariants`
+
+Defined in `@/components/ui/split-view`. Base classes:
+
+```text
+(none)
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `px-2.5 pt-4 pb-1.5 text-footnote font-semibold tracking-[-.1px] text-muted-foreground` |
+| `prominent` | `px-1 pt-6 pb-2 text-title font-bold tracking-[-.2px] text-foreground` |

@@ -1,8 +1,19 @@
 # ReplayPreview
 
-A session replay in a browser window. `ReplayPreview` plays an [rrweb](https://github.com/rrweb-io/rrweb) recording with docstream's headless `ReplayStage` and wraps it in BL UI chrome: a URL bar that follows the recording's navigations, play/pause, a scrubber with the recording's moments on a rail above it, a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready, a page-shaped skeleton holds the frame at the recording's aspect ratio, so nothing jumps when the page appears.
+A session replay in a browser window. `ReplayPreview` plays an [rrweb](https://github.com/rrweb-io/rrweb) recording with docstream's headless `ReplayStage` and wraps it in browser chrome: a URL bar that follows the recording's navigations, play/pause, a scrubber with the recording's moments on a rail above it, a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready, a page-shaped skeleton holds the frame at the recording's aspect ratio, so nothing jumps when the page appears.
+
+`ReplayPreview` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (1.7.0, `@brett_lamy/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part. The registry item adds `@brett_lamy/docstream` as its one npm dependency.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/replay-preview.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { ReplayPreview } from '@/components/ui/replay-preview'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -14,16 +25,16 @@ import '@brett_lamy/ui/styles.css'
 import { ReplayPreview } from '@brett_lamy/ui'
 ```
 {% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/replay-preview.json{% endcommand %}
+{% endtabs %}
 
-Adds `@/components/ui/replay-preview.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
+Import docstream's stylesheet once. The player is plain CSS in `@layer docstream.replay` under zero-specificity selectors, so your utilities and rules override it, and it reads your shadcn tokens (`--card`, `--border`, `--primary`, `--muted-foreground`, `--destructive`, `--success`, `--warning`, `--tertiary-foreground`, `--ring`) with neutral fallbacks:
 
 ```tsx
-import { ReplayPreview } from '@/components/ui/replay-preview'
+import '@brett_lamy/docstream/styles.css'
 ```
-{% endtab %}
-{% endtabs %}
+
+Using docstream directly is the same component: `import { ReplayPreview } from '@brett_lamy/docstream/replay'`.
+
 
 ## Browser frame
 
@@ -74,7 +85,7 @@ Pass `markers` to put your own moments on the rail (an agent's findings, a test'
 
 ## Recordings
 
-Record with rrweb (`record({ emit })`) and pass the events. Local and private-network assets in a recording (`localhost`, `10.x`, `192.168.x`…) are swapped for blanks before playback, so a replay never makes the viewer's browser fetch from their own network. Custom events become markers by tag (`record.addCustomEvent(tag, payload)`): `error` and `network` map to those kinds, `navigation` to a navigation, anything else is a checkpoint labelled by `payload.label`. The helpers read a recording without loading rrweb:
+Record with rrweb (`record({ emit })`) and pass the events. To embed instead of hold the recording, pass `source`: a public Loop QA URL, `{ kind: 'events-url', url }` for an events endpoint, or an event array. `events` and `source` are alternatives; both render the same player. Local and private-network assets in a recording (`localhost`, `10.x`, `192.168.x`…) are swapped for blanks before playback, so a replay never makes the viewer's browser fetch from their own network. Custom events become markers by tag (`record.addCustomEvent(tag, payload)`): `error` and `network` map to those kinds, `navigation` to a navigation, anything else is a checkpoint labelled by `payload.label`. The helpers read a recording without loading rrweb:
 
 | Helper | Returns |
 | --- | --- |
@@ -83,16 +94,19 @@ Record with rrweb (`record({ emit })`) and pass the events. Local and private-ne
 | `getReplayPointerTrack(events)` · `replayPointerAt(track, ms)` | The recorded pointer path and clicks; the pointer's position at a time |
 | `formatReplayTime(ms)` | `m:ss` |
 
-`replayDemoEvents` is a small synthetic recording (58 events, 20 KB): a shopper on a mock storefront whose checkout fails with a promo code.
+`replayDemoEvents`, from `@brett_lamy/docstream/replay/demo` (also re-exported by `@/components/ui/replay-preview`), is a small synthetic recording (58 events, 20 KB): a shopper on a mock storefront whose checkout fails with a promo code.
 
 ## Props
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `events` | — | The rrweb recording (`ReplayEvent[]`). |
+| `events` | — | The rrweb recording (`ReplayEvent[]`). Give `events` or `source`. |
+| `source` | — | The embed form: a Loop QA URL, `{ kind: 'events-url', url }`, or an event array. |
+| `active` | `true` | Keep a placeholder frame until true, e.g. until an editor block is visible. |
 | `chrome` | `browser` | `browser` (window, URL bar), `minimal` (a card), `none` (no frame). |
 | `trafficLights` | `true` | The window buttons in the browser chrome. |
 | `url` | the recording's | Address in the URL bar. |
+| `title` | `Session replay` | The player's accessible name. |
 | `controls` | `true` | Play/pause, scrubber, speed and fullscreen. |
 | `autoplay` · `loop` | `false` | Start playing on load; restart at the end. |
 | `initialTime` | `0` | Where the player starts (ms). |
@@ -106,4 +120,6 @@ Record with rrweb (`record({ emit })`) and pass the events. Local and private-ne
 | `playerRef` | — | `{ play, pause, seek, toggle, getCurrentTime }`. |
 | `onTimeUpdate` · `onPlayingChange` · `onMarkerPress` | — | Playhead (ms), play state, a pressed marker. |
 
-The root is `data-slot="replay-preview"` with `data-state` (`loading` · `paused` · `playing`) and `data-chrome`; its parts are `replay-preview-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`. `replayPreviewVariants` (chrome) and `replayMarkerVariants` (marker kind) are the cva functions.
+## Styling
+
+The root is `data-slot="replay-preview"` with `data-state` (`loading` · `paused` · `playing`) and `data-chrome`. Its parts are `replay-preview-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`, plus `-url`, `-center`, `-play`, `-time`, `-speed` and `-fullscreen`. Style them with `[data-slot=…]` selectors or utilities on `className`. Since the move to docstream the scrubber is a native range input, marker tooltips are `title` attributes, the icons are lucide, and the old `replayPreviewVariants` and `replayMarkerVariants` recipes are gone; the look is plain CSS on the tokens above.

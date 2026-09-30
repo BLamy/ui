@@ -1,3 +1,4 @@
+'use client';
 import type { CSSProperties, ReactNode } from 'react';
 import {
   Label,
@@ -76,8 +77,8 @@ export function Slider<T extends number | number[]>({
       {composeRenderProps(children, (kids, { state }) => {
         return kids ?? (
           <>
-            {label ? <Label className="text-[15px] font-medium text-foreground">{label}</Label> : null}
-            {showValue ? <SliderOutput className="col-start-2 text-[15px] text-muted-foreground tabular-nums" /> : null}
+            {label ? <Label className="text-subhead font-medium text-foreground">{label}</Label> : null}
+            {showValue ? <SliderOutput className="col-start-2 text-subhead text-muted-foreground tabular-nums" /> : null}
             <SliderTrack className="col-span-2">
               {state.values.map((_, i) => <SliderThumb key={i} index={i} />)}
             </SliderTrack>

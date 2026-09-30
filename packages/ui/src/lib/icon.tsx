@@ -1,3 +1,4 @@
+'use client';
 import { useId, type CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { WORKBENCH_SHAPES } from '@/lib/icon-shapes/workbench';

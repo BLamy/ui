@@ -40,7 +40,7 @@ function Composer({ color, onAdd, onClose }: { color: string; onAdd: (title: str
           else if (e.key === 'Escape') onClose();
         }}
         onBlur={() => { if (text.trim()) onAdd(text.trim()); onClose(); }}
-        className="min-w-0 flex-1 appearance-none border-0 bg-transparent py-[11px] pr-3 [font-family:inherit] text-[17px] text-foreground caret-(--c) shadow-[inset_0_-1px_0_var(--border)] outline-none select-text"
+        className="min-w-0 flex-1 appearance-none border-0 bg-transparent py-[11px] pr-3 [font-family:inherit] text-body text-foreground caret-(--c) shadow-hairline-b outline-none select-text"
         style={{ '--c': color } as CSSProperties} />
     </div>
   );
@@ -96,11 +96,11 @@ export function ListView() {
           ) : null}
 
           {list && view.completed ? (
-            <div className="mx-5 mt-1 flex items-center gap-2 py-1.5 text-[15px] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+            <div className="mx-5 mt-1 flex items-center gap-2 py-1.5 text-subhead text-muted-foreground shadow-hairline-b">
               <span>{view.completed} Completed</span>
               <span aria-hidden="true">·</span>
-              <button type="button" onClick={() => api.clearCompleted(list.id)} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[15px] text-primary">Clear</button>
-              <button type="button" onClick={() => api.setShowCompleted(list.id, !shown)} className="bl-btn ml-auto cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[15px] text-primary">
+              <button type="button" onClick={() => api.clearCompleted(list.id)} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Clear</button>
+              <button type="button" onClick={() => api.setShowCompleted(list.id, !shown)} className="bl-btn ml-auto cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">
                 {shown ? 'Hide' : 'Show'}
               </button>
             </div>
@@ -108,16 +108,16 @@ export function ListView() {
 
           {empty && !adding ? (
             <div className="grid place-items-center px-6 pt-24 pb-10 text-center animate-bl-fade-in">
-              <div className="text-[20px] font-semibold text-muted-foreground">
+              <div className="text-title font-semibold text-muted-foreground">
                 {id === 'search' ? 'No Results' : view.completed || id === 'today' || id === 'flagged' ? 'All Done' : 'No Reminders'}
               </div>
-              {id === 'search' ? null : <div className="mt-1 text-[15px] text-tertiary-foreground">{view.completed ? `${view.completed} completed` : 'Tap New Reminder to add one.'}</div>}
+              {id === 'search' ? null : <div className="mt-1 text-subhead text-tertiary-foreground">{view.completed ? `${view.completed} completed` : 'Tap New Reminder to add one.'}</div>}
             </div>
           ) : null}
 
           {view.groups.map((g, gi) => (
             <section key={g.key} className={cn(g.title && 'pt-4')}>
-              {g.title ? <h2 className="m-0 px-5 pb-1 text-[20px] font-bold tracking-[-.2px]" style={{ color: g.color }}>{g.title}</h2> : null}
+              {g.title ? <h2 className="m-0 px-5 pb-1 text-title font-bold tracking-[-.2px]" style={{ color: g.color }}>{g.title}</h2> : null}
               {g.items.map((r) => (
                 <ReminderRow key={r.id} r={r} leaving={view.leaving(r)} phone={s.collapsed}
                   color={api.lists.find((l) => l.id === r.list)?.color ?? view.color} />
@@ -131,7 +131,7 @@ export function ListView() {
       {canAdd ? (
         <div className="flex h-[54px] shrink-0 items-center px-4">
           <button type="button" onClick={() => setAdding(true)} style={{ color: view.color }}
-            className="bl-btn flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-[17px] font-semibold transition-[scale] duration-spring-snappy ease-spring-snappy active:scale-95">
+            className="bl-btn flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-body font-semibold transition-[scale] duration-spring-snappy ease-spring-snappy active:scale-95">
             <span className="grid size-[23px] place-items-center rounded-full text-white" style={{ background: view.color }}><Icon name="plus" size={15} sw={2.8} /></span>
             New Reminder
           </button>

@@ -91,7 +91,8 @@ function themeVars() {
   const vars = {};
   for (const block of css.matchAll(/@theme(?:\s+inline)?\s*\{([\s\S]*?)\n\}/g)) {
     for (const m of block[1].replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/^\s*--([\w-]+):\s*([^;]+);/gm)) {
-      if (!SHADCN_COLORS.test(m[1])) vars[m[1]] = m[2].trim();
+      // Fonts belong to the app (its own --font-sans); the bl-theme opts into the iOS stack.
+      if (!SHADCN_COLORS.test(m[1]) && !/^font-/.test(m[1])) vars[m[1]] = m[2].trim();
     }
   }
   return vars;
@@ -127,6 +128,13 @@ function parseRules(css) {
   }
   return rules;
 }
+// The iOS font stack (`--font-sans` / `--font-mono` in tokens.css), written to the app's @theme by the bl-theme only.
+function fontVars() {
+  const css = read('packages/ui/src/tokens.css');
+  const vars = {};
+  for (const m of css.matchAll(/^\s*--(font-(?:sans|mono)):\s*([^;]+);/gm)) vars[m[1]] = m[2].trim();
+  return vars;
+}
 function themeItem() {
   const rules = parseRules(read('packages/ui/src/theme.css'));
   const strip = (decls) => Object.fromEntries(Object.entries(decls).filter(([k]) => k.startsWith('--')).map(([k, v]) => [k.slice(2), v]));
@@ -139,7 +147,7 @@ function themeItem() {
     title: 'BL theme',
     description:
       "BL UI's iOS look as a shadcn theme: sets your CSS variables (light and dark) to the iOS palette, plus the Workbench, terminal, sheet and glass theme scopes the Composer and floating chats use.",
-    cssVars: { light: strip(light.decls), dark: strip(dark.decls) },
+    cssVars: { theme: fontVars(), light: strip(light.decls), dark: strip(dark.decls) },
     // A nested light subtree (BLProvider / ThemeScope put `light` on their root) needs the light values back; the CLI
     // only writes :root and .dark from cssVars.
     css: { '.light:not([data-theme-scope])': light.decls, ...Object.fromEntries(scopes.map((r) => [r.selector, r.decls])) },
@@ -152,6 +160,15 @@ const graph = buildGraph({ errors });
 const titleOf = (name) => name.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
 const depsField = (npm) => npm.map(([n, v]) => (v ? `${n}@${v}` : n));
 
+// The npm package's barrel must carry everything the docs show (a name documented on a page but missing from the
+// barrel would work with the registry and break with `npm install`).
+const barrelNames = new Set();
+{
+  const sf = ts.createSourceFile('index.ts', read(`${SRC}/index.ts`), ts.ScriptTarget.Latest, true);
+  sf.forEachChild((n) => {
+    if (ts.isExportDeclaration(n) && n.exportClause && ts.isNamedExports(n.exportClause)) for (const e of n.exportClause.elements) barrelNames.add(e.name.text);
+  });
+}
 const definedAnywhere = new Set();
 for (const mod of graph.modules) {
   const ex = moduleExports(`${SRC}/${mod}`);
@@ -160,7 +177,10 @@ for (const mod of graph.modules) {
 const componentItems = [...graph.items.values()].map((it) => {
   const m = it.manifest ?? {};
   const type = it.kind === 'lib' ? 'registry:lib' : 'registry:ui';
-  for (const e of m.exports ?? []) if (!definedAnywhere.has(e)) errors.push(`registry/components/${it.name}.json: nothing in the library exports "${e}"`);
+  for (const e of m.exports ?? []) {
+    if (!definedAnywhere.has(e)) errors.push(`registry/components/${it.name}.json: nothing in the library exports "${e}"`);
+    else if (!barrelNames.has(e)) errors.push(`registry/components/${it.name}.json: "${e}" is documented but missing from packages/ui/src/index.ts`);
+  }
   return {
     name: it.name,
     type,

@@ -74,16 +74,16 @@ export function CopyButton({ label, value }: { label: string; value: string }) {
 
 /* ── Grouped card + rows ── */
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('overflow-hidden rounded-[12px] bg-card shadow-[0_0_0_.5px_var(--border)]', className)}>{children}</div>;
+  return <div className={cn('overflow-hidden rounded-panel bg-card shadow-[0_0_0_.5px_var(--border)]', className)}>{children}</div>;
 }
 
 /** Label beside the value on a wide detail, above it on a narrow one (a container query on the detail). */
 export function Field({ label, children, trailing, last }: { label: string; children: ReactNode; trailing?: ReactNode; last?: boolean }) {
   return (
-    <div className="group/row relative flex min-h-[52px] items-center gap-3 px-4 py-2">
+    <div className="group/row relative flex min-h-toolbar items-center gap-3 px-4 py-2">
       <div className="min-w-0 flex-1 @md:flex @md:items-center @md:gap-4">
-        <div className="text-[13px] text-muted-foreground @md:w-[128px] @md:shrink-0 @md:text-right @md:text-[14px]">{label}</div>
-        <div className="min-w-0 truncate text-[16px] @md:flex-1 @md:text-[15px]">{children}</div>
+        <div className="text-footnote text-muted-foreground @md:w-[128px] @md:shrink-0 @md:text-right @md:text-detail">{label}</div>
+        <div className="min-w-0 truncate text-callout @md:flex-1 @md:text-subhead">{children}</div>
       </div>
       {trailing}
       {!last ? <span aria-hidden="true" className="absolute right-0 bottom-0 left-4 h-px bg-border @md:left-[160px]" /> : null}
@@ -119,7 +119,7 @@ export function CodeValue({ seed, now, size = 'md' }: { seed: string; now: CodeC
   const { code, left } = useCode(seed, now);
   const fmt = { minimumIntegerDigits: 3, useGrouping: false };
   return (
-    <span className={cn('inline-flex items-center gap-2.5 font-medium tabular-nums', size === 'lg' ? 'text-[22px]' : 'text-[17px]')}>
+    <span className={cn('inline-flex items-center gap-2.5 font-medium tabular-nums', size === 'lg' ? 'text-[22px]' : 'text-body')}>
       <span className="inline-flex gap-[.3em]">
         <NumberMorph value={Math.floor(code / 1000)} format={fmt} />
         <NumberMorph value={code % 1000} format={fmt} />
@@ -136,7 +136,7 @@ export function DetailHeader({ icon, title, subtitle }: { icon: ReactNode; title
       {icon}
       <div className="w-full max-w-[420px] min-w-0">
         <div className="truncate text-[24px] font-bold tracking-[-.3px] @md:text-[26px]">{title}</div>
-        <div className="mt-0.5 text-[13px] text-muted-foreground">{subtitle}</div>
+        <div className="mt-0.5 text-footnote text-muted-foreground">{subtitle}</div>
       </div>
     </div>
   );

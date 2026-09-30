@@ -40,10 +40,10 @@ export function RunPage({ id }: { id: string }) {
               <div className="flex flex-wrap items-center gap-2">
                 <RunStatusBadge status={r.status} />
                 <EnvBadge env={r.environment} />
-                <span className="font-mono text-[12px] text-tertiary-foreground">#{r.id.slice(4)}</span>
+                <span className="font-mono text-caption text-tertiary-foreground">#{r.id.slice(4)}</span>
               </div>
               <h1 className="m-0 mt-1.5 text-[24px] leading-[30px] font-semibold tracking-[-.025em]">{r.title}</h1>
-              <div className="mt-1 text-[13px] text-muted-foreground">
+              <div className="mt-1 text-footnote text-muted-foreground">
                 {r.status === 'running' ? 'Started just now' : `Started ${dateTime(r.started)}`} · {r.trigger} · {r.journeys.length}/{planned} journeys
                 {r.newBugs ? ` · ${r.newBugs} new bugs` : ''}{r.rediscovered ? ` · ${r.rediscovered} rediscovered` : ''}
               </div>
@@ -71,7 +71,7 @@ export function RunPage({ id }: { id: string }) {
 
           <Panel title="Exploration" icon="play-outline" bodyClassName={r.explored ? 'p-4' : 'px-4 py-5'}>
             {r.explored ? <ReplayPreview events={EXPLORATION_EVENTS} initialTime={2600} title="Run exploration" /> : (
-              <p className="m-0 text-[13px] text-muted-foreground">No exploration ran in this run — it replayed known journeys only.</p>
+              <p className="m-0 text-footnote text-muted-foreground">No exploration ran in this run — it replayed known journeys only.</p>
             )}
           </Panel>
 
@@ -79,10 +79,10 @@ export function RunPage({ id }: { id: string }) {
             <SectionLabel count={r.journeys.length}>Journeys</SectionLabel>
             {groups.map((g) => g.list.length ? (
               <div key={g.label} className="flex flex-col gap-2">
-                <div className={cn('text-[12px] font-semibold', g.label === 'With bugs' || g.label === 'Failed' ? 'text-destructive' : g.label === 'Blocked' ? 'text-warning' : 'text-success')}>
+                <div className={cn('text-caption font-semibold', g.label === 'With bugs' || g.label === 'Failed' ? 'text-destructive' : g.label === 'Blocked' ? 'text-warning' : 'text-success')}>
                   {g.label} · {g.list.length}
                 </div>
-                <ul className="m-0 flex list-none flex-col overflow-hidden rounded-[14px] border border-border bg-card p-0">
+                <ul className="m-0 flex list-none flex-col overflow-hidden rounded-card border border-border bg-card p-0">
                   {g.list.map((j) => <JourneyRow key={j.id} journey={j} />)}
                 </ul>
               </div>
@@ -98,12 +98,12 @@ export function RunPage({ id }: { id: string }) {
 function Pending({ run: r }: { run: Run }) {
   const next = LIVE_PLAN.slice(r.journeys.length);
   return (
-    <ul className="m-0 flex list-none flex-col overflow-hidden rounded-[14px] border border-dashed border-border p-0">
+    <ul className="m-0 flex list-none flex-col overflow-hidden rounded-card border border-dashed border-border p-0">
       {next.map((j, i) => (
         <li key={j.title} className="flex items-center gap-3 border-b border-border px-4 py-2.5 text-[13.5px] last:border-b-0">
           {i === 0 ? <Spinner size={14} /> : <span className="size-3.5 rounded-full border-[1.5px] border-dashed border-tertiary-foreground" />}
           <span className={i === 0 ? 'font-medium' : 'text-muted-foreground'}>{j.title}</span>
-          <span className="ml-auto text-[12px] text-tertiary-foreground">{i === 0 ? 'Replaying…' : 'Queued'}</span>
+          <span className="ml-auto text-caption text-tertiary-foreground">{i === 0 ? 'Replaying…' : 'Queued'}</span>
         </li>
       ))}
     </ul>
@@ -122,9 +122,9 @@ function JourneyRow({ journey: j }: { journey: Journey }) {
         className="flex w-full cursor-pointer items-center justify-start gap-3 rounded-none px-4 py-2.5 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-100 data-disabled:cursor-default data-disabled:opacity-100 data-focus-visible:ring-inset">
         <Icon name={icon} size={14} sw={2.6} className={cn('shrink-0', tone)} />
         <span className="min-w-0 flex-1 text-[13.5px] font-medium">{j.title}</span>
-        <span className="shrink-0 text-[12px] text-muted-foreground">{j.steps} steps</span>
+        <span className="shrink-0 text-caption text-muted-foreground">{j.steps} steps</span>
         {bugs.length ? (
-          <span className="flex shrink-0 items-center gap-1.5 text-[12px] font-semibold text-destructive">
+          <span className="flex shrink-0 items-center gap-1.5 text-caption font-semibold text-destructive">
             <Icon name="exclamation-circle" size={13} sw={2.2} />{bugs.length}
             <Chevron direction={open ? 'down' : 'right'} size={12} sw={2.6} className="text-tertiary-foreground" />
           </span>
@@ -139,7 +139,7 @@ function JourneyRow({ journey: j }: { journey: Journey }) {
                   <Pressable onPress={() => qa.open({ kind: 'bug', id: b.id })}
                     className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-[9px] px-2 py-1.5 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.99]">
                     <SeverityBadge severity={b.severity} />
-                    <span className="min-w-0 flex-1 truncate text-[13px]">{b.title}</span>
+                    <span className="min-w-0 flex-1 truncate text-footnote">{b.title}</span>
                     <span className="shrink-0 text-[11.5px] text-muted-foreground">{relativeTime(b.discovered)}</span>
                   </Pressable>
                 </li>

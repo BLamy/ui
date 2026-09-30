@@ -3,6 +3,15 @@
 An SF Symbols-style set drawn for BL UI: every glyph sits on the same 24px grid with about 2px of optical padding, strokes with round caps and joins in `currentColor`, and shares one set of corner radii, so icons from media, settings and mail screens line up next to each other and next to text. Transport controls are solid, as they are in SF Symbols; most other glyphs come as an outline with a `-fill` variant.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/icon.json{% endcommand %}
+
+Copies the source into your project's `lib/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { Icon } from '@/lib/icon'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,15 +21,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { Icon } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/icon.json{% endcommand %}
-
-Adds `@/components/ui/icon.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import { Icon } from '@/components/ui/icon'
 ```
 {% endtab %}
 {% endtabs %}

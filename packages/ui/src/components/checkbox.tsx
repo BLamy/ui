@@ -1,3 +1,4 @@
+'use client';
 import {
   Checkbox as AriaCheckbox, type CheckboxProps as AriaCheckboxProps,
   CheckboxGroup as AriaCheckboxGroup, type CheckboxGroupProps as AriaCheckboxGroupProps,
@@ -20,7 +21,7 @@ export const checkboxVariants = cva(
     variants: {
       shape: {
         circle: 'rounded-full',
-        square: 'rounded-[6px]',
+        square: 'rounded-md',
       },
     },
     defaultVariants: { shape: 'circle' },
@@ -34,7 +35,7 @@ export function Checkbox({ className, shape, children, ...props }: CheckboxProps
     <AriaCheckbox
       data-slot="checkbox"
       className={composeRenderProps(className, (cls) =>
-        cn('group relative inline-flex cursor-pointer items-center gap-3 text-[17px] text-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40', cls))}
+        cn('group relative inline-flex cursor-pointer items-center gap-3 text-body text-foreground outline-none data-disabled:cursor-default data-disabled:opacity-40', cls))}
       {...props}
     >
       {composeRenderProps(children, (kids, { isSelected, isIndeterminate }) => (

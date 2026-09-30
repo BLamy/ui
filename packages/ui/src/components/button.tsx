@@ -1,3 +1,4 @@
+'use client';
 import { Button as AriaButton, type ButtonProps as AriaButtonProps, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { JSX } from 'react';
@@ -21,11 +22,11 @@ export const buttonVariants = cva(
         link: 'bg-transparent p-0 text-primary',
       },
       size: {
-        default: 'h-9 rounded-[10px] px-4 text-[15px] font-semibold',
-        sm: 'h-8 rounded-lg px-3 text-[13px] font-semibold',
-        lg: 'h-11 rounded-xl px-5 text-[16px] font-semibold',
+        default: 'h-9 rounded-ctl px-4 text-subhead font-semibold',
+        sm: 'h-8 rounded-lg px-3 text-footnote font-semibold',
+        lg: 'h-11 rounded-xl px-5 text-callout font-semibold',
         /** Full-width iOS action pill. */
-        pill: 'w-full rounded-[14px] px-3 py-[13px] text-[16px] font-semibold',
+        pill: 'w-full rounded-card px-3 py-[13px] text-callout font-semibold',
         icon: 'size-9 rounded-full p-0',
       },
     },

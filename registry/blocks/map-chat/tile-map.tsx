@@ -486,7 +486,7 @@ export function TileMap({
                 }}
               >
                 {pin.callout != null && (
-                  <span className="pointer-events-auto absolute bottom-[23px] left-1/2 [transform:translateX(-50%)] rounded-[10px] bg-(--tile-map-callout) px-2.5 py-[5px] text-[13px] leading-[1.1] font-bold tracking-[-.01em] whitespace-nowrap text-white shadow-[0_4px_12px_rgba(0,0,0,.25)] after:absolute after:-bottom-[5px] after:left-1/2 after:size-2.5 after:[transform:translateX(-50%)_rotate(45deg)] after:rounded-[2px] after:bg-inherit">
+                  <span className="pointer-events-auto absolute bottom-[23px] left-1/2 [transform:translateX(-50%)] rounded-ctl bg-(--tile-map-callout) px-2.5 py-[5px] text-footnote leading-[1.1] font-bold tracking-[-.01em] whitespace-nowrap text-white shadow-[0_4px_12px_rgba(0,0,0,.25)] after:absolute after:-bottom-[5px] after:left-1/2 after:size-2.5 after:[transform:translateX(-50%)_rotate(45deg)] after:rounded-[2px] after:bg-inherit">
                     {pin.callout}
                   </span>
                 )}
@@ -505,7 +505,7 @@ export function TileMap({
                   )}
                 >
                   {user ? null : pin.badge != null ? (
-                    <span className="text-[13px] leading-none font-bold tracking-[-.02em]">{pin.badge}</span>
+                    <span className="text-footnote leading-none font-bold tracking-[-.02em]">{pin.badge}</span>
                   ) : (
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <path d={MAP_ICONS[pin.icon ?? 'pin']} />
@@ -515,7 +515,7 @@ export function TileMap({
                 {pin.label && !user && (
                   <span
                     className={cn(
-                      'pointer-events-auto max-w-[150px] shrink-0 overflow-hidden px-0.5 text-center text-[12px] leading-[1.15] text-ellipsis whitespace-nowrap',
+                      'pointer-events-auto max-w-[150px] shrink-0 overflow-hidden px-0.5 text-center text-caption leading-[1.15] text-ellipsis whitespace-nowrap',
                       pin.selected ? 'font-bold' : 'font-semibold',
                       tone.label,
                     )}
@@ -534,12 +534,12 @@ export function TileMap({
             <Button
               aria-label="Show my location"
               onPress={onLocate}
-              className={cn(CONTROL, 'rounded-[12px] border backdrop-blur-[14px]', tone.glass, tone.control, tone.hover)}
+              className={cn(CONTROL, 'rounded-panel border backdrop-blur-[14px]', tone.glass, tone.control, tone.hover)}
             >
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={MAP_ICONS.locate} /></svg>
             </Button>
           )}
-          <div data-slot="tile-map-zoom" className={cn('flex flex-col overflow-hidden rounded-[12px] border backdrop-blur-[14px]', tone.glass)}>
+          <div data-slot="tile-map-zoom" className={cn('flex flex-col overflow-hidden rounded-panel border backdrop-blur-[14px]', tone.glass)}>
             <Button aria-label="Zoom in" onPress={() => zoomBy(1)} className={cn(CONTROL, 'rounded-none border-0 bg-transparent', tone.control, tone.hover)}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d={MAP_ICONS.plus} /></svg>
             </Button>
@@ -553,7 +553,7 @@ export function TileMap({
       {attribution && (
         <div
           data-slot="tile-map-attribution"
-          className={cn('pointer-events-auto absolute bottom-1.5 left-2 z-3 rounded-[6px] px-1.5 py-0.5 text-[10px] leading-[1.3]', tone.attribution)}
+          className={cn('pointer-events-auto absolute bottom-1.5 left-2 z-3 rounded-md px-1.5 py-0.5 text-[10px] leading-[1.3]', tone.attribution)}
           data-map-ui
         >
           {attribution}

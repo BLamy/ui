@@ -1,3 +1,4 @@
+'use client';
 import {
   Children, createContext, isValidElement, useCallback, useContext, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef,
   useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement,
@@ -719,8 +720,8 @@ function CommandRoot({
           // --command-surface is the card's fill; sticky group headings share it. Override it (not bg-*) to recolour.
           'relative box-border flex w-full min-w-0 flex-col overflow-hidden bg-(--command-surface) text-popover-foreground [--command-surface:var(--popover)]',
           variant === 'dialog'
-            ? 'max-h-[min(640px,calc(100dvh-160px))] rounded-[18px] shadow-[0_24px_80px_--alpha(black/35%),0_0_0_.5px_var(--border)]'
-            : 'rounded-[14px] shadow-[0_0_0_.5px_var(--border)]',
+            ? 'max-h-[min(640px,calc(100dvh-160px))] rounded-sheet shadow-[0_24px_80px_--alpha(black/35%),0_0_0_.5px_var(--border)]'
+            : 'rounded-card shadow-[0_0_0_.5px_var(--border)]',
           className,
         )}
         style={style}
@@ -809,7 +810,7 @@ export function CommandInput({ placeholder = 'Search…', backButton = true, pag
         // The field is the whole bar, always focused: no ring (inline, so a host's global :focus-visible can't add one).
         style={{ outline: 'none', ...style }}
         className={cn(
-          'h-full min-w-0 flex-1 border-0 bg-transparent p-0 font-[inherit] text-[16px] text-foreground outline-none placeholder:text-tertiary-foreground',
+          'h-full min-w-0 flex-1 border-0 bg-transparent p-0 font-[inherit] text-callout text-foreground outline-none placeholder:text-tertiary-foreground',
           selectableText,
           className,
         )}
@@ -987,8 +988,8 @@ export interface CommandItemProps {
 function Keycaps({ keys }: { keys: string | string[] }) {
   const caps = Array.isArray(keys) ? keys : [...keys];
   return (
-    <span data-slot="command-shortcut" className="ml-auto inline-flex shrink-0 items-center gap-0.5 pl-3 text-[13px] text-muted-foreground">
-      {caps.map((k, i) => <kbd key={i} className="min-w-3 text-center font-ios font-normal">{k}</kbd>)}
+    <span data-slot="command-shortcut" className="ml-auto inline-flex shrink-0 items-center gap-0.5 pl-3 text-footnote text-muted-foreground">
+      {caps.map((k, i) => <kbd key={i} className="min-w-3 text-center font-sans font-normal">{k}</kbd>)}
     </span>
   );
 }
@@ -1060,8 +1061,8 @@ export function CommandItem({
       onPointerMove={() => { if (!disabled && store.active !== id) store.setActive(id, 'pointer'); }}
       style={filtering && (group || store.ranking === 'global') ? { order: -Math.round(score * 1000) } : undefined}
       className={cn(
-        'relative flex min-w-0 cursor-default items-center gap-3 rounded-[10px] px-3 text-[15px] text-foreground outline-none select-none',
-        grid ? 'aspect-square justify-center p-0' : description ? 'min-h-[52px] py-1.5' : 'min-h-10 py-1',
+        'relative flex min-w-0 cursor-default items-center gap-3 rounded-ctl px-3 text-subhead text-foreground outline-none select-none',
+        grid ? 'aspect-square justify-center p-0' : description ? 'min-h-toolbar py-1.5' : 'min-h-10 py-1',
         'transition-[background-color] duration-100 data-active:bg-accent',
         (disabled || dimmed) && 'text-muted-foreground',
         disabled && 'opacity-60',
@@ -1081,7 +1082,7 @@ export function CommandItem({
                 {typeof title === 'string' && filtering ? <CommandHighlight text={title} /> : title}
               </span>
               {description != null ? (
-                <span data-slot="command-item-description" className={cn('truncate text-[13px] leading-[18px] text-muted-foreground', (disabled || dimmed) && 'opacity-70')}>
+                <span data-slot="command-item-description" className={cn('truncate text-footnote leading-[18px] text-muted-foreground', (disabled || dimmed) && 'opacity-70')}>
                   {description}
                 </span>
               ) : null}
@@ -1103,7 +1104,7 @@ export function CommandEmpty({ children = 'No results', className }: { children?
   const count = useStoreValue(store, (s) => s.visible.length);
   if (!query.trim() || count > 0) return null;
   return (
-    <div data-slot="command-empty" role="presentation" className={cn('py-10 text-center text-[14px] text-muted-foreground', className)}>
+    <div data-slot="command-empty" role="presentation" className={cn('py-10 text-center text-detail text-muted-foreground', className)}>
       {children}
     </div>
   );
@@ -1145,7 +1146,7 @@ export function CommandFooter({ legend = true, className, children }: CommandFoo
     <div
       data-slot="command-footer"
       onMouseDown={(e) => { if (!(e.target as HTMLElement).closest('button,a,input')) e.preventDefault(); }}
-      className={cn('flex h-11 shrink-0 items-center gap-4 border-t border-border bg-secondary/40 px-3 text-[13px] text-muted-foreground', className)}
+      className={cn('flex h-11 shrink-0 items-center gap-4 border-t border-border bg-secondary/40 px-3 text-footnote text-muted-foreground', className)}
     >
       <AnimatePresence initial={false}>
         {items.map((it) => (

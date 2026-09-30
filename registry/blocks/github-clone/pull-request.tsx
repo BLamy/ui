@@ -19,7 +19,7 @@ export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }
   return (
     <div className={cn(ui.phone && 'px-4 py-4')}>
       {!ui.phone ? (
-        <button type="button" onClick={() => nav.openPr(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-[14px] text-primary hover:underline">
+        <button type="button" onClick={() => nav.openPr(null)} className="mb-3 flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-detail text-primary hover:underline">
           <Oct name="chevLeft" size={14} />Pull requests
         </button>
       ) : null}
@@ -67,7 +67,7 @@ export function Conversation({ ui, pr }: { ui: Layout; pr: PullRequest }) {
   const [items, setItems] = useState<TimelineItem[]>(PR_TIMELINE);
   const comment = (body: string) =>
     setItems((xs) => [...xs, { kind: 'comment', id: 'new' + xs.length, author: ME, when: 'now', body, role: 'Member' }]);
-  const side = 'border-b border-border py-4 text-[12px] first:pt-0';
+  const side = 'border-b border-border py-4 text-caption first:pt-0';
   const sideTitle = 'mb-2 flex items-center justify-between font-semibold text-muted-foreground';
   return (
     <div className="flex gap-6">
@@ -80,7 +80,7 @@ export function Conversation({ ui, pr }: { ui: Layout; pr: PullRequest }) {
         <div className="mt-6 flex gap-4 border-t-2 border-border pt-6">
           {!ui.phone ? <Avatar c={ME} size={40} /> : null}
           <div className="min-w-0 flex-1">
-            <h3 className="mt-0 mb-2 text-[14px] font-semibold">Add a comment</h3>
+            <h3 className="mt-0 mb-2 text-detail font-semibold">Add a comment</h3>
             <Composer onSubmit={comment}>
               <ComposerCard className="rounded-md shadow-none">
                 <ComposerInput placeholder="Use Markdown to format your comment" slashMenu={false} />
@@ -143,10 +143,10 @@ export function CommentCard({ ui, author, when, body, role, verb = 'commented', 
           <b className="shrink-0 font-semibold whitespace-nowrap text-foreground">{author.login}</b>
           <span className="min-w-0 truncate">{verb} {when}</span>
           <span className="flex-1" />
-          {role && !ui.phone ? <span className="rounded-full border border-border px-2 text-[12px] leading-[18px] font-medium">{role}</span> : null}
+          {role && !ui.phone ? <span className="rounded-full border border-border px-2 text-caption leading-[18px] font-medium">{role}</span> : null}
           <Oct name="kebab" className="shrink-0" />
         </div>
-        <MarkdownView markdown={body} className={cn(githubMarkdown, 'bg-background px-4 py-3 text-[14px] leading-[1.5]')} />
+        <MarkdownView markdown={body} className={cn(githubMarkdown, 'bg-background px-4 py-3 text-detail leading-[1.5]')} />
       </div>
     </div>
   );
@@ -180,7 +180,7 @@ export function TimelineEntry({ ui, item }: { ui: Layout; item: TimelineItem }) 
                 <Avatar c={c.author} size={16} />
                 <span className="min-w-0 flex-1 truncate text-foreground">{c.message}</span>
                 <Oct name="check" size={14} className="shrink-0 text-[var(--gh-open)]" />
-                <code className="shrink-0 font-mono text-[12px]">{c.sha}</code>
+                <code className="shrink-0 font-mono text-caption">{c.sha}</code>
               </li>
             ))}
           </ul>
@@ -212,7 +212,7 @@ export function MergeBox({ ui }: { ui: Layout }) {
       {icon}
       <div className="min-w-0">
         <div className="font-semibold">{title}</div>
-        <div className="text-[12px] text-muted-foreground">{text}</div>
+        <div className="text-caption text-muted-foreground">{text}</div>
       </div>
     </div>
   );
@@ -225,7 +225,7 @@ export function MergeBox({ ui }: { ui: Layout }) {
         {row(ok, 'All checks have passed', `${PR_CHECKS.length} successful checks`)}
         <div className="border-b border-border bg-muted">
           {PR_CHECKS.map((c) => (
-            <div key={c.name} className="flex items-center gap-2 px-4 py-1.5 text-[12px] sm:pl-[60px]">
+            <div key={c.name} className="flex items-center gap-2 px-4 py-1.5 text-caption sm:pl-[60px]">
               <Oct name="check" size={14} className="text-[var(--gh-open)]" />
               <b className="min-w-0 truncate font-semibold">{c.name}</b>
               <span className="text-muted-foreground">Successful in {c.time}</span>
@@ -238,7 +238,7 @@ export function MergeBox({ ui }: { ui: Layout }) {
             <Button className={cn(ghButton(true), 'rounded-r-none')}>Merge pull request</Button>
             <Button aria-label="Merge options" className={cn(ghButton(true), 'rounded-l-none border-l-white/30 px-2')}><Oct name="chevDown" size={12} /></Button>
           </div>
-          <span className="text-[12px] text-muted-foreground">You can also merge this with the command line.</span>
+          <span className="text-caption text-muted-foreground">You can also merge this with the command line.</span>
         </div>
       </div>
     </div>
@@ -256,12 +256,12 @@ export function CommitList({ ui }: { ui: Layout }) {
           <div key={c.sha} className="flex items-center gap-3 border-t border-border px-4 py-3 first:border-t-0 hover:bg-muted">
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">{c.message}</div>
-              <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+              <div className="mt-1 flex items-center gap-1.5 text-caption text-muted-foreground">
                 <Avatar c={c.author} size={16} /><b className="font-semibold text-foreground">{c.author.login}</b> committed {c.when}
                 <Oct name="check" size={14} className="text-[var(--gh-open)]" />
               </div>
             </div>
-            <code className={cn(ghButton(), 'h-7 px-2 font-mono text-[12px]')}>{c.sha}</code>
+            <code className={cn(ghButton(), 'h-7 px-2 font-mono text-caption')}>{c.sha}</code>
             {!ui.phone ? <Oct name="copy" size={14} className="text-muted-foreground" /> : null}
           </div>
         ))}
@@ -277,7 +277,7 @@ export function Checks() {
         <div key={c.name} className="flex items-center gap-3 border-t border-border px-4 py-2.5 first:border-t-0">
           <Oct name="checkFill" className="text-[var(--gh-open)]" />
           <span className="min-w-0 flex-1 truncate font-semibold">{c.name}</span>
-          <span className="shrink-0 text-[12px] text-muted-foreground">{c.time}</span>
+          <span className="shrink-0 text-caption text-muted-foreground">{c.time}</span>
         </div>
       ))}
     </Box>
@@ -312,7 +312,7 @@ export function FilesChanged({ ui }: { ui: Layout }) {
         {!ui.phone ? <Button className={ghButton()}>All commits<Oct name="chevDown" size={12} /></Button> : null}
         <span className="flex items-center gap-2 text-muted-foreground">{PR_FILES.length} files <DiffStat add={add} del={del} /></span>
         <span className="flex-1" />
-        <span className="text-[12px] text-muted-foreground">0 / {PR_FILES.length} viewed</span>
+        <span className="text-caption text-muted-foreground">0 / {PR_FILES.length} viewed</span>
         <Button className={ghButton(true)}>Review changes<Oct name="chevDown" size={12} /></Button>
       </div>
       <div className="flex gap-4">

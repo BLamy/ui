@@ -53,7 +53,7 @@ export function ChatComposer({ onSend, placeholder, autoFocus, value: valueProp,
     <ChatComposerContext.Provider value={{ value, setValue, send }}>
       <div
         data-slot="chat-composer"
-        className={cn('flex items-center gap-[8px] rounded-[12px] border border-border bg-card py-[4px] pr-[4px] pl-[13px]', className)}
+        className={cn('flex items-center gap-[8px] rounded-panel border border-border bg-card py-[4px] pr-[4px] pl-[13px]', className)}
         {...props}
       >
         {children ?? (
@@ -79,7 +79,7 @@ export function ChatComposerInput({ className, onKeyDown, ...props }: Omit<Compo
         onKeyDown?.(e);
       }}
       className={composeRenderProps(className, (c) =>
-        cn('min-w-0 flex-1 border-0 bg-transparent px-0 py-[7px] font-ios text-[13.5px] text-foreground outline-none', c),
+        cn('min-w-0 flex-1 border-0 bg-transparent px-0 py-[7px] font-sans text-[13.5px] text-foreground outline-none', c),
       )}
       {...props}
     />
@@ -125,7 +125,7 @@ export function ChatComposerAction({ className, ...props }: ComponentProps<typeo
     <Button
       data-slot="chat-composer-action"
       className={composeRenderProps(className, (c) =>
-        cn('-ml-[5px] grid size-[28px] shrink-0 cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent text-tertiary-foreground data-hovered:text-muted-foreground', c),
+        cn('-ml-[5px] grid size-[28px] shrink-0 cursor-pointer place-items-center rounded-lg border-0 bg-transparent text-tertiary-foreground data-hovered:text-muted-foreground', c),
       )}
       {...props}
     />

@@ -1,3 +1,4 @@
+'use client';
 import {
   Button as AriaButton,
   ComboBox as AriaComboBox, type ComboBoxProps as AriaComboBoxProps,
@@ -40,7 +41,7 @@ export function ComboBoxInput({ className, groupClassName, ...props }: ComboBoxI
     <Group
       data-slot="combobox-input"
       className={cn(
-        'box-border flex h-11 w-full items-center rounded-[10px] bg-input transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy',
+        'box-border flex h-11 w-full items-center rounded-ctl bg-input transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy',
         'data-focus-within:bg-transparent data-focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)]',
         'group-data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-disabled:opacity-50',
         groupClassName,
@@ -48,14 +49,14 @@ export function ComboBoxInput({ className, groupClassName, ...props }: ComboBoxI
     >
       <AriaInput
         className={composeRenderProps(className, (cls) => cn(
-          'h-full min-w-0 flex-1 border-0 bg-transparent pr-1 pl-3 [font-family:inherit] text-[17px] text-foreground outline-none placeholder:text-tertiary-foreground',
+          'h-full min-w-0 flex-1 border-0 bg-transparent pr-1 pl-3 [font-family:inherit] text-body text-foreground outline-none placeholder:text-tertiary-foreground',
           selectableText, cls,
         ))}
         {...props}
       />
       <AriaButton
         data-slot="combobox-button"
-        className="bl-btn mr-1 grid size-9 shrink-0 cursor-pointer place-items-center rounded-[8px] border-0 bg-transparent p-0 text-muted-foreground outline-none data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 data-pressed:bg-accent"
+        className="bl-btn mr-1 grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground outline-none data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 data-pressed:bg-accent"
       >
         <svg viewBox="0 0 24 24" width={16} height={16} aria-hidden="true" className="transition-transform duration-spring-snappy ease-spring-snappy group-data-open:rotate-180 motion-reduce:transition-none">
           <path d="M6.5 9.5l5.5 5.5 5.5-5.5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />

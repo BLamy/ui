@@ -3,6 +3,18 @@
 A cmdk-style command palette: a search input over grouped, fuzzy-ranked results, with nested pages you drill into and back out of, a keyboard legend, and ⌘1–⌘9 quick picks. It renders inline or as a ⌘K dialog; react-aria supplies the modal (focus trap, focus return, portal) and the keycaps, and the input keeps focus the whole time — the active row is virtual (`aria-activedescendant`), so typing, arrows and Enter never fight over focus.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/command-menu.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  CommandMenu, CommandInput, CommandList, CommandGroup,
+  CommandItem,
+} from '@/components/ui/command-menu'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -15,18 +27,6 @@ import {
   CommandMenu, CommandInput, CommandList, CommandGroup,
   CommandItem,
 } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/command-menu.json{% endcommand %}
-
-Adds `@/components/ui/command-menu.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  CommandMenu, CommandInput, CommandList, CommandGroup,
-  CommandItem,
-} from '@/components/ui/command-menu'
 ```
 {% endtab %}
 {% endtabs %}

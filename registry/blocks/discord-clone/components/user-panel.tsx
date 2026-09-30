@@ -28,7 +28,7 @@ export function UserPanelInfo({ className, ...props }: ComponentProps<'div'>) {
 }
 
 export function UserPanelName({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="user-panel-name" className={cn('truncate text-[12px] font-bold text-foreground', className)} {...props} />;
+  return <div data-slot="user-panel-name" className={cn('truncate text-caption font-bold text-foreground', className)} {...props} />;
 }
 
 export type ChatPresence = 'online' | 'idle' | 'dnd' | 'offline';

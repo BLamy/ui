@@ -1,3 +1,4 @@
+'use client';
 import {
   createContext,
   useCallback,
@@ -268,7 +269,7 @@ export function FloatingChat({
             data-slot="floating-chat-working"
             // Swaps in for the card with a soft rise; the real card waits, mounted, underneath.
             className={cn(
-              'box-border flex min-h-[46px] w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-border bg-card px-[15px] py-1.5 text-left [font:inherit] text-foreground shadow-[0_6px_24px_black] shadow-black/7 dark:shadow-black/28 outline-none motion-reduce:animate-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
+              'box-border flex min-h-row w-full animate-[ck-in_var(--duration-spring-smooth)_var(--ease-spring-smooth)_both] cursor-pointer items-center gap-[10px] rounded-[15px] border border-border bg-card px-[15px] py-1.5 text-left [font:inherit] text-foreground shadow-[0_6px_24px_black] shadow-black/7 dark:shadow-black/28 outline-none motion-reduce:animate-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
               glass && 'backdrop-blur-[16px]',
             )}
             onPress={() => revealRef.current()}
@@ -276,7 +277,7 @@ export function FloatingChat({
             <span className="grid animate-[ck-floating-working_1.8s_ease-in-out_infinite] place-items-center text-muted-foreground motion-reduce:animate-none" aria-hidden="true">
               <Icon name="sparkle" size={18} sw={1.9} />
             </span>
-            <span className="min-w-0 flex-1 truncate text-[15px] font-[560] text-muted-foreground">{labelRef.current}</span>
+            <span className="min-w-0 flex-1 truncate text-subhead font-[560] text-muted-foreground">{labelRef.current}</span>
             <Icon name="plus" size={20} sw={1.9} />
             <span className="sr-only">Add something new</span>
           </Button>

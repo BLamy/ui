@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ProgressBar, type ProgressBarProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -137,8 +138,8 @@ export const countdownRingLabelVariants = cva(
         auto: 'text-(length:--ring-font)',
         sm: 'text-[9.36px]',
         md: 'text-[10.5px]',
-        lg: 'text-[13px]',
-        xl: 'text-[20px]',
+        lg: 'text-footnote',
+        xl: 'text-title',
       },
       warn: { false: 'text-muted-foreground', true: 'text-(--ring-warn)' },
     },

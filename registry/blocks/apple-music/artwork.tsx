@@ -96,8 +96,8 @@ export function Artwork({ album: a, size, className, style, rounded = 8 }: {
       </defs>
       <rect width="100" height="100" fill={`url(#${uid}g)`} />
       <PatternArt album={a} uid={uid} />
-      <text x="7" y="12" fontSize="5.4" fontWeight="700" letterSpacing=".6" fill={ink} opacity=".92" className="font-ios uppercase">{a.artist}</text>
-      <text x="7" y="18.5" fontSize="4.6" letterSpacing=".3" fill={ink} opacity=".75" className="font-ios">{a.title}</text>
+      <text x="7" y="12" fontSize="5.4" fontWeight="700" letterSpacing=".6" fill={ink} opacity=".92" className="font-sans uppercase">{a.artist}</text>
+      <text x="7" y="18.5" fontSize="4.6" letterSpacing=".3" fill={ink} opacity=".75" className="font-sans">{a.title}</text>
     </svg>
   );
 }

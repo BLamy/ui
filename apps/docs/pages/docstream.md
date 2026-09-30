@@ -3,6 +3,17 @@
 Workbench chat replies and these docs use `@brett_lamy/docstream` through the package's `MarkdownView` adapter. Docstream provides GitBook-aware parsing, code highlighting, tables, hints, and streaming-aware markup.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/markdown-view.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  MarkdownView, HlPre, DocstreamRefContext,
+} from '@/components/ui/markdown-view'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -14,17 +25,6 @@ import '@brett_lamy/ui/styles.css'
 import {
   MarkdownView, HlPre, DocstreamRefContext,
 } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/markdown-view.json{% endcommand %}
-
-Adds `@/components/ui/markdown-view.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  MarkdownView, HlPre, DocstreamRefContext,
-} from '@/components/ui/markdown-view'
 ```
 {% endtab %}
 {% endtabs %}

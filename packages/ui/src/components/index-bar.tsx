@@ -1,3 +1,4 @@
+'use client';
 import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
@@ -47,7 +48,7 @@ function ibPoints<K extends IndexBarKey>(items: Array<IndexBarItem<K> | K> | und
 }
 
 export const indexBarVariants = cva(
-  'absolute z-80 flex cursor-pointer touch-none flex-col justify-center rounded-[8px] outline-offset-2 select-none',
+  'absolute z-80 flex cursor-pointer touch-none flex-col justify-center rounded-lg outline-offset-2 select-none',
   {
     variants: {
       variant: { default: 'items-center', wave: 'items-stretch' },
@@ -258,18 +259,18 @@ export function IndexBar<K extends IndexBarKey = string>({
             onPointerMove={(e) => e.stopPropagation()} onPointerEnter={() => { setHov(-1); setPu(null); }}
             className={cn('absolute top-1/2 -translate-y-1/2 cursor-default', side === 'left' ? 'left-(--ib-w) pl-1' : 'right-(--ib-w) pr-1')}>
             <div className={cn(
-              'bl-scroll box-border max-h-[70vh] w-max max-w-[300px] min-w-[220px] overflow-y-auto rounded-[14px] bg-card p-1.5',
+              'bl-scroll box-border max-h-[70vh] w-max max-w-[300px] min-w-[220px] overflow-y-auto rounded-card bg-card p-1.5',
               'shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)]',
               'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
               side === 'left' ? 'origin-left' : 'origin-right',
             )}>
-              {panelTitle != null ? <div className="truncate px-3 pt-1.5 pb-1 text-[13px] text-muted-foreground">{panelTitle}</div> : null}
+              {panelTitle != null ? <div className="truncate px-3 pt-1.5 pb-1 text-footnote text-muted-foreground">{panelTitle}</div> : null}
               {pts.map((q, i) => (
                 <div key={String(q.key) + i}
                   onClick={() => (onJump ? onJump(q.key as K, q as IndexBarItem<K>, i) : onLetter?.(String(q.key)))}
                   style={{ '--lvl': q.level - 1 } as CSSProperties}
                   className={cn(
-                    'cursor-pointer truncate rounded-lg py-1.5 pr-3 pl-[calc(12px+var(--lvl)*12px)] text-[13px] transition-colors duration-100 hover:bg-secondary',
+                    'cursor-pointer truncate rounded-lg py-1.5 pr-3 pl-[calc(12px+var(--lvl)*12px)] text-footnote transition-colors duration-100 hover:bg-secondary',
                     curIdx === i ? 'bg-secondary text-foreground' : 'text-muted-foreground',
                     idx === i && 'bg-accent',
                   )}>
@@ -281,23 +282,23 @@ export function IndexBar<K extends IndexBarKey = string>({
         )
         : wave
         ? p && <div className={cn(
-              'pointer-events-none absolute box-border w-max max-w-(--ib-card-w) min-w-[160px] -translate-y-1/2 rounded-[14px] bg-card px-[13px] py-[9px]',
+              'pointer-events-none absolute box-border w-max max-w-(--ib-card-w) min-w-[160px] -translate-y-1/2 rounded-card bg-card px-[13px] py-[9px]',
               'shadow-[0_8px_28px_--alpha(black/28%),0_0_0_1px_var(--border)] transition-[top] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
               'animate-[blWaveCard_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:animate-none',
               side === 'left' ? 'origin-left left-[calc(var(--ib-w)+4px)]' : 'origin-right right-[calc(var(--ib-w)+4px)]', 'top-(--ib-y)',
             )}>
             <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1 truncate text-[13px] leading-[18px] font-semibold text-foreground">{p.caption || p.label || `Stop ${idx + 1}`}</div>
+              <div className="min-w-0 flex-1 truncate text-footnote leading-[18px] font-semibold text-foreground">{p.caption || p.label || `Stop ${idx + 1}`}</div>
               {p.trailing}
             </div>
             {p.preview != null
-              ? <div className="mt-[2px] line-clamp-(--ib-lines) text-[12px] leading-[16px] text-pretty text-muted-foreground">{p.preview}</div>
+              ? <div className="mt-[2px] line-clamp-(--ib-lines) text-caption leading-[16px] text-pretty text-muted-foreground">{p.preview}</div>
               : null}
           </div>
         : p && (p.preview != null)
-        ? <div className={cn(bub, bubPos, 'box-border max-w-[250px] min-w-[120px] rounded-[14px] px-[13px] py-[9px]')}>
+        ? <div className={cn(bub, bubPos, 'box-border max-w-[250px] min-w-[120px] rounded-card px-[13px] py-[9px]')}>
             {p.caption ? <div className="mb-[3px] text-[9.5px] font-extrabold tracking-[.6px] text-primary uppercase">{p.caption}</div> : null}
-            <div className="line-clamp-3 text-[13px] leading-[1.35] font-[550] text-pretty text-foreground">{p.preview}</div>
+            <div className="line-clamp-3 text-footnote leading-[1.35] font-[550] text-pretty text-foreground">{p.preview}</div>
           </div>
         : p ? <div className={cn(bub, bubPos, 'grid size-[54px] place-items-center rounded-[27px] text-[25px] font-extrabold text-primary')}>{p.label}</div> : null}
     </div>

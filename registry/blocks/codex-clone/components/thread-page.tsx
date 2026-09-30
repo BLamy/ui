@@ -21,7 +21,7 @@ function Turn({ m }: { m: Message }) {
           {m.text}
         </div>
         {m.read && (
-          <div className="mt-1 mr-1 text-[11px] text-muted-foreground">
+          <div className="mt-1 mr-1 text-caption2 text-muted-foreground">
             {m.read}
           </div>
         )}
@@ -31,7 +31,7 @@ function Turn({ m }: { m: Message }) {
   return (
     <div className="flex flex-col gap-3 text-[14.5px] leading-[1.6]">
       {m.worked && (
-        <div className="flex items-center gap-1 border-b border-border pb-2 text-[13px] text-muted-foreground">
+        <div className="flex items-center gap-1 border-b border-border pb-2 text-footnote text-muted-foreground">
           {m.worked}
           <Icon name="chevron-right" size={12} sw={2.4} />
         </div>
@@ -43,7 +43,7 @@ function Turn({ m }: { m: Message }) {
       ) : null}
       {m.code && (
         <div className="rounded-2xl bg-secondary px-4 py-3">
-          <div className="mb-2 flex items-center gap-2 text-[13px] text-muted-foreground">
+          <div className="mb-2 flex items-center gap-2 text-footnote text-muted-foreground">
             <span aria-hidden="true" className="font-mono">
               &lt;/&gt;
             </span>
@@ -123,7 +123,7 @@ function ThreadComposer({
   };
   return (
     <div className="shrink-0 px-6 pt-2 pb-5">
-      <div className="mx-auto w-full max-w-[820px] rounded-2xl bg-secondary px-4 pt-3 pb-2.5 shadow-[inset_0_0_0_1px_var(--border)]">
+      <div className="mx-auto w-full max-w-[820px] rounded-2xl bg-secondary px-4 pt-3 pb-2.5 shadow-hairline">
         <TextField aria-label="Message" value={text} onChange={setText}>
           <TextArea
             rows={1}
@@ -146,7 +146,7 @@ function ThreadComposer({
           />
           <Button
             variant="ghost"
-            className="h-8 gap-1.5 rounded-full px-2 text-[13px] font-normal text-muted-foreground data-hovered:bg-accent"
+            className="h-8 gap-1.5 rounded-full px-2 text-footnote font-normal text-muted-foreground data-hovered:bg-accent"
           >
             <Icon name="shield" size={14} />
             Approve for me
@@ -154,7 +154,7 @@ function ThreadComposer({
           <span className="flex-1" />
           <Button
             variant="ghost"
-            className="h-8 gap-1 rounded-full px-2 text-[13px] font-normal text-muted-foreground data-hovered:bg-accent"
+            className="h-8 gap-1 rounded-full px-2 text-footnote font-normal text-muted-foreground data-hovered:bg-accent"
           >
             <Icon name="bolt-fill" size={12} />
             <span className="text-foreground">GPT-6 Luna</span> Medium
@@ -189,13 +189,13 @@ function ThreadPanel({ chat }: { chat: Chat }) {
       aria-label="Thread details"
       className="w-[340px] shrink-0 p-3 @max-[899px]:hidden"
     >
-      <div className="rounded-2xl bg-secondary/60 px-4 py-3 shadow-[inset_0_0_0_1px_var(--border)]">
-        <div className="flex items-center justify-between text-[14px] text-muted-foreground">
+      <div className="rounded-2xl bg-secondary/60 px-4 py-3 shadow-hairline">
+        <div className="flex items-center justify-between text-detail text-muted-foreground">
           {chat.project}
           <IconButton name="ellipsis" label="Project actions" size={16} />
         </div>
         {chat.changes && (
-          <div className="mt-1 flex items-center gap-2.5 py-1.5 text-[14px]">
+          <div className="mt-1 flex items-center gap-2.5 py-1.5 text-detail">
             <Icon name="doc" size={16} className="text-muted-foreground" />
             <span className="flex-1">Changes</span>
             <span className="tabular-nums text-success">
@@ -208,7 +208,7 @@ function ThreadPanel({ chat }: { chat: Chat }) {
         )}
         {chat.sources && (
           <>
-            <div className="mt-3 flex items-center justify-between text-[14px] text-muted-foreground">
+            <div className="mt-3 flex items-center justify-between text-detail text-muted-foreground">
               Sources
               <IconButton name="plus" label="Add source" size={16} />
             </div>
@@ -216,7 +216,7 @@ function ThreadPanel({ chat }: { chat: Chat }) {
               <div
                 key={src.label}
                 className={cn(
-                  'flex items-center gap-2.5 py-1.5 text-[14px]',
+                  'flex items-center gap-2.5 py-1.5 text-detail',
                   src.dim && 'text-tertiary-foreground',
                 )}
               >
@@ -292,7 +292,7 @@ export function ThreadContent({ codex }: { codex: CodexState }) {
       <SplitViewHeader
         title={s.collapsed ? chat.title : undefined}
         leading={
-          <span className="flex min-w-0 items-center gap-2.5 pl-2.5 text-[14px] font-medium">
+          <span className="flex min-w-0 items-center gap-2.5 pl-2.5 text-detail font-medium">
             <Icon
               name="folder"
               size={16}
@@ -328,7 +328,7 @@ export function ThreadContent({ codex }: { codex: CodexState }) {
           >
             <div className="mx-auto flex min-h-full w-full max-w-[820px] flex-col justify-end gap-5 px-6 py-6">
               {chat.items.length === 0 && (
-                <div className="grid flex-1 place-items-center py-24 text-[14px] text-muted-foreground">
+                <div className="grid flex-1 place-items-center py-24 text-detail text-muted-foreground">
                   Nothing here yet — ask for anything.
                 </div>
               )}
@@ -336,7 +336,7 @@ export function ThreadContent({ codex }: { codex: CodexState }) {
                 i.kind === 'time' ? (
                   <div
                     key={i.id}
-                    className="text-center text-[12px] text-muted-foreground"
+                    className="text-center text-caption text-muted-foreground"
                   >
                     {i.label}
                   </div>

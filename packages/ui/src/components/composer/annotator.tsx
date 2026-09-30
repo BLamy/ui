@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { PencilKitAnnotator } from '@/components/ui/pencilkit/pencilkit-annotator';
 

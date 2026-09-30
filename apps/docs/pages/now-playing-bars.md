@@ -3,6 +3,16 @@
 The little equaliser that bounces beside the track that's playing. Each bar scales from the bottom on its own slightly different period, so they never fall into step; paused, they settle to a still, uneven skyline. It's drawn in `currentColor` and sized in pixels, so it sits in a list row, a mini player or a tab bar.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/now-playing-bars.json https://blamy.github.io/ui/r/slider.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { NowPlayingBars } from '@/components/ui/now-playing-bars'
+import { Slider } from '@/components/ui/slider'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,17 +22,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { NowPlayingBars, Slider } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/now-playing-bars.json{% endcommand %}
-
-Adds `@/components/ui/now-playing-bars.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  NowPlayingBars, Slider,
-} from '@/components/ui/now-playing-bars'
 ```
 {% endtab %}
 {% endtabs %}

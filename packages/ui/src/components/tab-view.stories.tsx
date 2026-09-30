@@ -270,10 +270,10 @@ const workspaces = [
 function WorkspaceTile({ color = 'var(--primary)', mentions, children }: { color?: string; mentions?: number; children: ReactNode }) {
   return (
     <span style={{ '--tile': color } as CSSProperties}
-      className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-ios text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-link">
+      className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-data-hovered:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-data-pressed:scale-[.94] motion-reduce:transition-none group-data-focus-visible:outline-2 group-data-focus-visible:outline-offset-2 group-data-focus-visible:outline-link">
       {children}
       {mentions ? (
-        <span className="absolute -right-[7px] -bottom-[6px] box-border flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-[3px] border-muted bg-destructive px-[3px] font-ios text-[10px] leading-none font-bold text-white">
+        <span className="absolute -right-[7px] -bottom-[6px] box-border flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-[3px] border-muted bg-destructive px-[3px] font-sans text-[10px] leading-none font-bold text-white">
           {mentions > 99 ? '99+' : mentions}
         </span>
       ) : null}
@@ -328,7 +328,7 @@ export const WorkspaceRailScrolling: Story = {
     <ThemeScope scope="chat" appearance="dark" className="flex h-[300px] w-[200px] overflow-hidden bg-background text-foreground">
       <TabView orientation="vertical" defaultSelectedKey="w0" className="flex h-full">
         <TabViewBar variant="workspace">
-          <TabViewHeader className="font-ios text-[10px] font-bold tracking-[.4px] text-tertiary-foreground uppercase">Chat</TabViewHeader>
+          <TabViewHeader className="font-sans text-[10px] font-bold tracking-[.4px] text-tertiary-foreground uppercase">Chat</TabViewHeader>
           <TabViewList aria-label="Workspaces">
             {Array.from({ length: 12 }, (_, i) => (
               <TabViewTab key={i} id={`w${i}`} textValue={`Workspace ${i + 1}`}>

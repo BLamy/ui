@@ -3,6 +3,16 @@
 UITableView's vocabulary: plain or inset-grouped lists, sticky section headers, swipe actions, edit mode with multi-select.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/list.json https://blamy.github.io/ui/r/index-bar.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { List, ListSection, ListRow } from '@/components/ui/list'
+import { IndexBar } from '@/components/ui/index-bar'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,17 +22,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { List, ListSection, ListRow, IndexBar } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/list.json{% endcommand %}
-
-Adds `@/components/ui/list.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  List, ListSection, ListRow, IndexBar,
-} from '@/components/ui/list'
 ```
 {% endtab %}
 {% endtabs %}
@@ -286,3 +285,43 @@ Two ways to read a wave rail. With `preview`s, hovering a dash opens a card for 
 Scrub the rail or focus it and use the arrow keys. Switch modes to see the alphabet fallback and the wave variant:
 
 {% demo src="lists/index-bar" %}
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `listRowVariants`
+
+Defined in `@/components/ui/list`. Base classes:
+
+```text
+[ // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row. 'relative box-border flex min-h-row w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-body leading-[normal] tracking-[normal] outline-none', 'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]', // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent). 'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]', ]
+```
+
+**`align`** — default `center`
+
+| Value | Adds |
+| --- | --- |
+| `center` (default) | — |
+| `top` | `[&>[data-slot=list-row-leading]]:self-start [&>[data-slot=list-row-leading]]:pt-[7px]` |
+
+**`selected`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `bg-accent` |
+| `false` (default) | `bg-card` |
+
+**`destructive`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `text-destructive` |
+| `false` (default) | `text-foreground` |
+
+**`interactive`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `cursor-pointer` |
+| `false` (default) | `cursor-default` |

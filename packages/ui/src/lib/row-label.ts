@@ -1,3 +1,4 @@
+'use client';
 import { createContext, use } from 'react';
 
 /** The id of the element that names the controls inside it — ListRow publishes its title's id, so a Switch or

@@ -69,8 +69,8 @@ export function BugsTab({ project }: { project: Project }) {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[14px] border border-border bg-card">
-        <div role="row" className="hidden grid-cols-[92px_1fr_128px_128px_112px_72px] items-center gap-3 border-b border-border bg-muted px-4 py-2 text-[11px] font-semibold tracking-[.06em] text-muted-foreground uppercase @4xl:grid!">
+      <div className="overflow-hidden rounded-card border border-border bg-card">
+        <div role="row" className="hidden grid-cols-[92px_1fr_128px_128px_112px_72px] items-center gap-3 border-b border-border bg-muted px-4 py-2 text-caption2 font-semibold tracking-[.06em] text-muted-foreground uppercase @4xl:grid!">
           <span>Severity</span><span>Bug</span><span>Status</span><span>Kind</span><span>Environment</span><span className="text-right">Found</span>
         </div>
         {shown.length ? (
@@ -81,7 +81,7 @@ export function BugsTab({ project }: { project: Project }) {
           <Empty icon="checkmark-circle" title={all.length ? 'No bugs match' : 'No bugs found'} text={all.length ? 'Try clearing a filter or the search.' : 'Loop QA hasn’t found anything in this project yet.'} />
         )}
       </div>
-      <div className="text-[12px] text-muted-foreground">{shown.length} of {all.length} bugs</div>
+      <div className="text-caption text-muted-foreground">{shown.length} of {all.length} bugs</div>
     </div>
   );
 }
@@ -101,13 +101,13 @@ function BugRow({ bug: b }: { bug: Bug }) {
           <span className="font-mono text-[11.5px] text-tertiary-foreground">{b.id}</span>
         </span>
         <span className="line-clamp-2 text-[13.5px] leading-[19px] font-medium @4xl:line-clamp-1!">{b.title}</span>
-        <span className="mt-0.5 hidden truncate text-[12px] text-muted-foreground @4xl:block!"><span className="font-mono">{b.id}</span> · {b.journey}</span>
+        <span className="mt-0.5 hidden truncate text-caption text-muted-foreground @4xl:block!"><span className="font-mono">{b.id}</span> · {b.journey}</span>
       </span>
       <span className="relative z-10 row-span-2 self-start @4xl:row-span-1! @4xl:self-center!"><StatusMenu bug={b} /></span>
       <span className="pointer-events-none relative flex items-center gap-2 @4xl:contents!">
         <span className="relative @4xl:block!"><KindLabel kind={b.kind} /></span>
         <span className="relative @4xl:block!"><EnvBadge env={b.environment} /></span>
-        <span className="relative text-right text-[12px] text-muted-foreground tabular-nums">{relativeTime(b.discovered)}</span>
+        <span className="relative text-right text-caption text-muted-foreground tabular-nums">{relativeTime(b.discovered)}</span>
       </span>
     </li>
   );

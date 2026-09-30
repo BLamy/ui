@@ -1,3 +1,4 @@
+'use client';
 import { Label as AriaLabel, type LabelProps as AriaLabelProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
@@ -6,9 +7,9 @@ import { cn } from '@/lib/utils';
 export const labelVariants = cva('inline-flex items-center gap-1.5 font-medium group-data-disabled:opacity-50', {
   variants: {
     variant: {
-      default: 'text-[15px] text-foreground',
+      default: 'text-subhead text-foreground',
       /** iOS grouped-form header: small, secondary, sits above a field. */
-      field: 'px-1 text-[13px] text-muted-foreground',
+      field: 'px-1 text-footnote text-muted-foreground',
     },
   },
   defaultVariants: { variant: 'default' },

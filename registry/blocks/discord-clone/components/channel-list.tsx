@@ -68,7 +68,7 @@ function MentionPill({ n }: { n: number }) {
 
 /** A channel row: the selected one on the stronger fill; selected or unread rows bold. */
 export const channelItemVariants = cva(
-  'flex w-full cursor-pointer items-center gap-[7px] rounded-[8px] border-0 px-[8px] py-[5px] text-left font-ios text-[13.5px] [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
+  'flex w-full cursor-pointer items-center gap-[7px] rounded-lg border-0 px-[8px] py-[5px] text-left font-sans text-[13.5px] [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
   {
     variants: {
       active: { true: 'bg-secondary-strong', false: 'bg-transparent data-hovered:bg-accent' },
@@ -80,7 +80,7 @@ export const channelItemVariants = cva(
 
 /** An indented thread row under its channel. */
 export const channelThreadItemVariants = cva(
-  'flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 py-[3px] pr-[8px] pl-[24px] text-left font-ios text-[12px]',
+  'flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 py-[3px] pr-[8px] pl-[24px] text-left font-sans text-caption',
   {
     variants: {
       active: { true: 'bg-secondary font-semibold text-foreground', false: 'bg-transparent text-tertiary-foreground data-hovered:text-muted-foreground' },

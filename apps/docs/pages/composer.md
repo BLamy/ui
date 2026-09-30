@@ -3,6 +3,18 @@
 The Workbench prompt box is a set of parts, in the spirit of shadcn's `InputGroup`: the root owns the draft, the card holds the editor and its addons, and **bumps** attach above or below the card. Compose exactly the box you need — a bare editor with a send button, the Workbench default, or the full T3 Code layout below. The editor is `@brett_lamy/docstream-editor`, so drafts use the same GitBook-flavored Markdown model as rendered replies.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/composer.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  Composer, ComposerCard, ComposerInput, ComposerFooter,
+  ComposerSend,
+} from '@/components/ui/composer/composer'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -17,18 +29,6 @@ import {
 } from '@brett_lamy/ui'
 ```
 {% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/composer.json{% endcommand %}
-
-Adds `@/components/ui/composer.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  Composer, ComposerCard, ComposerInput, ComposerFooter,
-  ComposerSend,
-} from '@/components/ui/composer'
-```
-{% endtab %}
 {% endtabs %}
 
 ```tsx
@@ -36,8 +36,9 @@ import {
   Composer, ComposerBump, ComposerBumpHandle, ComposerBumpContent, ComposerCard,
   ComposerButton, ComposerAttachments, ComposerInput, ComposerExpand,
   ComposerFooter, ComposerSelect, ComposerSeparator, ComposerSpacer,
-  ComposerAttach, ComposerStop, ComposerSend, ComposerText, ModelPicker,
-} from '@brett_lamy/ui'
+  ComposerAttach, ComposerStop, ComposerSend, ComposerText,
+} from '@/components/ui/composer/composer'
+import { ModelPicker } from '@/components/blocks/t3-clone/components/workbench/model-picker'
 
 <Composer
   onSubmit={(markdown, attachments) => send(markdown, attachments)}
@@ -79,7 +80,7 @@ import {
 </Composer>
 ```
 
-`WorkbenchComposer` is the Workbench's default composition (card, attachments, expand, model / effort / access pills, send, and the detached checkout strip) — put it in a `ConversationComposer` (see [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell)), or compose your own from these parts.
+`Composer` and its parts are library parts. `WorkbenchComposer`, the Workbench's default composition (card, attachments, expand, model / effort / access pills, send, and the detached checkout strip), and `ModelPicker` are parts of the `t3-clone` [block](https://blamy.github.io/ui/#/blocks) (`@/components/blocks/t3-clone/components/workbench/workbench-composer`). Put the former in a `ConversationComposer` (see [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell)), or compose your own from the library parts.
 
 ## Parts
 
@@ -181,7 +182,7 @@ While files hover the card, a tinted wash and ring spring in over it with the "+
 Pressing an attachment annotates it with [PencilKit](https://blamy.github.io/ui/#/pencilkit) out of the box: `PencilKitAnnotator` lays a canvas over the image with its tool, ink and undo bar underneath, and Save flattens the strokes into it. No setup is needed. The annotator is pluggable — swap it for every Composer below a provider, or for one Composer; `null` opts out, and pressing an attachment then opens a plain preview of the image:
 
 ```tsx
-import { ComposerAnnotatorProvider, Composer } from '@brett_lamy/ui'
+import { ComposerAnnotatorProvider, Composer } from '@/components/ui/composer/composer'
 
 <ComposerAnnotatorProvider annotator={StampAnnotator}>
   <App />
@@ -216,7 +217,14 @@ function StampAnnotator({ children }: ComposerAnnotatorProps) {
 
 ## ModelPicker
 
-A searchable model menu in the style of T3 Code, and the footer's model pill. Search across every model; a vertical provider rail (favorites first) switches the list; rows show the name, a `NEW` badge, the provider, a `⌘N` shortcut and a favorite star; **Legacy models** opens a submenu. Arrow keys, typeahead, and ⌘1…⌘9 work while it is open. It is built on react-aria `DialogTrigger`, `SearchField`, vertical `Tabs`, `GridList`, and `SubmenuTrigger`, and it reads the Workbench palette off its trigger, so it matches light and dark surfaces.
+A searchable model menu in the style of T3 Code, and the footer's model pill. It is a `t3-clone` block part, not a library part: `npx shadcn add …/r/t3-clone.json` copies it to `components/blocks/t3-clone/components/workbench/model-picker.tsx`, with the sample catalog (`WORKBENCH_MODELS`, `WORKBENCH_PROVIDERS`) in `models.tsx` beside it.
+
+```tsx
+import { ModelPicker } from '@/components/blocks/t3-clone/components/workbench/model-picker'
+import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from '@/components/blocks/t3-clone/components/workbench/models'
+```
+
+Search across every model; a vertical provider rail (favorites first) switches the list; rows show the name, a `NEW` badge, the provider, a `⌘N` shortcut and a favorite star; **Legacy models** opens a submenu. Arrow keys, typeahead, and ⌘1…⌘9 work while it is open. It is built on react-aria `DialogTrigger`, `SearchField`, vertical `Tabs`, `GridList`, and `SubmenuTrigger`, and it reads the Workbench palette off its trigger, so it matches light and dark surfaces.
 
 ```tsx
 <ModelPicker
@@ -268,6 +276,125 @@ Image chips and the annotator. Press the thumbnail or the chip; remove the thumb
 
 {% demo src="composer/image-chips" %}
 
+The bottom bump as a usage meter: a **Project Credit Limit** progress bar with a **+10** button on the right that raises the limit. Each reply spends credits; as the bar fills it turns red, and once the limit is reached sending stops until you raise it:
+
+{% demo src="composer/credit-limit" %}
+
 A custom composition: an `inline-start` addon before the editor and an `inline-end` addon after it, in one row:
 
 {% demo src="composer/inline-start-addon" %}
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `composerFabVariants`
+
+Defined in `@/components/ui/composer/composer`. Base classes:
+
+```text
+[ pressable, 'z-3 grid size-[52px] cursor-pointer place-items-center rounded-[50%] border border-border bg-card p-0 text-foreground shadow-[0_10px_30px_-8px_color-mix(in_srgb,black_45%,transparent),0_2px_8px_color-mix(in_srgb,black_14%,transparent)] outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60', ]
+```
+
+No variants.
+
+### `composerCardVariants`
+
+Defined in `@/components/ui/composer/composer`. Base classes:
+
+```text
+relative z-1 box-border flex min-w-0 flex-wrap items-center border border-border bg-card
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `rounded-[15px] shadow-[0_6px_24px_black] shadow-black/8 dark:shadow-black/28` |
+| `lg` | `rounded-[22px] shadow-[0_8px_30px_black] shadow-black/8 dark:shadow-black/22` |
+
+### `composerAddonVariants`
+
+Defined in `@/components/ui/composer/composer`. Base classes:
+
+```text
+box-border flex min-w-0 items-center gap-[5px]
+```
+
+**`align`** — default `block-end`
+
+| Value | Adds |
+| --- | --- |
+| `block-start` | `order-[-2] w-full px-3 pt-2.5` |
+| `inline-start` | `order-[-1] shrink-0 self-start pt-2 pl-2` |
+| `inline-end` | `order-1 shrink-0 self-start pt-2 pr-2` |
+| `block-end` (default) | `order-2 w-full px-2 pt-1 pb-2` |
+
+### `composerButtonVariants`
+
+Defined in `@/components/ui/composer/composer`. Base classes:
+
+```text
+cn(pressable, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-sans outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60')
+```
+
+**`variant`** — default `ghost`
+
+| Value | Adds |
+| --- | --- |
+| `ghost` (default) | `bg-transparent text-muted-foreground hover:bg-secondary!` |
+| `pill` | `gap-[5px] rounded-[7px] bg-transparent px-[7px] py-[5px] text-[12.5px] font-semibold text-muted-foreground hover:bg-secondary!` |
+| `primary` | `rounded-[50%] bg-primary text-white [transition:opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy)]` |
+| `destructive` | `rounded-[50%] bg-destructive text-white` |
+
+**`size`** — default `icon`
+
+| Value | Adds |
+| --- | --- |
+| `icon` (default) | `size-7 rounded-[7px] p-0` |
+| `round` | `size-[30px] rounded-[50%] p-0` |
+| `pill` | — |
+
+**`tint`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `text-primary` |
+| `false` (default) | — |
+
+1 compound variant — see the source.
+
+### `composerMenuItemVariants`
+
+Defined in `@/components/ui/composer/composer`. Base classes:
+
+```text
+relative flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-[7px] text-footnote text-foreground outline-none data-focused:bg-secondary data-pressed:bg-secondary-strong data-disabled:cursor-default data-disabled:opacity-40
+```
+
+No variants.
+
+### `composerBumpVariants`
+
+Defined in `@/components/ui/composer/composer`. Base classes:
+
+```text
+relative box-border flex min-w-0 flex-col text-caption text-muted-foreground
+```
+
+**`side`** — default `bottom`
+
+| Value | Adds |
+| --- | --- |
+| `top` | `order-[-1]` |
+| `bottom` (default) | `order-1` |
+
+**`variant`** — default `attached`
+
+| Value | Adds |
+| --- | --- |
+| `attached` (default) | `border border-border bg-popover` |
+| `detached` | `rounded-[9px] bg-secondary` |
+| `flush` | — |
+
+6 compound variants — see the source.

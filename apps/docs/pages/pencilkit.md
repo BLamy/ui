@@ -3,6 +3,19 @@
 PencilKit's drawing surface in BL UI's language, built on **[perfect-freehand](https://github.com/steveruizok/perfect-freehand)** by Steve Ruiz — the pressure-to-outline ink engine behind tldraw.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/pencilkit.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas'
+import { PencilToolbar } from '@/components/ui/pencilkit/pencil-toolbar'
+import {
+  usePencilHistory,
+} from '@/components/ui/pencilkit/use-pencil-history'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -14,17 +27,6 @@ import '@brett_lamy/ui/styles.css'
 import {
   PencilCanvas, PencilToolbar, usePencilHistory,
 } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/pencilkit.json{% endcommand %}
-
-Adds `@/components/ui/pencilkit.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  PencilCanvas, PencilToolbar, usePencilHistory,
-} from '@/components/ui/pencilkit'
 ```
 {% endtab %}
 {% endtabs %}
@@ -58,17 +60,14 @@ const outline = getStroke(points, {
 ## Usage
 
 ```tsx
-import { PencilKitDemo, demoStrokes } from '@brett_lamy/ui'
+import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas'
 
 <div style={{ position: 'relative', height: 540 }}>
-  <PencilKitDemo
-    defaultStrokes={demoStrokes()}
-    style={{ position: 'absolute', inset: 0 }}
-  />
+  <PencilCanvas tool="pen" hint="Draw here" style={{ position: 'absolute', inset: 0 }} />
 </div>
 ```
 
-`PencilCanvas` is the raw surface — mount it inside any `--bl-*` themed container. `PencilKitDemo` wraps it with tokens and the dotted paper. Full page: [PencilKit demo](https://github.com/BLamy/ui/blob/main/packages/ui/src/demos/pencilkit/pencilkit-demo.tsx).
+`PencilCanvas` is the raw surface: mount it inside any themed container. `usePencilHistory` (from `@/components/ui/pencilkit/use-pencil-history`) gives it undo and redo. The full sketch-pad page with the toolbar, colors and demo strokes is the **pencilkit-sketch** [block](https://blamy.github.io/ui/#/blocks) (`npx shadcn add https://blamy.github.io/ui/r/pencilkit-sketch.json`).
 
 ## Examples
 
@@ -99,3 +98,22 @@ import { Composer, PencilKitAnnotator } from '@brett_lamy/ui'
 Strokes are plain data. `StrokePath` renders them anywhere, here as thumbnails fitted to each sketch's bounding box.
 
 {% demo src="pencilkit/sketch-gallery" %}
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `pencilToolButtonVariants`
+
+Defined in `@/components/ui/pencilkit/pencil-toolbar`. Base classes:
+
+```text
+grid h-[34px] w-[38px] cursor-pointer place-items-center rounded-[9px] border-0 p-0 data-disabled:cursor-default data-disabled:opacity-[.32]
+```
+
+**`active`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `bg-primary text-primary-foreground` |
+| `false` (default) | `bg-transparent text-muted-foreground data-selected:bg-primary data-selected:text-primary-foreground` |

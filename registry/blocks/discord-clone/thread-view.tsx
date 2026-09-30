@@ -25,7 +25,7 @@ export function ThreadView({ message, channelName, mode, onToggleReaction, onRep
   const thread = message.thread!;
   const n = thread.replies.length;
   return (
-    <div className={cn('mx-auto box-border flex h-full w-full flex-col font-ios', mode === 'full' ? 'max-w-[760px]' : 'max-w-none')}>
+    <div className={cn('mx-auto box-border flex h-full w-full flex-col font-sans', mode === 'full' ? 'max-w-[760px]' : 'max-w-none')}>
       <MessageList className="pt-1 pb-2.5">
         {mode === 'panel' && (
           <ThreadHeader

@@ -115,10 +115,10 @@ const CLIP_ICON: Record<ClipKind, string> = { text: 'textformat', link: 'link', 
 
 export function ClipGlyph({ kind, text, size = 30 }: { kind: ClipKind; text: string; size?: number }) {
   if (kind === 'color') {
-    return <span className="block shrink-0 rounded-[8px] shadow-[inset_0_0_0_.5px_rgba(0,0,0,.15)]" style={{ width: size, height: size, background: text }} />;
+    return <span className="block shrink-0 rounded-lg shadow-[inset_0_0_0_.5px_rgba(0,0,0,.15)]" style={{ width: size, height: size, background: text }} />;
   }
   return (
-    <span className="grid shrink-0 place-items-center rounded-[8px] bg-secondary text-muted-foreground" style={{ width: size, height: size }}>
+    <span className="grid shrink-0 place-items-center rounded-lg bg-secondary text-muted-foreground" style={{ width: size, height: size }}>
       <Icon name={CLIP_ICON[kind]} size={Math.round(size * 0.56)} sw={1.9} />
     </span>
   );
@@ -176,7 +176,7 @@ export function MenuBar({ dark, compact, onAlfred }: { dark: boolean; compact: b
     <div
       data-slot="alfred-menubar"
       className={cn(
-        'relative z-10 flex h-7 shrink-0 items-center gap-4 px-3.5 text-[13px] backdrop-blur-xl backdrop-saturate-150',
+        'relative z-10 flex h-7 shrink-0 items-center gap-4 px-3.5 text-footnote backdrop-blur-xl backdrop-saturate-150',
         dark ? 'bg-black/25 text-white/90' : 'bg-white/35 text-black/85',
       )}
     >
@@ -269,12 +269,12 @@ export function PowerOverlay({ state, onWake, dark }: { state: PowerState; onWak
         className={cn('absolute inset-0 z-30 flex animate-bl-fade-in cursor-pointer flex-col items-center backdrop-blur-2xl', dark ? 'bg-black/40 text-white' : 'bg-black/20 text-white')}
       >
         <div className="mt-[12%] animate-bl-sheet-in-top text-center [text-shadow:0_1px_12px_rgba(0,0,0,.25)] motion-reduce:animate-bl-fade-in">
-          <div className="text-[15px] font-semibold opacity-90">Tuesday, September 29</div>
+          <div className="text-subhead font-semibold opacity-90">Tuesday, September 29</div>
           <div className="text-[84px] leading-none font-bold tracking-tight">9:41</div>
         </div>
         <div className="mt-auto mb-[9%] flex animate-bl-pop-in flex-col items-center gap-2 motion-reduce:animate-bl-fade-in">
-          <span className="grid size-14 place-items-center rounded-full bg-white/30 text-[20px] font-semibold shadow-[inset_0_0_0_.5px_rgba(255,255,255,.5)] backdrop-blur-md">BL</span>
-          <span className="text-[14px] font-semibold [text-shadow:0_1px_8px_rgba(0,0,0,.3)]">Brett Lamy</span>
+          <span className="grid size-14 place-items-center rounded-full bg-white/30 text-title font-semibold shadow-[inset_0_0_0_.5px_rgba(255,255,255,.5)] backdrop-blur-md">BL</span>
+          <span className="text-detail font-semibold [text-shadow:0_1px_8px_rgba(0,0,0,.3)]">Brett Lamy</span>
           <span className="rounded-full bg-white/20 px-3 py-1 text-[12.5px] backdrop-blur-md">Click or press any key to unlock</span>
         </div>
       </div>

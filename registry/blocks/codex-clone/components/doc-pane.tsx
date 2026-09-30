@@ -14,15 +14,15 @@ import { DocOutline, outlineOf } from './doc-outline';
 /* The document dressed as a page: 15px body, headings with room above, a blockquote as a callout card, square
    checkboxes. The editor's stylesheet sits in a layer under utilities, so plain classes win. */
 const DOC_PARTS: MarkdownEditorClassNames = {
-  paragraph: 'text-[15px] leading-[1.65]',
+  paragraph: 'text-subhead leading-[1.65]',
   heading: 'mt-9 mb-2 text-[19px] leading-[1.3] font-semibold',
-  list: 'text-[15px] leading-[1.65]',
-  blockquote: 'my-4 rounded-xl border-0 bg-secondary px-4 py-3 text-[15px] leading-[1.6] text-foreground not-italic',
+  list: 'text-subhead leading-[1.65]',
+  blockquote: 'my-4 rounded-xl border-0 bg-secondary px-4 py-3 text-subhead leading-[1.6] text-foreground not-italic',
   checklist: 'pl-0',
-  checklistItem: 'items-start gap-2.5 text-[15px] leading-[1.65] data-[checked=true]:text-muted-foreground data-[checked=true]:line-through',
+  checklistItem: 'items-start gap-2.5 text-subhead leading-[1.65] data-[checked=true]:text-muted-foreground data-[checked=true]:line-through',
   checkbox: 'mt-[5px] size-[15px] cursor-pointer accent-primary',
   link: 'text-link underline-offset-2 hover:underline',
-  table: 'text-[14px]',
+  table: 'text-detail',
   tableHeader: 'border-border bg-transparent px-3 py-2 font-semibold',
   tableCell: 'border-border px-3 py-2',
 };
@@ -104,7 +104,7 @@ function DocPage({ codex, doc, editorRef, format }: { codex: CodexState; doc: Do
             onFocus={() => (typing.current = true)}
             onBlur={() => (typing.current = false)}
             onValueChange={(body) => typing.current && codex.editDoc(doc.id, { body })}
-            className="text-[15px]"
+            className="text-subhead"
             classNames={DOC_PARTS}
           />
         </div>

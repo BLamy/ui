@@ -3,6 +3,17 @@
 A compositional tab container on react-aria's `Tabs`. The same parts make the iOS bottom bar, a vertical rail along the left edge, or a fully custom bar — a Discord-style workspace rail for a [ChatShell](https://blamy.github.io/ui/#/chat-shell) is one of them.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/tab-view.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  TabView, TabViewBar, TabViewList, TabViewTab,
+} from '@/components/ui/tab-view'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -14,17 +25,6 @@ import '@brett_lamy/ui/styles.css'
 import {
   TabView, TabViewBar, TabViewList, TabViewTab,
 } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/tab-view.json{% endcommand %}
-
-Adds `@/components/ui/tab-view.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  TabView, TabViewBar, TabViewList, TabViewTab,
-} from '@/components/ui/tab-view'
 ```
 {% endtab %}
 {% endtabs %}
@@ -205,3 +205,116 @@ A mail client's leading rail: a logo in `TabViewHeader`, the mailboxes as tabs, 
 A vertical `TabView` with a `workspace` bar beside a channel column, in a `chat` theme scope (`themeScopeProps({ scope: 'chat', appearance })`) that keeps it in step with light and dark.
 
 {% demo src="tab-view/chat-workspaces" %}
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `tabViewVariants`
+
+Defined in `@/components/ui/tab-view`. Base classes:
+
+```text
+flex min-h-0 min-w-0
+```
+
+**`placement`** — default `bottom`
+
+| Value | Adds |
+| --- | --- |
+| `top` | `flex-col` |
+| `bottom` (default) | `flex-col-reverse` |
+| `start` | `flex-row` |
+| `end` | `flex-row-reverse` |
+
+### `tabViewBarVariants`
+
+Defined in `@/components/ui/tab-view`. Base classes:
+
+```text
+box-border
+```
+
+**`variant`** — default `bar`
+
+| Value | Adds |
+| --- | --- |
+| `bar` (default) | `absolute inset-x-0 bottom-0 z-120 flex h-[62px] [border-top:1px_solid_var(--border)] bg-bar pb-1 backdrop-blur-[20px] backdrop-saturate-[1.7] transition-transf…` |
+| `rail` | `relative flex w-[76px] shrink-0 flex-col gap-1 bg-bar py-2 data-[placement=end]:[border-left:1px_solid_var(--border)] data-[placement=start]:[border-right:1px_…` |
+| `workspace` | `flex w-[52px] shrink-0 flex-col items-center gap-[8px] border-r border-border bg-muted px-0 py-[10px]` |
+| `plain` | `flex shrink-0 data-[orientation=vertical]:flex-col` |
+
+### `tabViewListVariants`
+
+Defined in `@/components/ui/tab-view`. Base classes:
+
+```text
+outline-none
+```
+
+**`variant`** — default `plain`
+
+| Value | Adds |
+| --- | --- |
+| `bar` | `flex flex-1` |
+| `rail` | `flex flex-col gap-1 px-1.5` |
+| `workspace` | `flex min-h-0 w-full flex-col items-center gap-[8px] overflow-y-auto overscroll-contain -mt-1 -mb-1.5 pt-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:…` |
+| `plain` (default) | `flex data-[orientation=vertical]:flex-col` |
+
+### `tabViewTabVariants`
+
+Defined in `@/components/ui/tab-view`. Base classes:
+
+```text
+relative cursor-pointer outline-none
+```
+
+**`variant`** — default `plain`
+
+| Value | Adds |
+| --- | --- |
+| `bar` | `bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 text-center leading-[normal] [font-family:inherit] text-tertiary-…` |
+| `rail` | `bl-btn flex flex-col items-center justify-center gap-[3px] rounded-panel px-1 pt-[7px] pb-1.5 text-center leading-[normal] text-tertiary-foreground transition-…` |
+| `workspace` | `group flex w-full shrink-0 justify-center data-disabled:cursor-default` |
+| `plain` (default) | `data-disabled:cursor-default` |
+
+### `tabViewIndicatorVariants`
+
+Defined in `@/components/ui/tab-view`. Base classes:
+
+```text
+pointer-events-none absolute
+```
+
+**`variant`** — default `bar`
+
+| Value | Adds |
+| --- | --- |
+| `bar` (default) | `bg-primary transition-[translate,width,height] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none` |
+| `pill` | `start-0 top-1/2 h-0 w-1 -translate-y-1/2 rounded-e-[4px] bg-foreground opacity-0 transition-[height,opacity] duration-spring-snappy ease-spring-snappy data-att…` |
+
+**`orientation`** — default `horizontal`
+
+| Value | Adds |
+| --- | --- |
+| `horizontal` (default) | — |
+| `vertical` | — |
+
+2 compound variants — see the source.
+
+### `tabViewActionVariants`
+
+Defined in `@/components/ui/tab-view`. Base classes:
+
+```text
+cursor-pointer outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring/45
+```
+
+**`variant`** — default `plain`
+
+| Value | Adds |
+| --- | --- |
+| `bar` | `bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-tertiary-foreground d…` |
+| `rail` | `bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-panel border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inhe…` |
+| `workspace` | `grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-tertiary-foreground [transition:border-radiu…` |
+| `plain` (default) | `bl-btn border-0 bg-transparent p-0 [font-family:inherit]` |

@@ -1,3 +1,4 @@
+'use client';
 import { useState } from 'react';
 import type { PencilStroke } from '@/components/ui/pencilkit/constants';
 import type { PencilStrokesChangeSource } from '@/components/ui/pencilkit/pencil-canvas';

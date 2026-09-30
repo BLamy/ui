@@ -152,7 +152,7 @@ export function WorkbenchShell({
           data-width-class={widthClass}
           data-theme-scope={scope['data-theme-scope']}
           className={cn(
-            'relative grid h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-background font-ios text-foreground antialiased',
+            'relative grid h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_auto] overflow-hidden bg-background font-sans text-foreground antialiased',
             scope.className,
             className,
           )}
@@ -275,7 +275,7 @@ export function WorkbenchTitle({ project, icon = 'folder-closed', children, clas
           <span className="text-[12.5px] text-tertiary-foreground">/</span>
         </>
       ) : null}
-      <span className="truncate text-[13px] font-[650]">{children}</span>
+      <span className="truncate text-footnote font-[650]">{children}</span>
     </div>
   );
 }
@@ -480,7 +480,7 @@ export function WorkbenchPanelTitle({ icon, className, children }: { icon?: Icon
   return (
     <div data-slot="workbench-panel-title" className={cn('mr-0.5 flex min-w-0 flex-1 items-center gap-2', className)}>
       {icon ? <Icon name={icon} size={15} sw={1.8} className="text-muted-foreground" /> : null}
-      <span className="truncate text-[13px] font-[650]">{children}</span>
+      <span className="truncate text-footnote font-[650]">{children}</span>
     </div>
   );
 }

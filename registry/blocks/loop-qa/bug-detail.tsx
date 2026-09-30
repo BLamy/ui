@@ -47,7 +47,7 @@ export function BugPage({ id }: { id: string }) {
               <SeverityMenu bug={b} />
               <KindLabel kind={b.kind} className="ml-1" />
               <EnvBadge env={b.environment} />
-              <span className="font-mono text-[12px] text-tertiary-foreground">{b.id}</span>
+              <span className="font-mono text-caption text-tertiary-foreground">{b.id}</span>
             </div>
             <h1 className="m-0 mt-3 max-w-[900px] text-[22px] leading-[29px] font-semibold tracking-[-.025em] text-balance @3xl:text-[26px]! @3xl:leading-[33px]!">{b.title}</h1>
           </div>
@@ -58,18 +58,18 @@ export function BugPage({ id }: { id: string }) {
 
               <Tabs variant="underline" defaultSelectedKey="network">
                 <TabList aria-label="Logs">
-                  <Tab id="network">Network <span className="ml-1 text-[11px] text-destructive">1 failed</span></Tab>
-                  <Tab id="console">Console <span className="ml-1 text-[11px] text-destructive">2 errors</span></Tab>
+                  <Tab id="network">Network <span className="ml-1 text-caption2 text-destructive">1 failed</span></Tab>
+                  <Tab id="console">Console <span className="ml-1 text-caption2 text-destructive">2 errors</span></Tab>
                 </TabList>
                 <TabPanel id="network" className="pt-2">
                   <LogTable>
                     {BUG_NETWORK.map((n, i) => (
                       <LogRow key={i} at={n.at} onSeek={seek} bad={n.status >= 400}>
                         <span className="w-12 shrink-0 font-mono text-[11.5px] font-semibold text-muted-foreground">{n.method}</span>
-                        <span className="min-w-0 flex-1 truncate font-mono text-[12px]">{n.path}</span>
-                        <span className={cn('w-10 shrink-0 text-right font-mono text-[12px] font-semibold', n.status >= 400 ? 'text-destructive' : 'text-success')}>{n.status}</span>
-                        <span className="hidden w-16 shrink-0 text-right text-[12px] text-muted-foreground tabular-nums @2xl:block!">{n.ms} ms</span>
-                        <span className="hidden w-16 shrink-0 text-right text-[12px] text-muted-foreground tabular-nums @2xl:block!">{n.size}</span>
+                        <span className="min-w-0 flex-1 truncate font-mono text-caption">{n.path}</span>
+                        <span className={cn('w-10 shrink-0 text-right font-mono text-caption font-semibold', n.status >= 400 ? 'text-destructive' : 'text-success')}>{n.status}</span>
+                        <span className="hidden w-16 shrink-0 text-right text-caption text-muted-foreground tabular-nums @2xl:block!">{n.ms} ms</span>
+                        <span className="hidden w-16 shrink-0 text-right text-caption text-muted-foreground tabular-nums @2xl:block!">{n.size}</span>
                       </LogRow>
                     ))}
                   </LogTable>
@@ -80,7 +80,7 @@ export function BugPage({ id }: { id: string }) {
                       <LogRow key={i} at={c.at} onSeek={seek} bad={c.level === 'error'} warn={c.level === 'warn'}>
                         <Icon name={c.level === 'error' ? 'xmark-circle-fill' : c.level === 'warn' ? 'warning-fill' : 'info'} size={14}
                           className={cn('mt-px shrink-0 self-start', c.level === 'error' ? 'text-destructive' : c.level === 'warn' ? 'text-warning' : 'text-muted-foreground')} />
-                        <span className="min-w-0 flex-1 font-mono text-[12px] leading-[18px] whitespace-pre-wrap">{c.text}</span>
+                        <span className="min-w-0 flex-1 font-mono text-caption leading-[18px] whitespace-pre-wrap">{c.text}</span>
                         <span className="hidden shrink-0 self-start font-mono text-[11.5px] text-muted-foreground @2xl:block!">{c.source}</span>
                       </LogRow>
                     ))}
@@ -96,7 +96,7 @@ export function BugPage({ id }: { id: string }) {
               <Panel title="Steps to reproduce" icon="checklist" bodyClassName="px-4 py-3">
                 <ol className="m-0 flex list-none flex-col gap-2 p-0 [counter-reset:step]">
                   {b.steps.map((s) => (
-                    <li key={s} className="flex items-baseline gap-3 text-[13.5px] [counter-increment:step] before:grid before:size-5 before:shrink-0 before:place-items-center before:rounded-full before:bg-secondary before:text-[11px] before:font-semibold before:text-muted-foreground before:content-[counter(step)]">{s}</li>
+                    <li key={s} className="flex items-baseline gap-3 text-[13.5px] [counter-increment:step] before:grid before:size-5 before:shrink-0 before:place-items-center before:rounded-full before:bg-secondary before:text-caption2 before:font-semibold before:text-muted-foreground before:content-[counter(step)]">{s}</li>
                   ))}
                 </ol>
               </Panel>
@@ -109,7 +109,7 @@ export function BugPage({ id }: { id: string }) {
                   {b.rootCause.map((s, i) => (
                     <li key={i} className="relative flex gap-4 pb-5 last:pb-0">
                       {i < b.rootCause.length - 1 ? <span className="absolute top-7 bottom-0 left-[13px] w-px bg-border" /> : null}
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full border border-border bg-card text-[12px] font-semibold">{i + 1}</span>
+                      <span className="grid size-7 shrink-0 place-items-center rounded-full border border-border bg-card text-caption font-semibold">{i + 1}</span>
                       <div className="min-w-0 flex-1 pt-0.5 text-[13.5px] leading-[21px] [&_p]:m-0"><MarkdownView markdown={s} /></div>
                     </li>
                   ))}
@@ -146,7 +146,7 @@ function SeverityMenu({ bug: b }: { bug: Bug }) {
 }
 
 function LogTable({ children }: { children: ReactNode }) {
-  return <ul className="m-0 flex list-none flex-col overflow-hidden rounded-[12px] border border-border bg-card p-0">{children}</ul>;
+  return <ul className="m-0 flex list-none flex-col overflow-hidden rounded-panel border border-border bg-card p-0">{children}</ul>;
 }
 
 function LogRow({ at, onSeek, bad, warn, children }: { at: number; onSeek: (ms: number) => void; bad?: boolean; warn?: boolean; children: ReactNode }) {
@@ -154,7 +154,7 @@ function LogRow({ at, onSeek, bad, warn, children }: { at: number; onSeek: (ms: 
     <li className={cn('border-b border-border last:border-b-0', bad ? 'bg-destructive/6' : warn ? 'bg-warning/6' : '')}>
       <Pressable onPress={() => onSeek(at)} aria-label={`Seek to ${formatReplayTime(at)}`}
         className="flex w-full cursor-pointer items-center justify-start gap-3 rounded-none px-3.5 py-2 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-100 data-focus-visible:ring-inset">
-        <span className="w-9 shrink-0 self-start pt-px text-[11px] text-tertiary-foreground tabular-nums">{formatReplayTime(at)}</span>
+        <span className="w-9 shrink-0 self-start pt-px text-caption2 text-tertiary-foreground tabular-nums">{formatReplayTime(at)}</span>
         {children}
       </Pressable>
     </li>
@@ -163,8 +163,8 @@ function LogRow({ at, onSeek, bad, warn, children }: { at: number; onSeek: (ms: 
 
 function Outcome({ label, icon, tone, children }: { label: string; icon: string; tone: string; children: ReactNode }) {
   return (
-    <div className="rounded-[14px] border border-border bg-card p-4">
-      <div className={cn('flex items-center gap-1.5 text-[12px] font-semibold', tone)}><Icon name={icon} size={14} sw={2.2} />{label}</div>
+    <div className="rounded-card border border-border bg-card p-4">
+      <div className={cn('flex items-center gap-1.5 text-caption font-semibold', tone)}><Icon name={icon} size={14} sw={2.2} />{label}</div>
       <p className="m-0 mt-1.5 text-[13.5px] leading-[20px]">{children}</p>
     </div>
   );
@@ -179,10 +179,10 @@ function Chronology({ bug: b, onSeek }: { bug: Bug; onSeek: (ms: number) => void
         {b.chronology!.map((c, i) => (
           <li key={i} className="relative flex gap-4 pb-6 last:pb-0">
             {i < b.chronology!.length - 1 ? <span className="absolute top-7 bottom-0 left-[13px] w-px bg-border" /> : null}
-            <span className={cn('grid size-7 shrink-0 place-items-center rounded-full text-[12px] font-semibold', i === b.chronology!.length - 1 ? 'bg-destructive text-white' : 'border border-border bg-card')}>{i + 1}</span>
+            <span className={cn('grid size-7 shrink-0 place-items-center rounded-full text-caption font-semibold', i === b.chronology!.length - 1 ? 'bg-destructive text-white' : 'border border-border bg-card')}>{i + 1}</span>
             <div className="flex min-w-0 flex-1 flex-col gap-3 @2xl:flex-row!">
               <Pressable onPress={() => onSeek(c.time)} aria-label={`Show ${formatReplayTime(c.time)} in the replay`}
-                className="relative w-full shrink-0 cursor-pointer overflow-hidden rounded-[10px] border border-border p-0 data-hovered:ring-2 data-hovered:ring-primary/40 @2xl:w-[200px]!">
+                className="relative w-full shrink-0 cursor-pointer overflow-hidden rounded-ctl border border-border p-0 data-hovered:ring-2 data-hovered:ring-primary/40 @2xl:w-[200px]!">
                 <ReplayPreview events={replayDemoEvents} chrome="none" controls={false} initialTime={c.time} className="pointer-events-none w-full" title={`Frame at ${formatReplayTime(c.time)}`} />
                 <span className="absolute right-1.5 bottom-1.5 rounded-md bg-foreground/80 px-1.5 py-0.5 font-mono text-[10.5px] text-background">{formatReplayTime(c.time)}.{String(Math.floor((c.time % 1000) / 100))}</span>
               </Pressable>
@@ -213,7 +213,7 @@ function Details({ bug: b, project }: { bug: Bug; project: string }) {
   const rows: [string, string, ReactNode][] = [
     ['Discovered', 'clock', <>{relativeTime(b.discovered)} <span className="text-muted-foreground">· {dateTime(b.discovered)}</span></>],
     ['Type', 'sparkle', `${b.kind}`],
-    ['Source', 'checklist', <Button key="run" variant="link" size={null} className="h-auto p-0 text-[13px]" onPress={() => qa.open({ kind: 'run', id: b.runId })}>Test run #{b.runId.slice(4)}</Button>],
+    ['Source', 'checklist', <Button key="run" variant="link" size={null} className="h-auto p-0 text-footnote" onPress={() => qa.open({ kind: 'run', id: b.runId })}>Test run #{b.runId.slice(4)}</Button>],
     ['Journey', 'network', b.journey],
     ['Project', 'folder-closed', project],
     ['Webhook', 'paperplane', tracker ? `Filed in ${tracker.name}` : 'Not sent'],
@@ -221,29 +221,29 @@ function Details({ bug: b, project }: { bug: Bug; project: string }) {
   return (
     <aside className="flex flex-col gap-3 @5xl:sticky! @5xl:top-4!">
       <div className="flex flex-col gap-2">
-        <Button className="h-9 rounded-[10px] text-[13.5px]" onPress={() => { qa.copyBugReport(b.id); setCopied(true); }}>
+        <Button className="h-9 rounded-ctl text-[13.5px]" onPress={() => { qa.copyBugReport(b.id); setCopied(true); }}>
           <Icon name={copied ? 'check' : 'copy'} size={14} sw={2.2} />{copied ? 'Copied bug report' : 'Copy bug report'}
         </Button>
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="secondary" className="h-9 rounded-[10px] text-[13px]" onPress={() => {
+          <Button variant="secondary" className="h-9 rounded-ctl text-footnote" onPress={() => {
             const url = URL.createObjectURL(new Blob([bugReport(b)], { type: 'text/markdown' }));
             Object.assign(document.createElement('a'), { href: url, download: `${b.id}.md` }).click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
           }}>
             <Icon name="download" size={14} sw={2} />Download
           </Button>
-          <Button variant="secondary" className="h-9 rounded-[10px] text-[13px]" onPress={() => qa.setDialog('tracker')}>
+          <Button variant="secondary" className="h-9 rounded-ctl text-footnote" onPress={() => qa.setDialog('tracker')}>
             <Icon name={tracker ? 'checkmark-circle' : 'link'} size={14} sw={2} className={tracker ? 'text-success' : undefined} />{tracker ? tracker.name : 'Tracker'}
           </Button>
         </div>
       </div>
-      <dl className="m-0 flex flex-col overflow-hidden rounded-[14px] border border-border bg-card">
+      <dl className="m-0 flex flex-col overflow-hidden rounded-card border border-border bg-card">
         {rows.map(([k, icon, v]) => (
           <div key={k} className="flex gap-3 border-b border-border px-3.5 py-2.5 last:border-b-0">
             <Icon name={icon} size={14} sw={2} className="mt-0.5 shrink-0 text-tertiary-foreground" />
             <div className="min-w-0 flex-1">
               <dt className="text-[11.5px] text-muted-foreground">{k}</dt>
-              <dd className="m-0 mt-0.5 text-[13px] leading-[18px]">{v}</dd>
+              <dd className="m-0 mt-0.5 text-footnote leading-[18px]">{v}</dd>
             </div>
           </div>
         ))}

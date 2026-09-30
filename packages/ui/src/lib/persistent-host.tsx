@@ -1,3 +1,4 @@
+'use client';
 import { createContext, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ComposerOutlet, type ComposerOutletProps } from '@/components/ui/composer/composer';

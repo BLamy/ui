@@ -39,7 +39,7 @@ export function ProjectPage({ project: p }: { project: Project }) {
     <>
       <SplitViewHeader title={p.name} largeTitle largeTitleClassName={wrap} leading={<Leading />} trailing={<PageActions />} />
       <SplitViewContent className="@container">
-        <div className={cn(wrap, '-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 pb-3 text-[13px] text-muted-foreground')}>
+        <div className={cn(wrap, '-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 pb-3 text-footnote text-muted-foreground')}>
           <a href={p.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-muted-foreground no-underline hover:text-foreground">
             <Icon name="globe" size={13} sw={2} />{host(p.url)}<Icon name="arrow-up-right" size={11} sw={2.2} />
           </a>
@@ -86,7 +86,7 @@ function Panel({ tab, project }: { tab: ProjectTab; project: Project }) {
 function UnderlineTab({ id, label, icon, count, alert }: { id: string; label: string; icon: string; count?: number; alert?: boolean }) {
   return (
     <TabViewTab id={id} textValue={label} className="group relative flex shrink-0 cursor-pointer items-center py-1.5 outline-none">
-      <span className="flex items-center gap-2 rounded-[8px] px-2.5 py-1.5 text-[13.5px] font-medium text-muted-foreground transition-[color,background-color] group-data-hovered:bg-secondary! group-data-hovered:text-foreground group-data-selected:text-foreground group-data-focus-visible:ring-2 group-data-focus-visible:ring-ring">
+      <span className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13.5px] font-medium text-muted-foreground transition-[color,background-color] group-data-hovered:bg-secondary! group-data-hovered:text-foreground group-data-selected:text-foreground group-data-focus-visible:ring-2 group-data-focus-visible:ring-ring">
         <Icon name={icon} size={15} sw={2} />
         <span className="whitespace-nowrap">{label}</span>
         {count != null ? <Count n={count} alert={alert} /> : null}
@@ -98,7 +98,7 @@ function UnderlineTab({ id, label, icon, count, alert }: { id: string; label: st
 
 function Count({ n, alert }: { n: number; alert?: boolean }): ReactNode {
   return (
-    <span className={cn('min-w-5 rounded-full px-1.5 text-center text-[11px] leading-[18px] font-semibold tabular-nums', alert ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground')}>
+    <span className={cn('min-w-5 rounded-full px-1.5 text-center text-caption2 leading-[18px] font-semibold tabular-nums', alert ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground')}>
       <NumberMorph value={n} />
     </span>
   );

@@ -78,7 +78,7 @@ export function ChatShell({
         data-compact={ctx.compact || undefined}
         // A `chat` theme scope: the bl-theme's team-chat palette for everything inside the shell.
         data-theme-scope={scope['data-theme-scope']}
-        className={cn('relative flex h-full w-full overflow-hidden bg-background font-ios text-foreground', scope.className, className)}
+        className={cn('relative flex h-full w-full overflow-hidden bg-background font-sans text-foreground', scope.className, className)}
         style={{ ...scope.style, ...style }}
         {...props}
       >
@@ -150,7 +150,7 @@ export function ChatShellSidebar({ className, ...props }: ComponentProps<'div'>)
   return (
     <div
       data-slot="chat-shell-sidebar"
-      className={cn('box-border flex h-full w-[222px] shrink-0 flex-col border-r border-border bg-sidebar font-ios [--ck-avatar-ring:var(--sidebar)]', className)}
+      className={cn('box-border flex h-full w-[222px] shrink-0 flex-col border-r border-border bg-sidebar font-sans [--ck-avatar-ring:var(--sidebar)]', className)}
       {...props}
     />
   );
@@ -183,7 +183,7 @@ export function ChatShellHeaderIcon({ className, children, ...props }: Component
 }
 
 export function ChatShellTitle({ className, ...props }: ComponentProps<'span'>) {
-  return <span data-slot="chat-shell-title" className={cn('min-w-0 truncate text-[14px] font-[750]', className)} {...props} />;
+  return <span data-slot="chat-shell-title" className={cn('min-w-0 truncate text-detail font-[750]', className)} {...props} />;
 }
 
 /** The channel topic; fills the space between the title and the actions. */
@@ -202,13 +202,13 @@ export function ChatShellHeaderActions({ className, ...props }: ComponentProps<'
   return <div data-slot="chat-shell-header-actions" className={cn('ms-auto flex shrink-0 items-center gap-[9px]', className)} {...props} />;
 }
 
-export const chatShellHeaderActionVariants = cva('shrink-0 cursor-pointer bg-transparent font-ios', {
+export const chatShellHeaderActionVariants = cva('shrink-0 cursor-pointer bg-transparent font-sans', {
   variants: {
     variant: {
       /** an icon button; `isActive` tints it */
       icon: 'grid border-0 p-1 text-tertiary-foreground data-hovered:text-muted-foreground data-[active]:text-primary',
       /** a small outlined text button */
-      outline: 'rounded-[8px] border border-border px-2.5 py-1 text-[11.5px] font-semibold text-muted-foreground data-hovered:bg-accent',
+      outline: 'rounded-lg border border-border px-2.5 py-1 text-[11.5px] font-semibold text-muted-foreground data-hovered:bg-accent',
     },
   },
   defaultVariants: { variant: 'icon' },
@@ -243,7 +243,7 @@ export function ChatShellBack({ className, children, ...props }: ChatShellBackPr
     <Button
       data-slot="chat-shell-back"
       className={composeRenderProps(className, (c) =>
-        cn('flex shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent py-1 pr-1.5 pl-0 font-ios text-[13px] font-[650] text-primary', c),
+        cn('flex shrink-0 cursor-pointer items-center gap-1 border-0 bg-transparent py-1 pr-1.5 pl-0 font-sans text-footnote font-[650] text-primary', c),
       )}
       {...props}
     >

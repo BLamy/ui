@@ -20,7 +20,7 @@ export function RunsTab({ project }: { project: Project }) {
         <SectionLabel count={runs.length}>Test runs</SectionLabel>
         <span className="text-[12.5px] text-muted-foreground">{project.schedule}</span>
       </div>
-      <ul className="m-0 flex list-none flex-col overflow-hidden rounded-[14px] border border-border bg-card p-0">
+      <ul className="m-0 flex list-none flex-col overflow-hidden rounded-card border border-border bg-card p-0">
         {runs.map((r) => <RunRow key={r.id} run={r} />)}
       </ul>
     </div>
@@ -41,7 +41,7 @@ function RunRow({ run: r }: { run: Run }) {
         <RunRing run={r} size={34} />
         <span className="min-w-0">
           <span className="flex items-center gap-2">
-            <span className="truncate text-[14px] font-semibold tracking-[-.01em]">{r.title}</span>
+            <span className="truncate text-detail font-semibold tracking-[-.01em]">{r.title}</span>
             <span className="hidden font-mono text-[11.5px] text-tertiary-foreground @xl:inline!">#{r.id.slice(4)}</span>
           </span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12.5px] text-muted-foreground">
@@ -105,7 +105,7 @@ export function RunCard({ runId, compact, className, footer }: { runId: string; 
   const bugs = new Set(r.journeys.flatMap((j) => j.bugIds)).size;
   const now = r.status === 'running' ? LIVE_PLAN[r.journeys.length]?.title : null;
   return (
-    <div data-run-status={r.status} className={cn('overflow-hidden rounded-[14px] border border-border bg-card', r.status === 'running' && 'shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_10%,transparent)]', className)}>
+    <div data-run-status={r.status} className={cn('overflow-hidden rounded-card border border-border bg-card', r.status === 'running' && 'shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_10%,transparent)]', className)}>
       <Pressable
         onPress={() => qa.open({ kind: 'run', id: r.id })}
         aria-label={`Open run ${r.title}`}
@@ -114,9 +114,9 @@ export function RunCard({ runId, compact, className, footer }: { runId: string; 
         <RunRing run={r} size={compact ? 38 : 46} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className={cn('truncate font-semibold tracking-[-.01em]', compact ? 'text-[13px]' : 'text-[14.5px]')}>{r.title}</span>
+            <span className={cn('truncate font-semibold tracking-[-.01em]', compact ? 'text-footnote' : 'text-[14.5px]')}>{r.title}</span>
           </span>
-          <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">
+          <span className="mt-0.5 block truncate text-caption text-muted-foreground">
             {now ? <TextMorph>{`Replaying: ${now}`}</TextMorph> : `${r.journeys.length} / ${planned} journeys · ${r.status === 'running' ? 'just now' : relativeTime(r.started)}`}
           </span>
         </span>

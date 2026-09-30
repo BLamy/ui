@@ -1,3 +1,4 @@
+'use client';
 import { useState } from 'react';
 import type { ComposerAnnotatorProps } from '@/components/ui/composer/annotator';
 import { PK_INKS, type PencilTool } from '@/components/ui/pencilkit/constants';

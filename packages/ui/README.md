@@ -1,14 +1,19 @@
 # @brett_lamy/ui
 
-Touch-first React components inspired by UIKit container patterns. Colors come from your shadcn theme (CSS variables); the iOS look ships as an optional theme. The package includes lists, navigation, adaptive split views, drawers, sheets, and a reusable jump rail — plus a team-chat scaffold (`ChatShell`, `ArtifactChatContainer`, `FloatingSheet`), an IDE workbench (`WorkbenchShell`, `Composer`, `MessageScroller`, terminal dock, surfaces, `MarkdownView`) and PencilKit drawing (`PencilCanvas`, pickers, `usePencilHistory`, on perfect-freehand).
+Touch-first React components inspired by UIKit container patterns, built on react-aria-components and Tailwind v4. Colors, radius and font come from your shadcn theme (CSS variables); the iOS look ships as an optional theme. The library has lists, navigation, adaptive split views, drawers, sheets, a reusable jump rail, the Composer (a Markdown prompt box), PencilKit drawing and the message scroller. Product-specific compositions (an IDE workbench, a team-chat shell, a map chat, …) are **blocks**, installed from the shadcn registry rather than this package.
 
 ## Install
+
+Two ways, from the same source files. The docs explain both: [Installation](https://blamy.github.io/ui/#/installation) and [Optimization](https://blamy.github.io/ui/#/optimization).
+
+- **shadcn registry (recommended for products).** `npx shadcn add https://blamy.github.io/ui/r/split-view.json` copies the source of one component and what it imports into your app (`components/ui/…`, `lib/…`), so you own the files and only ship what you use.
+- **npm.** One dependency with everything in it:
 
 ```sh
 npm i @brett_lamy/ui
 ```
 
-Import the stylesheet once — and, for the iOS palette, the bl-theme (it sets shadcn's CSS variables; leave it out to use your own shadcn theme). `BLProvider` picks light/dark and a tint for a subtree:
+Import the stylesheet once — and, for the iOS palette, the bl-theme (it sets shadcn's CSS variables; leave it out to use your own shadcn theme). `BLProvider` picks light/dark and a tint for a subtree, and `ThemeScope` scopes any set of variables to a subtree:
 
 ```css
 @import '@brett_lamy/ui/styles.css';
@@ -26,6 +31,8 @@ export function App() {
   );
 }
 ```
+
+The package is ESM with one output module per source module (`sideEffects` is limited to CSS), so bundlers drop what you don't import; component modules start with `'use client'` for Next.js.
 
 React 18 and 19 are supported peer dependencies.
 

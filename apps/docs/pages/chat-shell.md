@@ -1,45 +1,41 @@
 # ChatShell
 
-Chat layouts, from parts. `ChatShell` is a thin layout root — it measures its own width, owns the compact navigation drawer, and applies the chat palette — and every region inside it is an ordinary component you place yourself. Leave out what a layout doesn't need: a DM view has no rail, a support widget has no navigation at all.
+Chat layouts, from parts. `ChatShell` is a thin layout root — it measures its own width, owns the compact navigation drawer, and opens the `chat` theme scope — and every region inside it is an ordinary component you place yourself. Leave out what a layout doesn't need: a DM view has no rail, a support widget has no navigation at all.
 
-{% tabs title="Installation" sync="install" %}
-{% tab title="npm" %}
-{% command %}npm install @brett_lamy/ui{% endcommand %}
+## Installation
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+`ChatShell` and its regions are parts of the **discord-clone** [block](https://blamy.github.io/ui/#/blocks), not the library: the shell is the layout of one product, so it is copied into your app, where it is yours to change. Adding the block also copies the library parts it is built from (AdaptivePane, SideDrawer, TabView, Composer, …).
 
-```tsx
-import '@brett_lamy/ui/styles.css'
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/discord-clone.json{% endcommand %}
 
-import {
-  ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain,
-  ChatShellHeader, ChatShellTitle, ChatShellFooter,
-} from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/chat-shell.json{% endcommand %}
-
-Adds `@/components/ui/chat-shell.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
+The shell lands in `components/blocks/discord-clone/components/chat-shell.tsx` (context in `chat-shell-context.ts`), with the chat palette in `chat-theme.css` next to the block. Import from your alias:
 
 ```tsx
 import {
   ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain,
   ChatShellHeader, ChatShellTitle, ChatShellFooter,
-} from '@/components/ui/chat-shell'
+} from '@/components/blocks/discord-clone/components/chat-shell'
+import { useChatShell } from '@/components/blocks/discord-clone/components/chat-shell-context'
 ```
-{% endtab %}
-{% endtabs %}
+
+The block's `page.tsx` imports `chat-theme.css`, which defines the `chat` [theme scope](https://blamy.github.io/ui/#/theming) the shell opens. If you render the shell without that page, import the stylesheet once yourself.
 
 ```tsx
 import {
   ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader,
   ChatShellNavTrigger, ChatShellHeaderIcon, ChatShellTitle, ChatShellFooter,
   ChatShellAside, ChatShellPanel,
+} from '@/components/blocks/discord-clone/components/chat-shell'
+import {
   TabView, TabViewBar, TabViewList, TabViewTab, TabViewIndicator,
-  SidebarHeader, SidebarContent, SidebarSection, SidebarItem, Icon,
+} from '@/components/ui/tab-view'
+import {
+  SidebarHeader, SidebarContent, SidebarSection, SidebarItem,
+} from '@/components/ui/sidebar'
+import { Icon } from '@/lib/icon'
+import {
   Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
-} from '@brett_lamy/ui'
+} from '@/components/ui/composer/composer'
 
 export function Chat() {
   const [channel, setChannel] = useState('general')
@@ -91,7 +87,7 @@ export function Chat() {
 }
 ```
 
-The regions hold whatever you give them. The Discord-style parts — channel list with thread rows, messages with reactions and thread previews, member list, typing indicator, the one-line composer — belong to the **discord-clone** block below: `npx shadcn add` copies them into your app (`components/blocks/discord-clone/components/*`), where they are yours to change.
+The regions hold whatever you give them. The Discord-style parts — channel list with thread rows, messages with reactions and thread previews, member list, typing indicator, the one-line composer — are more block files next to the shell (`components/blocks/discord-clone/components/*`), also yours to change.
 
 ## Live example
 
@@ -107,7 +103,7 @@ The full Discord layout is a registry block — `npx shadcn add` copies `page.ts
 
 | Part | What it is |
 | --- | --- |
-| `ChatShell` | Root. Measures itself (`breakpoint`, default 880), holds the compact drawer (`defaultNavOpen` / `navOpen` / `onNavOpenChange`), applies `--ck-*` tokens for `appearance` (default: the ambient `AppearanceProvider`, else dark) and the `tint` accent. |
+| `ChatShell` | Root. Measures itself (`breakpoint`, default 880), holds the compact drawer (`defaultNavOpen` / `navOpen` / `onNavOpenChange`), opens the `chat` theme scope for `appearance` (default: the ambient `AppearanceProvider`, else dark) and the `tint` accent. |
 | `ChatShellNav` | Rail + sidebar. A docked column when wide; one left drawer over a scrim when compact. |
 | `ChatShellNavTrigger` | The hamburger that opens the drawer. Renders nothing while the navigation is docked. |
 | `ChatShellSidebar` | The 222px channel column (a header, the channel list, the signed-in user). |

@@ -1,3 +1,4 @@
+'use client';
 import type { ComponentProps } from 'react';
 import {
   Dialog as AriaDialog, type DialogProps as AriaDialogProps,
@@ -27,10 +28,10 @@ export const sheetVariants = cva(
   {
     variants: {
       side: {
-        bottom: 'inset-x-0 bottom-0 max-h-[calc(100%-48px)] rounded-t-[14px] pb-[max(12px,env(safe-area-inset-bottom))] data-entering:animate-bl-sheet-in-bottom data-exiting:animate-bl-sheet-out-bottom',
-        top: 'inset-x-0 top-0 max-h-[calc(100%-48px)] rounded-b-[14px] pt-(--bl-safe-top) data-entering:animate-bl-sheet-in-top data-exiting:animate-bl-sheet-out-top',
-        left: 'inset-y-0 left-0 w-[85%] max-w-[360px] rounded-r-[14px] data-entering:animate-bl-sheet-in-left data-exiting:animate-bl-sheet-out-left',
-        right: 'inset-y-0 right-0 w-[85%] max-w-[360px] rounded-l-[14px] data-entering:animate-bl-sheet-in-right data-exiting:animate-bl-sheet-out-right',
+        bottom: 'inset-x-0 bottom-0 max-h-[calc(100%-48px)] rounded-t-card pb-[max(12px,env(safe-area-inset-bottom))] data-entering:animate-bl-sheet-in-bottom data-exiting:animate-bl-sheet-out-bottom',
+        top: 'inset-x-0 top-0 max-h-[calc(100%-48px)] rounded-b-card pt-(--bl-safe-top) data-entering:animate-bl-sheet-in-top data-exiting:animate-bl-sheet-out-top',
+        left: 'inset-y-0 left-0 w-[85%] max-w-[360px] rounded-r-card data-entering:animate-bl-sheet-in-left data-exiting:animate-bl-sheet-out-left',
+        right: 'inset-y-0 right-0 w-[85%] max-w-[360px] rounded-l-card data-entering:animate-bl-sheet-in-right data-exiting:animate-bl-sheet-out-right',
       },
     },
     defaultVariants: { side: 'bottom' },

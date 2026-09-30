@@ -14,7 +14,7 @@ import { Rail } from './rail';
 const WORKSPACES = ['Codex', 'Loop QA', 'Personal'];
 
 /* A selected chat is a soft wash, not the tint. */
-const ROW = 'min-h-9 py-1 text-[14px] data-[selected]:bg-secondary data-[selected]:text-foreground';
+const ROW = 'min-h-9 py-1 text-detail data-[selected]:bg-secondary data-[selected]:text-foreground';
 
 /** What a thread is doing, at the end of its row: still working, or a branch / pull request open. */
 function Status({ status }: { status: Chat['status'] }) {
@@ -23,7 +23,7 @@ function Status({ status }: { status: Chat['status'] }) {
   return null;
 }
 
-const Label = ({ children }: { children: ReactNode }) => <div className="px-2.5 pt-4 pb-1 text-[13px] text-tertiary-foreground">{children}</div>;
+const Label = ({ children }: { children: ReactNode }) => <div className="px-2.5 pt-4 pb-1 text-footnote text-tertiary-foreground">{children}</div>;
 
 /** The icon rail beside the chat list. With `inbox`: New chat, dot's own chat, Priority (chats with replies waiting) and
     the rest. Without: Projects — folders of threads — and Recents. */
@@ -40,7 +40,7 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
     <SplitViewItem key={c.id} id={c.id} variant="pill" className={cn(ROW, nested && 'pl-8!')} onPress={pick(c)}>
       {c.kind === 'dot' && !nested && <DotOrb size={16} />}
       <span className="min-w-0 flex-1 truncate">{c.title}</span>
-      {c.unread > 0 && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">{c.unread}</span>}
+      {c.unread > 0 && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-caption2 font-semibold text-primary-foreground">{c.unread}</span>}
       <Status status={c.status} />
     </SplitViewItem>
   );
@@ -52,7 +52,7 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
   const withInbox = (
     <>
       <SplitViewSection title="Priority" collapsible defaultExpanded>
-        {priority.length ? priority.map((c) => row(c)) : <div className="px-2.5 py-1.5 text-[13px] text-tertiary-foreground">Nothing needs attention</div>}
+        {priority.length ? priority.map((c) => row(c)) : <div className="px-2.5 py-1.5 text-footnote text-tertiary-foreground">Nothing needs attention</div>}
       </SplitViewSection>
       <SplitViewSection title="Chats" collapsible defaultExpanded>
         {[...dots, ...threads].filter((c) => !waiting.has(c.id)).map((c) => row(c))}
@@ -70,13 +70,13 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
         const shown = all.has(p) ? list : list.slice(0, 5);
         return (
           <div key={p}>
-            <Button variant="ghost" aria-expanded={expanded} onPress={() => setOpen((o) => toggle(o, p))} className="h-9 w-full justify-start gap-2.5 rounded-[10px] px-2.5 text-[14px] font-normal">
+            <Button variant="ghost" aria-expanded={expanded} onPress={() => setOpen((o) => toggle(o, p))} className="h-9 w-full justify-start gap-2.5 rounded-ctl px-2.5 text-detail font-normal">
               <Icon name={expanded ? 'folder-fill' : 'folder'} size={16} className="text-muted-foreground" />
               {p}
             </Button>
             {expanded && shown.map((c) => row(c, true))}
             {expanded && list.length > shown.length && (
-              <Button variant="ghost" onPress={() => setAll((a) => toggle(a, p))} className="h-8 w-full justify-start rounded-[10px] pl-8! text-[14px] font-normal text-tertiary-foreground">
+              <Button variant="ghost" onPress={() => setAll((a) => toggle(a, p))} className="h-8 w-full justify-start rounded-ctl pl-8! text-detail font-normal text-tertiary-foreground">
                 Show more
               </Button>
             )}
@@ -101,7 +101,7 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
             title={s.collapsed ? 'Chats' : undefined}
             leading={
               <DropdownMenu>
-                <Button variant="ghost" aria-label="Workspace" className="h-8 gap-1 rounded-lg px-2 text-[16px] font-semibold data-hovered:bg-secondary">
+                <Button variant="ghost" aria-label="Workspace" className="h-8 gap-1 rounded-lg px-2 text-callout font-semibold data-hovered:bg-secondary">
                   {workspace}
                   <Icon name="chevron-down" size={12} sw={2.4} className="text-muted-foreground" />
                 </Button>
@@ -123,7 +123,7 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
           />
           <SplitViewContent>
             <div className="px-2 pb-6">
-              <Button variant="ghost" onPress={() => { codex.newChat(); s.show('supplementary'); }} className="h-9 w-full justify-start gap-2.5 rounded-[10px] px-2.5 text-[14px] font-normal">
+              <Button variant="ghost" onPress={() => { codex.newChat(); s.show('supplementary'); }} className="h-9 w-full justify-start gap-2.5 rounded-ctl px-2.5 text-detail font-normal">
                 <Icon name="compose" size={16} className="text-muted-foreground" />
                 New chat
               </Button>

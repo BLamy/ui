@@ -1,3 +1,4 @@
+'use client';
 import {
   Children, createContext, isValidElement, useContext, useLayoutEffect, useReducer, useRef, useState,
   type CSSProperties, type HTMLAttributes, type ReactNode, type Ref,
@@ -223,8 +224,8 @@ export function TabViewList<T extends object>({ className, ...props }: AriaTabLi
 export const tabViewTabVariants = cva('relative cursor-pointer outline-none', {
   variants: {
     variant: {
-      bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 text-center leading-[normal] [font-family:inherit] text-tertiary-foreground transition-[color] duration-spring-snappy ease-spring-snappy data-selected:text-primary data-focus-visible:rounded-[12px] data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset',
-      rail: 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-[12px] px-1 pt-[7px] pb-1.5 text-center leading-[normal] text-tertiary-foreground transition-[color,background-color] duration-spring-snappy ease-spring-snappy data-hovered:bg-secondary/60 data-hovered:text-muted-foreground data-pressed:bg-secondary data-selected:bg-primary/12 data-selected:text-primary data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
+      bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 text-center leading-[normal] [font-family:inherit] text-tertiary-foreground transition-[color] duration-spring-snappy ease-spring-snappy data-selected:text-primary data-focus-visible:rounded-panel data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-focus-visible:ring-inset',
+      rail: 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-panel px-1 pt-[7px] pb-1.5 text-center leading-[normal] text-tertiary-foreground transition-[color,background-color] duration-spring-snappy ease-spring-snappy data-hovered:bg-secondary/60 data-hovered:text-muted-foreground data-pressed:bg-secondary data-selected:bg-primary/12 data-selected:text-primary data-focus-visible:ring-2 data-focus-visible:ring-ring/45 data-disabled:cursor-default data-disabled:opacity-40',
       /** A full-width row that centers its tile; the tile styles itself from the tab's state (`group-data-*`). */
       workspace: 'group flex w-full shrink-0 justify-center data-disabled:cursor-default',
       plain: 'data-disabled:cursor-default',
@@ -350,7 +351,7 @@ export const tabViewActionVariants = cva('cursor-pointer outline-none data-focus
   variants: {
     variant: {
       bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-tertiary-foreground data-pressed:opacity-60',
-      rail: 'bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-[12px] border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inherit] text-tertiary-foreground data-hovered:bg-secondary/60 data-pressed:bg-secondary',
+      rail: 'bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-panel border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inherit] text-tertiary-foreground data-hovered:bg-secondary/60 data-pressed:bg-secondary',
       /** A dashed tile ("Add workspace") that rounds its corners on hover and dips on press. */
       workspace: 'grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-tertiary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:rounded-[11px] data-hovered:text-muted-foreground data-pressed:scale-[.94] motion-reduce:transition-none',
       plain: 'bl-btn border-0 bg-transparent p-0 [font-family:inherit]',

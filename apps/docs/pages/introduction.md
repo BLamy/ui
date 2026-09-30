@@ -2,16 +2,16 @@
 
 BL UI brings Cocoa Touch-style composition to a typed React package. Containers own adaptive behavior; applications own state and data. The same component trees work in full pages, resizable panes, and compact device layouts.
 
-## Package and demos
+## What it is
 
-BL UI is one package, `@brett_lamy/ui`: every component, container and shell, and PencilKit drawing.
+BL UI is a generic component library in the shadcn style, with an iOS accent, plus a set of **blocks** that show how the parts compose. The parts are React Aria Components styled with Tailwind v4 and [cva](https://blamy.github.io/ui/#/styling); colors, radius, type and shadows come from CSS variables you own ([Theming](https://blamy.github.io/ui/#/theming)).
 
-| Area | Runnable demo |
+| Layer | What is in it |
 | --- | --- |
-| Containers | Contacts: NavigationStack, SplitView, lists, A-Z/custom IndexBar, tabs, Credenza, SideDrawer |
-| Chat | Team chat: workspace rail, channel navigation, messages, composer, thread views |
-| Workbench | IDE scaffold: threads, MessageScroller, terminal dock/sheet, surface panel, MarkdownView |
-| PencilKit | Pressure-aware drawing, and the Composer's image annotator |
+| Library | Primitives (Button, Dialog, Select, Tabs, …), iOS containers (NavigationStack, SplitView, TabView, Credenza, SideDrawer, Sidebar, List, CommandMenu, Toast, Morph), Icon, motion, the theme, the Composer, PencilKit, MarkdownEditor, MessageScroller and more |
+| Blocks | Whole apps composed from the library, with the product-specific parts (a chat shell, a workbench, a tile map, sample data) kept in the block: Mail, Notes, Reminders, Discord, GitHub, T3 Code, … |
+
+Take it one of two ways, from the same source: **copy the source you need** with the shadcn registry (recommended, and the tree-shaking mechanism: you own only what you add), or **install everything** as `@brett_lamy/ui`. [Installation](https://blamy.github.io/ui/#/installation) has both, and [How the registry works](https://blamy.github.io/ui/#/registry) explains the first.
 
 The full Contacts composition is interactive here:
 
@@ -39,7 +39,15 @@ Twenty-odd lines of composition: a `TabView` with a bar, a `NavigationStack` ins
 
 ## Atomic design
 
-The docs follow the same tiers as Storybook. **Atoms** and **molecules** are the smallest reusable pieces, **organisms** are self-contained regions such as a Sidebar or NavigationStack, and **templates** compose organisms into responsive shells. Every template is built from the organisms and molecules documented here, so a shell that does not fit can be recomposed from its parts.
+The docs follow the same tiers as Storybook. **Atoms** and **molecules** are the smallest reusable pieces, **organisms** are self-contained regions such as a Sidebar or NavigationStack, and **templates** compose organisms into responsive shells. The shells that belong to one product (the Discord-style `ChatShell`, the T3-style `WorkbenchShell`) live in [blocks](https://blamy.github.io/ui/#/blocks), documented under **Block parts**; every one is built from the organisms and molecules documented here, so a shell that does not fit can be recomposed from its parts.
+
+## Where to go next
+
+- [Installation](https://blamy.github.io/ui/#/installation): the registry (copy source) or npm, for Vite and Next.js.
+- [Styling and variants](https://blamy.github.io/ui/#/styling): every component is a cva recipe you can reuse and extend.
+- [Theming](https://blamy.github.io/ui/#/theming): variables, tokens and scopes.
+- [Blocks](https://blamy.github.io/ui/#/blocks): whole apps to read, run and copy.
+- [Working with LLMs](https://blamy.github.io/ui/#/working-with-llms): prompts for a coding agent.
 
 ## Principles
 

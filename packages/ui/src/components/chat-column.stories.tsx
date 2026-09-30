@@ -33,7 +33,7 @@ type Story = StoryObj<typeof ChatColumn>;
     scope (as ArtifactChatContainer docks it). */
 export const Default: Story = {
   render: () => (
-    <div className="relative isolate flex h-[560px] w-[400px] min-h-0 min-w-0 overflow-hidden rounded-[18px] bg-background font-ios text-foreground">
+    <div className="relative isolate flex h-[560px] w-[400px] min-h-0 min-w-0 overflow-hidden rounded-[18px] bg-background font-sans text-foreground">
       <ChatColumn className="flex-1">
         <ChatColumnTranscript>
           <ThemeScope scope="chat" appearance="dark" className="box-border flex h-full flex-col justify-end gap-3.5 bg-background p-[18px] text-foreground">

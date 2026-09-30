@@ -3,6 +3,17 @@
 A floating surface that grows from a resting card into the full page along a single drag. It fills its positioned host as a pointer-transparent layer, so a map, canvas, or scrolling page stays usable around it. The same component is translucent glass over a map, an opaque card inside a gutter, or a system-style sheet docked to the bottom edge; `FloatingChat` and the floating layout of [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) are both built on it.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/floating-sheet.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  FloatingSheet, useFloatingSheet,
+} from '@/components/ui/floating-sheet'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,17 +23,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { FloatingSheet, useFloatingSheet } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/floating-sheet.json{% endcommand %}
-
-Adds `@/components/ui/floating-sheet.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  FloatingSheet, useFloatingSheet,
-} from '@/components/ui/floating-sheet'
 ```
 {% endtab %}
 {% endtabs %}
@@ -128,3 +128,60 @@ The cap is a real button with `aria-expanded` and `aria-controls` pointing at th
 
 - `FloatingChat` — a `FloatingSheet` whose body is a transcript (`bodyAlign="end"`) and whose foot is a composer.
 - [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) — floats a `FloatingChat` over the artifact below its breakpoint. Its **Delivery tracking** example is a docked `FloatingSheet` over a map.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `floatingSheetSurfaceVariants`
+
+Defined in `@/components/ui/floating-sheet`. Base classes:
+
+```text
+surfaceBase
+```
+
+**`appearance`** — default `glass`
+
+| Value | Adds |
+| --- | --- |
+| `glass` (default) | `border-[color:rgba(var(--ck-sheet-line),var(--ck-sheet-border-alpha,.12))] bg-[color:rgba(var(--ck-sheet-surface),var(--ck-sheet-bg-alpha,.28))] bg-[linear-gra…` |
+| `sheet` | `border-[color:rgba(var(--ck-sheet-line),calc(var(--ck-sheet-border-alpha,.12)_*_.5))] bg-card [box-shadow:0_-1px_0_rgba(var(--ck-sheet-line),.04),0_2px_10px_co…` |
+
+**`placement`** — default `resting`
+
+| Value | Adds |
+| --- | --- |
+| `resting` (default) | `[transform:translateX(-50%)]` |
+| `hidden` | `[transform:translate(-50%,calc(100%_+_44px))]` |
+| `top-left` | `top-[var(--ck-sheet-gutter,20px)] right-auto bottom-auto left-[var(--ck-sheet-gutter,20px)] [transform:none]` |
+| `top-center` | `top-[var(--ck-sheet-gutter,20px)] right-auto bottom-auto left-1/2 [transform:translateX(-50%)]` |
+| `top-right` | `top-[var(--ck-sheet-gutter,20px)] right-[var(--ck-sheet-gutter,20px)] bottom-auto left-auto [transform:none]` |
+| `center-left` | `top-1/2 right-auto bottom-auto left-[var(--ck-sheet-gutter,20px)] [transform:translateY(-50%)]` |
+| `center-right` | `top-1/2 right-[var(--ck-sheet-gutter,20px)] bottom-auto left-auto [transform:translateY(-50%)]` |
+| `bottom-left` | `top-auto right-auto bottom-[var(--ck-sheet-gutter,20px)] left-[var(--ck-sheet-gutter,20px)] [transform:none]` |
+| `bottom-center` | `top-auto right-auto bottom-[max(var(--ck-sheet-gutter,20px),20px)] left-1/2 [transform:translateX(-50%)]` |
+| `bottom-right` | `top-auto right-[var(--ck-sheet-gutter,20px)] bottom-[var(--ck-sheet-gutter,20px)] left-auto [transform:none]` |
+
+**`hidden`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `pointer-events-none opacity-0` |
+| `false` (default) | — |
+
+### `floatingSheetVariants`
+
+Defined in `@/components/ui/floating-sheet`. Base classes:
+
+```text
+ck-floating-sheet pointer-events-none absolute inset-0 z-40 text-foreground [font-family:var(--bl-font,-apple-system,BlinkMacSystemFont,"SF_Pro_Text",sans-serif)]
+```
+
+**`tone`** — default `auto`
+
+| Value | Adds |
+| --- | --- |
+| `auto` (default) | `[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]` |
+| `dark` | `[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]` |
+| `light` | `[--ck-sheet-line:0,0,0] [--ck-sheet-surface:250,250,252]` |

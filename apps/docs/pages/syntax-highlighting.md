@@ -3,6 +3,18 @@
 Code blocks and inline code highlighted by [gpu-lexer](https://gpu-lexer.vercel.app/), a tiny WebGPU model that splits source into words, whitespace and symbols and labels each piece from its local and whole-file context. It needs no grammar or language setting (75+ languages, including mixed HTML, Vue and Svelte), and one lexer on one GPU device serves every block on the page.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/syntax-highlighting.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import {
+  SyntaxHighlighting, SyntaxHighlightingHeader,
+  SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,
+} from '@/components/ui/syntax-highlighting'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -15,18 +27,6 @@ import {
   SyntaxHighlighting, SyntaxHighlightingHeader,
   SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,
 } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/syntax-highlighting.json{% endcommand %}
-
-Adds `@/components/ui/syntax-highlighting.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import {
-  SyntaxHighlighting, SyntaxHighlightingHeader,
-  SyntaxHighlightingTitle, SyntaxHighlightingCopyButton,
-} from '@/components/ui/syntax-highlighting'
 ```
 {% endtab %}
 {% endtabs %}
@@ -170,3 +170,23 @@ Tests should wait for `pending` to go away before taking a screenshot. In headle
 ## Accessibility
 
 Blocks are real `<pre><code>` elements. The `<pre>` is focusable, so keyboard users can scroll it, and it is named by `title` (or the language). Line numbers and diff signs are CSS-generated and hidden from assistive tech, so they are neither read aloud nor copied. The copy button is a labelled react-aria `Button` whose label changes to "Copied", with a polite status message.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `syntaxHighlightingVariants`
+
+Defined in `@/components/ui/syntax-highlighting`. Base classes:
+
+```text
+bl-syntax
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `bl-syntax-card` |
+| `ghost` | `bl-syntax-ghost` |
+| `inline` | `bl-syntax-inline` |

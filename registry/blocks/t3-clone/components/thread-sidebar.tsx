@@ -165,7 +165,7 @@ export interface ThreadGroupProps {
 export function ThreadGroup({ label, collapsible, defaultOpen = true, open: openProp, onOpenChange, className, children }: ThreadGroupProps) {
   const [ownOpen, setOwnOpen] = useState(defaultOpen);
   const open = openProp ?? ownOpen;
-  const labelEl = <span className="text-[11px] font-semibold tracking-[.4px] text-tertiary-foreground">{label}</span>;
+  const labelEl = <span className="text-caption2 font-semibold tracking-[.4px] text-tertiary-foreground">{label}</span>;
   const line = <span className="h-px flex-1 bg-border" />;
   return (
     <div data-slot="thread-group" role="group" className={className}>
@@ -226,7 +226,7 @@ export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left'
       data-slot="thread-item"
       data-status={status}
       aria-current={active ? 'page' : undefined}
-      className={cn(rowBtn, 'box-border w-full px-2 py-1.5 text-[13px] text-foreground', active ? 'bg-secondary-strong' : 'bg-transparent', className)}
+      className={cn(rowBtn, 'box-border w-full px-2 py-1.5 text-footnote text-foreground', active ? 'bg-secondary-strong' : 'bg-transparent', className)}
       onPress={() => {
         onPress?.();
         close();
@@ -296,7 +296,7 @@ export function SidebarFooterItem({ icon, onPress, className, children }: { icon
   return (
     <Button
       data-slot="sidebar-footer-item"
-      className={cn(rowBtn, 'w-full bg-transparent px-2 py-[7px] text-[13px] text-muted-foreground', className)}
+      className={cn(rowBtn, 'w-full bg-transparent px-2 py-[7px] text-footnote text-muted-foreground', className)}
       onPress={() => onPress?.()}
     >
       <Icon name={icon} size={16} sw={1.7} />
@@ -331,12 +331,12 @@ export function SidebarUser({ name, detail, avatar, onPress, className }: Sideba
       {avatar ? (
         <img src={avatar} alt="" className="size-7 shrink-0 rounded-full object-cover" />
       ) : (
-        <span className={cn(brandTile, 'grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white')}>
+        <span className={cn(brandTile, 'grid size-7 shrink-0 place-items-center rounded-full text-caption2 font-bold text-white')}>
           {initials}
         </span>
       )}
       <span className="grid min-w-0 flex-1 leading-tight">
-        <span className="truncate text-[13px] font-semibold text-foreground">{name}</span>
+        <span className="truncate text-footnote font-semibold text-foreground">{name}</span>
         {detail != null ? <span className="truncate text-[11.5px] text-tertiary-foreground">{detail}</span> : null}
       </span>
       <Icon name="chevron-down-wide" size={13} sw={2.2} className="text-tertiary-foreground" />

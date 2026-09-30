@@ -61,7 +61,7 @@ export default function LoopQA({ appearance, initialProject, initialTab, initial
     <AppearanceProvider value={mode}>
       <BLProvider tint={LOOP_TINT[mode]} style={LOOP_THEME[mode]} className="min-h-0 bg-background">
         <LoopQAProvider value={qa}>
-          <div ref={ref} data-slot="loop-qa" className="relative flex h-full min-h-0 w-full bg-background text-[14px] text-foreground">
+          <div ref={ref} data-slot="loop-qa" className="relative flex h-full min-h-0 w-full bg-background text-detail text-foreground">
             <ArtifactChatContainer
               layout={dock && qa.askOpen ? 'split' : 'floating'}
               chatSide="right"

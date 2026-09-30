@@ -23,7 +23,7 @@ export function TerminalDock({ threadKey, workspace }: { threadKey: string; work
                   <Tab
                     key={t.id}
                     id={t.id}
-                    className="cursor-pointer rounded-md px-2 py-0.5 text-[12px] font-semibold text-tertiary-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:text-muted-foreground data-selected:bg-secondary data-selected:text-foreground"
+                    className="cursor-pointer rounded-md px-2 py-0.5 text-caption font-semibold text-tertiary-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:text-muted-foreground data-selected:bg-secondary data-selected:text-foreground"
                   >
                     {t.title}
                   </Tab>

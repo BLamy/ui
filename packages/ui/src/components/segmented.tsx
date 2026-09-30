@@ -1,3 +1,4 @@
+'use client';
 import type { CSSProperties, ReactNode } from 'react';
 import { Radio, RadioGroup, SelectionIndicator, SelectionIndicatorContext } from 'react-aria-components';
 import { cn } from '@/lib/utils';
@@ -38,7 +39,7 @@ export function Segmented({ options, value, onChange, className, style, ...rest 
         <Radio
           key={o.id}
           value={o.id}
-          className="bl-btn relative flex flex-1 cursor-pointer items-center justify-center rounded-[7px] px-3 py-[5px] text-[13px] font-semibold whitespace-nowrap text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring"
+          className="bl-btn relative flex flex-1 cursor-pointer items-center justify-center rounded-[7px] px-3 py-[5px] text-footnote font-semibold whitespace-nowrap text-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring"
         >
           {/* react-aria's Radio doesn't feed SelectionIndicator (only RadioField does), so say which one is selected. */}
           <SelectionIndicatorContext.Provider value={{ isSelected: o.id === value }}>

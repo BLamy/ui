@@ -29,7 +29,7 @@ export function TestsTab({ project }: { project: Project }) {
   const test = PLAYWRIGHT_TESTS.find((t) => t.id === selected)!;
   return (
     <div ref={ref} className={cn('grid gap-4', wide && 'grid-cols-[minmax(280px,340px)_1fr]')}>
-      <ul className="m-0 flex list-none flex-col self-start overflow-hidden rounded-[14px] border border-border bg-card p-0" aria-label="Playwright tests">
+      <ul className="m-0 flex list-none flex-col self-start overflow-hidden rounded-card border border-border bg-card p-0" aria-label="Playwright tests">
         {PLAYWRIGHT_TESTS.map((t) => (
           <li key={t.id} className="border-b border-border last:border-b-0">
             <Pressable aria-current={wide && t.id === selected ? 'true' : undefined}
@@ -64,7 +64,7 @@ export function TestSource({ test: t }: { test: PlaywrightTest }) {
           </Button>
         ) : null}
       </div>
-      <SyntaxHighlighting code={t.code} language="ts" className="overflow-hidden rounded-[14px] border border-border">
+      <SyntaxHighlighting code={t.code} language="ts" className="overflow-hidden rounded-card border border-border">
         <SyntaxHighlightingHeader>
           <SyntaxHighlightingTitle>{t.file}</SyntaxHighlightingTitle>
           <SyntaxHighlightingCopyButton label={`Copy ${t.file}`} />
@@ -83,7 +83,7 @@ export function TestPage({ id }: { id: string }) {
       <SplitViewHeader title={t?.name ?? 'Test'} titleOnScroll trailing={<PageActions run={false} />} />
       <SplitViewContent className="@container">
         <div className="mx-auto w-full max-w-[980px] px-5 py-4">
-          <h2 className="m-0 mb-3 text-[20px] leading-6 font-semibold tracking-[-.02em]">{t?.name}</h2>
+          <h2 className="m-0 mb-3 text-title leading-6 font-semibold tracking-[-.02em]">{t?.name}</h2>
           {t ? <TestSource test={t} /> : null}
         </div>
       </SplitViewContent>

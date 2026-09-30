@@ -41,7 +41,7 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
         {/* Positioned against the row body (which starts where the text does). */}
         {on ? (
           <motion.span layoutId="mail-selection" transition={springs.snappy} aria-hidden="true"
-            className="absolute inset-y-[2px] -right-2 -left-6 rounded-[10px] bg-primary" />
+            className="absolute inset-y-[2px] -right-2 -left-6 rounded-ctl bg-primary" />
         ) : null}
         <span aria-hidden="true" className={cn('absolute top-4 right-full flex flex-col items-center gap-[7px]', mail.editing ? 'w-5' : 'w-7')}>
           <span className={cn('size-[10px] rounded-full transition-[scale,opacity] duration-spring-snappy ease-spring-bouncy',
@@ -51,12 +51,12 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
         <span className={cn('relative block py-0.5 whitespace-normal', on && 'text-primary-foreground')}>
           <span className="sr-only">{m.unread ? 'Unread, ' : ''}{m.flagged ? 'Flagged, ' : ''}</span>
           <span className="flex items-center gap-1.5">
-            <span className="min-w-0 flex-1 truncate text-[16px] leading-[1.3] font-semibold tracking-[-.2px]">{m.from.name}</span>
+            <span className="min-w-0 flex-1 truncate text-callout leading-[1.3] font-semibold tracking-[-.2px]">{m.from.name}</span>
             {m.attachments?.length ? <Icon name="paperclip" size={14} weight="medium" className={on ? 'opacity-80' : 'text-muted-foreground'} /> : null}
-            <span className={cn('shrink-0 text-[14px] tabular-nums', on ? 'opacity-85' : 'text-muted-foreground')}>{relativeTime(m.date)}</span>
+            <span className={cn('shrink-0 text-detail tabular-nums', on ? 'opacity-85' : 'text-muted-foreground')}>{relativeTime(m.date)}</span>
             {chevron ? <Icon name="chevron-right" size={13} sw={2.6} className="text-tertiary-foreground" /> : null}
           </span>
-          <span className="block truncate text-[15px] leading-[1.35]">{m.subject}</span>
+          <span className="block truncate text-subhead leading-[1.35]">{m.subject}</span>
           <span className={cn('line-clamp-2 text-[14.5px] leading-[1.35]', on ? 'opacity-80' : 'text-muted-foreground')}>{preview(m)}</span>
         </span>
         <span aria-hidden="true" className={cn('absolute -right-4 bottom-0 left-0 h-px bg-border', on && 'opacity-0')} />
@@ -89,8 +89,8 @@ export function MessageList({ mail, onOpen }: { mail: MailState; onOpen: (id: st
       </LayoutGroup>
       {mail.list.length === 0 ? (
         <div className="px-6 pt-16 text-center">
-          <div className="text-[20px] font-semibold">{mail.query ? 'No Results' : 'No Mail'}</div>
-          <div className="mt-1 text-[14px] text-muted-foreground">
+          <div className="text-title font-semibold">{mail.query ? 'No Results' : 'No Mail'}</div>
+          <div className="mt-1 text-detail text-muted-foreground">
             {mail.query ? `No messages match “${mail.query}”.` : mail.unreadOnly ? 'You’ve read everything here.' : 'This mailbox is empty.'}
           </div>
         </div>

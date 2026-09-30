@@ -105,7 +105,7 @@ export function ProgressStepper({
               className={
                 labels
                   ? cn(
-                      'max-w-full truncate text-[11px] font-semibold',
+                      'max-w-full truncate text-caption2 font-semibold',
                       state === 'active' ? 'text-foreground' : 'text-muted-foreground',
                     )
                   : 'sr-only'

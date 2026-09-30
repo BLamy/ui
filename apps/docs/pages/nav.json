@@ -7,6 +7,10 @@
         { "id": "installation", "title": "Installation" },
         { "id": "working-with-llms", "title": "Working with LLMs" },
         { "id": "theming", "title": "Theming" },
+        { "id": "registry", "title": "How the registry works" },
+        { "id": "optimization", "title": "Optimization" },
+        { "id": "styling", "title": "Styling and variants" },
+        { "id": "variants", "title": "Variants reference" },
         { "id": "motion", "title": "Motion" }
       ]
     },

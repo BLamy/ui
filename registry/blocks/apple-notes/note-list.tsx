@@ -28,7 +28,7 @@ function NoteRow({ notes, n, selected, inset, first, last, isEdge, onOpen }: {
   const showFolder = !!notes.folder.match || !!notes.tag || !!notes.query;
   return (
     <ListRow divider={false} isEdge={isEdge} onPress={() => onOpen(n.id)}
-      className={cn(inset ? cn(first && 'rounded-t-[12px]', last && 'rounded-b-[12px]') : PLAIN)}
+      className={cn(inset ? cn(first && 'rounded-t-panel', last && 'rounded-b-panel') : PLAIN)}
       // Index 0 is the outermost action: the one a long swipe fires.
       leadingActions={n.folder === 'deleted' ? undefined : [{
         label: n.pinned ? 'Unpin' : 'Pin', icon: n.pinned ? 'pushpin-slash' : 'pushpin-fill', tint: 'var(--warning, oklch(0.769 0.165 70.1))', onAction: () => notes.togglePin(n.id),
@@ -47,7 +47,7 @@ function NoteRow({ notes, n, selected, inset, first, last, isEdge, onOpen }: {
         ) : null}
         <span className={cn('relative block py-[3px]', selected && 'text-primary-foreground')}>
           <span className="block truncate text-[15.5px] leading-[1.35] font-semibold tracking-[-.15px]">{title(n)}</span>
-          <span className="flex gap-2 text-[14px] leading-[1.35]">
+          <span className="flex gap-2 text-detail leading-[1.35]">
             <span className={cn('shrink-0 font-medium', selected ? 'opacity-90' : 'text-foreground/80')}>{shortDate(n.updated)}</span>
             <span className={cn('min-w-0 truncate', selected ? 'opacity-75' : 'text-muted-foreground')}>{notes.isLocked(n) ? 'Locked' : snippet(n)}</span>
           </span>
@@ -63,7 +63,7 @@ function NoteRow({ notes, n, selected, inset, first, last, isEdge, onOpen }: {
 }
 
 const Header = ({ children, inset }: { children: ReactNode; inset?: boolean }) => (
-  <h2 className={cn('m-0', inset ? 'px-1 pt-5 pb-2 text-[20px] font-bold tracking-[-.3px]' : 'px-5 pt-4 pb-1.5 text-[13px] font-semibold text-muted-foreground')}>{children}</h2>
+  <h2 className={cn('m-0', inset ? 'px-1 pt-5 pb-2 text-title font-bold tracking-[-.3px]' : 'px-5 pt-4 pb-1.5 text-footnote font-semibold text-muted-foreground')}>{children}</h2>
 );
 
 function Empty({ notes }: { notes: NotesState }) {
@@ -71,7 +71,7 @@ function Empty({ notes }: { notes: NotesState }) {
     <div className="px-6 pt-20 text-center">
       <div className="mb-2 grid place-items-center text-tertiary-foreground"><Icon name="note" size={44} sw={1.3} /></div>
       <div className="text-[18px] font-semibold text-muted-foreground">{notes.query ? 'No Results' : 'No Notes'}</div>
-      {notes.query ? <div className="mt-1 text-[14px] text-tertiary-foreground">Nothing matches “{notes.query}”.</div> : null}
+      {notes.query ? <div className="mt-1 text-detail text-tertiary-foreground">Nothing matches “{notes.query}”.</div> : null}
     </div>
   );
 }
@@ -118,7 +118,7 @@ function Thumbnail({ n, locked }: { n: Note; locked: boolean }) {
     <div className="flex flex-col gap-[3px] text-[8.5px] leading-[1.3] text-foreground">
       {lines.map((l, i) => {
         const task = /^[-*]\s+\[([ x])\]\s*(.*)$/.exec(l);
-        if (i === 0) return <div key={i} className="truncate text-[11px] font-bold">{l.replace(/^#+\s*/, '')}</div>;
+        if (i === 0) return <div key={i} className="truncate text-caption2 font-bold">{l.replace(/^#+\s*/, '')}</div>;
         if (/^#+\s/.test(l)) return <div key={i} className="truncate pt-[2px] text-[9.5px] font-bold">{l.replace(/^#+\s*/, '')}</div>;
         if (task) return (
           <div key={i} className="flex items-center gap-[4px] truncate">
@@ -154,13 +154,13 @@ export function NoteGallery({ notes, onOpen, selected }: { notes: NotesState; on
                     exit={{ opacity: 0, scale: 0.9 }} transition={springs.smooth} data-note-card=""
                     onClick={() => onOpen(n.id)}
                     className="bl-btn flex min-w-0 cursor-pointer flex-col items-center gap-1 border-0 bg-transparent p-0 [font-family:inherit] text-foreground">
-                    <span className={cn('block aspect-[4/3.3] w-full overflow-hidden rounded-[10px] bg-card p-2.5 text-left',
+                    <span className={cn('block aspect-[4/3.3] w-full overflow-hidden rounded-ctl bg-card p-2.5 text-left',
                       'shadow-[0_1px_3px_black] ring-1 shadow-black/6 ring-border transition-shadow duration-200',
                       on && 'shadow-none ring-3 ring-primary')}>
                       <Thumbnail n={n} locked={notes.isLocked(n)} />
                     </span>
-                    <span className="mt-1 w-full truncate text-center text-[13px] font-semibold">{title(n)}</span>
-                    <span className="-mt-0.5 text-[12px] text-muted-foreground">{shortDate(n.updated)}</span>
+                    <span className="mt-1 w-full truncate text-center text-footnote font-semibold">{title(n)}</span>
+                    <span className="-mt-0.5 text-caption text-muted-foreground">{shortDate(n.updated)}</span>
                   </motion.button>
                 );
               })}

@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -1113,7 +1114,7 @@ export function ComposerText({
   ...props
 }: React.HTMLAttributes<HTMLSpanElement> & { icon?: IconName | (string & {}) }) {
   return (
-    <span data-slot="composer-text" className={cn('flex min-w-0 items-center gap-[7px] text-[12px] text-muted-foreground', className)} {...props}>
+    <span data-slot="composer-text" className={cn('flex min-w-0 items-center gap-[7px] text-caption text-muted-foreground', className)} {...props}>
       {icon ? <Icon name={icon} size={13.5} sw={1.9} /> : null}
       {children}
     </span>
@@ -1122,7 +1123,7 @@ export function ComposerText({
 
 /* ── Buttons ── */
 export const composerButtonVariants = cva(
-  cn(pressable, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-ios outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60'),
+  cn(pressable, 'flex shrink-0 cursor-pointer items-center justify-center border-0 font-sans outline-none data-disabled:cursor-default data-disabled:opacity-35 data-focus-visible:ring-2 data-focus-visible:ring-primary/60'),
   {
     variants: {
       variant: {
@@ -1200,7 +1201,7 @@ export interface ComposerSelectProps {
 }
 
 export const composerMenuItemVariants = cva(
-  'relative flex cursor-pointer items-center gap-2 rounded-[8px] px-2.5 py-[7px] text-[13px] text-foreground outline-none data-focused:bg-secondary data-pressed:bg-secondary-strong data-disabled:cursor-default data-disabled:opacity-40',
+  'relative flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-[7px] text-footnote text-foreground outline-none data-focused:bg-secondary data-pressed:bg-secondary-strong data-disabled:cursor-default data-disabled:opacity-40',
 );
 
 export function ComposerMenuItem({ className, children, ...props }: MenuItemProps & { className?: string; children?: React.ReactNode }) {
@@ -1378,7 +1379,7 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', className, ..
       onPress={stopping ? stop : send}
       className={cn(
         pressable,
-        'relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-ios text-white outline-none data-disabled:cursor-default data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
+        'relative flex size-[30px] shrink-0 cursor-pointer items-center justify-center overflow-visible rounded-[50%] border-0 p-0 font-sans text-white outline-none data-disabled:cursor-default data-focus-visible:ring-2 data-focus-visible:ring-primary/60',
         '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
         !stopping ? 'bg-primary data-disabled:opacity-35' : stopVariant === 'solid' ? 'bg-destructive' : 'bg-transparent text-foreground',
         className,
@@ -1582,7 +1583,7 @@ function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttach
       </span>
       <span className="flex min-w-0 flex-col gap-px">
         <span className="truncate text-[12.5px] leading-[16px] font-medium text-foreground">{a.name}</span>
-        <span className="truncate text-[11px] leading-[14px] text-muted-foreground">{attachmentMeta(a, kind)}</span>
+        <span className="truncate text-caption2 leading-[14px] text-muted-foreground">{attachmentMeta(a, kind)}</span>
       </span>
     </span>
   );
@@ -1655,7 +1656,7 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                           aria-label={`${canAnnotate ? 'Annotate' : 'Preview'} ${a.name}`}
                           // The thumbnail sits in a dark well in either appearance: a `terminal` theme scope.
                           data-theme-scope={TERMINAL_WELL['data-theme-scope']}
-                          className={cn(TERMINAL_WELL.className, 'block cursor-pointer overflow-hidden rounded-[10px] border border-border bg-background p-0')}
+                          className={cn(TERMINAL_WELL.className, 'block cursor-pointer overflow-hidden rounded-ctl border border-border bg-background p-0')}
                         >
                           {a.src ? (
                             <img src={a.src} alt={a.name} className="block h-[58px] max-w-[130px] object-cover" />
@@ -1680,7 +1681,7 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                         onKeyDown={onTileKey(a.id)}
                         title={`${a.name}${meta ? ` · ${meta}` : ''}`}
                         aria-label={`Open ${a.name}${meta ? `, ${meta}` : ''}`}
-                        className="block cursor-pointer overflow-hidden rounded-[10px] border border-border bg-secondary p-0 font-ios outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60"
+                        className="block cursor-pointer overflow-hidden rounded-ctl border border-border bg-secondary p-0 font-sans outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary/60"
                       >
                         <FileTileFace a={a} kind={kind} />
                       </Button>
@@ -1832,7 +1833,7 @@ export function ComposerInput({
 }
 
 /* ── Bumps ── */
-export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-col text-[12px] text-muted-foreground', {
+export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-col text-caption text-muted-foreground', {
   variants: {
     side: {
       top: 'order-[-1]',
@@ -1850,8 +1851,8 @@ export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-c
   compoundVariants: [
     // The top bump slides 12px under the card; its content sits above the tuck.
     // No z-index of their own (not a stacking context), so a control flying in can cross over the card.
-    { side: 'top', variant: 'attached', className: 'mx-(--bump-inset) -mb-3 rounded-t-[14px] border-b-0 pb-3' },
-    { side: 'bottom', variant: 'attached', className: 'mx-(--bump-inset) -mt-3 rounded-b-[14px] border-t-0 pt-3' },
+    { side: 'top', variant: 'attached', className: 'mx-(--bump-inset) -mb-3 rounded-t-card border-b-0 pb-3' },
+    { side: 'bottom', variant: 'attached', className: 'mx-(--bump-inset) -mt-3 rounded-b-card border-t-0 pt-3' },
     { side: 'top', variant: 'detached', className: 'mx-2 mb-1.5' },
     { side: 'bottom', variant: 'detached', className: 'mx-2 mt-1.5' },
     { side: 'top', variant: 'flush', className: 'mb-1.5' },
@@ -2123,7 +2124,7 @@ export function ComposerBumpHandle({ grip = true, label, className, children, ..
           aria-label={name}
           aria-expanded={bump.open}
           aria-controls={bump.contentId}
-          className="absolute top-0 left-1/2 z-1 grid h-3 w-16 -translate-x-1/2 touch-none cursor-[inherit] place-items-center border-0 bg-transparent p-0 outline-none focus-visible:rounded-[4px] focus-visible:outline-2 focus-visible:outline-primary"
+          className="absolute top-0 left-1/2 z-1 grid h-3 w-16 -translate-x-1/2 touch-none cursor-[inherit] place-items-center border-0 bg-transparent p-0 outline-none focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-primary"
         >
           <span
             className={cn(
@@ -2325,7 +2326,7 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
     <Button
       onPress={onPress}
       className={cn(
-        'cursor-pointer rounded-[9px] px-3.5 py-[7px] font-ios text-[12.5px] font-[650] text-white',
+        'cursor-pointer rounded-[9px] px-3.5 py-[7px] font-sans text-[12.5px] font-[650] text-white',
         primary ? 'border-0 bg-primary' : 'border border-white/20 bg-transparent',
       )}
     >
@@ -2337,7 +2338,7 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
   const layout = (surface: ComposerAnnotatorSurface | null) => (
     <>
       <div ref={chromeRef} className="flex items-center gap-2">
-        <span className="flex-1 font-ios text-[13px] font-[650] text-foreground">
+        <span className="flex-1 font-sans text-footnote font-[650] text-foreground">
           {surface ? (surface.title ?? 'Annotate — strokes flatten into the image on save') : 'Preview'}
         </span>
         {surface ? (
@@ -2352,7 +2353,7 @@ export function AnnotateLightbox({ src, onClose, onSave, canvas, annotator: anno
       <div
         ref={boxRef}
         data-slot="annotate-lightbox-image"
-        className="relative origin-center self-center overflow-hidden rounded-[14px] border border-white/14 bg-code will-change-transform"
+        className="relative origin-center self-center overflow-hidden rounded-card border border-white/14 bg-code will-change-transform"
       >
         <img ref={imgRef} src={src} alt="" className="block h-auto max-h-[68vh] w-auto max-w-[86vw] min-w-[min(340px,86vw)]" />
         {surface?.canvas}

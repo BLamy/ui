@@ -1,3 +1,4 @@
+'use client';
 import type { ReactNode } from 'react';
 import {
   Button,
@@ -25,7 +26,7 @@ export const disclosureGroupVariants = cva('flex flex-col', {
       /** Rows separated by hairlines, no container. */
       default: '',
       /** iOS inset-grouped card. */
-      inset: 'overflow-hidden rounded-[12px] bg-card px-4',
+      inset: 'overflow-hidden rounded-panel bg-card px-4',
     },
   },
   defaultVariants: { variant: 'default' },
@@ -48,7 +49,7 @@ export function Disclosure({ className, ...props }: AriaDisclosureProps) {
     <AriaDisclosure
       data-slot="disclosure"
       className={composeRenderProps(className, (cls) =>
-        cn('group/disclosure relative text-foreground not-last:shadow-[inset_0_-1px_0_var(--border)]', cls))}
+        cn('group/disclosure relative text-foreground not-last:shadow-hairline-b', cls))}
       {...props}
     />
   );
@@ -68,7 +69,7 @@ export function DisclosureTrigger({ className, children, level = 3 }: Disclosure
         slot="trigger"
         data-slot="disclosure-trigger"
         className={composeRenderProps(className, (cls) => cn(
-          'bl-btn box-border flex min-h-11 flex-1 cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-0 py-[11px] text-left [font-family:inherit] text-[17px] leading-[22px] font-normal text-foreground outline-none',
+          'bl-btn box-border flex min-h-11 flex-1 cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-0 py-[11px] text-left [font-family:inherit] text-body leading-[22px] font-normal text-foreground outline-none',
           'rounded-md data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 data-pressed:opacity-60 data-disabled:cursor-default data-disabled:opacity-40',
           cls,
         ))}
@@ -90,7 +91,7 @@ export function DisclosurePanel({ className, children, ...props }: AriaDisclosur
     <AriaDisclosurePanel
       data-slot="disclosure-panel"
       className={composeRenderProps(className, (cls) => cn(
-        'h-(--disclosure-panel-height) overflow-clip text-[15px] leading-[20px] text-muted-foreground transition-[height] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
+        'h-(--disclosure-panel-height) overflow-clip text-subhead leading-[20px] text-muted-foreground transition-[height] duration-spring-tray ease-spring-tray motion-reduce:transition-none',
         cls,
       ))}
       {...props}

@@ -1,3 +1,4 @@
+'use client';
 import {
   use, useEffect, useLayoutEffect, useRef, useState,
   type CSSProperties, type ReactNode,
@@ -246,7 +247,7 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
         <div ref={rowRef} className={cn('flex h-toolbar w-full items-center transition-opacity duration-spring-snappy ease-spring-snappy', hid ? 'opacity-0' : 'opacity-100')}>
           <div className="relative z-1 flex min-w-[44px] items-center">
             {hasBack
-              ? <AriaButton className="bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary"
+              ? <AriaButton className="bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-body text-primary"
                   aria-label={bk.mode === 'none' ? 'Back' : undefined}
                   onPress={rootBack ? rootBack.onPress : nav.canPop ? nav.pop : undefined}>
                   <Icon name="chevL" size={24} sw={2.4} />
@@ -258,13 +259,13 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
               : (sc.leading || null)}
             {hasBack ? (
               // Off-screen rulers for the full previous title and for "Back".
-              <span aria-hidden="true" className="pointer-events-none invisible absolute top-0 left-0 flex text-[17px] whitespace-nowrap">
+              <span aria-hidden="true" className="pointer-events-none invisible absolute top-0 left-0 flex text-body whitespace-nowrap">
                 <span ref={measFull}>{backTitle}</span><span ref={measBack}>Back</span>
               </span>
             ) : null}
           </div>
           <div ref={(e) => { titleRef.current = e; reg(sc.key, { inline: e }); }} className={cn(
-            'pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-[17px] font-semibold text-foreground transition-opacity duration-spring-snappy ease-spring-snappy',
+            'pointer-events-none absolute left-1/2 max-w-[52%] -translate-x-1/2 truncate text-body font-semibold text-foreground transition-opacity duration-spring-snappy ease-spring-snappy',
             showTitle ? 'opacity-100' : 'opacity-0',
           )}>{sc.title}</div>
           <div className="relative z-1 ml-auto flex items-center">{sc.trailing || null}</div>

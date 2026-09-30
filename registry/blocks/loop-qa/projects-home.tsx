@@ -33,7 +33,7 @@ export function ProjectsHome() {
       <SplitViewHeader title="Projects" largeTitle largeTitleClassName="mx-auto w-full max-w-[1180px] px-5 @3xl:px-8!" leading={<Leading />} trailing={<PageActions run={false} />} />
       <SplitViewContent className="@container">
         <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-5 pb-12 @3xl:px-8!">
-          <p className="-mt-1 m-0 text-[14px] text-muted-foreground">Every app Loop QA is testing — what it found and when it last looked.</p>
+          <p className="-mt-1 m-0 text-detail text-muted-foreground">Every app Loop QA is testing — what it found and when it last looked.</p>
 
           <div className="grid grid-cols-2 gap-3 @4xl:grid-cols-4!">
             <StatTile label="Open bugs" icon="exclamation-circle" value={open.length} foot={`${counts.critical} critical · ${counts.high} high`}>
@@ -115,8 +115,8 @@ function ProjectCard({ project: p }: { project: Project }) {
         <div className="mt-auto flex items-end justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[20px] leading-6 font-semibold tracking-[-.02em] tabular-nums"><NumberMorph value={open.length} /></span>
-              <span className="text-[12px] text-muted-foreground">open {open.length === 1 ? 'bug' : 'bugs'}</span>
+              <span className="text-title leading-6 font-semibold tracking-[-.02em] tabular-nums"><NumberMorph value={open.length} /></span>
+              <span className="text-caption text-muted-foreground">open {open.length === 1 ? 'bug' : 'bugs'}</span>
             </div>
             <SeverityBar counts={counts} className="mt-2 w-[120px]" />
           </div>

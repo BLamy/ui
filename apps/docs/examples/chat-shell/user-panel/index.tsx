@@ -37,7 +37,7 @@ export default function Me() {
       <ChatShell style={{ height: 240 }}>
         <ChatShellSidebar className="w-full border-r-0">
           <SidebarHeader>
-            <div className="px-[9px] font-ios text-[14px] font-bold text-foreground">
+            <div className="px-[9px] font-sans text-[14px] font-bold text-foreground">
               BL UI HQ
             </div>
           </SidebarHeader>

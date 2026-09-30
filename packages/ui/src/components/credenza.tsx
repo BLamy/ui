@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { Icon } from '@/lib/icon';

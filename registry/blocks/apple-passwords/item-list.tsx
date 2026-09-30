@@ -18,12 +18,12 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
       <SplitViewHeader title={categoryTitle(category)} leading={<SplitViewToggle />}
         trailing={canAdd ? (
           <button type="button" aria-label="New password" onClick={() => onAdd()}
-            className="bl-btn grid size-9 cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent text-primary transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
+            className="bl-btn grid size-9 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-primary transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">
             <Icon name="plus" size={21} weight="semibold" />
           </button>
         ) : null} />
       <div className="px-3 pt-2.5 pb-2">
-        <SearchField value={query} onChange={onQuery} placeholder={`Search ${categoryTitle(category)}`} className="py-[6px] [&_input]:text-[15px]" />
+        <SearchField value={query} onChange={onQuery} placeholder={`Search ${categoryTitle(category)}`} className="py-[6px] [&_input]:text-subhead" />
       </div>
       <SplitViewContent>
         {total === 0 ? (
@@ -32,7 +32,7 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
             description={query ? `Nothing matches “${query}”.` : category === 'deleted' ? 'Deleted passwords stay here for 30 days.' : undefined} />
         ) : sections.map((s) => (
           <section key={s.title ?? 'items'} aria-label={s.title}>
-            {s.title ? <div className="px-4 pt-3 pb-1 text-[13px] font-semibold text-muted-foreground">{s.title}</div> : null}
+            {s.title ? <div className="px-4 pt-3 pb-1 text-footnote font-semibold text-muted-foreground">{s.title}</div> : null}
             {s.items.map((e) => <Row key={e.id} entry={e} category={category} now={now} />)}
           </section>
         ))}
@@ -58,7 +58,7 @@ function Row({ entry: e, category, now }: { entry: Entry; category: Selection; n
           <span className="truncate text-[15.5px] font-medium leading-[1.3]">{e.title}</span>
           {a?.group && category === 'all' ? <Icon name="people" size={14} className="text-muted-foreground" /> : null}
         </span>
-        <span className={cn('mt-px block truncate text-[13px]', e.severity && e.kind === 'account' && category === 'security' ? '' : 'text-muted-foreground')}
+        <span className={cn('mt-px block truncate text-footnote', e.severity && e.kind === 'account' && category === 'security' ? '' : 'text-muted-foreground')}
           style={e.severity && category === 'security' ? { color: SEVERITY[e.severity].ink } : undefined}>
           {e.kind === 'deleted' ? a!.deleted : e.subtitle}
         </span>

@@ -12,9 +12,9 @@ export const skeletonVariants = cva(
     variants: {
       shape: {
         /** 10px corners — cards, buttons, blocks. */
-        default: 'rounded-[10px]',
+        default: 'rounded-ctl',
         /** Same as default, named for symmetry with `rect`. */
-        rounded: 'rounded-[10px]',
+        rounded: 'rounded-ctl',
         /** Near-square corners — media, thumbnails, table cells. */
         rect: 'rounded-[3px]',
         /** One line of body text: 14px tall, fully rounded. */

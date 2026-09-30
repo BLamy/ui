@@ -142,7 +142,7 @@ export function TerminalHeader({ title = 'zsh', children, className, style }: Te
   return (
     <div data-slot="terminal-header" className={cn('flex shrink-0 items-center gap-1 border-b border-border py-[5px] pr-2 pl-3.5', className)} style={style}>
       <Icon name="terminal" size={14} sw={1.8} className="text-tertiary-foreground" />
-      <span className="ml-1 text-[12px] font-semibold text-muted-foreground">{title}</span>
+      <span className="ml-1 text-caption font-semibold text-muted-foreground">{title}</span>
       <span className="flex-1" />
       {children}
     </div>

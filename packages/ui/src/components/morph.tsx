@@ -1,3 +1,4 @@
+'use client';
 import {
   Children, createContext, forwardRef, isValidElement, useContext, useMemo, useRef,
   type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode,

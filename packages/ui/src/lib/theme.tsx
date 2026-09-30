@@ -1,3 +1,4 @@
+'use client';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
 import { cn, BARH } from '@/lib/utils';
@@ -177,7 +178,7 @@ export function BLProvider({ dark: darkProp, tint, safeTop, children, className,
       ref={setRoot}
       data-slot="bl-provider"
       className={cn(
-        'relative h-full w-full overflow-hidden bg-muted font-ios text-foreground select-none transition-[background] duration-spring-smooth ease-spring-smooth',
+        'relative h-full w-full overflow-hidden bg-muted font-sans text-foreground select-none transition-[background] duration-spring-smooth ease-spring-smooth',
         themeScopeClass(dark === undefined ? undefined : dark ? 'dark' : 'light'),
         className,
       )}

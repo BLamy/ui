@@ -3,6 +3,15 @@
 A Markdown field on the `@brett_lamy/docstream-editor` WYSIWYG editor. It reads and writes the same GitBook-flavored Markdown that [MarkdownView](https://blamy.github.io/ui/#/docstream) renders, so what you type is what readers get. Type `/` for blocks, paste Markdown to get structure, and paste or drop images as inline image blocks or as attachment chips.
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/markdown-editor.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { MarkdownEditor } from '@/components/ui/markdown-editor'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -12,15 +21,6 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 import '@brett_lamy/ui/styles.css'
 
 import { MarkdownEditor } from '@brett_lamy/ui'
-```
-{% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/markdown-editor.json{% endcommand %}
-
-Adds `@/components/ui/markdown-editor.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import { MarkdownEditor } from '@/components/ui/markdown-editor'
 ```
 {% endtab %}
 {% endtabs %}
@@ -131,3 +131,31 @@ The Docstream editor's stylesheet ships inside `@brett_lamy/ui/styles.css` in a 
 ```
 
 Descendant variants on `className` work too (`[&_.ProseMirror_h2]:text-[21px]`). Don't import `@brett_lamy/docstream-editor/styles.css` yourself: an unlayered copy outranks every layer, and you'd be back to `!important`.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `markdownEditorVariants`
+
+Defined in `@/components/ui/markdown-editor`. Base classes:
+
+```text
+[ 'bl-mde group/mde relative box-border flex w-full min-w-0 flex-col text-left [font-family:inherit] text-foreground', 'transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy', 'data-disabled:cursor-not-allowed data-disabled:opacity-50', ]
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `rounded-ctl bg-input focus-within:bg-transparent focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-readonly:focus-within:bg-input data-readonly:focus…` |
+| `ghost` | `rounded-none bg-transparent` |
+| `card` | `rounded-card bg-card shadow-[0_0_0_1px_var(--border),0_1px_2px_--alpha(black/4%)] focus-within:shadow-[0_0_0_1.5px_var(--primary),0_1px_2px_--alpha(black/4%)] …` |
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `bl-mde-sm` |
+| `default` (default) | `bl-mde-md` |
+| `lg` | `bl-mde-lg` |

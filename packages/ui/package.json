@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/ui",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -47,7 +47,7 @@
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19"
   },
-  "description": "iOS-flavored React components \u2014 containers, lists, tokens, plus the workbench (composer, chat, terminal, surfaces), team-chat shells and PencilKit drawing (react-aria base, shadcn conventions)",
+  "description": "iOS-flavored React components on react-aria-components, Tailwind v4 and cva — containers, lists, tokens, Composer, PencilKit. Also a shadcn registry (source-copy items and app blocks).",
   "license": "MIT",
   "sideEffects": [
     "*.css"

@@ -1,8 +1,17 @@
 # AdaptivePane
 
-One region, four presentations. A shell measures itself and picks a mode; the pane renders the same children as a docked column, an [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer), a cover over the host, or nothing. It is the building block behind [ChatShell](https://blamy.github.io/ui/#/chat-shell)'s navigation and [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell)'s sidebar and surface panel.
+One region, four presentations. A shell measures itself and picks a mode; the pane renders the same children as a docked column, an [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer), a cover over the host, or nothing. It is the building block behind the navigation of [ChatShell](https://blamy.github.io/ui/#/chat-shell) and the sidebar and surface panel of [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell), the shells that ship in the `discord-clone` and `t3-clone` [blocks](https://blamy.github.io/ui/#/blocks).
 
 {% tabs title="Installation" sync="install" %}
+{% tab title="shadcn CLI" %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/adaptive-pane.json{% endcommand %}
+
+Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+
+```tsx
+import { AdaptivePane } from '@/components/ui/adaptive-pane'
+```
+{% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
@@ -14,19 +23,11 @@ import '@brett_lamy/ui/styles.css'
 import { AdaptivePane } from '@brett_lamy/ui'
 ```
 {% endtab %}
-{% tab title="shadcn CLI" %}
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/adaptive-pane.json{% endcommand %}
-
-Adds `@/components/ui/adaptive-pane.tsx`, installs `@brett_lamy/ui`, and wires its stylesheet and tokens into your CSS. Import from your alias:
-
-```tsx
-import { AdaptivePane } from '@/components/ui/adaptive-pane'
-```
-{% endtab %}
 {% endtabs %}
 
 ```tsx
-import { AdaptivePane, useContainerWidth } from '@brett_lamy/ui'
+import { AdaptivePane } from '@/components/ui/adaptive-pane'
+import { useContainerWidth } from '@/lib/container'
 
 function Shell({ nav, children }) {
   const [ref, width] = useContainerWidth()
@@ -62,7 +63,7 @@ function Shell({ nav, children }) {
 
 ## Container utilities
 
-The templates share two more primitives, exported from `@brett_lamy/ui`:
+The shells share two more primitives, in `@/lib/container` (`@brett_lamy/ui` on npm):
 
 | Export | Role |
 | --- | --- |

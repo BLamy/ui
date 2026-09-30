@@ -83,7 +83,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
 
         {deleted ? (
           <Card className="flex flex-col gap-3 p-4">
-            <div className="text-[14px] text-muted-foreground">
+            <div className="text-detail text-muted-foreground">
               Recently deleted passwords can be recovered for 30 days. After that, they’re permanently removed from all your devices.
             </div>
             <div className="flex gap-2">
@@ -129,7 +129,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             </Field>
           ) : edit ? (
             <Field label="Verification Code" last>
-              <button type="button" className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[15px] text-primary">Set Up Verification Code…</button>
+              <button type="button" className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Set Up Verification Code…</button>
             </Field>
           ) : null}
         </Card>
@@ -155,7 +155,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             {edit ? (
               <Field label="" last>
                 <button type="button" onClick={() => setDraft({ ...draft, websites: [...draft.websites, ''] })}
-                  className="bl-btn inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-[15px] text-primary">
+                  className="bl-btn inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">
                   <span className="grid size-5 place-items-center rounded-full bg-success text-white"><Icon name="plus" size={13} sw={3} /></span>
                   Add Website
                 </button>
@@ -170,7 +170,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
               <Textarea aria-label="Notes" size="sm" value={draft.notes ?? ''} placeholder="Add Notes"
                 onChange={(e) => setDraft({ ...draft, notes: e.target.value })} className="bg-transparent" />
             ) : (
-              <div className={cn('text-[15px] whitespace-pre-wrap select-text', !a.notes && 'text-tertiary-foreground')}>{a.notes || 'No notes'}</div>
+              <div className={cn('text-subhead whitespace-pre-wrap select-text', !a.notes && 'text-tertiary-foreground')}>{a.notes || 'No notes'}</div>
             )}
           </Card>
         </Section>
@@ -203,7 +203,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section aria-label={title} className="flex flex-col gap-1.5">
-      <h3 className="m-0 px-4 text-[13px] font-semibold text-muted-foreground @md:px-1">{title}</h3>
+      <h3 className="m-0 px-4 text-footnote font-semibold text-muted-foreground @md:px-1">{title}</h3>
       {children}
     </section>
   );
@@ -212,7 +212,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 function InlineInput({ label, value, onChange, mono }: { label: string; value: string; onChange: (v: string) => void; mono?: boolean }) {
   return (
     <Input aria-label={label} size="sm" value={value} onChange={(e) => onChange(e.target.value)}
-      className={cn('-my-1 h-8 bg-secondary px-2 text-[15px]', mono && 'font-mono')} />
+      className={cn('-my-1 h-8 bg-secondary px-2 text-subhead', mono && 'font-mono')} />
   );
 }
 
@@ -222,11 +222,11 @@ function IssueCard({ account: a }: { account: Account }) {
     <Card className="flex gap-3 p-4" >
       <Icon name="warning-fill" size={26} style={{ color: s.color }} className="mt-0.5" />
       <div className="min-w-0 flex-1">
-        <div className="text-[15px] font-semibold">{a.issue!.kind}</div>
+        <div className="text-subhead font-semibold">{a.issue!.kind}</div>
         <div className="mt-1 text-[13.5px] leading-[1.45] text-muted-foreground">{a.issue!.detail}</div>
         <Button size="sm" className="mt-3">Change Password on {a.websites[0]}</Button>
       </div>
-      <span className="h-fit shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tracking-[.3px] uppercase"
+      <span className="h-fit shrink-0 rounded-full px-2 py-0.5 text-caption2 font-bold tracking-[.3px] uppercase"
         style={{ color: s.badge, background: `color-mix(in oklab, ${s.color} 16%, transparent)` }}>
         {a.issue!.severity}
       </span>
@@ -255,7 +255,7 @@ function WifiDetail({ network: n }: { network: WifiNetwork }) {
         <Card>
           <button type="button" aria-expanded={qr}
             onClick={() => setQr((v) => !v)}
-            className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3.5 text-left [font-family:inherit] text-[15px] text-primary">
+            className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-4 py-3.5 text-left [font-family:inherit] text-subhead text-primary">
             <Icon name="qrcode" size={20} />
             <span className="flex-1">{qr ? 'Hide Network QR Code' : 'Show Network QR Code'}</span>
             <Icon name="chevron-right" size={15} weight="bold" className={cn('text-tertiary-foreground transition-transform duration-spring-snappy ease-spring-snappy', qr && 'rotate-90')} />
@@ -263,10 +263,10 @@ function WifiDetail({ network: n }: { network: WifiNetwork }) {
           <AnimatedHeight>
             {qr ? (
               <div className="flex flex-col items-center gap-3 px-4 pt-1 pb-5 text-center">
-                <div className="rounded-[18px] bg-white p-4 text-black shadow-[0_0_0_.5px_black] shadow-black/12">
+                <div className="rounded-sheet bg-white p-4 text-black shadow-[0_0_0_.5px_black] shadow-black/12">
                   <QRSvg seed={`WIFI:S:${n.ssid};T:WPA;P:${n.password};;`} size={184} />
                 </div>
-                <div className="max-w-[300px] text-[13px] text-muted-foreground">
+                <div className="max-w-[300px] text-footnote text-muted-foreground">
                   Point another device’s camera at this code to join “{n.ssid}”.
                 </div>
               </div>

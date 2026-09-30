@@ -1,3 +1,4 @@
+'use client';
 import {
   createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode,
 } from 'react';
@@ -283,7 +284,7 @@ export const toastVariants = cva(
   {
     variants: {
       variant: {
-        hud: 'flex items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_8px_30px_black] shadow-black/25 backdrop-blur-xl backdrop-saturate-150',
+        hud: 'flex items-center gap-2 rounded-full bg-[rgba(30,30,32,.86)] px-4 py-2.5 text-detail font-semibold text-white shadow-[0_8px_30px_black] shadow-black/25 backdrop-blur-xl backdrop-saturate-150',
         banner: 'flex w-[min(360px,calc(100vw-32px))] items-start gap-3 rounded-2xl bg-card px-3.5 py-3 text-foreground shadow-[0_10px_34px_--alpha(black/16%),0_0_0_.5px_var(--border)]',
       },
     },
@@ -355,7 +356,7 @@ function ToastItem({ toast: t, state, fromTop }: { toast: QueuedToast<Entry>; st
       >
         <ToastIcon data={data} size={hud ? 16 : 20} />
         <div {...contentProps} className={cn('min-w-0', !hud && 'flex-1 pt-px')}>
-          <div {...titleProps} className={cn(hud ? 'whitespace-nowrap' : 'text-[15px] font-semibold leading-snug')}>
+          <div {...titleProps} className={cn(hud ? 'whitespace-nowrap' : 'text-subhead font-semibold leading-snug')}>
             {hud ? <TextMorph>{data.title}</TextMorph> : data.title}
           </div>
           {!hud && data.description ? (

@@ -90,7 +90,7 @@ function Artifact() {
 function Demo({ width, height, working = false, defaultChatOpen = false, fabPosition = 'bottom-center' }: DemoProps) {
   const [busy, setBusy] = useState(working);
   return (
-    <div style={{ width, height, overflow: 'hidden' }} className="font-ios">
+    <div style={{ width, height, overflow: 'hidden' }} className="font-sans">
       <ArtifactChatContainer
         breakpoint={760}
         working={busy}
@@ -140,7 +140,7 @@ export const Working: Story = { args: { width: 430, height: 720, working: true }
 function ResponsiveDemo() {
   const [wide, setWide] = useState(true);
   return (
-    <div className="font-ios">
+    <div className="font-sans">
       <button data-testid="toggle-width" onClick={() => setWide((w) => !w)} style={{ margin: 8, padding: '6px 12px' }}>
         {wide ? 'Narrow (floating)' : 'Wide (split)'}
       </button>
@@ -163,7 +163,7 @@ export const SplitToFloating: Story = { render: () => <ResponsiveDemo /> };
 export const AlwaysFloatingWithPeek: Story = {
   args: { width: 1100, height: 680 },
   render: (args) => (
-    <div style={{ width: args.width, height: args.height, overflow: 'hidden' }} className="font-ios">
+    <div style={{ width: args.width, height: args.height, overflow: 'hidden' }} className="font-sans">
       <ArtifactChatContainer layout="floating" peek={180}>
         <ArtifactChatContainer.Chat><Transcript /></ArtifactChatContainer.Chat>
         <ArtifactChatContainer.Composer>
@@ -224,7 +224,7 @@ function ThemedArtifact() {
 function ThemedDemo({ appearance, width, height, layout }: { appearance: Appearance; width: number; height: number; layout?: 'split' | 'floating' }) {
   return (
     <AppearanceProvider value={appearance}>
-      <div style={{ width, height, overflow: 'hidden' }} className="font-ios">
+      <div style={{ width, height, overflow: 'hidden' }} className="font-sans">
         <BLProvider>
           <ArtifactChatContainer layout={layout} peek={layout === 'floating' ? 150 : 0}>
             <ArtifactChatContainer.Chat><ThemedTranscript /></ArtifactChatContainer.Chat>

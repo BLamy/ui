@@ -104,7 +104,7 @@ export default function ThreadPanel() {
                 <button
                   type="button"
                   onClick={() => setOpen(true)}
-                  className="mt-1.5 flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-border bg-muted px-2.5 py-1.5 font-ios text-[12px] text-foreground"
+                  className="mt-1.5 flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-border bg-muted px-2.5 py-1.5 font-sans text-[12px] text-foreground"
                 >
                   <Icon name="text-bubble" size={13} sw={1.9} />
                   <span className="font-semibold">Smoke check: /chat-shell</span>

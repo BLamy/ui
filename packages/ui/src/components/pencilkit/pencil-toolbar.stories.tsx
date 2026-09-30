@@ -14,7 +14,7 @@ import {
 
 function Frame({ dark, children }: { dark?: boolean; children: React.ReactNode }) {
   return (
-    <ThemeScope appearance={dark ? 'dark' : 'light'} className="relative h-[120px] w-[620px] rounded-xl bg-muted font-ios text-foreground">
+    <ThemeScope appearance={dark ? 'dark' : 'light'} className="relative h-[120px] w-[620px] rounded-xl bg-muted font-sans text-foreground">
       {children}
     </ThemeScope>
   );

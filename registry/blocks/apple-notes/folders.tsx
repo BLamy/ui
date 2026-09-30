@@ -23,7 +23,7 @@ function Tags({ notes }: { notes: NotesState }) {
         return (
           <button key={t} type="button" aria-pressed={on}
             onClick={() => { notes.openTag(on ? null : t); if (!on && s.collapsed) s.show('supplementary'); }}
-            className={cn('bl-btn cursor-pointer rounded-full border-0 px-3 py-1.5 [font-family:inherit] text-[14px] transition-colors duration-150',
+            className={cn('bl-btn cursor-pointer rounded-full border-0 px-3 py-1.5 [font-family:inherit] text-detail transition-colors duration-150',
               on ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary-strong')}>#{t}</button>
         );
       })}

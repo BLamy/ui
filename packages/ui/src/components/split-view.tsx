@@ -1,3 +1,4 @@
+'use client';
 /* ══ SplitView — UISplitViewController, as composable parts ══
    <SplitView> owns the state: its width class (measured from its own box, or given), which columns exist,
    sidebar visibility, per-column selection, and which column is on top when collapsed. Each column part
@@ -729,16 +730,16 @@ export function SplitViewHeader({
     return () => ro.disconnect();
   }, [showBack, title]);
 
-  const titleCls = 'pointer-events-none absolute left-1/2 max-w-[56%] -translate-x-1/2 truncate text-[17px] font-semibold tracking-[-.2px]';
+  const titleCls = 'pointer-events-none absolute left-1/2 max-w-[56%] -translate-x-1/2 truncate text-body font-semibold tracking-[-.2px]';
   return (
     <>
       <div ref={head} data-slot="split-view-header" data-large-title={large || undefined}
-        className={cn('relative z-30 flex h-toolbar shrink-0 items-center px-1.5', !fading && 'shadow-[inset_0_-1px_0_var(--border)]', className)} style={style}>
+        className={cn('relative z-30 flex h-toolbar shrink-0 items-center px-1.5', !fading && 'shadow-hairline-b', className)} style={style}>
         <div className="relative z-1 flex min-w-[44px] items-center">
           {showBack ? (
             <AriaButton onPress={onBack} data-slot="split-view-back" aria-label={label === 'Back' ? undefined : `Back to ${label}`}
               className={cn(
-                'bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-[17px] text-primary outline-none data-[focus-visible]:rounded-lg data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring',
+                'bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-body text-primary outline-none data-[focus-visible]:rounded-lg data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring',
                 backMax != null ? 'max-w-(--back-max)' : 'max-w-[150px]',
               )}
               // The room the centered title leaves, measured.
@@ -804,7 +805,7 @@ export function SplitViewToggle({ className, ...aria }: SplitViewToggleProps) {
       aria-label={aria['aria-label'] ?? (s.sidebarVisible ? 'Hide sidebar' : 'Show sidebar')}
       aria-expanded={s.sidebarVisible} aria-controls={s.idFor('sidebar')}
       className={cn(
-        'bl-btn grid cursor-pointer place-items-center rounded-[10px] border-0 bg-transparent px-2.5 py-2 text-primary outline-none',
+        'bl-btn grid cursor-pointer place-items-center rounded-ctl border-0 bg-transparent px-2.5 py-2 text-primary outline-none',
         'transition-[background,transform] duration-150 data-[hovered]:bg-secondary data-[pressed]:scale-[.94] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring',
         className,
       )}>
@@ -827,8 +828,8 @@ export const splitViewItemVariants = cva(
   {
     variants: {
       variant: {
-        pill: 'min-h-[40px] rounded-[10px] px-2.5 py-1.5 text-[15.5px]',
-        row: 'min-h-[46px] px-4 py-2.5 text-[15.5px]',
+        pill: 'min-h-[40px] rounded-ctl px-2.5 py-1.5 text-[15.5px]',
+        row: 'min-h-row px-4 py-2.5 text-[15.5px]',
       },
       selected: { true: '', false: 'bg-transparent data-[hovered]:bg-secondary data-[pressed]:bg-accent' },
       tinted: { true: '', false: '' },
@@ -896,10 +897,10 @@ export function SplitViewItem({ id, title, subtitle, icon, badge, children, vari
             onSel ? tinted ? 'text-(--split-item-on-tint)' : 'text-primary-foreground' : tinted ? 'text-(--split-item-tint)' : 'text-primary')}>{icon}</span> : null}
           <span className="min-w-0 flex-1">
             <span className="block truncate leading-[1.3]">{title}</span>
-            {subtitle ? <span className={cn('mt-px block truncate text-[13px]',
+            {subtitle ? <span className={cn('mt-px block truncate text-footnote',
               onSel ? tinted ? 'text-(--split-item-on-tint)/80' : 'text-primary-foreground/80' : 'text-muted-foreground')}>{subtitle}</span> : null}
           </span>
-          {badge != null ? <span className={cn('shrink-0 text-[14px] tabular-nums',
+          {badge != null ? <span className={cn('shrink-0 text-detail tabular-nums',
             onSel ? tinted ? 'text-(--split-item-on-tint)/85' : 'text-primary-foreground/85' : 'text-muted-foreground')}>{badge}</span> : null}
           {pushes ? <Icon name="chev" size={14} sw={2.6} className={cn('shrink-0',
             onSel ? tinted ? 'text-(--split-item-on-tint)/70' : 'text-primary-foreground/70' : 'text-tertiary-foreground')} /> : null}
@@ -915,8 +916,8 @@ export function SplitViewItem({ id, title, subtitle, icon, badge, children, vari
 export const splitViewSectionLabelVariants = cva('', {
   variants: {
     variant: {
-      default: 'px-2.5 pt-4 pb-1.5 text-[13px] font-semibold tracking-[-.1px] text-muted-foreground',
-      prominent: 'px-1 pt-6 pb-2 text-[20px] font-bold tracking-[-.2px] text-foreground',
+      default: 'px-2.5 pt-4 pb-1.5 text-footnote font-semibold tracking-[-.1px] text-muted-foreground',
+      prominent: 'px-1 pt-6 pb-2 text-title font-bold tracking-[-.2px] text-foreground',
     },
   },
   defaultVariants: { variant: 'default' },
@@ -1169,8 +1170,8 @@ export function SplitViewEmpty({ icon, title, description, className }: SplitVie
     <div data-slot="split-view-empty" className={cn('grid h-full place-items-center p-6 text-center', className)}>
       <div>
         {icon ? <div className="mb-2.5 grid place-items-center text-tertiary-foreground">{icon}</div> : null}
-        {title ? <div className="text-[16px] font-medium text-muted-foreground">{title}</div> : null}
-        {description ? <div className="mt-1 text-[13px] text-tertiary-foreground">{description}</div> : null}
+        {title ? <div className="text-callout font-medium text-muted-foreground">{title}</div> : null}
+        {description ? <div className="mt-1 text-footnote text-tertiary-foreground">{description}</div> : null}
       </div>
     </div>
   );

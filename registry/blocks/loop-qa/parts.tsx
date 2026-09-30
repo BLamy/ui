@@ -76,7 +76,7 @@ export const pillVariants = cva(
         success: 'bg-success/13 text-success',
         primary: 'bg-primary/12 text-primary',
         neutral: 'bg-secondary text-muted-foreground',
-        outline: 'text-muted-foreground shadow-[inset_0_0_0_1px_var(--border)]',
+        outline: 'text-muted-foreground shadow-hairline',
       },
     },
     defaultVariants: { tone: 'neutral' },
@@ -192,7 +192,7 @@ export function SiteThumb({ kind, brand, className }: { kind: SiteKind; brand: s
           {line('mt-[3%] w-[30%]')}
           <div className="mt-[6%] grid grid-cols-4 gap-[4%]">
             {['0.95', '0.7', '0.5', '0.3'].map((o) => (
-              <div key={o} className="overflow-hidden rounded-[6px] bg-white shadow-[0_0_0_1px_--alpha(black/6%)]">
+              <div key={o} className="overflow-hidden rounded-md bg-white shadow-[0_0_0_1px_--alpha(black/6%)]">
                 <div className="aspect-[4/3] bg-(--brand)" style={{ opacity: o }} />
                 <div className="p-[10%]">{line('w-[70%]')}<span className="mt-[14%] block h-[7px] rounded-[3px] bg-black/85" /></div>
               </div>
@@ -204,9 +204,9 @@ export function SiteThumb({ kind, brand, className }: { kind: SiteKind; brand: s
           <div className="space-y-[10%] border-r border-black/6 bg-white p-[12%]">{line('w-full')}{line('w-3/4')}{line('w-4/5')}{line('w-2/3')}</div>
           <div className="p-[6%]">
             <div className="grid grid-cols-3 gap-[4%]">
-              {[0, 1, 2].map((i) => <div key={i} className="rounded-[6px] bg-white p-[8%] shadow-[0_0_0_1px_--alpha(black/6%)]">{line('w-1/2')}<span className="mt-[12%] block h-[9px] w-3/4 rounded-full bg-black/75" /></div>)}
+              {[0, 1, 2].map((i) => <div key={i} className="rounded-md bg-white p-[8%] shadow-[0_0_0_1px_--alpha(black/6%)]">{line('w-1/2')}<span className="mt-[12%] block h-[9px] w-3/4 rounded-full bg-black/75" /></div>)}
             </div>
-            <div className="mt-[5%] flex h-[46%] items-end gap-[3%] rounded-[6px] bg-white p-[5%] shadow-[0_0_0_1px_--alpha(black/6%)]">
+            <div className="mt-[5%] flex h-[46%] items-end gap-[3%] rounded-md bg-white p-[5%] shadow-[0_0_0_1px_--alpha(black/6%)]">
               {[40, 62, 48, 80, 66, 92, 74, 58].map((h, i) => <span key={i} className="flex-1 rounded-t-[2px] bg-(--brand)" style={{ height: `${h}%`, opacity: 0.35 + i * 0.08 }} />)}
             </div>
           </div>
@@ -217,11 +217,11 @@ export function SiteThumb({ kind, brand, className }: { kind: SiteKind; brand: s
           <div className="space-y-[5%] p-[8%]">
             <span className="block h-[10px] w-[60%] rounded-full bg-black/80" />
             {line('w-full')}{line('w-[92%]')}{line('w-[85%]')}
-            <span className="block h-[22%] rounded-[4px] bg-(--brand)/12 shadow-[inset_2px_0_0_var(--brand)]" />
+            <span className="block h-[22%] rounded-sm bg-(--brand)/12 shadow-[inset_2px_0_0_var(--brand)]" />
             {line('w-[70%]')}
           </div>
           <div className="space-y-[10%] border-l border-black/6 bg-white p-[10%]">
-            <span className="block h-[16%] rounded-[6px] bg-black/6" /><span className="ml-auto block h-[12%] w-3/4 rounded-[6px] bg-(--brand)/80" />
+            <span className="block h-[16%] rounded-md bg-black/6" /><span className="ml-auto block h-[12%] w-3/4 rounded-md bg-(--brand)/80" />
           </div>
         </div>
       ) : kind === 'docs' ? (
@@ -237,7 +237,7 @@ export function SiteThumb({ kind, brand, className }: { kind: SiteKind; brand: s
       ) : kind === 'todo' ? (
         <div className="mx-auto mt-[8%] w-[56%] space-y-[6%]">
           <span className="mx-auto block h-[10px] w-[30%] rounded-full bg-black/80" />
-          <div className="flex gap-[4%]"><span className="h-[16px] flex-1 rounded-[4px] bg-white shadow-[0_0_0_1px_--alpha(black/10%)]" /><span className="h-[16px] w-[18%] rounded-[4px] bg-(--brand)" /></div>
+          <div className="flex gap-[4%]"><span className="h-[16px] flex-1 rounded-sm bg-white shadow-[0_0_0_1px_--alpha(black/10%)]" /><span className="h-[16px] w-[18%] rounded-sm bg-(--brand)" /></div>
           {[0, 1, 2].map((i) => <div key={i} className="flex items-center gap-[4%]"><span className="size-[8px] rounded-full shadow-[0_0_0_1.5px_var(--brand)]" />{line(i === 1 ? 'w-1/2' : 'w-3/4')}</div>)}
         </div>
       ) : (
@@ -246,7 +246,7 @@ export function SiteThumb({ kind, brand, className }: { kind: SiteKind; brand: s
           <span className="mt-[3%] block h-[12px] w-[40%] rounded-full bg-white/85" />
           <span className="mt-[4%] block h-[6px] w-[48%] rounded-full bg-white/50" />
           <span className="mt-[7%] block h-[16px] w-[22%] rounded-full bg-white" />
-          <span className="absolute right-[6%] bottom-[10%] h-[50%] w-[34%] rounded-[8px] bg-white/20" />
+          <span className="absolute right-[6%] bottom-[10%] h-[50%] w-[34%] rounded-lg bg-white/20" />
         </div>
       )}
     </div>
@@ -258,7 +258,7 @@ export function Panel({ title, icon, trailing, children, className, bodyClassNam
   title?: ReactNode; icon?: string; trailing?: ReactNode; children?: ReactNode; className?: string; bodyClassName?: string;
 }) {
   return (
-    <section className={cn('overflow-hidden rounded-[14px] border border-border bg-card', className)}>
+    <section className={cn('overflow-hidden rounded-card border border-border bg-card', className)}>
       {title ? (
         <header className="flex min-h-12 items-center gap-2 border-b border-border px-4 py-2">
           {icon ? <Icon name={icon} size={15} sw={2} className="text-muted-foreground" /> : null}
@@ -275,7 +275,7 @@ export function SectionLabel({ children, count, className }: { children: ReactNo
   return (
     <div className={cn('flex items-center gap-2 text-[11.5px] font-semibold tracking-[.06em] text-muted-foreground uppercase', className)}>
       {children}
-      {count != null ? <span className="rounded-full bg-secondary px-1.5 py-px text-[11px] tracking-normal tabular-nums">{count}</span> : null}
+      {count != null ? <span className="rounded-full bg-secondary px-1.5 py-px text-caption2 tracking-normal tabular-nums">{count}</span> : null}
     </div>
   );
 }
@@ -291,10 +291,10 @@ export function StatTile({ label, value, icon, foot, children, onPress, classNam
       </div>
       {value != null ? <div className="mt-1.5 text-[30px] leading-9 font-semibold tracking-[-.03em] tabular-nums"><NumberMorph value={value} /></div> : null}
       {children}
-      {foot ? <div className="mt-auto pt-2 text-[12px] text-muted-foreground">{foot}</div> : null}
+      {foot ? <div className="mt-auto pt-2 text-caption text-muted-foreground">{foot}</div> : null}
     </>
   );
-  const cls = cn('flex min-h-[124px] flex-col rounded-[14px] border border-border bg-card p-4 text-left', className);
+  const cls = cn('flex min-h-[124px] flex-col rounded-card border border-border bg-card p-4 text-left', className);
   return onPress ? (
     <Pressable onPress={onPress} className={cn(cls, 'items-stretch justify-start gap-0 whitespace-normal cursor-pointer outline-none transition-[scale,background-color] duration-spring-snappy ease-spring-snappy data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.985] data-focus-visible:ring-2 data-focus-visible:ring-ring motion-reduce:transition-none')}>
       {body}
@@ -324,22 +324,22 @@ export function BarButton({ label, icon, children, className, ...props }: Omit<B
 export function Avatar({ initials, className, tone = 0 }: { initials: string; className?: string; tone?: number }) {
   const tones = ['bg-primary text-primary-foreground', 'bg-(--lq-info) text-white', 'bg-success text-white', 'bg-warning text-white'];
   return (
-    <span className={cn('inline-grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-semibold ring-2 ring-background', tones[tone % tones.length], className)}>
+    <span className={cn('inline-grid size-7 shrink-0 place-items-center rounded-full text-caption2 font-semibold ring-2 ring-background', tones[tone % tones.length], className)}>
       {initials}
     </span>
   );
 }
 
 export function Mono({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cn('font-mono text-[12px]', className)}>{children}</span>;
+  return <span className={cn('font-mono text-caption', className)}>{children}</span>;
 }
 
 export function Empty({ icon, title, text, action }: { icon: string; title: string; text: string; action?: ReactNode }) {
   return (
     <div className="grid place-items-center px-6 py-14 text-center">
       <span className="grid size-11 place-items-center rounded-full bg-secondary text-muted-foreground"><Icon name={icon} size={20} sw={2} /></span>
-      <div className="mt-3 text-[15px] font-semibold">{title}</div>
-      <p className="m-0 mt-1 max-w-[340px] text-[13px] text-muted-foreground">{text}</p>
+      <div className="mt-3 text-subhead font-semibold">{title}</div>
+      <p className="m-0 mt-1 max-w-[340px] text-footnote text-muted-foreground">{text}</p>
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   );
