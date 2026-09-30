@@ -2,7 +2,7 @@
 
 BL UI is an iOS-flavored React component framework, distributed as one workspace package:
 
-- `@brett_lamy/ui` — theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar), the team-chat parts and ChatShell (`src/components/chat`, `src/templates`), the IDE workbench parts and WorkbenchShell (`src/components/workbench`, `src/templates`), and PencilKit freehand drawing on perfect-freehand (`src/components/pencilkit`, `src/lib/pencilkit`; `PencilKitAnnotator` is the Composer's default image annotator). Demo apps live in `src/demos`.
+- `@brett_lamy/ui` — theme/tokens, Haptics, icons, controls, list primitives, containers (NavigationStack, SplitView, TabBar, Credenza, SideDrawer, IndexBar), the team-chat parts and ChatShell (`src/components/chat`, `src/templates`), the IDE workbench parts and WorkbenchShell (`src/components/workbench`, `src/templates`), and PencilKit freehand drawing on perfect-freehand (`src/components/pencilkit`, `src/lib/pencilkit`; `PencilKitAnnotator` is the Composer's default image annotator). Full demo pages live in `src/demos`.
 
 Every component is built **shadcn-style on react-aria-components, styled with Tailwind v4**. Visual output must not change while code moves onto that base: the visual-regression suite (below) is the source of truth, at zero pixel tolerance.
 
