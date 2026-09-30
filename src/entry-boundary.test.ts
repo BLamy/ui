@@ -91,8 +91,7 @@ describe("entry boundaries", () => {
         if (spec.startsWith("node:")) continue
         const id = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0]!
         expect(declared.has(id), `${name} imports ${spec}`).toBe(true)
-        // rrweb is lazy (checked below), so the replay chrome can live in any entry.
-        if (pkg.peerDependenciesMeta[id]?.optional && id !== "vite" && id !== "rrweb") {
+        if (pkg.peerDependenciesMeta[id]?.optional && id !== "vite") {
           expect(name, `${name} imports optional peer ${id}`).toBe(`./${id === "@brett_lamy/viz-engine" ? "viz" : id}`)
         }
       }
@@ -114,9 +113,11 @@ describe("entry boundaries", () => {
     expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "rrweb" || spec.startsWith("rrweb/"))).toEqual([])
   })
 
-  it("keeps rrweb an optional peer", () => {
-    expect(pkg.peerDependenciesMeta.rrweb?.optional).toBe(true)
-    expect(pkg.dependencies.rrweb).toBeUndefined()
+  // rrweb stays a regular dependency: the root ReplayPreview plays event sources, so an
+  // optional peer would break every bundler that resolves the (lazy) import without it.
+  it("keeps rrweb a dependency", () => {
+    expect(pkg.dependencies.rrweb).toBeDefined()
+    expect(pkg.peerDependencies.rrweb).toBeUndefined()
   })
 
   it("keeps almost-node an optional peer", () => {

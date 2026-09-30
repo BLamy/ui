@@ -14,7 +14,7 @@ export function preloadReplayStage(): Promise<unknown> {
 /**
  * A headless rrweb player: the recorded page, fitted to its box, with no controls. Drive it
  * through the ref (`play`, `pause`, `seek`, …) and the `onTimeUpdate` / `onPlayingChange`
- * callbacks to build custom player chrome. Requires the optional `rrweb` peer.
+ * callbacks to build custom player chrome.
  */
 export const ReplayStage = forwardRef<ReplayStageHandle, ReplayStageProps>(function ReplayStage(
   { fallback = null, ...props },

@@ -42,7 +42,7 @@ The package ships TypeScript source with subpath exports so hosts only pull what
 | \`@brett_lamy/docstream/streamdown\` | \`GitbookStreamdown\` plus the few helpers it needs. |
 | \`@brett_lamy/docstream/assets\` | \`setAssetBase\` / \`resolveAsset\`. |
 | \`@brett_lamy/docstream/openapi\` | \`OpenApiOperation\`. |
-| \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, the headless \`ReplayStage\`, marker/pointer helpers, URL helpers, source types. Native playback needs the optional \`rrweb\` peer. |
+| \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, the headless \`ReplayStage\`, marker/pointer helpers, URL helpers, source types. |
 | \`@brett_lamy/docstream/video\` | \`VideoEmbed\`. |
 | \`@brett_lamy/docstream/playground\` | Live React demos (\`PlaygroundStreamdown\`, \`ReactDemo\`, almost-node runtime + helpers). Needs \`@agent-wasm/core\`. |
 | \`@brett_lamy/docstream/viz\` | \`VizEmbed\`. Needs \`@brett_lamy/viz-engine\`. |
@@ -227,7 +227,7 @@ The native player sanitizes events (\`sanitizeReplayEvent\` is exported from \`@
 
 The pure helpers read an event list without loading rrweb: \`getReplayMeta\` (duration, viewport, first URL), \`getReplayMarkers\` (clicks, console errors, failed requests, navigations and custom events, for scrubber markers), \`getReplayPointerTrack\` + \`replayPointerAt\` (the pointer path, for a cursor overlay).
 
-\`rrweb\` is an optional peer dependency (\`npm i rrweb@2.0.0-alpha.20\`); only the lazily loaded player chunk imports it, so pages that just embed Loop QA URLs never need it.
+Only the lazily loaded player chunk imports \`rrweb\`, so pages that just embed Loop QA URLs never download it; the public types never reference it.
 
 ### URL helpers
 

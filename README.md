@@ -139,8 +139,8 @@ import { ReplayPreview } from "@brett_lamy/docstream"
 <ReplayPreview source="https://loop-qa.replay.io/projects/project-id/tasks/task-id" />
 ```
 
-Native rrweb playback needs the optional `rrweb` peer (`npm i rrweb@2.0.0-alpha.20`);
-it is imported only by the lazily loaded player chunk. To build custom player chrome, use
+rrweb (and its stylesheet) is imported only by the lazily loaded player chunk, so pages
+that only embed Loop QA URLs never download it. To build custom player chrome, use
 the headless `ReplayStage` (the fitted page, driven through a ref and callbacks) with the
 pure timeline helpers, none of which load rrweb:
 
