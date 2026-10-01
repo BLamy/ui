@@ -1,6 +1,7 @@
 /* macOS — a desktop (wallpaper, menu bar, Dock, windows) whose apps are the other examples: Reminders, Mail, Notes,
    Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one
-   from the Dock or from Alfred; windows drag, resize, zoom, minimize and stack.
+   from the Dock or from Alfred; windows drag, resize, zoom, minimize and stack. Right-click the Dock to turn
+   magnification off or hiding on (a hidden Dock slides up from the bottom edge, and windows take its room).
    Alfred is the launcher on top, on the CommandMenu primitive: type an app's name and press Enter. Its features are
    pages you open with Enter: Calculator (also inline at the root when you type math), Clipboard History with a
    preview and pinning, an Emoji grid, Snippets, File Search with nested folders, System commands (lock, sleep,
@@ -19,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { APPS } from './apps';
 import { DesktopProvider, useDesktop } from './desktop';
 import { Launcher } from './launcher';
-import { Dock, Hat, MenuBar, PowerOverlay, Wallpaper } from './parts';
+import { Dock, Hat, MenuBar, PowerOverlay, Wallpaper, type DockPrefs } from './parts';
 import { AppSwitcher, HOME_H, HomeBar, STATUS_H, Springboard, StatusBar, useSwitcher, type Point } from './phone';
 import { AlfredProvider, useAlfred } from './state';
 import { DesktopWindow } from './windows';
@@ -46,11 +47,13 @@ export interface MacOSProps {
   autoFocus?: boolean;
   /** Record this session for Time Machine (default true): an append-only rrweb recording in localStorage, one per mount. */
   record?: boolean;
+  /** The Dock's starting preferences; right-clicking the Dock changes them. Magnification defaults on, hiding off. */
+  dock?: Partial<DockPrefs>;
 }
 
 type Phase = 'open' | 'closing' | 'closed';
 
-export default function MacOS({ initialApps, initialPages, initialQuery = '', defaultOpen = true, autoFocus = true, record = true }: MacOSProps) {
+export default function MacOS({ initialApps, initialPages, initialQuery = '', defaultOpen = true, autoFocus = true, record = true, dock }: MacOSProps) {
   useSessionRecording({ enabled: record });
   const ambient = useAppearance() === 'dark';
   const [override, setOverride] = useState<boolean | null>(null);
@@ -73,7 +76,7 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
   return (
     <BLProvider dark={dark} tint={ALFRED_TINT[dark ? 'dark' : 'light']} className="bg-transparent">
       <AlfredProvider queue={queue} dark={dark} toggleDark={() => setOverride(!dark)} reset={reset} close={close}>
-        <Desktop dark={dark} phase={phase} setPhase={setPhase} show={show} close={close} boot={boot} menu={menu} queue={queue} initialApps={initialApps} />
+        <Desktop dark={dark} phase={phase} setPhase={setPhase} show={show} close={close} boot={boot} menu={menu} queue={queue} initialApps={initialApps} initialDock={dock} />
       </AlfredProvider>
     </BLProvider>
   );
@@ -103,9 +106,10 @@ interface ScreenProps {
   dark: boolean; phase: Phase; setPhase: (p: Phase) => void; show: () => void; close: () => void;
   boot: { pages?: string[]; query: string; focus: boolean }; menu: React.RefObject<CommandMenuApi | null>;
   queue: ReturnType<typeof createToastQueue>;
+  initialDock?: Partial<DockPrefs>;
 }
 
-function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }: ScreenProps & { size: { width: number; height: number } }) {
+function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initialDock, size }: ScreenProps & { size: { width: number; height: number } }) {
   const { power, setPower } = useAlfred();
   const desktop = useDesktop();
   // A phone-sized desktop is an iPhone: its own chrome, a springboard, and one full-screen app at a time.
@@ -132,10 +136,13 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }:
   const items = APPS.length + 2;
   const tile = Math.min(MAX_DOCK_TILE, Math.floor((size.width - 32 - 12 - (items + 1) * 6 - 6) / items));
   const dock = !phone && size.height >= 480 && tile >= MIN_DOCK_TILE;
+  const [dockPrefs, setDockPrefs] = useState<DockPrefs>({ magnify: true, hide: false, ...initialDock });
+  // A hidden dock sits off-screen, so windows, Alfred's list and the toasts get its room back.
+  const reserve = dock && !dockPrefs.hide;
   const width = Math.min(720, size.width - 24);
   const chrome = phone ? STATUS_H + HOME_H : MENU_H;
   const top = phone ? 12 : Math.round(Math.max(16, Math.min(140, size.height * 0.14)));
-  const listHeight = Math.round(Math.max(140, Math.min(400, size.height - chrome - top - 68 - 44 - (dock ? 88 : 20))));
+  const listHeight = Math.round(Math.max(140, Math.min(400, size.height - chrome - top - 68 - 44 - (reserve ? 88 : 20))));
   const toggle = () => (phase === 'open' ? close() : show());
 
   // ⌥Space, Alfred's hotkey (matchesHotkey compares the physical key: on a Mac ⌥Space types a non-breaking space).
@@ -163,7 +170,7 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }:
               const from = origins[w.app] ?? { x: layer.width / 2, y: layer.height / 2 };
               return (
                 <DesktopWindow
-                  key={w.app} win={w} dark={dark} dock={dock}
+                  key={w.app} win={w} dark={dark} dock={reserve}
                   phone={phone ? {
                     shown: w.app === foreground,
                     origin: `${from.x}px ${from.y}px`,
@@ -219,8 +226,8 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }:
         </div>
         {phone ? <HomeBar dark={dark} inApp={foreground !== null && !switching} onHome={goHome} onSwitcher={showSwitcher} /> : null}
       </div>
-      {dock ? <Dock dark={dark} tile={tile} onAlfred={toggle} /> : null}
-      <Toaster queue={queue} inline placement={phone ? 'top' : 'bottom'} offset={phone ? STATUS_H + 8 : dock ? 92 : 24} aria-label="Alfred notifications" />
+      {dock ? <Dock dark={dark} tile={tile} onAlfred={toggle} prefs={dockPrefs} onPrefs={setDockPrefs} /> : null}
+      <Toaster queue={queue} inline placement={phone ? 'top' : 'bottom'} offset={phone ? STATUS_H + 8 : reserve ? 92 : 24} aria-label="Alfred notifications" />
       <PowerOverlay state={power} onWake={wake} dark={dark} />
     </Wallpaper>
   );

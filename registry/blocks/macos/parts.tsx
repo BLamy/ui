@@ -1,6 +1,8 @@
 /* The desktop's pieces that aren't the launcher's menu: app tiles and file glyphs, the hat, the desktop (wallpaper,
    menu bar, dock) and the power overlays (lock screen, sleep, restart, shut down). */
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { Icon } from '@/lib/icon';
@@ -214,37 +216,87 @@ export function MenuBar({ dark, onAlfred }: { dark: boolean; onAlfred: () => voi
   );
 }
 
+/** What the Dock's context menu changes: icons that rise as the pointer passes over them, and a dock that slides away
+    until the pointer meets the bottom edge. Hiding also gives windows the dock's room back, so the desktop owns it. */
+export interface DockPrefs { magnify: boolean; hide: boolean }
+
 /** The Dock: every app, a dot under the ones that are open, then Alfred and the Trash. Click an app to open it (or
-    bring it forward). `tile` is the icon size; the dock sizes it to fit the desktop's width. */
-export function Dock({ dark, tile, onAlfred }: { dark: boolean; tile: number; onAlfred: () => void }) {
+    bring it forward); right-click for Magnification and Hiding. `tile` is the icon size; the dock sizes it to fit the
+    desktop's width. */
+export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; tile: number; onAlfred: () => void; prefs: DockPrefs; onPrefs: (p: DockPrefs) => void }) {
   const { trash } = useAlfred();
   const d = useDesktop();
+  const { magnify, hide } = prefs;
+  // A hidden dock comes up while the pointer is over it or the bottom-edge strip, keyboard focus is inside, or its menu is open.
+  const [near, setNear] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [menu, setMenu] = useState<{ x: number } | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const shown = !hide || near || focused || menu !== null;
+  // The menu is gone when it closes, and a pointer that was on it never reports leaving: ask the browser where the
+  // pointer is once it has caught up.
+  const closeMenu = () => {
+    setMenu(null);
+    setTimeout(() => setNear(box.current?.querySelector(':hover') != null), 150);
+  };
   const well = cn('grid place-items-center rounded-[27%]', dark ? 'bg-white/12 text-white/80' : 'bg-white/60 text-black/60');
-  const slot = 'group/dock relative grid cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform duration-spring-snappy ease-spring-snappy hover:-translate-y-1.5 hover:scale-110 active:scale-95 motion-reduce:transition-none';
+  const slot = cn(
+    'group/dock relative grid cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform duration-spring-snappy ease-spring-snappy active:scale-95 motion-reduce:transition-none',
+    magnify && 'hover:-translate-y-1.5 hover:scale-110',
+  );
   return (
+    // One box around the strip and the dock, so moving from the strip up onto the dock never counts as leaving.
     <div
-      data-slot="macos-dock"
-      className={cn(
-        'absolute bottom-2.5 left-1/2 z-10 flex -translate-x-1/2 items-end gap-1.5 rounded-[20px] p-1.5 backdrop-blur-2xl backdrop-saturate-150',
-        dark ? 'bg-white/10 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.18),0_10px_30px_rgba(0,0,0,.35)]' : 'bg-white/35 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.6),0_10px_30px_rgba(0,0,0,.12)]',
-      )}
+      ref={box}
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-0"
+      onPointerEnter={() => setNear(true)}
+      onPointerLeave={() => setNear(false)}
+      onFocus={(e) => { if (e.target.matches(':focus-visible')) setFocused(true); }}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
     >
-      {APPS.map((app) => (
-        <button key={app.id} type="button" aria-label={`${d.isOpen(app.id) ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={slot}>
-          <DockLabel dark={dark}>{app.name}</DockLabel>
-          <AppTile app={app} size={tile} />
-          {d.isOpen(app.id) ? <span aria-hidden="true" className={cn('absolute -bottom-1 size-1 rounded-full', dark ? 'bg-white/80' : 'bg-black/60')} /> : null}
+      {hide ? <div data-slot="macos-dock-edge" aria-hidden="true" className="pointer-events-auto absolute inset-x-0 bottom-0 h-3" onPointerDown={() => setNear(true)} /> : null}
+      <div
+        data-slot="macos-dock"
+        data-hidden={shown ? undefined : ''}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setMenu({ x: e.clientX - e.currentTarget.getBoundingClientRect().left });
+        }}
+        className={cn(
+          'pointer-events-auto absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-end gap-1.5 rounded-[20px] p-1.5 backdrop-blur-2xl backdrop-saturate-150 transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+          dark ? 'bg-white/10 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.18),0_10px_30px_rgba(0,0,0,.35)]' : 'bg-white/35 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.6),0_10px_30px_rgba(0,0,0,.12)]',
+          shown ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]',
+        )}
+      >
+        {APPS.map((app) => (
+          <button key={app.id} type="button" aria-label={`${d.isOpen(app.id) ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={slot}>
+            <DockLabel dark={dark}>{app.name}</DockLabel>
+            <AppTile app={app} size={tile} />
+            {d.isOpen(app.id) ? <span aria-hidden="true" className={cn('absolute -bottom-1 size-1 rounded-full', dark ? 'bg-white/80' : 'bg-black/60')} /> : null}
+          </button>
+        ))}
+        <span aria-hidden="true" className={cn('mx-0.5 w-px self-center', dark ? 'bg-white/20' : 'bg-black/12')} style={{ height: tile - 4 }} />
+        <button type="button" aria-label="Alfred" onClick={onAlfred} className={slot}>
+          <DockLabel dark={dark}>Alfred</DockLabel>
+          <Tile tone="alfred" size={tile} glyph={<Hat size={Math.round(tile * 0.62)} />} />
         </button>
-      ))}
-      <span aria-hidden="true" className={cn('mx-0.5 w-px self-center', dark ? 'bg-white/20' : 'bg-black/12')} style={{ height: tile - 4 }} />
-      <button type="button" aria-label="Alfred" onClick={onAlfred} className={slot}>
-        <DockLabel dark={dark}>Alfred</DockLabel>
-        <Tile tone="alfred" size={tile} glyph={<Hat size={Math.round(tile * 0.62)} />} />
-      </button>
-      <span aria-label="Trash" role="img" className={cn('group/dock relative', well)} style={{ width: tile, height: tile }}>
-        <IconSwap id={trash ? 'full' : 'empty'}><Icon name={trash ? 'trash-fill' : 'trash'} size={Math.round(tile * 0.57)} sw={1.7} /></IconSwap>
-        <DockLabel dark={dark}>Trash</DockLabel>
-      </span>
+        <span aria-label="Trash" role="img" className={cn('group/dock relative', well)} style={{ width: tile, height: tile }}>
+          <IconSwap id={trash ? 'full' : 'empty'}><Icon name={trash ? 'trash-fill' : 'trash'} size={Math.round(tile * 0.57)} sw={1.7} /></IconSwap>
+          <DockLabel dark={dark}>Trash</DockLabel>
+        </span>
+        {/* The menu opens where the right-click landed: an invisible anchor there, on the dock's top edge. */}
+        <DropdownMenu isOpen={menu !== null} onOpenChange={(o) => { if (!o) closeMenu(); }}>
+          <AriaButton aria-hidden="true" excludeFromTabOrder className="pointer-events-none absolute top-0 size-0 opacity-0" style={{ left: menu?.x ?? 0 }} />
+          <DropdownMenuContent placement="top" aria-label="Dock">
+            <DropdownMenuItem id="magnify" onAction={() => onPrefs({ ...prefs, magnify: !magnify })}>
+              {magnify ? 'Turn Magnification Off' : 'Turn Magnification On'}
+            </DropdownMenuItem>
+            <DropdownMenuItem id="hide" onAction={() => onPrefs({ ...prefs, hide: !hide })}>
+              {hide ? 'Turn Hiding Off' : 'Turn Hiding On'}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }

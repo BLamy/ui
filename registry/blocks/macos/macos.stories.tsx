@@ -99,3 +99,10 @@ export const LaunchApp: Story = {
   args: { initialQuery: 'remin' },
   render: (args) => <Full><MacOS {...args} /></Full>,
 };
+
+/** Right-click the Dock for Turn Magnification Off and Turn Hiding On. Here it starts hidden with magnification off:
+    move the pointer to the bottom edge and the Dock slides up, and zoomed windows fill the room it left. */
+export const DockHidden: Story = {
+  args: { initialApps: ['notes'], defaultOpen: false, dock: { hide: true, magnify: false } },
+  render: (args) => <Full><MacOS {...args} /></Full>,
+};
