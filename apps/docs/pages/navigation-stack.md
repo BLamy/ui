@@ -58,7 +58,7 @@ Dragging from the left edge pops interactively — the outgoing screen tracks yo
 
 The back button names the screen behind it, as on iOS. Its label gets whatever room the centered title leaves on its side of the bar — measured, not counted in characters — so a long previous title is ellipsized; only when a sliver is left does it fall back to **Back**, and then to the chevron alone.
 
-Titles travel between screens. On push the previous screen's title — its large title, or the inline one once it has scrolled — flies into the new back button, shrinking and taking the tint; on pop the back label flies back into the title it names. The edge swipe scrubs the flight with your finger and finishes it on the same spring as the screens, and a push or pop that lands mid-flight simply takes over. Reduced motion skips the flight.
+Titles travel between screens. On push the previous screen's title — its large title, or the inline one once it has scrolled — flies into the new back button, shrinking and taking the tint (an inline title, already the size of the back label, stays solid instead of cross-fading, and the new back chevron fades in at its resting place rather than sweeping through the title); on pop the back label flies back into the title it names. The edge swipe scrubs the flight with your finger and finishes it on the same spring as the screens, and a push or pop that lands mid-flight simply takes over. Reduced motion skips the flight.
 
 {% demo src="navigation-stack/title-morph" %}
 

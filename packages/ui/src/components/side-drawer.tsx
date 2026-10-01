@@ -189,8 +189,9 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
     if (e.button || !open) return;
     const rect = panel.current?.getBoundingClientRect();
     if (!rect || e.clientX - rect.left > navigationPush.edge) return;
+    // No pointer capture yet: a tap in the edge zone must still reach its own control. The panel takes the pointer
+    // once the drag engages, in `move`.
     drag.current = { x0: e.clientX, y0: e.clientY, w: rect.width, last: e.clientX, lt: performance.now(), vel: 0, dx: 0, on: false, page: pageOf(host.current) };
-    try { panel.current?.setPointerCapture(e.pointerId); } catch { /* noop */ }
   };
   const move = (e: React.PointerEvent) => {
     const d = drag.current;
@@ -199,8 +200,10 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
     const raw = e.clientX - d.x0, dy = e.clientY - d.y0;
     if (!d.on) {
       // Slop: engage only on a clearly horizontal rightward drag.
-      if (raw > 8 && raw > Math.abs(dy) * 1.2) d.on = true;
-      else { if (Math.abs(dy) > 14) drag.current = null; return; }
+      if (raw > 8 && raw > Math.abs(dy) * 1.2) {
+        d.on = true;
+        try { p.setPointerCapture(e.pointerId); } catch { /* noop */ }
+      } else { if (Math.abs(dy) > 14) drag.current = null; return; }
     }
     const dx = Math.max(0, raw);
     d.vel = (e.clientX - d.last) / Math.max(1, performance.now() - d.lt); d.last = e.clientX; d.lt = performance.now(); d.dx = dx;

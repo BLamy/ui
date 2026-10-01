@@ -300,6 +300,14 @@ function backLabel(r: ScreenParts | undefined): HTMLElement | null {
   return r?.back && r.back.dataset.mode === 'title' ? r.back : null;
 }
 
+/** The back chevron beside a back label. It rides in with the new screen, straight through the title that is
+ *  travelling to its side, so the flight draws its own copy that fades in where the chevron will rest. */
+function backChevron(to: HTMLElement): HTMLElement | SVGElement | null {
+  if (!to.dataset.mode) return null; // only a back label (data-mode) has one; a title's sibling is something else
+  const c = to.previousElementSibling;
+  return c instanceof HTMLElement || c instanceof SVGElement ? c : null;
+}
+
 function titleFlight(cont: HTMLElement, from: HTMLElement, to: HTMLElement, toScreen: HTMLElement | null | undefined): Flight | null {
   const cr = cont.getBoundingClientRect(), fr = from.getBoundingClientRect(), tr = to.getBoundingClientRect();
   if (!fr.width || !tr.width) return null;
@@ -328,15 +336,32 @@ function titleFlight(cont: HTMLElement, from: HTMLElement, to: HTMLElement, toSc
   const a = copy(from, fs, f), b = copy(to, ts, d);
   cont.appendChild(layer);
   from.style.visibility = 'hidden'; to.style.visibility = 'hidden';
+  // Titles of one size (an inline title into the back label, and back) have no scale change to hide a cross-fade
+  // behind, and two half-faded copies of the same words read as a blink. There the source stays solid under the
+  // arriving copy and drops out only once that one is opaque.
+  const same = Math.abs(k - 1) < 0.05;
+  const chevEl = backChevron(to);
+  let chev: HTMLElement | null = null;
+  if (chevEl) {
+    const r = chevEl.getBoundingClientRect();
+    chev = chevEl.cloneNode(true) as HTMLElement;
+    Object.assign(chev.style, {
+      position: 'absolute', left: r.left - sr.left + 'px', top: r.top - sr.top + 'px', margin: '0', opacity: '0',
+      width: r.width + 'px', height: r.height + 'px', color: getComputedStyle(chevEl).color,
+    });
+    layer.appendChild(chev);
+    chevEl.style.visibility = 'hidden';
+  }
   return {
     set(t) {
       const x = lerp(f.x, d.x, t), cy = lerp(f.y + f.h / 2, d.y + d.h / 2, t);
       a.style.transform = `translate(${x}px, ${cy - f.h / 2}px) scale(${lerp(1, k, t)})`;
       b.style.transform = `translate(${x}px, ${cy - d.h / 2}px) scale(${lerp(1 / k, 1, t)})`;
-      a.style.opacity = String(clamp01(1 - t * 1.8));
-      b.style.opacity = String(clamp01((t - 0.2) / 0.6));
+      a.style.opacity = String(same ? clamp01((0.85 - t) / 0.2) : clamp01(1 - t * 1.8));
+      b.style.opacity = String(same ? clamp01(t / 0.6) : clamp01((t - 0.2) / 0.6));
+      if (chev) chev.style.opacity = String(clamp01((t - 0.3) / 0.5));
     },
-    done() { from.style.visibility = ''; to.style.visibility = ''; layer.remove(); },
+    done() { from.style.visibility = ''; to.style.visibility = ''; if (chevEl) chevEl.style.visibility = ''; layer.remove(); },
   };
 }
 
@@ -396,6 +421,7 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
   const tRef = useRef<any>(null);
   const onPopRef = useRef(onPop); onPopRef.current = onPop;
   const drag = useRef<any>(null);
+  const swiped = useRef(false);
   const flight = useRef<{ f: Flight; run?: AnimationPlaybackControls } | null>(null);
   const endFlight = () => { const c = flight.current; flight.current = null; if (c) { c.run?.stop(); c.f.done(); } };
   const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -451,8 +477,9 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
     const topR = regMap.current[screens[screens.length - 1].key];
     const undR = regMap.current[screens[screens.length - 2].key];
     if (!topR || !topR.el || !undR || !undR.el) return;
+    // No pointer capture yet: a tap in the edge zone (the back chevron, a row's leading icon) must still reach its
+    // own button. The stack takes the pointer only once the drag engages, in `move`.
     drag.current = { x0: e.clientX, y0: e.clientY, w: rect.width, topR, undR, last: e.clientX, lt: performance.now(), vel: 0, moved: false, on: false };
-    try { contRef.current.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
   };
   const move = (e: React.PointerEvent) => {
     const d = drag.current; if (!d) return;
@@ -460,6 +487,9 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
     if (!d.on) {  // slop: engage only on a clearly horizontal rightward drag
       if (raw > 8 && raw > Math.abs(dy) * 1.2) {
         d.on = true;
+        try { contRef.current.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+        // A swipe that started on the back button must not also press it when the finger lifts over it.
+        swiped.current = true;
         // The back label scrubs toward the title it names, with the finger.
         endFlight();
         const from = backLabel(d.topR), to = shownTitle(d.undR);
@@ -478,6 +508,8 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
     } catch (err) { drag.current = null; }
   };
   const up = () => {
+    // A button's press fires later in this same pointerup dispatch, so hold the flag until the next task.
+    if (swiped.current) setTimeout(() => { swiped.current = false; }, 0);
     const d = drag.current; if (!d) return; drag.current = null;
     if (!d.moved || !d.on) { clean(d); return; }
     const p = (d.dx || 0) / d.w;
@@ -525,7 +557,7 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
       {rendered.map((r) => (
         <ScreenWrap key={r.sc.key} sc={r.sc} depth={r.i} top={r.ghost ? total : topIdx} ghost={r.ghost}
           entering={!r.ghost && (anim.enter === r.sc.key || pendingEnter === r.sc.key) && r.i === topIdx}
-          nav={{ pop: () => onPopRef.current && onPopRef.current(), canPop: canPop && !r.ghost }}
+          nav={{ pop: () => { if (!swiped.current && onPopRef.current) onPopRef.current(); }, canPop: canPop && !r.ghost }}
           backTitle={r.i > 0 ? (r.ghost ? (screens[screens.length - 1] && screens[screens.length - 1].title) : screens[r.i - 1].title) : null}
           reg={reg} defIns={defIns} z={r.i} rootBack={rootBack} />
       ))}
