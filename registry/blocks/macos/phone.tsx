@@ -3,7 +3,7 @@
    its icon; double-tap it for the app switcher — every running app as a card you swipe between, tap to open or flick
    up to quit. The apps are the desktop's own windows and the phone never moves or minimizes them, so they keep running
    (and keep their desktop places) when the width crosses over. */
-import { useCallback, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { useContainerSize } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -48,18 +48,68 @@ export function StatusBar({ dark, inApp }: { dark: boolean; inApp: boolean }) {
 /** Two taps this close together on the home bar open the app switcher (a Mac's default double-click speed, so a
     trackpad double-tap — and the first tap's animation running under it — still counts). */
 const DOUBLE_TAP = 500;
+/** Holding the bar this long, or pressing it this hard (a stylus or a touch screen that reports force), opens the
+    switcher too; moving the pointer further than `HOLD_SLOP` first makes it a swipe instead. */
+const LONG_PRESS = 450;
+const HARD_PRESS = 0.75;
+const HOLD_SLOP = 10;
 
-/** The home bar: tap it to leave the open app (or the switcher) for the springboard; double-tap it for the switcher. */
+/** The home bar: tap it to leave the open app (or the switcher) for the springboard; double-tap, long-press or
+    press hard on it for the switcher. */
 export function HomeBar({ dark, inApp, onHome, onSwitcher }: { dark: boolean; inApp: boolean; onHome: () => void; onSwitcher: () => void }) {
+  const button = useRef<HTMLButtonElement>(null);
   const last = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const press = useRef<Point | null>(null);
+  // The press already opened the switcher, so the click that ends it is not a tap.
+  const held = useRef(false);
+  const stop = () => { clearTimeout(timer.current); press.current = null; };
+  const hold = () => { stop(); held.current = true; onSwitcher(); };
+
+  // A Force Touch trackpad (Safari) reports a hard click as its own event; pointer events only carry force for touch and pens.
+  useEffect(() => {
+    const el = button.current;
+    if (!el) return;
+    const willBegin = (e: Event) => e.preventDefault();
+    el.addEventListener('webkitmouseforcewillbegin', willBegin);
+    el.addEventListener('webkitmouseforcedown', hold);
+    return () => { el.removeEventListener('webkitmouseforcewillbegin', willBegin); el.removeEventListener('webkitmouseforcedown', hold); };
+  });
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const down = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    held.current = false;
+    press.current = { x: e.clientX, y: e.clientY };
+    clearTimeout(timer.current);
+    timer.current = setTimeout(hold, LONG_PRESS);
+    if (e.pointerType !== 'mouse' && e.pressure >= HARD_PRESS) hold();
+  };
+  const move = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    const from = press.current;
+    if (!from) return;
+    if (Math.hypot(e.clientX - from.x, e.clientY - from.y) > HOLD_SLOP) stop();
+    else if (e.pointerType !== 'mouse' && e.pressure >= HARD_PRESS) hold();
+  };
   const tap = () => {
+    if (held.current) { held.current = false; return; }
     onHome();
     const now = Date.now();
     if (now - last.current < DOUBLE_TAP) { last.current = 0; onSwitcher(); } else last.current = now;
   };
   return (
     <div className={cn('grid shrink-0 place-items-center transition-colors duration-spring-smooth ease-spring-smooth', inApp ? 'bg-background' : 'bg-transparent')} style={{ height: HOME_H }}>
-      <button type="button" aria-label="Home" onClick={tap} className="grid size-full cursor-pointer place-items-center border-0 bg-transparent p-0">
+      <button
+        ref={button}
+        type="button"
+        aria-label="Home"
+        onClick={tap}
+        onPointerDown={down}
+        onPointerMove={move}
+        onPointerUp={stop}
+        onPointerCancel={stop}
+        onContextMenu={(e) => e.preventDefault()}
+        className="grid size-full cursor-pointer touch-none place-items-center border-0 bg-transparent p-0 select-none [-webkit-touch-callout:none]"
+      >
         <span aria-hidden="true" className={cn('block h-1 w-34 rounded-full', inApp ? 'bg-foreground/85' : dark ? 'bg-white/70' : 'bg-black/55')} />
       </button>
     </div>
