@@ -20,6 +20,7 @@ type Action =
   | { type: 'minimize'; app: string }
   | { type: 'zoom'; app: string }
   | { type: 'rect'; app: string; rect: Rect }
+  | { type: 'home' }
   | { type: 'blur' };
 
 /** Room the dock takes at the desktop's bottom edge. */
@@ -68,6 +69,7 @@ function reduce(s: State, a: Action): State {
     }
     case 'zoom': return { ...s, windows: patch(a.app, (w) => ({ zoomed: !w.zoomed })) };
     case 'rect': return { ...s, windows: patch(a.app, () => ({ ...a.rect })) };
+    case 'home': return s.windows.every((w) => w.minimized) && s.front === null ? s : { ...s, windows: s.windows.map((w) => ({ ...w, minimized: true })), front: null };
     case 'blur': return s.front === null ? s : { ...s, front: null };
   }
 }
@@ -83,6 +85,8 @@ export interface Desktop {
   minimize: (app: string) => void;
   toggleZoom: (app: string) => void;
   setRect: (app: string, rect: Rect) => void;
+  /** Phone mode's home gesture: every app steps back to the springboard (they stay running). */
+  home: () => void;
   blur: () => void;
   area: Area;
 }
@@ -108,6 +112,7 @@ export function DesktopProvider({ area, initialApps = [], children }: { area: Ar
     minimize: (app) => dispatch({ type: 'minimize', app }),
     toggleZoom: (app) => dispatch({ type: 'zoom', app }),
     setRect: (app, rect) => dispatch({ type: 'rect', app, rect }),
+    home: () => dispatch({ type: 'home' }),
     blur: () => dispatch({ type: 'blur' }),
     area,
   }), [state, area]);

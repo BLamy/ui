@@ -5094,7 +5094,7 @@
       "name": "macos",
       "type": "registry:block",
       "title": "macOS",
-      "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack; the menu bar follows the frontmost app. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Adapts to its container's width; light and dark.",
+      "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack; the menu bar follows the frontmost app. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Below 640px wide the desktop turns into an iPhone — a status bar with the Dynamic Island, a springboard of the same apps (paged when they don't fit, with a dock and a Search pill that opens Alfred), full-screen apps that zoom out of their icons, and a home bar that sends one back while it keeps running. Light and dark.",
       "categories": [
         "application",
         "productivity",
@@ -5152,6 +5152,11 @@
           "path": "registry/blocks/macos/windows.tsx",
           "type": "registry:component",
           "target": "components/blocks/macos/windows.tsx"
+        },
+        {
+          "path": "registry/blocks/macos/phone.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/macos/phone.tsx"
         },
         {
           "path": "registry/blocks/macos/launcher.tsx",

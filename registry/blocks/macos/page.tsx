@@ -5,7 +5,9 @@
    pages you open with Enter: Calculator (also inline at the root when you type math), Clipboard History with a
    preview and pinning, an Emoji grid, Snippets, File Search with nested folders, System commands (lock, sleep,
    empty Trash, dark mode, restart…), Web Search, and multi-step Workflows. ⌥Space hides and shows the bar; Esc
-   clears, then hides. All sample data is invented; the clock is fixed at 9:41. */
+   clears, then hides. All sample data is invented; the clock is fixed at 9:41.
+   Under 640px wide the desktop becomes an iPhone: a status bar, a springboard of the same apps (Search opens Alfred),
+   and full-screen apps that zoom out of their icons; the home bar sends one back. The apps keep running across it. */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useHotkey, type CommandMenuApi } from '@/components/ui/command-menu';
 import { Toaster, createToastQueue } from '@/components/ui/toast';
@@ -17,6 +19,7 @@ import { APPS } from './apps';
 import { DesktopProvider, useDesktop } from './desktop';
 import { Launcher } from './launcher';
 import { Dock, Hat, MenuBar, PowerOverlay, Wallpaper } from './parts';
+import { HOME_H, HomeBar, STATUS_H, Springboard, StatusBar } from './phone';
 import { AlfredProvider, useAlfred } from './state';
 import { DesktopWindow } from './windows';
 
@@ -98,14 +101,18 @@ interface ScreenProps {
 function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }: ScreenProps & { size: { width: number; height: number } }) {
   const { power, setPower } = useAlfred();
   const desktop = useDesktop();
-  const compact = size.width < 640;
+  // A phone-sized desktop is an iPhone: its own chrome, a springboard, and one full-screen app at a time.
+  const phone = size.width < 640;
+  const [origins, setOrigins] = useState<Record<string, string>>({});
+  const foreground = phone ? desktop.windows.filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0]?.app ?? null : null;
   // Every app, Alfred and the Trash, in the space the dock has.
   const items = APPS.length + 2;
   const tile = Math.min(MAX_DOCK_TILE, Math.floor((size.width - 32 - 12 - (items + 1) * 6 - 6) / items));
-  const dock = size.height >= 480 && tile >= MIN_DOCK_TILE;
+  const dock = !phone && size.height >= 480 && tile >= MIN_DOCK_TILE;
   const width = Math.min(720, size.width - 24);
-  const top = Math.round(Math.max(16, Math.min(140, size.height * 0.14)));
-  const listHeight = Math.round(Math.max(140, Math.min(400, size.height - 28 - top - 68 - 44 - (dock ? 88 : 20))));
+  const chrome = phone ? STATUS_H + HOME_H : MENU_H;
+  const top = phone ? 12 : Math.round(Math.max(16, Math.min(140, size.height * 0.14)));
+  const listHeight = Math.round(Math.max(140, Math.min(400, size.height - chrome - top - 68 - 44 - (dock ? 88 : 20))));
   const toggle = () => (phase === 'open' ? close() : show());
 
   // ⌥Space, Alfred's hotkey (matchesHotkey compares the physical key: on a Mac ⌥Space types a non-breaking space).
@@ -116,11 +123,25 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }:
   return (
     <Wallpaper dark={dark}>
       <div className="flex h-full flex-col">
-        <MenuBar dark={dark} compact={compact} onAlfred={toggle} />
+        {phone ? <StatusBar dark={dark} inApp={foreground !== null} /> : <MenuBar dark={dark} onAlfred={toggle} />}
         {/* The desktop: pressing the bare wallpaper puts Finder frontmost, as on a Mac. */}
         <div className="relative min-h-0 flex-1" onPointerDown={(e) => { if (e.target === e.currentTarget) desktop.blur(); }}>
+          {phone ? (
+            <Springboard
+              dark={dark}
+              away={foreground !== null}
+              onLaunch={(id, origin) => { setOrigins((o) => ({ ...o, [id]: origin })); desktop.open(id); }}
+              onSearch={show}
+            />
+          ) : null}
+          {/* The same windows in both modes, so a resize across the breakpoint keeps every app as it was. */}
           <div data-slot="macos-windows" className="pointer-events-none absolute inset-0 isolate overflow-hidden">
-            {desktop.windows.map((w) => <DesktopWindow key={w.app} win={w} dark={dark} dock={dock} />)}
+            {desktop.windows.map((w) => (
+              <DesktopWindow
+                key={w.app} win={w} dark={dark} dock={dock}
+                phone={phone ? { shown: w.app === foreground, origin: origins[w.app] ?? '50% 50%' } : undefined}
+              />
+            ))}
           </div>
           {phase !== 'closed' ? (
             <div
@@ -136,7 +157,7 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }:
                 width={width} listHeight={listHeight} onClose={close}
               />
             </div>
-          ) : !desktop.windows.length ? (
+          ) : !desktop.windows.length && !phone ? (
             <div className="absolute left-1/2 -translate-x-1/2" style={{ top: top + 12 }}>
               <button
                 type="button"
@@ -157,9 +178,10 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }:
             </div>
           ) : null}
         </div>
+        {phone ? <HomeBar dark={dark} inApp={foreground !== null} /> : null}
       </div>
       {dock ? <Dock dark={dark} tile={tile} onAlfred={toggle} /> : null}
-      <Toaster queue={queue} inline placement="bottom" offset={dock ? 92 : 24} aria-label="Alfred notifications" />
+      <Toaster queue={queue} inline placement={phone ? 'top' : 'bottom'} offset={phone ? STATUS_H + 8 : dock ? 92 : 24} aria-label="Alfred notifications" />
       <PowerOverlay state={power} onWake={wake} dark={dark} />
     </Wallpaper>
   );

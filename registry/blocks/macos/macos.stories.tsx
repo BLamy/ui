@@ -72,6 +72,16 @@ export const Narrow: Story = {
   ),
 };
 
+/** Phone width: the desktop becomes an iPhone — a springboard of the same apps; tap one and it zooms open, the home bar sends it back. */
+export const Phone: Story = {
+  args: { defaultOpen: false },
+  render: (args) => (
+    <div className="box-border grid h-screen w-full place-items-center p-4" style={{ background: DESK }}>
+      <div className="h-[780px] max-h-full w-[390px] overflow-hidden rounded-[44px] shadow-[0_12px_40px_black] shadow-black/18"><MacOS {...args} /></div>
+    </div>
+  ),
+};
+
 /** An app open in its window, the bar hidden — the Dock shows it running. */
 export const Reminders: Story = {
   args: { initialApps: ['reminders'], defaultOpen: false },

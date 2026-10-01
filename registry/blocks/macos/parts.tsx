@@ -177,7 +177,7 @@ function useCountdown(timer: RunningTimer | null) {
 }
 
 /** The menu bar: the frontmost app's name and menus, and the status items. The clock is fixed (9:41). */
-export function MenuBar({ dark, compact, onAlfred }: { dark: boolean; compact: boolean; onAlfred: () => void }) {
+export function MenuBar({ dark, onAlfred }: { dark: boolean; onAlfred: () => void }) {
   const { timer } = useAlfred();
   const { front } = useDesktop();
   const app = APPS.find((a) => a.id === front);
@@ -192,7 +192,7 @@ export function MenuBar({ dark, compact, onAlfred }: { dark: boolean; compact: b
     >
       <Hat size={17} />
       <span className="font-semibold">{app?.name ?? 'Finder'}</span>
-      {!compact ? ['File', 'Edit', 'View', app ? 'Window' : 'Go', 'Help'].map((m) => <span key={m} className="opacity-90">{m}</span>) : null}
+      {['File', 'Edit', 'View', app ? 'Window' : 'Go', 'Help'].map((m) => <span key={m} className="opacity-90">{m}</span>)}
       <span className="ml-auto flex items-center gap-3.5">
         {timer && left !== null ? (
           <span className="inline-flex animate-bl-pop-in items-center gap-1 rounded-md bg-current/12 px-1.5 py-px font-medium tabular-nums motion-reduce:animate-bl-fade-in">
@@ -205,10 +205,10 @@ export function MenuBar({ dark, compact, onAlfred }: { dark: boolean; compact: b
         <button type="button" onClick={onAlfred} aria-label="Show Alfred" className="grid cursor-pointer place-items-center border-0 bg-transparent p-0 text-inherit opacity-90 hover:opacity-100">
           <Hat size={16} />
         </button>
-        {!compact ? <Icon name="battery-full" size={20} sw={1.6} /> : null}
+        <Icon name="battery-full" size={20} sw={1.6} />
         <Icon name="wifi" size={15} sw={2} />
-        {!compact ? <Icon name="magnifyingglass" size={14} sw={2.2} /> : null}
-        <span className="font-medium tabular-nums">{compact ? '9:41' : 'Tue Sep 29  9:41 AM'}</span>
+        <Icon name="magnifyingglass" size={14} sw={2.2} />
+        <span className="font-medium tabular-nums">Tue Sep 29  9:41 AM</span>
       </span>
     </div>
   );

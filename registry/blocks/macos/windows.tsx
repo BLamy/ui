@@ -1,6 +1,7 @@
 /* A macOS window: traffic lights, a title bar you drag (double-click zooms), edges you resize, and the app inside.
-   The app stays mounted while the window is minimized, so it comes back as it was. */
-import { Suspense, memo, useRef, type PointerEvent as ReactPointerEvent } from 'react';
+   The app stays mounted while the window is minimized, so it comes back as it was. On a phone-sized desktop the
+   same window is a full-screen app that zooms out of its springboard icon — no chrome, same mounted app. */
+import { Suspense, memo, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { AppearanceProvider } from '@/lib/theme';
@@ -35,13 +36,28 @@ const AppBody = memo(function AppBody({ app, dark }: { app: DesktopApp; dark: bo
 
 type Edge = 'e' | 's' | 'se';
 
-export function DesktopWindow({ win, dark, dock }: { win: WindowState; dark: boolean; dock: boolean }) {
+/** How a window shows on a phone: the one in front is up, the rest are tucked into their icons (`origin`). */
+export interface PhoneView { shown: boolean; origin: string }
+
+/** False for the first frame, so a window that mounts hidden can transition in. */
+function useSettled() {
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setSettled(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return settled;
+}
+
+export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; dark: boolean; dock: boolean; phone?: PhoneView }) {
   const d = useDesktop();
+  const settled = useSettled();
   const app = appById(win.app);
   const gesture = useRef<{ kind: 'move' | Edge; px: number; py: number; rect: Rect } | null>(null);
   if (!app) return null;
   const front = d.front === win.app;
   const rect = shownRect(win, d.area, dock);
+  const up = phone ? phone.shown && settled : false;
 
   const begin = (kind: 'move' | Edge) => (e: ReactPointerEvent) => {
     if (e.button !== 0 || win.zoomed) return;
@@ -75,39 +91,49 @@ export function DesktopWindow({ win, dark, dock }: { win: WindowState; dark: boo
       aria-label={app.name}
       // Any press inside brings the window forward (capture: before the app's own handlers).
       onPointerDownCapture={() => d.focus(win.app)}
-      inert={win.minimized || undefined}
+      inert={(phone ? !phone.shown : win.minimized) || undefined}
       className={cn(
-        'pointer-events-auto absolute flex origin-bottom flex-col overflow-hidden bg-background transition-[opacity,scale,box-shadow] duration-spring-snappy ease-spring-snappy',
-        win.zoomed ? 'rounded-none' : 'rounded-panel',
-        win.minimized ? 'pointer-events-none scale-75 opacity-0' : 'animate-bl-pop-in motion-reduce:animate-bl-fade-in',
-        front
-          ? 'shadow-[0_24px_64px_-8px,0_0_0_.5px] shadow-black/40 ring-1 ring-black/20'
-          : 'shadow-[0_10px_32px_-8px,0_0_0_.5px] shadow-black/25 ring-1 ring-black/10',
+        'pointer-events-auto absolute flex flex-col overflow-hidden bg-background',
+        phone
+          ? cn(
+              'transition-[opacity,scale,border-radius] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+              up ? 'rounded-none' : 'pointer-events-none scale-[.18] rounded-[28px] opacity-0 motion-reduce:scale-100',
+            )
+          : cn(
+              'origin-bottom transition-[opacity,scale,box-shadow] duration-spring-snappy ease-spring-snappy',
+              win.zoomed ? 'rounded-none' : 'rounded-panel',
+              win.minimized ? 'pointer-events-none scale-75 opacity-0' : 'animate-bl-pop-in motion-reduce:animate-bl-fade-in',
+              front
+                ? 'shadow-[0_24px_64px_-8px,0_0_0_.5px] shadow-black/40 ring-1 ring-black/20'
+                : 'shadow-[0_10px_32px_-8px,0_0_0_.5px] shadow-black/25 ring-1 ring-black/10',
+            ),
       )}
-      style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, zIndex: win.z }}
+      style={phone ? { inset: 0, zIndex: win.z, transformOrigin: phone.origin } : { left: rect.x, top: rect.y, width: rect.w, height: rect.h, zIndex: win.z }}
     >
-      <header
-        data-slot="macos-titlebar"
-        onPointerDown={begin('move')}
-        onPointerMove={move}
-        onPointerUp={end}
-        onPointerCancel={end}
-        onDoubleClick={(e) => { if (!(e.target as HTMLElement).closest('button')) d.toggleZoom(win.app); }}
-        className={cn('group/lights relative flex shrink-0 touch-none items-center bg-card px-3 shadow-hairline-b', win.zoomed ? 'cursor-default' : 'cursor-grab active:cursor-grabbing')}
-        style={{ height: TITLE_H }}
-      >
-        <div className="z-10 flex gap-2">
-          <Light label={`Close ${app.name}`} kind="close" active={front} onClick={() => d.close(win.app)} />
-          <Light label={`Minimize ${app.name}`} kind="minimize" active={front} onClick={() => d.minimize(win.app)} />
-          <Light label={win.zoomed ? `Exit full size ${app.name}` : `Zoom ${app.name}`} kind="zoom" active={front} onClick={() => d.toggleZoom(win.app)} />
-        </div>
-        <div className={cn('pointer-events-none absolute inset-x-20 flex items-center justify-center gap-1.5 text-footnote font-semibold', front ? 'text-foreground' : 'text-muted-foreground')}>
-          <AppTile app={app} size={16} />
-          <span className="truncate">{app.name}</span>
-        </div>
-      </header>
+      {phone ? null : (
+        <header
+          data-slot="macos-titlebar"
+          onPointerDown={begin('move')}
+          onPointerMove={move}
+          onPointerUp={end}
+          onPointerCancel={end}
+          onDoubleClick={(e) => { if (!(e.target as HTMLElement).closest('button')) d.toggleZoom(win.app); }}
+          className={cn('group/lights relative flex shrink-0 touch-none items-center bg-card px-3 shadow-hairline-b', win.zoomed ? 'cursor-default' : 'cursor-grab active:cursor-grabbing')}
+          style={{ height: TITLE_H }}
+        >
+          <div className="z-10 flex gap-2">
+            <Light label={`Close ${app.name}`} kind="close" active={front} onClick={() => d.close(win.app)} />
+            <Light label={`Minimize ${app.name}`} kind="minimize" active={front} onClick={() => d.minimize(win.app)} />
+            <Light label={win.zoomed ? `Exit full size ${app.name}` : `Zoom ${app.name}`} kind="zoom" active={front} onClick={() => d.toggleZoom(win.app)} />
+          </div>
+          <div className={cn('pointer-events-none absolute inset-x-20 flex items-center justify-center gap-1.5 text-footnote font-semibold', front ? 'text-foreground' : 'text-muted-foreground')}>
+            <AppTile app={app} size={16} />
+            <span className="truncate">{app.name}</span>
+          </div>
+        </header>
+      )}
       <div className="relative isolate min-h-0 flex-1"><AppBody app={app} dark={dark} /></div>
-      {win.zoomed ? null : (
+      {win.zoomed || phone ? null : (
         <>
           {edge('e', 'top-0 right-0 h-full w-1.5 cursor-ew-resize')}
           {edge('s', 'bottom-0 left-0 h-1.5 w-full cursor-ns-resize')}
