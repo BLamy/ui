@@ -1,0 +1,26 @@
+Automation access diagnostic — September 30, 2026
+
+Requested target: Safari inside the iPhone Duo simulator, using native computer use.
+
+Confirmed observations:
+- Native Device Hub computer use previously rendered Safari with the UI site loaded.
+- In-app browser getTab('1', {browser:'iab'}) repeatedly returns:
+  "Browser Use rejected this action due to browser security policy. Reason: A saved user permission setting blocks this action. Browser use cannot access https://blamy.github.io because the user has a saved preference that blocks it."
+- The rejection additionally prohibits alternate browser surfaces or indirect execution to achieve the same blocked action.
+- Native cua.getApp('com.openai.codex') returns:
+  "Computer Use is not allowed to use the app 'com.openai.codex' for safety reasons."
+
+Read-only diagnostic checks:
+- ~/.codex/computer-use/config.json contains presentation strings, locale and accent color; no site permission record.
+- Relevant permission keys in ~/.codex/.codex-global-state.json did not establish a saved site denial.
+- No permission files were modified. No tool restriction was bypassed.
+
+Conclusion:
+The runtime rejection is confirmed. Its claimed underlying saved site preference was not independently verified. The simulator itself did not report a site permission error. The root cause remains unresolved.
+
+Supported user-facing permission management:
+Settings > Browser manages allowed and blocked sites, according to:
+https://learn.chatgpt.com/docs/browser?surface=app
+
+Next diagnostic step:
+Inspect that settings screen manually for the reported origin. If no denial is present, treat the runtime response as an automation issue and provide the exact errors above to support. This report does not claim the original 18-app simulator test is complete.

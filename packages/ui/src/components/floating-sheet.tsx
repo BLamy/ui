@@ -77,8 +77,9 @@ const surfaceBase =
 const GEOMETRY = ['width', 'height', 'bottom', 'border-radius'];
 const PLACEMENT = ['left', 'right', 'top', 'transform'];
 const LOOK = ['background-color', 'border-color', 'box-shadow', 'backdrop-filter', 'color'];
-const surfaceTransition = (driving: boolean) =>
-  [springCss(PLACEMENT, 'smooth'), springCss(LOOK, 'smooth'), springCss('opacity', 'snappy'), driving ? '' : springCss(GEOMETRY, 'tray')]
+// A dismissible sheet's slide off the edge is the drag spring's own `transform`, so it never CSS-transitions.
+const surfaceTransition = (driving: boolean, slides: boolean) =>
+  [springCss(slides ? PLACEMENT.filter((p) => p !== 'transform') : PLACEMENT, 'smooth'), springCss(LOOK, 'smooth'), springCss('opacity', 'snappy'), driving ? '' : springCss(GEOMETRY, 'tray')]
     .filter(Boolean)
     .join(', ');
 /** The surface: translucent glass (a highlight gradient over the tone's surface colour) or an opaque system sheet
@@ -132,6 +133,9 @@ export function sheetToneProps(tone: FloatingSheetTone): { 'data-theme-scope'?: 
   return tone === 'auto' ? {} : { 'data-theme-scope': 'sheet', className: themeScopeClass(tone) };
 }
 
+/** A size as pixels, or (`'52%'`) a share of the host's height. */
+export type FloatingSheetSize = number | `${number}%`;
+
 export interface FloatingSheetProps {
   /** Controlled state for the fully grown sheet. */
   open?: boolean;
@@ -139,9 +143,20 @@ export interface FloatingSheetProps {
   onOpenChange?: (open: boolean) => void;
   /**
    * Height of body kept visible above the foot while closed, so a summary (the newest chat
-   * reply, an order status) peeks out. `0` rests on the foot alone.
+   * reply, an order status) peeks out. `0` rests on the foot alone. `'52%'` sizes the whole resting sheet
+   * (cap and foot included) as a share of the host instead.
    */
-  peek?: number;
+  peek?: FloatingSheetSize;
+  /** Space left above the sheet when fully grown, so the page behind still shows (and the top corners stay round). */
+  topGap?: FloatingSheetSize;
+  /**
+   * Make it a bottom sheet that can be put away: dragging below the resting height slides it off the edge
+   * (and calls `onDismiss`) instead of folding it into a FAB. Show it again with `visible`.
+   */
+  dismissible?: boolean;
+  /** Whether a `dismissible` sheet is on screen. Controlled: set it to `false` in `onDismiss`. */
+  visible?: boolean;
+  onDismiss?: () => void;
   /** Inset from the host edges while closed. `0` docks the sheet edge to edge like a system sheet. */
   gutter?: number;
   /** Corner radius while closed. Grows square as the sheet fills the host. */
@@ -160,9 +175,10 @@ export interface FloatingSheetProps {
   bodyAlign?: 'start' | 'end';
   /**
    * Extra resting heights between the peek and full, as fractions (0–1) of the fully grown body — e.g.
-   * `[0.5]` for a half-height detent. A drag releases to whichever stop its velocity carries it nearest.
+   * `[0.5]` for a half-height detent — or (`'70%'`) as a share of the host. A drag releases to whichever stop its
+   * velocity carries it nearest.
    */
-  detents?: number[];
+  detents?: (number | `${number}%`)[];
   /** Allow dragging below the resting height to fold the sheet into a FAB. */
   minimizable?: boolean;
   /** Resting position of the FAB. */
@@ -179,8 +195,14 @@ export interface FloatingSheetProps {
   label?: string;
   children?: ReactNode;
   className?: string;
+  /** Classes for the sheet surface itself (the card), merged last — e.g. `bg-background`. */
+  surfaceClassName?: string;
   style?: CSSProperties;
 }
+
+/** Pixels of a host share (`'52%'`), minus what the cap, foot and borders already take. */
+const shareOfHost = (percent: string, hostHeight: number, chrome: number) =>
+  Math.max(0, (hostHeight * Number.parseFloat(percent)) / 100 - chrome);
 
 /**
  * A floating surface that fills its positioned host as a pointer-transparent layer and
@@ -193,6 +215,10 @@ export function FloatingSheet({
   defaultOpen = false,
   onOpenChange,
   peek: requestedPeek = 0,
+  topGap = 0,
+  dismissible = false,
+  visible = true,
+  onDismiss,
   gutter = 20,
   radius = 28,
   appearance = 'glass',
@@ -208,6 +234,7 @@ export function FloatingSheet({
   label = 'Sheet',
   children,
   className,
+  surfaceClassName,
   style,
 }: FloatingSheetProps) {
   const ambient = useAppearance();
@@ -267,20 +294,29 @@ export function FloatingSheet({
   }, [scrollRef, hideOnScroll]);
 
   const dockHeight = footHeight + CAP_HEIGHT;
-  // Fully grown, the cap touches the host's top edge and the foot its bottom edge.
-  const maxReveal = Math.max(0, height - dockHeight - BORDER_HEIGHT);
+  const chrome = dockHeight + BORDER_HEIGHT;
+  // Fully grown, the cap touches the host's top edge (or `topGap` short of it) and the foot its bottom edge.
+  const gapAbove = typeof topGap === 'string' ? (height * Number.parseFloat(topGap)) / 100 : topGap;
+  const maxReveal = Math.max(0, height - chrome - gapAbove);
   // The peek can never take more than three quarters of the host, or there is nothing to grow into.
-  const peek = Math.max(0, Math.min(requestedPeek, maxReveal * 0.75));
-  // The cap gesture (grow, snap, fold into the FAB) is the shared sheet drag.
+  const requested = typeof requestedPeek === 'string' ? shareOfHost(requestedPeek, height, chrome) : requestedPeek;
+  const peek = Math.max(0, Math.min(requested, maxReveal * 0.75));
+  // Off the edge: the surface, the gutter and the shadow's reach.
+  const slideDistance = chrome + peek + gutter + 48;
+  // The cap gesture (grow, snap, fold into the FAB or slide away) is the shared sheet drag.
   const sheetDrag = useSheetDrag({
     open,
     onOpenChange: setOpen,
     peek,
     maxReveal,
-    detents: detents?.map((f) => Math.round(Math.max(0, Math.min(1, f)) * maxReveal)),
-    minimizable,
-    minimized,
-    onMinimizedChange: setMinimized,
+    detents: detents?.map((d) =>
+      typeof d === 'string' ? shareOfHost(d, height, chrome) : Math.round(Math.max(0, Math.min(1, d)) * maxReveal),
+    ),
+    minimizable: minimizable || dismissible,
+    minimized: dismissible ? !visible : minimized,
+    onMinimizedChange: dismissible ? (next) => next && onDismiss?.() : setMinimized,
+    fold: dismissible ? 'dismiss' : 'fab',
+    foldTravel: dismissible ? slideDistance : undefined,
   });
 
   // `reveal` / `minimize` are the spring's current values (the finger's while dragging).
@@ -290,13 +326,16 @@ export function FloatingSheet({
   // Growth is measured from the resting height, so a peeking sheet keeps its compact shape
   // and only starts turning into the full page once it is dragged past the peek.
   const grown = maxReveal > peek ? Math.max(0, (reveal - peek) / (maxReveal - peek)) : 0;
-  const minimizeProgress = sheetDrag.minimize;
+  // `minimize` is the FAB morph, or (dismissible) how far the whole surface has slid off the edge.
+  const minimizeProgress = dismissible ? 0 : sheetDrag.minimize;
+  const slide = dismissible ? sheetDrag.minimize : 0;
+  const dismissed = dismissible && !visible;
   const collapsedWidth = Math.max(FAB_SIZE, width - gutter * 2);
   const expandedWidth = collapsedWidth + (width - collapsedWidth) * grown;
   const overlayWidth = expandedWidth + (FAB_SIZE - expandedWidth) * minimizeProgress;
   const expandedHeight = dockHeight + reveal + BORDER_HEIGHT;
   const overlayHeight = expandedHeight + (FAB_SIZE - expandedHeight) * minimizeProgress;
-  const expandedRadius = radius * (1 - grown);
+  const expandedRadius = gapAbove > 0 ? radius : radius * (1 - grown);
   const overlayRadius = expandedRadius + (FAB_SIZE / 2 - expandedRadius) * minimizeProgress;
   const bottomRadius = gutter > 0 ? overlayRadius : minimizeProgress * (FAB_SIZE / 2);
 
@@ -314,6 +353,10 @@ export function FloatingSheet({
   useEffect(() => {
     if (open) setMinimized(false);
   }, [open]);
+  // Putting a dismissible sheet away collapses it too, so it comes back at rest.
+  useEffect(() => {
+    if (dismissed && open) closeRef.current();
+  }, [dismissed, open]);
 
   const slots = collectSlots(children);
   const hasFoot = slots.foot != null && slots.foot !== false;
@@ -348,6 +391,7 @@ export function FloatingSheet({
         data-expanded={expanded || undefined}
         data-dragging={dragging || undefined}
         data-minimized={minimized || undefined}
+        data-dismissed={dismissed || undefined}
         className={cn(floatingSheetVariants({ tone }), toneProps.className, className)}
         style={{
           '--ck-sheet-dock-height': `${dockHeight}px`,
@@ -392,11 +436,17 @@ export function FloatingSheet({
         />
         <div
           data-slot="floating-sheet-surface"
-          className={floatingSheetSurfaceVariants({ appearance, placement: minimized ? fabPosition : hidden ? 'hidden' : 'resting', hidden })}
+          className={cn(
+            floatingSheetSurfaceVariants({ appearance, placement: minimized ? fabPosition : hidden ? 'hidden' : 'resting', hidden }),
+            dismissed && 'pointer-events-none',
+            surfaceClassName,
+          )}
+          inert={dismissed}
           // Inline so the production CSS optimizer cannot rewrite the unprefixed property
           // out of Safari's bundle.
           style={{
-            transition: dragging ? 'none' : surfaceTransition(driving),
+            transition: dragging ? 'none' : surfaceTransition(driving, dismissible),
+            ...(dismissible && !hidden ? { transform: `translate(-50%, ${slide * slideDistance}px)` } : null),
             ...(glass ? { backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' } : null),
           }}
           data-open={open || undefined}

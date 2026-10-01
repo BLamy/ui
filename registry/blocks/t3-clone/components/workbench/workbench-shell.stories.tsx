@@ -108,7 +108,7 @@ function ThreadNav({
 }
 
 /* The full composition, static (no agent): each frame width exercises one width class —
-   regular (≥1120) · medium (760–1119, right-edge drawer) · compact (<760, tab bar + snap-sheet dock). */
+   regular (≥1120) · medium (760–1119, right-edge drawer) · compact (<760, tab bar + sheet dock). */
 function ShellDemo({
   width,
   height,

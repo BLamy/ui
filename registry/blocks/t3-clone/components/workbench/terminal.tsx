@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 /* ══ Terminal parts ══
    <TerminalHeader title="zsh — cookbook"><TerminalAction icon="rectangle-split"/><WorkbenchDockClose/></TerminalHeader>
    <TerminalBody seed={lines}/>
-   Put them in a WorkbenchDock (inline dock ⇄ compact SnapSheet) or a SurfaceTerminal (panel). */
+   Put them in a WorkbenchDock (inline dock ⇄ compact FloatingSheet) or a SurfaceTerminal (panel). */
 export interface TermLine {
   /** text */
   t: string;

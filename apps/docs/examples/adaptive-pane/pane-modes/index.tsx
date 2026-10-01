@@ -1,6 +1,5 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane'
-import { EdgeDrawer } from '@/components/ui/edge-drawer'
 
 const panel: CSSProperties = {
   height: '100%',
@@ -63,27 +62,27 @@ export default function PaneModes({
               <TintButton label="Open pane" onPress={() => setOpen(true)} />
             ) : null}
             <TintButton
-              label="Open EdgeDrawer"
+              label="Open right drawer"
               onPress={() => setDrawer(true)}
             />
           </div>
         </div>
-        {/* EdgeDrawer: the headless scrim + panel AdaptivePane uses for its
-            drawer mode */}
-        <EdgeDrawer
+        {/* A second pane in drawer mode, from the right edge */}
+        <AdaptivePane
+          mode="drawer"
           side="right"
           open={drawer}
           onClose={() => setDrawer(false)}
-          width={240}
+          drawerWidth={240}
           zIndex={40}
         >
           <div style={panel}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>EdgeDrawer</div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Right drawer</div>
             <div style={{ color: 'var(--muted-foreground)' }}>
-              Headless scrim + panel. Tap the scrim to close.
+              Scrim + panel. Tap the scrim to close.
             </div>
           </div>
-        </EdgeDrawer>
+        </AdaptivePane>
       </div>
     </Frame>
   )

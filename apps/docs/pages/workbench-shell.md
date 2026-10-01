@@ -4,7 +4,7 @@ An IDE-style agent workspace, built from parts. `WorkbenchShell` is a thin layou
 
 ## Installation
 
-`WorkbenchShell` and its parts belong to the **t3-clone** [block](https://blamy.github.io/ui/#/blocks), not the library: an IDE-style workspace is the layout of one product, so it is copied into your app, where it is yours to change. The block also owns the terminal, the surface panels, the `ModelPicker` and the `WorkbenchComposer`. Adding it copies the library parts it is built from (AdaptivePane, SnapSheet, Conversation, Composer, MessageScroller, …).
+`WorkbenchShell` and its parts belong to the **t3-clone** [block](https://blamy.github.io/ui/#/blocks), not the library: an IDE-style workspace is the layout of one product, so it is copied into your app, where it is yours to change. The block also owns the terminal, the surface panels, the `ModelPicker` and the `WorkbenchComposer`. Adding it copies the library parts it is built from (AdaptivePane, FloatingSheet, Conversation, Composer, MessageScroller, …).
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/t3-clone.json{% endcommand %}
 
@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/conversation'
 ```
 
-The shell opens the `workbench` [theme scope](https://blamy.github.io/ui/#/theming), which the bl-theme defines; without the bl-theme it wears your own theme. The conversation parts, `MessageScroller`, `SnapSheet` and `Composer` are library parts.
+The shell opens the `workbench` [theme scope](https://blamy.github.io/ui/#/theming), which the bl-theme defines; without the bl-theme it wears your own theme. The conversation parts, `MessageScroller`, `FloatingSheet` and `Composer` are library parts.
 
 ```tsx
 import {
@@ -77,9 +77,9 @@ Triggers take an optional `onPress` that replaces their default action. Every pa
 
 | Region | Regular ≥ 1120px | Medium 760–1119px | Compact < 760px |
 | --- | --- | --- | --- |
-| `WorkbenchSidebar` | Column, toggled | Column, toggled | [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer) over the whole shell |
-| `WorkbenchDock` | Inline, open by default | Inline, closed by default | `SnapSheet` (52% / 93% snaps) |
-| `WorkbenchPanel` | Column (`clamp(300px, 32%, 420px)`), open by default | Right EdgeDrawer over a scrim | A page covering everything above the tab bar |
+| `WorkbenchSidebar` | Column, toggled | Column, toggled | Drawer over the whole shell |
+| `WorkbenchDock` | Inline, open by default | Inline, closed by default | dismissible `FloatingSheet` (52% / 93% stops) |
+| `WorkbenchPanel` | Column (`clamp(300px, 32%, 420px)`), open by default | Right drawer over a scrim | A page covering everything above the tab bar |
 | Panel full screen | Covers the whole shell | Covers the whole shell | — |
 | `WorkbenchTabBar` | Not rendered | Not rendered | Bottom bar |
 
@@ -148,7 +148,7 @@ No sidebar; the panel is an inspector showing the agent's change. At this width 
 
 ### Phone
 
-At compact width the header's sidebar toggle becomes a hamburger, and the dock is a `SnapSheet`: it rises on a spring, follows the finger (rubber-banding past the top), and its release velocity picks a snap or dismisses it.
+At compact width the header's sidebar toggle becomes a hamburger, and the dock is a dismissible [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet): it rises on a spring, follows the finger (rubber-banding past the top), and its release velocity picks a stop or dismisses it.
 
 {% demo src="workbench-shell/phone" %}
 
@@ -166,9 +166,9 @@ A new thread is a `Conversation` with `empty`: the greeting, the composer centre
 
 ### The compact terminal on its own
 
-`SnapSheet` is also usable directly. A slow drag settles at the nearest snap; a flick carries on to the next — or down past the lowest to close.
+`FloatingSheet` is also usable directly (`dismissible`, with `peek`, `detents` and `topGap` as shares of the host). A slow drag settles at the nearest stop; a flick carries on to the next — or down past the lowest to put it away.
 
-{% demo src="workbench-shell/snap-sheet" %}
+{% demo src="workbench-shell/compact-dock" %}
 
 ## Terminal
 

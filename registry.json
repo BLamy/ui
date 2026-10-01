@@ -1984,32 +1984,6 @@
       }
     },
     {
-      "name": "edge-drawer",
-      "type": "registry:ui",
-      "title": "EdgeDrawer",
-      "description": "A drawer that follows the finger from any edge, with rubber-banding and velocity-aware snapping.",
-      "dependencies": [
-        "class-variance-authority@^0.7.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/edge-drawer.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/edge-drawer.tsx"
-        }
-      ],
-      "meta": {
-        "page": "edge-drawer",
-        "exports": [
-          "EdgeDrawer"
-        ]
-      }
-    },
-    {
       "name": "edit-bar",
       "type": "registry:ui",
       "title": "EditBar",
@@ -3259,33 +3233,6 @@
       }
     },
     {
-      "name": "snap-sheet",
-      "type": "registry:ui",
-      "title": "SnapSheet",
-      "description": "A bottom sheet you drag between snap points, with velocity-aware release, a scrim that follows the panel and drag-down to dismiss.",
-      "dependencies": [
-        "framer-motion@^13.1.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/utils.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/components/snap-sheet.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/snap-sheet.tsx"
-        }
-      ],
-      "meta": {
-        "page": "snap-sheet",
-        "exports": [
-          "SnapSheet"
-        ]
-      }
-    },
-    {
       "name": "spinner",
       "type": "registry:ui",
       "title": "Spinner",
@@ -3826,6 +3773,26 @@
           "WorkbenchAppearanceProvider"
         ]
       }
+    },
+    {
+      "name": "edge-drawer",
+      "type": "registry:ui",
+      "title": "Edge Drawer",
+      "description": "Edge Drawer — part of BL UI's library (components/edge-drawer.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/edge-drawer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/edge-drawer.tsx"
+        }
+      ]
     },
     {
       "name": "measure-h",
@@ -5344,7 +5311,7 @@
       "name": "t3-clone",
       "type": "registry:block",
       "title": "T3 Code clone",
-      "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock with tabs, a surface panel (browser, terminal, files, diff, agents) — every thread keeps its own terminals and panel surface, so picking another thread switches them too — and a ⌘K command palette with nested pages (new thread in a project, link pull requests, go to file, search contents, add a project from a local folder, Git URL or GitHub) plus a live theme editor. Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and snap-sheet terminal on phones. Composed from the WorkbenchShell, conversation, terminal and surface primitives, with its own thread sidebar parts.",
+      "description": "An IDE-style agent workspace in the style of T3 Code: thread sidebar, streaming conversation with a composer that flies from centre to dock, resizable terminal dock with tabs, a surface panel (browser, terminal, files, diff, agents) — every thread keeps its own terminals and panel surface, so picking another thread switches them too — and a ⌘K command palette with nested pages (new thread in a project, link pull requests, go to file, search contents, add a project from a local folder, Git URL or GitHub) plus a live theme editor. Docks everything on desktop, slides the panel in as a drawer on tablets, and moves to a hamburger sidebar, bottom tab bar and dismissible-sheet terminal on phones. Composed from the WorkbenchShell, conversation, terminal and surface primitives, with its own thread sidebar parts.",
       "categories": [
         "ai",
         "chat",
@@ -5366,11 +5333,11 @@
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/conversation.json",
+        "https://blamy.github.io/ui/r/floating-sheet.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-button.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/plain-button.json",
-        "https://blamy.github.io/ui/r/snap-sheet.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toast.json",
         "https://blamy.github.io/ui/r/utils.json",

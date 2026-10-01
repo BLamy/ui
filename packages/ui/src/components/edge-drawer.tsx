@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils';
 
 /* ══ EdgeDrawer — headless scrim + panel that slides in from one edge of a positioned host ══
    No chrome of its own: the children are the whole panel. Tapping the scrim calls onClose. SideDrawer's overlay
-   mode, Sidebar's compact overlay and AdaptivePane's drawer mode are configurations of it. */
+   mode, Sidebar's compact overlay and AdaptivePane's drawer mode are configurations of it. An internal building
+   block, not a public component: reach for Sheet (modal) or FloatingSheet (beside the page) instead. */
 
 /** The sliding panel: its edge, and (while open) the lifted shadow. Closed, it waits just past its edge. */
 export const edgeDrawerVariants = cva(

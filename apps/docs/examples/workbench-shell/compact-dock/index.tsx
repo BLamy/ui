@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SnapSheet } from '@/components/ui/snap-sheet'
+import { FloatingSheet } from '@/components/ui/floating-sheet'
 import { WorkbenchTheme } from '@/components/ui/workbench-theme'
 import { ThemeScope } from '@/lib/theme'
 import { TerminalAction, TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
@@ -27,8 +27,8 @@ function TerminalSheet() {
           style={{ fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.5 }}
         >
           Open the terminal, then drag its handle: a slow drag settles at the
-          nearest snap, a flick carries on to the next — or down past the lowest
-          to close.
+          nearest stop, a flick carries on to the next — or down past the lowest
+          to put it away.
         </div>
         <button
           type="button"
@@ -51,26 +51,39 @@ function TerminalSheet() {
       </div>
       {/* A `terminal` theme scope: the terminal's own background and ink. */}
       <ThemeScope scope="terminal" style={{ display: 'contents' }}>
-      <SnapSheet
-        open={open}
-        onClose={() => setOpen(false)}
-        snaps={[0.5, 0.92]}
-        style={{ background: 'var(--background)' }}
+      <FloatingSheet
+        appearance="sheet"
+        gutter={0}
+        radius={16}
+        dismissible
+        visible={open}
+        onDismiss={() => setOpen(false)}
+        peek="50%"
+        topGap="8%"
+        hideOnScroll={false}
+        scrim={false}
+        label="Terminal"
+        className="z-70"
+        surfaceClassName="bg-background"
       >
-        <TerminalHeader title="zsh — cookbook">
-          <TerminalAction
-            icon="bin"
-            label="Close terminal"
-            onPress={() => setOpen(false)}
-          />
-        </TerminalHeader>
-        <TerminalBody
-          seed={[
-            { t: 'npm run dev', p: true },
-            { t: '  ➜  Local:   http://localhost:3000/', c: '#8AB4FF' },
-          ]}
-        />
-      </SnapSheet>
+        <FloatingSheet.Body>
+          <div className="flex h-full min-h-0 flex-col">
+            <TerminalHeader title="zsh — cookbook">
+              <TerminalAction
+                icon="bin"
+                label="Close terminal"
+                onPress={() => setOpen(false)}
+              />
+            </TerminalHeader>
+            <TerminalBody
+              seed={[
+                { t: 'npm run dev', p: true },
+                { t: '  ➜  Local:   http://localhost:3000/', c: '#8AB4FF' },
+              ]}
+            />
+          </div>
+        </FloatingSheet.Body>
+      </FloatingSheet>
       </ThemeScope>
     </WorkbenchTheme>
   )

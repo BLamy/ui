@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><title>Fold UI audit — incomplete</title>
+<style>body{max-width:950px;margin:40px auto;font:16px/1.6 system-ui;padding:20px}img{max-width:100%;max-height:650px}td,th{border:1px solid #ddd;padding:10px}</style>
+<h1>Fold UI audit — incomplete</h1>
+<p>September 30, 2026. Target: https://blamy.github.io/ui/. All 18 app blocks inventoried. Browser checks used representative 344×882 and 768×1024 CSS-pixel viewports. Exact Duo screen dimensions were not established. Computer use accessed the Xcode beta Device Hub iPhone Duo on iOS 27.1 and exercised its posture controls in Safari.</p>
+<p><strong>Blocked:</strong> Computer use rejected further access to blamy.github.io because a saved user browser permission preference blocks the domain. No complete pass or release sign-off is claimed.</p>
+<table><tr><th>Step</th><th>Surface</th><th>Health / coverage</th></tr>
+<tr><td>1</td><td>Catalog</td><td>18 blocks identified.</td></tr>
+<tr><td>2</td><td>Discord</td><td>Readable browser wide layout and simulator rendering captured; complete interaction and exact posture-size verification unfinished.</td></tr>
+<tr><td>3</td><td>GitHub</td><td>Readable narrow and wide browser layouts captured, plus Safari rendering. Repository tabs use horizontal overflow at the narrow width.</td></tr>
+<tr><td>4</td><td>T3 Code, Codex, macOS, Reminders, Mail</td><td>Visited both browser widths. Some captures show transitions or incorrect dimensions and require recapture. No confirmed defect inferred from these provisional captures.</td></tr>
+<tr><td>5</td><td>Settings</td><td>Readable narrow list and wide split layout captured. Long labels truncate in the narrow list.</td></tr>
+<tr><td>6</td><td>Notes</td><td>Viewed in simulator; browser capture interrupted by permission block. Incomplete.</td></tr>
+<tr><td>7</td><td>Passwords, Music, Loop QA, Map chat, Delivery, PencilKit, Time Machine, Freeform, SplitView compositions</td><td>Preview tabs loaded. Both-breakpoint visual inspection and interactions unfinished.</td></tr></table>
+<p>Keyboard focus, VoiceOver, touch hit areas, software keyboard, gestures, dark appearance and state persistence across every app remain unverified. Screenshots do not establish accessibility compliance. No source code was changed.</p>
+<p>Only images embedded below are accepted report evidence. Other captures are provisional; their filenames do not certify the app or dimensions shown.</p>
+<h2>Browser evidence</h2><p>GitHub narrow</p><img src="02-github-closed.jpg"><p>GitHub wide</p><img src="02-github-open.jpg"><p>Settings narrow</p><img src="07-apple-settings-closed.jpg"><p>Settings wide</p><img src="07-apple-settings-open.jpg">
+<h2>Simulator evidence</h2><p>Discord in Safari after exercising posture controls; exact screen size unverified.</p><img src="sim-discord-closed.png"><p>GitHub in Safari.</p><img src="sim-02-github-closed.png">

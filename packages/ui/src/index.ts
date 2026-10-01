@@ -83,8 +83,6 @@ export { Credenza, credenzaVariants } from './components/credenza';
 export type { CredenzaProps } from './components/credenza';
 export { SideDrawer, sideDrawerVariants } from './components/side-drawer';
 export type { SideDrawerProps } from './components/side-drawer';
-export { EdgeDrawer, edgeDrawerVariants } from './components/edge-drawer';
-export type { EdgeDrawerProps } from './components/edge-drawer';
 export { AdaptivePane } from './components/adaptive-pane';
 export {
   Sidebar, SidebarProvider, SidebarHeader, SidebarContent, SidebarFooter, SidebarWorkspace, SidebarSearch,
@@ -192,7 +190,6 @@ export {
   type ReferenceNode,
 } from './components/markdown-view';
 export { MessageScroller, type MessageScrollerProps, type MessageScrollerItem } from './components/message-scroller';
-export { SnapSheet, type SnapSheetProps } from './components/snap-sheet';
 export {
   Composer,
   ComposerOutlet,
@@ -273,6 +270,7 @@ export {
   type FloatingSheetFabPosition,
   type FloatingSheetAppearance,
   type FloatingSheetTone,
+  type FloatingSheetSize,
 } from './components/floating-sheet';
 export {
   FloatingChat,

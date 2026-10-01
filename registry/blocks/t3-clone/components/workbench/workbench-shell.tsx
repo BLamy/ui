@@ -2,9 +2,9 @@ import * as React from 'react';
 import { useState } from 'react';
 import { ToggleButtonGroup } from 'react-aria-components';
 import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane';
+import { FloatingSheet } from '@/components/ui/floating-sheet';
 import { IconButton } from '@/components/ui/icon-button';
 import { PlainToggleButton as ToggleButton } from '@/components/ui/plain-button';
-import { SnapSheet } from '@/components/ui/snap-sheet';
 import { useWorkbenchAppearance, WorkbenchAppearanceProvider } from '@/components/ui/workbench-theme';
 import { useContainerWidth } from '@/lib/container';
 import { Icon, type IconName } from '@/lib/icon';
@@ -19,7 +19,7 @@ import { cn, pressable } from '@/lib/utils';
      <WorkbenchMain>                     centre column
        <WorkbenchHeader/>                title bar: triggers, title, actions
        …content…
-       <WorkbenchDock/>                  resizable bottom dock ⇄ SnapSheet (compact)
+       <WorkbenchDock/>                  resizable bottom dock ⇄ FloatingSheet (compact)
      </WorkbenchMain>
      <WorkbenchPanel/>                   right column ⇄ drawer (medium) ⇄ cover (fullscreen / compact page)
      <WorkbenchTabBar/>                  bottom tab bar, compact only
@@ -313,7 +313,7 @@ export interface WorkbenchDockProps {
 }
 /**
  * The bottom dock (a terminal, logs, a console). Inline and resizable from its top edge at regular and
- * medium widths; at compact width the same children move into a SnapSheet over the whole shell.
+ * medium widths; at compact width the same children move into a dismissible FloatingSheet over the whole shell.
  * Place it last inside `WorkbenchMain`. Outside a shell it renders inline with its own height.
  */
 export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight = 520, className, style, children }: WorkbenchDockProps) {
@@ -323,18 +323,33 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
   const setH = shell ? shell.setDockHeight : setOwnH;
   const drag = React.useRef<{ y0: number; h0: number } | null>(null);
   if (shell?.compact) {
+    const lowest = Math.min(...snaps);
+    const highest = Math.max(...snaps);
+    const middle = snaps.filter((f) => f > lowest && f < highest);
     return (
       // The dock is a `terminal` theme scope: dark in both appearances. Its shadow still follows the shell.
       <ThemeScope scope="terminal" className="contents text-foreground">
-        <SnapSheet
-          open={shell.dockOpen}
-          onClose={() => shell.setDockOpen(false)}
-          snaps={snaps}
-          className={cn('bg-background', shell.appearance === 'light' && 'dark:shadow-black/8', className)}
+        <FloatingSheet
+          appearance="sheet"
+          gutter={0}
+          radius={16}
+          dismissible
+          visible={shell.dockOpen}
+          onDismiss={() => shell.setDockOpen(false)}
+          peek={`${lowest * 100}%`}
+          detents={middle.map((f) => `${f * 100}%` as const)}
+          topGap={`${(1 - highest) * 100}%`}
+          hideOnScroll={false}
+          scrim={false}
+          label="Dock"
+          className={cn('z-70', className)}
+          surfaceClassName="bg-background"
           style={style}
         >
-          {children}
-        </SnapSheet>
+          <FloatingSheet.Body>
+            <div className="flex h-full min-h-0 flex-col">{children}</div>
+          </FloatingSheet.Body>
+        </FloatingSheet>
       </ThemeScope>
     );
   }

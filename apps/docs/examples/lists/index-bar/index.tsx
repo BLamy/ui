@@ -35,7 +35,7 @@ const turns = [
     role: 'assistant',
     text:
       'It was. It now unmounts below the compact breakpoint and lives in the ' +
-      'SnapSheet instead.',
+      'dock sheet instead.',
   },
   {
     id: 'q4',

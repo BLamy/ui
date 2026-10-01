@@ -128,7 +128,7 @@ Exits are quicker than entrances: what leaves gets out of the way, what arrives 
 | `Radio`, `Slider` | press sink / thumb grows while dragging |
 | `Disclosure` | panel height (tray) + content fades down + chevron turns |
 | `Dialog`, `Popover`, `Tooltip`, `DropdownMenu`, `Select`, `ComboBox` | grow out of the trigger's anchor point (snappy), leave quicker |
-| `Sheet`, `SideDrawer`, `EdgeDrawer` | slide on the tray spring; `animateHeight` for stepping sheets |
+| `Sheet`, `SideDrawer`, `AdaptivePane` drawers | slide on the tray spring; `animateHeight` for stepping sheets |
 | `Credenza` | height morph, directional views and titles, back chevron grows in |
 | `NavigationStack` | push / pop on the smooth spring, interruptible; swipe release continues on the tray spring |
 | `List.Row` | swipe settles on snappy; delete collapses its height on the tray spring |

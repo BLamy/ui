@@ -61,7 +61,7 @@ The tone follows the nearest `AppearanceProvider`, so these examples switch with
 
 - **The cap is the handle.** Dragging it moves the surface one-to-one with the pointer; there is no second card fading in.
 - **Release keeps its momentum.** The pointer's velocity is projected forward: a flick goes to the next stop in the direction it was thrown, a slow drag settles at the nearest stop, and a spring carries the surface there *from the finger's speed* (grab it mid-flight and it stops under your finger).
-- **Detents.** `detents={[0.5]}` adds resting heights between the peek and full (fractions of the grown body).
+- **Detents.** `detents={[0.5]}` adds resting heights between the peek and full (fractions of the grown body, or `'70%'` for a share of the host).
 - **Tap toggles.** A plain tap on the cap (under 4px of travel) opens or closes it. `Escape` and the scrim close it.
 - **Drag below rest to minimize.** With `minimizable` (the default), dragging below the resting height first closes the peek, then folds the surface into a round FAB at `fabPosition`. Tapping the FAB restores the resting sheet.
 - **Scroll hides it.** While resting, `hideOnScroll` slides it away when the shared BL UI chrome hides (the same signal `TabBar` follows) or when `scrollRef`'s scroller moves down.
@@ -73,6 +73,32 @@ The tone follows the nearest `AppearanceProvider`, so these examples switch with
 With a half-height detent — drag slowly to settle at the nearest stop, flick to go to the next:
 
 {% demo src="floating-sheet/detents" %}
+
+## Dismissible
+
+A docked bottom sheet you can put away, like the Maps or Find My sheet. With `dismissible`, dragging below the resting height slides the whole surface off the bottom edge and calls `onDismiss`; `visible` brings it back, rising on the same spring. There is no FAB in this mode.
+
+`peek`, `detents` and `topGap` also take a share of the host's height (`'40%'`), so stops can be written the way a designer specifies them, without measuring the host first. `topGap` leaves room above the fully grown sheet so the page behind still shows and the top corners stay round. `surfaceClassName` restyles the card itself (`bg-background`). The compact terminal dock in [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell) is exactly this.
+
+{% demo src="floating-sheet/dismissible" %}
+
+```tsx
+<FloatingSheet
+  appearance="sheet"
+  gutter={0}
+  dismissible
+  visible={open}
+  onDismiss={() => setOpen(false)}
+  peek="40%"
+  detents={['70%']}
+  topGap="5%"
+  hideOnScroll={false}
+>
+  <FloatingSheet.Body>…</FloatingSheet.Body>
+</FloatingSheet>
+```
+
+Which one to use: [Sheet](https://blamy.github.io/ui/#/sheet) is the modal edge panel — focus trap, Escape, outside press, content that must be answered. `FloatingSheet` is the surface that lives *beside* the page and leaves it usable: a chat, a map panel, a dock.
 
 ## Appearance morphs
 
@@ -102,7 +128,11 @@ A flow in one sheet, after Family's trays: each step sets its own `peek`, so the
 | `tone` | `'auto' \| 'dark' \| 'light'` | ambient | Colour scheme inside the sheet. Defaults to the `AppearanceProvider` value, else `auto` (inherit the host's `--bl-*` tokens). |
 | `gutter` | `number` | `20` | Inset from the host edges while resting. `0` docks it edge to edge. |
 | `radius` | `number` | `28` | Corner radius while resting; squares off as the sheet fills the host. |
-| `peek` | `number` | `0` | Body height visible above the foot while resting. Capped at three quarters of the host. |
+| `peek` | `number \| '${number}%'` | `0` | Body height visible above the foot while resting; `'52%'` sizes the whole resting sheet as a share of the host. Capped at three quarters of the host. |
+| `topGap` | `number \| '${number}%'` | `0` | Space left above the fully grown sheet; keeps the top corners round. |
+| `detents` | `(number \| '${number}%')[]` | — | Extra resting stops: fractions of the grown body, or shares of the host. |
+| `dismissible` | `boolean` | `false` | Drag below rest slides the sheet off the bottom edge (calls `onDismiss`) instead of folding it to a FAB. |
+| `visible` / `onDismiss` | `boolean` / `() => void` | `true` | Whether a dismissible sheet is on screen. Controlled. |
 | `bodyAlign` | `'start' \| 'end'` | `'start'` | `start` keeps a card's header under the cap; `end` pins the body to the foot so a transcript grows upward. |
 | `open` / `defaultOpen` / `onOpenChange` | `boolean` | uncontrolled | Controlled or uncontrolled grown state. |
 | `minimizable` | `boolean` | `true` | Whether a drag below rest folds the sheet into its FAB. |
@@ -113,6 +143,7 @@ A flow in one sheet, after Family's trays: each step sets its own `peek`, so the
 | `scrollRef` | `RefObject<HTMLElement>` | — | A scroller whose direction also hides and restores the resting sheet. |
 | `label` | `string` | `'Sheet'` | Accessible name of the body region. |
 | `className` / `style` | | | Merged onto the root layer. |
+| `surfaceClassName` | `string` | — | Merged onto the sheet surface (the card). |
 
 ## Hook and styling
 

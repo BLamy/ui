@@ -53,7 +53,6 @@
         { "id": "replay-preview", "title": "ReplayPreview" },
         { "id": "morph", "title": "Morph" },
         { "id": "tab-view", "title": "TabView" },
-        { "id": "edge-drawer", "title": "EdgeDrawer" },
         { "id": "card", "title": "Card" },
         { "id": "disclosure", "title": "Disclosure" },
         { "id": "tabs", "title": "Tabs" },
@@ -90,8 +89,7 @@
         { "id": "tooltip", "title": "Tooltip" },
         { "id": "popover", "title": "Popover" },
         { "id": "dialog", "title": "Dialog" },
-        { "id": "sheet", "title": "Sheet" },
-        { "id": "snap-sheet", "title": "SnapSheet" }
+        { "id": "sheet", "title": "Sheet" }
       ]
     },
     {

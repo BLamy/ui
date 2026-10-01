@@ -115,7 +115,7 @@ function PhoneWorkbench() {
               />
             </ConversationComposer>
           </Conversation>
-          {/* compact width: the dock is a SnapSheet over the whole shell */}
+          {/* compact width: the dock is a dismissible FloatingSheet over the whole shell */}
           <WorkbenchDock>
             <TerminalHeader title="zsh — web">
               <WorkbenchDockClose />

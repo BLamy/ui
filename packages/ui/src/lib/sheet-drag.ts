@@ -11,6 +11,8 @@ const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayout
 export const SHEET_TAP_SLOP = 4;
 /** Extra downward travel (past the peek) that folds the surface into its FAB. */
 export const SHEET_MINIMIZE_TRAVEL = 96;
+/** Share of the fold travel a drag must reach (projected) to fold into a FAB / dismiss off the edge. */
+const FOLD_COMMIT = { fab: 0.5, dismiss: 0.2 } as const;
 /** How far (ms of travel at release velocity) a flick is projected before picking the nearest stop. */
 const PROJECT_MS = 200;
 /** Release speed (px/ms) above which a drag counts as a flick toward the next stop. */
@@ -25,10 +27,18 @@ export interface SheetDragOptions {
   maxReveal: number;
   /** Extra resting heights between `peek` and `maxReveal` (px of body). */
   detents?: number[];
-  /** Allow dragging below the resting height to fold into a FAB. */
+  /** Allow dragging below the resting height to fold into a FAB (or, with `fold: 'dismiss'`, to dismiss). */
   minimizable?: boolean;
   minimized?: boolean;
   onMinimizedChange?: (minimized: boolean) => void;
+  /**
+   * What folding means. `fab` (default) closes the peek on the way down, then the caller morphs the surface into
+   * a FAB. `dismiss` holds the body at `peek` and leaves the caller to slide the whole surface off its edge by
+   * `minimize` (0 at rest → 1 gone).
+   */
+  fold?: 'fab' | 'dismiss';
+  /** Downward travel below `peek` (px) that folds all the way (`minimize` = 1). Default `peek` + `SHEET_MINIMIZE_TRAVEL`. */
+  foldTravel?: number;
   /** Spring the body settles with (default `tray`). */
   spring?: SpringName;
 }
@@ -74,6 +84,8 @@ export function useSheetDrag({
   minimizable = false,
   minimized = false,
   onMinimizedChange,
+  fold = 'fab',
+  foldTravel,
   spring = 'tray',
 }: SheetDragOptions): SheetDragState {
   const [detent, setDetent] = useState<number | null>(null);
@@ -92,7 +104,7 @@ export function useSheetDrag({
   const drag = useRef({ active: false, y: 0, from: 0, moved: false, samples: [] as { t: number; y: number }[] });
   const mounted = useRef(false);
 
-  const minimizeTravel = peek + SHEET_MINIMIZE_TRAVEL;
+  const minimizeTravel = Math.max(1, foldTravel ?? peek + SHEET_MINIMIZE_TRAVEL);
   const minimizeFor = (raw: number) => (minimizable && raw < peek ? Math.min(1, (peek - raw) / minimizeTravel) : 0);
 
   const stop = () => {
@@ -168,8 +180,10 @@ export function useSheetDrag({
     d.samples.push({ t: event.timeStamp, y: event.clientY });
     if (d.samples.length > 6) d.samples.shift();
     const raw = d.from + delta;
-    const floor = minimizable ? 0 : Math.min(peek, maxReveal);
-    const shown = raw > maxReveal ? maxReveal + rubber(raw - maxReveal) * 0.35 : raw < floor ? Math.max(0, floor - rubber(floor - raw)) : raw;
+    // A dismissing sheet keeps its body at peek and slides as a whole (`minimize`); a FAB-bound one shrinks through peek first.
+    const floor = minimizable && fold === 'fab' ? 0 : Math.min(peek, maxReveal);
+    const below = fold === 'dismiss' && minimizable ? floor : Math.max(0, floor - rubber(floor - raw));
+    const shown = raw > maxReveal ? maxReveal + rubber(raw - maxReveal) * 0.35 : raw < floor ? below : raw;
     write(Math.min(maxReveal + 24, shown), minimizeFor(raw));
   };
 
@@ -185,7 +199,7 @@ export function useSheetDrag({
     const v = first ? (first.y - clientY) / dt : 0;
     const raw = d.from + (d.y - clientY);
     const projected = raw + v * PROJECT_MS;
-    const shouldMinimize = minimizable && minimizeFor(projected) > 0.5 && minimizeFor(raw) > 0.08;
+    const shouldMinimize = minimizable && minimizeFor(projected) > FOLD_COMMIT[fold] && minimizeFor(raw) > 0.08;
     const stops = [peek, ...detents.filter((x) => x > peek && x < maxReveal), maxReveal];
     const clamped = Math.max(0, Math.min(maxReveal, projected));
     // A decided flick goes to the next stop the way it was thrown; a gentle release, to the nearest one.

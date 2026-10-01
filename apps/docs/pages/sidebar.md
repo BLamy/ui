@@ -92,4 +92,4 @@ Every part reads collapsed state from context — compose any content and the ra
 
 ## Built from
 
-`SidebarProvider` measures itself with `useContainerWidth`, and the overlay variant is an [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer) — the same drawer the [templates](https://blamy.github.io/ui/#/artifact-chat-container) use. Colours read the workbench `--wb-*` tokens with dark fallbacks, so it drops into a `WorkbenchShell` unchanged.
+`SidebarProvider` measures itself with `useContainerWidth`, and the overlay variant is a drawer over the host — the same one [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) uses in `drawer` mode. Colours read the workbench `--wb-*` tokens with dark fallbacks, so it drops into a `WorkbenchShell` unchanged.

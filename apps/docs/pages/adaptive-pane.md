@@ -1,6 +1,6 @@
 # AdaptivePane
 
-One region, four presentations. A shell measures itself and picks a mode; the pane renders the same children as a docked column, an [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer), a cover over the host, or nothing. It is the building block behind the navigation of [ChatShell](https://blamy.github.io/ui/#/chat-shell) and the sidebar and surface panel of [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell), the shells that ship in the `discord-clone` and `t3-clone` [blocks](https://blamy.github.io/ui/#/blocks).
+One region, four presentations. A shell measures itself and picks a mode; the pane renders the same children as a docked column, an edge drawer, a cover over the host, or nothing. It is the building block behind the navigation of [ChatShell](https://blamy.github.io/ui/#/chat-shell) and the sidebar and surface panel of [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell), the shells that ship in the `discord-clone` and `t3-clone` [blocks](https://blamy.github.io/ui/#/blocks).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -57,7 +57,7 @@ function Shell({ nav, children }) {
 | Mode | Renders |
 | --- | --- |
 | `column` | A fixed-width flex child beside its siblings (`columnWidth`, `columnStyle`). |
-| `drawer` | An `EdgeDrawer` over the host (`open`, `onClose`, `drawerWidth`, and every EdgeDrawer prop). |
+| `drawer` | A scrim and panel sliding in from `side` over the host (`open`, `onClose`, `drawerWidth`, `zIndex`, `scrimClassName`, `scrim`, `shadow`, `className`, `style`). |
 | `cover` | Fills the positioned host at `zIndex` — full-screen panels and compact pages. |
 | `hidden` | Nothing. |
 
@@ -73,7 +73,7 @@ The shells share two more primitives, in `@/lib/container` (`@brett_lamy/ui` on 
 
 ## Live example
 
-Pick a mode, or open a bare EdgeDrawer:
+Pick a mode, or open a second pane as a right drawer:
 
 {% demo src="adaptive-pane/pane-modes" %}
 

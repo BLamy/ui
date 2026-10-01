@@ -97,7 +97,7 @@ The full Discord layout is a registry block — `npx shadcn add` copies `page.ts
 
 ## Built from
 
-`useContainerWidth` measures the shell. [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) turns `ChatShellNav` into a docked column or a left [EdgeDrawer](https://blamy.github.io/ui/#/edge-drawer); [SideDrawer](https://blamy.github.io/ui/#/side-drawer) gives `ChatShellPanel` its docked and overlay modes; the rail is a vertical [TabView](https://blamy.github.io/ui/#/tab-view) with a `workspace` bar; the channel column can use the [Sidebar](https://blamy.github.io/ui/#/sidebar) parts. For a phone-style stack, put the sidebar and conversation in a [SplitView](https://blamy.github.io/ui/#/split-view) (below).
+`useContainerWidth` measures the shell. [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) turns `ChatShellNav` into a docked column or a left drawer; [SideDrawer](https://blamy.github.io/ui/#/side-drawer) gives `ChatShellPanel` its docked and overlay modes; the rail is a vertical [TabView](https://blamy.github.io/ui/#/tab-view) with a `workspace` bar; the channel column can use the [Sidebar](https://blamy.github.io/ui/#/sidebar) parts. For a phone-style stack, put the sidebar and conversation in a [SplitView](https://blamy.github.io/ui/#/split-view) (below).
 
 ## Parts
 

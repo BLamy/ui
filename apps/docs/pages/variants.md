@@ -318,7 +318,7 @@ Defined in `@/components/ui/dropdown-menu`. Base classes:
 | `default` (default) | `text-foreground` |
 | `destructive` | `text-destructive` |
 
-## EdgeDrawer
+## Edge Drawer
 
 ### `edgeDrawerVariants`
 

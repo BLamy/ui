@@ -1,23 +1,23 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PlainButton as Button } from '@/components/ui/plain-button';
-import { SnapSheet } from '@/components/ui/snap-sheet';
+import { FloatingSheet } from '@/components/ui/floating-sheet';
 import { WorkbenchTheme } from '@/components/ui/workbench-theme';
 import { ThemeScope } from '@/lib/theme';
 import { cn, pressable } from '@/lib/utils';
 import { TerminalHeader, TerminalBody, TerminalAction } from './terminal';
 import { TERMINAL_SEED } from './fixtures';
 
-const meta: Meta<typeof SnapSheet> = {
-  title: 'Organisms/SnapSheet',
-  component: SnapSheet,
+const meta: Meta<typeof FloatingSheet> = {
+  title: 'Organisms/WorkbenchDock (compact)',
+  component: FloatingSheet,
   parameters: { layout: 'fullscreen' },
 };
 export default meta;
-type Story = StoryObj<typeof SnapSheet>;
+type Story = StoryObj<typeof FloatingSheet>;
 
-/* vaul-style bottom drawer in a phone frame — drag the handle between the 52% and 93%
-   snap points; a fast downward flick (or dragging past the low snap) closes it. */
+/* The compact dock: a dismissible FloatingSheet in a phone frame — drag the cap between the 52% and 93%
+   stops; a fast downward flick (or dragging past the low stop) puts it away. */
 function SheetDemo({ open: initialOpen }: { open: boolean }) {
   const [open, setOpen] = useState(initialOpen);
   return (
@@ -36,14 +36,32 @@ function SheetDemo({ open: initialOpen }: { open: boolean }) {
         </div>
         {/* The drawer holds a terminal: a `terminal` theme scope, dark in either appearance. */}
         <ThemeScope scope="terminal" className="contents">
-          <SnapSheet open={open} onClose={() => setOpen(false)} snaps={[0.52, 0.93]} className="bg-background">
-            <TerminalHeader title="zsh — cookbook">
-              <TerminalAction icon="rectangle-split" label="Split terminal" />
-              <TerminalAction icon="plus" label="New terminal" />
-              <TerminalAction icon="bin" label="Close terminal" onPress={() => setOpen(false)} />
-            </TerminalHeader>
-            <TerminalBody seed={TERMINAL_SEED} />
-          </SnapSheet>
+          <FloatingSheet
+            appearance="sheet"
+            gutter={0}
+            radius={16}
+            dismissible
+            visible={open}
+            onDismiss={() => setOpen(false)}
+            peek="52%"
+            topGap="7%"
+            hideOnScroll={false}
+            scrim={false}
+            label="Dock"
+            className="z-70"
+            surfaceClassName="bg-background"
+          >
+            <FloatingSheet.Body>
+              <div className="flex h-full min-h-0 flex-col">
+                <TerminalHeader title="zsh — cookbook">
+                  <TerminalAction icon="rectangle-split" label="Split terminal" />
+                  <TerminalAction icon="plus" label="New terminal" />
+                  <TerminalAction icon="bin" label="Close terminal" onPress={() => setOpen(false)} />
+                </TerminalHeader>
+                <TerminalBody seed={TERMINAL_SEED} />
+              </div>
+            </FloatingSheet.Body>
+          </FloatingSheet>
         </ThemeScope>
       </div>
     </WorkbenchTheme>

@@ -68,13 +68,13 @@ If `items` is omitted or empty, the component retains its A-Z form:
 
 ## Exports
 
-- Containers: `NavigationStack`, `SplitView`, `Credenza`, `SideDrawer`, `EdgeDrawer`, `AdaptivePane`, `Sidebar`
+- Containers: `NavigationStack`, `SplitView`, `Credenza`, `SideDrawer`, `AdaptivePane`, `Sidebar`
 - Lists and navigation: `List`, `List.Section`, `List.Row`, `IndexBar`, `TabBar`, `TabView`, `EditBar`
 - Inputs and feedback: `SearchField`, `Switch`, `Segmented`, plus shadcn-style primitives (`Button`, `Dialog`, `Sheet`, `Select`, `ComboBox`, `Tabs`, …)
 - Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `ContentSwap`, `Celebrate`
 - Foundations: `BLProvider`, `ThemeScope`, `AppearanceProvider`, `Icon`, `Avatar`, `Spinner`
 - Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `FloatingSheet`, `FloatingChat`, `ChatColumn`, `ArtifactChatContainer` (the Discord parts — channels, messages, threads, members — live in the `discord-clone` registry block)
-- Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `SnapSheet`, `MarkdownView`
+- Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `MarkdownView`
 - Demo apps: `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo` (full apps — Discord, T3 Code, GitHub — are registry blocks)
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.
@@ -140,7 +140,7 @@ export function Chat() {
 
 ## Workbench
 
-An adaptive IDE scaffold built from parts: a thin `WorkbenchShell` root that measures itself and owns region state, and parts you place yourself. Each part picks its presentation from the shell's width class — desktop columns (1120px and wider), a right-edge panel drawer (760–1119px), or a hamburger sidebar, compact panel page, bottom tab bar, and snap-sheet dock below that — measured from the shell's own container, not the viewport. The full T3 Code-style app is the `t3-clone` registry block.
+An adaptive IDE scaffold built from parts: a thin `WorkbenchShell` root that measures itself and owns region state, and parts you place yourself. Each part picks its presentation from the shell's width class — desktop columns (1120px and wider), a right-edge panel drawer (760–1119px), or a hamburger sidebar, compact panel page, bottom tab bar, and dismissible-sheet dock below that — measured from the shell's own container, not the viewport. The full T3 Code-style app is the `t3-clone` registry block.
 
 ```tsx
 import {
