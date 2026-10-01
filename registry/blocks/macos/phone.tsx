@@ -1,12 +1,14 @@
 /* The desktop at phone width: an iPhone. A status bar with the Dynamic Island, a springboard of app icons (paged when
    they don't fit, four in the dock), a Search pill that opens Alfred, and a home bar that sends the open app back to
-   its icon. The apps are the desktop's own windows, so they keep running when the width crosses over. */
-import { useRef, useState, type MouseEvent } from 'react';
+   its icon; double-tap it for the app switcher — every running app as a card you swipe between, tap to open or flick
+   up to quit. The apps are the desktop's own windows and the phone never moves or minimizes them, so they keep running
+   (and keep their desktop places) when the width crosses over. */
+import { useCallback, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { useContainerSize } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { APPS, type DesktopApp } from './apps';
-import { useDesktop } from './desktop';
+import type { Area } from './desktop';
 import { AppTile, Hat } from './parts';
 
 /** Status bar and home bar heights. */
@@ -43,23 +45,35 @@ export function StatusBar({ dark, inApp }: { dark: boolean; inApp: boolean }) {
   );
 }
 
-/** The home bar: the open app's way back to the springboard. */
-export function HomeBar({ dark, inApp }: { dark: boolean; inApp: boolean }) {
-  const d = useDesktop();
-  const pill = <span aria-hidden="true" className={cn('block h-1 w-34 rounded-full', inApp ? 'bg-foreground/85' : dark ? 'bg-white/70' : 'bg-black/55')} />;
+/** Two taps this close together on the home bar open the app switcher (a Mac's default double-click speed, so a
+    trackpad double-tap — and the first tap's animation running under it — still counts). */
+const DOUBLE_TAP = 500;
+
+/** The home bar: tap it to leave the open app (or the switcher) for the springboard; double-tap it for the switcher. */
+export function HomeBar({ dark, inApp, onHome, onSwitcher }: { dark: boolean; inApp: boolean; onHome: () => void; onSwitcher: () => void }) {
+  const last = useRef(0);
+  const tap = () => {
+    onHome();
+    const now = Date.now();
+    if (now - last.current < DOUBLE_TAP) { last.current = 0; onSwitcher(); } else last.current = now;
+  };
   return (
     <div className={cn('grid shrink-0 place-items-center transition-colors duration-spring-smooth ease-spring-smooth', inApp ? 'bg-background' : 'bg-transparent')} style={{ height: HOME_H }}>
-      {inApp ? <button type="button" aria-label="Home" onClick={d.home} className="grid size-full cursor-pointer place-items-center border-0 bg-transparent p-0">{pill}</button> : pill}
+      <button type="button" aria-label="Home" onClick={tap} className="grid size-full cursor-pointer place-items-center border-0 bg-transparent p-0">
+        <span aria-hidden="true" className={cn('block h-1 w-34 rounded-full', inApp ? 'bg-foreground/85' : dark ? 'bg-white/70' : 'bg-black/55')} />
+      </button>
     </div>
   );
 }
+
+export interface Point { x: number; y: number }
 
 interface SpringboardProps {
   dark: boolean;
   /** An app is up: the springboard recedes behind it. */
   away: boolean;
-  /** `origin` is the icon's center in the springboard's box, where the app zooms from. */
-  onLaunch: (id: string, origin: string) => void;
+  /** `from` is the icon's center in the springboard's box, where the app zooms from. */
+  onLaunch: (id: string, from: Point) => void;
   onSearch: () => void;
 }
 
@@ -75,9 +89,9 @@ export function Springboard({ dark, away, onLaunch, onSearch }: SpringboardProps
   const pages = Array.from({ length: Math.ceil(PAGE_APPS.length / perPage) }, (_, i) => PAGE_APPS.slice(i * perPage, (i + 1) * perPage));
 
   const launch = (app: DesktopApp) => (e: MouseEvent<HTMLButtonElement>) => {
-    const from = root.current?.getBoundingClientRect();
+    const box = root.current?.getBoundingClientRect();
     const r = e.currentTarget.getBoundingClientRect();
-    onLaunch(app.id, from ? `${Math.round(r.left + r.width / 2 - from.left)}px ${Math.round(r.top + r.height / 2 - from.top)}px` : '50% 50%');
+    onLaunch(app.id, box ? { x: Math.round(r.left + r.width / 2 - box.left), y: Math.round(r.top + r.height / 2 - box.top) } : { x: r.left, y: r.top });
   };
   const icon = (app: DesktopApp, label: boolean) => (
     <button key={app.id} type="button" aria-label={app.name} onClick={launch(app)} className="group/icon flex cursor-pointer flex-col items-center gap-1.5 border-0 bg-transparent p-0 transition-transform duration-spring-snappy ease-spring-snappy active:scale-90 motion-reduce:transition-none">
@@ -130,6 +144,140 @@ export function Springboard({ dark, away, onLaunch, onSearch }: SpringboardProps
       >
         {DOCK_APPS.map((app) => <div key={app.id} className="flex justify-center">{icon(app, false)}</div>)}
       </div>
+    </div>
+  );
+}
+
+/* ── App switcher ── */
+
+/** Gap between cards, and how far the cards sit below the middle (room for the name above them). */
+const CARD_GAP = 20;
+const CARD_DROP = 10;
+/** Flicking a card up past this closes the app. */
+const QUIT_DISTANCE = 80;
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+/** Where a window's center ends up when it is scaled by `scale` about `from` and moved by (dx, dy): the CSS
+    `translate` that does it, so a window can fly from its icon into a card without moving its transform origin. */
+function cardPlacement(layer: Area, from: Point, scale: number, dx: number, dy: number) {
+  return { scale, translate: `${(layer.width / 2 - from.x) * (1 - scale) + dx}px ${(layer.height / 2 - from.y) * (1 - scale) + dy}px` };
+}
+
+/** The switcher's state and card geometry. `layer` is the box the apps fill (between the status and home bars). */
+export function useSwitcher(layer: Area) {
+  const [open, setOpen] = useState(false);
+  const [scrollX, setScrollX] = useState(0);
+  // A scroll or a drag is moving cards under a finger: their position follows it instead of easing.
+  const [live, setLive] = useState(false);
+  const [drag, setDrag] = useState<Record<string, number>>({});
+  const settle = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const scale = clamp((layer.height - 150) / Math.max(1, layer.height), 0.42, 0.68);
+  const cardW = scale * layer.width;
+  const step = cardW + CARD_GAP;
+
+  const show = useCallback(() => { setScrollX(0); setDrag({}); setOpen(true); }, []);
+  const hide = useCallback(() => setOpen(false), []);
+  const scrolled = useCallback((x: number) => {
+    setScrollX(x);
+    setLive(true);
+    clearTimeout(settle.current);
+    settle.current = setTimeout(() => setLive(false), 140);
+  }, []);
+
+  /** The card for the `index`th app, as a window's phone view. */
+  const place = (index: number, app: string, from: Point) => {
+    const lift = drag[app] ?? 0;
+    return {
+      ...cardPlacement(layer, from, scale, index * step - scrollX, CARD_DROP + lift),
+      opacity: clamp(1 + lift / (layer.height * 0.6), 0, 1),
+      live,
+    };
+  };
+  return { open, show, hide, scrolled, setLive, drag, setDrag, scale, cardW, step, place };
+}
+export type Switcher = ReturnType<typeof useSwitcher>;
+
+/** The switcher's touch layer over the apps (which the windows lay out as cards): scroll between them, tap one to
+    open it, flick one up to quit it, tap the empty space to go back. */
+export function AppSwitcher({ apps, layer, switcher, dark, onPick, onQuit, onBack }: {
+  apps: DesktopApp[]; layer: Area; switcher: Switcher; dark: boolean;
+  onPick: (id: string) => void; onQuit: (id: string) => void; onBack: () => void;
+}) {
+  const { scale, cardW } = switcher;
+  const cardH = scale * layer.height;
+  const cardTop = layer.height / 2 + CARD_DROP - cardH / 2;
+  return (
+    <div
+      data-slot="macos-switcher"
+      onScroll={(e) => switcher.scrolled(Math.round(e.currentTarget.scrollLeft))}
+      onClick={(e) => { if (!(e.target as HTMLElement).closest('[data-card]')) onBack(); }}
+      className="absolute inset-0 z-10 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+    >
+      <div className="relative flex h-full w-max" style={{ paddingInline: (layer.width - cardW) / 2 }}>
+        {apps.map((app, i) => (
+          <SwitcherCard
+            key={app.id} app={app} dark={dark} switcher={switcher}
+            style={{ width: cardW, marginRight: i < apps.length - 1 ? CARD_GAP : 0 }} top={cardTop} height={cardH}
+            onPick={() => onPick(app.id)} onQuit={() => onQuit(app.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SwitcherCard({ app, dark, switcher, style, top, height, onPick, onQuit }: {
+  app: DesktopApp; dark: boolean; switcher: Switcher; style: { width: number; marginRight: number }; top: number; height: number;
+  onPick: () => void; onQuit: () => void;
+}) {
+  // Where the press began, and whether it turned into a flick (so the click that follows it doesn't open the app).
+  const start = useRef<number | null>(null);
+  const flicked = useRef(false);
+  const down = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    start.current = e.clientY;
+    flicked.current = false;
+  };
+  const move = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    if (start.current === null) return;
+    const dy = Math.min(0, e.clientY - start.current);
+    if (!flicked.current && dy > -6) return;
+    flicked.current = true;
+    switcher.setLive(true);
+    switcher.setDrag((d) => ({ ...d, [app.id]: dy }));
+  };
+  const up = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    const from = start.current;
+    start.current = null;
+    if (!flicked.current || from === null) return;
+    switcher.setLive(false);
+    if (e.clientY - from < -QUIT_DISTANCE) onQuit();
+    else switcher.setDrag((d) => ({ ...d, [app.id]: 0 }));
+  };
+  const ink = dark ? 'text-white' : 'text-black/85';
+  return (
+    <div className="relative h-full shrink-0 snap-center" style={style}>
+      <div data-card="" className={cn('absolute inset-x-0 flex items-center gap-2 px-1', ink)} style={{ top: top - 34, opacity: Math.max(0, 1 + (switcher.drag[app.id] ?? 0) / 120) }}>
+        <AppTile app={app} size={22} />
+        <span className="min-w-0 flex-1 truncate text-footnote font-semibold [text-shadow:0_1px_3px_rgba(0,0,0,.25)]">{app.name}</span>
+        <button type="button" aria-label={`Close ${app.name}`} onClick={onQuit} className={cn('grid size-6 shrink-0 cursor-pointer place-items-center rounded-full border-0 p-0 backdrop-blur-xl', dark ? 'bg-white/20 text-white' : 'bg-black/12 text-black/70')}>
+          <Icon name="xmark" size={11} sw={3} />
+        </button>
+      </div>
+      <button
+        type="button"
+        data-card=""
+        aria-label={`Open ${app.name}`}
+        onClick={() => { if (!flicked.current) onPick(); }}
+        onPointerDown={down}
+        onPointerMove={move}
+        onPointerUp={up}
+        onPointerCancel={() => { start.current = null; switcher.setLive(false); switcher.setDrag((d) => ({ ...d, [app.id]: 0 })); }}
+        className="absolute inset-x-0 cursor-pointer touch-pan-x rounded-[28px] border-0 bg-transparent p-0"
+        style={{ top, height }}
+      />
     </div>
   );
 }

@@ -20,7 +20,6 @@ type Action =
   | { type: 'minimize'; app: string }
   | { type: 'zoom'; app: string }
   | { type: 'rect'; app: string; rect: Rect }
-  | { type: 'home' }
   | { type: 'blur' };
 
 /** Room the dock takes at the desktop's bottom edge. */
@@ -69,7 +68,6 @@ function reduce(s: State, a: Action): State {
     }
     case 'zoom': return { ...s, windows: patch(a.app, (w) => ({ zoomed: !w.zoomed })) };
     case 'rect': return { ...s, windows: patch(a.app, () => ({ ...a.rect })) };
-    case 'home': return s.windows.every((w) => w.minimized) && s.front === null ? s : { ...s, windows: s.windows.map((w) => ({ ...w, minimized: true })), front: null };
     case 'blur': return s.front === null ? s : { ...s, front: null };
   }
 }
@@ -85,8 +83,6 @@ export interface Desktop {
   minimize: (app: string) => void;
   toggleZoom: (app: string) => void;
   setRect: (app: string, rect: Rect) => void;
-  /** Phone mode's home gesture: every app steps back to the springboard (they stay running). */
-  home: () => void;
   blur: () => void;
   area: Area;
 }
@@ -99,22 +95,23 @@ export function useDesktop(): Desktop {
   return d;
 }
 
-export function DesktopProvider({ area, initialApps = [], children }: { area: Area; initialApps?: string[]; children: ReactNode }) {
-  const [state, dispatch] = useReducer(reduce, { area, initialApps }, ({ area: a, initialApps: apps }) =>
+/** `openArea` is the room new windows are placed in (default: `area`) — a phone-sized desktop passes the last wide one,
+    so apps opened on the phone are where a desktop would have put them when the width comes back. */
+export function DesktopProvider({ area, openArea = area, initialApps = [], children }: { area: Area; openArea?: Area; initialApps?: string[]; children: ReactNode }) {
+  const [state, dispatch] = useReducer(reduce, { area: openArea, initialApps }, ({ area: a, initialApps: apps }) =>
     apps.reduce<State>((s, app) => reduce(s, { type: 'open', app, area: a }), { windows: [], z: 0, front: null }));
   const value = useMemo<Desktop>(() => ({
     windows: state.windows,
     front: state.front,
     isOpen: (app) => state.windows.some((w) => w.app === app),
-    open: (app) => dispatch({ type: 'open', app, area }),
+    open: (app) => dispatch({ type: 'open', app, area: openArea }),
     focus: (app) => dispatch({ type: 'focus', app }),
     close: (app) => dispatch({ type: 'close', app }),
     minimize: (app) => dispatch({ type: 'minimize', app }),
     toggleZoom: (app) => dispatch({ type: 'zoom', app }),
     setRect: (app, rect) => dispatch({ type: 'rect', app, rect }),
-    home: () => dispatch({ type: 'home' }),
     blur: () => dispatch({ type: 'blur' }),
     area,
-  }), [state, area]);
+  }), [state, area, openArea]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

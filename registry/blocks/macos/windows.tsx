@@ -36,8 +36,13 @@ const AppBody = memo(function AppBody({ app, dark }: { app: DesktopApp; dark: bo
 
 type Edge = 'e' | 's' | 'se';
 
-/** How a window shows on a phone: the one in front is up, the rest are tucked into their icons (`origin`). */
-export interface PhoneView { shown: boolean; origin: string }
+/** How a window shows on a phone: the one in front is up, the rest are tucked into their icons (`origin`), and in the
+    app switcher each is a `card` — a scale and translate from its place, `live` while a finger is moving it. */
+export interface PhoneView {
+  shown: boolean;
+  origin: string;
+  card?: { scale: number; translate: string; opacity: number; live: boolean };
+}
 
 /** False for the first frame, so a window that mounts hidden can transition in. */
 function useSettled() {
@@ -57,7 +62,8 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
   if (!app) return null;
   const front = d.front === win.app;
   const rect = shownRect(win, d.area, dock);
-  const up = phone ? phone.shown && settled : false;
+  const card = phone?.card;
+  const up = phone ? phone.shown && settled && !card : false;
 
   const begin = (kind: 'move' | Edge) => (e: ReactPointerEvent) => {
     if (e.button !== 0 || win.zoomed) return;
@@ -91,13 +97,15 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
       aria-label={app.name}
       // Any press inside brings the window forward (capture: before the app's own handlers).
       onPointerDownCapture={() => d.focus(win.app)}
-      inert={(phone ? !phone.shown : win.minimized) || undefined}
+      inert={(phone ? card !== undefined || !phone.shown : win.minimized) || undefined}
       className={cn(
         'pointer-events-auto absolute flex flex-col overflow-hidden bg-background',
         phone
           ? cn(
-              'transition-[opacity,scale,border-radius] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
-              up ? 'rounded-none' : 'pointer-events-none scale-[.18] rounded-[28px] opacity-0 motion-reduce:scale-100',
+              'transition-[opacity,scale,translate,border-radius] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+              card
+                ? 'rounded-[28px] shadow-[0_8px_30px] shadow-black/35'
+                : up ? 'rounded-none' : 'pointer-events-none scale-[.18] rounded-[28px] opacity-0 motion-reduce:scale-100',
             )
           : cn(
               'origin-bottom transition-[opacity,scale,box-shadow] duration-spring-snappy ease-spring-snappy',
@@ -108,7 +116,10 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
                 : 'shadow-[0_10px_32px_-8px,0_0_0_.5px] shadow-black/25 ring-1 ring-black/10',
             ),
       )}
-      style={phone ? { inset: 0, zIndex: win.z, transformOrigin: phone.origin } : { left: rect.x, top: rect.y, width: rect.w, height: rect.h, zIndex: win.z }}
+      style={phone ? {
+        inset: 0, zIndex: win.z, transformOrigin: phone.origin,
+        ...(card ? { scale: card.scale, translate: card.translate, opacity: card.opacity, ...(card.live ? { transitionProperty: 'opacity, scale, border-radius' } : null) } : null),
+      } : { left: rect.x, top: rect.y, width: rect.w, height: rect.h, zIndex: win.z }}
     >
       {phone ? null : (
         <header

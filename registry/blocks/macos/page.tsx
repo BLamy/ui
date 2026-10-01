@@ -7,7 +7,8 @@
    empty Trash, dark mode, restart…), Web Search, and multi-step Workflows. ⌥Space hides and shows the bar; Esc
    clears, then hides. All sample data is invented; the clock is fixed at 9:41.
    Under 640px wide the desktop becomes an iPhone: a status bar, a springboard of the same apps (Search opens Alfred),
-   and full-screen apps that zoom out of their icons; the home bar sends one back. The apps keep running across it. */
+   and full-screen apps that zoom out of their icons; the home bar sends one back, and double-tapping it opens the app
+   switcher. The phone never moves or minimizes a window, so widening the container brings every app back where it was. */
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useHotkey, type CommandMenuApi } from '@/components/ui/command-menu';
 import { Toaster, createToastQueue } from '@/components/ui/toast';
@@ -19,7 +20,7 @@ import { APPS } from './apps';
 import { DesktopProvider, useDesktop } from './desktop';
 import { Launcher } from './launcher';
 import { Dock, Hat, MenuBar, PowerOverlay, Wallpaper } from './parts';
-import { HOME_H, HomeBar, STATUS_H, Springboard, StatusBar } from './phone';
+import { AppSwitcher, HOME_H, HomeBar, STATUS_H, Springboard, StatusBar, useSwitcher, type Point } from './phone';
 import { AlfredProvider, useAlfred } from './state';
 import { DesktopWindow } from './windows';
 
@@ -28,6 +29,9 @@ const ALFRED_TINT = { light: '#5B4BD6', dark: '#8E7FFF' } as const;
 
 /** Menu bar height. */
 const MENU_H = 28;
+
+/** The width below which the desktop is a phone. */
+const PHONE_W = 640;
 
 export interface MacOSProps {
   /** Apps to have open on load, by id (see apps.ts): ['reminders'], ['mail', 'notes'] — the last is frontmost. */
@@ -83,9 +87,12 @@ function Desktop({ initialApps, ...rest }: ScreenProps & { initialApps?: string[
   const [ref, size] = useContainerSize({ width: 900, height: 640 });
   // The room windows live in: everything under the menu bar.
   const area = useMemo(() => ({ width: size.width, height: Math.max(0, size.height - MENU_H) }), [size.width, size.height]);
+  // The last desktop-sized room, where an app opened on the phone is placed for when the width comes back.
+  const [wide, setWide] = useState(area.width >= PHONE_W ? area : { width: 900, height: 640 - MENU_H });
+  if (area.width >= PHONE_W && (wide.width !== area.width || wide.height !== area.height)) setWide(area);
   return (
     <div ref={ref} data-slot="macos" className="relative h-full w-full">
-      <DesktopProvider area={area} initialApps={initialApps}>
+      <DesktopProvider area={area} openArea={area.width >= PHONE_W ? area : wide} initialApps={initialApps}>
         <Screen {...rest} size={size} />
       </DesktopProvider>
     </div>
@@ -102,9 +109,25 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }:
   const { power, setPower } = useAlfred();
   const desktop = useDesktop();
   // A phone-sized desktop is an iPhone: its own chrome, a springboard, and one full-screen app at a time.
-  const phone = size.width < 640;
-  const [origins, setOrigins] = useState<Record<string, string>>({});
-  const foreground = phone ? desktop.windows.filter((w) => !w.minimized).sort((a, b) => b.z - a.z)[0]?.app ?? null : null;
+  const phone = size.width < PHONE_W;
+  const layer = useMemo(() => ({ width: size.width, height: Math.max(0, size.height - STATUS_H - HOME_H) }), [size.width, size.height]);
+  const [origins, setOrigins] = useState<Record<string, Point>>({});
+  const switcher = useSwitcher(layer);
+  // "Home" and "switcher" are marks in the windows' stacking order, not changes to them: the app up is the frontmost
+  // one opened or focused since, and the switcher is over once anything is — so the desktop's windows stay as they are.
+  const maxZ = Math.max(0, ...desktop.windows.map((w) => w.z));
+  const [homeZ, setHomeZ] = useState(0);
+  const [switchZ, setSwitchZ] = useState(0);
+  const foreground = phone ? desktop.windows.filter((w) => !w.minimized && w.z > homeZ).sort((a, b) => b.z - a.z)[0]?.app ?? null : null;
+  const switching = phone && switcher.open && desktop.windows.length > 0 && maxZ <= switchZ;
+  // Most recent first.
+  const stack = [...desktop.windows].sort((a, b) => b.z - a.z);
+  const goHome = () => { switcher.hide(); setHomeZ(maxZ); };
+  const showSwitcher = () => { setSwitchZ(maxZ); switcher.show(); };
+  const quit = (id: string) => {
+    switcher.setDrag((d) => ({ ...d, [id]: -layer.height }));
+    setTimeout(() => { desktop.close(id); switcher.setDrag((d) => ({ ...d, [id]: 0 })); }, 220);
+  };
   // Every app, Alfred and the Trash, in the space the dock has.
   const items = APPS.length + 2;
   const tile = Math.min(MAX_DOCK_TILE, Math.floor((size.width - 32 - 12 - (items + 1) * 6 - 6) / items));
@@ -123,26 +146,42 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }:
   return (
     <Wallpaper dark={dark}>
       <div className="flex h-full flex-col">
-        {phone ? <StatusBar dark={dark} inApp={foreground !== null} /> : <MenuBar dark={dark} onAlfred={toggle} />}
+        {phone ? <StatusBar dark={dark} inApp={foreground !== null && !switching} /> : <MenuBar dark={dark} onAlfred={toggle} />}
         {/* The desktop: pressing the bare wallpaper puts Finder frontmost, as on a Mac. */}
         <div className="relative min-h-0 flex-1" onPointerDown={(e) => { if (e.target === e.currentTarget) desktop.blur(); }}>
           {phone ? (
             <Springboard
               dark={dark}
-              away={foreground !== null}
-              onLaunch={(id, origin) => { setOrigins((o) => ({ ...o, [id]: origin })); desktop.open(id); }}
+              away={foreground !== null || switching}
+              onLaunch={(id, from) => { setOrigins((o) => ({ ...o, [id]: from })); desktop.open(id); }}
               onSearch={show}
             />
           ) : null}
           {/* The same windows in both modes, so a resize across the breakpoint keeps every app as it was. */}
           <div data-slot="macos-windows" className="pointer-events-none absolute inset-0 isolate overflow-hidden">
-            {desktop.windows.map((w) => (
-              <DesktopWindow
-                key={w.app} win={w} dark={dark} dock={dock}
-                phone={phone ? { shown: w.app === foreground, origin: origins[w.app] ?? '50% 50%' } : undefined}
-              />
-            ))}
+            {desktop.windows.map((w) => {
+              const from = origins[w.app] ?? { x: layer.width / 2, y: layer.height / 2 };
+              return (
+                <DesktopWindow
+                  key={w.app} win={w} dark={dark} dock={dock}
+                  phone={phone ? {
+                    shown: w.app === foreground,
+                    origin: `${from.x}px ${from.y}px`,
+                    card: switching ? switcher.place(stack.indexOf(w), w.app, from) : undefined,
+                  } : undefined}
+                />
+              );
+            })}
           </div>
+          {switching ? (
+            <AppSwitcher
+              apps={stack.flatMap((w) => APPS.filter((a) => a.id === w.app))}
+              layer={layer} switcher={switcher} dark={dark}
+              onPick={(id) => { desktop.open(id); switcher.hide(); }}
+              onQuit={quit}
+              onBack={() => switcher.hide()}
+            />
+          ) : null}
           {phase !== 'closed' ? (
             <div
               className={cn(
@@ -178,7 +217,7 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, size }:
             </div>
           ) : null}
         </div>
-        {phone ? <HomeBar dark={dark} inApp={foreground !== null} /> : null}
+        {phone ? <HomeBar dark={dark} inApp={foreground !== null && !switching} onHome={goHome} onSwitcher={showSwitcher} /> : null}
       </div>
       {dock ? <Dock dark={dark} tile={tile} onAlfred={toggle} /> : null}
       <Toaster queue={queue} inline placement={phone ? 'top' : 'bottom'} offset={phone ? STATUS_H + 8 : dock ? 92 : 24} aria-label="Alfred notifications" />
