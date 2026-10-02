@@ -115,6 +115,14 @@ Exits are quicker than entrances: what leaves gets out of the way, what arrives 
 
 {% demo src="motion/celebrate" %}
 
+## Slowing it down
+
+These docs have a motion panel for reviewing animation: press **⌥M** (Alt+M) to show or hide it, then pick 1×, ½×, ¼× or ⅒× speed. Every demo slows together, so a title flying into a back button or a sheet settling can be watched frame by frame. Change the speed while something is moving and it carries on from where it was.
+
+The kit's motion comes from two engines and the panel slows both: framer-motion springs (the clock they read is scaled) and CSS transitions and animations (each one's playback rate is set). A link can carry the setting — `?motion=0.25` for a speed, `?reduce=1` for reduced motion — and a demo opened full screen takes the same parameters (`/?demo=navigation-stack/title-morph&motion=0.25`).
+
+**Reduce** makes `matchMedia('(prefers-reduced-motion: reduce)')` answer yes, which is what the kit's JavaScript checks (title flights are skipped, springs become instant). CSS `motion-reduce:` variants are a media query only the browser can flip: for those use DevTools → Rendering → *Emulate CSS media feature prefers-reduced-motion*. This is a tool of these docs, not part of the kit — nothing in your app changes.
+
 ## What moves where
 
 | Component | Motion |

@@ -12,6 +12,10 @@ import { AppearanceProvider } from '@/lib/theme';
 import App from './app/app';
 import RenderPage from './app/render-page';
 import { demoResolver } from './demos';
+import MotionTools, { initMotionTools } from './motion-tools';
+
+// Before anything renders: the slow-motion clock and the reduced-motion stand-in (⌥M opens the panel).
+const motionParams = initMotionTools();
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement,
@@ -38,5 +42,6 @@ root.render(
         <RenderPage resolver={search.get('resolver') !== '0'} />
       </AppearanceProvider>
     ) : <App />}
+    <MotionTools initiallyOpen={motionParams} />
   </StrictMode>,
 );
