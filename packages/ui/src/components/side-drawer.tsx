@@ -2,6 +2,7 @@
 import { use, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { useEdgeSwipe } from '@/lib/edge-swipe';
 import { Icon } from '@/lib/icon';
 import { springCss } from '@/lib/motion';
 import { BLSafeCtx } from '@/lib/theme';
@@ -138,9 +139,6 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
   const safeTop = use(BLSafeCtx);
   const panel = useRef<HTMLDivElement>(null);
   const dim = useRef<HTMLDivElement>(null);
-  const drag = useRef<{
-    x0: number; y0: number; w: number; last: number; lt: number; vel: number; dx: number; on: boolean; page: HTMLElement[];
-  } | null>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   // Painted (shadow, content) while open and until the pop has settled.
@@ -185,59 +183,43 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
     }
   }, [open]);
 
-  const down = (e: React.PointerEvent) => {
-    if (e.button || !open) return;
-    const rect = panel.current?.getBoundingClientRect();
-    if (!rect || e.clientX - rect.left > navigationPush.edge) return;
-    // No pointer capture yet: a tap in the edge zone must still reach its own control. The panel takes the pointer
-    // once the drag engages, in `move`.
-    drag.current = { x0: e.clientX, y0: e.clientY, w: rect.width, last: e.clientX, lt: performance.now(), vel: 0, dx: 0, on: false, page: pageOf(host.current) };
-  };
-  const move = (e: React.PointerEvent) => {
-    const d = drag.current;
-    const p = panel.current, s = dim.current;
-    if (!d || !p || !s) return;
-    const raw = e.clientX - d.x0, dy = e.clientY - d.y0;
-    if (!d.on) {
-      // Slop: engage only on a clearly horizontal rightward drag.
-      if (raw > 8 && raw > Math.abs(dy) * 1.2) {
-        d.on = true;
-        try { p.setPointerCapture(e.pointerId); } catch { /* noop */ }
-      } else { if (Math.abs(dy) > 14) drag.current = null; return; }
-    }
-    const dx = Math.max(0, raw);
-    d.vel = (e.clientX - d.last) / Math.max(1, performance.now() - d.lt); d.last = e.clientX; d.lt = performance.now(); d.dx = dx;
-    const k = 1 - dx / d.w;
-    p.style.transition = 'none'; p.style.transform = `translateX(${dx}px)`;
-    s.style.transition = 'none'; s.style.opacity = String(navigationPush.dim * k);
-    d.page.forEach((el) => { el.style.transition = 'none'; el.style.translate = `${(navigationPush.underPct / 100) * d.w * k}px 0`; });
-  };
-  const up = () => {
-    const d = drag.current; drag.current = null;
-    const p = panel.current, s = dim.current;
-    if (!d || !d.on || !p || !s) return;
-    const commit = d.dx / d.w > navigationPush.commit || d.vel > navigationPush.flick;
-    // Release continues on the tray spring from wherever the finger let go.
-    p.style.transition = springCss('transform', 'tray');
-    s.style.transition = springCss('opacity', 'tray');
-    d.page.forEach((el) => { el.style.transition = springCss('translate', 'tray'); });
-    if (commit) {
-      p.style.transform = `translateX(${navigationPush.off})`;
-      s.style.opacity = '0';
-      d.page.forEach((el) => { el.style.translate = ''; });
-      onCloseRef.current?.();
-    } else {
-      p.style.transform = 'translateX(0px)';
-      s.style.opacity = String(navigationPush.dim);
-      d.page.forEach((el) => { el.style.translate = `${(navigationPush.underPct / 100) * d.w}px 0`; });
-    }
-    // Hand the positions back to the classes once the tray spring has settled.
-    setTimeout(() => {
-      p.style.transition = ''; p.style.transform = '';
-      s.style.transition = ''; s.style.opacity = '';
-      d.page.forEach((el) => { el.style.transition = ''; });
-    }, 430);
-  };
+  // The edge swipe: the panel follows the finger while the page under it parallaxes back and un-dims.
+  const swipe = useEdgeSwipe<{ page: HTMLElement[]; w: number }>({
+    target: () => panel.current,
+    edge: navigationPush.edge, commit: navigationPush.commit, flick: navigationPush.flick,
+    begin: (_e, rect) => (open && dim.current ? { page: pageOf(host.current), w: rect.width } : null),
+    move: (c, p, dx) => {
+      const k = 1 - p;
+      if (!panel.current || !dim.current) return;
+      panel.current.style.transition = 'none'; panel.current.style.transform = `translateX(${dx}px)`;
+      dim.current.style.transition = 'none'; dim.current.style.opacity = String(navigationPush.dim * k);
+      c.page.forEach((el) => { el.style.transition = 'none'; el.style.translate = `${(navigationPush.underPct / 100) * c.w * k}px 0`; });
+    },
+    release: (c, { commit }) => {
+      const p = panel.current, s = dim.current;
+      if (!p || !s) return;
+      // Release continues on the tray spring from wherever the finger let go.
+      p.style.transition = springCss('transform', 'tray');
+      s.style.transition = springCss('opacity', 'tray');
+      c.page.forEach((el) => { el.style.transition = springCss('translate', 'tray'); });
+      if (commit) {
+        p.style.transform = `translateX(${navigationPush.off})`;
+        s.style.opacity = '0';
+        c.page.forEach((el) => { el.style.translate = ''; });
+        onCloseRef.current?.();
+      } else {
+        p.style.transform = 'translateX(0px)';
+        s.style.opacity = String(navigationPush.dim);
+        c.page.forEach((el) => { el.style.translate = `${(navigationPush.underPct / 100) * c.w}px 0`; });
+      }
+      // Hand the positions back to the classes once the tray spring has settled.
+      setTimeout(() => {
+        p.style.transition = ''; p.style.transform = '';
+        s.style.transition = ''; s.style.opacity = '';
+        c.page.forEach((el) => { el.style.transition = ''; });
+      }, 430);
+    },
+  });
 
   return (
     <>
@@ -248,7 +230,7 @@ function SideDrawerPush({ open, onClose, title, backLabel, host, hostWidth, chil
         )} />
       <div ref={panel} data-slot="side-drawer-panel" role="dialog" tabIndex={-1} aria-label={typeof title === 'string' ? title : undefined}
         aria-hidden={!open} inert={!open || undefined}
-        onPointerDownCapture={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+        {...swipe.bind}
         onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); onClose?.(); } }}
         className={cn(
           'absolute inset-0 flex touch-pan-y flex-col overflow-hidden bg-background outline-none will-change-transform [transform:translateX(var(--side-drawer-x))] transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',

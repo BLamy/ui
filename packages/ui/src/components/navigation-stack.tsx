@@ -4,11 +4,14 @@ import {
   type CSSProperties, type ReactNode,
 } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
-import { animate, type AnimationPlaybackControls } from 'framer-motion';
 import { Icon } from '@/lib/icon';
 import { chromeStore, BLSafeCtx, BLStickyCtx } from '@/lib/theme';
 import { cn, BARH } from '@/lib/utils';
-import { springCss, springs } from '@/lib/motion';
+import { springCss } from '@/lib/motion';
+import { armBackHistory, useBackHistory } from '@/lib/back-history';
+import { useEdgeSwipe } from '@/lib/edge-swipe';
+import { usePullToRefresh } from '@/lib/pull-to-refresh';
+import { backLabel, shownTitle, useTitleFlight, type ActiveFlight, type TitleParts } from '@/lib/title-flight';
 import { Spinner } from '@/components/ui/spinner';
 import { useSplitViewBack } from '@/components/ui/split-view';
 
@@ -32,12 +35,9 @@ export interface Screen {
 
 interface NavHandle { pop: () => void; canPop: boolean }
 /** Elements a screen hands the stack: its root and dimmer (edge swipe), and its titles (header morph). */
-interface ScreenParts {
+interface ScreenParts extends TitleParts {
   el?: HTMLDivElement | null;
   dim?: HTMLDivElement | null;
-  large?: HTMLElement | null;
-  inline?: HTMLElement | null;
-  back?: HTMLElement | null;
   scroller?: HTMLElement | null;
 }
 type Reg = (key: string, part: ScreenParts) => void;
@@ -91,8 +91,7 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
   const [hid, setHid] = useState(false);
   const safeTop = use(BLSafeCtx);
   const lastY = useRef(0);
-  const scroller = useRef<any>(null); const inner = useRef<any>(null); const spin = useRef<any>(null);
-  const pl = useRef<any>(null); const [refr, setRefr] = useState(false);
+  const scroller = useRef<HTMLDivElement | null>(null); const inner = useRef<HTMLDivElement | null>(null); const spin = useRef<HTMLDivElement | null>(null);
   const rowRef = useRef<HTMLDivElement | null>(null); const titleRef = useRef<HTMLDivElement | null>(null);
   const measFull = useRef<HTMLSpanElement | null>(null); const measBack = useRef<HTMLSpanElement | null>(null);
   const [bk, setBk] = useState<{ mode: BackMode; w: number }>({ mode: 'title', w: 160 });
@@ -148,57 +147,16 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
       if (rows[n]) { rows[n].focus(); e.preventDefault(); }
     }
   };
-  // pull-to-refresh
-  const pDown = (e: React.PointerEvent) => {
-    if (!sc.onRefresh || refr || e.button) return;
-    if (scroller.current.scrollTop > 2) return;
-    pl.current = { y0: e.clientY, x0: e.clientX, on: false, armed: false };
-  };
-  const pMove = (e: React.PointerEvent) => {
-    const d = pl.current; if (!d) return;
-    const dy = e.clientY - d.y0, dx = e.clientX - d.x0;
-    if (!d.on) {
-      if (dy > 10 && dy > Math.abs(dx) * 1.3 && scroller.current.scrollTop <= 1) {
-        d.on = true;
-        try { scroller.current.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
-      } else if (dy < -6) { pl.current = null; return; }
-      else return;
-    }
-    const t = Math.min(110, 56 * Math.log1p(Math.max(0, dy - 10) / 40)); d.t = t;
-    const c = inner.current, sp = spin.current;
-    if (c) { c.style.transition = 'none'; c.style.transform = `translateY(${t}px)`; }
-    if (sp) { sp.style.opacity = String(Math.min(1, t / 58)); sp.style.transform = `translateX(-50%) rotate(${t * 3.2}deg) scale(${Math.min(1, .5 + t / 90)})`; }
-    const armed = t > 54;
-    d.armed = armed;
-  };
-  const pEnd = () => {
-    const d = pl.current; if (!d) return; pl.current = null; if (!d.on) return;
-    const c = inner.current, sp = spin.current;
-    if (d.armed) {
-      setRefr(true);
-      if (c) { c.style.transition = springCss('transform', 'snappy'); c.style.transform = 'translateY(52px)'; }
-      if (sp) { sp.style.opacity = '1'; sp.style.transform = 'translateX(-50%)'; }
-      setTimeout(() => {
-        setRefr(false);
-        if (c) { c.style.transition = springCss('transform', 'smooth'); c.style.transform = 'translateY(0)'; }
-        if (sp) sp.style.opacity = '0';
-        sc.onRefresh && sc.onRefresh();
-        setTimeout(() => { if (c) { c.style.transition = ''; c.style.transform = ''; } }, 560);
-      }, 1100);
-    } else {
-      if (c) {
-        c.style.transition = springCss('transform', 'snappy'); c.style.transform = 'translateY(0)';
-        setTimeout(() => { if (c) { c.style.transition = ''; c.style.transform = ''; } }, 400);
-      }
-      if (sp) sp.style.opacity = '0';
-    }
-  };
+  const pull = usePullToRefresh({ onRefresh: sc.onRefresh, scroller, content: inner, spinner: spin });
   return (
     // Slide position, depth, and bar geometry are per-render values, fed in as CSS variables; the edge-swipe writes
     // transform/transition inline during a drag and clears them back to these classes.
-    <div ref={(el) => reg(sc.key, { el })} data-slot="screen" data-screen-label={typeof sc.title === 'string' ? sc.title : sc.key}
+    // A covered or leaving screen is inert: its controls take no focus and aren't read out behind the one on top. The
+    // screen itself takes focus (tabIndex -1) when a push lands on it, so the keyboard continues from its top.
+    <div ref={(el) => reg(sc.key, { el })} data-slot="screen" data-screen-key={sc.key} data-screen-label={typeof sc.title === 'string' ? sc.title : sc.key}
+      tabIndex={-1} inert={isUnder || ghost || undefined} onKeyDown={onKey}
       className={cn(
-        'absolute inset-0 z-(--screen-z) overflow-hidden will-change-transform [transform:translateX(var(--screen-x))] transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
+        'outline-none absolute inset-0 z-(--screen-z) overflow-hidden will-change-transform [transform:translateX(var(--screen-x))] transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
         sc.grouped ? 'bg-muted' : 'bg-background',
         depth > 0 && 'shadow-[-10px_0_30px_black] shadow-black/16',
         ghost ? 'pointer-events-none' : 'pointer-events-auto',
@@ -209,8 +167,8 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
         '--screen-max-w': sc.maxW == null || sc.maxW === 0 || sc.maxW === '' ? 'none' : typeof sc.maxW === 'number' ? sc.maxW + 'px' : sc.maxW,
         '--screen-inset': ins + 28 + 'px',
       } as CSSProperties}>
-      <div ref={(e) => { scroller.current = e; reg(sc.key, { scroller: e }); }} className="bl-scroll absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" onScroll={onScroll} onKeyDown={onKey}
-        onPointerDown={pDown} onPointerMove={pMove} onPointerUp={pEnd} onPointerCancel={pEnd}>
+      <div ref={(e) => { scroller.current = e; reg(sc.key, { scroller: e }); }} className="bl-scroll absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]" onScroll={onScroll}
+        {...pull.bind}>
         <div ref={inner} className="mx-auto box-border w-full max-w-(--screen-max-w)">
           {sc.largeTitle
             ? <div className="px-4 pt-[calc(var(--screen-bar-h)+2px)] pb-1.5">
@@ -226,7 +184,7 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
       </div>
       {sc.onRefresh ? (
         <div ref={spin}
-          className="pointer-events-none absolute top-[calc(var(--screen-bar-h)+8px)] left-1/2 z-5 [transform:translateX(-50%)] text-muted-foreground opacity-0 transition-opacity duration-spring-snappy ease-spring-snappy"><Spinner spin={refr} /></div>
+          className="pointer-events-none absolute top-[calc(var(--screen-bar-h)+8px)] left-1/2 z-5 [transform:translateX(-50%)] text-muted-foreground opacity-0 transition-opacity duration-spring-snappy ease-spring-snappy"><Spinner spin={pull.refreshing} /></div>
       ) : null}
       <div className={cn(
         'absolute inset-x-0 top-0 z-30 box-border flex h-(--screen-bar-h) items-end px-1.5 pt-(--screen-safe-top) transition-transform duration-spring-smooth ease-spring-smooth',
@@ -278,120 +236,8 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
   );
 }
 
-/* ══ Header title morph ══
-   On push the previous screen's title (large or inline, whichever is showing) flies into the new screen's back
-   button; on pop the back label flies back into the title it names. The two real labels hide while a pair of
-   copies (one styled as the source, one as the destination) travels between them on the same spring as the
-   screens, scaling and cross-fading from one style to the other. An edge swipe scrubs it with the finger. */
-
-interface Flight { set: (t: number) => void; done: () => void }
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-
-/** The title a screen is showing right now: its large title until it scrolls under the bar, else the inline one. */
-function shownTitle(r: ScreenParts | undefined): HTMLElement | null {
-  if (!r) return null;
-  if (r.large && !r.el?.hasAttribute('data-scrolled')) return r.large;
-  if (r.inline && parseFloat(getComputedStyle(r.inline).opacity) > 0.5) return r.inline;
-  return null;
-}
-function backLabel(r: ScreenParts | undefined): HTMLElement | null {
-  return r?.back && r.back.dataset.mode === 'title' ? r.back : null;
-}
-
-/** The back chevron beside a back label. It rides in with the new screen, straight through the title that is
- *  travelling to its side, so the flight draws its own copy that fades in where the chevron will rest. */
-function backChevron(to: HTMLElement): HTMLElement | SVGElement | null {
-  if (!to.dataset.mode) return null; // only a back label (data-mode) has one; a title's sibling is something else
-  const c = to.previousElementSibling;
-  return c instanceof HTMLElement || c instanceof SVGElement ? c : null;
-}
-
-function titleFlight(cont: HTMLElement, from: HTMLElement, to: HTMLElement, toScreen: HTMLElement | null | undefined): Flight | null {
-  const cr = cont.getBoundingClientRect(), fr = from.getBoundingClientRect(), tr = to.getBoundingClientRect();
-  if (!fr.width || !tr.width) return null;
-  // `to` is measured where it will be once its screen settles at the stack's origin.
-  const sr = toScreen ? toScreen.getBoundingClientRect() : cr;
-  const f = { x: fr.left - cr.left, y: fr.top - cr.top, w: fr.width, h: fr.height };
-  const d = { x: tr.left - sr.left, y: tr.top - sr.top, w: tr.width, h: tr.height };
-  const fs = getComputedStyle(from), ts = getComputedStyle(to);
-  const k = (parseFloat(ts.fontSize) || 17) / (parseFloat(fs.fontSize) || 17);
-  const layer = document.createElement('div');
-  layer.setAttribute('aria-hidden', 'true');
-  layer.dataset.slot = 'navigation-title-flight';
-  Object.assign(layer.style, { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '300', overflow: 'hidden' });
-  const copy = (src: HTMLElement, cs: CSSStyleDeclaration, r: { w: number; h: number }) => {
-    const c = document.createElement('div');
-    c.innerHTML = src.innerHTML;
-    Object.assign(c.style, {
-      position: 'absolute', left: '0', top: '0', width: r.w + 'px', height: r.h + 'px', whiteSpace: 'nowrap', overflow: 'hidden',
-      textOverflow: 'ellipsis', transformOrigin: '0 50%', willChange: 'transform, opacity',
-      color: cs.color, fontFamily: cs.fontFamily, fontSize: cs.fontSize, fontWeight: cs.fontWeight,
-      letterSpacing: cs.letterSpacing, lineHeight: r.h + 'px',
-    });
-    layer.appendChild(c);
-    return c;
-  };
-  const a = copy(from, fs, f), b = copy(to, ts, d);
-  cont.appendChild(layer);
-  from.style.visibility = 'hidden'; to.style.visibility = 'hidden';
-  // Titles of one size (an inline title into the back label, and back) have no scale change to hide a cross-fade
-  // behind, and two half-faded copies of the same words read as a blink. There the source stays solid under the
-  // arriving copy and drops out only once that one is opaque.
-  const same = Math.abs(k - 1) < 0.05;
-  const chevEl = backChevron(to);
-  let chev: HTMLElement | null = null;
-  if (chevEl) {
-    const r = chevEl.getBoundingClientRect();
-    chev = chevEl.cloneNode(true) as HTMLElement;
-    Object.assign(chev.style, {
-      position: 'absolute', left: r.left - sr.left + 'px', top: r.top - sr.top + 'px', margin: '0', opacity: '0',
-      width: r.width + 'px', height: r.height + 'px', color: getComputedStyle(chevEl).color,
-    });
-    layer.appendChild(chev);
-    chevEl.style.visibility = 'hidden';
-  }
-  return {
-    set(t) {
-      const x = lerp(f.x, d.x, t), cy = lerp(f.y + f.h / 2, d.y + d.h / 2, t);
-      a.style.transform = `translate(${x}px, ${cy - f.h / 2}px) scale(${lerp(1, k, t)})`;
-      b.style.transform = `translate(${x}px, ${cy - d.h / 2}px) scale(${lerp(1 / k, 1, t)})`;
-      a.style.opacity = String(same ? clamp01((0.85 - t) / 0.2) : clamp01(1 - t * 1.8));
-      b.style.opacity = String(same ? clamp01(t / 0.6) : clamp01((t - 0.2) / 0.6));
-      if (chev) chev.style.opacity = String(clamp01((t - 0.3) / 0.5));
-    },
-    done() { from.style.visibility = ''; to.style.visibility = ''; if (chevEl) chevEl.style.visibility = ''; layer.remove(); },
-  };
-}
-
 /** Push/pop settle time: the smooth spring (--duration-spring-smooth) plus a frame. */
 const SETTLE_MS = navigationPush.settleMs;
-
-/* Back-gesture history bridge: on touch devices the system edge-swipe would navigate the page itself away
-   (blank screen). While any stack can pop we keep one history sentinel armed; the system gesture then lands
-   as popstate and pops OUR stack instead of the page. */
-const NavPops = new Set<() => { depth: number; pop: () => void }>();
-let blArmed = false;
-let blCoarse = typeof matchMedia !== 'undefined' && matchMedia('(any-pointer: coarse)').matches;
-function armHistory() {
-  if (!blCoarse || blArmed) return;
-  try { history.pushState({ blNav: 1 }, ''); blArmed = true; } catch (e) { blCoarse = false; }
-}
-if (typeof window !== 'undefined' && !(window as any).__tkPopstate) {
-  (window as any).__tkPopstate = 1;
-  window.addEventListener('popstate', () => {
-    if (!blArmed) return; blArmed = false;
-    let best: { depth: number; pop: () => void } | null = null;
-    NavPops.forEach((g) => { const s = g(); if (s.depth > 1) best = s; });
-    if (best) {
-      (best as { pop: () => void }).pop();
-      setTimeout(() => {
-        let can = false; NavPops.forEach((g) => { if (g().depth > 1) can = true; }); if (can) armHistory();
-      }, 80);
-    }
-  });
-}
 
 export interface NavigationStackProps {
   screens: Screen[];
@@ -408,39 +254,30 @@ export interface NavigationStackProps {
   style?: CSSProperties;
 }
 
+/** What an edge swipe moves: the top screen, the one under it, and the title flight scrubbing along. */
+interface SwipeCtx {
+  top: ScreenParts & { el: HTMLDivElement };
+  under: ScreenParts & { el: HTMLDivElement };
+  flight: ActiveFlight | null;
+}
+
 export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: rootBackProp, className, style }: NavigationStackProps) {
   const rootTitle = screens[0]?.title;
   const split = useSplitViewBack(typeof rootTitle === 'string' ? rootTitle : undefined);
   const rootBack = rootBackProp === false ? null : rootBackProp ?? (split ? { title: split.title, onPress: split.back } : null);
-  const contRef = useRef<any>(null);
-  const regMap = useRef<Record<string, any>>({});
+  const contRef = useRef<HTMLDivElement | null>(null);
+  const regMap = useRef<Record<string, ScreenParts>>({});
   const reg: Reg = (k, part) => { regMap.current[k] = { ...regMap.current[k], ...part }; };
   const [anim, setAnim] = useState<{ enter: string | null; exit: Screen[] | null }>({ enter: null, exit: null });
   const prevRef = useRef(screens);
   const skipRef = useRef(false);
-  const tRef = useRef<any>(null);
+  const tRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const onPopRef = useRef(onPop); onPopRef.current = onPop;
-  const drag = useRef<any>(null);
-  const swiped = useRef(false);
-  const flight = useRef<{ f: Flight; run?: AnimationPlaybackControls } | null>(null);
-  const endFlight = () => { const c = flight.current; flight.current = null; if (c) { c.run?.stop(); c.f.done(); } };
-  const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  /** Fly a title between two screens (after a frame, once the new screen has laid out its bar). */
-  const fly = (pick: () => [HTMLElement | null, HTMLElement | null, HTMLElement | null | undefined]) => {
-    endFlight();
-    if (reducedMotion()) return;
-    requestAnimationFrame(() => {
-      const [from, to, toScreen] = pick();
-      if (!from || !to || !contRef.current) return;
-      const f = titleFlight(contRef.current, from, to, toScreen);
-      if (!f) return;
-      f.set(0);
-      const c: { f: Flight; run?: AnimationPlaybackControls } = { f };
-      flight.current = c;
-      c.run = animate(0, 1, { ...springs.smooth, onUpdate: f.set, onComplete: () => { if (flight.current === c) endFlight(); } });
-    });
-  };
-  useEffect(() => endFlight, []);
+  const titles = useTitleFlight(contRef);
+  // The control that had focus in each screen, so a pop can hand it back (the row that pushed).
+  const lastFocus = useRef<Record<string, HTMLElement>>({});
+  // Focus moves with a push or pop only when it is in the stack (or nowhere): never pulled from something else.
+  const focusIsOurs = () => !document.activeElement || document.activeElement === document.body || !!contRef.current?.contains(document.activeElement);
   const keysJ = screens.map((s) => s.key).join('¦');
   useLayoutEffect(() => {
     const old = prevRef.current; prevRef.current = screens;
@@ -451,91 +288,70 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
     if (nk.length > ok.length && pref(ok, nk)) {
       setAnim({ enter: nk[nk.length - 1], exit: null });
       const fromK = ok[ok.length - 1], toK = nk[nk.length - 1];
-      fly(() => [shownTitle(regMap.current[fromK]), backLabel(regMap.current[toK]), regMap.current[toK]?.el]);
-      armHistory();
+      titles.fly(() => [shownTitle(regMap.current[fromK]), backLabel(regMap.current[toK]), regMap.current[toK]?.el]);
+      armBackHistory();
+      if (focusIsOurs()) requestAnimationFrame(() => regMap.current[toK]?.el?.focus({ preventScroll: true }));
       tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), SETTLE_MS);
     } else if (nk.length < ok.length && pref(nk, ok)) {
       if (skipRef.current) { skipRef.current = false; setAnim({ enter: null, exit: null }); return; }
       setAnim({ enter: null, exit: old.slice(nk.length) });
       const fromK = ok[ok.length - 1], toK = nk[nk.length - 1];
-      fly(() => [backLabel(regMap.current[fromK]), shownTitle(regMap.current[toK]), regMap.current[toK]?.el]);
+      titles.fly(() => [backLabel(regMap.current[fromK]), shownTitle(regMap.current[toK]), regMap.current[toK]?.el]);
+      if (focusIsOurs()) {
+        requestAnimationFrame(() => {
+          const back = lastFocus.current[toK];
+          (back?.isConnected ? back : regMap.current[toK]?.el)?.focus({ preventScroll: true });
+        });
+      }
       tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), SETTLE_MS);
     } else setAnim({ enter: null, exit: null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keysJ]);
   const ghosts = anim.exit || [];
   const canPop = screens.length > 1;
-  const depthRef = useRef(0); depthRef.current = screens.length;
-  useEffect(() => {
-    const g = () => ({ depth: depthRef.current, pop: () => onPopRef.current && onPopRef.current() });
-    NavPops.add(g); return () => { NavPops.delete(g); };
-  }, []);
-  const down = (e: React.PointerEvent) => {
-    if (e.button || anim.enter || anim.exit || screens.length < 2) return;
-    const rect = contRef.current.getBoundingClientRect();
-    if (e.clientX - rect.left > navigationPush.edge) return;
-    const topR = regMap.current[screens[screens.length - 1].key];
-    const undR = regMap.current[screens[screens.length - 2].key];
-    if (!topR || !topR.el || !undR || !undR.el) return;
-    // No pointer capture yet: a tap in the edge zone (the back chevron, a row's leading icon) must still reach its
-    // own button. The stack takes the pointer only once the drag engages, in `move`.
-    drag.current = { x0: e.clientX, y0: e.clientY, w: rect.width, topR, undR, last: e.clientX, lt: performance.now(), vel: 0, moved: false, on: false };
-  };
-  const move = (e: React.PointerEvent) => {
-    const d = drag.current; if (!d) return;
-    const raw = e.clientX - d.x0, dy = e.clientY - d.y0;
-    if (!d.on) {  // slop: engage only on a clearly horizontal rightward drag
-      if (raw > 8 && raw > Math.abs(dy) * 1.2) {
-        d.on = true;
-        try { contRef.current.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
-        // A swipe that started on the back button must not also press it when the finger lifts over it.
-        swiped.current = true;
-        // The back label scrubs toward the title it names, with the finger.
-        endFlight();
-        const from = backLabel(d.topR), to = shownTitle(d.undR);
-        const f = !reducedMotion() && from && to ? titleFlight(contRef.current, from, to, d.undR.el) : null;
-        if (f) { f.set(0); flight.current = { f }; d.flight = flight.current; }
-      } else { if (Math.abs(dy) > 14) drag.current = null; return; }
-    }
-    const dx = Math.max(0, raw); d.moved = true; d.dx = dx;
-    d.vel = (e.clientX - d.last) / Math.max(1, performance.now() - d.lt); d.last = e.clientX; d.lt = performance.now();
-    const p = dx / d.w;
-    try {
-      d.topR.el.style.transition = 'none'; d.topR.el.style.transform = `translateX(${dx}px)`;
-      d.undR.el.style.transition = 'none'; d.undR.el.style.transform = `translateX(${navigationPush.underPct * (1 - p)}%)`;
-      if (d.undR.dim) { d.undR.dim.style.transition = 'none'; d.undR.dim.style.opacity = String(navigationPush.dim * (1 - p)); }
-      if (d.flight && flight.current === d.flight) d.flight.f.set(p);
-    } catch (err) { drag.current = null; }
-  };
-  const up = () => {
-    // A button's press fires later in this same pointerup dispatch, so hold the flag until the next task.
-    if (swiped.current) setTimeout(() => { swiped.current = false; }, 0);
-    const d = drag.current; if (!d) return; drag.current = null;
-    if (!d.moved || !d.on) { clean(d); return; }
-    const p = (d.dx || 0) / d.w;
-    const commit = p > navigationPush.commit || d.vel > navigationPush.flick;
-    // Release continues on the tray spring from wherever the finger let go (the CSS spring retargets).
-    const ease = springCss('transform', 'tray');
-    const c = d.flight && flight.current === d.flight ? d.flight : null;
-    if (c) c.run = animate(p, commit ? 1 : 0, { ...springs.tray, onUpdate: c.f.set, onComplete: () => { if (flight.current === c) endFlight(); } });
-    if (commit) {
-      d.topR.el.style.transition = ease; d.topR.el.style.transform = 'translateX(104%)';
-      d.undR.el.style.transition = ease; d.undR.el.style.transform = 'translateX(0%)';
-      if (d.undR.dim) { d.undR.dim.style.transition = springCss('opacity', 'tray'); d.undR.dim.style.opacity = '0'; }
-      skipRef.current = true;
-      setTimeout(() => { onPopRef.current && onPopRef.current(); requestAnimationFrame(() => clean(d)); }, 380);
-    } else {
-      d.topR.el.style.transition = ease; d.topR.el.style.transform = 'translateX(0px)';
-      d.undR.el.style.transition = ease; d.undR.el.style.transform = `translateX(${navigationPush.under})`;
-      if (d.undR.dim) { d.undR.dim.style.transition = springCss('opacity', 'tray'); d.undR.dim.style.opacity = String(navigationPush.dim); }
-      setTimeout(() => clean(d), 430);
-    }
-  };
-  const clean = (d: any) => [d.topR, d.undR].forEach((r) => {
-    try {
-      if (r && r.el) { r.el.style.transition = ''; r.el.style.transform = ''; }
-      if (r && r.dim) { r.dim.style.transition = ''; r.dim.style.opacity = ''; }
-    } catch (e) { /* noop */ }
+  useBackHistory(screens.length, () => onPopRef.current?.());
+
+  const clean = (c: SwipeCtx) => [c.top, c.under].forEach((r) => {
+    r.el.style.transition = ''; r.el.style.transform = '';
+    if (r.dim) { r.dim.style.transition = ''; r.dim.style.opacity = ''; }
+  });
+  // The edge swipe: the top screen follows the finger while the one under it parallaxes in and un-dims, and the back
+  // label scrubs toward the title it names.
+  const swipe = useEdgeSwipe<SwipeCtx>({
+    target: () => contRef.current,
+    edge: navigationPush.edge, commit: navigationPush.commit, flick: navigationPush.flick,
+    begin: () => {
+      if (anim.enter || anim.exit || screens.length < 2) return null;
+      const top = regMap.current[screens[screens.length - 1].key];
+      const under = regMap.current[screens[screens.length - 2].key];
+      if (!top?.el || !under?.el) return null;
+      return { top: top as SwipeCtx['top'], under: under as SwipeCtx['under'], flight: null };
+    },
+    engage: (c) => { c.flight = titles.scrub(backLabel(c.top), shownTitle(c.under), c.under.el); },
+    move: (c, p, dx) => {
+      c.top.el.style.transition = 'none'; c.top.el.style.transform = `translateX(${dx}px)`;
+      c.under.el.style.transition = 'none'; c.under.el.style.transform = `translateX(${navigationPush.underPct * (1 - p)}%)`;
+      if (c.under.dim) { c.under.dim.style.transition = 'none'; c.under.dim.style.opacity = String(navigationPush.dim * (1 - p)); }
+      if (titles.isCurrent(c.flight)) c.flight.f.set(p);
+    },
+    release: (c, { p, commit }) => {
+      // Release continues on the tray spring from wherever the finger let go (the CSS spring retargets).
+      const ease = springCss('transform', 'tray');
+      titles.release(c.flight, p, commit ? 1 : 0);
+      if (commit) {
+        c.top.el.style.transition = ease; c.top.el.style.transform = 'translateX(104%)';
+        c.under.el.style.transition = ease; c.under.el.style.transform = 'translateX(0%)';
+        if (c.under.dim) { c.under.dim.style.transition = springCss('opacity', 'tray'); c.under.dim.style.opacity = '0'; }
+        skipRef.current = true;
+        setTimeout(() => { onPopRef.current?.(); requestAnimationFrame(() => clean(c)); }, 380);
+      } else {
+        c.top.el.style.transition = ease; c.top.el.style.transform = 'translateX(0px)';
+        c.under.el.style.transition = ease; c.under.el.style.transform = `translateX(${navigationPush.under})`;
+        if (c.under.dim) { c.under.dim.style.transition = springCss('opacity', 'tray'); c.under.dim.style.opacity = String(navigationPush.dim); }
+        setTimeout(() => clean(c), 430);
+      }
+    },
+    abort: clean,
   });
   const topIdx = screens.length - 1;
   // A push is known during render, before the effect below records it: the new screen mounts already off to the
@@ -549,15 +365,16 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
   ];
   const total = rendered.length - 1;
   const inner = (
-    <div ref={contRef} data-slot="navigation-stack"
-      // Capture phase: the edge swipe may start on the back button, whose react-aria press handling stops
-      // pointerdown from bubbling.
-      onPointerDownCapture={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+    <div ref={contRef} data-slot="navigation-stack" {...swipe.bind}
+      onFocusCapture={(e) => {
+        const key = (e.target as Element).closest('[data-slot=screen]')?.getAttribute('data-screen-key');
+        if (key && e.target !== e.currentTarget && (e.target as Element).getAttribute('data-slot') !== 'screen') lastFocus.current[key] = e.target as HTMLElement;
+      }}
       className={cn('absolute inset-0 touch-pan-y overflow-hidden', className)} style={style}>
       {rendered.map((r) => (
         <ScreenWrap key={r.sc.key} sc={r.sc} depth={r.i} top={r.ghost ? total : topIdx} ghost={r.ghost}
           entering={!r.ghost && (anim.enter === r.sc.key || pendingEnter === r.sc.key) && r.i === topIdx}
-          nav={{ pop: () => { if (!swiped.current && onPopRef.current) onPopRef.current(); }, canPop: canPop && !r.ghost }}
+          nav={{ pop: () => onPopRef.current?.(), canPop: canPop && !r.ghost }}
           backTitle={r.i > 0 ? (r.ghost ? (screens[screens.length - 1] && screens[screens.length - 1].title) : screens[r.i - 1].title) : null}
           reg={reg} defIns={defIns} z={r.i} rootBack={rootBack} />
       ))}
