@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { openDemo } from './helpers.mjs';
 
-/* Tailscale in a real browser, against the docs demos. The tailnet is the in-page fake (lib/tailscale-fake) — no
-   account, no control server, no WebAssembly — but the service worker is real: Chromium registers tailscale-sw.js from
+/* Tailscale in a real browser, against the docs demos. The demos default to the real client (Tailscale's Go client as
+   WebAssembly) and a real tailnet; most tests switch them to "Simulated", the in-page fake (lib/tailscale-fake) — no
+   account, no control server — and check the real client only up to what needs no account. The service worker is real: Chromium registers tailscale-sw.js from
    the docs dev server, it intercepts plain fetch() calls, hands the matching ones to the page over a MessagePort, and
    streams the answers back. A *.ts.net name does not resolve on the public internet, so "the request went to the
    network" shows up as a failed fetch. */
@@ -11,8 +12,12 @@ const status = (page) => page.getByTestId('result-status');
 const via = (page) => page.getByTestId('result-via');
 const body = (page) => page.getByTestId('result-body');
 
+/** Switch a demo from your tailnet to the simulated one. */
+const simulated = (page) => page.getByText('Simulated', { exact: true }).click();
+
 async function openRouter(page) {
   await openDemo(page, 'tailscale-router/intercept', '[data-testid=router-status]');
+  await simulated(page);
   await expect(page.getByTestId('router-status')).toHaveAttribute('data-status', 'active', { timeout: 15_000 });
 }
 
@@ -23,6 +28,7 @@ async function signIn(page) {
 
 test('sign-in walks idle → signing in → connected, and signs out', async ({ page }) => {
   await openDemo(page, 'tailscale-login/sign-in', '[data-slot=tailscale-login-button]');
+  await simulated(page);
   const button = page.locator('[data-slot=tailscale-login-button]');
   await expect(button).toHaveAttribute('data-status', 'idle');
   await button.click();
@@ -37,6 +43,7 @@ test('sign-in walks idle → signing in → connected, and signs out', async ({ 
 
 test('a sign-in can be cancelled with the same button, and with the keyboard', async ({ page }) => {
   await openDemo(page, 'tailscale-login/sign-in', '[data-slot=tailscale-login-button]');
+  await simulated(page);
   const button = page.locator('[data-slot=tailscale-login-button]');
   await button.focus();
   await page.keyboard.press('Enter');
@@ -48,8 +55,33 @@ test('a sign-in can be cancelled with the same button, and with the keyboard', a
 
 test('auth key: signs in without a person', async ({ page }) => {
   await openDemo(page, 'tailscale-login/auth-key', '[data-slot=tailscale-login-button]');
+  await simulated(page);
   await page.getByRole('button', { name: 'Connect this kiosk' }).click();
   await expect(page.locator('[data-slot=tailscale-status-badge]')).toHaveAttribute('data-status', 'connected', { timeout: 10_000 });
+});
+
+test('the real client: nothing downloads until the press, then the WebAssembly loads and a sign-in popup opens', async ({ page, context }) => {
+  const wasm = [];
+  // The binary itself, not the tiny `main.wasm?import&url` module that only exports its URL.
+  page.on('request', (r) => /main\.wasm(\?(?!import)|$)/.test(r.url()) && wasm.push(r.url()));
+  await openDemo(page, 'tailscale-login/sign-in', '[data-slot=tailscale-login-button]');
+  await page.waitForTimeout(500);
+  expect(wasm).toEqual([]);
+  const popup = context.waitForEvent('page');
+  await page.locator('[data-slot=tailscale-login-button]').click();
+  await popup; // opened on the press, so a popup blocker allows it
+  await expect.poll(() => wasm.length, { timeout: 30_000 }).toBeGreaterThan(0);
+  await expect(page.locator('[data-slot=tailscale-login-button]')).toHaveAttribute('data-status', /loading|starting|signing-in/);
+});
+
+test('the real client reaches Tailscale\'s sign-in page (TAILSCALE_LIVE=1: talks to login.tailscale.com)', async ({ page, context }) => {
+  test.skip(!process.env.TAILSCALE_LIVE, 'needs the internet and Tailscale\'s control server');
+  await openDemo(page, 'tailscale-login/sign-in', '[data-slot=tailscale-login-button]');
+  const popup = context.waitForEvent('page');
+  await page.locator('[data-slot=tailscale-login-button]').click();
+  await (await popup).waitForURL(/^https:\/\/login\.tailscale\.com\//, { timeout: 60_000 });
+  await expect(page.locator('[data-slot=tailscale-login-button]')).toHaveAttribute('data-status', 'signing-in');
+  await expect(page.getByRole('link', { name: 'Continue to Tailscale' })).toHaveAttribute('href', /^https:\/\/login\.tailscale\.com\/a\//);
 });
 
 test('the router registers a real service worker that controls the page', async ({ page }) => {
@@ -143,6 +175,7 @@ test('after a reload the worker routes again (re-attach), and it can be removed'
   await openRouter(page);
   await signIn(page);
   await page.reload();
+  await simulated(page);
   await expect(page.getByTestId('router-status')).toHaveAttribute('data-status', 'active', { timeout: 15_000 });
   await signIn(page); // the demo keeps no session: each load is a new device
   await page.getByRole('button', { name: 'Fetch' }).click();

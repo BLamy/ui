@@ -263,6 +263,9 @@ importers:
         specifier: 3.3.0
         version: 3.3.0
     devDependencies:
+      '@agent-wasm/tailscale-connect':
+        specifier: 1.39.98-t02582083d
+        version: 1.39.98-t02582083d
       '@electric-sql/pglite':
         specifier: 0.5.8
         version: 0.5.8

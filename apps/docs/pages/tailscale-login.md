@@ -34,7 +34,7 @@ import {
 
 {% demo src="tailscale-login/sign-in" %}
 
-The demos on this page use an in-memory fake tailnet (`createFakeTailscaleClient`): nothing leaves the page and no account is needed. Read [Limits](#limits) before you rely on the real client.
+The demos on this page are real: **Your tailnet** runs Tailscale's client (`createTailscaleConnectClient`, about 26 MB of WebAssembly fetched on the first press) and the popup is Tailscale's own sign-in page. Approve it and this tab joins your tailnet as a device named `bl-ui-docs`, kept for this tab only (`sessionStorage`); sign out to remove it, or remove it in your admin console. **Simulated** swaps in an in-memory fake tailnet (`createFakeTailscaleClient`) that needs no account. Read [Limits](#limits) before you rely on the real client.
 
 ## Quick start
 
@@ -212,7 +212,7 @@ A polite `role="status"` region: a pill with an icon and a word, the tailnet whe
 What was **verified** here:
 
 - The state machine, sign-in modes, popup handling, persistence adapters, Web Lock and StrictMode behaviour: unit tests against the fake client.
-- The real `@agent-wasm/tailscale-connect` 1.39.98 client in Chromium (Playwright), through `createTailscaleConnectClient`: it loaded lazily, started, reported `NeedsLogin`, and on `login()` produced a real `https://login.tailscale.com/a/…` sign-in URL within about three seconds.
+- The real `@agent-wasm/tailscale-connect` 1.39.98 client in Chromium (Playwright), through `createTailscaleConnectClient` in the sign-in demo: nothing downloads until the press; then it loads, starts, and the popup lands on Tailscale's real sign-in page (`login.tailscale.com`) in about six seconds on a cold load (`TAILSCALE_LIVE=1` runs that check against the live control server).
 
 What could **not** be verified (no Tailscale account or credentials were used):
 

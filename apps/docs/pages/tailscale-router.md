@@ -29,7 +29,7 @@ import { TailscaleRouter, useTailscaleRouter } from '@brett_lamy/ui'
 
 {% demo src="tailscale-router/intercept" %}
 
-The demo's service worker is real (the library's `tailscale-sw.js`, registered on this site); the tailnet behind it is the in-memory fake, so it works without an account. `*.ts.net` names do not exist on the public internet, which is why a request sent while signed out fails.
+The demo's service worker is real (the library's `tailscale-sw.js`, registered on this site). With **Your tailnet**, sign in with your Tailscale account and fetch one of your own services: on this https site, use an `https://<machine>.<tailnet>.ts.net/` URL (turn on HTTPS certificates for your tailnet), since browsers block `http://` requests from an https page before any service worker sees them. **Simulated** puts an in-memory fake tailnet behind the same worker, with no account. `*.ts.net` names do not exist on the public internet, which is why a request sent while signed out fails.
 
 ## Set up
 
