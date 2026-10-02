@@ -1,9 +1,9 @@
 'use client';
 import {
-  createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode,
+  createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { useToast as useAriaToast, useToastRegion } from 'react-aria';
+import { mergeProps, useFocusWithin, useHover, useToast as useAriaToast, useToastRegion } from 'react-aria';
 import { Button as AriaButton, UNSTABLE_ToastQueue as AriaToastQueue, type QueuedToast, type ToastState } from 'react-aria-components';
 import { AnimatePresence, motion, useReducedMotion, type PanInfo } from 'framer-motion';
 import { Icon } from '@/lib/icon';
@@ -16,8 +16,10 @@ import { TextMorph } from '@/components/ui/text-morph';
    Two looks, one queue:
    - `hud`: the dark "Copied" pill — an icon and a short label, centered, gone in a moment. Showing another HUD
      while one is up updates it in place (its label morphs) instead of stacking a second pill.
-   - `banner`: a card with a title, an optional description and action, and a close button; banners stack
-     (newest nearest the edge), can be swiped away, and pause their timers while hovered or focused.
+   - `banner`: a card with a title, an optional description and action, and a close button. Banners pile up like
+     Sonner's: the newest sits in front and the ones before it peek out behind, a little smaller. Hover or focus
+     the pile (or tap it on a touch screen) and it spreads into a list; timers pause while it does. Banners can be
+     swiped away.
    The region and each toast come from react-aria (a landmark reachable with F6, role=alertdialog toasts whose
    content is announced as an alert, focus restored when the last one closes); the enter, exit and restacking
    run on springs, and collapse to fades under reduced motion.
@@ -67,7 +69,7 @@ export class ToastQueue {
   readonly aria: AriaToastQueue<Entry>;
   private listeners = new Set<() => void>();
   constructor(options: { maxVisibleToasts?: number } = {}) {
-    this.aria = new AriaToastQueue<Entry>({ maxVisibleToasts: options.maxVisibleToasts ?? 4 });
+    this.aria = new AriaToastQueue<Entry>({ maxVisibleToasts: options.maxVisibleToasts ?? 5 });
   }
 
   private find(id: string) {
@@ -102,11 +104,13 @@ export class ToastQueue {
     return id;
   }
 
-  /** Patch a visible toast in place (title, tone, loading …). Restarts its timer. */
+  /** Patch a visible toast in place (title, tone, loading …). Restarts its timer, with the timeout it had (a
+   *  loading toast has none, so it gets the default) unless `options.timeout` says otherwise. */
   update(id: string, patch: Partial<ToastData>, options: ToastOptions = {}) {
     const t = this.find(id);
     if (!t) return;
-    this.show({ ...t.content.data, loading: false, ...patch, id }, { ...options, onClose: t.onClose });
+    const kept = t.content.data.loading ? undefined : t.timeout ?? 0;
+    this.show({ ...t.content.data, loading: false, ...patch, id }, { ...options, timeout: options.timeout ?? kept, onClose: t.onClose });
   }
 
   /** Close one toast by id, or all of them. */
@@ -215,6 +219,8 @@ export interface ToasterProps {
   inline?: boolean;
   /** Distance from the edge in px (default 24). */
   offset?: number;
+  /** Show banners spread out as a list instead of piled up (the pile still spreads on hover and focus). */
+  expand?: boolean;
   'aria-label'?: string;
   className?: string;
   style?: CSSProperties;
@@ -230,7 +236,7 @@ const PLACEMENT: Record<ToasterPlacement, string> = {
 };
 
 /** The toast region. Mount once per queue. Children (optional) get `useToast()` bound to this queue. */
-export function Toaster({ queue = defaultToastQueue, placement = 'bottom', inline, offset = 24, className, style, children, ...props }: ToasterProps) {
+export function Toaster({ queue = defaultToastQueue, placement = 'bottom', inline, offset = 24, expand, className, style, children, ...props }: ToasterProps) {
   const state = useQueueState(queue);
   const [lingering, setLingering] = useState(false);
   const has = state.visibleToasts.length > 0;
@@ -239,7 +245,7 @@ export function Toaster({ queue = defaultToastQueue, placement = 'bottom', inlin
   useEffect(() => setMounted(true), []);
   const show = has || lingering;
   const region = show ? (
-    <Region state={state} placement={placement} inline={inline} offset={offset} className={className} style={style}
+    <Region state={state} placement={placement} inline={inline} offset={offset} expand={expand} className={className} style={style}
       aria-label={props['aria-label']} onSettled={() => { if (!queue.aria.visibleToasts.length) setLingering(false); }} />
   ) : null;
   return (
@@ -250,16 +256,60 @@ export function Toaster({ queue = defaultToastQueue, placement = 'bottom', inlin
   );
 }
 
-function Region({ state, placement, inline, offset, className, style, onSettled, ...props }: {
-  state: ToastState<Entry>; placement: ToasterPlacement; inline?: boolean; offset: number; className?: string;
+/** Gap between cards when the pile is spread out, how far each card behind shows past the one in front, how much
+    smaller each is, and how many show behind the front one (deeper ones hide behind the last). */
+const GAP = 10;
+const PEEK = 14;
+const SCALE_STEP = 0.05;
+const DEPTH = 3;
+/** A card's height until it has been measured. */
+const FALLBACK_H = 64;
+
+function Region({ state, placement, inline, offset, expand, className, style, onSettled, ...props }: {
+  state: ToastState<Entry>; placement: ToasterPlacement; inline?: boolean; offset: number; expand?: boolean; className?: string;
   style?: CSSProperties; onSettled: () => void; 'aria-label'?: string;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const { regionProps } = useToastRegion(props, state, ref);
-  const fromTop = placement.startsWith('top');
+  const reduced = useReducedMotion();
+  const edge = placement === 'bottom' || placement === 'bottom-end' ? 'bottom' : 'top';
+  const huds = state.visibleToasts.filter((t) => t.content.data.variant === 'hud');
+  const banners = state.visibleToasts.filter((t) => t.content.data.variant !== 'hud');
+
+  // The pile spreads while the pointer or focus is on it, or after a tap on a touch screen (until the next tap elsewhere).
+  const { hoverProps, isHovered } = useHover({});
+  const [isFocusWithin, setFocusWithin] = useState(false);
+  const { focusWithinProps } = useFocusWithin({ onFocusWithinChange: setFocusWithin });
+  const [pinned, setPinned] = useState(false);
+  useEffect(() => {
+    if (!pinned) return;
+    state.pauseAll();
+    const away = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setPinned(false); };
+    document.addEventListener('pointerdown', away, true);
+    return () => { document.removeEventListener('pointerdown', away, true); state.resumeAll(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pause and resume are the queue's, not per render
+  }, [pinned]);
+  const spread = !!expand || isHovered || isFocusWithin || pinned;
+
+  // Card heights (measured by the cards) place the cards when spread and size the pile when not.
+  const [heights, setHeights] = useState<Record<string, number>>({});
+  const onHeight = useCallback((key: string, h: number) => setHeights((prev) => (prev[key] === h ? prev : { ...prev, [key]: h })), []);
+  const heightOf = (key: string) => heights[key] ?? FALLBACK_H;
+  const frontHeight = banners[0] ? heightOf(banners[0].key) : 0;
+  let acc = 0;
+  const offsets = banners.map((t) => { const at = acc; acc += heightOf(t.key) + GAP; return at; });
+  const spreadHeight = Math.max(0, acc - GAP);
+  const pileHeight = frontHeight + Math.min(Math.max(0, banners.length - 1), DEPTH - 1) * PEEK;
+
+  // The pile stays mounted while its last cards leave.
+  const [stackLive, setStackLive] = useState(false);
+  useEffect(() => { if (banners.length) setStackLive(true); }, [banners.length]);
+
   return (
     <div
-      {...regionProps}
+      {...mergeProps(regionProps, hoverProps, focusWithinProps, {
+        onPointerDownCapture: (e: React.PointerEvent) => { if (e.pointerType === 'touch' && banners.length > 1) setPinned(true); },
+      })}
       ref={ref}
       data-slot="toaster"
       data-placement={placement}
@@ -272,8 +322,35 @@ function Region({ state, placement, inline, offset, className, style, onSettled,
       style={{ '--bl-toast-offset': `${offset}px`, ...style } as CSSProperties}
     >
       <AnimatePresence initial={true} onExitComplete={onSettled}>
-        {state.visibleToasts.map((t) => <ToastItem key={t.key} toast={t} state={state} fromTop={fromTop} />)}
+        {huds.map((t) => <HudItem key={t.key} toast={t} state={state} fromTop={edge === 'top'} />)}
       </AnimatePresence>
+      {stackLive ? (
+        <motion.div
+          data-slot="toast-stack"
+          data-expanded={spread || undefined}
+          className="pointer-events-auto relative w-[min(360px,calc(100vw-32px))]"
+          initial={false}
+          animate={{ height: spread ? spreadHeight : pileHeight }}
+          transition={reduced ? { duration: 0.15 } : springs.smooth}
+        >
+          <AnimatePresence initial={true} onExitComplete={() => { if (!state.visibleToasts.some((t) => t.content.data.variant !== 'hud')) setStackLive(false); onSettled(); }}>
+            {banners.map((t, index) => (
+              <BannerItem
+                key={t.key}
+                toast={t}
+                state={state}
+                edge={edge}
+                index={index}
+                spread={spread}
+                offset={offsets[index]}
+                frontHeight={frontHeight}
+                height={heights[t.key]}
+                onHeight={onHeight}
+              />
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      ) : null}
     </div>
   );
 }
@@ -324,18 +401,61 @@ function ToastIcon({ data, size }: { data: ToastData; size: number }) {
   );
 }
 
-function ToastItem({ toast: t, state, fromTop }: { toast: QueuedToast<Entry>; state: ToastState<Entry>; fromTop: boolean }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const { toastProps, contentProps, titleProps, descriptionProps, closeButtonProps } = useAriaToast({ toast: t }, state, ref);
-  const reduced = useReducedMotion();
+/** The card itself, shared by both looks: icon, title, description, action and close button. */
+function ToastCard({ toast: t, state, aria, cardRef, className, behind }: {
+  toast: QueuedToast<Entry>; state: ToastState<Entry>; aria: ReturnType<typeof useAriaToast>;
+  cardRef: RefObject<HTMLDivElement | null>; className?: string; behind?: boolean;
+}) {
+  const { toastProps, contentProps, titleProps, descriptionProps, closeButtonProps } = aria;
   const data = t.content.data;
   const hud = data.variant === 'hud';
-  const dy = fromTop ? -16 : 16;
-  const hidden = reduced ? { opacity: 0 } : { opacity: 0, y: dy, scale: hud ? 0.85 : 0.96, filter: 'blur(4px)' };
-  const onDragEnd = (_: unknown, info: PanInfo) => {
-    if (Math.abs(info.offset.x) > 90 || Math.abs(info.velocity.x) > 600) state.close(t.key);
-  };
   const { onPress: close, ...closeAria } = closeButtonProps as { onPress: () => void; 'aria-label': string };
+  return (
+    <div
+      {...toastProps}
+      ref={cardRef}
+      data-slot="toast"
+      data-variant={data.variant}
+      data-tone={data.tone ?? 'default'}
+      data-behind={behind || undefined}
+      className={cn(toastVariants({ variant: hud ? 'hud' : 'banner' }), className)}
+    >
+      <ToastIcon data={data} size={hud ? 16 : 20} />
+      <div {...contentProps} className={cn('min-w-0', !hud && 'flex-1 pt-px')}>
+        <div {...titleProps} className={cn(hud ? 'whitespace-nowrap' : 'text-subhead font-semibold leading-snug')}>
+          {hud ? <TextMorph>{data.title}</TextMorph> : data.title}
+        </div>
+        {!hud && data.description ? (
+          <div {...descriptionProps} className="mt-0.5 text-[13.5px] leading-snug text-muted-foreground">{data.description}</div>
+        ) : null}
+      </div>
+      {!hud && data.action ? (
+        <AriaButton
+          onPress={() => { if (data.action!.onAction() !== false) state.close(t.key); }}
+          className="bl-btn shrink-0 cursor-pointer self-center rounded-full border-0 bg-secondary px-3 py-1.5 text-[13.5px] font-semibold text-primary outline-none transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong active:scale-95 data-[focus-visible]:ring-2 data-[focus-visible]:ring-[var(--primary)]"
+        >
+          {data.action.label}
+        </AriaButton>
+      ) : null}
+      {!hud && data.dismissible !== false ? (
+        <AriaButton
+          {...closeAria}
+          onPress={close}
+          className="bl-btn -mt-0.5 -mr-1 grid size-7 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground data-[focus-visible]:ring-2 data-[focus-visible]:ring-[var(--primary)]"
+        >
+          <Icon name="x" size={14} sw={2.2} />
+        </AriaButton>
+      ) : null}
+    </div>
+  );
+}
+
+/** The HUD pill: one at a time, gone in a moment. */
+function HudItem({ toast: t, state, fromTop }: { toast: QueuedToast<Entry>; state: ToastState<Entry>; fromTop: boolean }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const aria = useAriaToast({ toast: t }, state, ref);
+  const reduced = useReducedMotion();
+  const hidden = reduced ? { opacity: 0 } : { opacity: 0, y: fromTop ? -16 : 16, scale: 0.85, filter: 'blur(4px)' };
   return (
     <motion.div
       layout={reduced ? false : 'position'}
@@ -343,44 +463,75 @@ function ToastItem({ toast: t, state, fromTop }: { toast: QueuedToast<Entry>; st
       animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
       exit={{ ...hidden, transition: reduced ? { duration: 0.12 } : { ...fades.out, y: springs.snappy, scale: springs.snappy } }}
       transition={reduced ? { duration: 0.15 } : { default: fades.in, y: springs.snappy, scale: springs.bouncy, layout: springs.smooth }}
-      {...(!hud && !reduced ? { drag: 'x' as const, dragSnapToOrigin: true, dragElastic: 0.6, onDragEnd } : null)}
       className="pointer-events-auto"
     >
-      <div
-        {...toastProps}
-        ref={ref}
-        data-slot="toast"
-        data-variant={data.variant}
-        data-tone={data.tone ?? 'default'}
-        className={toastVariants({ variant: hud ? 'hud' : 'banner' })}
-      >
-        <ToastIcon data={data} size={hud ? 16 : 20} />
-        <div {...contentProps} className={cn('min-w-0', !hud && 'flex-1 pt-px')}>
-          <div {...titleProps} className={cn(hud ? 'whitespace-nowrap' : 'text-subhead font-semibold leading-snug')}>
-            {hud ? <TextMorph>{data.title}</TextMorph> : data.title}
-          </div>
-          {!hud && data.description ? (
-            <div {...descriptionProps} className="mt-0.5 text-[13.5px] leading-snug text-muted-foreground">{data.description}</div>
-          ) : null}
-        </div>
-        {!hud && data.action ? (
-          <AriaButton
-            onPress={() => { if (data.action!.onAction() !== false) state.close(t.key); }}
-            className="bl-btn shrink-0 cursor-pointer self-center rounded-full border-0 bg-secondary px-3 py-1.5 text-[13.5px] font-semibold text-primary outline-none transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong active:scale-95 data-[focus-visible]:ring-2 data-[focus-visible]:ring-[var(--primary)]"
-          >
-            {data.action.label}
-          </AriaButton>
-        ) : null}
-        {!hud && data.dismissible !== false ? (
-          <AriaButton
-            {...closeAria}
-            onPress={close}
-            className="bl-btn -mt-0.5 -mr-1 grid size-7 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent text-muted-foreground outline-none transition-colors hover:bg-secondary hover:text-foreground data-[focus-visible]:ring-2 data-[focus-visible]:ring-[var(--primary)]"
-          >
-            <Icon name="x" size={14} sw={2.2} />
-          </AriaButton>
-        ) : null}
-      </div>
+      <ToastCard toast={t} state={state} aria={aria} cardRef={ref} />
+    </motion.div>
+  );
+}
+
+/** One banner in the pile. `index` 0 is the newest, in front. Piled, the ones behind sit `PEEK` px further in, a
+    little smaller and clipped to the front card's height (so a tall card behind never pokes out), their content
+    hidden; spread, each sits at its `offset` at its own size. */
+function BannerItem({ toast: t, state, edge, index, spread, offset, frontHeight, height, onHeight }: {
+  toast: QueuedToast<Entry>; state: ToastState<Entry>; edge: 'top' | 'bottom'; index: number; spread: boolean; offset: number;
+  frontHeight: number; height: number | undefined; onHeight: (key: string, h: number) => void;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const aria = useAriaToast({ toast: t }, state, ref);
+  const reduced = useReducedMotion();
+  // Tell the region how tall this card is: it places the cards when spread and sizes the pile when not.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const read = () => onHeight(t.key, el.offsetHeight);
+    read();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [t.key, onHeight]);
+
+  const toward = edge === 'bottom' ? -1 : 1; // which way "further in" is: up from the bottom edge, down from the top
+  const behind = !spread && index > 0;
+  const layer = Math.min(index, DEPTH - 1);
+  const enter = reduced ? { opacity: 0 } : { opacity: 0, y: -toward * 28, scale: 0.96, filter: 'blur(4px)' };
+  const leave = reduced ? { opacity: 0, transition: { duration: 0.12 } }
+    : index === 0 ? { opacity: 0, y: -toward * 20, scale: 0.96, filter: 'blur(4px)', transition: { ...fades.out, y: springs.snappy, scale: springs.snappy } }
+      : { opacity: 0, scale: 0.92, transition: fades.out };
+  const onDragEnd = (_: unknown, info: PanInfo) => {
+    if (Math.abs(info.offset.x) > 90 || Math.abs(info.velocity.x) > 600) state.close(t.key);
+  };
+  return (
+    <motion.div
+      data-slot="toast-layer"
+      data-index={index}
+      className={cn(
+        'absolute inset-x-0 flex flex-col',
+        edge === 'bottom' ? 'bottom-0 justify-start origin-top' : 'top-0 justify-end origin-bottom',
+        behind ? 'pointer-events-none overflow-hidden rounded-2xl' : 'pointer-events-auto',
+      )}
+      style={{ zIndex: 100 - index }}
+      initial={enter}
+      animate={{
+        opacity: !spread && index >= DEPTH ? 0 : 1,
+        y: toward * (spread ? offset : layer * PEEK),
+        scale: spread || reduced ? 1 : 1 - layer * SCALE_STEP,
+        filter: 'blur(0px)',
+        height: behind ? frontHeight : height ?? 'auto',
+      }}
+      exit={leave}
+      transition={reduced ? { duration: 0.15 } : { default: springs.smooth, y: springs.snappy, scale: springs.snappy, opacity: fades.in, filter: fades.in }}
+      {...(!behind && !reduced ? { drag: 'x' as const, dragSnapToOrigin: true, dragElastic: 0.6, onDragEnd } : null)}
+    >
+      <ToastCard
+        toast={t}
+        state={state}
+        aria={aria}
+        cardRef={ref}
+        behind={behind}
+        className="shrink-0 *:transition-opacity *:duration-150 data-behind:shadow-[inset_0_0_0_.5px_var(--border)] data-behind:*:opacity-0"
+      />
     </motion.div>
   );
 }

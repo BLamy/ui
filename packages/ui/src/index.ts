@@ -13,6 +13,14 @@ export type { NumberMorphProps } from './components/number-morph';
 export { IconSwap, Chevron } from './components/icon-swap';
 export type { IconSwapProps, ChevronProps, ChevronDirection } from './components/icon-swap';
 export { AnimatedHeight, ContentSwap } from './components/animated-height';
+export { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasGuides, useCanvas } from './components/canvas';
+export type { CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasFrameProps } from './components/canvas';
+export {
+  toBoard, toScreen, zoomAt, fitCamera, clampZoom, MIN_ZOOM, MAX_ZOOM, MIN_SIZE,
+  rotatePt, centerOf, dist, cornersOf, rectOf, unionRect, intersects, inFrame, distToSegment, distToPolyline,
+  frameHandles, handleCursor, resizeFrame, rotateFrame, snapMove, HANDLE_DIR, ALL_HANDLES, EDGE_HANDLES,
+} from './lib/canvas-math';
+export type { Camera, Frame, Guide, Handle, HandleId, Pt, Rect } from './lib/canvas-math';
 export type { AnimatedHeightProps, ContentSwapProps } from './components/animated-height';
 export { Celebrate } from './components/celebrate';
 export type { CelebrateProps } from './components/celebrate';
@@ -32,6 +40,8 @@ export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL } from './lib/sheet
 export { useEdgeSwipe } from './lib/edge-swipe';
 export type { EdgeSwipeConfig } from './lib/edge-swipe';
 export { usePersistentState, loadJSON, saveJSON } from './lib/persistent-state';
+export { useControllableState } from './lib/controllable-state';
+export { useScrollHidden } from './lib/scroll-hidden';
 export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
 export type { SlotComponent, SlotProps, ContainerSize } from './lib/container';
 export { Icon, IC, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS, ICON_WEIGHTS } from './lib/icon';
@@ -44,8 +54,8 @@ export { Switch } from './components/switch';
 export type { SwitchProps } from './components/switch';
 export { Segmented } from './components/segmented';
 export type { SegmentedProps, SegmentedOption } from './components/segmented';
-export { Spinner } from './components/spinner';
-export type { SpinnerProps } from './components/spinner';
+export { Spinner, spinnerAnimations } from './components/spinner';
+export type { SpinnerProps, SpinnerAnimation, SpinnerVariant, SpinnerAnimationInfo } from './components/spinner';
 export { SearchField } from './components/search-field';
 export type { SearchFieldProps } from './components/search-field';
 export { Button, buttonVariants } from './components/button';
@@ -185,7 +195,6 @@ export type { SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, Synta
 // ── end shadcn primitives ──
 
 // ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
-export { IconButton, iconButtonVariants, type IconButtonProps } from './components/icon-button';
 export { PlainButton, PlainToggleButton, type PlainButtonProps, type PlainToggleButtonProps } from './components/plain-button';
 export {
   MarkdownView,
@@ -378,3 +387,127 @@ export {
   type ConversationProps, type ConversationGreetingProps, type ConversationMessagesProps, type UserMessageProps,
   type WorkLogProps, type ToolCallProps, type SettledBannerProps,
 } from './components/conversation';
+
+// ── TimeInput / CronEditor ──
+export { TimeInput, timeInputVariants, type TimeInputProps, type TimeInputChange } from './components/time-input';
+export { CronEditor, cronEditorVariants, CRON_PRESETS, type CronEditorProps, type CronPreset } from './components/cron-editor';
+export {
+  useTimeParse, parseTime, loadGpuTime, formatOccurrence, timeTextSegments, describeRecurrence, rruleLine,
+  type TimeParseOptions, type UseTimeParseOptions, type TimeParseState, type TimeParseResult, type TimeOccurrence,
+  type TimeDiagnostic, type TimeSpan, type FormatOccurrenceOptions, type TimeTextSegment,
+} from './lib/gpu-time';
+export {
+  useCronParse, parseCronText, gpuCronAvailable, describeCronError,
+  type UseCronParseOptions, type CronParseState, type GpuCronMatch,
+} from './lib/gpu-cron';
+export {
+  validateCron, cronProblems, nextCronRuns, describeCron, splitCron, CRON_FIELDS,
+  type CronValidation, type CronFieldName, type CronFieldInfo, type NextCronRunsOptions, type DescribeCronOptions,
+} from './lib/cron';
+
+// ── Passkey vault ──
+export {
+  PasskeyError, detectPasskeySupport, createPasskey, getPrfSecret, passkeyUnsupportedReason, bytesToBase64Url, base64UrlToBytes, wipe,
+} from './lib/passkey';
+export type {
+  Bytes, PasskeyEnv, PasskeyErrorReason, PasskeySupport, CreatePasskeyOptions, CreatePasskeyResult, GetPrfSecretOptions, PasskeyCredentialRef, PrfSecret,
+} from './lib/passkey';
+export { createVault, VaultError } from './lib/vault';
+export type {
+  Vault, VaultOptions, VaultState, VaultStatus, VaultBusy, VaultErrorReason, VaultUnsupportedReason, VaultPasskeyInfo, EnrollOptions, AddPasskeyOptions,
+  QuarantineEntry, BroadcastChannelLike,
+} from './lib/vault';
+export { indexedDbStorage, localStorageStorage, memoryStorage, VaultStorageError } from './lib/vault-storage';
+export type { VaultStorage, IndexedDbOptions, LocalStorageOptions } from './lib/vault-storage';
+export { VaultProvider, useVault, useVaultState, useWebAuthnSupport, usePasskey, useEncryptedState, vaultErrorMessage } from './lib/vault-react';
+export type { VaultProviderProps, UsePasskey, EncryptedStateMeta, EncryptedStateSetter } from './lib/vault-react';
+export { PasskeyEnrollDialog, RecoveryKey, recoveryKeyVariants } from './components/passkey-enroll-dialog';
+export type { PasskeyEnrollDialogProps, RecoveryKeyProps } from './components/passkey-enroll-dialog';
+export { VaultGate, VaultUnlock, VaultSetup, VaultUnsupported, VaultStatusBadge, unsupportedMessage } from './components/vault-gate';
+export type { VaultGateProps, VaultUnlockProps, VaultSetupProps, VaultUnsupportedProps, VaultStatusBadgeProps } from './components/vault-gate';
+
+// ── PGlite ──
+export {
+  PGliteProvider, usePGlite, useReadyDatabase, useDatabaseStatus, useQuery, useLiveQuery, useExec, useTransaction,
+} from './lib/pglite';
+export type {
+  PGliteProviderProps, DatabaseState, DatabaseStatus, QueryState, UseQueryOptions, LiveQueryState, UseLiveQueryOptions, MutationState,
+} from './lib/pglite';
+export {
+  openDatabase, runMigrations, runSql, toSqlError, parseDataDir, peekDataDirVersion, deleteDatabase, readServerInfo,
+  runtimePostgresMajor, identifier, quoteIdent, quoteLiteral, PGliteError, DataDirVersionError, MigrationError,
+} from './lib/pglite-core';
+export type {
+  Database, DatabaseInfo, OpenDatabaseOptions, OpenedDatabase, PGliteAssets, Migration, MigrationOptions, MigrationResult,
+  MigrationErrorKind, PGliteErrorCode, ParsedDataDir, DataDirKind, RunOutcome, StatementResult, SqlError, SqlField, SqlResult,
+  SqlRunner, SqlTransaction, LiveNamespace, LiveQueryHandle,
+} from './lib/pglite-core';
+export { useTabLock, SingleTabGate } from './lib/tab-lock';
+export type { TabLock, TabLockStatus, SingleTabGateProps } from './lib/tab-lock';
+export {
+  exportDatabase, importDatabase, detectImportFormat, readArchiveVersion, dumpVersion,
+} from './lib/pglite-transfer';
+export type { ExportFormat, ExportOptions, ExportResult, ImportResult } from './lib/pglite-transfer';
+export { downloadFile, pickFile } from './lib/pglite-files';
+export { loadSchema, useSchema } from './lib/pglite-schema';
+export type {
+  SchemaInfo, SchemaNode, SchemaTable, SchemaColumn, ColumnReference, RelationKind, LoadSchemaOptions, UseSchemaState,
+} from './lib/pglite-schema';
+export { usePersistenceSupport, detectPersistenceSupport } from './lib/pglite-storage';
+export type { PersistenceSupport } from './lib/pglite-storage';
+export { sqlSpans, splitStatements, positionToLineColumn } from './lib/sql-lex';
+export type { SqlSpan, SqlSpanType, SqlStatement } from './lib/sql-lex';
+export { formatCell, toCsv, toJson, pgTypeName, formatDuration, pluralRows, PG_TYPE } from './lib/sql-format';
+export type { FormattedCell, CellKind, TabularResult } from './lib/sql-format';
+export { SqlEditor, useSqlHistory, sqlEditorVariants } from './components/sql-editor';
+export type { SqlEditorProps, SqlEditorHandle, SqlHistory } from './components/sql-editor';
+export { ResultTable, resultTableVariants } from './components/result-table';
+export type { ResultTableProps, ResultSet, ResultField } from './components/result-table';
+export { SchemaTree, schemaTreeVariants } from './components/schema-tree';
+export type { SchemaTreeProps } from './components/schema-tree';
+export { SqlConsole, sqlConsoleVariants } from './components/sql-console';
+export type { SqlConsoleProps } from './components/sql-console';
+
+
+// ── Filters ──
+export {
+  DATE_PRESETS, FILTER_OPERATORS, RELATIVE_UNITS, coerceFilter, createFilter, createFilterId, dateRange, defaultOperator, describeFilter, describeValue,
+  emptyValue, isDateValue, isFilterComplete, matchFilters, matchesFilters, operatorLabel, operatorsFor, parseFilters, serializeFilters, toTime,
+  withOperator, withValue,
+} from './lib/filter';
+export type {
+  DateOptions, DatePreset, DateValue, Filter, FilterField, FilterKind, FilterOperator, FilterOption, FilterValue, MatchOptions, RelativeUnit,
+} from './lib/filter';
+export {
+  FilterBar, FilterToolbar, FilterMenu, FilterList, FilterChip, FilterClear, FilterMatch, FilterValueEditor, useFilters, useFilterBar, useOptionalFilterBar,
+  filterBarVariants, filterToolbarVariants, filterChipVariants,
+} from './components/filter';
+export type {
+  FilterBarProps, FilterToolbarProps, FilterMenuProps, FilterListProps, FilterChipProps, FilterClearProps, FilterValueEditorProps,
+  FilterBarContextValue, FilterState, FilterActions, UseFiltersOptions,
+} from './components/filter';
+export { FilterInput, filterInputVariants } from './components/filter-input';
+export type { FilterInputProps } from './components/filter-input';
+export {
+  useFilterQuery, warmFilterQuery, interpretQuery, buildQuerySchema, clausesToFilters, matchOption, parseDateText,
+} from './lib/filter-query';
+export type { FilterQueryResult, UseFilterQueryOptions, Interpretation, Unresolved, QuerySchema, Trace } from './lib/filter-query';
+
+
+// ── FileUpload ──
+export {
+  FileUpload, FileDropZone, FileUploadButton, FileList, FileItem, FileThumbnail, fileDropZoneVariants, fileItemVariants, useFileUploadContext,
+} from './components/file-upload';
+export type {
+  FileUploadProps, FileDropZoneProps, FileUploadButtonProps, FileListProps, FileItemProps, FileUploadContextValue, FilesInfo,
+} from './components/file-upload';
+export {
+  useFileUpload, useFilePreview, xhrUpload, matchesAccept, describeAccept, describeRules, fileKind, validateFiles,
+  readDropItems, entriesFromFileList, rejectionMessage,
+} from './lib/file-upload';
+export type {
+  UseFileUploadOptions, FileUploadState, UploadFile, UploadFn, UploadContext, UploadResult, FileStatus, FileEntry, FileRules,
+  RejectionCode, RejectionContext, RejectionMessages, XhrUploadOptions, ReadDropOptions, FileKind,
+} from './lib/file-upload';
+
+export { formatBytes } from './lib/format-bytes';

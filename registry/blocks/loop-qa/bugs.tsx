@@ -1,10 +1,13 @@
-/* Bugs: filter menus (severity, status, kind, environment — multi-select, the trigger counts what's on), a
-   search, and the bulk actions (copy every report as Markdown, download them, connect an issue tracker). The
+/* Bugs: Linear-style filters (a FilterBar: severity, status, kind, environment as chips with their own operator and
+   value; a sentence in the FilterInput becomes chips), a search, and the bulk actions (copy every report as Markdown, download them, connect an issue tracker). The
    table's rows open the bug; the status column is a menu of its own. Narrow containers stack each row. */
 import { useMemo, useState, type CSSProperties, type Key } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { FilterBar, FilterToolbar } from '@/components/ui/filter';
+import { FilterInput } from '@/components/ui/filter-input';
 import { SearchField } from '@/components/ui/search-field';
+import { matchFilters, serializeFilters, type Filter, type FilterField } from '@/lib/filter';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import {
@@ -14,21 +17,24 @@ import {
 import { EnvBadge, Empty, KindLabel, SEVERITY_COLOR, STATUS_TONE, SeverityBadge, pillVariants, Pressable } from './parts';
 import { useLoopQA } from './state';
 
-type Filters = { severity: Set<string>; status: Set<string>; kind: Set<string>; environment: Set<string> };
-const DEFAULT_STATUS = new Set<string>(['open', 'confirmed', 'unconfirmed']);
+const FIELDS: FilterField[] = [
+  { id: 'severity', label: 'Severity', icon: 'flag', kind: 'select', options: SEVERITIES.map((s) => ({ value: s, label: SEVERITY_LABEL[s], color: SEVERITY_COLOR[s] })) },
+  { id: 'status', label: 'Status', icon: 'circle', kind: 'select', options: STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] })) },
+  { id: 'kind', label: 'Kind', icon: 'tag', kind: 'select', options: KINDS.map((k) => ({ value: k, label: k })) },
+  { id: 'environment', label: 'Environment', icon: 'globe', kind: 'select', options: ENVIRONMENTS.map((e) => ({ value: e, label: e })) },
+];
+/** Open work by default: the same three statuses the old Status menu started with. */
+const defaultFilters = (): Filter[] => [{ id: 'default-status', field: 'status', operator: 'is_any_of', value: ['open', 'confirmed', 'unconfirmed'] }];
 
 export function BugsTab({ project }: { project: Project }) {
   const qa = useLoopQA();
   const [query, setQuery] = useState('');
-  const [f, setF] = useState<Filters>(() => ({ severity: new Set(), status: new Set(DEFAULT_STATUS), kind: new Set(), environment: new Set() }));
+  const [filters, setFilters] = useState<Filter[]>(defaultFilters);
   const all = qa.bugs.filter((b) => b.projectId === project.id);
-  const shown = useMemo(() => all
-    .filter((b) => (!f.severity.size || f.severity.has(b.severity)) && (!f.status.size || f.status.has(b.status)) &&
-      (!f.kind.size || f.kind.has(b.kind)) && (!f.environment.size || f.environment.has(b.environment)) &&
-      (!query || `${b.id} ${b.title} ${b.journey}`.toLowerCase().includes(query.toLowerCase())))
+  const shown = useMemo(() => matchFilters(all, filters, FIELDS, (b, field) => b[field as 'severity' | 'status' | 'kind' | 'environment'])
+    .filter((b) => !query || `${b.id} ${b.title} ${b.journey}`.toLowerCase().includes(query.toLowerCase()))
     .sort((a, b) => severityRank(a.severity) - severityRank(b.severity) || b.discovered.localeCompare(a.discovered) || b.id.localeCompare(a.id)),
-  [all, f, query]);
-  const set = (k: keyof Filters) => (keys: Set<string>) => setF((x) => ({ ...x, [k]: keys }));
+  [all, filters, query]);
   const download = () => {
     const text = shown.map((b) => bugReport(b, project)).join('\n\n---\n\n');
     const url = URL.createObjectURL(new Blob([text], { type: 'text/markdown' }));
@@ -37,18 +43,14 @@ export function BugsTab({ project }: { project: Project }) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     qa.toast.hud(`Downloaded ${shown.length} reports`, { tone: 'success' });
   };
-  const filtered = f.severity.size + f.kind.size + f.environment.size > 0 || !sameSet(f.status, DEFAULT_STATUS);
+  const filtered = serializeFilters(filters) !== serializeFilters(defaultFilters());
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <FilterBar fields={FIELDS} value={filters} onValueChange={setFilters} className="gap-3.5">
       <div className="flex flex-wrap items-center gap-2">
-        <Filter label="Severity" options={SEVERITIES.map((s) => [s, SEVERITY_LABEL[s]])} value={f.severity} onChange={set('severity')} dots />
-        <Filter label="Status" options={STATUSES.map((s) => [s, STATUS_LABEL[s]])} value={f.status} onChange={set('status')} />
-        <Filter label="Kind" options={KINDS.map((k) => [k, k])} value={f.kind} onChange={set('kind')} />
-        <Filter label="Environment" options={ENVIRONMENTS.map((e) => [e, e])} value={f.environment} onChange={set('environment')} />
+        <FilterToolbar />
         {filtered ? (
-          <Button size="sm" variant="ghost" className="h-8 rounded-[9px] px-2.5 text-[12.5px] text-muted-foreground"
-            onPress={() => setF({ severity: new Set(), status: new Set(DEFAULT_STATUS), kind: new Set(), environment: new Set() })}>
+          <Button size="sm" variant="ghost" className="h-8 rounded-[9px] px-2.5 text-[12.5px] text-muted-foreground" onPress={() => setFilters(defaultFilters())}>
             Reset
           </Button>
         ) : null}
@@ -68,6 +70,7 @@ export function BugsTab({ project }: { project: Project }) {
           </Button>
         </div>
       </div>
+      <FilterInput className="max-w-xl" placeholder="Describe what you want, e.g. critical bugs in production" />
 
       <div className="overflow-hidden rounded-card border border-border bg-card">
         <div role="row" className="hidden grid-cols-[92px_1fr_128px_128px_112px_72px] items-center gap-3 border-b border-border bg-muted px-4 py-2 text-caption2 font-semibold tracking-[.06em] text-muted-foreground uppercase @4xl:grid!">
@@ -82,7 +85,7 @@ export function BugsTab({ project }: { project: Project }) {
         )}
       </div>
       <div className="text-caption text-muted-foreground">{shown.length} of {all.length} bugs</div>
-    </div>
+    </FilterBar>
   );
 }
 
@@ -142,34 +145,3 @@ export function StatusMenu({ bug: b, className }: { bug: Bug; className?: string
     </DropdownMenu>
   );
 }
-
-function Filter({ label, options, value, onChange, dots }: {
-  label: string; options: [string, string][]; value: Set<string>; onChange: (v: Set<string>) => void; dots?: boolean;
-}) {
-  const on = value.size;
-  return (
-    <DropdownMenu>
-      <Button size="sm" variant="secondary" className={cn('h-8 gap-1.5 rounded-[9px] px-2.5 text-[12.5px] font-medium', on && 'bg-primary/10 text-primary')}>
-        {label}
-        {on ? <span className="rounded-full bg-primary px-1.5 text-[10.5px] leading-4 font-semibold text-primary-foreground tabular-nums">{on}</span> : null}
-        <Icon name="chevron-down" size={11} sw={2.4} className="opacity-60" />
-      </Button>
-      <DropdownMenuContent
-        placement="bottom start"
-        selectionMode="multiple"
-        selectedKeys={value}
-        onSelectionChange={(keys) => onChange(new Set([...(keys as Set<Key>)].map(String)))}
-        popoverClassName="min-w-[200px]"
-      >
-        {options.map(([id, text]) => (
-          <DropdownMenuItem key={id} id={id} textValue={text}
-            icon={dots ? <span className="size-2 rounded-full bg-(--c)" style={{ '--c': SEVERITY_COLOR[id as Bug['severity']] } as CSSProperties} /> : undefined}>
-            {text}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-const sameSet = (a: Set<string>, b: Set<string>) => a.size === b.size && [...a].every((x) => b.has(x));

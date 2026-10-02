@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { IconButton } from '@/components/ui/icon-button';
 import { type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { TINTS } from '../lib/data';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/lib/icon';
 
 /** A small floating card ("Toggle theme editor" / ⌥⇧⌘T): appearance and accent, applied live. */
 export function ThemeEditor({
@@ -46,7 +47,15 @@ export function ThemeEditor({
     >
       <div className="mb-2.5 flex items-center justify-between">
         <span className="font-semibold">Theme</span>
-        <IconButton name="xmark-large" label="Close theme editor" size={12} onPress={onClose} />
+        <Button
+          variant="quiet"
+          size="icon-sm"
+          aria-label="Close theme editor"
+          title="Close theme editor"
+          onPress={onClose}
+        >
+          <Icon name="xmark-large" size={12} sw={1.7} />
+        </Button>
       </div>
       <div className="mb-3 grid grid-cols-2 gap-1 rounded-[9px] bg-secondary p-0.5">
         {(['light', 'dark'] as const).map((a) => (

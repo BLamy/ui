@@ -12,7 +12,9 @@ import {
 } from 'react';
 import { Button } from 'react-aria-components';
 import { cva } from 'class-variance-authority';
-import { themeScopeClass, useAppearance, useChromeHidden } from '@/lib/theme';
+import { themeScopeClass, useAppearance } from '@/lib/theme';
+import { useControllableState } from '@/lib/controllable-state';
+import { useScrollHidden } from '@/lib/scroll-hidden';
 import { collectSlots, defineSlot } from '@/lib/container';
 import { springCss } from '@/lib/motion';
 import { useSheetDrag } from '@/lib/sheet-drag';
@@ -245,17 +247,9 @@ export function FloatingSheet({
   const [width, setWidth] = useState(430);
   const [height, setHeight] = useState(800);
   const [footHeight, setFootHeight] = useState(0);
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const [minimized, setMinimized] = useState(false);
-  const [scrollHidden, setScrollHidden] = useState(false);
-  const chromeHidden = useChromeHidden();
-  const open = controlledOpen ?? uncontrolledOpen;
+  const [open, setOpen] = useControllableState(controlledOpen, defaultOpen, onOpenChange);
   const bodyId = useId();
-
-  const setOpen = (next: boolean) => {
-    if (controlledOpen == null) setUncontrolledOpen(next);
-    onOpenChange?.(next);
-  };
 
   useEffect(() => {
     const root = rootRef.current;
@@ -273,25 +267,6 @@ export function FloatingSheet({
     if (foot) observer.observe(foot);
     return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    const scroller = scrollRef?.current;
-    if (!scroller || !hideOnScroll) {
-      setScrollHidden(false);
-      return;
-    }
-    let previous = scroller.scrollTop;
-    const onScroll = () => {
-      const next = scroller.scrollTop;
-      const delta = next - previous;
-      previous = next;
-      if (next < 4) setScrollHidden(false);
-      else if (delta > 3) setScrollHidden(true);
-      else if (delta < -3) setScrollHidden(false);
-    };
-    scroller.addEventListener('scroll', onScroll, { passive: true });
-    return () => scroller.removeEventListener('scroll', onScroll);
-  }, [scrollRef, hideOnScroll]);
 
   const dockHeight = footHeight + CAP_HEIGHT;
   const chrome = dockHeight + BORDER_HEIGHT;
@@ -374,7 +349,7 @@ export function FloatingSheet({
     minimized,
     setMinimized,
   };
-  const hidden = hideOnScroll && (chromeHidden || scrollHidden) && !expanded;
+  const hidden = useScrollHidden(hideOnScroll, scrollRef) && !expanded;
   const restAlpha = peek > 0 ? 0.5 : 0.28;
   const glass = appearance === 'glass';
 

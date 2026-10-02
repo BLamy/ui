@@ -1,11 +1,11 @@
 'use client';
-import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { Icon } from '@/lib/icon';
 import { fades, springs, useMotion } from '@/lib/motion';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import { MeasureH } from '@/components/ui/measure-h';
+import { AnimatedHeight, ContentSwap } from '@/components/ui/animated-height';
 
 /** The card: a centered dialog, or (`compact`) a bottom tray you can drag down. */
 export const credenzaVariants = cva(
@@ -55,7 +55,6 @@ export interface CredenzaProps extends VariantProps<typeof credenzaVariants> {
 
 export function Credenza({ open, onClose, onBack, canBack, view, title, compact, children, className, style }: CredenzaProps) {
   const FM = useMotion();
-  const [h, setH] = useState<number | null>(null);
   const reduced = FM.useReducedMotion();
   // Direction of travel between views: revisiting a view in the trail is going back.
   const trail = useRef<string[]>([String(view)]);
@@ -160,19 +159,9 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
     </div>
   );
   const body = (
-    <m.div initial={false} animate={h == null ? {} : { height: h }} transition={spring} className="relative overflow-hidden">
-      <AP initial={false} mode="popLayout" custom={dir}>
-        <m.div key={String(view)} custom={dir}
-          variants={{
-            enter: (d: number) => ({ opacity: 0, x: d * 40, scale: d ? 1 : .97, filter: 'blur(6px)' }),
-            center: { opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' },
-            exit: (d: number) => ({ opacity: 0, x: d * -40, scale: d ? 1 : .97, filter: 'blur(6px)', transition: { ...fades.out, x: springs.smooth } }),
-          }}
-          initial="enter" animate="center" exit="exit" transition={{ default: fades.in, x: springs.smooth, scale: springs.smooth }} className="w-full">
-          <MeasureH onH={setH}>{children}</MeasureH>
-        </m.div>
-      </AP>
-    </m.div>
+    <AnimatedHeight spring="tray" className="relative">
+      <ContentSwap id={String(view)} direction={dirRef.current.dir as -1 | 0 | 1} distance={40} blur={6}>{children}</ContentSwap>
+    </AnimatedHeight>
   );
   return (
     <AP>

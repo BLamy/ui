@@ -19,6 +19,9 @@ export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
   resolve: { conditions: ['@org/source'], alias: aliases },
   optimizeDeps: {
+    // PGlite finds its WebAssembly with `new URL('./pglite.wasm', import.meta.url)`; pre-bundling would move the JS
+    // away from the .wasm / .data files next to it. Serve it from where it is (see the PGlite page).
+    exclude: ['@electric-sql/pglite', '@electric-sql/pglite-tools'],
     include: [
       '@tiptap/core',
       '@tiptap/extension-code-block-lowlight',
@@ -54,10 +57,8 @@ export default defineConfig(() => ({
       '@brett_lamy/docstream/playground',
     ],
   },
-  // Uncomment this if you are using workers.
-  // worker: {
-  //  plugins: [],
-  // },
+  // PGlite's worker (examples/pglite/worker) imports the engine, which code-splits: workers must build as ES modules.
+  worker: { format: 'es' },
   build: {
     outDir: './dist',
     emptyOutDir: true,

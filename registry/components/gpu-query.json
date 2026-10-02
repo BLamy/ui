@@ -1,0 +1,15 @@
+{
+  "name": "gpu-query",
+  "title": "gpu-query",
+  "description": "A vendored copy of safzanpirani/gpu-query's runtime (MIT): a 29,597-parameter neural tagger that turns a phrase into filter clauses against your schema, on the CPU or WebGPU. The ~40 KB weights load lazily. A feasibility spike; see lib/gpu-query/README.md for provenance and what changed.",
+  "files": [
+    "lib/gpu-query/index.ts",
+    "lib/gpu-query/schema.ts",
+    "lib/gpu-query/featurize.ts",
+    "lib/gpu-query/model.ts",
+    "lib/gpu-query/weights.ts",
+    "lib/gpu-query/webgpu.ts",
+    "lib/gpu-query/kernel.wgsl.ts"
+  ],
+  "exports": []
+}

@@ -19,11 +19,12 @@ const abs = (p) => join(ROOT, p);
 const readJson = (p) => JSON.parse(readFileSync(abs(p), 'utf8'));
 
 const SKIP_FILE = /\.(stories|test|spec)\.tsx?$/;
-const walk = (dir, out = []) => {
+const MODULE = /\.tsx?$/;
+const walk = (dir, out = [], keep = (name) => MODULE.test(name) && !SKIP_FILE.test(name) && !name.endsWith('.d.ts')) => {
   for (const name of readdirSync(abs(dir))) {
     const p = posix.join(dir, name);
-    if (statSync(abs(p)).isDirectory()) walk(p, out);
-    else if (/\.tsx?$/.test(name) && !SKIP_FILE.test(name) && !name.endsWith('.d.ts')) out.push(p);
+    if (statSync(abs(p)).isDirectory()) walk(p, out, keep);
+    else if (keep(name)) out.push(p);
   }
   return out;
 };
@@ -33,11 +34,22 @@ export function listModules() {
   return [...walk(`${SRC}/components`), ...walk(`${SRC}/lib`)].map((p) => posix.relative(SRC, p)).sort();
 }
 
+/** Non-code files (JSON, LICENSE, …) that sit inside a module folder (`lib/<dir>/…`, `components/<dir>/…`), relative to packages/ui/src.
+ *  Stylesheets are the framework's and not assets. */
+function listAssets() {
+  const keep = (name) => !MODULE.test(name) && !/\.css$/.test(name) && !name.startsWith('.');
+  return ['components', 'lib']
+    .flatMap((root) => readdirSync(abs(`${SRC}/${root}`), { withFileTypes: true }).filter((d) => d.isDirectory()).flatMap((d) => walk(`${SRC}/${root}/${d.name}`, [], keep)))
+    .map((p) => posix.relative(SRC, p))
+    .sort();
+}
+
 const pkgVersions = (() => {
   const ui = readJson('packages/ui/package.json');
   const root = readJson('package.json');
   // The workspace root pins concrete versions for what the blocks and the library share; the ui package's ranges fill in the rest.
-  return { ...ui.dependencies, ...root.devDependencies, ...root.dependencies };
+  // The ui package's optional peers (the PGlite engine) are installed as ordinary dependencies by a registry item, at the peer range.
+  return { ...ui.peerDependencies, ...ui.dependencies, ...root.devDependencies, ...root.dependencies };
 })();
 export const npmVersion = (name) => pkgVersions[name];
 
@@ -123,6 +135,11 @@ export function buildGraph({ errors = [] } = {}) {
     if (manifests[name] && !itemFiles.get(name)?.length) continue;
     claim(name, f);
   }
+  // 3. assets (a JSON weights file, a LICENSE) sitting in a folder with modules install with the item that owns them
+  for (const asset of listAssets()) {
+    const sibling = modules.find((m) => posix.dirname(m) === posix.dirname(asset) && owner.has(m));
+    if (sibling) claim(owner.get(sibling), asset);
+  }
   const items = new Map();
   for (const [name, files] of itemFiles) {
     const kind = files.every((f) => f.startsWith('lib/')) ? 'lib' : 'ui';
@@ -130,6 +147,7 @@ export function buildGraph({ errors = [] } = {}) {
     const deps = new Set();
     const npm = new Map();
     for (const f of files) {
+      if (!MODULE.test(f)) continue; // assets have no imports
       for (const spec of importsOf(`${SRC}/${f}`)) {
         const target = resolveModule(f, spec, all);
         if (target) {

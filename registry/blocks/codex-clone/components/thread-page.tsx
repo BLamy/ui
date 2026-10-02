@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { TextArea, TextField } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
-import { IconButton } from '@/components/ui/icon-button';
 import { IndexBar } from '@/components/ui/index-bar';
 import { SplitViewHeader, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -138,12 +137,15 @@ function ThreadComposer({
           />
         </TextField>
         <div className="mt-2 flex items-center gap-1">
-          <IconButton
-            name="plus"
-            label="Attach"
-            size={18}
+          <Button
+            variant="quiet"
+            size="icon-sm"
+            aria-label="Attach"
+            title="Attach"
             className="size-8 rounded-full"
-          />
+          >
+            <Icon name="plus" size={18} sw={1.7} />
+          </Button>
           <Button
             variant="ghost"
             className="h-8 gap-1.5 rounded-full px-2 text-footnote font-normal text-muted-foreground data-hovered:bg-accent"
@@ -160,12 +162,15 @@ function ThreadComposer({
             <span className="text-foreground">GPT-6 Luna</span> Medium
             <Icon name="chevron-down" size={11} sw={2.4} />
           </Button>
-          <IconButton
-            name="mic"
-            label="Dictate"
-            size={17}
+          <Button
+            variant="quiet"
+            size="icon-sm"
+            aria-label="Dictate"
+            title="Dictate"
             className="size-8 rounded-full"
-          />
+          >
+            <Icon name="mic" size={17} sw={1.7} />
+          </Button>
           <Button
             aria-label="Send"
             size="icon"
@@ -192,7 +197,14 @@ function ThreadPanel({ chat }: { chat: Chat }) {
       <div className="rounded-2xl bg-secondary/60 px-4 py-3 shadow-hairline">
         <div className="flex items-center justify-between text-detail text-muted-foreground">
           {chat.project}
-          <IconButton name="ellipsis" label="Project actions" size={16} />
+          <Button
+            variant="quiet"
+            size="icon-sm"
+            aria-label="Project actions"
+            title="Project actions"
+          >
+            <Icon name="ellipsis" size={16} sw={1.7} />
+          </Button>
         </div>
         {chat.changes && (
           <div className="mt-1 flex items-center gap-2.5 py-1.5 text-detail">
@@ -210,7 +222,7 @@ function ThreadPanel({ chat }: { chat: Chat }) {
           <>
             <div className="mt-3 flex items-center justify-between text-detail text-muted-foreground">
               Sources
-              <IconButton name="plus" label="Add source" size={16} />
+              <Button variant="quiet" size="icon-sm" aria-label="Add source" title="Add source"><Icon name="plus" size={16} sw={1.7} /></Button>
             </div>
             {chat.sources.map((src) => (
               <div
@@ -303,14 +315,24 @@ export function ThreadContent({ codex }: { codex: CodexState }) {
         }
         trailing={
           <>
-            <IconButton name="ellipsis" label="Thread actions" size={17} />
-            <IconButton
-              name="sidebar-right"
-              label="Toggle thread panel"
-              size={17}
+            <Button
+              variant="quiet"
+              size="icon-sm"
+              aria-label="Thread actions"
+              title="Thread actions"
+            >
+              <Icon name="ellipsis" size={17} sw={1.7} />
+            </Button>
+            <Button
+              variant="quiet"
+              size="icon-sm"
               active={panel}
+              aria-label="Toggle thread panel"
+              title="Toggle thread panel"
               onPress={() => setPanel((p) => !p)}
-            />
+            >
+              <Icon name="sidebar-right" size={17} sw={1.7} />
+            </Button>
           </>
         }
       />

@@ -1,6 +1,6 @@
 # PlainButton
 
-react-aria's buttons with no styling of their own. `PlainButton` is a `Button` and `PlainToggleButton` a `ToggleButton`, both unstyled and both keeping `title` (react-aria drops it), so you can draw the pressable yourself and still get press, focus, keyboard and accessibility behavior. Reach for them for chips, rows, tiles and custom icon buttons. For a styled labelled action use [Button](https://blamy.github.io/ui/#/button); for a ready-made icon-only control use [IconButton](https://blamy.github.io/ui/#/icon-button), which is built on `PlainButton`.
+react-aria's buttons with no styling of their own. `PlainButton` is a `Button` and `PlainToggleButton` a `ToggleButton`, both unstyled and both keeping `title` (react-aria drops it), so you can draw the pressable yourself and still get press, focus, keyboard and accessibility behavior. Reach for them for chips, rows, tiles and anything else whose look is all your own. For a styled action, including icon-only ones, use [Button](https://blamy.github.io/ui/#/button).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

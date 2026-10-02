@@ -1,6 +1,6 @@
 # Button
 
-The labelled action button, react-aria's `Button` dressed in BL UI's look: five variants, five sizes, a press that sinks a little on a spring, and a text label that morphs into the next one instead of swapping. Use it for anything the reader presses to do something. For a square button that holds only an icon, use [IconButton](https://blamy.github.io/ui/#/icon-button); to draw your own pressable from scratch, use [PlainButton](https://blamy.github.io/ui/#/plain-button).
+The labelled action button, react-aria's `Button` dressed in BL UI's look: five variants, five sizes, a press that sinks a little on a spring, and a text label that morphs into the next one instead of swapping. Use it for anything the reader presses to do something. Icon-only controls are Buttons too (`size="icon"`, or the quiet toolbar look below); to draw your own pressable from scratch, use [PlainButton](https://blamy.github.io/ui/#/plain-button).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -39,17 +39,34 @@ import { Button } from '@brett_lamy/ui'
 <Button size="icon" aria-label="Add contact"><Icon name="plus" /></Button>
 ```
 
-`size="pill"` is the full-width iOS action row. `size="icon"` is a 36px circle for a single glyph: it has no label of its own, so pass `aria-label`. For a borderless icon control that fills on hover, [IconButton](https://blamy.github.io/ui/#/icon-button) is the better fit.
+`size="pill"` is the full-width iOS action row. `size="icon"` is a 36px circle for a single glyph: it has no label of its own, so pass `aria-label`.
 
-## How Button, IconButton and PlainButton relate
+## Icon buttons and toolbars
+
+For the borderless tool you see in toolbars and row actions, use `variant="quiet"` with `size="icon-sm"`: muted until hovered, a small rounded square that hugs its glyph (so the glyph's size sets the button's), and filled while `active`. It has no label of its own, so pass `aria-label`, and `title` for the tooltip.
+
+```tsx
+<Button variant="quiet" size="icon-sm" aria-label="Search" title="Search">
+  <Icon name="magnifyingglass" size={17} sw={1.7} />
+</Button>
+
+<Button variant="quiet" size="icon-sm" active={starred} aria-label="Star" onPress={toggleStar}>
+  <Icon name="star" size={18} sw={1.7} />
+</Button>
+```
+
+`active` only draws the filled state; the state itself is yours to own. If you press the same shape often, wrap it once in your own component, as the demo does.
+
+{% demo src="button/icon-toolbar" %}
+
+## How Button and PlainButton relate
 
 | | Looks | Content | Use it for |
 | --- | --- | --- | --- |
-| `Button` | cva variants and sizes | text, or text and an icon | labelled actions |
-| [IconButton](https://blamy.github.io/ui/#/icon-button) | transparent, fills on hover or `active` | one `Icon`, `label` required | toolbars and row actions |
+| `Button` | cva variants and sizes | text, an icon, or both | labelled actions, icon buttons and toolbar tools |
 | [PlainButton](https://blamy.github.io/ui/#/plain-button) | none | anything | pressables you style yourself |
 
-`Button` and `PlainButton` both wrap react-aria's `Button` and keep `title`, which react-aria would otherwise drop; `IconButton` is built on `PlainButton`.
+`Button` and `PlainButton` both wrap react-aria's `Button` and keep `title`, which react-aria would otherwise drop.
 
 ## Label morph and pending
 
@@ -106,6 +123,7 @@ bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 b
 | `ghost` | `bg-transparent text-foreground data-hovered:bg-accent` |
 | `destructive` | `bg-destructive text-white` |
 | `link` | `bg-transparent p-0 text-primary` |
+| `quiet` | `bg-transparent text-muted-foreground data-hovered:bg-secondary` |
 
 **`size`** — default `default`
 
@@ -116,3 +134,13 @@ bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 b
 | `lg` | `h-11 rounded-xl px-5 text-callout font-semibold` |
 | `pill` | `w-full rounded-card px-3 py-[13px] text-callout font-semibold` |
 | `icon` | `size-9 rounded-full p-0` |
+| `icon-sm` | `grid place-items-center rounded-[7px] p-[5px]` |
+
+**`active`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | — |
+| `false` (default) | — |
+
+1 compound variant — see the source.

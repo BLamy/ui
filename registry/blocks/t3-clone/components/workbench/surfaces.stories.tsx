@@ -21,9 +21,10 @@ import {
   WorkbenchTabBar,
   WorkbenchTab,
 } from './workbench-shell';
-import { IconButton } from '@/components/ui/icon-button';
 import { WorkbenchTheme } from '@/components/ui/workbench-theme';
 import { AGENTS, DIFF, FILES } from './fixtures';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/lib/icon';
 
 const meta: Meta<typeof WorkbenchPanel> = {
   title: 'Organisms/SurfacePanel',
@@ -50,7 +51,15 @@ function PanelDemo({ initial, full: initialFull = false, compact }: { initial: S
     <WorkbenchPanel>
       <WorkbenchPanelHeader>
         <WorkbenchPanelTitle icon={meta?.icon}>{meta ? meta.name : 'Surfaces'}</WorkbenchPanelTitle>
-        {meta ? <IconButton name="chevron-down-wide" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
+        {meta ? <Button
+          variant="quiet"
+          size="icon-sm"
+          aria-label="Switch surface"
+          title="Switch surface"
+          onPress={() => setKind(null)}
+        >
+          <Icon name="chevron-down-wide" size={15} sw={1.7} />
+        </Button> : null}
         {!compact ? <WorkbenchPanelFullscreen active={full} onPress={() => setFull(!full)} /> : null}
         <WorkbenchPanelClose onPress={() => setKind(null)} />
       </WorkbenchPanelHeader>

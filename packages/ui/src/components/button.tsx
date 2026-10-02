@@ -20,6 +20,8 @@ export const buttonVariants = cva(
         ghost: 'bg-transparent text-foreground data-hovered:bg-accent',
         destructive: 'bg-destructive text-white',
         link: 'bg-transparent p-0 text-primary',
+        /** Borderless and muted until hovered: the toolbar and row-action look. */
+        quiet: 'bg-transparent text-muted-foreground data-hovered:bg-secondary',
       },
       size: {
         default: 'h-9 rounded-ctl px-4 text-subhead font-semibold',
@@ -28,9 +30,14 @@ export const buttonVariants = cva(
         /** Full-width iOS action pill. */
         pill: 'w-full rounded-card px-3 py-[13px] text-callout font-semibold',
         icon: 'size-9 rounded-full p-0',
+        /** A small rounded square that hugs its glyph (padding, not a fixed size, so the glyph size sets it). */
+        'icon-sm': 'grid place-items-center rounded-[7px] p-[5px]',
       },
+      /** The filled "on" state of a `quiet` button (a toolbar tool that is switched on). */
+      active: { true: '', false: '' },
     },
-    defaultVariants: { variant: 'default', size: 'default' },
+    compoundVariants: [{ variant: 'quiet', active: true, class: 'bg-secondary text-foreground' }],
+    defaultVariants: { variant: 'default', size: 'default', active: false },
   },
 );
 
@@ -39,11 +46,11 @@ export interface ButtonProps extends Omit<AriaButtonProps, 'render'>, VariantPro
   title?: string;
 }
 
-export function Button({ className, variant, size, title, children, ...props }: ButtonProps) {
+export function Button({ className, variant, size, active, title, children, ...props }: ButtonProps) {
   return (
     <AriaButton
       data-slot="button"
-      className={composeRenderProps(className, (cls) => cn(buttonVariants({ variant, size }), cls))}
+      className={composeRenderProps(className, (cls) => cn(buttonVariants({ variant, size, active }), cls))}
       {...props}
       children={typeof children === 'string' ? <TextMorph>{children}</TextMorph> : children}
       {...(title ? { render: (p: JSX.IntrinsicElements['button']) => <button {...p} title={title} /> } : {})}

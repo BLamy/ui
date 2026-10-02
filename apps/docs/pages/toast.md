@@ -42,13 +42,15 @@ const id = toast.loading('Uploading…')        // a spinner, no timeout
 toast.update(id, { title: 'Uploaded', tone: 'success' })
 ```
 
-A toast shown with the `id` of a visible one **updates it in place** — its content changes and its timer restarts — instead of stacking a second one. HUDs do this automatically: there is only ever one pill, and copying again while it's up morphs its label (the letters the two labels share stay put).
+A toast shown with the `id` of a visible one **updates it in place** — its content changes and its timer restarts — instead of stacking a second one. `toast.update` keeps the timeout the toast was shown with (a `loading` toast has none, so it gets the default) unless you pass `{ timeout }`. HUDs do this automatically: there is only ever one pill, and copying again while it's up morphs its label (the letters the two labels share stay put).
 
 {% demo src="toast/copy-hud" %}
 
 ## Banners
 
-Banners stack newest-first at the Toaster's edge. Each can have a description, an icon, a tone and one action; pressing the action closes the banner unless its handler returns `false`. Swipe a banner sideways to dismiss it. Timers pause while the pointer is over the stack or focus is inside it.
+Banners pile up at the Toaster's edge the way Sonner's do: the newest card sits in front and the ones before it peek out behind, each a little smaller (up to three behind). Hover the pile, or move focus into it, and it spreads into a list; leave and it settles back. On a touch screen, tap the pile to spread it and tap anywhere else to put it away. Timers pause while it is spread. Set `expand` to keep the list spread out all the time.
+
+Each banner can have a description, an icon, a tone and one action; pressing the action closes the banner unless its handler returns `false`. Swipe a banner sideways to dismiss it. From a `bottom` placement the pile grows upward; from `top` it grows downward.
 
 {% demo src="toast/banners" %}
 
@@ -69,8 +71,9 @@ const [queue] = useState(() => createToastQueue())
 ## Accessibility and motion
 
 - The region is a landmark ("Notifications"), reachable with `F6`; each toast is an `alertdialog` whose content is announced as an alert — including when a HUD's label updates in place. When the last toast closes, focus returns to where it was.
-- Enter: a short rise with a blur-in and a snappy spring (HUDs grow from 85%); exit: a quicker fade; the remaining banners slide into place on the smooth spring.
-- With `prefers-reduced-motion`, toasts fade in and out without moving, and swiping is off.
+- Enter: a short rise with a blur-in and a snappy spring (HUDs grow from 85%); exit: a quicker fade; the cards behind it move up a place on a spring.
+- Cards behind the front one hide their content while piled, but they are still in the page: moving focus to one (Tab, or `F6` to the region) spreads the pile so it is readable.
+- With `prefers-reduced-motion`, toasts fade in and out and the pile does not scale or slide; swiping is off.
 
 ## API
 
@@ -98,9 +101,10 @@ const [queue] = useState(() => createToastQueue())
 | `placement` | `bottom` | `top`, `bottom`, `center`, `top-end`, `bottom-end`. |
 | `inline` | `false` | Position inside the nearest positioned ancestor instead of fixed (portaled to `<body>`). |
 | `offset` | `24` | Distance from the edge in px. |
+| `expand` | `false` | Keep banners spread out as a list instead of piled (the pile still spreads on hover and focus). |
 | `aria-label` | "Notifications" | The landmark's label. |
 
-The region carries `data-slot="toaster"` and `data-placement`; each toast `data-slot="toast"`, `data-variant` and `data-tone`.
+The region carries `data-slot="toaster"` and `data-placement`; the banner pile `data-slot="toast-stack"` (with `data-expanded` while spread) and each banner in it `data-slot="toast-layer"` and `data-index` (0 is the front); each toast `data-slot="toast"`, `data-variant` and `data-tone`, and `data-behind` while it is piled behind another.
 
 ## cva recipes
 

@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { ToggleButtonGroup } from 'react-aria-components';
 import { AdaptivePane, type AdaptivePaneMode } from '@/components/ui/adaptive-pane';
 import { FloatingSheet } from '@/components/ui/floating-sheet';
-import { IconButton } from '@/components/ui/icon-button';
 import { PlainToggleButton as ToggleButton } from '@/components/ui/plain-button';
 import { useWorkbenchAppearance, WorkbenchAppearanceProvider } from '@/components/ui/workbench-theme';
 import { useContainerWidth } from '@/lib/container';
 import { Icon, type IconName } from '@/lib/icon';
 import { type Appearance, themeScopeProps, ThemeScope } from '@/lib/theme';
 import { cn, pressable } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 
 /* ══ WorkbenchShell — a thin layout root and the parts that compose an IDE-style agent workspace ══
@@ -213,17 +213,21 @@ export function WorkbenchSidebarTrigger({ onPress, className, style }: TriggerPr
   const shell = useOptionalWorkbenchShell();
   const compact = !!shell?.compact;
   return (
-    <IconButton
-      name={compact ? 'line-3-horizontal' : 'sidebar-left'}
-      label={compact ? 'Menu' : 'Toggle sidebar'}
+    <Button
+      variant="quiet"
+      size="icon-sm"
       active={!compact && shell ? !shell.sidebarOpen : false}
+      aria-label={compact ? 'Menu' : 'Toggle sidebar'}
+      title={compact ? 'Menu' : 'Toggle sidebar'}
       className={className}
       style={style}
       onPress={() => {
         if (onPress) onPress();
         else shell?.toggleSidebar();
       }}
-    />
+    >
+      <Icon name={compact ? 'line-3-horizontal' : 'sidebar-left'} size={18} sw={1.7} />
+    </Button>
   );
 }
 /** Closes the compact sidebar drawer; renders nothing at wider widths. */
@@ -231,7 +235,17 @@ export function WorkbenchSidebarClose({ onPress, className, style }: TriggerProp
   const shell = useOptionalWorkbenchShell();
   if (!shell?.compact) return null;
   return (
-    <IconButton name="xmark-large" label="Close sidebar" className={cn('ml-auto', className)} style={style} onPress={onPress ?? (() => shell.setSidebarOpen(false))} />
+    <Button
+      variant="quiet"
+      size="icon-sm"
+      aria-label="Close sidebar"
+      title="Close sidebar"
+      className={cn('ml-auto', className)}
+      style={style}
+      onPress={onPress ?? (() => shell.setSidebarOpen(false))}
+    >
+      <Icon name="xmark-large" size={18} sw={1.7} />
+    </Button>
   );
 }
 
@@ -289,15 +303,19 @@ export function WorkbenchActions({ className, children }: { className?: string; 
 /** A header icon button that thumps like the rest of the chrome. */
 export function WorkbenchAction({ icon, label, onPress, active, className }: { icon: IconName | (string & {}); label: string; onPress?: () => void; active?: boolean; className?: string }) {
   return (
-    <IconButton
-      name={icon}
-      label={label}
+    <Button
+      variant="quiet"
+      size="icon-sm"
       active={active}
+      aria-label={label}
+      title={label}
       className={className}
       onPress={() => {
         onPress?.();
       }}
-    />
+    >
+      <Icon name={icon} size={18} sw={1.7} />
+    </Button>
   );
 }
 
@@ -389,33 +407,40 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
 export function WorkbenchDockTrigger({ onPress, className, style }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
   return (
-    <IconButton
-      name="panel-bottom"
-      label="Toggle terminal"
+    <Button
+      variant="quiet"
+      size="icon-sm"
       active={!!shell?.dockOpen}
+      aria-label="Toggle terminal"
+      title="Toggle terminal"
       className={className}
       style={style}
       onPress={() => {
         if (onPress) onPress();
         else shell?.toggleDock();
       }}
-    />
+    >
+      <Icon name="panel-bottom" size={18} sw={1.7} />
+    </Button>
   );
 }
 /** Closes the dock (inline or sheet). */
 export function WorkbenchDockClose({ icon = 'bin', label = 'Close terminal', size = 15, onPress, className }: TriggerProps & { icon?: IconName | (string & {}); label?: string; size?: number }) {
   const shell = useOptionalWorkbenchShell();
   return (
-    <IconButton
-      name={icon}
-      label={label}
-      size={size}
+    <Button
+      variant="quiet"
+      size="icon-sm"
+      aria-label={label}
+      title={label}
       className={className}
       onPress={() => {
         if (onPress) onPress();
         else shell?.setDockOpen(false);
       }}
-    />
+    >
+      <Icon name={icon} size={size} sw={1.7} />
+    </Button>
   );
 }
 
@@ -466,17 +491,21 @@ export function WorkbenchPanelTrigger({ onPress, className, style }: TriggerProp
   const shell = useOptionalWorkbenchShell();
   if (shell?.compact) return null;
   return (
-    <IconButton
-      name="sidebar-right"
-      label="Toggle right panel"
+    <Button
+      variant="quiet"
+      size="icon-sm"
       active={!!shell?.panelOpen}
+      aria-label="Toggle right panel"
+      title="Toggle right panel"
       className={className}
       style={style}
       onPress={() => {
         if (onPress) onPress();
         else shell?.togglePanel();
       }}
-    />
+    >
+      <Icon name="sidebar-right" size={18} sw={1.7} />
+    </Button>
   );
 }
 export function WorkbenchPanelHeader({ className, style, children }: { className?: string; style?: React.CSSProperties; children?: React.ReactNode }) {
@@ -505,33 +534,39 @@ export function WorkbenchPanelFullscreen({ active, onPress, className }: Trigger
   if (shell?.compact) return null;
   const full = active ?? !!shell?.panelFullscreen;
   return (
-    <IconButton
-      name={full ? 'arrows-collapse' : 'arrows-expand'}
-      label={full ? 'Exit full screen' : 'Full screen'}
-      size={16}
+    <Button
+      variant="quiet"
+      size="icon-sm"
       active={full}
+      aria-label={full ? 'Exit full screen' : 'Full screen'}
+      title={full ? 'Exit full screen' : 'Full screen'}
       className={className}
       onPress={() => {
         if (onPress) onPress();
         else shell?.setPanelFullscreen(!full);
       }}
-    />
+    >
+      <Icon name={full ? 'arrows-collapse' : 'arrows-expand'} size={16} sw={1.7} />
+    </Button>
   );
 }
 /** Closes the panel (and leaves fullscreen); on compact width returns to the main view. */
 export function WorkbenchPanelClose({ onPress, className }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
   return (
-    <IconButton
-      name="xmark-large"
-      label="Close panel"
-      size={16}
+    <Button
+      variant="quiet"
+      size="icon-sm"
+      aria-label="Close panel"
+      title="Close panel"
       className={className}
       onPress={() => {
         if (onPress) onPress();
         else shell?.setPanelOpen(false);
       }}
-    />
+    >
+      <Icon name="xmark-large" size={16} sw={1.7} />
+    </Button>
   );
 }
 

@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -116,8 +115,15 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
             }
             trailing={
               <>
-                <IconButton name="bell" label="Notifications" size={17} />
-                <IconButton name="magnifyingglass" label="Search" size={17} />
+                <Button
+                  variant="quiet"
+                  size="icon-sm"
+                  aria-label="Notifications"
+                  title="Notifications"
+                >
+                  <Icon name="bell" size={17} sw={1.7} />
+                </Button>
+                <Button variant="quiet" size="icon-sm" aria-label="Search" title="Search"><Icon name="magnifyingglass" size={17} sw={1.7} /></Button>
               </>
             }
           />

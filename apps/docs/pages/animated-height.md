@@ -43,7 +43,7 @@ Wrap anything whose height changes. It observes its content with a `ResizeObserv
 
 ## ContentSwap
 
-Give it an `id` for the current view and a `direction`: `1` (forward) brings the new view in from the right and sends the old one left, `-1` the reverse, both blurring through the middle; `0` swaps in place with a small scale. `distance` sets the travel in px (default 36). The leaving view is taken out of flow (`popLayout`), so the swap never adds height; pair it with `AnimatedHeight` to spring to the new size. `useDirection(index)` from `@/lib/motion` returns -1, 0 or 1 from a changing index.
+Give it an `id` for the current view and a `direction`: `1` (forward) brings the new view in from the right and sends the old one left, `-1` the reverse, both blurring through the middle; `0` swaps in place with a small scale. `distance` sets the travel in px (default 36) and `blur` the blur at the middle of the swap (default 4px). The leaving view is taken out of flow (`popLayout`), so the swap never adds height; pair it with `AnimatedHeight` to spring to the new size. `useDirection(index)` from `@/lib/motion` returns -1, 0 or 1 from a changing index.
 
 {% demo src="animated-height/steps" %}
 
@@ -78,6 +78,7 @@ Neither component adds roles. The outgoing view stays in the DOM for the length 
 | `id` | — | Identity of the current view (`string` or `number`). Changing it swaps. |
 | `direction` | `0` | `-1` back, `1` forward (slide), `0` in place. |
 | `distance` | `36` | Slide distance in px for a directional swap. |
+| `blur` | `4` | Blur in px at the middle of the swap. |
 | `className` / `style` | — | Merged onto the wrapper (`relative`). |
 
 ## Styling

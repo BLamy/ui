@@ -135,6 +135,7 @@ if (isMain) {
   const stale = [];
   for (const f of readdirSync(COMPONENTS).filter((f) => f.endsWith('.json')).sort()) {
     const entry = JSON.parse(readFileSync(join(COMPONENTS, f), 'utf8'));
+    if (!entry.page) continue; // a lib item documented on another component's page (filter-model, filter-query, gpu-query)
     const file = join(PAGES, `${entry.page}.md`);
     let md;
     try { md = readFileSync(file, 'utf8'); } catch { console.error(`install-md: ${f} names page "${entry.page}", which has no ${file}`); process.exit(1); }

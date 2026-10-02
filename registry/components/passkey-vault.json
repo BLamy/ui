@@ -1,0 +1,48 @@
+{
+  "name": "passkey-vault",
+  "title": "Passkey vault",
+  "description": "Encrypted in-browser storage unlocked by a WebAuthn passkey (PRF): a random data key wrapped per passkey and by a recovery key, AES-GCM records in IndexedDB, hooks, and the enroll, unlock and gate screens.",
+  "page": "passkey-vault",
+  "exports": [
+    "PasskeyError",
+    "detectPasskeySupport",
+    "createPasskey",
+    "getPrfSecret",
+    "passkeyUnsupportedReason",
+    "bytesToBase64Url",
+    "base64UrlToBytes",
+    "wipe",
+    "createVault",
+    "VaultError",
+    "indexedDbStorage",
+    "localStorageStorage",
+    "memoryStorage",
+    "VaultStorageError",
+    "VaultProvider",
+    "useVault",
+    "useVaultState",
+    "useWebAuthnSupport",
+    "usePasskey",
+    "useEncryptedState",
+    "vaultErrorMessage",
+    "PasskeyEnrollDialog",
+    "RecoveryKey",
+    "VaultGate",
+    "VaultUnlock",
+    "VaultSetup",
+    "VaultUnsupported",
+    "VaultStatusBadge"
+  ],
+  "imports": [
+    "VaultProvider",
+    "useVault",
+    "useEncryptedState",
+    "VaultGate"
+  ],
+  "files": [
+    "lib/passkey.ts",
+    "lib/vault.ts",
+    "lib/vault-storage.ts",
+    "lib/vault-react.tsx"
+  ]
+}

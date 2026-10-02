@@ -1,10 +1,11 @@
 {
   "name": "spinner",
   "title": "Spinner",
-  "description": "iOS activity indicator: eight fading spokes that turn in discrete steps, drawn in currentColor and growing in when it mounts.",
+  "description": "Loading indicators: the iOS activity indicator (eight fading spokes in discrete steps, the default) and twenty CSS loaders with three variants each: seven ported from Dani Asyrofi's Loading (Orbit, Bars, Matrix, Merge, Encode, Scan, Lift) and thirteen of BL UI's own (Steps, Cradle, Hourglass, Balance, Fanout, Battery, Bloom, Sonar, Gyro, Coalesce, Crystal, Loop, Relay). They draw in currentColor, scale to any size, take a speed, pause themselves off screen, and hold still under reduced motion.",
   "page": "spinner",
   "exports": [
-    "Spinner"
+    "Spinner",
+    "spinnerAnimations"
   ],
   "imports": [
     "Spinner"

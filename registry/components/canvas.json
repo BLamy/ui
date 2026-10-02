@@ -1,0 +1,19 @@
+{
+  "name": "canvas",
+  "title": "Canvas",
+  "description": "An infinite, pannable, zoomable surface: scroll to pan, pinch or ⌘-scroll to zoom, Space to drag the view, a dotted or ruled background that follows the camera, and pointer events handed to you in board coordinates. With selection outlines, resize and rotate handles, a marquee and alignment guides that keep their thickness at any zoom, and the frame math (hit tests, resize, rotate, snap) as plain functions.",
+  "page": "canvas",
+  "exports": [
+    "Canvas",
+    "CanvasFrame",
+    "CanvasHandles",
+    "CanvasMarquee",
+    "CanvasGuides",
+    "useCanvas"
+  ],
+  "imports": [
+    "Canvas",
+    "CanvasFrame",
+    "useCanvas"
+  ]
+}

@@ -14,7 +14,9 @@ import {
 import { Button } from 'react-aria-components';
 import { collectSlots, defineSlot } from '@/lib/container';
 import { springCss } from '@/lib/motion';
-import { themeScopeClass, useAppearance, useChromeHidden } from '@/lib/theme';
+import { themeScopeClass, useAppearance } from '@/lib/theme';
+import { useControllableState } from '@/lib/controllable-state';
+import { useScrollHidden } from '@/lib/scroll-hidden';
 import { cva } from 'class-variance-authority';
 import { ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerFab, ComposerOutlet, type ComposerBumpProgress } from '@/components/ui/composer/composer';
 import { Icon } from '@/lib/icon';
@@ -146,31 +148,6 @@ export function glassScopeProps(tone: FloatingSheetTone) {
   return { 'data-theme-scope': 'glass' as const, className: themeScopeClass(tone === 'light' ? 'light' : 'dark') };
 }
 
-/** Hidden by the shared chrome state or by scrolling `scrollRef` down. */
-function useScrollHidden(hideOnScroll: boolean, scrollRef?: RefObject<HTMLElement | null>) {
-  const chromeHidden = useChromeHidden();
-  const [scrollHidden, setScrollHidden] = useState(false);
-  useEffect(() => {
-    const scroller = scrollRef?.current;
-    if (!scroller || !hideOnScroll) {
-      setScrollHidden(false);
-      return;
-    }
-    let previous = scroller.scrollTop;
-    const onScroll = () => {
-      const next = scroller.scrollTop;
-      const delta = next - previous;
-      previous = next;
-      if (next < 4) setScrollHidden(false);
-      else if (delta > 3) setScrollHidden(true);
-      else if (delta < -3) setScrollHidden(false);
-    };
-    scroller.addEventListener('scroll', onScroll, { passive: true });
-    return () => scroller.removeEventListener('scroll', onScroll);
-  }, [scrollRef, hideOnScroll]);
-  return hideOnScroll && (chromeHidden || scrollHidden);
-}
-
 /**
  * The floating chat: the host's Workbench `Composer` floats over any positioned host, and the transcript
  * hangs off a draggable top bump of that composer (added through a `ComposerOutlet`, so the composer itself
@@ -207,29 +184,18 @@ export function FloatingChat({
   const toneProps = sheetToneProps(tone);
   const glassScope = glassScopeProps(tone);
   const layerRef = useRef<HTMLDivElement>(null);
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
-  const [uncontrolledComposing, setUncontrolledComposing] = useState(!working);
-  const [uncontrolledMinimized, setUncontrolledMinimized] = useState(defaultMinimized);
   const [bump, setBump] = useState<ComposerBumpProgress>({ progress: 0, reveal: 0, minimize: 0, dragging: false, settling: false });
   // Inside ArtifactChatContainer the composer and transcript are shared with the docked layout: this chat
   // gives them docks and reports its outlet instead of rendering its own copies.
   const shared = useContext(ChatHostContext);
-  const open = controlledOpen ?? uncontrolledOpen;
+  const [open, setOpen] = useControllableState(controlledOpen, defaultOpen, onOpenChange);
+  const [uncontrolledComposing, setUncontrolledComposing] = useState(!working);
   const composing = controlledComposing ?? uncontrolledComposing;
-  const minimized = controlledMinimized ?? uncontrolledMinimized;
-
-  const setOpen = (next: boolean) => {
-    if (controlledOpen == null) setUncontrolledOpen(next);
-    onOpenChange?.(next);
-  };
   const setComposing = (next: boolean) => {
     if (controlledComposing == null) setUncontrolledComposing(next);
     onComposingChange?.(next);
   };
-  const setMinimized = (next: boolean) => {
-    if (controlledMinimized == null) setUncontrolledMinimized(next);
-    onMinimizedChange?.(next);
-  };
+  const [minimized, setMinimized] = useControllableState(controlledMinimized, defaultMinimized, onMinimizedChange);
 
   useEffect(() => {
     if (controlledComposing == null) setUncontrolledComposing(!working);

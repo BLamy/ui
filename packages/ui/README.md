@@ -34,7 +34,7 @@ export function App() {
 
 The package is ESM with one output module per source module (`sideEffects` is limited to CSS), so bundlers drop what you don't import; component modules start with `'use client'` for Next.js.
 
-React 18 and 19 are supported peer dependencies.
+React 19 is required (the components use `use(Context)`, `<Context value>` and `ref` as a prop).
 
 ## IndexBar
 

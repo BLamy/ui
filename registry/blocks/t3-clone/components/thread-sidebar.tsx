@@ -2,11 +2,11 @@ import * as React from 'react';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from 'react-aria-components';
-import { IconButton } from '@/components/ui/icon-button';
 import { Icon, type IconName } from '@/lib/icon';
 import { springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useOptionalWorkbenchShell } from './workbench/workbench-shell';
+import { Button as UiButton } from '@/components/ui/button';
 
 /* ══ Thread sidebar parts ══
    <ThreadSidebar>
@@ -107,16 +107,19 @@ export function ThreadSearch({ value, onChange, placeholder = 'Search', classNam
 export function ThreadNewButton({ onPress, label = 'New thread', className }: { onPress?: () => void; label?: string; className?: string }) {
   const close = useCloseDrawer();
   return (
-    <IconButton
-      name="square-pencil"
-      label={label}
-      size={17}
+    <UiButton
+      variant="quiet"
+      size="icon-sm"
+      aria-label={label}
+      title={label}
       className={className}
       onPress={() => {
         onPress?.();
         close();
       }}
-    />
+    >
+      <Icon name="square-pencil" size={17} sw={1.7} />
+    </UiButton>
   );
 }
 

@@ -158,7 +158,8 @@ if (pages.length) {
       demos: (clip.match(/^\{% demo /gm) ?? []).length,
       commands: (clip.match(/\{% command\b/g) ?? []).length,
       sections: (clip.match(/^\{% tabs title=/gm) ?? []).length,
-      headings: (clip.replace(/^(`{3,})[\s\S]*?^\1\s*$/gm, '').match(/^#{1,3} /gm) ?? []).length,
+      // Top-level headings only: the editor nests a tab panel's headings inside its tabs section.
+      headings: (clip.replace(/^(`{3,})[\s\S]*?^\1\s*$/gm, '').replace(/\{% tab\b[^%]*%\}[\s\S]*?\{% endtab %\}/g, '').match(/^#{1,3} /gm) ?? []).length,
     };
     want.viewers = want.demos;
     const bad = Object.keys(want).filter((k) => want[k] !== got[k]);

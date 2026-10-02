@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (61 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (73 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -74,6 +74,7 @@ bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 b
 | `ghost` | `bg-transparent text-foreground data-hovered:bg-accent` |
 | `destructive` | `bg-destructive text-white` |
 | `link` | `bg-transparent p-0 text-primary` |
+| `quiet` | `bg-transparent text-muted-foreground data-hovered:bg-secondary` |
 
 **`size`** — default `default`
 
@@ -84,6 +85,16 @@ bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 b
 | `lg` | `h-11 rounded-xl px-5 text-callout font-semibold` |
 | `pill` | `w-full rounded-card px-3 py-[13px] text-callout font-semibold` |
 | `icon` | `size-9 rounded-full p-0` |
+| `icon-sm` | `grid place-items-center rounded-[7px] p-[5px]` |
+
+**`active`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | — |
+| `false` (default) | — |
+
+1 compound variant — see the source.
 
 ## Card
 
@@ -250,6 +261,23 @@ z-401 box-border overflow-hidden bg-card text-foreground shadow-[0_24px_80px_--a
 | `true` | `absolute inset-x-2.5 bottom-2.5 touch-none rounded-[28px]` |
 | `false` (default) | `absolute top-1/2 left-1/2 w-[400px] max-w-[calc(100%-44px)] rounded-[24px]` |
 
+## CronEditor
+
+### `cronEditorVariants`
+
+Defined in `@/components/ui/cron-editor`. Base classes:
+
+```text
+flex min-w-0 flex-col gap-3 text-footnote
+```
+
+**`variant`** — default `card`
+
+| Value | Adds |
+| --- | --- |
+| `card` (default) | `[&_[data-surface]]:rounded-panel [&_[data-surface]]:bg-secondary [&_[data-surface]]:p-3` |
+| `plain` | `[&_[data-surface]]:px-1` |
+
 ## Dialog
 
 ### `dialogVariants`
@@ -350,6 +378,89 @@ absolute inset-y-0 z-(--edge-drawer-z) transition-[translate,box-shadow] duratio
 | `false` | — |
 
 3 compound variants — see the source.
+
+## FileUpload
+
+### `fileDropZoneVariants`
+
+Defined in `@/components/ui/file-upload`. Base classes:
+
+```text
+group/zone relative box-border flex border-2 border-dashed border-border text-center outline-none transition-[border-color,background-color,box-shadow,opacity] duration-spring-snappy motion-reduce:transition-none data-drop-target:border-primary data-drop-target:bg-primary/10 data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-invalid:border-destructive data-disabled:opacity-40
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `min-h-40 flex-col items-center justify-center gap-2 rounded-card p-6` |
+| `compact` | `flex-row items-center justify-start gap-3 rounded-panel p-3 text-left` |
+
+### `fileItemVariants`
+
+Defined in `@/components/ui/file-upload`. Base classes:
+
+```text
+box-border flex items-center gap-3 rounded-panel border border-border bg-card p-3 text-card-foreground transition-colors duration-spring-snappy motion-reduce:transition-none data-[status=error]:border-destructive data-[status=rejected]:border-destructive
+```
+
+No variants.
+
+## Filter
+
+### `filterBarVariants`
+
+Defined in `@/components/ui/filter`. Base classes:
+
+```text
+flex min-w-0 flex-col gap-2
+```
+
+No variants.
+
+### `filterToolbarVariants`
+
+Defined in `@/components/ui/filter`. Base classes:
+
+```text
+flex min-w-0 flex-wrap items-center gap-1.5
+```
+
+No variants.
+
+### `filterChipVariants`
+
+Defined in `@/components/ui/filter`. Base classes:
+
+```text
+box-border inline-flex max-w-full min-w-0 items-stretch overflow-hidden rounded-lg text-foreground
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `h-7 text-footnote` |
+| `sm` | `h-6 text-caption` |
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `bg-secondary shadow-hairline` |
+| `preview` | `bg-primary/10 text-foreground shadow-hairline` |
+
+## FilterInput
+
+### `filterInputVariants`
+
+Defined in `@/components/ui/filter-input`. Base classes:
+
+```text
+flex min-w-0 flex-col gap-1.5
+```
+
+No variants.
 
 ## FloatingChat
 
@@ -466,23 +577,6 @@ ck-floating-sheet pointer-events-none absolute inset-0 z-40 text-foreground [fon
 | `auto` (default) | `[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]` |
 | `dark` | `[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]` |
 | `light` | `[--ck-sheet-line:0,0,0] [--ck-sheet-surface:250,250,252]` |
-
-## IconButton
-
-### `iconButtonVariants`
-
-Defined in `@/components/ui/icon-button`. Base classes:
-
-```text
-cn(pressable, 'grid cursor-pointer place-items-center rounded-[7px] border-0 p-[5px] hover:bg-secondary!')
-```
-
-**`active`** — default `false`
-
-| Value | Adds |
-| --- | --- |
-| `true` | `bg-secondary text-foreground` |
-| `false` (default) | `bg-transparent text-muted-foreground` |
 
 ## IndexBar
 
@@ -638,6 +732,23 @@ Defined in `@/components/ui/markdown-editor`. Base classes:
 | `sm` | `bl-mde-sm` |
 | `default` (default) | `bl-mde-md` |
 | `lg` | `bl-mde-lg` |
+
+## Passkey Enroll Dialog
+
+### `recoveryKeyVariants`
+
+Defined in `@/components/ui/passkey-enroll-dialog`. Base classes:
+
+```text
+grid gap-x-3 gap-y-1 rounded-ctl bg-secondary px-3 py-3 font-mono text-callout font-semibold tracking-wide text-foreground tabular-nums select-text [-webkit-user-select:text]
+```
+
+**`layout`** — default `grid`
+
+| Value | Adds |
+| --- | --- |
+| `grid` (default) | `grid-cols-2` |
+| `row` | `grid-cols-4` |
 
 ## PencilKit
 
@@ -975,6 +1086,69 @@ Defined in `@/components/ui/split-view`. Base classes:
 | `default` (default) | `px-2.5 pt-4 pb-1.5 text-footnote font-semibold tracking-[-.1px] text-muted-foreground` |
 | `prominent` | `px-1 pt-6 pb-2 text-title font-bold tracking-[-.2px] text-foreground` |
 
+## SqlConsole
+
+### `resultTableVariants`
+
+Defined in `@/components/ui/result-table`. Base classes:
+
+```text
+flex min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground shadow-hairline
+```
+
+**`density`** — default `compact`
+
+| Value | Adds |
+| --- | --- |
+| `compact` (default) | `[--result-pad:calc(var(--spacing)*1.5)]` |
+| `comfortable` | `[--result-pad:calc(var(--spacing)*2.5)]` |
+
+### `schemaTreeVariants`
+
+Defined in `@/components/ui/schema-tree`. Base classes:
+
+```text
+flex min-h-0 min-w-0 flex-col text-footnote text-foreground outline-none
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | — |
+| `card` | `rounded-panel bg-card p-1 shadow-hairline` |
+
+### `sqlConsoleVariants`
+
+Defined in `@/components/ui/sql-console`. Base classes:
+
+```text
+flex min-h-0 min-w-0 flex-col gap-3 text-foreground
+```
+
+**`layout`** — default `split`
+
+| Value | Adds |
+| --- | --- |
+| `split` (default) | `md:grid md:grid-cols-[minmax(11rem,16rem)_minmax(0,1fr)] md:items-start` |
+| `stacked` | — |
+
+### `sqlEditorVariants`
+
+Defined in `@/components/ui/sql-editor`. Base classes:
+
+```text
+flex min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground shadow-hairline transition-shadow duration-spring-snappy ease-spring-snappy focus-within:ring-2 focus-within:ring-primary focus-within:ring-inset
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `[--editor-rows:8]` |
+| `sm` | `[--editor-rows:4]` |
+| `lg` | `[--editor-rows:14]` |
+
 ## SyntaxHighlighting
 
 ### `syntaxHighlightingVariants`
@@ -1153,6 +1327,23 @@ Defined in `@/components/ui/textarea`. Base classes:
 | `default` (default) | `min-h-24` |
 | `sm` | `min-h-16 text-subhead leading-[20px]` |
 | `lg` | `min-h-36` |
+
+## TimeInput
+
+### `timeInputVariants`
+
+Defined in `@/components/ui/time-input`. Base classes:
+
+```text
+flex min-w-0 flex-col gap-2 text-footnote
+```
+
+**`variant`** — default `card`
+
+| Value | Adds |
+| --- | --- |
+| `card` (default) | `[&_[data-slot=time-input-preview]]:rounded-panel [&_[data-slot=time-input-preview]]:bg-secondary [&_[data-slot=time-input-preview]]:p-3` |
+| `plain` | `[&_[data-slot=time-input-preview]]:px-1` |
 
 ## Toast
 

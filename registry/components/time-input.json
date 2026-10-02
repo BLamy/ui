@@ -1,0 +1,19 @@
+{
+  "name": "time-input",
+  "title": "TimeInput",
+  "description": "A text field that reads dates, times and recurrences written in English (\"every weekday at 9am\") with gpu-time, and previews what it understood: the recognised words, the resolved occurrences in a time zone, a Repeats chip and the parser's notes. Works on the CPU or the GPU; the package loads on first use.",
+  "page": "time-input",
+  "exports": [
+    "TimeInput",
+    "timeInputVariants",
+    "useTimeParse",
+    "parseTime",
+    "loadGpuTime",
+    "formatOccurrence",
+    "timeTextSegments",
+    "describeRecurrence",
+    "rruleLine"
+  ],
+  "imports": ["TimeInput"],
+  "types": ["TimeInputProps", "TimeInputChange", "TimeParseResult", "TimeOccurrence", "TimeDiagnostic", "TimeSpan", "UseTimeParseOptions", "TimeParseState"]
+}

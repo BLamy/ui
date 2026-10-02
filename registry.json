@@ -300,6 +300,16 @@
             "transform": "translateX(250%)"
           }
         },
+        "@layer components": {
+          "[data-slot=\"now-playing-bars\"][data-playing]>.bl-eq-bar": {
+            "animation": "blEq var(--bl-eq-dur,.7s) ease-in-out var(--bl-eq-delay,0s) infinite alternate"
+          },
+          "@media (prefers-reduced-motion:reduce)": {
+            "[data-slot=\"now-playing-bars\"][data-playing]>.bl-eq-bar": {
+              "animation": "none"
+            }
+          }
+        },
         "[data-theme-scope=\"chat\"].light .ck-role": {
           "color": "color-mix(in srgb,var(--ck-role) 58%,#000)"
         },
@@ -972,16 +982,6 @@
         ".gb .ProseMirror :is(h1,h2,h3,h4,h5,h6,p,ul,ol,li,blockquote,table,thead,tbody,tr,th,td,hr,input,label,a,:not(pre)>code)": {
           "all": "revert-layer"
         },
-        "@layer components": {
-          "[data-slot=\"now-playing-bars\"][data-playing]>.bl-eq-bar": {
-            "animation": "blEq var(--bl-eq-dur,.7s) ease-in-out var(--bl-eq-delay,0s) infinite alternate"
-          },
-          "@media (prefers-reduced-motion:reduce)": {
-            "[data-slot=\"now-playing-bars\"][data-playing]>.bl-eq-bar": {
-              "animation": "none"
-            }
-          }
-        },
         "[data-slot=\"composer-card\"]>[data-slot=\"composer-fab\"]": {
           "opacity": "0",
           "pointer-events": "none",
@@ -1412,6 +1412,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/chat-column.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/floating-chat.json",
         "https://blamy.github.io/ui/r/floating-sheet.json",
         "https://blamy.github.io/ui/r/motion.json",
@@ -1511,6 +1512,37 @@
         "exports": [
           "Button",
           "buttonVariants"
+        ]
+      }
+    },
+    {
+      "name": "canvas",
+      "type": "registry:ui",
+      "title": "Canvas",
+      "description": "An infinite, pannable, zoomable surface: scroll to pan, pinch or ⌘-scroll to zoom, Space to drag the view, a dotted or ruled background that follows the camera, and pointer events handed to you in board coordinates. With selection outlines, resize and rotate handles, a marquee and alignment guides that keep their thickness at any zoom, and the frame math (hit tests, resize, rotate, snap) as plain functions.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/canvas.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/canvas.tsx"
+        }
+      ],
+      "meta": {
+        "page": "canvas",
+        "exports": [
+          "Canvas",
+          "CanvasFrame",
+          "CanvasHandles",
+          "CanvasMarquee",
+          "CanvasGuides",
+          "useCanvas"
         ]
       }
     },
@@ -1882,8 +1914,8 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/measure-h.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -1898,6 +1930,52 @@
         "page": "credenza",
         "exports": [
           "Credenza"
+        ]
+      }
+    },
+    {
+      "name": "cron-editor",
+      "type": "registry:ui",
+      "title": "CronEditor",
+      "description": "Edit a 5-field cron expression with its meaning in view: per-field labels and validation, an English description, presets and the next runs in any time zone, all local. Where WebGPU is available, a plain-English box (gpu-cron) proposes an expression to review.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/cron.json",
+        "https://blamy.github.io/ui/r/gpu-cron.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/toggle.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/cron-editor.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/cron-editor.tsx"
+        }
+      ],
+      "meta": {
+        "page": "cron-editor",
+        "exports": [
+          "CronEditor",
+          "cronEditorVariants",
+          "CRON_PRESETS",
+          "useCronParse",
+          "parseCronText",
+          "gpuCronAvailable",
+          "describeCronError",
+          "validateCron",
+          "cronProblems",
+          "nextCronRuns",
+          "describeCron",
+          "splitCron",
+          "CRON_FIELDS"
         ]
       }
     },
@@ -2043,6 +2121,164 @@
       }
     },
     {
+      "name": "file-upload",
+      "type": "registry:ui",
+      "title": "FileUpload",
+      "description": "Pick, drop or paste files on react-aria's FileTrigger and DropZone: a styled drop zone, a file list with previews, progress, retry and remove, validation with per-file reasons, folder drops, and a concurrency-limited upload queue with an XHR adapter that reports real progress.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria@^3.51.0",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/format-bytes.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/progress.json",
+        "https://blamy.github.io/ui/r/use-file-upload.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/file-upload.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/file-upload.tsx"
+        }
+      ],
+      "meta": {
+        "page": "file-upload",
+        "exports": [
+          "FileUpload",
+          "FileDropZone",
+          "FileUploadButton",
+          "FileList",
+          "FileItem",
+          "FileThumbnail",
+          "useFileUploadContext"
+        ]
+      }
+    },
+    {
+      "name": "filter-input",
+      "type": "registry:ui",
+      "title": "FilterInput",
+      "description": "A natural-language box for Filter: type a sentence and see the chips it would create — what was understood, what was dropped, what was assumed — then press Enter to apply. Runs gpu-query, a 29,597-parameter tagger, in the browser on the CPU; a feasibility-spike model, so the preview is the point.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/filter.json",
+        "https://blamy.github.io/ui/r/filter-model.json",
+        "https://blamy.github.io/ui/r/filter-query.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/filter-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/filter-input.tsx"
+        }
+      ],
+      "meta": {
+        "page": "filter-input",
+        "exports": [
+          "FilterInput",
+          "filterInputVariants"
+        ]
+      }
+    },
+    {
+      "name": "filter-model",
+      "type": "registry:lib",
+      "title": "Filter model",
+      "description": "The data model behind Filter, with no UI: fields, filters, operator tables per kind, matchFilters (all/any), describeFilter, date presets, and a URL-safe serialize/parse that round-trips.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/filter.ts",
+          "type": "registry:lib",
+          "target": "lib/filter.ts"
+        }
+      ]
+    },
+    {
+      "name": "filter-query",
+      "type": "registry:lib",
+      "title": "Filter query",
+      "description": "useFilterQuery: a typed sentence as Filter[] through gpu-query — debounced, stale-guarded, SSR-safe, the ~40 KB model fetched on first use — with the field-schema and clause-to-filter mapping (fuzzy option matching, dates, numbers) and a report of what it could not use.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/filter-model.json",
+        "https://blamy.github.io/ui/r/gpu-query.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/filter-query.ts",
+          "type": "registry:lib",
+          "target": "lib/filter-query.ts"
+        }
+      ]
+    },
+    {
+      "name": "filter",
+      "type": "registry:ui",
+      "title": "Filter",
+      "description": "Linear-style filtering on react-aria: a Filter button (and F shortcut) opens a searchable list of fields, then a searchable multi-select of values; each filter is a chip with its own operator and value buttons, removable with ×, Backspace or Delete. One tab stop with arrow keys across the chips, polite announcements, match all/any and Clear all.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria@^3.51.0",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/filter-model.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/list-box.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/filter.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/filter.tsx"
+        }
+      ],
+      "meta": {
+        "page": "filter",
+        "exports": [
+          "FilterBar",
+          "FilterToolbar",
+          "FilterMenu",
+          "FilterList",
+          "FilterChip",
+          "FilterClear",
+          "FilterMatch",
+          "FilterValueEditor",
+          "useFilters",
+          "useFilterBar",
+          "useOptionalFilterBar",
+          "filterBarVariants",
+          "filterToolbarVariants",
+          "filterChipVariants"
+        ]
+      }
+    },
+    {
       "name": "floating-chat",
       "type": "registry:ui",
       "title": "FloatingChat",
@@ -2055,10 +2291,12 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/floating-sheet.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/persistent-host.json",
+        "https://blamy.github.io/ui/r/scroll-hidden.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -2089,7 +2327,9 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/scroll-hidden.json",
         "https://blamy.github.io/ui/r/sheet-drag.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -2137,33 +2377,66 @@
       }
     },
     {
-      "name": "icon-button",
-      "type": "registry:ui",
-      "title": "IconButton",
-      "description": "A square, icon-only button that stays transparent until hovered and fills while active; its label is required and becomes both the aria-label and the tooltip.",
-      "dependencies": [
-        "class-variance-authority@^0.7.1"
-      ],
+      "name": "gpu-query",
+      "type": "registry:lib",
+      "title": "gpu-query",
+      "description": "A vendored copy of safzanpirani/gpu-query's runtime (MIT): a 29,597-parameter neural tagger that turns a phrase into filter clauses against your schema, on the CPU or WebGPU. The ~40 KB weights load lazily. A feasibility spike; see lib/gpu-query/README.md for provenance and what changed.",
+      "dependencies": [],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/plain-button.json",
-        "https://blamy.github.io/ui/r/utils.json"
+        "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/components/icon-button.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/icon-button.tsx"
+          "path": "packages/ui/src/lib/gpu-query/LICENSE",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/LICENSE"
+        },
+        {
+          "path": "packages/ui/src/lib/gpu-query/README.md",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/README.md"
+        },
+        {
+          "path": "packages/ui/src/lib/gpu-query/featurize.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/featurize.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/gpu-query/index.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/index.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/gpu-query/kernel.wgsl.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/kernel.wgsl.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/gpu-query/model.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/model.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/gpu-query/schema.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/schema.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/gpu-query/webgpu.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/webgpu.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/gpu-query/weights.json",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/weights.json"
+        },
+        {
+          "path": "packages/ui/src/lib/gpu-query/weights.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-query/weights.ts"
         }
-      ],
-      "meta": {
-        "page": "icon-button",
-        "exports": [
-          "IconButton",
-          "iconButtonVariants"
-        ]
-      }
+      ]
     },
     {
       "name": "icon-swap",
@@ -2663,6 +2936,71 @@
       }
     },
     {
+      "name": "passkey-vault",
+      "type": "registry:lib",
+      "title": "Passkey vault",
+      "description": "Encrypted in-browser storage unlocked by a WebAuthn passkey (PRF): a random data key wrapped per passkey and by a recovery key, AES-GCM records in IndexedDB, hooks, and the enroll, unlock and gate screens.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/passkey.ts",
+          "type": "registry:lib",
+          "target": "lib/passkey.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/vault-react.tsx",
+          "type": "registry:lib",
+          "target": "lib/vault-react.tsx"
+        },
+        {
+          "path": "packages/ui/src/lib/vault-storage.ts",
+          "type": "registry:lib",
+          "target": "lib/vault-storage.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/vault.ts",
+          "type": "registry:lib",
+          "target": "lib/vault.ts"
+        }
+      ],
+      "meta": {
+        "page": "passkey-vault",
+        "exports": [
+          "PasskeyError",
+          "detectPasskeySupport",
+          "createPasskey",
+          "getPrfSecret",
+          "passkeyUnsupportedReason",
+          "bytesToBase64Url",
+          "base64UrlToBytes",
+          "wipe",
+          "createVault",
+          "VaultError",
+          "indexedDbStorage",
+          "localStorageStorage",
+          "memoryStorage",
+          "VaultStorageError",
+          "VaultProvider",
+          "useVault",
+          "useVaultState",
+          "useWebAuthnSupport",
+          "usePasskey",
+          "useEncryptedState",
+          "vaultErrorMessage",
+          "PasskeyEnrollDialog",
+          "RecoveryKey",
+          "VaultGate",
+          "VaultUnlock",
+          "VaultSetup",
+          "VaultUnsupported",
+          "VaultStatusBadge"
+        ]
+      }
+    },
+    {
       "name": "pencilkit",
       "type": "registry:ui",
       "title": "PencilKit",
@@ -2724,6 +3062,98 @@
           "PencilActions",
           "usePencilHistory",
           "PencilKitAnnotator"
+        ]
+      }
+    },
+    {
+      "name": "pglite",
+      "type": "registry:lib",
+      "title": "PGlite",
+      "description": "Postgres in the browser, as React hooks: PGliteProvider opens a PGlite database lazily (StrictMode-safe, memory, IndexedDB or OPFS, optional worker), with useQuery, useLiveQuery, useExec, useTransaction, migrations, multi-tab locking, SQL / data-directory export and import, and schema introspection. Needs the @electric-sql/pglite package (installed with the item).",
+      "dependencies": [
+        "@electric-sql/pglite@^0.5.8",
+        "@electric-sql/pglite-tools@^0.4.8"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/sql-lex.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/pglite-core.ts",
+          "type": "registry:lib",
+          "target": "lib/pglite-core.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/pglite-files.ts",
+          "type": "registry:lib",
+          "target": "lib/pglite-files.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/pglite-schema.ts",
+          "type": "registry:lib",
+          "target": "lib/pglite-schema.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/pglite-storage.ts",
+          "type": "registry:lib",
+          "target": "lib/pglite-storage.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/pglite-transfer.ts",
+          "type": "registry:lib",
+          "target": "lib/pglite-transfer.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/pglite.tsx",
+          "type": "registry:lib",
+          "target": "lib/pglite.tsx"
+        },
+        {
+          "path": "packages/ui/src/lib/tab-lock.tsx",
+          "type": "registry:lib",
+          "target": "lib/tab-lock.tsx"
+        }
+      ],
+      "meta": {
+        "page": "pglite",
+        "exports": [
+          "PGliteProvider",
+          "usePGlite",
+          "useReadyDatabase",
+          "useDatabaseStatus",
+          "useQuery",
+          "useLiveQuery",
+          "useExec",
+          "useTransaction",
+          "openDatabase",
+          "runMigrations",
+          "runSql",
+          "toSqlError",
+          "parseDataDir",
+          "peekDataDirVersion",
+          "deleteDatabase",
+          "readServerInfo",
+          "runtimePostgresMajor",
+          "identifier",
+          "quoteIdent",
+          "quoteLiteral",
+          "PGliteError",
+          "DataDirVersionError",
+          "MigrationError",
+          "useTabLock",
+          "SingleTabGate",
+          "exportDatabase",
+          "importDatabase",
+          "detectImportFormat",
+          "readArchiveVersion",
+          "dumpVersion",
+          "downloadFile",
+          "pickFile",
+          "loadSchema",
+          "useSchema",
+          "usePersistenceSupport",
+          "detectPersistenceSupport"
         ]
       }
     },
@@ -3273,10 +3703,11 @@
       "name": "spinner",
       "type": "registry:ui",
       "title": "Spinner",
-      "description": "iOS activity indicator: eight fading spokes that turn in discrete steps, drawn in currentColor and growing in when it mounts.",
+      "description": "Loading indicators: the iOS activity indicator (eight fading spokes in discrete steps, the default) and twenty CSS loaders with three variants each: seven ported from Dani Asyrofi's Loading (Orbit, Bars, Matrix, Merge, Encode, Scan, Lift) and thirteen of BL UI's own (Steps, Cradle, Hourglass, Balance, Fanout, Battery, Bloom, Sonar, Gyro, Coalesce, Crystal, Loop, Relay). They draw in currentColor, scale to any size, take a speed, pause themselves off screen, and hold still under reduced motion.",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/spinner-shapes.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3289,7 +3720,8 @@
       "meta": {
         "page": "spinner",
         "exports": [
-          "Spinner"
+          "Spinner",
+          "spinnerAnimations"
         ]
       }
     },
@@ -3337,6 +3769,68 @@
           "SplitViewSection",
           "SplitViewStack",
           "useSplitViewStack"
+        ]
+      }
+    },
+    {
+      "name": "sql-console",
+      "type": "registry:ui",
+      "title": "SqlConsole",
+      "description": "A SQL workbench for a PGlite database: a highlighted SqlEditor (⌘/Ctrl+Enter runs), a SchemaTree on react-aria's Tree, a ResultTable on react-aria's Table with type-aware cells and CSV / JSON copy, per-statement results, errors with line and caret, history, and SQL / data-directory export and import.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/format-bytes.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/kbd.json",
+        "https://blamy.github.io/ui/r/pglite.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/skeleton.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/sql-format.json",
+        "https://blamy.github.io/ui/r/sql-lex.json",
+        "https://blamy.github.io/ui/r/tabs.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/result-table.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/result-table.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/schema-tree.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/schema-tree.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/sql-console.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sql-console.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/sql-editor.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/sql-editor.tsx"
+        }
+      ],
+      "meta": {
+        "page": "sql-console",
+        "exports": [
+          "SqlConsole",
+          "SqlEditor",
+          "useSqlHistory",
+          "ResultTable",
+          "SchemaTree",
+          "sqlConsoleVariants",
+          "sqlEditorVariants",
+          "resultTableVariants",
+          "schemaTreeVariants"
         ]
       }
     },
@@ -3626,10 +4120,50 @@
       }
     },
     {
+      "name": "time-input",
+      "type": "registry:ui",
+      "title": "TimeInput",
+      "description": "A text field that reads dates, times and recurrences written in English (\"every weekday at 9am\") with gpu-time, and previews what it understood: the recognised words, the resolved occurrences in a time zone, a Repeats chip and the parser's notes. Works on the CPU or the GPU; the package loads on first use.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/gpu-time.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/time-input.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/time-input.tsx"
+        }
+      ],
+      "meta": {
+        "page": "time-input",
+        "exports": [
+          "TimeInput",
+          "timeInputVariants",
+          "useTimeParse",
+          "parseTime",
+          "loadGpuTime",
+          "formatOccurrence",
+          "timeTextSegments",
+          "describeRecurrence",
+          "rruleLine"
+        ]
+      }
+    },
+    {
       "name": "toast",
       "type": "registry:ui",
       "title": "Toast",
-      "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, stacking banners with actions, springs, auto-dismiss and announcements.",
+      "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, banners that pile up like Sonner's and spread on hover, with actions, springs, auto-dismiss and announcements.",
       "dependencies": [
         "class-variance-authority@^0.7.1",
         "framer-motion@^13.1.0",
@@ -3753,6 +4287,36 @@
       }
     },
     {
+      "name": "use-file-upload",
+      "type": "registry:lib",
+      "title": "useFileUpload",
+      "description": "The file-upload logic without UI: a file list with validation (type, size, count, duplicates, your own rule), a concurrency-limited upload queue with abort, retry and controlled mode, an XMLHttpRequest adapter that reports real progress, and the pure helpers (formatBytes, matchesAccept, folder flattening).",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/format-bytes.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/file-upload.ts",
+          "type": "registry:lib",
+          "target": "lib/file-upload.ts"
+        }
+      ],
+      "meta": {
+        "page": "use-file-upload",
+        "exports": [
+          "useFileUpload",
+          "useFilePreview",
+          "xhrUpload",
+          "formatBytes",
+          "matchesAccept"
+        ]
+      }
+    },
+    {
       "name": "utils",
       "type": "registry:lib",
       "title": "Utilities",
@@ -3832,19 +4396,80 @@
       ]
     },
     {
-      "name": "measure-h",
+      "name": "passkey-enroll-dialog",
       "type": "registry:ui",
-      "title": "Measure H",
-      "description": "Measure H — part of BL UI's library (components/measure-h.tsx).",
+      "title": "Passkey Enroll Dialog",
+      "description": "Passkey Enroll Dialog — part of BL UI's library (components/passkey-enroll-dialog.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria@^3.51.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/passkey-vault.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/passkey-enroll-dialog.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/passkey-enroll-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "spinner-shapes",
+      "type": "registry:ui",
+      "title": "Spinner Shapes",
+      "description": "Spinner Shapes — part of BL UI's library (components/spinner-shapes.tsx).",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
         {
-          "path": "packages/ui/src/components/measure-h.tsx",
+          "path": "packages/ui/src/components/spinner-shapes.tsx",
           "type": "registry:ui",
-          "target": "components/ui/measure-h.tsx"
+          "target": "components/ui/spinner-shapes.tsx"
+        }
+      ]
+    },
+    {
+      "name": "vault-gate",
+      "type": "registry:ui",
+      "title": "Vault Gate",
+      "description": "Vault Gate — part of BL UI's library (components/vault-gate.tsx).",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria@^3.51.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/passkey-enroll-dialog.json",
+        "https://blamy.github.io/ui/r/passkey-vault.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/vault-gate.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/vault-gate.tsx"
         }
       ]
     },
@@ -3883,6 +4508,23 @@
       ]
     },
     {
+      "name": "canvas-math",
+      "type": "registry:lib",
+      "title": "Canvas Math",
+      "description": "Canvas Math — part of BL UI's library (lib/canvas-math.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/canvas-math.ts",
+          "type": "registry:lib",
+          "target": "lib/canvas-math.ts"
+        }
+      ]
+    },
+    {
       "name": "container",
       "type": "registry:lib",
       "title": "Container",
@@ -3896,6 +4538,42 @@
           "path": "packages/ui/src/lib/container.ts",
           "type": "registry:lib",
           "target": "lib/container.ts"
+        }
+      ]
+    },
+    {
+      "name": "controllable-state",
+      "type": "registry:lib",
+      "title": "Controllable State",
+      "description": "Controllable State — part of BL UI's library (lib/controllable-state.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/controllable-state.ts",
+          "type": "registry:lib",
+          "target": "lib/controllable-state.ts"
+        }
+      ]
+    },
+    {
+      "name": "cron",
+      "type": "registry:lib",
+      "title": "Cron",
+      "description": "Cron — part of BL UI's library (lib/cron.ts).",
+      "dependencies": [
+        "cronstrue@^3.27.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cron.ts",
+          "type": "registry:lib",
+          "target": "lib/cron.ts"
         }
       ]
     },
@@ -3931,6 +4609,61 @@
           "path": "packages/ui/src/lib/edge-swipe.ts",
           "type": "registry:lib",
           "target": "lib/edge-swipe.ts"
+        }
+      ]
+    },
+    {
+      "name": "format-bytes",
+      "type": "registry:lib",
+      "title": "Format Bytes",
+      "description": "Format Bytes — part of BL UI's library (lib/format-bytes.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/format-bytes.ts",
+          "type": "registry:lib",
+          "target": "lib/format-bytes.ts"
+        }
+      ]
+    },
+    {
+      "name": "gpu-cron",
+      "type": "registry:lib",
+      "title": "Gpu Cron",
+      "description": "Gpu Cron — part of BL UI's library (lib/gpu-cron.ts).",
+      "dependencies": [
+        "gpu-cron@0.1.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/gpu-cron.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-cron.ts"
+        }
+      ]
+    },
+    {
+      "name": "gpu-time",
+      "type": "registry:lib",
+      "title": "Gpu Time",
+      "description": "Gpu Time — part of BL UI's library (lib/gpu-time.ts).",
+      "dependencies": [
+        "gpu-time@0.5.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/gpu-time.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-time.ts"
         }
       ]
     },
@@ -4039,6 +4772,24 @@
       ]
     },
     {
+      "name": "scroll-hidden",
+      "type": "registry:lib",
+      "title": "Scroll Hidden",
+      "description": "Scroll Hidden — part of BL UI's library (lib/scroll-hidden.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/theme.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/scroll-hidden.ts",
+          "type": "registry:lib",
+          "target": "lib/scroll-hidden.ts"
+        }
+      ]
+    },
+    {
       "name": "session-recorder",
       "type": "registry:lib",
       "title": "Session Recorder",
@@ -4076,6 +4827,40 @@
           "path": "packages/ui/src/lib/sheet-drag.ts",
           "type": "registry:lib",
           "target": "lib/sheet-drag.ts"
+        }
+      ]
+    },
+    {
+      "name": "sql-format",
+      "type": "registry:lib",
+      "title": "Sql Format",
+      "description": "Sql Format — part of BL UI's library (lib/sql-format.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/sql-format.ts",
+          "type": "registry:lib",
+          "target": "lib/sql-format.ts"
+        }
+      ]
+    },
+    {
+      "name": "sql-lex",
+      "type": "registry:lib",
+      "title": "Sql Lex",
+      "description": "Sql Lex — part of BL UI's library (lib/sql-lex.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/sql-lex.ts",
+          "type": "registry:lib",
+          "target": "lib/sql-lex.ts"
         }
       ]
     },
@@ -4583,7 +5368,6 @@
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/icon-button.json",
         "https://blamy.github.io/ui/r/index-bar.json",
         "https://blamy.github.io/ui/r/markdown-editor.json",
         "https://blamy.github.io/ui/r/spinner.json",
@@ -4828,6 +5612,8 @@
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
@@ -4856,9 +5642,9 @@
           "target": "components/blocks/freeform/editor.tsx"
         },
         {
-          "path": "registry/blocks/freeform/canvas.tsx",
+          "path": "registry/blocks/freeform/surface.tsx",
           "type": "registry:component",
-          "target": "components/blocks/freeform/canvas.tsx"
+          "target": "components/blocks/freeform/surface.tsx"
         },
         {
           "path": "registry/blocks/freeform/toolbar.tsx",
@@ -4889,11 +5675,6 @@
           "path": "registry/blocks/freeform/handles.ts",
           "type": "registry:component",
           "target": "components/blocks/freeform/handles.ts"
-        },
-        {
-          "path": "registry/blocks/freeform/camera.ts",
-          "type": "registry:component",
-          "target": "components/blocks/freeform/camera.ts"
         },
         {
           "path": "registry/blocks/freeform/shapes.ts",
@@ -5049,6 +5830,9 @@
         "https://blamy.github.io/ui/r/conversation.json",
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/filter.json",
+        "https://blamy.github.io/ui/r/filter-input.json",
+        "https://blamy.github.io/ui/r/filter-model.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/input.json",
@@ -5457,13 +6241,13 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/adaptive-pane.json",
         "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/command-menu.json",
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/conversation.json",
         "https://blamy.github.io/ui/r/floating-sheet.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/icon-button.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/theme.json",

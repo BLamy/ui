@@ -1,58 +1,8 @@
-/* Freeform's geometry: rotated frames, hit testing, bounds, and where a connector runs. All in board units. */
+/* Freeform's geometry: where a connector runs, item bounds and hit testing. The frame math underneath (rotated
+   frames, corners, distances) is the canvas toolkit's, in @/lib/canvas-math. All in board units. */
 import { PK_TOOLS } from '@/components/ui/pencilkit/constants';
-import { isAttached, isBox, type BoxItem, type ConnectorEnd, type ConnectorItem, type Frame, type Item, type Side, type StrokeItem } from './model';
-
-export interface Pt { x: number; y: number }
-export interface Rect { x: number; y: number; w: number; h: number }
-
-const RAD = Math.PI / 180;
-export const rotatePt = (p: Pt, c: Pt, deg: number): Pt => {
-  const a = deg * RAD, s = Math.sin(a), k = Math.cos(a);
-  const dx = p.x - c.x, dy = p.y - c.y;
-  return { x: c.x + dx * k - dy * s, y: c.y + dx * s + dy * k };
-};
-export const centerOf = (f: Rect): Pt => ({ x: f.x + f.w / 2, y: f.y + f.h / 2 });
-export const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y);
-
-/** The four corners of a frame, rotated, clockwise from top-left. */
-export function cornersOf(f: Frame): Pt[] {
-  const c = centerOf(f);
-  return [
-    { x: f.x, y: f.y }, { x: f.x + f.w, y: f.y }, { x: f.x + f.w, y: f.y + f.h }, { x: f.x, y: f.y + f.h },
-  ].map((p) => (f.rot ? rotatePt(p, c, f.rot) : p));
-}
-
-export function rectOf(pts: Pt[]): Rect {
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const p of pts) { x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
-  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
-}
-
-export const unionRect = (rs: Rect[]): Rect | null => {
-  if (!rs.length) return null;
-  return rectOf(rs.flatMap((r) => [{ x: r.x, y: r.y }, { x: r.x + r.w, y: r.y + r.h }]));
-};
-
-export const intersects = (a: Rect, b: Rect) => a.x <= b.x + b.w && b.x <= a.x + a.w && a.y <= b.y + b.h && b.y <= a.y + a.h;
-
-/** Is `p` inside the (rotated) frame, `pad` units out? */
-export function inFrame(p: Pt, f: Frame, pad = 0): boolean {
-  const q = f.rot ? rotatePt(p, centerOf(f), -f.rot) : p;
-  return q.x >= f.x - pad && q.x <= f.x + f.w + pad && q.y >= f.y - pad && q.y <= f.y + f.h + pad;
-}
-
-export function distToSegment(p: Pt, a: Pt, b: Pt): number {
-  const dx = b.x - a.x, dy = b.y - a.y;
-  const len2 = dx * dx + dy * dy;
-  const t = len2 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2)) : 0;
-  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
-}
-
-export function distToPolyline(p: Pt, pts: Pt[]): number {
-  let best = Infinity;
-  for (let i = 1; i < pts.length; i++) best = Math.min(best, distToSegment(p, pts[i - 1], pts[i]));
-  return pts.length === 1 ? dist(p, pts[0]) : best;
-}
+import { centerOf, cornersOf, dist, distToPolyline, inFrame, rectOf, rotatePt, type Pt, type Rect } from '@/lib/canvas-math';
+import { isAttached, isBox, type BoxItem, type ConnectorEnd, type ConnectorItem, type Item, type Side, type StrokeItem } from './model';
 
 /* ── Connectors ── */
 

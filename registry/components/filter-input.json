@@ -1,0 +1,12 @@
+{
+  "name": "filter-input",
+  "title": "FilterInput",
+  "description": "A natural-language box for Filter: type a sentence and see the chips it would create — what was understood, what was dropped, what was assumed — then press Enter to apply. Runs gpu-query, a 29,597-parameter tagger, in the browser on the CPU; a feasibility-spike model, so the preview is the point.",
+  "page": "filter-input",
+  "exports": [
+    "FilterInput",
+    "filterInputVariants"
+  ],
+  "imports": ["FilterInput"],
+  "types": ["FilterInputProps"]
+}

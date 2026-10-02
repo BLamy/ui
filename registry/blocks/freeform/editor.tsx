@@ -9,11 +9,12 @@ import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useContainerSize } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { fitCamera, toBoard, zoomAt } from './camera';
-import { Canvas, type Tool } from './canvas';
-import { boundsOf, unionRect } from './geometry';
+import { fitCamera, toBoard, zoomAt, type Camera } from '@/lib/canvas-math';
+import { BoardSurface, type Tool } from './surface';
+import { boundsOf } from './geometry';
+import { unionRect } from '@/lib/canvas-math';
 import { FormatPanel } from './inspector';
-import { makeImage, makeLink, makeShape, makeSticky, makeText, type Camera, type ShapeKind } from './model';
+import { makeImage, makeLink, makeShape, makeSticky, makeText, type ShapeKind } from './model';
 import { AUTO_INK, SHAPE_FILLS } from './palette';
 import { useFreeform } from './store';
 import { DrawBar, InsertBar, SelectionBar, ToolButton, ZoomCluster, drawSettings, type Inserts } from './toolbar';
@@ -134,7 +135,7 @@ export function BoardEditor({ compact, onBack }: { compact: boolean; onBack: () 
       </header>
 
       <div ref={vref} className="relative min-h-0 flex-1" onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) e.preventDefault(); }} onDrop={onDrop}>
-        <Canvas size={size} camera={camera} setCamera={(fn) => setCamera(fn)} tool={tool} setTool={setTool} draw={drawSettings(draw, AUTO_INK)} editing={editing} setEditing={setEditing} />
+        <BoardSurface camera={camera} onCameraChange={setCamera} tool={tool} setTool={setTool} draw={drawSettings(draw, AUTO_INK)} editing={editing} setEditing={setEditing} />
         {tool === 'select' && !editing && f.selection.length ? (
           <SelectionBar camera={camera} size={size} onEdit={() => { f.begin(); setEditing(f.selection[0]); }} />
         ) : null}

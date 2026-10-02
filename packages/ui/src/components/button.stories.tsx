@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/lib/icon';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof Button> = {
@@ -32,6 +33,22 @@ export const Pill: Story = {
     <div className="flex flex-col gap-2.5">
       <Button size="pill">Export Wei.vcf</Button>
       <Button size="pill" variant="secondary">Cancel</Button>
+    </div>
+  ),
+};
+
+/** `variant="quiet"` with `size="icon-sm"` — the toolbar tool: muted until hovered, filled while `active`. */
+export const IconTools: Story = {
+  render: () => (
+    <div className="flex items-center gap-1">
+      {['pencil', 'copy', 'share'].map((name) => (
+        <Button key={name} variant="quiet" size="icon-sm" aria-label={name} title={name}>
+          <Icon name={name} size={18} sw={1.7} />
+        </Button>
+      ))}
+      <Button variant="quiet" size="icon-sm" active aria-label="Bookmark" title="Bookmark">
+        <Icon name="bookmark" size={18} sw={1.7} />
+      </Button>
     </div>
   ),
 };

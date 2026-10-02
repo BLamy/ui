@@ -24,7 +24,6 @@ import {
   useOptionalWorkbenchShell,
 } from './workbench-shell';
 import { Conversation, ConversationEmpty, ConversationGreeting, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion, UserMessage, AssistantMessage, MessageMarkdown, WorkLog, ToolCall, SettledBanner } from '@/components/ui/conversation';
-import { IconButton } from '@/components/ui/icon-button';
 import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSearch, SidebarSection, SidebarWorkspace } from '@/components/ui/sidebar';
 import { Icon } from '@/lib/icon';
 
@@ -43,6 +42,7 @@ import {
 } from './surfaces';
 
 import { AGENTS, DIFF, FILES, SUGGESTIONS, TERMINAL_SEED, THREADS, type Thread } from './fixtures';
+import { Button } from '@/components/ui/button';
 
 const meta: Meta = {
   title: 'Templates/WorkbenchShell',
@@ -193,7 +193,15 @@ function ShellDemo({
         <WorkbenchPanel>
           <WorkbenchPanelHeader>
             <WorkbenchPanelTitle icon={surfaceMeta?.icon}>{surfaceMeta?.name ?? 'Surfaces'}</WorkbenchPanelTitle>
-            {surfaceMeta ? <IconButton name="chevron-down-wide" label="Switch surface" size={15} onPress={() => setKind(null)} /> : null}
+            {surfaceMeta ? <Button
+              variant="quiet"
+              size="icon-sm"
+              aria-label="Switch surface"
+              title="Switch surface"
+              onPress={() => setKind(null)}
+            >
+              <Icon name="chevron-down-wide" size={15} sw={1.7} />
+            </Button> : null}
             <WorkbenchPanelFullscreen />
             <WorkbenchPanelClose />
           </WorkbenchPanelHeader>

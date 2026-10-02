@@ -6,65 +6,34 @@
         { "id": "introduction", "title": "Introduction" },
         { "id": "installation", "title": "Installation" },
         { "id": "working-with-llms", "title": "Working with LLMs" },
-        { "id": "theming", "title": "Theming" },
         { "id": "registry", "title": "How the registry works" },
-        { "id": "optimization", "title": "Optimization" },
+        { "id": "optimization", "title": "Optimization" }
+      ]
+    },
+    {
+      "section": "Foundations",
+      "pages": [
+        { "id": "theming", "title": "Theming" },
         { "id": "styling", "title": "Styling and variants" },
         { "id": "variants", "title": "Variants reference" },
         { "id": "motion", "title": "Motion" },
-        { "id": "utilities", "title": "Utilities" }
+        { "id": "utilities", "title": "Utilities" },
+        { "id": "icons", "title": "Icons" }
       ]
     },
     {
-      "section": "Atoms",
+      "section": "Buttons and toggles",
       "pages": [
-        { "id": "icons", "title": "Icons" },
-        { "id": "docstream", "title": "Markdown" },
-        { "id": "markdown-editor", "title": "MarkdownEditor" },
-        { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
-        { "id": "progress-ring", "title": "ProgressRing" },
-        { "id": "now-playing-bars", "title": "NowPlayingBars" },
-        { "id": "skeleton", "title": "Skeleton" },
         { "id": "button", "title": "Button" },
-        { "id": "icon-button", "title": "IconButton" },
         { "id": "plain-button", "title": "PlainButton" },
-        { "id": "badge", "title": "Badge" },
-        { "id": "avatar", "title": "Avatar" },
-        { "id": "kbd", "title": "Kbd" },
+        { "id": "toggle", "title": "Toggle" },
+        { "id": "toggle-group", "title": "ToggleGroup" }
+      ]
+    },
+    {
+      "section": "Forms and inputs",
+      "pages": [
         { "id": "label", "title": "Label" },
-        { "id": "separator", "title": "Separator" },
-        { "id": "spinner", "title": "Spinner" },
-        { "id": "progress", "title": "Progress" },
-        { "id": "progress-stepper", "title": "ProgressStepper" },
-        { "id": "celebrate", "title": "Celebrate" },
-        { "id": "text-morph", "title": "TextMorph" },
-        { "id": "number-morph", "title": "NumberMorph" },
-        { "id": "icon-swap", "title": "IconSwap" },
-        { "id": "animated-height", "title": "AnimatedHeight" },
-        { "id": "qr-svg", "title": "QrSvg" },
-        { "id": "workbench-theme", "title": "WorkbenchTheme" }
-      ]
-    },
-    {
-      "section": "Molecules",
-      "pages": [
-        { "id": "composer", "title": "Composer" },
-        { "id": "toast", "title": "Toast" },
-        { "id": "replay-preview", "title": "ReplayPreview" },
-        { "id": "morph", "title": "Morph" },
-        { "id": "tab-view", "title": "TabView" },
-        { "id": "card", "title": "Card" },
-        { "id": "disclosure", "title": "Disclosure" },
-        { "id": "tabs", "title": "Tabs" },
-        { "id": "tab-bar", "title": "TabBar" },
-        { "id": "edit-bar", "title": "EditBar" },
-        { "id": "index-bar", "title": "IndexBar" },
-        { "id": "scroll-area", "title": "ScrollArea" }
-      ]
-    },
-    {
-      "section": "Inputs",
-      "pages": [
         { "id": "input", "title": "Input" },
         { "id": "textarea", "title": "Textarea" },
         { "id": "text-field", "title": "TextField" },
@@ -72,61 +41,146 @@
         { "id": "checkbox", "title": "Checkbox" },
         { "id": "radio-group", "title": "RadioGroup" },
         { "id": "switch", "title": "Switch" },
-        { "id": "toggle", "title": "Toggle" },
-        { "id": "toggle-group", "title": "ToggleGroup" },
         { "id": "slider", "title": "Slider" },
         { "id": "segmented", "title": "Segmented" },
-        { "id": "form", "title": "Form" }
+        { "id": "select", "title": "Select" },
+        { "id": "combobox", "title": "ComboBox" },
+        { "id": "list-box", "title": "ListBox" },
+        { "id": "form", "title": "Form" },
+        { "id": "time-input", "title": "TimeInput" },
+        { "id": "cron-editor", "title": "CronEditor" },
+        { "id": "file-upload", "title": "FileUpload" },
+        { "id": "use-file-upload", "title": "useFileUpload" }
       ]
     },
     {
       "section": "Menus and overlays",
       "pages": [
-        { "id": "select", "title": "Select" },
-        { "id": "combobox", "title": "ComboBox" },
-        { "id": "list-box", "title": "ListBox" },
         { "id": "dropdown-menu", "title": "DropdownMenu" },
         { "id": "context-menu", "title": "ContextMenu" },
         { "id": "tooltip", "title": "Tooltip" },
         { "id": "popover", "title": "Popover" },
         { "id": "dialog", "title": "Dialog" },
-        { "id": "sheet", "title": "Sheet" }
+        { "id": "sheet", "title": "Sheet" },
+        { "id": "credenza", "title": "Credenza" },
+        { "id": "floating-sheet", "title": "FloatingSheet" },
+        { "id": "command-menu", "title": "CommandMenu" }
       ]
     },
     {
-      "section": "Organisms",
+      "section": "Feedback and status",
+      "pages": [
+        { "id": "toast", "title": "Toast" },
+        { "id": "progress", "title": "Progress" },
+        { "id": "progress-ring", "title": "ProgressRing" },
+        { "id": "progress-stepper", "title": "ProgressStepper" },
+        { "id": "spinner", "title": "Spinner" },
+        { "id": "skeleton", "title": "Skeleton" },
+        { "id": "badge", "title": "Badge" },
+        { "id": "celebrate", "title": "Celebrate" },
+        { "id": "now-playing-bars", "title": "NowPlayingBars" }
+      ]
+    },
+    {
+      "section": "Lists and content",
+      "pages": [
+        { "id": "lists", "title": "Lists" },
+        { "id": "filter", "title": "Filter" },
+        { "id": "filter-input", "title": "FilterInput" },
+        { "id": "index-bar", "title": "IndexBar" },
+        { "id": "card", "title": "Card" },
+        { "id": "avatar", "title": "Avatar" },
+        { "id": "disclosure", "title": "Disclosure" },
+        { "id": "scroll-area", "title": "ScrollArea" },
+        { "id": "separator", "title": "Separator" },
+        { "id": "kbd", "title": "Kbd" },
+        { "id": "qr-svg", "title": "QrSvg" }
+      ]
+    },
+    {
+      "section": "Navigation and layout",
       "pages": [
         { "id": "navigation-stack", "title": "NavigationStack" },
-        { "id": "command-menu", "title": "CommandMenu" },
+        { "id": "tab-view", "title": "TabView" },
+        { "id": "tabs", "title": "Tabs" },
+        { "id": "tab-bar", "title": "TabBar" },
+        { "id": "edit-bar", "title": "EditBar" },
         { "id": "split-view", "title": "SplitView" },
-        { "id": "lists", "title": "Lists" },
-        { "id": "credenza", "title": "Credenza" },
-        { "id": "side-drawer", "title": "SideDrawer" },
         { "id": "sidebar", "title": "Sidebar" },
+        { "id": "side-drawer", "title": "SideDrawer" },
         { "id": "adaptive-pane", "title": "AdaptivePane" },
-        { "id": "message-scroller", "title": "MessageScroller" },
-        { "id": "floating-sheet", "title": "FloatingSheet" },
-        { "id": "pencilkit", "title": "PencilKit" },
-        { "id": "conversation", "title": "Conversation" },
-        { "id": "chat-column", "title": "ChatColumn" },
-        { "id": "floating-chat", "title": "FloatingChat" }
+        { "id": "canvas", "title": "Canvas" }
       ]
     },
     {
-      "section": "Templates",
+      "section": "Motion components",
       "pages": [
+        { "id": "morph", "title": "Morph" },
+        { "id": "text-morph", "title": "TextMorph" },
+        { "id": "number-morph", "title": "NumberMorph" },
+        { "id": "icon-swap", "title": "IconSwap" },
+        { "id": "animated-height", "title": "AnimatedHeight" }
+      ]
+    },
+    {
+      "section": "Chat",
+      "pages": [
+        { "id": "composer", "title": "Composer" },
+        { "id": "conversation", "title": "Conversation" },
+        { "id": "chat-column", "title": "ChatColumn" },
+        { "id": "message-scroller", "title": "MessageScroller" },
+        { "id": "floating-chat", "title": "FloatingChat" },
         { "id": "artifact-chat-container", "title": "ArtifactChatContainer" },
-        { "id": "chat-shell", "title": "ChatShell" },
-        { "id": "workbench-shell", "title": "WorkbenchShell" }
+        { "id": "chat-shell", "title": "ChatShell" }
+      ]
+    },
+    {
+      "section": "Editors and workbench",
+      "pages": [
+        { "id": "docstream", "title": "Markdown" },
+        { "id": "markdown-editor", "title": "MarkdownEditor" },
+        { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
+        { "id": "pencilkit", "title": "PencilKit" },
+        { "id": "replay-preview", "title": "ReplayPreview" },
+        { "id": "workbench-shell", "title": "WorkbenchShell" },
+        { "id": "workbench-theme", "title": "WorkbenchTheme" }
+      ]
+    },
+    {
+      "section": "Storage and security",
+      "pages": [
+        { "id": "passkey-vault", "title": "Passkey vault" },
+        { "id": "pglite", "title": "PGlite" },
+        { "id": "sql-console", "title": "SqlConsole" }
+      ]
+    },
+    {
+      "section": "Hooks",
+      "pages": [
+        { "id": "hooks", "title": "Hooks" },
+        { "id": "hooks-layout", "title": "Layout hooks" },
+        { "id": "hooks-motion", "title": "Motion hooks" },
+        { "id": "hooks-theme", "title": "Theme hooks" },
+        { "id": "hooks-state", "title": "State hooks" },
+        { "id": "hooks-composer", "title": "Composer hooks" },
+        { "id": "hooks-feedback", "title": "Feedback hooks" },
+        { "id": "hooks-syntax-and-sessions", "title": "Syntax, sessions and countdown" }
+      ]
+    },
+    {
+      "section": "react-aria hooks",
+      "pages": [
+        { "id": "aria-hooks", "title": "react-aria hooks" },
+        { "id": "aria-press", "title": "Press, hover, move, keyboard" },
+        { "id": "aria-focus", "title": "Focus" },
+        { "id": "aria-clipboard", "title": "Clipboard" },
+        { "id": "aria-drag-drop", "title": "Drag and drop" },
+        { "id": "aria-landmark", "title": "Landmarks" },
+        { "id": "aria-utilities", "title": "Utilities" }
       ]
     }
   ],
   "standalone": [
-    {
-      "id": "blocks",
-      "title": "Blocks",
-      "section": "Blocks",
-      "wide": true
-    }
+    { "id": "blocks", "title": "Blocks", "section": "Blocks", "wide": true }
   ]
 }

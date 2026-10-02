@@ -67,6 +67,512 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 @keyframes bl-panel-in{from{opacity:0;translate:calc(var(--bl-dx,0)*28px) calc(var(--bl-dy,0)*28px)}}
 @keyframes bl-panel-out{to{opacity:0;translate:calc(var(--bl-dx,0)*-28px) calc(var(--bl-dy,0)*-28px)}}
 @keyframes bl-progress-indeterminate{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+/* ── Spinner loaders: seven animations with three variants each ───────────────────────────────────────────
+   Ported from Dani Asyrofi's "Loading" (https://loading.daniasyrofi.com, MIT). Markup and timing tables are in
+   components/spinner.tsx; names are prefixed bl-ld-. Timing is --bl-ld-d (duration) and --bl-ld-delay per element,
+   divided by --bl-ld-speed, and every animation starts 2s into its cycle so the first frame already shows each phase. */
+@layer components {
+/* The loader frame: a 24px design scaled to --bl-ld-size, centered, in the text color. */
+.bl-ld{display:inline-grid;width:var(--bl-ld-size,32px);height:var(--bl-ld-size,32px);place-items:center;color:inherit;vertical-align:middle}
+.bl-ld-stage{position:relative;width:24px;height:24px;transform:scale(var(--bl-ld-scale,1.333333));transform-origin:center;--bl-ld-ink:currentColor;--bl-ld-accent:currentColor;--bl-ld-line:color-mix(in srgb,currentColor 20%,transparent)}
+.bl-ld-stage>span{display:block}
+.bl-ld-stage>:is(.bl-ld-beacon-indicator,.bl-ld-register-indicator){display:flex}
+.bl-ld-stage>:is(.bl-ld-matrix-indicator,.bl-ld-cell-indicator,.bl-ld-band-indicator){display:grid}
+/* Paused by the prop, or automatically while off screen or in a hidden tab. */
+.bl-ld[data-paused] .bl-ld-stage *{animation-play-state:paused}
+/* Reduced motion: hold a still frame instead of looping. */
+@media (prefers-reduced-motion:reduce){.bl-ld .bl-ld-stage *{animation:none!important;opacity:.65;scale:1;translate:none;rotate:none}}
+.bl-ld-orbit-indicator {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+
+/* ── BL UI's own loaders (components/spinner-shapes.tsx) ─────────────────────────────────────────────────────
+   Original designs on the same 24px grid and the same timing variables as the ported loaders above. They do not use
+   `translate` for layout (a still frame under reduced motion must keep its shape), only for motion. */
+@layer components {
+.bl-ld-stage>svg{display:block}
+.bl-ld-svg{width:24px;height:24px;overflow:visible}
+.bl-ld-a{animation-duration:calc(var(--bl-ld-d,1200ms) / var(--bl-ld-speed,1));animation-delay:calc((var(--bl-ld-delay,0ms) - 2000ms) / var(--bl-ld-speed,1));animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.45,0,.25,1)}
+.bl-ld-fb{transform-box:fill-box;transform-origin:center}
+
+/* Steps */
+.bl-ld-st-path{fill:none;stroke:var(--bl-ld-ink);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;opacity:.28}
+.bl-ld-st-dot{fill:var(--bl-ld-ink);opacity:.22;scale:.8;animation-name:bl-ld-st-hop}
+.bl-ld-svg[data-variant=mark] .bl-ld-st-dot{animation-name:bl-ld-st-mark}
+@keyframes bl-ld-st-hop{0%,100%{opacity:.22;translate:0 0;scale:.8}22%{opacity:1;translate:0 -2.4px;scale:1.15}45%{opacity:.5;translate:0 0;scale:1}}
+@keyframes bl-ld-st-mark{0%{opacity:0;scale:.3}16%,56%{opacity:1;scale:1}78%,100%{opacity:0;scale:.3}}
+
+/* Cradle */
+.bl-ld-cr-bar{stroke:var(--bl-ld-ink);stroke-width:1.2;stroke-linecap:round;opacity:.45}
+.bl-ld-cr-string{stroke:var(--bl-ld-ink);stroke-width:.8;opacity:.4}
+.bl-ld-cr-ball{fill:var(--bl-ld-ink)}
+.bl-ld-cr-arm{transform-box:view-box;transform-origin:var(--bl-ld-ox) 4px;animation-timing-function:linear}
+.bl-ld-cr-arm[data-role=l]{animation-name:bl-ld-cr-l}
+.bl-ld-cr-arm[data-role=r]{animation-name:bl-ld-cr-r}
+@keyframes bl-ld-cr-l{0%{rotate:-38deg;animation-timing-function:cubic-bezier(.5,0,.9,.6)}22%{rotate:0deg}72%{rotate:0deg;animation-timing-function:cubic-bezier(.1,.4,.5,1)}100%{rotate:-38deg}}
+@keyframes bl-ld-cr-r{0%,22%{rotate:0deg;animation-timing-function:cubic-bezier(.1,.4,.5,1)}50%{rotate:38deg;animation-timing-function:cubic-bezier(.5,0,.9,.6)}72%,100%{rotate:0deg}}
+
+/* Hourglass */
+.bl-ld-hg-frame{fill:none;stroke:var(--bl-ld-ink);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;opacity:.55}
+.bl-ld-hg-top,.bl-ld-hg-bottom{fill:var(--bl-ld-ink);opacity:.8;transform-box:view-box;animation-timing-function:linear}
+.bl-ld-hg-top{transform-origin:12px 10.4px;animation-name:bl-ld-hg-top}
+.bl-ld-hg-bottom{transform-origin:12px 19.3px;animation-name:bl-ld-hg-bottom}
+.bl-ld-hg-stream{stroke:var(--bl-ld-ink);stroke-width:.9;stroke-linecap:round;stroke-dasharray:1.2 1.6;animation-name:bl-ld-hg-stream;animation-timing-function:linear}
+.bl-ld-hg-glass{transform-box:view-box;transform-origin:12px 12px;animation-name:bl-ld-hg-flip}
+.bl-ld-hg-grain{fill:var(--bl-ld-ink);opacity:0;animation-name:bl-ld-hg-grain;animation-timing-function:linear}
+.bl-ld-svg[data-variant=grains] .bl-ld-hg-glass{animation-name:bl-ld-hg-rock;animation-timing-function:ease-in-out}
+@keyframes bl-ld-hg-top{0%{scale:1 1}68%,100%{scale:1 0}}
+@keyframes bl-ld-hg-bottom{0%{scale:1 0}68%,100%{scale:1 1}}
+@keyframes bl-ld-hg-stream{0%,5%{opacity:0;stroke-dashoffset:0}10%,64%{opacity:.9}70%,100%{opacity:0;stroke-dashoffset:-5.6}}
+@keyframes bl-ld-hg-flip{0%,82%{rotate:0deg}100%{rotate:180deg}}
+@keyframes bl-ld-hg-grain{0%{translate:0 0;opacity:0}12%{opacity:1}80%{translate:0 8px;opacity:1}100%{translate:0 9px;opacity:0}}
+@keyframes bl-ld-hg-rock{0%,100%{rotate:-7deg}50%{rotate:7deg}}
+
+/* Balance: the beam's angles and the pans' offsets are --bl-ld-a0…3, --bl-ld-l0…3 and --bl-ld-r0…3 */
+.bl-ld-ba-stand{fill:none;stroke:var(--bl-ld-ink);stroke-width:1.2;stroke-linejoin:round;opacity:.5}
+.bl-ld-ba-line{fill:none;stroke:var(--bl-ld-ink);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.bl-ld-ba-pivot{fill:var(--bl-ld-ink)}
+.bl-ld-ba-beam{transform-box:view-box;transform-origin:12px 8px;animation-name:bl-ld-ba-beam;animation-timing-function:ease-in-out}
+.bl-ld-ba-pan{animation-timing-function:ease-in-out}
+.bl-ld-ba-pan[data-side=l]{animation-name:bl-ld-ba-l}
+.bl-ld-ba-pan[data-side=r]{animation-name:bl-ld-ba-r}
+@keyframes bl-ld-ba-beam{0%{rotate:var(--bl-ld-a0)}25%{rotate:var(--bl-ld-a1)}50%{rotate:var(--bl-ld-a2)}75%{rotate:var(--bl-ld-a3)}100%{rotate:var(--bl-ld-a0)}}
+@keyframes bl-ld-ba-l{0%{translate:0 var(--bl-ld-l0)}25%{translate:0 var(--bl-ld-l1)}50%{translate:0 var(--bl-ld-l2)}75%{translate:0 var(--bl-ld-l3)}100%{translate:0 var(--bl-ld-l0)}}
+@keyframes bl-ld-ba-r{0%{translate:0 var(--bl-ld-r0)}25%{translate:0 var(--bl-ld-r1)}50%{translate:0 var(--bl-ld-r2)}75%{translate:0 var(--bl-ld-r3)}100%{translate:0 var(--bl-ld-r0)}}
+
+/* Fanout */
+.bl-ld-fo-line{fill:none;stroke:var(--bl-ld-ink);stroke-width:1.2;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:0;opacity:.3;animation-name:bl-ld-fo-out}
+.bl-ld-svg[data-variant=collect] .bl-ld-fo-line{animation-name:bl-ld-fo-in}
+.bl-ld-svg[data-variant=rank] .bl-ld-fo-line{animation:none;opacity:.4}
+.bl-ld-fo-root{fill:var(--bl-ld-ink);animation-name:bl-ld-fo-root}
+.bl-ld-fo-leaf{fill:var(--bl-ld-ink);opacity:.22;scale:.7;animation-name:bl-ld-fo-leaf}
+.bl-ld-svg[data-variant=rank] .bl-ld-fo-leaf{animation-name:bl-ld-fo-rank}
+@keyframes bl-ld-fo-out{0%{stroke-dashoffset:1;opacity:.3}35%,72%{stroke-dashoffset:0;opacity:1}92%,100%{stroke-dashoffset:0;opacity:.25}}
+@keyframes bl-ld-fo-in{0%{stroke-dashoffset:-1;opacity:.3}35%,72%{stroke-dashoffset:0;opacity:1}92%,100%{stroke-dashoffset:0;opacity:.25}}
+@keyframes bl-ld-fo-root{0%,100%{opacity:.55;scale:.9}18%{opacity:1;scale:1.25}40%{opacity:.8;scale:1}}
+@keyframes bl-ld-fo-leaf{0%,26%{opacity:.22;scale:.7}42%,70%{opacity:1;scale:1.25}90%,100%{opacity:.22;scale:.7}}
+@keyframes bl-ld-fo-rank{0%,100%{opacity:.25;scale:.7}35%{opacity:1;scale:var(--bl-ld-peak)}65%{opacity:.7;scale:calc(var(--bl-ld-peak) * .8)}}
+
+/* Battery */
+.bl-ld-ba2-body{fill:none;stroke:var(--bl-ld-ink);stroke-width:1.2}
+.bl-ld-svg[data-variant=pulse] .bl-ld-ba2-body{animation-name:bl-ld-ba2-body}
+.bl-ld-ba2-cap{fill:var(--bl-ld-ink);opacity:.6}
+.bl-ld-ba2-cell{fill:var(--bl-ld-ink);opacity:.14;scale:.6 1;animation-name:bl-ld-ba2-on}
+.bl-ld-svg[data-variant=drain] .bl-ld-ba2-cell{animation-name:bl-ld-ba2-off}
+.bl-ld-svg[data-variant=pulse] .bl-ld-ba2-cell{animation-name:bl-ld-ba2-breathe}
+@keyframes bl-ld-ba2-on{0%{opacity:.14;scale:.6 1}20%,76%{opacity:1;scale:1 1}92%,100%{opacity:.14;scale:.6 1}}
+@keyframes bl-ld-ba2-off{0%,12%{opacity:1;scale:1 1}34%,86%{opacity:.14;scale:.6 1}100%{opacity:1;scale:1 1}}
+@keyframes bl-ld-ba2-breathe{0%,100%{opacity:.3;scale:.85 1}50%{opacity:1;scale:1 1}}
+@keyframes bl-ld-ba2-body{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* Bloom */
+.bl-ld-bloom{position:relative;display:block;width:24px;height:24px}
+.bl-ld-bloom-dot{position:absolute;left:calc(12px + var(--bl-ld-x) - 1.05px);top:calc(12px + var(--bl-ld-y) - 1.05px);width:2.1px;height:2.1px;border-radius:50%;background:var(--bl-ld-ink);opacity:.2;scale:.4;animation-name:bl-ld-bl-pop}
+.bl-ld-bloom[data-variant=spin]{animation:bl-ld-bl-spin calc(var(--bl-ld-d,1900ms) * 2 / var(--bl-ld-speed,1)) linear infinite}
+@keyframes bl-ld-bl-pop{0%,100%{opacity:.2;scale:.4}28%{opacity:1;scale:1.3}55%{opacity:.5;scale:.9}}
+@keyframes bl-ld-bl-spin{to{rotate:360deg}}
+
+/* Sonar */
+.bl-ld-sonar{position:relative;display:block;width:24px;height:24px}
+.bl-ld-so-ring{position:absolute;inset:0;margin:auto;width:var(--bl-ld-w);height:var(--bl-ld-w);border:1px solid var(--bl-ld-ink);border-radius:50%;opacity:.28}
+.bl-ld-so-arm{position:absolute;inset:1px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 58%,color-mix(in srgb,var(--bl-ld-ink) 55%,transparent) 99%,var(--bl-ld-ink) 100%);animation:bl-ld-so-turn calc(var(--bl-ld-d,2000ms) / var(--bl-ld-speed,1)) linear infinite}
+.bl-ld-so-blip{position:absolute;left:calc(12px + var(--bl-ld-x) - 1px);top:calc(12px + var(--bl-ld-y) - 1px);width:2px;height:2px;border-radius:50%;background:var(--bl-ld-ink);opacity:0;animation-name:bl-ld-so-blip;animation-timing-function:ease-out}
+.bl-ld-so-core{position:absolute;left:10.5px;top:10.5px;width:3px;height:3px;border-radius:50%;background:var(--bl-ld-ink)}
+.bl-ld-so-wave{position:absolute;inset:0;margin:auto;width:22px;height:22px;border:1.2px solid var(--bl-ld-ink);border-radius:50%;opacity:0;scale:.12;animation-name:bl-ld-so-wave;animation-timing-function:cubic-bezier(.2,.6,.3,1)}
+@keyframes bl-ld-so-turn{to{rotate:360deg}}
+@keyframes bl-ld-so-blip{0%{opacity:1;scale:1.6}40%{opacity:.6;scale:1}85%,100%{opacity:0;scale:.6}}
+@keyframes bl-ld-so-wave{0%{opacity:.9;scale:.12}100%{opacity:0;scale:1}}
+
+/* Gyro: --bl-ld-h1 and --bl-ld-h2 are the angles at 40% and 60% of the cycle (a hold when they are equal) */
+.bl-ld-gyro{position:relative;display:block;width:24px;height:24px;perspective:46px}
+.bl-ld-gy-ring{position:absolute;inset:0;margin:auto;width:var(--bl-ld-w);height:var(--bl-ld-w);border:1.3px solid var(--bl-ld-ink);border-radius:50%;opacity:.8;animation-timing-function:linear}
+.bl-ld-gy-ring[data-ring="0"]{animation-name:bl-ld-gy-y}
+.bl-ld-gy-ring[data-ring="1"]{animation-name:bl-ld-gy-x}
+.bl-ld-gy-ring[data-ring="2"]{animation-name:bl-ld-gy-d}
+.bl-ld-gyro[data-variant=tumble] .bl-ld-gy-ring,.bl-ld-gyro[data-variant=settle] .bl-ld-gy-ring{animation-timing-function:cubic-bezier(.65,0,.35,1)}
+@keyframes bl-ld-gy-y{0%{transform:rotateY(0deg)}40%{transform:rotateY(var(--bl-ld-h1))}60%{transform:rotateY(var(--bl-ld-h2))}100%{transform:rotateY(360deg)}}
+@keyframes bl-ld-gy-x{0%{transform:rotateX(0deg)}40%{transform:rotateX(var(--bl-ld-h1))}60%{transform:rotateX(var(--bl-ld-h2))}100%{transform:rotateX(360deg)}}
+@keyframes bl-ld-gy-d{0%{transform:rotate3d(1,1,0,0deg)}40%{transform:rotate3d(1,1,0,var(--bl-ld-h1))}60%{transform:rotate3d(1,1,0,var(--bl-ld-h2))}100%{transform:rotate3d(1,1,0,360deg)}}
+
+/* Coalesce: dots sit on the ring and travel towards the center (by -x, -y) */
+.bl-ld-coalesce{position:relative;display:block;width:24px;height:24px}
+.bl-ld-co-dot{position:absolute;left:calc(12px + var(--bl-ld-x) - 1.5px);top:calc(12px + var(--bl-ld-y) - 1.5px);width:3px;height:3px;border-radius:50%;background:var(--bl-ld-ink);opacity:.4;scale:.7;animation-name:bl-ld-co-gather}
+.bl-ld-coalesce[data-variant=burst] .bl-ld-co-dot{animation-name:bl-ld-co-burst}
+@keyframes bl-ld-co-gather{0%,100%{translate:0 0;opacity:.4;scale:.7}45%,60%{translate:calc(var(--bl-ld-x) * -1) calc(var(--bl-ld-y) * -1);opacity:1;scale:1.15}}
+@keyframes bl-ld-co-burst{0%{translate:calc(var(--bl-ld-x) * -1) calc(var(--bl-ld-y) * -1);opacity:0;scale:.4}14%{opacity:1;scale:1.2}70%{translate:0 0;opacity:.6;scale:.8}100%{translate:calc(var(--bl-ld-x) * .25) calc(var(--bl-ld-y) * .25);opacity:0;scale:.5}}
+
+/* Crystal */
+.bl-ld-ct-frame{fill:none;stroke:var(--bl-ld-ink);stroke-width:1;stroke-linejoin:round;opacity:.4}
+.bl-ld-ct-facet{fill:var(--bl-ld-ink);stroke:var(--bl-ld-ink);stroke-width:.4;stroke-linejoin:round;opacity:.14;animation-name:bl-ld-ct-lit}
+.bl-ld-svg[data-variant=shimmer] .bl-ld-ct-facet{animation-name:bl-ld-ct-shimmer}
+@keyframes bl-ld-ct-lit{0%,100%{opacity:.12}28%,52%{opacity:.85}}
+@keyframes bl-ld-ct-shimmer{0%,100%{opacity:.12}20%{opacity:1}42%{opacity:.4}}
+
+/* Loop */
+.bl-ld-lp-track{fill:none;stroke:var(--bl-ld-ink);stroke-width:1.2;stroke-linecap:round;opacity:.2}
+.bl-ld-lp-run{fill:none;stroke:var(--bl-ld-ink);stroke-width:1.8;stroke-linecap:round;stroke-dasharray:.16 .84;stroke-dashoffset:0;opacity:var(--bl-ld-o,1);animation-name:bl-ld-lp-run;animation-timing-function:linear}
+.bl-ld-svg[data-variant=pair] .bl-ld-lp-run{stroke-dasharray:.13 .37}
+@keyframes bl-ld-lp-run{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+
+/* Relay */
+.bl-ld-rl-link{stroke:var(--bl-ld-ink);stroke-width:1.2;stroke-linecap:round;opacity:.3}
+.bl-ld-svg[data-variant=flow] .bl-ld-rl-link{stroke-dasharray:1.2 2;opacity:.6;animation-name:bl-ld-rl-flow;animation-timing-function:linear}
+.bl-ld-rl-node{fill:var(--bl-ld-ink);opacity:.3;animation-name:bl-ld-rl-n0}
+.bl-ld-rl-node[data-node="1"]{animation-name:bl-ld-rl-n1}
+.bl-ld-rl-node[data-node="2"]{animation-name:bl-ld-rl-n2}
+.bl-ld-svg[data-variant=bounce] .bl-ld-rl-node[data-node="1"]{animation-name:bl-ld-rl-n1b}
+@keyframes bl-ld-rl-n0{0%{opacity:1;scale:1.3}22%{opacity:.3;scale:1}88%{opacity:.3;scale:1}100%{opacity:.7;scale:1.15}}
+@keyframes bl-ld-rl-n1{0%,14%{opacity:.3;scale:1}33%{opacity:1;scale:1.3}55%,100%{opacity:.3;scale:1}}
+@keyframes bl-ld-rl-n2{0%,48%{opacity:.3;scale:1}66%{opacity:1;scale:1.3}88%,100%{opacity:.3;scale:1}}
+@keyframes bl-ld-rl-n1b{0%,14%{opacity:.3;scale:1}33%{opacity:1;scale:1.3}50%,70%{opacity:.3;scale:1}83%{opacity:1;scale:1.3}100%{opacity:.3;scale:1}}
+@keyframes bl-ld-rl-flow{to{stroke-dashoffset:-3.2}}
+}
+.bl-ld-orbit-node {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3.5px;
+  height: 3.5px;
+  margin-top: -1.75px;
+  margin-left: -1.75px;
+  transform: rotate(var(--bl-ld-angle)) translateY(-9px);
+  transform-origin: 1.75px 1.75px;
+}
+.bl-ld-orbit-dot {
+  display: block;
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 999px;
+  background: var(--bl-ld-ink);
+  opacity: 0.18;
+  scale: 0.72;
+  animation: bl-ld-orbit-node calc(var(--bl-ld-d) / var(--bl-ld-speed)) ease-in-out calc((var(--bl-ld-delay) - 2000ms) / var(--bl-ld-speed)) infinite;
+}
+@keyframes bl-ld-orbit-node {
+  0%, 100% {
+    background-color: var(--bl-ld-ink);
+    opacity: 0.18;
+    scale: 0.72;
+  }
+  20% {
+    background-color: var(--bl-ld-accent);
+    opacity: 1;
+    scale: 1.2;
+  }
+  42% {
+    background-color: var(--bl-ld-accent);
+    opacity: 0.7;
+    scale: 1;
+  }
+  65% {
+    background-color: var(--bl-ld-ink);
+    opacity: 0.18;
+    scale: 0.72;
+  }
+}
+.bl-ld-orbit-indicator[data-variant="breathe"] .bl-ld-orbit-dot {
+  animation-name: bl-ld-orbit-breathe;
+}
+@keyframes bl-ld-orbit-breathe {
+  0%, 100% {
+    background-color: var(--bl-ld-ink);
+    opacity: 0.25;
+    scale: 0.82;
+  }
+  50% {
+    background-color: var(--bl-ld-accent);
+    opacity: 0.82;
+    scale: 1.08;
+  }
+}
+.bl-ld-beacon-indicator,
+.bl-ld-matrix-indicator {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+.bl-ld-beacon-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.bl-ld-beacon-indicator__bar {
+  width: 2px;
+  height: var(--bl-ld-bar);
+  border-radius: 1px;
+  background: var(--bl-ld-ink);
+  opacity: 0.22;
+  scale: 1 0.56;
+  animation: bl-ld-beacon-bar calc(var(--bl-ld-d) / var(--bl-ld-speed)) cubic-bezier(0.45, 0, 0.25, 1) calc((var(--bl-ld-delay) - 2000ms) / var(--bl-ld-speed)) infinite;
+}
+@keyframes bl-ld-beacon-bar {
+  0%, 100% { opacity: 0.22; scale: 1 0.56; }
+  28% { opacity: 0.52; scale: 1 0.82; }
+  48% { opacity: 1; scale: 1 1; }
+  72% { opacity: 0.34; scale: 1 0.68; }
+}
+.bl-ld-beacon-indicator[data-variant="balance"] .bl-ld-beacon-indicator__bar {
+  animation-name: bl-ld-beacon-balance;
+}
+@keyframes bl-ld-beacon-balance {
+  0%, 100% { opacity: 0.24; scale: 1 0.62; }
+  50% { opacity: 0.94; scale: 1 1; }
+}
+.bl-ld-matrix-indicator {
+  display: grid;
+  grid-template-columns: repeat(3, 3px);
+  grid-auto-rows: 3px;
+  place-content: center;
+  gap: 3px;
+}
+.bl-ld-matrix-indicator__dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--bl-ld-ink);
+  opacity: 0.2;
+  scale: 0.68;
+  animation: bl-ld-matrix-node calc(var(--bl-ld-d) / var(--bl-ld-speed)) cubic-bezier(0.45, 0, 0.25, 1) calc((var(--bl-ld-delay) - 2000ms) / var(--bl-ld-speed)) infinite;
+}
+@keyframes bl-ld-matrix-node {
+  0%, 100% { opacity: 0.2; scale: 0.68; }
+  30% { opacity: 0.46; scale: 0.82; }
+  48% { opacity: 1; scale: 1.18; }
+  72% { opacity: 0.3; scale: 0.74; }
+}
+.bl-ld-matrix-indicator[data-variant="ripple"] .bl-ld-matrix-indicator__dot {
+  animation-name: bl-ld-matrix-ripple;
+}
+@keyframes bl-ld-matrix-ripple {
+  0%, 100% { opacity: 0.18; scale: 0.64; }
+  42% { opacity: 0.94; scale: 1.12; }
+  68% { opacity: 0.36; scale: 0.78; }
+}
+.bl-ld-matrix-indicator[data-variant="scan"] .bl-ld-matrix-indicator__dot {
+  border-radius: 1px;
+  animation-name: bl-ld-matrix-scan;
+}
+@keyframes bl-ld-matrix-scan {
+  0%, 100% { opacity: 0.18; scale: 0.72; }
+  34%, 56% { opacity: 1; scale: 1; }
+  76% { opacity: 0.32; scale: 0.76; }
+}
+.bl-ld-band-indicator {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+.bl-ld-band-indicator {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+.bl-ld-band-indicator__row {
+  position: relative;
+  display: block;
+  width: 20px;
+  height: 2px;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 1px;
+}
+.bl-ld-band-indicator__rail,
+.bl-ld-band-indicator__segment {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.bl-ld-band-indicator__rail {
+  background: var(--bl-ld-line);
+}
+.bl-ld-band-indicator__segment {
+  width: 7px;
+  border-radius: 1px;
+  background: var(--bl-ld-ink);
+  opacity: 0.26;
+  translate: -8px 0;
+  animation: bl-ld-band-segment calc(var(--bl-ld-d) / var(--bl-ld-speed)) cubic-bezier(0.45, 0, 0.25, 1) calc((var(--bl-ld-delay) - 2000ms) / var(--bl-ld-speed)) infinite;
+}
+@keyframes bl-ld-band-segment {
+  0%, 100% { opacity: 0.2; translate: -8px 0; }
+  42% { opacity: 1; translate: 7px 0; }
+  70% { opacity: 0.36; translate: 14px 0; }
+}
+.bl-ld-band-indicator[data-variant="ascend"] .bl-ld-band-indicator__segment {
+  animation-name: bl-ld-band-return;
+}
+@keyframes bl-ld-band-return {
+  0%, 100% { opacity: 0.2; translate: 21px 0; }
+  42% { opacity: 1; translate: 7px 0; }
+  70% { opacity: 0.36; translate: -8px 0; }
+}
+.bl-ld-band-indicator[data-variant="split"] .bl-ld-band-indicator__row:nth-child(odd) .bl-ld-band-indicator__segment {
+  animation-name: bl-ld-band-split-forward;
+}
+.bl-ld-band-indicator[data-variant="split"] .bl-ld-band-indicator__row:nth-child(even) .bl-ld-band-indicator__segment {
+  animation-name: bl-ld-band-split-reverse;
+}
+@keyframes bl-ld-band-split-forward {
+  0%, 100% { opacity: 0.24; translate: 6px 0; scale: 0.42 1; }
+  46%, 64% { opacity: 1; translate: 13px 0; scale: 1 1; }
+}
+@keyframes bl-ld-band-split-reverse {
+  0%, 100% { opacity: 0.24; translate: 7px 0; scale: 0.42 1; }
+  46%, 64% { opacity: 1; translate: 0 0; scale: 1 1; }
+}
+.bl-ld-cell-indicator {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+.bl-ld-cell-indicator {
+  display: grid;
+  grid-template-columns: repeat(2, 6px);
+  grid-auto-rows: 6px;
+  place-content: center;
+  gap: 3px;
+}
+.bl-ld-cell-indicator__cell {
+  width: 6px;
+  height: 6px;
+  border-radius: 1.5px;
+  background: var(--bl-ld-ink);
+  opacity: 0.2;
+  scale: 0.7;
+  animation: bl-ld-cell-merge calc(var(--bl-ld-d) / var(--bl-ld-speed)) cubic-bezier(0.45, 0, 0.25, 1) calc((var(--bl-ld-delay) - 2000ms) / var(--bl-ld-speed)) infinite;
+}
+.bl-ld-cell-indicator__cell:nth-child(1) { --bl-ld-cx: 2px; --bl-ld-cy: 2px; }
+.bl-ld-cell-indicator__cell:nth-child(2) { --bl-ld-cx: -2px; --bl-ld-cy: 2px; }
+.bl-ld-cell-indicator__cell:nth-child(3) { --bl-ld-cx: 2px; --bl-ld-cy: -2px; }
+.bl-ld-cell-indicator__cell:nth-child(4) { --bl-ld-cx: -2px; --bl-ld-cy: -2px; }
+@keyframes bl-ld-cell-merge {
+  0%, 100% { opacity: 0.2; scale: 0.7; translate: 0 0; }
+  44%, 62% { opacity: 1; scale: 1; translate: var(--bl-ld-cx) var(--bl-ld-cy); }
+  78% { opacity: 0.36; scale: 0.78; translate: 0 0; }
+}
+.bl-ld-cell-indicator[data-variant="spread"] .bl-ld-cell-indicator__cell {
+  animation-name: bl-ld-cell-spread;
+}
+@keyframes bl-ld-cell-spread {
+  0%, 100% { opacity: 0.24; scale: 0.76; translate: var(--bl-ld-cx) var(--bl-ld-cy); }
+  46%, 64% { opacity: 1; scale: 1; translate: 0 0; }
+  80% { opacity: 0.4; scale: 0.82; translate: var(--bl-ld-cx) var(--bl-ld-cy); }
+}
+.bl-ld-cell-indicator[data-variant="checker"] .bl-ld-cell-indicator__cell {
+  animation-name: bl-ld-cell-checker;
+}
+@keyframes bl-ld-cell-checker {
+  0%, 100% { opacity: 0.2; scale: 0.68; }
+  42%, 64% { opacity: 1; scale: 1; }
+  80% { opacity: 0.34; scale: 0.76; }
+}
+.bl-ld-register-indicator {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+.bl-ld-register-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.bl-ld-register-indicator__bit {
+  display: block;
+  width: 2px;
+  height: 9px;
+  border-radius: 1px;
+  background: var(--bl-ld-ink);
+  opacity: 0.2;
+  scale: 1 0.42;
+  animation: bl-ld-register-shift calc(var(--bl-ld-d) / var(--bl-ld-speed)) cubic-bezier(0.45, 0, 0.25, 1) calc((var(--bl-ld-delay) - 2000ms) / var(--bl-ld-speed)) infinite;
+}
+.bl-ld-register-indicator__bit[data-bit="zero"] {
+  translate: 0 3px;
+}
+.bl-ld-register-indicator__bit[data-bit="one"] {
+  translate: 0 -3px;
+}
+@keyframes bl-ld-register-shift {
+  0%, 100% { opacity: 0.2; scale: 1 0.42; }
+  32% { opacity: 0.5; scale: 1 0.72; }
+  50% { opacity: 1; scale: 1 1; }
+  74% { opacity: 0.32; scale: 1 0.52; }
+}
+.bl-ld-register-indicator[data-variant="invert"] .bl-ld-register-indicator__bit {
+  animation-name: bl-ld-register-invert;
+}
+@keyframes bl-ld-register-invert {
+  0%, 100% { opacity: 0.2; scale: 1 0.42; }
+  44%, 64% { opacity: 1; scale: 1 1; }
+  80% { opacity: 0.36; scale: 1 0.54; }
+}
+.bl-ld-register-indicator[data-variant="pair"] .bl-ld-register-indicator__bit {
+  animation-name: bl-ld-register-pair;
+}
+@keyframes bl-ld-register-pair {
+  0%, 100% { opacity: 0.22; scale: 1 0.44; }
+  40%, 62% { opacity: 0.96; scale: 1 0.92; }
+  78% { opacity: 0.34; scale: 1 0.52; }
+}
+.bl-ld-lift-queue-indicator {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+.bl-ld-lift-queue-indicator::before {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 11.5px;
+  width: 1px;
+  background: var(--bl-ld-line);
+  content: "";
+}
+.bl-ld-lift-queue-indicator__level {
+  position: absolute;
+  bottom: calc(3px + var(--bl-ld-level) * 5px);
+  left: calc(9px - var(--bl-ld-level) * .65px);
+  width: calc(6px + var(--bl-ld-level) * 1.3px);
+  height: 3px;
+  border-radius: 1.5px;
+  background: var(--bl-ld-ink);
+  opacity: .18;
+  transform-origin: center;
+  animation: bl-ld-lift-queue-rise calc(var(--bl-ld-d) / var(--bl-ld-speed)) cubic-bezier(.34, 1.4, .55, 1) calc((var(--bl-ld-delay) - 2000ms) / var(--bl-ld-speed)) infinite;
+}
+@keyframes bl-ld-lift-queue-rise {
+  0%, 100% { opacity: .16; translate: 0 2px; scale: .72; }
+  32% { opacity: .5; translate: 0 0; scale: .9; }
+  50% { opacity: 1; translate: 0 -2px; scale: 1.08; }
+  74% { opacity: .3; translate: 0 -3px; scale: .82; }
+}
+.bl-ld-lift-queue-indicator[data-variant="fall"] .bl-ld-lift-queue-indicator__level {
+  animation-name: bl-ld-lift-queue-fall;
+}
+@keyframes bl-ld-lift-queue-fall {
+  0%, 100% { opacity: .14; translate: 0 -2px; scale: .72; }
+  34% { opacity: .54; translate: 0 0; scale: .9; }
+  52% { opacity: 1; translate: 0 2px; scale: 1.08; }
+  76% { opacity: .28; translate: 0 3px; scale: .8; }
+}
+.bl-ld-lift-queue-indicator[data-variant="breathe"] .bl-ld-lift-queue-indicator__level {
+  animation-name: bl-ld-lift-queue-breathe;
+}
+@keyframes bl-ld-lift-queue-breathe {
+  0%, 100% { opacity: .22; scale: .72 1; }
+  50% { opacity: .92; scale: 1 1; }
+}
+}
 @theme {
   /* Entrances spring (theme.css --ease-spring-*); exits are a quick ease-in (--ease-exit) — what leaves gets
      out of the way. Exit animations must end (react-aria unmounts on animationend), so they fill forwards. */

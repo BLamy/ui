@@ -78,7 +78,13 @@ export function useEdgeSwipe<C>(config: EdgeSwipeConfig<C>) {
     g.vel = (e.clientX - g.last) / Math.max(1, performance.now() - g.lt);
     g.last = e.clientX;
     g.lt = performance.now();
-    try { cfg.current.move(g.ctx, dx / g.w, dx); } catch { gesture.current = null; }
+    try {
+      cfg.current.move(g.ctx, dx / g.w, dx);
+    } catch (e) {
+      // Drop the gesture (whatever it was moving is probably gone), but don't hide the error.
+      gesture.current = null;
+      if (typeof reportError === 'function') reportError(e); else console.error(e);
+    }
   };
 
   const up = () => {

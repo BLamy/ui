@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject }
 import { Input, TextField } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { IconButton } from '@/components/ui/icon-button';
 import { MarkdownEditor, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { SplitViewEmpty, SplitViewHeader, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -116,7 +115,17 @@ function DocPage({ codex, doc, editorRef, format }: { codex: CodexState; doc: Do
 
 /** Editor tools: text formatting, checklist, table, and the "/" block menu. */
 function DocTools({ editorRef, format, onFormat, disabled }: { editorRef: RefObject<MarkdownEditorHandle | null>; format: boolean; onFormat: () => void; disabled: boolean }) {
-  const tool = (label: string, icon: string, onPress: () => void, active?: boolean) => <IconButton name={icon} label={label} size={17} active={active} onPress={disabled ? undefined : onPress} className={cn(disabled && 'opacity-40')} />;
+  const tool = (label: string, icon: string, onPress: () => void, active?: boolean) => <Button
+    variant="quiet"
+    size="icon-sm"
+    active={active}
+    aria-label={label}
+    title={label}
+    onPress={disabled ? undefined : onPress}
+    className={cn(disabled && 'opacity-40')}
+  >
+    <Icon name={icon} size={17} sw={1.7} />
+  </Button>;
   return (
     <>
       {tool('Format text', 'textformat', onFormat, format)}
@@ -166,8 +175,15 @@ export function DocContent({ codex }: { codex: CodexState }) {
         }
         trailing={
           <>
-            <IconButton name="clock" label="Version history" size={18} />
-            <IconButton name="bubble" label="Comments" size={18} />
+            <Button
+              variant="quiet"
+              size="icon-sm"
+              aria-label="Version history"
+              title="Version history"
+            >
+              <Icon name="clock" size={18} sw={1.7} />
+            </Button>
+            <Button variant="quiet" size="icon-sm" aria-label="Comments" title="Comments"><Icon name="bubble" size={18} sw={1.7} /></Button>
             <Button variant="secondary" size="sm" className="ml-1 gap-1.5 rounded-full">
               <Icon name="share" size={15} />
               Share

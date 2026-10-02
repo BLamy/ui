@@ -1,0 +1,16 @@
+{
+  "name": "filter-query",
+  "title": "Filter query",
+  "description": "useFilterQuery: a typed sentence as Filter[] through gpu-query — debounced, stale-guarded, SSR-safe, the ~40 KB model fetched on first use — with the field-schema and clause-to-filter mapping (fuzzy option matching, dates, numbers) and a report of what it could not use.",
+  "exports": [
+    "useFilterQuery",
+    "warmFilterQuery",
+    "interpretQuery",
+    "buildQuerySchema",
+    "clausesToFilters",
+    "matchOption",
+    "parseDateText"
+  ],
+  "imports": ["useFilterQuery"],
+  "types": ["FilterQueryResult", "UseFilterQueryOptions", "Interpretation", "Unresolved"]
+}

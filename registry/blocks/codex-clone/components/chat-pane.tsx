@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Input, TextField } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
-import { IconButton } from '@/components/ui/icon-button';
 import { SplitViewHeader, SplitViewSupplementary, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -82,7 +81,15 @@ function Composer({ onSend, disabled }: { onSend: (text: string) => void; disabl
   return (
     <div className="shrink-0 px-3 pt-2 pb-3">
       <div className="flex h-11 items-center gap-1 rounded-full bg-secondary pr-1.5 pl-1 shadow-hairline">
-        <IconButton name="plus" label="Attach" size={18} className="size-8 rounded-full" />
+        <Button
+          variant="quiet"
+          size="icon-sm"
+          aria-label="Attach"
+          title="Attach"
+          className="size-8 rounded-full"
+        >
+          <Icon name="plus" size={18} sw={1.7} />
+        </Button>
         <TextField aria-label="Message" value={text} onChange={setText} className="min-w-0 flex-1">
           <Input
             placeholder="Send a message"
@@ -90,7 +97,15 @@ function Composer({ onSend, disabled }: { onSend: (text: string) => void; disabl
             className="box-border w-full min-w-0 border-0 bg-transparent px-1.5 text-[14.5px] text-foreground [font-family:inherit] outline-none placeholder:text-tertiary-foreground"
           />
         </TextField>
-        <IconButton name="mic" label="Dictate" size={17} className="size-8 rounded-full" />
+        <Button
+          variant="quiet"
+          size="icon-sm"
+          aria-label="Dictate"
+          title="Dictate"
+          className="size-8 rounded-full"
+        >
+          <Icon name="mic" size={17} sw={1.7} />
+        </Button>
         <Button aria-label="Send" size="icon" isDisabled={!text.trim() || disabled} onPress={send} className="size-8 bg-primary text-primary-foreground data-disabled:opacity-60">
           <Icon name="arrow-up" size={16} sw={2.4} />
         </Button>
@@ -131,7 +146,7 @@ export function ChatPane({ codex }: { codex: CodexState }) {
             </span>
           )
         }
-        trailing={<IconButton name="phone" label="Call dot" size={18} />}
+        trailing={<Button variant="quiet" size="icon-sm" aria-label="Call dot" title="Call dot"><Icon name="phone" size={18} sw={1.7} /></Button>}
       />
       <div
         ref={scroller}

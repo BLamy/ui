@@ -3,5 +3,5 @@
   "title": "Freeform",
   "description": "An infinite whiteboard after Apple's Freeform: a gallery of boards, and a pannable, zoomable canvas of sticky notes, shapes, text, photos, links, connectors that follow what they're glued to, and freehand drawing on PencilKit. Select, move, resize, rotate, group, lock, align and arrange; alignment guides while you drag; Format panel for fills, borders, text, connectors and the board's background; undo and redo per board; scroll to pan, pinch or ⌘-scroll to zoom. Built on the PencilKit core (strokes, inks, tool palette).",
   "categories": ["drawing", "application", "productivity"],
-  "files": ["page.tsx", "boards.tsx", "editor.tsx", "canvas.tsx", "toolbar.tsx", "inspector.tsx", "items.tsx", "store.tsx", "geometry.ts", "handles.ts", "camera.ts", "shapes.ts", "model.ts", "glyphs.ts", "glyph-views.tsx", "palette.ts", "data.ts"]
+  "files": ["page.tsx", "boards.tsx", "editor.tsx", "surface.tsx", "toolbar.tsx", "inspector.tsx", "items.tsx", "store.tsx", "geometry.ts", "handles.ts", "shapes.ts", "model.ts", "glyphs.ts", "glyph-views.tsx", "palette.ts", "data.ts"]
 }

@@ -1,0 +1,20 @@
+{
+  "name": "use-file-upload",
+  "title": "useFileUpload",
+  "description": "The file-upload logic without UI: a file list with validation (type, size, count, duplicates, your own rule), a concurrency-limited upload queue with abort, retry and controlled mode, an XMLHttpRequest adapter that reports real progress, and the pure helpers (formatBytes, matchesAccept, folder flattening).",
+  "page": "use-file-upload",
+  "exports": [
+    "useFileUpload",
+    "useFilePreview",
+    "xhrUpload",
+    "formatBytes",
+    "matchesAccept"
+  ],
+  "imports": [
+    "useFileUpload",
+    "xhrUpload"
+  ],
+  "files": [
+    "lib/file-upload.ts"
+  ]
+}

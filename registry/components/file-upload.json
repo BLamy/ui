@@ -1,0 +1,23 @@
+{
+  "name": "file-upload",
+  "title": "FileUpload",
+  "description": "Pick, drop or paste files on react-aria's FileTrigger and DropZone: a styled drop zone, a file list with previews, progress, retry and remove, validation with per-file reasons, folder drops, and a concurrency-limited upload queue with an XHR adapter that reports real progress.",
+  "page": "file-upload",
+  "exports": [
+    "FileUpload",
+    "FileDropZone",
+    "FileUploadButton",
+    "FileList",
+    "FileItem",
+    "FileThumbnail",
+    "useFileUploadContext"
+  ],
+  "imports": [
+    "FileUpload",
+    "FileDropZone",
+    "FileList"
+  ],
+  "files": [
+    "components/file-upload.tsx"
+  ]
+}

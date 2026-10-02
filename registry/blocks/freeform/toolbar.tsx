@@ -8,15 +8,16 @@ import { PlainButton } from '@/components/ui/plain-button';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Icon, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { toScreen } from './camera';
-import { boundsOf, unionRect } from './geometry';
+import { toScreen, type Camera } from '@/lib/canvas-math';
+import { boundsOf } from './geometry';
+import { unionRect } from '@/lib/canvas-math';
 import { G_CONNECTOR, G_SELECT, G_SHAPES } from './glyphs';
 import { ShapeGlyph, StickyGlyph } from './glyph-views';
-import type { Camera, ShapeKind } from './model';
+import type { ShapeKind } from './model';
 import { ART, STICKY_COLORS } from './palette';
 import { SHAPE_KINDS } from './shapes';
 import { useFreeform } from './store';
-import type { DrawSettings, Tool } from './canvas';
+import type { DrawSettings, Tool } from './surface';
 
 /* ── Buttons ── */
 

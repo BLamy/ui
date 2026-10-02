@@ -12,14 +12,14 @@ export default meta;
 type Story = StoryObj<typeof Toaster>;
 
 /** A frame with its own queue and an inline Toaster; `seed` shows toasts on mount (no timeout, for screenshots). */
-function Frame({ dark, placement = 'bottom', seed, children, h = 420 }: {
-  dark?: boolean; placement?: ToasterPlacement; seed?: (q: ToastQueue) => void; children?: ReactNode; h?: number;
+function Frame({ dark, placement = 'bottom', expand, seed, children, h = 420 }: {
+  dark?: boolean; placement?: ToasterPlacement; expand?: boolean; seed?: (q: ToastQueue) => void; children?: ReactNode; h?: number;
 }) {
   const [queue] = useState(() => createToastQueue());
   useEffect(() => { seed?.(queue); return () => queue.dismiss(); }, [queue, seed]);
   return (
     <Phone dark={dark} w={420} h={h}>
-      <Toaster queue={queue} placement={placement} inline>
+      <Toaster queue={queue} placement={placement} expand={expand} inline>
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-foreground">{children}</div>
       </Toaster>
     </Phone>
@@ -37,8 +37,14 @@ const bannerSeed = (q: ToastQueue) => {
   q.show({ id: 'c', title: 'Backup complete', description: 'Your iPhone was backed up to iCloud at 9:41.', tone: 'success' }, { timeout: 0 });
 };
 
-/** Banners stack newest-first nearest the edge; each can carry a description and one action. */
+/** Banners pile up newest-first at the edge, the older ones peeking out behind; hover or focus spreads them. */
 export const Banners: Story = { render: () => <Frame placement="top" seed={bannerSeed} h={460} /> };
+
+/** From the bottom edge the pile grows upward. */
+export const BannersBottom: Story = { render: () => <Frame placement="bottom" seed={bannerSeed} h={460} /> };
+
+/** `expand` keeps the list spread out, with no pile. */
+export const Spread: Story = { render: () => <Frame placement="top" expand seed={bannerSeed} h={460} /> };
 
 export const Dark: Story = {
   render: () => (

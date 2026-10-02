@@ -1,0 +1,32 @@
+{
+  "name": "filter-model",
+  "title": "Filter model",
+  "description": "The data model behind Filter, with no UI: fields, filters, operator tables per kind, matchFilters (all/any), describeFilter, date presets, and a URL-safe serialize/parse that round-trips.",
+  "files": ["lib/filter.ts"],
+  "exports": [
+    "FILTER_OPERATORS",
+    "DATE_PRESETS",
+    "RELATIVE_UNITS",
+    "operatorsFor",
+    "defaultOperator",
+    "operatorLabel",
+    "createFilter",
+    "createFilterId",
+    "coerceFilter",
+    "withValue",
+    "withOperator",
+    "emptyValue",
+    "isFilterComplete",
+    "isDateValue",
+    "dateRange",
+    "toTime",
+    "matchFilters",
+    "matchesFilters",
+    "describeFilter",
+    "describeValue",
+    "serializeFilters",
+    "parseFilters"
+  ],
+  "imports": ["matchFilters", "serializeFilters", "parseFilters", "describeFilter"],
+  "types": ["Filter", "FilterField", "FilterKind", "FilterOperator", "FilterOption", "FilterValue", "DateValue", "MatchOptions"]
+}

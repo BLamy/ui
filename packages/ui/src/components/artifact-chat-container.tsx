@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, animate, motion } from 'framer-motion';
 import { collectSlots, defineSlot, useContainerWidth } from '@/lib/container';
 import { springs } from '@/lib/motion';
+import { useControllableState } from '@/lib/controllable-state';
 import { useAppearance } from '@/lib/theme';
 import { ChatColumn, ChatColumnComposer, ChatColumnTranscript } from '@/components/ui/chat-column';
 import { cn } from '@/lib/utils';
@@ -147,19 +148,13 @@ export function ArtifactChatContainer({
   const toneProps = sheetToneProps(tone);
   const glassScope = glassScopeProps(tone);
   const contentRef = useRef<HTMLElement>(null);
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultChatOpen);
+  const [chatOpen, setChatOpen] = useControllableState(controlledChatOpen, defaultChatOpen, onChatOpenChange);
   const [composing, setComposing] = useState(!working);
   const layout: ArtifactChatLayout =
     requestedLayout === 'auto' ? (width < breakpoint ? 'floating' : 'split') : requestedLayout;
   const compact = layout === 'floating';
   const right = chatSide === 'right';
   const edge = right ? 1 : -1;
-  const chatOpen = controlledChatOpen ?? uncontrolledOpen;
-
-  const setChatOpen = (open: boolean) => {
-    if (controlledChatOpen == null) setUncontrolledOpen(open);
-    onChatOpenChange?.(open);
-  };
 
   useEffect(() => {
     setComposing(!working);

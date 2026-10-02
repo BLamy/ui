@@ -1,10 +1,11 @@
 /* How each kind of item draws on the board. All are absolutely placed in board units inside the canvas's scaled
    layer; none take pointer events (the canvas hits them by geometry), except the text being edited. */
-import { memo, useEffect, useId, useLayoutEffect, useRef, type CSSProperties } from 'react';
+import { memo, useId, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { connectorGeometry, type Pt } from './geometry';
+import type { Pt } from '@/lib/canvas-math';
+import { connectorGeometry } from './geometry';
 import { type BoxItem, type ConnectorItem, type ImageItem, type Item, type LinkItem, type ShapeItem, type StickyItem, type StrokeItem, type TextItem } from './model';
 import { ART, LINK_ACCENT, SCENE } from './palette';
 import { shapePath } from './shapes';
@@ -216,17 +217,4 @@ export function ItemView({ item, byId, editing, onText, onGrow }: { item: Item; 
   if (item.kind === 'connector') return <Connector item={item} byId={byId} />;
   if (item.kind === 'stroke') return <StrokeView item={item} />;
   return <BoxView item={item} editing={editing} onText={onText} onGrow={onGrow} />;
-}
-
-/** Keeps the board from scrolling the page behind it (wheel) — used by the canvas. */
-export function useNonPassive(ref: React.RefObject<HTMLElement | null>, type: 'wheel', handler: (e: WheelEvent) => void) {
-  const h = useRef(handler);
-  h.current = handler;
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const fn = (e: WheelEvent) => h.current(e);
-    el.addEventListener(type, fn, { passive: false });
-    return () => el.removeEventListener(type, fn);
-  }, [ref, type]);
 }

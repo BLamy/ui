@@ -1,0 +1,23 @@
+{
+  "name": "cron-editor",
+  "title": "CronEditor",
+  "description": "Edit a 5-field cron expression with its meaning in view: per-field labels and validation, an English description, presets and the next runs in any time zone, all local. Where WebGPU is available, a plain-English box (gpu-cron) proposes an expression to review.",
+  "page": "cron-editor",
+  "exports": [
+    "CronEditor",
+    "cronEditorVariants",
+    "CRON_PRESETS",
+    "useCronParse",
+    "parseCronText",
+    "gpuCronAvailable",
+    "describeCronError",
+    "validateCron",
+    "cronProblems",
+    "nextCronRuns",
+    "describeCron",
+    "splitCron",
+    "CRON_FIELDS"
+  ],
+  "imports": ["CronEditor"],
+  "types": ["CronEditorProps", "CronPreset", "CronValidation", "CronFieldName", "NextCronRunsOptions", "UseCronParseOptions", "CronParseState", "GpuCronMatch"]
+}

@@ -1,0 +1,1655 @@
+[
+ {
+  "text": "give me companys with invoice and qualified please",
+  "schema": [
+   {
+    "name": "phone",
+    "kind": "text",
+    "aliases": [
+     "mobile"
+    ],
+    "values": []
+   },
+   {
+    "name": "confirmed",
+    "kind": "bool",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "revenue",
+    "kind": "number",
+    "aliases": [
+     "value"
+    ],
+    "values": []
+   },
+   {
+    "name": "region",
+    "kind": "enum",
+    "aliases": [],
+    "values": [
+     "emea",
+     "apac",
+     "latam",
+     "nordics"
+    ]
+   },
+   {
+    "name": "stage",
+    "kind": "enum",
+    "aliases": [],
+    "values": [
+     "prospect",
+     "qualified",
+     "won",
+     "churned"
+    ]
+   },
+   {
+    "name": "company",
+    "kind": "text",
+    "aliases": [
+     "employer",
+     "org"
+    ],
+    "values": []
+   },
+   {
+    "name": "contacted",
+    "kind": "date",
+    "aliases": [
+     "reached"
+    ],
+    "values": []
+   },
+   {
+    "name": "subscribed",
+    "kind": "bool",
+    "aliases": [],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "FIELD",
+   "OP_CONTAINS",
+   "VALUE",
+   "AND",
+   "VALUE",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "company",
+    "cmp": "contains",
+    "value": "invoice",
+    "neg": false
+   },
+   {
+    "field": "stage",
+    "cmp": "eq",
+    "value": "qualified",
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "anything easy or excluding ingredient mentioning onboarding thanks",
+  "schema": [
+   {
+    "name": "difficulty",
+    "kind": "enum",
+    "aliases": [
+     "effort"
+    ],
+    "values": [
+     "easy",
+     "moderate",
+     "hard"
+    ]
+   },
+   {
+    "name": "cooked",
+    "kind": "date",
+    "aliases": [
+     "prepared"
+    ],
+    "values": []
+   },
+   {
+    "name": "bookmarked",
+    "kind": "bool",
+    "aliases": [
+     "saved"
+    ],
+    "values": []
+   },
+   {
+    "name": "cuisine",
+    "kind": "enum",
+    "aliases": [
+     "origin"
+    ],
+    "values": [
+     "thai",
+     "basque",
+     "creole",
+     "sichuan"
+    ]
+   },
+   {
+    "name": "ingredient",
+    "kind": "text",
+    "aliases": [
+     "component"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "VALUE",
+   "OR",
+   "NEG",
+   "FIELD",
+   "OP_CONTAINS",
+   "VALUE",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "difficulty",
+    "cmp": "eq",
+    "value": "easy",
+    "neg": false
+   },
+   {
+    "field": "ingredient",
+    "cmp": "contains",
+    "value": "onboarding",
+    "neg": true
+   }
+  ]
+ },
+ {
+  "text": "everything meatless thanks",
+  "schema": [
+   {
+    "name": "cuisine",
+    "kind": "enum",
+    "aliases": [
+     "origin"
+    ],
+    "values": [
+     "thai",
+     "basque",
+     "creole",
+     "sichuan"
+    ]
+   },
+   {
+    "name": "calories",
+    "kind": "number",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "vegetarian",
+    "kind": "bool",
+    "aliases": [
+     "meatless"
+    ],
+    "values": []
+   },
+   {
+    "name": "ingredient",
+    "kind": "text",
+    "aliases": [
+     "component"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "FIELD",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "vegetarian",
+    "cmp": "is",
+    "value": true,
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "search for lengths = 25 and not explicit and releas this month thanks",
+  "schema": [
+   {
+    "name": "released",
+    "kind": "date",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "duration",
+    "kind": "number",
+    "aliases": [
+     "length"
+    ],
+    "values": []
+   },
+   {
+    "name": "album",
+    "kind": "text",
+    "aliases": [
+     "record"
+    ],
+    "values": []
+   },
+   {
+    "name": "artist",
+    "kind": "text",
+    "aliases": [
+     "performer"
+    ],
+    "values": []
+   },
+   {
+    "name": "explicit",
+    "kind": "bool",
+    "aliases": [
+     "uncensored"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "FIELD",
+   "OP_EQ",
+   "VALUE",
+   "AND",
+   "NEG",
+   "FIELD",
+   "AND",
+   "FIELD",
+   "VALUE",
+   "VALUE_CONT",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "duration",
+    "cmp": "eq",
+    "value": "25",
+    "neg": false
+   },
+   {
+    "field": "explicit",
+    "cmp": "is",
+    "value": true,
+    "neg": true
+   },
+   {
+    "field": "released",
+    "cmp": "eq",
+    "value": "this month",
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "show me no easy and vegetarian and coeked later than last week please",
+  "schema": [
+   {
+    "name": "bookmarked",
+    "kind": "bool",
+    "aliases": [
+     "saved"
+    ],
+    "values": []
+   },
+   {
+    "name": "cooked",
+    "kind": "date",
+    "aliases": [
+     "prepared"
+    ],
+    "values": []
+   },
+   {
+    "name": "calories",
+    "kind": "number",
+    "aliases": [
+     "energy"
+    ],
+    "values": []
+   },
+   {
+    "name": "vegetarian",
+    "kind": "bool",
+    "aliases": [
+     "meatless"
+    ],
+    "values": []
+   },
+   {
+    "name": "difficulty",
+    "kind": "enum",
+    "aliases": [
+     "effort"
+    ],
+    "values": [
+     "easy",
+     "moderate",
+     "hard"
+    ]
+   },
+   {
+    "name": "cuisine",
+    "kind": "enum",
+    "aliases": [
+     "origin"
+    ],
+    "values": [
+     "thai",
+     "basque",
+     "creole",
+     "sichuan",
+     "hard"
+    ]
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "NEG",
+   "VALUE",
+   "AND",
+   "FIELD",
+   "AND",
+   "FIELD",
+   "OP_GT",
+   "OP_GT",
+   "VALUE",
+   "VALUE_CONT",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "difficulty",
+    "cmp": "eq",
+    "value": "easy",
+    "neg": true
+   },
+   {
+    "field": "vegetarian",
+    "cmp": "is",
+    "value": true,
+    "neg": false
+   },
+   {
+    "field": "cooked",
+    "cmp": "gt",
+    "value": "last week",
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "find all region is apac and confirmed please",
+  "schema": [
+   {
+    "name": "region",
+    "kind": "enum",
+    "aliases": [
+     "territory"
+    ],
+    "values": [
+     "emea",
+     "apac",
+     "latam",
+     "nordics"
+    ]
+   },
+   {
+    "name": "contacted",
+    "kind": "date",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "revenue",
+    "kind": "number",
+    "aliases": [
+     "value"
+    ],
+    "values": []
+   },
+   {
+    "name": "subscribed",
+    "kind": "bool",
+    "aliases": [
+     "opted"
+    ],
+    "values": []
+   },
+   {
+    "name": "phone",
+    "kind": "text",
+    "aliases": [
+     "mobile"
+    ],
+    "values": []
+   },
+   {
+    "name": "confirmed",
+    "kind": "bool",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "stage",
+    "kind": "enum",
+    "aliases": [
+     "pipeline"
+    ],
+    "values": [
+     "prospect",
+     "qualified",
+     "won",
+     "churned"
+    ]
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "FIELD",
+   "OP_EQ",
+   "VALUE",
+   "AND",
+   "FIELD",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "region",
+    "cmp": "eq",
+    "value": "apac",
+    "neg": false
+   },
+   {
+    "field": "confirmed",
+    "cmp": "is",
+    "value": true,
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "performers priya and no explicit please",
+  "schema": [
+   {
+    "name": "genre",
+    "kind": "enum",
+    "aliases": [
+     "style"
+    ],
+    "values": [
+     "ambient",
+     "techno",
+     "jazz",
+     "shoegaze"
+    ]
+   },
+   {
+    "name": "plays",
+    "kind": "number",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "released",
+    "kind": "date",
+    "aliases": [
+     "issued"
+    ],
+    "values": []
+   },
+   {
+    "name": "duration",
+    "kind": "number",
+    "aliases": [
+     "length"
+    ],
+    "values": []
+   },
+   {
+    "name": "artist",
+    "kind": "text",
+    "aliases": [
+     "performer",
+     "band"
+    ],
+    "values": []
+   },
+   {
+    "name": "explicit",
+    "kind": "bool",
+    "aliases": [
+     "uncensored"
+    ],
+    "values": []
+   },
+   {
+    "name": "downloaded",
+    "kind": "bool",
+    "aliases": [
+     "offline"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "FIELD",
+   "VALUE",
+   "AND",
+   "NEG",
+   "FIELD",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "artist",
+    "cmp": "eq",
+    "value": "priya",
+    "neg": false
+   },
+   {
+    "field": "explicit",
+    "cmp": "is",
+    "value": true,
+    "neg": true
+   }
+  ]
+ },
+ {
+  "text": "show me artist design spec please",
+  "schema": [
+   {
+    "name": "album",
+    "kind": "text",
+    "aliases": [
+     "record"
+    ],
+    "values": []
+   },
+   {
+    "name": "artist",
+    "kind": "text",
+    "aliases": [
+     "performer",
+     "band"
+    ],
+    "values": []
+   },
+   {
+    "name": "explicit",
+    "kind": "bool",
+    "aliases": [
+     "uncensored"
+    ],
+    "values": []
+   },
+   {
+    "name": "duration",
+    "kind": "number",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "plays",
+    "kind": "number",
+    "aliases": [
+     "listens"
+    ],
+    "values": []
+   },
+   {
+    "name": "released",
+    "kind": "date",
+    "aliases": [
+     "issued"
+    ],
+    "values": []
+   },
+   {
+    "name": "downloaded",
+    "kind": "bool",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "genre",
+    "kind": "enum",
+    "aliases": [
+     "style"
+    ],
+    "values": [
+     "ambient",
+     "techno",
+     "jazz",
+     "shoegaze"
+    ]
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "FIELD",
+   "VALUE",
+   "VALUE_CONT",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "artist",
+    "cmp": "eq",
+    "value": "design spec",
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "show plays at most 1 and artist offline thanks",
+  "schema": [
+   {
+    "name": "genre",
+    "kind": "enum",
+    "aliases": [],
+    "values": [
+     "ambient",
+     "techno",
+     "jazz",
+     "shoegaze"
+    ]
+   },
+   {
+    "name": "artist",
+    "kind": "text",
+    "aliases": [
+     "performer"
+    ],
+    "values": []
+   },
+   {
+    "name": "released",
+    "kind": "date",
+    "aliases": [
+     "issued"
+    ],
+    "values": []
+   },
+   {
+    "name": "duration",
+    "kind": "number",
+    "aliases": [
+     "length"
+    ],
+    "values": []
+   },
+   {
+    "name": "explicit",
+    "kind": "bool",
+    "aliases": [
+     "uncensored"
+    ],
+    "values": []
+   },
+   {
+    "name": "album",
+    "kind": "text",
+    "aliases": [
+     "record"
+    ],
+    "values": []
+   },
+   {
+    "name": "plays",
+    "kind": "number",
+    "aliases": [
+     "listens"
+    ],
+    "values": []
+   },
+   {
+    "name": "downloaded",
+    "kind": "bool",
+    "aliases": [
+     "offline"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "FIELD",
+   "OP_LT",
+   "OP_LT",
+   "VALUE",
+   "AND",
+   "FIELD",
+   "VALUE",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "plays",
+    "cmp": "lt",
+    "value": "1",
+    "neg": false
+   },
+   {
+    "field": "artist",
+    "cmp": "eq",
+    "value": "offline",
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "find style techno and afbum with invoice and issued earlier than last week please",
+  "schema": [
+   {
+    "name": "duration",
+    "kind": "number",
+    "aliases": [
+     "length"
+    ],
+    "values": []
+   },
+   {
+    "name": "downloaded",
+    "kind": "bool",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "album",
+    "kind": "text",
+    "aliases": [
+     "record"
+    ],
+    "values": []
+   },
+   {
+    "name": "released",
+    "kind": "date",
+    "aliases": [
+     "issued"
+    ],
+    "values": []
+   },
+   {
+    "name": "genre",
+    "kind": "enum",
+    "aliases": [
+     "style"
+    ],
+    "values": [
+     "ambient",
+     "techno",
+     "jazz",
+     "shoegaze"
+    ]
+   }
+  ],
+  "labels": [
+   "O",
+   "FIELD",
+   "VALUE",
+   "AND",
+   "FIELD",
+   "OP_CONTAINS",
+   "VALUE",
+   "AND",
+   "FIELD",
+   "OP_LT",
+   "OP_LT",
+   "VALUE",
+   "VALUE_CONT",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "genre",
+    "cmp": "eq",
+    "value": "techno",
+    "neg": false
+   },
+   {
+    "field": "album",
+    "cmp": "contains",
+    "value": "invoice",
+    "neg": false
+   },
+   {
+    "field": "released",
+    "cmp": "lt",
+    "value": "last week",
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "everything excluding opted thanks",
+  "schema": [
+   {
+    "name": "region",
+    "kind": "enum",
+    "aliases": [
+     "territory"
+    ],
+    "values": [
+     "emea",
+     "apac",
+     "latam",
+     "nordics"
+    ]
+   },
+   {
+    "name": "stage",
+    "kind": "enum",
+    "aliases": [
+     "pipeline"
+    ],
+    "values": [
+     "prospect",
+     "qualified",
+     "won",
+     "churned"
+    ]
+   },
+   {
+    "name": "subscribed",
+    "kind": "bool",
+    "aliases": [
+     "opted"
+    ],
+    "values": []
+   },
+   {
+    "name": "revenue",
+    "kind": "number",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "contacted",
+    "kind": "date",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "confirmed",
+    "kind": "bool",
+    "aliases": [
+     "screened"
+    ],
+    "values": []
+   },
+   {
+    "name": "phone",
+    "kind": "text",
+    "aliases": [
+     "mobile"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "NEG",
+   "FIELD",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "subscribed",
+    "cmp": "is",
+    "value": true,
+    "neg": true
+   }
+  ]
+ },
+ {
+  "text": "find no albuv arik and duration more than 1 please",
+  "schema": [
+   {
+    "name": "album",
+    "kind": "text",
+    "aliases": [
+     "record"
+    ],
+    "values": []
+   },
+   {
+    "name": "downloaded",
+    "kind": "bool",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "artist",
+    "kind": "text",
+    "aliases": [
+     "performer"
+    ],
+    "values": []
+   },
+   {
+    "name": "duration",
+    "kind": "number",
+    "aliases": [
+     "length"
+    ],
+    "values": []
+   },
+   {
+    "name": "released",
+    "kind": "date",
+    "aliases": [],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "NEG",
+   "FIELD",
+   "VALUE",
+   "AND",
+   "FIELD",
+   "OP_GT",
+   "OP_GT",
+   "VALUE",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "album",
+    "cmp": "eq",
+    "value": "arik",
+    "neg": true
+   },
+   {
+    "field": "duration",
+    "cmp": "gt",
+    "value": "1",
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "search for destination late and no departed later than today please",
+  "schema": [
+   {
+    "name": "destination",
+    "kind": "text",
+    "aliases": [
+     "arrival"
+    ],
+    "values": []
+   },
+   {
+    "name": "dispatched",
+    "kind": "date",
+    "aliases": [
+     "departed"
+    ],
+    "values": []
+   },
+   {
+    "name": "carrier",
+    "kind": "enum",
+    "aliases": [
+     "courier"
+    ],
+    "values": [
+     "maersk",
+     "hapag",
+     "evergreen"
+    ]
+   },
+   {
+    "name": "origin",
+    "kind": "text",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "delayed",
+    "kind": "bool",
+    "aliases": [
+     "late"
+    ],
+    "values": []
+   },
+   {
+    "name": "insured",
+    "kind": "bool",
+    "aliases": [
+     "covered"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "FIELD",
+   "VALUE",
+   "AND",
+   "NEG",
+   "FIELD",
+   "FIELD",
+   "OP_GT",
+   "VALUE",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "destination",
+    "cmp": "eq",
+    "value": "late",
+    "neg": false
+   },
+   {
+    "field": "dispatched",
+    "cmp": "gt",
+    "value": "today",
+    "neg": true
+   }
+  ]
+ },
+ {
+  "text": "show me confirmed",
+  "schema": [
+   {
+    "name": "subscribed",
+    "kind": "bool",
+    "aliases": [
+     "opted"
+    ],
+    "values": []
+   },
+   {
+    "name": "revenue",
+    "kind": "number",
+    "aliases": [
+     "value"
+    ],
+    "values": []
+   },
+   {
+    "name": "confirmed",
+    "kind": "bool",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "stage",
+    "kind": "enum",
+    "aliases": [
+     "pipeline"
+    ],
+    "values": [
+     "prospect",
+     "qualified",
+     "won",
+     "churned"
+    ]
+   },
+   {
+    "name": "region",
+    "kind": "enum",
+    "aliases": [
+     "territory"
+    ],
+    "values": [
+     "emea",
+     "apac",
+     "latam",
+     "nordics"
+    ]
+   },
+   {
+    "name": "phone",
+    "kind": "text",
+    "aliases": [
+     "mobile"
+    ],
+    "values": []
+   },
+   {
+    "name": "contacted",
+    "kind": "date",
+    "aliases": [
+     "reached"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "FIELD"
+  ],
+  "ast": [
+   {
+    "field": "confirmed",
+    "cmp": "is",
+    "value": true,
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "screened please",
+  "schema": [
+   {
+    "name": "revenue",
+    "kind": "number",
+    "aliases": [
+     "value"
+    ],
+    "values": []
+   },
+   {
+    "name": "confirmed",
+    "kind": "bool",
+    "aliases": [
+     "screened"
+    ],
+    "values": []
+   },
+   {
+    "name": "region",
+    "kind": "enum",
+    "aliases": [
+     "territory"
+    ],
+    "values": [
+     "emea",
+     "apac",
+     "latam",
+     "nordics"
+    ]
+   },
+   {
+    "name": "stage",
+    "kind": "enum",
+    "aliases": [
+     "pipeline"
+    ],
+    "values": [
+     "prospect",
+     "qualified",
+     "won",
+     "churned"
+    ]
+   }
+  ],
+  "labels": [
+   "FIELD",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "confirmed",
+    "cmp": "is",
+    "value": true,
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "give me revenu fewer than 5 and companys tomas thanks",
+  "schema": [
+   {
+    "name": "stage",
+    "kind": "enum",
+    "aliases": [
+     "pipeline"
+    ],
+    "values": [
+     "prospect",
+     "qualified",
+     "won",
+     "churned",
+     "apac"
+    ]
+   },
+   {
+    "name": "phone",
+    "kind": "text",
+    "aliases": [
+     "mobile"
+    ],
+    "values": []
+   },
+   {
+    "name": "subscribed",
+    "kind": "bool",
+    "aliases": [
+     "opted"
+    ],
+    "values": []
+   },
+   {
+    "name": "company",
+    "kind": "text",
+    "aliases": [
+     "employer",
+     "org"
+    ],
+    "values": []
+   },
+   {
+    "name": "revenue",
+    "kind": "number",
+    "aliases": [
+     "value"
+    ],
+    "values": []
+   },
+   {
+    "name": "confirmed",
+    "kind": "bool",
+    "aliases": [
+     "screened"
+    ],
+    "values": []
+   },
+   {
+    "name": "contacted",
+    "kind": "date",
+    "aliases": [
+     "reached"
+    ],
+    "values": []
+   },
+   {
+    "name": "region",
+    "kind": "enum",
+    "aliases": [
+     "territory"
+    ],
+    "values": [
+     "emea",
+     "apac",
+     "latam",
+     "nordics"
+    ]
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "FIELD",
+   "OP_LT",
+   "OP_LT",
+   "VALUE",
+   "AND",
+   "FIELD",
+   "VALUE",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "revenue",
+    "cmp": "lt",
+    "value": "5",
+    "neg": false
+   },
+   {
+    "field": "company",
+    "cmp": "eq",
+    "value": "tomas",
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "find all bookmarked and energy over 1 and no difficulty creole thanks",
+  "schema": [
+   {
+    "name": "cooked",
+    "kind": "date",
+    "aliases": [
+     "prepared"
+    ],
+    "values": []
+   },
+   {
+    "name": "bookmarked",
+    "kind": "bool",
+    "aliases": [
+     "saved"
+    ],
+    "values": []
+   },
+   {
+    "name": "vegetarian",
+    "kind": "bool",
+    "aliases": [
+     "meatless"
+    ],
+    "values": []
+   },
+   {
+    "name": "calories",
+    "kind": "number",
+    "aliases": [
+     "energy"
+    ],
+    "values": []
+   },
+   {
+    "name": "cuisine",
+    "kind": "enum",
+    "aliases": [],
+    "values": [
+     "thai",
+     "basque",
+     "creole",
+     "sichuan"
+    ]
+   },
+   {
+    "name": "ingredient",
+    "kind": "text",
+    "aliases": [
+     "component"
+    ],
+    "values": []
+   },
+   {
+    "name": "difficulty",
+    "kind": "enum",
+    "aliases": [
+     "effort"
+    ],
+    "values": [
+     "easy",
+     "moderate",
+     "hard",
+     "creole"
+    ]
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "FIELD",
+   "AND",
+   "FIELD",
+   "OP_GT",
+   "VALUE",
+   "AND",
+   "NEG",
+   "FIELD",
+   "VALUE",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "bookmarked",
+    "cmp": "is",
+    "value": true,
+    "neg": false
+   },
+   {
+    "field": "calories",
+    "cmp": "gt",
+    "value": "1",
+    "neg": false
+   },
+   {
+    "field": "difficulty",
+    "cmp": "eq",
+    "value": "creole",
+    "neg": true
+   }
+  ]
+ },
+ {
+  "text": "cookeds prior to yesterday and difficultys hard thanks",
+  "schema": [
+   {
+    "name": "vegetarian",
+    "kind": "bool",
+    "aliases": [
+     "meatless"
+    ],
+    "values": []
+   },
+   {
+    "name": "cuisine",
+    "kind": "enum",
+    "aliases": [
+     "origin"
+    ],
+    "values": [
+     "thai",
+     "basque",
+     "creole",
+     "sichuan"
+    ]
+   },
+   {
+    "name": "difficulty",
+    "kind": "enum",
+    "aliases": [
+     "effort"
+    ],
+    "values": [
+     "easy",
+     "moderate",
+     "hard",
+     "sichuan"
+    ]
+   },
+   {
+    "name": "cooked",
+    "kind": "date",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "calories",
+    "kind": "number",
+    "aliases": [
+     "energy"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "FIELD",
+   "OP_LT",
+   "OP_LT",
+   "VALUE",
+   "AND",
+   "FIELD",
+   "VALUE",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "cooked",
+    "cmp": "lt",
+    "value": "yesterday",
+    "neg": false
+   },
+   {
+    "field": "difficulty",
+    "cmp": "eq",
+    "value": "hard",
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "insured and delayed thanks",
+  "schema": [
+   {
+    "name": "carrier",
+    "kind": "enum",
+    "aliases": [
+     "courier"
+    ],
+    "values": [
+     "maersk",
+     "hapag",
+     "evergreen"
+    ]
+   },
+   {
+    "name": "origin",
+    "kind": "text",
+    "aliases": [
+     "departure"
+    ],
+    "values": []
+   },
+   {
+    "name": "destination",
+    "kind": "text",
+    "aliases": [
+     "arrival"
+    ],
+    "values": []
+   },
+   {
+    "name": "delayed",
+    "kind": "bool",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "weight",
+    "kind": "number",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "insured",
+    "kind": "bool",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "dispatched",
+    "kind": "date",
+    "aliases": [
+     "departed"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "FIELD",
+   "AND",
+   "FIELD",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "insured",
+    "cmp": "is",
+    "value": true,
+    "neg": false
+   },
+   {
+    "field": "delayed",
+    "cmp": "is",
+    "value": true,
+    "neg": false
+   }
+  ]
+ },
+ {
+  "text": "find all album arik or issued earlier than this month thanks",
+  "schema": [
+   {
+    "name": "album",
+    "kind": "text",
+    "aliases": [],
+    "values": []
+   },
+   {
+    "name": "released",
+    "kind": "date",
+    "aliases": [
+     "issued"
+    ],
+    "values": []
+   },
+   {
+    "name": "genre",
+    "kind": "enum",
+    "aliases": [
+     "style"
+    ],
+    "values": [
+     "ambient",
+     "techno",
+     "jazz",
+     "shoegaze"
+    ]
+   },
+   {
+    "name": "plays",
+    "kind": "number",
+    "aliases": [
+     "listens"
+    ],
+    "values": []
+   }
+  ],
+  "labels": [
+   "O",
+   "O",
+   "FIELD",
+   "VALUE",
+   "OR",
+   "FIELD",
+   "OP_LT",
+   "OP_LT",
+   "VALUE",
+   "VALUE_CONT",
+   "O"
+  ],
+  "ast": [
+   {
+    "field": "album",
+    "cmp": "eq",
+    "value": "arik",
+    "neg": false
+   },
+   {
+    "field": "released",
+    "cmp": "lt",
+    "value": "this month",
+    "neg": false
+   }
+  ]
+ }
+]

@@ -263,7 +263,7 @@ A block is a whole app or screen composed from library parts. Adding one copies 
 {% step %}
 ### Install
 
-BL UI needs React 18 or 19. Tailwind is optional here: the package ships a precompiled stylesheet for its own classes. You only need Tailwind if you also write Tailwind classes in your app.
+BL UI needs React 19. Tailwind is optional here: the package ships a precompiled stylesheet for its own classes. You only need Tailwind if you also write Tailwind classes in your app.
 
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 {% endstep %}

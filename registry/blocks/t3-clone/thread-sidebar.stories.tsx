@@ -18,9 +18,10 @@ import {
   SidebarUser,
   type ThreadStatus,
 } from './components/thread-sidebar';
-import { IconButton } from '@/components/ui/icon-button';
 import { WorkbenchTheme } from '@/components/ui/workbench-theme';
 import { THREADS } from './lib/data';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/lib/icon';
 
 const meta: Meta<typeof ThreadSidebar> = {
   title: 'Organisms/ThreadSidebar',
@@ -58,7 +59,15 @@ function SidebarDemo({ compact }: { compact?: boolean }) {
     <ThreadSidebar>
       <ThreadSidebarHeader>
         <ThreadSidebarBrand>Workbench</ThreadSidebarBrand>
-        {compact ? <IconButton name="xmark-large" label="Close sidebar" className="ml-auto" /> : null}
+        {compact ? <Button
+          variant="quiet"
+          size="icon-sm"
+          aria-label="Close sidebar"
+          title="Close sidebar"
+          className="ml-auto"
+        >
+          <Icon name="xmark-large" size={18} sw={1.7} />
+        </Button> : null}
       </ThreadSidebarHeader>
       <ThreadSidebarToolbar>
         <ThreadSearch value={query} onChange={setQuery} />

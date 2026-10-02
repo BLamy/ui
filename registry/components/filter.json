@@ -1,0 +1,25 @@
+{
+  "name": "filter",
+  "title": "Filter",
+  "description": "Linear-style filtering on react-aria: a Filter button (and F shortcut) opens a searchable list of fields, then a searchable multi-select of values; each filter is a chip with its own operator and value buttons, removable with ×, Backspace or Delete. One tab stop with arrow keys across the chips, polite announcements, match all/any and Clear all.",
+  "page": "filter",
+  "files": ["components/filter.tsx"],
+  "exports": [
+    "FilterBar",
+    "FilterToolbar",
+    "FilterMenu",
+    "FilterList",
+    "FilterChip",
+    "FilterClear",
+    "FilterMatch",
+    "FilterValueEditor",
+    "useFilters",
+    "useFilterBar",
+    "useOptionalFilterBar",
+    "filterBarVariants",
+    "filterToolbarVariants",
+    "filterChipVariants"
+  ],
+  "imports": ["FilterBar", "FilterToolbar", "FilterMenu", "FilterList", "FilterChip"],
+  "types": ["FilterBarProps", "FilterChipProps", "FilterState", "UseFiltersOptions"]
+}

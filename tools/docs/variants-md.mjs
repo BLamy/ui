@@ -68,7 +68,7 @@ function recipesIn(rel) {
 
 const byItem = new Map();
 for (const it of graph.items.values()) {
-  const recipes = it.files.flatMap(recipesIn);
+  const recipes = it.files.filter((f) => /\.tsx?$/.test(f)).flatMap(recipesIn); // not an item's assets (weights.json, LICENSE)
   if (recipes.length) byItem.set(it.name, { item: it, recipes });
 }
 

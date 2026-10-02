@@ -1,6 +1,7 @@
 /* Freeform's data model: a board is a list of items in z-order (first is backmost). Everything is plain data, so
    undo is a snapshot of the list and a board serializes as-is. Coordinates are board units: px at 100% zoom. */
 import type { PencilDrawTool, PencilPoint } from '@/components/ui/pencilkit/constants';
+import type { Frame } from '@/lib/canvas-math';
 
 export type Side = 't' | 'r' | 'b' | 'l';
 
@@ -17,9 +18,6 @@ interface ItemBase {
   /** Items sharing a group id select and move together. */
   group?: string;
 }
-
-/** Position, size and rotation (degrees, about the center) of an item you can resize. */
-export interface Frame { x: number; y: number; w: number; h: number; rot: number }
 
 export interface StickyItem extends ItemBase, Frame {
   kind: 'sticky';
@@ -120,12 +118,6 @@ export interface Board {
   edited: string;
   background: Background;
 }
-
-export interface Camera { x: number; y: number; z: number }
-
-export const MIN_ZOOM = 0.1;
-export const MAX_ZOOM = 4;
-export const MIN_SIZE = 24;
 
 let counter = 0;
 /** A fresh id for an item, group or board. */

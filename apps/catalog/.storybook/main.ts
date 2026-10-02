@@ -17,6 +17,8 @@ const config: StorybookConfig = {
     (cfg.resolve as any).dedupe = ['react', 'react-dom'];
     cfg.optimizeDeps = {
       ...cfg.optimizeDeps,
+      // PGlite locates its WebAssembly next to its own module (`new URL('./pglite.wasm', import.meta.url)`): serve it unbundled.
+      exclude: [...(cfg.optimizeDeps?.exclude ?? []), '@electric-sql/pglite', '@electric-sql/pglite-tools'],
       include: [
         ...(cfg.optimizeDeps?.include ?? []),
         'react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime',

@@ -37,9 +37,11 @@ Twenty-odd lines of composition: a `TabView` with a bar, a `NavigationStack` ins
 | Sidebar | `Sidebar` — docked, rail, float, or overlay navigation |
 | Canvas view | `PencilCanvas` |
 
-## Atomic design
+## How the docs are organized
 
-The docs follow the same tiers as Storybook. **Atoms** and **molecules** are the smallest reusable pieces, **organisms** are self-contained regions such as a Sidebar or NavigationStack, and **templates** compose organisms into responsive shells. The shells that belong to one product (the Discord-style `ChatShell`, the T3-style `WorkbenchShell`) live in [blocks](https://blamy.github.io/ui/#/blocks), documented under **Block parts**; every one is built from the organisms and molecules documented here, so a shell that does not fit can be recomposed from its parts.
+The sidebar groups pages by what a part does, not by how big it is. **Foundations** covers theming, styling, variants, motion and icons. Then come the parts: **Buttons and toggles**, **Forms and inputs**, **Menus and overlays**, **Feedback and status**, **Lists and content**, **Navigation and layout**, **Motion components**, **Chat**, and **Editors and workbench**. **Hooks** documents every hook the library exports.
+
+The shells that belong to one product (the Discord-style `ChatShell`, the T3-style `WorkbenchShell`) live in [blocks](https://blamy.github.io/ui/#/blocks). Every one is built from the parts documented here, so a shell that does not fit can be recomposed from them.
 
 ## Where to go next
 

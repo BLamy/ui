@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { IconButton } from '@/components/ui/icon-button';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 /* ══ Terminal parts ══
    <TerminalHeader title="zsh — cookbook"><TerminalAction icon="rectangle-split"/><WorkbenchDockClose/></TerminalHeader>
@@ -151,14 +151,17 @@ export function TerminalHeader({ title = 'zsh', children, className, style }: Te
 
 export function TerminalAction({ icon, label, onPress, className }: { icon: IconName | (string & {}); label: string; onPress?: () => void; className?: string }) {
   return (
-    <IconButton
-      name={icon}
-      label={label}
-      size={15}
+    <Button
+      variant="quiet"
+      size="icon-sm"
+      aria-label={label}
+      title={label}
       className={className}
       onPress={() => {
         onPress?.();
       }}
-    />
+    >
+      <Icon name={icon} size={15} sw={1.7} />
+    </Button>
   );
 }

@@ -1,7 +1,7 @@
 {
   "name": "toast",
   "title": "Toast",
-  "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, stacking banners with actions, springs, auto-dismiss and announcements.",
+  "description": "HUDs and banners on react-aria's toast region: the \"Copied\" pill that updates in place, banners that pile up like Sonner's and spread on hover, with actions, springs, auto-dismiss and announcements.",
   "page": "toast",
   "exports": [
     "Toaster",

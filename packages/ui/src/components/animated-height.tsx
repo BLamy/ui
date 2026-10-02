@@ -47,15 +47,17 @@ export interface ContentSwapProps {
   direction?: -1 | 0 | 1;
   /** Travel distance in px for a directional swap. */
   distance?: number;
+  /** Blur in px at the middle of the swap. */
+  blur?: number;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
 
-export function ContentSwap({ id, direction = 0, distance = 36, children, className, style }: ContentSwapProps) {
+export function ContentSwap({ id, direction = 0, distance = 36, blur = 4, children, className, style }: ContentSwapProps) {
   const reduced = useReducedMotion();
   const off = (d: number, sign: number) => reduced ? { opacity: 0 }
-    : d ? { opacity: 0, x: sign * d * distance, filter: 'blur(4px)' } : { opacity: 0, scale: 0.96, filter: 'blur(4px)' };
+    : d ? { opacity: 0, x: sign * d * distance, filter: `blur(${blur}px)` } : { opacity: 0, scale: 0.96, filter: `blur(${blur}px)` };
   return (
     <div data-slot="content-swap" className={cn('relative', className)} style={style}>
       <AnimatePresence initial={false} mode="popLayout" custom={direction}>

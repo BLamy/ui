@@ -53,5 +53,8 @@
   },
   "scripts": {
     "pages-md": "node ../../tools/docs/pages-md.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8"
   }
 }

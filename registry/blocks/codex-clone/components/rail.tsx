@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { IconButton } from '@/components/ui/icon-button';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/lib/icon';
 
 const ITEMS = [
   { id: 'home', icon: 'house', label: 'Home' },
@@ -17,7 +18,18 @@ export function Rail() {
   return (
     <nav data-slot="codex-rail" aria-label="Sections" className="flex w-[52px] shrink-0 flex-col items-center gap-1.5 py-3 shadow-[inset_-1px_0_0_var(--border)]">
       {ITEMS.map((i) => (
-        <IconButton key={i.id} name={i.icon} label={i.label} size={19} active={active === i.id} onPress={() => setActive(i.id)} className="size-9" />
+        <Button
+          variant="quiet"
+          size="icon-sm"
+          active={active === i.id}
+          aria-label={i.label}
+          title={i.label}
+          key={i.id}
+          onPress={() => setActive(i.id)}
+          className="size-9"
+        >
+          <Icon name={i.icon} size={19} sw={1.7} />
+        </Button>
       ))}
       <span className="flex-1" />
       <Avatar c={{ f: 'B', l: 'L' }} size={26} />

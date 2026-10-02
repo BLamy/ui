@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { springCss } from '@/lib/motion';
 
 /* Pull-to-refresh for a scroller at its top: drag down and the content follows (with rubber-band resistance) while a
@@ -10,8 +10,9 @@ import { springCss } from '@/lib/motion';
 interface Pull { y0: number; x0: number; on: boolean; armed: boolean }
 
 interface Options {
-  /** Called when a pull is released past the threshold. Pull-to-refresh is off without it. */
-  onRefresh?: () => void;
+  /** Called when a pull is released past the threshold. Return a promise to keep the spinner until it settles (it
+   *  always shows for at least a moment). Pull-to-refresh is off without it. */
+  onRefresh?: () => void | Promise<unknown>;
   /** The scroller the pull starts on (it must be at its top). */
   scroller: RefObject<HTMLElement | null>;
   /** The content that follows the finger. */
@@ -20,15 +21,28 @@ interface Options {
   spinner: RefObject<HTMLElement | null>;
 }
 
-/** How long the refresh is held open before `onRefresh` runs and the content settles back. */
+/** The least time the refresh is held open, however fast `onRefresh` finishes. */
 const HOLD_MS = 1100;
 /** How far the content sits while refreshing, px, and the pull (px) past which a release arms a refresh. */
 const HELD = 52;
 const ARM = 54;
 
+const report = (e: unknown) => (typeof reportError === 'function' ? reportError(e) : console.error(e));
+
 export function usePullToRefresh({ onRefresh, scroller, content, spinner }: Options) {
   const pull = useRef<Pull | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const alive = useRef(true);
+  const later = (fn: () => void, ms: number) => {
+    const t = setTimeout(() => { timers.current.delete(t); fn(); }, ms);
+    timers.current.add(t);
+  };
+  useEffect(() => {
+    alive.current = true;
+    const pending = timers.current;
+    return () => { alive.current = false; pending.forEach(clearTimeout); pending.clear(); };
+  }, []);
 
   const down = (e: ReactPointerEvent) => {
     if (!onRefresh || refreshing || e.button) return;
@@ -60,18 +74,22 @@ export function usePullToRefresh({ onRefresh, scroller, content, spinner }: Opti
     pull.current = null;
     if (!d.on) return;
     const c = content.current, sp = spinner.current;
-    const clearAfter = (ms: number) => setTimeout(() => { if (c) { c.style.transition = ''; c.style.transform = ''; } }, ms);
+    const clearAfter = (ms: number) => later(() => { if (c) { c.style.transition = ''; c.style.transform = ''; } }, ms);
     if (d.armed) {
       setRefreshing(true);
       if (c) { c.style.transition = springCss('transform', 'snappy'); c.style.transform = `translateY(${HELD}px)`; }
       if (sp) { sp.style.opacity = '1'; sp.style.transform = 'translateX(-50%)'; }
-      setTimeout(() => {
+      // The refresh starts now; the spinner stays for `HOLD_MS` at least, and for as long as a returned promise takes.
+      const held = new Promise<void>((done) => later(done, HOLD_MS));
+      let work: Promise<unknown> = Promise.resolve();
+      try { work = Promise.resolve(onRefresh?.()); } catch (e) { report(e); }
+      void Promise.all([held, work.catch(report)]).then(() => {
+        if (!alive.current) return;
         setRefreshing(false);
         if (c) { c.style.transition = springCss('transform', 'smooth'); c.style.transform = 'translateY(0)'; }
         if (sp) sp.style.opacity = '0';
-        onRefresh?.();
         clearAfter(560);
-      }, HOLD_MS);
+      });
     } else {
       if (c) {
         c.style.transition = springCss('transform', 'snappy'); c.style.transform = 'translateY(0)';

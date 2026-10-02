@@ -28,7 +28,7 @@ export interface Screen {
   subheader?: ReactNode;
   maxW?: number | string;
   bottomInset?: number;
-  onRefresh?: () => void;
+  onRefresh?: () => void | Promise<unknown>;
   titleOnScroll?: boolean;
   hideChromeOnScroll?: boolean;
 }
