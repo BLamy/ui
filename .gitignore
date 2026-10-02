@@ -30,6 +30,8 @@ typings/
 tools/vr/__baseline__/
 tools/vr/.results/
 tools/vr/results.json
+tools/e2e/.results/
+tools/e2e/a11y-report.json
 .claude/worktrees/
 apps/docs/public/r/
 apps/docs/public/md/
