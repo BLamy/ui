@@ -42,6 +42,7 @@ function Bubble({ mine, children }: { mine: boolean; children: ReactNode }) {
 export default function ChatMessages() {
   return (
     <div
+      role="group"
       aria-busy="true"
       aria-label="Loading messages"
       style={{

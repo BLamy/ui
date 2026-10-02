@@ -5,6 +5,7 @@ import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
 export default function Paragraph() {
   return (
     <article
+      role="group"
       aria-busy="true"
       aria-label="Loading article"
       style={{

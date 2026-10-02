@@ -80,7 +80,9 @@ export function Slider<T extends number | number[]>({
             {label ? <Label className="text-subhead font-medium text-foreground">{label}</Label> : null}
             {showValue ? <SliderOutput className="col-start-2 text-subhead text-muted-foreground tabular-nums" /> : null}
             <SliderTrack className="col-span-2">
-              {state.values.map((_, i) => <SliderThumb key={i} index={i} />)}
+              {/* A thumb names itself from the group's *content* plus its own `aria-labelledby`, so a label that comes from
+                  outside the group (the row's title) has to be handed to each thumb. */}
+              {state.values.map((_, i) => <SliderThumb key={i} index={i} {...(!label && rowLabel ? { 'aria-labelledby': rowLabel } : null)} />)}
             </SliderTrack>
           </>
         );

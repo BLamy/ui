@@ -11,6 +11,7 @@ const sizes = [
 export default function AvatarText() {
   return (
     <div
+      role="group"
       aria-busy="true"
       aria-label="Loading profiles"
       style={{

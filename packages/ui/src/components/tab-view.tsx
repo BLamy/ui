@@ -239,16 +239,40 @@ export interface TabViewTabProps extends AriaTabProps {
   icon?: string;
   /** …and a label. Ignored when `children` is given. */
   title?: ReactNode;
-  /** Text for typeahead and accessibility when the content isn't plain text. */
+  /** Text for typeahead, and the tab's accessible name when its content isn't plain text (an icon). */
   textValue?: string;
   ref?: Ref<HTMLDivElement>;
 }
 
-export function TabViewTab({ className, icon, title, children, ...props }: TabViewTabProps) {
+export function TabViewTab({ className, icon, title, children, ref, ...props }: TabViewTabProps) {
   const { variant } = useContext(TabViewCtx);
+  // react-aria points the selected tab's `aria-controls` at its panel's id whether or not a panel is rendered. A tab
+  // bar whose content is routed elsewhere has none, and an `aria-controls` to nothing is invalid ARIA: drop it. This
+  // component renders inside react-aria's hidden collection pass, so the real element only arrives through the ref;
+  // and react-aria sets the attribute from its own render, so it is watched rather than checked once.
+  const watch = useRef<MutationObserver | null>(null);
+  const setRef = (el: HTMLDivElement | null) => {
+    watch.current?.disconnect();
+    watch.current = null;
+    if (el) {
+      const fix = () => {
+        const id = el.getAttribute('aria-controls');
+        if (id && !document.getElementById(id)) el.removeAttribute('aria-controls');
+      };
+      fix();
+      watch.current = new MutationObserver(fix);
+      watch.current.observe(el, { attributes: true, attributeFilter: ['aria-controls'] });
+    }
+    if (typeof ref === 'function') ref(el);
+    else if (ref) ref.current = el;
+  };
+  // An icon-only tab has no text to name it: `textValue` is its name (unless `aria-label` / `aria-labelledby` says otherwise).
+  const named = props['aria-label'] != null || props['aria-labelledby'] != null || props.textValue == null;
   return (
     <AriaTab
       data-slot="tab-view-tab"
+      ref={setRef}
+      {...(named ? null : { 'aria-label': props.textValue })}
       className={composeRenderProps(className, (cls) => cn(tabViewTabVariants({ variant }), cls))}
       {...props}
     >

@@ -26,6 +26,7 @@ function CardPlaceholder() {
 export default function MediaCard() {
   return (
     <div
+      role="group"
       aria-busy="true"
       aria-label="Loading episodes"
       style={{

@@ -79,7 +79,7 @@ Keep the placeholder and the content in one container and swap them: `ContentSwa
 
 ```tsx
 <AnimatedHeight>
-  <div aria-busy={loading}>
+  <div role="group" aria-label="Order" aria-busy={loading}>
     <ContentSwap id={loading ? 'loading' : 'loaded'}>
       {loading ? <OrderPlaceholder /> : <Order />}
     </ContentSwap>
@@ -95,7 +95,7 @@ The fill and the sweep come from the `--bl-*` tokens — `fill2` under a card-co
 
 ## Accessibility
 
-Placeholders are `aria-hidden`: they are decoration, not content. Mark the region that is loading instead — `aria-busy="true"` with a label such as "Loading contacts" — and clear `aria-busy` when the content arrives, so assistive technology announces the result once.
+Placeholders are `aria-hidden`: they are decoration, not content. Mark the region that is loading instead — `role="group"` with `aria-busy="true"` and a label such as "Loading contacts" (a plain `div` can't take a name, so the role matters) — and clear `aria-busy` when the content arrives, so assistive technology announces the result once.
 
 ## Props
 

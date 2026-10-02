@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 /* ══ Skeleton — loading placeholder. A soft highlight sweeps across it (left to right, the reading direction)
    instead of the whole block pulsing; reduced motion gets a still block. Size it with classes or `width` /
    `height`; `shape` picks the corners. SkeletonText stacks text lines with a shorter last line. Placeholders are
-   aria-hidden — mark the region that is loading with aria-busy (and a label) instead. ══ */
+   aria-hidden — mark the region that is loading with role="group", aria-busy and a label instead. ══ */
 export const skeletonVariants = cva(
   'block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25%,color-mix(in_oklab,var(--card)_55%,transparent)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none',
   {

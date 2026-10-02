@@ -70,6 +70,8 @@ export function EdgeDrawer({
         data-side={side}
         data-open={open}
         aria-hidden={!open}
+        // Hidden from assistive tech is not enough: a closed drawer's buttons would still take focus.
+        inert={!open || undefined}
         className={cn(
           edgeDrawerVariants({ side, open, lifted: shadow == null }),
           width != null && 'w-(--edge-drawer-w)',

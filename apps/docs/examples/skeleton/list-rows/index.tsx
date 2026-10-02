@@ -7,6 +7,7 @@ export default function ListRows() {
   const widths = [132, 168, 104, 150]
   return (
     <div
+      role="group"
       aria-busy="true"
       aria-label="Loading contacts"
       style={{

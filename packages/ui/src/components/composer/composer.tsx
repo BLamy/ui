@@ -1691,9 +1691,10 @@ export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonP
                         removeAttachment(a.id);
                       }}
                       aria-label={`Remove ${a.name}`}
-                      className="absolute -top-1.5 -right-1.5 grid size-[18px] cursor-pointer place-items-center rounded-[50%] border border-border bg-popover p-0 text-[10px] leading-none text-muted-foreground"
+                      // The button is a 24px target; the 18px badge is drawn inside it.
+                      className="absolute -top-[9px] -right-[9px] grid size-6 cursor-pointer place-items-center border-0 bg-transparent p-0 text-[10px] leading-none text-muted-foreground"
                     >
-                      ✕
+                      <span aria-hidden="true" className="grid size-[18px] place-items-center rounded-[50%] border border-border bg-popover">✕</span>
                     </Button>
                   </motion.div>
                 );
@@ -1736,6 +1737,8 @@ const FILE_DROP_EXTENSIONS = [
 
 export interface ComposerInputProps {
   placeholder?: string;
+  /** The field's accessible name (default "Message"). The editor is a contenteditable, so it has no name of its own. */
+  'aria-label'?: string;
   autoFocus?: boolean;
   /** How pasted/dropped images enter: attachment chips (default) or inline image blocks. */
   imagePaste?: 'chip' | 'inline';
@@ -1751,6 +1754,7 @@ export interface ComposerInputProps {
  */
 export function ComposerInput({
   placeholder = 'Ask anything — @ files, / commands, paste images',
+  'aria-label': ariaLabel = 'Message',
   autoFocus,
   imagePaste = 'chip',
   slashMenu = true,
@@ -1792,12 +1796,24 @@ export function ComposerInput({
     if (!looksLikeMarkdown(text) || !editorRef.current) return false;
     return insertMarkdown(editorRef.current, text);
   };
+  // The name goes on the contenteditable itself (a role="textbox" div has none otherwise).
+  const labelRef = useRef(ariaLabel);
+  labelRef.current = ariaLabel;
+  const nameEditor = React.useCallback((editor: ComposerEditor | null) => {
+    try {
+      if (editor && !editor.isDestroyed) editor.view.dom.setAttribute('aria-label', labelRef.current);
+    } catch {
+      /* the view isn't mounted yet: the effect below names it once it is */
+    }
+  }, []);
+  React.useEffect(() => nameEditor(editorRef.current), [ariaLabel, nameEditor, ctx.editor]);
   const onEditorReady = React.useCallback(
     (editor: ComposerEditor | null) => {
       editorRef.current = editor;
       setEditor(editor);
+      nameEditor(editor);
     },
-    [setEditor],
+    [setEditor, nameEditor],
   );
   const onAttachmentOpen = React.useCallback((a: ComposerAttachment) => {
     latest.current.annotate(a.id);
