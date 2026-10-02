@@ -76,7 +76,7 @@ function Console() {
         <Button size="sm" variant="secondary" onPress={() => void send('http://notes.demo-tailnet.ts.net/echo', { method: 'POST', body: 'hello over the tailnet' })}>POST echo</Button>
         <Button size="sm" variant="secondary" onPress={() => void send('http://notes.demo-tailnet.ts.net/stream')}>Stream</Button>
         <Button size="sm" variant="secondary" onPress={() => void send('http://100.101.102.103/ping')}>100.101.102.103</Button>
-        <Button size="sm" variant="secondary" onPress={() => void send(`${location.origin}/favicon.ico`)}>Same origin</Button>
+        <Button size="sm" variant="secondary" onPress={() => void send(new URL(`${import.meta.env.BASE_URL}favicon.ico`, location.origin).href)}>Same origin</Button>
         <Button size="sm" variant="ghost" onPress={() => void router.router?.unregister()}>Remove service worker</Button>
       </div>
       <output aria-live="polite" className="grid gap-1 rounded-ctl bg-secondary px-3 py-2 text-footnote">

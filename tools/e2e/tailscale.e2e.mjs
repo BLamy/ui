@@ -56,11 +56,13 @@ test('the router registers a real service worker that controls the page', async 
   await openRouter(page);
   const info = await page.evaluate(async () => {
     const reg = await navigator.serviceWorker.getRegistration();
-    return { controlled: !!navigator.serviceWorker.controller, script: reg?.active?.scriptURL ?? null, scope: reg?.scope ?? null };
+    // The site's base: `/` locally, `/ui/` under GitHub Actions (see apps/docs/vite.config.mts).
+    const base = document.querySelector('script[src*="@vite/client"]')?.getAttribute('src')?.replace('@vite/client', '') ?? '/';
+    return { controlled: !!navigator.serviceWorker.controller, script: reg?.active?.scriptURL ?? null, scope: reg?.scope ?? null, base };
   });
   expect(info.controlled).toBe(true);
   expect(info.script).toMatch(/\/tailscale-sw\.js\?p=[A-Za-z0-9_-]+$/);
-  expect(new URL(info.scope).pathname).toBe('/');
+  expect(new URL(info.scope).pathname).toBe(info.base);
 });
 
 test('signed in: a plain fetch to a *.ts.net name and to a Tailscale IP is answered through the tailnet', async ({ page }) => {
