@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { GitbookStreamdown } from '@brett_lamy/docstream/streamdown';
+import { GitbookStreamdown, type GitbookStreamdownProps } from '@brett_lamy/docstream/streamdown';
 import { DocstreamRefContext, type DocstreamRefContextValue } from '@brett_lamy/docstream/reference';
 import type { ReferenceNode } from '@brett_lamy/docstream/gitbook';
 import '@brett_lamy/docstream/styles.css';
@@ -189,6 +189,10 @@ export interface MarkdownViewProps {
   markdown?: string;
   /** Passes streaming state through to Docstream for accessible streaming markup. */
   streaming?: boolean;
+  /** Resolve live demo blocks and their source files. */
+  demoResolver?: GitbookStreamdownProps['demoResolver'];
+  /** Render mounted component or Storybook source references. */
+  sourceRenderer?: GitbookStreamdownProps['sourceRenderer'];
   /** Called when an @mention / #tag / citation chip is clicked. */
   onReferenceClick?: (ref: ReferenceNode) => void;
   /** Override chip rendering; return null to fall back to the default chips. */
@@ -196,7 +200,7 @@ export interface MarkdownViewProps {
   className?: string;
   style?: React.CSSProperties;
 }
-export function MarkdownView({ markdown, streaming, onReferenceClick, renderReference, className, style }: MarkdownViewProps) {
+export function MarkdownView({ markdown, streaming, demoResolver, sourceRenderer, onReferenceClick, renderReference, className, style }: MarkdownViewProps) {
   const refCtx = React.useMemo<DocstreamRefContextValue>(
     () => ({
       ...(onReferenceClick ? { onReferenceClick } : {}),
@@ -206,7 +210,7 @@ export function MarkdownView({ markdown, streaming, onReferenceClick, renderRefe
   );
   const view = (
     <div data-slot="markdown-view" data-renderer="docstream" className={cn('wb-md', className)} style={style}>
-      <GitbookStreamdown markdown={markdown ?? ''} isStreaming={streaming} />
+      <GitbookStreamdown markdown={markdown ?? ''} isStreaming={streaming} demoResolver={demoResolver} sourceRenderer={sourceRenderer} />
     </div>
   );
   if (!onReferenceClick && !renderReference) return view;

@@ -234,6 +234,8 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   slashMenu?: GitbookEditorProps['slashMenu'];
   /** @mention / #tag / $codebase pickers: off by default; true for the defaults, or per-trigger sources. */
   references?: GitbookEditorProps['references'];
+  /** Resolve live demo blocks and their source files inside the editor. */
+  demoResolver?: GitbookEditorProps['demoResolver'];
   /** Parse pasted plain text that looks like Markdown into structure (default true). */
   pasteMarkdown?: boolean;
   /** Pasted or dropped images: inline image blocks (default) or attachment chips the host stores. */
@@ -321,6 +323,7 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     toolbar = false,
     slashMenu = true,
     references = false,
+    demoResolver,
     pasteMarkdown = true,
     imagePaste = 'inline',
     attachments,
@@ -531,6 +534,7 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
         toolbar={toolbar && editable}
         slashMenu={slashMenu}
         references={references}
+        demoResolver={demoResolver}
         editable={editable}
         {...(placeholder !== undefined ? { placeholder } : {})}
         autofocus={autoFocus}

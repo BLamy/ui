@@ -39,9 +39,11 @@ import { MarkdownView } from '@brett_lamy/ui'
 
 - Headings, paragraphs, emphasis, strong text, strike-through, links, and inline code
 - Ordered and unordered lists
+- Task lists, nested lists, mentions, tags, codebase references, and citations
 - Block quotes and horizontal rules
 - Tables and fenced code blocks with syntax highlighting
 - GitBook blocks supported by Docstream, including hints, tabs, expandables, and embeds
+- Package-manager commands, steppers, columns, figures, card tables, math, Mermaid diagrams, updates, OpenAPI operations, source references, and live demos
 
 The `MarkdownView` wrapper keeps BL UI's `wb-md` styling and sets `data-renderer="docstream"`. Docstream renders structured React elements rather than injecting raw HTML.
 
@@ -64,6 +66,16 @@ The demo feeds an answer in chunks so you can inspect partial and completed rend
 {% demo src="docstream/streamed-reply" %}
 
 ## Examples
+
+### Kitchen sink
+
+Every Docstream block type in one document: all six heading levels, inline formatting and reference chips, nested and task lists, quotes, code, all four hints, synchronized tabs and package-manager commands, expandables, steppers, columns, tables and cards, images and captions, math, Mermaid, video and replay, content and file links, updates, an OpenAPI operation, component and story references, and live demos with inline files.
+
+Switch between **Rendered** and **Editor**, inspect or edit the **Markdown source**, or **Stream example** to watch partial blocks arrive. Both component pages use this same sample. Images, the API spec, demos, and replay are bundled; the video requires a network connection. Optional sandboxed React and VizEngine integrations are shown with their setup syntax.
+
+{% demo src="docstream/kitchen-sink" %}
+
+`demoResolver` connects live demo blocks to their components and files. `sourceRenderer` renders component and Storybook references; the example uses Docstream's `SourcePreview` with a bundled source client.
 
 ### Chat replies
 

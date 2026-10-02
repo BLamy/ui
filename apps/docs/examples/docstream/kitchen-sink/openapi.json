@@ -1,0 +1,47 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Kitchen sink API", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.example.com" }],
+  "paths": {
+    "/notes/{id}": {
+      "get": {
+        "summary": "Read a note",
+        "description": "An OpenAPI operation rendered from the bundled example spec.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The note to read.",
+            "schema": { "type": "string", "example": "standup" }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Optional related content.",
+            "schema": { "type": "string", "enum": ["references", "attachments"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested note.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["id", "title"],
+                  "properties": {
+                    "id": { "type": "string", "example": "standup", "description": "Note identifier." },
+                    "title": { "type": "string", "example": "Standup notes", "description": "Display title." },
+                    "published": { "type": "boolean", "example": true, "description": "Publication state." }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "No note has this identifier." }
+        }
+      }
+    }
+  }
+}

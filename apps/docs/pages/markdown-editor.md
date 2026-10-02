@@ -39,6 +39,14 @@ const [markdown, setMarkdown] = useState('# Notes')
 
 ## Live examples
 
+### Kitchen sink
+
+Edit the complete Docstream sample beside its live `MarkdownView` preview. It includes inline formatting and reference chips, every heading level, nested and task lists, code, hints, tabs, commands, expandables, steppers, columns, tables and cards, figures, math, Mermaid, embeds, content links, updates, OpenAPI, source references, and live demos. Type `/` for blocks or `@`, `#`, and `$` for reference pickers.
+
+**Markdown source** exposes the same document as text; **Reset example** restores it. This is the same sample as the [Markdown kitchen sink](https://blamy.github.io/ui/#/docstream). Source-reference metadata and the API operation remain editable in the field; the preview resolves their content. The video requires a network connection, and the optional sandboxed React and VizEngine integrations include setup syntax.
+
+{% demo src="docstream/kitchen-sink" variants="editor:Editor,rendered:Rendered" %}
+
 ### Notes with a live preview
 
 A controlled editor beside a `MarkdownView` of the same value. Every edit serializes to Markdown, so the preview updates as you type.
@@ -84,6 +92,7 @@ Type `/` for headings, lists, tasks, quotes, code, hints, tabs, expandables, ste
 | `toolbar` | `boolean` | `false` | Bold, italic, strike, code and link buttons. Hidden while read-only or disabled. |
 | `slashMenu` | `boolean \| { items }` | `true` | The `/` block menu, or a custom item list. |
 | `references` | `boolean \| ReferenceSources` | `false` | `@` / `#` / `$` pickers that insert reference chips. |
+| `demoResolver` | `DemoResolver` | — | Resolves live demo blocks to components, source files, and metadata. |
 | `pasteMarkdown` | `boolean` | `true` | Parse pasted plain text that looks like Markdown into structure. |
 | `imagePaste` | `'inline' \| 'chip'` | `'inline'` | Pasted or dropped images become image blocks or attachment chips. |
 | `attachments` | `MarkdownEditorAttachment[]` | — | Chip mode: the host's store (`{ id, name, src?, size?, type? }`). |
