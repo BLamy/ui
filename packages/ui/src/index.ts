@@ -29,6 +29,9 @@ export type { DurableStreamsConfig, CloudSettings, CloudStatus } from './lib/dur
 export { useSessionRecording, startSessionRecording, useSessions, useSessionCloud, sessionCloud, readSession, deleteSession, clearSessions, currentSessionId, storageUsage } from './lib/session-recorder';
 export type { SessionInfo, SessionRecordingOptions, RecordedEvent, IndexRecord } from './lib/session-recorder';
 export { useSheetDrag, SHEET_TAP_SLOP, SHEET_MINIMIZE_TRAVEL } from './lib/sheet-drag';
+export { useEdgeSwipe } from './lib/edge-swipe';
+export type { EdgeSwipeConfig } from './lib/edge-swipe';
+export { usePersistentState, loadJSON, saveJSON } from './lib/persistent-state';
 export type { SheetDragOptions, SheetDragState } from './lib/sheet-drag';
 export type { SlotComponent, SlotProps, ContainerSize } from './lib/container';
 export { Icon, IC, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS, ICON_WEIGHTS } from './lib/icon';
@@ -145,6 +148,11 @@ export {
   DropdownMenuShortcut, DropdownMenuSub, dropdownMenuItemVariants,
 } from './components/dropdown-menu';
 export type { DropdownMenuContentProps, DropdownMenuItemProps, DropdownMenuSectionProps } from './components/dropdown-menu';
+export {
+  ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSection, ContextMenuLabel, ContextMenuSeparator,
+  ContextMenuShortcut, ContextMenuSub,
+} from './components/context-menu';
+export type { ContextMenuProps } from './components/context-menu';
 export { Tooltip, TooltipTrigger } from './components/tooltip';
 export type { TooltipProps } from './components/tooltip';
 export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectSection, selectTriggerVariants } from './components/select';

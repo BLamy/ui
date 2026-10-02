@@ -86,6 +86,7 @@
         { "id": "combobox", "title": "ComboBox" },
         { "id": "list-box", "title": "ListBox" },
         { "id": "dropdown-menu", "title": "DropdownMenu" },
+        { "id": "context-menu", "title": "ContextMenu" },
         { "id": "tooltip", "title": "Tooltip" },
         { "id": "popover", "title": "Popover" },
         { "id": "dialog", "title": "Dialog" },

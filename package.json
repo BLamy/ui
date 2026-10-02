@@ -8,13 +8,16 @@
     "build": "nx run-many -t build",
     "test:stories": "node tools/smoke-stories.mjs",
     "dev:docs": "vite --config apps/docs/vite.config.mts",
+    "e2e": "playwright test -c tools/e2e/playwright.config.mjs",
+    "a11y": "node tools/e2e/a11y-audit.mjs --check",
+    "a11y:update": "node tools/e2e/a11y-audit.mjs --update",
     "vr": "playwright test -c tools/vr/playwright.config.mjs",
     "vr:update": "playwright test -c tools/vr/playwright.config.mjs --update-snapshots",
     "registry": "node tools/registry/build.mjs",
     "registry:static": "node tools/registry/build.mjs --static",
     "tokens": "node tools/tokens/build.mjs && node tools/tokens/check.mjs",
     "variants": "node tools/docs/variants-md.mjs",
-    "knip": "pnpm dlx knip@5"
+    "knip": "knip"
   },
   "private": false,
   "dependencies": {
@@ -55,6 +58,7 @@
     "@vitejs/plugin-react": "^6.0.0",
     "@vitest/coverage-v8": "~4.1.0",
     "@vitest/ui": "~4.1.0",
+    "axe-core": "4.13.0",
     "esbuild": "^0.27.0",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
@@ -67,6 +71,7 @@
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "^2.1.0",
     "jsqr": "^1.4.0",
+    "knip": "^5.88.1",
     "nx": "23.1.1",
     "postcss": "^8.5.26",
     "prettier": "^3.8.1",

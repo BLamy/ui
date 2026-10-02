@@ -16,7 +16,6 @@
         "clsx",
         "tailwind-merge",
         "perfect-freehand",
-        "tailwindcss",
         "shadcn",
         "@nx/devkit",
         "@nx/workspace",
@@ -48,13 +47,13 @@
     "registry": {
       "entry": [
         "blocks/*/page.tsx",
-        "blocks/**/*.stories.tsx",
-        "components/*.tsx",
-        "blocks/types.ts",
-        "components/types.ts"
+        "blocks/**/*.stories.tsx"
       ],
       "project": [
         "**/*.{ts,tsx}"
+      ],
+      "ignoreDependencies": [
+        "@brett_lamy/ui"
       ]
     },
     "apps/docs": {
@@ -83,7 +82,8 @@
       ],
       "ignoreDependencies": [
         "highlight.js",
-        "use-sync-external-store"
+        "use-sync-external-store",
+        "@brett_lamy/ui"
       ]
     }
   }

@@ -1795,6 +1795,39 @@
       }
     },
     {
+      "name": "context-menu",
+      "type": "registry:ui",
+      "title": "ContextMenu",
+      "description": "The DropdownMenu opened where you right-click, long-press or press the menu key: anchored at the pointer, keyboard-reachable, focus handed back.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/context-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/context-menu.tsx"
+        }
+      ],
+      "meta": {
+        "page": "context-menu",
+        "exports": [
+          "ContextMenu",
+          "ContextMenuContent",
+          "ContextMenuItem",
+          "ContextMenuSection",
+          "ContextMenuLabel",
+          "ContextMenuSeparator",
+          "ContextMenuShortcut",
+          "ContextMenuSub"
+        ]
+      }
+    },
+    {
       "name": "conversation",
       "type": "registry:ui",
       "title": "Conversation",
@@ -2545,16 +2578,19 @@
       "title": "NavigationStack",
       "description": "A controlled push/pop stack with large titles and edge-swipe back.",
       "dependencies": [
-        "framer-motion@^13.1.0",
         "react-aria-components@^1.20.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/back-history.json",
+        "https://blamy.github.io/ui/r/edge-swipe.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/pull-to-refresh.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/title-flight.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3113,6 +3149,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/edge-drawer.json",
+        "https://blamy.github.io/ui/r/edge-swipe.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/navigation-stack.json",
@@ -3829,6 +3866,23 @@
       ]
     },
     {
+      "name": "back-history",
+      "type": "registry:lib",
+      "title": "Back History",
+      "description": "Back History — part of BL UI's library (lib/back-history.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/back-history.ts",
+          "type": "registry:lib",
+          "target": "lib/back-history.ts"
+        }
+      ]
+    },
+    {
       "name": "container",
       "type": "registry:lib",
       "title": "Container",
@@ -3864,6 +3918,23 @@
       ]
     },
     {
+      "name": "edge-swipe",
+      "type": "registry:lib",
+      "title": "Edge Swipe",
+      "description": "Edge Swipe — part of BL UI's library (lib/edge-swipe.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/edge-swipe.ts",
+          "type": "registry:lib",
+          "target": "lib/edge-swipe.ts"
+        }
+      ]
+    },
+    {
       "name": "persistent-host",
       "type": "registry:lib",
       "title": "Persistent Host",
@@ -3882,6 +3953,23 @@
       ]
     },
     {
+      "name": "persistent-state",
+      "type": "registry:lib",
+      "title": "Persistent State",
+      "description": "Persistent State — part of BL UI's library (lib/persistent-state.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/persistent-state.ts",
+          "type": "registry:lib",
+          "target": "lib/persistent-state.ts"
+        }
+      ]
+    },
+    {
       "name": "primitives",
       "type": "registry:lib",
       "title": "Primitives",
@@ -3895,6 +3983,24 @@
           "path": "packages/ui/src/lib/primitives.ts",
           "type": "registry:lib",
           "target": "lib/primitives.ts"
+        }
+      ]
+    },
+    {
+      "name": "pull-to-refresh",
+      "type": "registry:lib",
+      "title": "Pull To Refresh",
+      "description": "Pull To Refresh — part of BL UI's library (lib/pull-to-refresh.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/pull-to-refresh.ts",
+          "type": "registry:lib",
+          "target": "lib/pull-to-refresh.ts"
         }
       ]
     },
@@ -3989,6 +4095,26 @@
           "path": "packages/ui/src/lib/syntax.ts",
           "type": "registry:lib",
           "target": "lib/syntax.ts"
+        }
+      ]
+    },
+    {
+      "name": "title-flight",
+      "type": "registry:lib",
+      "title": "Title Flight",
+      "description": "Title Flight — part of BL UI's library (lib/title-flight.ts).",
+      "dependencies": [
+        "framer-motion@^13.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/title-flight.ts",
+          "type": "registry:lib",
+          "target": "lib/title-flight.ts"
         }
       ]
     },
@@ -5061,7 +5187,7 @@
       "name": "macos",
       "type": "registry:block",
       "title": "macOS",
-      "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack; the menu bar follows the frontmost app. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Below 640px wide the desktop turns into an iPhone — a status bar with the Dynamic Island, a springboard of the same apps (paged when they don't fit, with a dock and a Search pill that opens Alfred), full-screen apps that zoom out of their icons, and a home bar that sends one back while it keeps running. Light and dark.",
+      "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack (right-click the Dock to turn magnification off or hiding on — a hidden Dock slides up from the bottom edge and windows take its room); the menu bar follows the frontmost app. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Below 640px wide the desktop turns into an iPhone — a status bar with the Dynamic Island, a springboard of the same apps (paged when they don't fit, with a dock and a Search pill that opens Alfred), full-screen apps that zoom out of their icons, and a home bar that sends one back while it keeps running. Light and dark.",
       "categories": [
         "application",
         "productivity",
@@ -5073,10 +5199,12 @@
         "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/command-menu.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/kbd.json",
         "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/persistent-state.json",
         "https://blamy.github.io/ui/r/session-recorder.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/text-morph.json",
