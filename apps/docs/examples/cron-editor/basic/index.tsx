@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { CronEditor } from '@/components/ui/cron-editor'
 
-// The expression is the value. Where the browser has WebGPU a "Describe the
-// schedule" box proposes one for you to review; elsewhere the box is replaced
-// by a note and the rest works the same. "Now" and the zone are pinned so the
-// next runs read the same for everyone; in an app, leave `from` out.
+// The expression is the value. Where the browser has WebGPU, you describe the
+// schedule in words and the value follows on every keystroke, with the next
+// runs to check it by. Without WebGPU the box is replaced by a note and the raw
+// expression editor. "Now" and the zone are pinned so the next runs read the
+// same for everyone; in an app, leave `from` out.
 export default function Basic() {
   const [cron, setCron] = useState('0 9 * * 1-5')
   return (

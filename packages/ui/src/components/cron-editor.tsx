@@ -1,7 +1,6 @@
 'use client';
-import { useEffect, useId, useMemo, useState, type ComponentProps, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useState, type ComponentProps, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FieldDescription, FieldError, TextField } from '@/components/ui/text-field';
@@ -15,10 +14,11 @@ import { cn } from '@/lib/utils';
    The raw expression is always there: one text field, with each of its five fields (minute, hour, day of month,
    month, day of week) labelled and checked on its own, an English description, preset chips and the next runs in
    any IANA time zone. All of that is local and works everywhere.
-   Where the browser has WebGPU, a second box takes a plain-English description ("every weekday at 9am") and gpu-cron
-   turns it into an expression for you to review and use. gpu-cron is WebGPU-only, so without WebGPU that box is left
-   out and a note says why. The model always answers, even to nonsense, so its answer is shown as "what the model
-   understood" with a warning, and is only applied when you press "Use this expression".
+   Where the browser has WebGPU, the editor is just a plain-English box ("every weekday at 9am") and the next runs:
+   gpu-cron turns the text into an expression on every keystroke and that becomes the value, so the runs (and your
+   `onValueChange`) follow what you type. The model always answers, even to nonsense, which is why the next runs stay
+   in view: they are how you check it. gpu-cron is WebGPU-only, so without WebGPU (or with `naturalLanguage={false}`)
+   the editor is the raw expression instead, with its fields, description and presets.
 
    <CronEditor value={cron} onValueChange={setCron} timeZone="Europe/Paris" /> ══ */
 
@@ -69,7 +69,7 @@ export interface CronEditorProps extends Omit<ComponentProps<'div'>, 'defaultVal
   value?: string;
   /** The initial expression when uncontrolled. */
   defaultValue?: string;
-  /** Called with the new expression on every edit, a preset press, and "Use this expression". */
+  /** Called with the new expression on every edit, a preset press, and every answer of the plain-English box. */
   onValueChange?: (expression: string) => void;
   /** Label of the expression field. Default: "Cron expression". */
   label?: ReactNode;
@@ -86,13 +86,14 @@ export interface CronEditorProps extends Omit<ComponentProps<'div'>, 'defaultVal
   nextRunCount?: number;
   /** Preset chips; `false` hides them. Default: `CRON_PRESETS`. */
   presets?: readonly CronPreset[] | false;
-  /** Offer the plain-English box where WebGPU is available. `false` never loads gpu-cron. Default: true. */
+  /** Where WebGPU is available, edit through the plain-English box alone (the raw expression editor is the fallback).
+      `false` never loads gpu-cron and always shows the raw expression. Default: true. */
   naturalLanguage?: boolean;
   /** Label of the plain-English box. Default: "Describe the schedule". */
   naturalLanguageLabel?: ReactNode;
   /** BCP 47 locale for the dates in "Next runs". Default: the browser's. */
   locale?: string;
-  /** Milliseconds the plain-English box waits after typing before asking the model. Default: 150. */
+  /** Milliseconds the plain-English box waits after typing before asking the model. Default: 0 (every keystroke). */
   debounceMs?: number;
   isDisabled?: boolean;
 }
@@ -189,67 +190,75 @@ export function CronEditor({
   }, [locale, zone]);
   const nextId = useId();
   const zoneKnown = isValidTimeZone(zone);
+  // While the plain-English box can run (or is still checking), it is the only input; without WebGPU, the raw one.
+  const [support, setSupport] = useState<boolean | null>(null);
+  // Disabled, the editor shows the expression itself (read-only).
+  const plainEnglish = naturalLanguage && !isDisabled && support !== false;
 
   return (
     <div data-slot="cron-editor" className={cn(cronEditorVariants({ variant }), className)} {...rest}>
       {naturalLanguage ? (
-        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} debounceMs={debounceMs} isDisabled={isDisabled} />
+        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} onSupport={setSupport} debounceMs={debounceMs} isDisabled={isDisabled} />
       ) : null}
 
-      <TextField value={expression} onChange={set} name={name} isDisabled={isDisabled} isInvalid={!empty && !validation.valid}>
-        <Label variant="field" className={subtleText}>{label}</Label>
-        <Input
-          className="[font-family:var(--font-mono)]"
-          placeholder="0 9 * * 1-5"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          onSelect={(e) => setCaretField(fieldAtCaret(e.currentTarget.value, e.currentTarget.selectionStart ?? e.currentTarget.value.length))}
-          onBlur={() => setCaretField(null)}
-        />
-        <FieldDescription className={subtleText}>{description ?? 'Five fields, separated by spaces.'}</FieldDescription>
-        <FieldError className="text-foreground">
-          {problems.map((p) => (
-            <ErrorLine key={`${p.field}-${p.message}`}>{p.message}</ErrorLine>
-          ))}
-        </FieldError>
-      </TextField>
+      {plainEnglish ? null : (
+        <>
+          <TextField value={expression} onChange={set} name={name} isDisabled={isDisabled} isInvalid={!empty && !validation.valid}>
+            <Label variant="field" className={subtleText}>{label}</Label>
+            <Input
+              className="[font-family:var(--font-mono)]"
+              placeholder="0 9 * * 1-5"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              onSelect={(e) => setCaretField(fieldAtCaret(e.currentTarget.value, e.currentTarget.selectionStart ?? e.currentTarget.value.length))}
+              onBlur={() => setCaretField(null)}
+            />
+            <FieldDescription className={subtleText}>{description ?? 'Five fields, separated by spaces.'}</FieldDescription>
+            <FieldError className="text-foreground">
+              {problems.map((p) => (
+                <ErrorLine key={`${p.field}-${p.message}`}>{p.message}</ErrorLine>
+              ))}
+            </FieldError>
+          </TextField>
 
-      <dl data-slot="cron-editor-fields" className="m-0 grid grid-cols-5 gap-1.5">
-        {CRON_FIELDS.map((f, i) => {
-          const bad = validation.fields[f.name];
-          const part = validation.parts[i];
-          return (
-            <div
-              key={f.name}
-              data-field={f.name}
-              data-active={caretField === i ? '' : undefined}
-              data-invalid={bad ? '' : undefined}
-              className="flex min-w-0 flex-col-reverse items-center justify-end gap-0.5 rounded-ctl bg-secondary px-1 py-1.5 text-center ring-primary data-active:ring-2 data-invalid:ring-2 data-invalid:ring-destructive"
-            >
-              <dt className="text-caption2 leading-tight text-foreground/70">{f.label}</dt>
-              <dd className={cn('m-0 max-w-full truncate font-mono text-subhead leading-tight text-foreground', part === undefined && 'text-foreground/70')}>
-                {part ?? '–'}
-              </dd>
+          <dl data-slot="cron-editor-fields" className="m-0 grid grid-cols-5 gap-1.5">
+            {CRON_FIELDS.map((f, i) => {
+              const bad = validation.fields[f.name];
+              const part = validation.parts[i];
+              return (
+                <div
+                  key={f.name}
+                  data-field={f.name}
+                  data-active={caretField === i ? '' : undefined}
+                  data-invalid={bad ? '' : undefined}
+                  className="flex min-w-0 flex-col-reverse items-center justify-end gap-0.5 rounded-ctl bg-secondary px-1 py-1.5 text-center ring-primary data-active:ring-2 data-invalid:ring-2 data-invalid:ring-destructive"
+                >
+                  <dt className="text-caption2 leading-tight text-foreground/70">{f.label}</dt>
+                  <dd className={cn('m-0 max-w-full truncate font-mono text-subhead leading-tight text-foreground', part === undefined && 'text-foreground/70')}>
+                    {part ?? '–'}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+
+          <p data-slot="cron-editor-description" className="m-0 min-h-[18px] px-1 text-detail text-foreground">
+            {validation.valid ? words : null}
+          </p>
+
+          {presets && presets.length ? (
+            <div data-slot="cron-editor-presets" role="group" aria-label="Presets" className="flex flex-wrap gap-1.5">
+              {presets.map((p) => (
+                <Toggle key={p.value} variant="filled" size="sm" isSelected={expression.trim() === p.value} onChange={() => set(p.value)} isDisabled={isDisabled} className="data-selected:text-foreground">
+                  {p.label}
+                </Toggle>
+              ))}
             </div>
-          );
-        })}
-      </dl>
-
-      <p data-slot="cron-editor-description" className="m-0 min-h-[18px] px-1 text-detail text-foreground">
-        {validation.valid ? words : null}
-      </p>
-
-      {presets && presets.length ? (
-        <div data-slot="cron-editor-presets" role="group" aria-label="Presets" className="flex flex-wrap gap-1.5">
-          {presets.map((p) => (
-            <Toggle key={p.value} variant="filled" size="sm" isSelected={expression.trim() === p.value} onChange={() => set(p.value)} isDisabled={isDisabled} className="data-selected:text-foreground">
-              {p.label}
-            </Toggle>
-          ))}
-        </div>
-      ) : null}
+          ) : null}
+        </>
+      )}
 
       <section data-slot="cron-editor-next" data-surface="" aria-labelledby={nextId} className="flex flex-col gap-1.5">
         <p id={nextId} className="m-0 text-caption font-semibold text-foreground/70">Next runs</p>
@@ -288,18 +297,25 @@ interface NaturalLanguageProps {
   /** The expression in the editor now. */
   current: string;
   onUse: (expression: string) => void;
+  /** Reports whether gpu-cron can run here (null while checking). */
+  onSupport: (supported: boolean | null) => void;
   debounceMs?: number;
   isDisabled?: boolean;
 }
 
-/** The plain-English box: gpu-cron's answer shown as a proposal, and applied only on request. Rendered only while
-    gpu-cron may run (and as a note when it cannot). */
-function NaturalLanguage({ label, current, onUse, debounceMs, isDisabled }: NaturalLanguageProps) {
+/** The plain-English box: each answer gpu-cron gives for the text becomes the value. Rendered only while gpu-cron may
+    run (and as a note when it cannot). */
+function NaturalLanguage({ label, current, onUse, onSupport, debounceMs = 0, isDisabled }: NaturalLanguageProps) {
   const [text, setText] = useState('');
-  const { result, error, pending, supported, parsedText } = useCronParse(text, { debounceMs, enabled: !isDisabled });
-  const fresh = !!result && parsedText === text;
-  const words = useCronDescription(fresh ? result.expression : '');
-  const inUse = fresh && result.expression === current.trim();
+  const { result, error, supported, parsedText } = useCronParse(text, { debounceMs, enabled: !isDisabled });
+  const answer = result && parsedText === text ? result.expression : null;
+
+  useEffect(() => onSupport(supported), [supported, onSupport]);
+  // The newest answer is the value (only answers to what the box says now, so a slow one never lands late).
+  useEffect(() => {
+    if (answer !== null && answer !== current.trim()) onUse(answer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answer]);
 
   if (supported === false) {
     return (
@@ -309,37 +325,14 @@ function NaturalLanguage({ label, current, onUse, debounceMs, isDisabled }: Natu
       </p>
     );
   }
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && fresh && !pending) {
-      e.preventDefault();
-      onUse(result.expression);
-    }
-  };
 
   return (
     <div data-slot="cron-editor-natural" data-supported={supported ?? undefined} className="flex flex-col gap-2">
       <TextField value={text} onChange={setText} isDisabled={isDisabled || supported === null} isInvalid={error !== null}>
         <Label variant="field" className={subtleText}>{label}</Label>
-        <Input placeholder={supported === null && !isDisabled ? 'Checking for WebGPU…' : 'e.g. every weekday at 9am'} autoComplete="off" spellCheck={false} onKeyDown={onKeyDown} />
-        <FieldDescription className={subtleText}>Runs on your GPU; nothing is sent anywhere. Press Enter to use the answer.</FieldDescription>
+        <Input placeholder={supported === null && !isDisabled ? 'Checking for WebGPU…' : 'e.g. every weekday at 9am'} autoComplete="off" spellCheck={false} />
         <FieldError className="text-foreground">{error ? <ErrorLine>{describeCronError(error)}</ErrorLine> : null}</FieldError>
       </TextField>
-      {fresh ? (
-        <div data-slot="cron-editor-understood" data-surface="" aria-busy={pending || undefined} className={cn('flex flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
-          <p className="m-0 text-caption font-semibold text-foreground/70">What the model understood</p>
-          <code className="font-mono text-body text-foreground">{result.expression}</code>
-          <p className="m-0 min-h-[18px] text-detail text-foreground">{words}</p>
-          <div className="flex items-center gap-2">
-            <Button size="sm" isDisabled={isDisabled || inUse} onPress={() => onUse(result.expression)}>
-              {inUse ? 'In use' : 'Use this expression'}
-            </Button>
-          </div>
-          <p data-slot="cron-editor-warning" className="m-0 flex items-start gap-1.5 text-foreground/70">
-            <Icon name="warning" size={14} className="mt-[3px] text-warning" />
-            <span>The model always gives an answer, even to text that is not a schedule. Check that this reads the way you meant before you use it.</span>
-          </p>
-        </div>
-      ) : null}
     </div>
   );
 }

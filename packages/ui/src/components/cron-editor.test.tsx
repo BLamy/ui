@@ -233,54 +233,41 @@ describe('CronEditor (natural language)', () => {
     expect(box.placeholder).toMatch(/every weekday/);
   });
 
-  it('shows what the model understood, with the warning, and applies it only on request', async () => {
-    setWebGPU(true);
-    const seen: string[] = [];
-    render(<CronEditor {...base} onValueChange={(v) => seen.push(v)} />);
-    const box = screen.getByRole('textbox', { name: 'Describe the schedule' }) as HTMLInputElement;
-    await waitFor(() => expect(box.disabled).toBe(false));
-    fireEvent.change(box, { target: { value: 'every weekday at 9am' } });
-
-    await waitFor(() => expect(document.querySelector('[data-slot=cron-editor-understood]')).not.toBeNull());
-    const understood = document.querySelector('[data-slot=cron-editor-understood]') as HTMLElement;
-    expect(understood.textContent).toContain('What the model understood');
-    expect(understood.querySelector('code')?.textContent).toBe('0 9 * * 1-5');
-    expect(document.querySelector('[data-slot=cron-editor-warning]')?.textContent).toContain('always gives an answer, even to text that is not a schedule');
-    await waitFor(() => expect(understood.textContent).toContain('At 09:00 AM, Monday through Friday'));
-    // proposed, not applied
-    expect(expressionField().value).toBe('');
-    expect(seen).toEqual([]);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Use this expression' }));
-    expect(seen).toEqual(['0 9 * * 1-5']);
-    expect(expressionField().value).toBe('0 9 * * 1-5');
-    await waitFor(() => expect(screen.getByRole('button', { name: 'In use' }).hasAttribute('disabled')).toBe(true));
-    await waitFor(() => expect(runs()).toHaveLength(5));
-  });
-
-  it('applies the answer on Enter', async () => {
-    setWebGPU(true);
-    const seen: string[] = [];
-    render(<CronEditor {...base} onValueChange={(v) => seen.push(v)} />);
-    const box = screen.getByRole('textbox', { name: 'Describe the schedule' }) as HTMLInputElement;
-    await waitFor(() => expect(box.disabled).toBe(false));
-    fireEvent.change(box, { target: { value: 'weekdays at nine' } });
-    fireEvent.keyDown(box, { key: 'Enter' }); // nothing to apply yet
-    expect(seen).toEqual([]);
-    await waitFor(() => expect(document.querySelector('[data-slot=cron-editor-understood]')).not.toBeNull());
-    fireEvent.keyDown(box, { key: 'Enter' });
-    expect(seen).toEqual(['0 9 * * 1-5']);
-  });
-
-  it('hides the answer when the text is cleared, and shows the error when the model throws', async () => {
+  it('is the only input where WebGPU works: no expression field, fields, description or presets', async () => {
     setWebGPU(true);
     render(<CronEditor {...base} />);
     const box = screen.getByRole('textbox', { name: 'Describe the schedule' }) as HTMLInputElement;
     await waitFor(() => expect(box.disabled).toBe(false));
-    fireEvent.change(box, { target: { value: 'daily' } });
-    await waitFor(() => expect(document.querySelector('[data-slot=cron-editor-understood]')).not.toBeNull());
-    fireEvent.change(box, { target: { value: '' } });
-    expect(document.querySelector('[data-slot=cron-editor-understood]')).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Cron expression' })).toBeNull();
+    expect(document.querySelector('[data-slot=cron-editor-fields]')).toBeNull();
+    expect(document.querySelector('[data-slot=cron-editor-description]')).toBeNull();
+    expect(document.querySelector('[data-slot=cron-editor-presets]')).toBeNull();
+    expect(document.querySelector('[data-slot=cron-editor-next]')).not.toBeNull();
+  });
+
+  it('applies each answer as the value while you type, and the next runs follow', async () => {
+    setWebGPU(true);
+    const seen: string[] = [];
+    render(<CronEditor {...base} onValueChange={(v) => seen.push(v)} />);
+    mocks.parse.mockImplementation(async (text: string) => ({ expression: text.includes('15') ? '*/15 * * * *' : '0 9 * * 1-5', next: [] }));
+    const box = screen.getByRole('textbox', { name: 'Describe the schedule' }) as HTMLInputElement;
+    await waitFor(() => expect(box.disabled).toBe(false));
+    fireEvent.change(box, { target: { value: 'every weekday at 9am' } });
+    await waitFor(() => expect(seen).toEqual(['0 9 * * 1-5']));
+    await waitFor(() => expect(runs()).toHaveLength(5));
+    fireEvent.change(box, { target: { value: 'every 15 minutes' } });
+    await waitFor(() => expect(seen.at(-1)).toBe('*/15 * * * *'));
+  });
+
+  it('does not re-send an answer that is already the value, and shows the error when the model throws', async () => {
+    setWebGPU(true);
+    const seen: string[] = [];
+    render(<CronEditor {...base} defaultValue="0 9 * * 1-5" onValueChange={(v) => seen.push(v)} />);
+    const box = screen.getByRole('textbox', { name: 'Describe the schedule' }) as HTMLInputElement;
+    await waitFor(() => expect(box.disabled).toBe(false));
+    fireEvent.change(box, { target: { value: 'weekdays at nine' } });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(seen).toEqual([]);
 
     mocks.parse.mockRejectedValueOnce(new Error('prompt is 900 characters; the model fits 200 alongside its answer'));
     fireEvent.change(box, { target: { value: 'a very long description' } });

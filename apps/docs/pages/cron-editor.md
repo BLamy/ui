@@ -1,6 +1,6 @@
 # CronEditor
 
-Edit a 5-field cron expression with its meaning in view. The expression is always a plain text field, with each of its five fields (minute, hour, day of month, month, day of week) labelled and checked on its own, an English description, preset chips and the next runs in any time zone. All of that is computed locally and works in every browser. Where the browser has WebGPU, a second box takes a plain-English description ("every weekday at 9am") and [gpu-cron](https://github.com/jlsajfj/gpu-cron), a tiny on-device model, proposes an expression for you to review and use.
+Edit a 5-field cron expression with its meaning in view. Where the browser has WebGPU, the editor is a plain-English box ("every weekday at 9am") and the next runs: [gpu-cron](https://github.com/jlsajfj/gpu-cron), a tiny on-device model, turns the text into an expression on every keystroke, and that is the value. Everywhere else (and with `naturalLanguage={false}`) it is the raw expression: a plain text field with each of its five fields (minute, hour, day of month, month, day of week) labelled and checked on its own, an English description, preset chips and the next runs in any time zone, all computed locally.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -39,13 +39,17 @@ const [cron, setCron] = useState('0 9 * * 1-5')
 
 {% demo src="cron-editor/basic" %}
 
-The sections, top to bottom:
+Where WebGPU works there are two parts:
 
-1. **Describe the schedule** (only where WebGPU works). Type English; after a short pause the box shows *What the model understood*: the expression, its description, a **Use this expression** button and a warning. Nothing is applied until you press the button (or press Enter in the box). See the next section.
-2. **The expression.** A monospace text field. Under it, the five fields are shown one per cell with their names, and the cell the caret is in is outlined. A field that is wrong is outlined in the error color, and the error text names it ("Minute: 60 is out of range (0–59)"). An empty field gets a prompt, not an error.
-3. **A description**, in English, from [cronstrue](https://github.com/bradymholt/cRonstrue) (loaded on first use): "At 09:00 AM, Monday through Friday".
-4. **Presets**, as toggle chips; the one that equals the current expression is pressed.
-5. **Next runs**: the next five times it runs, in a time zone, with the zone named under the list.
+1. **Describe the schedule.** Type English. Each answer the model gives for what the box says now becomes the value (`onValueChange`), as you type; an answer for older text never lands late.
+2. **Next runs**: the next five times the value runs, in a time zone, with the zone named under the list. They are how you check the model's reading. See the section below.
+
+Without WebGPU the box is replaced by a note, and the editor is the raw expression, top to bottom:
+
+1. **The expression.** A monospace text field. Under it, the five fields are shown one per cell with their names, and the cell the caret is in is outlined. A field that is wrong is outlined in the error color, and the error text names it ("Minute: 60 is out of range (0–59)"). An empty field gets a prompt, not an error.
+2. **A description**, in English, from [cronstrue](https://github.com/bradymholt/cRonstrue) (loaded on first use): "At 09:00 AM, Monday through Friday".
+3. **Presets**, as toggle chips; the one that equals the current expression is pressed.
+4. **Next runs**, as above.
 
 ### Raw only, and your own presets
 
@@ -57,13 +61,13 @@ The sections, top to bottom:
 
 The model (45,376 parameters, 89 KB, MIT) turns text into a cron expression by constrained decoding: the output is **always syntactically valid** cron. It is **not** always the schedule you meant, and it has **no way to say it did not understand**. Gibberish gets a confident, valid, meaningless expression back. gpu-cron's own tests put its semantic accuracy at 83 to 87 percent on held-out phrasings, and sub-minute requests ("every 30 seconds") and end-of-month requests ("the last day of the month") are known to come out wrong, because standard 5-field cron cannot say them.
 
-So CronEditor never applies the model's answer by itself. The answer appears in its own row, titled **What the model understood**, with the expression, its English description and this warning: *The model always gives an answer, even to text that is not a schedule. Check that this reads the way you meant before you use it.* You decide with the **Use this expression** button. If you build your own UI on `useCronParse`, do the same: always show the decoded expression next to what the person typed.
+So the answer is never out of sight: CronEditor applies it as you type, and the next runs right under the box show what it actually means — "every tuesday at 10pm" reads *Tue, Oct 6, 2026, 10:00 PM*, a misreading reads wrong at a glance. Show the value as well when it matters (the demo prints it under the editor). If you build your own UI on `useCronParse`, do the same: always show what the decoded expression does next to what the person typed.
 
 Other facts about it:
 
 - **5 fields only.** No `@daily` macros, `L`, `W`, `#`, `?` or names in what the model writes; Sunday is 0. (The raw field and the local calculator also accept names and macros.)
 - **Its `next` times are in the machine's local zone** and the package has no option to change that. CronEditor ignores them and computes the runs itself with `nextCronRuns`, so the list follows `timeZone`.
-- **One call at a time.** The package serialises calls, so one call per keystroke is safe; the hook debounces by 150 ms anyway.
+- **One call at a time.** The package serialises calls, so one call per keystroke is safe. CronEditor asks on every keystroke (`debounceMs` 0); the hook's own default is 150 ms.
 - **Long text is refused** (the model has a fixed context); the box shows "That description is too long".
 
 ## WebGPU: when the box is there
@@ -125,7 +129,7 @@ The expression and the plain-English box are react-aria text fields with linked 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `value` / `defaultValue` | — | The expression, controlled or uncontrolled. |
-| `onValueChange` | — | `(expression: string) => void`, on every edit, preset press and "Use this expression". |
+| `onValueChange` | — | `(expression: string) => void`, on every edit, preset press and every answer of the plain-English box. |
 | `label` | "Cron expression" | Label of the expression field. |
 | `description` | "Five fields, separated by spaces." | Help text under it. |
 | `name` | — | Form field name of the expression. |
@@ -136,12 +140,12 @@ The expression and the plain-English box are react-aria text fields with linked 
 | `naturalLanguage` | `true` | `false` never loads gpu-cron. |
 | `naturalLanguageLabel` | "Describe the schedule" | Label of the plain-English box. |
 | `locale` | the browser's | BCP 47 locale of the run times. |
-| `debounceMs` | `150` | Wait after typing before asking the model. |
+| `debounceMs` | `0` | Wait after typing before asking the model (0: every keystroke). |
 | `variant` | `card` | `card` puts the model's answer and the next runs on filled panels; `plain` has no surface. |
 | `isDisabled` | `false` | Disables the fields and chips. |
 | `className`, `style` | — | Merged onto the root (`data-slot="cron-editor"`). Other div props pass through. |
 
-Parts carry `data-slot`s for tests and styling: `cron-editor-natural`, `cron-editor-understood`, `cron-editor-warning`, `cron-editor-note`, `cron-editor-fields` (each cell has `data-field`, and `data-active` / `data-invalid`), `cron-editor-description`, `cron-editor-presets` and `cron-editor-next`.
+Parts carry `data-slot`s for tests and styling: `cron-editor-natural`, `cron-editor-note`, `cron-editor-fields` (each cell has `data-field`, and `data-active` / `data-invalid`), `cron-editor-description`, `cron-editor-presets` and `cron-editor-next`.
 
 ## Hooks and helpers
 

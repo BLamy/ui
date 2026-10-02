@@ -1952,7 +1952,6 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/cron.json",
         "https://blamy.github.io/ui/r/gpu-cron.json",
         "https://blamy.github.io/ui/r/icon.json",
