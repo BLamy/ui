@@ -1,8 +1,7 @@
 /* The desktop's pieces that aren't the launcher's menu: app tiles and file glyphs, the hat, the desktop (wallpaper,
    menu bar, dock) and the power overlays (lock screen, sleep, restart, shut down). */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Button as AriaButton } from 'react-aria-components';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { Icon } from '@/lib/icon';
@@ -230,15 +229,24 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
   // A hidden dock comes up while the pointer is over it or the bottom-edge strip, keyboard focus is inside, or its menu is open.
   const [near, setNear] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [menu, setMenu] = useState<{ x: number } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
-  const shown = !hide || near || focused || menu !== null;
-  // The menu is gone when it closes, and a pointer that was on it never reports leaving: ask the browser where the
-  // pointer is once it has caught up.
-  const closeMenu = () => {
-    setMenu(null);
-    setTimeout(() => setNear(box.current?.querySelector(':hover') != null), 150);
+  const shown = !hide || near || focused || menuOpen;
+  const onMenuOpenChange = (open: boolean) => {
+    setMenuOpen(open);
+    // The menu is gone when it closes, and a pointer that was on it never reports leaving: ask the browser where the
+    // pointer is once it has caught up.
+    if (!open) setTimeout(() => setNear(box.current?.querySelector(':hover') != null), 150);
   };
+  // The dock's own preferences, at the foot of every one of its menus.
+  const prefsItems = [
+    <ContextMenuItem key="magnify" id="magnify" onAction={() => onPrefs({ ...prefs, magnify: !magnify })}>
+      {magnify ? 'Turn Magnification Off' : 'Turn Magnification On'}
+    </ContextMenuItem>,
+    <ContextMenuItem key="hide" id="hide" onAction={() => onPrefs({ ...prefs, hide: !hide })}>
+      {hide ? 'Turn Hiding Off' : 'Turn Hiding On'}
+    </ContextMenuItem>,
+  ];
   const well = cn('grid place-items-center rounded-[27%]', dark ? 'bg-white/12 text-white/80' : 'bg-white/60 text-black/60');
   const slot = cn(
     'group/dock relative grid cursor-pointer place-items-center border-0 bg-transparent p-0 transition-transform duration-spring-snappy ease-spring-snappy active:scale-95 motion-reduce:transition-none',
@@ -255,26 +263,38 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false); }}
     >
       {hide ? <div data-slot="macos-dock-edge" aria-hidden="true" className="pointer-events-auto absolute inset-x-0 bottom-0 h-3" onPointerDown={() => setNear(true)} /> : null}
-      <div
+      <ContextMenu
         data-slot="macos-dock"
         data-hidden={shown ? undefined : ''}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          setMenu({ x: e.clientX - e.currentTarget.getBoundingClientRect().left });
-        }}
+        anchor="top"
+        onOpenChange={onMenuOpenChange}
         className={cn(
           'pointer-events-auto absolute bottom-2.5 left-1/2 flex -translate-x-1/2 items-end gap-1.5 rounded-[20px] p-1.5 backdrop-blur-2xl backdrop-saturate-150 transition-transform duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
           dark ? 'bg-white/10 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.18),0_10px_30px_rgba(0,0,0,.35)]' : 'bg-white/35 shadow-[inset_0_0_0_.5px_rgba(255,255,255,.6),0_10px_30px_rgba(0,0,0,.12)]',
           shown ? 'translate-y-0' : 'translate-y-[calc(100%+20px)]',
         )}
       >
-        {APPS.map((app) => (
-          <button key={app.id} type="button" aria-label={`${d.isOpen(app.id) ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={slot}>
-            <DockLabel dark={dark}>{app.name}</DockLabel>
-            <AppTile app={app} size={tile} />
-            {d.isOpen(app.id) ? <span aria-hidden="true" className={cn('absolute -bottom-1 size-1 rounded-full', dark ? 'bg-white/80' : 'bg-black/60')} /> : null}
-          </button>
-        ))}
+        {APPS.map((app) => {
+          const running = d.isOpen(app.id);
+          return (
+            // An icon's own menu (Open or Show, Quit) with the dock's preferences under it. Right-clicking anywhere else on
+            // the dock gets the preferences alone: the outer menu stands aside for an event this one has handled.
+            <ContextMenu key={app.id} anchor="top" onOpenChange={onMenuOpenChange}>
+              <button type="button" aria-label={`${running ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={slot}>
+                <DockLabel dark={dark}>{app.name}</DockLabel>
+                <AppTile app={app} size={tile} />
+                {running ? <span aria-hidden="true" className={cn('absolute -bottom-1 size-1 rounded-full', dark ? 'bg-white/80' : 'bg-black/60')} /> : null}
+              </button>
+              {/* 14 = the usual 8 plus the dock's 6px padding: an icon's area starts inside it. */}
+              <ContextMenuContent placement="top" offset={14} aria-label={`${app.name} dock menu`}>
+                <ContextMenuItem id="open" onAction={() => d.open(app.id)}>{running ? 'Show' : 'Open'}</ContextMenuItem>
+                {running ? <ContextMenuItem id="quit" onAction={() => d.close(app.id)}>Quit</ContextMenuItem> : null}
+                <ContextMenuSeparator />
+                {prefsItems}
+              </ContextMenuContent>
+            </ContextMenu>
+          );
+        })}
         <span aria-hidden="true" className={cn('mx-0.5 w-px self-center', dark ? 'bg-white/20' : 'bg-black/12')} style={{ height: tile - 4 }} />
         <button type="button" aria-label="Alfred" onClick={onAlfred} className={slot}>
           <DockLabel dark={dark}>Alfred</DockLabel>
@@ -284,19 +304,8 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
           <IconSwap id={trash ? 'full' : 'empty'}><Icon name={trash ? 'trash-fill' : 'trash'} size={Math.round(tile * 0.57)} sw={1.7} /></IconSwap>
           <DockLabel dark={dark}>Trash</DockLabel>
         </span>
-        {/* The menu opens where the right-click landed: an invisible anchor there, on the dock's top edge. */}
-        <DropdownMenu isOpen={menu !== null} onOpenChange={(o) => { if (!o) closeMenu(); }}>
-          <AriaButton aria-hidden="true" excludeFromTabOrder className="pointer-events-none absolute top-0 size-0 opacity-0" style={{ left: menu?.x ?? 0 }} />
-          <DropdownMenuContent placement="top" aria-label="Dock">
-            <DropdownMenuItem id="magnify" onAction={() => onPrefs({ ...prefs, magnify: !magnify })}>
-              {magnify ? 'Turn Magnification Off' : 'Turn Magnification On'}
-            </DropdownMenuItem>
-            <DropdownMenuItem id="hide" onAction={() => onPrefs({ ...prefs, hide: !hide })}>
-              {hide ? 'Turn Hiding Off' : 'Turn Hiding On'}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        <ContextMenuContent placement="top" aria-label="Dock">{prefsItems}</ContextMenuContent>
+      </ContextMenu>
     </div>
   );
 }

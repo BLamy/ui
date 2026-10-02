@@ -11,6 +11,7 @@
    and full-screen apps that zoom out of their icons; the home bar sends one back, and double-tapping it opens the app
    switcher. The phone never moves or minimizes a window, so widening the container brings every app back where it was. */
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { usePersistentState } from '@/lib/persistent-state';
 import { useHotkey, type CommandMenuApi } from '@/components/ui/command-menu';
 import { Toaster, createToastQueue } from '@/components/ui/toast';
 import { useContainerSize } from '@/lib/container';
@@ -49,14 +50,19 @@ export interface MacOSProps {
   record?: boolean;
   /** The Dock's starting preferences; right-clicking the Dock changes them. Magnification defaults on, hiding off. */
   dock?: Partial<DockPrefs>;
+  /** Keep the desktop across reloads, in localStorage: the open windows (where they are, their order, zoomed or
+   *  minimized), the Dock's preferences and the dark-mode override. `true` uses the key "bl-macos"; a string is your
+   *  own, so two desktops on a page don't share one. Off by default. */
+  persist?: boolean | string;
 }
 
 type Phase = 'open' | 'closing' | 'closed';
 
-export default function MacOS({ initialApps, initialPages, initialQuery = '', defaultOpen = true, autoFocus = true, record = true, dock }: MacOSProps) {
+export default function MacOS({ initialApps, initialPages, initialQuery = '', defaultOpen = true, autoFocus = true, record = true, dock, persist = false }: MacOSProps) {
   useSessionRecording({ enabled: record });
   const ambient = useAppearance() === 'dark';
-  const [override, setOverride] = useState<boolean | null>(null);
+  const key = persist ? (typeof persist === 'string' ? persist : 'bl-macos') : null;
+  const [override, setOverride] = usePersistentState<boolean | null>(key && `${key}:dark`, null, (v): v is boolean | null => v === null || typeof v === 'boolean');
   const dark = override ?? ambient;
   const [queue] = useState(createToastQueue);
   const [phase, setPhase] = useState<Phase>(defaultOpen ? 'open' : 'closed');
@@ -76,7 +82,7 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
   return (
     <BLProvider dark={dark} tint={ALFRED_TINT[dark ? 'dark' : 'light']} className="bg-transparent">
       <AlfredProvider queue={queue} dark={dark} toggleDark={() => setOverride(!dark)} reset={reset} close={close}>
-        <Desktop dark={dark} phase={phase} setPhase={setPhase} show={show} close={close} boot={boot} menu={menu} queue={queue} initialApps={initialApps} initialDock={dock} />
+        <Desktop dark={dark} phase={phase} setPhase={setPhase} show={show} close={close} boot={boot} menu={menu} queue={queue} initialApps={initialApps} initialDock={dock} persistKey={key} />
       </AlfredProvider>
     </BLProvider>
   );
@@ -86,7 +92,7 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
 const MIN_DOCK_TILE = 28;
 const MAX_DOCK_TILE = 48;
 
-function Desktop({ initialApps, ...rest }: ScreenProps & { initialApps?: string[] }) {
+function Desktop({ initialApps, persistKey, ...rest }: ScreenProps & { initialApps?: string[] }) {
   const [ref, size] = useContainerSize({ width: 900, height: 640 });
   // The room windows live in: everything under the menu bar.
   const area = useMemo(() => ({ width: size.width, height: Math.max(0, size.height - MENU_H) }), [size.width, size.height]);
@@ -95,8 +101,8 @@ function Desktop({ initialApps, ...rest }: ScreenProps & { initialApps?: string[
   if (area.width >= PHONE_W && (wide.width !== area.width || wide.height !== area.height)) setWide(area);
   return (
     <div ref={ref} data-slot="macos" className="relative h-full w-full">
-      <DesktopProvider area={area} openArea={area.width >= PHONE_W ? area : wide} initialApps={initialApps}>
-        <Screen {...rest} size={size} />
+      <DesktopProvider area={area} openArea={area.width >= PHONE_W ? area : wide} initialApps={initialApps} persistKey={persistKey ? `${persistKey}:desktop` : undefined}>
+        <Screen {...rest} persistKey={persistKey} size={size} />
       </DesktopProvider>
     </div>
   );
@@ -107,9 +113,10 @@ interface ScreenProps {
   boot: { pages?: string[]; query: string; focus: boolean }; menu: React.RefObject<CommandMenuApi | null>;
   queue: ReturnType<typeof createToastQueue>;
   initialDock?: Partial<DockPrefs>;
+  persistKey?: string | null;
 }
 
-function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initialDock, size }: ScreenProps & { size: { width: number; height: number } }) {
+function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initialDock, persistKey, size }: ScreenProps & { size: { width: number; height: number } }) {
   const { power, setPower } = useAlfred();
   const desktop = useDesktop();
   // A phone-sized desktop is an iPhone: its own chrome, a springboard, and one full-screen app at a time.
@@ -136,7 +143,8 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initial
   const items = APPS.length + 2;
   const tile = Math.min(MAX_DOCK_TILE, Math.floor((size.width - 32 - 12 - (items + 1) * 6 - 6) / items));
   const dock = !phone && size.height >= 480 && tile >= MIN_DOCK_TILE;
-  const [dockPrefs, setDockPrefs] = useState<DockPrefs>({ magnify: true, hide: false, ...initialDock });
+  const [dockPrefs, setDockPrefs] = usePersistentState<DockPrefs>(persistKey ? `${persistKey}:dock` : null, () => ({ magnify: true, hide: false, ...initialDock }),
+    (v): v is DockPrefs => typeof (v as DockPrefs)?.magnify === 'boolean' && typeof (v as DockPrefs)?.hide === 'boolean');
   // A hidden dock sits off-screen, so windows, Alfred's list and the toasts get its room back.
   const reserve = dock && !dockPrefs.hide;
   const width = Math.min(720, size.width - 24);
@@ -144,6 +152,14 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initial
   const top = phone ? 12 : Math.round(Math.max(16, Math.min(140, size.height * 0.14)));
   const listHeight = Math.round(Math.max(140, Math.min(400, size.height - chrome - top - 68 - 44 - (reserve ? 88 : 20))));
   const toggle = () => (phase === 'open' ? close() : show());
+
+  // ⌥Tab brings back the window behind the front one (a Mac's ⌘Tab, which the browser keeps for itself).
+  const cycle = () => {
+    const order = [...desktop.windows].sort((a, b) => b.z - a.z);
+    const next = order[1] ?? order[0];
+    if (next) desktop.open(next.app);
+  };
+  useHotkey('alt+tab', cycle, !power && !phone);
 
   // ⌥Space, Alfred's hotkey (matchesHotkey compares the physical key: on a Mac ⌥Space types a non-breaking space).
   useHotkey('alt+space', toggle, !power);

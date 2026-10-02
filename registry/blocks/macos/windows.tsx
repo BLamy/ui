@@ -11,7 +11,26 @@ import { DOCK_RESERVE, MIN_H, MIN_W, useDesktop, type Area, type Rect, type Wind
 import { AppTile } from './parts';
 
 const TITLE_H = 40;
+/** How near an edge (px) the pointer must be, while dragging a title bar, to snap the window on release. */
+const SNAP = 8;
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+/** Where a drag that ends with the pointer at (x, y) would put the window, if it is at an edge: the left or right half
+    of the desktop, or all of it (the top edge zooms); none when the desktop is too narrow to split. */
+export type Snap = 'left' | 'right' | 'top';
+export function snapAt(x: number, y: number, area: Area): Snap | null {
+  if (area.width < MIN_W * 2) return null;
+  if (y <= SNAP) return 'top';
+  if (x <= SNAP) return 'left';
+  if (x >= area.width - SNAP) return 'right';
+  return null;
+}
+/** The rect a snap places a window in. */
+export function snapRect(snap: Exclude<Snap, 'top'>, area: Area, dock: boolean): Rect {
+  const h = Math.max(MIN_H, area.height - (dock ? DOCK_RESERVE : 0));
+  const w = Math.floor(area.width / 2);
+  return snap === 'left' ? { x: 0, y: 0, w, h } : { x: area.width - w, y: 0, w, h };
+}
 
 /** The rect a window actually shows: zoomed fills the desktop above the dock, and a stored rect is kept inside it. */
 export function shownRect(win: WindowState, area: Area, dock: boolean): Rect {
@@ -59,6 +78,8 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
   const settled = useSettled();
   const app = appById(win.app);
   const gesture = useRef<{ kind: 'move' | Edge; px: number; py: number; rect: Rect } | null>(null);
+  // Where the window would snap if the drag ended now (drawn as a preview while the pointer is at an edge).
+  const [snap, setSnap] = useState<Snap | null>(null);
   if (!app) return null;
   const front = d.front === win.app;
   const rect = shownRect(win, d.area, dock);
@@ -76,20 +97,43 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
     if (!g) return;
     const dx = e.clientX - g.px;
     const dy = e.clientY - g.py;
-    if (g.kind === 'move') d.setRect(win.app, { ...g.rect, x: clamp(g.rect.x + dx, 60 - g.rect.w, d.area.width - 60), y: clamp(g.rect.y + dy, 0, d.area.height - TITLE_H) });
-    else {
+    if (g.kind === 'move') {
+      d.setRect(win.app, { ...g.rect, x: clamp(g.rect.x + dx, 60 - g.rect.w, d.area.width - 60), y: clamp(g.rect.y + dy, 0, d.area.height - TITLE_H) });
+      // The pointer's place on the desktop (the windows layer starts at the stack's origin, so client coordinates less its box).
+      const layer = e.currentTarget.closest('[data-slot=macos-windows]')?.getBoundingClientRect();
+      setSnap(layer ? snapAt(e.clientX - layer.left, e.clientY - layer.top, d.area) : null);
+    } else {
       const w = g.kind === 's' ? g.rect.w : clamp(g.rect.w + dx, MIN_W, d.area.width - g.rect.x);
       const h = g.kind === 'e' ? g.rect.h : clamp(g.rect.h + dy, MIN_H, d.area.height - g.rect.y);
       d.setRect(win.app, { ...g.rect, w, h });
     }
   };
-  const end = () => { gesture.current = null; };
+  const end = () => {
+    const g = gesture.current;
+    gesture.current = null;
+    if (g?.kind === 'move' && snap) {
+      // Back to the place the drag began from first: a zoomed window un-zooms to where it was, not to where it was dragged.
+      if (snap === 'top') { d.setRect(win.app, g.rect); d.toggleZoom(win.app); }
+      else d.setRect(win.app, snapRect(snap, d.area, dock));
+    }
+    setSnap(null);
+  };
 
   const edge = (kind: Edge, className: string) => (
     <div aria-hidden="true" onPointerDown={begin(kind)} onPointerMove={move} onPointerUp={end} onPointerCancel={end} className={cn('absolute z-10 touch-none', className)} />
   );
 
+  const preview = snap ? (snap === 'top' ? { x: 0, y: 0, w: d.area.width, h: Math.max(MIN_H, d.area.height - (dock ? DOCK_RESERVE : 0)) } : snapRect(snap, d.area, dock)) : null;
   return (
+    <>
+    {preview ? (
+      <div
+        data-slot="macos-snap-preview"
+        aria-hidden="true"
+        className="pointer-events-none absolute rounded-panel bg-white/25 shadow-[inset_0_0_0_1.5px_rgba(255,255,255,.55)] backdrop-blur-sm"
+        style={{ left: preview.x + 6, top: preview.y + 6, width: preview.w - 12, height: preview.h - 12, zIndex: win.z - 1 }}
+      />
+    ) : null}
     <section
       data-slot="macos-window"
       data-app={app.id}
@@ -152,6 +196,7 @@ export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; da
         </>
       )}
     </section>
+    </>
   );
 }
 

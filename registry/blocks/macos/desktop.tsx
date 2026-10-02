@@ -1,6 +1,7 @@
 /* The desktop's window manager: one window per app (opening a running app brings it forward), a stacking order,
    and the frontmost app the menu bar shows. Geometry is stored unzoomed; a zoomed window fills the desktop. */
-import { createContext, useContext, useMemo, useReducer, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
+import { loadJSON, saveJSON } from '@/lib/persistent-state';
 import { appById, type DesktopApp } from './apps';
 
 export interface Rect { x: number; y: number; w: number; h: number }
@@ -95,11 +96,27 @@ export function useDesktop(): Desktop {
   return d;
 }
 
+/** The saved layout, or null when there is none or it isn't the right shape (an app that no longer exists, a bad number). */
+function loadState(key: string): State | null {
+  const v = loadJSON(key) as { v?: number; windows?: unknown; z?: unknown; front?: unknown } | undefined;
+  if (!v || v.v !== 1 || !Array.isArray(v.windows) || typeof v.z !== 'number') return null;
+  const num = (n: unknown) => typeof n === 'number' && Number.isFinite(n);
+  const ok = v.windows.every((w: Partial<WindowState>) =>
+    typeof w?.app === 'string' && !!appById(w.app) && num(w.x) && num(w.y) && num(w.w) && num(w.h) && num(w.z) && typeof w.minimized === 'boolean' && typeof w.zoomed === 'boolean');
+  return ok ? { windows: v.windows as WindowState[], z: v.z, front: typeof v.front === 'string' ? v.front : null } : null;
+}
+
 /** `openArea` is the room new windows are placed in (default: `area`) — a phone-sized desktop passes the last wide one,
     so apps opened on the phone are where a desktop would have put them when the width comes back. */
-export function DesktopProvider({ area, openArea = area, initialApps = [], children }: { area: Area; openArea?: Area; initialApps?: string[]; children: ReactNode }) {
+/** With `persistKey` the layout (which windows, where, in what order, zoomed or minimized) is kept in localStorage and
+    comes back on the next visit — in place of `initialApps` when there is one saved. */
+export function DesktopProvider({ area, openArea = area, initialApps = [], persistKey, children }: { area: Area; openArea?: Area; initialApps?: string[]; persistKey?: string; children: ReactNode }) {
   const [state, dispatch] = useReducer(reduce, { area: openArea, initialApps }, ({ area: a, initialApps: apps }) =>
-    apps.reduce<State>((s, app) => reduce(s, { type: 'open', app, area: a }), { windows: [], z: 0, front: null }));
+    (persistKey ? loadState(persistKey) : null)
+    ?? apps.reduce<State>((s, app) => reduce(s, { type: 'open', app, area: a }), { windows: [], z: 0, front: null }));
+  useEffect(() => {
+    if (persistKey) saveJSON(persistKey, { v: 1, windows: state.windows, z: state.z, front: state.front });
+  }, [persistKey, state]);
   const value = useMemo<Desktop>(() => ({
     windows: state.windows,
     front: state.front,
