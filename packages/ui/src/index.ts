@@ -277,6 +277,16 @@ export {
   type ComposerAnnotatorSurface,
 } from './components/composer/annotator';
 export { WbPopover, type WbPopoverProps } from './components/composer/composer-popover';
+export {
+  ComposerCards,
+  ComposerMorphCard,
+  ComposerQueue,
+  type ComposerCardsProps,
+  type ComposerMorphCardProps,
+  type ComposerQueueProps,
+  type ComposerQueueItem,
+  type ComposerQueueActions,
+} from './components/composer/composer-cards';
 
 // ── Chat: floating/artifact chat containers (ChatShell and the Discord-style parts live in the discord-clone block) ──
 export {

@@ -33,7 +33,10 @@
     "ComposerAnnotatorProvider",
     "useComposer",
     "useComposerBump",
-    "useComposerAnnotator"
+    "useComposerAnnotator",
+    "ComposerCards",
+    "ComposerMorphCard",
+    "ComposerQueue"
   ],
   "imports": [
     "Composer",

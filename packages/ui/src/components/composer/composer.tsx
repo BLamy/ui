@@ -131,6 +131,12 @@ export interface ComposerContextValue {
   canSend: boolean;
   send: () => void;
   stop: () => void;
+  /** Hands a message to `onSubmit` directly, bypassing the draft (a ComposerQueue feeding a queued message in). */
+  submit: (markdown: string, attachments: ComposerAttachment[]) => void;
+  /** A ComposerQueue is mounted: sending while streaming queues the draft instead of being held. */
+  canQueue: boolean;
+  /** @internal a ComposerQueue registers where queued drafts go. */
+  setQueue: (queue: ((markdown: string, attachments: ComposerAttachment[]) => void) | null) => void;
   /** Opens the annotator for an attachment (a plain preview when the annotator is opted out). */
   annotate: (id: string) => void;
   /** An annotator is in effect (PencilKit by default, the `annotator` prop, a ComposerAnnotatorProvider, or `annotateCanvas`). */
@@ -470,8 +476,21 @@ export function Composer({
     }
   };
 
+  // A mounted ComposerQueue takes drafts sent while a reply streams.
+  const queueRef = useRef<((markdown: string, attachments: ComposerAttachment[]) => void) | null>(null);
+  const [canQueue, setCanQueue] = useState(false);
+  const setQueue = React.useCallback((queue: ((markdown: string, attachments: ComposerAttachment[]) => void) | null) => {
+    queueRef.current = queue;
+    setCanQueue(!!queue);
+  }, []);
+  const submitRef = useRef(onSubmit);
+  submitRef.current = onSubmit;
+  const submit = React.useCallback((markdown: string, sent: ComposerAttachment[]) => submitRef.current?.(markdown, sent), []);
+
   const send = () => {
-    if (!canSend || streaming) return;
+    if (!canSend) return;
+    const queue = streaming ? queueRef.current : null;
+    if (streaming && !queue) return;
     const markdown = valueRef.current.trim();
     const sent = attRef.current;
     // The receiver owns the sent files' URLs now; they stay valid until this Composer unmounts.
@@ -484,7 +503,8 @@ export function Composer({
     setAttachments([]);
     if (editor) editor.commands.clearContent(true);
     setValue('');
-    onSubmit?.(markdown, sent);
+    if (queue) queue(markdown, sent);
+    else onSubmit?.(markdown, sent);
   };
   const stop = () => {
     onStop?.();
@@ -613,6 +633,9 @@ export function Composer({
     canSend,
     send,
     stop,
+    submit,
+    canQueue,
+    setQueue,
     annotate: openAnnotator,
     canAnnotate: annotateCanvas !== undefined || !!annotator,
     editor,
@@ -1368,14 +1391,16 @@ export interface ComposerSendProps extends Omit<ComposerButtonProps, 'variant'> 
  * the same button: the fill drains (ring) or turns red (solid) and the arrow turns into the stop square.
  */
 export function ComposerSend({ morph = true, stopVariant = 'ring', className, ...props }: ComposerSendProps) {
-  const { streaming, canSend, send, stop } = useComposer();
-  const stopping = streaming && morph;
+  const { streaming, canSend, canQueue, send, stop } = useComposer();
+  // With a ComposerQueue, a draft typed during a reply is sent into the queue: the button stays a send arrow.
+  const queueing = streaming && canQueue && canSend;
+  const stopping = streaming && morph && !queueing;
   return (
     <Button
       data-slot={stopping ? 'composer-stop' : 'composer-send'}
-      data-state={stopping ? 'stop' : 'send'}
-      aria-label={stopping ? 'Stop' : 'Send'}
-      isDisabled={stopping ? false : !canSend || streaming}
+      data-state={stopping ? 'stop' : queueing ? 'queue' : 'send'}
+      aria-label={stopping ? 'Stop' : queueing ? 'Queue message' : 'Send'}
+      isDisabled={stopping ? false : !canSend || (streaming && !canQueue)}
       onPress={stopping ? stop : send}
       className={cn(
         pressable,

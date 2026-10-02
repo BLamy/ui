@@ -244,6 +244,62 @@ Search across every model; a vertical provider rail (favorites first) switches t
 />
 ```
 
+## Morphing cards
+
+`ComposerCards` is a tray of cards on one side of the composer (`side="top"` or `"bottom"`), for things that belong to the next message but are not part of the draft: a connector to set up, the context that will go with it, a step an agent just finished. Its `ComposerMorphCard`s come out of the composer like a drop of liquid. A new card starts inside the surface next to it, blurred, and slides out. While the two are closer than a few pixels their outlines are one shape that necks in and pinches off, and then the card stands on its own. Removing a card plays that backwards: it sinks back in. Cards are keyed children, so adding and removing them is just rendering.
+
+The tray and the queue ship with the composer (`components/ui/composer/composer-cards`) and are exported from the package root.
+
+{% demo src="composer/morph-cards" %}
+
+```tsx
+import { ComposerCards, ComposerMorphCard } from '@/components/ui/composer/composer-cards'
+
+<Composer>
+  <ComposerCards side="top">
+    {suggest ? <ComposerMorphCard key="notion">…</ComposerMorphCard> : null}
+  </ComposerCards>
+  <ComposerCard>…</ComposerCard>
+  <ComposerCards side="bottom">…</ComposerCards>
+</Composer>
+```
+
+**Where a card comes out of.** A card grows out of the surface on its inner side. For the card next to the composer that is the composer's card, unless the composer has a bump on that side: then it is the outermost `attached` or `detached` bump, so cards come out of the nub rather than the main card. A card added beyond another card grows out of that card. The tray takes the width of the surface it comes out of and orders itself outside the bumps on its side, wherever you place it among the Composer's children.
+
+{% demo src="composer/morph-from-bump" %}
+
+**How it is drawn.** While surfaces are joined, their own background, border and shadow are switched off and the joined outline is drawn as one SVG path under the composer: their rounded rectangles plus a neck between each joined pair (`lib/morph-path.ts`). It is filled, outlined and shadowed with the source's own computed `background-color`, `border-color`, corner radius and `box-shadow`, and the cards wear the same material at rest, so the joined and the separate states look identical, in light and dark. `gap` (default 8px) is the space between a card and its source at rest. Below 6px two surfaces are drawn as one, so a smaller `gap` is raised to 6. Under `prefers-reduced-motion` cards appear and disappear without the morph.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `side` | `top` | Above or below the composer. |
+| `gap` | `8` | Space between a card and the surface it came out of, at rest (px). |
+| `animateOnMount` | `false` | Morph in the cards that are there when the tray mounts. |
+| `ComposerMorphCard` `onExited` | — | Called once a removed card has sunk back into its source. |
+
+## Queued messages
+
+`ComposerQueue` puts the cards to work. While a reply is streaming, sending no longer waits: the draft becomes a card that morphs out of the top of the composer (out of a top bump, when there is one) and the draft clears for the next message. When the reply ends, the oldest queued card merges back into the composer and goes to `onSubmit`, like a message you just sent; the next one goes in after the following reply. Each card can be edited (it merges back and its text and attachments return to the draft), sent now (stops the reply, then sends), or removed.
+
+{% demo src="composer/queue" %}
+
+```tsx
+import { ComposerQueue } from '@/components/ui/composer/composer-cards'
+
+<Composer streaming={busy} onSubmit={send} onStop={stop}>
+  <ComposerQueue />
+  <ComposerCard>
+    <ComposerInput placeholder="Message the agent" />
+    <ComposerFooter>
+      <ComposerSpacer />
+      <ComposerSend />
+    </ComposerFooter>
+  </ComposerCard>
+</Composer>
+```
+
+With a queue mounted, `ComposerSend` stays a send arrow ("Queue message") while there is a draft during a reply, and is the stop control otherwise. Pair it with a `ComposerStop` if stopping should always be one press away. The oldest message sits against the composer, since it goes in next, and newer ones stack outwards. `items` / `defaultItems` / `onItemsChange` make the queue controlled (`{ id, markdown, attachments }[]`). `autoSend={false}` leaves sending to the card's **Send now**, and `renderItem(item, { edit, sendNow, remove })` draws your own card. `useComposer()` also exposes `submit(markdown, attachments)` (sends without touching the draft) and `canQueue`.
+
 ## Empty state
 
 A thread with no messages renders the **centered composer**: glyph, "What are we building?", the composer, and three suggestion chips that send on tap. Press the `+` in any header to get there. Sending the first message keeps the composer: the greeting leaves, and the same composer travels down to its dock as the thread's first turn rises in (see [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell)).
@@ -258,6 +314,7 @@ Every state change moves rather than swaps, after Benji Taylor's [Family Values]
 - **Dropping files**: the card's drop overlay springs in (wash, ring, the "+" lifting into place) and folds away when the files land or leave.
 - **Annotate** zooms the image out of the thumbnail or chip you pressed and, on Cancel or Save, back into it.
 - **Option pills** morph their label by the letters old and new share; menu ticks pop in.
+- **Cards** morph out of the composer (or out of a bump) and sink back into it, their outline necking in and pinching off like liquid (see [Morphing cards](https://blamy.github.io/ui/#/composer)).
 - **Draggable bumps** follow the finger, then settle on a spring that keeps the release velocity — a flick opens or closes them.
 
 `prefers-reduced-motion` turns movement into instant changes.
