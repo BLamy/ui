@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (73 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (75 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -1309,6 +1309,57 @@ bl-btn relative box-border flex cursor-pointer items-center justify-center gap-1
 | --- | --- |
 | `segmented` (default) | `flex-1 rounded-[7px] px-3 py-[5px] text-footnote text-foreground data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45` |
 | `underline` | `-mb-px h-10 px-0.5 text-subhead text-muted-foreground data-hovered:text-foreground data-selected:text-primary data-focus-visible:rounded-md data-focus-visible:…` |
+
+## TailscaleLoginButton
+
+### `tailscaleLoginButtonVariants`
+
+Defined in `@/components/ui/tailscale-login-button`. Base classes:
+
+```text
+box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] font-semibold whitespace-nowrap outline-none transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy data-pressed:scale-[.97] motion-reduce:transition-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-offset-2 data-disabled:cursor-default data-disabled:opacity-40
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `bg-foreground text-background` |
+| `outline` | `bg-background text-foreground shadow-hairline data-hovered:bg-secondary` |
+| `secondary` | `bg-secondary text-secondary-foreground` |
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `h-10 rounded-ctl px-4 text-subhead` |
+| `sm` | `h-8 rounded-lg px-3 text-footnote` |
+| `lg` | `h-11 rounded-xl px-5 text-callout` |
+| `pill` | `h-11 w-full rounded-card px-4 text-callout` |
+
+**`tone`** — default `idle`
+
+| Value | Adds |
+| --- | --- |
+| `idle` (default) | — |
+| `busy` | — |
+| `connected` | — |
+| `error` | `bg-secondary text-foreground shadow-none` |
+
+### `tailscaleStatusBadgeVariants`
+
+Defined in `@/components/ui/tailscale-login-button`. Base classes:
+
+```text
+inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-footnote
+```
+
+**`layout`** — default `inline`
+
+| Value | Adds |
+| --- | --- |
+| `inline` (default) | — |
+| `stacked` | `flex-col items-start` |
 
 ## Textarea
 

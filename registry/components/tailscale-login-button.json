@@ -1,0 +1,35 @@
+{
+  "name": "tailscale-login-button",
+  "title": "TailscaleLoginButton",
+  "description": "A \"Sign in with Tailscale\" button on react-aria's Button that follows the connection (sign in, signing in and cancel, connected and sign out, error and retry), and a status badge with the tailnet, the error, and the sign-in link when a popup is blocked.",
+  "files": [
+    "components/tailscale-login-button.tsx"
+  ],
+  "exports": [
+    "TailscaleLoginButton",
+    "TailscaleStatusBadge",
+    "TailscaleMark",
+    "tailscaleLoginButtonVariants",
+    "tailscaleStatusBadgeVariants",
+    "createTailscale",
+    "createTailscaleFetch",
+    "TailscaleError",
+    "tailscaleErrorMessage",
+    "memoryTailscalePersistence",
+    "webStorageTailscalePersistence",
+    "vaultTailscalePersistence",
+    "TailscaleProvider",
+    "useTailscale",
+    "useTailscaleStatus",
+    "useTailscaleFetch",
+    "createTailscaleConnectClient",
+    "createFakeTailscaleClient"
+  ],
+  "page": "tailscale-login",
+  "imports": [
+    "TailscaleProvider",
+    "TailscaleLoginButton",
+    "TailscaleStatusBadge",
+    "createTailscaleConnectClient"
+  ]
+}

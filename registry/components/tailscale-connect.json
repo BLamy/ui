@@ -1,0 +1,14 @@
+{
+  "name": "tailscale-connect",
+  "title": "Tailscale WebAssembly client",
+  "description": "The real tailnet client for createTailscale: adapts @agent-wasm/tailscale-connect (Tailscale's Go client compiled to WebAssembly, about 26 MB, imported only when someone signs in) to the TailscaleClient interface. Installs that package.",
+  "files": [
+    "lib/tailscale-connect.ts"
+  ],
+  "exports": [
+    "createTailscaleConnectClient"
+  ],
+  "imports": [
+    "createTailscaleConnectClient"
+  ]
+}

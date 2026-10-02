@@ -1,0 +1,14 @@
+{
+  "name": "tailscale-fake",
+  "title": "Fake Tailscale client",
+  "description": "An in-memory TailscaleClient for tests, stories and demos: a sign-in that approves itself, auth keys, a node state map, and per-host request handlers. No network and no account.",
+  "files": [
+    "lib/tailscale-fake.ts"
+  ],
+  "exports": [
+    "createFakeTailscaleClient"
+  ],
+  "imports": [
+    "createFakeTailscaleClient"
+  ]
+}

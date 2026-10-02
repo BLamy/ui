@@ -190,11 +190,13 @@ const componentItems = [...graph.items.values()].map((it) => {
     dependencies: depsField(it.npm),
     registryDependencies: [BASE_ITEM, ...it.deps.map(itemUrl)],
     ...(m.css ? { css: m.css } : {}),
-    files: it.files.map((f) => ({
-      path: `${SRC}/${f}`,
-      type,
-      target: f.startsWith('components/') ? `components/ui/${f.slice('components/'.length)}` : f,
-    })),
+    // A manifest's `publicFiles` maps an asset (a service worker script) to where it must be served from: it installs as
+    // a registry:file at that target (`~/public/…` is the project root's public folder), not next to the code.
+    files: it.files.map((f) =>
+      m.publicFiles?.[f]
+        ? { path: `${SRC}/${f}`, type: 'registry:file', target: m.publicFiles[f] }
+        : { path: `${SRC}/${f}`, type, target: f.startsWith('components/') ? `components/ui/${f.slice('components/'.length)}` : f },
+    ),
     ...(m.page ? { meta: { page: m.page, exports: m.exports } } : {}),
   };
 });

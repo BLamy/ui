@@ -151,7 +151,9 @@
       "pages": [
         { "id": "passkey-vault", "title": "Passkey vault" },
         { "id": "pglite", "title": "PGlite" },
-        { "id": "sql-console", "title": "SqlConsole" }
+        { "id": "sql-console", "title": "SqlConsole" },
+        { "id": "tailscale-login", "title": "Sign in with Tailscale" },
+        { "id": "tailscale-router", "title": "Tailscale request router" }
       ]
     },
     {

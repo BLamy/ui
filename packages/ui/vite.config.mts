@@ -22,6 +22,12 @@ export default defineConfig(() => ({
     }),
     // The bl-theme ships as plain CSS (`@brett_lamy/ui/theme.css`), copied as is.
     { name: 'bl-theme-css', closeBundle: () => copyFileSync(path.join(import.meta.dirname, 'src/theme.css'), path.join(import.meta.dirname, 'dist/theme.css')) },
+    // The Tailscale router's service worker ships as a plain script (`@brett_lamy/ui/tailscale-sw.js`) to copy into public/.
+    {
+      name: 'bl-tailscale-sw',
+      closeBundle: () =>
+        copyFileSync(path.join(import.meta.dirname, 'src/lib/tailscale-router/tailscale-sw.js'), path.join(import.meta.dirname, 'dist/tailscale-sw.js')),
+    },
   ],
   // Uncomment this if you are using workers.
   // worker: {

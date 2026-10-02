@@ -1,0 +1,28 @@
+{
+  "name": "tailscale-router",
+  "title": "Tailscale request router",
+  "description": "A service worker that intercepts the page's fetches, sends the ones its policy matches to a page connected to the tailnet over a MessagePort, and streams the answers back; everything else goes to the network untouched. Installs tailscale-sw.js into public/.",
+  "page": "tailscale-router",
+  "files": [
+    "lib/tailscale-router/bridge.ts",
+    "lib/tailscale-router/react.ts"
+  ],
+  "publicFiles": {
+    "lib/tailscale-router/tailscale-sw.js": "~/public/tailscale-sw.js"
+  },
+  "exports": [
+    "registerTailscaleRouter",
+    "tailscaleServiceWorkerUrl",
+    "tailscaleRouterUnsupportedReason",
+    "TailscaleRouter",
+    "useTailscaleRouter",
+    "resolveTailscalePolicy",
+    "matchTailscalePolicy",
+    "describeTailscalePolicy",
+    "isTailnetHost"
+  ],
+  "imports": [
+    "TailscaleRouter",
+    "useTailscaleRouter"
+  ]
+}

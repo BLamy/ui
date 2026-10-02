@@ -521,3 +521,39 @@ export type {
 } from './lib/file-upload';
 
 export { formatBytes } from './lib/format-bytes';
+
+
+// ── Tailscale ──
+export {
+  createTailscale, createTailscaleFetch, toTailscaleRequest, toResponse, isSafeLoginUrl, tailscaleErrorMessage, TailscaleError,
+  memoryTailscalePersistence, webStorageTailscalePersistence, vaultTailscalePersistence,
+} from './lib/tailscale';
+export type {
+  Tailscale, TailscaleOptions, TailscaleSnapshot, TailscaleStatus, TailscaleAuth, TailscaleEnv, TailscalePopup, TailscalePeer,
+  TailscaleClient, TailscaleClientEvent, TailscaleClientStartOptions, TailscaleClientState, TailscaleNetMap, TailscaleNode,
+  TailscaleRequest, TailscaleResponse, TailscaleSession, TailscalePersistence, TailscaleVaultLike, TailscaleErrorReason,
+} from './lib/tailscale';
+export {
+  resolveTailscalePolicy, matchTailscalePolicy, encodeTailscalePolicy, decodeTailscalePolicy, describeTailscalePolicy,
+  isTailnetHost, isTailnetAddress, TailscalePolicyError,
+} from './lib/tailscale-policy';
+export type {
+  TailscalePolicy, ResolvedTailscalePolicy, TailscaleIntercept, TailscaleUnavailable, TailscaleMatch, TailscaleMatchReason,
+} from './lib/tailscale-policy';
+export { TailscaleProvider, useTailscale, useTailscaleStatus, useTailscaleFetch, useOptionalTailscale } from './lib/tailscale-react';
+export type { TailscaleProviderProps } from './lib/tailscale-react';
+export { createTailscaleConnectClient } from './lib/tailscale-connect';
+export type { TailscaleConnectOptions, TailscaleConnectModule, TailscaleIpn } from './lib/tailscale-connect';
+export { createFakeTailscaleClient } from './lib/tailscale-fake';
+export type { FakeTailscale, FakeTailscaleOptions, FakeTailnetHandler } from './lib/tailscale-fake';
+export { registerTailscaleRouter, tailscaleServiceWorkerUrl, tailscaleRouterUnsupportedReason } from './lib/tailscale-router/bridge';
+export type {
+  TailscaleRouterHandle, TailscaleRouterOptions, TailscaleRouterState, TailscaleRouterStatus, TailscaleRouteTarget,
+  TailscaleRoutedRequest,
+} from './lib/tailscale-router/bridge';
+export { TailscaleRouter, useTailscaleRouter } from './lib/tailscale-router/react';
+export type { TailscaleRouterProps, UseTailscaleRouterOptions } from './lib/tailscale-router/react';
+export {
+  TailscaleLoginButton, TailscaleStatusBadge, TailscaleMark, tailscaleLoginButtonVariants, tailscaleStatusBadgeVariants,
+} from './components/tailscale-login-button';
+export type { TailscaleLoginButtonProps, TailscaleLoginButtonLabels, TailscaleStatusBadgeProps } from './components/tailscale-login-button';

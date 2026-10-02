@@ -132,6 +132,8 @@ Each is documented on the page of the component or module it belongs to.
 | `usePGlite`, `useReadyDatabase`, `useDatabaseStatus` | the database, or its status | `PGliteProvider`; throws outside | public | [PGlite](https://blamy.github.io/ui/#/pglite) |
 | `useQuery`, `useLiveQuery`, `useExec`, `useTransaction` | rows and status; a function that runs SQL | `PGliteProvider` | public | [PGlite](https://blamy.github.io/ui/#/pglite) |
 | `useSchema`, `usePersistenceSupport`, `useTabLock` | the database's tables; where it can persist; a one-tab lock | `PGliteProvider` for `useSchema` | public | [PGlite](https://blamy.github.io/ui/#/pglite) |
+| `useTailscale`, `useTailscaleStatus`, `useTailscaleFetch` | the tailnet connection, its status, a `fetch` that routes through it | `TailscaleProvider`; throws outside | public | [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale-login) |
+| `useTailscaleRouter` | the service-worker router's status | `TailscaleProvider` | public | [Tailscale request router](https://blamy.github.io/ui/#/tailscale-router) |
 
 The `react-aria` hooks that BL UI builds on (`usePress`, `useClipboard`, `useDrag` …) are not BL UI's own; they have their own section, starting with the [react-aria hooks overview](https://blamy.github.io/ui/#/aria-hooks).
 

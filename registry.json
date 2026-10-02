@@ -1759,6 +1759,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/markdown-editor.json",
+        "https://blamy.github.io/ui/r/morph-path.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/pencilkit.json",
         "https://blamy.github.io/ui/r/plain-button.json",
@@ -1773,6 +1774,11 @@
           "path": "packages/ui/src/components/composer/annotator.tsx",
           "type": "registry:ui",
           "target": "components/ui/composer/annotator.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/composer/composer-cards.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/composer/composer-cards.tsx"
         },
         {
           "path": "packages/ui/src/components/composer/composer-files.ts",
@@ -1822,7 +1828,10 @@
           "ComposerAnnotatorProvider",
           "useComposer",
           "useComposerBump",
-          "useComposerAnnotator"
+          "useComposerAnnotator",
+          "ComposerCards",
+          "ComposerMorphCard",
+          "ComposerQueue"
         ]
       }
     },
@@ -4004,6 +4013,161 @@
       }
     },
     {
+      "name": "tailscale-connect",
+      "type": "registry:lib",
+      "title": "Tailscale WebAssembly client",
+      "description": "The real tailnet client for createTailscale: adapts @agent-wasm/tailscale-connect (Tailscale's Go client compiled to WebAssembly, about 26 MB, imported only when someone signs in) to the TailscaleClient interface. Installs that package.",
+      "dependencies": [
+        "@agent-wasm/tailscale-connect@^1.39.98-t02582083d"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/tailscale.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/tailscale-connect.ts",
+          "type": "registry:lib",
+          "target": "lib/tailscale-connect.ts"
+        }
+      ]
+    },
+    {
+      "name": "tailscale-fake",
+      "type": "registry:lib",
+      "title": "Fake Tailscale client",
+      "description": "An in-memory TailscaleClient for tests, stories and demos: a sign-in that approves itself, auth keys, a node state map, and per-host request handlers. No network and no account.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/tailscale.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/tailscale-fake.ts",
+          "type": "registry:lib",
+          "target": "lib/tailscale-fake.ts"
+        }
+      ]
+    },
+    {
+      "name": "tailscale-login-button",
+      "type": "registry:ui",
+      "title": "TailscaleLoginButton",
+      "description": "A \"Sign in with Tailscale\" button on react-aria's Button that follows the connection (sign in, signing in and cancel, connected and sign out, error and retry), and a status badge with the tailnet, the error, and the sign-in link when a popup is blocked.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/tailscale.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/tailscale-login-button.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tailscale-login-button.tsx"
+        }
+      ],
+      "meta": {
+        "page": "tailscale-login",
+        "exports": [
+          "TailscaleLoginButton",
+          "TailscaleStatusBadge",
+          "TailscaleMark",
+          "tailscaleLoginButtonVariants",
+          "tailscaleStatusBadgeVariants",
+          "createTailscale",
+          "createTailscaleFetch",
+          "TailscaleError",
+          "tailscaleErrorMessage",
+          "memoryTailscalePersistence",
+          "webStorageTailscalePersistence",
+          "vaultTailscalePersistence",
+          "TailscaleProvider",
+          "useTailscale",
+          "useTailscaleStatus",
+          "useTailscaleFetch",
+          "createTailscaleConnectClient",
+          "createFakeTailscaleClient"
+        ]
+      }
+    },
+    {
+      "name": "tailscale-router",
+      "type": "registry:lib",
+      "title": "Tailscale request router",
+      "description": "A service worker that intercepts the page's fetches, sends the ones its policy matches to a page connected to the tailnet over a MessagePort, and streams the answers back; everything else goes to the network untouched. Installs tailscale-sw.js into public/.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/tailscale.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/tailscale-router/bridge.ts",
+          "type": "registry:lib",
+          "target": "lib/tailscale-router/bridge.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/tailscale-router/react.ts",
+          "type": "registry:lib",
+          "target": "lib/tailscale-router/react.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/tailscale-router/tailscale-sw.js",
+          "type": "registry:file",
+          "target": "~/public/tailscale-sw.js"
+        }
+      ],
+      "meta": {
+        "page": "tailscale-router",
+        "exports": [
+          "registerTailscaleRouter",
+          "tailscaleServiceWorkerUrl",
+          "tailscaleRouterUnsupportedReason",
+          "TailscaleRouter",
+          "useTailscaleRouter",
+          "resolveTailscalePolicy",
+          "matchTailscalePolicy",
+          "describeTailscalePolicy",
+          "isTailnetHost"
+        ]
+      }
+    },
+    {
+      "name": "tailscale",
+      "type": "registry:lib",
+      "title": "Tailscale",
+      "description": "Sign in to a tailnet from the browser: a controller (createTailscale) with a sign-in state machine (interactive login URL in a popup, or a pre-auth key from your server), a lazily created tailnet client behind a small structural interface, session persistence that can be encrypted in the passkey vault, a routing policy (*.ts.net, 100.64.0.0/10, your hosts and subnets) and React hooks (TailscaleProvider, useTailscale, useTailscaleStatus, useTailscaleFetch).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/tailscale-policy.ts",
+          "type": "registry:lib",
+          "target": "lib/tailscale-policy.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/tailscale-react.tsx",
+          "type": "registry:lib",
+          "target": "lib/tailscale-react.tsx"
+        },
+        {
+          "path": "packages/ui/src/lib/tailscale.ts",
+          "type": "registry:lib",
+          "target": "lib/tailscale.ts"
+        }
+      ]
+    },
+    {
       "name": "text-field",
       "type": "registry:ui",
       "title": "TextField",
@@ -4664,6 +4828,23 @@
           "path": "packages/ui/src/lib/gpu-time.ts",
           "type": "registry:lib",
           "target": "lib/gpu-time.ts"
+        }
+      ]
+    },
+    {
+      "name": "morph-path",
+      "type": "registry:lib",
+      "title": "Morph Path",
+      "description": "Morph Path — part of BL UI's library (lib/morph-path.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/morph-path.ts",
+          "type": "registry:lib",
+          "target": "lib/morph-path.ts"
         }
       ]
     },

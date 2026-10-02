@@ -20,6 +20,10 @@
     "./theme.css": {
       "@org/source": "./src/theme.css",
       "default": "./dist/theme.css"
+    },
+    "./tailscale-sw.js": {
+      "@org/source": "./src/lib/tailscale-router/tailscale-sw.js",
+      "default": "./dist/tailscale-sw.js"
     }
   },
   "dependencies": {
@@ -48,12 +52,16 @@
     "tailwind-merge": "^3"
   },
   "peerDependencies": {
+    "@agent-wasm/tailscale-connect": "^1.39.98-t02582083d",
     "@electric-sql/pglite": "^0.5.8",
     "@electric-sql/pglite-tools": "^0.4.8",
     "react": "^19",
     "react-dom": "^19"
   },
   "peerDependenciesMeta": {
+    "@agent-wasm/tailscale-connect": {
+      "optional": true
+    },
     "@electric-sql/pglite": {
       "optional": true
     },
@@ -61,7 +69,7 @@
       "optional": true
     }
   },
-  "description": "iOS-flavored React components on react-aria-components, Tailwind v4 and cva — containers, lists, tokens, Composer, PencilKit. Also a shadcn registry (source-copy items and app blocks).",
+  "description": "iOS-flavored React components on react-aria-components, Tailwind v4 and cva \u2014 containers, lists, tokens, Composer, PencilKit. Also a shadcn registry (source-copy items and app blocks).",
   "license": "MIT",
   "sideEffects": [
     "*.css"
@@ -82,6 +90,7 @@
     "components"
   ],
   "devDependencies": {
+    "@agent-wasm/tailscale-connect": "1.39.98-t02582083d",
     "@electric-sql/pglite": "0.5.8",
     "@electric-sql/pglite-tools": "0.4.8",
     "@testing-library/dom": "^10.4.2",

@@ -2,7 +2,29 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { readFileSync } from 'node:fs';
+import type { Plugin } from 'vite';
 import { aliases } from '../../tools/alias.mjs';
+
+/* The Tailscale router's service worker must be served from the site's root (a worker only controls pages under its own
+   path). An app copies it into public/; the docs serve the library's copy in place, so there is one source. */
+function tailscaleServiceWorker(): Plugin {
+  const file = new URL('../../packages/ui/src/lib/tailscale-router/tailscale-sw.js', import.meta.url);
+  return {
+    name: 'bl-docs-tailscale-sw',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url || new URL(req.url, 'http://x').pathname !== `${server.config.base}tailscale-sw.js`) return next();
+        res.setHeader('content-type', 'text/javascript; charset=utf-8');
+        res.setHeader('cache-control', 'no-cache');
+        res.end(readFileSync(file, 'utf8'));
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'tailscale-sw.js', source: readFileSync(file, 'utf8') });
+    },
+  };
+}
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -16,7 +38,7 @@ export default defineConfig(() => ({
     port: 4206,
     host: 'localhost',
   },
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), tailscaleServiceWorker()],
   resolve: { conditions: ['@org/source'], alias: aliases },
   optimizeDeps: {
     // PGlite finds its WebAssembly with `new URL('./pglite.wasm', import.meta.url)`; pre-bundling would move the JS
