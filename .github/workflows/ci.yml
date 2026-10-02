@@ -9,7 +9,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm nx run-many -t typecheck,build,test
+      - run: pnpm nx run-many -t lint,typecheck,build,test
+      - name: Dead code (knip)
+        run: pnpm knip --no-progress
       - name: Registry, tokens and variant docs
         run: |
           node tools/registry/build.mjs --check
@@ -17,6 +19,10 @@ jobs:
           node tools/tokens/check.mjs
           node tools/docs/variants-md.mjs --check
       - run: pnpm exec playwright install chromium --with-deps
+      - name: Behavior tests (taps, swipes, right-clicks)
+        run: pnpm e2e
+      - name: Accessibility (axe) — no new violations
+        run: pnpm a11y
       - name: Storybook story smoke test
         run: |
           pnpm --filter @brett_lamy/catalog storybook --no-open --quiet &
