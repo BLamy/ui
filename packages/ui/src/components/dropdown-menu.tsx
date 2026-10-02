@@ -36,16 +36,18 @@ export function DropdownMenu(props: MenuTriggerProps) {
 
 export interface DropdownMenuContentProps<T> extends MenuProps<T> {
   placement?: PopoverProps['placement'];
+  /** Gap between the trigger and the menu, px. Default 8 (a submenu overlaps its parent row by 6). */
+  offset?: number;
   popoverClassName?: string;
 }
 
 export function DropdownMenuContent<T extends object>({
-  className, placement, popoverClassName, ...props
+  className, placement, offset, popoverClassName, ...props
 }: DropdownMenuContentProps<T>) {
   // Placement comes from react-aria (bottom start for a menu, end top for a submenu); submenus overlap their row.
   const isSubmenu = useSlottedContext(PopoverContext)?.trigger === 'SubmenuTrigger';
   return (
-    <Popover data-slot="dropdown-menu" placement={placement} offset={isSubmenu ? -6 : 8} className={cn('min-w-[230px]', popoverClassName)}>
+    <Popover data-slot="dropdown-menu" placement={placement} offset={offset ?? (isSubmenu ? -6 : 8)} className={cn('min-w-[230px]', popoverClassName)}>
       <Menu<T>
         data-slot="dropdown-menu-content"
         className={cn('bl-scroll box-border max-h-[inherit] overflow-y-auto py-1 outline-none', className)}

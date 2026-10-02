@@ -1,0 +1,22 @@
+{
+  "name": "context-menu",
+  "title": "ContextMenu",
+  "description": "The DropdownMenu opened where you right-click, long-press or press the menu key: anchored at the pointer, keyboard-reachable, focus handed back.",
+  "page": "context-menu",
+  "exports": [
+    "ContextMenu",
+    "ContextMenuContent",
+    "ContextMenuItem",
+    "ContextMenuSection",
+    "ContextMenuLabel",
+    "ContextMenuSeparator",
+    "ContextMenuShortcut",
+    "ContextMenuSub"
+  ],
+  "imports": [
+    "ContextMenu",
+    "ContextMenuContent",
+    "ContextMenuItem",
+    "ContextMenuSeparator"
+  ]
+}
