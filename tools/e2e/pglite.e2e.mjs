@@ -7,6 +7,12 @@ import { openDemo } from './helpers.mjs';
 /* PGlite in a real browser: lazy loading (no WASM until a provider mounts, one download under StrictMode), the hooks,
    persistence in IndexedDB and in OPFS (through a worker), tabs that share one worker database, and hosting the
    WebAssembly yourself (`assets`). The docs app mounts every demo inside <StrictMode>. */
+// Booting Postgres (and a worker) on a cold dev server takes a while on a CI runner.
+test.describe.configure({ timeout: 120_000 });
+
+/** The dev server's base (`/ui/` in CI, see apps/docs/vite.config.mts), read from the Vite client script it injected. */
+const DEV_BASE = () => document.querySelector('script[src*="@vite/client"]')?.getAttribute('src')?.replace('@vite/client', '') ?? '/';
+
 const wasmRequests = (page) => {
   const seen = [];
   page.on('request', (r) => {
@@ -123,7 +129,8 @@ test('assets: the WebAssembly can be hosted at URLs of your choosing', async ({ 
   });
   await page.goto('/?demo=badge/variants');
   // The library module straight from the dev server, as an app that imports `openDatabase` would have it.
-  const core = '/@fs' + new URL('../../packages/ui/src/lib/pglite-core.ts', import.meta.url).pathname;
+  const core = '@fs' + new URL('../../packages/ui/src/lib/pglite-core.ts', import.meta.url).pathname;
+  const base = await page.evaluate(DEV_BASE);
   const answer = await page.evaluate(async (path) => {
     const { openDatabase } = await import(/* @vite-ignore */ path);
     const opened = await openDatabase({
@@ -132,7 +139,7 @@ test('assets: the WebAssembly can be hosted at URLs of your choosing', async ({ 
     const { rows } = await opened.db.query('select 40 + 2 as answer');
     await opened.close();
     return rows[0].answer;
-  }, core);
+  }, base + core);
   expect(answer).toBe(42);
   expect(hosted.sort()).toEqual(['initdb.wasm', 'pglite.data', 'pglite.wasm']);
   expect(fromDefault).toEqual([]);
@@ -140,7 +147,7 @@ test('assets: the WebAssembly can be hosted at URLs of your choosing', async ({ 
 
 test('a data-directory archive restores into a NEW idb:// database; an existing one is refused; the stored version is readable', async ({ page }) => {
   await page.goto('/?demo=badge/variants');
-  const root = '/@fs' + new URL('../../packages/ui/src/lib/', import.meta.url).pathname;
+  const root = (await page.evaluate(DEV_BASE)) + '@fs' + new URL('../../packages/ui/src/lib/', import.meta.url).pathname;
   const out = await page.evaluate(async (base) => {
     const core = await import(/* @vite-ignore */ `${base}pglite-core.ts`);
     const transfer = await import(/* @vite-ignore */ `${base}pglite-transfer.ts`);

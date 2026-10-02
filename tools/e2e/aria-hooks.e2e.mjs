@@ -716,7 +716,8 @@ test.describe('useClipboard', () => {
 
     test('the Copy button writes through the async Clipboard API', async ({ page }) => {
       await page.getByRole('button', { name: 'Copy' }).first().click();
-      expect(await readText(page)).toBe('pnpm add @brett_lamy/ui');
+      // The async Clipboard API resolves after the click returns: wait for the write to land.
+      await expect.poll(() => readText(page)).toBe('pnpm add @brett_lamy/ui');
       expect(await readHtml(page)).toContain('<code>pnpm add');
     });
 
