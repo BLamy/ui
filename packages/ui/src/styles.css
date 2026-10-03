@@ -105,15 +105,15 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 @keyframes bl-ld-st-hop{0%,100%{opacity:.22;translate:0 0;scale:.8}22%{opacity:1;translate:0 -2.4px;scale:1.15}45%{opacity:.5;translate:0 0;scale:1}}
 @keyframes bl-ld-st-mark{0%{opacity:0;scale:.3}16%,56%{opacity:1;scale:1}78%,100%{opacity:0;scale:.3}}
 
-/* Cradle */
+/* Cradle: positive rotate swings a hanging ball left, so the left arm lifts to +38deg and the right to -38deg (both swing away from the row) */
 .bl-ld-cr-bar{stroke:var(--bl-ld-ink);stroke-width:1.2;stroke-linecap:round;opacity:.45}
 .bl-ld-cr-string{stroke:var(--bl-ld-ink);stroke-width:.8;opacity:.4}
 .bl-ld-cr-ball{fill:var(--bl-ld-ink)}
 .bl-ld-cr-arm{transform-box:view-box;transform-origin:var(--bl-ld-ox) 4px;animation-timing-function:linear}
 .bl-ld-cr-arm[data-role=l]{animation-name:bl-ld-cr-l}
 .bl-ld-cr-arm[data-role=r]{animation-name:bl-ld-cr-r}
-@keyframes bl-ld-cr-l{0%{rotate:-38deg;animation-timing-function:cubic-bezier(.5,0,.9,.6)}22%{rotate:0deg}72%{rotate:0deg;animation-timing-function:cubic-bezier(.1,.4,.5,1)}100%{rotate:-38deg}}
-@keyframes bl-ld-cr-r{0%,22%{rotate:0deg;animation-timing-function:cubic-bezier(.1,.4,.5,1)}50%{rotate:38deg;animation-timing-function:cubic-bezier(.5,0,.9,.6)}72%,100%{rotate:0deg}}
+@keyframes bl-ld-cr-l{0%{rotate:38deg;animation-timing-function:cubic-bezier(.5,0,.9,.6)}22%{rotate:0deg}72%{rotate:0deg;animation-timing-function:cubic-bezier(.1,.4,.5,1)}100%{rotate:38deg}}
+@keyframes bl-ld-cr-r{0%,22%{rotate:0deg;animation-timing-function:cubic-bezier(.1,.4,.5,1)}50%{rotate:-38deg;animation-timing-function:cubic-bezier(.5,0,.9,.6)}72%,100%{rotate:0deg}}
 
 /* Hourglass */
 .bl-ld-hg-frame{fill:none;stroke:var(--bl-ld-ink);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;opacity:.55}

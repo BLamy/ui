@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Spinner, spinnerAnimations, type SpinnerAnimation, type SpinnerVariant } from '@/components/ui/spinner';
 
 /** How many animated parts each loader has. */
@@ -125,5 +127,22 @@ describe('Spinner ios (the default)', () => {
     const svg = root(render(<Spinner />).container);
     expect(svg.getAttribute('width')).toBe('22');
     expect(svg.getAttribute('class')).not.toContain('blSpin');
+  });
+});
+
+describe('Spinner cradle', () => {
+  /* In SVG a positive `rotate` is clockwise, which swings a hanging ball to the LEFT. The end balls must lift away from
+     the row (left one to the left, right one to the right) so they strike the others instead of passing through them. */
+  const css = readFileSync(resolve(__dirname, '../styles.css'), 'utf8');
+  const angles = (name: string) => {
+    const body = css.match(new RegExp(`@keyframes ${name}\\{(.*)\\}`))?.[1] ?? '';
+    return [...body.matchAll(/rotate:(-?\d+)deg/g)].map((m) => Number(m[1]));
+  };
+
+  it('lifts the left ball to the left and the right ball to the right', () => {
+    expect(Math.max(...angles('bl-ld-cr-l'))).toBeGreaterThan(0);
+    expect(Math.min(...angles('bl-ld-cr-l'))).toBe(0);
+    expect(Math.min(...angles('bl-ld-cr-r'))).toBeLessThan(0);
+    expect(Math.max(...angles('bl-ld-cr-r'))).toBe(0);
   });
 });
