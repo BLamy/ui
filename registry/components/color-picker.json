@@ -1,0 +1,35 @@
+{
+  "name": "color-picker",
+  "title": "ColorPicker",
+  "description": "Color editing parts on react-aria: a ColorArea, ColorSliders, preset swatches, and a popover that composes them with a hex field behind a trigger that shows the current color.",
+  "page": "color-picker",
+  "exports": [
+    "ColorPicker",
+    "ColorPickerTrigger",
+    "ColorPickerContent",
+    "ColorArea",
+    "ColorSlider",
+    "ColorThumb",
+    "ColorSwatchPicker",
+    "ColorSwatchPickerItem"
+  ],
+  "imports": [
+    "ColorPicker",
+    "ColorPickerTrigger",
+    "ColorPickerContent",
+    "ColorArea",
+    "ColorSlider",
+    "ColorSwatchPicker",
+    "ColorSwatchPickerItem"
+  ],
+  "types": [
+    "ColorPickerProps",
+    "ColorPickerTriggerProps",
+    "ColorPickerContentProps",
+    "ColorAreaProps",
+    "ColorSliderProps",
+    "ColorThumbProps",
+    "ColorSwatchPickerProps",
+    "ColorSwatchPickerItemProps"
+  ]
+}

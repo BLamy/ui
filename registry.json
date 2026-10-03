@@ -1516,6 +1516,41 @@
       }
     },
     {
+      "name": "calendar",
+      "type": "registry:ui",
+      "title": "Calendar",
+      "description": "A month calendar and a range calendar: react-aria's Calendar and RangeCalendar with keyboard navigation, locale week starts, min/max and unavailable dates, drawn as iOS round day cells with a soft band joining a range.",
+      "dependencies": [
+        "@internationalized/date@^3.12.4",
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/calendar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/calendar.tsx"
+        }
+      ],
+      "meta": {
+        "page": "calendar",
+        "exports": [
+          "Calendar",
+          "RangeCalendar",
+          "CalendarHeader",
+          "CalendarGrid",
+          "CalendarCell",
+          "calendarVariants"
+        ]
+      }
+    },
+    {
       "name": "canvas",
       "type": "registry:ui",
       "title": "Canvas",
@@ -1656,6 +1691,76 @@
           "Checkbox",
           "CheckboxGroup",
           "checkboxVariants"
+        ]
+      }
+    },
+    {
+      "name": "color-field",
+      "type": "registry:ui",
+      "title": "ColorField",
+      "description": "A text field that reads a hex color, or one channel of it, with an optional swatch; and ColorSwatch, a color chip over a checkerboard so transparency shows. React-aria's ColorField.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/color-field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/color-field.tsx"
+        }
+      ],
+      "meta": {
+        "page": "color-field",
+        "exports": [
+          "ColorField",
+          "ColorFieldGroup",
+          "ColorFieldInput",
+          "ColorFieldSwatch",
+          "ColorSwatch",
+          "colorFieldGroupVariants"
+        ]
+      }
+    },
+    {
+      "name": "color-picker",
+      "type": "registry:ui",
+      "title": "ColorPicker",
+      "description": "Color editing parts on react-aria: a ColorArea, ColorSliders, preset swatches, and a popover that composes them with a hex field behind a trigger that shows the current color.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/color-field.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/color-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/color-picker.tsx"
+        }
+      ],
+      "meta": {
+        "page": "color-picker",
+        "exports": [
+          "ColorPicker",
+          "ColorPickerTrigger",
+          "ColorPickerContent",
+          "ColorArea",
+          "ColorSlider",
+          "ColorThumb",
+          "ColorSwatchPicker",
+          "ColorSwatchPickerItem"
         ]
       }
     },
@@ -1984,6 +2089,76 @@
           "describeCron",
           "splitCron",
           "CRON_FIELDS"
+        ]
+      }
+    },
+    {
+      "name": "date-field",
+      "type": "registry:ui",
+      "title": "DateField",
+      "description": "Segmented date and time fields: react-aria's DateField and TimeField, each part of the value its own spin-button, in the filled iOS field with a Label, description and error wired in.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/date-field.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/date-field.tsx"
+        }
+      ],
+      "meta": {
+        "page": "date-field",
+        "exports": [
+          "DateField",
+          "TimeField",
+          "DateInput",
+          "DateSegment",
+          "dateInputVariants"
+        ]
+      }
+    },
+    {
+      "name": "date-picker",
+      "type": "registry:ui",
+      "title": "DatePicker",
+      "description": "A date field with a calendar button that opens a Calendar in a popover, and the same for a range: react-aria's DatePicker and DateRangePicker, composed from a field and a content part.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/calendar.json",
+        "https://blamy.github.io/ui/r/date-field.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/date-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/date-picker.tsx"
+        }
+      ],
+      "meta": {
+        "page": "date-picker",
+        "exports": [
+          "DatePicker",
+          "DatePickerField",
+          "DatePickerContent",
+          "DateRangePicker",
+          "DateRangePickerField",
+          "DateRangePickerContent",
+          "datePickerFieldVariants"
         ]
       }
     },

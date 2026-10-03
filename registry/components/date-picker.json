@@ -1,0 +1,29 @@
+{
+  "name": "date-picker",
+  "title": "DatePicker",
+  "description": "A date field with a calendar button that opens a Calendar in a popover, and the same for a range: react-aria's DatePicker and DateRangePicker, composed from a field and a content part.",
+  "page": "date-picker",
+  "exports": [
+    "DatePicker",
+    "DatePickerField",
+    "DatePickerContent",
+    "DateRangePicker",
+    "DateRangePickerField",
+    "DateRangePickerContent",
+    "datePickerFieldVariants"
+  ],
+  "imports": [
+    "DatePicker",
+    "DatePickerField",
+    "DatePickerContent",
+    "DateRangePicker",
+    "DateRangePickerField",
+    "DateRangePickerContent"
+  ],
+  "types": [
+    "DatePickerProps",
+    "DatePickerContentProps",
+    "DateRangePickerProps",
+    "DateRangePickerContentProps"
+  ]
+}

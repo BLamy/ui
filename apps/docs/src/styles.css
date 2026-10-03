@@ -194,6 +194,20 @@ a:hover {
   border: revert-layer;
   text-wrap: revert-layer;
 }
+/* The same leak for the Calendar demos: the prose's unlayered table / th / td rules (borders under every row,
+   collapsed borders, left-aligned padded heads) restyle the calendar's month grid. Roll the grid back to the demo's
+   utilities (`border-separate border-spacing-0`, `text-center`, no padding). */
+.dk-doc .docs-demo-canvas :is([data-slot="calendar-grid"], [data-slot="calendar-grid"] :is(thead, tbody, tr, th, td)) {
+  width: revert-layer;
+  margin: revert-layer;
+  padding: revert-layer;
+  border: revert-layer;
+  border-collapse: revert-layer;
+  text-align: revert-layer;
+  font-size: revert-layer;
+  font-weight: revert-layer;
+  color: revert-layer;
+}
 .dk-nav {
   display: block;
   width: 100%;

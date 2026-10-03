@@ -398,6 +398,29 @@ export {
   type WorkLogProps, type ToolCallProps, type SettledBannerProps,
 } from './components/conversation';
 
+// ── Calendar / DateField / DatePicker / ColorField / ColorPicker ──
+export {
+  Calendar, RangeCalendar, CalendarHeader, CalendarGrid, CalendarCell, calendarVariants,
+  type CalendarProps, type RangeCalendarProps, type CalendarCellProps,
+} from './components/calendar';
+export {
+  DateField, TimeField, DateInput, DateSegment, dateInputVariants,
+  type DateFieldProps, type TimeFieldProps, type DateInputProps,
+} from './components/date-field';
+export {
+  DatePicker, DatePickerField, DatePickerContent, DateRangePicker, DateRangePickerField, DateRangePickerContent, datePickerFieldVariants,
+  type DatePickerProps, type DatePickerContentProps, type DateRangePickerProps, type DateRangePickerContentProps,
+} from './components/date-picker';
+export {
+  ColorField, ColorFieldGroup, ColorFieldInput, ColorFieldSwatch, ColorSwatch, colorFieldGroupVariants,
+  type ColorFieldProps, type ColorFieldGroupProps, type ColorSwatchProps,
+} from './components/color-field';
+export {
+  ColorPicker, ColorPickerTrigger, ColorPickerContent, ColorArea, ColorSlider, ColorThumb, ColorSwatchPicker, ColorSwatchPickerItem,
+  type ColorPickerProps, type ColorPickerTriggerProps, type ColorPickerContentProps, type ColorAreaProps, type ColorSliderProps,
+  type ColorThumbProps, type ColorSwatchPickerProps, type ColorSwatchPickerItemProps,
+} from './components/color-picker';
+
 // ── TimeInput / CronEditor ──
 export { TimeInput, timeInputVariants, type TimeInputProps, type TimeInputChange } from './components/time-input';
 export { CronEditor, cronEditorVariants, CRON_PRESETS, type CronEditorProps, type CronPreset } from './components/cron-editor';

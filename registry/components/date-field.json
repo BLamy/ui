@@ -1,0 +1,23 @@
+{
+  "name": "date-field",
+  "title": "DateField",
+  "description": "Segmented date and time fields: react-aria's DateField and TimeField, each part of the value its own spin-button, in the filled iOS field with a Label, description and error wired in.",
+  "page": "date-field",
+  "exports": [
+    "DateField",
+    "TimeField",
+    "DateInput",
+    "DateSegment",
+    "dateInputVariants"
+  ],
+  "imports": [
+    "DateField",
+    "TimeField",
+    "DateInput"
+  ],
+  "types": [
+    "DateFieldProps",
+    "TimeFieldProps",
+    "DateInputProps"
+  ]
+}

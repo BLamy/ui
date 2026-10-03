@@ -1,0 +1,23 @@
+{
+  "name": "calendar",
+  "title": "Calendar",
+  "description": "A month calendar and a range calendar: react-aria's Calendar and RangeCalendar with keyboard navigation, locale week starts, min/max and unavailable dates, drawn as iOS round day cells with a soft band joining a range.",
+  "page": "calendar",
+  "exports": [
+    "Calendar",
+    "RangeCalendar",
+    "CalendarHeader",
+    "CalendarGrid",
+    "CalendarCell",
+    "calendarVariants"
+  ],
+  "imports": [
+    "Calendar",
+    "RangeCalendar"
+  ],
+  "types": [
+    "CalendarProps",
+    "RangeCalendarProps",
+    "CalendarCellProps"
+  ]
+}

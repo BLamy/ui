@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (75 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (79 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -96,6 +96,23 @@ bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 b
 
 1 compound variant — see the source.
 
+## Calendar
+
+### `calendarVariants`
+
+Defined in `@/components/ui/calendar`. Base classes:
+
+```text
+flex w-fit max-w-full flex-col text-foreground data-disabled:opacity-50
+```
+
+**`variant`** — default `plain`
+
+| Value | Adds |
+| --- | --- |
+| `plain` (default) | — |
+| `card` | `rounded-panel bg-secondary p-3` |
+
 ## Card
 
 ### `cardVariants`
@@ -130,6 +147,24 @@ Defined in `@/components/ui/checkbox`. Base classes:
 | --- | --- |
 | `circle` (default) | `rounded-full` |
 | `square` | `rounded-md` |
+
+## ColorField
+
+### `colorFieldGroupVariants`
+
+Defined in `@/components/ui/color-field`. Base classes:
+
+```text
+[ 'box-border flex w-full min-w-0 items-center gap-2 bg-input px-3 text-foreground outline-none transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy', 'data-focus-within:bg-transparent data-focus-within:ring-[1.5px] data-focus-within:ring-primary data-focus-within:ring-inset', 'data-invalid:ring-[1.5px] data-invalid:ring-destructive data-invalid:ring-inset data-disabled:cursor-not-allowed data-disabled:opacity-50', ]
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `h-8 rounded-lg text-subhead` |
+| `default` (default) | `h-11 rounded-ctl text-body` |
+| `lg` | `h-[50px] rounded-xl text-body` |
 
 ## Composer
 
@@ -277,6 +312,51 @@ flex min-w-0 flex-col gap-3 text-footnote
 | --- | --- |
 | `card` (default) | `[&_[data-surface]]:rounded-panel [&_[data-surface]]:bg-secondary [&_[data-surface]]:p-3` |
 | `plain` | `[&_[data-surface]]:px-1` |
+
+## DateField
+
+### `dateInputVariants`
+
+Defined in `@/components/ui/date-field`. Base classes:
+
+```text
+flex min-w-0 items-center text-foreground [font-family:inherit] whitespace-nowrap
+```
+
+**`variant`** — default `field`
+
+| Value | Adds |
+| --- | --- |
+| `field` (default) | `[ 'box-border w-full rounded-ctl bg-input px-3 outline-none transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy', …` |
+| `bare` | `flex-1` |
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `text-subhead` |
+| `default` (default) | `text-body` |
+| `lg` | `text-body` |
+
+3 compound variants — see the source.
+
+## DatePicker
+
+### `datePickerFieldVariants`
+
+Defined in `@/components/ui/date-picker`. Base classes:
+
+```text
+[ 'flex min-w-0 items-center gap-1 bg-input pl-3 pr-1.5 text-foreground outline-none transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy', 'data-focus-within:bg-transparent data-focus-within:ring-[1.5px] data-focus-within:ring-primary data-focus-within:ring-inset', 'group-data-open:bg-transparent group-data-open:ring-[1.5px] group-data-open:ring-primary group-data-open:ring-inset', 'data-invalid:ring-[1.5px] data-invalid:ring-destructive data-invalid:ring-inset data-disabled:cursor-not-allowed data-disabled:opacity-50', ]
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `h-8 rounded-lg text-subhead` |
+| `default` (default) | `h-11 rounded-ctl text-body` |
+| `lg` | `h-[50px] rounded-xl text-body` |
 
 ## Dialog
 
