@@ -14,9 +14,9 @@ const animation = (el) => el.evaluate((root) => {
 test.describe('gallery', () => {
   test.beforeEach(async ({ page }) => { await openDemo(page, 'spinner/gallery', '[data-slot=spinner]'); });
 
-  test('shows the iOS spinner and all 60 loader variants', async ({ page }) => {
-    await expect(spinners(page)).toHaveCount(61);
-    for (const a of ['orbit', 'beacon', 'matrix', 'cells', 'register', 'bands', 'lift', 'steps', 'cradle', 'hourglass', 'balance', 'fanout', 'battery', 'bloom', 'sonar', 'gyro', 'coalesce', 'crystal', 'loop', 'relay']) {
+  test('shows the iOS spinner and all 66 loader variants', async ({ page }) => {
+    await expect(spinners(page)).toHaveCount(67);
+    for (const a of ['orbit', 'beacon', 'matrix', 'cells', 'register', 'bands', 'lift', 'steps', 'cradle', 'hourglass', 'balance', 'fanout', 'battery', 'bloom', 'sonar', 'gyro', 'coalesce', 'crystal', 'loop', 'relay', 'robot', 'kettle']) {
       await expect(page.locator(`[data-slot=spinner][data-animation=${a}]`)).toHaveCount(3);
     }
   });
@@ -35,8 +35,8 @@ test.describe('gallery', () => {
       expect(a.state).toBe('running');
       names.add(a.name);
     }
-    // Twenty animations, several of which switch keyframes by variant.
-    expect(names.size).toBeGreaterThanOrEqual(20);
+    // Twenty-two animations, several of which switch keyframes by variant.
+    expect(names.size).toBeGreaterThanOrEqual(22);
   });
 
   test('loaders take the colour of the text around them', async ({ page }) => {

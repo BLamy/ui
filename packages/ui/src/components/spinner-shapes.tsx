@@ -1,11 +1,11 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 /* ══ Spinner shapes — BL UI's own loaders ══
-   Thirteen small animations, three variants each, drawn on the same 24px grid as the ported loaders in spinner.tsx
+   Fifteen small animations, three variants each, drawn on the same 24px grid as the ported loaders in spinner.tsx
    and driven the same way: a table says how long a cycle is and when each part starts, the component writes those as
    custom properties (--bl-ld-d, --bl-ld-delay …), and the keyframes in styles.css (`bl-ld-*`) read them. They are
    original designs, made after the *ideas* in the gallery at https://loading.daniasyrofi.com (a cradle, an hourglass,
-   a balance beam, a stair climb …) without using any of its code. */
+   a balance beam, a stair climb, a robot, a kettle …) without using any of its code. */
 
 interface Variant {
   /** One cycle, in ms. */
@@ -332,6 +332,53 @@ export const SHAPES = {
         {[4, 12, 20].map((cx, i) => (
           <circle key={cx} className="bl-ld-a bl-ld-fb bl-ld-rl-node" data-node={i} cx={cx} cy="12" r="2.2" style={at(v, i)} />
         ))}
+      </>
+    )),
+  },
+
+  /* A little robot on a stand that blinks, glances about, or rocks while it thinks. */
+  robot: {
+    label: 'Robot',
+    variants: {
+      blink: { duration: 3000, delays: [0, 0] },
+      look: { duration: 3400, delays: [0, 0] },
+      think: { duration: 2400, delays: [0, 0] },
+    },
+    render: (name, v) => svg(name, (
+      <>
+        <path className="bl-ld-rb-stand" d="M12 14.4V20.5M7.6 20.5H16.4" />
+        <g className={name === 'think' ? 'bl-ld-a bl-ld-rb-rock' : 'bl-ld-rb-rock'} style={at(v, 0)}>
+          <rect className="bl-ld-rb-head" x="4.5" y="2.8" width="15" height="11.6" rx="4" />
+          <g className={name === 'look' ? 'bl-ld-a bl-ld-rb-gaze' : 'bl-ld-rb-gaze'} style={at(v, 0)}>
+            {[9.2, 14.8].map((cx, i) => (
+              <circle key={cx} className="bl-ld-a bl-ld-fb bl-ld-rb-eye" cx={cx} cy="8.6" r="1.35" style={at(v, i)} />
+            ))}
+          </g>
+        </g>
+      </>
+    )),
+  },
+
+  /* A kettle coming to the boil: steam rises, the kettle shakes, or the lid rattles. */
+  kettle: {
+    label: 'Kettle',
+    variants: {
+      whistle: { duration: 1500, delays: [0, 380, 760, 0, 0] },
+      boil: { duration: 1100, delays: [0, 280, 560, 0, 0] },
+      steam: { duration: 2600, delays: [0, 850, 1700, 0, 0] },
+    },
+    render: (name, v) => svg(name, (
+      <>
+        {[9.4, 12, 14.6].map((x, i) => (
+          <path key={x} className="bl-ld-a bl-ld-kt-steam" d={`M${x} 9.4c-1.1-1.1 1.1-2.1 0-3.4`} style={at(v, i)} />
+        ))}
+        <g className={name === 'whistle' ? 'bl-ld-a bl-ld-kt-body' : 'bl-ld-kt-body'} style={at(v, 4)}>
+          <path className="bl-ld-kt-line" d="M5.6 20.5c0-4.3 2.1-7 6.4-7s6.4 2.7 6.4 7zM6.6 16.4 3.2 13.4M17.9 15.6c3.5-.3 3.7 4.4.3 4.7" />
+          <g className={name === 'boil' ? 'bl-ld-a bl-ld-kt-lid' : 'bl-ld-kt-lid'} style={at(v, 3)}>
+            <path className="bl-ld-kt-line" d="M10 13.5h4" />
+            <circle className="bl-ld-kt-knob" cx="12" cy="12.2" r="1" />
+          </g>
+        </g>
       </>
     )),
   },

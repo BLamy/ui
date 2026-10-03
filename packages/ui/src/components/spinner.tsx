@@ -3,10 +3,10 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { SHAPES, SHAPE_IDS, ShapeLoader, type ShapeAnimation, type ShapeVariant } from './spinner-shapes';
 
-/* ══ Spinner — the iOS activity indicator, and twenty loaders with three variants each ══
+/* ══ Spinner — the iOS activity indicator, and twenty-two loaders with three variants each ══
    `ios` (the default) is eight fading spokes in stepped rotation. Seven of the others — orbit, beacon, matrix, cells,
    register, bands, lift — are the CSS loaders from Dani Asyrofi's "Loading" (https://loading.daniasyrofi.com), ported to
-   React: the markup and the timing tables below are his, the keyframes are in styles.css (`bl-ld-*`). The other thirteen
+   React: the markup and the timing tables below are his, the keyframes are in styles.css (`bl-ld-*`). The other fifteen
    (steps, cradle, hourglass … see spinner-shapes.tsx) are BL UI's own, made after the ideas in his gallery. They draw in
    `currentColor`, scale from a 24px design to any `size`, can be sped up, slowed down or paused, pause themselves
    while off screen or in a hidden tab, and hold a still frame under reduced motion.
@@ -199,7 +199,7 @@ function useVisibleToUser(ref: React.RefObject<HTMLElement | null>, enabled: boo
 
 /** A loading indicator. The default is the iOS activity indicator (eight fading spokes, stepped rotation); it grows in
     when it mounts (a spinner appearing is an event; popping in unannounced reads as a glitch). `animation` picks one of
-    one of the twenty loaders instead. */
+    one of the twenty-two loaders instead. */
 export function Spinner({ animation = 'ios', variant, spin, size, speed = 1, paused, label, className, style }: SpinnerProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const isLoader = animation !== 'ios';

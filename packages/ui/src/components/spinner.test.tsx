@@ -28,16 +28,18 @@ const PARTS: Record<string, [selector: string, count: number | number[]]> = {
   crystal: ['.bl-ld-ct-facet', 6],
   loop: ['.bl-ld-lp-run', [1, 3, 1]], // `trail` has three runners, one per variant otherwise
   relay: ['.bl-ld-rl-node', 3],
+  robot: ['.bl-ld-rb-eye', 2],
+  kettle: ['.bl-ld-kt-steam', 3],
 };
 
 const root = (c: HTMLElement) => c.querySelector('[data-slot=spinner]') as HTMLElement;
 const delaysOf = (c: HTMLElement, sel: string) => [...c.querySelectorAll<HTMLElement>(sel)].map((e) => e.style.getPropertyValue('--bl-ld-delay'));
 
 describe('spinnerAnimations', () => {
-  it('lists ios and the twenty loaders, three variants each', () => {
+  it('lists ios and the twenty-two loaders, three variants each', () => {
     expect(spinnerAnimations.map((a) => a.id)).toEqual([
       'ios', 'orbit', 'beacon', 'matrix', 'cells', 'register', 'bands', 'lift',
-      'steps', 'cradle', 'hourglass', 'balance', 'fanout', 'battery', 'bloom', 'sonar', 'gyro', 'coalesce', 'crystal', 'loop', 'relay',
+      'steps', 'cradle', 'hourglass', 'balance', 'fanout', 'battery', 'bloom', 'sonar', 'gyro', 'coalesce', 'crystal', 'loop', 'relay', 'robot', 'kettle',
     ]);
     for (const a of spinnerAnimations.filter((x) => x.id !== 'ios')) expect(a.variants).toHaveLength(3);
     expect(spinnerAnimations[0].variants).toEqual([]);

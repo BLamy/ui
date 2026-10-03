@@ -1,6 +1,6 @@
 # Spinner
 
-Loading indicators for an indeterminate wait. The default is the iOS activity indicator: eight spokes that fade from faint to full and turn in eight discrete steps, not a smooth spin. Pick `animation` and it becomes one of twenty other loaders, each with three variants: seven ported from [Dani Asyrofi's Loading](https://loading.daniasyrofi.com) (Orbit, Bars, Matrix, Merge, Encode, Scan and Lift) and thirteen BL UI's own, drawn after the ideas in his gallery (Steps, Cradle, Hourglass, Balance, Fanout, Battery, Bloom, Sonar, Gyro, Coalesce, Crystal, Loop and Relay). All of them draw in `currentColor`, so they take the colour of the text around them. Use one for a wait inside a button, a row or a toolbar; for a bar use [Progress](https://blamy.github.io/ui/#/progress), for a ring with a value use [ProgressRing](https://blamy.github.io/ui/#/progress-ring), and for content that is loading use [Skeleton](https://blamy.github.io/ui/#/skeleton).
+Loading indicators for an indeterminate wait. The default is the iOS activity indicator: eight spokes that fade from faint to full and turn in eight discrete steps, not a smooth spin. Pick `animation` and it becomes one of twenty-two other loaders, each with three variants: seven ported from [Dani Asyrofi's Loading](https://loading.daniasyrofi.com) (Orbit, Bars, Matrix, Merge, Encode, Scan and Lift) and fifteen BL UI's own, drawn after the ideas in his gallery (Steps, Cradle, Hourglass, Balance, Fanout, Battery, Bloom, Sonar, Gyro, Coalesce, Crystal, Loop, Relay, Robot and Kettle). All of them draw in `currentColor`, so they take the colour of the text around them. Use one for a wait inside a button, a row or a toolbar; for a bar use [Progress](https://blamy.github.io/ui/#/progress), for a ring with a value use [ProgressRing](https://blamy.github.io/ui/#/progress-ring), and for content that is loading use [Skeleton](https://blamy.github.io/ui/#/skeleton).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -38,7 +38,7 @@ import { Spinner } from '@brett_lamy/ui'
 
 ## Loaders
 
-`animation` picks one of twenty loaders and `variant` one of its three patterns. The first variant is the default, and a variant the animation does not have falls back to it. The loaders animate on their own (no `spin`); hold one still with `paused`.
+`animation` picks one of twenty-two loaders and `variant` one of its three patterns. The first variant is the default, and a variant the animation does not have falls back to it. The loaders animate on their own (no `spin`); hold one still with `paused`.
 
 {% demo src="spinner/gallery" %}
 
@@ -65,6 +65,8 @@ import { Spinner } from '@brett_lamy/ui'
 | `crystal` | A hexagon whose six facets light up | `grow`, `mirror`, `shimmer` |
 | `loop` | A light running round an infinity loop | `run`, `trail`, `pair` |
 | `relay` | Three nodes passing a pulse along | `hop`, `bounce`, `flow` |
+| `robot` | A little robot on a stand that blinks, glances about or rocks as it thinks | `blink`, `look`, `think` |
+| `kettle` | A kettle with steam rising; it shakes as it whistles, or its lid rattles | `whistle`, `boil`, `steam` |
 
 `spinnerAnimations` lists every animation with its label and variants (`{ id, label, variants }[]`), so a gallery or a picker never has to hard-code them.
 
@@ -103,7 +105,7 @@ Under `prefers-reduced-motion` the loaders hold a still frame (at 65% opacity) i
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `animation` | `ios` | `ios` or one of the twenty loaders in the table above (`orbit`, `beacon`, `matrix`, `cells`, `register`, `bands`, `lift`, `steps`, `cradle`, `hourglass`, `balance`, `fanout`, `battery`, `bloom`, `sonar`, `gyro`, `coalesce`, `crystal`, `loop`, `relay`). |
+| `animation` | `ios` | `ios` or one of the twenty-two loaders in the table above (`orbit`, `beacon`, `matrix`, `cells`, `register`, `bands`, `lift`, `steps`, `cradle`, `hourglass`, `balance`, `fanout`, `battery`, `bloom`, `sonar`, `gyro`, `coalesce`, `crystal`, `loop`, `relay`, `robot`, `kettle`). |
 | `variant` | the animation's first | One of its three patterns (see the table above). |
 | `spin` | `false` | `ios` only: start the stepped rotation (`animate-[blSpin_.75s_steps(8)_infinite]`). |
 | `size` | `22` (`ios`) / `32` | Width and height in px; 12–160 for the loaders. |
@@ -123,6 +125,6 @@ The loaders are plain CSS in that stylesheet (`@layer components`, classes and k
 The idea, and the first seven loaders, come from [Loading](https://loading.daniasyrofi.com) by [Dani Asyrofi](https://daniasyrofi.com), whose gallery of small CSS loaders is well worth a look.
 
 - **Orbit, Bars, Matrix, Merge, Encode, Scan and Lift** are his, MIT licensed. BL UI ports the markup and timing tables to React and the CSS to its stylesheet; the licence text is kept at the top of `spinner.tsx`, so it travels with a registry copy.
-- **Steps, Cradle, Hourglass, Balance, Fanout, Battery, Bloom, Sonar, Gyro, Coalesce, Crystal, Loop and Relay** are BL UI's own. They were made after the *ideas* in his gallery (a cradle, an hourglass, a balance beam, a stair climb, a fan-out of results …) and share none of its code or artwork: the drawings are new (see `spinner-shapes.tsx`), and so are the keyframes.
+- **Steps, Cradle, Hourglass, Balance, Fanout, Battery, Bloom, Sonar, Gyro, Coalesce, Crystal, Loop, Relay, Robot and Kettle** are BL UI's own. They were made after the *ideas* in his gallery (a cradle, an hourglass, a balance beam, a stair climb, a fan-out of results, a robot, a kettle …) and share none of its code or artwork: the drawings are new (see `spinner-shapes.tsx`), and so are the keyframes.
 
 The original also publishes more specialised loaders (AI-agent, canvas and WebGL ones) from its own site; they are not part of BL UI.

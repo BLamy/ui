@@ -1,7 +1,7 @@
 import { Spinner, spinnerAnimations } from '@/components/ui/spinner'
 
 // Every animation with every variant. `spinnerAnimations` lists them with their labels, so a gallery or a picker
-// never has to hard-code the names. The iOS indicator is the default; the other twenty are the loaders.
+// never has to hard-code the names. The iOS indicator is the default; the other twenty-two are the loaders.
 export default function Gallery() {
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-x-6 gap-y-4 text-foreground">
