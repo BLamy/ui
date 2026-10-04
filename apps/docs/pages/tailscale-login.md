@@ -226,7 +226,7 @@ Inherent to running Tailscale in a page:
 - **Relayed only**: no UDP in browsers, so all traffic goes through DERP over WebSockets: slower than a native client.
 - **HTTP only**: the client exposes `fetch`; there are no raw TCP sockets, and WebSockets to tailnet hosts are not covered.
 - **Buffered**: request and response bodies cross into WebAssembly as whole base64 strings, so large bodies cost memory and nothing streams.
-- **Public hosts**: with an exit node, public names need DNS that works inside the client; almostnode resolves them over DNS-over-HTTPS first. This adapter does not.
+- **Public hosts**: with an exit node, public names need DNS that works inside the client. This adapter does what almostnode does: it resolves the name over DNS-over-HTTPS (`dohUrl`, default Cloudflare, from the page's own network, or through the exit node with `dnsVia: 'exit-node'`), passes the address to the client as `ipMap` and fetches the name; if that fails it dials the address with the name as `Host` and TLS name, and reports both errors if that fails too.
 - **The tab is the device**: closing it takes the device offline; a restored session reconnects when the page loads again.
 - **Panics**: the Go runtime can crash; the status becomes `error` and **Try again** starts a fresh client.
 

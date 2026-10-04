@@ -11,8 +11,9 @@
      ipn.fetch(url | { url, method, headers, bodyBase64, redirect }) → { status, statusText, headers, bodyBase64 }
    Browsers cannot send UDP, so every packet is relayed over Tailscale's DERP servers on WebSockets; there are no direct
    connections. Bodies are buffered (base64) both ways, so nothing streams. almostnode runs the client in a dedicated
-   Worker with shims around it and resolves public host names itself; this adapter runs it where you call it (the main
-   thread, unless you construct it in a worker yourself) and leaves name resolution to the client's MagicDNS. */
+   Worker with shims around it; this adapter runs it where you call it (the main thread, unless you construct it in a worker
+   yourself). Tailnet names resolve in the client (MagicDNS). Through an exit node, a public name is looked up over
+   DNS-over-HTTPS and given to the client as `ipMap`, as almostnode does (see `dnsVia`). */
 
 import type { TailscaleClient, TailscaleClientState, TailscaleNetMap, TailscaleRequest, TailscaleResponse } from '@/lib/tailscale';
 
@@ -60,9 +61,14 @@ export interface TailscaleConnectOptions {
    *  almostnode found name-based fetches failing in the WebAssembly runtime without it; this sends the settings it sends. */
   acceptDns?: boolean;
   /** A DNS-over-HTTPS (JSON) endpoint for public host names while an exit node is in use. The client cannot resolve them itself,
-   *  so the lookup is sent *through the exit node* (never over the page's own network). An IP-literal URL, so no name is needed
-   *  to reach it. Default `https://1.1.1.1/dns-query`. */
+   *  so the name is looked up here and handed to the client as `ipMap` (the way almostnode does it). Default
+   *  `https://cloudflare-dns.com/dns-query`, or `https://1.1.1.1/dns-query` with `dnsVia: 'exit-node'`. */
   dohUrl?: string;
+  /** Where that lookup is sent. `page` (default, as almostnode does): the page's own network, which leaks the names you visit to the
+   *  DNS server. `exit-node`: through the tailnet client, so through the exit node; it needs an IP-literal `dohUrl`. */
+  dnsVia?: 'page' | 'exit-node';
+  /** The `fetch` for a `page` lookup. Default `globalThis.fetch`. */
+  dnsFetch?: typeof fetch;
 }
 
 /** The client keeps its prefs as hex-encoded JSON under `profile-…` keys, and a login can write `CorpDNS: false` back;
@@ -123,23 +129,38 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
   let exitNodeId: string | null = null;
   /** Public host name → address and when to forget it. Cleared whenever the exit node changes. */
   const addresses = new Map<string, { ip: string; until: number }>();
+  /** What the client has been told: host name → address. It dials the address for the name (keeping the name for Host and TLS). */
+  const ipMap: Record<string, string> = {};
 
-  /** An A record for `host`, asked of the DoH server *through the tailnet client* (so through the exit node). */
+  /** An A record for `host` from a DNS-over-HTTPS server: over the page's network (almostnode's way), or through the exit node. */
   async function resolvePublic(host: string): Promise<string> {
     const hit = addresses.get(host);
     if (hit && hit.until > Date.now()) return hit.ip;
-    if (!ipn) throw new Error('The Tailscale client is not running.');
-    const endpoint = new URL(options.dohUrl ?? 'https://1.1.1.1/dns-query');
+    const viaExit = options.dnsVia === 'exit-node';
+    const endpoint = new URL(options.dohUrl ?? (viaExit ? 'https://1.1.1.1/dns-query' : 'https://cloudflare-dns.com/dns-query'));
     endpoint.searchParams.set('name', host);
     endpoint.searchParams.set('type', 'A');
-    const res = await ipn.fetch({ url: endpoint.href, headers: { accept: 'application/dns-json' } });
-    const text = res.text ? await res.text() : new TextDecoder().decode(base64ToBytes(res.bodyBase64 ?? ''));
-    if (res.status !== 200) throw new Error(`DNS lookup for ${host} through the exit node failed (HTTP ${res.status}).`);
+    let status: number;
+    let text: string;
+    if (viaExit) {
+      if (!ipn) throw new Error('The Tailscale client is not running.');
+      const res = await ipn.fetch({ url: endpoint.href, headers: { accept: 'application/dns-json' } });
+      status = res.status;
+      text = res.text ? await res.text() : new TextDecoder().decode(base64ToBytes(res.bodyBase64 ?? ''));
+    } else {
+      const res = await (options.dnsFetch ?? globalThis.fetch.bind(globalThis))(endpoint.href, { headers: { accept: 'application/dns-json' } });
+      status = res.status;
+      text = await res.text();
+    }
+    if (status !== 200) throw new Error(`DNS lookup for ${host} failed (HTTP ${status}).`);
     const answer = (JSON.parse(text) as { Answer?: Array<{ type?: number; data?: string; TTL?: number }> }).Answer?.find((a) => a.type === 1 && typeof a.data === 'string' && IPV4.test(a.data));
-    if (!answer?.data) throw new Error(`${host} has no address the exit node could look up.`);
+    if (!answer?.data) throw new Error(`${host} has no address to look up.`);
     addresses.set(host, { ip: answer.data, until: Date.now() + Math.min(Math.max(answer.TTL ?? 60, 30), 300) * 1000 });
     return answer.data;
   }
+
+  /** The exit node, DNS and address map, applied together (almostnode sends the whole config each time). */
+  const applyConfig = () => ipn?.configure?.({ ...exitNodeSettings(exitNodeId), ...(Object.keys(ipMap).length ? { ipMap: { ...ipMap } } : {}) });
 
   return {
     async start(o) {
@@ -189,39 +210,54 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
     async setExitNode(id) {
       if (!ipn) throw new Error('The Tailscale client is not running.');
       if (!ipn.configure) throw new Error('This build of the Tailscale client cannot change its exit node.');
-      await ipn.configure(exitNodeSettings(id));
       exitNodeId = id;
+      await applyConfig();
       addresses.clear();
     },
     async fetch(req: TailscaleRequest): Promise<TailscaleResponse> {
       if (!ipn) throw new Error('The Tailscale client is not running.');
       const method = (req.method ?? 'GET').toUpperCase();
       const url = new URL(req.url);
-      // Through an exit node, a public name is looked up (through that same exit node), then the address is dialled with the
-      // name kept as the Host header and the TLS server name — the way almostnode does it, minus its public DoH request.
+      // Through an exit node a public name needs an address: look it up, tell the client (`ipMap`) and fetch the name as asked —
+      // the way almostnode does. If the client ignores the map, dial the address with the name kept as the Host header and the
+      // TLS server name instead.
       const viaExit = exitNodeId !== null && isPublicName(url.hostname);
       const simple = !viaExit && method === 'GET' && !req.body && !req.headers?.length && (req.redirect ?? 'follow') === 'follow';
       const headers = Object.fromEntries(req.headers ?? []);
-      let target = req.url;
-      let tlsServerName: string | undefined;
-      if (viaExit) {
-        const ip = await resolvePublic(url.hostname);
-        const original = url.host;
-        url.hostname = ip;
-        target = url.href;
-        for (const name of Object.keys(headers)) if (name.toLowerCase() === 'host') delete headers[name];
-        headers.Host = original;
-        if (url.protocol === 'https:') tlsServerName = new URL(req.url).hostname;
-      }
-      // The minimal build only takes a URL string; the structured form needs a build that has it (almostnode's does).
-      const res = await ipn.fetch(simple ? req.url : {
+      const structured = (target: string, extra: Record<string, unknown> = {}) => ({
         url: target,
         method,
         headers,
         bodyBase64: req.body ? bytesToBase64(req.body) : undefined,
         redirect: req.redirect,
-        ...(tlsServerName ? { tlsServerName } : {}),
+        ...extra,
       });
+      let res: Awaited<ReturnType<TailscaleIpn['fetch']>>;
+      if (viaExit) {
+        const ip = await resolvePublic(url.hostname);
+        if (ipMap[url.hostname] !== ip) {
+          ipMap[url.hostname] = ip;
+          await applyConfig();
+        }
+        try {
+          res = await ipn.fetch(structured(req.url));
+        } catch (primary) {
+          const direct = new URL(req.url);
+          direct.hostname = ip;
+          const withHost = { ...headers };
+          for (const name of Object.keys(withHost)) if (name.toLowerCase() === 'host') delete withHost[name];
+          withHost.Host = url.host;
+          try {
+            res = await ipn.fetch({ ...structured(direct.href), headers: withHost, ...(url.protocol === 'https:' ? { tlsServerName: url.hostname } : {}) });
+          } catch (fallback) {
+            const reason = (e: unknown) => (e instanceof Error ? e.message : typeof e === 'string' ? e : (e as { message?: string } | null)?.message ?? String(e));
+            throw new Error(`${url.hostname} (${ip}) could not be fetched through the exit node. Fetching the name: ${reason(primary)}. Fetching the address: ${reason(fallback)}.`);
+          }
+        }
+      } else {
+        // The minimal build only takes a URL string; the structured form needs a build that has it (almostnode's does).
+        res = await ipn.fetch(simple ? req.url : structured(req.url));
+      }
       const body = res.bodyBase64 !== undefined ? base64ToBytes(res.bodyBase64) : res.text ? new TextEncoder().encode(await res.text()) : null;
       return { url: viaExit ? req.url : res.url ?? req.url, status: res.status, statusText: res.statusText ?? '', headers: Object.entries(res.headers ?? {}), body };
     },

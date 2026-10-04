@@ -73,7 +73,7 @@ describe('createTailscaleConnectClient', () => {
 });
 
 /** An IPN with exit nodes: the net map offers one, `configure` applies it, and only then do public addresses answer. */
-function exitNodeModule(reportsSelection = true) {
+function exitNodeModule(reportsSelection = true, ignoreIpMap = false) {
   let callbacks: Parameters<TailscaleIpn['run']>[0] | null = null;
   const fetches: Array<string | Parameters<TailscaleIpn['fetch']>[0]> = [];
   const configured: Array<Record<string, unknown>> = [];
@@ -91,6 +91,8 @@ function exitNodeModule(reportsSelection = true) {
     fetch: async (req) => {
       fetches.push(req);
       const url = typeof req === 'string' ? req : req.url;
+      // A client that ignores `ipMap` cannot resolve a public name by itself.
+      if (ignoreIpMap && typeof req !== 'string' && !/^[\d.]+$/.test(new URL(url).hostname) && !url.includes('dns-query')) throw new Error('lookup ' + new URL(url).hostname + ' on [::1]:53: connection refused');
       if (new URL(url).pathname === '/dns-query') {
         const name = new URL(url).searchParams.get('name');
         if (name === 'nowhere.example') return { status: 200, headers: {}, text: async () => JSON.stringify({ Status: 3 }) };
@@ -104,9 +106,18 @@ function exitNodeModule(reportsSelection = true) {
 }
 
 describe('exit nodes', () => {
-  const connect = async (extra: Parameters<typeof createTailscaleConnectClient>[0] extends infer O ? Partial<O> : never = {}, reportsSelection = true) => {
-    const f = exitNodeModule(reportsSelection);
-    const t = createTailscale({ client: createTailscaleConnectClient({ wasmURL: '/w', load: async () => f.mod, ...extra }), auth: { mode: 'auth-key', authKey: 'k' }, env: { open: () => null, locks: null } });
+  /** The page's own DNS-over-HTTPS lookups (what `dnsFetch` is). */
+  const dnsCalls: string[] = [];
+  const dnsFetch = (async (url: string) => {
+    dnsCalls.push(url);
+    const name = new URL(url).searchParams.get('name');
+    if (name === 'nowhere.example') return new Response(JSON.stringify({ Status: 3 }));
+    return new Response(JSON.stringify({ Status: 0, Answer: [{ type: 1, TTL: 120, data: name === 'example.com' ? '93.184.216.34' : '10.0.0.1' }] }));
+  }) as unknown as typeof fetch;
+  const connect = async (extra: Parameters<typeof createTailscaleConnectClient>[0] extends infer O ? Partial<O> : never = {}, reportsSelection = true, ignoreIpMap = false) => {
+    dnsCalls.length = 0;
+    const f = exitNodeModule(reportsSelection, ignoreIpMap);
+    const t = createTailscale({ client: createTailscaleConnectClient({ wasmURL: '/w', load: async () => f.mod, dnsFetch, ...extra }), auth: { mode: 'auth-key', authKey: 'k' }, env: { open: () => null, locks: null } });
     await t.signIn();
     await vi.waitFor(() => expect(t.getSnapshot().status).toBe('connected'));
     return { t, f };
@@ -153,14 +164,45 @@ describe('exit nodes', () => {
     await t.dispose();
   });
 
-  it('with an exit node: looks a public name up through the tailnet, then dials the address with the name as Host and SNI', async () => {
+  it('with an exit node: looks a public name up over DNS-over-HTTPS, tells the client (ipMap) and fetches the name', async () => {
     const { t, f } = await connect();
     await t.setExitNode('nExit1');
     const res = toResponse(await t.fetch({ url: 'https://example.com/a?b=1', headers: [['accept', 'text/html']] }));
+    expect(await res.text()).toBe('served https://example.com/a?b=1');
+    // almostnode's way: the lookup is the page's own request, and the name goes to the client with its address.
+    expect(dnsCalls).toEqual(['https://cloudflare-dns.com/dns-query?name=example.com&type=A']);
+    expect(f.configured.at(-1)).toMatchObject({ useExitNode: true, ExitNodeID: 'nExit1', CorpDNS: true, ipMap: { 'example.com': '93.184.216.34' } });
+    expect(f.fetches).toEqual([{ url: 'https://example.com/a?b=1', method: 'GET', headers: { accept: 'text/html' }, bodyBase64: undefined, redirect: undefined }]);
+    await t.dispose();
+  });
+
+  it('falls back to dialling the address, with the name as Host and SNI, when the client ignores the map', async () => {
+    const { t, f } = await connect({}, true, true);
+    await t.setExitNode('nExit1');
+    const res = toResponse(await t.fetch({ url: 'https://example.com/a?b=1', headers: [['accept', 'text/html']] }));
     expect(await res.text()).toBe('served https://93.184.216.34/a?b=1');
-    // The DoH lookup is itself a tailnet request: an IP-literal URL, so it needs no name resolution and goes through the exit node.
+    expect(f.fetches.at(-1)).toEqual({ url: 'https://93.184.216.34/a?b=1', method: 'GET', headers: { accept: 'text/html', Host: 'example.com' }, bodyBase64: undefined, redirect: undefined, tlsServerName: 'example.com' });
+    await t.dispose();
+  });
+
+  it('says why when both the name and the address fail', async () => {
+    const f = exitNodeModule();
+    const ipn = await f.mod.createIPN({ authKey: '', panicHandler: () => {} });
+    const failing: TailscaleConnectModule = { createIPN: async () => ({ ...ipn, fetch: async () => { throw new Error('dial tcp: i/o timeout'); } }) };
+    const t = createTailscale({ client: createTailscaleConnectClient({ wasmURL: '/w', load: async () => failing, dnsFetch }), auth: { mode: 'auth-key', authKey: 'k' }, env: { open: () => null, locks: null } });
+    await t.signIn();
+    await vi.waitFor(() => expect(t.getSnapshot().status).toBe('connected'));
+    await t.setExitNode('nExit1').catch(() => {});
+    await expect(t.fetch({ url: 'https://example.com/' })).rejects.toThrow(/example\.com \(93\.184\.216\.34\) could not be fetched through the exit node.*name: dial tcp: i\/o timeout.*address: dial tcp: i\/o timeout/);
+    await t.dispose();
+  });
+
+  it('can send the lookup through the exit node instead of the page', async () => {
+    const { t, f } = await connect({ dnsVia: 'exit-node' });
+    await t.setExitNode('nExit1');
+    await t.fetch({ url: 'https://example.com/a' });
+    expect(dnsCalls).toEqual([]);
     expect(f.fetches[0]).toMatchObject({ url: expect.stringMatching(/^https:\/\/1\.1\.1\.1\/dns-query\?name=example\.com&type=A$/), headers: { accept: 'application/dns-json' } });
-    expect(f.fetches[1]).toEqual({ url: 'https://93.184.216.34/a?b=1', method: 'GET', headers: { accept: 'text/html', Host: 'example.com' }, bodyBase64: undefined, redirect: undefined, tlsServerName: 'example.com' });
     await t.dispose();
   });
 
@@ -170,20 +212,18 @@ describe('exit nodes', () => {
     f.sendMap();
     f.sendMap();
     const res = toResponse(await t.fetch({ url: 'https://example.com/a' }));
-    expect(await res.text()).toBe('served https://93.184.216.34/a');
+    expect(await res.text()).toBe('served https://example.com/a');
     expect(t.getSnapshot().exitNodeId).toBe('nExit1');
     await t.dispose();
   });
 
-  it('keeps the page-visible URL (not the address) in the response, and caches the lookup', async () => {
-    const { t, f } = await connect();
+  it('keeps the page-visible URL in the response, and caches the lookup', async () => {
+    const { t } = await connect();
     await t.setExitNode('nExit1');
     const first = await t.fetch({ url: 'http://example.com/' });
     expect(first.url).toBe('http://example.com/');
     await t.fetch({ url: 'http://example.com/other' });
-    expect(f.fetches.filter((r) => typeof r !== 'string' && r.url.includes('dns-query'))).toHaveLength(1);
-    expect(f.fetches.at(-1)).toMatchObject({ url: 'http://93.184.216.34/other', headers: { Host: 'example.com' } });
-    expect((f.fetches.at(-1) as { tlsServerName?: string }).tlsServerName).toBeUndefined(); // http: no TLS
+    expect(dnsCalls).toHaveLength(1);
     await t.dispose();
   });
 
@@ -194,15 +234,16 @@ describe('exit nodes', () => {
     await t.setExitNode('nExit1');
     f.fetches.length = 0;
     for (const url of ['http://nas.tail1234.ts.net/', 'http://100.64.2.2/', 'http://nas/', 'http://localhost:3000/', 'http://[fd7a:115c:a1e0::1]/']) await t.fetch({ url });
-    expect(f.fetches.every((r) => typeof r === 'string' && !r.includes('dns-query'))).toBe(true);
+    expect(f.fetches.every((r) => typeof r === 'string')).toBe(true);
+    expect(dnsCalls).toEqual([]);
     await t.dispose();
   });
 
   it('uses the DoH endpoint it is given, and reports a name that has no address', async () => {
-    const { t, f } = await connect({ dohUrl: 'https://9.9.9.9/dns-query' });
+    const { t } = await connect({ dohUrl: 'https://9.9.9.9/dns-query' });
     await t.setExitNode('nExit1');
     await t.fetch({ url: 'http://example.com/' });
-    expect(f.fetches[0]).toMatchObject({ url: expect.stringContaining('https://9.9.9.9/dns-query?name=example.com') });
+    expect(dnsCalls[0]).toContain('https://9.9.9.9/dns-query?name=example.com');
     await expect(t.fetch({ url: 'http://nowhere.example/' })).rejects.toThrow(/nowhere\.example has no address/);
     await t.dispose();
   });

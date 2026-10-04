@@ -149,6 +149,8 @@ export function ErrorView({ error, address, snapshot, optedOut = false, onRetry 
   return (
     <Message icon={error && 'reason' in error && error.reason === 'offline' ? 'lock-fill' : 'exclamation-circle'} title={title} detail={detail}>
       {address ? <code className="max-w-full truncate rounded-ctl bg-secondary px-2 py-1 text-footnote text-foreground/70">{displayAddress(address)}</code> : null}
+      {/* Why the exit node could not carry it: the client's own words, so the cause can be reported. */}
+      {problem === 'failing' && error?.message ? <p data-slot="safari-error-reason" className="m-0 max-w-full text-caption break-words text-foreground/60 select-text">{error.message}</p> : null}
       <Button
         variant="secondary"
         isDisabled={busy !== null}
