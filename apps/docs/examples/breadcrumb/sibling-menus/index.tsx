@@ -22,7 +22,7 @@ export default function SiblingMenus() {
   return (
     <div className="mx-auto grid max-w-md gap-3 p-2">
       <Breadcrumb items={path} />
-      <p className="text-footnote text-muted-foreground">
+      <p className="text-footnote text-foreground/70">
         Open <b className="font-medium text-foreground">{folder}/{file}</b>. Press a segment to pick another.
       </p>
     </div>

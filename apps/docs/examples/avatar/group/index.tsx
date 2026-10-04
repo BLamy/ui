@@ -34,7 +34,7 @@ export default function Group() {
         </AvatarGroup>
       </div>
 
-      <p className="text-subhead text-muted-foreground">{picked ? `You picked ${picked}.` : 'Press a stack to see everyone.'}</p>
+      <p className="text-subhead text-foreground/70">{picked ? `You picked ${picked}.` : 'Press a stack to see everyone.'}</p>
     </div>
   )
 }

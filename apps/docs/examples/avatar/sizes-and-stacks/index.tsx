@@ -33,7 +33,7 @@ export default function SizesAndStacks() {
             <Avatar key={c.f + c.l} c={c} />
           ))}
         </AvatarGroup>
-        <span className="text-subhead text-muted-foreground">{TOTAL} people in this thread</span>
+        <span className="text-subhead text-foreground/70">{TOTAL} people in this thread</span>
       </div>
 
       {/* A presence dot, ringed in the surface colour. */}
@@ -41,7 +41,7 @@ export default function SizesAndStacks() {
         <Avatar c={{ f: 'June', l: 'Calloway' }} size={44} status="online" />
         <div className="grid">
           <span className="text-body text-foreground">June Calloway</span>
-          <span className="text-footnote text-muted-foreground">Active now</span>
+          <span className="text-footnote text-foreground/70">Active now</span>
         </div>
       </div>
     </div>

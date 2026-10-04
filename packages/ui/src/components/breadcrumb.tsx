@@ -103,7 +103,7 @@ export const breadcrumbVariants = cva('relative block w-full min-w-0 overflow-cl
  *  being the current one — the measuring copy does not know — so the current page differs by colour only. */
 export const breadcrumbItemVariants = cva(
   [
-    'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent text-muted-foreground no-underline [font-family:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none',
+    'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent text-foreground/70 no-underline [font-family:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none',
     'data-current:text-foreground',
     'data-focus-visible:ring-2 data-focus-visible:ring-ring',
   ],

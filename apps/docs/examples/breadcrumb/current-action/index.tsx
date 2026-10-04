@@ -14,7 +14,7 @@ export default function CurrentAction() {
           { id: 'weekly', label: 'Weekly report', onPress: () => setLoads((n) => n + 1) },
         ]}
       />
-      <p className="text-footnote text-muted-foreground">Loaded {loads} {loads === 1 ? 'time' : 'times'}. Press the current page to reload it.</p>
+      <p className="text-footnote text-foreground/70">Loaded {loads} {loads === 1 ? 'time' : 'times'}. Press the current page to reload it.</p>
     </div>
   )
 }

@@ -95,7 +95,7 @@ export function Avatar({ c, name, initials, color, src, icon, status, size = 40,
         <img src={image} alt="" draggable={false} onError={() => setFailed(image)} className="absolute inset-0 size-full rounded-[inherit] object-cover" />
       )}
       {status && (
-        <span data-slot="avatar-status" data-status={status} aria-label={status} className={avatarStatusVariants({ status })} />
+        <span data-slot="avatar-status" data-status={status} role="img" aria-label={status} className={avatarStatusVariants({ status })} />
       )}
     </span>
   );
