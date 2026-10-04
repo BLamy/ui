@@ -112,7 +112,9 @@ export function resolveHttp(ref: string | null | undefined, base: string): strin
 function asLoadError(e: unknown): Error {
   if (e instanceof LoadError || (e instanceof DOMException && e.name === 'AbortError')) return e;
   if (e instanceof TailscaleError && e.reason === 'not-connected') return new LoadError('offline', 'Tailscale is not connected.');
-  return new LoadError('unreachable', e instanceof Error && e.message ? e.message : 'The server could not be reached through your tailnet.');
+  // The Go client rejects with plain strings or objects as often as with Errors; the reason is worth showing either way.
+  const reason = e instanceof Error ? e.message : typeof e === 'string' ? e : typeof (e as { message?: unknown } | null)?.message === 'string' ? (e as { message: string }).message : '';
+  return new LoadError('unreachable', reason || 'The server could not be reached through your tailnet.');
 }
 
 interface Ctx {

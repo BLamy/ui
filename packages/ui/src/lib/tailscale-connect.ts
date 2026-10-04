@@ -168,7 +168,9 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
         notifyNetMap: (text) => {
           try {
             const netMap = JSON.parse(text) as TailscaleNetMap;
-            exitNodeId = netMap.selectedExitNodeId ?? null;
+            // A build that never reports the choice (the Go side of the bundled one does not) must not have it cleared by every
+            // net map: only a map that says something about it (even null) settles it, as the session does.
+            if (netMap.selectedExitNodeId !== undefined) exitNodeId = netMap.selectedExitNodeId;
             o.onEvent({ netMap });
           } catch {
             o.onEvent({ netMap: null });

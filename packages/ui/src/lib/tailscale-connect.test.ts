@@ -73,7 +73,7 @@ describe('createTailscaleConnectClient', () => {
 });
 
 /** An IPN with exit nodes: the net map offers one, `configure` applies it, and only then do public addresses answer. */
-function exitNodeModule() {
+function exitNodeModule(reportsSelection = true) {
   let callbacks: Parameters<TailscaleIpn['run']>[0] | null = null;
   const fetches: Array<string | Parameters<TailscaleIpn['fetch']>[0]> = [];
   const configured: Array<Record<string, unknown>> = [];
@@ -81,7 +81,7 @@ function exitNodeModule() {
   const sendMap = () => callbacks?.notifyNetMap(JSON.stringify({
     self: { name: 'laptop.tail1234.ts.net.', addresses: ['100.64.1.2'] },
     peers: [{ id: 'nExit1', name: 'exit.tail1234.ts.net.', addresses: ['100.64.9.9'], online: true, exitNodeOption: true }, { id: 'nNas', name: 'nas.tail1234.ts.net.', addresses: ['100.64.2.2'], online: true }],
-    selectedExitNodeId: selected,
+    ...(reportsSelection ? { selectedExitNodeId: selected } : {}),
   }));
   const ipn: TailscaleIpn = {
     run: (cb) => { callbacks = cb; cb.notifyState('Running'); sendMap(); },
@@ -100,12 +100,12 @@ function exitNodeModule() {
     },
   };
   const mod: TailscaleConnectModule = { createIPN: vi.fn(async () => ipn) };
-  return { mod, fetches, configured };
+  return { mod, fetches, configured, sendMap };
 }
 
 describe('exit nodes', () => {
-  const connect = async (extra: Parameters<typeof createTailscaleConnectClient>[0] extends infer O ? Partial<O> : never = {}) => {
-    const f = exitNodeModule();
+  const connect = async (extra: Parameters<typeof createTailscaleConnectClient>[0] extends infer O ? Partial<O> : never = {}, reportsSelection = true) => {
+    const f = exitNodeModule(reportsSelection);
     const t = createTailscale({ client: createTailscaleConnectClient({ wasmURL: '/w', load: async () => f.mod, ...extra }), auth: { mode: 'auth-key', authKey: 'k' }, env: { open: () => null, locks: null } });
     await t.signIn();
     await vi.waitFor(() => expect(t.getSnapshot().status).toBe('connected'));
@@ -161,6 +161,17 @@ describe('exit nodes', () => {
     // The DoH lookup is itself a tailnet request: an IP-literal URL, so it needs no name resolution and goes through the exit node.
     expect(f.fetches[0]).toMatchObject({ url: expect.stringMatching(/^https:\/\/1\.1\.1\.1\/dns-query\?name=example\.com&type=A$/), headers: { accept: 'application/dns-json' } });
     expect(f.fetches[1]).toEqual({ url: 'https://93.184.216.34/a?b=1', method: 'GET', headers: { accept: 'text/html', Host: 'example.com' }, bodyBase64: undefined, redirect: undefined, tlsServerName: 'example.com' });
+    await t.dispose();
+  });
+
+  it('keeps using the exit node after net maps that do not report the selection (the bundled Go build never does)', async () => {
+    const { t, f } = await connect({}, false);
+    await t.setExitNode('nExit1');
+    f.sendMap();
+    f.sendMap();
+    const res = toResponse(await t.fetch({ url: 'https://example.com/a' }));
+    expect(await res.text()).toBe('served https://93.184.216.34/a');
+    expect(t.getSnapshot().exitNodeId).toBe('nExit1');
     await t.dispose();
   });
 
