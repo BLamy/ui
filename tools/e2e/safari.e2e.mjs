@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { openDemo } from './helpers.mjs';
+import { openDemo, openHarness } from './helpers.mjs';
 
 /* The Safari block, in a real browser. Its default is the real Tailscale (Tailscale's client as WebAssembly, the real
-   sign-in popup); these tests switch the demo to "Simulated", an in-memory tailnet, because they cannot sign in to an
-   account — the same way tools/e2e/tailscale.e2e.mjs does. The one test that touches the real client checks only what
+   sign-in popup); these tests run the block on a dev-only test page (apps/docs/src/e2e-harness.tsx, not a demo) with an
+   in-memory tailnet, because they cannot sign in to an account — the same way tools/e2e/tailscale.e2e.mjs does. The one test that touches the real client checks only what
    needs no account: it loads on the press, and the sign-in popup is sent to Tailscale. What they prove: nothing works until
    Tailscale is connected; once it is, every page, stylesheet and picture comes through the tailnet; a page cannot make
-   requests of its own; and a public address fails without an exit node and loads through one. */
+   requests of its own; and a public address picks an exit node by itself (unless None was chosen, which Try Again overrides) and loads through it. */
 
 const TAILNET = 'demo-tailnet.ts.net';
 const frame = (page) => page.frameLocator('[data-slot=safari-frame]');
@@ -21,10 +21,9 @@ function watchNetwork(page) {
   return hosts;
 }
 
-/** The docs demo, switched to the simulated tailnet. */
+/** The Safari block on the in-memory tailnet. */
 async function open(page) {
-  await openDemo(page, 'safari/tailnet', '[data-slot=safari]');
-  await page.getByText('Simulated', { exact: true }).click();
+  await openHarness(page, 'safari', '[data-slot=safari]');
   await expect(gate(page)).toBeVisible();
 }
 
@@ -114,7 +113,7 @@ test('links, back and forward, same-page anchors and redirects all go through th
   await f.getByRole('link', { name: /^Wiki/ }).first().click();
   await expect(address(page)).toHaveValue(`wiki.${TAILNET}`);
   await expect(f.getByRole('heading', { name: 'How the tailnet is wired' })).toBeVisible();
-  expect(page.url()).toContain('/?demo=safari/tailnet'); // the outer page never navigated
+  expect(page.url()).toContain('/?harness=safari'); // the outer page never navigated
 
   // A link to an anchor on the same page scrolls the frame and does not reload it.
   await f.getByRole('link', { name: 'the end' }).click();
@@ -177,24 +176,20 @@ test('the address field: names, addresses and suggestions from the tailnet', asy
   await expect(address(page)).toHaveValue(`wiki.${TAILNET}`);
 });
 
-test('a public address fails without an exit node, offers one, and loads through it — never from the network', async ({ page }) => {
+test('a public address picks the exit node itself, honours None until Try Again, and never loads from the network', async ({ page }) => {
   const hosts = watchNetwork(page);
   await open(page);
   await signIn(page);
 
+  // No exit node is set: opening a public address selects the online one by itself and loads the page through it. No error page.
   await visit(page, 'example.com');
-  await expect(page.getByRole('heading', { name: 'example.com is not on your tailnet' })).toBeVisible();
-  await expect(page.getByText(/only through an exit node/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Try Again' })).toBeVisible();
-
-  // The error page offers the exit node; choosing it reloads the page through it.
-  await page.getByRole('button', { name: 'Use exit-node as the exit node' }).click();
   await expect(frame(page).getByRole('heading', { name: 'Example Domain' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /is not on your tailnet/ })).toHaveCount(0);
   await expect(address(page)).toHaveValue('example.com');
   await frame(page).getByRole('link', { name: 'More information…' }).click();
   await expect(address(page)).toHaveValue('example.com/more');
 
-  // The shield menu shows and drops the choice; with it dropped the public site fails again.
+  // The shield menu shows the pick and can drop it. None is remembered: reloading shows why the page fails, and picks nothing.
   await page.getByRole('button', { name: 'Tailscale connection' }).click();
   const popover = page.getByRole('dialog', { name: 'Tailscale connection' });
   await expect(popover.getByRole('radio', { name: 'exit-node' })).toBeChecked();
@@ -203,6 +198,17 @@ test('a public address fails without an exit node, offers one, and loads through
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Reload page' }).click();
   await expect(page.getByRole('heading', { name: 'example.com is not on your tailnet' })).toBeVisible();
+  await expect(page.getByText(/you chose to use your devices only/)).toBeVisible();
+  // No button offers an exit node on the error page: Try Again is the way back.
+  await expect(page.getByRole('button', { name: /as the exit node/ })).toHaveCount(0);
+
+  // Try Again clears the opt-out, selects the exit node and reloads the page through it.
+  await page.getByRole('button', { name: 'Try Again' }).click();
+  await expect(frame(page).getByRole('heading', { name: 'More information' })).toBeVisible();
+  await page.getByRole('button', { name: 'Tailscale connection' }).click();
+  await expect(popover.getByRole('radio', { name: 'exit-node' })).toBeChecked();
+  await popover.press('Escape'); // nothing inside has focus yet: press it on the dialog itself
+  await expect(popover).toHaveCount(0);
 
   // A tracker that was never on the tailnet stays an error, exit node or not.
   await visit(page, 'http://tracker.example.com/pixel.gif');
@@ -213,7 +219,7 @@ test('a public address fails without an exit node, offers one, and loads through
 test('the real client is the default: it loads only on the press, and the sign-in goes to Tailscale', async ({ page, context }) => {
   const requested = [];
   page.on('request', (r) => requested.push(r.url()));
-  await openDemo(page, 'safari/tailnet', '[data-slot=safari]');
+  await openDemo(page, 'blocks/safari', '[data-slot=safari]');
   await expect(gate(page)).toBeVisible();
   await page.waitForTimeout(500);
   expect(requested.some((u) => u.endsWith('.wasm'))).toBe(false); // 26 MB of WebAssembly: not before someone signs in
@@ -318,9 +324,7 @@ test('works in dark mode without errors', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-  await page.goto('/?demo=safari/tailnet&theme=dark', { waitUntil: 'load' });
-  await page.locator('[data-slot=safari]').waitFor();
-  await page.getByText('Simulated', { exact: true }).click();
+  await openHarness(page, 'safari', '[data-slot=safari]', { theme: 'dark' });
   await signIn(page);
   await visit(page, `home.${TAILNET}`);
   await expect(frame(page).getByRole('heading', { name: 'Welcome home' })).toBeVisible();

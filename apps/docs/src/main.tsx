@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { lazy, StrictMode, Suspense } from 'react';
 import * as ReactDOM from 'react-dom/client';
 import '@brett_lamy/ui/styles.css';
 // ui's sheet compiled with the registry blocks' Tailwind classes (loaded last, so it's the superset that wins).
@@ -27,13 +27,21 @@ const demo = demoFromSearch();
 const search = new URLSearchParams(window.location.search);
 /* `?render[&resolver=0]` renders arbitrary docstream Markdown like a page (the Copy page round-trip check). */
 const render = search.has('render');
+/* `?harness=<name>` (dev server only) renders Tailscale components on an in-memory tailnet for tools/e2e. It is test
+   tooling, not a demo, and the production build drops it. */
+const harness = import.meta.env.DEV ? search.get('harness') : null;
+const E2eHarness = import.meta.env.DEV ? lazy(() => import('./e2e-harness')) : null;
 const theme = search.get('theme') ?? window.localStorage.getItem('bldocs-theme');
 const appearance = theme === 'dark' || theme === 'light' ? theme : window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-if (demo || render) document.documentElement.dataset.theme = appearance;
+if (demo || render || harness) document.documentElement.dataset.theme = appearance;
 
 root.render(
   <StrictMode>
-    {demo ? (
+    {harness && E2eHarness ? (
+      <AppearanceProvider value={appearance}>
+        <Suspense fallback={null}><E2eHarness name={harness} /></Suspense>
+      </AppearanceProvider>
+    ) : demo ? (
       <AppearanceProvider value={appearance}>
         <DemoFullscreen src={demo.src} variant={demo.variant} resolver={demoResolver} style={{ width: '100vw', height: '100dvh' }} />
       </AppearanceProvider>

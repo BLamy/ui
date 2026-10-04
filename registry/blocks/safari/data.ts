@@ -138,13 +138,19 @@ export interface DemoTailnet {
   options: TailscaleOptions;
 }
 
+export interface DemoTailnetOptions {
+  /** The exit node: `online` (default), `offline` (listed, asleep) or `none` (the tailnet offers no exit node). */
+  exitNode?: 'online' | 'offline' | 'none';
+}
+
 /** A fresh simulated tailnet, and the controller options that use it. */
-export function createDemoTailnet(): DemoTailnet {
+export function createDemoTailnet({ exitNode = 'online' }: DemoTailnetOptions = {}): DemoTailnet {
   const fake = createFakeTailscaleClient({
     tailnet: TAILNET,
     approveAfterMs: 900,
     routes: { [HOME]: home, [WIKI]: wiki, [NOTES]: notes, [STATUS]: status },
-    exitNodes: [EXIT_NODE],
+    exitNodes: exitNode === 'online' ? [EXIT_NODE] : [],
+    offlineExitNodes: exitNode === 'offline' ? [EXIT_NODE] : [],
     internet: { [PUBLIC_SITE]: publicSite },
   });
   return { fake, options: { client: fake.client, popup: false, lockName: false, hostname: 'safari' } };

@@ -17,6 +17,8 @@ export interface FakeTailscaleOptions {
   routes?: Record<string, FakeTailnetHandler>;
   /** Names of peers that offer to be exit nodes (they show up in the peers, with `exitNodeOption`). */
   exitNodes?: string[];
+  /** Exit nodes that are listed but offline (`online: false`), as a laptop that went to sleep. */
+  offlineExitNodes?: string[];
   /** The "public internet": handlers by host that answer only while an exit node is selected. Without one they get a 502. */
   internet?: Record<string, FakeTailnetHandler>;
   /** Approve an interactive sign-in this long after the login URL is shown (ms). `false`: wait for `approve()`. Default 600. */
@@ -64,6 +66,7 @@ export function createFakeTailscaleClient(options: FakeTailscaleOptions = {}): F
     peers: [
       ...Object.keys(options.routes ?? {}).map((host, i) => ({ name: `${host}.`, addresses: [`100.100.8.${i + 1}`], online: true, id: peerId(host) })),
       ...(options.exitNodes ?? []).map((name, i) => ({ name: `${name}.${tailnet}.`, addresses: [`100.100.9.${i + 1}`], online: true, id: peerId(name), exitNodeOption: true })),
+      ...(options.offlineExitNodes ?? []).map((name, i) => ({ name: `${name}.${tailnet}.`, addresses: [`100.100.10.${i + 1}`], online: false, id: peerId(name), exitNodeOption: true })),
     ],
     selectedExitNodeId: exitNodeId,
   });

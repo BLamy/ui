@@ -6,6 +6,12 @@ export async function openDemo(page, src, selector) {
   await page.locator(selector).first().waitFor({ timeout: 30_000 });
 }
 
+/** Opens one in-memory-tailnet test page (apps/docs/src/e2e-harness.tsx, dev server only) and waits for it to mount. Not a demo. */
+export async function openHarness(page, name, selector, { theme = 'light' } = {}) {
+  await page.goto(`/?harness=${name}&theme=${theme}`, { waitUntil: 'load' });
+  await page.locator(selector).first().waitFor({ timeout: 30_000 });
+}
+
 /** Polls until `read()` is stable for two consecutive frames — a spring that has come to rest. */
 export async function settled(page, read, { timeout = 5000 } = {}) {
   await expect

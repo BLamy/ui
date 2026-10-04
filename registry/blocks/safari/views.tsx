@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { formatBytes } from '@/lib/format-bytes';
 import { Icon } from '@/lib/icon';
 import type { TailscalePeer, TailscaleSnapshot } from '@/lib/tailscale';
-import { isPublicName } from '@/lib/tailscale-connect';
+import { exitNodeName } from '@/lib/tailscale-exit';
 import { cn } from '@/lib/utils';
+import { exitNodeProblem, publicHostOf, type ExitNodeProblem } from './exit-node';
 import { describeError, displayAddress, hostOf, type Page } from './loader';
 import type { Entry, Totals } from './use-browser';
 
@@ -104,35 +105,61 @@ function Message({ icon, title, detail, children }: { icon: 'doc' | 'exclamation
   );
 }
 
-export function ErrorView({ error, address, snapshot, onRetry, onExitNode }: {
+/** What an error page says. A public site that needs an exit node is explained in terms of the exit node: there is none to use,
+    you chose none, or the one in use is offline or failing. Anything else is the loader's own message. */
+export function describeFailure(error: Error | null, address: string, snapshot: TailscaleSnapshot, optedOut: boolean): { title: string; detail: string; problem: ExitNodeProblem | null } {
+  const generic = describeError(error);
+  const problem = exitNodeProblem(snapshot, address, error);
+  const host = publicHostOf(address);
+  const others = snapshot.peers.filter((p) => p.exitNode && p.id && p.online && p.id !== snapshot.exitNodeId);
+  if (problem === 'none' && host) {
+    const exits = snapshot.peers.filter((p) => p.exitNode && p.id);
+    const detail = optedOut
+      ? 'It is on the public internet, and you chose to use your devices only. Try Again turns an exit node back on.'
+      : exits.some((p) => p.online)
+        ? 'It is on the public internet, so it needs an exit node. Try Again chooses one.'
+        : exits.length
+          ? 'It is on the public internet, so it needs an exit node, and every exit node on your tailnet is offline. Try Again when one is back.'
+          : 'It is on the public internet. Safari only goes through your tailnet, so it can reach it only through an exit node, and your tailnet has none. Offer one with tailscale set --advertise-exit-node on a device, and approve it in the admin console.';
+    return { title: `${host} is not on your tailnet`, detail, problem };
+  }
+  if ((problem === 'offline' || problem === 'failing') && host) {
+    const name = snapshot.peers.find((p) => p.id === snapshot.exitNodeId);
+    const via = name ? exitNodeName(name) : 'The exit node';
+    return {
+      title: `Safari can’t reach ${host}`,
+      detail: `${problem === 'offline' ? `${via} is offline.` : `It could not be reached through ${via}.`} ${others.length ? 'Try Again switches to another exit node.' : 'No other exit node is online.'}`,
+      problem,
+    };
+  }
+  return { ...generic, problem };
+}
+
+export function ErrorView({ error, address, snapshot, optedOut = false, onRetry }: {
   error: Error | null;
   address: string;
   snapshot: TailscaleSnapshot;
-  onRetry: () => void;
-  /** Choose an exit node (then the page is loaded again). */
-  onExitNode: (id: string) => Promise<void>;
+  /** The person chose "None: your devices only" in the menu. */
+  optedOut?: boolean;
+  /** Try Again. When the failure is about the exit node it picks one first (the button shows "Connecting…" meanwhile), then loads again. */
+  onRetry: () => void | Promise<void>;
 }) {
-  const { title, detail } = describeError(error);
-  const host = address ? hostOf(address) : '';
-  // A public address with no exit node is the one failure with a fix: say so, and offer the exit nodes there and then.
-  const exits = snapshot.peers.filter((p) => p.exitNode && p.id && p.online);
-  const publicSite = host !== '' && isPublicName(host) && !snapshot.exitNodeId && !(error && 'reason' in error && error.reason === 'offline');
-  const [busy, setBusy] = useState<string | null>(null);
+  const { title, detail, problem } = describeFailure(error, address, snapshot, optedOut);
+  const [busy, setBusy] = useState<'connecting' | 'reloading' | null>(null);
   return (
-    <Message icon={error && 'reason' in error && error.reason === 'offline' ? 'lock-fill' : 'exclamation-circle'} title={publicSite ? `${host} is not on your tailnet` : title} detail={publicSite ? 'It is on the public internet. Safari only goes through your tailnet, so it can reach it only through an exit node.' : detail}>
+    <Message icon={error && 'reason' in error && error.reason === 'offline' ? 'lock-fill' : 'exclamation-circle'} title={title} detail={detail}>
       {address ? <code className="max-w-full truncate rounded-ctl bg-secondary px-2 py-1 text-footnote text-foreground/70">{displayAddress(address)}</code> : null}
-      {publicSite && exits.length ? (
-        <div className="flex w-full flex-col gap-2" role="group" aria-label="Exit nodes">
-          {exits.map((p) => (
-            <Button key={p.id} variant="secondary" isDisabled={busy !== null} onPress={() => { setBusy(p.id); onExitNode(p.id as string).finally(() => setBusy(null)); }}>
-              {busy === p.id ? 'Connecting…' : `Use ${p.name.split('.')[0]} as the exit node`}
-            </Button>
-          ))}
-        </div>
-      ) : publicSite ? (
-        <p className="m-0 text-footnote text-foreground/70">Your tailnet has no exit node. Offer one with <code>tailscale set --advertise-exit-node</code> on a device, and approve it in the admin console.</p>
-      ) : null}
-      <Button variant="secondary" onPress={onRetry}>Try Again</Button>
+      <Button
+        variant="secondary"
+        isDisabled={busy !== null}
+        aria-busy={busy !== null || undefined}
+        onPress={() => {
+          setBusy(problem ? 'connecting' : 'reloading');
+          Promise.resolve(onRetry()).finally(() => setBusy(null));
+        }}
+      >
+        {busy === 'connecting' ? 'Connecting…' : 'Try Again'}
+      </Button>
     </Message>
   );
 }

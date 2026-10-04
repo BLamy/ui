@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { createTailscale } from '@/lib/tailscale';
 import { AppearanceProvider } from '@/lib/theme';
-import { createDemoTailnet, EXIT_NODE_ID, HOME, NOTES, PUBLIC_SITE } from './data';
+import { createDemoTailnet, HOME, NOTES, PUBLIC_SITE, type DemoTailnetOptions } from './data';
 import Safari, { type SafariProps } from './page';
 
 const meta: Meta<typeof Safari> = {
@@ -26,19 +26,13 @@ function Device({ width, height, children }: { width: number; height: number; ch
 
 /** Safari on a simulated tailnet that is already signed in (an auth key), as a person arrives on a later visit. These stories
     use the simulation on purpose: the block's own default is the real Tailscale. */
-function Connected({ exitNode, ...props }: SafariProps & { exitNode?: boolean }) {
-  const [controller] = useState(() => createTailscale({ ...createDemoTailnet().options, auth: { mode: 'auth-key', authKey: 'demo' } }));
+function Connected({ exitNode, ...props }: SafariProps & { exitNode?: DemoTailnetOptions['exitNode'] }) {
+  const [controller] = useState(() => createTailscale({ ...createDemoTailnet({ exitNode }).options, auth: { mode: 'auth-key', authKey: 'demo' } }));
   useEffect(() => {
     const off = controller.activate();
     void controller.signIn();
-    let cancelled = false;
-    // Choose the exit node as soon as the net map lists it.
-    const unsubscribe = exitNode ? controller.subscribe(() => {
-      const s = controller.getSnapshot();
-      if (!cancelled && s.status === 'connected' && !s.exitNodeId && s.peers.some((p) => p.id === EXIT_NODE_ID)) void controller.setExitNode(EXIT_NODE_ID);
-    }) : () => {};
-    return () => { cancelled = true; unsubscribe(); off(); void controller.dispose(); };
-  }, [controller, exitNode]);
+    return () => { off(); void controller.dispose(); };
+  }, [controller]);
   return <Safari {...props} controller={controller} />;
 }
 
@@ -54,11 +48,14 @@ export const Browsing: Story = { render: (args) => <Full><Connected {...args} in
 /** Two tabs: the tab strip appears. */
 export const Tabs: Story = { render: (args) => <Full><Connected {...args} initialUrls={[`http://${HOME}/`, `http://${NOTES}/`]} /></Full> };
 
-/** A public address with no exit node chosen fails, and the error page offers the exit node. Nothing is requested from the public internet. */
-export const NotOnTheTailnet: Story = { render: (args) => <Full><Connected {...args} initialUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
+/** A public address with no exit node set: Safari picks the online one itself, then loads the page through it. */
+export const ThroughAnExitNode: Story = { render: (args) => <Full><Connected {...args} initialUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
 
-/** With the exit node chosen, the same public address loads, through it. */
-export const ThroughAnExitNode: Story = { render: (args) => <Full><Connected {...args} exitNode initialUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
+/** A tailnet that offers no exit node: the public address fails, and the page says why. Nothing is requested from the public internet. */
+export const NotOnTheTailnet: Story = { render: (args) => <Full><Connected {...args} exitNode="none" initialUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
+
+/** The only exit node is offline: nothing is picked, and the page says so. */
+export const ExitNodeOffline: Story = { render: (args) => <Full><Connected {...args} exitNode="offline" initialUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
 
 export const Dark: Story = {
   render: (args) => (

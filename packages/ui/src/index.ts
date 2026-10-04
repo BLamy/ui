@@ -569,6 +569,8 @@ export {
 export type {
   TailscalePolicy, ResolvedTailscalePolicy, TailscaleIntercept, TailscaleUnavailable, TailscaleMatch, TailscaleMatchReason,
 } from './lib/tailscale-policy';
+export { pickExitNode, exitNodePeers, exitNodeOnline, exitNodeName } from './lib/tailscale-exit';
+export type { PickExitNodeOptions } from './lib/tailscale-exit';
 export { TailscaleProvider, useTailscale, useTailscaleStatus, useTailscaleFetch, useOptionalTailscale } from './lib/tailscale-react';
 export type { TailscaleProviderProps } from './lib/tailscale-react';
 export { createTailscaleConnectClient } from './lib/tailscale-connect';
@@ -586,3 +588,9 @@ export {
   TailscaleLoginButton, TailscaleStatusBadge, TailscaleMark, tailscaleLoginButtonVariants, tailscaleStatusBadgeVariants,
 } from './components/tailscale-login-button';
 export type { TailscaleLoginButtonProps, TailscaleLoginButtonLabels, TailscaleStatusBadgeProps } from './components/tailscale-login-button';
+export {
+  TailscaleMenu, TailscaleMenuSummary, TailscaleExitNodes, tailscaleMenuVariants, tailscaleExitNodesVariants,
+} from './components/tailscale-menu';
+export type {
+  TailscaleMenuProps, TailscaleMenuSummaryProps, TailscaleExitNodesProps, TailscaleExitNodeLabels, TailscaleExitNodeState, TailscaleMenuVariant,
+} from './components/tailscale-menu';

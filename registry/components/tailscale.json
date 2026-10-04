@@ -1,9 +1,10 @@
 {
   "name": "tailscale",
   "title": "Tailscale",
-  "description": "Sign in to a tailnet from the browser: a controller (createTailscale) with a sign-in state machine (interactive login URL in a popup, or a pre-auth key from your server), a lazily created tailnet client behind a small structural interface, session persistence that can be encrypted in the passkey vault, a routing policy (*.ts.net, 100.64.0.0/10, your hosts and subnets) and React hooks (TailscaleProvider, useTailscale, useTailscaleStatus, useTailscaleFetch).",
+  "description": "Sign in to a tailnet from the browser: a controller (createTailscale) with a sign-in state machine (interactive login URL in a popup, or a pre-auth key from your server), a lazily created tailnet client behind a small structural interface, session persistence that can be encrypted in the passkey vault, a routing policy (*.ts.net, 100.64.0.0/10, your hosts and subnets), exit node helpers (pickExitNode) and React hooks (TailscaleProvider, useTailscale, useTailscaleStatus, useTailscaleFetch).",
   "files": [
     "lib/tailscale.ts",
+    "lib/tailscale-exit.ts",
     "lib/tailscale-policy.ts",
     "lib/tailscale-react.tsx"
   ],
@@ -22,7 +23,11 @@
     "TailscaleProvider",
     "useTailscale",
     "useTailscaleStatus",
-    "useTailscaleFetch"
+    "useTailscaleFetch",
+    "pickExitNode",
+    "exitNodePeers",
+    "exitNodeOnline",
+    "exitNodeName"
   ],
   "imports": [
     "TailscaleProvider",

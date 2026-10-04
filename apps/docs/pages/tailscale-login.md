@@ -34,7 +34,7 @@ import {
 
 {% demo src="tailscale-login/sign-in" %}
 
-The demos on this page are real: **Your tailnet** runs Tailscale's client (`createTailscaleConnectClient`, about 26 MB of WebAssembly fetched on the first press) and the popup is Tailscale's own sign-in page. Approve it and this tab joins your tailnet as a device named `bl-ui-docs`, kept for this tab only (`sessionStorage`); sign out to remove it, or remove it in your admin console. **Simulated** swaps in an in-memory fake tailnet (`createFakeTailscaleClient`) that needs no account. Read [Limits](#limits) before you rely on the real client.
+The demos on this page are real: they run Tailscale's client (`createTailscaleConnectClient`, about 26 MB of WebAssembly fetched on the first press) and the popup is Tailscale's own sign-in page. Approve it and this tab joins your tailnet as a device named `bl-ui-docs`, kept for this tab only (`sessionStorage`); sign out to remove it, or remove it in your admin console. You need a Tailscale account to try them. Read [Limits](#limits) before you rely on the real client.
 
 ## Quick start
 
@@ -232,7 +232,7 @@ Inherent to running Tailscale in a page:
 
 ## Testing
 
-Use the fake: `createTailscale({ client: createFakeTailscaleClient({ routes: { 'nas.example-tailnet.ts.net': (req) => new Response('ok') } }).client, env: { open: () => null, locks: null } })`. `approveAfterMs: false` holds an interactive sign-in until you call `approve()`; `acceptKeys` limits auth keys; `failStart` and `crash()` exercise the error paths. The repository's `tools/e2e/tailscale.e2e.mjs` drives these demos in Chromium.
+Use the fake: `createTailscale({ client: createFakeTailscaleClient({ routes: { 'nas.example-tailnet.ts.net': (req) => new Response('ok') } }).client, env: { open: () => null, locks: null } })`. `approveAfterMs: false` holds an interactive sign-in until you call `approve()`; `acceptKeys` limits auth keys; `failStart` and `crash()` exercise the error paths. The repository's `tools/e2e/tailscale.e2e.mjs` runs the same components against the fake in Chromium (a dev-only test page, not one of the demos above).
 
 ## cva recipes
 

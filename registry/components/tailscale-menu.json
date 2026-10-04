@@ -1,0 +1,25 @@
+{
+  "name": "tailscale-menu",
+  "title": "TailscaleMenu",
+  "description": "The Tailscale connection as a menu, for a popover or a menu-bar extra: where you are connected (tailnet and this device), the exit node chooser and sign out, over useTailscale. The exit nodes read as a radio list or as a list of networks like macOS's Wi-Fi menu (a check for the one in use, a trailing glyph, Connecting\u2026, offline devices dimmed, None at the top). The parts (TailscaleMenuSummary, TailscaleExitNodes) are exported to build your own.",
+  "page": "tailscale-menu",
+  "files": [
+    "components/tailscale-menu.tsx"
+  ],
+  "exports": [
+    "TailscaleMenu",
+    "TailscaleMenuSummary",
+    "TailscaleExitNodes",
+    "tailscaleMenuVariants",
+    "tailscaleExitNodesVariants",
+    "TailscaleProvider",
+    "TailscaleLoginButton",
+    "pickExitNode",
+    "createTailscaleConnectClient"
+  ],
+  "imports": [
+    "TailscaleProvider",
+    "TailscaleMenu",
+    "createTailscaleConnectClient"
+  ]
+}

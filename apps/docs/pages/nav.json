@@ -159,6 +159,7 @@
         { "id": "pglite", "title": "PGlite" },
         { "id": "sql-console", "title": "SqlConsole" },
         { "id": "tailscale-login", "title": "Sign in with Tailscale" },
+        { "id": "tailscale-menu", "title": "Tailscale menu" },
         { "id": "tailscale-router", "title": "Tailscale request router" }
       ]
     },

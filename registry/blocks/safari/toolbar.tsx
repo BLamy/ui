@@ -2,9 +2,8 @@
 import { useId, useMemo, useState, type FormEvent, type KeyboardEvent, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Radio, RadioGroup } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
-import { TailscaleLoginButton } from '@/components/ui/tailscale-login-button';
+import { TailscaleMenu } from '@/components/ui/tailscale-menu';
 import { Icon } from '@/lib/icon';
 import type { TailscalePeer, TailscaleSnapshot } from '@/lib/tailscale';
 import { cn } from '@/lib/utils';
@@ -18,39 +17,6 @@ const tabTitle = (tab: Tab) => {
   const entry = tab.history[tab.index];
   return tab.page?.title || entry?.title || (entry ? hostOf(entry.url) : 'Start Page');
 };
-
-/* ── the exit node chooser ── */
-
-export const exitNodeName = (p: TailscalePeer) => p.name.split('.')[0] ?? p.name;
-
-/** Which device carries the traffic to the public internet. Without one only the tailnet is reachable. */
-function ExitNodePicker({ snapshot, onChange }: { snapshot: TailscaleSnapshot; onChange: (id: string | null) => Promise<void> }) {
-  const exits = snapshot.peers.filter((p) => p.exitNode && p.id);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  if (!exits.length) {
-    return <p className="m-0 text-footnote text-foreground/70">No exit node on this tailnet, so only your devices can be reached. Offer one with <code>tailscale set --advertise-exit-node</code> and approve it in the admin console.</p>;
-  }
-  return (
-    <div className="flex flex-col gap-1.5">
-      <RadioGroup
-        aria-label="Exit node"
-        value={snapshot.exitNodeId ?? 'none'}
-        isDisabled={busy}
-        onChange={(value) => {
-          setBusy(true);
-          setError(null);
-          onChange(value === 'none' ? null : value).catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not change the exit node.')).finally(() => setBusy(false));
-        }}
-        className="flex-col gap-1"
-      >
-        <Radio value="none">None: your devices only</Radio>
-        {exits.map((p) => <Radio key={p.id} value={p.id as string}>{exitNodeName(p)}{p.online ? '' : ' (offline)'}</Radio>)}
-      </RadioGroup>
-      {error ? <p role="alert" className="m-0 text-footnote">{error}</p> : null}
-    </div>
-  );
-}
 
 /* ── the address field ── */
 
@@ -202,18 +168,7 @@ export function Toolbar({ browser, snapshot, history, totals, inputRef, overview
       <PopoverTrigger isOpen={menu && snapshot.status === 'connected'} onOpenChange={setMenu}>
         <Button variant="quiet" size="icon" className="size-8" aria-label="Tailscale connection"><Icon name="shield-check-fill" size={18} className="text-primary" /></Button>
         <PopoverContent aria-label="Tailscale connection" placement="bottom end" className="w-80">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-subhead font-semibold">Connected to {snapshot.tailnet ?? 'your tailnet'}</span>
-              <span className="text-footnote text-foreground/70">As {snapshot.selfName?.replace(/\.$/, '') ?? 'this device'}</span>
-            </div>
-            <p className="m-0 text-footnote text-foreground/70">{totals.pages} pages and {totals.requests} requests this session, all through Tailscale.</p>
-            <div className="flex flex-col gap-1.5">
-              <span className="text-footnote font-semibold">Exit node</span>
-              <ExitNodePicker snapshot={snapshot} onChange={onExitNode} />
-            </div>
-            <TailscaleLoginButton size="sm" variant="outline" />
-          </div>
+          <TailscaleMenu variant="radio" onExitNode={onExitNode} detail={`${totals.pages} pages and ${totals.requests} requests this session, all through Tailscale.`} />
         </PopoverContent>
       </PopoverTrigger>
       {!compact ? <Button variant="quiet" size="icon" className="size-8" aria-label="New tab" onPress={() => { browser.openTab(); requestAnimationFrame(() => inputRef.current?.focus()); }}><Icon name="plus" size={18} /></Button> : null}

@@ -2041,7 +2041,7 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@1.7.0",
+        "@brett_lamy/docstream-editor@1.8.0",
         "@tiptap/core@3.30.5",
         "@tiptap/pm@3.30.5",
         "class-variance-authority@^0.7.1",
@@ -3068,8 +3068,8 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/docstream@1.7.0",
-        "@brett_lamy/docstream-editor@1.7.0",
+        "@brett_lamy/docstream@1.8.0",
+        "@brett_lamy/docstream-editor@1.8.0",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -3099,7 +3099,7 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/docstream@1.7.0"
+        "@brett_lamy/docstream@1.8.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3733,7 +3733,7 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@1.7.0"
+        "@brett_lamy/docstream@1.8.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4462,6 +4462,47 @@
       }
     },
     {
+      "name": "tailscale-menu",
+      "type": "registry:ui",
+      "title": "TailscaleMenu",
+      "description": "The Tailscale connection as a menu, for a popover or a menu-bar extra: where you are connected (tailnet and this device), the exit node chooser and sign out, over useTailscale. The exit nodes read as a radio list or as a list of networks like macOS's Wi-Fi menu (a check for the one in use, a trailing glyph, Connecting…, offline devices dimmed, None at the top). The parts (TailscaleMenuSummary, TailscaleExitNodes) are exported to build your own.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/list-box.json",
+        "https://blamy.github.io/ui/r/radio-group.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/tailscale.json",
+        "https://blamy.github.io/ui/r/tailscale-login-button.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/tailscale-menu.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tailscale-menu.tsx"
+        }
+      ],
+      "meta": {
+        "page": "tailscale-menu",
+        "exports": [
+          "TailscaleMenu",
+          "TailscaleMenuSummary",
+          "TailscaleExitNodes",
+          "tailscaleMenuVariants",
+          "tailscaleExitNodesVariants",
+          "TailscaleProvider",
+          "TailscaleLoginButton",
+          "pickExitNode",
+          "createTailscaleConnectClient"
+        ]
+      }
+    },
+    {
       "name": "tailscale-router",
       "type": "registry:lib",
       "title": "Tailscale request router",
@@ -4507,12 +4548,17 @@
       "name": "tailscale",
       "type": "registry:lib",
       "title": "Tailscale",
-      "description": "Sign in to a tailnet from the browser: a controller (createTailscale) with a sign-in state machine (interactive login URL in a popup, or a pre-auth key from your server), a lazily created tailnet client behind a small structural interface, session persistence that can be encrypted in the passkey vault, a routing policy (*.ts.net, 100.64.0.0/10, your hosts and subnets) and React hooks (TailscaleProvider, useTailscale, useTailscaleStatus, useTailscaleFetch).",
+      "description": "Sign in to a tailnet from the browser: a controller (createTailscale) with a sign-in state machine (interactive login URL in a popup, or a pre-auth key from your server), a lazily created tailnet client behind a small structural interface, session persistence that can be encrypted in the passkey vault, a routing policy (*.ts.net, 100.64.0.0/10, your hosts and subnets), exit node helpers (pickExitNode) and React hooks (TailscaleProvider, useTailscale, useTailscaleStatus, useTailscaleFetch).",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "files": [
+        {
+          "path": "packages/ui/src/lib/tailscale-exit.ts",
+          "type": "registry:lib",
+          "target": "lib/tailscale-exit.ts"
+        },
         {
           "path": "packages/ui/src/lib/tailscale-policy.ts",
           "type": "registry:lib",
@@ -6730,7 +6776,7 @@
       "name": "safari",
       "type": "registry:block",
       "title": "Safari clone",
-      "description": "A browser that only browses through your tailnet. Opening it shows a gate: nothing works until Tailscale is connected (a saved session is restored without a prompt; signing out brings the gate back), and behind it the browser is inert. Then a tabbed Safari: back and forward with per-tab history, an address field with suggestions from your tailnet's devices and your history, reload and stop, a tab strip and a tab overview, a start page of your devices with a Tailscale report, and a popover to see or end the connection. Every page, stylesheet, image and form is fetched by the page itself through tailscale.fetch, which never falls back to the public network, and shown as a sealed document: scripts, frames, plug-ins and media removed, assets inlined as data URLs, and the frame under a Content-Security-Policy that forbids any request of its own, so a page cannot reach out around the tailnet. It is a document browser, not an app runtime. It uses the real Tailscale by default: Tailscale's own client as WebAssembly and its real sign-in page. A tailnet alone reaches your devices; choose an exit node in the shield menu to browse the public internet through it (the DNS lookups go through the exit node too). A simulated tailnet (data.ts) is there for stories and tests, never the default. Composed from TailscaleProvider, TailscaleLoginButton, Button, Popover, Spinner, Icon and BLProvider.",
+      "description": "A browser that only browses through your tailnet. Opening it shows a gate: nothing works until Tailscale is connected (a saved session is restored without a prompt; signing out brings the gate back), and behind it the browser is inert. Then a tabbed Safari: back and forward with per-tab history, an address field with suggestions from your tailnet's devices and your history, reload and stop, a tab strip and a tab overview, a start page of your devices with a Tailscale report, and a popover (TailscaleMenu) to see or end the connection and choose the exit node. Every page, stylesheet, image and form is fetched by the page itself through tailscale.fetch, which never falls back to the public network, and shown as a sealed document: scripts, frames, plug-ins and media removed, assets inlined as data URLs, and the frame under a Content-Security-Policy that forbids any request of its own, so a page cannot reach out around the tailnet. It is a document browser, not an app runtime. It uses the real Tailscale by default: Tailscale's own client as WebAssembly and its real sign-in page. A tailnet alone reaches your devices; for the public internet an exit node carries the traffic and the DNS lookups, and Safari picks one for you: opening a public address with none set selects the best online exit node (the one used last, else the first by name) and loads the page. The shield menu (TailscaleMenu) changes or clears it; choosing None is remembered, so a public address then explains why it fails, and Try Again turns an exit node back on (it also swaps an offline or failing exit node for another online one). With no online exit node it fails with an explanation. A simulated tailnet (data.ts) is there for stories and tests, never the default. Composed from TailscaleProvider, TailscaleMenu, TailscaleLoginButton, Button, Popover, Spinner, Icon and BLProvider.",
       "categories": [
         "browser",
         "network",
@@ -6746,12 +6792,12 @@
         "https://blamy.github.io/ui/r/format-bytes.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/popover.json",
-        "https://blamy.github.io/ui/r/radio-group.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/tailscale.json",
         "https://blamy.github.io/ui/r/tailscale-connect.json",
         "https://blamy.github.io/ui/r/tailscale-fake.json",
         "https://blamy.github.io/ui/r/tailscale-login-button.json",
+        "https://blamy.github.io/ui/r/tailscale-menu.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -6780,6 +6826,11 @@
           "path": "registry/blocks/safari/use-browser.ts",
           "type": "registry:component",
           "target": "components/blocks/safari/use-browser.ts"
+        },
+        {
+          "path": "registry/blocks/safari/exit-node.ts",
+          "type": "registry:component",
+          "target": "components/blocks/safari/exit-node.ts"
         },
         {
           "path": "registry/blocks/safari/loader.ts",

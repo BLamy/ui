@@ -14,14 +14,19 @@
    options (a Headscale server, `localStorage`, an auth key) or a `controller` you made yourself. data.ts has a simulated
    tailnet for stories and tests; it is never the default.
 
-   A tailnet alone reaches your devices. To browse the public internet, choose an exit node in the shield menu: all
-   traffic, and the DNS lookups for public names, then go through that device. Without one a public address fails. */
-import { useMemo, useRef, useState } from 'react';
+   A tailnet alone reaches your devices. To browse the public internet, an exit node carries the traffic (and the DNS lookups
+   for public names). Safari picks one for you: opening a public address with none set selects the best online exit node
+   (the one used last, else the first by name) and then loads the page. The shield menu (core TailscaleMenu) can change or
+   clear it; choosing "None: your devices only" is remembered, and then a public address shows why it fails, and Try Again
+   turns an exit node back on. Try Again also swaps an offline or failing exit node for another online one. With no online
+   exit node a public address fails with an explanation. */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useContainerSize } from '@/lib/container';
 import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { webStorageTailscalePersistence, type Tailscale, type TailscaleOptions } from '@/lib/tailscale';
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect';
 import { TailscaleProvider, useTailscale } from '@/lib/tailscale-react';
+import { createExitNodes } from './exit-node';
 import { Gate } from './gate';
 import { parseAddress, tailnetFetcher } from './loader';
 import { Toolbar, TabOverview, TabStrip } from './toolbar';
@@ -61,7 +66,11 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
   const connected = snapshot.status === 'connected';
   const fetcher = useMemo(() => tailnetFetcher(tailscale), [tailscale]);
   const urls = useMemo(() => initialUrls?.map((u) => parseAddress(u) ?? u), [initialUrls]);
-  const browser = useBrowser({ fetcher, initialUrls: urls, enabled: connected });
+  // The exit node is chosen for you when a public site needs one (see exit-node.ts); the menu can still change or clear it.
+  const exitNodes = useMemo(() => createExitNodes(tailscale), [tailscale]);
+  const prepare = useCallback((entry: { url: string }) => exitNodes.prepare(entry.url), [exitNodes]);
+  const browser = useBrowser({ fetcher, initialUrls: urls, enabled: connected, prepare });
+  useEffect(() => { if (!connected) exitNodes.reset(); }, [connected, exitNodes]);
   const [overview, setOverview] = useState(false);
   const [sizeRef, size] = useContainerSize<HTMLDivElement>();
   const addressRef = useRef<HTMLInputElement>(null);
@@ -70,10 +79,16 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
   const entry = tab.history[tab.index];
   const history = useMemo(() => browser.state.tabs.flatMap((t) => t.history), [browser.state.tabs]);
 
-  /** Choose (or drop) the exit node. Choosing one reloads the page, which is usually why it was chosen. */
+  /** The menu: choose an exit node, or None (remembered: nothing is picked for you again until Try Again). Choosing one reloads a failed page. */
   const chooseExitNode = async (id: string | null) => {
-    await tailscale.setExitNode(id);
+    await exitNodes.choose(id);
     if (id && browser.tab.status === 'error') browser.reload();
+  };
+
+  /** Try Again: when the failure is about the exit node (a public site with none, or one that is offline or failing), pick one first. */
+  const retry = async () => {
+    await exitNodes.retry(entry?.url ?? '', tab.error);
+    browser.reload();
   };
 
   const open = (next: Parameters<typeof browser.navigate>[0], options?: NavigateOptions) => {
@@ -102,7 +117,7 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
         {!compact && browser.state.tabs.length > 1 ? <TabStrip browser={browser} /> : null}
         <main className="relative min-h-0 flex-1 bg-background" aria-busy={tab.status === 'loading'}>
           {tab.status === 'start' ? <StartPage snapshot={snapshot} history={history} totals={browser.state.totals} onOpen={open} />
-            : tab.status === 'error' ? <ErrorView error={tab.error} address={entry?.url ?? ''} snapshot={snapshot} onRetry={browser.reload} onExitNode={chooseExitNode} />
+            : tab.status === 'error' ? <ErrorView error={tab.error} address={entry?.url ?? ''} snapshot={snapshot} optedOut={exitNodes.optedOut} onRetry={retry} />
             : tab.page ? <PageView page={tab.page} onNavigate={open} />
             : null}
           {overview ? <TabOverview browser={browser} onDone={() => setOverview(false)} /> : null}

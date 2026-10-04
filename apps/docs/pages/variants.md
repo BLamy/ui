@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (84 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (86 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -1525,6 +1525,38 @@ inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-footnote
 | --- | --- |
 | `inline` (default) | — |
 | `stacked` | `flex-col items-start` |
+
+## TailscaleMenu
+
+### `tailscaleMenuVariants`
+
+Defined in `@/components/ui/tailscale-menu`. Base classes:
+
+```text
+flex flex-col
+```
+
+**`variant`** — default `radio`
+
+| Value | Adds |
+| --- | --- |
+| `radio` (default) | `gap-3` |
+| `networks` | `gap-2` |
+
+### `tailscaleExitNodesVariants`
+
+Defined in `@/components/ui/tailscale-menu`. Base classes:
+
+```text
+flex flex-col
+```
+
+**`variant`** — default `radio`
+
+| Value | Adds |
+| --- | --- |
+| `radio` (default) | `gap-1.5` |
+| `networks` | `gap-1` |
 
 ## Textarea
 

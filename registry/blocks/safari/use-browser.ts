@@ -135,6 +135,8 @@ export interface UseBrowserOptions {
   enabled?: boolean;
   /** Addresses to open in tabs at the start; none: one tab on the start page. */
   initialUrls?: readonly string[];
+  /** Awaited before each page is fetched (the tab shows loading meanwhile): Safari selects an exit node here. A rejection is ignored; the load goes on. */
+  prepare?: (entry: Entry) => Promise<unknown> | void;
 }
 
 export interface Browser {
@@ -154,8 +156,10 @@ export interface Browser {
 
 const asEntry = (e: Entry | string): Entry => (typeof e === 'string' ? { url: e } : e);
 
-export function useBrowser({ fetcher, initialUrls, enabled = true }: UseBrowserOptions): Browser {
+export function useBrowser({ fetcher, initialUrls, enabled = true, prepare }: UseBrowserOptions): Browser {
   const [state, dispatch] = useReducer(reducer, initialUrls, initialState);
+  const prepareRef = useRef(prepare);
+  prepareRef.current = prepare;
   const inflight = useRef(new Map<number, { seq: number; ctrl: AbortController }>());
 
   useEffect(() => {
@@ -187,10 +191,14 @@ export function useBrowser({ fetcher, initialUrls, enabled = true }: UseBrowserO
       inflight.current.set(tab.id, { seq: tab.seq, ctrl });
       const entry = tab.history[tab.index];
       const { id, seq } = tab;
-      loadPage(entry.url, fetcher, { method: entry.method, body: entry.body, signal: ctrl.signal }).then(
-        (page) => { if (!ctrl.signal.aborted) dispatch({ type: 'loaded', id, seq, page }); },
-        (error) => { if (!ctrl.signal.aborted) dispatch({ type: 'failed', id, seq, error }); },
-      );
+      Promise.resolve()
+        .then(() => prepareRef.current?.(entry))
+        .catch(() => undefined)
+        .then(() => (ctrl.signal.aborted ? null : loadPage(entry.url, fetcher, { method: entry.method, body: entry.body, signal: ctrl.signal })))
+        .then(
+          (page) => { if (page && !ctrl.signal.aborted) dispatch({ type: 'loaded', id, seq, page }); },
+          (error) => { if (!ctrl.signal.aborted) dispatch({ type: 'failed', id, seq, error }); },
+        );
     }
     for (const [id, { ctrl }] of inflight.current) {
       if (!live.has(id)) {

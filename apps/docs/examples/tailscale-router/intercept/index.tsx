@@ -2,11 +2,9 @@ import { useState } from 'react'
 import wasmURL from '@agent-wasm/tailscale-connect/main.wasm?url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Segmented } from '@/components/ui/segmented'
 import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
 import { webStorageTailscalePersistence } from '@/lib/tailscale'
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect'
-import { createFakeTailscaleClient } from '@/lib/tailscale-fake'
 import { TailscaleProvider } from '@/lib/tailscale-react'
 import { useTailscaleRouter } from '@/lib/tailscale-router/react'
 
@@ -16,39 +14,13 @@ import { useTailscaleRouter } from '@/lib/tailscale-router/react'
 // Tailscale's client. Signed out, they go to the normal network, where these
 // names do not exist. On an https page, ask for https:// tailnet URLs (enable
 // HTTPS certificates in your tailnet): the browser blocks http:// requests from
-// an https page before any service worker sees them. "Simulated" puts a fake
-// tailnet behind the same worker.
-type Mode = 'real' | 'simulated'
-
-const demoTailnet = () =>
-  createFakeTailscaleClient({
-    tailnet: 'demo-tailnet.ts.net',
-    approveAfterMs: 800,
-    routes: {
-      'notes.demo-tailnet.ts.net': async (req) => {
-        const path = new URL(req.url).pathname
-        if (path === '/echo') return new Response(await req.arrayBuffer(), { headers: { 'content-type': req.headers.get('content-type') ?? 'application/octet-stream' } })
-        if (path === '/stream') {
-          let n = 0
-          return new Response(new ReadableStream<Uint8Array>({
-            async pull(c) {
-              await new Promise((r) => setTimeout(r, 250))
-              if (n++ < 4) c.enqueue(new TextEncoder().encode(`part ${n}\n`))
-              else c.close()
-            },
-          }), { headers: { 'content-type': 'text/plain' } })
-        }
-        return Response.json({ notes: ['Buy milk', 'Renew the TLS cert'], served: 'by the fake tailnet' })
-      },
-      '100.101.102.103': () => new Response('pong from 100.101.102.103', { headers: { 'content-type': 'text/plain' } }),
-    },
-  })
+// an https page before any service worker sees them.
 
 interface Result { status: string; via: string; body: string }
 
-function Console({ mode }: { mode: Mode }) {
+function Console() {
   const router = useTailscaleRouter()
-  const [url, setUrl] = useState(mode === 'simulated' ? 'http://notes.demo-tailnet.ts.net/' : '')
+  const [url, setUrl] = useState('')
   const [result, setResult] = useState<Result | null>(null)
 
   const send = async (target: string, init?: RequestInit) => {
@@ -82,13 +54,6 @@ function Console({ mode }: { mode: Mode }) {
         <Button type="submit" variant="secondary">Fetch</Button>
       </form>
       <div className="flex flex-wrap gap-2">
-        {mode === 'simulated' ? (
-          <>
-            <Button size="sm" variant="secondary" onPress={() => void send('http://notes.demo-tailnet.ts.net/echo', { method: 'POST', body: 'hello over the tailnet' })}>POST echo</Button>
-            <Button size="sm" variant="secondary" onPress={() => void send('http://notes.demo-tailnet.ts.net/stream')}>Stream</Button>
-            <Button size="sm" variant="secondary" onPress={() => void send('http://100.101.102.103/ping')}>100.101.102.103</Button>
-          </>
-        ) : null}
         <Button size="sm" variant="secondary" onPress={() => void send(new URL(`${import.meta.env.BASE_URL}favicon.ico`, location.origin).href)}>Same origin</Button>
         <Button size="sm" variant="ghost" onPress={() => void router.router?.unregister()}>Remove service worker</Button>
       </div>
@@ -105,29 +70,16 @@ function Console({ mode }: { mode: Mode }) {
 }
 
 export default function Intercept() {
-  const [mode, setMode] = useState<Mode>('real')
-  const [fake] = useState(demoTailnet)
   return (
     <div className="mx-auto grid w-full max-w-lg gap-3">
-      <Segmented
-        aria-label="Tailnet"
-        value={mode}
-        onChange={(m) => setMode(m as Mode)}
-        options={[{ id: 'real', label: 'Your tailnet' }, { id: 'simulated', label: 'Simulated' }]}
-      />
       <TailscaleProvider
-        key={mode}
-        options={
-          mode === 'real'
-            ? { client: () => createTailscaleConnectClient({ wasmURL }), hostname: 'bl-ui-docs-router', persistence: webStorageTailscalePersistence(sessionStorage, 'bl-docs-tailscale-router'), lockName: 'docs-router' }
-            : { client: fake.client, popup: false, lockName: 'docs-router-simulated' }
-        }
+        options={{ client: () => createTailscaleConnectClient({ wasmURL }), hostname: 'bl-ui-docs-router', persistence: webStorageTailscalePersistence(sessionStorage, 'bl-docs-tailscale-router'), lockName: 'docs-router' }}
       >
         <div className="flex flex-wrap items-center gap-3">
           <TailscaleLoginButton />
           <TailscaleStatusBadge compact />
         </div>
-        <Console mode={mode} />
+        <Console />
       </TailscaleProvider>
     </div>
   )

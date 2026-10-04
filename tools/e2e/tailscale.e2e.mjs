@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { openDemo } from './helpers.mjs';
+import { openDemo, openHarness } from './helpers.mjs';
 
-/* Tailscale in a real browser, against the docs demos. The demos default to the real client (Tailscale's Go client as
-   WebAssembly) and a real tailnet; most tests switch them to "Simulated", the in-page fake (lib/tailscale-fake) — no
-   account, no control server — and check the real client only up to what needs no account. The service worker is real: Chromium registers tailscale-sw.js from
+/* Tailscale in a real browser. The docs demos run the real client (Tailscale's Go client as WebAssembly) on a real
+   tailnet; most tests here run the same components on a dev-only test page (apps/docs/src/e2e-harness.tsx, not a demo)
+   with the in-page fake (lib/tailscale-fake) — no account, no control server — and check the real client, through the
+   demos, only up to what needs no account. The service worker is real: Chromium registers tailscale-sw.js from
    the docs dev server, it intercepts plain fetch() calls, hands the matching ones to the page over a MessagePort, and
    streams the answers back. A *.ts.net name does not resolve on the public internet, so "the request went to the
    network" shows up as a failed fetch. */
@@ -12,12 +13,8 @@ const status = (page) => page.getByTestId('result-status');
 const via = (page) => page.getByTestId('result-via');
 const body = (page) => page.getByTestId('result-body');
 
-/** Switch a demo from your tailnet to the simulated one. */
-const simulated = (page) => page.getByText('Simulated', { exact: true }).click();
-
 async function openRouter(page) {
-  await openDemo(page, 'tailscale-router/intercept', '[data-testid=router-status]');
-  await simulated(page);
+  await openHarness(page, 'tailscale-router', '[data-testid=router-status]');
   await expect(page.getByTestId('router-status')).toHaveAttribute('data-status', 'active', { timeout: 15_000 });
 }
 
@@ -27,8 +24,7 @@ async function signIn(page) {
 }
 
 test('sign-in walks idle → signing in → connected, and signs out', async ({ page }) => {
-  await openDemo(page, 'tailscale-login/sign-in', '[data-slot=tailscale-login-button]');
-  await simulated(page);
+  await openHarness(page, 'tailscale-sign-in', '[data-slot=tailscale-login-button]');
   const button = page.locator('[data-slot=tailscale-login-button]');
   await expect(button).toHaveAttribute('data-status', 'idle');
   await button.click();
@@ -42,8 +38,7 @@ test('sign-in walks idle → signing in → connected, and signs out', async ({ 
 });
 
 test('a sign-in can be cancelled with the same button, and with the keyboard', async ({ page }) => {
-  await openDemo(page, 'tailscale-login/sign-in', '[data-slot=tailscale-login-button]');
-  await simulated(page);
+  await openHarness(page, 'tailscale-sign-in', '[data-slot=tailscale-login-button]');
   const button = page.locator('[data-slot=tailscale-login-button]');
   await button.focus();
   await page.keyboard.press('Enter');
@@ -54,8 +49,7 @@ test('a sign-in can be cancelled with the same button, and with the keyboard', a
 });
 
 test('auth key: signs in without a person', async ({ page }) => {
-  await openDemo(page, 'tailscale-login/auth-key', '[data-slot=tailscale-login-button]');
-  await simulated(page);
+  await openHarness(page, 'tailscale-auth-key', '[data-slot=tailscale-login-button]');
   await page.getByRole('button', { name: 'Connect this kiosk' }).click();
   await expect(page.locator('[data-slot=tailscale-status-badge]')).toHaveAttribute('data-status', 'connected', { timeout: 10_000 });
 });
@@ -175,7 +169,6 @@ test('after a reload the worker routes again (re-attach), and it can be removed'
   await openRouter(page);
   await signIn(page);
   await page.reload();
-  await simulated(page);
   await expect(page.getByTestId('router-status')).toHaveAttribute('data-status', 'active', { timeout: 15_000 });
   await signIn(page); // the demo keeps no session: each load is a new device
   await page.getByRole('button', { name: 'Fetch' }).click();
