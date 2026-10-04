@@ -102,7 +102,8 @@ function Window({ width, children }: { width: number; children: ReactNode }) {
 }
 
 // Containers own behavior, your state owns data: a tab bar, a stack per tab,
-// lists and a tray.
+// lists and a tray. shouldForceMount keeps a hidden panel mounted, so each
+// tab keeps its own stack while you are on another.
 export default function FirstApp() {
   return (
     <Window width={390}>
@@ -118,10 +119,10 @@ export default function FirstApp() {
             </TabViewList>
           </TabViewBar>
           <TabViewPanels>
-            <TabViewPanel id="friends">
+            <TabViewPanel id="friends" shouldForceMount>
               <FriendsTab />
             </TabViewPanel>
-            <TabViewPanel id="settings">
+            <TabViewPanel id="settings" shouldForceMount>
               <p style={{ padding: 24, color: 'var(--muted-foreground)' }}>
                 Each tab keeps its own stack and state.
               </p>
