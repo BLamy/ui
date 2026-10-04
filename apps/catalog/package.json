@@ -11,7 +11,7 @@
     "@brett_lamy/ui": "workspace:*"
   },
   "devDependencies": {
-    "@brett_lamy/docstream": "1.7.0",
+    "@brett_lamy/docstream": "1.8.0",
     "highlight.js": "11.11.2",
     "use-sync-external-store": "1.6.0"
   }
