@@ -35,6 +35,14 @@ export function shownTitle(r: TitleParts | undefined): HTMLElement | null {
   return null;
 }
 
+/** The title that flies out on a push. A large title that has scrolled under the bar leaves nothing to fly from (its
+ *  inline stand-in sits at the bar's centre, an odd place for the back label to appear from), so the new screen
+ *  just slides in with its own back button. A screen without a large title flies its inline one as usual. */
+export function pushedTitle(r: TitleParts | undefined): HTMLElement | null {
+  if (r?.large && r.el?.hasAttribute('data-scrolled')) return null;
+  return shownTitle(r);
+}
+
 /** A screen's back label, when it shows the previous title (not "Back", not nothing). */
 export function backLabel(r: TitleParts | undefined): HTMLElement | null {
   return r?.back && r.back.dataset.mode === 'title' ? r.back : null;

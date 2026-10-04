@@ -11,7 +11,7 @@ import { springCss } from '@/lib/motion';
 import { armBackHistory, useBackHistory } from '@/lib/back-history';
 import { useEdgeSwipe } from '@/lib/edge-swipe';
 import { usePullToRefresh } from '@/lib/pull-to-refresh';
-import { backLabel, shownTitle, useTitleFlight, type ActiveFlight, type TitleParts } from '@/lib/title-flight';
+import { backLabel, pushedTitle, shownTitle, useTitleFlight, type ActiveFlight, type TitleParts } from '@/lib/title-flight';
 import { Spinner } from '@/components/ui/spinner';
 import { useSplitViewBack } from '@/components/ui/split-view';
 
@@ -126,14 +126,28 @@ export function ScreenWrap({ sc, depth, top, ghost, entering, nav, backTitle: pr
   const ins = sc.bottomInset != null ? sc.bottomInset : (defIns || 0);
   const barH = safeTop + BARH;
   const hideChrome = sc.hideChromeOnScroll !== false;
-  useEffect(() => () => chromeStore.set(false), []);
+  // The shared chrome (tab bar, sticky headers) follows the screen that is live on top, so when a pop brings a
+  // scrolled list back its own hidden bar and the tab bar agree again, rather than the leaving screen resetting them.
+  const live = !ghost && !isUnder;
+  const liveRef = useRef(live); liveRef.current = live;
+  const published = useRef(false);
+  useEffect(() => {
+    if (!live) return;
+    // A root screen mounting at rest has nothing to say; it would only un-hide another stack's chrome.
+    if (!published.current && depth === 0 && !hid) return;
+    published.current = true;
+    chromeStore.set(hid);
+  }, [live, hid, depth]);
+  // Leaving while still on top (a swipe pop unmounts without a ghost) hands the chrome back; the screen revealed
+  // publishes its own state right after. A ghost leaves it alone: the screen under already has.
+  useEffect(() => () => { if (liveRef.current) chromeStore.set(false); }, []);
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const y = e.currentTarget.scrollTop; const s = y > (sc.largeTitle ? 44 : 8); if (s !== scr) setScr(s);
     if (hideChrome && !ghost) {
       const dy = y - lastY.current;
-      if (y < barH * 0.7) { if (hid) { setHid(false); chromeStore.set(false); } }
-      else if (dy > 5) { if (!hid) { setHid(true); chromeStore.set(true); } }
-      else if (dy < -5) { if (hid) { setHid(false); chromeStore.set(false); } }
+      if (y < barH * 0.7) { if (hid) setHid(false); }
+      else if (dy > 5) { if (!hid) setHid(true); }
+      else if (dy < -5) { if (hid) setHid(false); }
     }
     lastY.current = y;
   };
@@ -288,7 +302,7 @@ export function NavigationStack({ screens, onPop, defIns, safeTop, rootBack: roo
     if (nk.length > ok.length && pref(ok, nk)) {
       setAnim({ enter: nk[nk.length - 1], exit: null });
       const fromK = ok[ok.length - 1], toK = nk[nk.length - 1];
-      titles.fly(() => [shownTitle(regMap.current[fromK]), backLabel(regMap.current[toK]), regMap.current[toK]?.el]);
+      titles.fly(() => [pushedTitle(regMap.current[fromK]), backLabel(regMap.current[toK]), regMap.current[toK]?.el]);
       armBackHistory();
       if (focusIsOurs()) requestAnimationFrame(() => regMap.current[toK]?.el?.focus({ preventScroll: true }));
       tRef.current = setTimeout(() => setAnim({ enter: null, exit: null }), SETTLE_MS);
