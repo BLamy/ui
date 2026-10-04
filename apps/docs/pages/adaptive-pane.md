@@ -61,6 +61,12 @@ function Shell({ nav, children }) {
 | `cover` | Fills the positioned host at `zIndex` — full-screen panels and compact pages. |
 | `hidden` | Nothing. |
 
+## Resizing and gestures
+
+`resizable` puts a divider on the inner edge of a `column` or a `drawer`: drag it, or focus it and use the arrow keys (Shift for bigger steps), Home and End; double-click or Enter resets to the default width. `minWidth` (default 160) and a numeric `maxWidth` bound it, and a column never takes the last 240px of its host (a drawer, the last 48px). `onResize(width, mode)` reports each change (`width` is `undefined` once reset).
+
+A drawer moves like a NavigationStack screen: it opens and closes on the `smooth` spring, and dragging its panel toward its edge follows the finger and closes past the stack's commit distance or flick (`swipe={false}` turns that off). Give `onOpen` and a thin strip along the host's edge opens the drawer with a drag from the edge. That strip sits where a NavigationStack's back swipe starts, so use it on the side a stack in the host doesn't.
+
 ## Container utilities
 
 The shells share two more primitives, in `@/lib/container` (`@brett_lamy/ui` on npm):

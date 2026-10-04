@@ -44,3 +44,29 @@ function Demo() {
 }
 
 export const Modes: Story = { render: () => <Demo /> };
+
+/** The divider drags the width (arrows, Home and End too; double-click resets); a drawer also drags shut by its
+ *  panel and, given `onOpen`, drags open from the left edge. */
+function ResizableDemo() {
+  const [mode, setMode] = useState<AdaptivePaneMode>('column');
+  const [open, setOpen] = useState(true);
+  return (
+    <Phone w={720} h={460}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+        <AdaptivePane mode={mode} open={open} onClose={() => setOpen(false)} onOpen={() => setOpen(true)} resizable
+          columnWidth={220} drawerWidth={260} zIndex={20} columnStyle={{ borderRight: '1px solid var(--border)' }}>
+          <div style={{ height: '100%', padding: 16, boxSizing: 'border-box', background: 'var(--card)' }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Pane</div>
+            <div style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>Drag the edge to resize ({mode}).</div>
+          </div>
+        </AdaptivePane>
+        <div style={{ flex: 1, minWidth: 0, padding: 20 }}>
+          <Segmented options={['column', 'drawer'].map((m) => ({ id: m, label: m }))} value={mode}
+            onChange={(v) => { setMode(v as AdaptivePaneMode); setOpen(true); }} />
+        </div>
+      </div>
+    </Phone>
+  );
+}
+
+export const Resizable: Story = { render: () => <ResizableDemo /> };

@@ -15,8 +15,10 @@ export default function PaneModes({
   variant?: string
 }) {
   // column | drawer | cover | hidden — a real shell picks this from its
-  // measured width
-  const mode = variant as AdaptivePaneMode
+  // measured width. `resizable` and `drawer-resizable` add the divider.
+  const resizable = variant === 'resizable' || variant === 'drawer-resizable'
+  const mode: AdaptivePaneMode =
+    variant === 'resizable' ? 'column' : variant === 'drawer-resizable' ? 'drawer' : (variant as AdaptivePaneMode)
   const [open, setOpen] = useState(true)
   const [drawer, setDrawer] = useState(false)
   useEffect(() => {
@@ -29,6 +31,8 @@ export default function PaneModes({
           mode={mode}
           open={open}
           onClose={() => setOpen(false)}
+          onOpen={() => setOpen(true)}
+          resizable={resizable}
           columnWidth={200}
           drawerWidth={240}
           zIndex={20}
@@ -56,6 +60,8 @@ export default function PaneModes({
           >
             A shell picks the mode from its measured width; the pane never
             remounts its children within a mode. Switch modes in the header.
+            A drawer drags shut by its panel and drags open from the left edge;
+            the resizable variants have a divider to drag.
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {mode === 'drawer' ? (

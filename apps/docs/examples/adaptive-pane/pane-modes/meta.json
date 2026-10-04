@@ -5,7 +5,9 @@
     { "id": "column", "label": "column" },
     { "id": "drawer", "label": "drawer" },
     { "id": "cover", "label": "cover" },
-    { "id": "hidden", "label": "hidden" }
+    { "id": "hidden", "label": "hidden" },
+    { "id": "resizable", "label": "column ↔" },
+    { "id": "drawer-resizable", "label": "drawer ↔" }
   ],
   "variantsWidth": 300
 }

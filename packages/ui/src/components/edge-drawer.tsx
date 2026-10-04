@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, HTMLAttributes, ReactNode, Ref } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +41,11 @@ export interface EdgeDrawerProps extends Pick<VariantProps<typeof edgeDrawerVari
   /** Any CSS box-shadow for the open panel, replacing the default lift (`none` for flat). Or pass `shadow-*`
    *  utilities in `className`. */
   shadow?: string;
+  /** The panel and the scrim, for a host that drives them directly (a drag that follows the finger). */
+  panelRef?: Ref<HTMLDivElement>;
+  scrimRef?: Ref<HTMLDivElement>;
+  /** Extra props for the panel (a gesture's pointer handlers). */
+  panelProps?: HTMLAttributes<HTMLDivElement>;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -50,11 +55,12 @@ const len = (v: number | string | undefined) => (typeof v === 'number' ? v + 'px
 
 export function EdgeDrawer({
   side = 'left', open, onClose, width, maxWidth, zIndex = 30, scrimClassName, scrim, shadow,
-  children, className, style,
+  panelRef, scrimRef, panelProps, children, className, style,
 }: EdgeDrawerProps) {
   return (
     <>
       <div
+        ref={scrimRef}
         data-slot="edge-drawer-scrim"
         onClick={onClose}
         className={cn(
@@ -66,6 +72,8 @@ export function EdgeDrawer({
         style={{ '--edge-drawer-z': zIndex, ...(scrim != null ? { '--edge-drawer-scrim': scrim } : null) } as CSSProperties}
       />
       <div
+        {...panelProps}
+        ref={panelRef}
         data-slot="edge-drawer"
         data-side={side}
         data-open={open}
