@@ -121,3 +121,30 @@ describe("surface: meta.json object ⇄ tag declarations", () => {
 })
 
 const ONE_FILE = [{ path: "index.tsx", content: "x\n", language: "tsx" }]
+
+describe("DemoViewer code view: breadcrumb and file list handle (server markup)", () => {
+  const MULTI = [
+    { path: "index.tsx", content: "export default () => null", language: "tsx" },
+    { path: "components/user-panel.tsx", content: "export const a = 1", language: "tsx" },
+  ]
+
+  it("renders the path as a Breadcrumb nav with one button per segment, the src first", () => {
+    const html = renderToString(<DemoViewer src="blocks/discord-clone" title="T" files={MULTI} />)
+    expect(html).toContain('<nav class="docs-demo-crumbs" aria-label="Breadcrumb">')
+    expect(html).not.toContain("docs-demo-source-path")
+    const list = html.slice(html.indexOf("<ol"), html.indexOf("</ol>"))
+    const names = [...list.matchAll(/docs-demo-crumb-text">([^<]+)</g)].map((m) => m[1])
+    expect(names).toEqual(["blocks", "discord-clone", "index.tsx"])
+    expect(list).toContain('aria-haspopup="menu"')
+    expect(list).toContain('aria-current="page"')
+  })
+
+  it("renders a vertical separator between the file list and the source", () => {
+    const html = renderToString(<DemoViewer src="a/b" title="T" files={MULTI} />)
+    expect(html).toMatch(/class="docs-demo-files-handle" role="separator" tabindex="0" aria-orientation="vertical"/)
+    expect(html).toContain('aria-valuemin="140"')
+    expect(html).toContain('aria-valuenow="188"')
+    // The default width is the stylesheet's; no inline width until the reader drags.
+    expect(html).not.toContain("--docs-demo-files-w")
+  })
+})

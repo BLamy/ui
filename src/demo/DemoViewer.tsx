@@ -38,6 +38,7 @@ import { PillTabs, Segmented, rovingKeyDown } from "../docs/controls"
 import { useDemoResolver, useDemoRuntime } from "./context"
 import { createDocstreamClipboard, type DemoSourceSnapshot, type DocstreamClipboard } from "./clipboard"
 import { CopyDemoButton } from "./copy-demo"
+import { PathBreadcrumb } from "./PathBreadcrumb"
 import { languageForPath } from "./glob"
 import { useDemoVFSContext, useDemoVFSEntry, type DemoVFS } from "./vfs"
 import { cssToSurface, surfaceStyle, surfaceToCss } from "./surface"
@@ -455,6 +456,22 @@ function fileTree(files: DemoFile[]): TreeRow[] {
   return rows
 }
 
+export const FILES_DEFAULT_WIDTH = 188
+export const FILES_MIN_WIDTH = 140
+/** The file list never takes more than this share of the viewer, so the source pane can't collapse. */
+export const FILES_MAX_SHARE = 0.6
+
+/** The widest the file list may be inside a viewer `container` px wide (never below the minimum). */
+export function filesMaxWidth(container: number): number {
+  return Math.max(FILES_MIN_WIDTH, Math.floor(container * FILES_MAX_SHARE))
+}
+
+/** Clamp a file list width to [min, 60% of the viewer]. An unmeasured viewer (0) only enforces the minimum. */
+export function clampFilesWidth(width: number, container: number): number {
+  const max = container > 0 ? filesMaxWidth(container) : Infinity
+  return Math.round(Math.min(max, Math.max(FILES_MIN_WIDTH, width)))
+}
+
 function CodeView({ src, files, height, id }: { src: string; files: DemoFile[]; height: string; id: string }) {
   const [active, setActive] = useState(files[0]?.path ?? "")
   useEffect(() => {
@@ -465,8 +482,67 @@ function CodeView({ src, files, height, id }: { src: string; files: DemoFile[]; 
   const paths = files.map((f) => f.path)
   const tabId = (path: string) => `${id}-file-${paths.indexOf(path)}`
   const panelId = `${id}-source`
+
+  // The file list width is the user's choice (null: the default). It lives here, so it survives file switches.
+  const code = useRef<HTMLDivElement | null>(null)
+  const [chosen, setChosen] = useState<number | null>(null)
+  const [container, setContainer] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  useEffect(() => {
+    const el = code.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(() => setContainer(Math.round(el.getBoundingClientRect().width)))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  const width = clampFilesWidth(chosen ?? FILES_DEFAULT_WIDTH, container)
+  const max = container > 0 ? filesMaxWidth(container) : undefined
+
+  const startDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const el = code.current
+    if (!el || event.button !== 0) return
+    event.preventDefault()
+    const handle = event.currentTarget
+    const pointer = event.pointerId
+    try {
+      handle.setPointerCapture(pointer)
+    } catch {
+      /* not capturable (synthetic event): the window listeners still follow the drag */
+    }
+    const left = el.getBoundingClientRect().left
+    setDragging(true)
+    const move = (ev: PointerEvent) => setChosen(clampFilesWidth(ev.clientX - left, el.getBoundingClientRect().width))
+    const up = () => {
+      setDragging(false)
+      if (handle.hasPointerCapture?.(pointer)) handle.releasePointerCapture(pointer)
+      window.removeEventListener("pointermove", move)
+      window.removeEventListener("pointerup", up)
+      window.removeEventListener("pointercancel", up)
+    }
+    window.addEventListener("pointermove", move)
+    window.addEventListener("pointerup", up)
+    window.addEventListener("pointercancel", up)
+  }
+
+  const onResizeKey = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const step = event.shiftKey ? 50 : 10
+    let next: number | undefined
+    if (event.key === "ArrowLeft") next = width - step
+    else if (event.key === "ArrowRight") next = width + step
+    else if (event.key === "Home") next = FILES_MIN_WIDTH
+    else if (event.key === "End") next = max ?? width
+    if (next === undefined) return
+    event.preventDefault()
+    setChosen(clampFilesWidth(next, container))
+  }
+
   return (
-    <div className="docs-demo-code" style={{ height }}>
+    <div
+      ref={code}
+      className="docs-demo-code"
+      style={{ height, ...(chosen === null ? null : { "--docs-demo-files-w": `${width}px` }) } as CSSProperties}
+      data-dragging={dragging || undefined}
+    >
       <div
         className="docs-demo-files"
         role="tablist"
@@ -502,9 +578,25 @@ function CodeView({ src, files, height, id }: { src: string; files: DemoFile[]; 
           ),
         )}
       </div>
+      <div
+        className="docs-demo-files-handle"
+        role="separator"
+        tabIndex={0}
+        aria-orientation="vertical"
+        aria-label="Resize file list"
+        aria-controls={panelId}
+        aria-valuemin={FILES_MIN_WIDTH}
+        aria-valuemax={max}
+        aria-valuenow={width}
+        aria-valuetext={`${width} pixels wide`}
+        data-dragging={dragging || undefined}
+        onPointerDown={startDrag}
+        onKeyDown={onResizeKey}
+        onDoubleClick={() => setChosen(null)}
+      />
       <div className="docs-demo-source" role="tabpanel" id={panelId} aria-labelledby={file ? tabId(file.path) : undefined}>
         <div className="docs-demo-source-h">
-          <span className="docs-demo-source-path">{src && file ? `${src}/${file.path}` : file?.path}</span>
+          {file ? <PathBreadcrumb src={src} path={file.path} paths={paths} onSelect={setActive} /> : <span className="docs-demo-crumbs" />}
           {file ? <CopyButton text={file.content} label={`Copy ${file.path}`} /> : null}
         </div>
         <div className="docs-demo-source-body" tabIndex={0} aria-label={file ? `${file.path} source` : undefined}>

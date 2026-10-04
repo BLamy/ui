@@ -2064,11 +2064,74 @@
 .docs-demo-files {
   flex-shrink: 0;
   box-sizing: border-box;
-  width: 188px;
+  /* --docs-demo-files-w is set (px) once the reader drags the handle; 188px until then. */
+  width: var(--docs-demo-files-w, 188px);
   padding: 8px;
   overflow-y: auto;
   border-right: 1px solid var(--gb-border);
   background: var(--gb-muted);
+}
+
+/* The drag handle between the file list and the source: zero layout width, with a wider hit area
+   and the same grip as the preview handle straddling the divider. */
+.docs-demo-files-handle {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 0;
+  width: 0;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.docs-demo-files-handle::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  width: 10px;
+  content: "";
+}
+
+.docs-demo-files-handle::after {
+  position: absolute;
+  top: 50%;
+  left: -2.5px;
+  width: 5px;
+  height: 40px;
+  margin-top: -20px;
+  border-radius: 3px;
+  background: var(--gb-stage-dot);
+  content: "";
+  opacity: 0;
+  transition: opacity 150ms ease, background 150ms ease, height 200ms ease, margin 200ms ease;
+}
+
+.docs-demo-code:hover .docs-demo-files-handle::after {
+  opacity: 1;
+}
+
+.docs-demo-files-handle:hover::after,
+.docs-demo-files-handle:focus-visible::after,
+.docs-demo-files-handle[data-dragging]::after {
+  height: 56px;
+  margin-top: -28px;
+  background: var(--gb-primary);
+  opacity: 1;
+}
+
+.docs-demo-files-handle:focus-visible {
+  outline: none;
+}
+
+.docs-demo-files-handle:focus-visible::before {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: -1px;
+  border-radius: 2px;
+}
+
+.docs-demo-code[data-dragging] {
+  cursor: col-resize;
+  user-select: none;
 }
 
 .docs-demo-files-h {
@@ -2143,16 +2206,172 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 5px 6px 5px 14px;
+  padding: 5px 6px 5px 8px;
   border-bottom: 1px solid var(--gb-border);
   color: var(--gb-muted-foreground);
   font: 12px/1 var(--docs-demo-mono);
 }
 
-.docs-demo-source-path {
+/* Breadcrumb path: one button per segment. The list is clipped to the header; the fit logic in
+   PathBreadcrumb collapses the middle to a "…" before that matters. */
+.docs-demo-crumbs {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.docs-demo-crumbs > .docs-demo-crumbs-list {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.docs-demo-crumbs > .docs-demo-crumbs-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.docs-demo-crumbs-list > .docs-demo-crumb-item {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.docs-demo-crumbs-list > .docs-demo-crumb-item[data-last] {
+  flex: 0 1 auto;
+}
+
+.docs-demo-crumb-sep {
+  flex-shrink: 0;
+  color: var(--gb-muted-foreground);
+  opacity: 0.7;
+}
+
+.docs-demo-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--gb-muted-foreground);
+  font: inherit;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.docs-demo-crumb svg {
+  flex-shrink: 0;
+}
+
+.docs-demo-crumb-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.docs-demo-crumb:hover,
+.docs-demo-crumb[aria-expanded="true"] {
+  background: var(--gb-hover);
+  color: var(--gb-panel-foreground);
+}
+
+.docs-demo-crumb[data-current] {
+  color: var(--gb-panel-foreground);
+  font-weight: 600;
+}
+
+.docs-demo-crumb[data-current] svg {
+  color: var(--gb-primary);
+}
+
+.docs-demo-crumb:focus-visible {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: -2px;
+}
+
+/* The sibling / hidden-segment menu. Portalled next to the docs root (so it isn't clipped by the
+   viewer) and fixed under its trigger; --crumb-x / --crumb-y are set from the trigger's rect. */
+.docs-demo-crumb-menu {
+  position: fixed;
+  top: var(--crumb-y, 0);
+  left: var(--crumb-x, 0);
+  z-index: 60;
+  box-sizing: border-box;
+  min-width: 160px;
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: min(320px, calc(100vh - 16px));
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--gb-border);
+  border-radius: 10px;
+  background: var(--gb-panel);
+  box-shadow: var(--gb-menu-shadow);
+  color: var(--gb-panel-foreground);
+  font: 12.5px/1.3 var(--docs-demo-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+
+.docs-demo-crumb-option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.docs-demo-crumb-option svg {
+  flex-shrink: 0;
+  color: var(--gb-muted-foreground);
+}
+
+.docs-demo-crumb-option:hover,
+.docs-demo-crumb-option:focus-visible {
+  outline: none;
+  background: var(--gb-hover);
+}
+
+.docs-demo-crumb-option[data-current] {
+  color: var(--gb-primary);
+  font-weight: 600;
+}
+
+.docs-demo-crumb-option[data-current] svg {
+  color: var(--gb-primary);
+}
+
+.docs-demo-crumb-option-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docs-demo-crumb-option .docs-demo-crumb-check {
+  margin-left: auto;
 }
 
 .docs-demo-source-body {
@@ -2195,7 +2414,8 @@
   }
 
   .docs-demo-files-h,
-  .docs-demo-dir {
+  .docs-demo-dir,
+  .docs-demo-files-handle {
     display: none;
   }
 
@@ -2338,6 +2558,8 @@
   }
 
   .docs-demo-handle::after,
+  .docs-demo-files-handle::after,
+  .docs-demo-crumb,
   .docs-page-actions-more svg {
     transition: none;
   }
