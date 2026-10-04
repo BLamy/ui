@@ -10,6 +10,7 @@ import { APPS, type DesktopApp } from './apps';
 import type { ClipKind, FileKind } from './data';
 import { useDesktop } from './desktop';
 import { useAlfred, type PowerState, type RunningTimer } from './state';
+import { TailscaleStatusItem, WifiStatusItem, type StatusMenu } from './status-items';
 
 /* ── Tiles: macOS-style app icons (a gradient squircle with a white glyph) ── */
 
@@ -177,8 +178,9 @@ function useCountdown(timer: RunningTimer | null) {
   return Math.max(0, Math.round(timer.minutes * 60 - (now - timer.startedAt) / 1000));
 }
 
-/** The menu bar: the frontmost app's name and menus, and the status items. The clock is fixed (9:41). */
-export function MenuBar({ dark, onAlfred }: { dark: boolean; onAlfred: () => void }) {
+/** The menu bar: the frontmost app's name and menus, and the status items. The clock is fixed (9:41). Tailscale and Wi-Fi are
+    working items (status-items.tsx); `initialMenu` opens one of them on load. */
+export function MenuBar({ dark, onAlfred, initialMenu }: { dark: boolean; onAlfred: () => void; initialMenu?: StatusMenu }) {
   const { timer } = useAlfred();
   const { front } = useDesktop();
   const app = APPS.find((a) => a.id === front);
@@ -191,10 +193,13 @@ export function MenuBar({ dark, onAlfred }: { dark: boolean; onAlfred: () => voi
         dark ? 'bg-black/25 text-white/90' : 'bg-white/35 text-black/85',
       )}
     >
-      <Hat size={17} />
-      <span className="font-semibold">{app?.name ?? 'Finder'}</span>
-      {['File', 'Edit', 'View', app ? 'Window' : 'Go', 'Help'].map((m) => <span key={m} className="opacity-90">{m}</span>)}
-      <span className="ml-auto flex items-center gap-3.5">
+      <Hat size={17} className="shrink-0" />
+      {/* The app's menus give way (clipped) when the bar is too narrow for them and the status items. */}
+      <span className="flex min-w-0 items-center gap-4 overflow-hidden whitespace-nowrap">
+        <span className="font-semibold">{app?.name ?? 'Finder'}</span>
+        {['File', 'Edit', 'View', app ? 'Window' : 'Go', 'Help'].map((m) => <span key={m} className="opacity-90">{m}</span>)}
+      </span>
+      <span className="ml-auto flex shrink-0 items-center gap-3.5 whitespace-nowrap">
         {timer && left !== null ? (
           <span className="inline-flex animate-bl-pop-in items-center gap-1 rounded-md bg-current/12 px-1.5 py-px font-medium tabular-nums motion-reduce:animate-bl-fade-in">
             <Icon name="clock" size={13} sw={2.2} />
@@ -207,7 +212,8 @@ export function MenuBar({ dark, onAlfred }: { dark: boolean; onAlfred: () => voi
           <Hat size={16} />
         </button>
         <Icon name="battery-full" size={20} sw={1.6} />
-        <Icon name="wifi" size={15} sw={2} />
+        <TailscaleStatusItem defaultOpen={initialMenu === 'tailscale'} />
+        <WifiStatusItem defaultOpen={initialMenu === 'wifi'} />
         <Icon name="magnifyingglass" size={14} sw={2.2} />
         <span className="font-medium tabular-nums">Tue Sep 29  9:41 AM</span>
       </span>

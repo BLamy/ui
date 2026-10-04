@@ -5,6 +5,7 @@ import { Suspense, memo, useEffect, useRef, useState, type PointerEvent as React
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { AppearanceProvider } from '@/lib/theme';
+import { useOptionalTailscale } from '@/lib/tailscale-react';
 import { cn } from '@/lib/utils';
 import { appById, type DesktopApp } from './apps';
 import { DOCK_RESERVE, MIN_H, MIN_W, useDesktop, type Area, type Rect, type WindowState } from './desktop';
@@ -44,10 +45,12 @@ export function shownRect(win: WindowState, area: Area, dock: boolean): Rect {
 /** The app's body. Memoized, so dragging and resizing move the window without re-rendering what's inside. */
 const AppBody = memo(function AppBody({ app, dark }: { app: DesktopApp; dark: boolean }) {
   const { Component } = app;
+  const tailscale = useOptionalTailscale();
+  const props = typeof app.props === 'function' ? app.props({ tailscale }) : app.props;
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
       <Suspense fallback={<div className="grid h-full place-items-center bg-muted text-muted-foreground"><Spinner spin size={24} /></div>}>
-        <Component {...app.props} />
+        <Component {...props} />
       </Suspense>
     </AppearanceProvider>
   );

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createTailscale, type TailscalePeer, type TailscaleSnapshot } from '@/lib/tailscale';
 import { LoadError } from './loader';
 import { EXIT_NODE_ID, PUBLIC_SITE, createDemoTailnet } from './data';
-import { createExitNodes, exitNodeProblem, publicHostOf } from './exit-node';
+import { createExitNodes, exitNodeProblem, exitNodesFor, publicHostOf } from './exit-node';
 
 const peer = (name: string, o: Partial<TailscalePeer> = {}): TailscalePeer => ({ name: `${name}.tail1234.ts.net`, addresses: [], online: true, id: `id-${name}`, exitNode: true, ...o });
 
@@ -148,6 +148,22 @@ describe('Try Again', () => {
     const c = control([peer('pro')]);
     c.setExitNode.mockRejectedValueOnce(new Error('refused'));
     await expect(createExitNodes(c.tailscale).retry(SITE, new LoadError('unreachable', 'x'))).resolves.toBe(false);
+  });
+});
+
+describe('shared by everything that chooses for a controller', () => {
+  it('is one per controller: a None chosen through one is honoured by the other, and forgotten when the controller disconnects', async () => {
+    const listeners = new Set<() => void>();
+    const c = control([peer('pro')], 'id-pro');
+    const t = { ...c.tailscale, subscribe: (l: () => void) => { listeners.add(l); return () => listeners.delete(l); } } as unknown as Parameters<typeof exitNodesFor>[0];
+    expect(exitNodesFor(t)).toBe(exitNodesFor(t));
+    await exitNodesFor(t).choose(null);
+    await exitNodesFor(t).prepare(SITE);
+    expect(c.setExitNode).toHaveBeenCalledExactlyOnceWith(null);
+    expect(exitNodesFor(t).optedOut).toBe(true);
+    c.snapshot.status = 'idle';
+    listeners.forEach((l) => l());
+    expect(exitNodesFor(t).optedOut).toBe(false);
   });
 });
 

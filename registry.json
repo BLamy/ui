@@ -6572,7 +6572,7 @@
       "name": "macos",
       "type": "registry:block",
       "title": "macOS",
-      "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack (right-click the Dock to turn magnification off or hiding on — a hidden Dock slides up from the bottom edge and windows take its room); the menu bar follows the frontmost app. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Below 640px wide the desktop turns into an iPhone — a status bar with the Dynamic Island, a springboard of the same apps (paged when they don't fit, with a dock and a Search pill that opens Alfred), full-screen apps that zoom out of their icons, and a home bar that sends one back while it keeps running. Light and dark.",
+      "description": "A macOS desktop whose apps are the other examples — Reminders, Mail, Safari, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one from the Dock or from Alfred and it appears in a window you can drag, resize, zoom, minimize and stack (right-click the Dock to turn magnification off or hiding on — a hidden Dock slides up from the bottom edge and windows take its room); the menu bar follows the frontmost app, and its Tailscale and Wi-Fi items are working menus. The desktop owns one Tailscale controller (the real Tailscale by default; its WebAssembly client loads only when someone signs in) that the Safari window and the menu bar share, so signing in or choosing an exit node in either shows in both: the Tailscale menu is the core TailscaleMenu with exit nodes drawn like Wi-Fi networks (a check for the one in use, the name, a signal glyph, Connecting…), and the Wi-Fi menu is invented sample data in the same row style — a switch, the network you are on, nearby ones with locks and signal bars, and Network Settings…. Alfred is the launcher on top, built on the CommandMenu primitive: type an app's name and press Enter, or use its pages — a calculator with live results and history (type math at the root and the answer shows inline), clipboard history with a preview pane, pinning (⌘P) and delete (⌘⌫), an emoji grid you move through with the arrow keys, snippets that expand from ;keywords, file search with folders you open with → and reveal with ⌘↵, system commands (lock screen, sleep, empty Trash with a confirmation, dark mode, restart), web searches, and multi-step workflows (create a GitHub issue, start a timer). ⌥Space hides and shows the bar, and a HUD confirms each copy. Every session is recorded with rrweb into append-only localStorage streams, and Time Machine plays them back; apps load on first launch. Below 640px wide the desktop turns into an iPhone — a status bar with the Dynamic Island, a springboard of the same apps (paged when they don't fit, with a dock and a Search pill that opens Alfred), full-screen apps that zoom out of their icons, and a home bar that sends one back while it keeps running. Light and dark.",
       "categories": [
         "application",
         "productivity",
@@ -6582,16 +6582,23 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/command-menu.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/kbd.json",
+        "https://blamy.github.io/ui/r/list-box.json",
         "https://blamy.github.io/ui/r/number-morph.json",
         "https://blamy.github.io/ui/r/persistent-state.json",
+        "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/session-recorder.json",
         "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/switch.json",
+        "https://blamy.github.io/ui/r/tailscale.json",
+        "https://blamy.github.io/ui/r/tailscale-login-button.json",
+        "https://blamy.github.io/ui/r/tailscale-menu.json",
         "https://blamy.github.io/ui/r/text-morph.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toast.json",
@@ -6609,6 +6616,7 @@
         "https://blamy.github.io/ui/r/github-clone.json",
         "https://blamy.github.io/ui/r/loop-qa.json",
         "https://blamy.github.io/ui/r/map-chat.json",
+        "https://blamy.github.io/ui/r/safari.json",
         "https://blamy.github.io/ui/r/t3-clone.json",
         "https://blamy.github.io/ui/r/timemachine.json"
       ],
@@ -6667,6 +6675,16 @@
           "path": "registry/blocks/macos/data.ts",
           "type": "registry:component",
           "target": "components/blocks/macos/data.ts"
+        },
+        {
+          "path": "registry/blocks/macos/status-items.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/macos/status-items.tsx"
+        },
+        {
+          "path": "registry/blocks/macos/tailnet.ts",
+          "type": "registry:component",
+          "target": "components/blocks/macos/tailnet.ts"
         }
       ],
       "meta": {

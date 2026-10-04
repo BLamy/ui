@@ -1,7 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { createTailscale } from '@/lib/tailscale';
 import { AppearanceProvider } from '@/lib/theme';
-import MacOS from './page';
+import { createDemoTailnet } from '../safari/data';
+import MacOS, { type MacOSProps } from './page';
 
 const meta: Meta<typeof MacOS> = {
   title: 'Blocks/macOS',
@@ -19,6 +21,20 @@ const DESK = '#e6e8eb';
 function Full({ children }: { children: ReactNode }) {
   return <div className="h-screen w-full">{children}</div>;
 }
+/** The desktop on the simulated tailnet (stories only: the block's own default is the real Tailscale), signed out until someone signs in. */
+const demo = (args: MacOSProps) => <MacOS {...args} tailscale={createDemoTailnet().options} />;
+
+/** The same, already signed in (an auth key), as on a later visit: the menu bar and the Safari window share this one controller. */
+function Connected(props: MacOSProps) {
+  const [controller] = useState(() => createTailscale({ ...createDemoTailnet().options, auth: { mode: 'auth-key', authKey: 'demo' } }));
+  useEffect(() => {
+    const off = controller.activate();
+    void controller.signIn();
+    return () => { off(); void controller.dispose(); };
+  }, [controller]);
+  return <MacOS {...props} controller={controller} />;
+}
+
 const dark = (node: ReactNode) => <AppearanceProvider value="dark">{node}</AppearanceProvider>;
 
 /** The desktop with Alfred open at the root: the apps first (⌘1–⌘9), then Alfred's own features. */
@@ -105,4 +121,45 @@ export const LaunchApp: Story = {
 export const DockHidden: Story = {
   args: { initialApps: ['notes'], defaultOpen: false, dock: { hide: true, magnify: false } },
   render: (args) => <Full><MacOS {...args} /></Full>,
+};
+
+/** The menu bar's Tailscale item before anyone has signed in: the mark is dim, and the menu is the sign-in. */
+export const TailscaleSignedOut: Story = {
+  args: { defaultOpen: false, initialMenu: 'tailscale' },
+  render: (args) => <Full>{demo(args)}</Full>,
+};
+
+/** Signed in: the Tailscale menu with the tailnet, this device and the exit nodes drawn like Wi-Fi networks. */
+export const TailscaleMenu: Story = {
+  args: { defaultOpen: false, initialMenu: 'tailscale' },
+  render: (args) => <Full><Connected {...args} /></Full>,
+};
+
+export const TailscaleMenuDark: Story = {
+  args: { defaultOpen: false, initialMenu: 'tailscale' },
+  render: (args) => dark(<Full><Connected {...args} /></Full>),
+};
+
+/** The Wi-Fi menu: a switch, the network this Mac is on (checked), nearby ones with locks and signal bars, and Network Settings…. */
+export const WifiMenu: Story = {
+  args: { defaultOpen: false, initialMenu: 'wifi' },
+  render: (args) => <Full>{demo(args)}</Full>,
+};
+
+export const WifiMenuDark: Story = {
+  args: { defaultOpen: false, initialMenu: 'wifi' },
+  render: (args) => dark(<Full>{demo(args)}</Full>),
+};
+
+/** Safari opened from the desktop, signed in: its shield menu and the menu bar's Tailscale item are one controller, so an exit
+    node chosen in either shows in both (Safari picks one itself when a public address needs it). */
+export const SafariOnTheTailnet: Story = {
+  args: { initialApps: ['safari'], defaultOpen: false },
+  render: (args) => <Full><Connected {...args} /></Full>,
+};
+
+/** Safari signed out: its gate, and the same sign-in in the menu bar's Tailscale item. */
+export const SafariGate: Story = {
+  args: { initialApps: ['safari'], defaultOpen: false },
+  render: (args) => dark(<Full>{demo(args)}</Full>),
 };

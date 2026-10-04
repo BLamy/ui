@@ -108,3 +108,18 @@ export function createExitNodes(tailscale: Pick<Tailscale, 'getSnapshot' | 'setE
     },
   };
 }
+
+const shared = new WeakMap<object, ExitNodes>();
+
+/** The one `ExitNodes` of a controller, so everything that chooses an exit node for it (Safari's menu and page loads, a menu bar's
+    Tailscale menu) agrees on whether "None" was chosen and on the node used last. Forgotten when the controller is no longer connected. */
+export function exitNodesFor(tailscale: Tailscale): ExitNodes {
+  let nodes = shared.get(tailscale);
+  if (!nodes) {
+    const made = createExitNodes(tailscale);
+    tailscale.subscribe(() => { if (tailscale.getSnapshot().status !== 'connected') made.reset(); });
+    shared.set(tailscale, made);
+    nodes = made;
+  }
+  return nodes;
+}

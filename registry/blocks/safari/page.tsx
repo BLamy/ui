@@ -26,7 +26,7 @@ import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '
 import { webStorageTailscalePersistence, type Tailscale, type TailscaleOptions } from '@/lib/tailscale';
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect';
 import { TailscaleProvider, useTailscale } from '@/lib/tailscale-react';
-import { createExitNodes } from './exit-node';
+import { exitNodesFor } from './exit-node';
 import { Gate } from './gate';
 import { parseAddress, tailnetFetcher } from './loader';
 import { Toolbar, TabOverview, TabStrip } from './toolbar';
@@ -56,6 +56,8 @@ export function tailnetOptions(): TailscaleOptions {
   };
 }
 
+export { exitNodesFor };
+
 /** Narrower than this the tab strip steps aside for the tab overview. */
 const COMPACT_W = 560;
 
@@ -67,7 +69,7 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
   const fetcher = useMemo(() => tailnetFetcher(tailscale), [tailscale]);
   const urls = useMemo(() => initialUrls?.map((u) => parseAddress(u) ?? u), [initialUrls]);
   // The exit node is chosen for you when a public site needs one (see exit-node.ts); the menu can still change or clear it.
-  const exitNodes = useMemo(() => createExitNodes(tailscale), [tailscale]);
+  const exitNodes = useMemo(() => exitNodesFor(tailscale), [tailscale]);
   const prepare = useCallback((entry: { url: string }) => exitNodes.prepare(entry.url), [exitNodes]);
   const browser = useBrowser({ fetcher, initialUrls: urls, enabled: connected, prepare });
   useEffect(() => { if (!connected) exitNodes.reset(); }, [connected, exitNodes]);

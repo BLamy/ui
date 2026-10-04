@@ -2,6 +2,13 @@
    desktop itself stays light) and opens in a window of the given size. To trim the desktop, delete an entry — and
    the block it imports from. */
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
+import type { Tailscale } from '@/lib/tailscale';
+
+/** What the desktop shares with its apps: one Tailscale controller, so the menu bar and Safari are always in step.
+    Null when no provider is above the desktop (an app then falls back to its own). */
+export interface DesktopShared {
+  tailscale: Tailscale | null;
+}
 
 export interface DesktopApp {
   id: string;
@@ -18,8 +25,9 @@ export interface DesktopApp {
   darkGlyph?: boolean;
   /** The window it opens in. */
   size: { w: number; h: number };
-  /** Props for the app (Settings drops its own window dots: the window has them). */
-  props?: Record<string, unknown>;
+  /** Props for the app (Settings drops its own window dots: the window has them), or a function of what the desktop shares
+      (Safari takes the desktop's Tailscale controller). */
+  props?: Record<string, unknown> | ((shared: DesktopShared) => Record<string, unknown>);
   // Each app has its own props (all optional); `props` supplies the few the desktop sets.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Component: LazyExoticComponent<ComponentType<any>>;
@@ -35,6 +43,11 @@ export const APPS: DesktopApp[] = [
     id: 'mail', name: 'Mail', description: 'Mailboxes, threads and compose', keywords: ['email', 'inbox', 'message'],
     tile: ['#5AC8FA', '#0A7CFF'], icon: 'envelope-fill', size: { w: 960, h: 620 },
     Component: lazy(() => import('../apple-mail/page')),
+  },
+  {
+    id: 'safari', name: 'Safari', description: 'Browse through your tailnet', keywords: ['browser', 'web', 'internet', 'tailnet', 'tailscale', 'vpn', 'exit node'],
+    tile: ['#5AD1F5', '#0A6CF0'], icon: 'globe', size: { w: 1000, h: 680 }, props: ({ tailscale }) => ({ controller: tailscale ?? undefined }),
+    Component: lazy(() => import('../safari/page')),
   },
   {
     id: 'notes', name: 'Notes', description: 'Folders and Markdown notes', keywords: ['write', 'memo', 'document'],

@@ -1,4 +1,4 @@
-/* macOS — a desktop (wallpaper, menu bar, Dock, windows) whose apps are the other examples: Reminders, Mail, Notes,
+/* macOS — a desktop (wallpaper, menu bar, Dock, windows) whose apps are the other examples: Reminders, Mail, Safari, Notes,
    Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA. Open one
    from the Dock or from Alfred; windows drag, resize, zoom, minimize and stack. Right-click the Dock to turn
    magnification off or hiding on (a hidden Dock slides up from the bottom edge, and windows take its room).
@@ -7,6 +7,10 @@
    preview and pinning, an Emoji grid, Snippets, File Search with nested folders, System commands (lock, sleep,
    empty Trash, dark mode, restart…), Web Search, and multi-step Workflows. ⌥Space hides and shows the bar; Esc
    clears, then hides. All sample data is invented; the clock is fixed at 9:41.
+   The menu bar's Tailscale and Wi-Fi items open menus. The desktop owns one Tailscale controller (the real Tailscale by
+   default; the WebAssembly client loads only when someone signs in), shared by the Tailscale menu and the Safari window:
+   sign in from either, and an exit node chosen in either shows in both. The Tailscale menu is the core TailscaleMenu
+   with exit nodes drawn like Wi-Fi networks; the Wi-Fi menu is invented sample data.
    Under 640px wide the desktop becomes an iPhone: a status bar, a springboard of the same apps (Search opens Alfred),
    and full-screen apps that zoom out of their icons; the home bar sends one back, and double-tapping it opens the app
    switcher. The phone never moves or minimizes a window, so widening the container brings every app back where it was. */
@@ -17,6 +21,8 @@ import { Toaster, createToastQueue } from '@/components/ui/toast';
 import { useContainerSize } from '@/lib/container';
 import { useSessionRecording } from '@/lib/session-recorder';
 import { BLProvider, useAppearance } from '@/lib/theme';
+import type { Tailscale, TailscaleOptions } from '@/lib/tailscale';
+import { TailscaleProvider } from '@/lib/tailscale-react';
 import { cn } from '@/lib/utils';
 import { APPS } from './apps';
 import { DesktopProvider, useDesktop } from './desktop';
@@ -24,6 +30,8 @@ import { Launcher } from './launcher';
 import { Dock, Hat, MenuBar, PowerOverlay, Wallpaper, type DockPrefs } from './parts';
 import { AppSwitcher, HOME_H, HomeBar, STATUS_H, Springboard, StatusBar, useSwitcher, type Point } from './phone';
 import { AlfredProvider, useAlfred } from './state';
+import type { StatusMenu } from './status-items';
+import { desktopTailnet } from './tailnet';
 import { DesktopWindow } from './windows';
 
 /** Alfred's accent: its hat's purple. */
@@ -54,11 +62,18 @@ export interface MacOSProps {
    *  minimized), the Dock's preferences and the dark-mode override. `true` uses the key "bl-macos"; a string is your
    *  own, so two desktops on a page don't share one. Off by default. */
   persist?: boolean | string;
+  /** Options for the one Tailscale controller the desktop makes (shared by the menu bar and Safari). Default: the real Tailscale,
+   *  with this tab as the device (see tailnet.ts). Stories and tests pass the simulated tailnet's (`createDemoTailnet().options`). */
+  tailscale?: TailscaleOptions;
+  /** A controller you made yourself (and perhaps signed in). Takes precedence over `tailscale`. */
+  controller?: Tailscale;
+  /** Open one of the menu bar's menus on load. */
+  initialMenu?: StatusMenu;
 }
 
 type Phase = 'open' | 'closing' | 'closed';
 
-export default function MacOS({ initialApps, initialPages, initialQuery = '', defaultOpen = true, autoFocus = true, record = true, dock, persist = false }: MacOSProps) {
+export default function MacOS({ initialApps, initialPages, initialQuery = '', defaultOpen = true, autoFocus = true, record = true, dock, persist = false, tailscale, controller, initialMenu }: MacOSProps) {
   useSessionRecording({ enabled: record });
   const ambient = useAppearance() === 'dark';
   const key = persist ? (typeof persist === 'string' ? persist : 'bl-macos') : null;
@@ -69,6 +84,8 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
   // The props seed the first opening; later ones start at the root (a closed bar unmounts, so it mounts fresh).
   const [boot, setBoot] = useState({ pages: initialPages, query: initialQuery, focus: autoFocus });
   const menu = useRef<CommandMenuApi | null>(null);
+  // The one Tailscale controller of this desktop, made once on first render; the real Tailscale unless told otherwise.
+  const [real] = useState(() => (controller || tailscale ? null : desktopTailnet()));
 
   // Back to the root with an empty query: after a workflow, or reopening a bar that is still animating out.
   const reset = useCallback(() => menu.current?.reset(), []);
@@ -81,9 +98,11 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
 
   return (
     <BLProvider dark={dark} tint={ALFRED_TINT[dark ? 'dark' : 'light']} className="bg-transparent">
-      <AlfredProvider queue={queue} dark={dark} toggleDark={() => setOverride(!dark)} reset={reset} close={close}>
-        <Desktop dark={dark} phase={phase} setPhase={setPhase} show={show} close={close} boot={boot} menu={menu} queue={queue} initialApps={initialApps} initialDock={dock} persistKey={key} />
-      </AlfredProvider>
+      <TailscaleProvider tailscale={controller} options={tailscale ?? real ?? undefined}>
+        <AlfredProvider queue={queue} dark={dark} toggleDark={() => setOverride(!dark)} reset={reset} close={close}>
+          <Desktop dark={dark} phase={phase} setPhase={setPhase} show={show} close={close} boot={boot} menu={menu} queue={queue} initialApps={initialApps} initialDock={dock} persistKey={key} initialMenu={initialMenu} />
+        </AlfredProvider>
+      </TailscaleProvider>
     </BLProvider>
   );
 }
@@ -114,9 +133,10 @@ interface ScreenProps {
   queue: ReturnType<typeof createToastQueue>;
   initialDock?: Partial<DockPrefs>;
   persistKey?: string | null;
+  initialMenu?: StatusMenu;
 }
 
-function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initialDock, persistKey, size }: ScreenProps & { size: { width: number; height: number } }) {
+function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initialDock, persistKey, initialMenu, size }: ScreenProps & { size: { width: number; height: number } }) {
   const { power, setPower } = useAlfred();
   const desktop = useDesktop();
   // A phone-sized desktop is an iPhone: its own chrome, a springboard, and one full-screen app at a time.
@@ -169,7 +189,7 @@ function Screen({ dark, phase, setPhase, show, close, boot, menu, queue, initial
   return (
     <Wallpaper dark={dark}>
       <div className="flex h-full flex-col">
-        {phone ? <StatusBar dark={dark} inApp={foreground !== null && !switching} /> : <MenuBar dark={dark} onAlfred={toggle} />}
+        {phone ? <StatusBar dark={dark} inApp={foreground !== null && !switching} /> : <MenuBar dark={dark} onAlfred={toggle} initialMenu={initialMenu} />}
         {/* The desktop: pressing the bare wallpaper puts Finder frontmost, as on a Mac. */}
         <div className="relative min-h-0 flex-1" onPointerDown={(e) => { if (e.target === e.currentTarget) desktop.blur(); }}>
           {phone ? (
