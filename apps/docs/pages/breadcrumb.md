@@ -150,7 +150,7 @@ relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [o
 Defined in `@/components/ui/breadcrumb`. Base classes:
 
 ```text
-[ 'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent text-muted-foreground no-underline [font-family:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none', 'data-current:text-foreground', 'data-focus-visible:ring-2 data-focus-visible:ring-ring', ]
+[ 'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent text-foreground/70 no-underline [font-family:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none', 'data-current:text-foreground', 'data-focus-visible:ring-2 data-focus-visible:ring-ring', ]
 ```
 
 **`size`** — default `default`
