@@ -1,12 +1,14 @@
 {
   "name": "avatar",
   "title": "Avatar",
-  "description": "A round initials avatar whose gradient is derived from the person's name, at any pixel size.",
+  "description": "An avatar of initials on a name-derived gradient, an image, or a glyph, with a presence dot, plus an overlapping AvatarGroup whose menu lists everyone.",
   "page": "avatar",
   "exports": [
-    "Avatar"
+    "Avatar",
+    "AvatarGroup"
   ],
   "imports": [
-    "Avatar"
+    "Avatar",
+    "AvatarGroup"
   ]
 }

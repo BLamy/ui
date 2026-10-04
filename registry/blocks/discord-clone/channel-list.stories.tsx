@@ -1,10 +1,10 @@
 import { useState, type CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ChannelGroup, ChannelItem, ChannelList } from './components/channel-list';
-import { ChatAvatar } from './components/chat-avatar';
+import { Avatar } from '@/components/ui/avatar';
 import { ServerHeader } from './components/server-header';
 import { ChatShellSidebar } from './components/chat-shell';
-import { ChatUsersProvider } from './components/chat-users';
+import { ChatUsersProvider, chatUserAvatar } from './components/chat-users';
 import { FixtureSidebar, FixtureUserPanel, USERS, ChatFrame } from './chat.fixtures';
 
 /* The channel sidebar: ChatShellSidebar › ServerHeader · ChannelList (ChannelGroup › ChannelItem,
@@ -91,7 +91,7 @@ export const MentionsAndDirectMessages: Story = {
           </ChannelGroup>
           <ChannelGroup label="Direct messages">
             {(['miles', 'noor', 'stitch'] as const).map((id, i) => (
-              <ChannelItem key={id} id={'dm-' + id} icon={<ChatAvatar user={USERS[id]} size={18} square={USERS[id].bot} />} mentions={i === 1 ? 1 : undefined}>
+              <ChannelItem key={id} id={'dm-' + id} icon={<Avatar {...chatUserAvatar(USERS[id], 18)} />} mentions={i === 1 ? 1 : undefined}>
                 {USERS[id].name}
               </ChannelItem>
             ))}

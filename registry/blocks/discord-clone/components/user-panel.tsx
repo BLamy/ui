@@ -5,7 +5,7 @@ import { cva } from 'class-variance-authority';
 
 /* ══ UserPanel — the signed-in user at the foot of the channel sidebar ══
    <UserPanel>
-     <ChatAvatar user={me} size={26} />
+     <Avatar {...chatUserAvatar(me, 26)} />
      <UserPanelInfo>
        <UserPanelName>Ada</UserPanelName>
        <UserPanelStatus status="online" />

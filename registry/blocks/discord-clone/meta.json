@@ -1,7 +1,7 @@
 {
   "name": "discord-clone",
   "title": "Discord clone",
-  "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell and TabView, with its own channel, message, member and composer parts.",
+  "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell, TabView, Avatar and the Composer, with its own channel, message and member parts; messages are rendered by Docstream.",
   "categories": [
     "chat",
     "application"
@@ -10,10 +10,9 @@
     "page.tsx",
     "channel-message.tsx",
     "thread-view.tsx",
+    "message-composer.tsx",
     "data.ts",
     "components/chat-users.tsx",
-    "components/chat-avatar.tsx",
-    "components/rich-text.tsx",
     "components/workspace-rail.tsx",
     "components/server-header.tsx",
     "components/channel-list.tsx",
@@ -22,7 +21,6 @@
     "components/message-list.tsx",
     "components/thread-preview.tsx",
     "components/member-list.tsx",
-    "components/chat-composer.tsx",
     "chat-theme.css",
     "components/chat-shell.tsx",
     "components/chat-shell-context.ts"

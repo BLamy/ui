@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
-import { ChatAvatar } from './chat-avatar';
-import type { ChatUser } from './chat-users';
+import { Avatar } from '@/components/ui/avatar';
+import { chatUserAvatar, type ChatUser } from './chat-users';
 import { cn } from '@/lib/utils';
 
 /* ══ ThreadPreview — the card under a message that opens its thread ══
@@ -49,7 +49,7 @@ export interface ThreadPreviewReplyProps {
 export function ThreadPreviewReply({ user, children, className }: ThreadPreviewReplyProps) {
   return (
     <span data-slot="thread-preview-reply" className={cn('mt-[4px] flex min-w-0 items-center gap-[6px] text-caption text-muted-foreground', className)}>
-      <ChatAvatar user={user} size={15} />
+      <Avatar {...chatUserAvatar(user, 15)} />
       <span className="truncate">
         {user.name}: {children}
       </span>

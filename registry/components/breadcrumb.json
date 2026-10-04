@@ -1,0 +1,19 @@
+{
+  "name": "breadcrumb",
+  "title": "Breadcrumb",
+  "description": "The path to the current page: every item pressable, siblings in a menu like VS Code's, and the middle collapsing into a … menu when the trail does not fit.",
+  "page": "breadcrumb",
+  "exports": [
+    "Breadcrumb",
+    "BreadcrumbItem",
+    "BreadcrumbSeparator",
+    "BreadcrumbEllipsis",
+    "breadcrumbVariants",
+    "breadcrumbItemVariants",
+    "fitBreadcrumbs"
+  ],
+  "imports": [
+    "Breadcrumb",
+    "BreadcrumbItem"
+  ]
+}

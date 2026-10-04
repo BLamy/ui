@@ -4,8 +4,8 @@ import { Icon } from '@/lib/icon';
 import { themeScopeProps, type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { ChatShellSidebar } from './components/chat-shell';
-import type { ChatUsers } from './components/chat-users';
-import { ChatAvatar } from './components/chat-avatar';
+import { Avatar } from '@/components/ui/avatar';
+import { chatUserAvatar, type ChatUsers } from './components/chat-users';
 import { ChannelGroup, ChannelItem, ChannelList, ChannelThreadItem } from './components/channel-list';
 import { ServerHeader } from './components/server-header';
 import { UserPanel, UserPanelAction, UserPanelInfo, UserPanelName, UserPanelStatus } from './components/user-panel';
@@ -60,7 +60,7 @@ export const CHANNEL_GROUPS: { label: string; channels: { id: string; name: stri
 export function FixtureUserPanel() {
   return (
     <UserPanel>
-      <ChatAvatar user={USERS.ada} size={26} />
+      <Avatar {...chatUserAvatar(USERS.ada, 26)} />
       <UserPanelInfo>
         <UserPanelName>Ada</UserPanelName>
         <UserPanelStatus status="online" />

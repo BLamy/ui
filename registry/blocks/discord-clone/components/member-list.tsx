@@ -1,7 +1,7 @@
 import type { ComponentProps, CSSProperties, ReactNode } from 'react';
-import { ChatAvatar } from './chat-avatar';
+import { Avatar } from '@/components/ui/avatar';
 import type { ChatPresence } from './user-panel';
-import type { ChatUser } from './chat-users';
+import { chatUserAvatar, type ChatUser } from './chat-users';
 import { cn } from '@/lib/utils';
 
 /* ══ Member list — who's in the channel, usually inside a ChatShellAside ══
@@ -57,7 +57,7 @@ export function MemberItem({ user, status, badge, className, style, children, ..
       style={style}
       {...props}
     >
-      <ChatAvatar user={user} size={24} square={user.bot} status={status} />
+      <Avatar {...chatUserAvatar(user, 24)} status={status} />
       <span
         className="ck-role flex-1 overflow-hidden text-[12.5px] font-semibold text-ellipsis whitespace-nowrap text-(--ck-role)"
         style={{ '--ck-role': user.role } as CSSProperties}

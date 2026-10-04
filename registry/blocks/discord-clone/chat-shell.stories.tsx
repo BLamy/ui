@@ -4,10 +4,10 @@ import { TabView, TabViewAction, TabViewBar, TabViewFooter, TabViewIndicator, Ta
 import { Icon } from '@/lib/icon';
 import { ChatShell, ChatShellAside, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderAction, ChatShellHeaderActions, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
 import { useChatShell } from './components/chat-shell-context';
-import { ChatUsersProvider, type ChatUser } from './components/chat-users';
-import { ChatAvatar } from './components/chat-avatar';
+import { ChatUsersProvider, chatUserAvatar, type ChatUser } from './components/chat-users';
+import { Avatar } from '@/components/ui/avatar';
 import { ChannelGroup, ChannelItem, ChannelList } from './components/channel-list';
-import { ChatComposer } from './components/chat-composer';
+import { MessageComposer } from './message-composer';
 import { MemberGroup, MemberItem, MemberList } from './components/member-list';
 import { Message, MessageAuthor, MessageAvatar, MessageBody, MessageContent, MessageHeader, MessageTimestamp } from './components/message';
 import { DateDivider, MessageList, TypingIndicator } from './components/message-list';
@@ -154,7 +154,7 @@ function Conversation({ name, icon, typing, children }: { name: string; icon?: R
         {typing && <TypingIndicator>{typing} is typing…</TypingIndicator>}
       </MessageList>
       <ChatShellFooter>
-        <ChatComposer placeholder={'Message ' + name} onSend={() => {}} />
+        <MessageComposer placeholder={'Message ' + name} onSend={() => {}} />
       </ChatShellFooter>
     </ChatShellMain>
   );
@@ -174,7 +174,7 @@ export const DirectMessages: Story = {
               <ChannelList selectedKey={cur} onSelectionChange={setCur}>
                 <ChannelGroup label="Recent">
                   {(['miles', 'noor', 'theo', 'stitch'] as const).map((id) => (
-                    <ChannelItem key={id} id={id} icon={<ChatAvatar user={USERS[id]} size={18} square={USERS[id].bot} />} unread={id === 'noor'}>
+                    <ChannelItem key={id} id={id} icon={<Avatar {...chatUserAvatar(USERS[id], 18)} />} unread={id === 'noor'}>
                       {USERS[id].name}
                     </ChannelItem>
                   ))}
@@ -183,7 +183,7 @@ export const DirectMessages: Story = {
               <FixtureUserPanel />
             </ChatShellSidebar>
           </ChatShellNav>
-          <Conversation name={USERS[cur].name} icon={<ChatAvatar user={USERS[cur]} size={20} />} typing={USERS[cur].name} />
+          <Conversation name={USERS[cur].name} icon={<Avatar {...chatUserAvatar(USERS[cur], 20)} />} typing={USERS[cur].name} />
         </ChatShell>
       </Frame>
     );
@@ -212,7 +212,7 @@ export const ThreadPanel: Story = {
                 <div className="px-1 pt-2.5">{line(USERS.ada, '10:06 AM', 'Pushed: spring on transform, 0 layout reads.', 't1')}</div>
               </MessageList>
               <ChatShellFooter className="px-3">
-                <ChatComposer placeholder="Reply in thread" onSend={() => {}} />
+                <MessageComposer placeholder="Reply in thread" onSend={() => {}} />
               </ChatShellFooter>
             </div>
           </ChatShellPanel>
@@ -252,7 +252,7 @@ export const SupportWidget: Story = {
   render: ({ width, height }) => (
     <Frame width={width} height={height}>
       <ChatShell appearance="light" tint="#30B06E">
-        <Conversation name="Support" icon={<ChatAvatar user={USERS.stitch} size={20} square />} typing="Stitch" />
+        <Conversation name="Support" icon={<Avatar {...chatUserAvatar(USERS.stitch, 20)} />} typing="Stitch" />
       </ChatShell>
     </Frame>
   ),

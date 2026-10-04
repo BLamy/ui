@@ -59,3 +59,25 @@
   --overlay: rgba(0, 0, 0, .5);
   --link: #7EB6FF;
 }
+
+/* Message text is Docstream Markdown. Its article rhythm (15.5px paragraphs, 12px gaps) is tightened to a chat line;
+   these sit above Docstream's own (unlayered) rules, which utilities can't beat. */
+[data-slot="message-content"] .wb-md,
+[data-slot="message-content"] .wb-md :is([data-docstream], .docs-article) {
+  font-size: inherit;
+  line-height: inherit;
+}
+[data-slot="message-content"] .wb-md :is(p, li) {
+  font-size: inherit;
+  line-height: inherit;
+  margin: 0;
+}
+[data-slot="message-content"] .wb-md p + p {
+  margin-top: 6px;
+}
+[data-slot="message-content"] .wb-md :is(ul, ol) {
+  margin: 4px 0;
+}
+[data-slot="message-content"] .wb-md :is(pre, blockquote) {
+  margin: 6px 0;
+}

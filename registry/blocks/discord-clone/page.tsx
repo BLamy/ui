@@ -6,15 +6,15 @@ import { type Appearance } from '@/lib/theme';
 import { ChatShell, ChatShellAside, ChatShellBack, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderAction, ChatShellHeaderActions, ChatShellHeaderIcon, ChatShellMain, ChatShellNav, ChatShellNavTrigger, ChatShellPanel, ChatShellSidebar, ChatShellTitle } from './components/chat-shell';
 import { useChatShell } from './components/chat-shell-context';
 import { ChannelGroup, ChannelItem, ChannelList, ChannelThreadItem } from './components/channel-list';
-import { ChatAvatar } from './components/chat-avatar';
-import { ChatComposer } from './components/chat-composer';
-import { ChatUsersProvider } from './components/chat-users';
+import { Avatar } from '@/components/ui/avatar';
+import { ChatUsersProvider, chatUserAvatar } from './components/chat-users';
 import { MemberGroup, MemberItem, MemberList } from './components/member-list';
 import { ChannelIntro, DateDivider, MessageList, TypingIndicator } from './components/message-list';
 import { ServerHeader } from './components/server-header';
 import { UserPanel, UserPanelAction, UserPanelInfo, UserPanelName, UserPanelStatus } from './components/user-panel';
 import { WorkspaceTile } from './components/workspace-rail';
 import { ChannelMessage } from './channel-message';
+import { MessageComposer } from './message-composer';
 import { ThreadView } from './thread-view';
 import { BOT_REPLY, CHANNELS, ME, PRESENCE, USERS, WORKSPACES, type Channel, type MessageData } from './data';
 
@@ -126,7 +126,7 @@ export default function DiscordClone({
               ))}
             </ChannelList>
             <UserPanel>
-              <ChatAvatar user={USERS[ME]} size={26} />
+              <Avatar {...chatUserAvatar(USERS[ME], 26)} />
               <UserPanelInfo>
                 <UserPanelName>{USERS[ME].name}</UserPanelName>
                 <UserPanelStatus status={PRESENCE[ME]} />
@@ -181,7 +181,7 @@ export default function DiscordClone({
                 {chat.typing === channelId && <TypingIndicator>{USERS[BOT_REPLY.user].name} is typing…</TypingIndicator>}
               </MessageList>
               <ChatShellFooter>
-                <ChatComposer placeholder={'Message #' + channel.name} onSend={(text) => chat.send(channelId, text)} />
+                <MessageComposer placeholder={'Message #' + channel.name} channels={CHANNELS.map((c) => c.name)} onSend={(text) => chat.send(channelId, text)} />
               </ChatShellFooter>
             </>
           )}

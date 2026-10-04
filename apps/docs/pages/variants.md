@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (79 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (84 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -34,6 +34,50 @@ ck-artifact-chat relative isolate h-full w-full min-h-0 min-w-0 overflow-hidden 
 
 2 compound variants — see the source.
 
+## Avatar
+
+### `avatarVariants`
+
+Defined in `@/components/ui/avatar`. Base classes:
+
+```text
+grid size-(--avatar-size) shrink-0 place-items-center bg-(image:--avatar-bg) font-semibold tracking-[.5px] text-white select-none [font-size:var(--avatar-font)]
+```
+
+**`shape`** — default `circle`
+
+| Value | Adds |
+| --- | --- |
+| `circle` (default) | `rounded-full` |
+| `square` | `rounded-(--avatar-radius)` |
+
+### `avatarStatusVariants`
+
+Defined in `@/components/ui/avatar`. Base classes:
+
+```text
+absolute -right-[2px] -bottom-[2px] box-border size-[max(10px,calc(var(--avatar-size)*.36))] rounded-full border-[2.5px] border-(--avatar-ring,var(--background))
+```
+
+**`status`** — default `online`
+
+| Value | Adds |
+| --- | --- |
+| `online` (default) | `bg-success` |
+| `idle` | `bg-warning` |
+| `dnd` | `bg-destructive` |
+| `offline` | `bg-tertiary-foreground` |
+
+### `avatarGroupVariants`
+
+Defined in `@/components/ui/avatar`. Base classes:
+
+```text
+inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ml-(--avatar-overlap)
+```
+
+No variants.
+
 ## Badge
 
 ### `badgeVariants`
@@ -54,6 +98,47 @@ box-border inline-flex h-[22px] shrink-0 items-center justify-center gap-1 round
 | `outline` | `text-foreground shadow-hairline` |
 | `destructive` | `bg-destructive text-white` |
 | `success` | `bg-success text-white` |
+
+## Breadcrumb
+
+### `breadcrumbVariants`
+
+Defined in `@/components/ui/breadcrumb`. Base classes:
+
+```text
+relative block w-full min-w-0 overflow-clip whitespace-nowrap text-foreground [overflow-clip-margin:4px]
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `text-caption` |
+| `default` (default) | `text-footnote` |
+| `lg` | `text-subhead` |
+
+### `breadcrumbItemVariants`
+
+Defined in `@/components/ui/breadcrumb`. Base classes:
+
+```text
+[ 'bl-btn box-border inline-flex max-w-full min-w-0 items-center rounded-md border-0 bg-transparent text-muted-foreground no-underline [font-family:inherit] whitespace-nowrap outline-none transition-colors motion-reduce:transition-none', 'data-current:text-foreground', 'data-focus-visible:ring-2 data-focus-visible:ring-ring', ]
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `h-5 gap-1 px-1` |
+| `default` (default) | `h-6 gap-1.5 px-1.5` |
+| `lg` | `h-7 gap-1.5 px-2` |
+
+**`interactive`** — default `true`
+
+| Value | Adds |
+| --- | --- |
+| `true` (default) | `cursor-pointer data-hovered:bg-secondary data-hovered:text-foreground data-pressed:bg-secondary-strong aria-expanded:bg-secondary aria-expanded:text-foreground…` |
+| `false` | `cursor-default` |
 
 ## Button
 

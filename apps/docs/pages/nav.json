@@ -106,6 +106,7 @@
       "section": "Navigation and layout",
       "pages": [
         { "id": "navigation-stack", "title": "NavigationStack" },
+        { "id": "breadcrumb", "title": "Breadcrumb" },
         { "id": "tab-view", "title": "TabView" },
         { "id": "tabs", "title": "Tabs" },
         { "id": "tab-bar", "title": "TabBar" },

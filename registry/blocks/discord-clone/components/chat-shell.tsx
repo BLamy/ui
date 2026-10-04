@@ -150,7 +150,7 @@ export function ChatShellSidebar({ className, ...props }: ComponentProps<'div'>)
   return (
     <div
       data-slot="chat-shell-sidebar"
-      className={cn('box-border flex h-full w-[222px] shrink-0 flex-col border-r border-border bg-sidebar font-sans [--ck-avatar-ring:var(--sidebar)]', className)}
+      className={cn('box-border flex h-full w-[222px] shrink-0 flex-col border-r border-border bg-sidebar font-sans [--avatar-ring:var(--sidebar)]', className)}
       {...props}
     />
   );
@@ -275,7 +275,7 @@ export function ChatShellAside({ minWidth = 1320, open = true, className, ...pro
   return (
     <aside
       data-slot="chat-shell-aside"
-      className={cn('box-border w-[168px] shrink-0 border-l border-border bg-sidebar [--ck-avatar-ring:var(--sidebar)]', className)}
+      className={cn('box-border w-[168px] shrink-0 border-l border-border bg-sidebar [--avatar-ring:var(--sidebar)]', className)}
       {...props}
     />
   );

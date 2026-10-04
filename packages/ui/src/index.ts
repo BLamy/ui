@@ -48,8 +48,8 @@ export { Icon, IC, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS, ICO
 export type { IconProps, IconName, IconCanonicalName, IconShape, IconWeight, IconCategory } from './lib/icon';
 
 // components
-export { Avatar } from './components/avatar';
-export type { AvatarProps } from './components/avatar';
+export { Avatar, AvatarGroup, avatarVariants, avatarStatusVariants, avatarGroupVariants } from './components/avatar';
+export type { AvatarProps, AvatarGroupProps, AvatarStatus } from './components/avatar';
 export { Switch } from './components/switch';
 export type { SwitchProps } from './components/switch';
 export { Segmented } from './components/segmented';
@@ -106,6 +106,12 @@ export type {
   SidebarSectionProps, SidebarItemProps, SidebarNavProps,
 } from './components/sidebar';
 export type { AdaptivePaneProps, AdaptivePaneMode } from './components/adaptive-pane';
+export {
+  Breadcrumb, BreadcrumbItem, BreadcrumbSeparator, BreadcrumbEllipsis, breadcrumbVariants, breadcrumbItemVariants, fitBreadcrumbs,
+} from './components/breadcrumb';
+export type {
+  BreadcrumbProps, BreadcrumbItemProps, BreadcrumbItemData, BreadcrumbEntry, BreadcrumbEllipsisProps, BreadcrumbFit, BreadcrumbFitOptions,
+} from './components/breadcrumb';
 
 
 // ── shadcn primitives (react-aria-components + Tailwind + cva) ──

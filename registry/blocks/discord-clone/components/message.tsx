@@ -1,9 +1,9 @@
 import { createContext, useContext, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { Button, ToggleButton, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { ChatAvatar } from './chat-avatar';
-import { RichText } from './rich-text';
-import type { ChatUser } from './chat-users';
+import { Avatar } from '@/components/ui/avatar';
+import { MarkdownView } from '@/components/ui/markdown-view';
+import { chatUserAvatar, useChatUsers, type ChatUser } from './chat-users';
 import { cn } from '@/lib/utils';
 
 /* ══ Message — one row of a transcript, from parts ══
@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
      </MessageBody>
      <MessageActions><MessageAction label="Add 👍">👍</MessageAction></MessageActions>
    </Message>
-   The row provides its author to the parts, so MessageAvatar / MessageAuthor need no props. */
+   The row provides its author to the parts, so MessageAvatar / MessageAuthor need no props. Message text is Markdown. */
 
 interface MessageContextValue {
   user?: ChatUser;
@@ -82,7 +82,7 @@ export function MessageAvatar({ user: userProp, size = 36, className, style }: M
   if (variant === 'continued' || !user) {
     return <span data-slot="message-avatar" aria-hidden className={cn('shrink-0', className)} style={{ width: size, ...style }} />;
   }
-  return <ChatAvatar user={user} size={size} square={user.bot} className={className} style={style} />;
+  return <Avatar {...chatUserAvatar(user, size)} className={className} style={style} />;
 }
 
 export function MessageBody({ className, ...props }: ComponentProps<'div'>) {
@@ -118,11 +118,27 @@ export function MessageTimestamp({ className, ...props }: ComponentProps<'span'>
   return <span data-slot="message-timestamp" className={cn('text-[10.5px] text-tertiary-foreground', className)} {...props} />;
 }
 
-/** The message text. A string child is rendered as RichText (so @mentions become chips). */
+/** The message text: Markdown, rendered by Docstream (a string child). `@id` mentions become chips for the chat's
+ *  users; anything else you pass renders as given. */
 export function MessageContent({ className, children, ...props }: ComponentProps<'div'>) {
+  const users = useChatUsers();
   return (
     <div data-slot="message-content" className={cn('mt-px text-[13.5px] leading-[1.55] wrap-break-word text-foreground', className)} {...props}>
-      {typeof children === 'string' ? <RichText text={children} /> : children}
+      {typeof children === 'string' ? (
+        <MarkdownView
+          markdown={children}
+          renderReference={(ref) => {
+            const user = ref.kind === 'mention' ? users[ref.id] : undefined;
+            return user ? (
+              <span data-slot="mention" className="rounded-sm bg-primary/12 dark:bg-primary/16 px-[3px] py-0 font-semibold text-link">
+                @{user.name}
+              </span>
+            ) : null;
+          }}
+        />
+      ) : (
+        children
+      )}
     </div>
   );
 }

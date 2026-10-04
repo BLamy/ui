@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { ChatShellFooter } from './components/chat-shell';
-import { ChatComposer } from './components/chat-composer';
 import { useChatUsers } from './components/chat-users';
 import { MessageDivider, MessageList, MessageListEmpty } from './components/message-list';
 import { ThreadHeader } from './components/thread-preview';
 import { ChannelMessage } from './channel-message';
+import { MessageComposer } from './message-composer';
 import type { MessageData } from './data';
 
 export interface ThreadViewProps {
@@ -48,7 +48,7 @@ export function ThreadView({ message, channelName, mode, onToggleReaction, onRep
         </div>
       </MessageList>
       <ChatShellFooter className="px-3">
-        <ChatComposer placeholder={'Reply in "' + thread.title + '"'} onSend={onReply} autoFocus={mode === 'panel'} />
+        <MessageComposer placeholder="Reply in thread" onSend={onReply} autoFocus={mode === 'panel'} />
       </ChatShellFooter>
     </div>
   );

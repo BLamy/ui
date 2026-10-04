@@ -92,7 +92,7 @@ export const channelThreadItemVariants = cva(
 export interface ChannelItemProps extends Omit<ComponentProps<typeof Button>, 'id' | 'children'> {
   id: string;
   children?: ReactNode;
-  /** leading glyph; a # by default (pass a ChatAvatar for a DM) */
+  /** leading glyph; a # by default (pass an Avatar for a DM) */
   icon?: ReactNode;
   /** new activity: bold label and a tint dot (hidden while selected) */
   unread?: boolean;

@@ -1588,10 +1588,14 @@
       "name": "avatar",
       "type": "registry:ui",
       "title": "Avatar",
-      "description": "A round initials avatar whose gradient is derived from the person's name, at any pixel size.",
-      "dependencies": [],
+      "description": "An avatar of initials on a name-derived gradient, an image, or a glyph, with a presence dot, plus an overlapping AvatarGroup whose menu lists everyone.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -1604,7 +1608,8 @@
       "meta": {
         "page": "avatar",
         "exports": [
-          "Avatar"
+          "Avatar",
+          "AvatarGroup"
         ]
       }
     },
@@ -1632,6 +1637,41 @@
         "exports": [
           "Badge",
           "badgeVariants"
+        ]
+      }
+    },
+    {
+      "name": "breadcrumb",
+      "type": "registry:ui",
+      "title": "Breadcrumb",
+      "description": "The path to the current page: every item pressable, siblings in a menu like VS Code's, and the middle collapsing into a … menu when the trail does not fit.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/breadcrumb.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/breadcrumb.tsx"
+        }
+      ],
+      "meta": {
+        "page": "breadcrumb",
+        "exports": [
+          "Breadcrumb",
+          "BreadcrumbItem",
+          "BreadcrumbSeparator",
+          "BreadcrumbEllipsis",
+          "breadcrumbVariants",
+          "breadcrumbItemVariants",
+          "fitBreadcrumbs"
         ]
       }
     },
@@ -6001,7 +6041,7 @@
       "name": "discord-clone",
       "type": "registry:block",
       "title": "Discord clone",
-      "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell and TabView, with its own channel, message, member and composer parts.",
+      "description": "A team chat in Discord's shape: server rail, channel sidebar with threads, a transcript with reactions and thread previews, a member list, and a thread panel that docks on wide screens and slides over on narrow ones. Composed from ChatShell, TabView, Avatar and the Composer, with its own channel, message and member parts; messages are rendered by Docstream.",
       "categories": [
         "chat",
         "application"
@@ -6013,8 +6053,11 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/adaptive-pane.json",
+        "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/side-drawer.json",
         "https://blamy.github.io/ui/r/tab-view.json",
         "https://blamy.github.io/ui/r/theme.json",
@@ -6037,6 +6080,11 @@
           "target": "components/blocks/discord-clone/thread-view.tsx"
         },
         {
+          "path": "registry/blocks/discord-clone/message-composer.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/message-composer.tsx"
+        },
+        {
           "path": "registry/blocks/discord-clone/data.ts",
           "type": "registry:component",
           "target": "components/blocks/discord-clone/data.ts"
@@ -6045,16 +6093,6 @@
           "path": "registry/blocks/discord-clone/components/chat-users.tsx",
           "type": "registry:component",
           "target": "components/blocks/discord-clone/components/chat-users.tsx"
-        },
-        {
-          "path": "registry/blocks/discord-clone/components/chat-avatar.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/discord-clone/components/chat-avatar.tsx"
-        },
-        {
-          "path": "registry/blocks/discord-clone/components/rich-text.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/discord-clone/components/rich-text.tsx"
         },
         {
           "path": "registry/blocks/discord-clone/components/workspace-rail.tsx",
@@ -6095,11 +6133,6 @@
           "path": "registry/blocks/discord-clone/components/member-list.tsx",
           "type": "registry:component",
           "target": "components/blocks/discord-clone/components/member-list.tsx"
-        },
-        {
-          "path": "registry/blocks/discord-clone/components/chat-composer.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/discord-clone/components/chat-composer.tsx"
         },
         {
           "path": "registry/blocks/discord-clone/chat-theme.css",
