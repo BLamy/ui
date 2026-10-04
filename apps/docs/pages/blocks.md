@@ -80,6 +80,34 @@ Freeform is the PencilKit core grown into a whole app: boards in a gallery, and 
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/freeform.json{% endcommand %}
 
+{% demo src="blocks/safari" layout="multi" %}
+
+Safari is a browser that only browses through your tailnet, on the real Tailscale. It opens on a gate: nothing works until Tailscale is connected (a saved session is restored without a prompt, and signing out brings the gate back), and the browser behind it is `inert`. Press **Sign in with Tailscale** and Tailscale's own sign-in opens in a popup; the client (Tailscale's Go code as WebAssembly, about 26 MB) is downloaded on that press and not before, and the device lives for the tab. Then it is a tabbed browser with per-tab history, an address field that suggests your tailnet's devices, a tab overview, a start page that reports what was loaded, and a shield menu to see the connection, **choose an exit node** and sign out.
+
+A tailnet on its own reaches your devices (by name or `100.x` address) and subnet routes. To open a public site, choose an exit node in the shield menu, or from the error page that a public address gets: all traffic then goes through that device, and so do the DNS lookups for public names (the client cannot resolve them itself, so Safari asks a DNS-over-HTTPS server *through the exit node*, never over the page's own network). Without an exit node a public address fails; that is the point of the gate. Your tailnet needs a device offering one: `tailscale set --advertise-exit-node`, approved in the admin console.
+
+Every document, stylesheet, image and form is fetched by the page itself with `tailscale.fetch`, which has no fallback to the public network (it rejects while disconnected), and shown as a sealed document: scripts, frames, plug-ins and media are removed, assets are inlined as data URLs, and the frame carries a `Content-Security-Policy` of `default-src 'none'` and no scripting, so the page cannot make a request of its own. That is why it does not use the service worker router: a worker cannot see navigations or frames, and an `http://` subresource on an https page is blocked before it reaches one.
+
+**What that means in use: it is a document browser, not an app runtime.** A page that needs JavaScript (a single-page app, a video site such as youtube.com) shows only what its HTML contains, so even through an exit node it will not work. Pages that are server-rendered (documentation, Wikipedia, Hacker News, your own apps' dashboards) do. Running scripts without opening a way around the tailnet would need a different design, such as a remote browser on your tailnet.
+
+The default is the real Tailscale; the block imports the WebAssembly file's URL from `wasm-url.ts` (a Vite `?url` import: swap it for your bundler's equivalent). Pass `tailscale` for other options or a `controller` you made yourself:
+
+```tsx
+import Safari, { tailnetOptions } from '@/components/blocks/safari/page'
+import { webStorageTailscalePersistence } from '@/lib/tailscale'
+
+// Keep the device across visits (the node's keys go in localStorage), on your own Headscale server:
+<Safari tailscale={{ ...tailnetOptions(), controlUrl: 'https://headscale.example', persistence: webStorageTailscalePersistence(localStorage, 'safari') }} />
+```
+
+The demo above is the real thing. This one has a switch to **Simulated**: an in-memory tailnet with four demo sites, an exit node and a pretend public internet, for trying the browser without an account (and what the tests use). It is never the default.
+
+{% demo src="safari/tailnet" %}
+
+**What is verified.** In Chromium (`tools/e2e/safari.e2e.mjs`), on the simulated tailnet: the gate, sign-in, pages with their stylesheets and images, links, forms (GET and POST), redirects, back and forward, tabs, the exit node (a public address fails without it and loads through it), and that no request leaves the page. Unit tests cover the loader's sealing and the exit-node plumbing. Against the real client, the same Chromium run checks that the WebAssembly loads only on the press and that the sign-in reaches Tailscale's real control plane and opens its real login page. **Not verified here:** a completed sign-in and real traffic, including through an exit node (that needs a Tailscale account), and the real client's behavior with the DNS lookups and `Host`/TLS-name handling for public sites, which follows almostnode's approach but is untested against a live exit node. The client relays over DERP only (no direct connections), buffers whole bodies, and carries HTTP only.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/safari.json{% endcommand %}
+
 {% demo src="blocks/split-view-demos" layout="multi" %}
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/split-view-demos.json{% endcommand %}

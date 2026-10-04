@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@agent-wasm/tailscale-connect':
+        specifier: 1.39.98-t02582083d
+        version: 1.39.98-t02582083d
       '@internationalized/date':
         specifier: ^3.12.4
         version: 3.12.4

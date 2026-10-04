@@ -9,6 +9,7 @@ export default defineConfig({
   test: {
     name: 'ui',
     environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}'],
+    // Blocks keep their pure logic testable here too (registry/blocks/<slug>/*.test.ts): the aliases are the same.
+    include: ['src/**/*.test.{ts,tsx}', '../../registry/blocks/*/*.test.{ts,tsx}'],
   },
 });

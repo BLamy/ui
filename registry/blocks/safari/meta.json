@@ -1,0 +1,23 @@
+{
+  "name": "safari",
+  "title": "Safari clone",
+  "description": "A browser that only browses through your tailnet. Opening it shows a gate: nothing works until Tailscale is connected (a saved session is restored without a prompt; signing out brings the gate back), and behind it the browser is inert. Then a tabbed Safari: back and forward with per-tab history, an address field with suggestions from your tailnet's devices and your history, reload and stop, a tab strip and a tab overview, a start page of your devices with a Tailscale report, and a popover to see or end the connection. Every page, stylesheet, image and form is fetched by the page itself through tailscale.fetch, which never falls back to the public network, and shown as a sealed document: scripts, frames, plug-ins and media removed, assets inlined as data URLs, and the frame under a Content-Security-Policy that forbids any request of its own, so a page cannot reach out around the tailnet. It is a document browser, not an app runtime. It uses the real Tailscale by default: Tailscale's own client as WebAssembly and its real sign-in page. A tailnet alone reaches your devices; choose an exit node in the shield menu to browse the public internet through it (the DNS lookups go through the exit node too). A simulated tailnet (data.ts) is there for stories and tests, never the default. Composed from TailscaleProvider, TailscaleLoginButton, Button, Popover, Spinner, Icon and BLProvider.",
+  "categories": [
+    "browser",
+    "network",
+    "application"
+  ],
+  "files": [
+    "page.tsx",
+    "gate.tsx",
+    "toolbar.tsx",
+    "views.tsx",
+    "use-browser.ts",
+    "loader.ts",
+    "wasm-url.ts",
+    "data.ts"
+  ],
+  "dependencies": [
+    "@agent-wasm/tailscale-connect"
+  ]
+}

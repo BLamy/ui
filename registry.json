@@ -1501,7 +1501,10 @@
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/edge-drawer.json"
+        "https://blamy.github.io/ui/r/drawer-swipe.json",
+        "https://blamy.github.io/ui/r/edge-drawer.json",
+        "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -4338,7 +4341,7 @@
       "title": "Tailscale WebAssembly client",
       "description": "The real tailnet client for createTailscale: adapts @agent-wasm/tailscale-connect (Tailscale's Go client compiled to WebAssembly, about 26 MB, imported only when someone signs in) to the TailscaleClient interface. Installs that package.",
       "dependencies": [
-        "@agent-wasm/tailscale-connect@^1.39.98-t02582083d"
+        "@agent-wasm/tailscale-connect@1.39.98-t02582083d"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5058,6 +5061,24 @@
           "path": "packages/ui/src/lib/cron.ts",
           "type": "registry:lib",
           "target": "lib/cron.ts"
+        }
+      ]
+    },
+    {
+      "name": "drawer-swipe",
+      "type": "registry:lib",
+      "title": "Drawer Swipe",
+      "description": "Drawer Swipe — part of BL UI's library (lib/drawer-swipe.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/drawer-swipe.ts",
+          "type": "registry:lib",
+          "target": "lib/drawer-swipe.ts"
         }
       ]
     },
@@ -6670,6 +6691,81 @@
       ],
       "meta": {
         "entry": "components/blocks/pencilkit-sketch/page.tsx"
+      }
+    },
+    {
+      "name": "safari",
+      "type": "registry:block",
+      "title": "Safari clone",
+      "description": "A browser that only browses through your tailnet. Opening it shows a gate: nothing works until Tailscale is connected (a saved session is restored without a prompt; signing out brings the gate back), and behind it the browser is inert. Then a tabbed Safari: back and forward with per-tab history, an address field with suggestions from your tailnet's devices and your history, reload and stop, a tab strip and a tab overview, a start page of your devices with a Tailscale report, and a popover to see or end the connection. Every page, stylesheet, image and form is fetched by the page itself through tailscale.fetch, which never falls back to the public network, and shown as a sealed document: scripts, frames, plug-ins and media removed, assets inlined as data URLs, and the frame under a Content-Security-Policy that forbids any request of its own, so a page cannot reach out around the tailnet. It is a document browser, not an app runtime. It uses the real Tailscale by default: Tailscale's own client as WebAssembly and its real sign-in page. A tailnet alone reaches your devices; choose an exit node in the shield menu to browse the public internet through it (the DNS lookups go through the exit node too). A simulated tailnet (data.ts) is there for stories and tests, never the default. Composed from TailscaleProvider, TailscaleLoginButton, Button, Popover, Spinner, Icon and BLProvider.",
+      "categories": [
+        "browser",
+        "network",
+        "application"
+      ],
+      "dependencies": [
+        "@agent-wasm/tailscale-connect@1.39.98-t02582083d"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/format-bytes.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/radio-group.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/tailscale.json",
+        "https://blamy.github.io/ui/r/tailscale-connect.json",
+        "https://blamy.github.io/ui/r/tailscale-fake.json",
+        "https://blamy.github.io/ui/r/tailscale-login-button.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/safari/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/safari/page.tsx"
+        },
+        {
+          "path": "registry/blocks/safari/gate.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/safari/gate.tsx"
+        },
+        {
+          "path": "registry/blocks/safari/toolbar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/safari/toolbar.tsx"
+        },
+        {
+          "path": "registry/blocks/safari/views.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/safari/views.tsx"
+        },
+        {
+          "path": "registry/blocks/safari/use-browser.ts",
+          "type": "registry:component",
+          "target": "components/blocks/safari/use-browser.ts"
+        },
+        {
+          "path": "registry/blocks/safari/loader.ts",
+          "type": "registry:component",
+          "target": "components/blocks/safari/loader.ts"
+        },
+        {
+          "path": "registry/blocks/safari/wasm-url.ts",
+          "type": "registry:component",
+          "target": "components/blocks/safari/wasm-url.ts"
+        },
+        {
+          "path": "registry/blocks/safari/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/safari/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/safari/page.tsx"
       }
     },
     {

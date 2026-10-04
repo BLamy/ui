@@ -26,6 +26,10 @@ export interface TailscaleNode {
   name: string;
   addresses: string[];
   online?: boolean;
+  /** The node's stable id: what `setExitNode` takes. */
+  id?: string;
+  /** This node offers to carry the tailnet's traffic to the public internet (an exit node). */
+  exitNodeOption?: boolean;
 }
 
 export interface TailscaleNetMap {
@@ -33,6 +37,8 @@ export interface TailscaleNetMap {
   peers: TailscaleNode[];
   /** Tailnet lock is on and this node is not signed. */
   lockedOut?: boolean;
+  /** The exit node in use, if any. */
+  selectedExitNodeId?: string | null;
 }
 
 export interface TailscaleClientEvent {
@@ -83,6 +89,8 @@ export interface TailscaleClient {
   login(): Promise<void> | void;
   logout(): Promise<void> | void;
   fetch(request: TailscaleRequest): Promise<TailscaleResponse>;
+  /** Send all traffic through this exit node (an id from the net map), or stop with `null`. Optional: a client without it cannot. */
+  setExitNode?(id: string | null): Promise<void> | void;
   dispose(): Promise<void> | void;
 }
 
@@ -195,6 +203,10 @@ export interface TailscalePeer {
   name: string;
   addresses: string[];
   online: boolean;
+  /** The node's id, when the client reports one. */
+  id: string | null;
+  /** It offers to be an exit node. */
+  exitNode: boolean;
 }
 
 export interface TailscaleSnapshot {
@@ -209,6 +221,8 @@ export interface TailscaleSnapshot {
   tailnet: string | null;
   addresses: string[];
   peers: TailscalePeer[];
+  /** The exit node in use: all traffic, public sites included, goes through it. Null: only the tailnet is reachable. */
+  exitNodeId: string | null;
   /** A saved session exists: `connect()` restores it without a sign-in. */
   hasSession: boolean;
 }
@@ -278,6 +292,9 @@ export interface Tailscale {
   signOut(): Promise<void>;
   /** A request through the tailnet. Rejects with `TailscaleError('not-connected')` unless connected. */
   fetch(request: TailscaleRequest): Promise<TailscaleResponse>;
+  /** Route everything through an exit node (its `id` from `getSnapshot().peers`), or `null` to go back to the tailnet alone.
+      Rejects unless connected, the client supports it, and the id is a peer that offers to be an exit node. */
+  setExitNode(id: string | null): Promise<void>;
   /** Whether `url` matches this controller's policy. */
   matches(url: string | URL, method?: string): boolean;
   readonly policy: ResolvedTailscalePolicy;
@@ -286,7 +303,7 @@ export interface Tailscale {
 }
 
 const IDLE: TailscaleSnapshot = Object.freeze({
-  status: 'idle', loginUrl: null, error: null, warning: null, selfName: null, tailnet: null, addresses: [], peers: [], hasSession: false,
+  status: 'idle', loginUrl: null, error: null, warning: null, selfName: null, tailnet: null, addresses: [], peers: [], exitNodeId: null, hasSession: false,
 }) as TailscaleSnapshot;
 
 /** https anywhere; http only on loopback (a local Headscale). Anything else (javascript:, data:) is refused. */
@@ -467,7 +484,9 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
         selfName,
         tailnet: tailnetOf(selfName),
         addresses: nm?.self.addresses ?? [],
-        peers: (nm?.peers ?? []).map((p) => ({ name: p.name.replace(/\.$/, ''), addresses: p.addresses, online: p.online === true })),
+        peers: (nm?.peers ?? []).map((p) => ({ name: p.name.replace(/\.$/, ''), addresses: p.addresses, online: p.online === true, id: p.id ?? null, exitNode: p.exitNodeOption === true })),
+        // A net map that says nothing about it leaves the choice as it was; one that does (even null) settles it.
+        ...(nm?.selectedExitNodeId !== undefined ? { exitNodeId: nm.selectedExitNodeId } : nm === null ? { exitNodeId: null } : {}),
       });
     }
     if (event.loginUrl !== undefined) showLoginUrl(event.loginUrl);
@@ -579,7 +598,7 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
     if (c) await c.dispose();
   }
 
-  const reset = () => set({ status: 'idle', loginUrl: null, selfName: null, tailnet: null, addresses: [], peers: [] });
+  const reset = () => set({ status: 'idle', loginUrl: null, selfName: null, tailnet: null, addresses: [], peers: [], exitNodeId: null });
 
   const api: Tailscale = {
     policy,
@@ -685,6 +704,13 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
     async fetch(request) {
       if (!client || clientState !== 'Running') throw new TailscaleError('not-connected', 'Not connected to Tailscale.');
       return client.fetch(request);
+    },
+    async setExitNode(id) {
+      if (!client || clientState !== 'Running') throw new TailscaleError('not-connected', 'Not connected to Tailscale.');
+      if (!client.setExitNode) throw new TailscaleError('client', 'This Tailscale client cannot use an exit node.');
+      if (id !== null && !snap.peers.some((p) => p.id === id && p.exitNode)) throw new TailscaleError('client', 'That device is not an exit node on this tailnet.');
+      await client.setExitNode(id);
+      set({ exitNodeId: id });
     },
     matches(url, method = 'GET') {
       return matchTailscalePolicy(url, method, policy, typeof location !== 'undefined' ? location.origin : undefined).route;

@@ -21,6 +21,7 @@
   },
   "private": false,
   "dependencies": {
+    "@agent-wasm/tailscale-connect": "1.39.98-t02582083d",
     "@internationalized/date": "^3.12.4",
     "@pierre/diffs": "^1.3.6",
     "@pierre/trees": "1.0.0-beta.6",

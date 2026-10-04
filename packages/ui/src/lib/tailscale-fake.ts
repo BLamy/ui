@@ -15,6 +15,10 @@ export type FakeTailnetHandler = (request: Request, info: { host: string }) => R
 export interface FakeTailscaleOptions {
   /** Handlers by host (lower case, no port). Anything else gets a 502, as an unreachable peer would. */
   routes?: Record<string, FakeTailnetHandler>;
+  /** Names of peers that offer to be exit nodes (they show up in the peers, with `exitNodeOption`). */
+  exitNodes?: string[];
+  /** The "public internet": handlers by host that answer only while an exit node is selected. Without one they get a 502. */
+  internet?: Record<string, FakeTailnetHandler>;
   /** Approve an interactive sign-in this long after the login URL is shown (ms). `false`: wait for `approve()`. Default 600. */
   approveAfterMs?: number | false;
   /** Startup time (ms) before the client reports a state. Default 150. */
@@ -39,6 +43,8 @@ export interface FakeTailscale {
   readonly requests: TailscaleRequest[];
   /** Times `start` was called — a lazily loaded client starts once. */
   readonly starts: number;
+  /** The exit node in use (its id), or null. */
+  readonly exitNodeId: string | null;
 }
 
 export function createFakeTailscaleClient(options: FakeTailscaleOptions = {}): FakeTailscale {
@@ -47,13 +53,19 @@ export function createFakeTailscaleClient(options: FakeTailscaleOptions = {}): F
   let starts = 0;
   let current: TailscaleClientStartOptions | null = null;
   let running = false;
+  let exitNodeId: string | null = null;
   let timers: Array<ReturnType<typeof setTimeout>> = [];
   const later = (ms: number, fn: () => void) => { timers.push(setTimeout(fn, ms)); };
   const emit = (e: TailscaleClientEvent) => current?.onEvent(e);
 
+  const peerId = (name: string) => `node-${name.split('.')[0]}`;
   const netMap = (hostname: string) => ({
     self: { name: `${hostname}.${tailnet}.`, addresses: ['100.100.7.42', 'fd7a:115c:a1e0::7:42'] },
-    peers: Object.keys(options.routes ?? {}).map((host, i) => ({ name: `${host}.`, addresses: [`100.100.8.${i + 1}`], online: true })),
+    peers: [
+      ...Object.keys(options.routes ?? {}).map((host, i) => ({ name: `${host}.`, addresses: [`100.100.8.${i + 1}`], online: true, id: peerId(host) })),
+      ...(options.exitNodes ?? []).map((name, i) => ({ name: `${name}.${tailnet}.`, addresses: [`100.100.9.${i + 1}`], online: true, id: peerId(name), exitNodeOption: true })),
+    ],
+    selectedExitNodeId: exitNodeId,
   });
 
   function goRunning() {
@@ -85,19 +97,26 @@ export function createFakeTailscaleClient(options: FakeTailscaleOptions = {}): F
       emit({ loginUrl: options.loginUrl ?? `https://login.tailscale.example/a/${id}` });
       if (options.approveAfterMs !== false) later(options.approveAfterMs ?? 600, goRunning);
     },
+    setExitNode(id) {
+      if (!running) throw new Error('fake tailnet: not running');
+      exitNodeId = id;
+      if (current) emit({ netMap: netMap(current.hostname) });
+    },
     logout() {
       running = false;
+      exitNodeId = null;
       emit({ state: 'NeedsLogin', netMap: null });
     },
     async fetch(req) {
       if (!running) throw new Error('fake tailnet: not running');
       requests.push(req);
       const url = new URL(req.url);
-      const handler = options.routes?.[url.hostname.toLowerCase()];
+      const host = url.hostname.toLowerCase();
+      const handler = options.routes?.[host] ?? (exitNodeId ? options.internet?.[host] : undefined);
       const init: RequestInit = { method: req.method ?? 'GET', headers: req.headers, body: req.body ? req.body.slice() : undefined };
       const res = handler
         ? await handler(new Request(req.url, init), { host: url.hostname })
-        : new Response(`fake tailnet: no peer answers at ${url.hostname}`, { status: 502, headers: { 'content-type': 'text/plain' } });
+        : new Response(`fake tailnet: no peer answers at ${url.hostname}${options.internet?.[host] ? ' (it is on the internet: choose an exit node)' : ''}`, { status: 502, headers: { 'content-type': 'text/plain' } });
       const headers: Array<[string, string]> = [];
       res.headers.forEach((v, k) => headers.push([k, v]));
       const out: TailscaleResponse = { url: req.url, status: res.status, statusText: res.statusText, headers, body: res.body };
@@ -117,5 +136,6 @@ export function createFakeTailscaleClient(options: FakeTailscaleOptions = {}): F
     crash: (message = 'fake panic') => { running = false; emit({ error: message }); },
     requests,
     get starts() { return starts; },
+    get exitNodeId() { return exitNodeId; },
   };
 }

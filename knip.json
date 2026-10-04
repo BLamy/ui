@@ -29,7 +29,8 @@
         "eslint-plugin-jsx-a11y",
         "eslint-plugin-playwright",
         "eslint-plugin-react",
-        "eslint-plugin-react-hooks"
+        "eslint-plugin-react-hooks",
+        "happy-dom"
       ],
       "ignoreBinaries": [
         "wait-on"
