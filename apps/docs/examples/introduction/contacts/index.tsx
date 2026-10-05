@@ -123,9 +123,19 @@ export default function Contacts() {
       <div style={{ position: 'absolute', inset: 0 }}>
         <BLProvider>
           <div style={{ position: 'absolute', inset: 0 }}>
-            {tab === 'contacts' ? (
+            {/* The stack stays mounted while another tab shows, only hidden, so it comes
+                back as you left it: the pushed contact, and the list scrolled where it was
+                under it. */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: tab === 'contacts' ? undefined : 'none',
+              }}
+            >
               <NavigationStack screens={screens} onPop={() => setSel(null)} />
-            ) : (
+            </div>
+            {tab !== 'contacts' && (
               <div
                 style={{
                   position: 'absolute',
