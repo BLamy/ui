@@ -1,0 +1,7 @@
+{
+  "name": "video-editor",
+  "title": "Video Editor",
+  "description": "A video editor in the browser, after iMovie and Final Cut: a media library (drop or browse for video, audio and images), a viewer that plays the edit live, an inspector (volume, speed, fades, dissolves, colour looks, fill or fit, picture in picture, titles) and a timeline with a magnetic main track, titles over it and music under it: drag to move, trim the edges, split, snap, zoom, undo. FFmpeg in WebAssembly (openclaw/ffmpeg-wasm, built by tools/ffmpeg-wasm) runs in workers on the device to probe files, draw filmstrips and waveforms, and export the timeline to MP4, WebM, GIF, MP3 or WAV with live progress. Its threads need a cross-origin isolated page; without one the browser plays what it can and export is off.",
+  "categories": ["media", "application", "editor"],
+  "files": ["page.tsx", "store.tsx", "actions.ts", "media.ts", "media-panel.tsx", "inspector.tsx", "export-dialog.tsx", "titles.tsx", "samples.ts"]
+}

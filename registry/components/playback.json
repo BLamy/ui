@@ -1,0 +1,13 @@
+{
+  "name": "playback",
+  "title": "Playback clock",
+  "description": "The time a preview, a timeline and transport controls share: play, pause, seek, rate and loop on animation frames, as a small external store whose subscribers follow every tick without re-rendering.",
+  "files": [
+    "lib/playback.ts"
+  ],
+  "exports": [
+    "createPlayback",
+    "usePlaybackClock",
+    "usePlaybackState"
+  ]
+}

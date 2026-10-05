@@ -1,0 +1,12 @@
+{
+  "name": "filmstrip",
+  "title": "Filmstrip",
+  "description": "A row of video frames across a stretch of media time: tiles its width with frame-shaped cells, each showing the frame nearest its time, so it reads right at any width or zoom.",
+  "page": "filmstrip",
+  "files": [
+    "components/filmstrip.tsx"
+  ],
+  "exports": [
+    "Filmstrip"
+  ]
+}

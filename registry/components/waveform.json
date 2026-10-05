@@ -1,0 +1,13 @@
+{
+  "name": "waveform",
+  "title": "Waveform",
+  "description": "Audio peaks drawn across a stretch of media time on a canvas, one bar per device pixel, mirrored or rising from the bottom, tinted by the text colour and scaled by a gain.",
+  "page": "waveform",
+  "files": [
+    "components/waveform.tsx"
+  ],
+  "exports": [
+    "Waveform",
+    "waveformVariants"
+  ]
+}

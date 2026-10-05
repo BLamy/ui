@@ -2493,6 +2493,63 @@
       }
     },
     {
+      "name": "ffmpeg",
+      "type": "registry:lib",
+      "title": "FFmpeg",
+      "description": "FFmpeg and FFprobe in the browser (openclaw/ffmpeg-wasm, built for the web by tools/ffmpeg-wasm), run like a command line in a pool of module workers: files in (Blobs mounted, never copied), the files a run wrote out, with progress and cancelling. Probes media, grabs filmstrip frames and decodes waveform peaks, with a React provider and hooks that share the work per file. Installs ffmpeg-worker.js into public/ffmpeg/; serve the wasm build next to it, from a cross-origin isolated page.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/ffmpeg/ffmpeg-worker.js",
+          "type": "registry:file",
+          "target": "~/public/ffmpeg/ffmpeg-worker.js"
+        },
+        {
+          "path": "packages/ui/src/lib/ffmpeg/index.ts",
+          "type": "registry:lib",
+          "target": "lib/ffmpeg/index.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/ffmpeg/media.ts",
+          "type": "registry:lib",
+          "target": "lib/ffmpeg/media.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/ffmpeg/react.tsx",
+          "type": "registry:lib",
+          "target": "lib/ffmpeg/react.tsx"
+        }
+      ],
+      "meta": {
+        "page": "ffmpeg",
+        "exports": [
+          "createFfmpeg",
+          "ffmpegUnsupportedReason",
+          "FfmpegError",
+          "parseProbe",
+          "parseRate",
+          "mediaFileName",
+          "extractFrames",
+          "extractPeaks",
+          "frameTimes",
+          "wavPeaks",
+          "FfmpegProvider",
+          "useFfmpeg",
+          "useFfmpegSupport",
+          "useMediaInfo",
+          "useMediaFrames",
+          "useMediaPeaks",
+          "probeMedia",
+          "mediaFrames",
+          "mediaPeaks",
+          "releaseMedia"
+        ]
+      }
+    },
+    {
       "name": "file-upload",
       "type": "registry:ui",
       "title": "FileUpload",
@@ -2528,6 +2585,30 @@
           "FileItem",
           "FileThumbnail",
           "useFileUploadContext"
+        ]
+      }
+    },
+    {
+      "name": "filmstrip",
+      "type": "registry:ui",
+      "title": "Filmstrip",
+      "description": "A row of video frames across a stretch of media time: tiles its width with frame-shaped cells, each showing the frame nearest its time, so it reads right at any width or zoom.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/filmstrip.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/filmstrip.tsx"
+        }
+      ],
+      "meta": {
+        "page": "filmstrip",
+        "exports": [
+          "Filmstrip"
         ]
       }
     },
@@ -3590,6 +3671,23 @@
           "PlainToggleButton"
         ]
       }
+    },
+    {
+      "name": "playback",
+      "type": "registry:lib",
+      "title": "Playback clock",
+      "description": "The time a preview, a timeline and transport controls share: play, pause, seek, rate and loop on animation frames, as a small external store whose subscribers follow every tick without re-rendering.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/playback.ts",
+          "type": "registry:lib",
+          "target": "lib/playback.ts"
+        }
+      ]
     },
     {
       "name": "popover",
@@ -4954,6 +5052,132 @@
           "FONT",
           "BARH",
           "EASE"
+        ]
+      }
+    },
+    {
+      "name": "video-preview",
+      "type": "registry:ui",
+      "title": "VideoPreview",
+      "description": "Plays a video timeline live, without rendering: the clips near the playhead as video, audio and image elements in their frames, with looks as CSS filters and fades as opacity and volume, following a shared playback clock (re-synced on drift, the next clip loaded ahead). With transport controls and a timecode.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/playback.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/video-timeline-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/video-preview.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/video-preview.tsx"
+        }
+      ],
+      "meta": {
+        "page": "video-preview",
+        "exports": [
+          "VideoPreview",
+          "PlaybackControls",
+          "PlaybackTimecode"
+        ]
+      }
+    },
+    {
+      "name": "video-render",
+      "type": "registry:lib",
+      "title": "Video render",
+      "description": "A timeline as one FFmpeg command: an input per clip, each picture fitted, looked, faded and laid over the background at its time, each sound retimed, levelled, faded, delayed and mixed, then MP4 (MPEG-4 + AAC), WebM (VP8 + Opus), GIF, MP3 or WAV. renderTimeline runs it with progress.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/ffmpeg.json",
+        "https://blamy.github.io/ui/r/video-timeline-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/video-render.ts",
+          "type": "registry:lib",
+          "target": "lib/video-render.ts"
+        }
+      ]
+    },
+    {
+      "name": "video-timeline-model",
+      "type": "registry:lib",
+      "title": "Video timeline model",
+      "description": "The model behind VideoTimeline: tracks of clips (source in/out, speed, volume, fades, dissolves, picture-in-picture frames, colour looks), a magnetic main track whose edits ripple, and pure edits (split, trim, move, insert, remove, slice, snap) that return a new timeline, plus timecode and the looks as CSS and FFmpeg filters.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/video-timeline.ts",
+          "type": "registry:lib",
+          "target": "lib/video-timeline.ts"
+        }
+      ]
+    },
+    {
+      "name": "video-timeline",
+      "type": "registry:ui",
+      "title": "VideoTimeline",
+      "description": "A video editor's timeline: a ruler you scrub, lanes with headers (hide, mute, lock), clips you drag along a track, among a magnetic track's clips (which make room) or to another track, trim handles on both edges, a playhead, snapping to edges and the playhead, frame-accurate edits, pinch or ⌘-wheel zoom, keyboard nudging and drops from a media library. Controlled: one onChange per gesture, so each edit is one undo step.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/playback.json",
+        "https://blamy.github.io/ui/r/toggle.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/video-timeline-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/video-timeline.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/video-timeline.tsx"
+        }
+      ],
+      "meta": {
+        "page": "video-timeline",
+        "exports": [
+          "VideoTimeline",
+          "timelineMediaType",
+          "fitTimelineZoom",
+          "timelineZoomRange",
+          "rulerSteps"
+        ]
+      }
+    },
+    {
+      "name": "waveform",
+      "type": "registry:ui",
+      "title": "Waveform",
+      "description": "Audio peaks drawn across a stretch of media time on a canvas, one bar per device pixel, mirrored or rising from the bottom, tinted by the text colour and scaled by a gain.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/waveform.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/waveform.tsx"
+        }
+      ],
+      "meta": {
+        "page": "waveform",
+        "exports": [
+          "Waveform",
+          "waveformVariants"
         ]
       }
     },
@@ -7529,6 +7753,96 @@
       ],
       "meta": {
         "entry": "components/blocks/timemachine/page.tsx"
+      }
+    },
+    {
+      "name": "video-editor",
+      "type": "registry:block",
+      "title": "Video Editor",
+      "description": "A video editor in the browser, after iMovie and Final Cut: a media library (drop or browse for video, audio and images), a viewer that plays the edit live, an inspector (volume, speed, fades, dissolves, colour looks, fill or fit, picture in picture, titles) and a timeline with a magnetic main track, titles over it and music under it: drag to move, trim the edges, split, snap, zoom, undo. FFmpeg in WebAssembly (openclaw/ffmpeg-wasm, built by tools/ffmpeg-wasm) runs in workers on the device to probe files, draw filmstrips and waveforms, and export the timeline to MP4, WebM, GIF, MP3 or WAV with live progress. Its threads need a cross-origin isolated page; without one the browser plays what it can and export is off.",
+      "categories": [
+        "media",
+        "application",
+        "editor"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/ffmpeg.json",
+        "https://blamy.github.io/ui/r/file-upload.json",
+        "https://blamy.github.io/ui/r/filmstrip.json",
+        "https://blamy.github.io/ui/r/format-bytes.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/playback.json",
+        "https://blamy.github.io/ui/r/progress.json",
+        "https://blamy.github.io/ui/r/slider.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/switch.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/textarea.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toggle.json",
+        "https://blamy.github.io/ui/r/toggle-group.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/video-preview.json",
+        "https://blamy.github.io/ui/r/video-render.json",
+        "https://blamy.github.io/ui/r/video-timeline.json",
+        "https://blamy.github.io/ui/r/video-timeline-model.json",
+        "https://blamy.github.io/ui/r/waveform.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/video-editor/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/video-editor/page.tsx"
+        },
+        {
+          "path": "registry/blocks/video-editor/store.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/video-editor/store.tsx"
+        },
+        {
+          "path": "registry/blocks/video-editor/actions.ts",
+          "type": "registry:component",
+          "target": "components/blocks/video-editor/actions.ts"
+        },
+        {
+          "path": "registry/blocks/video-editor/media.ts",
+          "type": "registry:component",
+          "target": "components/blocks/video-editor/media.ts"
+        },
+        {
+          "path": "registry/blocks/video-editor/media-panel.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/video-editor/media-panel.tsx"
+        },
+        {
+          "path": "registry/blocks/video-editor/inspector.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/video-editor/inspector.tsx"
+        },
+        {
+          "path": "registry/blocks/video-editor/export-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/video-editor/export-dialog.tsx"
+        },
+        {
+          "path": "registry/blocks/video-editor/titles.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/video-editor/titles.tsx"
+        },
+        {
+          "path": "registry/blocks/video-editor/samples.ts",
+          "type": "registry:component",
+          "target": "components/blocks/video-editor/samples.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/video-editor/page.tsx"
       }
     }
   ]

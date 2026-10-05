@@ -167,8 +167,10 @@ export function buildGraph({ errors = [] } = {}) {
   return { items, owner, modules, all, manifests };
 }
 
-/** The item that owns a library module, and the alias path a consumer imports it by. */
+/** The item that owns a library module, and the alias path a consumer imports it by (a folder's index by the folder). */
 export const aliasOf = (rel) =>
-  rel.startsWith('components/') ? '@/components/ui/' + rel.slice('components/'.length).replace(/\.tsx?$/, '') : '@/lib/' + rel.slice('lib/'.length).replace(/\.tsx?$/, '');
+  (rel.startsWith('components/') ? '@/components/ui/' + rel.slice('components/'.length) : '@/lib/' + rel.slice('lib/'.length))
+    .replace(/\.tsx?$/, '')
+    .replace(/\/index$/, '');
 
 export { abs, readJson, relative };

@@ -24,6 +24,12 @@ The Interface Builder block is Xcode's storyboard for apps made of BL UI. Its li
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/interface-builder.json{% endcommand %}
 
+{% demo src="blocks/video-editor" layout="multi" %}
+
+The Video Editor block is iMovie and Final Cut in a page: a media library, a viewer that plays the edit live, an inspector and a timeline with a magnetic main track, titles over it and music under it. Drop files on the library (or drag cards onto a track), drag clips to move them, trim their edges, split at the playhead (S), dissolve between clips, give them a look, fill or fit the frame, set clips over the main track as picture in picture, and undo anything. [FFmpeg](https://blamy.github.io/ui/#/ffmpeg) does the reading and the writing on the device: it probes files, draws the filmstrips and waveforms, makes the sample clips and exports the timeline to WebM, MP4, GIF, MP3 or WAV with live progress and the command it ran. FFmpeg's threads need a cross-origin isolated page: in browsers other than Chrome, open the demo in its own tab. Where it can't run, the browser reads and plays what it can and exporting is off.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/video-editor.json{% endcommand %}
+
 {% demo src="blocks/macos" layout="multi" %}
 
 The macOS block is a desktop whose apps are the blocks on this page — Reminders, Mail, Safari, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA; the Dock and Alfred open them in windows — so adding it also adds each of them; delete an entry from its `apps.ts` (and the block it imports) to trim the desktop.

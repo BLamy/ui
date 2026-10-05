@@ -26,6 +26,48 @@ function tailscaleServiceWorker(): Plugin {
   };
 }
 
+/* FFmpeg (lib/ffmpeg) runs on threads, so its page must be cross-origin isolated. Every document gets
+   `Document-Isolation-Policy: isolate-and-credentialless`, which isolates it in Chrome without COOP (popups such as the
+   Tailscale sign-in keep their opener) or COEP's demands on iframes. Browsers without it get COOP/COEP on the URLs that
+   ask (`?isolate`, and the video editor's demos), and the FFmpeg files carry the matching COEP so their workers may
+   start there. The worker script is the library's copy, served next to the wasm build in public/ffmpeg
+   (`node tools/ffmpeg-wasm/build.mjs`). */
+function ffmpegIsolation(): Plugin {
+  const worker = new URL('../../packages/ui/src/lib/ffmpeg/ffmpeg-worker.js', import.meta.url);
+  const isolate: Plugin['configureServer'] = (server) => {
+    server.middlewares.use((req, res, next) => {
+      const url = new URL(req.url ?? '/', 'http://x');
+      const base = server.config.base;
+      if (url.pathname.startsWith(`${base}ffmpeg/`)) {
+        res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+        res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+        if (url.pathname === `${base}ffmpeg/ffmpeg-worker.js`) {
+          res.setHeader('content-type', 'text/javascript; charset=utf-8');
+          res.setHeader('cache-control', 'no-cache');
+          res.end(readFileSync(worker, 'utf8'));
+          return;
+        }
+      } else if (req.headers['sec-fetch-dest'] === 'document' || req.headers.accept?.includes('text/html')) {
+        res.setHeader('Document-Isolation-Policy', 'isolate-and-credentialless');
+        const demo = url.searchParams.get('demo') ?? '';
+        if (url.searchParams.has('isolate') || /^(blocks\/video-editor|video-[\w-]+\/|ffmpeg\/)/.test(demo)) {
+          res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+          res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+        }
+      }
+      next();
+    });
+  };
+  return {
+    name: 'bl-docs-ffmpeg',
+    configureServer: isolate,
+    configurePreviewServer: isolate as Plugin['configurePreviewServer'],
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'ffmpeg/ffmpeg-worker.js', source: readFileSync(worker, 'utf8') });
+    },
+  };
+}
+
 export default defineConfig(() => ({
   root: import.meta.dirname,
   base: process.env.GITHUB_ACTIONS ? '/ui/' : '/',
@@ -38,7 +80,7 @@ export default defineConfig(() => ({
     port: 4206,
     host: 'localhost',
   },
-  plugins: [react(), tailwindcss(), tailscaleServiceWorker()],
+  plugins: [react(), tailwindcss(), tailscaleServiceWorker(), ffmpegIsolation()],
   resolve: { conditions: ['@org/source'], alias: aliases },
   optimizeDeps: {
     // PGlite finds its WebAssembly with `new URL('./pglite.wasm', import.meta.url)`; pre-bundling would move the JS

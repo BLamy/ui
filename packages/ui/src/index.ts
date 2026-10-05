@@ -602,3 +602,39 @@ export {
 export type {
   TailscaleMenuProps, TailscaleMenuSummaryProps, TailscaleExitNodesProps, TailscaleExitNodeLabels, TailscaleExitNodeState, TailscaleMenuVariant,
 } from './components/tailscale-menu';
+
+
+// ── Video: FFmpeg, the timeline model, render, playback and the editing parts ──
+export {
+  createFfmpeg, ffmpegUnsupportedReason, FfmpegError, parseProbe, parseRate, mediaFileName,
+} from './lib/ffmpeg';
+export type {
+  Ffmpeg, FfmpegOptions, FfmpegJob, FfmpegResult, FfmpegProgress, FfmpegInput, FfmpegTool, FfmpegErrorCode, ProbeOptions,
+  MediaInfo, MediaKind, VideoStreamInfo, AudioStreamInfo,
+} from './lib/ffmpeg';
+export { extractFrames, extractPeaks, frameTimes, wavPeaks } from './lib/ffmpeg/media';
+export type { MediaFrame, FramesOptions, MediaPeaks, PeaksOptions } from './lib/ffmpeg/media';
+export {
+  FfmpegProvider, useFfmpeg, useFfmpegSupport, useMediaInfo, useMediaFrames, useMediaPeaks, probeMedia, mediaFrames, mediaPeaks, releaseMedia,
+} from './lib/ffmpeg/react';
+export type { FfmpegProviderProps, MediaFrameURL, AsyncResult } from './lib/ffmpeg/react';
+export {
+  clipDuration, clipEnd, sourceTime, trackDuration, timelineDuration, quantize, clipsAt, findClip, timelineId,
+  layoutTrack, updateClip, updateTrack, removeClips, splitClip, trimClip, moveClip, insertClip, magneticIndex,
+  sliceTimeline, snapTargets, snapTime, formatTimecode, parseTimecode, timelineLooks, lookCss, lookFfmpeg,
+} from './lib/video-timeline';
+export type {
+  Timeline, TimelineTrack, TimelineClip, TimelineFormat, TimelineLook, TrackKind, ClipFrame, TrimLimits, PlaceOptions,
+} from './lib/video-timeline';
+export { buildRender, renderTimeline, renderMime } from './lib/video-render';
+export type { RenderMedia, RenderContainer, RenderQuality, RenderOptions, RenderPlan, RenderTimelineOptions } from './lib/video-render';
+export { createPlayback, usePlaybackClock, usePlaybackState } from './lib/playback';
+export type { Playback, PlaybackState } from './lib/playback';
+export { VideoTimeline, timelineMediaType, fitTimelineZoom, timelineZoomRange, rulerSteps } from './components/video-timeline';
+export type { VideoTimelineProps, TimelineMediaInfo, TimelineDrop } from './components/video-timeline';
+export { VideoPreview, PlaybackControls, PlaybackTimecode } from './components/video-preview';
+export type { VideoPreviewProps, PreviewMedia, PlaybackControlsProps, PlaybackTimecodeProps } from './components/video-preview';
+export { Filmstrip } from './components/filmstrip';
+export type { FilmstripProps, FilmstripFrame } from './components/filmstrip';
+export { Waveform, waveformVariants } from './components/waveform';
+export type { WaveformProps } from './components/waveform';

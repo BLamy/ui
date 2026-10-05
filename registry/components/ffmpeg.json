@@ -1,0 +1,42 @@
+{
+  "name": "ffmpeg",
+  "title": "FFmpeg",
+  "description": "FFmpeg and FFprobe in the browser (openclaw/ffmpeg-wasm, built for the web by tools/ffmpeg-wasm), run like a command line in a pool of module workers: files in (Blobs mounted, never copied), the files a run wrote out, with progress and cancelling. Probes media, grabs filmstrip frames and decodes waveform peaks, with a React provider and hooks that share the work per file. Installs ffmpeg-worker.js into public/ffmpeg/; serve the wasm build next to it, from a cross-origin isolated page.",
+  "page": "ffmpeg",
+  "files": [
+    "lib/ffmpeg/index.ts",
+    "lib/ffmpeg/media.ts",
+    "lib/ffmpeg/react.tsx"
+  ],
+  "publicFiles": {
+    "lib/ffmpeg/ffmpeg-worker.js": "~/public/ffmpeg/ffmpeg-worker.js"
+  },
+  "exports": [
+    "createFfmpeg",
+    "ffmpegUnsupportedReason",
+    "FfmpegError",
+    "parseProbe",
+    "parseRate",
+    "mediaFileName",
+    "extractFrames",
+    "extractPeaks",
+    "frameTimes",
+    "wavPeaks",
+    "FfmpegProvider",
+    "useFfmpeg",
+    "useFfmpegSupport",
+    "useMediaInfo",
+    "useMediaFrames",
+    "useMediaPeaks",
+    "probeMedia",
+    "mediaFrames",
+    "mediaPeaks",
+    "releaseMedia"
+  ],
+  "imports": [
+    "createFfmpeg",
+    "FfmpegProvider",
+    "useFfmpeg",
+    "useMediaInfo"
+  ]
+}

@@ -154,6 +154,16 @@
       ]
     },
     {
+      "section": "Video",
+      "pages": [
+        { "id": "ffmpeg", "title": "FFmpeg" },
+        { "id": "video-timeline", "title": "VideoTimeline" },
+        { "id": "video-preview", "title": "VideoPreview" },
+        { "id": "filmstrip", "title": "Filmstrip" },
+        { "id": "waveform", "title": "Waveform" }
+      ]
+    },
+    {
       "section": "Storage and security",
       "pages": [
         { "id": "passkey-vault", "title": "Passkey vault" },

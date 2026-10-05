@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (89 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (90 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -1712,3 +1712,22 @@ isolate inline-flex w-fit items-center
 | `default` (default) | `gap-1` |
 | `filled` | `gap-0.5 rounded-[11px] bg-secondary p-0.5` |
 | `outline` | `gap-0 overflow-hidden rounded-ctl shadow-hairline` |
+
+## Waveform
+
+### `waveformVariants`
+
+Defined in `@/components/ui/waveform`. Base classes:
+
+```text
+relative block h-full w-full
+```
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `text-foreground/55` |
+| `primary` | `text-primary` |
+| `success` | `text-success` |
+| `muted` | `text-muted-foreground` |

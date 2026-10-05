@@ -28,6 +28,12 @@ export default defineConfig(() => ({
       closeBundle: () =>
         copyFileSync(path.join(import.meta.dirname, 'src/lib/tailscale-router/tailscale-sw.js'), path.join(import.meta.dirname, 'dist/tailscale-sw.js')),
     },
+    // So does the FFmpeg worker (`@brett_lamy/ui/ffmpeg-worker.js`), to serve next to the FFmpeg wasm build.
+    {
+      name: 'bl-ffmpeg-worker',
+      closeBundle: () =>
+        copyFileSync(path.join(import.meta.dirname, 'src/lib/ffmpeg/ffmpeg-worker.js'), path.join(import.meta.dirname, 'dist/ffmpeg-worker.js')),
+    },
   ],
   // Uncomment this if you are using workers.
   // worker: {

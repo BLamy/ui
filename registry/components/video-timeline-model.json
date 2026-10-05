@@ -1,0 +1,36 @@
+{
+  "name": "video-timeline-model",
+  "title": "Video timeline model",
+  "description": "The model behind VideoTimeline: tracks of clips (source in/out, speed, volume, fades, dissolves, picture-in-picture frames, colour looks), a magnetic main track whose edits ripple, and pure edits (split, trim, move, insert, remove, slice, snap) that return a new timeline, plus timecode and the looks as CSS and FFmpeg filters.",
+  "files": [
+    "lib/video-timeline.ts"
+  ],
+  "exports": [
+    "clipDuration",
+    "clipEnd",
+    "sourceTime",
+    "trackDuration",
+    "timelineDuration",
+    "quantize",
+    "clipsAt",
+    "findClip",
+    "timelineId",
+    "layoutTrack",
+    "updateClip",
+    "updateTrack",
+    "removeClips",
+    "splitClip",
+    "trimClip",
+    "moveClip",
+    "insertClip",
+    "magneticIndex",
+    "sliceTimeline",
+    "snapTargets",
+    "snapTime",
+    "formatTimecode",
+    "parseTimecode",
+    "timelineLooks",
+    "lookCss",
+    "lookFfmpeg"
+  ]
+}

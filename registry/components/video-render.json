@@ -1,0 +1,13 @@
+{
+  "name": "video-render",
+  "title": "Video render",
+  "description": "A timeline as one FFmpeg command: an input per clip, each picture fitted, looked, faded and laid over the background at its time, each sound retimed, levelled, faded, delayed and mixed, then MP4 (MPEG-4 + AAC), WebM (VP8 + Opus), GIF, MP3 or WAV. renderTimeline runs it with progress.",
+  "files": [
+    "lib/video-render.ts"
+  ],
+  "exports": [
+    "buildRender",
+    "renderTimeline",
+    "renderMime"
+  ]
+}

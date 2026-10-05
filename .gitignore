@@ -36,3 +36,6 @@ tools/e2e/a11y-report.json
 apps/docs/public/r/
 apps/docs/public/md/
 apps/docs/public/llms.txt
+
+# The FFmpeg wasm build the docs serve (node tools/ffmpeg-wasm/build.mjs); ffmpeg-worker.js comes from packages/ui.
+apps/docs/public/ffmpeg/

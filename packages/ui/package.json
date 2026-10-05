@@ -24,6 +24,10 @@
     "./tailscale-sw.js": {
       "@org/source": "./src/lib/tailscale-router/tailscale-sw.js",
       "default": "./dist/tailscale-sw.js"
+    },
+    "./ffmpeg-worker.js": {
+      "@org/source": "./src/lib/ffmpeg/ffmpeg-worker.js",
+      "default": "./dist/ffmpeg-worker.js"
     }
   },
   "dependencies": {

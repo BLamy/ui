@@ -1,0 +1,21 @@
+{
+  "name": "video-timeline",
+  "title": "VideoTimeline",
+  "description": "A video editor's timeline: a ruler you scrub, lanes with headers (hide, mute, lock), clips you drag along a track, among a magnetic track's clips (which make room) or to another track, trim handles on both edges, a playhead, snapping to edges and the playhead, frame-accurate edits, pinch or ⌘-wheel zoom, keyboard nudging and drops from a media library. Controlled: one onChange per gesture, so each edit is one undo step.",
+  "page": "video-timeline",
+  "files": [
+    "components/video-timeline.tsx"
+  ],
+  "exports": [
+    "VideoTimeline",
+    "timelineMediaType",
+    "fitTimelineZoom",
+    "timelineZoomRange",
+    "rulerSteps"
+  ],
+  "imports": [
+    "VideoTimeline",
+    "usePlaybackClock",
+    "splitClip"
+  ]
+}
