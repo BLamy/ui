@@ -68,10 +68,36 @@ function Demo({ compact }: { compact?: boolean }) {
   );
 }
 
+/** A gate the user has to answer: no close button or grabber, and Escape, the scrim and a drag down leave it open. */
+function Gate({ compact }: { compact?: boolean }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
+        <Button size="pill" onPress={() => setOpen(true)} className="w-[200px]">Show the gate</Button>
+      </div>
+      <Credenza open={open} isDismissable={false} compact={compact} title="Updated terms">
+        <div style={{ padding: '6px 20px 20px' }}>
+          <div style={{ fontSize: 14, color: 'var(--muted-foreground)', margin: '0 0 16px', lineHeight: 1.45 }}>
+            Shared albums now keep their photos for a year. Agree to keep sharing — this sheet stays until you do.
+          </div>
+          <Button size="pill" onPress={() => setOpen(false)}>Agree and Continue</Button>
+        </div>
+      </Credenza>
+    </>
+  );
+}
+
 export const Dialog: Story = {
   render: () => <Phone w={720} h={560}><Demo /></Phone>,
 };
 
 export const CompactTray: Story = {
   render: () => <Phone w={390} h={720}><Demo compact /></Phone>,
+};
+
+/** `isDismissable={false}`: only the button closes it; the tray rubber-bands when dragged. */
+export const NonDismissable: Story = {
+  args: { compact: true },
+  render: ({ compact }) => <Phone w={compact ? 390 : 720} h={compact ? 720 : 560}><Gate compact={!!compact} /></Phone>,
 };

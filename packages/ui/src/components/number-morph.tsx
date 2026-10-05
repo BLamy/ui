@@ -42,13 +42,16 @@ function Digit({ value, trend }: { value: string; trend: number }) {
   const pos = useMotionValue(d);
   const y = useTransform(pos, (p) => `${-(((p % 10) + 10) % 10) * (100 / 11)}%`);
   const lastD = useRef(d);
+  // Where the reel is headed. A change that lands mid-roll steps on from there: stepping from the rounded in-flight
+  // position could be a notch off and leave the reel on the wrong digit.
+  const target = useRef(d);
   useEffect(() => {
     const prev = lastD.current; lastD.current = d;
     if (prev === d) return;
-    const cur = pos.get();
     const step = trend >= 0 ? (d - prev + 10) % 10 : -((prev - d + 10) % 10);
-    if (reduced) { pos.set(cur + step); return; }
-    animate(pos, Math.round(cur) + step, springs.smooth as never);
+    target.current += step;
+    if (reduced) { pos.set(target.current); return; }
+    animate(pos, target.current, springs.smooth as never);
   }, [d, trend, reduced, pos]);
   return (
     <span className="relative inline-block [mask-image:linear-gradient(to_bottom,transparent,#000_.12em,#000_calc(100%_-_.12em),transparent)] py-[.12em] -my-[.12em]">

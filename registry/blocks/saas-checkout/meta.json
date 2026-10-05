@@ -1,0 +1,8 @@
+{
+  "name": "saas-checkout",
+  "title": "SaaS checkout",
+  "description": "A Stripe-style upgrade flow: plans billed monthly or yearly at a per-seat price with a seat stepper, an account step, then card payment — the number groups itself and shows its brand, with expiry, security code, country and postal code. The order summary follows along live (promotion codes, tax from the billing address, the total); a mock processor takes the payment, its test cards decline in different ways, and the flow ends on a receipt. A sticky summary beside the form on wide hosts; one column with the summary folded into a bar on narrow ones. Nothing leaves the browser.",
+  "categories": ["commerce", "forms"],
+  "files": ["page.tsx", "plan-step.tsx", "account-step.tsx", "payment-step.tsx", "summary.tsx", "receipt.tsx", "parts.tsx", "use-checkout.ts", "checkout.ts", "data.ts"],
+  "dependencies": ["react-aria-components"]
+}

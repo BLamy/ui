@@ -28,7 +28,10 @@ export const credenzaVariants = cva(
    chevron grows in and out of the header. Direction comes from the view history (a view seen before is "back").
    It is modal: opening moves focus onto the sheet (or onto a descendant marked `data-autofocus`), Tab cycles
    inside it, Escape closes only the Credenza (the key is stopped so a SplitView / NavigationStack behind it
-   doesn't also pop), and closing returns focus to whatever had it before. */
+   doesn't also pop), and closing returns focus to whatever had it before.
+   `isDismissable={false}` makes it a step the user has to finish — a paywall, a sign-in gate: Escape (still
+   stopped), a press on the scrim and a drag down don't close it (the tray only rubber-bands), and there is no
+   close button or grabber. Only `open` closes it; focus and the view morph work as before. */
 
 const TABBABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),[contenteditable="true"]';
 
@@ -41,19 +44,22 @@ function tabbables(root: HTMLElement) {
 
 export interface CredenzaProps extends VariantProps<typeof credenzaVariants> {
   open: boolean;
-  onClose: () => void;
+  /** The user dismissed it: Escape, a press on the scrim, the close button or a drag down. */
+  onClose?: () => void;
   onBack?: () => void;
   canBack?: boolean;
   /** Key of the current morphing view — changing it cross-fades and re-measures the body. */
   view?: string;
   title?: ReactNode;
   compact?: boolean | null;
+  /** `false`: nothing the user does closes it (no close button, Escape, scrim or drag) — only `open`. Default `true`. */
+  isDismissable?: boolean;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
 
-export function Credenza({ open, onClose, onBack, canBack, view, title, compact, children, className, style }: CredenzaProps) {
+export function Credenza({ open, onClose, onBack, canBack, view, title, compact, isDismissable = true, children, className, style }: CredenzaProps) {
   const FM = useMotion();
   const reduced = FM.useReducedMotion();
   // Direction of travel between views: revisiting a view in the trail is going back.
@@ -65,14 +71,16 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
     else { trail.current = [...trail.current, v]; dirRef.current = { view: v, dir: 1 }; }
   }
   const dir = reduced ? 0 : dirRef.current.dir;
-  const closeRef = useRef(onClose); closeRef.current = onClose;
+  // Every way the user can dismiss it goes through here; a non-dismissable Credenza has none.
+  const closeRef = useRef(onClose); closeRef.current = isDismissable ? onClose : undefined;
   const sheetRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   // Modal focus. The Credenza is modal to its host (the positioned element it and its scrim fill), so focus
   // moves in on open, focus that lands elsewhere in the host is pulled back, and closing returns it to the
   // opener. Only the most recently opened Credenza enforces this. Escape or Tab while focus has fallen to
   // <body> (e.g. the focused row left with its view) still closes / re-enters. An instance mounted already open
-  // (a page-load demo) only takes focus when the user was already working inside its host.
+  // (a page-load demo) only takes focus when the user was already working inside its host; once their focus is
+  // inside it, view changes hand it on like any other.
   const wasClosed = useRef(!open);
   useEffect(() => {
     if (!open) { wasClosed.current = true; return; }
@@ -89,18 +97,22 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
     };
     // A view change unmounts the focused control, dropping focus to <body> — put it back on the sheet.
     const refocus = new MutationObserver(() => { if (top() && lost(document.activeElement) && sheetRef.current?.isConnected) into(); });
-    let took = false;
+    let watching = false;
+    const watch = () => {
+      if (watching || !sheetRef.current) return;
+      watching = true;
+      refocus.observe(sheetRef.current, { childList: true, subtree: true });
+    };
     const raf = requestAnimationFrame(() => {
-      took = wasClosed.current || !!(opener && host()?.contains(opener));
-      if (took) into();
-      if (took && sheetRef.current) refocus.observe(sheetRef.current, { childList: true, subtree: true });
+      if (wasClosed.current || (opener && host()?.contains(opener))) { into(); watch(); }
     });
     const onFocusIn = (e: FocusEvent) => {
-      if (top() && !inside(e.target) && e.target instanceof Node && host()?.contains(e.target)) into();
+      if (inside(e.target)) watch();
+      else if (top() && e.target instanceof Node && host()?.contains(e.target)) into();
     };
     const onKey = (e: KeyboardEvent) => {
       if (!top() || e.defaultPrevented || inside(e.target) || !(lost(e.target) || (e.target instanceof Node && host()?.contains(e.target)))) return;
-      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeRef.current(); }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeRef.current?.(); }
       else if (e.key === 'Tab') { e.preventDefault(); into(); }
     };
     document.addEventListener('focusin', onFocusIn);
@@ -117,7 +129,7 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
   }, [open]);
   const onSheetKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.defaultPrevented) return;
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeRef.current(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeRef.current?.(); return; }
     if (e.key !== 'Tab') return;
     const list = tabbables(e.currentTarget);
     if (!list.length) { e.preventDefault(); return; }
@@ -137,7 +149,8 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
   const m = FM.motion as any, AP = FM.AnimatePresence;
   const spring = reduced ? { duration: 0 } : springs.tray;
   const header = (
-    <div className="relative z-2 flex items-center gap-2.5 px-[14px] pt-[14px] pb-1.5">
+    // Without its close button the header keeps the height the button gives it, so the back chevron can come and go.
+    <div className={cn('relative z-2 flex items-center gap-2.5 px-[14px] pt-[14px] pb-1.5', !isDismissable && 'min-h-[50px]')}>
       <AP initial={false}>{canBack ? (
         <m.div key="bk" initial={{ opacity: 0, scale: .4, width: 0, marginRight: -10 }}
           animate={{ opacity: 1, scale: 1, width: 30, marginRight: 0 }} exit={{ opacity: 0, scale: .4, width: 0, marginRight: -10, transition: { ...springs.snappy, opacity: fades.out } }}
@@ -155,7 +168,7 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
             className="absolute top-0 left-0 text-[18px] leading-[26px] font-bold tracking-[-.2px] whitespace-nowrap">{title}</m.div>
         </AP>
       </div>
-      {circle('x', onClose, 'Close')}
+      {isDismissable ? circle('x', onClose, 'Close') : null}
     </div>
   );
   const body = (
@@ -165,14 +178,15 @@ export function Credenza({ open, onClose, onBack, canBack, view, title, compact,
   );
   return (
     <AP>
-      {open ? <m.div key="scrim" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: .24 } }} transition={fades.in}
+      {open ? <m.div key="scrim" onClick={() => closeRef.current?.()} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: .24 } }} transition={fades.in}
         className="absolute inset-0 z-400 bg-overlay" /> : null}
       {open ? (compact
         ? <m.div key="tray" data-slot="credenza" {...a11y} className={cn(credenzaVariants({ compact: true }), className)} initial={{ y: '112%' }} animate={{ y: '0%' }} exit={{ y: '118%' }} transition={spring}
-            drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: .02, bottom: .55 }}
-            onDragEnd={(_ev: unknown, inf: any) => { if (inf.offset.y > 120 || inf.velocity.y > 500) closeRef.current(); }}
+            // A tray that can't be dismissed still gives a little under the finger, then springs back.
+            drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: .02, bottom: isDismissable ? .55 : .1 }}
+            onDragEnd={(_ev: unknown, inf: any) => { if (inf.offset.y > 120 || inf.velocity.y > 500) closeRef.current?.(); }}
             style={style}>
-            <div aria-hidden="true" className="absolute top-[7px] left-1/2 z-3 h-[5px] w-[38px] -translate-x-1/2 rounded-[3px] bg-secondary-strong" />
+            {isDismissable ? <div aria-hidden="true" className="absolute top-[7px] left-1/2 z-3 h-[5px] w-[38px] -translate-x-1/2 rounded-[3px] bg-secondary-strong" /> : null}
             {header}{body}
           </m.div>
         : <m.div key="dlg" data-slot="credenza" {...a11y}

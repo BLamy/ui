@@ -18,6 +18,12 @@ Whole apps composed from BL UI parts, in the spirit of shadcn blocks. A block is
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/codex-clone.json{% endcommand %}
 
+{% demo src="blocks/interface-builder" layout="multi" %}
+
+The Interface Builder block is Xcode's storyboard for apps made of BL UI. Its library is the kit itself, and scenes are composed from its containers — a TabView of NavigationStacks, a SplitView's columns, lists — where a scene shown inside another is selected and edited in place: click anything you see (⌘-click works the way it does in a design tool), right-click for everything under the pointer, double-click a text to type over it. Segues, outlets, delegates, the first responder and context mean what they mean in React (navigation, refs, callback props, focus and a responder chain, `useContext`); motion is framer-motion's, with spring and curve editors and a timeline; text takes any Google Fonts family through the [FontPicker](https://blamy.github.io/ui/#/font-picker), previewed on the canvas as you hover the list. Every scene lays out for iPhone, iPad and desktop, runs as a live preview, and exports as a React app on the kit.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/interface-builder.json{% endcommand %}
+
 {% demo src="blocks/macos" layout="multi" %}
 
 The macOS block is a desktop whose apps are the blocks on this page — Reminders, Mail, Safari, Notes, Music, Passwords, System Settings, Time Machine, Maps, Delivery, Freeform, GitHub, Discord, Codex, T3 Code and Loop QA; the Dock and Alfred open them in windows — so adding it also adds each of them; delete an entry from its `apps.ts` (and the block it imports) to trim the desktop.
@@ -65,6 +71,12 @@ The menu bar has two working status items. **Wi-Fi** opens a macOS-style menu: a
 {% demo src="blocks/delivery-tracking" layout="multi" %}
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/delivery-tracking.json{% endcommand %}
+
+{% demo src="blocks/saas-checkout" layout="multi" %}
+
+A SaaS upgrade in three steps — plan, account, payment — beside an order summary that keeps up with every change. Nothing is charged and nothing leaves the browser: `charge` in `checkout.ts` is a stand-in for your payment provider. The test cards fill the form in one press: `4242 4242 4242 4242` succeeds, and the cards ending `0002`, `9995`, `0127` and `0069` are declined (generic, insufficient funds, wrong security code, expired), each message landing on the field it is about. Promotion codes: `LAUNCH20` and `WELCOME25` work on any plan, `SCALE30` only on Business, and `SUMMER24` has expired. Pass `onDashboard` to send the receipt's *Go to dashboard* into your app.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/saas-checkout.json{% endcommand %}
 
 {% demo src="blocks/pencilkit-sketch" layout="multi" %}
 

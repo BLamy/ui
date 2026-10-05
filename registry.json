@@ -2722,6 +2722,42 @@
       }
     },
     {
+      "name": "font-picker",
+      "type": "registry:ui",
+      "title": "FontPicker",
+      "description": "Google Fonts families picked the way a design tool picks them: a searchable, category-filtered list of the most popular families, each drawn in its own face (only its name's glyphs are fetched, only while on screen), that previews the hovered family on your text. FontPicker holds one family, FontStackPicker a font stack as reorderable chips, FontList is the list alone; useGoogleFont and fontStack load and set a family without a picker.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/google-fonts.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/list-box.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/font-picker.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/font-picker.tsx"
+        }
+      ],
+      "meta": {
+        "page": "font-picker",
+        "exports": [
+          "FontPicker",
+          "FontStackPicker",
+          "FontList",
+          "fontPickerTriggerVariants",
+          "fontStackPickerVariants",
+          "fontListItemVariants"
+        ]
+      }
+    },
+    {
       "name": "form",
       "type": "registry:ui",
       "title": "Form",
@@ -5221,6 +5257,28 @@
       ]
     },
     {
+      "name": "google-fonts",
+      "type": "registry:lib",
+      "title": "Google Fonts",
+      "description": "Google Fonts — part of BL UI's library (lib/google-fonts.generated.ts, lib/google-fonts.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/google-fonts.generated.ts",
+          "type": "registry:lib",
+          "target": "lib/google-fonts.generated.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/google-fonts.ts",
+          "type": "registry:lib",
+          "target": "lib/google-fonts.ts"
+        }
+      ]
+    },
+    {
       "name": "gpu-cron",
       "type": "registry:lib",
       "title": "Gpu Cron",
@@ -6407,6 +6465,280 @@
       }
     },
     {
+      "name": "interface-builder",
+      "type": "registry:block",
+      "title": "Interface Builder",
+      "description": "Xcode's storyboard for React apps made of BL UI: scenes on a canvas composed from the kit's own components and containers (NavigationStack, TabView, SplitView, lists), edited in place; segues, delegates, outlets, the first responder and context in React's terms; Framer-style motion with spring and easing editors and a timeline; Google Fonts typography with live preview; a live preview, and the app as code.",
+      "categories": [
+        "design",
+        "developer",
+        "application",
+        "animation"
+      ],
+      "dependencies": [
+        "@internationalized/date@^3.12.4",
+        "framer-motion@^13.1.0",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/avatar.json",
+        "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/breadcrumb.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/calendar.json",
+        "https://blamy.github.io/ui/r/canvas.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/card.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/color-field.json",
+        "https://blamy.github.io/ui/r/color-picker.json",
+        "https://blamy.github.io/ui/r/combobox.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/context-menu.json",
+        "https://blamy.github.io/ui/r/date-field.json",
+        "https://blamy.github.io/ui/r/date-picker.json",
+        "https://blamy.github.io/ui/r/disclosure.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/font-picker.json",
+        "https://blamy.github.io/ui/r/google-fonts.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/kbd.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/now-playing-bars.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/progress.json",
+        "https://blamy.github.io/ui/r/progress-ring.json",
+        "https://blamy.github.io/ui/r/progress-stepper.json",
+        "https://blamy.github.io/ui/r/qr-svg.json",
+        "https://blamy.github.io/ui/r/radio-group.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/select.json",
+        "https://blamy.github.io/ui/r/separator.json",
+        "https://blamy.github.io/ui/r/skeleton.json",
+        "https://blamy.github.io/ui/r/slider.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/switch.json",
+        "https://blamy.github.io/ui/r/syntax-highlighting.json",
+        "https://blamy.github.io/ui/r/tab-bar.json",
+        "https://blamy.github.io/ui/r/tab-view.json",
+        "https://blamy.github.io/ui/r/tabs.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/textarea.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toast.json",
+        "https://blamy.github.io/ui/r/toggle.json",
+        "https://blamy.github.io/ui/r/toggle-group.json",
+        "https://blamy.github.io/ui/r/tooltip.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/interface-builder/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/page.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/actions.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/actions.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/appear.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/appear.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/catalog.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/catalog.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/code.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/code.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/codegen.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/codegen.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/curves.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/curves.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/data.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/diagnostics.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/diagnostics.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/dnd.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/dnd.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/easing.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/easing.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/editor.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/editor.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/expr.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/expr.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/fields.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/fields.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/geometry.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/geometry.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/hosts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/hosts.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/inspect-doc.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/inspect-doc.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/inspect-motion.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/inspect-motion.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/inspect-node.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/inspect-node.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/inspect-scene.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/inspect-scene.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/inspector.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/inspector.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/kit.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/kit.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/library.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/library.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/model.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/model.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/navigator.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/navigator.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/ops.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/ops.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/palette.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/palette.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/pick.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/pick.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/player.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/player.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/render.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/render.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/runtime.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/runtime.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/scope.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/scope.ts"
+        },
+        {
+          "path": "registry/blocks/interface-builder/spec.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/spec.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/store.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/store.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/storyboard.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/storyboard.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/timeline.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/timeline.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/toolbar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/toolbar.tsx"
+        },
+        {
+          "path": "registry/blocks/interface-builder/tree.ts",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/tree.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/interface-builder/page.tsx"
+      }
+    },
+    {
       "name": "loop-qa",
       "type": "registry:block",
       "title": "Loop QA",
@@ -6788,6 +7120,101 @@
       ],
       "meta": {
         "entry": "components/blocks/pencilkit-sketch/page.tsx"
+      }
+    },
+    {
+      "name": "saas-checkout",
+      "type": "registry:block",
+      "title": "SaaS checkout",
+      "description": "A Stripe-style upgrade flow: plans billed monthly or yearly at a per-seat price with a seat stepper, an account step, then card payment — the number groups itself and shows its brand, with expiry, security code, country and postal code. The order summary follows along live (promotion codes, tax from the billing address, the total); a mock processor takes the payment, its test cards decline in different ways, and the flow ends on a receipt. A sticky summary beside the form on wide hosts; one column with the summary folded into a bar on narrow ones. Nothing leaves the browser.",
+      "categories": [
+        "commerce",
+        "forms"
+      ],
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/card.json",
+        "https://blamy.github.io/ui/r/celebrate.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/disclosure.json",
+        "https://blamy.github.io/ui/r/form.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/progress-stepper.json",
+        "https://blamy.github.io/ui/r/radio-group.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/select.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/text-field.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/saas-checkout/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/page.tsx"
+        },
+        {
+          "path": "registry/blocks/saas-checkout/plan-step.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/plan-step.tsx"
+        },
+        {
+          "path": "registry/blocks/saas-checkout/account-step.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/account-step.tsx"
+        },
+        {
+          "path": "registry/blocks/saas-checkout/payment-step.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/payment-step.tsx"
+        },
+        {
+          "path": "registry/blocks/saas-checkout/summary.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/summary.tsx"
+        },
+        {
+          "path": "registry/blocks/saas-checkout/receipt.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/receipt.tsx"
+        },
+        {
+          "path": "registry/blocks/saas-checkout/parts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/saas-checkout/use-checkout.ts",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/use-checkout.ts"
+        },
+        {
+          "path": "registry/blocks/saas-checkout/checkout.ts",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/checkout.ts"
+        },
+        {
+          "path": "registry/blocks/saas-checkout/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/saas-checkout/data.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/saas-checkout/page.tsx"
       }
     },
     {

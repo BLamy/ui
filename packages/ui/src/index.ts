@@ -426,6 +426,14 @@ export {
   type ColorPickerProps, type ColorPickerTriggerProps, type ColorPickerContentProps, type ColorAreaProps, type ColorSliderProps,
   type ColorThumbProps, type ColorSwatchPickerProps, type ColorSwatchPickerItemProps,
 } from './components/color-picker';
+export {
+  FontPicker, FontList, FontStackPicker, fontPickerTriggerVariants, fontListItemVariants, fontStackPickerVariants,
+  type FontPickerProps, type FontListProps, type FontStackPickerProps,
+} from './components/font-picker';
+export {
+  GOOGLE_FONTS, FONT_CATEGORIES, findGoogleFont, fontStack, googleFontsUrl, loadGoogleFont, useGoogleFont, useGoogleFontStatus,
+  type GoogleFont, type FontCategory, type GoogleFontOptions, type GoogleFontStatus,
+} from './lib/google-fonts';
 
 // ── TimeInput / CronEditor ──
 export { TimeInput, timeInputVariants, type TimeInputProps, type TimeInputChange } from './components/time-input';

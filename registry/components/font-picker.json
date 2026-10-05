@@ -1,0 +1,24 @@
+{
+  "name": "font-picker",
+  "title": "FontPicker",
+  "description": "Google Fonts families picked the way a design tool picks them: a searchable, category-filtered list of the most popular families, each drawn in its own face (only its name's glyphs are fetched, only while on screen), that previews the hovered family on your text. FontPicker holds one family, FontStackPicker a font stack as reorderable chips, FontList is the list alone; useGoogleFont and fontStack load and set a family without a picker.",
+  "page": "font-picker",
+  "exports": [
+    "FontPicker",
+    "FontStackPicker",
+    "FontList",
+    "fontPickerTriggerVariants",
+    "fontStackPickerVariants",
+    "fontListItemVariants"
+  ],
+  "imports": [
+    "FontPicker",
+    "FontStackPicker",
+    "FontList"
+  ],
+  "types": [
+    "FontPickerProps",
+    "FontStackPickerProps",
+    "FontListProps"
+  ]
+}

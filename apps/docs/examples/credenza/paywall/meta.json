@@ -1,0 +1,9 @@
+{
+  "title": "Paywall · plans, mock checkout, unlocked",
+  "status": "Live",
+  "variants": [
+    { "id": "dialog", "label": "Dialog" },
+    { "id": "tray", "label": "Tray" }
+  ],
+  "variantsWidth": 160
+}

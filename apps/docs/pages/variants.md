@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (86 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (89 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -742,6 +742,48 @@ ck-floating-sheet pointer-events-none absolute inset-0 z-40 text-foreground [fon
 | `auto` (default) | `[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]` |
 | `dark` | `[--ck-sheet-line:255,255,255] [--ck-sheet-surface:18,18,22]` |
 | `light` | `[--ck-sheet-line:0,0,0] [--ck-sheet-surface:250,250,252]` |
+
+## FontPicker
+
+### `fontListItemVariants`
+
+Defined in `@/components/ui/font-picker`. Base classes:
+
+```text
+h-10 min-h-0 scroll-my-1.5 py-0 data-hovered:bg-accent
+```
+
+No variants.
+
+### `fontPickerTriggerVariants`
+
+Defined in `@/components/ui/font-picker`. Base classes:
+
+```text
+[ 'bl-btn box-border flex w-full cursor-pointer items-center justify-between gap-2 border-0 bg-input px-3 text-left text-foreground outline-none', 'transition-[background-color,box-shadow] duration-spring-snappy ease-spring-snappy data-pressed:bg-secondary-strong', 'data-focus-visible:ring-[3px] data-focus-visible:ring-ring/45 aria-expanded:shadow-[inset_0_0_0_1.5px_var(--primary)]', 'data-disabled:cursor-default data-disabled:opacity-50', ]
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `h-8 rounded-lg text-subhead` |
+| `default` (default) | `h-11 rounded-ctl text-body` |
+
+### `fontStackPickerVariants`
+
+Defined in `@/components/ui/font-picker`. Base classes:
+
+```text
+flex w-full flex-wrap items-center gap-1.5 rounded-ctl bg-input p-1.5 data-disabled:opacity-50
+```
+
+**`size`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `sm` | `min-h-8 rounded-lg p-1 text-footnote` |
+| `default` (default) | `min-h-11 text-subhead` |
 
 ## IndexBar
 

@@ -50,6 +50,7 @@
         { "id": "calendar", "title": "Calendar" },
         { "id": "color-field", "title": "ColorField" },
         { "id": "color-picker", "title": "ColorPicker" },
+        { "id": "font-picker", "title": "FontPicker" },
         { "id": "list-box", "title": "ListBox" },
         { "id": "form", "title": "Form" },
         { "id": "time-input", "title": "TimeInput" },

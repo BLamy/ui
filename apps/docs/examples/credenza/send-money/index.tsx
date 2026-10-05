@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Celebrate } from '@/components/ui/celebrate'
 import { Credenza } from '@/components/ui/credenza'
 import { ListRow } from '@/components/ui/list'
 import { Segmented } from '@/components/ui/segmented'
@@ -17,6 +18,49 @@ const amounts = [
   { id: '50', label: '$50' },
   { id: '120', label: '$120' },
 ]
+
+// Sending money is a rare moment, so it may celebrate. A beat after the view
+// lands, the check pops in and a burst plays behind it — once per arrival,
+// however often the view re-renders. Celebrate keeps only its ring under
+// reduced motion.
+function Sent({ amount, onDone }: { amount: string; onDone: () => void }) {
+  const [landed, setLanded] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setLanded(true), 300)
+    return () => clearTimeout(t)
+  }, [])
+  return (
+    <div style={{ padding: '36px 20px 24px', textAlign: 'center' }}>
+      <span className="relative isolate inline-grid">
+        <Celebrate fire={landed} spread={60} count={18} />
+        <span
+          className={
+            'grid size-[52px] place-items-center rounded-full bg-success ' +
+            'text-white transition-[scale,opacity] duration-spring-bouncy ' +
+            'ease-spring-bouncy motion-reduce:transition-none ' +
+            (landed ? 'scale-100' : 'scale-50 opacity-0')
+          }
+        >
+          <Icon name="check" size={28} sw={2.6} />
+        </span>
+      </span>
+      <div
+        role="status"
+        style={{ fontSize: 17, fontWeight: 650, marginTop: 10 }}
+      >
+        ${amount} sent to Maya
+      </div>
+      <Button
+        size="pill"
+        variant="secondary"
+        style={{ marginTop: 18 }}
+        onPress={onDone}
+      >
+        Done
+      </Button>
+    </div>
+  )
+}
 
 function SendMoneyTray() {
   const [step, setStep] = useState<Step | null>('amount')
@@ -43,32 +87,7 @@ function SendMoneyTray() {
         onClose={() => setStep(null)}
       >
         {step === 'sent' ? (
-          <div style={{ padding: '18px 20px 24px', textAlign: 'center' }}>
-            <span
-              style={{
-                display: 'inline-grid',
-                placeItems: 'center',
-                width: 52,
-                height: 52,
-                borderRadius: 52,
-                background: 'var(--success)',
-                color: '#fff',
-              }}
-            >
-              <Icon name="check" size={28} sw={2.6} />
-            </span>
-            <div style={{ fontSize: 17, fontWeight: 650, marginTop: 10 }}>
-              ${amount} sent to Maya
-            </div>
-            <Button
-              size="pill"
-              variant="secondary"
-              style={{ marginTop: 18 }}
-              onPress={() => setStep(null)}
-            >
-              Done
-            </Button>
-          </div>
+          <Sent amount={amount} onDone={() => setStep(null)} />
         ) : step === 'review' ? (
           <div style={{ padding: '6px 16px 16px' }}>
             <ListRow

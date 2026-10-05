@@ -1,0 +1,9 @@
+{
+  "title": "Sign-in gate · sign in, register, reset",
+  "status": "Live",
+  "variants": [
+    { "id": "dialog", "label": "Dialog" },
+    { "id": "tray", "label": "Tray" }
+  ],
+  "variantsWidth": 160
+}
