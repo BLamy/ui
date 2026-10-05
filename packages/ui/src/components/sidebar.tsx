@@ -121,24 +121,30 @@ export function Sidebar({ variant = 'docked', width = 228, railWidth = 52, child
     );
   const w = collapsed ? railWidth : c.open ? width : 0;
   const float = variant === 'float';
+  // Closing slides the panel out to the left: the box narrows while the panel, at full width, moves by its own width
+  // on the same spring, so its right edge stays on the content's left edge and the content closes the gap as fast as
+  // the panel leaves (opening runs it back). A rail only narrows, uncovering its labels from the left.
   return (
     <div
       data-slot="sidebar"
+      // Closed, its items are out of sight: keep them out of the tab order and the accessibility tree too.
+      inert={w === 0 || undefined}
       className={cn(
         'box-border shrink-0 overflow-hidden transition-[width] duration-spring-smooth ease-spring-smooth',
-        float ? 'bg-transparent p-2.5' : 'border-r border-border bg-sidebar p-0',
+        !float && 'border-r border-border bg-sidebar p-0',
       )}
       // Width follows open/collapsed state and the width props.
       style={{ width: w }}
     >
       <div
         className={cn(
-          'box-border h-full',
-          float && 'overflow-hidden rounded-card border border-border bg-sidebar font-sans',
+          'box-border h-full transition-transform duration-spring-smooth ease-spring-smooth',
+          float && 'p-2.5',
+          w === 0 && '-translate-x-full',
         )}
-        style={{ width: (collapsed ? railWidth : width) - (float ? 20 : 0) }}
+        style={{ width: collapsed ? railWidth : width }}
       >
-        {body}
+        {float ? <div className="box-border h-full overflow-hidden rounded-card border border-border bg-sidebar font-sans">{body}</div> : body}
       </div>
     </div>
   );
