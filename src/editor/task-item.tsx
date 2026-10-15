@@ -42,20 +42,30 @@ export const GbTaskItem = TaskItem.extend({
       dom.append(label, content)
       const root = createRoot(label)
       let previousKeys = new Set<string>()
+      let disposed = false
+      let scheduled = false
       const render = () => {
         const attrs = { ...this.options.HTMLAttributes, ...HTMLAttributes, ...getRenderedAttributes(node, editor.extensionManager.attributes), "data-type": "taskItem", "data-checked": String(node.attrs.checked), "data-task-state": getTaskState(node.attrs) }
         for (const key of previousKeys) if (!(key in attrs)) dom.removeAttribute(key)
         for (const [key, value] of Object.entries(attrs)) dom.setAttribute(key, String(value))
         previousKeys = new Set(Object.keys(attrs))
-        root.render(<TaskCheckbox state={getTaskState(node.attrs)} label={node.textContent || "Task"}
-          onChange={editor.isEditable ? (state) => {
-            if (!editor.isEditable) return
-            const position = typeof getPos === "function" ? getPos() : undefined
-            if (typeof position !== "number") return
-            const current = editor.state.doc.nodeAt(position)
-            if (!current) return
-            editor.view.dispatch(closeHistory(editor.state.tr).setNodeMarkup(position, undefined, { ...current.attrs, state, checked: state === "verified" }))
-          } : undefined} />)
+        if (scheduled) return
+        scheduled = true
+        // ProseMirror can create/update node views during React's render phase.
+        // Paint the independent checkbox root after that phase and coalesce updates.
+        queueMicrotask(() => {
+          scheduled = false
+          if (disposed) return
+          root.render(<TaskCheckbox state={getTaskState(node.attrs)} label={node.textContent || "Task"}
+            onChange={editor.isEditable ? (state) => {
+              if (!editor.isEditable) return
+              const position = typeof getPos === "function" ? getPos() : undefined
+              if (typeof position !== "number") return
+              const current = editor.state.doc.nodeAt(position)
+              if (!current) return
+              editor.view.dispatch(closeHistory(editor.state.tr).setNodeMarkup(position, undefined, { ...current.attrs, state, checked: state === "verified" }))
+            } : undefined} />)
+        })
       }
       render()
       let editable = editor.isEditable
@@ -69,7 +79,7 @@ export const GbTaskItem = TaskItem.extend({
           return event.target instanceof Node && label.contains(event.target)
         },
         ignoreMutation(mutation) { return mutation.type !== "selection" && !content.contains(mutation.target) },
-        destroy() { editor.off("update", onEditable); queueMicrotask(() => root.unmount()) },
+        destroy() { disposed = true; editor.off("update", onEditable); queueMicrotask(() => root.unmount()) },
       }
     }
   },
