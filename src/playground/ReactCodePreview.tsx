@@ -128,6 +128,14 @@ export function useAlmostNodeServer({ files, port = 4173, run, workspaceOptions,
           },
         })
 
+        // The iframe's virtual URL only works once the host page is controlled. Do not
+        // reload the host when a reader opens its first live example.
+        await workspace.container.serverBridge.ensureServiceWorkerReady({ reloadOnFirstControl: false })
+        if (cancelled) {
+          workspace.dispose()
+          return
+        }
+
         const result = await workspace.container.run(`vite --port ${port}`, {
           env: DETACHED_SERVER_ENV,
         })

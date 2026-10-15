@@ -742,6 +742,14 @@ Code highlighting follows the surrounding `color-scheme`: set `color-scheme: dar
 
 `ReactDemo` from `@brett_lamy/docstream/playground` boots an almost-node Vite server for self-contained projects. When the components already run on your page, pass `preview` instead: you keep the same frame, header, and collapsible code panel without a runtime.
 
+Runtime previews require the almost-node service worker at `/__sw__.js`. Add
+`almostnodePlugin()` from `@agent-wasm/core/vite` to a Vite development server;
+for a production host, serve `getServiceWorkerContent()` from
+`@agent-wasm/core/next` as that JavaScript asset. With a deployment subpath, pass
+`workspaceOptions={{ basePath: "/docs" }}` and serve `/docs/__sw__.js`.
+Docstream waits for the worker to control the page before opening the preview,
+without reloading the reader's document.
+
 ```tsx
 import { ReactDemo } from "@brett_lamy/docstream/playground"
 
