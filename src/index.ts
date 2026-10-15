@@ -2,6 +2,12 @@ export { GitbookEditor } from "./editor/Editor"
 export type { GitbookEditorProps, EditorAttachment } from "./editor/Editor"
 export { astToTiptap, tiptapToAst, serializeEditorMarkdown, markdownPasteContent } from "./editor/convert"
 export type { PMNode } from "./editor/convert"
+export { GbDocumentProperties, DocumentPropertiesEditor } from "./editor/document-properties"
+export { GbTaskItem } from "./editor/task-item"
+export { TaskCheckbox, TASK_STATE_ICONS } from "@brett_lamy/docstream/tasks"
+export { TASK_STATES } from "@brett_lamy/docstream/gitbook"
+export type { TaskState } from "@brett_lamy/docstream/gitbook"
+export type { DocumentPropertiesNode } from "@brett_lamy/docstream/gitbook"
 
 // Building blocks for composing a custom editor (e.g. with Yjs collaboration
 // or a bespoke slash menu) instead of the batteries-included GitbookEditor.

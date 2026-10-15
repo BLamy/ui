@@ -19,6 +19,7 @@ import {
   type ReferenceNode,
   type TableNode,
   type TextNode,
+  type TaskState,
 } from "@brett_lamy/docstream/gitbook"
 
 type SpelledMark = "bold" | "italic" | "strike" | "link"
@@ -219,7 +220,7 @@ function listItemToPM(item: ListItemNode, task: boolean): PMNode {
   return withLayout(
     {
       type: task ? "taskItem" : "listItem",
-      ...(task ? { attrs: { checked: !!item.checked } } : {}),
+      ...(task ? { attrs: { checked: !!item.checked, ...(item.state ? { state: item.state } : {}) } } : {}),
       content: item.children.map(blockToPM),
     },
     item,
@@ -404,7 +405,7 @@ function blockContentToPM(b: Block): PMNode {
 
 export function astToTiptap(doc: DocumentNode): PMNode {
   const content = doc.children.map(blockToPM)
-  return withLayout({ type: "doc", content: content.length ? content : [{ type: "paragraph" }] }, doc)
+  return withLayout({ type: "doc", ...(doc.properties ? { attrs: { properties: doc.properties } } : {}), content: content.length ? content : [{ type: "paragraph" }] }, doc)
 }
 
 // ---------- TipTap → AST ----------
@@ -675,6 +676,7 @@ function pmContentToBlock(n: PMNode): Block | null {
         items: (n.content ?? []).map((pmItem) => {
           const base: ListItemNode = { type: "listItem", children: pmToBlocks(pmItem.content) }
           if (task) base.checked = !!pmItem.attrs?.checked
+          if (task && pmItem.attrs?.state) base.state = pmItem.attrs.state as TaskState
           if (!base.children.length) base.children = [{ type: "paragraph", children: [] }]
           return item(pmItem, base)
         }),
@@ -768,7 +770,7 @@ function pmToBlocks(nodes: PMNode[] | undefined): Block[] {
 }
 
 export function tiptapToAst(doc: PMNode): DocumentNode {
-  return { type: "doc", children: pmToBlocks(doc.content), ...layoutOf(doc) }
+  return { type: "doc", children: pmToBlocks(doc.content), ...layoutOf(doc), ...(doc.attrs?.properties ? { properties: doc.attrs.properties as DocumentNode["properties"] } : {}) }
 }
 
 /** Attachment chips with no recorded syntax are Markdown images (they read, and diff, better). */

@@ -1,13 +1,15 @@
 import StarterKit from "@tiptap/starter-kit"
 import Code from "@tiptap/extension-code"
 import Placeholder from "@tiptap/extension-placeholder"
-import { TaskItem, TaskList } from "@tiptap/extension-list"
+import { TaskList } from "@tiptap/extension-list"
 import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table"
 import { Extension, Mark, getSchema, type AnyExtension } from "@tiptap/core"
 import type { Schema } from "@tiptap/pm/model"
 import { GbCodeBlock, gitbookNodes } from "./nodes"
 import { SlashMenu, createSlashMenu, type SlashItem } from "./slash-menu"
 import { createReferenceSuggestion, type ReferenceSource } from "./reference-menu"
+import { GbDocumentProperties } from "./document-properties"
+import { GbTaskItem } from "./task-item"
 
 // Carries GitBook's data-view (e.g. "cards") and the GFM column alignment through the editor untouched.
 export const GbTable = Table.extend({
@@ -232,7 +234,7 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
     GbCode,
     GbCodeBlock,
     TaskList,
-    TaskItem.configure({ nested: true }),
+    GbTaskItem.configure({ nested: true }),
     GbTable.configure({ resizable: false }),
     TableRow,
     TableHeader,
@@ -241,6 +243,7 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
     GbLinkInner,
     GbMarkSpelling,
     GbMarkdownLayout,
+    GbDocumentProperties,
     GbEscaped,
     ...gitbookNodes,
   ]

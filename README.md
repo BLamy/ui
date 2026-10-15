@@ -34,6 +34,20 @@ pnpm add @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tipta
 
 React and the TipTap packages (including `@tiptap/extension-code`) are peer dependencies. `@brett_lamy/docstream` is a runtime dependency (pinned to the same version as the editor) because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers. Nothing in the install runs a build script, and the editor never references Docstream's optional almost-node playground (`@agent-wasm/core`) — see `liveRenderer` below to opt in.
 
+### Document properties and task states (1.9)
+
+YAML frontmatter is part of the document model. The editor shows a compact, editable property sheet
+above the body; `documentProperties={false}` hides it and `documentProperties={{ defaultOpen: true }}`
+expands it. Property edits use the normal `onChange` and undo/redo history. Body edits preserve the
+original YAML, and controlled Markdown updates refresh both properties and body. Custom editors can
+use `GbDocumentProperties`, `DocumentPropertiesEditor` and `editor.commands.setDocumentProperties()`.
+
+Task checkboxes support `[ ]`, `[~]`, `[?]`, `[b]`, `[d]`, `[!]`, `[x]`, and `[-]` with shared Docstream
+icons and tooltips. Click any marked state to clear it, then click again to verify it. Right-click or
+Shift+F10 opens the state picker with every icon and label. Choices serialize to the original marker
+and participate in undo/redo. `GbTaskItem` and `editor.commands.setTaskState(state)` are available to
+custom editors built with `createGitbookExtensions`.
+
 ### Migrating to 1.5
 
 No breaking changes. Copying a selection with demo blocks now writes the docstream

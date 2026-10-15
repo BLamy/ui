@@ -1,3 +1,6 @@
+@import "@brett_lamy/docstream/properties/styles.css";
+@import "@brett_lamy/docstream/tasks/styles.css";
+
 /*
  * Editor chrome for the GitBook node views (.gb-* classes emitted by
  * nodes.tsx, Editor.tsx, and slash-menu.tsx).

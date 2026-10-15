@@ -47,10 +47,13 @@ import {
 import { createGitbookExtensions, type ReferenceSources } from "./extensions"
 import { EditorRuntimeProvider } from "./runtime"
 import type { SlashItem } from "./slash-menu"
+import { DocumentPropertiesEditor } from "./document-properties"
 
 export type { EditorAttachment } from "./attachments"
 
 export interface GitbookEditorProps {
+  /** Editable YAML frontmatter, shown as document properties above the body (default true). */
+  documentProperties?: boolean | { defaultOpen?: boolean }
   /** Markdown source. When provided, the editor stays in sync with it (controlled). */
   markdown?: string
   /** Called with serialized GitBook markdown on every edit. */
@@ -221,6 +224,7 @@ export function GitbookEditor({
   markdown,
   onChange,
   toolbar = true,
+  documentProperties = true,
   slashMenu = true,
   references = true,
   editable = true,
@@ -495,7 +499,12 @@ export function GitbookEditor({
     lastEmitted.current = markdown as string
     const doc = parseMarkdown(markdown as string)
     citationsRef.current = doc.citations
-    editor.commands.setContent(astToTiptap(doc), { emitUpdate: false })
+    const content = astToTiptap(doc)
+    editor.chain().setContent(content, { emitUpdate: false }).command(({ tr }) => {
+      tr.setDocAttribute("properties", doc.properties ?? null)
+      tr.setDocAttribute("md", content.attrs?.md ?? null)
+      return true
+    }).run()
     // Chips replaced by the host's own markdown aren't "removed" by the user.
     attachmentIds.current = collectAttachmentIds(editor.state.doc)
   }, [editor, controlled, markdown])
@@ -519,6 +528,7 @@ export function GitbookEditor({
 
   return (
     <div className={className ? `gb ${className}` : "gb"}>
+      {documentProperties ? <DocumentPropertiesEditor editor={editor} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
       {toolbar && <Toolbar editor={editor} />}
       <EditorRuntimeProvider value={runtime}>
         <DocstreamDemoVFSContext.Provider value={vfs}>
