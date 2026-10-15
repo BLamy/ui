@@ -35,6 +35,8 @@ export function GitbookStreamdown({
   demoDependencies,
   demoVFS,
   pageActions,
+  documentProperties,
+  onTaskStateChange,
 }: GitbookStreamdownProps) {
   const content = markdown ?? children ?? ""
   const gitbookDoc = useMemo(
@@ -59,6 +61,8 @@ export function GitbookStreamdown({
         demoDependencies={demoDependencies}
         demoVFS={demoVFS}
         pageActions={isStreaming ? false : pageActions}
+        documentProperties={documentProperties}
+        onTaskStateChange={onTaskStateChange}
       />
     </div>
   )

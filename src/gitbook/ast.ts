@@ -433,6 +433,8 @@ export interface ListItemNode extends ContainerSpacing {
   type: "listItem"
   children: Block[]
   checked?: boolean // present only in task lists
+  /** Extended task state. Omitted for ordinary `[ ]` / `[x]` items for backwards compatibility. */
+  state?: TaskState
   /** The item's marker as written (`*`, `3.`), when it isn't the one its list's pattern gives it. */
   marker?: string
   /** Spaces between the marker and the content (default 1). */
@@ -442,6 +444,8 @@ export interface ListItemNode extends ContainerSpacing {
   /** A checked task written `[X]`. */
   checkMark?: "X"
 }
+
+export type TaskState = "pending" | "in-progress" | "implemented" | "blocked" | "parked" | "refuted" | "verified" | "cancelled"
 
 export interface ListNode extends BlockSpacing {
   type: "list"
@@ -563,9 +567,21 @@ export type Block =
   | DefinitionNode
   | RawNode
 
+/** YAML frontmatter, kept separately from the document body. Comments, key order and quoting survive edits. */
+export interface DocumentPropertiesNode {
+  /** YAML between the delimiters, using the document's normalized line endings. */
+  yaml: string
+  /** Opening delimiter as written (including an optional BOM). Defaults to `---`. */
+  opening?: string
+  /** Closing delimiter as written (`---` or `...`). Defaults to `---`. */
+  closing?: string
+}
+
 export interface DocumentNode {
   type: "doc"
   children: Block[]
+  /** First-party document properties from YAML frontmatter. */
+  properties?: DocumentPropertiesNode
   /** Footnote citation definitions, in definition order. */
   citations?: CitationDef[]
   /** Blank lines before the trailing footnote definitions (default 1). */

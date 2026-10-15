@@ -120,6 +120,24 @@ export function Preview({ markdown }: { markdown: string }) {
 }
 ```
 
+## Document properties and task states
+
+YAML frontmatter is first-party document metadata (`doc.properties`), separate from the body.
+The renderer shows a compact, collapsed property sheet. Use `documentProperties={false}` to hide it
+or `documentProperties={{ defaultOpen: true }}` to expand it. Comments, key order, quoting and line
+endings survive body edits. `readDocumentProperties`, `setDocumentProperty` and
+`removeDocumentProperty` are also available from `@brett_lamy/docstream/gitbook`.
+`DocumentProperties` from `@brett_lamy/docstream/properties` accepts an optional `onChange`
+for an editable sheet with text, number, boolean and structured values.
+
+Task lists understand `[ ]` pending, `[~]` in progress, `[?]` implemented/evidence needed,
+`[b]` blocked, `[d]` parked/verification debt, `[!]` refuted, `[x]` verified and `[-]` cancelled.
+Each state has a distinct icon and state-name tooltip. With `onTaskStateChange={(item, state) => …}`,
+rendered checkboxes become interactive: update the item in your AST and re-render to persist it.
+A normal click clears any marked state, then checks the empty box as `[x]`; right-click or
+Shift+F10 opens the icon state picker. `TaskCheckbox` and `TASK_STATE_ICONS` are exported from
+`@brett_lamy/docstream/tasks`; `TASK_STATES`, `getTaskState` and `taskMarker` from `/gitbook`.
+
 ## Video and Replay QA embeds
 
 `embed` blocks accept direct `.mp4`, `.webm`, and `.ogg` assets, YouTube URLs,

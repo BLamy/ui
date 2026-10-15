@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "publishConfig": {
     "access": "public"
@@ -38,6 +38,20 @@
       "import": "./dist/gitbook/index.js",
       "default": "./dist/gitbook/index.js"
     },
+    "./properties": {
+      "source": "./src/docs/DocumentProperties.tsx",
+      "types": "./dist/docs/DocumentProperties.d.ts",
+      "import": "./dist/docs/DocumentProperties.js",
+      "default": "./dist/docs/DocumentProperties.js"
+    },
+    "./properties/styles.css": "./dist/docs/properties.css",
+    "./tasks": {
+      "source": "./src/docs/TaskCheckbox.tsx",
+      "types": "./dist/docs/TaskCheckbox.d.ts",
+      "import": "./dist/docs/TaskCheckbox.js",
+      "default": "./dist/docs/TaskCheckbox.js"
+    },
+    "./tasks/styles.css": "./dist/docs/tasks.css",
     "./streamdown": {
       "source": "./src/streamdown.tsx",
       "types": "./dist/streamdown.d.ts",

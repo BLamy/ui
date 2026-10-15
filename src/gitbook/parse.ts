@@ -36,6 +36,7 @@ import type {
 import { TAG_ATTRS, parseAttrs } from "./attrs"
 import { containerTags, defaultDelimiterRow, definitionLine, delimiterAlign, fenceInfo, figureMarkdown, serializeBlocks, type TaggedNode } from "./serialize"
 import { footnoteDefinitions, normalizeLabel, parseInline, plainText, refDefinitions } from "./inline"
+import { taskStateFromMarker } from "./tasks"
 
 // Minimal HTML-inline → markdown-inline bridge for HTML table cells.
 function htmlToInlineMd(html: string): string {
@@ -256,7 +257,15 @@ export function footnoteLine(id: string, url: string, label?: string): string {
 export function parseMarkdown(src: string): DocumentNode {
   // Windows line endings throughout come back as such; mixed ones stay in the lines as written.
   const crlf = src.includes("\r\n") && !/(^|[^\r])\n/.test(src)
-  const lines = src.split(crlf || !src.includes("\r\n") ? /\r?\n/ : "\n")
+  let lines = src.split(crlf || !src.includes("\r\n") ? /\r?\n/ : "\n")
+  let properties: DocumentNode["properties"]
+  if (/^\uFEFF?---[ \t]*$/.test(lines[0])) {
+    const closing = lines.findIndex((line, index) => index > 0 && /^(?:---|\.\.\.)[ \t]*$/.test(line))
+    if (closing > 0) {
+      properties = { yaml: lines.slice(1, closing).join("\n"), opening: lines[0], closing: lines[closing] }
+      lines = lines.slice(closing + 1)
+    }
+  }
   refDefinitions.clear()
   footnoteDefinitions.clear()
   const fences = fenceTracker()
@@ -289,6 +298,7 @@ export function parseMarkdown(src: string): DocumentNode {
   const trailing = group <= last
   const { blocks, end } = parseBody(trailing ? lines.slice(0, group) : lines)
   const doc: DocumentNode = { type: "doc", children: blocks }
+  if (properties) doc.properties = properties
   if (footnoteDefinitions.size) {
     doc.citations = [...footnoteDefinitions.entries()].map(([id, d]) => ({ id, ...d }))
   }
@@ -1117,10 +1127,10 @@ function parseList(lines: string[], start: number): ParsedList {
     let content = m[4]
     let checked: boolean | undefined
     let checkMark: string | undefined
-    const taskMatch = content.match(/^\[([ xX])\]\s+(.*)$/)
+    const taskMatch = content.match(/^\[([ xX~?bd!\-])\]\s+(.*)$/)
     if (taskMatch) {
       list.task = true
-      checked = taskMatch[1] !== " "
+      checked = /[xX]/.test(taskMatch[1])
       checkMark = taskMatch[1]
       content = taskMatch[2]
     }
@@ -1158,6 +1168,8 @@ function parseList(lines: string[], start: number): ParsedList {
     const para: Block = { type: "paragraph", children: parseInline(content) }
     const children: Block[] = body.length ? [para, ...parseBlocks(body)] : [para]
     const item: ListItemNode = checked === undefined ? { type: "listItem", children } : { type: "listItem", children, checked }
+    const state = checkMark === undefined ? undefined : taskStateFromMarker(checkMark)
+    if (state && state !== "pending" && state !== "verified") item.state = state
     const expected = ordered ? `${(list.start ?? 1) + items.length}${list.delimiter ?? "."}` : (list.bullet ?? "-")
     if (m[2] !== expected) item.marker = m[2]
     if (m[3].length !== 1) item.pad = m[3].length

@@ -35,7 +35,7 @@ import { CollapsibleCode } from "../docs/CollapsibleCode"
 import { HighlightedCode } from "../docs/HighlightedCode"
 import { CopyButton } from "../docs/copy"
 import { PillTabs, Segmented, rovingKeyDown } from "../docs/controls"
-import { useDemoResolver, useDemoRuntime } from "./context"
+import { DocstreamDemoContext, useDemoResolver, useDemoRuntime } from "./context"
 import { createDocstreamClipboard, type DemoSourceSnapshot, type DocstreamClipboard } from "./clipboard"
 import { CopyDemoButton } from "./copy-demo"
 import { PathBreadcrumb } from "./PathBreadcrumb"
@@ -1046,7 +1046,9 @@ export function DemoFullscreen({ src, resolver: override, variant, className, st
   if (!resolver) return <DemoError message={`No demo resolver for ${src}`} />
   return (
     <div className={className ? `docs-demo-fullscreen ${className}` : "docs-demo-fullscreen"} style={style} data-demo-src={src}>
-      <DemoCanvas src={src} preview={{ kind: "component", component }} variant={chosen} bleed={metaValue?.bleed} look={metaValue} />
+      <DocstreamDemoContext.Provider value={resolver}>
+        <DemoCanvas src={src} preview={{ kind: "component", component }} variant={chosen} bleed={metaValue?.bleed} look={metaValue} />
+      </DocstreamDemoContext.Provider>
     </div>
   )
 }

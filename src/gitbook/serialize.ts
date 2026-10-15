@@ -27,6 +27,7 @@ import { attr } from "./attrs"
 import { normalizeLabel, serializeInline, serializeReference, withDocumentDefinitions } from "./inline"
 import { plainText } from "./inline"
 import { parseBlocks } from "./parse"
+import { taskMarker } from "./tasks"
 
 /** A `{% tag %}…{% endtag %}` container, block or item. */
 export type TaggedNode = HintNode | TabsNode | TabNode | StepperNode | StepNode | ColumnsNode | ColumnNode | UpdatesNode | UpdateNode
@@ -114,7 +115,9 @@ export function serializeMarkdown(doc: DocumentNode): string {
   documentCitations = citations
   try {
     return withDocumentDefinitions(defs, () => {
-      let out = doc.children.map((b, k) => `${blankLines(b, k ? 1 : 0)}${serializeBlock(b)}\n`).join("")
+      const properties = doc.properties
+      let out = properties ? `${properties.opening ?? "---"}\n${properties.yaml}${properties.yaml ? "\n" : ""}${properties.closing ?? "---"}\n` : ""
+      out += doc.children.map((b, k) => `${blankLines(b, k ? 1 : 0)}${serializeBlock(b)}\n`).join("")
       // Footnote definitions not placed in the document end it, as a group.
       const trailing = (doc.citations ?? []).filter((c) => !placed.has(c.id))
       if (trailing.length) {
@@ -537,7 +540,7 @@ function inlineToHtml(nodes: Inline[]): string {
 
 function serializeListItem(item: ListItemNode, list: ListNode, idx: number): string {
   const marker = item.marker ?? (list.ordered ? `${(list.start ?? 1) + idx}${list.delimiter ?? "."}` : (list.bullet ?? "-"))
-  const check = list.task ? `[${item.checked ? (item.checkMark ?? "x") : " "}] ` : ""
+  const check = list.task ? `[${taskMarker(item)}] ` : ""
   const [first, ...rest] = item.children
   const firstText = first?.type === "paragraph" ? serializeInline(first.children) : first ? serializeBlock(first) : ""
   const restText = rest.length ? "\n" + indent(serializeBlocks(rest), " ".repeat(item.indent ?? 2)) : ""

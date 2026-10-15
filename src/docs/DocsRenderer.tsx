@@ -31,6 +31,10 @@ import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
 import { HighlightedCode } from "./HighlightedCode"
 import { CitationSources, InlineReference } from "./reference"
+import { DocumentProperties } from "./DocumentProperties"
+import { TaskCheckbox, TaskStateChangeContext, type TaskStateChangeHandler } from "./TaskCheckbox"
+import { getTaskState } from "../gitbook/tasks"
+import { plainText } from "../gitbook/inline"
 
 type MathRenderer = (formula: string) => string
 let mathRenderer: MathRenderer | null = null
@@ -312,6 +316,7 @@ function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, {
 }
 
 function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & Renderers) {
+  const onTaskStateChange = useContext(TaskStateChangeContext)
   switch (block.type) {
     case "paragraph":
       return (
@@ -476,8 +481,9 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       return (
         <Tag className={block.task ? "docs-tasklist" : undefined}>
           {block.items.map((item, i) => (
-            <li key={i}>
-              {block.task && <input type="checkbox" checked={!!item.checked} readOnly />}
+            <li key={i} data-task-state={block.task ? getTaskState(item) : undefined}>
+              {block.task && <TaskCheckbox state={getTaskState(item)} label={item.children.filter((b) => b.type === "paragraph").map((b) => b.type === "paragraph" ? plainText(b.children) : "").join(" ") || "Task"}
+                onChange={onTaskStateChange ? (state) => onTaskStateChange(item, state) : undefined} />}
               <Blocks blocks={item.children} inline liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
             </li>
           ))}
@@ -582,6 +588,10 @@ function Blocks({ blocks, inline, liveRenderer, sourceRenderer }: { blocks: Bloc
 }
 
 export interface DocRenderOptions {
+  /** Make rendered task checkboxes interactive. Update the supplied item and re-render to persist a choice. */
+  onTaskStateChange?: TaskStateChangeHandler
+  /** Show the document's frontmatter as a property sheet (default true). */
+  documentProperties?: boolean | { defaultOpen?: boolean }
   /** Resolves `{% demo %}` blocks. Provided through context, so nested renderers inherit it. */
   demoResolver?: DemoResolver
   /**
@@ -605,8 +615,9 @@ export interface DocRenderOptions {
   pageActions?: boolean | DocPageActionsOptions
 }
 
-function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS }: DocRenderOptions, children: ReactNode) {
+function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange }: DocRenderOptions, children: ReactNode) {
   let out = children
+  if (onTaskStateChange) out = <TaskStateChangeContext.Provider value={onTaskStateChange}>{out}</TaskStateChangeContext.Provider>
   if (demoVFS) out = <DocstreamDemoVFSContext.Provider value={demoVFS}>{out}</DocstreamDemoVFSContext.Provider>
   if (demoRuntime || demoDependencies) {
     out = <DemoRuntimeProvider runtime={demoRuntime} dependencies={demoDependencies}>{out}</DemoRuntimeProvider>
@@ -650,12 +661,15 @@ export function MarkdownContent({
   demoVFS,
   pageActions,
   className,
+  documentProperties = true,
+  onTaskStateChange,
 }: { markdown: string; className?: string } & Renderers & DocRenderOptions) {
   const doc = useMemo(() => parseMarkdown(markdown), [markdown])
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange },
     <div data-docstream="" className={className}>
       <PageActionsBar markdown={markdown} options={pageActions} />
+      {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       <CitationSources citations={doc.citations} />
     </div>,
@@ -672,11 +686,14 @@ export function DocsRenderer({
   demoVFS,
   pageActions,
   markdown,
+  documentProperties = true,
+  onTaskStateChange,
 }: { doc: DocumentNode; /** Source for page actions; defaults to `serializeMarkdown(doc)`. */ markdown?: string } & Renderers & DocRenderOptions) {
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange },
     <article className="docs-article">
       <PageActionsBar markdown={markdown ?? (() => serializeMarkdown(doc))} options={pageActions} />
+      {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       <CitationSources citations={doc.citations} />
     </article>,
