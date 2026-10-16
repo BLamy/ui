@@ -450,6 +450,200 @@
   border-radius: 12px;
 }
 
+/* StlViewer: a WebGL preview of an .stl model ({% embed url="part.stl" %}). The model takes
+   its color from `color`, so it follows the theme's primary. */
+.docstream-stl,
+.docstream-strudel {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.docstream-stl__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  overflow: hidden;
+  color: var(--gb-primary, #6366f1);
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--gb-muted, #f4f4f5) 40%, transparent), transparent 70%),
+    var(--gb-muted, #f4f4f5);
+}
+
+.docstream-stl__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.docstream-stl__canvas:active {
+  cursor: grabbing;
+}
+
+.docstream-stl__canvas:focus-visible {
+  outline: 2px solid var(--gb-primary, #6366f1);
+  outline-offset: -2px;
+  border-radius: 12px;
+}
+
+.docstream-stl__status {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--gb-muted-foreground);
+}
+
+.docstream-stl__reset {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 10px;
+  border: 1px solid var(--gb-border);
+  border-radius: 999px;
+  background: var(--gb-panel, #fff);
+  color: var(--gb-panel-foreground, inherit);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.docstream-stl__reset:hover {
+  opacity: 1;
+  background: var(--gb-hover, var(--gb-accent));
+}
+
+.docstream-stl__caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  font-size: 12px;
+  color: var(--gb-muted-foreground);
+}
+
+.docstream-stl__caption a {
+  color: inherit;
+  font-weight: 500;
+}
+
+/* StrudelPlayer: a Strudel pattern as an audio player (```strudel fences, .strudel embeds). */
+.docstream-strudel__bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  background: var(--gb-panel, #fff);
+  color: var(--gb-panel-foreground, inherit);
+}
+
+.docstream-strudel__play {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gb-primary, #6366f1);
+  color: var(--gb-primary-foreground, #fff);
+  cursor: pointer;
+}
+
+.docstream-strudel__play:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.docstream-strudel__play:focus-visible,
+.docstream-strudel__toggle:focus-visible {
+  outline: 2px solid var(--gb-primary, #6366f1);
+  outline-offset: 2px;
+}
+
+.docstream-strudel__spin {
+  animation: docstream-strudel-spin 0.9s linear infinite;
+}
+
+@keyframes docstream-strudel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.docstream-strudel__meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 0 1 auto;
+  max-width: 40%;
+}
+
+.docstream-strudel__title {
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docstream-strudel__sub {
+  font-size: 12px;
+  color: var(--gb-muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.docstream-strudel__roll {
+  flex: 1 1 auto;
+  min-width: 60px;
+  height: 40px;
+  color: var(--gb-primary, #6366f1);
+}
+
+.docstream-strudel__toggle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--gb-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gb-muted-foreground);
+  cursor: pointer;
+}
+
+.docstream-strudel__toggle[aria-expanded="true"],
+.docstream-strudel__toggle:hover {
+  background: var(--gb-hover, var(--gb-accent));
+  color: inherit;
+}
+
+.docstream-strudel__error {
+  font-size: 12px;
+  color: var(--gb-danger, #dc2626);
+  white-space: pre-wrap;
+}
+
+.docstream-strudel__code {
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  background: var(--gb-code-bg);
+  color: var(--gb-code-fg);
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-size: 13px;
+}
+
 .docs-content-ref {
   display: flex !important;
   align-items: center;

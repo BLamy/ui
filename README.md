@@ -198,6 +198,34 @@ const stage = useRef<ReplayStageHandle>(null)
 // markers: getReplayMarkers(events) → clicks, console errors, failed requests, navigations, custom events
 ```
 
+## 3D models and Strudel music
+
+An `embed` whose URL ends in `.stl` renders an interactive WebGL viewer (binary or ASCII
+STL, no dependencies): drag or arrow keys to orbit, pinch / ⌘-scroll or `+`/`−` to zoom,
+double-click or `0` to reset. Relative paths resolve like images.
+
+```md
+{% embed url="models/bracket.stl" title="Mounting bracket" %}
+```
+
+A `strudel` code fence, or an `embed` of a `.strudel` file, renders an audio player for a
+[Strudel](https://strudel.cc) pattern: play/stop, a scrolling piano roll and a code toggle.
+Strudel runs in the page (`@strudel/web`, AGPL-3.0, loaded on the first play); one pattern
+plays at a time. The Tidal dirt-samples load on first play, so `s("bd sd")` works as on strudel.cc.
+
+````md
+{% code title="Night drive" %}
+```strudel
+stack(s("bd*2 [~ bd] sd ~"), note("<c3 a2 f2 g2>").s("sawtooth").lpf(800))
+```
+{% endcode %}
+
+{% embed url="music/loop.strudel" title="Loop" %}
+````
+
+Both are components too: `StlViewer` (`@brett_lamy/docstream/stl`) and `StrudelPlayer`
+(`@brett_lamy/docstream/strudel`, `code` or `src`).
+
 ## GitBook Syntax
 
 The parser supports normal Markdown plus GitBook-style block tags.
@@ -686,6 +714,8 @@ You can also resolve paths yourself with `resolveAsset`.
 - `MarkdownContent`: Parses and renders a markdown string.
 - `ReplayPreview` / `ReplayEmbed`: A session-replay player for rrweb `events`, or an embed of public Loop QA pages / CORS-enabled event data via `source`.
 - `VideoEmbed`: Renders direct video assets or hosted video players.
+- `StlViewer`: Interactive WebGL preview of an `.stl` model (`parseStl`, `isStlUrl` alongside).
+- `StrudelPlayer`: Audio player for a Strudel pattern (`code`) or `.strudel` file (`src`).
 - `OpenApiOperation`: Renders a parsed OpenAPI operation block.
 - `SourcePreview`: Imports and renders a mounted component or CSF story export.
 - `createViteSourceClient`: Reads, writes, and imports files exposed by the Vite plugin.

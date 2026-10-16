@@ -27,6 +27,8 @@ import { useSyncedTab } from "./tabs-sync"
 import { ReplayPreview } from "../replay/ReplayPreview"
 import { isReplayQaUrl } from "../replay/url"
 import { VideoEmbed } from "../video"
+import { StlViewer, isStlUrl } from "../stl"
+import { StrudelPlayer, isStrudelFile, isStrudelLanguage } from "../strudel"
 import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
 import { HighlightedCode } from "./HighlightedCode"
@@ -153,7 +155,7 @@ function codeOnlyTabs(block: Extract<Block, { type: "tabs" }>): CodeBlockNode[] 
   const codes: CodeBlockNode[] = []
   for (const tab of block.tabs) {
     const only = tab.children.length === 1 ? tab.children[0] : null
-    if (!only || only.type !== "code" || only.live || only.language === "mermaid") return null
+    if (!only || only.type !== "code" || only.live || only.language === "mermaid" || isStrudelLanguage(only.language)) return null
     codes.push(only)
   }
   return codes
@@ -342,6 +344,9 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
           />
         )
       }
+      if (isStrudelLanguage(block.language)) {
+        return <StrudelPlayer code={block.code} {...(block.title ? { title: block.title } : {})} />
+      }
       if (block.live && isReactLanguage(block.language) && liveRenderer) {
         const entry = block.entry ?? "/src/main.jsx"
         return liveRenderer({
@@ -418,6 +423,12 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
     case "embed": {
       if (isReplayQaUrl(block.url)) {
         return <ReplayPreview source={block.url} title="Replay preview" />
+      }
+      if (isStlUrl(block.url)) {
+        return <StlViewer src={resolveAsset(block.url)} {...(block.title ? { title: block.title } : {})} />
+      }
+      if (isStrudelFile(block.url)) {
+        return <StrudelPlayer src={resolveAsset(block.url)} {...(block.title ? { title: block.title } : {})} />
       }
       const src = embedSrc(block.url)
       return src || isDirectVideo(block.url) ? (
