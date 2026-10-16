@@ -1,0 +1,28 @@
+{
+  "name": "strudel-rack",
+  "title": "StrudelRack",
+  "description": "Studio hardware generated from Strudel code: a rack of devices, one per track, with mute/solo pads, a channel fader, synth and key LCDs, TR-style step keys for the mini-notation and LED-ring knobs for each effect. Every control edits the code in place. Knob, Fader and StepGrid are exported on their own.",
+  "page": "strudel-rack",
+  "exports": [
+    "StrudelRack",
+    "RackGrid",
+    "Knob",
+    "Fader",
+    "StepGrid",
+    "STRUDEL_PARAMS",
+    "trackName"
+  ],
+  "imports": [
+    "StrudelRack",
+    "Knob",
+    "Fader",
+    "StepGrid"
+  ],
+  "types": [
+    "StrudelRackProps",
+    "ControlProps",
+    "StepGridProps",
+    "RackGridProps",
+    "GridLayout"
+  ]
+}

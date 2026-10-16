@@ -70,6 +70,12 @@ For folder-backed example previews in your own host, serve the almost-node servi
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-music.json{% endcommand %}
 
+{% demo src="blocks/strudel-studio" layout="multi" %}
+
+Strudel runs in the page (`@strudel/web`, AGPL-3.0) and loads on the first press of Play. The rack's layout is remembered per song.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/strudel-studio.json{% endcommand %}
+
 {% demo src="blocks/loop-qa" layout="multi" %}
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/loop-qa.json{% endcommand %}

@@ -2,7 +2,7 @@
    repeat. Each song is a Strudel pattern (songs.ts) that loops while the song's clock runs. Sound starts only after
    a press (browsers block audio until then), so stories and screenshots that start "playing" stay silent. */
 import { useEffect, useRef, useState } from 'react';
-import { playStrudel, stopStrudel } from '@brett_lamy/docstream/strudel';
+import { getStrudelSnapshot, playStrudel, stopStrudel, subscribeStrudel } from '@brett_lamy/docstream/strudel';
 import { albumSongs, ALBUM, type Song } from './data';
 import { songCode } from './songs';
 
@@ -43,6 +43,11 @@ export function usePlayer(initial?: { queue: Song[]; index: number; position?: n
     return () => clearTimeout(id);
   }, [playing, current, volume]);
   useEffect(() => () => void stopStrudel(OWNER), []);
+  // Another Strudel player on the page took over the audio: pause.
+  useEffect(() => subscribeStrudel(() => {
+    const { owner, status } = getStrudelSnapshot();
+    if (armed.current && owner !== OWNER && status !== 'idle') setPlaying(false);
+  }), []);
 
   // At the end of a song: play it again (repeat one) or move on.
   useEffect(() => {

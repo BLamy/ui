@@ -1,0 +1,8 @@
+{
+  "name": "strudel-studio",
+  "title": "Strudel Studio",
+  "description": "A live-coding music studio: write Strudel and play it on skeuomorphic hardware generated from the code's syntax tree — a rack of modules with LED-ring knobs, channel faders, backlit mute/solo pads and TR-style step keys on a masonry grid you drag and resize. Every control rewrites the code while it plays; a syntax-tree tab shows the parsed song. Four starter songs.",
+  "categories": ["application", "media", "audio"],
+  "dependencies": ["@brett_lamy/docstream"],
+  "files": ["page.tsx", "syntax-tree.tsx", "songs.ts"]
+}

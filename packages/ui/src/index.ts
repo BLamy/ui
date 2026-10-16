@@ -382,6 +382,21 @@ export {
 export type {
   ReplayPreviewHandle, ReplayPreviewProps, ReplayEvent, ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack,
 } from './components/replay-preview';
+// The Strudel player, rack and syntax tree live in docstream; re-exported here (see components/strudel-*.tsx)
+export {
+  StrudelPlayer, DEFAULT_SAMPLES, playStrudel, stopStrudel, updateStrudel, subscribeStrudel, getStrudelSnapshot, strudelNow,
+} from './components/strudel-player';
+export type { StrudelPlayerProps, StrudelPattern, StrudelHap, StrudelSnapshot } from './components/strudel-player';
+export { StrudelRack, RackGrid, StepGrid, Knob, Fader, STRUDEL_PARAMS, trackName } from './components/strudel-rack';
+export type { StrudelRackProps, RackGridProps, GridItem, GridLayout, StepGridProps, ControlProps } from './components/strudel-rack';
+export {
+  parseStrudel, parseMini, miniAtoms, miniLayers, chainCalls, findCall, StrudelSyntaxError, MiniSyntaxError,
+  applyEdits, formatNumber, setArg, setMethod, removeMethod, setTempo, setMiniAtom, setMiniSource, mixCode, isAudible,
+} from './components/strudel-syntax';
+export type {
+  StrudelSong, StrudelTrack, StrudelChain, StrudelCall, StrudelArg, StrudelTempo, StrudelTrackKind, StrudelMix, CodeEdit,
+  MiniGroup, MiniSequence, MiniLayers, MiniStep, MiniSlice, MiniAtom, MiniOp, MiniNode, MiniSubcycle, MiniAlternation, MiniPolymeter,
+} from './components/strudel-syntax';
 export { NowPlayingBars } from './components/now-playing-bars';
 export type { NowPlayingBarsProps } from './components/now-playing-bars';
 export { MorphGroup, Morph, MorphPresence, useMorphTransition } from './components/morph';

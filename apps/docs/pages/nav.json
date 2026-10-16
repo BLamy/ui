@@ -165,6 +165,14 @@
       ]
     },
     {
+      "section": "Audio",
+      "pages": [
+        { "id": "strudel-player", "title": "StrudelPlayer" },
+        { "id": "strudel-rack", "title": "StrudelRack" },
+        { "id": "strudel-syntax", "title": "Strudel syntax tree" }
+      ]
+    },
+    {
       "section": "Storage and security",
       "pages": [
         { "id": "passkey-vault", "title": "Passkey vault" },
