@@ -600,7 +600,8 @@
 
 .docstream-strudel__sub {
   font-size: 12px;
-  color: var(--gb-muted-foreground, var(--muted-foreground, #71717a));
+  /* Mixed from the panel's own pair, so it stays legible (≥ 4.5:1) whatever the host's muted token is. */
+  color: color-mix(in srgb, var(--gb-panel-foreground, var(--card-foreground, #18181b)) 68%, var(--gb-panel, var(--card, #fff)));
   font-variant-numeric: tabular-nums;
 }
 
