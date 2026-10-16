@@ -246,7 +246,11 @@ setMethod(code, song.tracks[1].chain, "room", formatNumber(0.5)) // exact edit, 
 mixCode(song, { solo: new Set([0]) })                              // the code with other tracks silenced
 ```
 
-`StrudelRack`, `StepGrid`, `Knob` and `Fader` are exported for custom studios. The parser
+The master strip's **Rack | Grid** switch puts the modules on a masonry grid: drag a module's
+title to move it, drag its corner to resize it (arrow keys work on both handles).
+`<StrudelRack layout="grid" persistKey="my-song" />` starts there and remembers the arrangement.
+
+`StrudelRack`, `RackGrid`, `StepGrid`, `Knob` and `Fader` are exported for custom studios. The parser
 (acorn) loads only when a rack opens.
 
 ## GitBook Syntax

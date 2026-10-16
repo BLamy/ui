@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "publishConfig": {
     "access": "public"

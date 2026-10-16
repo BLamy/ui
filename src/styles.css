@@ -1104,6 +1104,116 @@
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 3px 5px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(0 0 0 / 0.6);
 }
 
+.strudel-rack__mode {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 5px;
+  background: #0a0b0d;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.9), 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+.strudel-rack__mode button {
+  padding: 3px 9px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #8b9099;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.strudel-rack__mode button[aria-checked="true"] {
+  background: linear-gradient(180deg, #4a4e56, #2b2e34);
+  color: var(--strudel-accent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--strudel-accent) 60%, transparent);
+}
+
+/* Grid mode: a Eurorack-style case — rails behind, modules dropped in a masonry grid. */
+.strudel-rack[data-mode="grid"] {
+  padding-block: 14px;
+}
+
+.strudel-grid {
+  display: grid;
+  grid-auto-flow: row dense;
+}
+
+.strudel-grid__item {
+  position: relative;
+  min-width: 0;
+  transition: transform 0s;
+}
+
+.strudel-grid__item[data-dragging] {
+  z-index: 5;
+  filter: drop-shadow(0 18px 22px rgb(0 0 0 / 0.6));
+  cursor: grabbing;
+}
+
+.strudel-grid__content {
+  display: flex;
+  flex-direction: column;
+}
+
+.strudel-grid__content > * {
+  flex: 1;
+}
+
+.strudel-grid__content > .strudel-rack__master {
+  flex-wrap: wrap;
+}
+
+/* The grip: an invisible handle over the module's title (left of its pads). */
+.strudel-grid__grip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% - 84px);
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px 0 0 0;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.strudel-grid__item[data-grid-key="master"] .strudel-grid__grip {
+  width: 140px;
+  height: 100%;
+}
+
+.strudel-grid__grip:focus-visible,
+.strudel-grid__corner:focus-visible {
+  outline: 2px solid var(--strudel-accent);
+  outline-offset: -2px;
+}
+
+/* The corner: three engraved ribs. */
+.strudel-grid__corner {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 0 0 6px 0;
+  background: linear-gradient(135deg, transparent 0 45%, #7d828b 45% 52%, transparent 52% 62%, #7d828b 62% 69%, transparent 69% 79%, #7d828b 79% 86%, transparent 86%);
+  cursor: nwse-resize;
+  touch-action: none;
+  opacity: 0.7;
+}
+
+.strudel-grid__item:hover .strudel-grid__corner {
+  opacity: 1;
+}
+
 /* Steps: TR-style keys that light up. */
 .strudel-steps {
   display: flex;

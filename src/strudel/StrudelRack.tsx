@@ -9,6 +9,7 @@ import { findCall, parseStrudel, StrudelSyntaxError, type StrudelArg, type Strud
 import { formatNumber, isAudible, mixCode, removeMethod, setMethod, setMiniAtom, setMiniSource, setTempo, type StrudelMix } from "./ast/edit"
 import { Fader, Knob, defaultFormat } from "./controls"
 import { StepGrid } from "./StepGrid"
+import { RackGrid, type GridLayout } from "./RackGrid"
 
 export interface StrudelRackProps {
   code: string
@@ -16,6 +17,24 @@ export interface StrudelRackProps {
   /** The code to play for the current mute/solo mix (the written code with silenced tracks). */
   onPlayableChange?: (code: string) => void
   className?: string
+  /** "rack": modules stacked full width. "grid": a masonry grid you drag and resize. Defaults to "rack". */
+  layout?: "rack" | "grid"
+  /** Remember the layout (mode, order and sizes) in localStorage under this key. */
+  persistKey?: string
+}
+
+interface Saved {
+  mode: "rack" | "grid"
+  grid: GridLayout
+}
+
+function load(key: string | undefined): Partial<Saved> {
+  if (!key) return {}
+  try {
+    return JSON.parse(localStorage.getItem(`strudel-rack:${key}`) ?? "{}") as Partial<Saved>
+  } catch {
+    return {}
+  }
 }
 
 interface Param {
@@ -230,7 +249,18 @@ function Device({
 }
 
 /** Equipment generated from Strudel code. Controlled: `code` in, edited code out through `onChange`. */
-export function StrudelRack({ code, onChange, onPlayableChange, className }: StrudelRackProps) {
+export function StrudelRack({ code, onChange, onPlayableChange, className, layout = "rack", persistKey }: StrudelRackProps) {
+  const [saved] = useState(() => load(persistKey))
+  const [mode, setMode] = useState<"rack" | "grid">(saved.mode ?? layout)
+  const [grid, setGrid] = useState<GridLayout>(saved.grid ?? { order: [], sizes: {} })
+  useEffect(() => {
+    if (!persistKey) return
+    try {
+      localStorage.setItem(`strudel-rack:${persistKey}`, JSON.stringify({ mode, grid } satisfies Saved))
+    } catch {
+      // Storage unavailable (private mode): the layout just isn't remembered.
+    }
+  }, [persistKey, mode, grid])
   const parsed = useMemo((): { song: StrudelSong } | { error: string } => {
     try {
       return { song: parseStrudel(code) }
@@ -266,8 +296,7 @@ export function StrudelRack({ code, onChange, onPlayableChange, className }: Str
   const master = song.masterChain
   const postgain = master ? firstNumber(findCall(master, "postgain")) : null
 
-  return (
-    <div className={`strudel-rack ${className ?? ""}`.trim()}>
+  const masterStrip = (
       <div className="strudel-rack__master" role="group" aria-label="Master">
         <span className="strudel-rack__title">
           Master
@@ -303,18 +332,43 @@ export function StrudelRack({ code, onChange, onPlayableChange, className }: Str
           {song.tracks.length} track{song.tracks.length === 1 ? "" : "s"}
           {song.layout === "stack" ? " · stack" : song.layout === "labels" ? " · $:" : ""}
         </span>
+        <div className="strudel-rack__mode" role="radiogroup" aria-label="Layout">
+          {(["rack", "grid"] as const).map((m) => (
+            <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => setMode(m)}>
+              {m}
+            </button>
+          ))}
+        </div>
       </div>
+  )
+  const devices = song.tracks.map((t) => ({
+    key: `track-${t.index}`,
+    label: trackName(t),
+    span: 6,
+    node: (
+      <Device
+        song={song}
+        track={t}
+        mix={mix}
+        onChange={onChange}
+        onMix={(kind) => (kind === "mute" ? setMuted(toggle(muted, t.index)) : setSolo(toggle(solo, t.index)))}
+      />
+    ),
+  }))
+
+  return (
+    <div className={`strudel-rack ${className ?? ""}`.trim()} data-mode={mode}>
+      {mode === "grid" ? (
+        <RackGrid items={[{ key: "master", label: "Master", span: 12, node: masterStrip }, ...devices]} layout={grid} onLayoutChange={setGrid} />
+      ) : (
+        <>
+          {masterStrip}
+          {devices.map((d) => (
+            <div key={d.key}>{d.node}</div>
+          ))}
+        </>
+      )}
       {song.tracks.length === 0 && <p className="strudel-rack__error">No pattern found.</p>}
-      {song.tracks.map((t) => (
-        <Device
-          key={t.index}
-          song={song}
-          track={t}
-          mix={mix}
-          onChange={onChange}
-          onMix={(kind) => (kind === "mute" ? setMuted(toggle(muted, t.index)) : setSolo(toggle(solo, t.index)))}
-        />
-      ))}
     </div>
   )
 }
