@@ -52,6 +52,14 @@ The menu bar has two working status items. **Wi-Fi** opens a macOS-style menu: a
 
 {% demo src="blocks/apple-notes" layout="multi" %}
 
+Apple Notes starts with your own files. The **+** button at the top of the sidebar adds folders from your computer under **On My Mac**, opens individual Markdown files, and makes new notes and folders. The folders are remembered across reloads; if browser permission has expired, select a folder to reconnect. [use-fs](https://use-fs.com) watches the originals for changes. Local linking requires a desktop browser with the File System Access API.
+
+The master list shows the location selected in the sidebar, in a navigation stack: only folders push another screen, and selecting a file opens its note in the detail pane. The top-right control switches the list to a file [Tree](https://blamy.github.io/ui/#/tree). Right-click any note, folder or location to rename it in place, duplicate it, copy its path or delete it; New Note and Delete open a [Credenza](https://blamy.github.io/ui/#/credenza), a centered dialog on wide layouts and a bottom tray on the phone. New notes save in the selected folder, or in the personal **Notes** folder under **In This Browser**, backed by OPFS. The note's toolbar has the filename (double-click to rename), formatting, checklist and table tools, a Markdown source toggle, Share and the note's menu. Both views save automatically; conflicting external edits keep your draft until you choose a version. Removing a folder from Notes leaves its files on disk.
+
+Docstream provides an editable property sheet for YAML frontmatter and eight task states, each with an icon and tooltip. Right-click a checkbox to choose a state; a normal click clears it, then verifies it on the next click. Added folders also supply demo source files and metadata to Docstream, so local examples work and follow external source edits. Blue dots in the list and tree identify unseen external Markdown changes. Opening a file clears its dot; saves from Notes stay marked as read.
+
+For folder-backed example previews in your own host, serve the almost-node service worker at `__sw__.js` in the app's base directory. Vite's `almostnodePlugin()` from `@agent-wasm/core/vite` serves it during development; production hosts can copy `getServiceWorkerContent()` from `@agent-wasm/core/next`. The docs app includes both paths.
+
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-notes.json{% endcommand %}
 
 {% demo src="blocks/apple-passwords" layout="multi" %}

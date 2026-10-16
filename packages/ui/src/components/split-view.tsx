@@ -653,6 +653,8 @@ function LargeTitle({ spec, titleRef }: { spec: LargeSpec; titleRef?: React.Ref<
 /* ── Column chrome ── */
 export interface SplitViewHeaderProps {
   title?: ReactNode;
+  /** Inline title alignment. Leading titles share the available space with toolbar controls. */
+  titleAlign?: 'center' | 'leading';
   /** iOS large title: drawn big at the top of the pane's SplitViewContent and scrolling with it; once it has
    *  gone under the bar the inline title (and the bar's hairline) spring in. */
   largeTitle?: boolean;
@@ -674,7 +676,7 @@ export interface SplitViewHeaderProps {
 
 /** Column bar: back button when collapsed (or on a pushed stack page), title, leading / trailing items. */
 export function SplitViewHeader({
-  title, largeTitle, largeTitleTrailing, largeTitleClassName, titleOnScroll, leading, trailing, backLabel, className, style,
+  title, titleAlign = 'center', largeTitle, largeTitleTrailing, largeTitleClassName, titleOnScroll, leading, trailing, backLabel, className, style,
 }: SplitViewHeaderProps) {
   const s = useInternal('SplitViewHeader');
   const column = useContext(ColumnCtx);
@@ -730,12 +732,13 @@ export function SplitViewHeader({
     return () => ro.disconnect();
   }, [showBack, title]);
 
-  const titleCls = 'pointer-events-none absolute left-1/2 max-w-[56%] -translate-x-1/2 truncate text-body font-semibold tracking-[-.2px]';
+  const titleCls = cn('truncate text-body font-semibold tracking-[-.2px]',
+    titleAlign === 'leading' ? 'min-w-0 flex-1 px-2' : 'pointer-events-none absolute left-1/2 max-w-[56%] -translate-x-1/2');
   return (
     <>
       <div ref={head} data-slot="split-view-header" data-large-title={large || undefined}
         className={cn('relative z-30 flex h-toolbar shrink-0 items-center px-1.5', !fading && 'shadow-hairline-b', className)} style={style}>
-        <div className="relative z-1 flex min-w-[44px] items-center">
+        <div className={cn('relative z-1 flex items-center', titleAlign === 'leading' && !showBack && !leading ? 'min-w-0' : 'min-w-[44px]')}>
           {showBack ? (
             <AriaButton onPress={onBack} data-slot="split-view-back" aria-label={label === 'Back' ? undefined : `Back to ${label}`}
               className={cn(

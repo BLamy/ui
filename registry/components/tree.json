@@ -1,0 +1,16 @@
+{
+  "name": "tree",
+  "title": "Tree",
+  "description": "A keyboard-navigable tree (react-aria's treegrid) with Finder-style rows: indent guides, a turning chevron, icons, a trailing slot and an optional right-click menu per item, plus folder and file-type icons for file trees.",
+  "page": "tree",
+  "exports": [
+    "Tree",
+    "TreeItem",
+    "TreeFolderIcon",
+    "TreeFileIcon"
+  ],
+  "imports": [
+    "Tree",
+    "TreeItem"
+  ]
+}

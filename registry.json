@@ -2041,7 +2041,7 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@1.8.0",
+        "@brett_lamy/docstream-editor@1.9.1",
         "@tiptap/core@3.30.5",
         "@tiptap/pm@3.30.5",
         "class-variance-authority@^0.7.1",
@@ -3185,8 +3185,8 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/docstream@1.8.0",
-        "@brett_lamy/docstream-editor@1.8.0",
+        "@brett_lamy/docstream@1.9.1",
+        "@brett_lamy/docstream-editor@1.9.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -3216,7 +3216,7 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/docstream@1.8.0"
+        "@brett_lamy/docstream@1.9.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3867,7 +3867,7 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@1.8.0"
+        "@brett_lamy/docstream@1.9.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4994,6 +4994,37 @@
       }
     },
     {
+      "name": "tree",
+      "type": "registry:ui",
+      "title": "Tree",
+      "description": "A keyboard-navigable tree (react-aria's treegrid) with Finder-style rows: indent guides, a turning chevron, icons, a trailing slot and an optional right-click menu per item, plus folder and file-type icons for file trees.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/context-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/tree.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/tree.tsx"
+        }
+      ],
+      "meta": {
+        "page": "tree",
+        "exports": [
+          "Tree",
+          "TreeItem",
+          "TreeFolderIcon",
+          "TreeFileIcon"
+        ]
+      }
+    },
+    {
       "name": "use-file-upload",
       "type": "registry:lib",
       "title": "useFileUpload",
@@ -5961,28 +5992,37 @@
       "name": "apple-notes",
       "type": "registry:block",
       "title": "Apple Notes clone",
-      "description": "Apple Notes: iCloud and On My Mac folders with All iCloud, Recently Deleted and tags; notes grouped Pinned · Today · Previous 7 Days… with snippets, or a gallery of thumbnails; a Markdown note editor with checklists and tables; pin, lock, share, move, delete, search, swipe actions (ListRow) and new notes that spring into place. One SplitView at every size: three tiled columns on desktop (the list steps aside for the gallery), an overlay sidebar on iPad, a stack with large titles and back buttons on iPhone. Composed from SplitView (sections, large titles, supplementaryVisible), ListRow, Icon, SearchField, MarkdownEditor (classNames), Segmented and DropdownMenu.",
+      "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. Each sidebar location is its own master list in a NavigationStack: folders push, file leaves open the note. The top-right control switches to the library's file Tree. Right-click any folder, note or location to rename, duplicate or delete it in place. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
       "categories": [
         "notes",
         "productivity",
         "application"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "use-fs@2.1.0",
+        "react-aria-components@^1.20.0",
+        "@agent-wasm/core@0.4.0",
+        "@brett_lamy/docstream@1.9.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/context-menu.json",
+        "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/markdown-editor.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/navigation-stack.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/tree.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6020,6 +6060,51 @@
           "path": "registry/blocks/apple-notes/use-notes.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-notes/use-notes.ts"
+        },
+        {
+          "path": "registry/blocks/apple-notes/use-note-files.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/use-note-files.ts"
+        },
+        {
+          "path": "registry/blocks/apple-notes/use-file-changes.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/use-file-changes.ts"
+        },
+        {
+          "path": "registry/blocks/apple-notes/use-note-demos.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/use-note-demos.ts"
+        },
+        {
+          "path": "registry/blocks/apple-notes/local-demo-files.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/local-demo-files.ts"
+        },
+        {
+          "path": "registry/blocks/apple-notes/folder-storage.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/folder-storage.ts"
+        },
+        {
+          "path": "registry/blocks/apple-notes/master-actions.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/master-actions.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/folder-tree.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/folder-tree.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/item-menu.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/item-menu.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/dialogs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/dialogs.tsx"
         },
         {
           "path": "registry/blocks/apple-notes/data.ts",

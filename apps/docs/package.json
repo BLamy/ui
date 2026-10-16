@@ -4,8 +4,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@brett_lamy/docstream": "1.8.0",
-    "@brett_lamy/docstream-editor": "1.8.0",
+    "@agent-wasm/core": "0.4.0",
+    "@brett_lamy/docstream": "1.9.1",
+    "@brett_lamy/docstream-editor": "1.9.1",
+    "@brett_lamy/registry": "workspace:*",
+    "@brett_lamy/ui": "workspace:*",
     "@tiptap/core": "3.30.5",
     "@tiptap/extension-code-block-lowlight": "3.30.5",
     "@tiptap/extension-list": "3.30.5",
@@ -15,10 +18,8 @@
     "@tiptap/react": "3.30.5",
     "@tiptap/starter-kit": "3.30.5",
     "@tiptap/suggestion": "3.30.5",
-    "@brett_lamy/ui": "workspace:*",
     "highlight.js": "11.11.2",
-    "lowlight": "3.3.0",
-    "@brett_lamy/registry": "workspace:*"
+    "lowlight": "3.3.0"
   },
   "nx": {
     "targets": {

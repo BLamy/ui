@@ -1,84 +1,104 @@
-/* The note: its date, then the note itself in a MarkdownEditor dressed as Notes — a big bold title line,
-   round checklist circles that fill with the tint, hairline tables. Locked notes show the lock screen until
-   you choose View Note; the note blurs in where the lock was. */
-import { useRef, type RefObject } from 'react';
-import { ContentSwap } from '@/components/ui/animated-height';
+import { useEffect, useRef, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { MarkdownEditor, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { longDate, type Note } from './data';
+import { BROWSER_ROOT } from './use-note-files';
+import type { Note } from './data';
 import type { NotesState } from './use-notes';
+import { useNoteDemos } from './use-note-demos';
 
-/* Notes typography and controls, styled through the editor's `classNames` slots (its stylesheet sits in a layer
-   under utilities, so plain classes win). */
 const NOTES_PARTS: MarkdownEditorClassNames = {
-  // The first line is the title, whatever block it is.
   title: 'text-[28px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
   heading: 'text-[21px] font-bold mt-5',
-  // Checklists: round circles that fill with the tint; done items fade.
   checklist: 'pl-0',
   checklistItem: 'gap-2.5 items-start [&>label]:mt-[2px] data-[checked=true]:[&>div]:text-muted-foreground',
-  checkbox: cn(
-    'appearance-none m-0 size-[21px] rounded-full cursor-pointer',
-    'shadow-[inset_0_0_0_1.6px_var(--tertiary-foreground,color-mix(in_oklab,var(--muted-foreground)_60%,transparent))] transition-[background-color,box-shadow] duration-200',
-    'checked:bg-primary checked:shadow-none checked:bg-[length:13px_13px] checked:bg-center checked:bg-no-repeat',
-    'checked:bg-[url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2024%2024%27%20fill=%27none%27%20stroke=%27white%27%20stroke-width=%273.2%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27%3E%3Cpath%20d=%27M6%2012.5l4%204%208-9%27/%3E%3C/svg%3E)]',
-  ),
-  // Tables: hairlines, no header fill.
+  checkbox: 'size-[21px] cursor-pointer',
   table: 'text-subhead',
   tableHeader: 'bg-transparent font-semibold border-border px-3 py-2',
   tableCell: 'border-border px-3 py-2',
 };
 
-function Locked({ onUnlock }: { onUnlock: () => void }) {
-  return (
-    <div className="grid min-h-[60vh] place-items-center px-6 text-center">
-      <div className="flex flex-col items-center">
-        <span className="mb-4 grid size-16 place-items-center rounded-full bg-secondary text-muted-foreground"><Icon name="lock-fill" size={30} /></span>
-        <div className="text-title font-semibold">This note is locked.</div>
-        <div className="mt-1 max-w-[280px] text-detail text-muted-foreground">Use Touch ID or enter your password to view this note.</div>
-        <Button variant="secondary" className="mt-5 text-primary" onPress={onUnlock}>View Note</Button>
-      </div>
-    </div>
-  );
-}
-
-export function NoteEditor({ notes, n, editorRef, format }: {
-  notes: NotesState; n: Note; editorRef: RefObject<MarkdownEditorHandle | null>; format: boolean;
+/** The document is owned by Docstream, including its first-party property sheet. Both views autosave. */
+export function NoteEditor({ notes, n, source, format, editorRef }: {
+  notes: NotesState; n: Note; source: boolean; format: boolean; editorRef: RefObject<MarkdownEditorHandle | null>;
 }) {
-  // Only edits made while the editor has focus count (the editor normalizes on load; that isn't a change).
-  const focused = useRef(false);
-  const locked = notes.isLocked(n);
-  return (
-    <ContentSwap id={locked ? `locked-${n.id}` : n.id}>
-      {locked ? <Locked onUnlock={() => notes.unlock(n.id)} /> : (
-        <div className="mx-auto w-full max-w-[720px] px-6 pt-2 pb-28 select-text">
-          <div className="pb-3 text-center text-footnote text-muted-foreground">{longDate(n.updated)}</div>
-          <MarkdownEditor key={n.id} ref={editorRef} variant="ghost" aria-label="Note" defaultValue={n.body}
-            autoFocus={!n.body} placeholder="Title" toolbar={format} minHeight={320}
-            onFocus={() => { focused.current = true; }} onBlur={() => { focused.current = false; }}
-            onValueChange={(md) => { if (focused.current) notes.edit(n.id, md); }}
-            className="text-body leading-[1.5]" classNames={NOTES_PARTS} />
-        </div>
-      )}
-    </ContentSwap>
-  );
+  const root = useRef<HTMLDivElement>(null);
+  const demos = useNoteDemos(n.body, n.file.path, notes.files.directoryRoots);
+  const { unseen, markSeen } = notes.files;
+  useEffect(() => {
+    const see = () => {
+      const element = root.current;
+      const box = element?.getBoundingClientRect();
+      if (element && box && !element.closest('[inert]') && box.right > 0 && box.left < window.innerWidth && document.visibilityState === 'visible' && document.hasFocus()) markSeen(n.id);
+    };
+    see(); window.addEventListener('focus', see); document.addEventListener('visibilitychange', see);
+    return () => { window.removeEventListener('focus', see); document.removeEventListener('visibilitychange', see); };
+  }, [n.id, n.body, unseen, markSeen]);
+  const status = notes.fileStatus(n);
+  const draft = notes.drafts[n.id];
+  const info = n.file;
+  const onSaveKey = (event: { metaKey: boolean; ctrlKey: boolean; key: string; preventDefault(): void }) => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault(); if (!status.conflict) void notes.save(n.id); return true;
+    }
+    return false;
+  };
+  return <div ref={root} className="mx-auto w-full max-w-[720px] px-6 pt-4 pb-28 select-text">
+    <div role="status" aria-live="polite" className="sr-only">{status.label}</div>
+    <div className="pb-4 text-center text-footnote text-muted-foreground"><time dateTime={n.updated.toISOString()}>
+      {n.updated.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} at {n.updated.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+    </time></div>
+    {demos.error ? <p role="status" className="text-caption text-muted-foreground">{demos.error}</p> : null}
+    {draft?.error && !status.conflict ? <div role="alert" className="mb-4 flex items-center gap-2 text-detail text-destructive">
+      <span className="flex-1">{draft.error}</span><Button size="sm" variant="ghost" onPress={() => { void notes.save(n.id); }}>Retry</Button>
+    </div> : null}
+    {status.conflict ? <div role="alert" className="space-y-2 rounded-lg border border-border bg-secondary p-3 text-detail">
+      <p className="m-0">{status.missing ? 'This file is no longer available. Your edits are still here.' : 'The file changed in another editor. Your edits have been kept. Choose which version to save.'}</p>
+      {!status.missing ? <details><summary className="cursor-pointer">View current file</summary><pre className="max-h-60 overflow-auto whitespace-pre-wrap break-words font-mono text-caption">{draft?.conflict ?? notes.files.notes.find((item) => item.id === n.id)?.body}</pre></details> : null}
+      <div className="flex flex-wrap gap-1">
+        {!status.missing ? <>
+          <Button size="sm" variant="secondary" isDisabled={!!draft?.saving} onPress={() => notes.revert(n.id)}>Use disk version</Button>
+          <Button size="sm" isDisabled={!!draft?.saving} onPress={() => { void notes.save(n.id, true); }}>Keep my edits</Button>
+        </> : <Button size="sm" isDisabled={!notes.files.ready || !notes.files.isOpfsWritable || !!draft?.saving} onPress={() => {
+          void notes.files.run(async () => {
+            const extension = /\.mdx$/i.test(info.name) ? '.mdx' : '.md';
+            const id = await notes.files.create(BROWSER_ROOT, `${info.name.replace(/\.mdx?$/i, '')} recovered ${Date.now()}${extension}`, n.body);
+            notes.revert(n.id); notes.select(id);
+          });
+        }}>Keep a copy in Notes</Button>}
+      </div>
+    </div> : null}
+    {source ? <textarea aria-label={`${info.name} source`} value={n.body} spellCheck={false} autoCapitalize="off" autoCorrect="off"
+      onChange={(e) => notes.edit(n.id, e.target.value)}
+      onKeyDown={onSaveKey}
+      className="min-h-[60vh] w-full resize-none border-0 bg-transparent p-0 font-mono text-detail leading-6 text-foreground outline-none" /> :
+      <MarkdownEditor key={n.id} ref={editorRef} value={n.body} variant="ghost" toolbar={format} aria-label={`${info.name} note`}
+        demoResolver={demos.resolver} demoVFS={demos.vfs} demoRuntime={demos.runtime}
+        placeholder="Start writing…" minHeight="60vh" onKeyDown={onSaveKey}
+        onValueChange={(markdown) => {
+          if (markdown !== n.body) notes.edit(n.id, markdown);
+        }}
+        className="text-body leading-[1.5]" classNames={NOTES_PARTS} />
+    }
+  </div>;
 }
 
-/** Editor tools for the toolbar: Aa (formatting bar), checklist, table. */
-export function EditorTools({ editorRef, format, onFormat, disabled }: {
-  editorRef: RefObject<MarkdownEditorHandle | null>; format: boolean; onFormat: () => void; disabled?: boolean;
+/** Editor tools for the toolbar: Aa (formatting bar), checklist, table, and the Markdown source toggle. */
+export function EditorTools({ editorRef, format, onFormat, source, onSource }: {
+  editorRef: RefObject<MarkdownEditorHandle | null>; format: boolean; onFormat: () => void; source: boolean; onSource: () => void;
 }) {
   const tool = 'h-9 w-10 rounded-ctl px-0 text-primary data-hovered:bg-secondary';
-  return (
-    <>
-      <Button variant="ghost" preventFocusOnPress aria-label="Format" aria-pressed={format} isDisabled={disabled} onPress={onFormat}
-        className={cn(tool, format && 'bg-secondary')}><Icon name="textformat" /></Button>
-      <Button variant="ghost" preventFocusOnPress aria-label="Checklist" isDisabled={disabled} className={tool}
-        onPress={() => editorRef.current?.chain()?.toggleList('taskList', 'taskItem').run()}><Icon name="checklist" /></Button>
-      <Button variant="ghost" preventFocusOnPress aria-label="Table" isDisabled={disabled} className={tool}
-        onPress={() => editorRef.current?.insertMarkdown('| Column | Column |\n| --- | --- |\n|  |  |\n|  |  |')}><Icon name="table" /></Button>
-    </>
-  );
+  return <>
+    <Button variant="ghost" preventFocusOnPress aria-label="Format" aria-pressed={format} isDisabled={source} onPress={onFormat}
+      className={cn(tool, format && !source && 'bg-secondary')}><Icon name="textformat" /></Button>
+    <Button variant="ghost" preventFocusOnPress aria-label="Checklist" isDisabled={source} className={tool}
+      onPress={() => editorRef.current?.chain()?.toggleList('taskList', 'taskItem').run()}><Icon name="checklist" /></Button>
+    <Button variant="ghost" preventFocusOnPress aria-label="Table" isDisabled={source} className={tool}
+      onPress={() => editorRef.current?.insertMarkdown('| Column | Column |\n| --- | --- |\n|  |  |\n|  |  |')}><Icon name="table" /></Button>
+    <Button variant="ghost" preventFocusOnPress aria-label="Markdown source" aria-pressed={source} onPress={onSource}
+      className={cn(tool, source && 'bg-secondary')}>
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14" /></svg>
+    </Button>
+  </>;
 }

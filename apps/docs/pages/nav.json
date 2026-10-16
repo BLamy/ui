@@ -52,6 +52,7 @@
         { "id": "color-picker", "title": "ColorPicker" },
         { "id": "font-picker", "title": "FontPicker" },
         { "id": "list-box", "title": "ListBox" },
+        { "id": "tree", "title": "Tree" },
         { "id": "form", "title": "Form" },
         { "id": "time-input", "title": "TimeInput" },
         { "id": "cron-editor", "title": "CronEditor" },

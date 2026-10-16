@@ -23,10 +23,11 @@ const blocks = createGlobDemoResolver({
     ['../../../registry/blocks/*/**/*.{ts,tsx,css,json}', '!../../../registry/blocks/*/**/*.stories.tsx'],
     { query: '?raw', import: 'default' },
   ),
-  // A block's meta.json (title, description, files) plus how the viewer shows it: full bleed, multi-file.
+  // How the viewer shows a block: full bleed, multi-file. Its title and description head its own docs page
+  // (pages.ts), so the viewer doesn't repeat them.
   metas: Object.fromEntries(
     Object.entries(import.meta.glob<DemoMeta>('../../../registry/blocks/*/meta.json', { eager: true, import: 'default' }))
-      .map(([path, meta]) => [path, { title: meta.title, description: meta.description, entry: 'page.tsx', layout: 'multi', bleed: true, height: 720 } satisfies DemoMeta]),
+      .map(([path]) => [path, { entry: 'page.tsx', layout: 'multi', bleed: true, height: 720 } satisfies DemoMeta]),
   ),
   href,
 });

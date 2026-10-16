@@ -46,7 +46,11 @@ try {
 
   rmSync(MD_OUT, { recursive: true, force: true });
   mkdirSync(MD_OUT, { recursive: true });
-  for (const { id } of PAGE_LIST) writeFileSync(join(MD_OUT, `${id}.md`), await exportPage(id));
+  for (const { id } of PAGE_LIST) {
+    // Block pages are `blocks/<slug>`: md/blocks/<slug>.md.
+    mkdirSync(dirname(join(MD_OUT, `${id}.md`)), { recursive: true });
+    writeFileSync(join(MD_OUT, `${id}.md`), await exportPage(id));
+  }
 
   const sections = [...new Set(PAGE_LIST.map((p) => p.section))];
   const llms = [

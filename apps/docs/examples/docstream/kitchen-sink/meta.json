@@ -3,9 +3,5 @@
   "description": "One complete document in MarkdownView and MarkdownEditor.",
   "height": 780,
   "bleed": true,
-  "status": "Live",
-  "variants": [
-    { "id": "rendered", "label": "Rendered" },
-    { "id": "editor", "label": "Editor" }
-  ]
+  "status": "Live"
 }

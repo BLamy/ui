@@ -1,8 +1,9 @@
 {
   "name": "apple-notes",
   "title": "Apple Notes clone",
-  "description": "Apple Notes: iCloud and On My Mac folders with All iCloud, Recently Deleted and tags; notes grouped Pinned · Today · Previous 7 Days… with snippets, or a gallery of thumbnails; a Markdown note editor with checklists and tables; pin, lock, share, move, delete, search, swipe actions (ListRow) and new notes that spring into place. One SplitView at every size: three tiled columns on desktop (the list steps aside for the gallery), an overlay sidebar on iPad, a stack with large titles and back buttons on iPhone. Composed from SplitView (sections, large titles, supplementaryVisible), ListRow, Icon, SearchField, MarkdownEditor (classNames), Segmented and DropdownMenu.",
+  "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. Each sidebar location is its own master list in a NavigationStack: folders push, file leaves open the note. The top-right control switches to the library's file Tree. Right-click any folder, note or location to rename, duplicate or delete it in place. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
   "categories": ["notes", "productivity", "application"],
+  "dependencies": ["use-fs", "react-aria-components", "@agent-wasm/core", "@brett_lamy/docstream"],
   "files": [
     "page.tsx",
     "columns.tsx",
@@ -11,6 +12,15 @@
     "note-editor.tsx",
     "parts.tsx",
     "use-notes.ts",
+    "use-note-files.ts",
+    "use-file-changes.ts",
+    "use-note-demos.ts",
+    "local-demo-files.ts",
+    "folder-storage.ts",
+    "master-actions.tsx",
+    "folder-tree.tsx",
+    "item-menu.tsx",
+    "dialogs.tsx",
     "data.ts"
   ]
 }

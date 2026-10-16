@@ -12,13 +12,23 @@
     "./styles.css": "./styles.css"
   },
   "dependencies": {
-    "@brett_lamy/ui": "workspace:*"
+    "@agent-wasm/core": "0.4.0",
+    "@brett_lamy/docstream": "1.9.1",
+    "@brett_lamy/ui": "workspace:*",
+    "react-aria-components": "^1.20.0",
+    "use-fs": "2.1.0"
   },
   "scripts": {
     "registry": "node ../tools/registry/build.mjs --static"
   },
   "nx": {
     "targets": {
+      "e2e-notes": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "playwright test -c tools/e2e/playwright.config.mjs apple-notes.e2e.mjs"
+        }
+      },
       "registry": {
         "cache": true,
         "inputs": [

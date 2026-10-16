@@ -212,6 +212,8 @@ function applySlotClasses(
 }
 
 export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorVariants> {
+  /** First-party YAML frontmatter property sheet. */
+  documentProperties?: GitbookEditorProps['documentProperties'];
   /** Markdown (controlled). */
   value?: string;
   /** Initial Markdown (uncontrolled). */
@@ -236,6 +238,9 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   references?: GitbookEditorProps['references'];
   /** Resolve live demo blocks and their source files inside the editor. */
   demoResolver?: GitbookEditorProps['demoResolver'];
+  demoRuntime?: GitbookEditorProps['demoRuntime'];
+  demoVFS?: GitbookEditorProps['demoVFS'];
+  demoDependencies?: GitbookEditorProps['demoDependencies'];
   /** Parse pasted plain text that looks like Markdown into structure (default true). */
   pasteMarkdown?: boolean;
   /** Pasted or dropped images: inline image blocks (default) or attachment chips the host stores. */
@@ -321,9 +326,13 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     invalid = false,
     autoFocus = false,
     toolbar = false,
+    documentProperties,
     slashMenu = true,
     references = false,
     demoResolver,
+    demoRuntime,
+    demoVFS,
+    demoDependencies,
     pasteMarkdown = true,
     imagePaste = 'inline',
     attachments,
@@ -532,9 +541,13 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
         markdown={markdown}
         onChange={handleChange}
         toolbar={toolbar && editable}
+        documentProperties={documentProperties}
         slashMenu={slashMenu}
         references={references}
         demoResolver={demoResolver}
+        demoRuntime={demoRuntime}
+        demoVFS={demoVFS}
+        demoDependencies={demoDependencies}
         editable={editable}
         {...(placeholder !== undefined ? { placeholder } : {})}
         autofocus={autoFocus}

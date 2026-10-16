@@ -43,9 +43,9 @@ const [markdown, setMarkdown] = useState('# Notes')
 
 Edit the complete Docstream sample beside its live `MarkdownView` preview. It includes inline formatting and reference chips, every heading level, nested and task lists, code, hints, tabs, commands, expandables, steppers, columns, tables and cards, figures, math, Mermaid, embeds, content links, updates, OpenAPI, source references, and live demos. Type `/` for blocks or `@`, `#`, and `$` for reference pickers.
 
-**Markdown source** exposes the same document as text; **Reset example** restores it. This is the same sample as the [Markdown kitchen sink](https://blamy.github.io/ui/#/docstream). Source-reference metadata and the API operation remain editable in the field; the preview resolves their content. The video requires a network connection, and the optional sandboxed React and VizEngine integrations include setup syntax.
+The **Markdown**, **Rich editor**, and **Preview** tabs inside the example switch modes. Markdown starts with the source beside its rendered preview; Rich editor opens the block editor beside the preview. **Reset example** restores the sample. Source-reference metadata and the API operation remain editable in the field; the preview resolves their content. The video requires a network connection, and the optional sandboxed React and VizEngine integrations include setup syntax.
 
-{% demo src="docstream/kitchen-sink" variants="editor:Editor,rendered:Rendered" %}
+{% demo src="docstream/kitchen-sink" %}
 
 ### Notes with a live preview
 
