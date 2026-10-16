@@ -308,7 +308,7 @@ export function StrudelPlayer({
         </Suspense>
       )}
       {current !== null && codeOpen && (
-        <div id={codeId} className="docstream-strudel__code">
+        <div id={codeId} className="docstream-strudel__code" tabIndex={0} role="region" aria-label={`${label} code`}>
           <HighlightedCode code={current.trim()} language="javascript" />
         </div>
       )}
