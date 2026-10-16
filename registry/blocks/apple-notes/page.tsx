@@ -4,6 +4,7 @@ import { type CSSProperties } from 'react';
 import { SplitView } from '@/components/ui/split-view';
 import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { ListColumn, NoteColumn } from './columns';
+import { NotesDialogs } from './dialogs';
 import { FoldersSidebar } from './folders';
 import { useNotes, type NotesView } from './use-notes';
 
@@ -36,6 +37,7 @@ export default function AppleNotes({ appearance, initialFolder = 'folders', init
           <FoldersSidebar notes={notes} />
           <ListColumn notes={notes} />
           <NoteColumn notes={notes} />
+          <NotesDialogs notes={notes} />
         </SplitView>
       </BLProvider>
     </AppearanceProvider>

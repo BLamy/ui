@@ -1,15 +1,15 @@
 /* BL UI documentation shell — a port of the original HTML design prototype. */
-import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { AppearanceProvider, type Appearance } from '@/lib/theme';
 import { GitbookStreamdown } from '@brett_lamy/docstream';
 import { BLOCK_COUNT, demoResolver } from '../demos';
-import { NAV, PAGES, PAGE_ORDER, pageMdPath, pageSource, pageUrl, SITE_URL } from '../pages';
+import { BLOCK_ORDER, BLOCK_PAGES, isBlockPage, NAV, PAGES, PAGE_ORDER, pageMdPath, pageSource, pageUrl, SITE_URL } from '../pages';
 import './shell.css';
 
 const SCROLL_ID = 'bldocs-scroll';
 const BLOCKS_ID = 'blocks';
 
-/* Routes live in the hash — `#/composer`, `#/blocks` — so every page has a link and GitHub Pages needs no rewrites. */
+/* Routes live in the hash — `#/composer`, `#/blocks`, `#/blocks/apple-notes` — so every page has a link and GitHub Pages needs no rewrites. */
 function slugFromHash(): string {
   if (typeof window === 'undefined') return 'introduction';
   const id = window.location.hash.replace(/^#\/?/, '');
@@ -71,34 +71,45 @@ function NavHeader({ onClose, theme }: { onClose?: () => void; theme: ReactNode 
   );
 }
 
-function NavList({ slug, pick }: { slug: string; pick: (id: string) => void }) {
-  const onBlocks = slug === BLOCKS_ID;
+function NavItem({ id, title, slug, pick }: { id: string; title: string; slug: string; pick: (id: string) => void }) {
+  const active = id === slug;
+  return (
+    <button data-page={id} className="dk-nav" onClick={() => pick(id)}
+      aria-current={active ? 'page' : undefined}
+      style={active ? { background: 'var(--dk-active)', color: 'var(--dk-accent)', fontWeight: 600 } : undefined}>
+      {title}
+    </button>
+  );
+}
+
+const sectionTitle: CSSProperties = { padding: '16px 10px 5px', fontSize: 10.5, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-muted)' };
+
+/** Components lists the docs; Blocks lists the blocks, one page each. */
+function NavList({ slug, pick, lastDoc }: { slug: string; pick: (id: string) => void; lastDoc: string }) {
+  const onBlocks = isBlockPage(slug);
   return (
     <div className="dk-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 10px 10px' }}>
       <div className="dk-topnav">
-        <button className="dk-topnav-item" data-page="docs" aria-current={!onBlocks ? 'page' : undefined} onClick={() => pick(onBlocks ? 'introduction' : slug)}>
+        <button className="dk-topnav-item" data-page="docs" aria-current={!onBlocks ? 'page' : undefined} onClick={() => pick(onBlocks ? lastDoc : slug)}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5" /></svg>
-          Docs
+          Components
         </button>
-        <button className="dk-topnav-item" data-page={BLOCKS_ID} aria-current={onBlocks ? 'page' : undefined} onClick={() => pick(BLOCKS_ID)}>
+        <button className="dk-topnav-item" data-page={BLOCKS_ID} aria-current={onBlocks ? 'page' : undefined} onClick={() => pick(onBlocks ? slug : BLOCKS_ID)}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" /></svg>
           Blocks
           <span className="dk-topnav-count">{BLOCK_COUNT}</span>
         </button>
       </div>
-      {NAV.sections.map((sec) => (
+      {onBlocks ? (
+        <div>
+          <div style={sectionTitle}>Blocks</div>
+          <NavItem id={BLOCKS_ID} title="Overview" slug={slug} pick={pick} />
+          {BLOCK_PAGES.map((b) => <NavItem key={b.id} id={b.id} title={b.title} slug={slug} pick={pick} />)}
+        </div>
+      ) : NAV.sections.map((sec) => (
         <div key={sec.section}>
-          <div style={{ padding: '16px 10px 5px', fontSize: 10.5, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-muted)' }}>{sec.section}</div>
-          {sec.pages.map((p) => {
-            const active = p.id === slug;
-            return (
-              <button key={p.id} data-page={p.id} className="dk-nav" onClick={() => pick(p.id)}
-                aria-current={active ? 'page' : undefined}
-                style={active ? { background: 'var(--dk-active)', color: 'var(--dk-accent)', fontWeight: 600 } : undefined}>
-                {p.title}
-              </button>
-            );
-          })}
+          <div style={sectionTitle}>{sec.section}</div>
+          {sec.pages.map((p) => <NavItem key={p.id} id={p.id} title={p.title} slug={slug} pick={pick} />)}
         </div>
       ))}
     </div>
@@ -155,9 +166,14 @@ export default function App() {
   const page = PAGES[slug];
   const markdown = pageSource(slug);
   useEffect(() => { document.title = `${page.title} — BL UI`; }, [page.title]);
-  const idx = PAGE_ORDER.indexOf(slug);
-  const prev = idx > 0 ? PAGE_ORDER[idx - 1] : null;
-  const next = idx >= 0 && idx < PAGE_ORDER.length - 1 ? PAGE_ORDER[idx + 1] : null;
+  // Prev / next stay inside the section you're reading: the component docs, or the blocks.
+  const order = isBlockPage(slug) ? BLOCK_ORDER : PAGE_ORDER;
+  const idx = order.indexOf(slug);
+  const prev = idx > 0 ? order[idx - 1] : null;
+  const next = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null;
+  // Components returns to the docs page you left for Blocks.
+  const lastDoc = useRef('introduction');
+  if (!isBlockPage(slug)) lastDoc.current = slug;
   const toc: Array<{ text: string; h3: boolean }> = [];
   let fenced = false;
   markdown.split('\n').forEach((l) => {
@@ -226,7 +242,7 @@ export default function App() {
       {fixedNav ? (
         <div style={{ width: 262, flexShrink: 0, background: 'var(--dk-side)', borderRight: '1px solid var(--dk-border)', display: 'flex', flexDirection: 'column' }}>
           <NavHeader theme={theme} />
-          <NavList slug={slug} pick={pick} />
+          <NavList slug={slug} pick={pick} lastDoc={lastDoc.current} />
           <NavFooter />
         </div>
       ) : null}
@@ -270,7 +286,7 @@ export default function App() {
           <div onClick={() => setNavOpen(false)} style={scrimStyle} />
           <div style={drawerStyle}>
             <NavHeader theme={theme} onClose={() => setNavOpen(false)} />
-            <NavList slug={slug} pick={pick} />
+            <NavList slug={slug} pick={pick} lastDoc={lastDoc.current} />
             <NavFooter />
           </div>
         </div>

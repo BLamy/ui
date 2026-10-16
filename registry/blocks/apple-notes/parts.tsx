@@ -1,14 +1,15 @@
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Segmented } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { Note } from './data';
+import { itemMenuItems, useItemMenuAction } from './item-menu';
 import type { NotesState, NotesView } from './use-notes';
 
 export function UnreadDot() {
-  return <span role="img" aria-label="Changed outside Notes" title="Changed outside Notes" className="size-1.5 shrink-0 rounded-full bg-[#007aff] dark:bg-[#0a84ff]" />;
+  return <span role="img" aria-label="Changed outside Notes" title="Changed outside Notes" className="size-1.5 shrink-0 rounded-full bg-primary" />;
 }
 
 export function BarButton({ label, children, onPress, isDisabled, className }: {
@@ -26,16 +27,33 @@ export function ViewToggle({ view, onChange }: { view: NotesView; onChange: (v: 
     ]} />;
 }
 
-export function NoteMenu({ notes, n }: { notes: NotesState; n: Note }) {
+/** Share the note's file: copy it or save a copy. */
+export function ShareMenu({ n }: { n: Note }) {
   return <DropdownMenu>
-    <BarButton label="Note actions"><Icon name="ellipsis-circle" /></BarButton>
-    <DropdownMenuContent aria-label="File actions" placement="bottom end" onAction={(key) => {
-      if (key === 'revert') notes.revert(n.id);
-      if (key === 'close') { notes.files.close(n); notes.select(null); }
+    <BarButton label="Share"><Icon name="share" /></BarButton>
+    <DropdownMenuContent aria-label="Share" placement="bottom end" onAction={(key) => {
+      if (key === 'copy') void navigator.clipboard?.writeText(n.body);
+      if (key === 'path') void navigator.clipboard?.writeText(n.file.path);
+      if (key === 'download') {
+        const url = URL.createObjectURL(new Blob([n.body], { type: 'text/markdown' }));
+        const a = Object.assign(document.createElement('a'), { href: url, download: n.file.name });
+        a.click(); setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
     }}>
-      <DropdownMenuItem id="revert" isDisabled={!notes.drafts[n.id] || !!notes.drafts[n.id]?.saving}>Discard my edits</DropdownMenuItem>
-      {n.file.standalone ? <DropdownMenuItem id="close" isDisabled={!!notes.drafts[n.id]}>Close file</DropdownMenuItem> : null}
+      <DropdownMenuItem id="copy" icon={<Icon name="copy" size={20} />}>Copy Markdown</DropdownMenuItem>
+      <DropdownMenuItem id="path" icon={<Icon name="link" size={20} />}>Copy Path</DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem id="download" icon={<Icon name="download" size={20} />}>Download a Copy</DropdownMenuItem>
     </DropdownMenuContent>
+  </DropdownMenu>;
+}
+
+/** The note's … menu: the same actions as right-clicking it in the list. */
+export function NoteMenu({ notes, n }: { notes: NotesState; n: Note }) {
+  const act = useItemMenuAction(notes, n.id, 'title');
+  return <DropdownMenu>
+    <BarButton label="More"><Icon name="ellipsis-circle" /></BarButton>
+    <DropdownMenuContent aria-label="Note actions" placement="bottom end" onAction={act}>{itemMenuItems(notes, n.id)}</DropdownMenuContent>
   </DropdownMenu>;
 }
 

@@ -1,6 +1,8 @@
 import { useEffect, useRef, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { MarkdownEditor, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
+import { Icon } from '@/lib/icon';
+import { cn } from '@/lib/utils';
 import { BROWSER_ROOT } from './use-note-files';
 import type { Note } from './data';
 import type { NotesState } from './use-notes';
@@ -70,7 +72,7 @@ export function NoteEditor({ notes, n, source, format, editorRef }: {
     {source ? <textarea aria-label={`${info.name} source`} value={n.body} spellCheck={false} autoCapitalize="off" autoCorrect="off"
       onChange={(e) => notes.edit(n.id, e.target.value)}
       onKeyDown={onSaveKey}
-      className="min-h-[60vh] w-full resize-none border-0 bg-transparent p-0 font-mono text-[14px] leading-6 text-foreground outline-none" /> :
+      className="min-h-[60vh] w-full resize-none border-0 bg-transparent p-0 font-mono text-detail leading-6 text-foreground outline-none" /> :
       <MarkdownEditor key={n.id} ref={editorRef} value={n.body} variant="ghost" toolbar={format} aria-label={`${info.name} note`}
         demoResolver={demos.resolver} demoVFS={demos.vfs} demoRuntime={demos.runtime}
         placeholder="Start writing…" minHeight="60vh" onKeyDown={onSaveKey}
@@ -80,4 +82,23 @@ export function NoteEditor({ notes, n, source, format, editorRef }: {
         className="text-body leading-[1.5]" classNames={NOTES_PARTS} />
     }
   </div>;
+}
+
+/** Editor tools for the toolbar: Aa (formatting bar), checklist, table, and the Markdown source toggle. */
+export function EditorTools({ editorRef, format, onFormat, source, onSource }: {
+  editorRef: RefObject<MarkdownEditorHandle | null>; format: boolean; onFormat: () => void; source: boolean; onSource: () => void;
+}) {
+  const tool = 'h-9 w-10 rounded-ctl px-0 text-primary data-hovered:bg-secondary';
+  return <>
+    <Button variant="ghost" preventFocusOnPress aria-label="Format" aria-pressed={format} isDisabled={source} onPress={onFormat}
+      className={cn(tool, format && !source && 'bg-secondary')}><Icon name="textformat" /></Button>
+    <Button variant="ghost" preventFocusOnPress aria-label="Checklist" isDisabled={source} className={tool}
+      onPress={() => editorRef.current?.chain()?.toggleList('taskList', 'taskItem').run()}><Icon name="checklist" /></Button>
+    <Button variant="ghost" preventFocusOnPress aria-label="Table" isDisabled={source} className={tool}
+      onPress={() => editorRef.current?.insertMarkdown('| Column | Column |\n| --- | --- |\n|  |  |\n|  |  |')}><Icon name="table" /></Button>
+    <Button variant="ghost" preventFocusOnPress aria-label="Markdown source" aria-pressed={source} onPress={onSource}
+      className={cn(tool, source && 'bg-secondary')}>
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14" /></svg>
+    </Button>
+  </>;
 }

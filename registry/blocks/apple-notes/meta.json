@@ -1,7 +1,7 @@
 {
   "name": "apple-notes",
   "title": "Apple Notes clone",
-  "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. The master list lives in a NavigationStack: folders push, file leaves open the note. The top-right control switches to an accessible tree. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
+  "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. Each sidebar location is its own master list in a NavigationStack: folders push, file leaves open the note. The top-right control switches to the library's file Tree. Right-click any folder, note or location to rename, duplicate or delete it in place. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
   "categories": ["notes", "productivity", "application"],
   "dependencies": ["use-fs", "react-aria-components", "@agent-wasm/core", "@brett_lamy/docstream"],
   "files": [
@@ -19,6 +19,8 @@
     "folder-storage.ts",
     "master-actions.tsx",
     "folder-tree.tsx",
+    "item-menu.tsx",
+    "dialogs.tsx",
     "data.ts"
   ]
 }

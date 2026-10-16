@@ -16,6 +16,28 @@ const parentPath = (path: string) => {
 export const fileId = (path: string) => `file:${path}`;
 export const folderId = (path: string) => `folder:${path}`;
 const message = (error: unknown) => error instanceof Error ? error.message : String(error);
+const badName = (name: string) => !name.trim() || /[\\/]/.test(name) || name === '.' || name === '..';
+
+/** Whether a file or folder of this name is already in the directory. */
+async function taken(directory: FileSystemDirectoryHandle, name: string) {
+  for (const probe of [() => directory.getFileHandle(name), () => directory.getDirectoryHandle(name)]) {
+    try { await probe(); return true; }
+    catch (e) { if (e instanceof DOMException && e.name === 'TypeMismatchError') return true; if (!(e instanceof DOMException && e.name === 'NotFoundError')) throw e; }
+  }
+  return false;
+}
+
+/** `move()` renames in place where the browser has it (Chromium); otherwise the entry is copied and the original removed. */
+type Movable = FileSystemHandle & { move?: (name: string) => Promise<void> };
+type Listable = FileSystemDirectoryHandle & { values(): AsyncIterable<FileSystemFileHandle | FileSystemDirectoryHandle> };
+async function copyInto(from: FileSystemDirectoryHandle, to: FileSystemDirectoryHandle) {
+  for await (const entry of (from as Listable).values()) {
+    if (entry.kind === 'file') {
+      const stream = await (await to.getFileHandle(entry.name, { create: true })).createWritable();
+      await stream.write(await entry.getFile()); await stream.close();
+    } else await copyInto(entry, await to.getDirectoryHandle(entry.name, { create: true }));
+  }
+}
 
 interface LinkedFile { handle: FileSystemFileHandle; body: string; updated: Date }
 interface FolderSource extends SavedFolder { connected: boolean }
@@ -154,6 +176,8 @@ export function useNoteFiles() {
     return result;
   }, [fs.directories, directories, fs.files, linked.size, sources]);
 
+  const directoryAt = async (path: string) => directoryHandles.current.get(path) ?? (path === BROWSER_ROOT && ready ? await getOpfsRoot({ name: 'apple-notes' }) : null);
+
   async function run<T>(action: () => Promise<T>): Promise<T | undefined> {
     setError(null); setBusy(true);
     try { return await action(); }
@@ -215,16 +239,15 @@ export function useNoteFiles() {
     }),
     /** Refuse creation when a file with this name already exists. */
     async create(path: string, name: string, body = '') {
-      if (!markdown(name) || /[\\/]/.test(name) || name === '.' || name === '..') throw new Error('Use a filename ending in .md or .mdx, without slashes.');
-      const directory = directoryHandles.current.get(path) ?? (path === BROWSER_ROOT && ready ? await getOpfsRoot({ name: 'apple-notes' }) : null);
+      if (!markdown(name) || badName(name)) throw new Error('Use a filename ending in .md or .mdx, without slashes.');
+      const directory = await directoryAt(path);
       if (!directory) throw new Error('The folder is not available.');
-      try { await directory.getFileHandle(name); throw new Error(`“${name}” already exists. Choose another name.`); }
-      catch (e) { if (!(e instanceof DOMException && e.name === 'NotFoundError')) throw e; }
+      if (await taken(directory, name)) throw new Error(`“${name}” already exists. Choose another name.`);
       await fs.createFile(`${path}/${name}`, body);
       return fileId(`${path}/${name}`);
     },
     async createFolder(path: string, name: string) {
-      if (!name.trim() || /[\\/]/.test(name) || name === '.' || name === '..') throw new Error('Use a folder name without slashes.');
+      if (badName(name)) throw new Error('Use a folder name without slashes.');
       const directory = directoryHandles.current.get(path);
       if (!directory) throw new Error('The folder is not available.');
       if (!await ensurePermission(directory, 'readwrite')) throw new Error('Write access was not granted.');
@@ -254,6 +277,64 @@ export function useNoteFiles() {
       } else await fs.writeFile(info.path, body, { create: false });
       } catch (error) { ownWrites.current.delete(info.path); throw error; }
     },
+    /** Renames a file in a watched folder. Returns the note's new id. */
+    async renameFile(path: string, name: string) {
+      const parent = parentPath(path);
+      const old = path.slice(parent.length + 1);
+      if (name === old) return fileId(path);
+      if (!markdown(name) || badName(name)) throw new Error('Use a filename ending in .md or .mdx, without slashes.');
+      const directory = await directoryAt(parent);
+      const handle = fs.handles.get(path) as Movable | undefined;
+      if (!directory || !handle) throw new Error('The file is not available.');
+      // A case-only rename finds the file itself on a case-insensitive disk.
+      if (name.toLowerCase() !== old.toLowerCase() && await taken(directory, name)) throw new Error(`“${name}” already exists. Choose another name.`);
+      if (!await ensurePermission(directory, 'readwrite')) throw new Error('Write access was not granted.');
+      if (handle.move) await handle.move(name);
+      else {
+        if (name.toLowerCase() === old.toLowerCase()) throw new Error('This browser cannot change only the capitalization of a filename.');
+        await fs.createFile(`${parent}/${name}`, fs.files.get(path) ?? '');
+        await fs.deleteFile(path);
+      }
+      await fs.refresh();
+      return fileId(`${parent}/${name}`);
+    },
+    /** Renames a folder inside a watched folder. Returns the folder's new id. */
+    async renameFolder(path: string, name: string) {
+      const parent = parentPath(path);
+      const old = path.slice(parent.length + 1);
+      if (name === old) return folderId(path);
+      if (badName(name)) throw new Error('Use a folder name without slashes.');
+      const directory = parent ? await directoryAt(parent) : null;
+      const handle = directoryHandles.current.get(path) as (FileSystemDirectoryHandle & Movable) | undefined;
+      if (!directory || !handle) throw new Error('Only folders inside an added folder can be renamed.');
+      if (name.toLowerCase() !== old.toLowerCase() && await taken(directory, name)) throw new Error(`“${name}” already exists. Choose another name.`);
+      if (!await ensurePermission(directory, 'readwrite')) throw new Error('Write access was not granted.');
+      let moved = false;
+      if (handle.move) {
+        try { await handle.move(name); moved = true; }
+        catch (e) { if (!(e instanceof DOMException && (e.name === 'NotSupportedError' || e.name === 'InvalidModificationError'))) throw e; }
+      }
+      if (!moved) {
+        if (name.toLowerCase() === old.toLowerCase()) throw new Error('This browser cannot change only the capitalization of a folder name.');
+        await copyInto(handle, await directory.getDirectoryHandle(name, { create: true }));
+        await directory.removeEntry(old, { recursive: true });
+      }
+      await fs.refresh();
+      return folderId(`${parent}/${name}`);
+    },
+    /** Copies a file next to itself as “name copy.md”, “name copy 2.md”, … */
+    async duplicate(path: string) {
+      const parent = parentPath(path);
+      const directory = await directoryAt(parent);
+      if (!directory) throw new Error('The folder is not available.');
+      const [, stem, extension] = /^(.*?)(\.mdx?)$/i.exec(path.slice(parent.length + 1)) ?? [];
+      let name = `${stem} copy${extension}`;
+      for (let index = 2; await taken(directory, name); index++) name = `${stem} copy ${index}${extension}`;
+      await fs.createFile(`${parent}/${name}`, fs.files.get(path) ?? '');
+      return fileId(`${parent}/${name}`);
+    },
+    deleteFile: (path: string) => fs.deleteFile(path),
+    deleteFolder: (path: string) => fs.deleteDirectory(path),
     close(n: Note) {
       if (!n.file?.standalone) return;
       const next = new Map(linkedRef.current); next.delete(n.file.path); linkedRef.current = next; setLinked(next);

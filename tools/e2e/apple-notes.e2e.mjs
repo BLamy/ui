@@ -8,7 +8,8 @@ const row = (page, name) => current(page).locator('[data-slot=list-row]').filter
 const editor = (page, name) => page.getByRole('textbox', { name: `${name} source`, exact: true });
 const path = (page) => page.locator(`${STACK} > [data-slot=screen]:not([data-screen-ghost])`).evaluateAll((screens) => screens.filter((s) => !s.classList.contains('pointer-events-none')).map((s) => s.dataset.screenKey));
 async function sourceMode(page) {
-  await page.getByRole('radiogroup', { name: 'Note view', exact: true }).getByText('Source', { exact: true }).click();
+  const toggle = page.getByRole('button', { name: 'Markdown source', exact: true });
+  if (await toggle.getAttribute('aria-pressed') !== 'true') await toggle.click();
 }
 const mac = (page) => page.getByRole('group', { name: 'On My Mac', exact: true });
 
@@ -44,8 +45,14 @@ async function remove(page, path, root = 'apple-notes') {
   }, { path, root });
 }
 
+/** The sidebar's + folder menu. */
 async function action(page, name) {
-  await current(page).getByRole('button', { name: 'Folder actions', exact: true }).click();
+  await page.locator('[data-slot=split-view-sidebar]').getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByRole('menuitem', typeof name === 'string' ? { name, exact: true } : { name }).click();
+}
+/** Right-click `target` and choose `name`. */
+async function contextAction(page, target, name) {
+  await target.click({ button: 'right' });
   await page.getByRole('menuitem', { name, exact: true }).click();
 }
 async function browserNotes(page) {
@@ -54,7 +61,7 @@ async function browserNotes(page) {
 }
 async function addFolder(page, name) {
   await page.evaluate((name) => { window.__nextFolder = name; }, name);
-  await page.getByRole('button', { name: 'Add Folder…', exact: true }).click();
+  await action(page, 'Add Folder…');
   await expect(current(page)).toHaveAttribute('data-screen-label', name);
 }
 
@@ -70,11 +77,14 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('group', { name: 'In This Browser', exact: true })).toBeVisible();
 });
 
-test('starts with no sample content or storage button strip, with the entire root list in NavigationStack', async ({ page }) => {
-  await expect(current(page)).toHaveAttribute('data-screen-key', 'folders');
-  await expect(current(page).getByRole('searchbox', { name: 'Search notes' })).toBeVisible();
-  await expect(current(page).getByRole('button', { name: 'Choose Folder…' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Add Folder…', exact: true })).toBeVisible();
+test('starts with no sample content, on the browser location, with only the sidebar\'s + folder menu', async ({ page }) => {
+  await expect(current(page)).toHaveAttribute('data-screen-key', 'folder:browser-notes');
+  await expect(current(page).getByRole('searchbox', { name: 'Search Notes' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'All Folders', exact: true })).toHaveCount(0);
+  await expect(current(page).getByRole('button', { name: /Folder actions|More/ })).toHaveCount(0);
+  await page.locator('[data-slot=split-view-sidebar]').getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: 'Add Folder…', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(current(page).locator('[data-slot=list-row]')).toHaveCount(0);
   await expect(page.getByText(/Tokyo|Groceries|Example folders|iCloud|Tags/, { exact: false })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Import copy|Open folder|New file/ })).toHaveCount(0);
@@ -99,10 +109,10 @@ test('multiple Mac folders appear in the sidebar, remain independent and are rem
   await expect(mac(page).locator('[data-slot=split-view-item]')).toHaveCount(2);
   await mac(page).getByRole('button', { name: /^Work / }).click();
   await expect(row(page, 'work.md')).toBeVisible();
-  await page.getByRole('button', { name: 'All Folders', exact: true }).click();
-  await expect(current(page).getByRole('button', { name: 'Open folder Work', exact: true })).toBeVisible();
-  await expect(current(page).getByRole('button', { name: 'Open folder Journal', exact: true })).toBeVisible();
-  await expect(current(page).locator('[data-slot=list-row]')).toHaveCount(0);
+  // The master list is only the chosen location.
+  expect(await path(page)).toEqual(['folder:Work']);
+  await expect(row(page, 'journal.mdx')).toHaveCount(0);
+  await expect(current(page).getByRole('button', { name: /^Open folder (Work|Journal)$/ })).toHaveCount(0);
 });
 
 test('folders push the stack and file leaves only open the note', async ({ page }) => {
@@ -116,10 +126,10 @@ test('folders push the stack and file leaves only open the note', async ({ page 
   await current(page).getByRole('button', { name: 'Open folder Projects', exact: true }).click();
   await expect(current(page).getByRole('button', { name: 'Open folder Empty', exact: true })).toBeVisible();
   await current(page).getByRole('button', { name: 'Open folder Components', exact: true }).click();
-  await expect.poll(() => path(page)).toEqual(['folders', 'folder:Work', 'folder:Work/Projects', 'folder:Work/Projects/Components']);
+  await expect.poll(() => path(page)).toEqual(['folder:Work', 'folder:Work/Projects', 'folder:Work/Projects/Components']);
   await row(page, 'readme.mdx').click(); await sourceMode(page);
   await expect(editor(page, 'readme.mdx')).toHaveValue('# Nested');
-  expect(await path(page)).toEqual(['folders', 'folder:Work', 'folder:Work/Projects', 'folder:Work/Projects/Components']);
+  expect(await path(page)).toEqual(['folder:Work', 'folder:Work/Projects', 'folder:Work/Projects/Components']);
   await current(page).getByRole('button', { name: 'Projects', exact: true }).click();
   await expect(current(page)).toHaveAttribute('data-screen-label', 'Projects');
 });
@@ -133,7 +143,7 @@ test('the top-right tree is also inside the stack and file selection never chang
   const nested = tree.getByRole('row', { name: 'nested', exact: true });
   await nested.press('ArrowRight'); await nested.press('ArrowDown'); await page.keyboard.press('Enter'); await sourceMode(page);
   await expect(editor(page, 'readme.mdx')).toHaveValue('# Tree\n\n<Card />');
-  expect(await path(page)).toEqual(['folders']);
+  expect(await path(page)).toEqual(['folder:Work']);
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'List', exact: true }) }).click();
   await expect(current(page)).toHaveAttribute('data-screen-key', 'folder:Work');
   await expect(row(page, 'readme.mdx')).toHaveCount(0);
@@ -197,31 +207,45 @@ test('Use disk version replaces only the unsaved buffer', async ({ page }) => {
 });
 
 test('deleted local files retain unsaved edits and can be kept in Notes', async ({ page }) => {
-  await seed(page, { 'linked.mdx': '# Original' }, 'local-fixtures'); await action(page, 'Open File…'); await sourceMode(page);
+  await seed(page, { 'linked.mdx': '# Original' }, 'local-fixtures');
+  const before = await path(page);
+  await action(page, 'Open File…'); await sourceMode(page);
   await editor(page, 'linked.mdx').fill('# Still here\n\n<Component />'); await remove(page, 'linked.mdx', 'local-fixtures');
   await expect(page.getByRole('button', { name: 'Keep a copy in Notes', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Keep a copy in Notes', exact: true }).click(); await sourceMode(page);
   await expect(page.getByRole('textbox', { name: /linked recovered \d+\.mdx source/ })).toHaveValue('# Still here\n\n<Component />');
-  expect(await path(page)).toEqual(['folders']);
+  expect(await path(page)).toEqual(before);
+});
+
+test('New Note is a centered dialog that starts with the stem selected', async ({ page }) => {
+  await browserNotes(page);
+  await page.locator('[data-slot=split-view-detail]').getByRole('button', { name: 'New note', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'New Note' });
+  const field = dialog.getByRole('textbox', { name: /^File name/ });
+  await expect(field).toBeFocused();
+  await page.keyboard.type('ideas'); await page.keyboard.press('Enter');
+  await expect(dialog).toHaveCount(0);
+  await expect(row(page, 'ideas.md')).toBeVisible();
+  await expect(page.locator('[data-slot=split-view-detail] [data-slot=split-view-header]')).toContainText('ideas.md');
 });
 
 test('new notes are created in the selected Mac folder and duplicate creation never overwrites', async ({ page }) => {
   await seed(page, { 'existing.md': '# Keep this' }, 'Work'); await addFolder(page, 'Work');
   const before = await path(page);
-  await action(page, 'New Note…'); await page.getByRole('textbox', { name: 'File name', exact: true }).fill('new.mdx');
-  await page.getByRole('button', { name: 'Create note', exact: true }).click(); await sourceMode(page);
+  await action(page, /^New Note/); await page.getByRole('dialog').getByRole('textbox', { name: /^File name/ }).fill('new.mdx');
+  await page.getByRole('button', { name: 'Create Note', exact: true }).click(); await sourceMode(page);
   await editor(page, 'new.mdx').fill('export const draft = true;\n\n<Note />');
   await expect.poll(() => read(page, 'new.mdx', 'Work')).toBe('export const draft = true;\n\n<Note />');
   expect(await path(page)).toEqual(before);
-  await action(page, 'New Note…'); await page.getByRole('textbox', { name: 'File name', exact: true }).fill('existing.md');
-  await page.getByRole('button', { name: 'Create note', exact: true }).click(); await sourceMode(page);
-  await expect(page.getByRole('alert')).toContainText('already exists');
+  await action(page, /^New Note/); await page.getByRole('dialog').getByRole('textbox', { name: /^File name/ }).fill('existing.md');
+  await page.getByRole('button', { name: 'Create Note', exact: true }).click();
+  await expect(page.getByRole('dialog').getByRole('alert')).toContainText('already exists');
   expect(await read(page, 'existing.md', 'Work')).toBe('# Keep this');
 });
 
 test('removing a folder from Notes preserves files on disk and other added folders', async ({ page }) => {
   await seed(page, { 'work.md': '# Keep Work' }, 'Work'); await seed(page, { 'journal.md': '# Keep Journal' }, 'Journal');
-  await addFolder(page, 'Journal'); await addFolder(page, 'Work'); await action(page, 'Remove Folder from Notes');
+  await addFolder(page, 'Journal'); await addFolder(page, 'Work'); await action(page, 'Remove “Work” from Notes');
   await expect(mac(page).getByRole('button', { name: /^Work / })).toHaveCount(0);
   await expect(mac(page).getByRole('button', { name: /^Journal / })).toBeVisible();
   expect(await read(page, 'work.md', 'Work')).toBe('# Keep Work');
@@ -233,9 +257,11 @@ test('removing a folder from Notes preserves files on disk and other added folde
 test('browsers without local pickers can create personal notes with no storage management buttons', async ({ page }) => {
   await page.addInitScript(() => { window.showOpenFilePicker = undefined; window.showDirectoryPicker = undefined; });
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Add Folder…', exact: true })).toBeDisabled();
-  await action(page, 'New Note…'); await page.getByRole('textbox', { name: 'File name', exact: true }).fill('personal.md');
-  await page.getByRole('button', { name: 'Create note', exact: true }).click(); await sourceMode(page);
+  await page.locator('[data-slot=split-view-sidebar]').getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: 'Add Folder…', exact: true })).toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Escape');
+  await action(page, /^New Note/); await page.getByRole('dialog').getByRole('textbox', { name: /^File name/ }).fill('personal.md');
+  await page.getByRole('button', { name: 'Create Note', exact: true }).click(); await sourceMode(page);
   await editor(page, 'personal.md').fill('# My personal note');
   await expect.poll(() => read(page, 'personal.md')).toBe('# My personal note');
 });
@@ -279,6 +305,8 @@ test('phone folder navigation stays in the master stack when a leaf opens and th
   await page.setViewportSize({ width: 390, height: 844 }); await page.reload();
   await seed(page, { 'nested/phone.md': '# Phone note' }, 'Work');
   await page.evaluate(() => { window.__nextFolder = 'Work'; });
+  // The phone opens on the list; the + is in the Folders column behind it.
+  await current(page).getByRole('button', { name: /^(Folders|Back)$/ }).click();
   await action(page, 'Add Folder…');
   await current(page).getByRole('button', { name: 'Open folder nested', exact: true }).click();
   await expect(current(page)).toHaveAttribute('data-screen-key', 'folder:Work/nested');
@@ -301,7 +329,8 @@ test('Markdown opens in Docstream by default, preserves frontmatter, saves rich 
   await expect(page.getByRole('textbox', { name: 'note.md source', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save', exact: true })).toHaveCount(0);
   await expect(page.locator('[data-slot=split-view-detail] [data-slot=split-view-header]')).toContainText('note.md');
-  await expect(page.getByRole('radiogroup', { name: 'Note view' }).getByRole('radio', { name: 'Editor', exact: true })).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Markdown source', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  for (const tool of ['Format', 'Checklist', 'Table', 'Share', 'More', 'New note']) await expect(page.locator('[data-slot=split-view-detail]').getByRole('button', { name: tool, exact: true })).toBeVisible();
   expect(await read(page, 'note.md', 'Work')).toBe(properties + body);
   const paragraph = rich.locator('p').filter({ hasText: 'Original important paragraph.' });
   await paragraph.click(); await page.keyboard.press('End'); await page.keyboard.type(' Edited in Docstream.');
@@ -325,7 +354,7 @@ test('first-party document properties edit and autosave with the body and stay i
   await expect.poll(() => read(page, 'properties.md', 'Work')).toContain('complete: true');
   await sourceMode(page);
   await expect(editor(page, 'properties.md')).toHaveValue(/priority: 7[\s\S]*complete: true/);
-  await page.getByRole('radiogroup', { name: 'Note view' }).getByText('Editor', { exact: true }).click();
+  await page.getByRole('button', { name: 'Markdown source', exact: true }).click();
   await sheet.locator('summary').click();
   await expect(sheet.getByRole('spinbutton', { name: 'priority', exact: true })).toHaveValue('7');
 });
@@ -403,4 +432,45 @@ test('added folders provide Docstream demo source files, metadata and a working 
   await expect(frame.getByRole('button', { name: 'Hello from my folder' })).toBeVisible({ timeout: 90_000 });
   await seed(page, { 'docs/examples/hello/world/message.ts': 'export const greeting = "Updated outside Notes";' }, 'Work');
   await expect(frame.getByRole('button', { name: 'Updated outside Notes' })).toBeVisible({ timeout: 90_000 });
+});
+
+test('right-click renames and deletes notes and folders in place, in the list and the tree', async ({ page }) => {
+  await seed(page, { 'draft.md': '# Draft', 'Old/inner.md': '# Inner', 'Trash me/gone.md': '# Gone' }, 'Work'); await addFolder(page, 'Work');
+  // Rename a note: the name becomes a field with the stem selected; Return keeps it.
+  await contextAction(page, row(page, 'draft.md'), 'Rename…');
+  const field = page.getByRole('textbox', { name: 'Rename draft.md', exact: true });
+  await expect(field).toBeFocused();
+  await page.keyboard.type('final'); await page.keyboard.press('Enter');
+  await expect(row(page, 'final.md')).toBeVisible();
+  await expect.poll(() => read(page, 'final.md', 'Work')).toBe('# Draft');
+  // Escape leaves the name alone.
+  await contextAction(page, row(page, 'final.md'), 'Rename…');
+  await page.keyboard.type('nope'); await page.keyboard.press('Escape');
+  await expect(row(page, 'final.md')).toBeVisible();
+  // Rename a folder; its notes move with it.
+  await contextAction(page, current(page).getByRole('button', { name: 'Open folder Old', exact: true }), 'Rename…');
+  await page.keyboard.type('New'); await page.keyboard.press('Enter');
+  await expect(current(page).getByRole('button', { name: 'Open folder New', exact: true })).toBeVisible();
+  await expect.poll(() => read(page, 'New/inner.md', 'Work')).toBe('# Inner');
+  // Delete asks first.
+  await contextAction(page, row(page, 'final.md'), 'Delete');
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(row(page, 'final.md')).toHaveCount(0);
+  await expect.poll(() => read(page, 'final.md', 'Work').catch(() => null)).toBe(null);
+  // The tree has the same menu.
+  await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
+  await contextAction(page, page.getByRole('treegrid').getByRole('row', { name: 'Trash me', exact: true }), 'Delete');
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.getByRole('treegrid').getByRole('row', { name: 'Trash me', exact: true })).toHaveCount(0);
+  // And the toolbar's … menu renames the open note in its title.
+  await page.getByRole('treegrid').getByRole('row', { name: 'New', exact: true }).press('ArrowRight');
+  await page.getByRole('treegrid').getByRole('row', { name: 'inner.md', exact: true }).click();
+  await page.locator('[data-slot=split-view-detail]').getByRole('button', { name: 'More', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Rename…', exact: true }).click();
+  await page.keyboard.type('renamed'); await page.keyboard.press('Enter');
+  await expect(page.locator('[data-slot=split-view-detail] [data-slot=split-view-header]')).toContainText('renamed.md');
+  await expect.poll(() => read(page, 'New/renamed.md', 'Work')).toBe('# Inner');
+  // Sidebar locations have their own menu.
+  await contextAction(page, mac(page).getByRole('button', { name: /^Work / }), 'Remove from Notes');
+  await expect(mac(page).getByRole('button', { name: /^Work / })).toHaveCount(0);
 });
