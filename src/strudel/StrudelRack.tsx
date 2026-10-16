@@ -120,7 +120,8 @@ function Device({
   return (
     <section className="strudel-device" data-kind={track.kind} data-audible={audible} aria-label={name}>
       <header className="strudel-device__head">
-        <Icon size={15} aria-hidden="true" />
+        <span className="strudel-device__led" aria-hidden="true" />
+        <Icon size={14} aria-hidden="true" />
         <span className="strudel-device__name" title={code.slice(track.start, track.end)}>
           {name}
         </span>
@@ -145,7 +146,7 @@ function Device({
         />
         <div className="strudel-device__main">
           {(synth || scaleMatch) && (
-            <div className="strudel-device__selects">
+            <div className="strudel-device__selects strudel-lcd">
               {synth && (
                 <label>
                   <span>Sound</span>
@@ -268,8 +269,16 @@ export function StrudelRack({ code, onChange, onPlayableChange, className }: Str
   return (
     <div className={`strudel-rack ${className ?? ""}`.trim()}>
       <div className="strudel-rack__master" role="group" aria-label="Master">
-        <span className="strudel-rack__title">Master</span>
+        <span className="strudel-rack__title">
+          Master
+          <small>Strudel</small>
+        </span>
+        <output className="strudel-lcd strudel-lcd--bpm" aria-label="Tempo">
+          {Math.round((cps && Number.isFinite(cps) ? cps : 0.5) * 2400) / 10}
+          <small>BPM</small>
+        </output>
         <Knob
+          size="lg"
           label="Tempo"
           value={cps && Number.isFinite(cps) ? cps : 0.5}
           min={0.1}
@@ -280,6 +289,7 @@ export function StrudelRack({ code, onChange, onPlayableChange, className }: Str
         />
         {master && (
           <Knob
+            size="lg"
             label="Output"
             value={postgain ?? 1}
             min={0}

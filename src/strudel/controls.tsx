@@ -1,6 +1,7 @@
-/* The rack's hardware: a rotary knob and a fader. Both are ARIA sliders — drag (Shift for fine), arrow keys,
-   Page Up/Down, Home/End — and double-click resets to the default. Values map logarithmically when `log`. */
-import { useRef, type KeyboardEvent, type PointerEvent } from "react"
+/* The rack's hardware: a rotary knob (rubber skirt, machined cap, LED ring) and a channel fader (slotted
+   track, tick scale, chunky cap). Both are ARIA sliders — drag (Shift for fine), arrow keys, Page Up/Down,
+   Home/End — and double-click resets to the default. Values map logarithmically when `log`. */
+import { useId, useRef, type KeyboardEvent, type PointerEvent } from "react"
 
 export interface ControlProps {
   label: string
@@ -16,6 +17,8 @@ export interface ControlProps {
   /** Shown instead of the value, e.g. "∿" for a modulated parameter. */
   display?: string
   title?: string
+  /** Knob only: "lg" for master controls. */
+  size?: "md" | "lg"
 }
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
@@ -38,20 +41,19 @@ export function defaultFormat(v: number): string {
   return v.toFixed(2)
 }
 
-function useDrag(props: ControlProps, axis: "x" | "y", travel: number) {
+function useDrag(props: ControlProps, travel: number) {
   const start = useRef<{ pos: number; unit: number } | null>(null)
   const set = (unit: number) => props.onChange(fromUnit(unit, props))
   const onPointerDown = (e: PointerEvent<HTMLElement>) => {
     if (props.disabled) return
     e.currentTarget.setPointerCapture(e.pointerId)
     e.currentTarget.focus()
-    start.current = { pos: axis === "y" ? e.clientY : e.clientX, unit: toUnit(props.value, props) }
+    start.current = { pos: e.clientY, unit: toUnit(props.value, props) }
   }
   const onPointerMove = (e: PointerEvent<HTMLElement>) => {
     const s = start.current
     if (!s) return
-    const delta = axis === "y" ? s.pos - e.clientY : e.clientX - s.pos
-    set(s.unit + (delta / travel) * (e.shiftKey ? 0.2 : 1))
+    set(s.unit + ((s.pos - e.clientY) / travel) * (e.shiftKey ? 0.2 : 1))
   }
   const onPointerUp = () => {
     start.current = null
@@ -95,31 +97,57 @@ function aria(props: ControlProps, format: (v: number) => string) {
 }
 
 const ARC = 270
-const polar = (deg: number, r: number) => {
+const LEDS = 15
+const polar = (deg: number, r: number, c = 30) => {
   const a = ((deg - 90) * Math.PI) / 180
-  return [20 + r * Math.cos(a), 20 + r * Math.sin(a)] as const
-}
-const arc = (from: number, to: number, r: number) => {
-  const [x1, y1] = polar(from, r)
-  const [x2, y2] = polar(to, r)
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${to - from > 180 ? 1 : 0} 1 ${x2} ${y2}`
+  return [c + r * Math.cos(a), c + r * Math.sin(a)] as const
 }
 
 export function Knob(props: ControlProps) {
+  const id = useId().replace(/:/g, "")
   const format = props.format ?? defaultFormat
-  const handlers = useDrag(props, "y", 160)
+  const handlers = useDrag(props, 160)
   const u = toUnit(props.value, props)
-  const from = -ARC / 2
-  const to = from + ARC * u
-  const [px, py] = polar(to, 11)
+  const angle = -ARC / 2 + ARC * u
+  // A bipolar parameter (pan, speed) lights from the centre; the rest light from the left.
+  const bipolar = props.min < 0 || props.label === "Pan"
+  const zero = bipolar ? toUnit(props.min < 0 ? 0 : (props.min + props.max) / 2, props) : 0
+  const lit = (i: number) => {
+    const t = i / (LEDS - 1)
+    return !props.disabled && (bipolar ? (t >= Math.min(zero, u) - 0.001 && t <= Math.max(zero, u) + 0.001) : t <= u + 0.001)
+  }
   return (
-    <div className="strudel-knob" data-disabled={props.disabled || undefined}>
+    <div className="strudel-knob" data-size={props.size ?? "md"} data-disabled={props.disabled || undefined}>
       <div className="strudel-knob__dial" {...aria(props, format)} {...handlers}>
-        <svg viewBox="0 0 40 40" aria-hidden="true">
-          <path d={arc(from, from + ARC, 16)} className="strudel-knob__track" />
-          {!props.disabled && u > 0.001 && <path d={arc(from, to, 16)} className="strudel-knob__fill" />}
-          <circle cx="20" cy="20" r="11.5" className="strudel-knob__cap" />
-          <line x1="20" y1="20" x2={px} y2={py} className="strudel-knob__pointer" />
+        <svg viewBox="0 0 60 60" aria-hidden="true">
+          <defs>
+            <radialGradient id={`${id}-skirt`} cx="50%" cy="35%" r="70%">
+              <stop offset="0" stopColor="#4a4d55" />
+              <stop offset=".6" stopColor="#1d1f24" />
+              <stop offset="1" stopColor="#0b0c0e" />
+            </radialGradient>
+            <linearGradient id={`${id}-cap`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#f2f3f5" />
+              <stop offset=".45" stopColor="#a9adb5" />
+              <stop offset=".55" stopColor="#8a8f98" />
+              <stop offset="1" stopColor="#d7dae0" />
+            </linearGradient>
+          </defs>
+          {Array.from({ length: LEDS }, (_, i) => {
+            const [x, y] = polar(-ARC / 2 + (ARC * i) / (LEDS - 1), 27)
+            return <circle key={i} cx={x} cy={y} r="1.7" className="strudel-knob__led" data-on={lit(i) || undefined} />
+          })}
+          <circle cx="30" cy="31.5" r="19.5" className="strudel-knob__shadow" />
+          <circle cx="30" cy="30" r="19" fill={`url(#${id}-skirt)`} className="strudel-knob__skirt" />
+          {/* Grip ridges on the skirt, then the machined cap and its indicator. */}
+          <g transform={`rotate(${angle} 30 30)`}>
+            {Array.from({ length: 24 }, (_, i) => (
+              <line key={i} x1="30" y1="11.6" x2="30" y2="14" transform={`rotate(${i * 15} 30 30)`} className="strudel-knob__ridge" />
+            ))}
+            <circle cx="30" cy="30" r="12.5" fill={`url(#${id}-cap)`} className="strudel-knob__cap" />
+            <circle cx="30" cy="30" r="12.5" className="strudel-knob__brush" />
+            <line x1="30" y1="19.5" x2="30" y2="26" className="strudel-knob__pointer" />
+          </g>
         </svg>
       </div>
       <span className="strudel-knob__value">{props.display ?? format(props.value)}</span>
@@ -128,16 +156,25 @@ export function Knob(props: ControlProps) {
   )
 }
 
+const TICKS = [10, 8, 6, 4, 2, 0]
+
 export function Fader(props: ControlProps) {
   const format = props.format ?? defaultFormat
-  const handlers = useDrag(props, "y", 90)
+  const handlers = useDrag(props, 104)
   const u = toUnit(props.value, props)
   return (
     <div className="strudel-fader" data-disabled={props.disabled || undefined}>
       <span className="strudel-fader__value">{props.display ?? format(props.value)}</span>
-      <div className="strudel-fader__track" {...aria(props, format)} {...handlers} aria-orientation="vertical">
-        <div className="strudel-fader__fill" style={{ height: `${u * 100}%` }} />
-        <div className="strudel-fader__thumb" style={{ bottom: `calc(${u * 100}% - 5px)` }} />
+      <div className="strudel-fader__body">
+        <div className="strudel-fader__scale" aria-hidden="true">
+          {TICKS.map((t) => (
+            <span key={t}>{t}</span>
+          ))}
+        </div>
+        <div className="strudel-fader__track" {...aria(props, format)} {...handlers} aria-orientation="vertical">
+          <div className="strudel-fader__slot" />
+          <div className="strudel-fader__cap" style={{ bottom: `calc(${u} * (100% - 22px))` }} />
+        </div>
       </div>
       <span className="strudel-fader__label">{props.label}</span>
     </div>

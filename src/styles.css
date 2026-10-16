@@ -661,65 +661,157 @@
   cursor: pointer;
 }
 
+/* The rack is hardware, so it is dark in both themes: a brushed-steel 19" frame with screwed rack ears,
+   anodized modules with silkscreened labels, rubber knobs with LED rings, channel faders, backlit pads,
+   TR-style step keys and green LCDs. */
 .strudel-rack {
-  --strudel-accent: var(--gb-primary, #6366f1);
+  --strudel-accent: #36d6ff;
+  --strudel-amber: #ff9d1c;
+  --strudel-red: #ff4433;
+  --strudel-lcd: #9dff9a;
+  --strudel-silk: #d9dde4;
+  --strudel-ear: 22px;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid var(--gb-border);
-  border-radius: 12px;
-  background: var(--gb-muted, #f4f4f5);
+  gap: 10px;
+  padding: 12px calc(var(--strudel-ear) + 10px);
+  border-radius: 8px;
+  color: var(--strudel-silk);
   font-size: 12px;
+  font-family: "Helvetica Neue", Arial, system-ui, sans-serif;
+  background:
+    /* rack ears: four screws */
+    radial-gradient(circle at calc(var(--strudel-ear) / 2) 18px, #e7e9ee 0 2px, #6b7079 2.5px 4px, transparent 4.5px),
+    radial-gradient(circle at calc(var(--strudel-ear) / 2) calc(100% - 18px), #e7e9ee 0 2px, #6b7079 2.5px 4px, transparent 4.5px),
+    radial-gradient(circle at calc(100% - var(--strudel-ear) / 2) 18px, #e7e9ee 0 2px, #6b7079 2.5px 4px, transparent 4.5px),
+    radial-gradient(circle at calc(100% - var(--strudel-ear) / 2) calc(100% - 18px), #e7e9ee 0 2px, #6b7079 2.5px 4px, transparent 4.5px),
+    /* ear plates */
+    linear-gradient(90deg, #9da2ab 0, #c9ccd2 9px, #8e939c var(--strudel-ear), rgb(0 0 0 / 0.5) var(--strudel-ear), transparent calc(var(--strudel-ear) + 2px)) left / calc(var(--strudel-ear) + 2px) 100% no-repeat,
+    linear-gradient(270deg, #9da2ab 0, #c9ccd2 9px, #8e939c var(--strudel-ear), rgb(0 0 0 / 0.5) var(--strudel-ear), transparent calc(var(--strudel-ear) + 2px)) right / calc(var(--strudel-ear) + 2px) 100% no-repeat,
+    /* brushed steel */
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.025) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #3a3d44, #24262b 30%, #1b1c20);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    inset 0 -1px 0 rgb(0 0 0 / 0.6),
+    0 1px 0 rgb(255 255 255 / 0.4),
+    0 10px 24px -8px rgb(0 0 0 / 0.55);
 }
 
 .strudel-rack__master {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 4px 6px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #2c2f35, #17181c);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(0 0 0 / 0.7), 0 2px 3px rgb(0 0 0 / 0.5);
 }
 
 .strudel-rack__title {
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  font-weight: 800;
   font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.strudel-rack__title small {
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--strudel-accent);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--strudel-accent) 60%, transparent);
 }
 
 .strudel-rack__summary {
   margin-left: auto;
-  color: var(--gb-muted-foreground);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8b9099;
 }
 
 .strudel-rack__error,
 .strudel-device__error {
   margin: 0;
-  color: var(--gb-danger, #dc2626);
+  color: var(--strudel-red);
   font-size: 12px;
 }
 
-.strudel-device {
-  border: 1px solid var(--gb-border);
-  border-radius: 10px;
-  background: var(--gb-panel, #fff);
-  color: var(--gb-panel-foreground, inherit);
-  overflow: hidden;
+/* LCD: recessed green glass with a faint pixel grid. */
+.strudel-lcd {
+  padding: 6px 10px;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.18) 0 1px, transparent 1px 2px),
+    linear-gradient(180deg, #0c1a10, #10261a);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.8), inset 0 0 0 1px rgb(0 0 0 / 0.9), 0 1px 0 rgb(255 255 255 / 0.12);
+  color: var(--strudel-lcd);
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  text-shadow: 0 0 6px color-mix(in srgb, var(--strudel-lcd) 55%, transparent);
 }
 
-.strudel-device[data-audible="false"] .strudel-device__body {
-  opacity: 0.45;
+.strudel-lcd--bpm {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 92px;
+  justify-content: flex-end;
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
+
+.strudel-lcd--bpm small {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+}
+
+/* Modules: anodized faceplates with a top bevel and corner screws. */
+.strudel-device {
+  position: relative;
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 8px 8px, #c4c8cf 0 1.5px, #555a62 2px 3px, transparent 3.5px),
+    radial-gradient(circle at calc(100% - 8px) 8px, #c4c8cf 0 1.5px, #555a62 2px 3px, transparent 3.5px),
+    radial-gradient(circle at 8px calc(100% - 8px), #c4c8cf 0 1.5px, #555a62 2px 3px, transparent 3.5px),
+    radial-gradient(circle at calc(100% - 8px) calc(100% - 8px), #c4c8cf 0 1.5px, #555a62 2px 3px, transparent 3.5px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.018) 0 1px, transparent 1px 2px),
+    linear-gradient(180deg, #33363d, #212328);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px rgb(0 0 0 / 0.75), 0 3px 5px rgb(0 0 0 / 0.5);
+}
+
+.strudel-device[data-kind="drums"] { --strudel-key: var(--strudel-amber); }
+.strudel-device[data-kind="melodic"],
+.strudel-device[data-kind="other"] { --strudel-key: var(--strudel-accent); }
 
 .strudel-device__head {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px 6px 10px;
-  border-bottom: 1px solid var(--gb-border);
-  color: var(--gb-muted-foreground);
+  padding: 7px 16px 7px 18px;
+  border-bottom: 1px solid rgb(0 0 0 / 0.6);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06);
+  color: var(--strudel-key);
 }
 
-.strudel-device[data-kind="drums"] .strudel-device__head svg { color: #f59e0b; }
-.strudel-device[data-kind="melodic"] .strudel-device__head svg { color: var(--strudel-accent); }
+.strudel-device__led {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 35%, #d8ffd6, #2fe05a 45%, #0d6a26);
+  box-shadow: 0 0 6px #2fe05a, 0 0 0 1px rgb(0 0 0 / 0.7);
+}
+
+.strudel-device[data-audible="false"] .strudel-device__led {
+  background: radial-gradient(circle at 35% 35%, #4b524c, #1f2420);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.7);
+}
 
 .strudel-device__name {
   flex: 1;
@@ -727,30 +819,54 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 600;
-  color: var(--gb-panel-foreground, inherit);
-}
-
-.strudel-device__toggle {
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--gb-border);
-  border-radius: 5px;
-  background: transparent;
-  color: var(--gb-muted-foreground);
-  font: inherit;
-  font-size: 11px;
   font-weight: 700;
-  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--strudel-silk);
 }
 
-.strudel-device__toggle[data-kind="mute"][aria-pressed="true"] { background: #f59e0b; border-color: #f59e0b; color: #000; }
-.strudel-device__toggle[data-kind="solo"][aria-pressed="true"] { background: var(--strudel-accent); border-color: var(--strudel-accent); color: var(--gb-primary-foreground, #fff); }
+/* Backlit rubber pads. */
+.strudel-device__toggle {
+  width: 26px;
+  height: 20px;
+  border: 0;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #4a4e56, #2b2e34);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 2px 0 #0d0e10, 0 3px 4px rgb(0 0 0 / 0.5);
+  color: #9aa0a9;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 60ms, box-shadow 60ms;
+}
+
+.strudel-device__toggle:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 0 0 #0d0e10, 0 1px 2px rgb(0 0 0 / 0.5);
+}
+
+.strudel-device__toggle[data-kind="mute"][aria-pressed="true"] {
+  background: linear-gradient(180deg, #ffc266, var(--strudel-amber));
+  color: #3a1d00;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 2px 0 #7a4300, 0 0 12px color-mix(in srgb, var(--strudel-amber) 70%, transparent);
+}
+
+.strudel-device__toggle[data-kind="solo"][aria-pressed="true"] {
+  background: linear-gradient(180deg, #a6f0ff, var(--strudel-accent));
+  color: #002a36;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 2px 0 #00657d, 0 0 12px color-mix(in srgb, var(--strudel-accent) 70%, transparent);
+}
 
 .strudel-device__body {
   display: flex;
-  gap: 12px;
-  padding: 10px;
+  gap: 14px;
+  padding: 12px 18px 16px;
+}
+
+.strudel-device[data-audible="false"] .strudel-device__main {
+  filter: saturate(0.2) brightness(0.7);
 }
 
 .strudel-device__main {
@@ -758,38 +874,57 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .strudel-device__selects {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
+  align-items: center;
+  gap: 4px 16px;
+  align-self: flex-start;
 }
 
 .strudel-device__selects label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--gb-muted-foreground);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 
-.strudel-device__selects select,
-.strudel-device__add select {
+.strudel-device__selects select {
+  appearance: none;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--strudel-lcd);
   font: inherit;
-  font-size: 12px;
-  padding: 2px 4px;
-  border: 1px solid var(--gb-border);
-  border-radius: 6px;
-  background: var(--gb-panel, #fff);
-  color: var(--gb-panel-foreground, inherit);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  text-shadow: inherit;
+  cursor: pointer;
+}
+
+.strudel-device__selects select:focus-visible {
+  outline: 1px solid var(--strudel-lcd);
+  border-radius: 2px;
+}
+
+.strudel-device__selects option,
+.strudel-device__add option {
+  background: #111;
+  color: #eee;
 }
 
 .strudel-device__knobs {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 4px 10px;
+  gap: 6px 10px;
 }
 
 .strudel-device__knob {
@@ -798,8 +933,8 @@
 
 .strudel-device__remove {
   position: absolute;
-  top: -2px;
-  right: -4px;
+  top: 0;
+  right: 0;
   display: none;
   place-items: center;
   width: 14px;
@@ -807,8 +942,8 @@
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: var(--gb-muted-foreground);
-  color: var(--gb-panel, #fff);
+  background: var(--strudel-red);
+  color: #fff;
   cursor: pointer;
 }
 
@@ -818,126 +953,186 @@
 }
 
 .strudel-device__add {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  align-self: center;
-  color: var(--gb-muted-foreground);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  align-self: flex-start;
+  width: 40px;
+  height: 40px;
+  margin-top: 6px;
+  border-radius: 999px;
+  border: 1px dashed #5d626b;
+  color: #8b9099;
 }
 
+.strudel-device__add select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.strudel-device__add:focus-within {
+  outline: 2px solid var(--strudel-accent);
+  outline-offset: 2px;
+}
+
+/* Knob: LED ring, rubber skirt, machined cap. */
 .strudel-knob {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 52px;
+  width: 58px;
   user-select: none;
 }
 
 .strudel-knob__dial {
-  width: 38px;
-  height: 38px;
+  width: 52px;
+  height: 52px;
   border-radius: 999px;
   cursor: ns-resize;
   touch-action: none;
 }
 
+.strudel-knob[data-size="lg"] {
+  width: 70px;
+}
+
+.strudel-knob[data-size="lg"] .strudel-knob__dial {
+  width: 64px;
+  height: 64px;
+}
+
 .strudel-knob__dial:focus-visible,
 .strudel-fader__track:focus-visible {
-  outline: 2px solid var(--strudel-accent, #6366f1);
+  outline: 2px solid var(--strudel-accent);
   outline-offset: 2px;
 }
 
-.strudel-knob__dial svg { width: 100%; height: 100%; display: block; }
-.strudel-knob__track { fill: none; stroke: var(--gb-border); stroke-width: 3; stroke-linecap: round; }
-.strudel-knob__fill { fill: none; stroke: var(--strudel-accent, #6366f1); stroke-width: 3; stroke-linecap: round; }
-.strudel-knob__cap { fill: var(--gb-muted, #f4f4f5); stroke: var(--gb-border); }
-.strudel-knob__pointer { stroke: var(--gb-panel-foreground, #18181b); stroke-width: 2; stroke-linecap: round; }
+.strudel-knob__dial svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.strudel-knob__led { fill: #2a2d33; stroke: rgb(0 0 0 / 0.6); stroke-width: 0.5; }
+.strudel-knob__led[data-on] { fill: var(--strudel-key, var(--strudel-accent)); filter: drop-shadow(0 0 1.6px var(--strudel-key, var(--strudel-accent))); }
+.strudel-knob__shadow { fill: rgb(0 0 0 / 0.55); filter: blur(1.4px); }
+.strudel-knob__skirt { stroke: #050506; stroke-width: 0.8; }
+.strudel-knob__ridge { stroke: rgb(255 255 255 / 0.12); stroke-width: 1.2; stroke-linecap: round; }
+.strudel-knob__cap { stroke: rgb(0 0 0 / 0.5); stroke-width: 0.6; }
+.strudel-knob__brush { fill: none; stroke: rgb(255 255 255 / 0.35); stroke-width: 0.5; stroke-dasharray: 0.6 1.4; }
+.strudel-knob__pointer { stroke: #111; stroke-width: 2.4; stroke-linecap: round; }
 
 .strudel-knob__value,
 .strudel-fader__value {
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #fff;
 }
 
 .strudel-knob__label,
 .strudel-fader__label {
-  font-size: 10px;
-  color: var(--gb-muted-foreground);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--strudel-silk);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.16em;
   white-space: nowrap;
 }
 
 .strudel-knob[data-disabled] .strudel-knob__dial,
 .strudel-fader[data-disabled] .strudel-fader__track {
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
+.strudel-knob[data-disabled] .strudel-knob__value {
+  color: var(--strudel-accent);
+}
+
+/* Channel fader: tick scale, slotted track, chunky ribbed cap. */
 .strudel-fader {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: 36px;
   user-select: none;
+}
+
+.strudel-fader__body {
+  display: flex;
+  gap: 4px;
+}
+
+.strudel-fader__scale {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 7px;
+  line-height: 1;
+  color: #8b9099;
+  text-align: right;
 }
 
 .strudel-fader__track {
   position: relative;
-  width: 8px;
-  height: 90px;
-  border-radius: 999px;
-  background: var(--gb-border);
+  width: 26px;
+  height: 118px;
   cursor: ns-resize;
   touch-action: none;
+  border-radius: 4px;
+  background: repeating-linear-gradient(180deg, transparent 0 9px, rgb(255 255 255 / 0.12) 9px 10px) 0 6px / 5px calc(100% - 12px) no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 9px, rgb(255 255 255 / 0.12) 9px 10px) 100% 6px / 5px calc(100% - 12px) no-repeat;
 }
 
-.strudel-fader__fill {
+.strudel-fader__slot {
   position: absolute;
-  inset: auto 0 0;
-  border-radius: 999px;
-  background: var(--strudel-accent, #6366f1);
-}
-
-.strudel-fader__thumb {
-  position: absolute;
-  left: -6px;
-  width: 20px;
-  height: 10px;
+  inset: 4px calc(50% - 2.5px);
   border-radius: 3px;
-  background: var(--gb-panel, #fff);
-  border: 1px solid var(--gb-muted-foreground);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  background: #050506;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.9), 0 1px 0 rgb(255 255 255 / 0.1);
 }
 
-/* StepGrid: mini-notation as a step sequencer. */
+.strudel-fader__cap {
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  height: 22px;
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, transparent 10px, #fff 10px 12px, transparent 12px),
+    repeating-linear-gradient(180deg, rgb(0 0 0 / 0.25) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #a3a8b1, #5b6069 48%, #3e4249 52%, #7c818a);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 3px 5px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(0 0 0 / 0.6);
+}
+
+/* Steps: TR-style keys that light up. */
 .strudel-steps {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-top: 6px;
+  padding: 8px;
+  border-radius: 5px;
+  background: rgb(0 0 0 / 0.35);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.8), 0 1px 0 rgb(255 255 255 / 0.06);
   overflow-x: auto;
 }
 
 .strudel-step__layers {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   flex: 1;
 }
 
 .strudel-step__row {
   display: flex;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
 .strudel-step {
   position: relative;
   flex: 1 1 0;
-  min-width: 18px;
+  min-width: 20px;
   display: flex;
 }
 
@@ -945,48 +1140,75 @@
 .strudel-step__input {
   flex: 1;
   min-width: 0;
-  height: 26px;
+  height: 30px;
   padding: 0 3px;
-  border: 1px solid var(--gb-border);
-  border-radius: 5px;
-  font: inherit;
-  font-size: 11px;
-  font-family: var(--gb-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  border: 0;
+  border-radius: 3px;
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .strudel-step__cell {
-  background: color-mix(in srgb, var(--strudel-accent, #6366f1) 22%, var(--gb-panel, #fff));
-  color: var(--gb-panel-foreground, inherit);
+  position: relative;
+  padding-top: 7px;
+  color: #1a0d00;
   cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--strudel-key) 70%, #fff), var(--strudel-key) 55%, color-mix(in srgb, var(--strudel-key) 75%, #000));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55), 0 2px 0 rgb(0 0 0 / 0.75), 0 0 10px color-mix(in srgb, var(--strudel-key) 45%, transparent);
+  transition: transform 50ms, box-shadow 50ms;
 }
 
-.strudel-device[data-kind="drums"] .strudel-step__cell:not([data-rest]) {
-  background: color-mix(in srgb, #f59e0b 30%, var(--gb-panel, #fff));
+/* The key's LED. */
+.strudel-step__cell::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  width: 10px;
+  height: 3px;
+  margin-left: -5px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 5px #fff;
 }
 
 .strudel-step__cell[data-rest] {
-  background: transparent;
-  border-style: dashed;
+  color: transparent;
+  background: linear-gradient(180deg, #4b4f57, #34373d 55%, #26282d);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16), 0 2px 0 rgb(0 0 0 / 0.75);
 }
 
-.strudel-step__cell:hover {
-  border-color: var(--strudel-accent, #6366f1);
+.strudel-step__cell[data-rest]::before {
+  background: #1a1b1e;
+  box-shadow: inset 0 0 1px #000;
+}
+
+.strudel-step__cell:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 0 0 rgb(0 0 0 / 0.75);
+}
+
+.strudel-step__cell:focus-visible,
+.strudel-step__input:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
 }
 
 .strudel-step__input {
-  background: var(--gb-panel, #fff);
-  color: inherit;
+  background: #0c1a10;
+  color: var(--strudel-lcd);
 }
 
 .strudel-step__nest {
   flex: 1;
   display: flex;
-  padding: 2px;
-  border: 1px solid var(--gb-border);
-  border-radius: 6px;
+  padding: 3px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
 }
 
 .strudel-step__nest > .strudel-step__row {
@@ -994,7 +1216,7 @@
 }
 
 .strudel-step__nest[data-kind="alternation"] {
-  border-style: dashed;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--strudel-key) 45%, transparent);
 }
 
 .strudel-step__nest[data-kind="alternation"] > .strudel-step__layers > .strudel-step__row {
@@ -1006,12 +1228,18 @@
   top: -6px;
   right: 2px;
   padding: 0 3px;
-  border-radius: 4px;
-  background: var(--gb-panel-foreground, #18181b);
-  color: var(--gb-panel, #fff);
-  font-size: 9px;
+  border-radius: 3px;
+  background: #000;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.2);
+  color: var(--strudel-lcd);
+  font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  font-size: 8px;
   line-height: 12px;
   pointer-events: none;
+}
+
+.strudel-steps {
+  padding-top: 10px;
 }
 
 .docs-content-ref {
