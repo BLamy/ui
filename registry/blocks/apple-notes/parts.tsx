@@ -6,7 +6,7 @@ import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { Note } from './data';
 import { itemMenuItems, useItemMenuAction } from './item-menu';
-import type { NotesState, NotesView } from './use-notes';
+import type { FileFilter, NotesState, NotesView } from './use-notes';
 
 export function UnreadDot() {
   return <span role="img" aria-label="Changed outside Notes" title="Changed outside Notes" className="size-1.5 shrink-0 rounded-full bg-primary" />;
@@ -25,6 +25,20 @@ export function ViewToggle({ view, onChange }: { view: NotesView; onChange: (v: 
       { id: 'list', label: <span aria-label="List" className="text-foreground"><Icon name="list" size={17} weight="medium" /></span> },
       { id: 'tree', label: <span aria-label="Tree view" className="text-foreground"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 3v11h4M4 7h4M11 4h5v5h-5zM11 12h5v5h-5z" /></svg></span> },
     ]} />;
+}
+
+/** Beside the search field: Markdown Files (the default) or All Files. The icon fills while other files show. */
+export function FilterMenu({ filter, onChange }: { filter: FileFilter; onChange: (f: FileFilter) => void }) {
+  return <DropdownMenu>
+    <BarButton label="Filter files" className="h-[34px] w-9 shrink-0">
+      <Icon name={filter === 'all' ? 'filter-circle-fill' : 'filter-circle'} size={24} />
+    </BarButton>
+    <DropdownMenuContent aria-label="Show" placement="bottom end" selectionMode="single" selectedKeys={[filter]}
+      onSelectionChange={(keys) => { const key = [...keys][0]; if (key) onChange(key as FileFilter); }}>
+      <DropdownMenuItem id="markdown" icon={<Icon name="note" size={20} />}>Markdown Files</DropdownMenuItem>
+      <DropdownMenuItem id="all" icon={<Icon name="folder" size={20} />}>All Files</DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>;
 }
 
 /** Share the note's file: copy it or save a copy. */

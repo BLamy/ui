@@ -474,3 +474,42 @@ test('right-click renames and deletes notes and folders in place, in the list an
   await contextAction(page, mac(page).getByRole('button', { name: /^Work / }), 'Remove from Notes');
   await expect(mac(page).getByRole('button', { name: /^Work / })).toHaveCount(0);
 });
+
+test('the filter shows Markdown files by default, hiding folders without notes, and All Files dims everything else', async ({ page }) => {
+  await seed(page, {
+    'README.md': '# Readme', 'package.json': '{}', 'docs/guide.md': '# Guide', 'src/app.ts': 'export {}', 'assets/logo.png': 'png', 'Empty': null,
+  }, 'Project');
+  await addFolder(page, 'Project');
+  const folderRow = (name) => current(page).getByRole('button', { name: `Open folder ${name}`, exact: true });
+  const others = current(page).getByRole('list', { name: 'Other files' });
+  await expect(row(page, 'README.md')).toBeVisible();
+  await expect(folderRow('docs')).toBeVisible();
+  await expect(folderRow('Empty')).toBeVisible();
+  await expect(folderRow('src')).toHaveCount(0);
+  await expect(folderRow('assets')).toHaveCount(0);
+  await expect(others).toHaveCount(0);
+
+  const filter = current(page).getByRole('button', { name: 'Filter files', exact: true });
+  await filter.click();
+  await expect(page.getByRole('menuitemradio', { name: 'Markdown Files' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('menuitemradio', { name: 'All Files' }).click();
+  await expect(folderRow('src')).toBeVisible();
+  await expect(folderRow('assets')).toBeVisible();
+  await expect(others.getByRole('listitem')).toHaveText([/package\.json$/]);
+  await expect(row(page, 'README.md')).toBeVisible();
+  await folderRow('src').click();
+  await expect(others.getByRole('listitem')).toHaveText([/app\.ts$/]);
+  await expect(current(page).getByRole('heading', { name: 'No Notes' })).toHaveCount(0);
+  await current(page).getByRole('button', { name: 'Project', exact: true }).click();
+  await expect(current(page)).toHaveAttribute('data-screen-label', 'Project');
+
+  await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
+  const tree = current(page).getByRole('treegrid', { name: 'Folders and Markdown files' });
+  await expect(tree.getByRole('row', { name: 'package.json', exact: true })).toHaveAttribute('aria-disabled', 'true');
+  await expect(tree.getByRole('row', { name: 'src', exact: true })).toBeVisible();
+  await current(page).getByRole('button', { name: 'Filter files', exact: true }).click();
+  await page.getByRole('menuitemradio', { name: 'Markdown Files' }).click();
+  await expect(tree.getByRole('row', { name: 'package.json', exact: true })).toHaveCount(0);
+  await expect(tree.getByRole('row', { name: 'src', exact: true })).toHaveCount(0);
+  await expect(tree.getByRole('row', { name: 'README.md', exact: true })).toBeVisible();
+});

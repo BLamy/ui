@@ -3,6 +3,10 @@ import { ROOT_FOLDER, title, type Folder, type Note } from './data';
 import { BROWSER_ROOT, FileConflict, fileId, folderId as fileFolderId, useNoteFiles } from './use-note-files';
 
 export type NotesView = 'list' | 'tree';
+/** Markdown Files lists only notes, and only folders with notes in them; All Files adds everything else, dimmed. */
+export type FileFilter = 'markdown' | 'all';
+/** A file Notes doesn't open: listed under All Files by name. */
+export interface OtherFile { id: string; path: string; name: string; folder: string }
 /** Where a name is edited: its row in the master list (or tree), or the note's title in the toolbar. */
 export type RenamePlace = 'list' | 'title';
 interface Draft { note: Note; body: string; base: string; saving?: boolean; error?: string; conflict?: string | null }
@@ -60,6 +64,7 @@ export function useNotes({ folder: initialFolder = ROOT_FOLDER.id, note: initial
   const [selectedId, setSelectedId] = useState<string | null>(initialNote);
   const [query, setQuery] = useState('');
   const [view, setView] = useState<NotesView>(initialView);
+  const [filter, setFilter] = useState<FileFilter>('markdown');
   const [creating, setCreating] = useState<'file' | 'folder' | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; in: RenamePlace } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -80,17 +85,37 @@ export function useNotes({ folder: initialFolder = ROOT_FOLDER.id, note: initial
   const within = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
   const hasDrafts = (prefix: string) => Object.values(draftsRef.current).some((draft) => within(draft.note.file.path, prefix));
 
+  const others = useMemo<OtherFile[]>(() => files.others.map((path) => ({
+    id: `other:${path}`, path, name: path.slice(path.lastIndexOf('/') + 1), folder: fileFolderId(path.slice(0, path.lastIndexOf('/'))),
+  })), [files.others]);
+  // Folders with a note somewhere inside, and folders with any file at all inside.
+  const { withNotes, withFiles } = useMemo(() => {
+    const ancestors = (path: string, into: Set<string>) => {
+      for (let i = path.lastIndexOf('/'); i > 0; i = path.lastIndexOf('/', i - 1)) into.add(path.slice(0, i));
+    };
+    const withNotes = new Set<string>();
+    for (const n of notes) if (!n.file.standalone) ancestors(n.file.path, withNotes);
+    const withFiles = new Set(withNotes);
+    for (const o of others) ancestors(o.path, withFiles);
+    return { withNotes, withFiles };
+  }, [notes, others]);
+  /** Under Markdown Files, a folder of only other files is hidden. Empty folders (a new one) and the folder you're in stay. */
+  const shown = (f: Folder) => filter === 'all' || !f.path || f.parent === ROOT_FOLDER.id || withNotes.has(f.path) || !withFiles.has(f.path)
+    || trail.some((t) => t.id === f.id);
+
   function contents(f: Folder) {
     const q = query.trim().toLowerCase();
+    const inside = (folder: string, path: string) => q ? !!f.path && path.startsWith(`${f.path}/`) : folder === f.id;
     const list = notes.filter((n) => q
-      ? (n.folder === f.id || !!f.path && n.file.path.startsWith(`${f.path}/`)) && `${title(n)}\n${n.body}`.toLowerCase().includes(q)
+      ? (n.folder === f.id || inside(n.folder, n.file.path)) && `${title(n)}\n${n.body}`.toLowerCase().includes(q)
       : n.folder === f.id).sort((a, b) => a.file.name.localeCompare(b.file.name));
-    const children = folders.filter((child) => child.parent === f.id);
-    return { list, children: q ? [] : children };
+    const children = folders.filter((child) => child.parent === f.id && shown(child));
+    const rest = filter === 'all' ? others.filter((o) => inside(o.folder, o.path) && (!q || o.name.toLowerCase().includes(q))) : [];
+    return { list, children: q ? [] : children, others: rest };
   }
 
   return {
-    notes, folder, folders, roots, trail, rootFolder, selected, selectedId, query, view, count, files, drafts, creating, renaming, deleting,
+    notes, folder, folders, roots, others, filter, setFilter, shown, trail, rootFolder, selected, selectedId, query, view, count, files, drafts, creating, renaming, deleting,
     folderId: folder.id, sidebarId: rootFolder?.id ?? null,
     list: contents(folder).list, contents, setQuery, save, setView, setCreating, setRenaming, setDeleting,
     /** Starts a new note or folder inside `id` (the current folder by default). */
