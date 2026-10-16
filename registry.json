@@ -2041,7 +2041,7 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@1.9.1",
+        "@brett_lamy/docstream-editor@1.10.0",
         "@tiptap/core@3.30.5",
         "@tiptap/pm@3.30.5",
         "class-variance-authority@^0.7.1",
@@ -3185,8 +3185,8 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/docstream@1.9.1",
-        "@brett_lamy/docstream-editor@1.9.1",
+        "@brett_lamy/docstream@1.10.0",
+        "@brett_lamy/docstream-editor@1.10.0",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -3216,7 +3216,7 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/docstream@1.9.1"
+        "@brett_lamy/docstream@1.10.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3867,7 +3867,7 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@1.9.1"
+        "@brett_lamy/docstream@1.10.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -5926,12 +5926,14 @@
       "name": "apple-music",
       "type": "registry:block",
       "title": "Apple Music",
-      "description": "Apple Music: Listen Now, Browse, Radio, Search and a Library (Recently Added, Artists, Albums, Songs, playlists) with generated album artwork, album, artist and playlist pages that tint from their artwork, and a mini player that springs open into the full Now Playing screen — scrubber, transport, volume, lyrics and up next — as one morphing element. A SplitView sidebar on desktop and tablet; the iOS tab bar with the mini player above it on phones; light and dark.",
+      "description": "Apple Music: Listen Now, Browse, Radio, Search and a Library (Recently Added, Artists, Albums, Songs, playlists) with generated album artwork, album, artist and playlist pages that tint from their artwork, and a mini player that springs open into the full Now Playing screen — scrubber, transport, volume, lyrics and up next — as one morphing element. Every song is a generated Strudel pattern (genre sets the band, the track seeds key, chords and melody) that really plays. A SplitView sidebar on desktop and tablet; the iOS tab bar with the mini player above it on phones; light and dark.",
       "categories": [
         "application",
         "media"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "@brett_lamy/docstream@1.10.0"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
@@ -5979,6 +5981,11 @@
           "target": "components/blocks/apple-music/player.ts"
         },
         {
+          "path": "registry/blocks/apple-music/songs.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/songs.ts"
+        },
+        {
           "path": "registry/blocks/apple-music/data.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-music/data.ts"
@@ -6002,7 +6009,7 @@
         "use-fs@2.1.0",
         "react-aria-components@^1.20.0",
         "@agent-wasm/core@0.4.0",
-        "@brett_lamy/docstream@1.9.1"
+        "@brett_lamy/docstream@1.10.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",

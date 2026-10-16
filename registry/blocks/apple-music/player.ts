@@ -1,7 +1,12 @@
-/* Playback, simulated: a queue of songs, the current index, a position that advances while playing, volume,
-   shuffle and repeat. Nothing makes sound — the clock is the song. */
-import { useEffect, useState } from 'react';
+/* Playback: a queue of songs, the current index, a position that advances while playing, volume, shuffle and
+   repeat. Each song is a Strudel pattern (songs.ts) that loops while the song's clock runs. Sound starts only after
+   a press (browsers block audio until then), so stories and screenshots that start "playing" stay silent. */
+import { useEffect, useRef, useState } from 'react';
+import { playStrudel, stopStrudel } from '@brett_lamy/docstream/strudel';
 import { albumSongs, ALBUM, type Song } from './data';
+import { songCode } from './songs';
+
+const OWNER = 'apple-music';
 
 export type Repeat = 'off' | 'all' | 'one';
 
@@ -14,6 +19,7 @@ export function usePlayer(initial?: { queue: Song[]; index: number; position?: n
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState<Repeat>('off');
   const current = queue[index];
+  const armed = useRef(false);
 
   const go = (i: number) => {
     const n = queue.length;
@@ -29,6 +35,15 @@ export function usePlayer(initial?: { queue: Song[]; index: number; position?: n
     return () => clearInterval(id);
   }, [playing, current]);
 
+  // Sound follows the player: (re)start the current song's pattern, at the current volume, whenever either changes.
+  useEffect(() => {
+    if (!playing || !armed.current) { void stopStrudel(OWNER); return; }
+    const code = `${songCode(current)}.postgain(${(volume / 100) * 1.2})`;
+    const id = setTimeout(() => playStrudel(OWNER, code).catch((err) => console.warn('[apple-music] Strudel:', err)), 150);
+    return () => clearTimeout(id);
+  }, [playing, current, volume]);
+  useEffect(() => () => void stopStrudel(OWNER), []);
+
   // At the end of a song: play it again (repeat one) or move on.
   useEffect(() => {
     if (!playing || position < current.track.dur) return;
@@ -39,16 +54,16 @@ export function usePlayer(initial?: { queue: Song[]; index: number; position?: n
   return {
     queue, index, current, position, playing, volume, shuffle, repeat,
     upNext: queue.slice(index + 1),
-    toggle: () => setPlaying((p) => !p),
+    toggle: () => { armed.current = true; setPlaying((p) => !p); },
     next: () => go(index + 1),
     // Like every player: back restarts the song unless it has barely begun.
     prev: () => { if (position > 3) setPosition(0); else go(index - 1); },
     seek: (s: number) => setPosition(s),
     setVolume,
     playFrom: (songs: Song[], i: number) => {
-      setQueue(songs); setIndex(i); setPosition(0); setPlaying(true);
+      armed.current = true; setQueue(songs); setIndex(i); setPosition(0); setPlaying(true);
     },
-    jump: (i: number) => { setIndex(i); setPosition(0); setPlaying(true); },
+    jump: (i: number) => { armed.current = true; setIndex(i); setPosition(0); setPlaying(true); },
     toggleShuffle: () => {
       // Turning shuffle on reshuffles what's up next; the current song keeps playing.
       if (!shuffle) {

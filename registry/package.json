@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@agent-wasm/core": "0.4.0",
-    "@brett_lamy/docstream": "1.9.1",
+    "@brett_lamy/docstream": "1.10.0",
     "@brett_lamy/ui": "workspace:*",
     "react-aria-components": "^1.20.0",
     "use-fs": "2.1.0"
