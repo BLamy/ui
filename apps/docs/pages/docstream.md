@@ -71,7 +71,7 @@ The demo feeds an answer in chunks so you can inspect partial and completed rend
 
 Every Docstream block type in one document: all six heading levels, inline formatting and reference chips, nested and task lists, quotes, code, all four hints, synchronized tabs and package-manager commands, expandables, steppers, columns, tables and cards, images and captions, math, Mermaid, video and replay, content and file links, updates, an OpenAPI operation, component and story references, and live demos with inline files.
 
-Switch between **Rendered** and **Editor**, inspect or edit the **Markdown source**, or **Stream example** to watch partial blocks arrive. Both component pages use this same sample. Images, the API spec, demos, and replay are bundled; the video requires a network connection. Optional sandboxed React and VizEngine integrations are shown with their setup syntax.
+Use the **Markdown**, **Rich editor**, and **Preview** tabs inside the example to switch modes. The Markdown tab starts with source on the left and rendered output on the right; the Rich editor tab opens the block editor beside the preview. **Stream example** shows partial blocks arriving. Both component pages use this same sample. Images, the API spec, demos, and replay are bundled; the video requires a network connection. Optional sandboxed React and VizEngine integrations are shown with their setup syntax.
 
 {% demo src="docstream/kitchen-sink" %}
 

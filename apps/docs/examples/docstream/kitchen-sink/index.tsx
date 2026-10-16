@@ -3,6 +3,7 @@ import { createBundledSourceClient, SourcePreview, type DemoResolver, type Sourc
 import { Button } from '@/components/ui/button'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view'
+import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs'
 import Counter from './counter'
 import counterSource from './counter.tsx?raw'
 import { kitchenSinkMarkdown } from './document'
@@ -29,12 +30,12 @@ const references = {
   codebases: [{ id: 'blamy/ui', label: 'BL UI' }, { id: 'blamy/docstream', label: 'Docstream' }],
 }
 
-export default function KitchenSink({ variant = 'rendered' }: { variant?: string }) {
+export default function KitchenSink() {
   const [markdown, setMarkdown] = useState(kitchenSinkMarkdown)
-  const [showSource, setShowSource] = useState(false)
+  const [mode, setMode] = useState('markdown')
   const [streamedLength, setStreamedLength] = useState<number | null>(null)
   const [picked, setPicked] = useState<ReferenceNode | null>(null)
-  const editing = variant === 'editor'
+  const editing = mode === 'editor'
   const streaming = !editing && streamedLength !== null
 
   useEffect(() => {
@@ -66,24 +67,44 @@ export default function KitchenSink({ variant = 'rendered' }: { variant?: string
 
   return (
     <div className="docstream-kitchen-sink">
-      <div className="sink-controls">
-        <Button size="sm" variant="secondary" onPress={() => setShowSource((shown) => !shown)}>
-          {showSource ? 'Show document' : 'Markdown source'}
-        </Button>
-        {!editing && !showSource && (
-          <Button size="sm" variant="secondary" onPress={() => { setPicked(null); setStreamedLength(streaming ? null : 0) }}>
-            {streaming ? 'Show full document' : 'Stream example'}
-          </Button>
-        )}
-        <Button size="sm" variant="ghost" onPress={reset}>Reset example</Button>
-        <span className="sink-status" role="status">
-          {streaming ? 'Streaming…' : picked ? picked.kind + ': ' + picked.id : 'Every Docstream block, one document'}
-        </span>
-      </div>
-      <div className={'sink-workspace' + (editing ? ' sink-workspace-editing' : '')}>
-        {editing && (
+      <Tabs selectedKey={mode} onSelectionChange={(key) => setMode(String(key))} className="sink-tabs">
+        <div className="sink-controls">
+          <TabList aria-label="Document mode">
+            <Tab id="markdown">Markdown</Tab>
+            <Tab id="editor">Rich editor</Tab>
+            <Tab id="preview">Preview</Tab>
+          </TabList>
+          {mode !== 'editor' && (
+            <Button size="sm" variant="secondary" onPress={() => { setPicked(null); setStreamedLength(streaming ? null : 0) }}>
+              {streaming ? 'Show full document' : 'Stream example'}
+            </Button>
+          )}
+          <Button size="sm" variant="ghost" onPress={reset}>Reset example</Button>
+          <span className="sink-status" role="status">
+            {streaming ? 'Streaming…' : picked ? picked.kind + ': ' + picked.id : 'Every Docstream block, one document'}
+          </span>
+        </div>
+        <TabPanel id="markdown" className="sink-workspace sink-workspace-split">
           <section className="sink-panel">
-            <div className="sink-panel-label">Editor · type / for blocks</div>
+            <div className="sink-panel-label">Markdown source</div>
+            <textarea
+              className="sink-source"
+              aria-label="Kitchen sink Markdown source"
+              value={markdown}
+              onChange={(event) => { setStreamedLength(null); setMarkdown(event.target.value) }}
+              spellCheck={false}
+            />
+          </section>
+          <section className="sink-panel">
+            <div className="sink-panel-label">Rendered preview</div>
+            <div className="sink-panel-body sink-preview" tabIndex={0} role="region" aria-label="Kitchen sink preview">
+              {preview}
+            </div>
+          </section>
+        </TabPanel>
+        <TabPanel id="editor" className="sink-workspace sink-workspace-split">
+          <section className="sink-panel">
+            <div className="sink-panel-label">Rich editor · type / for blocks</div>
             <div className="sink-panel-body">
               <MarkdownEditor
                 aria-label="Kitchen sink document"
@@ -97,24 +118,22 @@ export default function KitchenSink({ variant = 'rendered' }: { variant?: string
               />
             </div>
           </section>
-        )}
-        <section className="sink-panel">
-          <div className="sink-panel-label">{showSource ? 'Markdown source' : editing ? 'Live preview' : 'Rendered document'}</div>
-          {showSource ? (
-            <textarea
-              className="sink-source"
-              aria-label="Kitchen sink Markdown source"
-              value={markdown}
-              onChange={(event) => { setStreamedLength(null); setMarkdown(event.target.value) }}
-              spellCheck={false}
-            />
-          ) : (
+          <section className="sink-panel">
+            <div className="sink-panel-label">Rendered preview</div>
             <div className="sink-panel-body sink-preview" tabIndex={0} role="region" aria-label="Kitchen sink preview">
               {preview}
             </div>
-          )}
-        </section>
-      </div>
+          </section>
+        </TabPanel>
+        <TabPanel id="preview" className="sink-workspace">
+          <section className="sink-panel">
+            <div className="sink-panel-label">Rendered preview</div>
+            <div className="sink-panel-body sink-preview" tabIndex={0} role="region" aria-label="Kitchen sink preview">
+              {preview}
+            </div>
+          </section>
+        </TabPanel>
+      </Tabs>
     </div>
   )
 }
