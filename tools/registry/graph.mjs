@@ -47,9 +47,10 @@ function listAssets() {
 const pkgVersions = (() => {
   const ui = readJson('packages/ui/package.json');
   const root = readJson('package.json');
+  const registry = readJson('registry/package.json');
   // The workspace root pins concrete versions for what the blocks and the library share; the ui package's ranges fill in the rest.
   // The ui package's optional peers (the PGlite engine) are installed as ordinary dependencies by a registry item, at the peer range.
-  return { ...ui.peerDependencies, ...ui.dependencies, ...root.devDependencies, ...root.dependencies };
+  return { ...registry.dependencies, ...ui.peerDependencies, ...ui.dependencies, ...root.devDependencies, ...root.dependencies };
 })();
 export const npmVersion = (name) => pkgVersions[name];
 

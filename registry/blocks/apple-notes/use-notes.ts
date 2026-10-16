@@ -1,104 +1,141 @@
-/* Notes state: the notes, the open folder or tag, the selected note, search, list/gallery view, and which
-   locked notes are unlocked this session. Shared by every column. */
-import { useMemo, useState } from 'react';
-import { FOLDERS, NOTES, NOW, dateGroup, title, type Folder, type Note } from './data';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ROOT_FOLDER, title, type Folder, type Note } from './data';
+import { BROWSER_ROOT, FileConflict, folderId as fileFolderId, useNoteFiles } from './use-note-files';
 
-export type NotesView = 'list' | 'gallery';
-export interface NoteGroup { title: string; notes: Note[] }
+export type NotesView = 'list' | 'tree';
+interface Draft { note: Note; body: string; base: string; saving?: boolean; error?: string; conflict?: string | null }
 
-/** Notes written this session are stamped a minute apart after NOW, so they sort to the top of Today. */
-let tick = 0;
-const stamp = () => new Date(NOW.getTime() + 60_000 * ++tick);
+export function useNotes({ folder: initialFolder = ROOT_FOLDER.id, note: initialNote = null as string | null, view: initialView = 'list' as NotesView } = {}) {
+  const files = useNoteFiles();
+  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const draftsRef = useRef(drafts);
+  const filesRef = useRef(files); filesRef.current = files;
+  const updateDrafts = useCallback((fn: (prev: Record<string, Draft>) => Record<string, Draft>) => {
+    const next = fn(draftsRef.current); draftsRef.current = next; setDrafts(next);
+  }, []);
+  const save = useCallback(async (id: string, keepMine = false) => {
+    const draft = draftsRef.current[id];
+    if (!draft || draft.saving) return;
+    const current = filesRef.current.notes.find((n) => n.id === id);
+    const expected = keepMine ? draft.conflict ?? current?.body ?? draft.base : draft.base;
+    updateDrafts((prev) => ({ ...prev, [id]: { ...prev[id], saving: true, error: undefined } }));
+    try {
+      await filesRef.current.write(draft.note, draft.body, expected);
+      updateDrafts((prev) => {
+        if (!prev[id]) return prev;
+        const next = { ...prev };
+        if (next[id].body === draft.body) delete next[id];
+        else next[id] = { ...next[id], base: draft.body, saving: false, conflict: undefined };
+        return next;
+      });
+    } catch (e) {
+      updateDrafts((prev) => !prev[id] ? prev : ({ ...prev, [id]: { ...prev[id], saving: false,
+        error: e instanceof Error ? e.message : String(e), ...(e instanceof FileConflict ? { conflict: e.disk } : {}) } }));
+    }
+  }, [updateDrafts]);
 
-export function useNotes({ folder: initialFolder = 'all', note: initialNote = 'n1' as string | null, view: initialView = 'list' as NotesView } = {}) {
-  const [notes, setNotes] = useState<Note[]>(NOTES);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      for (const [id, draft] of Object.entries(draftsRef.current)) if (!draft.saving && !draft.error) void save(id);
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [drafts, save]);
+
+  useEffect(() => {
+    if (!Object.keys(drafts).length) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [drafts]);
+
+  const notes = useMemo(() => {
+    const result = files.notes.map((n) => drafts[n.id] ? { ...n, body: drafts[n.id].body } : n);
+    for (const [id, draft] of Object.entries(drafts)) if (!result.some((n) => n.id === id)) result.push({ ...draft.note, body: draft.body });
+    return result;
+  }, [files.notes, drafts]);
+  const folders = useMemo(() => [ROOT_FOLDER, ...files.folders], [files.folders]);
   const [folderId, setFolderId] = useState(initialFolder);
-  const [tag, setTag] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(initialNote);
   const [query, setQuery] = useState('');
   const [view, setView] = useState<NotesView>(initialView);
-  const [unlocked, setUnlocked] = useState<Set<string>>(() => new Set());
-
-  const folder: Folder = FOLDERS.find((f) => f.id === folderId) ?? FOLDERS[0];
-  const inFolder = (n: Note) => (tag ? n.folder !== 'deleted' && n.body.includes(`#${tag}`) : folder.match ? folder.match(n) : n.folder === folder.id);
-
-  const list = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return notes
-      .filter(inFolder)
-      .filter((n) => !q || (!n.locked && n.body.toLowerCase().includes(q)) || title(n).toLowerCase().includes(q))
-      .sort((a, b) => b.updated.getTime() - a.updated.getTime());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notes, folderId, tag, query]);
-
-  /** Pinned first, then by date — the sections Notes draws. */
-  const groups = useMemo(() => {
-    const out: NoteGroup[] = [];
-    const pinned = list.filter((n) => n.pinned && n.folder !== 'deleted');
-    if (pinned.length) out.push({ title: 'Pinned', notes: pinned });
-    for (const n of list) {
-      if (pinned.includes(n)) continue;
-      const g = dateGroup(n.updated);
-      const last = out[out.length - 1];
-      if (last && last.title === g) last.notes.push(n);
-      else out.push({ title: g, notes: [n] });
-    }
-    return out;
-  }, [list]);
-
+  const [creating, setCreating] = useState<'file' | 'folder' | null>(null);
+  const folder = folders.find((f) => f.id === folderId) ?? ROOT_FOLDER;
+  const trail: Folder[] = [];
+  let ancestor: Folder | undefined = folder;
+  while (ancestor) {
+    trail.unshift(ancestor);
+    const parent: string | undefined = ancestor.parent;
+    ancestor = folders.find((f) => f.id === parent);
+  }
+  const rootFolder = trail[1] ?? null;
   const selected = notes.find((n) => n.id === selectedId) ?? null;
-  const count = (f: Folder) => notes.filter((n) => (f.match ? f.match(n) : n.folder === f.id)).length;
-  const patch = (id: string, p: Partial<Note>) => setNotes((all) => all.map((n) => (n.id === id ? { ...n, ...p } : n)));
-  const isLocked = (n: Note) => !!n.locked && !unlocked.has(n.id);
+  const count = (f: Folder) => notes.filter((n) => n.folder === f.id || !!f.path && n.file.path.startsWith(`${f.path}/`)).length;
+
+  function contents(f: Folder) {
+    const q = query.trim().toLowerCase();
+    const list = notes.filter((n) => q
+      ? (f.id === ROOT_FOLDER.id || n.folder === f.id || !!f.path && n.file.path.startsWith(`${f.path}/`)) && `${title(n)}\n${n.body}`.toLowerCase().includes(q)
+      : n.folder === f.id).sort((a, b) => a.file.name.localeCompare(b.file.name));
+    const children = folders.filter((child) => child.parent === f.id && (f.id !== ROOT_FOLDER.id || child.source === 'local' || count(child) > 0));
+    return { list, children: q ? [] : children };
+  }
 
   return {
-    notes, list, groups, folder, folderId, tag, selected, selectedId, query, view, count, isLocked,
-    setQuery,
+    notes, folder, folders, trail, rootFolder, selected, selectedId, query, view, count, files, drafts, creating,
+    folderId: folder.id, sidebarId: rootFolder?.id ?? ROOT_FOLDER.id,
+    list: contents(folder).list, contents, setQuery, save, setView, setCreating,
+    fileStatus(n: Note) {
+      const draft = drafts[n.id];
+      if (!draft) return { label: 'Saved · watching for changes', conflict: false, missing: false };
+      const disk = files.notes.find((item) => item.id === n.id);
+      const conflict = draft.conflict !== undefined || (!draft.saving && (!disk || (disk.body !== draft.base && disk.body !== draft.body)));
+      return { label: draft.saving ? 'Saving…' : conflict ? 'File changed outside Notes' : draft.error ?? 'Unsaved changes', conflict, missing: draft.conflict === null || !disk };
+    },
+    revert(id: string) {
+      updateDrafts((prev) => { const next = { ...prev }; delete next[id]; return next; });
+      if (!files.notes.some((n) => n.id === id)) setSelectedId(null);
+    },
     openFolder(id: string) {
-      setTag(null);
-      if (id === folderId) return;
-      setFolderId(id); setQuery('');
+      setFolderId(id); setQuery(''); setCreating(null);
+      const f = folders.find((item) => item.id === id);
+      if (f?.connected === false) void files.run(() => files.reconnect(id));
     },
-    openTag(t: string | null) { setTag(t); setQuery(''); },
-    select(id: string | null) { setSelectedId(id); },
-    setView(v: NotesView) { setView(v); },
-    /** Typing in the editor: the note jumps to the top of Today, as it does in Notes. */
-    edit(id: string, body: string) { patch(id, { body, updated: stamp() }); },
-    create() {
-      const target = folder.match || folder.id === 'deleted' || tag ? 'notes' : folder.id;
-      const n: Note = { id: `new-${Date.now()}`, folder: target, body: '', updated: stamp() };
-      setNotes((all) => [n, ...all]);
-      setSelectedId(n.id); setQuery('');
-      return n.id;
+    /** Selecting a leaf never changes the folder path or pushes a NavigationStack screen. */
+    select(id: string | null) { setSelectedId(id); if (id) files.markSeen(id); },
+    async addFolder() {
+      const id = await files.openFolder();
+      if (id) { setFolderId(id); setQuery(''); }
+      return id;
     },
-    togglePin(id: string) {
-      const n = notes.find((x) => x.id === id);
-      patch(id, { pinned: !n?.pinned });
+    async openFiles() {
+      const id = await files.openFiles();
+      if (id) setSelectedId(id);
+      return id;
     },
-    toggleLock(id: string) {
-      const n = notes.find((x) => x.id === id);
+    async removeFolder() {
+      if (!rootFolder?.path) return;
+      const prefix = `${rootFolder.path}/`;
+      if (Object.values(drafts).some((draft) => draft.note.file.path.startsWith(prefix))) throw new Error('Save or discard your edits before removing this folder from Notes.');
+      await files.removeFolder(rootFolder.path);
+      if (selected?.file.path.startsWith(prefix)) setSelectedId(null);
+      setFolderId(ROOT_FOLDER.id);
+    },
+    edit(id: string, body: string) {
+      const n = notes.find((item) => item.id === id);
       if (!n) return;
-      // Adding a lock leaves the note open until you lock it (Lock Now); removing one is immediate.
-      patch(id, { locked: !n.locked });
-      setUnlocked((s) => { const x = new Set(s); if (n.locked) x.delete(id); else x.add(id); return x; });
+      updateDrafts((prev) => ({ ...prev, [id]: { ...prev[id], note: n, body, base: prev[id]?.base ?? n.body, error: undefined } }));
     },
-    relock(id: string) {
-      setUnlocked((s) => { const x = new Set(s); x.delete(id); return x; });
+    async create(name: string) {
+      const path = folder.path ?? BROWSER_ROOT;
+      const id = await files.create(path, name);
+      setSelectedId(id); setQuery(''); setCreating(null);
+      return id;
     },
-    unlock(id: string) { setUnlocked((s) => new Set(s).add(id)); },
-    /** Deleting moves to Recently Deleted; deleting from there is final. */
-    remove(id: string) {
-      const n = notes.find((x) => x.id === id);
-      if (!n) return;
-      if (selectedId === id) {
-        const i = list.findIndex((x) => x.id === id);
-        const rest = list.filter((x) => x.id !== id);
-        setSelectedId(rest[Math.min(Math.max(i, 0), rest.length - 1)]?.id ?? null);
-      }
-      if (n.folder === 'deleted') setNotes((all) => all.filter((x) => x.id !== id));
-      else patch(id, { folder: 'deleted', deletedFrom: n.folder, pinned: false });
+    async createFolder(name: string) {
+      const id = await files.createFolder(folder.path ?? BROWSER_ROOT, name);
+      setFolderId(id); setQuery(''); setCreating(null);
     },
-    moveTo(id: string, folderTo: string) { patch(id, { folder: folderTo, deletedFrom: undefined }); },
+    browserFolderId: fileFolderId(BROWSER_ROOT),
   };
 }
 

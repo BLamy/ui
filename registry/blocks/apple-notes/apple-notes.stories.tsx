@@ -36,12 +36,14 @@ export const Dark: Story = {
   ),
 };
 
-/** Thumbnails instead of rows; the list column steps aside and the gallery fills the window. */
-export const Gallery: Story = { args: { initialView: 'gallery' }, render: (args) => <Full><AppleNotes {...args} /></Full> };
+/** The same files in an accessible, keyboard-navigable folder tree. */
+export const TreeView: Story = { args: { initialView: 'tree' }, render: (args) => <Full><AppleNotes {...args} /></Full> };
+
+/** Personal notes in browser storage, with no sample content. */
+export const BrowserStorage: Story = { args: { initialFolder: 'folder:browser-notes', initialNote: null }, render: (args) => <Full><AppleNotes {...args} /></Full> };
 
 /** iPad: list and note tiled; the folders float in from the sidebar button. */
 export const Tablet: Story = {
-  args: { initialNote: 'n4' },
   render: (args) => <Device width={834} height={860}><AppleNotes {...args} /></Device>,
 };
 
@@ -54,6 +56,3 @@ export const PhoneDark: Story = {
     </AppearanceProvider>
   ),
 };
-
-/** A locked note, before View Note. */
-export const LockedNote: Story = { args: { initialNote: 'n5' }, render: (args) => <Full><AppleNotes {...args} /></Full> };

@@ -5,6 +5,25 @@ import tailwindcss from '@tailwindcss/vite';
 import { readFileSync } from 'node:fs';
 import type { Plugin } from 'vite';
 import { aliases } from '../../tools/alias.mjs';
+import { getServiceWorkerContent } from '@agent-wasm/core/next';
+
+/* Folder-backed Docstream examples route their in-browser Vite server through this worker. */
+function almostNodeServiceWorker(): Plugin {
+  return {
+    name: 'bl-docs-almost-node-sw',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url || new URL(req.url, 'http://x').pathname !== `${server.config.base}__sw__.js`) return next();
+        res.setHeader('content-type', 'text/javascript; charset=utf-8');
+        res.setHeader('cache-control', 'no-cache');
+        res.end(getServiceWorkerContent());
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: '__sw__.js', source: getServiceWorkerContent() });
+    },
+  };
+}
 
 /* The Tailscale router's service worker must be served from the site's root (a worker only controls pages under its own
    path). An app copies it into public/; the docs serve the library's copy in place, so there is one source. */
@@ -80,8 +99,12 @@ export default defineConfig(() => ({
     port: 4206,
     host: 'localhost',
   },
-  plugins: [react(), tailwindcss(), tailscaleServiceWorker(), ffmpegIsolation()],
-  resolve: { conditions: ['@org/source'], alias: aliases },
+  plugins: [react(), tailwindcss(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation()],
+  resolve: {
+    conditions: ['@org/source'], alias: aliases,
+    // The registry and app share Docstream's demo contexts even when optional runtime peers differ.
+    dedupe: ['react', 'react-dom', '@brett_lamy/docstream', '@brett_lamy/docstream-editor'],
+  },
   optimizeDeps: {
     // PGlite finds its WebAssembly with `new URL('./pglite.wasm', import.meta.url)`; pre-bundling would move the JS
     // away from the .wasm / .data files next to it. Serve it from where it is (see the PGlite page).

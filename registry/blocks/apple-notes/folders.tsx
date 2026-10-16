@@ -1,60 +1,37 @@
-/* Folders: iCloud (with All iCloud and Recently Deleted) and On My Mac, each collapsible, with note counts,
-   plus tags. Tiled or floating beside the list on wide screens; on the phone it is the root of the stack (with a
-   large title and a bottom bar), and picking a folder or a tag pushes its notes. */
-import { NumberMorph } from '@/components/ui/number-morph';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
-import { cn } from '@/lib/utils';
-import { ICLOUD, ON_MY_MAC, TAGS } from './data';
+import { ROOT_FOLDER } from './data';
 import { BarButton, BottomBar } from './parts';
 import type { NotesState } from './use-notes';
 
-const SECTIONS = [
-  { title: 'iCloud', folders: ICLOUD },
-  { title: 'On My Mac', folders: ON_MY_MAC },
-];
-
-function Tags({ notes }: { notes: NotesState }) {
-  const s = useSplitView();
-  return (
-    <div className="flex flex-wrap gap-1.5 px-2.5 pb-2">
-      {TAGS.map((t) => {
-        const on = notes.tag === t;
-        return (
-          <button key={t} type="button" aria-pressed={on}
-            onClick={() => { notes.openTag(on ? null : t); if (!on && s.collapsed) s.show('supplementary'); }}
-            className={cn('bl-btn cursor-pointer rounded-full border-0 px-3 py-1.5 [font-family:inherit] text-detail transition-colors duration-150',
-              on ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground hover:bg-secondary-strong')}>#{t}</button>
-        );
-      })}
-    </div>
-  );
-}
-
+/** The sidebar contains the user's folder locations. Add Folder opens the Mac directory picker. */
 export function FoldersSidebar({ notes }: { notes: NotesState }) {
   const s = useSplitView();
-  return (
-    <SplitViewSidebar aria-label="Folders" width={240} minWidth={200}>
-      <SplitViewHeader title="Folders" largeTitle={s.collapsed}
-        trailing={<BarButton label="New folder"><Icon name="folder-badge-plus" /></BarButton>} />
-      <SplitViewContent>
-        <div className="px-2.5 pb-16">
-          {SECTIONS.map((sec) => (
-            <SplitViewSection key={sec.title} title={sec.title} collapsible>
-              {sec.folders.map((f) => (
-                <SplitViewItem key={f.id} id={f.id} title={f.title} icon={<Icon name={f.icon ?? 'folder'} size={21} />}
-                  badge={<NumberMorph value={notes.count(f)} />} onPress={() => notes.openFolder(f.id)} />
-              ))}
-            </SplitViewSection>
-          ))}
-          <SplitViewSection title="Tags" collapsible><Tags notes={notes} /></SplitViewSection>
-        </div>
-      </SplitViewContent>
-      {s.collapsed ? (
-        <BottomBar className="justify-end px-3">
-          <BarButton label="New note" onPress={() => { notes.create(); s.show('detail'); }}><Icon name="compose" size={24} /></BarButton>
-        </BottomBar>
-      ) : null}
-    </SplitViewSidebar>
-  );
+  const roots = notes.files.folders.filter((f) => f.parent === ROOT_FOLDER.id);
+  const local = roots.filter((f) => f.source === 'local');
+  const browser = roots.find((f) => f.source === 'browser');
+  return <SplitViewSidebar aria-label="Folders" width={240} minWidth={200}>
+    <SplitViewHeader title="Folders" largeTitle={s.collapsed} />
+    <SplitViewContent>
+      <div className="px-2.5 pb-16">
+        <SplitViewItem id={ROOT_FOLDER.id} title="All Folders" icon={<Icon name="folder" size={21} />} onPress={() => notes.openFolder(ROOT_FOLDER.id)} />
+        <SplitViewSection title="On My Mac" collapsible>
+          {local.map((f) => <SplitViewItem key={f.id} id={f.id} title={f.title}
+            subtitle={f.connected === false ? 'Reconnect folder' : undefined}
+            icon={<Icon name="folder" size={21} />} badge={notes.count(f)} onPress={() => notes.openFolder(f.id)} />)}
+          {!local.length ? <p className="m-0 px-2.5 py-3 text-detail leading-relaxed text-muted-foreground">Add the folders where you keep your notes.</p> : null}
+        </SplitViewSection>
+        {browser ? <SplitViewSection title="In This Browser" collapsible>
+          <SplitViewItem id={browser.id} title="Notes" icon={<Icon name="note" size={21} />} badge={notes.count(browser)} onPress={() => notes.openFolder(browser.id)} />
+        </SplitViewSection> : null}
+        {!notes.files.canOpenFolder ? <p className="px-2.5 pt-4 text-caption leading-relaxed text-muted-foreground">Open in Chrome or Edge to add folders from your Mac.</p> : null}
+      </div>
+    </SplitViewContent>
+    <BottomBar>
+      <BarButton label="Add Folder…" isDisabled={!notes.files.canOpenFolder || notes.files.busy} className="w-auto gap-2 px-2"
+        onPress={() => { void notes.addFolder().then((id) => { if (id && s.collapsed) s.show('supplementary'); }); }}>
+        <Icon name="folder-badge-plus" size={21} /><span className="text-detail">Add Folder…</span>
+      </BarButton>
+    </BottomBar>
+  </SplitViewSidebar>;
 }

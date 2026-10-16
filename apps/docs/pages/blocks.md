@@ -52,6 +52,14 @@ The menu bar has two working status items. **Wi-Fi** opens a macOS-style menu: a
 
 {% demo src="blocks/apple-notes" layout="multi" %}
 
+Apple Notes starts with your own files. Use **Add Folder…** to add one or more folders from your computer under **On My Mac**. The folders are remembered across reloads; if browser permission has expired, select a folder to reconnect. The folder actions menu also opens individual Markdown files. [use-fs](https://use-fs.com) watches the originals for changes. Local linking requires a desktop browser with the File System Access API.
+
+The entire master list sits in a navigation stack. Only folders push another screen; selecting a file opens its note in the detail pane. The existing top-right control switches between the folder list and a keyboard-accessible tree. New notes save in the selected folder, or in the personal **Notes** folder under **In This Browser**, backed by OPFS. The note's title and **Editor / Source** switch sit in its top bar. Both views save automatically; conflicting external edits keep your draft until you choose a version. Removing a folder from Notes leaves its files on disk.
+
+Docstream provides an editable property sheet for YAML frontmatter and eight task states, each with an icon and tooltip. Right-click a checkbox to choose a state; a normal click clears it, then verifies it on the next click. Added folders also supply demo source files and metadata to Docstream, so local examples work and follow external source edits. Blue dots in the list and tree identify unseen external Markdown changes. Opening a file clears its dot; saves from Notes stay marked as read.
+
+For folder-backed example previews in your own host, serve the almost-node service worker at `__sw__.js` in the app's base directory. Vite's `almostnodePlugin()` from `@agent-wasm/core/vite` serves it during development; production hosts can copy `getServiceWorkerContent()` from `@agent-wasm/core/next`. The docs app includes both paths.
+
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-notes.json{% endcommand %}
 
 {% demo src="blocks/apple-passwords" layout="multi" %}

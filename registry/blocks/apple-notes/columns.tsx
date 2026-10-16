@@ -1,104 +1,101 @@
-/* The list and note columns (the folders column lives in folders.tsx). The same columns serve every width. In
-   gallery view the list column steps aside (SplitView `supplementaryVisible`) and the gallery fills the detail;
-   opening a card shows the note there with a way back. On the phone SplitView stacks the columns — the gallery
-   takes the list's place — and the toolbars move to bottom bars. */
+/* The entire master list lives in NavigationStack. Only folder rows change its screens. */
 import { useRef, useState } from 'react';
 import { Chevron } from '@/components/ui/icon-swap';
-import { type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
-import { NumberMorph } from '@/components/ui/number-morph';
+import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
+import { Segmented } from '@/components/ui/segmented';
+import type { MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
-import { cn } from '@/lib/utils';
-import { NoteGallery, NoteList } from './note-list';
-import { EditorTools, NoteEditor } from './note-editor';
-import { BarButton, BottomBar, LockButton, NoteMenu, ShareMenu, ViewToggle } from './parts';
+import { ROOT_FOLDER, type Folder } from './data';
+import { FolderTree } from './folder-tree';
+import { NoteList } from './note-list';
+import { NoteEditor } from './note-editor';
+import { CreationForm, FolderActions } from './master-actions';
+import { BarButton, BottomBar, NoteMenu, ViewToggle } from './parts';
 import type { NotesState } from './use-notes';
 
-const count = (n: number) => <><NumberMorph value={n} /> {n === 1 ? 'note' : 'notes'}</>;
-
-/** Note count (wide layouts; the phone shows it in the bottom bar) and search, under the large title. */
-function ListTop({ notes }: { notes: NotesState }) {
-  const s = useSplitView();
-  return (
-    <div className="px-4 pb-2">
-      {s.collapsed ? null : <div className="-mt-2 mb-2.5 text-detail text-muted-foreground">{count(notes.list.length)}</div>}
-      <SearchField value={notes.query} onChange={notes.setQuery} aria-label="Search notes" />
-    </div>
-  );
+function FolderRows({ notes, folders }: { notes: NotesState; folders: Folder[] }) {
+  return <div className="mx-3">
+    {folders.map((f) => <button key={f.id} type="button" aria-label={`Open folder ${f.title}`} data-tkrow=""
+      onClick={() => notes.openFolder(f.id)}
+      className="flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-2 text-left text-detail text-foreground outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
+      <Icon name="folder" size={21} className="shrink-0 text-primary" />
+      <span className="min-w-0 flex-1 truncate">{f.title}{f.connected === false ? <span className="block text-caption text-muted-foreground">Reconnect folder</span> : null}</span>
+      <span className="text-caption text-muted-foreground">{notes.count(f)}</span><Chevron direction="right" size={15} />
+    </button>)}
+  </div>;
 }
 
-const listTitle = (notes: NotesState) => (notes.tag ? `#${notes.tag}` : notes.folder.title);
+function EmptyFolder({ notes, folder }: { notes: NotesState; folder: Folder }) {
+  const s = useSplitView();
+  const root = folder.id === ROOT_FOLDER.id;
+  return <div className="px-6 pt-16 text-center">
+    <Icon name="folder" size={42} className="mx-auto mb-3 text-muted-foreground" />
+    <h2 className="m-0 text-title font-semibold">{notes.query ? 'No Results' : root ? 'Your folders, your notes' : 'No Notes'}</h2>
+    <p className="text-detail leading-relaxed text-muted-foreground">{notes.query ? 'Try another search.' : root
+      ? 'Add a folder from your Mac to browse and edit its Markdown files.' : 'Markdown files in this folder will appear here.'}</p>
+    {root && !notes.query ? <Button variant="secondary" isDisabled={!notes.files.canOpenFolder || notes.files.busy}
+      onPress={() => { void notes.addFolder().then((id) => { if (id && s.collapsed) s.show('supplementary'); }); }}>Choose Folder…</Button> : null}
+  </div>;
+}
 
 export function ListColumn({ notes }: { notes: NotesState }) {
   const s = useSplitView();
   const open = (id: string) => { notes.select(id); s.select('supplementary', id); };
-  const create = () => { notes.create(); s.show('detail'); };
-  // The phone keeps this column in gallery view and shows the gallery in it; the list reads as inset cards.
-  const gallery = notes.view === 'gallery';
-  const grouped = s.collapsed && !gallery;
-  return (
-    <SplitViewSupplementary aria-label="Notes" width={330} minWidth={280} className={cn(grouped && 'bg-muted')}>
-      <SplitViewHeader largeTitle title={listTitle(notes)} leading={<SplitViewToggle />}
-        trailing={<ViewToggle view={notes.view} onChange={notes.setView} />} />
-      <SplitViewContent>
-        <ListTop notes={notes} />
-        {s.collapsed && gallery ? <NoteGallery notes={notes} onOpen={open} /> : <NoteList notes={notes} inset={grouped} onOpen={open} />}
-      </SplitViewContent>
-      {s.collapsed ? (
-        <BottomBar>
-          <span className="w-10" />
-          <span className="flex-1 text-center text-caption text-foreground capitalize">{count(notes.list.length)}</span>
-          <BarButton label="New note" onPress={create}><Icon name="compose" size={24} /></BarButton>
-        </BottomBar>
-      ) : null}
-    </SplitViewSupplementary>
-  );
+  const tree = notes.view === 'tree';
+  const visibleTrail = tree ? [ROOT_FOLDER] : notes.trail;
+  const screens: Screen[] = visibleTrail.map((folder, i) => {
+    const { list, children } = notes.contents(folder);
+    const active = i === visibleTrail.length - 1;
+    return {
+      key: folder.id, title: folder.title, largeTitle: true, hideChromeOnScroll: false,
+      bottomInset: s.collapsed ? 50 : 0,
+      leading: <SplitViewToggle />,
+      trailing: <><ViewToggle view={notes.view} onChange={notes.setView} /><FolderActions notes={notes} onOpen={() => s.show('detail')} /></>,
+      content: <>
+        <div className="px-4 pb-3"><SearchField value={notes.query} onChange={notes.setQuery} aria-label="Search notes" /></div>
+        {active && notes.files.error ? <div role="alert" className="mx-4 mb-3 break-words text-detail text-destructive">{notes.files.error}</div> : null}
+        {active && notes.creating ? <CreationForm notes={notes} onCreated={() => s.show('detail')} /> : null}
+        {folder.connected === false ? <div className="space-y-3 px-5 py-10 text-detail text-muted-foreground">
+          <p>Reconnect {folder.title} to view the notes on your Mac.</p>
+          <Button variant="secondary" onPress={() => { void notes.files.run(() => notes.files.reconnect(folder.id)); }}>Reconnect folder</Button>
+        </div> : tree ? <FolderTree notes={notes} onOpen={open} /> : <>
+          <FolderRows notes={notes} folders={children} />
+          <NoteList notes={notes} items={list} onOpen={open} />
+          {!list.length && !children.length && !notes.creating ? <EmptyFolder notes={notes} folder={folder} /> : null}
+        </>}
+      </>,
+    };
+  });
+  return <SplitViewSupplementary aria-label="Notes" width={330} minWidth={280}>
+    <div className="relative min-h-0 flex-1"><NavigationStack screens={screens}
+      onPop={() => { const previous = notes.trail.at(-2); if (previous) notes.openFolder(previous.id); }} /></div>
+    {s.collapsed ? <BottomBar className="justify-end">
+      <BarButton label="New note" onPress={() => notes.setCreating('file')}><Icon name="compose" size={24} /></BarButton>
+    </BottomBar> : null}
+  </SplitViewSupplementary>;
 }
 
 export function NoteColumn({ notes }: { notes: NotesState }) {
   const s = useSplitView();
-  const editorRef = useRef<MarkdownEditorHandle | null>(null);
+  const n = notes.selected;
+  const [mode, setMode] = useState('editor');
   const [format, setFormat] = useState(false);
-  // Gallery view (wide): the gallery, until a card is opened.
-  const [open, setOpen] = useState(false);
-  const gallery = notes.view === 'gallery' && !s.collapsed;
-  const n = gallery && !open ? null : notes.selected;
-  const create = () => { notes.create(); setOpen(true); s.show('detail'); };
-  const compose = <BarButton label="New note" onPress={create}><Icon name="compose" /></BarButton>;
-  const tools = n ? <EditorTools editorRef={editorRef} format={format} onFormat={() => setFormat((f) => !f)} disabled={notes.isLocked(n)} /> : null;
-  return (
-    <SplitViewDetail aria-label={n ? 'Note' : gallery ? 'Gallery' : 'Note'}>
-      <SplitViewHeader largeTitle={gallery && !n} title={gallery && !n ? listTitle(notes) : undefined}
-        leading={<>
-          {/* In list view the list column carries the sidebar button. */}
-          {gallery ? <SplitViewToggle /> : null}
-          {gallery && n ? (
-            <BarButton label="Back to gallery" onPress={() => setOpen(false)} className="w-auto gap-0.5 pr-2 pl-1">
-              <Chevron direction="left" size={20} /><span className="text-body font-normal">Gallery</span>
-            </BarButton>
-          ) : null}
-        </>}
-        trailing={n ? <>
-          {s.collapsed ? null : <>{tools}<LockButton notes={notes} n={n} /></>}
-          <ShareMenu n={n} />
-          <NoteMenu notes={notes} n={n} onDeleted={() => { if (s.collapsed) s.back(); }} />
-          {s.collapsed ? null : compose}
-        </> : <>
-          {gallery ? <ViewToggle view={notes.view} onChange={(v) => { notes.setView(v); setOpen(false); }} /> : null}
-          {compose}
-        </>} />
-      {n ? (
-        <SplitViewContent key={n.id}>
-          <NoteEditor notes={notes} n={n} editorRef={editorRef} format={format} />
-        </SplitViewContent>
-      ) : gallery ? (
-        <SplitViewContent>
-          <ListTop notes={notes} />
-          <NoteGallery notes={notes} selected={notes.selectedId} onOpen={(id) => { notes.select(id); setOpen(true); }} />
-        </SplitViewContent>
-      ) : <SplitViewEmpty icon={<Icon name="note" size={48} sw={1.2} />} title="No Note Selected" />}
-      {s.collapsed && n ? <BottomBar className="justify-between px-3">{tools}<BarButton label="New note" onPress={create}><Icon name="compose" size={24} /></BarButton></BottomBar> : null}
-    </SplitViewDetail>
-  );
+  const editorRef = useRef<MarkdownEditorHandle | null>(null);
+  return <SplitViewDetail aria-label="Note">
+    <SplitViewHeader title={n ? <span title={`${n.file.path} · ${notes.fileStatus(n).label}`}>{n.file.name}</span> : undefined} titleAlign="leading" trailing={<>
+      {n ? <>
+        {mode === 'editor' && !s.collapsed ? <Button variant="ghost" aria-label="Formatting" aria-pressed={format} preventFocusOnPress onPress={() => setFormat((v) => !v)}
+          className="h-9 w-10 rounded-ctl px-0 text-primary"><Icon name="textformat" /></Button> : null}
+        <Segmented aria-label="Note view" value={mode} onChange={(value) => setMode(String(value))} className="w-[134px] shrink-0"
+          options={[{ id: 'editor', label: 'Editor' }, { id: 'source', label: 'Source' }]} />
+      </> : null}
+      {n ? <NoteMenu notes={notes} n={n} /> : null}
+      <BarButton label="New note" onPress={() => { notes.setCreating('file'); s.show('supplementary'); }}><Icon name="compose" /></BarButton>
+    </>} />
+    {n ? <SplitViewContent key={n.id}><NoteEditor notes={notes} n={n} source={mode === 'source'} format={format} editorRef={editorRef} /></SplitViewContent>
+      : <SplitViewEmpty icon={<Icon name="note" size={48} sw={1.2} />} title="No Note Selected" />}
+  </SplitViewDetail>;
 }
