@@ -226,6 +226,29 @@ stack(s("bd*2 [~ bd] sd ~"), note("<c3 a2 f2 g2>").s("sawtooth").lpf(800))
 Both are components too: `StlViewer` (`@brett_lamy/docstream/stl`) and `StrudelPlayer`
 (`@brett_lamy/docstream/strudel`, `code` or `src`).
 
+### Strudel rack and syntax tree
+
+The player's sliders button opens a **rack**: equipment generated from the code. Each track
+(`stack(...)` arguments or `$:` lines) becomes a device with mute/solo, a gain fader, its synth
+and key, a step grid for its mini-notation (click a step to rest it, double-click to type) and a
+knob per effect (`lpf`, `room`, `delay`, … — add more from its menu); the master strip has the
+tempo. Every control rewrites only the characters it owns, and edits play live.
+
+The rack sits on a full syntax tree you can use directly (`@brett_lamy/docstream/strudel`):
+
+```ts
+import { parseStrudel, parseMini, setMethod, mixCode, formatNumber } from "@brett_lamy/docstream/strudel"
+
+const song = parseStrudel(code) // acorn JS tree + tempo, tracks, master chain, every mini string
+song.tracks[0].chain.methods     // [{ name: "lpf", args: [{ kind: "number", value: 800, start, end }] }, …]
+parseMini("bd*2 [~ sd] <c e>")   // sequences, [ ] < > { }%n , | ., * / ! @ _ ? : .. (k,n,r) — with ranges
+setMethod(code, song.tracks[1].chain, "room", formatNumber(0.5)) // exact edit, adds the call if missing
+mixCode(song, { solo: new Set([0]) })                              // the code with other tracks silenced
+```
+
+`StrudelRack`, `StepGrid`, `Knob` and `Fader` are exported for custom studios. The parser
+(acorn) loads only when a rack opens.
+
 ## GitBook Syntax
 
 The parser supports normal Markdown plus GitBook-style block tags.
@@ -715,7 +738,8 @@ You can also resolve paths yourself with `resolveAsset`.
 - `ReplayPreview` / `ReplayEmbed`: A session-replay player for rrweb `events`, or an embed of public Loop QA pages / CORS-enabled event data via `source`.
 - `VideoEmbed`: Renders direct video assets or hosted video players.
 - `StlViewer`: Interactive WebGL preview of an `.stl` model (`parseStl`, `isStlUrl` alongside).
-- `StrudelPlayer`: Audio player for a Strudel pattern (`code`) or `.strudel` file (`src`).
+- `StrudelPlayer`: Audio player for a Strudel pattern (`code`) or `.strudel` file (`src`), with an optional equipment rack.
+- `StrudelRack`: Equipment generated from Strudel code (controlled: `code`, `onChange`); `parseStrudel` / `parseMini` are its syntax tree.
 - `OpenApiOperation`: Renders a parsed OpenAPI operation block.
 - `SourcePreview`: Imports and renders a mounted component or CSF story export.
 - `createViteSourceClient`: Reads, writes, and imports files exposed by the Vite plugin.

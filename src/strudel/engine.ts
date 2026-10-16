@@ -86,6 +86,20 @@ export async function playStrudel(owner: string, code: string, samples: readonly
   }
 }
 
+/**
+ * Swap the pattern `owner` is playing for `code` without stopping (live edits). Resolves null when `owner`
+ * isn't playing; throws when the code doesn't evaluate (the old pattern keeps playing).
+ */
+export async function updateStrudel(owner: string, code: string): Promise<StrudelPattern | null> {
+  if (snapshot.owner !== owner || snapshot.status !== "playing" || !loaded) return null
+  const pattern = await loaded.evaluate(code, true)
+  if (!pattern || loaded.state.evalError) {
+    const err = loaded.state.evalError
+    throw err instanceof Error ? err : new Error(String(err ?? "Strudel could not evaluate this pattern"))
+  }
+  return pattern
+}
+
 export async function stopStrudel(owner: string): Promise<void> {
   if (snapshot.owner !== owner) return
   set({ owner: null, status: "idle" })

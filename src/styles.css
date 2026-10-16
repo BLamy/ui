@@ -642,6 +642,376 @@
   padding: 12px 14px;
   overflow-x: auto;
   font-size: 13px;
+  white-space: pre;
+}
+
+/* StrudelRack: equipment generated from the code — a master strip, then one device per track. */
+.docstream-strudel__revert {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--gb-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gb-muted-foreground);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.strudel-rack {
+  --strudel-accent: var(--gb-primary, #6366f1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  background: var(--gb-muted, #f4f4f5);
+  font-size: 12px;
+}
+
+.strudel-rack__master {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 6px;
+}
+
+.strudel-rack__title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.strudel-rack__summary {
+  margin-left: auto;
+  color: var(--gb-muted-foreground);
+}
+
+.strudel-rack__error,
+.strudel-device__error {
+  margin: 0;
+  color: var(--gb-danger, #dc2626);
+  font-size: 12px;
+}
+
+.strudel-device {
+  border: 1px solid var(--gb-border);
+  border-radius: 10px;
+  background: var(--gb-panel, #fff);
+  color: var(--gb-panel-foreground, inherit);
+  overflow: hidden;
+}
+
+.strudel-device[data-audible="false"] .strudel-device__body {
+  opacity: 0.45;
+}
+
+.strudel-device__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+  border-bottom: 1px solid var(--gb-border);
+  color: var(--gb-muted-foreground);
+}
+
+.strudel-device[data-kind="drums"] .strudel-device__head svg { color: #f59e0b; }
+.strudel-device[data-kind="melodic"] .strudel-device__head svg { color: var(--strudel-accent); }
+
+.strudel-device__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--gb-panel-foreground, inherit);
+}
+
+.strudel-device__toggle {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--gb-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--gb-muted-foreground);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.strudel-device__toggle[data-kind="mute"][aria-pressed="true"] { background: #f59e0b; border-color: #f59e0b; color: #000; }
+.strudel-device__toggle[data-kind="solo"][aria-pressed="true"] { background: var(--strudel-accent); border-color: var(--strudel-accent); color: var(--gb-primary-foreground, #fff); }
+
+.strudel-device__body {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+}
+
+.strudel-device__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.strudel-device__selects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.strudel-device__selects label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gb-muted-foreground);
+}
+
+.strudel-device__selects select,
+.strudel-device__add select {
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid var(--gb-border);
+  border-radius: 6px;
+  background: var(--gb-panel, #fff);
+  color: var(--gb-panel-foreground, inherit);
+}
+
+.strudel-device__knobs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 10px;
+}
+
+.strudel-device__knob {
+  position: relative;
+}
+
+.strudel-device__remove {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  display: none;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gb-muted-foreground);
+  color: var(--gb-panel, #fff);
+  cursor: pointer;
+}
+
+.strudel-device__knob:hover .strudel-device__remove,
+.strudel-device__remove:focus-visible {
+  display: grid;
+}
+
+.strudel-device__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: center;
+  color: var(--gb-muted-foreground);
+}
+
+.strudel-knob {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 52px;
+  user-select: none;
+}
+
+.strudel-knob__dial {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.strudel-knob__dial:focus-visible,
+.strudel-fader__track:focus-visible {
+  outline: 2px solid var(--strudel-accent, #6366f1);
+  outline-offset: 2px;
+}
+
+.strudel-knob__dial svg { width: 100%; height: 100%; display: block; }
+.strudel-knob__track { fill: none; stroke: var(--gb-border); stroke-width: 3; stroke-linecap: round; }
+.strudel-knob__fill { fill: none; stroke: var(--strudel-accent, #6366f1); stroke-width: 3; stroke-linecap: round; }
+.strudel-knob__cap { fill: var(--gb-muted, #f4f4f5); stroke: var(--gb-border); }
+.strudel-knob__pointer { stroke: var(--gb-panel-foreground, #18181b); stroke-width: 2; stroke-linecap: round; }
+
+.strudel-knob__value,
+.strudel-fader__value {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.strudel-knob__label,
+.strudel-fader__label {
+  font-size: 10px;
+  color: var(--gb-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.strudel-knob[data-disabled] .strudel-knob__dial,
+.strudel-fader[data-disabled] .strudel-fader__track {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.strudel-fader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 36px;
+  user-select: none;
+}
+
+.strudel-fader__track {
+  position: relative;
+  width: 8px;
+  height: 90px;
+  border-radius: 999px;
+  background: var(--gb-border);
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.strudel-fader__fill {
+  position: absolute;
+  inset: auto 0 0;
+  border-radius: 999px;
+  background: var(--strudel-accent, #6366f1);
+}
+
+.strudel-fader__thumb {
+  position: absolute;
+  left: -6px;
+  width: 20px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--gb-panel, #fff);
+  border: 1px solid var(--gb-muted-foreground);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+}
+
+/* StepGrid: mini-notation as a step sequencer. */
+.strudel-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 6px;
+  overflow-x: auto;
+}
+
+.strudel-step__layers {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.strudel-step__row {
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+}
+
+.strudel-step {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 18px;
+  display: flex;
+}
+
+.strudel-step__cell,
+.strudel-step__input {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 3px;
+  border: 1px solid var(--gb-border);
+  border-radius: 5px;
+  font: inherit;
+  font-size: 11px;
+  font-family: var(--gb-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strudel-step__cell {
+  background: color-mix(in srgb, var(--strudel-accent, #6366f1) 22%, var(--gb-panel, #fff));
+  color: var(--gb-panel-foreground, inherit);
+  cursor: pointer;
+}
+
+.strudel-device[data-kind="drums"] .strudel-step__cell:not([data-rest]) {
+  background: color-mix(in srgb, #f59e0b 30%, var(--gb-panel, #fff));
+}
+
+.strudel-step__cell[data-rest] {
+  background: transparent;
+  border-style: dashed;
+}
+
+.strudel-step__cell:hover {
+  border-color: var(--strudel-accent, #6366f1);
+}
+
+.strudel-step__input {
+  background: var(--gb-panel, #fff);
+  color: inherit;
+}
+
+.strudel-step__nest {
+  flex: 1;
+  display: flex;
+  padding: 2px;
+  border: 1px solid var(--gb-border);
+  border-radius: 6px;
+}
+
+.strudel-step__nest > .strudel-step__row {
+  flex: 1;
+}
+
+.strudel-step__nest[data-kind="alternation"] {
+  border-style: dashed;
+}
+
+.strudel-step__nest[data-kind="alternation"] > .strudel-step__layers > .strudel-step__row {
+  flex-wrap: wrap;
+}
+
+.strudel-step__badge {
+  position: absolute;
+  top: -6px;
+  right: 2px;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: var(--gb-panel-foreground, #18181b);
+  color: var(--gb-panel, #fff);
+  font-size: 9px;
+  line-height: 12px;
+  pointer-events: none;
 }
 
 .docs-content-ref {

@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
-import { Code2, Loader2, Pause, Play } from "lucide-react"
+import { lazy, Suspense, useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
+import { Code2, Loader2, Pause, Play, SlidersHorizontal, Undo2 } from "lucide-react"
 import { HighlightedCode } from "../docs/HighlightedCode"
 import {
   DEFAULT_SAMPLES,
@@ -8,9 +8,13 @@ import {
   stopStrudel,
   strudelNow,
   subscribeStrudel,
+  updateStrudel,
   type StrudelHap,
   type StrudelPattern,
 } from "./engine"
+
+// The rack parses the code (acorn + the mini-notation parser); it loads the first time someone opens it.
+const StrudelRack = lazy(() => import("./StrudelRack"))
 
 export interface StrudelPlayerProps {
   /** Strudel pattern code (what you would type at strudel.cc). */
@@ -23,6 +27,12 @@ export interface StrudelPlayerProps {
   showCode?: boolean
   /** Sample banks to load before the first play. Defaults to the Tidal dirt-samples. */
   samples?: readonly string[]
+  /** Offer the equipment rack (generated from the code) behind a toggle. Defaults to true. */
+  rack?: boolean
+  /** Open the rack from the start. */
+  showRack?: boolean
+  /** Called with the code after every rack edit. */
+  onCodeChange?: (code: string) => void
 }
 
 type Source = { kind: "loading" } | { kind: "error"; message: string } | { kind: "ready"; code: string }
@@ -106,10 +116,24 @@ function drawRoll(canvas: HTMLCanvasElement, pattern: StrudelPattern | null, now
 }
 
 /** A live-coded music player: Strudel (strudel.cc) runs the pattern in this page, no iframe. */
-export function StrudelPlayer({ code, src, title, className, showCode = false, samples = DEFAULT_SAMPLES }: StrudelPlayerProps) {
+export function StrudelPlayer({
+  code,
+  src,
+  title,
+  className,
+  showCode = false,
+  samples = DEFAULT_SAMPLES,
+  rack = true,
+  showRack = false,
+  onCodeChange,
+}: StrudelPlayerProps) {
   const id = useId()
   const [source, setSource] = useState<Source>(() => (code !== undefined ? { kind: "ready", code } : { kind: "loading" }))
   const [codeOpen, setCodeOpen] = useState(showCode)
+  const [rackOpen, setRackOpen] = useState(showRack)
+  // The rack edits a working copy; `playable` is that copy with the rack's mutes and solos applied.
+  const [edited, setEdited] = useState<string | null>(null)
+  const [playable, setPlayable] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cycle, setCycle] = useState(0)
   const pattern = useRef<StrudelPattern | null>(null)
@@ -142,7 +166,33 @@ export function StrudelPlayer({ code, src, title, className, showCode = false, s
 
   // Stop our pattern when the player unmounts or its code changes underneath it.
   const ready = source.kind === "ready" ? source.code : null
-  useEffect(() => () => void stopStrudel(id), [id, ready])
+  useEffect(() => {
+    setEdited(null)
+    setPlayable(null)
+    return () => void stopStrudel(id)
+  }, [id, ready])
+  const current = edited ?? ready
+  const toPlay = playable ?? current
+
+  // Live edits: while playing, swap in the new pattern without stopping.
+  useEffect(() => {
+    if (status !== "playing" || !toPlay) return
+    const timer = setTimeout(() => {
+      updateStrudel(id, toPlay).then(
+        (p) => {
+          if (p) pattern.current = p
+          setError(null)
+        },
+        (err: unknown) => setError(err instanceof Error ? err.message : String(err)),
+      )
+    }, 120)
+    return () => clearTimeout(timer)
+  }, [toPlay])
+
+  const edit = (next: string) => {
+    setEdited(next)
+    onCodeChange?.(next)
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -167,14 +217,14 @@ export function StrudelPlayer({ code, src, title, className, showCode = false, s
   }, [status])
 
   const toggle = async () => {
-    if (source.kind !== "ready") return
+    if (!toPlay) return
     if (status !== "idle") {
       await stopStrudel(id)
       return
     }
     setError(null)
     try {
-      pattern.current = await playStrudel(id, source.code, samples)
+      pattern.current = await playStrudel(id, toPlay, samples)
     } catch (err) {
       if (err instanceof Error && err.message === "superseded") return
       setError(err instanceof Error ? err.message : String(err))
@@ -218,6 +268,17 @@ export function StrudelPlayer({ code, src, title, className, showCode = false, s
           </span>
         </div>
         <canvas ref={canvasRef} className="docstream-strudel__roll" aria-hidden="true" />
+        {source.kind === "ready" && rack && (
+          <button
+            type="button"
+            className="docstream-strudel__toggle"
+            aria-expanded={rackOpen}
+            aria-label={rackOpen ? "Hide equipment" : "Show equipment"}
+            onClick={() => setRackOpen((open) => !open)}
+          >
+            <SlidersHorizontal size={16} />
+          </button>
+        )}
         {source.kind === "ready" && (
           <button
             type="button"
@@ -236,9 +297,19 @@ export function StrudelPlayer({ code, src, title, className, showCode = false, s
           {error}
         </div>
       )}
-      {source.kind === "ready" && codeOpen && (
+      {current !== null && rack && rackOpen && (
+        <Suspense fallback={<div className="docstream-strudel__sub">Loading equipment…</div>}>
+          {edited !== null && edited !== ready && (
+            <button type="button" className="docstream-strudel__revert" onClick={() => edit(ready!)}>
+              <Undo2 size={13} aria-hidden="true" /> Revert edits
+            </button>
+          )}
+          <StrudelRack code={current} onChange={edit} onPlayableChange={setPlayable} />
+        </Suspense>
+      )}
+      {current !== null && codeOpen && (
         <div id={codeId} className="docstream-strudel__code">
-          <HighlightedCode code={source.code.trim()} language="javascript" />
+          <HighlightedCode code={current.trim()} language="javascript" />
         </div>
       )}
     </figure>

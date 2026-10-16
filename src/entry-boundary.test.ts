@@ -113,6 +113,11 @@ describe("entry boundaries", () => {
     expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "rrweb" || spec.startsWith("rrweb/"))).toEqual([])
   })
 
+  // The Strudel rack's parser (acorn) loads only when a reader opens the rack.
+  it.each(entries.filter(([name]) => name !== "./strudel"))("%s (%s) loads acorn only through a dynamic import", (_name, target) => {
+    expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "acorn")).toEqual([])
+  })
+
   // rrweb stays a regular dependency: the root ReplayPreview plays event sources, so an
   // optional peer would break every bundler that resolves the (lazy) import without it.
   it("keeps rrweb a dependency", () => {
