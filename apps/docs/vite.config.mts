@@ -87,6 +87,35 @@ function ffmpegIsolation(): Plugin {
   };
 }
 
+/* @agent-wasm/core ships PGlite's .wasm and .data inlined as base64 `new URL("data:…", import.meta.url)`, which makes
+   one 40 MB chunk — over Cloudflare Pages' 25 MiB per-file limit, and slow to parse. In the build, each large one
+   becomes a real asset file fetched by the same URL expression. */
+function extractInlinedBinaries(): Plugin {
+  return {
+    name: 'extract-inlined-binaries',
+    apply: 'build',
+    transform(code, id) {
+      if (!id.includes('@agent-wasm') || !code.includes(';base64,')) return null;
+      // A plain scan: the payloads are tens of megabytes, too long for a regular expression.
+      const PREFIX = /new URL\((["'`])data:application\/(wasm|octet-stream);base64,/g;
+      let out = '', last = 0, count = 0, match: RegExpExecArray | null;
+      while ((match = PREFIX.exec(code))) {
+        const [opening, quote, kind] = match;
+        const from = match.index + opening.length;
+        const to = code.indexOf(quote, from);
+        const tail = /^\s*,\s*import\.meta\.url\s*\)/.exec(code.slice(to + 1, to + 40));
+        if (to < 0 || !tail || to - from < 1 << 20) continue;
+        const ref = this.emitFile({ type: 'asset', name: `inlined-${count++}.${kind === 'wasm' ? 'wasm' : 'data'}`, source: Buffer.from(code.slice(from, to), 'base64') });
+        out += `${code.slice(last, match.index)}new URL(import.meta.ROLLUP_FILE_URL_${ref}, import.meta.url)`;
+        last = to + 1 + tail[0].length;
+        PREFIX.lastIndex = last;
+      }
+      out += code.slice(last);
+      return count ? { code: out, map: null } : null;
+    },
+  };
+}
+
 export default defineConfig(() => ({
   root: import.meta.dirname,
   base: process.env.GITHUB_ACTIONS ? '/ui/' : '/',
@@ -99,7 +128,7 @@ export default defineConfig(() => ({
     port: 4206,
     host: 'localhost',
   },
-  plugins: [react(), tailwindcss(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation()],
+  plugins: [react(), tailwindcss(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation(), extractInlinedBinaries()],
   resolve: {
     conditions: ['@org/source'], alias: aliases,
     // The registry and app share Docstream's demo contexts even when optional runtime peers differ.
