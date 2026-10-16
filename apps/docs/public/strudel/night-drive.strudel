@@ -1,0 +1,8 @@
+// Night drive — a .strudel file, loaded by URL
+setcps(.5)
+stack(
+  s("bd*2 [~ bd] sd ~, hh*8").gain(.8),
+  n("<0 3 4 3>").scale("G2:minor").s("sawtooth").lpf(sine.range(300, 900).slow(8)),
+  n("<[0,2,4] [3,5,7] [4,6,8] [3,5,7]>").scale("G3:minor").s("triangle").room(.4).gain(.28),
+  n("<[1 ~ 6 2 ~ ~ ~ 3] [3 ~ 6 4 ~ ~ ~ 5]>").scale("G4:minor").s("square").delay(.35).lpf(2200).gain(.2)
+)

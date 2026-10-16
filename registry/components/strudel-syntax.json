@@ -1,0 +1,34 @@
+{
+  "name": "strudel-syntax",
+  "title": "Strudel syntax tree",
+  "description": "Strudel code as a syntax tree: the JavaScript (acorn) read as a song — tempo, tracks, method chains with typed arguments — every mini-notation string parsed with source ranges, and edits that rewrite only the characters they touch.",
+  "page": "strudel-syntax",
+  "exports": [
+    "parseStrudel",
+    "parseMini",
+    "miniAtoms",
+    "findCall",
+    "setMethod",
+    "removeMethod",
+    "setTempo",
+    "setMiniAtom",
+    "mixCode",
+    "formatNumber",
+    "applyEdits"
+  ],
+  "imports": [
+    "parseStrudel",
+    "parseMini",
+    "setMethod",
+    "mixCode"
+  ],
+  "types": [
+    "StrudelSong",
+    "StrudelTrack",
+    "StrudelCall",
+    "StrudelArg",
+    "MiniGroup",
+    "MiniStep",
+    "MiniAtom"
+  ]
+}

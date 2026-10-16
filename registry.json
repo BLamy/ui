@@ -2041,7 +2041,7 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@1.9.1",
+        "@brett_lamy/docstream-editor@1.13.2",
         "@tiptap/core@3.30.5",
         "@tiptap/pm@3.30.5",
         "class-variance-authority@^0.7.1",
@@ -3185,8 +3185,8 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/docstream@1.9.1",
-        "@brett_lamy/docstream-editor@1.9.1",
+        "@brett_lamy/docstream@1.13.2",
+        "@brett_lamy/docstream-editor@1.13.2",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -3216,7 +3216,7 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/docstream@1.9.1"
+        "@brett_lamy/docstream@1.13.2"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3867,7 +3867,7 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@1.9.1"
+        "@brett_lamy/docstream@1.13.2"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4337,6 +4337,104 @@
           "sqlEditorVariants",
           "resultTableVariants",
           "schemaTreeVariants"
+        ]
+      }
+    },
+    {
+      "name": "strudel-player",
+      "type": "registry:ui",
+      "title": "StrudelPlayer",
+      "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time.",
+      "dependencies": [
+        "@brett_lamy/docstream@1.13.2"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/strudel-player.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/strudel-player.tsx"
+        }
+      ],
+      "meta": {
+        "page": "strudel-player",
+        "exports": [
+          "StrudelPlayer",
+          "playStrudel",
+          "stopStrudel",
+          "updateStrudel",
+          "subscribeStrudel",
+          "getStrudelSnapshot",
+          "strudelNow",
+          "DEFAULT_SAMPLES"
+        ]
+      }
+    },
+    {
+      "name": "strudel-rack",
+      "type": "registry:ui",
+      "title": "StrudelRack",
+      "description": "Studio hardware generated from Strudel code: a rack of devices, one per track, with mute/solo pads, a channel fader, synth and key LCDs, TR-style step keys for the mini-notation and LED-ring knobs for each effect. Every control edits the code in place. Knob, Fader and StepGrid are exported on their own.",
+      "dependencies": [
+        "@brett_lamy/docstream@1.13.2"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/strudel-rack.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/strudel-rack.tsx"
+        }
+      ],
+      "meta": {
+        "page": "strudel-rack",
+        "exports": [
+          "StrudelRack",
+          "RackGrid",
+          "Knob",
+          "Fader",
+          "StepGrid",
+          "STRUDEL_PARAMS",
+          "trackName"
+        ]
+      }
+    },
+    {
+      "name": "strudel-syntax",
+      "type": "registry:ui",
+      "title": "Strudel syntax tree",
+      "description": "Strudel code as a syntax tree: the JavaScript (acorn) read as a song — tempo, tracks, method chains with typed arguments — every mini-notation string parsed with source ranges, and edits that rewrite only the characters they touch.",
+      "dependencies": [
+        "@brett_lamy/docstream@1.13.2"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/strudel-syntax.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/strudel-syntax.tsx"
+        }
+      ],
+      "meta": {
+        "page": "strudel-syntax",
+        "exports": [
+          "parseStrudel",
+          "parseMini",
+          "miniAtoms",
+          "findCall",
+          "setMethod",
+          "removeMethod",
+          "setTempo",
+          "setMiniAtom",
+          "mixCode",
+          "formatNumber",
+          "applyEdits"
         ]
       }
     },
@@ -5926,12 +6024,14 @@
       "name": "apple-music",
       "type": "registry:block",
       "title": "Apple Music",
-      "description": "Apple Music: Listen Now, Browse, Radio, Search and a Library (Recently Added, Artists, Albums, Songs, playlists) with generated album artwork, album, artist and playlist pages that tint from their artwork, and a mini player that springs open into the full Now Playing screen — scrubber, transport, volume, lyrics and up next — as one morphing element. A SplitView sidebar on desktop and tablet; the iOS tab bar with the mini player above it on phones; light and dark.",
+      "description": "Apple Music: Listen Now, Browse, Radio, Search and a Library (Recently Added, Artists, Albums, Songs, playlists) with generated album artwork, album, artist and playlist pages that tint from their artwork, and a mini player that springs open into the full Now Playing screen — scrubber, transport, volume, lyrics and up next — as one morphing element. Every song is a generated Strudel pattern (genre sets the band, the track seeds key, chords and melody) that really plays. A SplitView sidebar on desktop and tablet; the iOS tab bar with the mini player above it on phones; light and dark.",
       "categories": [
         "application",
         "media"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "@brett_lamy/docstream@1.13.2"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
@@ -5979,6 +6079,11 @@
           "target": "components/blocks/apple-music/player.ts"
         },
         {
+          "path": "registry/blocks/apple-music/songs.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-music/songs.ts"
+        },
+        {
           "path": "registry/blocks/apple-music/data.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-music/data.ts"
@@ -6002,7 +6107,7 @@
         "use-fs@2.1.0",
         "react-aria-components@^1.20.0",
         "@agent-wasm/core@0.4.0",
-        "@brett_lamy/docstream@1.9.1"
+        "@brett_lamy/docstream@1.13.2"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -7652,6 +7757,52 @@
       ],
       "meta": {
         "entry": "components/blocks/split-view-demos/page.tsx"
+      }
+    },
+    {
+      "name": "strudel-studio",
+      "type": "registry:block",
+      "title": "Strudel Studio",
+      "description": "A live-coding music studio: write Strudel and play it on skeuomorphic hardware generated from the code's syntax tree — a rack of modules with LED-ring knobs, channel faders, backlit mute/solo pads and TR-style step keys on a masonry grid you drag and resize. Every control rewrites the code while it plays; a syntax-tree tab shows the parsed song. Four starter songs.",
+      "categories": [
+        "application",
+        "media",
+        "audio"
+      ],
+      "dependencies": [
+        "@brett_lamy/docstream@1.13.2"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/strudel-player.json",
+        "https://blamy.github.io/ui/r/strudel-rack.json",
+        "https://blamy.github.io/ui/r/strudel-syntax.json",
+        "https://blamy.github.io/ui/r/tabs.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/tree.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/strudel-studio/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/strudel-studio/page.tsx"
+        },
+        {
+          "path": "registry/blocks/strudel-studio/syntax-tree.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/strudel-studio/syntax-tree.tsx"
+        },
+        {
+          "path": "registry/blocks/strudel-studio/songs.ts",
+          "type": "registry:component",
+          "target": "components/blocks/strudel-studio/songs.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/strudel-studio/page.tsx"
       }
     },
     {
