@@ -54,6 +54,7 @@ export class FileConflict extends Error {
 export function useNoteFiles() {
   const ownWrites = useRef(new Map<string, string>());
   const [directories, setDirectories] = useState<string[]>([]);
+  const [otherPaths, setOtherPaths] = useState<string[]>([]);
   const directoryHandles = useRef(new Map<string, FileSystemDirectoryHandle>());
   const publishTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [linked, setLinked] = useState(new Map<string, LinkedFile>());
@@ -62,22 +63,32 @@ export function useNoteFiles() {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sources, setSources] = useState<FolderSource[]>([]);
-  // A new filter instance is made for each scan. Recording its directories includes empty folders,
-  // without a second traversal or reading any non-Markdown file bodies.
+  // A new filter instance is made for each scan. Recording its directories includes empty folders, and recording
+  // the files it skips lists everything else by name, without a second traversal or reading their bodies.
   const trackFolders = useMemo<FilterFn>(() => () => {
     const seen = new Map<string, FileSystemDirectoryHandle>();
+    const others = new Set<string>();
+    const publish = () => {
+      clearTimeout(publishTimer.current);
+      publishTimer.current = setTimeout(() => {
+        directoryHandles.current = seen;
+        const paths = [...seen.keys()].sort();
+        setDirectories((prev) => prev.join('\n') === paths.join('\n') ? prev : paths);
+        const files = [...others].sort();
+        setOtherPaths((prev) => prev.join('\n') === files.join('\n') ? prev : files);
+      }, 80);
+    };
     return {
-      shouldIncludeFile: ({ name }) => markdown(name),
+      shouldIncludeFile: ({ path, name }) => {
+        if (markdown(name)) return true;
+        others.add(path); publish();
+        return false;
+      },
       shouldProcessDirectory: () => true,
       onDirectoryEnter({ path }, handle) {
         seen.set(path, handle);
         directoryHandles.current.set(path, handle);
-        clearTimeout(publishTimer.current);
-        publishTimer.current = setTimeout(() => {
-          directoryHandles.current = seen;
-          const paths = [...seen.keys()].sort();
-          setDirectories((prev) => prev.join('\n') === paths.join('\n') ? prev : paths);
-        }, 80);
+        publish();
       },
     };
   }, []);
@@ -176,6 +187,9 @@ export function useNoteFiles() {
     return result;
   }, [fs.directories, directories, fs.files, linked.size, sources]);
 
+  /** Everything else in the watched folders, by path: listed (“All Files”), never opened. */
+  const others = useMemo(() => otherPaths.filter((path) => fs.directories.some((root) => path.startsWith(`${root}/`))), [otherPaths, fs.directories]);
+
   const directoryAt = async (path: string) => directoryHandles.current.get(path) ?? (path === BROWSER_ROOT && ready ? await getOpfsRoot({ name: 'apple-notes' }) : null);
 
   async function run<T>(action: () => Promise<T>): Promise<T | undefined> {
@@ -186,7 +200,7 @@ export function useNoteFiles() {
   }
 
   return {
-    notes, folders, ready, busy, ...changes, error: error ?? fs.error?.message ?? null,
+    notes, folders, others, ready, busy, ...changes, error: error ?? fs.error?.message ?? null,
     directoryRoots: sources.filter((source) => source.connected).map(({ path, handle }) => ({ path, handle })),
     isOpfsSupported: fs.isOpfsSupported, isOpfsWritable: fs.isOpfsWritable,
     canOpenFolder: fs.isBrowserSupported,

@@ -4,6 +4,7 @@ import { Chevron } from '@/components/ui/icon-swap';
 import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
+import { TreeFileIcon } from '@/components/ui/tree';
 import type { MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
@@ -13,8 +14,8 @@ import { FolderTree } from './folder-tree';
 import { NoteList } from './note-list';
 import { EditorTools, NoteEditor } from './note-editor';
 import { ItemMenu, RenameField } from './item-menu';
-import { BarButton, BottomBar, NoteMenu, ShareMenu, ViewToggle } from './parts';
-import type { NotesState } from './use-notes';
+import { BarButton, BottomBar, FilterMenu, NoteMenu, ShareMenu, ViewToggle } from './parts';
+import type { NotesState, OtherFile } from './use-notes';
 
 function FolderRows({ notes, folders }: { notes: NotesState; folders: Folder[] }) {
   const row = 'flex min-h-12 w-full items-center gap-2 rounded-md px-2 text-left text-detail text-foreground';
@@ -31,6 +32,19 @@ function FolderRows({ notes, folders }: { notes: NotesState; folders: Folder[] }
         </button>
       </ItemMenu>)}
   </div>;
+}
+
+/** Files Notes doesn't open, under All Files: listed by name, dimmed, not interactive. */
+function OtherFileRows({ notes, files }: { notes: NotesState; files: OtherFile[] }) {
+  if (!files.length) return null;
+  return <ul aria-label="Other files" className="m-0 list-none px-5">
+    {files.map((f) => <li key={f.id} title={`${f.path} · Notes opens Markdown files only`}
+      className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-subhead text-muted-foreground opacity-60">
+      <TreeFileIcon name={f.name} className="shrink-0" />
+      <span className="min-w-0 flex-1 truncate">{f.name}
+        {notes.query ? <span className="block truncate text-caption">{f.path.split('/').slice(1, -1).join('/')}</span> : null}</span>
+    </li>)}
+  </ul>;
 }
 
 function EmptyFolder({ notes, folder }: { notes: NotesState; folder: Folder }) {
@@ -53,7 +67,7 @@ export function ListColumn({ notes }: { notes: NotesState }) {
   const tree = notes.view === 'tree';
   const visibleTrail = notes.rootFolder ? tree ? [notes.rootFolder] : notes.trail : [notes.folder];
   const screens: Screen[] = visibleTrail.map((folder, i) => {
-    const { list, children } = notes.contents(folder);
+    const { list, children, others } = notes.contents(folder);
     const active = i === visibleTrail.length - 1;
     return {
       key: folder.id, title: notes.rootFolder ? folder.title : 'Notes', largeTitle: true, hideChromeOnScroll: false,
@@ -61,15 +75,18 @@ export function ListColumn({ notes }: { notes: NotesState }) {
       leading: i === 0 ? <SplitViewToggle /> : undefined,
       trailing: <ViewToggle view={notes.view} onChange={notes.setView} />,
       content: <>
-        <div className="px-4 pb-3"><SearchField value={notes.query} onChange={notes.setQuery} aria-label={`Search ${folder.title}`} /></div>
+        <div className="flex items-center gap-1.5 pr-2.5 pb-3 pl-4">
+          <SearchField value={notes.query} onChange={notes.setQuery} aria-label={`Search ${folder.title}`} className="min-w-0 flex-1" />
+          <FilterMenu filter={notes.filter} onChange={notes.setFilter} />
+        </div>
         {active && notes.files.error ? <div role="alert" className="mx-4 mb-3 break-words text-detail text-destructive">{notes.files.error}</div> : null}
         {folder.connected === false ? <div className="space-y-3 px-5 py-10 text-detail text-muted-foreground">
           <p>Reconnect {folder.title} to view the notes on your Mac.</p>
           <Button variant="secondary" onPress={() => { void notes.files.run(() => notes.files.reconnect(folder.id)); }}>Reconnect folder</Button>
         </div> : tree && notes.rootFolder ? <FolderTree notes={notes} root={notes.rootFolder} onOpen={open} /> : <>
           <FolderRows notes={notes} folders={children} />
-          <NoteList notes={notes} items={list} onOpen={open} />
-          {!list.length && !children.length ? <EmptyFolder notes={notes} folder={folder} /> : null}
+          <div className="pb-12"><NoteList notes={notes} items={list} onOpen={open} /><OtherFileRows notes={notes} files={others} /></div>
+          {!list.length && !children.length && !others.length ? <EmptyFolder notes={notes} folder={folder} /> : null}
         </>}
       </>,
     };

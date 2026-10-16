@@ -7,7 +7,7 @@ import { UnreadDot } from './parts';
 
 /** Leaf rows only select the note. They never change the master list's navigation path. */
 export function NoteList({ notes, items, onOpen }: { notes: NotesState; items: Note[]; onOpen: (id: string) => void }) {
-  return <div className="pb-12">
+  return <div>
     {items.map((note) => {
       const selected = notes.selectedId === note.id;
       const meta = <span className={cn('mt-0.5 flex gap-2 text-detail', selected ? 'opacity-80' : 'text-muted-foreground')}>
