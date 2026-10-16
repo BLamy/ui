@@ -33,6 +33,8 @@ import { resolveAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
 import { packageManagerCommands, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/docstream/gitbook"
 import { VideoEmbed } from "@brett_lamy/docstream/video"
+import { StlViewer, isStlUrl } from "@brett_lamy/docstream/stl"
+import { StrudelPlayer, isStrudelFile, isStrudelLanguage } from "@brett_lamy/docstream/strudel"
 import { DemoViewer, prefetchDemoSources, useDemoVFSEntry, writeDocstreamClipboard } from "@brett_lamy/docstream/demo"
 import { pmToCommand, pmToDemo } from "./convert"
 import { clipboardForDoc, setActiveDemoDrag } from "./demo-clipboard"
@@ -431,6 +433,10 @@ function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
     <NodeViewWrapper className="gb-embed" contentEditable={false}>
       {isReplayQaUrl(url) ? (
         <ReplayPreview source={url} title="Replay preview" />
+      ) : isStlUrl(url) ? (
+        <StlViewer src={resolveAsset(url)} {...(node.attrs.title ? { title } : {})} />
+      ) : isStrudelFile(url) ? (
+        <StrudelPlayer src={resolveAsset(url)} {...(node.attrs.title ? { title } : {})} />
       ) : preview || isDirectVideo(url) ? (
         <VideoEmbed
           src={preview ?? url}
@@ -1097,6 +1103,7 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
   const previewCode = useDebouncedValue(code)
   const language = String(node.attrs.language ?? "").toLowerCase()
   const mermaid = language === "mermaid"
+  const strudel = isStrudelLanguage(language)
   const { liveRenderer } = useEditorRuntime()
   const live = !!liveRenderer && !!node.attrs.live && (language === "jsx" || language === "tsx" || language === "react")
   const entry = String(node.attrs.entry || (language === "tsx" ? "/src/main.tsx" : "/src/main.jsx"))
@@ -1111,6 +1118,11 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
       {mermaid ? (
         <div className="gb-code-preview gb-code-mermaid-preview" contentEditable={false}>
           <DocsRenderer doc={mermaidDocument} />
+        </div>
+      ) : null}
+      {strudel ? (
+        <div className="gb-code-preview gb-code-strudel-preview" contentEditable={false}>
+          <StrudelPlayer code={previewCode} {...(node.attrs.title ? { title: node.attrs.title } : {})} />
         </div>
       ) : null}
       {live && liveRenderer ? (

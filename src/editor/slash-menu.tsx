@@ -16,6 +16,7 @@ import {
   ListTodo,
   Megaphone,
   Minus,
+  Music,
   MonitorPlay,
   PanelTop,
   Quote,
@@ -181,6 +182,16 @@ export const SLASH_ITEMS: SlashItem[] = [
       type: "codeBlock",
       attrs: { language: "mermaid", title: null, lineNumbers: false },
       content: [{ type: "text", text: "graph TD\n  A --> B" }],
+    }),
+  },
+  {
+    title: "Strudel music",
+    keywords: "audio song beat pattern live code tidal",
+    icon: Music,
+    run: insertBlock({
+      type: "codeBlock",
+      attrs: { language: "strudel", title: null, lineNumbers: false },
+      content: [{ type: "text", text: 'note("c e g b").s("triangle")' }],
     }),
   },
   {
