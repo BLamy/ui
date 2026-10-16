@@ -32,7 +32,11 @@ async function read(page, path, root = 'apple-notes') {
     let dir = await (await navigator.storage.getDirectory()).getDirectoryHandle(root);
     const parts = path.split('/'); const name = parts.pop();
     for (const part of parts) dir = await dir.getDirectoryHandle(part);
-    return (await (await dir.getFileHandle(name)).getFile()).text();
+    // An autosave swapping the file in can make a read fail for a moment (NotReadableError); read again.
+    for (let attempt = 0; ; attempt++) {
+      try { return await (await (await dir.getFileHandle(name)).getFile()).text(); }
+      catch (e) { if (e?.name !== 'NotReadableError' || attempt > 20) throw e; await new Promise((r) => setTimeout(r, 50)); }
+    }
   }, { path, root });
 }
 
