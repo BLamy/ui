@@ -718,12 +718,15 @@ function AssetImg({ url, ...props }: { url: string } & Omit<ComponentProps<"img"
   return <img src={src} {...props} />
 }
 
+// A resolved URL (blob:) has no file name in it: the title falls back to the one written in the document.
+const fileName = (url: string) => url.split(/[?#]/)[0]!.split("/").pop() || url
+
 function AssetStl({ url, title }: { url: string; title?: string }) {
   const src = useAsset(url)
-  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StlViewer src={src} {...(title ? { title } : {})} />
+  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StlViewer src={src} title={title || fileName(url)} />
 }
 
 function AssetStrudel({ url, title }: { url: string; title?: string }) {
   const src = useAsset(url)
-  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StrudelPlayer src={src} {...(title ? { title } : {})} />
+  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StrudelPlayer src={src} title={title || fileName(url)} />
 }
