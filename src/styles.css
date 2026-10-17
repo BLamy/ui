@@ -715,40 +715,25 @@
 .gb-inline-img-wrap { display: inline-block; vertical-align: middle; }
 .gb-inline-img { display: inline-block; vertical-align: middle; border-radius: 4px; }
 
-/* ── Math (mirrors .docs-math) ──────────────────────────── */
-.gb-math {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  border: 1px solid var(--gb-border);
-  border-radius: var(--gb-radius);
-  padding: 14px 16px;
-  margin: 0.85em 0;
-  background: var(--gb-muted);
-}
-.gb-math-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--gb-muted-foreground);
-  border: 1px solid var(--gb-border);
-  border-radius: 4px;
-  padding: 1px 5px;
-  margin-top: 3px;
-  text-transform: uppercase;
-}
+/* ── Math: docstream's card (.docs-split-card), its source pane editable ── */
+.gb-math.docs-split-card { margin: 0.85em 0; }
 .gb-math-input {
-  flex: 1;
+  width: 100%;
+  min-height: 2.5em;
+  padding: 0;
   background: transparent;
   border: none;
   outline: none;
   resize: vertical;
+  color: var(--gb-code-fg);
   font-family: ui-monospace, Menlo, monospace;
-  font-size: 13.5px;
+  font-size: 13px;
+  line-height: 1.7;
 }
+.gb-math-input:focus-visible { box-shadow: 0 2px 0 var(--gb-primary); }
 .gb-math-formula {
-  flex: 1;
   font-family: ui-monospace, Menlo, monospace;
-  font-size: 13.5px;
+  font-size: 13px;
   white-space: pre-wrap;
 }
 
@@ -768,7 +753,18 @@
   margin: 0;
   padding: 14px;
 }
-.gb-code-mermaid-preview .docs-mermaid-code,
+/* Mermaid: docstream's Pele card (.docs-mermaid-preview), its source pane being the editable code. */
+.gb-code.gb-code-mermaid {
+  margin: 0.85em 0;
+  border-radius: 16px;
+}
+.gb-code-mermaid .docs-pele-source {
+  min-height: 3em;
+  font-family: ui-monospace, Menlo, monospace;
+  color: var(--gb-code-fg);
+}
+.gb-code-mermaid .docs-pele-source code { background: none; padding: 0; font-size: inherit; color: inherit; }
+.gb-code-mermaid .gb-code-lang { width: 70px; }
 .gb-code-almost-preview .docs-react-demo-code {
   display: none;
 }

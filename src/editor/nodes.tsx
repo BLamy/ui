@@ -29,7 +29,7 @@ import {
 
 // The root entry (unlike `/replay`) keeps rrweb behind a dynamic import. The editor never
 // imports `/playground`: live previews run only through a host-supplied `liveRenderer`.
-import { DocsRenderer, ReplayPreview, isReplayQaUrl } from "@brett_lamy/docstream"
+import { DocsRenderer, MathFormula, PeleDiagram, ReplayPreview, SplitResult, isReplayQaUrl } from "@brett_lamy/docstream"
 import { useAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
 import { packageManagerCommands, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/docstream/gitbook"
@@ -1105,20 +1105,33 @@ export const GbFigure = Node.create({
 
 // ---------- Math ----------
 
+// Docstream's math card: the TeX (editable here) on the left, KaTeX's typesetting on the right, stacked when narrow.
 function MathView({ node, updateAttributes, editor }: NodeViewProps) {
+  const formula = String(node.attrs.formula ?? "")
+  const preview = useDebouncedValue(formula)
   return (
-    <NodeViewWrapper className="gb-math" contentEditable={false}>
-      <div className="gb-math-label">TeX</div>
-      {editor.isEditable ? (
-        <textarea
-          className="gb-math-input"
-          value={node.attrs.formula}
-          rows={Math.max(1, String(node.attrs.formula).split("\n").length)}
-          onChange={(e) => updateAttributes({ formula: e.target.value })}
-        />
-      ) : (
-        <pre className="gb-math-formula">{node.attrs.formula}</pre>
-      )}
+    <NodeViewWrapper className="gb-math docs-split-card docs-math-card" data-docstream-math="" contentEditable={false}>
+      <div className="docs-split-grid">
+        <div className="docs-split-pane docs-split-source-pane">
+          <div className="docs-split-head">
+            <span className="docs-split-label">LaTeX</span>
+          </div>
+          {editor.isEditable ? (
+            <textarea
+              className="gb-math-input docs-split-source"
+              aria-label="TeX"
+              value={formula}
+              rows={Math.max(1, formula.split("\n").length)}
+              onChange={(e) => updateAttributes({ formula: e.target.value })}
+            />
+          ) : (
+            <pre className="gb-math-formula docs-split-source">{formula}</pre>
+          )}
+        </div>
+        <SplitResult label="KaTeX">
+          <MathFormula formula={preview} />
+        </SplitResult>
+      </div>
     </NodeViewWrapper>
   )
 }
@@ -1153,18 +1166,37 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
   const live = !!liveRenderer && !!node.attrs.live && (language === "jsx" || language === "tsx" || language === "react")
   const entry = String(node.attrs.entry || (language === "tsx" ? "/src/main.tsx" : "/src/main.jsx"))
   const files = useMemo(() => ({ [entry]: previewCode }), [entry, previewCode])
-  const mermaidDocument = useMemo<DocumentNode>(() => ({
-    type: "doc",
-    children: [{ type: "code", language: "mermaid", code: previewCode, title: null, lineNumbers: true }],
-  }), [previewCode])
+
+  // Mermaid: docstream's card, with this block's code as the source pane — edit on the left, Pele draws on the right.
+  if (mermaid) {
+    return (
+      <NodeViewWrapper className="gb-code gb-code-mermaid docs-mermaid-preview docs-split-card" data-docstream-mermaid="">
+        <div className="docs-split-grid">
+        <div className="docs-split-pane docs-split-source-pane">
+          <div className="docs-split-head" contentEditable={false}>
+            <span className="docs-split-label">Mermaid</span>
+            {editor.isEditable ? (
+              <input
+                className="gb-inline-input gb-code-lang"
+                aria-label="Language"
+                value={node.attrs.language ?? ""}
+                placeholder="lang"
+                onChange={(e) => updateAttributes({ language: e.target.value || null })}
+              />
+            ) : null}
+          </div>
+          <pre className="docs-split-source">
+            <NodeViewContent {...({ as: "code" } as object)} />
+          </pre>
+        </div>
+        <PeleDiagram code={previewCode} />
+        </div>
+      </NodeViewWrapper>
+    )
+  }
 
   return (
     <NodeViewWrapper className="gb-code">
-      {mermaid ? (
-        <div className="gb-code-preview gb-code-mermaid-preview" contentEditable={false}>
-          <DocsRenderer doc={mermaidDocument} />
-        </div>
-      ) : null}
       {strudel ? (
         <div className="gb-code-preview gb-code-strudel-preview" contentEditable={false}>
           <StrudelPlayer code={previewCode} {...(node.attrs.title ? { title: node.attrs.title } : {})} />
