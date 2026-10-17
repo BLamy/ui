@@ -9,7 +9,7 @@ A hierarchy you can expand, collapse, search and select from the keyboard, built
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { Tree, type TreeNode } from '@/components/ui/tree'
+import { Tree } from '@/components/ui/tree'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -20,7 +20,7 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Tree, type TreeNode } from '@brett_lamy/ui'
+import { Tree } from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}
