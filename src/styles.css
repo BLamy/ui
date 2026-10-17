@@ -753,6 +753,14 @@
   margin: 0;
   padding: 14px;
 }
+/* docstream's source-and-result cards read a few tokens the editor doesn't otherwise define. */
+.gb .docs-split-card {
+  --gb-hover: rgba(128, 128, 128, 0.12);
+  --gb-panel-foreground: var(--gb-text);
+}
+.gb .ProseMirror a.docs-split-action { display: inline-flex; align-items: center; gap: 6px; color: var(--gb-muted-foreground); text-decoration: none; }
+.gb .ProseMirror a.docs-split-action:hover { color: var(--gb-text); }
+
 /* Mermaid: docstream's Pele card (.docs-mermaid-preview), its source pane being the editable code. */
 .gb-code.gb-code-mermaid {
   margin: 0.85em 0;
@@ -764,7 +772,7 @@
   color: var(--gb-code-fg);
 }
 .gb-code-mermaid .docs-pele-source code { background: none; padding: 0; font-size: inherit; color: inherit; }
-.gb-code-mermaid .gb-code-lang { width: 70px; }
+.gb-code-mermaid .gb-code-lang { width: 70px; font-size: 12.5px; }
 .gb-code-almost-preview .docs-react-demo-code {
   display: none;
 }
