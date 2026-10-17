@@ -142,9 +142,9 @@ test('the top-right tree is also inside the stack and file selection never chang
   await seed(page, { 'nested/readme.mdx': '# Tree\n\n<Card />' }, 'Work');
   await addFolder(page, 'Work');
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  const tree = current(page).getByRole('treegrid', { name: 'Folders and files' });
+  const tree = current(page).getByRole('tree', { name: 'Folders and files' });
   await expect(tree).toBeVisible();
-  const nested = tree.getByRole('row', { name: 'nested', exact: true });
+  const nested = tree.getByRole('treeitem', { name: 'nested', exact: true });
   await nested.press('ArrowRight'); await nested.press('ArrowDown'); await page.keyboard.press('Enter'); await sourceMode(page);
   await expect(editor(page, 'readme.mdx')).toHaveValue('# Tree\n\n<Card />');
   expect(await path(page)).toEqual(['folder:Work']);
@@ -399,16 +399,17 @@ test('external edits get persistent blue dots in both list and tree, opening cle
   await mac(page).getByRole('button', { name: /^Work / }).click();
   await expect(row(page, 'two.md').getByRole('img', { name: 'Changed outside Notes' })).toBeVisible();
   await current(page).getByRole('radiogroup', { name: 'View as' }).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  const treeRow = page.getByRole('treegrid').getByRole('row', { name: /two.md/ });
-  await expect(treeRow.getByRole('img', { name: 'Changed outside Notes' })).toBeVisible();
+  const treeRow = page.getByRole('tree').getByRole('treeitem', { name: /two.md/ });
+  // The tree's rows mark it with a titled dot after the name.
+  await expect(treeRow.locator('[title="Changed outside Notes"]')).toBeVisible();
   await treeRow.click();
-  await expect(treeRow.getByRole('img', { name: 'Changed outside Notes' })).toHaveCount(0);
+  await expect(treeRow.locator('[title="Changed outside Notes"]')).toHaveCount(0);
   await sourceMode(page); await editor(page, 'two.md').fill('# Saved in Notes\n');
   await expect.poll(() => read(page, 'two.md', 'Work')).toBe('# Saved in Notes\n');
-  await expect(treeRow.getByRole('img', { name: 'Changed outside Notes' })).toHaveCount(0);
+  await expect(treeRow.locator('[title="Changed outside Notes"]')).toHaveCount(0);
   await seed(page, { 'two.md': '# Changed while viewing\n' }, 'Work');
   await expect(editor(page, 'two.md')).toHaveValue('# Changed while viewing\n');
-  await expect(treeRow.getByRole('img', { name: 'Changed outside Notes' })).toHaveCount(0);
+  await expect(treeRow.locator('[title="Changed outside Notes"]')).toHaveCount(0);
 });
 
 test('local notes inherit the host demo registry so app examples render automatically', async ({ page }) => {
@@ -463,12 +464,12 @@ test('right-click renames and deletes notes and folders in place, in the list an
   await expect.poll(() => read(page, 'final.md', 'Work').catch(() => null)).toBe(null);
   // The tree has the same menu.
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  await contextAction(page, page.getByRole('treegrid').getByRole('row', { name: 'Trash me', exact: true }), 'Delete');
+  await contextAction(page, page.getByRole('tree').getByRole('treeitem', { name: 'Trash me', exact: true }), 'Delete');
   await page.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
-  await expect(page.getByRole('treegrid').getByRole('row', { name: 'Trash me', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('tree').getByRole('treeitem', { name: 'Trash me', exact: true })).toHaveCount(0);
   // And the toolbar's … menu renames the open note in its title.
-  await page.getByRole('treegrid').getByRole('row', { name: 'New', exact: true }).press('ArrowRight');
-  await page.getByRole('treegrid').getByRole('row', { name: 'inner.md', exact: true }).click();
+  await page.getByRole('tree').getByRole('treeitem', { name: 'New', exact: true }).press('ArrowRight');
+  await page.getByRole('tree').getByRole('treeitem', { name: 'inner.md', exact: true }).click();
   await page.locator('[data-slot=split-view-detail]').getByRole('button', { name: 'More', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Rename…', exact: true }).click();
   await page.keyboard.type('renamed'); await page.keyboard.press('Enter');
@@ -510,23 +511,23 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await expect(current(page)).toHaveAttribute('data-screen-label', 'Project');
 
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  const tree = current(page).getByRole('treegrid', { name: 'Folders and files' });
+  const tree = current(page).getByRole('tree', { name: 'Folders and files' });
   // Files Notes can't open are listed (dimmed, draggable onto a note) but never selected.
-  await tree.getByRole('row', { name: 'package.json', exact: true }).click();
-  await expect(tree.getByRole('row', { name: 'package.json', exact: true })).not.toHaveAttribute('aria-selected', 'true');
-  await expect(tree.getByRole('row', { name: 'src', exact: true })).toBeVisible();
+  await tree.getByRole('treeitem', { name: 'package.json', exact: true }).click();
+  await expect(tree.getByRole('treeitem', { name: 'package.json', exact: true })).not.toHaveAttribute('aria-selected', 'true');
+  await expect(tree.getByRole('treeitem', { name: 'src', exact: true })).toBeVisible();
   await current(page).getByRole('button', { name: 'Filter files', exact: true }).click();
   await page.getByRole('menuitemradio', { name: 'Markdown' }).click();
-  await expect(tree.getByRole('row', { name: 'package.json', exact: true })).toHaveCount(0);
-  await expect(tree.getByRole('row', { name: 'src', exact: true })).toHaveCount(0);
-  await expect(tree.getByRole('row', { name: 'README.md', exact: true })).toBeVisible();
+  await expect(tree.getByRole('treeitem', { name: 'package.json', exact: true })).toHaveCount(0);
+  await expect(tree.getByRole('treeitem', { name: 'src', exact: true })).toHaveCount(0);
+  await expect(tree.getByRole('treeitem', { name: 'README.md', exact: true })).toBeVisible();
 
   // 3D Models: only STL files and the folders holding them; one opens in the viewer.
   await current(page).getByRole('button', { name: 'Filter files', exact: true }).click();
   await page.getByRole('menuitemradio', { name: '3D Models (STL)' }).click();
-  await expect(tree.getByRole('row', { name: 'README.md', exact: true })).toHaveCount(0);
-  await tree.getByRole('row', { name: 'case', exact: true }).click();
-  await tree.getByRole('row', { name: 'part.stl', exact: true }).click();
+  await expect(tree.getByRole('treeitem', { name: 'README.md', exact: true })).toHaveCount(0);
+  await tree.getByRole('treeitem', { name: 'case', exact: true }).click();
+  await tree.getByRole('treeitem', { name: 'part.stl', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Model' }).or(page.locator('[aria-label="Model"]')).first()).toBeVisible();
   await expect(page.locator('.docstream-stl')).toBeVisible();
 });

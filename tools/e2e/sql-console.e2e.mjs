@@ -54,7 +54,7 @@ test.describe('queries', () => {
     await run(page);
     await expect(results(page).locator('figure')).toHaveCount(2);
     await expect(results(page)).toContainText('2 rows affected');
-    await expect(page.getByRole('treegrid', { name: 'Database schema' }).or(page.getByRole('tree', { name: 'Database schema' }))).toContainText('scratch');
+    await expect(page.getByRole('tree', { name: 'Database schema' }).getByRole('treeitem', { name: 'scratch', exact: true })).toBeVisible();
   });
 
   test('an error shows the message, SQLSTATE, the line with a caret, and underlines the token', async ({ page }) => {
@@ -96,22 +96,22 @@ test.describe('queries', () => {
 
   test('choosing a table in the schema tree pastes a select into the editor', async ({ page }) => {
     await setSql(page, '');
-    const books = page.getByRole('row', { name: /^books/ }).first();
+    const books = page.getByRole('treeitem', { name: 'books', exact: true });
     await books.click();
     await expect(editor(page)).toHaveValue('select * from books limit 100;');
     await run(page);
     await expect(results(page).locator('[data-slot=result-table-summary]')).toHaveText(/8 rows/);
     // a second pick appends rather than replacing what you wrote
-    await page.getByRole('row', { name: /^authors/ }).first().click();
+    await page.getByRole('treeitem', { name: 'authors', exact: true }).click();
     await expect(editor(page)).toHaveValue(/books limit 100;\nselect \* from authors limit 100;/);
   });
 
   test('the schema tree is keyboard accessible: arrows expand, Enter picks', async ({ page }) => {
     await setSql(page, '');
-    const books = page.getByRole('row', { name: /^books/ }).first();
+    const books = page.getByRole('treeitem', { name: 'books', exact: true });
     await books.focus();
     await page.keyboard.press('ArrowRight');
-    await expect(page.getByRole('row', { name: /^title, text/ }).first()).toBeVisible();
+    await expect(page.getByRole('treeitem', { name: 'title', exact: true }).first()).toBeVisible();
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('Enter');
     await expect(editor(page)).toHaveValue('select * from books limit 100;');
@@ -208,7 +208,7 @@ test.describe('export and import', () => {
     await expect(grid).toContainText("it's fine");
     await expect(grid.getByRole('row')).toHaveCount(3);
     // the schema tree shows the imported table; a second import clashes and changes nothing
-    await expect(fresh.getByRole('row', { name: /^kept/ }).first()).toBeVisible();
+    await expect(fresh.getByRole('treeitem', { name: 'kept', exact: true })).toBeVisible();
     const [again] = await Promise.all([fresh.waitForEvent('filechooser'), fresh.getByRole('button', { name: 'Import…' }).click()]);
     await again.setFiles(sqlPath);
     await expect(fresh.locator('[data-slot=sql-console-error]', { hasText: 'Could not finish' })).toContainText('nothing was changed');

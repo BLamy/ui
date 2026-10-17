@@ -5,6 +5,7 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { SyntaxHighlighting, SyntaxTokens, useSyntaxTokens } from '@/components/ui/syntax-highlighting';
 import { TabViewIndicator, TabViewPanel, TabViewTab } from '@/components/ui/tab-view';
+import { Tree, type TreeNode } from '@/components/ui/tree';
 import { Icon, type IconName } from '@/lib/icon';
 import { languageFromPath } from '@/lib/syntax';
 import { cn } from '@/lib/utils';
@@ -342,47 +343,27 @@ export function DiffView({ path, patch, add, del }: { path: string; patch: strin
   );
 }
 
-/* ── File tree ── nested folders, the selected file highlighted with a tint bar. */
-export function FileTree({ nodes, selected, onSelect, depth = 0, defaultOpen }: {
-  nodes: FileNode[]; selected?: string; onSelect: (node: FileNode) => void; depth?: number; defaultOpen?: boolean;
-}) {
-  return (
-    <ul role={depth ? 'group' : 'tree'} className="m-0 list-none p-0">
-      {nodes.map((n) => <TreeItem key={n.path} node={n} selected={selected} onSelect={onSelect} depth={depth} defaultOpen={defaultOpen} />)}
-    </ul>
-  );
-}
+/* ── File tree ── the library's Tree (Trees): folders open to the selected file; choosing a file opens it. */
+const treeNodes = (nodes: readonly FileNode[]): TreeNode[] =>
+  nodes.map((n) => ({ id: n.path, name: n.name, ...(n.type === 'dir' ? { children: treeNodes(n.children ?? []) } : {}) }));
 
-function TreeItem({ node, selected, onSelect, depth, defaultOpen }: {
-  node: FileNode; selected?: string; onSelect: (node: FileNode) => void; depth: number; defaultOpen?: boolean;
+export function FileTree({ nodes, selected, onSelect, defaultOpen }: {
+  nodes: FileNode[]; selected?: string; onSelect: (node: FileNode) => void; defaultOpen?: boolean;
 }) {
-  // Folders on the way to the selection open themselves until the user toggles them.
-  const [toggled, setOpen] = useState<boolean | null>(null);
-  const open = toggled ?? (defaultOpen || (!!selected && (selected === node.path || selected.startsWith(node.path + '/'))));
-  const active = selected === node.path;
+  const items = useMemo(() => treeNodes(nodes), [nodes]);
+  const byPath = useMemo(() => {
+    const m = new Map<string, FileNode>();
+    const walk = (list: readonly FileNode[]) => list.forEach((n) => { m.set(n.path, n); if (n.children) walk(n.children); });
+    walk(nodes);
+    return m;
+  }, [nodes]);
+  // The folders on the way to the selection.
+  const ancestors = selected ? selected.split('/').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('/')) : [];
   return (
-    <li role="treeitem" aria-expanded={node.type === 'dir' ? open : undefined} aria-selected={active}>
-      <button type="button"
-        onClick={() => (node.type === 'dir' ? setOpen(!open) : onSelect(node))}
-        className={cn(
-          'relative flex h-8 w-full cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent pr-2 text-left text-detail text-foreground hover:bg-secondary',
-          active && 'bg-secondary before:absolute before:inset-y-1.5 before:left-0 before:w-1 before:rounded-full before:bg-primary',
-        )}
-        style={{ paddingLeft: 8 + depth * 16 }}>
-        {node.type === 'dir' ? (
-          <>
-            <Oct name={open ? 'chevDown' : 'chevRight'} size={12} className="text-muted-foreground" />
-            <Oct name="folder" className="text-[var(--gh-folder)]" />
-          </>
-        ) : (
-          <Oct name="file" className="ml-[18px] text-muted-foreground" />
-        )}
-        <span className="truncate">{node.name}</span>
-      </button>
-      {node.type === 'dir' && open && node.children ? (
-        <FileTree nodes={node.children} selected={selected} onSelect={onSelect} depth={depth + 1} defaultOpen={defaultOpen} />
-      ) : null}
-    </li>
+    <Tree aria-label="Files" items={items} defaultExpanded={defaultOpen ? 'all' : ancestors} expandedIds={ancestors}
+      selectedIds={selected ? [selected] : []}
+      onSelectionChange={([path]) => { const n = path ? byPath.get(path) : undefined; if (n?.type === 'file') onSelect(n); }}
+      className="h-[min(70vh,640px)]" />
   );
 }
 

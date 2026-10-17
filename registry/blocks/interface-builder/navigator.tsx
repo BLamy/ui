@@ -1,17 +1,15 @@
-/* The navigator: the document outline (Xcode's) and the library. The outline is react-aria's Tree — arrows move,
-   → and ← open and close, Return selects — and stays in step with the canvas: select a row and the canvas selects it;
+/* The navigator: the document outline (Xcode's) and the library. The outline is the library's Tree (Trees) — arrows
+   move, → and ← open and close, typing searches, Return on a scene focuses it — and stays in step with the canvas: select a row and the canvas selects it;
    select on the canvas and the outline opens to it. Every scene lists its view tree (slots by name), its First
    Responder and Exit proxies, and the segues that leave it. Badges say what a node is wired to: @outlet, ƒ binding,
    ↻ repeat, if, ⚡ actions, ✦ motion. */
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import { Button as AriaButton, Collection, Tree, TreeItem, TreeItemContent, type Key } from 'react-aria-components';
+import { useMemo, useState } from 'react';
 import { PlainButton } from '@/components/ui/plain-button';
 import { Segmented } from '@/components/ui/segmented';
-import { Icon, type IconShape } from '@/lib/icon';
-import { cn } from '@/lib/utils';
+import { Tree, type TreeNode } from '@/components/ui/tree';
+import { Icon, type IconName } from '@/lib/icon';
 import { nodeLabel, specOf } from './catalog';
 import { LibraryList } from './library';
-import { DOCK_COLORS } from './palette';
 import { type ContextDef, type Doc, type Node, type Scene, type Segue } from './model';
 import { newContext, newScene, SEGUE_KINDS } from './ops';
 import { useBuilder, type Selection } from './store';
@@ -87,123 +85,80 @@ function selectionOf(key: string, doc: Doc): Selection {
   }
 }
 
-const Badge = ({ children, title, mono }: { children: ReactNode; title: string; mono?: boolean }) => (
-  <span title={title} className={cn('shrink-0 rounded px-1 text-caption2 leading-4 text-muted-foreground', mono && 'font-mono', 'bg-secondary')}>{children}</span>
-);
-
-function Glyph({ name, shapes, color, className }: { name?: string; shapes?: readonly IconShape[]; color?: string; className?: string }) {
-  return (
-    <span className={cn('grid size-[18px] shrink-0 place-items-center rounded-[5px]', color ? 'text-white' : 'text-primary', className)} style={color ? { background: color } : undefined}>
-      <Icon name={name} shapes={shapes} size={color ? 12 : 15} sw={color ? 2.6 : 1.9} />
-    </span>
-  );
-}
-
-function RowBody({ item }: { item: Item }) {
+/** An outline row: the item's name, an icon for leaves, and what it's wired to after the label. */
+function toNode(item: Item): TreeNode {
+  const kids = 'children' in item && item.children.length ? { children: item.children.map(toNode) } : {};
   switch (item.kind) {
-    case 'entry': return (<><Glyph name="arrow-right" /><span className="truncate">{item.label}</span></>);
-    case 'contexts': return (<><Glyph name="square-on-square" /><span className="flex-1 truncate font-medium">Contexts</span></>);
-    case 'context': return (<><Glyph name="circle-fill" className="text-success" /><span className="truncate">{item.ctx.name}</span><Badge title="Read it as" mono>{item.ctx.alias}</Badge></>);
-    case 'scene': return (<><Glyph name="circle-fill" color={DOCK_COLORS.component} /><span className="truncate font-semibold">{item.scene.name}</span></>);
-    case 'responder': return (<><Glyph name="bolt-fill" color={DOCK_COLORS.responder} /><span className="truncate text-muted-foreground">First Responder</span>{Object.keys(item.scene.responds ?? {}).length ? <Badge title="Commands it handles">{Object.keys(item.scene.responds ?? {}).length}</Badge> : null}</>);
-    case 'exit': return (<><Glyph name="arrow-uturn-backward" color={DOCK_COLORS.exit} /><span className="truncate text-muted-foreground">Exit</span></>);
-    case 'segue': return (<><Glyph name={SEGUE_GLYPH[item.segue.kind]} /><span className="truncate">{SEGUE_KINDS.find((k) => k.id === item.segue.kind)?.label} → {item.to}</span></>);
-    case 'slot': return (<><span className="size-[18px] shrink-0" /><span className="truncate text-caption font-medium tracking-wide text-muted-foreground uppercase">{item.label}</span></>);
+    case 'entry': return { id: item.id, name: item.label, icon: 'arrow-right' };
+    case 'contexts': return { id: item.id, name: 'Contexts', ...kids };
+    case 'context': return { id: item.id, name: item.ctx.name, icon: 'circle-fill', detail: item.ctx.alias, detailTitle: 'Read it as' };
+    case 'scene': return { id: item.id, name: item.scene.name, ...kids };
+    case 'responder': {
+      const handles = Object.keys(item.scene.responds ?? {}).length;
+      return { id: item.id, name: 'First Responder', icon: 'bolt-fill', ...(handles ? { detail: String(handles), detailTitle: 'Commands it handles' } : {}) };
+    }
+    case 'exit': return { id: item.id, name: 'Exit', icon: 'arrow-uturn-backward' };
+    case 'segue': return { id: item.id, name: `${SEGUE_KINDS.find((k) => k.id === item.segue.kind)?.label} → ${item.to}`, icon: SEGUE_GLYPH[item.segue.kind] as IconName };
+    case 'slot': return { id: item.id, name: item.label.toUpperCase(), dimmed: true, ...kids };
     case 'node': {
       const n = item.node, spec = specOf(n.type);
       const actions = Object.values(n.on ?? {}).reduce((k, l) => k + l.length, 0);
       const m = n.motion;
       const moves = !!(m && (m.appear || m.hover || m.press || m.focus || m.exit || m.drag || m.layoutId || m.layout || Object.keys(m.variants ?? {}).length));
-      return (
-        <>
-          <Glyph name={typeof spec.icon === 'string' ? spec.icon : undefined} shapes={typeof spec.icon === 'string' ? undefined : spec.icon} />
-          <span className="min-w-0 flex-1 truncate">{item.root ? `${item.label} (root)` : item.label}</span>
-          {n.ref ? <Badge title={`Outlet: useRef → ${n.ref}`} mono>@{n.ref}</Badge> : null}
-          {n.bind && Object.keys(n.bind).length ? <Badge title={`Bound: ${Object.keys(n.bind).join(', ')}`}>ƒ</Badge> : null}
-          {n.repeat ? <Badge title={`Repeats over ${n.repeat.each}`}>↻</Badge> : null}
-          {n.when ? <Badge title={`Shown when ${n.when}`}>if</Badge> : null}
-          {actions ? <Badge title={`${actions} action${actions === 1 ? '' : 's'}`}>⚡{actions}</Badge> : null}
-          {moves ? <Badge title="Animated">✦</Badge> : null}
-        </>
-      );
+      const badges: [string, string][] = [
+        ...(n.ref ? [[`@${n.ref}`, `Outlet: useRef → ${n.ref}`] as [string, string]] : []),
+        ...(n.bind && Object.keys(n.bind).length ? [['ƒ', `Bound: ${Object.keys(n.bind).join(', ')}`] as [string, string]] : []),
+        ...(n.repeat ? [['↻', `Repeats over ${n.repeat.each}`] as [string, string]] : []),
+        ...(n.when ? [['if', `Shown when ${n.when}`] as [string, string]] : []),
+        ...(actions ? [[`⚡${actions}`, `${actions} action${actions === 1 ? '' : 's'}`] as [string, string]] : []),
+        ...(moves ? [['✦', 'Animated'] as [string, string]] : []),
+      ];
+      return {
+        id: item.id, name: item.root ? `${item.label} (root)` : item.label,
+        ...(typeof spec.icon === 'string' ? { icon: spec.icon as IconName } : {}),
+        ...(badges.length ? { detail: badges.map(([b]) => b).join(' '), detailTitle: badges.map(([, t]) => t).join('; ') } : {}),
+        ...kids,
+      };
     }
   }
-}
-
-function renderItem(item: Item) {
-  const children = 'children' in item ? item.children : null;
-  const text = item.kind === 'node' ? item.label : item.kind === 'scene' ? item.scene.name : item.kind === 'context' ? item.ctx.name : item.kind === 'slot' ? item.label : item.kind === 'segue' ? `Segue to ${item.to}` : item.kind === 'responder' ? 'First Responder' : item.kind === 'exit' ? 'Exit' : item.kind === 'contexts' ? 'Contexts' : item.label;
-  return (
-    <TreeItem
-      key={item.id}
-      id={item.id}
-      textValue={text}
-      isDisabled={item.kind === 'slot'}
-      className="group/row cursor-default rounded-md outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring data-focus-visible:ring-inset data-hovered:bg-secondary/70 data-selected:bg-primary/14 data-disabled:cursor-default"
-    >
-      <TreeItemContent>
-        {({ hasChildItems, isExpanded, level }) => (
-          <div className="flex h-7 min-w-0 items-center gap-1.5 pe-1.5 ps-[calc((var(--level)-1)*0.85rem+0.2rem)] text-footnote" style={{ '--level': level } as CSSProperties}>
-            {hasChildItems ? (
-              <AriaButton slot="chevron" aria-label={isExpanded ? 'Collapse' : 'Expand'} className="grid size-4 shrink-0 cursor-pointer place-items-center rounded border-0 bg-transparent p-0 text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-ring">
-                <Icon name="chevron-right" size={11} sw={2.6} className={cn('transition-transform duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', isExpanded && 'rotate-90')} />
-              </AriaButton>
-            ) : <span className="size-4 shrink-0" />}
-            <RowBody item={item} />
-          </div>
-        )}
-      </TreeItemContent>
-      {children ? <Collection items={children}>{renderItem}</Collection> : null}
-    </TreeItem>
-  );
 }
 
 export function Outline({ onFocusScene }: { onFocusScene: (id: string) => void }) {
   const b = useBuilder();
   const items = useMemo(() => itemsOf(b.doc), [b.doc]);
   const selected = keyOf(b.selection);
-  const [expanded, setExpanded] = useState<Set<Key>>(() => new Set(['contexts', ...b.doc.scenes.map((s) => `scene:${s.id}`)]));
+  const nodes = useMemo(() => items.map(toNode), [items]);
 
-  // Open the outline to whatever the canvas selected.
-  useEffect(() => {
+  // Open the outline to whatever the canvas selected (the Tree scrolls the selected row into view).
+  const opened = useMemo(() => {
     const sel = b.selection;
     const sceneId = sel.kind === 'node' || sel.kind === 'scene' || sel.kind === 'responder' || sel.kind === 'exit' ? sel.scene : sel.kind === 'segue' ? b.doc.segues.find((g) => g.id === sel.segue)?.from : null;
-    if (!sceneId) return;
-    const scene = b.doc.scenes.find((s) => s.id === sceneId);
-    if (!scene) return;
+    const scene = sceneId ? b.doc.scenes.find((s) => s.id === sceneId) : undefined;
+    if (!scene) return [];
     const path = sel.kind === 'node' ? pathTo(scene.root, sel.ids[0]).slice(0, -1) : [];
-    const keys = [`scene:${sceneId}`, ...path.map((n) => n.id)];
+    const keys = [`scene:${scene.id}`, ...path.map((n) => n.id)];
     // A node in a slot: open the slot's row too.
     if (sel.kind === 'node' && path.length) {
       const parent = path[path.length - 1];
       for (const [slot, list] of Object.entries(parent.slots ?? {})) if (list.some((c) => c.id === sel.ids[0])) keys.push(`slot:${parent.id}:${slot}`);
     }
-    setExpanded((prev) => (keys.every((k) => prev.has(k)) ? prev : new Set([...prev, ...keys])));
-    // Keep the selected row in view.
-    requestAnimationFrame(() => document.querySelector(`[data-ib-outline] [data-key="${CSS.escape(keyOf(sel) ?? '')}"]`)?.scrollIntoView({ block: 'nearest' }));
+    return keys;
   }, [b.selection, b.doc]);
 
   return (
     <div data-ib-outline className="flex min-h-0 flex-1 flex-col">
       <Tree
         aria-label="Document outline"
-        items={items}
-        selectionMode="single"
-        selectedKeys={selected ? [selected] : []}
-        onSelectionChange={(keys) => {
-          const k = [...(keys as Set<Key>)][0];
-          if (k != null) b.select(selectionOf(String(k), b.doc));
-        }}
-        onAction={(k) => {
-          const key = String(k);
-          if (key.startsWith('scene:')) onFocusScene(key.slice(6));
-        }}
-        expandedKeys={expanded}
-        onExpandedChange={(keys) => setExpanded(new Set(keys))}
-        className="bl-scroll min-h-0 flex-1 overflow-auto px-1.5 py-1 outline-none"
-      >
-        {renderItem}
-      </Tree>
+        items={nodes}
+        icons="none"
+        density="compact"
+        defaultExpanded={['contexts', ...b.doc.scenes.map((s) => `scene:${s.id}`)]}
+        expandedIds={opened}
+        selectedIds={selected ? [selected] : []}
+        onSelectionChange={([k]) => { if (k != null) b.select(selectionOf(k, b.doc)); }}
+        onAction={(node) => { if (node.id.startsWith('scene:')) onFocusScene(node.id.slice(6)); }}
+        className="min-h-0 flex-1 px-1.5 py-1"
+      />
       <div className="flex shrink-0 items-center gap-1 border-t border-border p-1.5">
         <PlainButton
           onPress={() => {

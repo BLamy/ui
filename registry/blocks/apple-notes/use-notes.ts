@@ -10,7 +10,7 @@ export interface OtherFile { id: string; path: string; name: string; folder: str
 /** Files dragged onto another location, waiting for Move or Copy. */
 export interface Transfer { paths: string[]; to: Folder }
 /** Where a name is edited: its row in the master list (or tree), or the note's title in the toolbar. */
-export type RenamePlace = 'list' | 'title';
+export type RenamePlace = 'list' | 'title' | 'tree';
 interface Draft { note: Note; body: string; base: string; saving?: boolean; error?: string; conflict?: string | null }
 
 export function useNotes({ folder: initialFolder = ROOT_FOLDER.id, note: initialNote = null as string | null, view: initialView = 'list' as NotesView } = {}) {

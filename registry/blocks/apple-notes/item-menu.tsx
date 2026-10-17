@@ -81,9 +81,9 @@ export function useItemMenuAction(notes: NotesState, id: string, place: RenamePl
   return (key: string | number) => act(String(key));
 }
 
-/** The item's right-click menu, for a ContextMenu (or a TreeItem's `contextMenu`). */
-export function ItemMenuContent({ notes, id, label }: { notes: NotesState; id: string; label: string }) {
-  const act = useItemMenuAction(notes, id);
+/** The item's right-click menu, for a ContextMenu (or a Tree's `contextMenu`). */
+export function ItemMenuContent({ notes, id, label, place }: { notes: NotesState; id: string; label: string; place?: RenamePlace }) {
+  const act = useItemMenuAction(notes, id, place);
   return <ContextMenuContent aria-label={`${label} actions`} onAction={act}>{itemMenuItems(notes, id)}</ContextMenuContent>;
 }
 
