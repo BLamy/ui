@@ -1,10 +1,14 @@
 /* Reminders data: lists (name, color, icon, sections), reminders (due day as an offset from "today", time, notes,
    flag, priority, subtasks) and the smart lists that filter them. "Today" is pinned so the data never goes stale. */
 import { type IconName } from '@/lib/icon';
+import type { TaskState } from './markdown-tasks';
 
 export const TODAY = new Date(2026, 8, 28); // Monday, September 28, 2026
 
-export interface Subtask { id: string; title: string; done?: boolean }
+/** Where a reminder read from a Markdown file lives: the file, and the line as it was read. */
+export interface TaskSource { path: string; line: number; raw: string; tags: string[]; subtasks: { line: number; raw: string }[] }
+
+export interface Subtask { id: string; title: string; done?: boolean; state?: TaskState; source?: TaskSource }
 export interface Reminder {
   id: string;
   list: string;
@@ -17,12 +21,23 @@ export interface Reminder {
   /** 0 none · 1 low (!) · 2 medium (!!) · 3 high (!!!) */
   priority?: 0 | 1 | 2 | 3;
   done?: boolean;
+  /** Docstream's task state; without one, `done` means verified. Completed (`done`) is verified or cancelled. */
+  state?: TaskState;
+  /** Set for a task read from a Markdown file: changes are written back to that line. */
+  source?: TaskSource;
   section?: string;
   url?: string;
   tags?: string[];
   subtasks?: Subtask[];
 }
-export interface RList { id: string; name: string; color: string; glyph: IconName; sections?: string[] }
+export interface RList {
+  id: string; name: string; color: string; glyph: IconName; sections?: string[];
+  /** A Markdown file's task list: the file and the location (sidebar root) it's in. */
+  file?: { path: string; root: string };
+}
+
+/** A reminder's (or subtask's) state, for ones that only say done or not. */
+export const stateOf = (x: { state?: TaskState; done?: boolean }): TaskState => x.state ?? (x.done ? 'verified' : 'pending');
 
 /** iOS system colors Reminders uses outside the lists (fixed; the lists' own colors are data). */
 export const SYSTEM = { red: '#FF3B30', orange: '#FF9500', yellow: '#FFCC00', green: '#34C759', blue: '#007AFF', pink: '#FF2D55', gray: '#8E8E93' } as const;

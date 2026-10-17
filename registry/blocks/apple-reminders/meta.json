@@ -1,7 +1,8 @@
 {
   "name": "apple-reminders",
   "title": "Apple Reminders",
-  "description": "Apple Reminders: smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts, colored lists with sections, circular checkboxes that spring filled, inline add, a details sheet (notes, date and time, flag, priority, subtasks), show/clear completed, search, and a small burst when a list is cleared. Sidebar and list side by side on wide screens; the lists screen pushes the list on phones. Large list titles fold into the bar as you scroll; tints with each list's color, light and dark.",
+  "description": "Apple Reminders: smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts, colored lists with sections, circular checkboxes that spring filled, inline add, a details sheet (notes, date and time, flag, priority, subtasks), show/clear completed, search, and a small burst when a list is cleared. Right-click any checkbox for every docstream task state (in progress, implemented, blocked, parked, refuted, verified, cancelled); the details sheet has the same Status menu. Markdown task lists become lists too: files in this browser's private store (OPFS) and in folders you add from your computer — both shared with the Apple Notes block — are scanned for `- [ ]` items, headings become sections, nested tasks subtasks, and every change is written back to that line of the file. Sidebar and list side by side on wide screens; the lists screen pushes the list on phones. Large list titles fold into the bar as you scroll; tints with each list's color, light and dark.",
   "categories": ["application", "productivity"],
-  "files": ["page.tsx", "sidebar.tsx", "list-view.tsx", "reminder-row.tsx", "details.tsx", "views.ts", "store.ts", "data.ts"]
+  "files": ["page.tsx", "sidebar.tsx", "list-view.tsx", "reminder-row.tsx", "details.tsx", "views.ts", "store.ts", "data.ts", "markdown-tasks.ts", "file-lists.ts", "use-task-files.ts", "folder-storage.ts"],
+  "dependencies": ["use-fs", "@brett_lamy/docstream"]
 }

@@ -77,10 +77,13 @@ export function ListView() {
               <DropdownMenuItem onAction={() => api.setShowCompleted(list.id, !shown)} icon={<Icon name="check" size={20} />}>
                 {shown ? 'Hide Completed' : 'Show Completed'}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" isDisabled={!view.completed} onAction={() => api.clearCompleted(list.id)}>
-                {`Clear ${view.completed} Completed`}
-              </DropdownMenuItem>
+              {/* A file's completed tasks stay in the file. */}
+              {list.file ? null : <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" isDisabled={!view.completed} onAction={() => api.clearCompleted(list.id)}>
+                  {`Clear ${view.completed} Completed`}
+                </DropdownMenuItem>
+              </>}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null} />
@@ -98,8 +101,10 @@ export function ListView() {
           {list && view.completed ? (
             <div className="mx-5 mt-1 flex items-center gap-2 py-1.5 text-subhead text-muted-foreground shadow-hairline-b">
               <span>{view.completed} Completed</span>
-              <span aria-hidden="true">·</span>
-              <button type="button" onClick={() => api.clearCompleted(list.id)} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Clear</button>
+              {list.file ? null : <>
+                <span aria-hidden="true">·</span>
+                <button type="button" onClick={() => api.clearCompleted(list.id)} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">Clear</button>
+              </>}
               <button type="button" onClick={() => api.setShowCompleted(list.id, !shown)} className="bl-btn ml-auto cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-subhead text-primary">
                 {shown ? 'Hide' : 'Show'}
               </button>

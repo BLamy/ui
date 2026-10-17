@@ -913,8 +913,7 @@
         ".docstream-stl": {
           "--gb-primary": "var(--primary)",
           "--gb-muted": "var(--secondary)",
-          "--gb-border": "var(--border)",
-          "--gb-muted-foreground": "var(--muted-foreground)"
+          "--gb-border": "var(--border)"
         },
         ".wb-composer-doc.gb .gb-attachment": {
           "background": "var(--secondary)",
@@ -6340,16 +6339,20 @@
       "name": "apple-reminders",
       "type": "registry:block",
       "title": "Apple Reminders",
-      "description": "Apple Reminders: smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts, colored lists with sections, circular checkboxes that spring filled, inline add, a details sheet (notes, date and time, flag, priority, subtasks), show/clear completed, search, and a small burst when a list is cleared. Sidebar and list side by side on wide screens; the lists screen pushes the list on phones. Large list titles fold into the bar as you scroll; tints with each list's color, light and dark.",
+      "description": "Apple Reminders: smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts, colored lists with sections, circular checkboxes that spring filled, inline add, a details sheet (notes, date and time, flag, priority, subtasks), show/clear completed, search, and a small burst when a list is cleared. Right-click any checkbox for every docstream task state (in progress, implemented, blocked, parked, refuted, verified, cancelled); the details sheet has the same Status menu. Markdown task lists become lists too: files in this browser's private store (OPFS) and in folders you add from your computer — both shared with the Apple Notes block — are scanned for `- [ ]` items, headings become sections, nested tasks subtasks, and every change is written back to that line of the file. Sidebar and list side by side on wide screens; the lists screen pushes the list on phones. Large list titles fold into the bar as you scroll; tints with each list's color, light and dark.",
       "categories": [
         "application",
         "productivity"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "use-fs@2.1.0",
+        "@brett_lamy/docstream@1.14.1"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/celebrate.json",
+        "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
@@ -6403,6 +6406,26 @@
           "path": "registry/blocks/apple-reminders/data.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-reminders/data.ts"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/markdown-tasks.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/markdown-tasks.ts"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/file-lists.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/file-lists.ts"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/use-task-files.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/use-task-files.ts"
+        },
+        {
+          "path": "registry/blocks/apple-reminders/folder-storage.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-reminders/folder-storage.ts"
         }
       ],
       "meta": {
