@@ -910,6 +910,12 @@
           "--gb-accent-foreground": "currentColor",
           "--gb-code-fg": "currentColor"
         },
+        ".docstream-stl": {
+          "--gb-primary": "var(--primary)",
+          "--gb-muted": "var(--secondary)",
+          "--gb-border": "var(--border)",
+          "--gb-muted-foreground": "var(--muted-foreground)"
+        },
         ".wb-composer-doc.gb .gb-attachment": {
           "background": "var(--secondary)",
           "border-color": "var(--border)"
@@ -2041,7 +2047,7 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@1.13.2",
+        "@brett_lamy/docstream-editor@1.14.1",
         "@tiptap/core@3.30.5",
         "@tiptap/pm@3.30.5",
         "class-variance-authority@^0.7.1",
@@ -3185,8 +3191,8 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/docstream@1.13.2",
-        "@brett_lamy/docstream-editor@1.13.2",
+        "@brett_lamy/docstream@1.14.1",
+        "@brett_lamy/docstream-editor@1.14.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -3216,7 +3222,7 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/docstream@1.13.2"
+        "@brett_lamy/docstream@1.14.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3867,7 +3873,7 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@1.13.2"
+        "@brett_lamy/docstream@1.14.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4341,12 +4347,39 @@
       }
     },
     {
+      "name": "stl-viewer",
+      "type": "registry:ui",
+      "title": "StlViewer",
+      "description": "A 3D preview of an .stl model, binary or ASCII: WebGL with no dependencies, drag to orbit, pinch or ⌘-scroll to zoom, double-click to reset, and the triangle count and size under it. The model takes the theme's primary color.",
+      "dependencies": [
+        "@brett_lamy/docstream@1.14.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/stl-viewer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/stl-viewer.tsx"
+        }
+      ],
+      "meta": {
+        "page": "stl-viewer",
+        "exports": [
+          "StlViewer",
+          "parseStl",
+          "isStlUrl"
+        ]
+      }
+    },
+    {
       "name": "strudel-player",
       "type": "registry:ui",
       "title": "StrudelPlayer",
       "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time.",
       "dependencies": [
-        "@brett_lamy/docstream@1.13.2"
+        "@brett_lamy/docstream@1.14.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4378,7 +4411,7 @@
       "title": "StrudelRack",
       "description": "Studio hardware generated from Strudel code: a rack of devices, one per track, with mute/solo pads, a channel fader, synth and key LCDs, TR-style step keys for the mini-notation and LED-ring knobs for each effect. Every control edits the code in place. Knob, Fader and StepGrid are exported on their own.",
       "dependencies": [
-        "@brett_lamy/docstream@1.13.2"
+        "@brett_lamy/docstream@1.14.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4409,7 +4442,7 @@
       "title": "Strudel syntax tree",
       "description": "Strudel code as a syntax tree: the JavaScript (acorn) read as a song — tempo, tracks, method chains with typed arguments — every mini-notation string parsed with source ranges, and edits that rewrite only the characters they touch.",
       "dependencies": [
-        "@brett_lamy/docstream@1.13.2"
+        "@brett_lamy/docstream@1.14.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6030,7 +6063,7 @@
         "media"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@1.13.2"
+        "@brett_lamy/docstream@1.14.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -6097,7 +6130,7 @@
       "name": "apple-notes",
       "type": "registry:block",
       "title": "Apple Notes clone",
-      "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. Each sidebar location is its own master list in a NavigationStack: folders push, file leaves open the note. The top-right control switches to the library's file Tree. Right-click any folder, note or location to rename, duplicate or delete it in place. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
+      "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. Each sidebar location is its own master list in a NavigationStack: folders push, file leaves open the note. The top-right control switches to the library's file Tree. Right-click any folder, note or location to rename, duplicate or delete it in place. The filter shows All Files or one type (Markdown, STL); an STL model opens in a 3D viewer. Embeds load from the note's folder, \"Choose file…\" picks any file in it, and dragging rows (or files from your computer) onto a note embeds them; drop computer files on a folder to copy them in, or drag files onto another location to move or copy them. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
       "categories": [
         "notes",
         "productivity",
@@ -6107,7 +6140,7 @@
         "use-fs@2.1.0",
         "react-aria-components@^1.20.0",
         "@agent-wasm/core@0.4.0",
-        "@brett_lamy/docstream@1.13.2"
+        "@brett_lamy/docstream@1.14.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -6120,11 +6153,13 @@
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/list-box.json",
         "https://blamy.github.io/ui/r/markdown-editor.json",
         "https://blamy.github.io/ui/r/navigation-stack.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/stl-viewer.json",
         "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/tree.json",
@@ -6200,6 +6235,16 @@
           "path": "registry/blocks/apple-notes/folder-tree.tsx",
           "type": "registry:component",
           "target": "components/blocks/apple-notes/folder-tree.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/drag.ts",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/drag.ts"
+        },
+        {
+          "path": "registry/blocks/apple-notes/project-files.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/project-files.tsx"
         },
         {
           "path": "registry/blocks/apple-notes/item-menu.tsx",
@@ -7770,7 +7815,7 @@
         "audio"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@1.13.2"
+        "@brett_lamy/docstream@1.14.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",

@@ -7,6 +7,7 @@ import { BROWSER_ROOT } from './use-note-files';
 import type { Note } from './data';
 import type { NotesState } from './use-notes';
 import { useNoteDemos } from './use-note-demos';
+import { useProjectFiles } from './project-files';
 
 const NOTES_PARTS: MarkdownEditorClassNames = {
   title: 'text-[28px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
@@ -19,12 +20,14 @@ const NOTES_PARTS: MarkdownEditorClassNames = {
   tableCell: 'border-border px-3 py-2',
 };
 
-/** The document is owned by Docstream, including its first-party property sheet. Both views autosave. */
+/** The document is owned by Docstream, including its first-party property sheet. Both views autosave. Embeds load
+    from the note's folder, "Choose file…" lists it, and files dropped on the note are copied into it and embedded. */
 export function NoteEditor({ notes, n, source, format, editorRef }: {
   notes: NotesState; n: Note; source: boolean; format: boolean; editorRef: RefObject<MarkdownEditorHandle | null>;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const demos = useNoteDemos(n.body, n.file.path, notes.files.directoryRoots);
+  const project = useProjectFiles(notes, n);
   const { unseen, markSeen } = notes.files;
   useEffect(() => {
     const see = () => {
@@ -75,12 +78,14 @@ export function NoteEditor({ notes, n, source, format, editorRef }: {
       className="min-h-[60vh] w-full resize-none border-0 bg-transparent p-0 font-mono text-detail leading-6 text-foreground outline-none" /> :
       <MarkdownEditor key={n.id} ref={editorRef} value={n.body} variant="ghost" toolbar={format} aria-label={`${info.name} note`}
         demoResolver={demos.resolver} demoVFS={demos.vfs} demoRuntime={demos.runtime}
+        resolveAsset={project.resolveAsset} pickFile={project.pickFile} onDropEmbeds={project.onDropEmbeds}
         placeholder="Start writing…" minHeight="60vh" onKeyDown={onSaveKey}
         onValueChange={(markdown) => {
           if (markdown !== n.body) notes.edit(n.id, markdown);
         }}
         className="text-body leading-[1.5]" classNames={NOTES_PARTS} />
     }
+    {project.picker}
   </div>;
 }
 

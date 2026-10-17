@@ -75,6 +75,9 @@ export function TreeItem<T extends object>({ title, textValue, icon, trailing, c
                 'transition-[background-color] duration-100',
                 isSelected ? 'bg-primary text-primary-foreground' : 'group-data-hovered/tree-item:bg-secondary',
                 isFocusVisible && 'ring-[3px] ring-ring/45',
+                // A drop onto the item (with `dragAndDropHooks`).
+                'group-data-[drop-target]/tree-item:bg-secondary group-data-[drop-target]/tree-item:ring-2 group-data-[drop-target]/tree-item:ring-primary',
+                'group-data-[dragging]/tree-item:opacity-50',
                 isDisabled && 'opacity-40',
               )}
               style={{ paddingInlineStart: INSET + (level - 1) * INDENT } as CSSProperties}
@@ -132,6 +135,7 @@ const FILE_KINDS: Record<string, { label: string; color: string }> = {
   js: { label: 'JS', color: YELLOW }, jsx: { label: 'JSX', color: YELLOW }, mjs: { label: 'JS', color: YELLOW },
   json: { label: '{ }', color: AMBER }, css: { label: 'CSS', color: PURPLE },
   md: { label: 'MD', color: GRAY }, mdx: { label: 'MDX', color: ORANGE },
+  stl: { label: 'STL', color: PURPLE },
   html: { label: 'HTML', color: RED }, svg: { label: 'SVG', color: GOLD },
   png: { label: 'PNG', color: GREEN }, jpg: { label: 'JPG', color: GREEN },
   yml: { label: 'YML', color: PINK }, yaml: { label: 'YML', color: PINK },
