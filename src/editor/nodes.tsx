@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   ChevronDown,
   FolderGit2,
+  FolderOpen,
   Hash,
   Heading,
   Info,
@@ -29,7 +30,7 @@ import {
 // The root entry (unlike `/replay`) keeps rrweb behind a dynamic import. The editor never
 // imports `/playground`: live previews run only through a host-supplied `liveRenderer`.
 import { DocsRenderer, ReplayPreview, isReplayQaUrl } from "@brett_lamy/docstream"
-import { resolveAsset } from "@brett_lamy/docstream/assets"
+import { useAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
 import { packageManagerCommands, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/docstream/gitbook"
 import { VideoEmbed } from "@brett_lamy/docstream/video"
@@ -39,7 +40,7 @@ import { DemoViewer, prefetchDemoSources, useDemoVFSEntry, writeDocstreamClipboa
 import { pmToCommand, pmToDemo } from "./convert"
 import { clipboardForDoc, setActiveDemoDrag } from "./demo-clipboard"
 import { SourceFileEditor } from "./SourceFileEditor"
-import { useEditorRuntime } from "./runtime"
+import { useEditorRuntime, type FilePickKind } from "./runtime"
 import { GbAttachment } from "./attachments"
 
 function useDebouncedValue<T>(value: T, delay = 350): T {
@@ -420,6 +421,35 @@ function booleanAttribute(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined
 }
 
+/** "Choose file…": asks the host's `pickFile` for a path and sets it. Rendered only when the host has one. */
+function PickFileButton({ kind, current, onPick, label }: { kind: FilePickKind; current: string; onPick: (url: string) => void; label: string }) {
+  const { pickFile } = useEditorRuntime()
+  if (!pickFile) return null
+  return (
+    <button
+      type="button"
+      className="gb-pick-file"
+      onClick={async () => {
+        const url = await pickFile({ kind, current })
+        if (url) onPick(url)
+      }}
+    >
+      <FolderOpen className="size-3.5" aria-hidden="true" /> {label}
+    </button>
+  )
+}
+
+// STL and Strudel files go through the host's asset resolver (a blob: URL of a local file, say).
+function ResolvedStl({ url, title }: { url: string; title?: string }) {
+  const src = useAsset(url)
+  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StlViewer src={src} {...(title ? { title } : {})} />
+}
+
+function ResolvedStrudel({ url, title }: { url: string; title?: string }) {
+  const src = useAsset(url)
+  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StrudelPlayer src={src} {...(title ? { title } : {})} />
+}
+
 function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
   const url = node.attrs.url as string
   const preview = embedPreview(url)
@@ -434,9 +464,9 @@ function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
       {isReplayQaUrl(url) ? (
         <ReplayPreview source={url} title="Replay preview" />
       ) : isStlUrl(url) ? (
-        <StlViewer src={resolveAsset(url)} {...(node.attrs.title ? { title } : {})} />
+        <ResolvedStl url={url} {...(node.attrs.title ? { title } : {})} />
       ) : isStrudelFile(url) ? (
-        <StrudelPlayer src={resolveAsset(url)} {...(node.attrs.title ? { title } : {})} />
+        <ResolvedStrudel url={url} {...(node.attrs.title ? { title } : {})} />
       ) : preview || isDirectVideo(url) ? (
         <VideoEmbed
           src={preview ?? url}
@@ -454,12 +484,16 @@ function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         </a>
       )}
       {editor.isEditable && (
-        <input
-          className="gb-inline-input gb-embed-input"
-          value={url}
-          placeholder="https://…"
-          onChange={(e) => updateAttributes({ url: e.target.value })}
-        />
+        <div className="gb-embed-fields">
+          <input
+            className="gb-inline-input gb-embed-input"
+            value={url}
+            placeholder="https://… or ./file.stl"
+            aria-label="Embed URL"
+            onChange={(e) => updateAttributes({ url: e.target.value })}
+          />
+          <PickFileButton kind="embed" current={url} label="Choose file…" onPick={(next) => updateAttributes({ url: next })} />
+        </div>
       )}
     </NodeViewWrapper>
   )
@@ -1008,23 +1042,31 @@ export const GbColumn = Node.create({
 
 // ---------- Figure ----------
 
+function FigureImg({ url, alt }: { url: string; alt: string }) {
+  return <img src={useAsset(url)} alt={alt} className="gb-figure-img" />
+}
+
 function FigureView({ node, updateAttributes, editor }: NodeViewProps) {
   const { src, alt, caption } = node.attrs
   return (
     <NodeViewWrapper className="gb-figure" contentEditable={false}>
       {src ? (
-        <img src={resolveAsset(src)} alt={alt} className="gb-figure-img" />
+        <FigureImg url={src} alt={alt} />
       ) : (
         <div className="gb-figure-placeholder">No image</div>
       )}
       {editor.isEditable ? (
         <div className="gb-figure-fields">
-          <input
-            className="gb-inline-input"
-            value={src}
-            placeholder="Image URL…"
-            onChange={(e) => updateAttributes({ src: e.target.value })}
-          />
+          <div className="gb-embed-fields">
+            <input
+              className="gb-inline-input"
+              value={src}
+              placeholder="Image URL…"
+              aria-label="Image URL"
+              onChange={(e) => updateAttributes({ src: e.target.value })}
+            />
+            <PickFileButton kind="image" current={src} label="Choose image…" onPick={(next) => updateAttributes({ src: next })} />
+          </div>
           <input
             className="gb-inline-input"
             value={caption}
@@ -1211,9 +1253,10 @@ export const GbCodeBlock = CodeBlock.extend({
 
 function InlineImageView({ node }: NodeViewProps) {
   const { src, alt, width, height, link } = node.attrs
+  const resolved = useAsset(src)
   const img = (
     <img
-      src={resolveAsset(src)}
+      src={resolved}
       alt={alt}
       className="gb-inline-img"
       style={{ width: width || undefined, height: height || undefined }}

@@ -251,6 +251,30 @@ from `onEditorReady`). Markdown images with an `attachment:` URL always load as 
 whatever the mode. `serializeEditorMarkdown(ast)` is the serializer that writes them in
 this form.
 
+## Files from the host's project
+
+An app that edits Markdown from a folder can plug in its own files. All three props are optional.
+
+```tsx
+<GitbookEditor
+  markdown={markdown}
+  onChange={setMarkdown}
+  // "./case/part.stl" as written → a URL the browser can load (blob: of the local file).
+  resolveAsset={(url) => (url.startsWith("./") ? blobUrlFor(url) : null)}
+  // Adds "Choose file…" to embed blocks ("Choose image…" to figures).
+  pickFile={({ kind }) => openMyFilePicker({ imagesOnly: kind === "image" })}
+  // Drops you claim become embeds at the drop point: images as figures, anything else as an embed.
+  onDropEmbeds={(data) =>
+    data.types.includes("Files") ? copyIntoProject([...data.files]).then((paths) => paths.map((p) => `./${p}`)) : null
+  }
+/>
+```
+
+- `resolveAsset` covers figures, inline images and `.stl` / `.strudel` embeds (they wait for a promise).
+- `pickFile` resolves to the URL to write, or nothing when the user cancels.
+- `onDropEmbeds` decides synchronously: return `null` and the editor handles the drop as before (images
+  inline, demo blocks). `embedBlockFor(url)` is the block a URL becomes.
+
 ## Edit a referenced source file
 
 `GitbookEditor` edits the Markdown composition, including a structured

@@ -5,7 +5,14 @@ import type { DemoResolver, DemoVFS, InlineDemoRuntime } from "@brett_lamy/docst
 import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import type { EditorAttachment } from "./attachments"
 
+/** What a "Choose file…" button is choosing: any file for an embed, or an image for a figure. */
+export type FilePickKind = "embed" | "image"
+
+/** The host's file chooser. Resolves to the URL to write into the document (e.g. "./models/part.stl"), or nothing when cancelled. */
+export type FilePicker = (request: { kind: FilePickKind; current: string }) => Promise<string | null | undefined>
+
 export interface EditorRuntimeOptions {
+  pickFile?: FilePicker
   sourceClient?: SourceReferenceClient
   sourcePreview?: boolean
   sourceAutoSave?: boolean | number

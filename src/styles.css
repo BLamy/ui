@@ -654,6 +654,15 @@
   text-decoration: none;
 }
 .gb-embed-input { font-size: 12px; color: var(--gb-muted-foreground); width: 100%; }
+.gb-embed-fields { display: flex; align-items: center; gap: 8px; }
+.gb-embed-fields > .gb-inline-input { flex: 1; min-width: 0; }
+.gb-pick-file {
+  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+  border: 1px solid var(--gb-border); border-radius: 6px; padding: 2px 8px;
+  background: transparent; color: var(--gb-primary, currentColor); font: inherit; font-size: 12px; cursor: pointer;
+}
+.gb-pick-file:hover { background: var(--gb-muted); }
+.gb-pick-file:focus-visible { outline: 2px solid var(--gb-ring, var(--gb-primary)); outline-offset: 1px; }
 .gb-content-ref {
   display: flex;
   align-items: center;

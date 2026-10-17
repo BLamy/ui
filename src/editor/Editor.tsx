@@ -45,11 +45,14 @@ import {
   type PastedDemoFiles,
 } from "./demo-clipboard"
 import { createGitbookExtensions, type ReferenceSources } from "./extensions"
-import { EditorRuntimeProvider } from "./runtime"
+import { EditorRuntimeProvider, type FilePicker } from "./runtime"
+import { AssetResolverProvider, type AssetResolver } from "@brett_lamy/docstream/assets"
 import type { SlashItem } from "./slash-menu"
 import { DocumentPropertiesEditor } from "./document-properties"
 
 export type { EditorAttachment } from "./attachments"
+export type { FilePicker, FilePickKind } from "./runtime"
+export type { AssetResolver } from "@brett_lamy/docstream/assets"
 
 export interface GitbookEditorProps {
   /** Editable YAML frontmatter, shown as document properties above the body (default true). */
@@ -158,6 +161,36 @@ export interface GitbookEditorProps {
    * and pasting one restores the demos with their files (default true).
    */
   demoClipboard?: boolean
+  /**
+   * Resolves asset URLs as written in the document (`./models/part.stl`, `./photo.png`) to URLs the
+   * browser can load — typically `blob:` URLs of files next to the document. Return nothing for the default.
+   */
+  resolveAsset?: AssetResolver
+  /** Adds "Choose file…" to embed and image blocks. Resolve with the URL to write, or nothing when cancelled. */
+  pickFile?: FilePicker
+  /**
+   * A drop on the editor: return the URLs to embed at the drop point (images become figures, anything
+   * else an embed) — e.g. after copying dropped files next to the document — or `null` to let the
+   * editor handle the drop itself. Decide synchronously; the URLs may arrive later.
+   */
+  onDropEmbeds?: (data: DataTransfer) => Promise<readonly string[]> | readonly string[] | null
+}
+
+const IMAGE_URL = /\.(?:png|jpe?g|gif|webp|avif|svg|bmp|ico)(?:[?#]|$)/i
+
+/** The block for a dropped URL: a figure for an image, an embed for anything else. */
+export function embedBlockFor(url: string): PMNode {
+  let name = url.split(/[?#]/)[0]!.split("/").pop() ?? url
+  try {
+    name = decodeURIComponent(name)
+  } catch {
+    // Not percent-encoded after all: keep it as written.
+  }
+  const alt = name.replace(/[[\]\r\n]/g, "_")
+  // `md.raw` keeps it a Markdown image (`![alt](src)`) rather than <figure> HTML.
+  return IMAGE_URL.test(url)
+    ? { type: "gbFigure", attrs: { src: url, alt, caption: "", md: { raw: `![${alt}](${url})` } } }
+    : { type: "gbEmbed", attrs: { url } }
 }
 
 function ToolbarButton({
@@ -255,6 +288,9 @@ export function GitbookEditor({
   onDemoFilesChange,
   pastedDemoFiles = "inline",
   demoClipboard = true,
+  resolveAsset,
+  pickFile,
+  onDropEmbeds,
 }: GitbookEditorProps) {
   const [ownVFS] = useState(() => createDemoVFS())
   const vfs = demoVFS ?? ownVFS
@@ -268,8 +304,8 @@ export function GitbookEditor({
   // Ids of the attachment chips in the document, to report removals.
   const attachmentIds = useRef<Set<string>>(new Set())
   // Latest callbacks for handlers the editor captured at creation.
-  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard })
-  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard }
+  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds })
+  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds }
   const editorRef = useRef<TiptapEditor | null>(null)
 
   // Pasted/dropped image files: image blocks ("inline") or attachment chips ("chip").
@@ -444,6 +480,22 @@ export function GitbookEditor({
           return true
         }
         if (moved || !view.editable) return false
+        const embeds = event.dataTransfer && latest.current.onDropEmbeds?.(event.dataTransfer)
+        if (embeds) {
+          event.preventDefault()
+          // Map the drop point through anything typed while the host was still copying files.
+          const start = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos
+          const doc = view.state.doc
+          void Promise.resolve(embeds).then((urls) => {
+            const ed = editorRef.current
+            if (!ed || ed.isDestroyed || !urls.length) return
+            const content = urls.map(embedBlockFor)
+            const at = start === undefined || ed.state.doc !== doc ? undefined : Math.min(start, ed.state.doc.content.size)
+            const chain = ed.chain().focus()
+            ;(at === undefined ? chain.insertContent(content) : chain.insertContentAt(at, content)).run()
+          }, () => {})
+          return true
+        }
         const files = imageFilesFrom(event.dataTransfer)
         if (!files.length) return false
         event.preventDefault()
@@ -522,7 +574,8 @@ export function GitbookEditor({
     ...(demoDependencies ? { demoDependencies } : {}),
     ...(attachments ? { attachments } : {}),
     ...(onAttachmentOpen ? { onAttachmentOpen } : {}),
-  }), [attachments, demoDependencies, demoResolver, demoRuntime, vfs, liveRenderer, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
+    ...(pickFile ? { pickFile } : {}),
+  }), [pickFile, attachments, demoDependencies, demoResolver, demoRuntime, vfs, liveRenderer, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
 
   if (!editor) return null
 
@@ -531,9 +584,11 @@ export function GitbookEditor({
       {documentProperties ? <DocumentPropertiesEditor editor={editor} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
       {toolbar && <Toolbar editor={editor} />}
       <EditorRuntimeProvider value={runtime}>
-        <DocstreamDemoVFSContext.Provider value={vfs}>
-          <EditorContent editor={editor} className="gb-content" />
-        </DocstreamDemoVFSContext.Provider>
+        <AssetResolverProvider resolve={resolveAsset}>
+          <DocstreamDemoVFSContext.Provider value={vfs}>
+            <EditorContent editor={editor} className="gb-content" />
+          </DocstreamDemoVFSContext.Provider>
+        </AssetResolverProvider>
       </EditorRuntimeProvider>
     </div>
   )
