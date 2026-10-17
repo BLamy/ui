@@ -142,7 +142,7 @@ test('the top-right tree is also inside the stack and file selection never chang
   await seed(page, { 'nested/readme.mdx': '# Tree\n\n<Card />' }, 'Work');
   await addFolder(page, 'Work');
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  const tree = current(page).getByRole('treegrid', { name: 'Folders and Markdown files' });
+  const tree = current(page).getByRole('treegrid', { name: 'Folders and files' });
   await expect(tree).toBeVisible();
   const nested = tree.getByRole('row', { name: 'nested', exact: true });
   await nested.press('ArrowRight'); await nested.press('ArrowDown'); await page.keyboard.press('Enter'); await sourceMode(page);
@@ -479,9 +479,10 @@ test('right-click renames and deletes notes and folders in place, in the list an
   await expect(mac(page).getByRole('button', { name: /^Work / })).toHaveCount(0);
 });
 
-test('the filter shows Markdown files by default, hiding folders without notes, and All Files dims everything else', async ({ page }) => {
+test('the filter shows Markdown files by default, hiding folders without notes, All Files dims everything else, and 3D Models lists STL files', async ({ page }) => {
   await seed(page, {
     'README.md': '# Readme', 'package.json': '{}', 'docs/guide.md': '# Guide', 'src/app.ts': 'export {}', 'assets/logo.png': 'png', 'Empty': null,
+    'case/part.stl': 'solid part\nendsolid part\n',
   }, 'Project');
   await addFolder(page, 'Project');
   const folderRow = (name) => current(page).getByRole('button', { name: `Open folder ${name}`, exact: true });
@@ -491,11 +492,12 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await expect(folderRow('Empty')).toBeVisible();
   await expect(folderRow('src')).toHaveCount(0);
   await expect(folderRow('assets')).toHaveCount(0);
+  await expect(folderRow('case')).toHaveCount(0);
   await expect(others).toHaveCount(0);
 
   const filter = current(page).getByRole('button', { name: 'Filter files', exact: true });
   await filter.click();
-  await expect(page.getByRole('menuitemradio', { name: 'Markdown Files' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('menuitemradio', { name: 'Markdown' })).toHaveAttribute('aria-checked', 'true');
   await page.getByRole('menuitemradio', { name: 'All Files' }).click();
   await expect(folderRow('src')).toBeVisible();
   await expect(folderRow('assets')).toBeVisible();
@@ -508,12 +510,23 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await expect(current(page)).toHaveAttribute('data-screen-label', 'Project');
 
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  const tree = current(page).getByRole('treegrid', { name: 'Folders and Markdown files' });
-  await expect(tree.getByRole('row', { name: 'package.json', exact: true })).toHaveAttribute('aria-disabled', 'true');
+  const tree = current(page).getByRole('treegrid', { name: 'Folders and files' });
+  // Files Notes can't open are listed (dimmed, draggable onto a note) but never selected.
+  await tree.getByRole('row', { name: 'package.json', exact: true }).click();
+  await expect(tree.getByRole('row', { name: 'package.json', exact: true })).not.toHaveAttribute('aria-selected', 'true');
   await expect(tree.getByRole('row', { name: 'src', exact: true })).toBeVisible();
   await current(page).getByRole('button', { name: 'Filter files', exact: true }).click();
-  await page.getByRole('menuitemradio', { name: 'Markdown Files' }).click();
+  await page.getByRole('menuitemradio', { name: 'Markdown' }).click();
   await expect(tree.getByRole('row', { name: 'package.json', exact: true })).toHaveCount(0);
   await expect(tree.getByRole('row', { name: 'src', exact: true })).toHaveCount(0);
   await expect(tree.getByRole('row', { name: 'README.md', exact: true })).toBeVisible();
+
+  // 3D Models: only STL files and the folders holding them; one opens in the viewer.
+  await current(page).getByRole('button', { name: 'Filter files', exact: true }).click();
+  await page.getByRole('menuitemradio', { name: '3D Models (STL)' }).click();
+  await expect(tree.getByRole('row', { name: 'README.md', exact: true })).toHaveCount(0);
+  await tree.getByRole('row', { name: 'case', exact: true }).click();
+  await tree.getByRole('row', { name: 'part.stl', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Model' }).or(page.locator('[aria-label="Model"]')).first()).toBeVisible();
+  await expect(page.locator('.docstream-stl')).toBeVisible();
 });
