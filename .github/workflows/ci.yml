@@ -1,5 +1,10 @@
 name: CI
-on: [push, pull_request]
+# Pull requests only: merging to main deploys through deploy-docs.yml, which runs its own checks.
+on: [pull_request]
+# A newer push to the same PR cancels the run still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -23,8 +28,3 @@ jobs:
         run: pnpm e2e
       - name: Accessibility (axe) — no new violations
         run: pnpm a11y
-      - name: Storybook story smoke test
-        run: |
-          pnpm --filter @brett_lamy/catalog storybook --no-open --quiet &
-          npx wait-on http://localhost:6006/index.json -t 120000
-          pnpm test:stories

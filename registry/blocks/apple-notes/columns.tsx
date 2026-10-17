@@ -1,5 +1,5 @@
 /* The master list lives in NavigationStack, rooted at the sidebar's location. Only folder rows change its screens. */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Chevron } from '@/components/ui/icon-swap';
 import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
 import { Button } from '@/components/ui/button';
@@ -7,17 +7,17 @@ import { SearchField } from '@/components/ui/search-field';
 import { TreeFileIcon } from '@/components/ui/tree';
 import type { MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
-import { StlViewer } from '@/components/ui/stl-viewer';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { Folder } from './data';
 import { fileDragProps, hasComputerFiles, useDropTarget } from './drag';
 import { FolderTree } from './folder-tree';
+import { FileView, viewerLabel } from './file-views';
 import { NoteList } from './note-list';
 import { EditorTools, NoteEditor } from './note-editor';
 import { ItemMenu, RenameField } from './item-menu';
 import { BarButton, BottomBar, FilterMenu, NoteMenu, ShareMenu, ViewToggle } from './parts';
-import type { NotesState, OtherFile } from './use-notes';
+import { viewable, type NotesState, type OtherFile } from './use-notes';
 
 /** Files from your computer dropped on a folder (a row, or the list itself) are copied into it. Nothing is embedded. */
 function useUploadTarget(notes: NotesState, folder: Folder) {
@@ -49,20 +49,21 @@ function FolderRows({ notes, folders }: { notes: NotesState; folders: Folder[] }
   </div>;
 }
 
-/** Files that aren't notes. An STL model opens in the 3D viewer; anything else is listed by name, dimmed. Every row
+/** Files that aren't notes. A model, image or JSON/YAML file opens in its viewer; anything else is listed by name, dimmed. Every row
     drags onto a note to embed it, or onto another location to move or copy it. */
 function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: OtherFile[]; onOpen: (id: string) => void }) {
   if (!files.length) return null;
-  return <ul aria-label="Other files" className="m-0 list-none px-5">
+  return <ul aria-label="Other files" className="m-0 list-none! px-5">
     {files.map((f) => {
       const where = notes.query ? <span className="block truncate text-caption opacity-70">{f.path.split('/').slice(1, -1).join('/')}</span> : null;
-      if (f.kind === 'stl') {
+      if (viewable(f.kind)) {
         const selected = notes.selectedId === f.id;
         return <li key={f.id}>
           <button type="button" {...fileDragProps(f.path)} onClick={() => onOpen(f.id)} aria-current={selected || undefined} title={f.path}
             className={cn('flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg border-0 bg-transparent px-2 text-left text-subhead text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
               selected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')}>
-            <Icon name="cube" size={18} className={cn('shrink-0', !selected && 'text-primary')} />
+            {f.kind === 'stl' || f.kind === 'image' ? <Icon name={f.kind === 'stl' ? 'cube' : 'photo'} size={18} className={cn('shrink-0', !selected && 'text-primary')} />
+              : <TreeFileIcon name={f.name} className="shrink-0" />}
             <span className="min-w-0 flex-1 truncate">{f.name}{where}</span>
           </button>
         </li>;
@@ -74,26 +75,6 @@ function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: Oth
       </li>;
     })}
   </ul>;
-}
-
-/** The detail column for a model: the STL viewer, from the file on disk. */
-function ModelView({ notes, file }: { notes: NotesState; file: OtherFile }) {
-  const [url, setUrl] = useState<{ path: string; url: string | null; error?: string } | null>(null);
-  const { fileUrl } = notes.files;
-  useEffect(() => {
-    let live = true;
-    fileUrl(file.path).then((next) => { if (live) setUrl({ path: file.path, url: next }); },
-      (e: unknown) => { if (live) setUrl({ path: file.path, url: null, error: e instanceof Error ? e.message : String(e) }); });
-    return () => { live = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `fileUrl` is remade each render; the path decides.
-  }, [file.path]);
-  const current = url?.path === file.path ? url : null;
-  return <div className="mx-auto w-full max-w-[900px] px-6 pt-4 pb-28">
-    {current?.error ? <p role="alert" className="text-detail text-destructive">{current.error}</p>
-      : current?.url ? <StlViewer key={current.url} src={current.url} title={file.name} />
-      : <div aria-busy="true" className="aspect-video rounded-xl bg-secondary" />}
-    <p className="mt-3 text-center text-footnote text-muted-foreground">{file.path.split('/').slice(1).join('/')} · Drag it onto a note to embed it</p>
-  </div>;
 }
 
 function EmptyFolder({ notes, folder }: { notes: NotesState; folder: Folder }) {
@@ -170,9 +151,9 @@ export function NoteColumn({ notes }: { notes: NotesState }) {
     ? <RenameField notes={notes} id={n.id} name={n.file.name} className="text-body font-semibold" />
     : <span title={`${n.file.path} · ${notes.fileStatus(n).label} · Double-click to rename`}
       onDoubleClick={() => { if (!n.file.standalone) notes.setRenaming({ id: n.id, in: 'title' }); }}>{n.file.name}</span> : undefined;
-  if (!n && model) return <SplitViewDetail aria-label="Model">
+  if (!n && model) return <SplitViewDetail aria-label={viewerLabel(model)}>
     <SplitViewHeader title={<span title={model.path}>{model.name}</span>} titleAlign="leading" trailing={compose} />
-    <SplitViewContent key={model.id}><ModelView notes={notes} file={model} /></SplitViewContent>
+    <SplitViewContent key={model.id}><FileView notes={notes} file={model} /></SplitViewContent>
   </SplitViewDetail>;
   return <SplitViewDetail aria-label="Note">
     <SplitViewHeader title={name} titleAlign="leading" trailing={n ? <>

@@ -142,9 +142,9 @@ test('the top-right tree is also inside the stack and file selection never chang
   await seed(page, { 'nested/readme.mdx': '# Tree\n\n<Card />' }, 'Work');
   await addFolder(page, 'Work');
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  const tree = current(page).getByRole('treegrid', { name: 'Folders and Markdown files' });
+  const tree = current(page).getByRole('tree', { name: 'Folders and files' });
   await expect(tree).toBeVisible();
-  const nested = tree.getByRole('row', { name: 'nested', exact: true });
+  const nested = tree.getByRole('treeitem', { name: 'nested', exact: true });
   await nested.press('ArrowRight'); await nested.press('ArrowDown'); await page.keyboard.press('Enter'); await sourceMode(page);
   await expect(editor(page, 'readme.mdx')).toHaveValue('# Tree\n\n<Card />');
   expect(await path(page)).toEqual(['folder:Work']);
@@ -399,16 +399,17 @@ test('external edits get persistent blue dots in both list and tree, opening cle
   await mac(page).getByRole('button', { name: /^Work / }).click();
   await expect(row(page, 'two.md').getByRole('img', { name: 'Changed outside Notes' })).toBeVisible();
   await current(page).getByRole('radiogroup', { name: 'View as' }).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  const treeRow = page.getByRole('treegrid').getByRole('row', { name: /two.md/ });
-  await expect(treeRow.getByRole('img', { name: 'Changed outside Notes' })).toBeVisible();
+  const treeRow = page.getByRole('tree').getByRole('treeitem', { name: /two.md/ });
+  // The tree's rows mark it with a titled dot after the name.
+  await expect(treeRow.locator('[title="Changed outside Notes"]')).toBeVisible();
   await treeRow.click();
-  await expect(treeRow.getByRole('img', { name: 'Changed outside Notes' })).toHaveCount(0);
+  await expect(treeRow.locator('[title="Changed outside Notes"]')).toHaveCount(0);
   await sourceMode(page); await editor(page, 'two.md').fill('# Saved in Notes\n');
   await expect.poll(() => read(page, 'two.md', 'Work')).toBe('# Saved in Notes\n');
-  await expect(treeRow.getByRole('img', { name: 'Changed outside Notes' })).toHaveCount(0);
+  await expect(treeRow.locator('[title="Changed outside Notes"]')).toHaveCount(0);
   await seed(page, { 'two.md': '# Changed while viewing\n' }, 'Work');
   await expect(editor(page, 'two.md')).toHaveValue('# Changed while viewing\n');
-  await expect(treeRow.getByRole('img', { name: 'Changed outside Notes' })).toHaveCount(0);
+  await expect(treeRow.locator('[title="Changed outside Notes"]')).toHaveCount(0);
 });
 
 test('local notes inherit the host demo registry so app examples render automatically', async ({ page }) => {
@@ -463,12 +464,12 @@ test('right-click renames and deletes notes and folders in place, in the list an
   await expect.poll(() => read(page, 'final.md', 'Work').catch(() => null)).toBe(null);
   // The tree has the same menu.
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  await contextAction(page, page.getByRole('treegrid').getByRole('row', { name: 'Trash me', exact: true }), 'Delete');
+  await contextAction(page, page.getByRole('tree').getByRole('treeitem', { name: 'Trash me', exact: true }), 'Delete');
   await page.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
-  await expect(page.getByRole('treegrid').getByRole('row', { name: 'Trash me', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('tree').getByRole('treeitem', { name: 'Trash me', exact: true })).toHaveCount(0);
   // And the toolbar's … menu renames the open note in its title.
-  await page.getByRole('treegrid').getByRole('row', { name: 'New', exact: true }).press('ArrowRight');
-  await page.getByRole('treegrid').getByRole('row', { name: 'inner.md', exact: true }).click();
+  await page.getByRole('tree').getByRole('treeitem', { name: 'New', exact: true }).press('ArrowRight');
+  await page.getByRole('tree').getByRole('treeitem', { name: 'inner.md', exact: true }).click();
   await page.locator('[data-slot=split-view-detail]').getByRole('button', { name: 'More', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Rename…', exact: true }).click();
   await page.keyboard.type('renamed'); await page.keyboard.press('Enter');
@@ -479,9 +480,10 @@ test('right-click renames and deletes notes and folders in place, in the list an
   await expect(mac(page).getByRole('button', { name: /^Work / })).toHaveCount(0);
 });
 
-test('the filter shows Markdown files by default, hiding folders without notes, and All Files dims everything else', async ({ page }) => {
+test('the filter shows Markdown files by default, hiding folders without notes, All Files dims everything else, and 3D Models lists STL files', async ({ page }) => {
   await seed(page, {
-    'README.md': '# Readme', 'package.json': '{}', 'docs/guide.md': '# Guide', 'src/app.ts': 'export {}', 'assets/logo.png': 'png', 'Empty': null,
+    'README.md': '# Readme', 'package.json': '{}', 'LICENSE': 'MIT', 'docs/guide.md': '# Guide', 'src/app.ts': 'export {}', 'assets/logo.png': 'png', 'Empty': null,
+    'case/part.stl': 'solid part\nendsolid part\n',
   }, 'Project');
   await addFolder(page, 'Project');
   const folderRow = (name) => current(page).getByRole('button', { name: `Open folder ${name}`, exact: true });
@@ -491,15 +493,16 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await expect(folderRow('Empty')).toBeVisible();
   await expect(folderRow('src')).toHaveCount(0);
   await expect(folderRow('assets')).toHaveCount(0);
+  await expect(folderRow('case')).toHaveCount(0);
   await expect(others).toHaveCount(0);
 
   const filter = current(page).getByRole('button', { name: 'Filter files', exact: true });
   await filter.click();
-  await expect(page.getByRole('menuitemradio', { name: 'Markdown Files' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('menuitemradio', { name: 'Markdown' })).toHaveAttribute('aria-checked', 'true');
   await page.getByRole('menuitemradio', { name: 'All Files' }).click();
   await expect(folderRow('src')).toBeVisible();
   await expect(folderRow('assets')).toBeVisible();
-  await expect(others.getByRole('listitem')).toHaveText([/package\.json$/]);
+  await expect(others.getByRole('listitem')).toHaveText([/LICENSE$/, /package\.json$/]);
   await expect(row(page, 'README.md')).toBeVisible();
   await folderRow('src').click();
   await expect(others.getByRole('listitem')).toHaveText([/app\.ts$/]);
@@ -508,12 +511,57 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await expect(current(page)).toHaveAttribute('data-screen-label', 'Project');
 
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
-  const tree = current(page).getByRole('treegrid', { name: 'Folders and Markdown files' });
-  await expect(tree.getByRole('row', { name: 'package.json', exact: true })).toHaveAttribute('aria-disabled', 'true');
-  await expect(tree.getByRole('row', { name: 'src', exact: true })).toBeVisible();
+  const tree = current(page).getByRole('tree', { name: 'Folders and files' });
+  // Files Notes can't open are listed (dimmed, draggable onto a note) but never selected.
+  await tree.getByRole('treeitem', { name: 'LICENSE', exact: true }).click();
+  await expect(tree.getByRole('treeitem', { name: 'LICENSE', exact: true })).not.toHaveAttribute('aria-selected', 'true');
+  await expect(tree.getByRole('treeitem', { name: 'src', exact: true })).toBeVisible();
   await current(page).getByRole('button', { name: 'Filter files', exact: true }).click();
-  await page.getByRole('menuitemradio', { name: 'Markdown Files' }).click();
-  await expect(tree.getByRole('row', { name: 'package.json', exact: true })).toHaveCount(0);
-  await expect(tree.getByRole('row', { name: 'src', exact: true })).toHaveCount(0);
-  await expect(tree.getByRole('row', { name: 'README.md', exact: true })).toBeVisible();
+  await page.getByRole('menuitemradio', { name: 'Markdown' }).click();
+  await expect(tree.getByRole('treeitem', { name: 'LICENSE', exact: true })).toHaveCount(0);
+  await expect(tree.getByRole('treeitem', { name: 'src', exact: true })).toHaveCount(0);
+  await expect(tree.getByRole('treeitem', { name: 'README.md', exact: true })).toBeVisible();
+
+  // 3D Models: only STL files and the folders holding them; one opens in the viewer.
+  await current(page).getByRole('button', { name: 'Filter files', exact: true }).click();
+  await page.getByRole('menuitemradio', { name: '3D Models (STL)' }).click();
+  await expect(tree.getByRole('treeitem', { name: 'README.md', exact: true })).toHaveCount(0);
+  await tree.getByRole('treeitem', { name: 'case', exact: true }).click();
+  await tree.getByRole('treeitem', { name: 'part.stl', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Model' }).or(page.locator('[aria-label="Model"]')).first()).toBeVisible();
+  await expect(page.locator('.docstream-stl')).toBeVisible();
+});
+
+test('images open in an image viewer, JSON in visual-json (edits save to the file) and YAML read-only', async ({ page }) => {
+  await seed(page, {
+    'art/logo.svg': '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="red"/></svg>',
+    'data/config.json': '{\n  "name": "case",\n  "size": 2\n}\n',
+    'data/ci.yaml': '# CI\nname: build\n',
+  }, 'Project');
+  await addFolder(page, 'Project');
+  const filter = current(page).getByRole('button', { name: 'Filter files', exact: true });
+  const others = current(page).getByRole('list', { name: 'Other files' });
+
+  await filter.click();
+  await page.getByRole('menuitemradio', { name: 'Images' }).click();
+  await current(page).getByRole('button', { name: 'Open folder art', exact: true }).click();
+  await others.getByRole('button', { name: /logo\.svg/ }).click();
+  const image = page.locator('[aria-label="Image"]').getByRole('img', { name: 'logo.svg' });
+  await expect(image).toBeVisible();
+  await expect(page.locator('[aria-label="Image"]')).toContainText('40 × 20');
+
+  await current(page).getByRole('button', { name: 'Project', exact: true }).click();
+  await filter.click();
+  await page.getByRole('menuitemradio', { name: 'JSON & YAML' }).click();
+  await expect(current(page).getByRole('button', { name: 'Open folder art', exact: true })).toHaveCount(0);
+  await current(page).getByRole('button', { name: 'Open folder data', exact: true }).click();
+  await others.getByRole('button', { name: /config\.json/ }).click();
+  const json = page.locator('[aria-label="JSON"]');
+  await expect(json).toContainText('name');
+  await expect(json).toContainText('case');
+  await expect(json).toContainText('Edits save to the file');
+  await others.getByRole('button', { name: /ci\.yaml/ }).click();
+  const yaml = page.locator('[aria-label="YAML"]');
+  await expect(yaml).toContainText('build');
+  await expect(yaml).toContainText('read-only');
 });

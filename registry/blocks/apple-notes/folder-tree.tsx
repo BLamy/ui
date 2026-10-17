@@ -1,85 +1,81 @@
 import { useMemo, useState } from 'react';
-import { Collection, isFileDropItem, useDragAndDrop, type DropItem, type Key } from 'react-aria-components';
-import { Tree, TreeFileIcon, TreeFolderIcon, TreeItem } from '@/components/ui/tree';
+import { Tree, type TreeNode } from '@/components/ui/tree';
 import { title, type Folder, type Note } from './data';
-import { hasItemMenu, ItemMenuContent, RenameField } from './item-menu';
-import type { NotesState, OtherFile } from './use-notes';
-import { UnreadDot } from './parts';
-import { NOTES_FILE } from './drag';
-import { Icon } from '@/lib/icon';
+import { hasItemMenu, ItemMenuContent } from './item-menu';
+import { viewable, type NotesState, type OtherFile } from './use-notes';
+import { hasComputerFiles, NOTES_FILE } from './drag';
 
-interface Node { id: string; label: string; folder?: Folder; note?: Note; other?: OtherFile; children?: Node[] }
+interface Node extends TreeNode { folder?: Folder; note?: Note; other?: OtherFile; children?: Node[] }
 
 /** The location as a file tree: the library's Tree, with each item's Notes menu and in-place rename. Files drag out
     (onto a note to embed, onto another location to move or copy); files from your computer drop into a folder. */
 export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: Folder; onOpen: (id: string) => void }) {
-  const [expanded, setExpanded] = useState<Set<Key>>(() => new Set([...notes.trail.map((f) => f.id), ...(notes.selected ? [notes.selected.folder] : [])]));
+  const [opened] = useState(() => [...notes.trail.map((f) => f.id), ...(notes.selected ? [notes.selected.folder] : [])]);
   const nodes = useMemo(() => {
     const q = notes.query.trim().toLowerCase();
-    const leaves = (parent: string): Node[] => notes.filter === 'stl' ? [] : notes.notes.filter((n) => n.folder === parent && (!q || `${title(n)}\n${n.body}`.toLowerCase().includes(q)))
-      .sort((a, b) => title(a).localeCompare(title(b)))
-      .map((n) => ({ id: n.id, label: title(n), note: n }));
-    // Models open in the viewer; under All Files, everything else is listed beside them, dimmed.
+    const leaves = (parent: string): Node[] => notes.filter !== 'all' && notes.filter !== 'markdown' ? [] : notes.notes.filter((n) => n.folder === parent && (!q || `${title(n)}\n${n.body}`.toLowerCase().includes(q)))
+      .map((n) => {
+        const marks = [notes.files.unseen.has(n.id) ? 'Changed outside Notes' : '', notes.drafts[n.id] ? 'Unsaved changes' : ''].filter(Boolean);
+        return { id: n.id, name: title(n), note: n, icon: 'doc' as const, ...(marks.length ? { detail: '•', detailTitle: marks.join(', ') } : {}) };
+      });
+    // Models, images and data files open in their viewers; under All Files, everything else is listed beside them, dimmed.
     const rest = (parent: string): Node[] => notes.others
       .filter((o) => notes.listed(o) && o.folder === parent && (!q || o.name.toLowerCase().includes(q)))
-      .map((o) => ({ id: o.id, label: o.name, other: o }));
-    const sorted = (items: Node[]) => items.sort((a, b) => a.label.localeCompare(b.label));
+      .map((o) => ({ id: o.id, name: o.name, other: o, ...(o.kind === 'stl' ? { icon: 'cube' as const } : o.kind === 'image' ? { icon: 'photo' as const }
+        : viewable(o.kind) ? {} : { dimmed: true, detailTitle: 'Drag onto a note to embed it' }) }));
+    const sorted = (items: Node[]) => items.sort((a, b) => a.name.localeCompare(b.name));
     const build = (parent: string): Node[] => [...notes.folders
       .filter((f) => f.parent === parent && notes.shown(f))
       .sort((a, b) => a.title.localeCompare(b.title))
-      .map((f) => ({ id: f.id, label: f.title, folder: f, children: build(f.id) })), ...sorted([...leaves(parent), ...rest(parent)])];
+      .map((f) => ({ id: f.id, name: f.title, folder: f, children: build(f.id) })), ...sorted([...leaves(parent), ...rest(parent)])];
     return build(root.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `shown` follows the filter and the folders.
-  }, [notes.folders, notes.notes, notes.others, notes.filter, notes.query, root.id]);
-  const index = new Map<string, Node>();
-  const visit = (n: Node) => { index.set(n.id, n); n.children?.forEach(visit); };
-  nodes.forEach(visit);
-  const upload = (folder: Folder | undefined, items: DropItem[]) => {
-    if (!folder?.path) return;
+  }, [notes.folders, notes.notes, notes.others, notes.filter, notes.query, notes.files.unseen, notes.drafts, root.id]);
+  const pathOf = (node: Node) => (node.note && !node.note.file.standalone ? node.note.file.path : node.other?.path);
+  const upload = (folder: Folder | undefined, files: File[]) => {
+    if (!folder?.path || !files.length) return;
     const path = folder.path;
-    void notes.files.run(async () => notes.upload(path, await Promise.all(items.filter(isFileDropItem).map((item) => item.getFile()))));
+    void notes.files.run(() => notes.upload(path, files));
   };
-  const { dragAndDropHooks } = useDragAndDrop({
-    getItems: (keys) => [...keys].flatMap((key) => {
-      const node = index.get(String(key));
-      const path = node?.note && !node.note.file.standalone ? node.note.file.path : node?.other?.path;
-      return path ? [{ [NOTES_FILE]: path, 'text/plain': path }] : [];
-    }),
-    getAllowedDropOperations: () => ['copy', 'move'],
-    // Only files from your computer drop here, into a folder row or the location itself.
-    getDropOperation: (target, types) => types.has(NOTES_FILE) || (target.type === 'item' && (target.dropPosition !== 'on' || !index.get(String(target.key))?.folder)) ? 'cancel' : 'copy',
-    onRootDrop: (e) => upload(root, e.items),
-    onItemDrop: (e) => upload(index.get(String(e.target.key))?.folder, e.items),
-  });
-  const toggle = (id: string) => setExpanded((prev) => {
-    const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next;
-  });
+  const renaming = notes.renaming?.in === 'tree' ? notes.renaming.id : null;
 
-  function render(node: Node) {
-    return (
-      <TreeItem id={node.id} textValue={node.label}
-        title={notes.isRenaming(node.id) ? <RenameField notes={notes} id={node.id} name={node.label} className="w-full" />
-          : node.other && node.other.kind !== 'stl' ? <span className="opacity-60" title="Drag onto a note to embed it">{node.label}</span> : node.label}
-        icon={({ isExpanded, isSelected }) => node.folder ? <TreeFolderIcon open={isExpanded} />
-          : node.other?.kind === 'stl' ? <Icon name="cube" size={17} className={isSelected ? undefined : 'text-primary'} /> : <TreeFileIcon name={node.label} />}
-        trailing={node.note ? <>
-          {notes.files.unseen.has(node.id) ? <UnreadDot /> : null}
-          {notes.drafts[node.id] ? <span aria-label="Unsaved changes" className="size-1.5 rounded-full bg-current" /> : null}
-        </> : null}
-        contextMenu={!node.other && hasItemMenu(notes, node.id) ? <ItemMenuContent notes={notes} id={node.id} label={node.label} /> : undefined}>
-        {node.children?.length ? <Collection items={node.children}>{render}</Collection> : null}
-      </TreeItem>
-    );
-  }
-
-  return <Tree aria-label="Folders and files" items={nodes} dragAndDropHooks={dragAndDropHooks} expandedKeys={notes.query ? notes.folders.map((f) => f.id) : expanded} onExpandedChange={(keys) => setExpanded(new Set(keys))}
-    // react-aria caches rendered rows by item; these change a row without changing its item.
-    dependencies={[notes.files.unseen, notes.drafts, notes.renaming, notes.files.busy]}
-    selectionMode="single" selectedKeys={notes.selectedId ? [notes.selectedId] : [notes.folderId]}
-    onSelectionChange={(keys) => {
-      const node = index.get(String([...keys][0]));
-      if (node?.note || node?.other?.kind === 'stl') onOpen(node.id);
-      else if (node?.folder) toggle(node.id);
+  return <Tree aria-label="Folders and files" items={nodes} icons="standard"
+    defaultExpanded={opened}
+    // While searching, every folder opens so the matches show.
+    expandedIds={notes.query ? notes.folders.map((f) => f.id) : undefined}
+    selectedIds={[notes.selectedId ?? notes.folderId]}
+    onSelectionChange={([id]) => {
+      const node = find(nodes, id);
+      if (node?.note || (node?.other && viewable(node.other.kind))) onOpen(node.id);
     }}
-    className="mx-2 min-h-[50vh] rounded-xl pb-16 data-[drop-target]:bg-secondary/60 data-[drop-target]:ring-2 data-[drop-target]:ring-primary data-[drop-target]:ring-inset">{render}</Tree>;
+    contextMenu={(node) => {
+      const n = node as Node;
+      return !n.other && hasItemMenu(notes, n.id) ? <ItemMenuContent notes={notes} id={n.id} label={n.name} place="tree" /> : null;
+    }}
+    renamingId={renaming}
+    onRename={(node, name) => { void notes.files.run(() => notes.rename(node.id, name)); }}
+    onRenameEnd={() => { if (notes.renaming?.in === 'tree') notes.setRenaming(null); }}
+    // Files drag out as their paths: a note embeds them, another location moves or copies them.
+    canDrag={(list) => list.every((n) => !!pathOf(n as Node))}
+    onDragStart={(list, data) => {
+      const paths = list.flatMap((n) => pathOf(n as Node) ?? []).join('\n');
+      data.setData(NOTES_FILE, paths);
+      data.setData('text/plain', paths);
+      data.effectAllowed = 'copyMove';
+    }}
+    // Files from your computer drop into a folder (a file's row stands for its folder), or the location itself.
+    externalDrop={{
+      accepts: (types) => types.includes('Files') && !types.includes(NOTES_FILE),
+      onDrop: (data, target) => { if (hasComputerFiles(data)) upload((target as Node | null)?.folder ?? root, [...data.files]); },
+    }}
+    className="mx-2 h-[60vh] min-h-64 pb-4" />;
+}
+
+function find(nodes: readonly Node[], id: string | undefined): Node | undefined {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    const inner = n.children && find(n.children, id);
+    if (inner) return inner;
+  }
+  return undefined;
 }

@@ -222,11 +222,12 @@ export function SqlConsole({
                   <Tab id="schema">Schema</Tab>
                   <Tab id="history">History{history.entries.length ? ` (${history.entries.length})` : ''}</Tab>
                 </TabList>
-                <TabPanel id="schema" className="max-h-80 overflow-y-auto">
+                <TabPanel id="schema" className="flex h-80 flex-col">
                   <SchemaTree
                     schema={schema}
                     isLoading={schemaLoading || !ready}
                     variant="card"
+                    className="flex-1"
                     onSelectTable={(t) => insertTable(t.schema, t.name)}
                   />
                 </TabPanel>

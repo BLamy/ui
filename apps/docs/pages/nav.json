@@ -213,6 +213,12 @@
         { "id": "aria-landmark", "title": "Landmarks" },
         { "id": "aria-utilities", "title": "Utilities" }
       ]
+    },
+    {
+      "section": "About",
+      "pages": [
+        { "id": "attributions", "title": "Attributions" }
+      ]
     }
   ],
   "standalone": [

@@ -9,9 +9,14 @@ import { useFileChanges } from './use-file-changes';
 export const BROWSER_ROOT = 'browser-notes';
 export const LINKED_FILES = 'linked-files';
 const markdown = (name: string) => /\.mdx?$/i.test(name);
-/** The file types Notes opens: Markdown in the editor, STL models in the 3D viewer. Everything else is listed only. */
-export type FileKind = 'markdown' | 'stl' | 'other';
-export const fileKind = (name: string): FileKind => markdown(name) ? 'markdown' : /\.stl$/i.test(name) ? 'stl' : 'other';
+/** The file types Notes opens: Markdown in the editor, STL models in the 3D viewer, images in an image viewer, JSON and
+    YAML in visual-json. Everything else is listed only. */
+export type FileKind = 'markdown' | 'stl' | 'image' | 'json' | 'yaml' | 'other';
+export const fileKind = (name: string): FileKind => markdown(name) ? 'markdown'
+  : /\.stl$/i.test(name) ? 'stl'
+  : /\.(png|jpe?g|gif|webp|avif|svg|bmp|ico)$/i.test(name) ? 'image'
+  : /\.json$/i.test(name) ? 'json'
+  : /\.ya?ml$/i.test(name) ? 'yaml' : 'other';
 const parentPath = (path: string) => {
   const separator = path.lastIndexOf('/');
   return separator < 0 ? '' : path.slice(0, separator);
@@ -238,6 +243,16 @@ export function useNoteFiles() {
     return `${folder}/${free}`;
   }
 
+  /** Overwrites the file at `path` in place (a data file edited in its viewer). */
+  async function replaceFile(path: string, data: Blob | string) {
+    const directory = await directoryAt(parentPath(path));
+    if (!directory) throw new Error('The folder is not available.');
+    if (!await ensurePermission(directory, 'readwrite')) throw new Error('Write access was not granted.');
+    const stream = await (await directory.getFileHandle(path.slice(path.lastIndexOf('/') + 1))).createWritable();
+    try { await stream.write(data); await stream.close(); }
+    catch (e) { await stream.abort().catch(() => {}); throw e; }
+  }
+
   async function removeFile(path: string) {
     if (fs.handles.has(path)) return fs.deleteFile(path);
     const directory = await directoryAt(parentPath(path));
@@ -247,7 +262,7 @@ export function useNoteFiles() {
   }
 
   return {
-    readFile, writeFile, removeFile,
+    readFile, writeFile, replaceFile, removeFile,
     /** A `blob:` URL of the file, kept until it changes on disk. */
     async fileUrl(path: string) {
       const file = await readFile(path);

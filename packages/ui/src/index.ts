@@ -179,8 +179,8 @@ export { Slider, SliderTrack, SliderThumb, sliderVariants } from './components/s
 export type { SliderProps, SliderTone } from './components/slider';
 export { ListBox, ListBoxItem, ListBoxSection, ListBoxHeader, listBoxVariants, listBoxItemVariants } from './components/list-box';
 export type { ListBoxProps, ListBoxItemProps, ListBoxSectionProps } from './components/list-box';
-export { Tree, TreeItem, TreeFolderIcon, TreeFileIcon } from './components/tree';
-export type { TreeProps, TreeItemProps } from './components/tree';
+export { Tree, TreeFolderIcon, TreeFileIcon } from './components/tree';
+export type { TreeProps, TreeNode, TreeDropTarget, TreeGitStatus } from './components/tree';
 export {
   Disclosure, DisclosureGroup, DisclosureTrigger, DisclosurePanel, disclosureGroupVariants,
   Accordion, AccordionItem, AccordionTrigger, AccordionContent,
