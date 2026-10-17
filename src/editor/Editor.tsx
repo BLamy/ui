@@ -490,9 +490,9 @@ export function GitbookEditor({
             const ed = editorRef.current
             if (!ed || ed.isDestroyed || !urls.length) return
             const content = urls.map(embedBlockFor)
-            const at = start === undefined || ed.state.doc !== doc ? undefined : Math.min(start, ed.state.doc.content.size)
-            const chain = ed.chain().focus()
-            ;(at === undefined ? chain.insertContent(content) : chain.insertContentAt(at, content)).run()
+            // The document changed meanwhile (another drop landed first): go after the selection, never over it.
+            const at = start !== undefined && ed.state.doc === doc ? Math.min(start, ed.state.doc.content.size) : ed.state.selection.to
+            ed.chain().focus().insertContentAt(at, content).run()
           }, () => {})
           return true
         }

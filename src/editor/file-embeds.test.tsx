@@ -78,6 +78,18 @@ describe("file embeds", () => {
     expect(markdown().indexOf("Intro.")).toBeLessThan(markdown().indexOf("part.stl"))
   })
 
+  it("two drops that resolve late both land; neither replaces the other", async () => {
+    let n = 0
+    const { editor, markdown } = await mount({ markdown: "Intro.\n", onDropEmbeds: () => Promise.resolve([`./file${++n}.stl`]) })
+    await act(async () => {
+      drop(editor, new DataTransfer())
+      drop(editor, new DataTransfer())
+    })
+    await flush()
+    expect(markdown()).toContain("./file1.stl")
+    expect(markdown()).toContain("./file2.stl")
+  })
+
   it("a drop the host passes on is left to the editor", async () => {
     const { editor, markdown } = await mount({ markdown: "Intro.\n", onDropEmbeds: () => null })
     const data = new DataTransfer()

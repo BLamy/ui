@@ -440,14 +440,17 @@ function PickFileButton({ kind, current, onPick, label }: { kind: FilePickKind; 
 }
 
 // STL and Strudel files go through the host's asset resolver (a blob: URL of a local file, say).
+// A resolved URL (blob:) has no file name in it: the title falls back to the one written in the document.
+const fileName = (url: string) => url.split(/[?#]/)[0]!.split("/").pop() || url
+
 function ResolvedStl({ url, title }: { url: string; title?: string }) {
   const src = useAsset(url)
-  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StlViewer src={src} {...(title ? { title } : {})} />
+  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StlViewer src={src} title={title || fileName(url)} />
 }
 
 function ResolvedStrudel({ url, title }: { url: string; title?: string }) {
   const src = useAsset(url)
-  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StrudelPlayer src={src} {...(title ? { title } : {})} />
+  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StrudelPlayer src={src} title={title || fileName(url)} />
 }
 
 function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
