@@ -352,6 +352,7 @@ const SHAPES = {
   'filter-circle': [RING, { d: 'M8 9.3h8M9.6 12.3h4.8M11 15.3h2' }],
   'filter-circle-fill': [DISC, { d: 'M8 9.3h8M9.6 12.3h4.8M11 15.3h2', k: 1 }],
   layers: [{ d: 'M12 3.6l8.2 4.6L12 12.8 3.8 8.2 12 3.6z' }, { d: 'M4.6 12.4L12 16.6l7.4-4.2' }],
+  cube: [{ d: 'M12 3.4l7.6 4.2v8.8L12 20.6l-7.6-4.2V7.6z' }, { d: 'M4.6 7.7L12 11.9l7.4-4.2M12 11.9v8.6' }],
 
   /* ── communication ── */
   envelope: [{ r: ENVELOPE }, { d: ENVELOPE_FLAP }],
@@ -531,7 +532,7 @@ export const ICON_KEYWORDS: Partial<Record<IconCanonicalName, string>> = {
   clock: 'time recent history', tag: 'label', doc: 'document file page', note: 'document text', copy: 'duplicate doc on doc',
   link: 'url chain', bookmark: 'save read later', book: 'read library', briefcase: 'work job', gift: 'present birthday',
   'chart-bar': 'stats graph analytics', textformat: 'font text size aa', 'filter-circle': 'filter sort', 'filter-circle-fill': 'filter sort active',
-  layers: 'stack square stack copy', envelope: 'mail email message', 'envelope-open': 'read mail', 'envelope-badge': 'unread mail',
+  layers: 'stack square stack copy', cube: '3d model box stl object', envelope: 'mail email message', 'envelope-open': 'read mail', 'envelope-badge': 'unread mail',
   paperplane: 'send', reply: 'respond mail', 'reply-all': 'respond mail', 'arrow-forward': 'forward mail send on',
   'phone-fill': 'call telephone', 'message-fill': 'chat sms imessage bubble', bubble: 'chat message comment',
   person: 'contact account profile user avatar', 'person-bust': 'contact user profile', people: 'group contacts users',

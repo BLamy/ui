@@ -253,6 +253,12 @@ export interface MarkdownEditorProps extends VariantProps<typeof markdownEditorV
   onAttachmentRemove?: (ids: string[]) => void;
   /** Chip mode: a chip was clicked. Omit for the built-in image viewer. */
   onAttachmentOpen?: (attachment: MarkdownEditorAttachment) => void;
+  /** Resolves asset URLs as written (`./models/part.stl`) to loadable ones, e.g. `blob:` URLs of files next to the document. */
+  resolveAsset?: GitbookEditorProps['resolveAsset'];
+  /** Adds "Choose file…" to embed blocks (and "Choose image…" to images); resolve with the URL to write. */
+  pickFile?: GitbookEditorProps['pickFile'];
+  /** Claim a drop: return the URLs to embed at the drop point, or `null` for the default handling. */
+  onDropEmbeds?: GitbookEditorProps['onDropEmbeds'];
   /** Runs before the editor's keymaps; return true when handled. */
   onKeyDown?: (event: KeyboardEvent) => boolean;
   /** Runs before the editor's paste handling; return true when handled. */
@@ -339,6 +345,9 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
     onAttachmentAdd,
     onAttachmentRemove,
     onAttachmentOpen,
+    resolveAsset,
+    pickFile,
+    onDropEmbeds,
     onKeyDown,
     onPaste,
     onFocus,
@@ -559,6 +568,9 @@ export const MarkdownEditor = React.forwardRef<MarkdownEditorHandle, MarkdownEdi
         {...(onAttachmentAdd ? { onAttachmentAdd } : {})}
         {...(onAttachmentRemove ? { onAttachmentRemove } : {})}
         {...(onAttachmentOpen ? { onAttachmentOpen } : {})}
+        {...(resolveAsset ? { resolveAsset } : {})}
+        {...(pickFile ? { pickFile } : {})}
+        {...(onDropEmbeds ? { onDropEmbeds } : {})}
         onEditorReady={handleReady}
       />
       {name !== undefined ? <input type="hidden" name={name} value={markdown} disabled={disabled} /> : null}

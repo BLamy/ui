@@ -382,6 +382,9 @@ export {
 export type {
   ReplayPreviewHandle, ReplayPreviewProps, ReplayEvent, ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack,
 } from './components/replay-preview';
+// The STL viewer lives in docstream; re-exported here (see components/stl-viewer.tsx)
+export { StlViewer, parseStl, isStlUrl } from './components/stl-viewer';
+export type { StlViewerProps, StlMesh } from './components/stl-viewer';
 // The Strudel player, rack and syntax tree live in docstream; re-exported here (see components/strudel-*.tsx)
 export {
   StrudelPlayer, DEFAULT_SAMPLES, playStrudel, stopStrudel, updateStrudel, subscribeStrudel, getStrudelSnapshot, strudelNow,

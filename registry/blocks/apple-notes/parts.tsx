@@ -27,16 +27,19 @@ export function ViewToggle({ view, onChange }: { view: NotesView; onChange: (v: 
     ]} />;
 }
 
-/** Beside the search field: Markdown Files (the default) or All Files. The icon fills while other files show. */
+/** Beside the search field: All Files, then one file type at a time (Markdown, the default, and STL models). The
+    icon fills while the list isn't Markdown only. */
 export function FilterMenu({ filter, onChange }: { filter: FileFilter; onChange: (f: FileFilter) => void }) {
   return <DropdownMenu>
     <BarButton label="Filter files" className="h-[34px] w-9 shrink-0">
-      <Icon name={filter === 'all' ? 'filter-circle-fill' : 'filter-circle'} size={24} />
+      <Icon name={filter === 'markdown' ? 'filter-circle' : 'filter-circle-fill'} size={24} />
     </BarButton>
     <DropdownMenuContent aria-label="Show" placement="bottom end" selectionMode="single" selectedKeys={[filter]}
       onSelectionChange={(keys) => { const key = [...keys][0]; if (key) onChange(key as FileFilter); }}>
-      <DropdownMenuItem id="markdown" icon={<Icon name="note" size={20} />}>Markdown Files</DropdownMenuItem>
       <DropdownMenuItem id="all" icon={<Icon name="folder" size={20} />}>All Files</DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem id="markdown" icon={<Icon name="note" size={20} />}>Markdown</DropdownMenuItem>
+      <DropdownMenuItem id="stl" icon={<Icon name="cube" size={20} />}>3D Models (STL)</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>;
 }

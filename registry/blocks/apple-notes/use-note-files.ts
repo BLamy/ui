@@ -9,6 +9,9 @@ import { useFileChanges } from './use-file-changes';
 export const BROWSER_ROOT = 'browser-notes';
 export const LINKED_FILES = 'linked-files';
 const markdown = (name: string) => /\.mdx?$/i.test(name);
+/** The file types Notes opens: Markdown in the editor, STL models in the 3D viewer. Everything else is listed only. */
+export type FileKind = 'markdown' | 'stl' | 'other';
+export const fileKind = (name: string): FileKind => markdown(name) ? 'markdown' : /\.stl$/i.test(name) ? 'stl' : 'other';
 const parentPath = (path: string) => {
   const separator = path.lastIndexOf('/');
   return separator < 0 ? '' : path.slice(0, separator);
@@ -25,6 +28,15 @@ async function taken(directory: FileSystemDirectoryHandle, name: string) {
     catch (e) { if (e instanceof DOMException && e.name === 'TypeMismatchError') return true; if (!(e instanceof DOMException && e.name === 'NotFoundError')) throw e; }
   }
   return false;
+}
+
+/** `name`, or “name 2.ext”, “name 3.ext”, … — the first that isn't taken in the directory. */
+async function freeName(directory: FileSystemDirectoryHandle, name: string) {
+  const dot = name.lastIndexOf('.');
+  const [stem, extension] = dot > 0 ? [name.slice(0, dot), name.slice(dot)] : [name, ''];
+  let next = name;
+  for (let index = 2; await taken(directory, next); index++) next = `${stem} ${index}${extension}`;
+  return next;
 }
 
 /** `move()` renames in place where the browser has it (Chromium); otherwise the entry is copied and the original removed. */
@@ -190,6 +202,10 @@ export function useNoteFiles() {
   /** Everything else in the watched folders, by path: listed (“All Files”), never opened. */
   const others = useMemo(() => otherPaths.filter((path) => fs.directories.some((root) => path.startsWith(`${root}/`))), [otherPaths, fs.directories]);
 
+  // Blob URLs of files shown in notes and the 3D viewer, made again only when the file changes.
+  const blobs = useRef(new Map<string, { url: string; modified: number; size: number }>());
+  useEffect(() => () => { for (const blob of blobs.current.values()) URL.revokeObjectURL(blob.url); }, []);
+
   const directoryAt = async (path: string) => directoryHandles.current.get(path) ?? (path === BROWSER_ROOT && ready ? await getOpfsRoot({ name: 'apple-notes' }) : null);
 
   async function run<T>(action: () => Promise<T>): Promise<T | undefined> {
@@ -199,7 +215,51 @@ export function useNoteFiles() {
     finally { setBusy(false); }
   }
 
+  /** Any file in a watched folder, Markdown or not. */
+  async function readFile(path: string): Promise<File> {
+    const handle = fs.handles.get(path);
+    if (handle) return handle.getFile();
+    const directory = await directoryAt(parentPath(path));
+    if (!directory) throw new Error('The folder is not available.');
+    return (await directory.getFileHandle(path.slice(path.lastIndexOf('/') + 1))).getFile();
+  }
+
+  /** Writes `data` into a watched folder under `name`, or the first free “name 2.ext”. Returns the new path. */
+  async function writeFile(folder: string, name: string, data: Blob | string) {
+    if (badName(name)) throw new Error('Use a filename without slashes.');
+    const directory = await directoryAt(folder);
+    if (!directory) throw new Error('The folder is not available.');
+    if (!await ensurePermission(directory, 'readwrite')) throw new Error('Write access was not granted.');
+    const free = await freeName(directory, name);
+    const stream = await (await directory.getFileHandle(free, { create: true })).createWritable();
+    try { await stream.write(data); await stream.close(); }
+    catch (e) { await stream.abort().catch(() => {}); throw e; }
+    await fs.refresh();
+    return `${folder}/${free}`;
+  }
+
+  async function removeFile(path: string) {
+    if (fs.handles.has(path)) return fs.deleteFile(path);
+    const directory = await directoryAt(parentPath(path));
+    if (!directory) throw new Error('The folder is not available.');
+    await directory.removeEntry(path.slice(path.lastIndexOf('/') + 1));
+    await fs.refresh();
+  }
+
   return {
+    readFile, writeFile, removeFile,
+    /** A `blob:` URL of the file, kept until it changes on disk. */
+    async fileUrl(path: string) {
+      const file = await readFile(path);
+      const cached = blobs.current.get(path);
+      if (cached && cached.modified === file.lastModified && cached.size === file.size) return cached.url;
+      if (cached) URL.revokeObjectURL(cached.url);
+      const url = URL.createObjectURL(file);
+      blobs.current.set(path, { url, modified: file.lastModified, size: file.size });
+      return url;
+    },
+    /** The watched folder (a sidebar location) a path is in. */
+    rootOf: (path: string) => fs.directories.find((root) => path === root || path.startsWith(`${root}/`)) ?? null,
     notes, folders, others, ready, busy, ...changes, error: error ?? fs.error?.message ?? null,
     directoryRoots: sources.filter((source) => source.connected).map(({ path, handle }) => ({ path, handle })),
     isOpfsSupported: fs.isOpfsSupported, isOpfsWritable: fs.isOpfsWritable,

@@ -173,6 +173,12 @@
       ]
     },
     {
+      "section": "3D",
+      "pages": [
+        { "id": "stl-viewer", "title": "StlViewer" }
+      ]
+    },
+    {
       "section": "Storage and security",
       "pages": [
         { "id": "passkey-vault", "title": "Passkey vault" },

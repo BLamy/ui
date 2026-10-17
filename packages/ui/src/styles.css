@@ -782,6 +782,9 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
   --gb-code-fg:currentColor;
 }
 
+/* StlViewer used on its own (outside a docstream article or editor) takes the theme's tokens too. */
+.docstream-stl{--gb-primary:var(--primary);--gb-muted:var(--secondary);--gb-border:var(--border)}
+
 /* Attachment chips: the editor portals the hover card to <body>, outside any theme scope. While a chip in a dark
    composer is hovered or focused, the card takes the dark Workbench scope's palette (card, foreground, muted and
    muted-foreground are that scope's values; the editor's defaults are light). */

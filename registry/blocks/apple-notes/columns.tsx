@@ -1,5 +1,5 @@
 /* The master list lives in NavigationStack, rooted at the sidebar's location. Only folder rows change its screens. */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Chevron } from '@/components/ui/icon-swap';
 import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,11 @@ import { SearchField } from '@/components/ui/search-field';
 import { TreeFileIcon } from '@/components/ui/tree';
 import type { MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { SplitViewContent, SplitViewDetail, SplitViewEmpty, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { StlViewer } from '@/components/ui/stl-viewer';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { Folder } from './data';
+import { fileDragProps, hasComputerFiles, useDropTarget } from './drag';
 import { FolderTree } from './folder-tree';
 import { NoteList } from './note-list';
 import { EditorTools, NoteEditor } from './note-editor';
@@ -17,34 +19,81 @@ import { ItemMenu, RenameField } from './item-menu';
 import { BarButton, BottomBar, FilterMenu, NoteMenu, ShareMenu, ViewToggle } from './parts';
 import type { NotesState, OtherFile } from './use-notes';
 
+/** Files from your computer dropped on a folder (a row, or the list itself) are copied into it. Nothing is embedded. */
+function useUploadTarget(notes: NotesState, folder: Folder) {
+  return useDropTarget({
+    accepts: (data) => !!folder.path && folder.connected !== false && hasComputerFiles(data),
+    onDrop: (data) => { const list = [...data.files]; void notes.files.run(() => notes.upload(folder.path!, list)); },
+  });
+}
+
+function FolderRow({ notes, f, className }: { notes: NotesState; f: Folder; className: string }) {
+  const { dropProps } = useUploadTarget(notes, f);
+  return <ItemMenu notes={notes} id={f.id} label={f.title}>
+    <button type="button" aria-label={`Open folder ${f.title}`} data-tkrow="" {...dropProps}
+      onClick={() => notes.openFolder(f.id)}
+      className={cn(className, 'cursor-pointer border-0 bg-transparent outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-[drop-target]:bg-secondary data-[drop-target]:ring-2 data-[drop-target]:ring-primary')}>
+      <Icon name="folder" size={21} className="shrink-0 text-primary" />
+      <span className="min-w-0 flex-1 truncate">{f.title}{f.connected === false ? <span className="block text-caption text-muted-foreground">Reconnect folder</span> : null}</span>
+      <span className="text-caption text-muted-foreground">{notes.count(f)}</span><Chevron direction="right" size={15} />
+    </button>
+  </ItemMenu>;
+}
+
 function FolderRows({ notes, folders }: { notes: NotesState; folders: Folder[] }) {
   const row = 'flex min-h-12 w-full items-center gap-2 rounded-md px-2 text-left text-detail text-foreground';
   return <div className="mx-3">
     {folders.map((f) => notes.isRenaming(f.id)
       ? <div key={f.id} className={row}><Icon name="folder" size={21} className="shrink-0 text-primary" /><RenameField notes={notes} id={f.id} name={f.title} /></div>
-      : <ItemMenu key={f.id} notes={notes} id={f.id} label={f.title}>
-        <button type="button" aria-label={`Open folder ${f.title}`} data-tkrow=""
-          onClick={() => notes.openFolder(f.id)}
-          className={cn(row, 'cursor-pointer border-0 bg-transparent outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring')}>
-          <Icon name="folder" size={21} className="shrink-0 text-primary" />
-          <span className="min-w-0 flex-1 truncate">{f.title}{f.connected === false ? <span className="block text-caption text-muted-foreground">Reconnect folder</span> : null}</span>
-          <span className="text-caption text-muted-foreground">{notes.count(f)}</span><Chevron direction="right" size={15} />
-        </button>
-      </ItemMenu>)}
+      : <FolderRow key={f.id} notes={notes} f={f} className={row} />)}
   </div>;
 }
 
-/** Files Notes doesn't open, under All Files: listed by name, dimmed, not interactive. */
-function OtherFileRows({ notes, files }: { notes: NotesState; files: OtherFile[] }) {
+/** Files that aren't notes. An STL model opens in the 3D viewer; anything else is listed by name, dimmed. Every row
+    drags onto a note to embed it, or onto another location to move or copy it. */
+function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: OtherFile[]; onOpen: (id: string) => void }) {
   if (!files.length) return null;
   return <ul aria-label="Other files" className="m-0 list-none px-5">
-    {files.map((f) => <li key={f.id} title={`${f.path} · Notes opens Markdown files only`}
-      className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-subhead text-muted-foreground opacity-60">
-      <TreeFileIcon name={f.name} className="shrink-0" />
-      <span className="min-w-0 flex-1 truncate">{f.name}
-        {notes.query ? <span className="block truncate text-caption">{f.path.split('/').slice(1, -1).join('/')}</span> : null}</span>
-    </li>)}
+    {files.map((f) => {
+      const where = notes.query ? <span className="block truncate text-caption opacity-70">{f.path.split('/').slice(1, -1).join('/')}</span> : null;
+      if (f.kind === 'stl') {
+        const selected = notes.selectedId === f.id;
+        return <li key={f.id}>
+          <button type="button" {...fileDragProps(f.path)} onClick={() => onOpen(f.id)} aria-current={selected || undefined} title={f.path}
+            className={cn('flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg border-0 bg-transparent px-2 text-left text-subhead text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              selected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')}>
+            <Icon name="cube" size={18} className={cn('shrink-0', !selected && 'text-primary')} />
+            <span className="min-w-0 flex-1 truncate">{f.name}{where}</span>
+          </button>
+        </li>;
+      }
+      return <li key={f.id} {...fileDragProps(f.path)} title={`${f.path} · Drag onto a note to embed it`}
+        className="flex min-h-11 cursor-grab items-center gap-2 rounded-lg px-2 text-subhead text-muted-foreground opacity-60">
+        <TreeFileIcon name={f.name} className="shrink-0" />
+        <span className="min-w-0 flex-1 truncate">{f.name}{where}</span>
+      </li>;
+    })}
   </ul>;
+}
+
+/** The detail column for a model: the STL viewer, from the file on disk. */
+function ModelView({ notes, file }: { notes: NotesState; file: OtherFile }) {
+  const [url, setUrl] = useState<{ path: string; url: string | null; error?: string } | null>(null);
+  const { fileUrl } = notes.files;
+  useEffect(() => {
+    let live = true;
+    fileUrl(file.path).then((next) => { if (live) setUrl({ path: file.path, url: next }); },
+      (e: unknown) => { if (live) setUrl({ path: file.path, url: null, error: e instanceof Error ? e.message : String(e) }); });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `fileUrl` is remade each render; the path decides.
+  }, [file.path]);
+  const current = url?.path === file.path ? url : null;
+  return <div className="mx-auto w-full max-w-[900px] px-6 pt-4 pb-28">
+    {current?.error ? <p role="alert" className="text-detail text-destructive">{current.error}</p>
+      : current?.url ? <StlViewer key={current.url} src={current.url} title={file.name} />
+      : <div aria-busy="true" className="aspect-video rounded-xl bg-secondary" />}
+    <p className="mt-3 text-center text-footnote text-muted-foreground">{file.path.split('/').slice(1).join('/')} · Drag it onto a note to embed it</p>
+  </div>;
 }
 
 function EmptyFolder({ notes, folder }: { notes: NotesState; folder: Folder }) {
@@ -84,9 +133,11 @@ export function ListColumn({ notes }: { notes: NotesState }) {
           <p>Reconnect {folder.title} to view the notes on your Mac.</p>
           <Button variant="secondary" onPress={() => { void notes.files.run(() => notes.files.reconnect(folder.id)); }}>Reconnect folder</Button>
         </div> : tree && notes.rootFolder ? <FolderTree notes={notes} root={notes.rootFolder} onOpen={open} /> : <>
-          <FolderRows notes={notes} folders={children} />
-          <div className="pb-12"><NoteList notes={notes} items={list} onOpen={open} /><OtherFileRows notes={notes} files={others} /></div>
-          {!list.length && !children.length && !others.length ? <EmptyFolder notes={notes} folder={folder} /> : null}
+          <UploadArea notes={notes} folder={folder}>
+            <FolderRows notes={notes} folders={children} />
+            <div className="pb-12"><NoteList notes={notes} items={list} onOpen={open} /><OtherFileRows notes={notes} files={others} onOpen={open} /></div>
+            {!list.length && !children.length && !others.length ? <EmptyFolder notes={notes} folder={folder} /> : null}
+          </UploadArea>
         </>}
       </>,
     };
@@ -100,9 +151,16 @@ export function ListColumn({ notes }: { notes: NotesState }) {
   </SplitViewSupplementary>;
 }
 
+/** The list's own area takes files from your computer into the folder it shows. */
+function UploadArea({ notes, folder, children }: { notes: NotesState; folder: Folder; children: ReactNode }) {
+  const { dropProps } = useUploadTarget(notes, folder);
+  return <div {...dropProps} className="min-h-[60vh] rounded-xl data-[drop-target]:bg-secondary/60 data-[drop-target]:ring-2 data-[drop-target]:ring-primary data-[drop-target]:ring-inset">{children}</div>;
+}
+
 export function NoteColumn({ notes }: { notes: NotesState }) {
   const s = useSplitView();
   const n = notes.selected;
+  const model = notes.selectedFile;
   const [source, setSource] = useState(false);
   const [format, setFormat] = useState(false);
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
@@ -112,6 +170,10 @@ export function NoteColumn({ notes }: { notes: NotesState }) {
     ? <RenameField notes={notes} id={n.id} name={n.file.name} className="text-body font-semibold" />
     : <span title={`${n.file.path} · ${notes.fileStatus(n).label} · Double-click to rename`}
       onDoubleClick={() => { if (!n.file.standalone) notes.setRenaming({ id: n.id, in: 'title' }); }}>{n.file.name}</span> : undefined;
+  if (!n && model) return <SplitViewDetail aria-label="Model">
+    <SplitViewHeader title={<span title={model.path}>{model.name}</span>} titleAlign="leading" trailing={compose} />
+    <SplitViewContent key={model.id}><ModelView notes={notes} file={model} /></SplitViewContent>
+  </SplitViewDetail>;
   return <SplitViewDetail aria-label="Note">
     <SplitViewHeader title={name} titleAlign="leading" trailing={n ? <>
       {s.collapsed ? null : tools}

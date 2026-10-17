@@ -1,4 +1,4 @@
-/* New note, new folder and delete confirmations: a Credenza over the whole app — a centered dialog on wide
+/* New note, new folder, delete confirmations and Move or Copy: a Credenza over the whole app — a centered dialog on wide
    layouts, a bottom tray you can drag away on the phone. */
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -73,17 +73,46 @@ function DeleteConfirm({ notes, id }: { notes: NotesState; id: string }) {
   </div>;
 }
 
+/** Files dragged onto another location: move them (they leave this one) or copy them, to the top of that location. */
+function TransferConfirm({ notes, paths, to }: { notes: NotesState; paths: string[]; to: string }) {
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const what = paths.length === 1 ? `“${paths[0]!.slice(paths[0]!.lastIndexOf('/') + 1)}”` : `${paths.length} files`;
+  const go = (mode: 'move' | 'copy') => {
+    const target = notes.transfer?.to.path;
+    if (!target) return;
+    setBusy(true); setError(null);
+    void notes.transferFiles(paths, target, mode).then(() => notes.setTransfer(null)).catch((e: unknown) => { setError(message(e)); setBusy(false); });
+  };
+  return <div className="px-4 pt-0.5 pb-4">
+    <p className="m-0 mb-4 text-subhead leading-[1.45] text-muted-foreground">
+      Move {what} to {to}, or keep {paths.length === 1 ? 'it' : 'them'} here and put a copy there? {paths.length === 1 ? 'It goes' : 'They go'} at the top of {to}.
+    </p>
+    {error ? <p role="alert" className="m-0 mb-3 text-footnote text-destructive">{error}</p> : null}
+    <div className="flex gap-2">
+      <Button variant="secondary" className="flex-1" onPress={() => notes.setTransfer(null)}>Cancel</Button>
+      <Button variant="secondary" className="flex-1" isDisabled={busy} onPress={() => go('copy')}>Copy</Button>
+      <Button className="flex-1" isDisabled={busy} onPress={() => go('move')}>Move</Button>
+    </div>
+  </div>;
+}
+
 /** Render inside the SplitView, so the sheet covers every column and knows when the layout is the phone's. */
 export function NotesDialogs({ notes }: { notes: NotesState }) {
   const s = useSplitView();
   const creating = useLast(notes.creating);
   const deleting = useLast(notes.deleting);
+  const transfer = useLast(notes.transfer);
   const name = deleting ? notes.notes.find((n) => n.id === deleting)?.file.name ?? notes.folders.find((f) => f.id === deleting)?.title : '';
   return <>
     <Credenza compact={s.collapsed} open={!!notes.creating} onClose={() => notes.setCreating(null)}
       title={creating === 'folder' ? 'New Folder' : 'New Note'}>
       {/* Keyed so each opening starts from a fresh name. */}
       {creating ? <CreateForm key={`${creating}:${notes.creating ? 'open' : 'closed'}`} notes={notes} kind={creating} /> : null}
+    </Credenza>
+    <Credenza compact={s.collapsed} open={!!notes.transfer} onClose={() => notes.setTransfer(null)}
+      title={transfer ? `Move or Copy to ${transfer.to.title}?` : ''}>
+      {transfer ? <TransferConfirm key={transfer.paths.join('\n')} notes={notes} paths={transfer.paths} to={transfer.to.title} /> : null}
     </Credenza>
     <Credenza compact={s.collapsed} open={!!notes.deleting} onClose={() => notes.setDeleting(null)} title={`Delete “${name}”?`}>
       {deleting ? <DeleteConfirm key={deleting} notes={notes} id={deleting} /> : null}
