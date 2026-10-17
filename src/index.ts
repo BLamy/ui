@@ -2,7 +2,7 @@
 // inline-file demos run only when the host passes a runtime — see `@brett_lamy/docstream/playground`.
 export { GitbookStreamdown } from "./streamdown"
 export type { GitbookStreamdownProps } from "./streamdown"
-export { DocsRenderer, MarkdownContent } from "./docs/DocsRenderer"
+export { DocsRenderer, MarkdownContent, MathFormula } from "./docs/DocsRenderer"
 export { TaskCheckbox, TASK_STATE_ICONS } from "./docs/TaskCheckbox"
 export type { TaskCheckboxProps, TaskStateChangeHandler } from "./docs/TaskCheckbox"
 export { TASK_STATES, getTaskState, taskMarker, taskStateFromMarker } from "./gitbook/tasks"

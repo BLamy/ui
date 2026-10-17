@@ -48,9 +48,8 @@ function loadMathRenderer(): Promise<MathRenderer> {
   return mathLoad
 }
 
-// A math block is a card: the TeX on the left, KaTeX's typesetting on the right (stacked when narrow). KaTeX loads on
-// first use; until then the result pane shows the TeX.
-function MathBlock({ formula }: { formula: string }) {
+/** A formula typeset by KaTeX, which loads on first use; until then the TeX shows in its place. */
+export function MathFormula({ formula }: { formula: string }) {
   const [render, setRender] = useState<MathRenderer | null>(() => mathRenderer)
   useEffect(() => {
     if (render) return
@@ -60,17 +59,22 @@ function MathBlock({ formula }: { formula: string }) {
       live = false
     }
   }, [render])
+  return render ? (
+    <div className="docs-math" dangerouslySetInnerHTML={{ __html: render(formula) }} />
+  ) : (
+    <div className="docs-math" data-pending="">
+      <code>{formula}</code>
+    </div>
+  )
+}
+
+// A math block is a card: the TeX on the left, KaTeX's typesetting on the right (stacked when narrow).
+function MathBlock({ formula }: { formula: string }) {
   return (
     <SplitCard className="docs-math-card" data-docstream-math="">
       <SplitSource label="LaTeX" code={formula} language="latex" />
       <SplitResult label="KaTeX">
-        {render ? (
-          <div className="docs-math" dangerouslySetInnerHTML={{ __html: render(formula) }} />
-        ) : (
-          <div className="docs-math" data-pending="">
-            <code>{formula}</code>
-          </div>
-        )}
+        <MathFormula formula={formula} />
       </SplitResult>
     </SplitCard>
   )
