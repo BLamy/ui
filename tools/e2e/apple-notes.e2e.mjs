@@ -482,7 +482,7 @@ test('right-click renames and deletes notes and folders in place, in the list an
 
 test('the filter shows Markdown files by default, hiding folders without notes, All Files dims everything else, and 3D Models lists STL files', async ({ page }) => {
   await seed(page, {
-    'README.md': '# Readme', 'package.json': '{}', 'docs/guide.md': '# Guide', 'src/app.ts': 'export {}', 'assets/logo.png': 'png', 'Empty': null,
+    'README.md': '# Readme', 'package.json': '{}', 'LICENSE': 'MIT', 'docs/guide.md': '# Guide', 'src/app.ts': 'export {}', 'assets/logo.png': 'png', 'Empty': null,
     'case/part.stl': 'solid part\nendsolid part\n',
   }, 'Project');
   await addFolder(page, 'Project');
@@ -502,7 +502,7 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await page.getByRole('menuitemradio', { name: 'All Files' }).click();
   await expect(folderRow('src')).toBeVisible();
   await expect(folderRow('assets')).toBeVisible();
-  await expect(others.getByRole('listitem')).toHaveText([/package\.json$/]);
+  await expect(others.getByRole('listitem')).toHaveText([/LICENSE$/, /package\.json$/]);
   await expect(row(page, 'README.md')).toBeVisible();
   await folderRow('src').click();
   await expect(others.getByRole('listitem')).toHaveText([/app\.ts$/]);
@@ -513,12 +513,12 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
   const tree = current(page).getByRole('tree', { name: 'Folders and files' });
   // Files Notes can't open are listed (dimmed, draggable onto a note) but never selected.
-  await tree.getByRole('treeitem', { name: 'package.json', exact: true }).click();
-  await expect(tree.getByRole('treeitem', { name: 'package.json', exact: true })).not.toHaveAttribute('aria-selected', 'true');
+  await tree.getByRole('treeitem', { name: 'LICENSE', exact: true }).click();
+  await expect(tree.getByRole('treeitem', { name: 'LICENSE', exact: true })).not.toHaveAttribute('aria-selected', 'true');
   await expect(tree.getByRole('treeitem', { name: 'src', exact: true })).toBeVisible();
   await current(page).getByRole('button', { name: 'Filter files', exact: true }).click();
   await page.getByRole('menuitemradio', { name: 'Markdown' }).click();
-  await expect(tree.getByRole('treeitem', { name: 'package.json', exact: true })).toHaveCount(0);
+  await expect(tree.getByRole('treeitem', { name: 'LICENSE', exact: true })).toHaveCount(0);
   await expect(tree.getByRole('treeitem', { name: 'src', exact: true })).toHaveCount(0);
   await expect(tree.getByRole('treeitem', { name: 'README.md', exact: true })).toBeVisible();
 
