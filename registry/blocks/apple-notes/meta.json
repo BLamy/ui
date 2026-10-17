@@ -1,9 +1,20 @@
 {
   "name": "apple-notes",
   "title": "Apple Notes clone",
-  "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. Each sidebar location is its own master list in a NavigationStack: folders push, file leaves open the note. The top-right control switches to the library's file Tree. Right-click any folder, note or location to rename, duplicate or delete it in place. The filter shows All Files or one type (Markdown, STL); an STL model opens in a 3D viewer. Embeds load from the note's folder, \"Choose file…\" picks any file in it, and dragging rows (or files from your computer) onto a note embeds them; drop computer files on a folder to copy them in, or drag files onto another location to move or copy them. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
-  "categories": ["notes", "productivity", "application"],
-  "dependencies": ["use-fs", "react-aria-components", "@agent-wasm/core", "@brett_lamy/docstream"],
+  "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. Each sidebar location is its own master list in a NavigationStack: folders push, file leaves open the note. The top-right control switches to the library's file Tree. Right-click any folder, note or location to rename, duplicate or delete it in place. The filter shows All Files or one type (Markdown, 3D models, images, JSON & YAML); an STL model opens in a 3D viewer, an image in an image viewer, and JSON or YAML in visual-json (JSON edits save back to the file). Embeds load from the note's folder, \"Choose file…\" picks any file in it, and dragging rows (or files from your computer) onto a note embeds them; drop computer files on a folder to copy them in, or drag files onto another location to move or copy them. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
+  "categories": [
+    "notes",
+    "productivity",
+    "application"
+  ],
+  "dependencies": [
+    "use-fs",
+    "react-aria-components",
+    "@agent-wasm/core",
+    "@brett_lamy/docstream",
+    "@visual-json/react",
+    "@visual-json/yaml"
+  ],
   "files": [
     "page.tsx",
     "columns.tsx",
@@ -18,6 +29,7 @@
     "local-demo-files.ts",
     "folder-storage.ts",
     "master-actions.tsx",
+    "file-views.tsx",
     "folder-tree.tsx",
     "drag.ts",
     "project-files.tsx",

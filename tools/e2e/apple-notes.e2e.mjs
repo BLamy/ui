@@ -531,3 +531,37 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await expect(page.getByRole('region', { name: 'Model' }).or(page.locator('[aria-label="Model"]')).first()).toBeVisible();
   await expect(page.locator('.docstream-stl')).toBeVisible();
 });
+
+test('images open in an image viewer, JSON in visual-json (edits save to the file) and YAML read-only', async ({ page }) => {
+  await seed(page, {
+    'art/logo.svg': '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="red"/></svg>',
+    'data/config.json': '{\n  "name": "case",\n  "size": 2\n}\n',
+    'data/ci.yaml': '# CI\nname: build\n',
+  }, 'Project');
+  await addFolder(page, 'Project');
+  const filter = current(page).getByRole('button', { name: 'Filter files', exact: true });
+  const others = current(page).getByRole('list', { name: 'Other files' });
+
+  await filter.click();
+  await page.getByRole('menuitemradio', { name: 'Images' }).click();
+  await current(page).getByRole('button', { name: 'Open folder art', exact: true }).click();
+  await others.getByRole('button', { name: /logo\.svg/ }).click();
+  const image = page.locator('[aria-label="Image"]').getByRole('img', { name: 'logo.svg' });
+  await expect(image).toBeVisible();
+  await expect(page.locator('[aria-label="Image"]')).toContainText('40 × 20');
+
+  await current(page).getByRole('button', { name: 'Project', exact: true }).click();
+  await filter.click();
+  await page.getByRole('menuitemradio', { name: 'JSON & YAML' }).click();
+  await expect(current(page).getByRole('button', { name: 'Open folder art', exact: true })).toHaveCount(0);
+  await current(page).getByRole('button', { name: 'Open folder data', exact: true }).click();
+  await others.getByRole('button', { name: /config\.json/ }).click();
+  const json = page.locator('[aria-label="JSON"]');
+  await expect(json).toContainText('name');
+  await expect(json).toContainText('case');
+  await expect(json).toContainText('Edits save to the file');
+  await others.getByRole('button', { name: /ci\.yaml/ }).click();
+  const yaml = page.locator('[aria-label="YAML"]');
+  await expect(yaml).toContainText('build');
+  await expect(yaml).toContainText('read-only');
+});

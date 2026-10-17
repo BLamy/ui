@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Tree, type TreeNode } from '@/components/ui/tree';
 import { title, type Folder, type Note } from './data';
 import { hasItemMenu, ItemMenuContent } from './item-menu';
-import type { NotesState, OtherFile } from './use-notes';
+import { viewable, type NotesState, type OtherFile } from './use-notes';
 import { hasComputerFiles, NOTES_FILE } from './drag';
 
 interface Node extends TreeNode { folder?: Folder; note?: Note; other?: OtherFile; children?: Node[] }
@@ -13,15 +13,16 @@ export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: F
   const [opened] = useState(() => [...notes.trail.map((f) => f.id), ...(notes.selected ? [notes.selected.folder] : [])]);
   const nodes = useMemo(() => {
     const q = notes.query.trim().toLowerCase();
-    const leaves = (parent: string): Node[] => notes.filter === 'stl' ? [] : notes.notes.filter((n) => n.folder === parent && (!q || `${title(n)}\n${n.body}`.toLowerCase().includes(q)))
+    const leaves = (parent: string): Node[] => notes.filter !== 'all' && notes.filter !== 'markdown' ? [] : notes.notes.filter((n) => n.folder === parent && (!q || `${title(n)}\n${n.body}`.toLowerCase().includes(q)))
       .map((n) => {
         const marks = [notes.files.unseen.has(n.id) ? 'Changed outside Notes' : '', notes.drafts[n.id] ? 'Unsaved changes' : ''].filter(Boolean);
         return { id: n.id, name: title(n), note: n, icon: 'doc' as const, ...(marks.length ? { detail: '•', detailTitle: marks.join(', ') } : {}) };
       });
-    // Models open in the viewer; under All Files, everything else is listed beside them, dimmed.
+    // Models, images and data files open in their viewers; under All Files, everything else is listed beside them, dimmed.
     const rest = (parent: string): Node[] => notes.others
       .filter((o) => notes.listed(o) && o.folder === parent && (!q || o.name.toLowerCase().includes(q)))
-      .map((o) => ({ id: o.id, name: o.name, other: o, ...(o.kind === 'stl' ? { icon: 'cube' as const } : { dimmed: true, detailTitle: 'Drag onto a note to embed it' }) }));
+      .map((o) => ({ id: o.id, name: o.name, other: o, ...(o.kind === 'stl' ? { icon: 'cube' as const } : o.kind === 'image' ? { icon: 'photo' as const }
+        : viewable(o.kind) ? {} : { dimmed: true, detailTitle: 'Drag onto a note to embed it' }) }));
     const sorted = (items: Node[]) => items.sort((a, b) => a.name.localeCompare(b.name));
     const build = (parent: string): Node[] => [...notes.folders
       .filter((f) => f.parent === parent && notes.shown(f))
@@ -45,7 +46,7 @@ export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: F
     selectedIds={[notes.selectedId ?? notes.folderId]}
     onSelectionChange={([id]) => {
       const node = find(nodes, id);
-      if (node?.note || node?.other?.kind === 'stl') onOpen(node.id);
+      if (node?.note || (node?.other && viewable(node.other.kind))) onOpen(node.id);
     }}
     contextMenu={(node) => {
       const n = node as Node;

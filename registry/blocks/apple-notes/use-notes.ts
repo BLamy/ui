@@ -4,8 +4,12 @@ import { BROWSER_ROOT, FileConflict, fileId, fileKind, folderId as fileFolderId,
 
 export type NotesView = 'list' | 'tree';
 /** All Files lists everything (files Notes can't open dimmed); each type lists only its files, and the folders with some in them. */
-export type FileFilter = 'all' | 'markdown' | 'stl';
-/** A file that isn't a note: an STL model opens in the 3D viewer, anything else is listed by name. */
+export type FileFilter = 'all' | 'markdown' | 'stl' | 'image' | 'data';
+/** The kinds a filter other than Markdown lists. */
+export const FILTER_KINDS: Record<Exclude<FileFilter, 'all' | 'markdown'>, readonly FileKind[]> = { stl: ['stl'], image: ['image'], data: ['json', 'yaml'] };
+/** Files that open in the detail column: models, images and data. */
+export const viewable = (kind: FileKind) => kind === 'stl' || kind === 'image' || kind === 'json' || kind === 'yaml';
+/** A file that isn't a note: a model, image or data file opens in its viewer, anything else is listed by name. */
 export interface OtherFile { id: string; path: string; name: string; folder: string; kind: FileKind }
 /** Files dragged onto another location, waiting for Move or Copy. */
 export interface Transfer { paths: string[]; to: Folder }
@@ -92,30 +96,33 @@ export function useNotes({ folder: initialFolder = ROOT_FOLDER.id, note: initial
     id: `other:${path}`, path, name: path.slice(path.lastIndexOf('/') + 1), folder: fileFolderId(path.slice(0, path.lastIndexOf('/'))),
     kind: fileKind(path),
   })), [files.others]);
-  // Folders with a note somewhere inside, with a model inside, and with any file at all inside.
-  const { withNotes, withModels, withFiles } = useMemo(() => {
+  // Folders with a note somewhere inside, with each kind of file inside, and with any file at all inside.
+  const { withNotes, withKind, withFiles } = useMemo(() => {
     const ancestors = (path: string, into: Set<string>) => {
       for (let i = path.lastIndexOf('/'); i > 0; i = path.lastIndexOf('/', i - 1)) into.add(path.slice(0, i));
     };
     const withNotes = new Set<string>();
     for (const n of notes) if (!n.file.standalone) ancestors(n.file.path, withNotes);
-    const withModels = new Set<string>();
-    for (const o of others) if (o.kind === 'stl') ancestors(o.path, withModels);
-    const withFiles = new Set([...withNotes, ...withModels]);
+    const withKind = new Map<FileKind, Set<string>>();
+    for (const o of others) {
+      if (!withKind.has(o.kind)) withKind.set(o.kind, new Set());
+      ancestors(o.path, withKind.get(o.kind)!);
+    }
+    const withFiles = new Set(withNotes);
     for (const o of others) ancestors(o.path, withFiles);
-    return { withNotes, withModels, withFiles };
+    return { withNotes, withKind, withFiles };
   }, [notes, others]);
   /** Under one file type, a folder without any of it is hidden. Empty folders (a new one) and the folder you're in stay. */
   const shown = (f: Folder) => filter === 'all' || !f.path || f.parent === ROOT_FOLDER.id
-    || (filter === 'markdown' ? withNotes : withModels).has(f.path) || !withFiles.has(f.path)
+    || (filter === 'markdown' ? withNotes.has(f.path) : FILTER_KINDS[filter].some((k) => withKind.get(k)?.has(f.path!))) || !withFiles.has(f.path)
     || trail.some((t) => t.id === f.id);
   /** The files a filter lists besides notes. */
-  const listed = (o: OtherFile) => filter === 'all' || o.kind === filter;
+  const listed = (o: OtherFile) => filter === 'all' || (filter !== 'markdown' && FILTER_KINDS[filter].includes(o.kind));
 
   function contents(f: Folder) {
     const q = query.trim().toLowerCase();
     const inside = (folder: string, path: string) => q ? !!f.path && path.startsWith(`${f.path}/`) : folder === f.id;
-    const list = filter === 'stl' ? [] : notes.filter((n) => q
+    const list = filter !== 'all' && filter !== 'markdown' ? [] : notes.filter((n) => q
       ? (n.folder === f.id || inside(n.folder, n.file.path)) && `${title(n)}\n${n.body}`.toLowerCase().includes(q)
       : n.folder === f.id).sort((a, b) => a.file.name.localeCompare(b.file.name));
     const children = folders.filter((child) => child.parent === f.id && shown(child));
@@ -125,8 +132,8 @@ export function useNotes({ folder: initialFolder = ROOT_FOLDER.id, note: initial
 
   return {
     notes, folder, folders, roots, others, filter, setFilter, shown, listed, trail, rootFolder, selected, selectedId, query, view, count, files, drafts, creating, renaming, deleting,
-    /** The model open in the detail column, when the selection is an STL file rather than a note. */
-    selectedFile: others.find((o) => o.id === selectedId && o.kind === 'stl') ?? null,
+    /** The file open in the detail column, when the selection is a model, image or data file rather than a note. */
+    selectedFile: others.find((o) => o.id === selectedId && viewable(o.kind)) ?? null,
     transfer, setTransfer,
     folderId: folder.id, sidebarId: rootFolder?.id ?? null,
     list: contents(folder).list, contents, setQuery, save, setView, setCreating, setRenaming, setDeleting,

@@ -40,6 +40,8 @@ export function FilterMenu({ filter, onChange }: { filter: FileFilter; onChange:
       <DropdownMenuSeparator />
       <DropdownMenuItem id="markdown" icon={<Icon name="note" size={20} />}>Markdown</DropdownMenuItem>
       <DropdownMenuItem id="stl" icon={<Icon name="cube" size={20} />}>3D Models (STL)</DropdownMenuItem>
+      <DropdownMenuItem id="image" icon={<Icon name="photo" size={20} />}>Images</DropdownMenuItem>
+      <DropdownMenuItem id="data" icon={<Icon name="list" size={20} />}>JSON &amp; YAML</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>;
 }
