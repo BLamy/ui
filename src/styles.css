@@ -1555,14 +1555,14 @@
 .docs-mermaid-preview {
   /* Pele draws with these; they follow the theme without a redraw. */
   --pele-bg: transparent;
-  --pele-fg: var(--gb-panel-foreground);
+  --pele-fg: var(--gb-panel-foreground, currentColor);
   --pele-muted: var(--gb-muted-foreground);
   --pele-line: var(--gb-muted-foreground);
-  --pele-surface: var(--gb-hover);
+  --pele-surface: var(--gb-hover, rgba(128, 128, 128, 0.12));
   --pele-surface-alt: var(--gb-code-bg);
   --pele-border: var(--gb-border);
   --pele-accent: var(--gb-primary);
-  --pele-error: var(--gb-danger);
+  --pele-error: var(--gb-danger, #ef4444);
   --pele-radius: 6px;
 }
 
@@ -1575,7 +1575,7 @@
   border-radius: 16px;
   overflow: hidden;
   background: var(--gb-panel);
-  color: var(--gb-panel-foreground);
+  color: var(--gb-panel-foreground, inherit);
 }
 
 .docs-split-grid {
