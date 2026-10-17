@@ -103,7 +103,7 @@ export function Tab({ className, children, ...props }: AriaTabProps) {
     >
       {composeRenderProps(children, (kids) => (
         <>
-          <SelectionIndicator data-slot="tab-indicator" className={variant === 'underline' ? underlineIndicator : cn(segmentIndicator, 'bg-card')} />
+          <SelectionIndicator data-slot="tab-indicator" className={variant === 'underline' ? underlineIndicator : segmentIndicator} />
           {kids}
         </>
       ))}
