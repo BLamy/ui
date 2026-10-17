@@ -66,7 +66,7 @@ export function TreeItem<T extends object>({ title, textValue, icon, trailing, c
     >
       <TreeItemContent>
         {(state) => {
-          const { hasChildItems, isExpanded, isSelected, isFocusVisible, isDisabled, level } = state;
+          const { hasChildItems, isExpanded, isSelected, isFocusVisible, isDisabled, level, allowsDragging } = state;
           const row = (
             <div
               data-slot="tree-item-row"
@@ -99,6 +99,8 @@ export function TreeItem<T extends object>({ title, textValue, icon, trailing, c
               ) : <span aria-hidden="true" className="shrink-0" style={{ width: CHEVRON }} />}
               {icon ? <span data-slot="tree-item-icon" className="grid shrink-0 place-items-center">{typeof icon === 'function' ? icon(state) : icon}</span> : null}
               <span data-slot="tree-item-title" className="min-w-0 flex-1 truncate">{title}</span>
+              {/* With `dragAndDropHooks`: the handle keyboard and screen-reader users drag with (focus the row, then Tab to it). */}
+              {allowsDragging ? <AriaButton slot="drag" aria-label={`Drag ${text}`} className="sr-only">≡</AriaButton> : null}
               {trailing ? <span data-slot="tree-item-trailing" className={cn('flex shrink-0 items-center gap-1.5 text-footnote tabular-nums',
                 isSelected ? 'text-primary-foreground/85' : 'text-muted-foreground')}>{typeof trailing === 'function' ? trailing(state) : trailing}</span> : null}
             </div>
