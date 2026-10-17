@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "1.14.1",
+  "version": "1.15.0",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "publishConfig": {
     "access": "public"
@@ -145,7 +145,7 @@
     "gpu-lexer": "^0.0.2",
     "katex": "^0.18.5",
     "lucide-react": "^1.17.0",
-    "mermaid": "^11.15.0",
+    "pele": "1.6.0",
     "react-aria": "^3.52.1",
     "rrweb": "2.0.0-alpha.20",
     "yaml": "^2.9.0"

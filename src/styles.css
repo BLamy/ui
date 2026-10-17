@@ -1545,32 +1545,134 @@
 }
 
 .docs-mermaid-preview {
+  /* Pele draws with these; they follow the theme without a redraw. */
+  --pele-bg: transparent;
+  --pele-fg: var(--gb-panel-foreground);
+  --pele-muted: var(--gb-muted-foreground);
+  --pele-line: var(--gb-muted-foreground);
+  --pele-surface: var(--gb-hover);
+  --pele-surface-alt: var(--gb-code-bg);
+  --pele-border: var(--gb-border);
+  --pele-accent: var(--gb-primary);
+  --pele-error: var(--gb-danger);
+  --pele-radius: 6px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   border: 1px solid var(--gb-border);
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
+  background: var(--gb-panel);
+  color: var(--gb-panel-foreground);
+}
+
+.docs-pele-pane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 14px 18px 18px;
+}
+
+/* Side by side, a hairline between; stacked, a hairline above the drawing. */
+.docs-pele-source-pane {
+  box-shadow: 1px 0 0 var(--gb-border), 0 1px 0 var(--gb-border);
+}
+
+.docs-pele-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+  margin-bottom: 10px;
+}
+
+.docs-pele-label {
+  font-size: 13px;
+  color: var(--gb-muted-foreground);
+}
+
+.docs-pele-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  margin-right: -6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--gb-muted-foreground);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.docs-mermaid-preview a.docs-pele-action {
+  color: var(--gb-muted-foreground);
+  text-decoration: none;
+}
+
+.docs-pele-action:hover,
+.docs-mermaid-preview a.docs-pele-action:hover {
+  background: var(--gb-hover);
+  color: var(--gb-panel-foreground);
+}
+
+.docs-pele-action:focus-visible {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: 1px;
+}
+
+.docs-pele-source {
+  margin: 0;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre;
+}
+
+.docs-mermaid-preview .docs-pele-source code {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: inherit;
 }
 
 .docs-mermaid {
   display: flex;
+  flex: 1;
+  align-items: center;
   justify-content: center;
-  padding: 16px;
-  background: var(--background, #ffffff);
+  min-height: 120px;
+  padding: 8px 0 18px;
 }
 
 .docs-mermaid svg {
   max-width: 100%;
+  height: auto;
+}
+
+.docs-mermaid-pending {
+  font-size: 13px;
+  color: var(--gb-muted-foreground);
+}
+
+.docs-pele-time {
+  position: absolute;
+  right: 18px;
+  bottom: 12px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gb-muted-foreground);
 }
 
 .docs-mermaid-error {
   margin: 0;
   font-size: 12px;
   color: var(--gb-danger);
-  padding: 10px;
   white-space: pre-wrap;
-}
-
-.docs-mermaid-code {
-  border-top: 1px solid var(--gb-border);
 }
 
 .docs-inline-img {

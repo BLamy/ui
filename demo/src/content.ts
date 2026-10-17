@@ -803,9 +803,9 @@ export function hello(name: string) {
 }
 \`\`\`
 
-Indented (4-space) code blocks are also recognized. Fences with language \`mermaid\` render as diagrams with an expandable source block. The source defaults to 3 collapsed lines and a 30-line expanded scroll cap; set \`collapsedCodeLines\` and \`expandedCodeLines\` on the fence to customize them:
+Indented (4-space) code blocks are also recognized. Fences with language \`mermaid\` are drawn by [Pele](https://pele.run): the source on the left, the diagram on the right with a link to Pele's playground and the render time. On a narrow page the two stack:
 
-\`\`\`mermaid collapsedCodeLines="4" expandedCodeLines="24"
+\`\`\`mermaid
 graph LR
   MD[markdown] --> P(parseMarkdown)
   P --> AST[block AST]
@@ -1083,7 +1083,7 @@ The stylesheet (\`@brett_lamy/docstream/styles.css\`) is driven entirely by CSS 
 | \`--gb-code-bg\` | — | \`rgba(128, 128, 128, 0.13)\` |
 | \`--gb-code-fg\` | \`--foreground\` | \`#18181b\` |
 
-Mermaid surfaces also read \`--background\` / \`--foreground\` directly with the same fallback pattern.
+Mermaid diagrams map these onto Pele's \`--pele-*\` variables, so a theme switch recolors them without a redraw. Set a \`--pele-*\` variable on \`.docs-mermaid-preview\` to override one.
 
 ### Semantic hint palette
 

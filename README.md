@@ -13,7 +13,7 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
   Markdown vs HTML images, blank lines between blocks, list markers, fences, table layout and tag lines as written).
   Layout-only fields (`gap`, `raw`, `opening`, …) are recorded only where the source differs from the default
   output, and are ignored once they no longer fit an edited node.
-- Syntax-highlighted code blocks through `gpu-lexer`; Mermaid diagrams and KaTeX math load on first use.
+- Syntax-highlighted code blocks through `gpu-lexer`; Mermaid diagrams (drawn by [Pele](https://pele.run)) and KaTeX math load on first use.
 - GitBook block support for hints, tabs, expandables, steppers, embeds, content refs, columns, figures, tables, math, dividers, updates, and OpenAPI operations.
 - Embed blocks render YouTube/direct video URLs through the built-in `VideoEmbed` and public Loop QA task, journey, exploration, or test-run URLs through `ReplayPreview`.
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.
@@ -31,8 +31,20 @@ pnpm add @brett_lamy/docstream
 React and React DOM are peer dependencies and must be provided by your app.
 Nothing in docstream's dependency tree runs an install script, so
 `pnpm add` succeeds with no build-script prompts (no `ERR_PNPM_IGNORED_BUILDS`).
-Heavy renderers are loaded only when a page needs them: Mermaid for
-` ```mermaid ` fences, KaTeX for math blocks, rrweb for replay event lists.
+Heavy renderers are loaded only when a page needs them: Pele for
+` ```mermaid ` fences (only the diagram types the page uses), KaTeX for math
+blocks, rrweb for replay event lists.
+
+` ```mermaid ` fences are drawn by [Pele](https://pele.run), which turns Mermaid
+text into SVG synchronously, without Mermaid or a browser layout pass. Each
+diagram is a card: the source on the left (with a copy button), the drawing on
+the right with **Open in Playground** and the render time; the panes stack on a
+narrow page. Pele reads its colors from `--pele-*` variables, which docstream
+maps to its theme on `.docs-mermaid-preview`. `PeleDiagram` (the drawing pane)
+and `usePele(code, ref)` are exported for hosts that show the source
+themselves, as the editor does. Pele supports every diagram type built into
+Mermaid, though its layout is its own. A diagram it can't draw shows Pele's
+error as text.
 
 Two features are opt-in, each behind its own entry and an **optional** peer
 dependency that the rest of the package never references:
@@ -840,7 +852,7 @@ import { ReactDemo } from "@brett_lamy/docstream/playground"
 
 Since 1.4 the package ships compiled ES modules (ES2022, `react-jsx`) with type
 declarations and declaration maps — one file per source module in `dist/`,
-dependencies left as imports, lazy features (Mermaid, KaTeX, rrweb, the
+dependencies left as imports, lazy features (Pele, KaTeX, rrweb, the
 playground's almost-node) still behind dynamic `import()`:
 
 ```json
