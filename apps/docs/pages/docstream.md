@@ -43,7 +43,7 @@ import { MarkdownView } from '@brett_lamy/ui'
 - Block quotes and horizontal rules
 - Tables and fenced code blocks with syntax highlighting
 - GitBook blocks supported by Docstream, including hints, tabs, expandables, and embeds
-- Package-manager commands, steppers, columns, figures, card tables, math, Mermaid diagrams, updates, OpenAPI operations, source references, and live demos
+- Package-manager commands, steppers, columns, figures, card tables, math (TeX beside KaTeX), Mermaid diagrams (drawn by [Pele](https://pele.run), source beside the drawing), updates, OpenAPI operations, source references, and live demos
 
 The `MarkdownView` wrapper keeps BL UI's `wb-md` styling and sets `data-renderer="docstream"`. Docstream renders structured React elements rather than injecting raw HTML.
 
