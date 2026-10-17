@@ -18,3 +18,5 @@ export function resolveAsset(src: string): string {
   if (!assetBase) return src
   return assetBase + src.replace(/^\.\//, "")
 }
+
+export { AssetResolverContext, AssetResolverProvider, useAsset, type AssetResolver } from "./asset-resolver"

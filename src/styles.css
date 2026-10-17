@@ -460,6 +460,14 @@
   gap: 6px;
 }
 
+/* An asset the host's resolver hasn't returned yet. */
+.docstream-asset-pending {
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  background: var(--gb-muted, #f4f4f5);
+}
+
 .docstream-stl__stage {
   position: relative;
   aspect-ratio: 16 / 9;

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useId, useMemo, useState, type ReactNode } from "react"
+import { useContext, useEffect, useId, useMemo, useState, type ComponentProps, type ReactNode } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import {
   AlertTriangle,
@@ -13,7 +13,7 @@ import {
 import type { Block, CodeBlockNode, CommandNode, DocumentNode, Inline, PackageManager, SourceRefNode } from "../gitbook/ast"
 import { PACKAGE_MANAGERS, packageManagerCommands } from "../gitbook/package-managers"
 import { slugify } from "../gitbook/outline"
-import { resolveAsset } from "../assets"
+import { resolveAsset, useAsset } from "../assets"
 import { parseMarkdown } from "../gitbook/parse"
 import { serializeMarkdown } from "../gitbook/serialize"
 import { DocstreamDemoContext, DocstreamDemoRuntimeContext, DocstreamDemoVFSContext } from "../demo/context"
@@ -91,8 +91,8 @@ function InlineText({ nodes }: { nodes: Inline[] }) {
           el = <InlineReference node={n} />
         } else if (n.type === "image") {
           const img = (
-            <img
-              src={resolveAsset(n.src)}
+            <AssetImg
+              url={n.src}
               alt={n.alt ?? ""}
               className="docs-inline-img"
               style={{ width: n.width, height: n.height }}
@@ -426,10 +426,10 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         return <ReplayPreview source={block.url} title="Replay preview" />
       }
       if (isStlUrl(block.url)) {
-        return <StlViewer src={resolveAsset(block.url)} {...(block.title ? { title: block.title } : {})} />
+        return <AssetStl url={block.url} {...(block.title ? { title: block.title } : {})} />
       }
       if (isStrudelFile(block.url)) {
-        return <StrudelPlayer src={resolveAsset(block.url)} {...(block.title ? { title: block.title } : {})} />
+        return <AssetStrudel url={block.url} {...(block.title ? { title: block.title } : {})} />
       }
       const src = embedSrc(block.url)
       return src || isDirectVideo(block.url) ? (
@@ -484,7 +484,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
     case "figure":
       return (
         <figure className="docs-figure">
-          {block.src && <img src={resolveAsset(block.src)} alt={block.alt} />}
+          {block.src && <AssetImg url={block.src} alt={block.alt} />}
           {block.caption && <figcaption>{block.caption}</figcaption>}
         </figure>
       )
@@ -710,4 +710,20 @@ export function DocsRenderer({
       <CitationSources citations={doc.citations} />
     </article>,
   )
+}
+
+// Assets go through the host's resolver (AssetResolverProvider) when there is one.
+function AssetImg({ url, ...props }: { url: string } & Omit<ComponentProps<"img">, "src">) {
+  const src = useAsset(url)
+  return <img src={src} {...props} />
+}
+
+function AssetStl({ url, title }: { url: string; title?: string }) {
+  const src = useAsset(url)
+  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StlViewer src={src} {...(title ? { title } : {})} />
+}
+
+function AssetStrudel({ url, title }: { url: string; title?: string }) {
+  const src = useAsset(url)
+  return src === undefined ? <div className="docstream-asset-pending" aria-busy="true" /> : <StrudelPlayer src={src} {...(title ? { title } : {})} />
 }

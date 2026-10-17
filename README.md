@@ -732,6 +732,21 @@ setAssetBase("/docs/assets/")
 
 You can also resolve paths yourself with `resolveAsset`.
 
+An app that opens Markdown from a folder can resolve each asset itself. Wrap the rendered document in
+`AssetResolverProvider`; images, figures, `.stl` and `.strudel` embeds ask it for the URL to load (a `blob:`
+URL of the file, say). Return nothing to fall back to `resolveAsset`. A promise is fine: STL and Strudel
+embeds show a placeholder until it settles.
+
+```tsx
+import { AssetResolverProvider, MarkdownContent } from "@brett_lamy/docstream"
+
+<AssetResolverProvider resolve={(url) => (url.startsWith("./") ? blobUrlFor(url) : null)}>
+  <MarkdownContent markdown={markdown} />
+</AssetResolverProvider>
+```
+
+`useAsset(url)` gives the same answer inside your own components (undefined while pending).
+
 ## API Reference
 
 ### Components

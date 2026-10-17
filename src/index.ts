@@ -103,7 +103,7 @@ export type {
   InlineDemoProjectOptions,
   ReactDemoFilesOptions,
 } from "./playground/project"
-export { resolveAsset, setAssetBase } from "./assets"
+export { resolveAsset, setAssetBase, AssetResolverContext, AssetResolverProvider, useAsset, type AssetResolver } from "./assets"
 export { createBundledSourceClient, createViteSourceClient, SourcePreview } from "./source"
 export type {
   BundledSourceModule,
