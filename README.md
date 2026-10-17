@@ -40,7 +40,11 @@ text into SVG synchronously, without Mermaid or a browser layout pass. Each
 diagram is a card: the source on the left (with a copy button), the drawing on
 the right with **Open in Playground** and the render time; the panes stack on a
 narrow page. Pele reads its colors from `--pele-*` variables, which docstream
-maps to its theme on `.docs-mermaid-preview`. `PeleDiagram` (the drawing pane)
+maps to its theme on `.docs-mermaid-preview`. Math blocks (`$$ … $$`) use the same card: the TeX on the left, KaTeX's
+typesetting on the right. The card is side by side when it is at least 640px
+wide and stacks below that (a container query, so it follows the card, not the
+window). `SplitCard`, `SplitSource` and `SplitResult` build it.
+`PeleDiagram` (the drawing pane)
 and `usePele(code, ref)` are exported for hosts that show the source
 themselves, as the editor does. Pele supports every diagram type built into
 Mermaid, though its layout is its own. A diagram it can't draw shows Pele's

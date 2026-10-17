@@ -30,10 +30,10 @@ describe("Mermaid (Pele)", () => {
   it("shows the source beside Pele's drawing, with a playground link and the render time", async () => {
     act(() => root.render(<MarkdownContent markdown={"```mermaid\n" + FLOW + "\n```"} />))
     const card = host.querySelector("[data-docstream-mermaid]")!
-    expect(card.querySelector(".docs-pele-source")?.textContent).toContain("A[Mermaid text]")
+    expect(card.querySelector(".docs-split-source")?.textContent).toContain("A[Mermaid text]")
     await until(() => !!card.querySelector(".docs-mermaid svg.pele"))
     expect(card.querySelector(".docs-mermaid svg")?.textContent).toContain("Flowchart?")
-    expect(card.querySelector<HTMLAnchorElement>("a.docs-pele-action")?.href).toBe(pelePlaygroundUrl(FLOW))
+    expect(card.querySelector<HTMLAnchorElement>("a.docs-split-action")?.href).toBe(pelePlaygroundUrl(FLOW))
     expect(card.querySelector(".docs-pele-time")?.textContent).toMatch(/ms$/)
   })
 
@@ -46,5 +46,16 @@ describe("Mermaid (Pele)", () => {
   it("leaves long sources out of the playground link", () => {
     expect(pelePlaygroundUrl("graph TD\n" + "  A --> B\n".repeat(2000))).toBeNull()
     expect(pelePlaygroundUrl("graph TD\n  A --> B")).toBe("https://pele.run/playground#source=graph+TD%0A++A+--%3E+B")
+  })
+})
+
+describe("math blocks", () => {
+  it("show the TeX beside KaTeX's typesetting", async () => {
+    act(() => root.render(<MarkdownContent markdown={"$$\nE = mc^2\n$$"} />))
+    const card = host.querySelector("[data-docstream-math]")!
+    expect(card.classList.contains("docs-split-card")).toBe(true)
+    expect(card.querySelector(".docs-split-source")?.textContent).toContain("E = mc^2")
+    await until(() => !!card.querySelector(".docs-math .katex"))
+    expect([...card.querySelectorAll(".docs-split-label")].map((l) => l.textContent)).toEqual(["LaTeX", "KaTeX"])
   })
 })

@@ -16,7 +16,7 @@ describe("DocStream markdown defaults", () => {
 
   it("sets predefined spacing on rendered markdown blocks", () => {
     expect(styles).toContain("[data-docstream-blocks] > * {\n  margin-block: 0.75em;")
-    expect(styles).toContain("> :is(.docs-cards, .docs-code, .docs-math, .docs-hint")
+    expect(styles).toContain("> :is(.docs-cards, .docs-code, .docs-split-card, .docs-hint")
     expect(styles).toContain("[data-docstream-blocks] > :is(h1, h2, h3, h4, h5, h6) {\n  margin-block: 1.6em 0.45em;")
   })
 

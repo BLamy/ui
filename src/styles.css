@@ -149,7 +149,7 @@
   margin-block: 0.75em;
 }
 
-:is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-cards, .docs-code, .docs-math, .docs-hint, .docs-tabs, .docs-demo, .docs-expandable, .docs-stepper, .docs-mermaid-preview, .oas, .docs-embed, .docstream-viz, figure, blockquote, ul, ol, hr) {
+:is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-cards, .docs-code, .docs-split-card, .docs-hint, .docs-tabs, .docs-demo, .docs-expandable, .docs-stepper, .oas, .docs-embed, .docstream-viz, figure, blockquote, ul, ol, hr) {
   margin-block: 0.75em;
 }
 
@@ -1479,12 +1479,20 @@
   font-weight: 600;
 }
 
+/* TeX wraps rather than scrolls: one long line is the usual shape. */
+.docs-math-card .docs-split-source {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .docs-math {
-  border: 1px solid var(--gb-border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  background: var(--gb-muted);
-  text-align: center;
+  font-size: 1.1em;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  padding: 4px 0 8px;
   overflow-x: auto;
 }
 
@@ -1556,8 +1564,13 @@
   --pele-accent: var(--gb-primary);
   --pele-error: var(--gb-danger);
   --pele-radius: 6px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+/* A source-and-result card (Mermaid → Pele, LaTeX → KaTeX): side by side when the card is wide, the source above
+   the result when it isn't. */
+.docs-mermaid-preview,
+.docs-split-card {
+  container-type: inline-size;
   border: 1px solid var(--gb-border);
   border-radius: 16px;
   overflow: hidden;
@@ -1565,7 +1578,21 @@
   color: var(--gb-panel-foreground);
 }
 
-.docs-pele-pane {
+.docs-split-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container (min-width: 640px) {
+  .docs-split-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .docs-split-grid > .docs-split-source-pane {
+    box-shadow: 1px 0 0 var(--gb-border);
+  }
+}
+
+.docs-split-pane {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1573,12 +1600,12 @@
   padding: 14px 18px 18px;
 }
 
-/* Side by side, a hairline between; stacked, a hairline above the drawing. */
-.docs-pele-source-pane {
-  box-shadow: 1px 0 0 var(--gb-border), 0 1px 0 var(--gb-border);
+/* Stacked, a hairline under the source; side by side, one between the panes (above). */
+.docs-split-source-pane {
+  box-shadow: 0 1px 0 var(--gb-border);
 }
 
-.docs-pele-head {
+.docs-split-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1587,12 +1614,12 @@
   margin-bottom: 10px;
 }
 
-.docs-pele-label {
+.docs-split-label {
   font-size: 13px;
   color: var(--gb-muted-foreground);
 }
 
-.docs-pele-action {
+.docs-split-action {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1608,23 +1635,23 @@
   cursor: pointer;
 }
 
-.docs-mermaid-preview a.docs-pele-action {
+:is(.docs-mermaid-preview, .docs-split-card) a.docs-split-action {
   color: var(--gb-muted-foreground);
   text-decoration: none;
 }
 
-.docs-pele-action:hover,
-.docs-mermaid-preview a.docs-pele-action:hover {
+.docs-split-action:hover,
+:is(.docs-mermaid-preview, .docs-split-card) a.docs-split-action:hover {
   background: var(--gb-hover);
   color: var(--gb-panel-foreground);
 }
 
-.docs-pele-action:focus-visible {
+.docs-split-action:focus-visible {
   outline: 2px solid var(--gb-primary);
   outline-offset: 1px;
 }
 
-.docs-pele-source {
+.docs-split-source {
   margin: 0;
   overflow: auto;
   font-size: 13px;
@@ -1632,7 +1659,7 @@
   white-space: pre;
 }
 
-.docs-mermaid-preview .docs-pele-source code {
+.docs-split-source code {
   padding: 0;
   border: 0;
   border-radius: 0;

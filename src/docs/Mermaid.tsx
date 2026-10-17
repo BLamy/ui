@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react"
 import { Play } from "lucide-react"
-import { HighlightedCode } from "./HighlightedCode"
-import { CopyIcon, useCopied } from "./copy"
+import { SplitCard, SplitSource } from "./SplitCard"
 
 /* Mermaid diagrams, drawn by Pele (https://pele.run): Mermaid text in, SVG out, synchronously and with no
    browser layout pass. A diagram is a card of two panes — the source on the left, the drawing on the right with
@@ -72,11 +71,11 @@ export function PeleDiagram({ code, className, children }: { code: string; class
   const drawn = usePele(code, host)
   const playground = pelePlaygroundUrl(code)
   return (
-    <div ref={host} className={`docs-pele-pane docs-pele-diagram-pane${className ? ` ${className}` : ""}`}>
-      <div className="docs-pele-head">
-        <span className="docs-pele-label">Pele</span>
+    <div ref={host} className={`docs-split-pane docs-split-render-pane${className ? ` ${className}` : ""}`}>
+      <div className="docs-split-head">
+        <span className="docs-split-label">Pele</span>
         {playground ? (
-          <a className="docs-pele-action" href={playground} target="_blank" rel="noreferrer">
+          <a className="docs-split-action" href={playground} target="_blank" rel="noreferrer">
             <Play width={14} height={14} strokeWidth={2} aria-hidden="true" />
             Open in Playground
           </a>
@@ -97,21 +96,10 @@ export function PeleDiagram({ code, className, children }: { code: string; class
 }
 
 export function Mermaid({ code }: MermaidProps) {
-  const { copied, copy } = useCopied()
   return (
-    <section className="docs-mermaid-preview" data-docstream-mermaid="">
-      <div className="docs-pele-pane docs-pele-source-pane">
-        <div className="docs-pele-head">
-          <span className="docs-pele-label">Mermaid</span>
-          <button type="button" className="docs-pele-action docs-pele-copy" aria-label={copied ? "Copied" : "Copy Mermaid source"} onClick={() => void copy(code)}>
-            <CopyIcon copied={copied} size={16} />
-          </button>
-        </div>
-        <pre className="docs-pele-source">
-          <HighlightedCode code={code} language="mermaid" />
-        </pre>
-      </div>
+    <SplitCard className="docs-mermaid-preview" data-docstream-mermaid="">
+      <SplitSource label="Mermaid" code={code} language="mermaid" />
       <PeleDiagram code={code} />
-    </section>
+    </SplitCard>
   )
 }

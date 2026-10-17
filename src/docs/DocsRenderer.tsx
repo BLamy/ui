@@ -21,6 +21,7 @@ import type { DemoVFS } from "../demo/vfs"
 import { DemoBlock } from "../demo/DemoViewer"
 import type { DemoResolver, InlineDemoRuntime } from "../demo/types"
 import { CopyButton } from "./copy"
+import { SplitCard, SplitResult, SplitSource } from "./SplitCard"
 import { PillTabs, rovingKeyDown } from "./controls"
 import { DocPageActions, type DocPageActionsOptions } from "./PageActions"
 import { useSyncedTab } from "./tabs-sync"
@@ -47,7 +48,8 @@ function loadMathRenderer(): Promise<MathRenderer> {
   return mathLoad
 }
 
-// KaTeX loads on first use; until then the TeX source shows in place.
+// A math block is a card: the TeX on the left, KaTeX's typesetting on the right (stacked when narrow). KaTeX loads on
+// first use; until then the result pane shows the TeX.
 function MathBlock({ formula }: { formula: string }) {
   const [render, setRender] = useState<MathRenderer | null>(() => mathRenderer)
   useEffect(() => {
@@ -58,14 +60,20 @@ function MathBlock({ formula }: { formula: string }) {
       live = false
     }
   }, [render])
-  if (!render) {
-    return (
-      <div className="docs-math" data-pending="">
-        <code>{formula}</code>
-      </div>
-    )
-  }
-  return <div className="docs-math" dangerouslySetInnerHTML={{ __html: render(formula) }} />
+  return (
+    <SplitCard className="docs-math-card" data-docstream-math="">
+      <SplitSource label="LaTeX" code={formula} language="latex" />
+      <SplitResult label="KaTeX">
+        {render ? (
+          <div className="docs-math" dangerouslySetInnerHTML={{ __html: render(formula) }} />
+        ) : (
+          <div className="docs-math" data-pending="">
+            <code>{formula}</code>
+          </div>
+        )}
+      </SplitResult>
+    </SplitCard>
+  )
 }
 
 export interface LivePreviewProps {
