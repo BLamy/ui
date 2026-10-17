@@ -14,6 +14,7 @@
           "color-warning": "var(--warning, oklch(0.769 0.165 70.1))",
           "color-tertiary-foreground": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))",
           "color-secondary-strong": "var(--secondary-strong, var(--accent))",
+          "color-segment": "var(--segment, var(--card))",
           "color-overlay": "var(--overlay, color-mix(in oklab, black 40%, transparent))",
           "color-bar": "var(--bar, color-mix(in oklab, var(--background) 85%, transparent))",
           "color-sticky": "var(--sticky, color-mix(in oklab, var(--muted) 92%, transparent))",
@@ -1322,7 +1323,8 @@
           "sticky": "rgba(18, 18, 20, .9)",
           "handle": "rgba(120, 120, 128, .34)",
           "code": "#101014",
-          "code-foreground": "#D8D8E2"
+          "code-foreground": "#D8D8E2",
+          "segment": "#636366"
         }
       },
       "css": {
@@ -1429,7 +1431,8 @@
           "--handle": "rgba(255, 255, 255, .22)",
           "--code": "#0C0C10",
           "--code-foreground": "#D8D8E2",
-          "--scope-terminal-background": "#0C0C10"
+          "--scope-terminal-background": "#0C0C10",
+          "--segment": "#636366"
         },
         "[data-theme-scope=\"terminal\"]": {
           "color-scheme": "dark",
@@ -1460,7 +1463,8 @@
           "--border": "rgba(84, 84, 88, .6)",
           "--input": "rgba(120, 120, 128, .24)",
           "--tertiary-foreground": "rgba(235, 235, 245, .32)",
-          "--secondary-strong": "rgba(120, 120, 128, .36)"
+          "--secondary-strong": "rgba(120, 120, 128, .36)",
+          "--segment": "#636366"
         },
         "[data-theme-scope=\"sheet\"].light": {
           "color-scheme": "light",

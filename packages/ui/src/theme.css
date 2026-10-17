@@ -97,6 +97,7 @@
   --handle: rgba(120, 120, 128, .34);
   --code: #101014;
   --code-foreground: #D8D8E2;
+  --segment: #636366;
 }
 
 /* ── Workbench scope (WorkbenchShell, WorkbenchTheme, Composer surfaces): dark-first IDE palette ── */
@@ -159,6 +160,7 @@
   --code: #0C0C10;
   --code-foreground: #D8D8E2;
   --scope-terminal-background: #0C0C10;
+  --segment: #636366;
 }
 
 /* ── Terminal scope: the Workbench's integrated terminal stays dark in both appearances ── */
@@ -195,6 +197,7 @@
   --input: rgba(120, 120, 128, .24);
   --tertiary-foreground: rgba(235, 235, 245, .32);
   --secondary-strong: rgba(120, 120, 128, .36);
+  --segment: #636366;
 }
 [data-theme-scope="sheet"].light {
   color-scheme: light;

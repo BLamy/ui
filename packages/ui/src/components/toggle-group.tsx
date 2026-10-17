@@ -62,7 +62,7 @@ export function ToggleGroupItem({ className, variant, size, children, ...props }
       {...props}
     >
       {slide
-        ? composeRenderProps(children, (kids) => <><SelectionIndicator data-slot="toggle-group-indicator" className={cn(segmentIndicator, 'bg-card')} />{kids}</>)
+        ? composeRenderProps(children, (kids) => <><SelectionIndicator data-slot="toggle-group-indicator" className={segmentIndicator} />{kids}</>)
         : children}
     </Toggle>
   );
