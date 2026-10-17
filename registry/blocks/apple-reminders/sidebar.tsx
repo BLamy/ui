@@ -1,10 +1,14 @@
 /* The lists column: search, the smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts,
-   and My Lists. On a phone it's the root screen and search results show right here. */
+   My Lists, then one section per place Markdown task lists come from — In This Browser and each folder you add
+   (both shared with Apple Notes). On a phone it's the root screen and search results show right here. */
+import { ContextMenu, ContextMenuContent } from '@/components/ui/context-menu';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { SearchField } from '@/components/ui/search-field';
 import { SplitViewContent, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { SMART, SYSTEM, TODAY_NUMBER, type RList, type Smart } from './data';
+import type { TaskRoot } from './use-task-files';
 import { ListIcon, ReminderRow } from './reminder-row';
 import { useReminders } from './store';
 import { buildView, countFor } from './views';
@@ -45,7 +49,9 @@ function ListItem({ l, collapsed }: { l: RList; collapsed: boolean }) {
     <SplitViewItem id={l.id} tint={l.color}
       className="min-h-[50px] gap-3 rounded-ctl px-3 text-body after:absolute after:right-0 after:bottom-0 after:left-[55px] after:h-px after:bg-border last:after:hidden data-selected:after:hidden">
       <ListIcon glyph={l.glyph} color={l.color} size={30} className="transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--list-color)" />
-      <span className="min-w-0 flex-1 truncate">{l.name}</span>
+      <span className="min-w-0 flex-1 truncate" title={l.file?.path}>{l.name}
+        {l.file ? <span className="block truncate text-footnote text-muted-foreground group-data-selected/item:text-white/80">{l.file.path.split('/').slice(1).join('/')}</span> : null}
+      </span>
       <span className="text-muted-foreground tabular-nums group-data-selected/item:text-white/85">{countFor(l.id, items)}</span>
       {collapsed ? <Icon name="chevron-right" size={14} weight="bold" className="text-tertiary-foreground" /> : null}
     </SplitViewItem>
@@ -69,6 +75,39 @@ function InlineResults() {
   );
 }
 
+const sectionTitle = 'text-title font-bold tracking-[-.2px] text-foreground';
+
+/** One place task lists come from: its Markdown files that have tasks, each a list. Right-click a folder to remove it. */
+function RootSection({ root, collapsed }: { root: TaskRoot; collapsed: boolean }) {
+  const api = useReminders();
+  const lists = api.lists.filter((l) => l.file?.root === root.path);
+  const heading = <span className={`-mx-1.5 mt-2 mb-0.5 flex items-center gap-2 ${sectionTitle}`}>
+    <Icon name={root.source === 'browser' ? 'note' : 'folder'} size={20} className="text-primary" />
+    <span className="min-w-0 flex-1 truncate">{root.name}</span>
+  </span>;
+  return (
+    <SplitViewSection title={root.source === 'local' ? <ContextMenu>
+      {heading}
+      <ContextMenuContent aria-label={`${root.name} actions`} onAction={(key) => { if (key === 'remove') api.removeFolder(root.path); }}>
+        <DropdownMenuItem id="remove" icon={<Icon name="xmark-circle" size={20} />}>Remove from Reminders and Notes</DropdownMenuItem>
+      </ContextMenuContent>
+    </ContextMenu> : heading}>
+      {!root.connected ? (
+        <button type="button" onClick={() => api.reconnect(root.path)}
+          className="bl-btn w-full cursor-pointer rounded-panel border-0 bg-card px-4 py-3 text-left [font-family:inherit] text-body text-primary">Reconnect folder</button>
+      ) : lists.length ? (
+        <div className="overflow-hidden rounded-panel bg-card">
+          {lists.map((l) => <ListItem key={l.id} l={l} collapsed={collapsed} />)}
+        </div>
+      ) : (
+        <p className="m-0 rounded-panel bg-card px-4 py-3 text-subhead leading-snug text-muted-foreground">
+          Markdown files with task lists (<code className="font-mono text-footnote">- [ ] …</code>) {root.source === 'browser' ? 'in Notes in this browser' : 'in this folder'} show up here.
+        </p>
+      )}
+    </SplitViewSection>
+  );
+}
+
 export function ListsSidebar() {
   const api = useReminders();
   const s = useSplitView();
@@ -80,15 +119,20 @@ export function ListsSidebar() {
         {api.query && s.collapsed ? <InlineResults /> : (
           <>
             <div className="grid grid-cols-2 gap-3">{SMART.map((t) => <SmartTile key={t.id} t={t} />)}</div>
-            <SplitViewSection title={<span className="-mx-1.5 mt-2 mb-0.5 block text-title font-bold tracking-[-.2px] text-foreground">My Lists</span>}>
+            <SplitViewSection title={<span className={`-mx-1.5 mt-2 mb-0.5 block ${sectionTitle}`}>My Lists</span>}>
               <div className="overflow-hidden rounded-panel bg-card">
-                {api.lists.map((l) => <ListItem key={l.id} l={l} collapsed={s.collapsed} />)}
+                {api.lists.filter((l) => !l.file).map((l) => <ListItem key={l.id} l={l} collapsed={s.collapsed} />)}
               </div>
             </SplitViewSection>
+            {api.roots.map((root) => <RootSection key={root.path} root={root} collapsed={s.collapsed} />)}
+            {api.error ? <p role="alert" className="mt-3 text-subhead text-destructive">{api.error}</p> : null}
           </>
         )}
       </SplitViewContent>
-      <div className="flex h-[50px] shrink-0 items-center justify-end px-4">
+      <div className="flex h-[50px] shrink-0 items-center justify-between px-4">
+        {api.canAddFolder ? (
+          <button type="button" onClick={api.addFolder} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-body" style={{ color: SYSTEM.blue }}>Add Folder…</button>
+        ) : <span />}
         <button type="button" onClick={addList} className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-body" style={{ color: SYSTEM.blue }}>Add List</button>
       </div>
     </SplitViewSidebar>
