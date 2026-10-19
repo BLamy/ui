@@ -20,6 +20,9 @@ importers:
       '@pierre/trees':
         specifier: 1.0.0-beta.6
         version: 1.0.0-beta.6(@pierre/theme@2.0.0)(@shikijs/themes@4.4.3)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(shiki@4.4.3)
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -29,6 +32,9 @@ importers:
       framer-motion:
         specifier: ^13.1.0
         version: 13.4.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      isomorphic-git:
+        specifier: ^1.41.9
+        version: 1.41.9
       perfect-freehand:
         specifier: ^1.2.3
         version: 1.2.3

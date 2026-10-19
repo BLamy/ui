@@ -8193,6 +8193,98 @@
       "meta": {
         "entry": "components/blocks/video-editor/page.tsx"
       }
+    },
+    {
+      "name": "worktree-atlas",
+      "type": "registry:block",
+      "title": "Worktree Atlas",
+      "description": "Every Git worktree under the folders you open, grouped by repository, running entirely in the browser: open folders with the File System Access API (remembered across visits) and Git is read in the page by isomorphic-git, no server or desktop app. Repositories in the sidebar with an All Worktrees item; the master list shows each worktree's branch, folder, last activity, size and chips (primary, pull request state, locked, missing, outside the opened folders), with search, swipe-to-delete and an Edit mode for bulk delete. Every delete goes through a confirmation Credenza that checks each worktree for uncommitted changes first and, like git worktree remove, keeps dirty ones unless you choose otherwise, keeps locked ones, and only prunes missing ones. The detail is the worktree's diff to main since it branched (uncommitted edits included): a summary with ahead/behind and line counts, the changed files as a Tree with Git status, and a virtualized @pierre/diffs CodeView, unified or split. Pluggable WorktreeSource (sample data included) so a desktop app can supply Git CLI results instead. Responsive SplitView on desktop, tablet and phone.",
+      "categories": [
+        "developer",
+        "git",
+        "application"
+      ],
+      "dependencies": [
+        "@pierre/diffs@^1.3.6",
+        "isomorphic-git@^1.41.9",
+        "buffer@^6.0.3"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/list.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/tree.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/worktree-atlas/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/page.tsx"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/sidebar.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/sidebar.tsx"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/worktree-list.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/worktree-list.tsx"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/diff-view.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/diff-view.tsx"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/delete-credenza.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/delete-credenza.tsx"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/parts.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/use-atlas.ts",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/use-atlas.ts"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/types.ts",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/types.ts"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/data.ts",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/data.ts"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/browser-source.ts",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/browser-source.ts"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/git-fs.ts",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/git-fs.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/worktree-atlas/page.tsx"
+      }
     }
   ]
 }

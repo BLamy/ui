@@ -50,6 +50,26 @@ The menu bar has two working status items. **Wi-Fi** opens a macOS-style menu: a
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/apple-mail.json{% endcommand %}
 
+{% demo src="blocks/worktree-atlas" layout="multi" %}
+
+Worktree Atlas finds every Git worktree under the folders you open and groups them by repository. It runs entirely in the browser: **Open Folder…** uses the File System Access API (the folders are remembered across visits; after a restart, press **Allow** to reconnect), and Git is read in the page by [isomorphic-git](https://isomorphic-git.org), straight out of each `.git`. Nothing is uploaded and there is no server. [OPFS](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system) can't do this: it is a private, empty disk for the site, so it can't see repositories that are already on your computer. Open the folder your projects live in, plus any folder your agents keep worktrees in (`~/.codex`, a repository's `.claude/worktrees`), so each repository's records of its worktrees can be matched to folders on disk.
+
+Repositories are in the sidebar; the master list shows a repository's worktrees, or all of them, with the branch, folder, last activity and status chips. Swipe a row for **Delete**, or press **Edit** to select several. Either way a [Credenza](https://blamy.github.io/ui/#/credenza) confirms first. It checks each worktree for uncommitted and untracked files, and, like `git worktree remove`, keeps those unless you tick the box. It keeps locked worktrees, and for a worktree whose folder is already gone it only prunes Git's record. Branches and commits stay in the repository. Selecting a worktree shows its diff to main since it branched, uncommitted edits included: the changed files as a [Tree](https://blamy.github.io/ui/#/tree) with Git status beside a virtualized [@pierre/diffs](https://diffs.com) view, unified or split.
+
+The data comes from a `WorktreeSource`, so a desktop app can supply its own Git CLI results (sizes, pull requests) instead:
+
+```tsx
+import WorktreeAtlas, { createDemoSource } from '@/components/blocks/worktree-atlas/page'
+
+<WorktreeAtlas />                              // folders opened in this browser
+<WorktreeAtlas source={createDemoSource()} />  // the sample repositories
+<WorktreeAtlas source={electronSource} />      // your own: scan, diff, status, remove
+```
+
+Opening folders needs a Chromium browser (Chrome, Edge, Arc); elsewhere the block shows the sample data.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/worktree-atlas.json{% endcommand %}
+
 {% demo src="blocks/apple-notes" layout="multi" %}
 
 Apple Notes starts with your own files. The **+** button at the top of the sidebar adds folders from your computer under **On My Mac**, opens individual Markdown files, and makes new notes and folders. The folders are remembered across reloads; if browser permission has expired, select a folder to reconnect. [use-fs](https://use-fs.com) watches the originals for changes. Local linking requires a desktop browser with the File System Access API.
