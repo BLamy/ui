@@ -23,7 +23,11 @@ class FileShim {
 class DirShim {
   readonly kind = 'directory' as const;
   constructor(readonly path: string, readonly name: string) {}
-  private at(name: string) { return join(this.path, name); }
+  /** Chrome's rule: one plain name, never empty, `.`, `..` or containing a slash. */
+  private at(name: string) {
+    if (!name || name === '.' || name === '..' || name.includes('/')) throw new TypeError(`Name is not allowed: ${JSON.stringify(name)}`);
+    return join(this.path, name);
+  }
   async getDirectoryHandle(name: string) {
     if (!existsSync(this.at(name))) throw notFound();
     if (!statSync(this.at(name)).isDirectory()) throw mismatch();

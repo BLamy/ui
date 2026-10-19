@@ -70,6 +70,16 @@ export function parseIndex(bytes: Uint8Array): Map<string, IndexStat> {
   return out;
 }
 
+/** isomorphic-git asks for paths like `/wt/./.gitignore`; Chrome rejects `.` and `..` as names, so resolve them. */
+function normalize(path: string) {
+  const parts: string[] = [];
+  for (const p of path.split('/')) {
+    if (p === '..') parts.pop();
+    else if (p && p !== '.') parts.push(p);
+  }
+  return `/${parts.join('/')}`;
+}
+
 export class HandleFs {
   private dirs = new Map<string, Promise<FileSystemDirectoryHandle>>();
 
@@ -79,7 +89,8 @@ export class HandleFs {
     this.mounts = [...mounts].sort((a, b) => b.at.length - a.at.length);
   }
 
-  private mountOf(path: string) {
+  private mountOf(raw: string) {
+    const path = normalize(raw);
     const m = this.mounts.find((x) => path === x.at || path.startsWith(`${x.at}/`));
     if (!m) throw new FsError('ENOENT', path);
     return { m, rest: path.slice(m.at.length).split('/').filter(Boolean) };
@@ -133,7 +144,7 @@ export class HandleFs {
       for await (const name of (handle as FileSystemDirectoryHandle & { keys(): AsyncIterable<string> }).keys()) names.push(name);
       // Files mounted over this folder show up in it too.
       for (const m of this.mounts) {
-        if (m.file && m.at.slice(0, m.at.lastIndexOf('/')) === path) {
+        if (m.file && m.at.slice(0, m.at.lastIndexOf('/')) === normalize(path)) {
           const name = m.at.slice(m.at.lastIndexOf('/') + 1);
           if (!names.includes(name)) names.push(name);
         }
@@ -145,7 +156,7 @@ export class HandleFs {
       const handle = await this.entry(path);
       if (handle.kind === 'directory') return stats('directory', 0, 0);
       const file = await handle.getFile();
-      const hint = this.hints.get(path);
+      const hint = this.hints.get(normalize(path));
       if (hint && hint.size === file.size && hint.mtimeSeconds === Math.floor(file.lastModified / 1000)) {
         return { ...stats('file', file.size, file.lastModified, hint.mode), ...hint };
       }
