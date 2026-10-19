@@ -27,7 +27,10 @@ function Note({ w, check, result }: { w: Worktree; check?: Check; result?: Remov
   if (!check || check.state === 'checking') return <span className="flex items-center gap-1.5"><Spinner size={11} label="Checking" />Checking for changes…</span>;
   if (check.state === 'failed') return <span className="text-warning">{check.error}</span>;
   const n = check.status.changed;
-  return n ? <span className="text-warning">{n} uncommitted change{n === 1 ? '' : 's'}</span> : <span>No uncommitted changes</span>;
+  const unpushed = check.status.unpushed ?? [];
+  const lost = [n ? `${n} uncommitted change${n === 1 ? '' : 's'}` : '', unpushed.length ? `not pushed: ${unpushed.join(', ')}` : ''].filter(Boolean);
+  if (lost.length) return <span className="text-warning">{w.clone ? 'Whole clone · ' : ''}{lost.join(' · ')}</span>;
+  return <span>{w.clone ? 'Whole clone · everything is pushed' : 'No uncommitted changes'}</span>;
 }
 
 function Rows({ worktrees, checks, results }: { worktrees: Worktree[]; checks: Map<string, Check>; results?: RemoveResult[] }) {
@@ -76,7 +79,8 @@ export function DeleteCredenza({ atlas, compact }: { atlas: AtlasState; compact:
     return () => { live = false; };
   }, [pending, source]);
 
-  const dirty = list.filter((w) => { const c = checks.get(w.id); return c?.state === 'done' && c.status.dirty; });
+  // Work that deleting would lose: uncommitted files, or (for a clone) branches no remote has.
+  const dirty = list.filter((w) => { const c = checks.get(w.id); return c?.state === 'done' && (c.status.dirty || !!c.status.unpushed?.length); });
   const kept = list.filter((w) => w.locked || (!force && dirty.includes(w)));
   const going = list.length - kept.length;
   const checking = [...checks.values()].some((c) => c.state === 'checking');
@@ -87,7 +91,7 @@ export function DeleteCredenza({ atlas, compact }: { atlas: AtlasState; compact:
     // Locked worktrees and (without force) dirty ones are left out rather than sent to fail.
     const send = list.filter((w) => !kept.includes(w));
     const removed = await source.remove(send, { force }).catch((e): RemoveResult[] => send.map((w) => ({ id: w.id, ok: false, error: e instanceof Error ? e.message : String(e) })));
-    const skippedResults = kept.map((w): RemoveResult => ({ id: w.id, ok: false, error: w.locked ? 'Locked — kept' : 'Uncommitted changes — kept' }));
+    const skippedResults = kept.map((w): RemoveResult => ({ id: w.id, ok: false, error: w.locked ? 'Locked — kept' : 'Unsaved work — kept' }));
     setResults([...removed, ...skippedResults]);
     atlas.applyRemoved(removed);
     atlas.setEditing(false);
@@ -111,12 +115,13 @@ export function DeleteCredenza({ atlas, compact }: { atlas: AtlasState; compact:
           {view === 'confirm' ? (
             <p className="mx-1 mb-3 text-footnote leading-[1.4] text-muted-foreground">
               {one ? 'Its folder and Git’s record of it are' : 'Their folders and Git’s records of them are'} deleted, like <code className="font-mono">git worktree remove</code>. Branches and commits stay in the repository.
+              {list.some((w) => w.clone) ? ' A clone is deleted with its whole history.' : ''}
             </p>
           ) : null}
           <Rows worktrees={list} checks={checks} results={view === 'done' ? results : undefined} />
           {view === 'confirm' && dirty.length ? (
             <Checkbox isSelected={force} onChange={setForce} className="mx-1 mt-3 text-footnote">
-              Also delete {dirty.length === 1 && one ? 'it' : `the ${dirty.length} with uncommitted changes`} — those changes are lost
+              Also delete {dirty.length === 1 && one ? 'it' : `the ${dirty.length} with unsaved work`} — that work is lost
             </Checkbox>
           ) : null}
           <div className="mt-4 grid gap-2">

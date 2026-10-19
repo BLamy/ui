@@ -23,6 +23,9 @@ export interface Worktree {
   head: string;
   /** The repository's own checkout. Git won't remove it, and neither will Atlas. */
   primary: boolean;
+  /** Another full clone of the same project (its own `.git`, same origin). Deleting it removes the whole folder,
+      history included, so unpushed branches are checked first. */
+  clone?: boolean;
   /** `git worktree lock`ed: Git refuses to remove it. */
   locked?: boolean;
   /** Its folder is gone; deleting only prunes Git's record of it. */
@@ -44,6 +47,8 @@ export interface Project {
   /** The branch diffs are taken against (`main`, else `master`). */
   baseBranch: string;
   worktrees: Worktree[];
+  /** The origin remote, when there is one: clones with the same origin are one project. */
+  remote?: string;
   /** Shared `.git` size, bytes. */
   gitSize?: number;
   /** Why some of it couldn't be read. */
@@ -77,6 +82,8 @@ export interface WorktreeStatus {
   /** Uncommitted or untracked files that deleting the folder would lose. */
   dirty: boolean;
   changed: number;
+  /** For a clone: local branches (and `stash`) with commits that no remote branch has. Deleting loses them. */
+  unpushed?: string[];
 }
 
 export interface RemoveResult {

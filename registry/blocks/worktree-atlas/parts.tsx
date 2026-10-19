@@ -1,5 +1,5 @@
 /* Small pieces the columns share: tinted bar buttons, the translucent bottom bar, a branch glyph, and the status
-   chips on a worktree (primary, pull request, locked, missing, outside the opened folders). */
+   chips on a worktree (primary, clone, pull request, locked, missing, outside the opened folders). */
 import type { CSSProperties, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAppearance } from '@/lib/theme';
@@ -70,6 +70,7 @@ export function WorktreeChips({ w }: { w: Worktree }) {
   return (
     <>
       {w.primary ? <Chip tone="primary">Primary</Chip> : null}
+      {w.clone ? <Chip tone="primary">Clone</Chip> : null}
       {w.pullRequest ? <PullRequestChip pr={w.pullRequest} /> : null}
       {w.locked ? <Chip tone="warning">Locked</Chip> : null}
       {w.missing ? <Chip tone="destructive">Missing</Chip> : null}

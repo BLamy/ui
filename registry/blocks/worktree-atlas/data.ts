@@ -1,5 +1,5 @@
-/* Sample worktrees: three repositories with feature, fix and agent worktrees, one locked, one whose folder is
-   gone, pull requests in every state, and real file changes to diff. The demo source keeps its own copy, so
+/* Sample worktrees: three repositories with feature, fix and agent worktrees, a second clone, one locked, one
+   whose folder is gone, pull requests in every state, and real file changes to diff. The demo source keeps its own copy, so
    deleting works (and stays deleted until the page reloads). Times are relative to when the source was made. */
 import type { DiffFile, Project, RemoveResult, Worktree, WorktreeDiff, WorktreeSource } from './types';
 
@@ -126,11 +126,11 @@ const COLUMNS = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' } as cons
 
 /* ── Repositories ── */
 
-interface Fixture { diff: Omit<WorktreeDiff, 'baseBranch'>; uncommitted: number }
+interface Fixture { diff: Omit<WorktreeDiff, 'baseBranch'>; uncommitted: number; unpushed?: string[] }
 
 function fixtures(now: number) {
   const wt = (projectId: string, w: Partial<Worktree> & Pick<Worktree, 'name' | 'path' | 'branch' | 'head'>): Worktree => ({
-    id: `${projectId}#${w.primary ? '' : w.name}`, projectId, primary: false, ...w,
+    id: `${projectId}#${w.primary ? '' : w.clone ? `clone:${w.path}` : w.name}`, projectId, primary: false, ...w,
   });
   const ui = '/Users/you/Code/ui', docstream = '/Users/you/Code/docstream', editor = '/Users/you/Code/editor';
   const projects: Project[] = [
@@ -156,6 +156,8 @@ function fixtures(now: number) {
         wt(docstream, { name: 'docstream', path: docstream, branch: 'main', head: '91aa0f3', primary: true, modified: now - 30 * HOUR, size: 420 * MB }),
         wt(docstream, { name: 'card-table-columns', path: `${docstream}-card-table`, branch: 'feat/card-table-columns', head: 'e7b2c10',
           modified: now - 8 * HOUR, size: 380 * MB, pullRequest: { number: 41, state: 'open', url: 'https://github.com/you/docstream/pull/41' } }),
+        wt(docstream, { name: 'docstream', path: '/Users/you/Code/scratch/docstream', branch: 'try/streaming-tables', head: '4be19d0', clone: true,
+          modified: now - 9 * 24 * HOUR, size: 450 * MB }),
         wt(docstream, { name: 'old-spike', path: '/Users/you/Code/scratch/old-spike', branch: 'spike/streaming', head: '3c0de55', missing: true,
           modified: now - 40 * 24 * HOUR, pullRequest: { number: 12, state: 'closed', url: 'https://github.com/you/docstream/pull/12' } }),
       ],
@@ -210,6 +212,12 @@ function fixtures(now: number) {
         { path: 'RELEASING.md', status: 'modified', before: RELEASE_BEFORE, after: RELEASE_AFTER },
       ] },
     },
+    [`${docstream}#clone:/Users/you/Code/scratch/docstream`]: {
+      uncommitted: 0, unpushed: ['try/streaming-tables'],
+      diff: { base: '91aa0f3', ahead: 1, behind: 3, dirty: false, files: [
+        { path: 'src/blocks/card-table.tsx', status: 'modified', before: TABLE_BEFORE, after: TABLE_BEFORE.replace('gap-3', 'gap-4') },
+      ] },
+    },
     [`${docstream}#card-table-columns`]: {
       uncommitted: 0,
       diff: { base: '91aa0f3', ahead: 2, behind: 0, dirty: false, files: [
@@ -250,7 +258,7 @@ export function createDemoSource({ latency = 250, now = Date.now() }: { latency?
     async status(wt) {
       await wait(latency);
       const n = changes[wt.id]?.uncommitted ?? 0;
-      return { dirty: n > 0, changed: n };
+      return { dirty: n > 0, changed: n, ...(wt.clone ? { unpushed: changes[wt.id]?.unpushed ?? [] } : {}) };
     },
     async remove(worktrees, { force }) {
       await wait(latency * 2);
@@ -260,6 +268,7 @@ export function createDemoSource({ latency = 250, now = Date.now() }: { latency?
         if (current.primary) return { id: w.id, ok: false, error: 'The repository’s own checkout can’t be deleted.' };
         if (current.locked) return { id: w.id, ok: false, error: 'Locked. Run git worktree unlock first.' };
         if (!force && !current.missing && (changes[w.id]?.uncommitted ?? 0) > 0) return { id: w.id, ok: false, error: 'Has uncommitted changes.' };
+        if (!force && changes[w.id]?.unpushed?.length) return { id: w.id, ok: false, error: `Unpushed: ${changes[w.id].unpushed!.join(', ')}.` };
         return { id: w.id, ok: true };
       });
       const gone = new Set(results.filter((r) => r.ok).map((r) => r.id));

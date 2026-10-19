@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
-import { BarButton } from './parts';
+import { BarButton, shortPath } from './parts';
 import { ALL, type AtlasState } from './use-atlas';
 
 const Count = ({ n }: { n: number }) => <span className="tabular-nums">{n}</span>;
@@ -15,6 +15,9 @@ const Count = ({ n }: { n: number }) => <span className="tabular-nums">{n}</span
 export function ProjectsSidebar({ atlas, footer }: { atlas: AtlasState; footer?: ReactNode }) {
   const s = useSplitView();
   const canAdd = !!atlas.source.addLocation;
+  // Different projects can share a folder name: those show where they live.
+  const named = new Map<string, number>();
+  for (const p of atlas.projects) named.set(p.name, (named.get(p.name) ?? 0) + 1);
   return (
     <SplitViewSidebar aria-label="Projects" width={260} minWidth={220}>
       <SplitViewHeader title="Projects" largeTitle={s.collapsed} trailing={<>
@@ -30,6 +33,7 @@ export function ProjectsSidebar({ atlas, footer }: { atlas: AtlasState; footer?:
             <SplitViewSection title="Repositories" collapsible>
               {atlas.projects.map((p) => (
                 <SplitViewItem key={p.id} id={p.id} title={p.name} icon={<Icon name="folder" size={20} />}
+                  subtitle={(named.get(p.name) ?? 0) > 1 ? shortPath(p.path.slice(0, p.path.lastIndexOf('/')) || p.path) : undefined}
                   badge={<Count n={p.worktrees.length} />} />
               ))}
             </SplitViewSection>

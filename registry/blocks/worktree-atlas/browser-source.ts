@@ -116,7 +116,27 @@ async function baseBranchOf(common: Dir) {
 interface Checkout { location: LocationState; rel: string; dir: Dir }
 interface LocationState extends SavedLocation { connected: boolean; abs: string | null }
 /** What it takes to read one worktree with git. */
-interface Handles { checkout: Dir | null; common: Dir; own: Dir; entry: string | null; parent: Dir | null; location: LocationState | null }
+interface Handles {
+  checkout: Dir | null; common: Dir; own: Dir; entry: string | null; parent: Dir | null; location: LocationState | null;
+  /** Where the repository's own checkout is opened (write access for deleting goes through it). */
+  repo: LocationState;
+}
+
+/** An origin URL as a comparable key: `git@github.com:BLamy/ui.git` and `https://github.com/blamy/ui` are the same.
+    A local path (a clone of a clone) stays a path. */
+export function remoteKey(url: string): string {
+  const u = url.trim().replace(/^file:\/\//, '').replace(/\/+$/, '').replace(/\.git$/, '');
+  const scp = /^[\w.-]+@([^:/]+):(.+)$/.exec(u);
+  if (scp) return `${scp[1]}/${scp[2]}`.toLowerCase();
+  const web = /^[a-z][a-z+.-]*:\/\/(?:[^@/]+@)?([^/:]+)(?::\d+)?\/(.+)$/i.exec(u);
+  if (web) return `${web[1]}/${web[2]}`.toLowerCase();
+  return u;
+}
+
+async function originOf(common: Dir) {
+  const config = (await readText(common, 'config')) ?? '';
+  return /\[remote "origin"\][^[]*?\burl\s*=\s*(.+)/.exec(config)?.[1].trim() ?? null;
+}
 
 export interface BrowserSourceOptions {
   /** Called when the list of locations changes (added, removed, connected). */
@@ -228,6 +248,9 @@ export function createBrowserSource(options: BrowserSourceOptions = {}): Worktre
   }
 
   async function project(repo: Checkout, abs: string | null): Promise<Project> {
+    // The clone's folder, for deleting the whole clone: its parent inside the opened location.
+    const parts = repo.rel.split('/').filter(Boolean);
+    const parent = parts.length ? await subdir(repo.location.handle, parts.slice(0, -1)) : null;
     const common = await repo.dir.getDirectoryHandle('.git');
     const name = repo.rel.split('/').pop() || repo.location.name;
     const id = abs ?? `${repo.location.id}:${repo.rel}`;
@@ -237,9 +260,8 @@ export function createBrowserSource(options: BrowserSourceOptions = {}): Worktre
       id: `${id}#`, projectId: id, name, path: abs ?? join(repo.location.name, repo.rel), branch: own.branch, head: own.oid.slice(0, 7),
       primary: true, modified: Math.max((await modifiedAt(common, 'index')) ?? 0, (await modifiedAt(common, 'logs/HEAD')) ?? 0) || undefined,
     }];
-    handles.set(`${id}#`, { checkout: repo.dir, common, own: common, entry: null, parent: null, location: repo.location });
+    handles.set(`${id}#`, { checkout: repo.dir, common, own: common, entry: null, parent, location: repo.location, repo: repo.location });
     const records = await subdir(common, ['worktrees']);
-    let unreachable = 0;
     for (const r of records ? await names(records) : []) {
       if (r.kind !== 'directory') continue;
       const record = await records!.getDirectoryHandle(r.name);
@@ -249,18 +271,48 @@ export function createBrowserSource(options: BrowserSourceOptions = {}): Worktre
       const at = path ? await resolve(path) : null;
       const wid = `${id}#${r.name}`;
       const missing = !!at && !at.dir;
-      if (!at) unreachable++;
       worktrees.push({
         id: wid, projectId: id, name: path.split('/').pop() || r.name, path: path || r.name, branch: head.branch, head: head.oid.slice(0, 7),
         primary: false, locked: !!(await child(record, 'locked')), missing, unreachable: !at,
         modified: Math.max((await modifiedAt(record, 'index')) ?? 0, (await modifiedAt(record, 'logs/HEAD')) ?? 0) || undefined,
       });
-      handles.set(wid, { checkout: at?.dir ?? null, common, own: record, entry: r.name, parent: at?.parent ?? null, location: at?.location ?? null });
+      handles.set(wid, { checkout: at?.dir ?? null, common, own: record, entry: r.name, parent: at?.parent ?? null, location: at?.location ?? null, repo: repo.location });
     }
-    return {
-      id, name, path: abs ?? join(repo.location.name, repo.rel), baseBranch, worktrees,
-      note: unreachable ? `${unreachable} worktree${unreachable > 1 ? 's are' : ' is'} outside the opened folders. Add a folder that contains ${unreachable > 1 ? 'them' : 'it'} to read or delete ${unreachable > 1 ? 'them' : 'it'}.` : undefined,
+    const origin = await originOf(common);
+    return { id, name, path: abs ?? join(repo.location.name, repo.rel), baseBranch, worktrees, remote: origin ?? undefined };
+  }
+
+  const outsideNote = (n: number) => (n
+    ? `${n} worktree${n > 1 ? 's are' : ' is'} outside the opened folders. Add a folder that contains ${n > 1 ? 'them' : 'it'} to read or delete ${n > 1 ? 'them' : 'it'}.`
+    : undefined);
+
+  /** Clones of one project (same origin, or cloned from a repository found here) become one project. The checkout
+      whose folder is the origin, else the one named like the remote, else the shortest path, stays the primary. */
+  function groupClones(projects: Project[]): Project[] {
+    const byPath = new Map(projects.map((p) => [p.path, p]));
+    const keyOf = (p: Project) => {
+      let key = p.remote ? remoteKey(p.remote) : p.id;
+      // A clone of a local repository joins that repository's project (and its origin, if it has one).
+      for (let hops = 0; key.startsWith('/') && byPath.has(key) && hops < 8; hops++) {
+        const origin = byPath.get(key)!;
+        key = origin.remote ? remoteKey(origin.remote) : origin.id;
+        if (!origin.remote) break;
+      }
+      return key;
     };
+    const groups = new Map<string, Project[]>();
+    for (const p of projects) groups.set(keyOf(p), [...(groups.get(keyOf(p)) ?? []), p]);
+    const out: Project[] = [];
+    for (const [key, members] of groups) {
+      const remoteName = key.split('/').pop() ?? '';
+      const main = members.find((m) => m.path === key) ?? members.find((m) => m.id === key)
+        ?? [...members].sort((a, b) => Number(b.name === remoteName) - Number(a.name === remoteName) || a.path.length - b.path.length)[0];
+      const worktrees = members.flatMap((m) => m.worktrees.map((w) => (
+        m === main ? w : { ...w, projectId: main.id, ...(w.primary ? { primary: false, clone: true } : {}) }
+      )));
+      out.push({ ...main, worktrees, note: outsideNote(worktrees.filter((w) => w.unreachable).length) });
+    }
+    return out;
   }
 
   async function scan(onProgress?: (p: ScanProgress) => void): Promise<Project[]> {
@@ -282,7 +334,7 @@ export function createBrowserSource(options: BrowserSourceOptions = {}): Worktre
       if (abs && projects.some((p) => p.id === abs)) continue;
       try { projects.push(await project(repo, abs)); } catch { /* unreadable: skipped */ }
     }
-    return projects.sort((a, b) => a.name.localeCompare(b.name));
+    return groupClones(projects).sort((a, b) => a.name.localeCompare(b.name) || a.path.localeCompare(b.path));
   }
 
   /** isomorphic-git over this worktree's three folders, with its index as the stat cache. */
@@ -367,12 +419,35 @@ export function createBrowserSource(options: BrowserSourceOptions = {}): Worktre
     };
   }
 
+  /** Local branches (and a stash) whose commits no remote branch contains. */
+  async function unpushed(o: Opened): Promise<string[]> {
+    const { git, fs, gitdir, cache } = o;
+    const remotes: string[] = [];
+    for (const { remote } of await git.listRemotes({ fs, gitdir }).catch(() => [])) {
+      for (const b of await git.listBranches({ fs, gitdir, remote }).catch(() => [] as string[])) {
+        if (b !== 'HEAD') remotes.push(await git.resolveRef({ fs, gitdir, ref: `refs/remotes/${remote}/${b}` }).catch(() => ''));
+      }
+    }
+    const out: string[] = [];
+    for (const b of await git.listBranches({ fs, gitdir })) {
+      const oid = await git.resolveRef({ fs, gitdir, ref: `refs/heads/${b}` }).catch(() => '');
+      if (!oid || remotes.includes(oid)) continue;
+      let pushed = false;
+      for (const r of remotes) {
+        if (r && await git.isDescendent({ fs, gitdir, oid: r, ancestor: oid, depth: 2000, cache }).catch(() => false)) { pushed = true; break; }
+      }
+      if (!pushed) out.push(b);
+    }
+    if (await git.resolveRef({ fs, gitdir, ref: 'refs/stash' }).catch(() => null)) out.push('stash');
+    return out;
+  }
+
   async function status(wt: Worktree): Promise<WorktreeStatus> {
     if (wt.missing) return { dirty: false, changed: 0 };
     const o = await open(wt);
     const head = await o.git.resolveRef({ fs: o.fs, gitdir: o.gitdir, ref: 'HEAD' });
     const changed = (await compare(o, [head])).filter((r) => r.head !== r.work).length;
-    return { dirty: changed > 0, changed };
+    return { dirty: changed > 0, changed, ...(wt.clone ? { unpushed: await unpushed(o) } : {}) };
   }
 
   async function remove(worktrees: Worktree[], { force }: { force: boolean }): Promise<RemoveResult[]> {
@@ -381,8 +456,7 @@ export function createBrowserSource(options: BrowserSourceOptions = {}): Worktre
     for (const wt of worktrees) {
       const h = handles.get(wt.id);
       if (h?.location) roots.add(h.location.handle);
-      const repo = handles.get(`${wt.projectId}#`);
-      if (repo?.location) roots.add(repo.location.handle);
+      if (h?.repo) roots.add(h.repo.handle);
     }
     const granted = new Set<PermissionDir>();
     for (const root of roots) {
@@ -396,18 +470,24 @@ export function createBrowserSource(options: BrowserSourceOptions = {}): Worktre
       if (wt.primary) { fail('The repository’s own checkout can’t be deleted.'); continue; }
       if (wt.locked) { fail('Locked. Run git worktree unlock first.'); continue; }
       if (wt.unreachable) { fail('Outside the opened folders.'); continue; }
-      const repo = handles.get(`${wt.projectId}#`);
-      if (!repo?.location || !granted.has(repo.location.handle) || (h.location && !granted.has(h.location.handle))) { fail('Write access was not granted.'); continue; }
+      if (!granted.has(h.repo.handle) || (h.location && !granted.has(h.location.handle))) { fail('Write access was not granted.'); continue; }
       try {
-        if (!wt.missing && !force && (await status(wt)).dirty) { fail('Has uncommitted changes.'); continue; }
+        if (wt.clone) {
+          // A clone's linked worktrees would be left pointing at a deleted repository.
+          const linked = [...handles.values()].filter((x) => x.common === h.common && x.entry && x.checkout).length;
+          if (linked) { fail(`Has ${linked} linked worktree${linked > 1 ? 's' : ''}; delete ${linked > 1 ? 'them' : 'it'} first.`); continue; }
+          const st = await status(wt);
+          if (!force && st.dirty) { fail('Has uncommitted changes.'); continue; }
+          if (!force && st.unpushed?.length) { fail(`Unpushed: ${st.unpushed.join(', ')}.`); continue; }
+        } else if (!wt.missing && !force && (await status(wt)).dirty) { fail('Has uncommitted changes.'); continue; }
         if (h.checkout) {
           const self = h.checkout as Dir & { remove?: (o: { recursive: boolean }) => Promise<void> };
           if (h.parent) await h.parent.removeEntry(h.checkout.name, { recursive: true });
           else if (self.remove) await self.remove({ recursive: true });
           else { fail('Its folder is an opened location; remove it in Finder.'); continue; }
         }
-        const records = await h.common.getDirectoryHandle('worktrees');
-        await records.removeEntry(h.entry!, { recursive: true });
+        // A clone's `.git` went with its folder; a linked worktree's record lives in the repository.
+        if (h.entry) await (await h.common.getDirectoryHandle('worktrees')).removeEntry(h.entry, { recursive: true });
         handles.delete(wt.id);
         results.push({ id: wt.id, ok: true });
       } catch (e) { fail(e instanceof Error ? e.message : String(e)); }

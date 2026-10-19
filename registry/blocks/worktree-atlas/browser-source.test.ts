@@ -93,11 +93,33 @@ beforeAll(() => {
   git(app, 'worktree', 'add', '-q', '-b', 'gone', join(root, 'wt/gone'));
   rmSync(join(root, 'wt/gone'), { recursive: true });
   git(app, 'worktree', 'add', '-q', '-b', 'far', join(outside, 'far'));
+  git(app, 'remote', 'add', 'origin', 'https://github.com/You/App.git');
+
+  // Clones of the same project: one cloned from the local repo (with a branch nobody has), one with the GitHub
+  // origin written the SSH way (with its own linked worktree), and an unrelated repository that is also called app.
+  const copy = join(root, 'scratch/app-copy');
+  mkdirSync(join(root, 'scratch'), { recursive: true });
+  git(root, 'clone', '-q', app, copy);
+  git(copy, 'switch', '-q', '-c', 'local-only');
+  write(join(copy, 'e.ts'), 'export const e = 5;\n');
+  git(copy, 'add', '-A');
+  git(copy, 'commit', '-q', '-m', 'local');
+  const ssh = join(root, 'elsewhere/app2');
+  mkdirSync(join(root, 'elsewhere'), { recursive: true });
+  git(root, 'clone', '-q', app, ssh);
+  git(ssh, 'remote', 'set-url', 'origin', 'git@github.com:you/app.git');
+  git(ssh, 'worktree', 'add', '-q', '-b', 'ssh-wt', join(root, 'wt/ssh-wt'));
+  const other = join(root, 'misc/app');
+  mkdirSync(other, { recursive: true });
+  git(other, 'init', '-q', '-b', 'main');
+  write(join(other, 'x.ts'), 'x\n');
+  git(other, 'add', '-A');
+  git(other, 'commit', '-q', '-m', 'other');
   // main moves on after the branches: they are behind by one.
   write(join(app, 'd.ts'), 'export const d = 4;\n');
   git(app, 'add', '-A');
   git(app, 'commit', '-q', '-m', 'main moves');
-});
+}, 60_000); // git clone runs any global hooks, which can take seconds
 
 afterAll(() => {
   rmSync(root, { recursive: true, force: true });
@@ -106,7 +128,9 @@ afterAll(() => {
 
 describe('createBrowserSource', () => {
   let projects: Project[];
-  const wt = (branch: string) => projects[0].worktrees.find((w) => w.branch === branch) as Worktree;
+  const app = () => projects.find((p) => p.path === join(root, 'code/app')) as Project;
+  const wt = (branch: string) => app().worktrees.find((w) => w.branch === branch && !w.clone) as Worktree;
+  const clone = (dir: string) => app().worktrees.find((w) => w.path === join(root, dir)) as Worktree;
   const source = () => createBrowserSource({ folders: [asHandle(root)] });
   let s: ReturnType<typeof source>;
 
@@ -116,21 +140,42 @@ describe('createBrowserSource', () => {
   });
 
   it('groups every worktree under its repository, with absolute paths', () => {
-    expect(projects.map((p) => p.name)).toEqual(['app']);
-    const p = projects[0];
-    expect(p.path).toBe(join(root, 'code/app'));
+    expect(projects.map((p) => p.path)).toEqual([join(root, 'code/app'), join(root, 'misc/app')]);
+    const p = app();
     expect(p.baseBranch).toBe('main');
-    expect(p.worktrees.map((w) => w.branch).sort()).toEqual(['far', 'feat', 'fix', 'gone', 'lockme', 'main']);
+    expect(p.worktrees.filter((w) => !w.clone && w.path !== join(root, 'wt/ssh-wt')).map((w) => w.branch).sort())
+      .toEqual(['far', 'feat', 'fix', 'gone', 'lockme', 'main']);
     expect(wt('main').primary).toBe(true);
     expect(wt('feat').path).toBe(join(root, 'code/app/.claude/worktrees/feat'));
   });
+
+  it('folds clones of the same origin into one project, wherever and however they were cloned', () => {
+    expect(clone('scratch/app-copy')).toMatchObject({ clone: true, primary: false, branch: 'local-only', projectId: app().id });
+    expect(clone('elsewhere/app2')).toMatchObject({ clone: true, primary: false, branch: 'main' });
+    // A clone's own linked worktrees come along.
+    expect(clone('wt/ssh-wt')).toMatchObject({ primary: false, branch: 'ssh-wt' });
+    expect(clone('wt/ssh-wt').clone).toBeFalsy();
+    expect(wt('main').primary).toBe(true);
+  });
+
+  it('reads a clone’s unpushed branches, and won’t delete them (or a clone with linked worktrees) unforced', async () => {
+    expect(await s.status(clone('scratch/app-copy'))).toEqual({ dirty: false, changed: 0, unpushed: ['local-only'] });
+    expect(await s.status(clone('elsewhere/app2'))).toEqual({ dirty: false, changed: 0, unpushed: [] });
+    const [kept] = await s.remove([clone('scratch/app-copy')], { force: false });
+    expect(kept).toMatchObject({ ok: false, error: 'Unpushed: local-only.' });
+    const [linked] = await s.remove([clone('elsewhere/app2')], { force: true });
+    expect(linked).toMatchObject({ ok: false, error: 'Has 1 linked worktree; delete it first.' });
+    const [gone] = await s.remove([clone('scratch/app-copy')], { force: true });
+    expect(gone.ok).toBe(true);
+    expect(existsSync(join(root, 'scratch/app-copy'))).toBe(false);
+  }, 30_000);
 
   it('marks locked, missing and out-of-reach worktrees', () => {
     expect(wt('lockme').locked).toBe(true);
     expect(wt('gone').missing).toBe(true);
     expect(wt('far').unreachable).toBe(true);
     expect(wt('feat')).toMatchObject({ locked: false, missing: false, unreachable: false });
-    expect(projects[0].note).toMatch(/1 worktree is outside/);
+    expect(app().note).toMatch(/1 worktree is outside/);
   });
 
   it('diffs a worktree against its merge base with main, uncommitted and untracked files included', async () => {
@@ -177,7 +222,7 @@ describe('createBrowserSource', () => {
 
   it('finds a repository in one folder from worktrees opened in another', async () => {
     const far = createBrowserSource({ folders: [asHandle(outside), asHandle(join(root, 'code'))] });
-    const [p] = await far.scan();
+    const p = (await far.scan()).find((x) => x.path === join(root, 'code/app')) as Project;
     expect(p.worktrees.find((w) => w.branch === 'far')).toMatchObject({ unreachable: false, path: join(outside, 'far') });
   });
 });
