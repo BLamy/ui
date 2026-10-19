@@ -30,7 +30,8 @@
         "eslint-plugin-playwright",
         "eslint-plugin-react",
         "eslint-plugin-react-hooks",
-        "happy-dom"
+        "happy-dom",
+        "@electron/packager"
       ],
       "ignoreBinaries": [
         "wait-on"

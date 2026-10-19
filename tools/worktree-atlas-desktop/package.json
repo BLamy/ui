@@ -1,0 +1,18 @@
+{
+  "name": "@brett_lamy/worktree-atlas-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A macOS home for the BL UI Worktree Atlas block: every Git worktree on this Mac, grouped by project.",
+  "main": "main.cjs",
+  "author": "Brett Lamy",
+  "license": "MIT",
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "44.8.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
+  }
+}

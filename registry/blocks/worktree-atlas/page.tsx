@@ -52,7 +52,7 @@ function useBrowserSource(enabled: boolean) {
 
 function Welcome({ onAdd, onSample }: { onAdd: () => void; onSample: () => void }) {
   return (
-    <div className="absolute inset-0 z-40 grid place-items-center bg-background/80 p-6 backdrop-blur-md">
+    <div data-slot="atlas-welcome" className="absolute inset-0 z-40 grid place-items-center bg-background/80 p-6 backdrop-blur-md">
       <div className="w-full max-w-[420px] rounded-sheet bg-card p-7 text-center shadow-hairline">
         <span className="mx-auto grid size-14 place-items-center rounded-card bg-primary text-primary-foreground"><Icon name="layers" size={28} /></span>
         <h2 className="mt-4 text-title font-bold">Worktree Atlas</h2>

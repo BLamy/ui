@@ -1,0 +1,51 @@
+/* The column toolbars and the top of the sidebar's view rail are the native window's drag surface. */
+[data-slot='split-view-header'],
+[data-slot='atlas-rail-top'],
+[data-slot='atlas-welcome'] {
+  -webkit-app-region: drag;
+  app-region: drag;
+  user-select: none;
+}
+
+/* The welcome card covers the toolbars until a folder is open: its backdrop moves the window, the card doesn't. */
+[data-slot='atlas-welcome'] > div {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* Keep controls, column resizing and the context menu interactive. */
+button,
+a,
+input,
+textarea,
+select,
+[role='button'],
+[role='radio'],
+[role='tab'],
+[role='switch'],
+[role='menu'],
+[role='dialog'],
+[data-slot='split-view-resizer'] {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* The traffic lights sit over the rail and run past it: the sidebar's title starts after them. */
+[data-slot='split-view-sidebar'] [data-slot='split-view-header'] {
+  padding-left: 30px;
+}
+
+/* With the sidebar hidden, the file column's sidebar toggle moves clear of the traffic lights. */
+[data-slot='split-view']:not([data-sidebar-visible])
+  [data-slot='split-view-supplementary']
+  [data-slot='split-view-header'] {
+  padding-left: 80px;
+}
+
+/* Hidden panes and modal overlays must not leave invisible drag targets. */
+[inert] [data-slot='split-view-header'],
+body:has([role='dialog'], [role='menu']) [data-slot='split-view-header'],
+body:has([role='dialog'], [role='menu']) [data-slot='atlas-rail-top'] {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}

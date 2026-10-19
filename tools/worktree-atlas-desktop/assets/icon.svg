@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8583FF" />
+      <stop offset="0.55" stop-color="#5856D6" />
+      <stop offset="1" stop-color="#2F2A9E" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0.32" cy="0.18" r="0.75">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.32" />
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.45" />
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0" />
+      <stop offset="1" stop-color="#000000" stop-opacity="0.18" />
+    </linearGradient>
+    <linearGradient id="line" gradientUnits="userSpaceOnUse" x1="0" y1="260" x2="0" y2="800">
+      <stop offset="0" stop-color="#ffffff" />
+      <stop offset="1" stop-color="#E4E3FF" />
+    </linearGradient>
+    <clipPath id="tile"><rect x="100" y="100" width="824" height="824" rx="186" /></clipPath>
+    <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#0b0a2e" flood-opacity="0.35" />
+    </filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#14106b" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Tile -->
+  <g filter="url(#drop)">
+    <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)" />
+  </g>
+  <g clip-path="url(#tile)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#glow)" />
+    <!-- The atlas: faint meridians and parallels -->
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="5">
+      <ellipse cx="512" cy="530" rx="380" ry="380" />
+      <ellipse cx="512" cy="530" rx="250" ry="380" />
+      <ellipse cx="512" cy="530" rx="115" ry="380" />
+      <path d="M132 530H892M168 370H856M168 690H856M272 240H752M272 820H752" />
+    </g>
+  </g>
+  <rect x="102" y="102" width="820" height="820" rx="184" fill="none" stroke="url(#rim)" stroke-width="4" />
+
+  <!-- Worktrees: a trunk with two branches -->
+  <g filter="url(#soft)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M512 300V744" stroke="url(#line)" stroke-width="40" />
+    <path d="M512 668C512 572 312 610 312 500V372" stroke="url(#line)" stroke-width="40" />
+    <path d="M512 556C512 476 712 506 712 420V340" stroke="url(#line)" stroke-width="40" />
+    <!-- main's head and root -->
+    <circle cx="512" cy="282" r="50" fill="#ffffff" stroke="none" />
+    <circle cx="512" cy="764" r="50" fill="#ffffff" stroke="none" />
+    <!-- worktree heads -->
+    <circle cx="312" cy="340" r="54" fill="#3DDBB4" stroke="#ffffff" stroke-width="22" />
+    <circle cx="712" cy="308" r="54" fill="#FFC94D" stroke="#ffffff" stroke-width="22" />
+  </g>
+</svg>

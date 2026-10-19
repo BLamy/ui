@@ -30,7 +30,7 @@ function Rail({ atlas }: { atlas: AtlasState }) {
   return (
     <div role="toolbar" aria-label="View" aria-orientation="vertical"
       className="flex w-[52px] shrink-0 flex-col items-center gap-1.5 shadow-[inset_-1px_0_0_var(--border)]">
-      <div aria-hidden="true" className="h-toolbar shrink-0" />
+      <div aria-hidden="true" data-slot="atlas-rail-top" className="h-toolbar w-full shrink-0" />
       {VIEWS.map((v) => {
         const on = atlas.view === v.id;
         return (

@@ -1,0 +1,54 @@
+{
+  "name": "worktree-atlas-desktop",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "bootstrap": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --dir tools/worktree-atlas-desktop install --ignore-workspace --frozen-lockfile",
+          "node tools/worktree-atlas-desktop/node_modules/electron/install.js"
+        ],
+        "parallel": false
+      }
+    },
+    "check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node --check tools/worktree-atlas-desktop/main.cjs",
+          "node --check tools/worktree-atlas-desktop/build.mjs",
+          "node --check tools/worktree-atlas-desktop/folder-access.cjs"
+        ]
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "env -u ELECTRON_RUN_AS_NODE tools/worktree-atlas-desktop/node_modules/.bin/electron tools/worktree-atlas-desktop"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node --test tools/worktree-atlas-desktop/folder-access.test.cjs"
+      }
+    },
+    "icon": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/worktree-atlas-desktop/render-icon.mjs"
+      }
+    },
+    "package": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/tools/worktree-atlas-desktop"
+      ],
+      "options": {
+        "command": "node tools/worktree-atlas-desktop/build.mjs"
+      }
+    }
+  }
+}
