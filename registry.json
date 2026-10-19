@@ -8198,7 +8198,7 @@
       "name": "worktree-atlas",
       "type": "registry:block",
       "title": "Worktree Atlas",
-      "description": "Every Git worktree under the folders you open, grouped by repository, running entirely in the browser: open folders with the File System Access API (remembered across visits) and Git is read in the page by isomorphic-git, no server or desktop app. Repositories in the sidebar with an All Worktrees item; the master list shows each worktree's branch, folder, last activity, size and chips (primary, pull request state, locked, missing, outside the opened folders), with search, swipe-to-delete and an Edit mode for bulk delete. Every delete goes through a confirmation Credenza that checks each worktree for uncommitted changes first and, like git worktree remove, keeps dirty ones unless you choose otherwise, keeps locked ones, and only prunes missing ones. The detail is the worktree's diff to main since it branched (uncommitted edits included): a summary with ahead/behind and line counts, the changed files as a Tree with Git status, and a virtualized @pierre/diffs CodeView, unified or split. Pluggable WorktreeSource (sample data included) so a desktop app can supply Git CLI results instead. Responsive SplitView on desktop, tablet and phone.",
+      "description": "Every Git worktree under the folders you open, grouped by repository, running entirely in the browser: open folders with the File System Access API (remembered across visits) and Git is read in the page by isomorphic-git, no server or desktop app. The sidebar folds each project open to its worktrees (five at first, Show more for twenty, then twenty more at a time), with a rail that switches between Files and Changes. Right-click a worktree to delete it; every delete goes through a confirmation Credenza that checks for uncommitted changes first and, like git worktree remove, keeps dirty ones unless you choose otherwise, keeps locked ones, and only prunes missing ones. The master column is the open worktree's file Tree: every file in the checkout (Files, with search and uncommitted changes marked) or what it changes against main since it branched (Changes, with a summary of ahead/behind and line counts). The detail shows the picked file, highlighted, or every change in a virtualized @pierre/diffs CodeView, unified or split. Pluggable WorktreeSource (sample data included) so a desktop app can supply Git CLI results instead. Responsive SplitView on desktop, tablet and phone.",
       "categories": [
         "developer",
         "git",
@@ -8211,13 +8211,13 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/icon.json",
-        "https://blamy.github.io/ui/r/list.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/split-view.json",
@@ -8237,14 +8237,14 @@
           "target": "components/blocks/worktree-atlas/sidebar.tsx"
         },
         {
-          "path": "registry/blocks/worktree-atlas/worktree-list.tsx",
+          "path": "registry/blocks/worktree-atlas/file-column.tsx",
           "type": "registry:component",
-          "target": "components/blocks/worktree-atlas/worktree-list.tsx"
+          "target": "components/blocks/worktree-atlas/file-column.tsx"
         },
         {
-          "path": "registry/blocks/worktree-atlas/diff-view.tsx",
+          "path": "registry/blocks/worktree-atlas/detail-column.tsx",
           "type": "registry:component",
-          "target": "components/blocks/worktree-atlas/diff-view.tsx"
+          "target": "components/blocks/worktree-atlas/detail-column.tsx"
         },
         {
           "path": "registry/blocks/worktree-atlas/delete-credenza.tsx",
@@ -8255,6 +8255,11 @@
           "path": "registry/blocks/worktree-atlas/parts.tsx",
           "type": "registry:component",
           "target": "components/blocks/worktree-atlas/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/worktree-atlas/files.ts",
+          "type": "registry:component",
+          "target": "components/blocks/worktree-atlas/files.ts"
         },
         {
           "path": "registry/blocks/worktree-atlas/use-atlas.ts",

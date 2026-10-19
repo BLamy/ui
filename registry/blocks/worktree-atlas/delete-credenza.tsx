@@ -94,7 +94,6 @@ export function DeleteCredenza({ atlas, compact }: { atlas: AtlasState; compact:
     const skippedResults = kept.map((w): RemoveResult => ({ id: w.id, ok: false, error: w.locked ? 'Locked — kept' : 'Unsaved work — kept' }));
     setResults([...removed, ...skippedResults]);
     atlas.applyRemoved(removed);
-    atlas.setEditing(false);
     setView('done');
   };
 

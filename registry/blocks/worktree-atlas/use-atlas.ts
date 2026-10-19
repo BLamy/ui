@@ -1,30 +1,73 @@
-/* Everything the three columns share: the projects a source reported, which project and worktree are open, the
-   list's search and edit mode, diffs as they load, and the worktrees waiting on the delete confirmation. */
+/* Everything the three columns share: the projects a source reported, which worktree and file are open, whether the
+   rail shows Files or Changes, file lists, contents and diffs as they load, and the worktrees waiting on the delete
+   confirmation. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Location, Project, RemoveResult, ScanProgress, Worktree, WorktreeDiff, WorktreeSource } from './types';
+import type { FileContent, FileEntry, Location, Project, RemoveResult, ScanProgress, Worktree, WorktreeDiff, WorktreeSource } from './types';
 
-/** The sidebar's "All Worktrees" item. */
-export const ALL = 'all';
+/** The rail: browse the checkout, or see what it changes against main. */
+export type AtlasView = 'files' | 'changes';
 
-export type DiffState = { status: 'loading' } | { status: 'ready'; diff: WorktreeDiff } | { status: 'error'; error: string };
+export type Load<T> = { status: 'loading' } | { status: 'ready'; value: T } | { status: 'error'; error: string };
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-export function useAtlas(source: WorktreeSource, initial: { project?: string; worktree?: string | null } = {}) {
+/** Loads `key` once and keeps it until `clear` (a rescan) or `refresh`. Results from before a clear are dropped. */
+function useCache<T>(key: string | null, load: (key: string, signal: AbortSignal) => Promise<T>) {
+  const [cache, setCache] = useState(() => new Map<string, Load<T>>());
+  const generation = useRef(0);
+  const inflight = useRef(new Set<AbortController>());
+  useEffect(() => {
+    if (key == null || cache.has(key)) return;
+    const gen = generation.current;
+    const controller = new AbortController();
+    inflight.current.add(controller);
+    const put = (v: Load<T>) => { if (generation.current === gen) setCache((c) => new Map(c).set(key, v)); };
+    put({ status: 'loading' });
+    load(key, controller.signal)
+      .then((value) => put({ status: 'ready', value }))
+      .catch((e) => { if (!controller.signal.aborted) put({ status: 'error', error: message(e) }); })
+      .finally(() => inflight.current.delete(controller));
+  }, [key, cache, load]);
+  useEffect(() => () => { for (const c of inflight.current) c.abort(); }, []);
+  const clear = useCallback(() => { generation.current++; setCache(new Map()); }, []);
+  const refresh = useCallback((k: string) => setCache((c) => { const next = new Map(c); next.delete(k); return next; }), []);
+  return { get: (k: string | null) => (k == null ? undefined : cache.get(k)), clear, refresh };
+}
+
+export function useAtlas(source: WorktreeSource, initial: { worktree?: string | null; view?: AtlasView } = {}) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [scanned, setScanned] = useState(false);
   const [progress, setProgress] = useState<ScanProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [projectId, setProjectId] = useState(initial.project ?? ALL);
   const [worktreeId, setWorktreeId] = useState<string | null>(initial.worktree ?? null);
-  const [query, setQuery] = useState('');
-  const [editing, setEditingState] = useState(false);
-  const [checked, setChecked] = useState<Set<string>>(new Set());
-  const [diffs, setDiffs] = useState<Map<string, DiffState>>(new Map());
+  const [view, setView] = useState<AtlasView>(initial.view ?? 'changes');
+  /** The file open in the detail (Files), or the one the diff scrolled to (Changes). */
+  const [filePath, setFilePath] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Worktree[] | null>(null);
   const [locations, setLocations] = useState<Location[]>(() => source.locations?.() ?? []);
   const run = useRef(0);
 
+  const all = useMemo(() => projects.flatMap((p) => p.worktrees), [projects]);
+  const selected = all.find((w) => w.id === worktreeId) ?? null;
+  const project = projects.find((p) => p.id === selected?.projectId) ?? null;
+  const byId = useRef(new Map<string, Worktree>());
+  byId.current = new Map(all.map((w) => [w.id, w]));
+  const worktree = useCallback((id: string) => {
+    const w = byId.current.get(id);
+    if (!w) throw new Error('Scan again: this worktree is no longer known.');
+    return w;
+  }, []);
+
+  const readable = selected && !selected.unreachable ? selected.id : null;
+  const diffs = useCache<WorktreeDiff>(view === 'changes' ? readable : null,
+    useCallback((id, signal) => source.diff(worktree(id), signal), [source, worktree]));
+  const fileLists = useCache<FileEntry[]>(view === 'files' ? readable : null,
+    useCallback((id, signal) => source.files(worktree(id), signal), [source, worktree]));
+  const fileKey = view === 'files' && readable && filePath ? `${readable}\n${filePath}` : null;
+  const contents = useCache<FileContent>(fileKey,
+    useCallback((key) => { const [id, path] = key.split('\n'); return source.read(worktree(id), path); }, [source, worktree]));
+
+  const { clear: clearDiffs } = diffs, { clear: clearFiles } = fileLists, { clear: clearContents } = contents;
   const scan = useCallback(async () => {
     const id = ++run.current;
     setProgress({ at: '', found: 0 });
@@ -33,7 +76,7 @@ export function useAtlas(source: WorktreeSource, initial: { project?: string; wo
       const next = await source.scan((p) => { if (run.current === id) setProgress(p); });
       if (run.current !== id) return;
       setProjects(next);
-      setDiffs(new Map());
+      clearDiffs(); clearFiles(); clearContents();
       setScanned(true);
     } catch (e) {
       if (run.current === id) setError(message(e));
@@ -41,60 +84,39 @@ export function useAtlas(source: WorktreeSource, initial: { project?: string; wo
       if (run.current === id) setProgress(null);
       setLocations(source.locations?.() ?? []);
     }
-  }, [source]);
+  }, [source, clearDiffs, clearFiles, clearContents]);
 
   useEffect(() => { void scan(); }, [scan]);
 
-  const all = useMemo(() => projects.flatMap((p) => p.worktrees), [projects]);
-  const project = projects.find((p) => p.id === projectId) ?? null;
-  const list = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const rows = projectId === ALL ? all : project?.worktrees ?? [];
-    return q ? rows.filter((w) => [w.name, w.branch ?? '', w.path].some((s) => s.toLowerCase().includes(q))) : rows;
-  }, [all, project, projectId, query]);
-  const selected = all.find((w) => w.id === worktreeId) ?? null;
+  /** Reload whatever the open view shows. */
+  const reload = () => {
+    if (!selected) return;
+    if (view === 'changes') diffs.refresh(selected.id);
+    else { fileLists.refresh(selected.id); if (fileKey) contents.refresh(fileKey); }
+  };
 
-  // Load the open worktree's diff once; a rescan clears the cache.
-  const loading = useRef(new Map<string, AbortController>());
-  useEffect(() => {
-    if (!selected || diffs.has(selected.id) || selected.unreachable) return;
-    const wt = selected;
-    const controller = new AbortController();
-    loading.current.set(wt.id, controller);
-    setDiffs((d) => new Map(d).set(wt.id, { status: 'loading' }));
-    source.diff(wt, controller.signal)
-      .then((diff) => setDiffs((d) => new Map(d).set(wt.id, { status: 'ready', diff })))
-      .catch((e) => { if (!controller.signal.aborted) setDiffs((d) => new Map(d).set(wt.id, { status: 'error', error: message(e) })); })
-      .finally(() => loading.current.delete(wt.id));
-  }, [selected, diffs, source]);
-  useEffect(() => () => { for (const c of loading.current.values()) c.abort(); }, []);
+  const open = (id: string | null) => { if (id !== worktreeId) { setWorktreeId(id); setFilePath(null); } };
+  const showView = (v: AtlasView) => { if (v !== view) { setView(v); setFilePath(null); } };
 
-  const refreshDiff = (id: string) => setDiffs((d) => { const next = new Map(d); next.delete(id); return next; });
-
-  const setEditing = (on: boolean) => { setEditingState(on); if (!on) setChecked(new Set()); };
   const deletable = (w: Worktree) => !w.primary;
-  const toggleChecked = (id: string) => setChecked((c) => { const next = new Set(c); if (next.has(id)) next.delete(id); else next.add(id); return next; });
-  const candidates = list.filter(deletable);
-  const checkAll = () => setChecked((c) => (c.size === candidates.length ? new Set() : new Set(candidates.map((w) => w.id))));
 
-  const openProject = (id: string) => { setProjectId(id); setQuery(''); setChecked(new Set()); };
-
-  /** Deleted worktrees leave the list; when the open one goes, the selection clears. */
+  /** Deleted worktrees leave the sidebar; when the open one goes, the selection clears. */
   const applyRemoved = (results: RemoveResult[]) => {
     const gone = new Set(results.filter((r) => r.ok).map((r) => r.id));
     if (!gone.size) return;
     setProjects((ps) => ps.map((p) => ({ ...p, worktrees: p.worktrees.filter((w) => !gone.has(w.id)) })));
-    setChecked((c) => new Set([...c].filter((id) => !gone.has(id))));
-    if (worktreeId && gone.has(worktreeId)) setWorktreeId(null);
+    if (worktreeId && gone.has(worktreeId)) open(null);
   };
 
   return {
     source, projects, scanned, scanning: progress !== null, progress, error, scan, locations,
-    projectId, project, openProject, list, all,
-    worktreeId, selected, open: setWorktreeId,
-    query, setQuery,
-    editing, setEditing, checked, toggleChecked, checkAll, candidates, deletable,
-    diffs, refreshDiff,
+    all, worktreeId, selected, project, open,
+    view, showView, filePath, openFile: setFilePath,
+    diff: diffs.get(view === 'changes' ? readable : null),
+    files: fileLists.get(view === 'files' ? readable : null),
+    content: contents.get(fileKey),
+    reload,
+    deletable,
     pendingDelete, requestDelete: (ws: Worktree[]) => setPendingDelete(ws.filter(deletable)), cancelDelete: () => setPendingDelete(null),
     applyRemoved,
     async addLocation() { if (await source.addLocation?.()) await scan(); },

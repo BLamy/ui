@@ -34,12 +34,12 @@ function Sample(props: WorktreeAtlasProps) {
 }
 
 export const Light: Story = {
-  args: { initialProject: UI, initialWorktree: `${UI}#worktree-atlas` },
+  args: { initialWorktree: `${UI}#worktree-atlas` },
   render: (args) => <Full><Sample {...args} /></Full>,
 };
 
 export const Dark: Story = {
-  args: { initialProject: UI, initialWorktree: `${UI}#segmented-hit-target` },
+  args: { initialWorktree: `${UI}#segmented-hit-target` },
   render: (args) => (
     <AppearanceProvider value="dark">
       <Full><Sample {...args} /></Full>
@@ -47,16 +47,18 @@ export const Dark: Story = {
   ),
 };
 
-/** Every repository's worktrees in one list. */
-export const AllWorktrees: Story = { render: (args) => <Full><Sample {...args} /></Full> };
+/** The Files view: the checkout's tree, and the picked file. */
+export const Files: Story = {
+  args: { initialWorktree: `${UI}#worktree-atlas`, initialView: 'files' },
+  render: (args) => <Full><Sample {...args} /></Full>,
+};
 
 export const Tablet: Story = {
-  args: { initialProject: UI, initialWorktree: `${UI}#pierre-trees` },
+  args: { initialWorktree: `${UI}#pierre-trees` },
   render: (args) => <Device width={834} height={860}><Sample {...args} /></Device>,
 };
 
 export const Phone: Story = {
-  args: { initialProject: UI },
   render: (args) => <Device width={390} height={844}><Sample {...args} /></Device>,
 };
 

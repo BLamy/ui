@@ -197,6 +197,14 @@ describe('createBrowserSource', () => {
     expect(await s.status(wt('feat'))).toEqual({ dirty: true, changed: 2 });
   });
 
+  it('lists a checkout’s files with their uncommitted changes, ignored ones left out, and reads one', async () => {
+    const files = await s.files(wt('feat'));
+    expect(files).toEqual([
+      { path: '.gitignore' }, { path: 'a.ts' }, { path: 'c.ts' }, { path: 'new.txt', status: 'added' }, { path: 'src/b.ts', status: 'modified' },
+    ]);
+    expect(await s.read(wt('feat'), 'src/b.ts')).toEqual({ text: 'export const b = 20;\n' });
+  });
+
   it('diffs the primary checkout against main itself', async () => {
     const d = await s.diff(wt('main'));
     expect(d).toMatchObject({ ahead: 0, behind: 0, dirty: false, files: [] });

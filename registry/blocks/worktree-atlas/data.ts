@@ -1,7 +1,7 @@
 /* Sample worktrees: three repositories with feature, fix and agent worktrees, a second clone, one locked, one
    whose folder is gone, pull requests in every state, and real file changes to diff. The demo source keeps its own copy, so
    deleting works (and stays deleted until the page reloads). Times are relative to when the source was made. */
-import type { DiffFile, Project, RemoveResult, Worktree, WorktreeDiff, WorktreeSource } from './types';
+import type { DiffFile, FileContent, FileEntry, Project, RemoveResult, Worktree, WorktreeDiff, WorktreeSource } from './types';
 
 const HOUR = 3_600_000;
 const GB = 1024 ** 3, MB = 1024 ** 2;
@@ -123,6 +123,41 @@ const TABLE_AFTER = `export function CardTable({ rows, columns = 3 }: { rows: Ro
 
 const COLUMNS = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' } as const;
 `;
+
+/* ── Checkouts: the files every worktree of a repository starts with ── */
+
+const TREES: Record<string, string[]> = {
+  ui: [
+    'README.md', 'package.json', 'pnpm-workspace.yaml', 'tsconfig.base.json', '.gitignore',
+    'apps/docs/package.json', 'apps/docs/pages/index.md', 'apps/docs/pages/blocks.md', 'apps/docs/pages/components.md',
+    'packages/ui/package.json', 'packages/ui/src/components/button.tsx', 'packages/ui/src/components/segmented.tsx',
+    'packages/ui/src/components/split-view.tsx', 'packages/ui/src/components/tree.tsx', 'packages/ui/src/components/schema-tree.tsx',
+    'packages/ui/src/lib/icon.tsx', 'packages/ui/src/lib/motion.ts', 'packages/ui/src/lib/utils.ts', 'packages/ui/src/styles.css',
+    'registry/blocks/apple-mail/page.tsx', 'registry/blocks/apple-mail/meta.json', 'tools/registry/build.mjs',
+  ],
+  docstream: [
+    'README.md', 'RELEASING.md', 'package.json', 'tsconfig.json', 'src/index.ts', 'src/render.tsx', 'src/parse.ts',
+    'src/blocks/card-table.tsx', 'src/blocks/hint.tsx', 'src/blocks/tabs.tsx', 'src/blocks/stepper.tsx', 'test/parse.test.ts',
+  ],
+  editor: ['README.md', 'CHANGELOG.md', 'package.json', 'src/index.ts', 'src/editor.tsx', 'src/toolbar.tsx', 'src/keymap.ts'],
+};
+
+/** Something plausible for a file the fixtures don't spell out. */
+function placeholder(path: string, project: string) {
+  const name = path.split('/').pop()!;
+  const base = name.replace(/\.[^.]+$/, '');
+  if (name === 'package.json') return `{\n  "name": "${path.includes('/') ? `@you/${path.split('/').slice(-2, -1)[0]}` : project}",\n  "version": "1.0.0",\n  "type": "module"\n}\n`;
+  if (name.endsWith('.json')) return '{\n  "extends": "../../tsconfig.base.json"\n}\n';
+  if (name.endsWith('.md')) return `# ${base === 'README' ? project : base}\n\nSample file in the ${project} repository.\n`;
+  if (name.endsWith('.tsx')) {
+    const component = base.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join('');
+    return `export function ${component}() {\n  return <div data-slot="${base}" />;\n}\n`;
+  }
+  if (/\.(ts|mjs)$/.test(name)) return `export const ${base.replace(/\W/g, '_')} = {};\n`;
+  if (name.endsWith('.css')) return '@import "tailwindcss";\n';
+  if (name.endsWith('.yaml')) return 'packages:\n  - apps/*\n  - packages/*\n';
+  return '\n';
+}
 
 /* ── Repositories ── */
 
@@ -259,6 +294,31 @@ export function createDemoSource({ latency = 250, now = Date.now() }: { latency?
       await wait(latency);
       const n = changes[wt.id]?.uncommitted ?? 0;
       return { dirty: n > 0, changed: n, ...(wt.clone ? { unpushed: changes[wt.id]?.unpushed ?? [] } : {}) };
+    },
+    async files(wt) {
+      await wait(latency);
+      if (wt.missing) throw new Error('This worktree’s folder is missing.');
+      const project = state.find((p) => p.id === wt.projectId);
+      const fixture = changes[wt.id];
+      const paths = new Set(TREES[project?.name ?? ''] ?? []);
+      for (const f of fixture?.diff.files ?? []) {
+        if (f.status === 'deleted') paths.delete(f.path); else paths.add(f.path);
+      }
+      // The fixture's last few changes are the uncommitted ones.
+      const changed = fixture?.diff.files ?? [];
+      const dirty = fixture?.uncommitted ? changed.slice(-fixture.uncommitted).filter((f) => f.status !== 'deleted') : [];
+      return [...paths].sort().map((path): FileEntry => {
+        const f = dirty.find((x) => x.path === path);
+        return f ? { path, status: f.status } : { path };
+      });
+    },
+    async read(wt, path): Promise<FileContent> {
+      await wait(latency / 2);
+      const own = changes[wt.id]?.diff.files.find((x) => x.path === path);
+      if (own?.skipped) return { skipped: own.skipped };
+      // A file another worktree changes is, here, as it is on main.
+      const main = Object.values(changes).flatMap((c) => c.diff.files).find((x) => x.path === path && x.before != null)?.before;
+      return { text: own?.after ?? main ?? placeholder(path, state.find((p) => p.id === wt.projectId)?.name ?? '') };
     },
     async remove(worktrees, { force }) {
       await wait(latency * 2);

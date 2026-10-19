@@ -1,20 +1,14 @@
 {
   "name": "worktree-atlas",
   "title": "Worktree Atlas",
-  "description": "Every Git worktree under the folders you open, grouped by repository, running entirely in the browser: open folders with the File System Access API (remembered across visits) and Git is read in the page by isomorphic-git, no server or desktop app. Repositories in the sidebar with an All Worktrees item; the master list shows each worktree's branch, folder, last activity, size and chips (primary, pull request state, locked, missing, outside the opened folders), with search, swipe-to-delete and an Edit mode for bulk delete. Every delete goes through a confirmation Credenza that checks each worktree for uncommitted changes first and, like git worktree remove, keeps dirty ones unless you choose otherwise, keeps locked ones, and only prunes missing ones. The detail is the worktree's diff to main since it branched (uncommitted edits included): a summary with ahead/behind and line counts, the changed files as a Tree with Git status, and a virtualized @pierre/diffs CodeView, unified or split. Pluggable WorktreeSource (sample data included) so a desktop app can supply Git CLI results instead. Responsive SplitView on desktop, tablet and phone.",
-  "categories": ["developer", "git", "application"],
-  "dependencies": ["@pierre/diffs", "isomorphic-git", "buffer"],
+  "description": "Every Git worktree under the folders you open, grouped by repository, running entirely in the browser: open folders with the File System Access API (remembered across visits) and Git is read in the page by isomorphic-git, no server or desktop app. The sidebar folds each project open to its worktrees (five at first, Show more for twenty, then twenty more at a time), with a rail that switches between Files and Changes. Right-click a worktree to delete it; every delete goes through a confirmation Credenza that checks for uncommitted changes first and, like git worktree remove, keeps dirty ones unless you choose otherwise, keeps locked ones, and only prunes missing ones. The master column is the open worktree's file Tree: every file in the checkout (Files, with search and uncommitted changes marked) or what it changes against main since it branched (Changes, with a summary of ahead/behind and line counts). The detail shows the picked file, highlighted, or every change in a virtualized @pierre/diffs CodeView, unified or split. Pluggable WorktreeSource (sample data included) so a desktop app can supply Git CLI results instead. Responsive SplitView on desktop, tablet and phone.",
+  "categories": [
+    "developer", "git", "application"
+  ],
+  "dependencies": [
+    "@pierre/diffs", "isomorphic-git", "buffer"
+  ],
   "files": [
-    "page.tsx",
-    "sidebar.tsx",
-    "worktree-list.tsx",
-    "diff-view.tsx",
-    "delete-credenza.tsx",
-    "parts.tsx",
-    "use-atlas.ts",
-    "types.ts",
-    "data.ts",
-    "browser-source.ts",
-    "git-fs.ts"
+    "page.tsx", "sidebar.tsx", "file-column.tsx", "detail-column.tsx", "delete-credenza.tsx", "parts.tsx", "files.ts", "use-atlas.ts", "types.ts", "data.ts", "browser-source.ts", "git-fs.ts"
   ]
 }

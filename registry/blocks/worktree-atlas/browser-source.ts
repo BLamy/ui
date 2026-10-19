@@ -9,7 +9,7 @@
    `git worktree remove` does: delete the checkout and the repository's `.git/worktrees/<name>`. */
 import { Buffer } from 'buffer';
 import { HandleFs, parseIndex, type Mount } from './git-fs';
-import type { DiffFile, Location, Project, RemoveResult, ScanProgress, Worktree, WorktreeDiff, WorktreeSource, WorktreeStatus } from './types';
+import type { DiffFile, FileContent, FileEntry, Location, Project, RemoveResult, ScanProgress, Worktree, WorktreeDiff, WorktreeSource, WorktreeStatus } from './types';
 
 type Git = typeof import('isomorphic-git');
 type Dir = FileSystemDirectoryHandle;
@@ -450,6 +450,24 @@ export function createBrowserSource(options: BrowserSourceOptions = {}): Worktre
     return { dirty: changed > 0, changed, ...(wt.clone ? { unpushed: await unpushed(o) } : {}) };
   }
 
+  /** Every file in the checkout (ignored ones left out), with its uncommitted change against HEAD. */
+  async function files(wt: Worktree, signal?: AbortSignal): Promise<FileEntry[]> {
+    const o = await open(wt);
+    const head = await o.git.resolveRef({ fs: o.fs, gitdir: o.gitdir, ref: 'HEAD' }).catch(() => null);
+    const rows = head ? await compare(o, [head], signal) : (await compare(o, [], signal));
+    return rows.flatMap((r): FileEntry[] => {
+      if (!r.work && !r.head) return [];
+      const status = r.head === r.work ? undefined : !r.head ? 'added' : !r.work ? 'deleted' : 'modified';
+      return [{ path: r.path, ...(status ? { status } : {}) }];
+    });
+  }
+
+  async function read(wt: Worktree, path: string): Promise<FileContent> {
+    const o = await open(wt);
+    const d = decode(new Uint8Array(await o.fs.promises.readFile(`/wt/${path}`) as Buffer));
+    return d.skipped ? { skipped: d.skipped } : { text: d.text };
+  }
+
   async function remove(worktrees: Worktree[], { force }: { force: boolean }): Promise<RemoveResult[]> {
     // Ask for write access first, while the press that started this still counts as a user gesture.
     const roots = new Set<PermissionDir>();
@@ -498,7 +516,7 @@ export function createBrowserSource(options: BrowserSourceOptions = {}): Worktre
   return {
     label: 'This browser',
     ready,
-    scan, diff, status, remove,
+    scan, diff, status, files, read, remove,
     locations: (): Location[] => locations.map((l) => ({ id: l.id, name: l.name, connected: l.connected })),
     async addLocation() {
       const pick = (window as PickerWindow).showDirectoryPicker;

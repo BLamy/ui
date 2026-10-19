@@ -1,5 +1,5 @@
 /* The data Worktree Atlas shows and the source that provides it. A source is anything that can list a machine's
-   Git worktrees, diff one against main and delete some: the in-memory demo (data.ts), folders opened in the
+   Git worktrees, list and read a worktree's files, diff one against main and delete some: the in-memory demo (data.ts), folders opened in the
    browser (browser-source.ts), or a desktop app's IPC bridge. The UI only talks to this interface. */
 
 export type ChangeStatus = 'added' | 'modified' | 'deleted';
@@ -78,6 +78,19 @@ export interface WorktreeDiff {
   files: DiffFile[];
 }
 
+/** A file in a worktree's checkout: tracked, or untracked and not ignored. */
+export interface FileEntry {
+  path: string;
+  /** Uncommitted change against the worktree's HEAD. */
+  status?: ChangeStatus;
+}
+
+export interface FileContent {
+  /** Absent when skipped. */
+  text?: string;
+  skipped?: 'binary' | 'large';
+}
+
 export interface WorktreeStatus {
   /** Uncommitted or untracked files that deleting the folder would lose. */
   dirty: boolean;
@@ -105,6 +118,10 @@ export interface WorktreeSource {
   scan(onProgress?: (p: ScanProgress) => void): Promise<Project[]>;
   diff(worktree: Worktree, signal?: AbortSignal): Promise<WorktreeDiff>;
   status(worktree: Worktree): Promise<WorktreeStatus>;
+  /** Every file in the checkout, for browsing. */
+  files(worktree: Worktree, signal?: AbortSignal): Promise<FileEntry[]>;
+  /** One file's contents as it is in the checkout. */
+  read(worktree: Worktree, path: string): Promise<FileContent>;
   /** `force` deletes worktrees with uncommitted changes (`git worktree remove --force`). */
   remove(worktrees: Worktree[], options: { force: boolean }): Promise<RemoveResult[]>;
   /** The opened locations, when the source has them (the browser source does). */

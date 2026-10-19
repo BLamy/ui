@@ -1,6 +1,7 @@
-/* Worktree Atlas — every Git worktree under the folders you open, grouped by repository. Projects in the sidebar;
-   a project's worktrees in the master list (swipe to delete, or Edit to delete several, always through a
-   confirmation Credenza); the open worktree's diff to main in the detail, as a changed-files Tree beside a
+/* Worktree Atlas — every Git worktree under the folders you open, grouped by repository. The sidebar folds each
+   project open to its worktrees (right-click one to delete it, always through a confirmation Credenza), with a
+   rail that switches between Files and Changes. The master column is the open worktree's file tree: every file
+   (Files) or what it changes against main (Changes); the detail shows the picked file, or the diff in a
    @pierre/diffs view. One SplitView at every size: three columns on desktop, a floating sidebar on an iPad, a
    stack on the phone.
    Data comes from a `WorktreeSource`. By default that is the browser itself: open folders (File System Access)
@@ -14,11 +15,11 @@ import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '
 import { browserFoldersSupported, createBrowserSource } from './browser-source';
 import { createDemoSource } from './data';
 import { DeleteCredenza } from './delete-credenza';
-import { DiffColumn } from './diff-view';
+import { DetailColumn } from './detail-column';
+import { FileColumn } from './file-column';
 import { ProjectsSidebar } from './sidebar';
 import type { WorktreeSource } from './types';
-import { useAtlas } from './use-atlas';
-import { WorktreeColumn } from './worktree-list';
+import { useAtlas, type AtlasView } from './use-atlas';
 
 export type { WorktreeSource } from './types';
 export { createBrowserSource, createDemoSource };
@@ -28,10 +29,10 @@ export interface WorktreeAtlasProps {
   appearance?: Appearance;
   /** Where worktrees come from. Default: folders opened in this browser (sample data where that isn't supported). */
   source?: WorktreeSource;
-  /** Sidebar item to open on: `all` or a project id. */
-  initialProject?: string;
   /** Worktree open at mount (wide layouts). */
   initialWorktree?: string | null;
+  /** What the rail shows at mount: the checkout's files, or its changes against main (default). */
+  initialView?: AtlasView;
 }
 
 /** An accent that reads as "developer tool": iOS indigo. */
@@ -68,20 +69,23 @@ function Welcome({ onAdd, onSample }: { onAdd: () => void; onSample: () => void 
   );
 }
 
-function Atlas({ source, initialProject, initialWorktree, onSample, onLeaveSample }: Omit<WorktreeAtlasProps, 'appearance' | 'source'> & {
+function Atlas({ source, initialWorktree, initialView, onSample, onLeaveSample }: Omit<WorktreeAtlasProps, 'appearance' | 'source'> & {
   source: WorktreeSource; onSample?: () => void; onLeaveSample?: () => void;
 }) {
   const [compact, setCompact] = useState(false);
-  const atlas = useAtlas(source, { project: initialProject, worktree: initialWorktree });
+  const atlas = useAtlas(source, { worktree: initialWorktree, view: initialView });
   const welcome = onSample && atlas.scanned && atlas.locations.length === 0;
   return (
     <>
-      <SplitView aria-label="Worktree Atlas" onWidthClassChange={(wc) => setCompact(wc === 'compact')}
-        selection={{ sidebar: atlas.projectId, supplementary: atlas.worktreeId }}
-        onSelectionChange={(sel) => { if (sel.sidebar && sel.sidebar !== atlas.projectId) atlas.openProject(sel.sidebar); }}>
+      <SplitView aria-label="Worktree Atlas" defaultCompactColumn={initialWorktree ? 'supplementary' : 'sidebar'} onWidthClassChange={(wc) => setCompact(wc === 'compact')}
+        selection={{ sidebar: atlas.worktreeId, supplementary: atlas.filePath }}
+        onSelectionChange={(sel) => {
+          if (sel.sidebar !== undefined && sel.sidebar !== atlas.worktreeId) atlas.open(sel.sidebar);
+          else if (sel.supplementary !== undefined && sel.supplementary !== atlas.filePath) atlas.openFile(sel.supplementary);
+        }}>
         <ProjectsSidebar atlas={atlas} footer={onLeaveSample ? <Button size="sm" variant="secondary" onPress={onLeaveSample}>Open My Folders</Button> : null} />
-        <WorktreeColumn atlas={atlas} />
-        <DiffColumn atlas={atlas} />
+        <FileColumn atlas={atlas} />
+        <DetailColumn atlas={atlas} />
       </SplitView>
       <DeleteCredenza atlas={atlas} compact={compact} />
       {welcome ? <Welcome onAdd={() => void atlas.addLocation()} onSample={onSample} /> : null}
@@ -89,7 +93,7 @@ function Atlas({ source, initialProject, initialWorktree, onSample, onLeaveSampl
   );
 }
 
-export default function WorktreeAtlas({ appearance, source, initialProject = 'all', initialWorktree = null }: WorktreeAtlasProps) {
+export default function WorktreeAtlas({ appearance, source, initialWorktree = null, initialView = 'changes' }: WorktreeAtlasProps) {
   const ambient = useAppearance();
   const dark = (appearance ?? ambient) === 'dark';
   const browser = useBrowserSource(!source && browserFoldersSupported());
@@ -99,7 +103,7 @@ export default function WorktreeAtlas({ appearance, source, initialProject = 'al
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
       <BLProvider tint={ATLAS_TINT[dark ? 'dark' : 'light']} className="bg-background">
-        <Atlas key={active === browser ? 'browser' : 'other'} source={active} initialProject={initialProject} initialWorktree={initialWorktree}
+        <Atlas key={active === browser ? 'browser' : 'other'} source={active} initialWorktree={initialWorktree} initialView={initialView}
           onSample={active === browser ? () => setSample(true) : undefined}
           onLeaveSample={browser && sample && !source ? () => setSample(false) : undefined} />
       </BLProvider>
