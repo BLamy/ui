@@ -1,0 +1,47 @@
+{
+  "name": "bl-notes-desktop",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "bootstrap": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --dir tools/notes-desktop install --ignore-workspace --frozen-lockfile",
+          "node tools/notes-desktop/node_modules/electron/install.js"
+        ],
+        "parallel": false
+      }
+    },
+    "check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "node --check tools/notes-desktop/main.cjs",
+          "node --check tools/notes-desktop/build.mjs"
+        ]
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "env -u ELECTRON_RUN_AS_NODE tools/notes-desktop/node_modules/.bin/electron tools/notes-desktop"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node --test tools/notes-desktop/folder-access.test.cjs"
+      }
+    },
+    "package": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/tools/notes-desktop"
+      ],
+      "options": {
+        "command": "node tools/notes-desktop/build.mjs"
+      }
+    }
+  }
+}
