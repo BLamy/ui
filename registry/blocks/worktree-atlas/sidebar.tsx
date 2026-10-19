@@ -95,7 +95,7 @@ function ProjectGroup({ atlas, p, where, expanded, onExpandedChange }: {
   return (
     <div role="group" aria-label={p.name}>
       <PlainButton onPress={() => onExpandedChange(!expanded)} aria-expanded={expanded}
-        className="bl-btn flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-ctl border-0 bg-transparent px-2.5 text-left [font-family:inherit] text-[15px] text-foreground outline-none data-[hovered]:bg-secondary data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+        className="bl-btn flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-ctl border-0 bg-transparent px-2.5 text-left [font-family:inherit] text-subhead text-foreground outline-none data-[hovered]:bg-secondary data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
         <FolderIcon open={expanded} size={20} className="text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate" title={shortPath(p.path)}>
           {p.name}{where ? <span className="ml-1.5 text-footnote text-muted-foreground">{where}</span> : null}
