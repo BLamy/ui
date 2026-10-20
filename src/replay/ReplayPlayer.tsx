@@ -294,11 +294,18 @@ export function ReplayPlayer({
 
 /* ── parts ───────────────────────────────────────────────────────────────────────── */
 
-export function BrowserBar({ href, trafficLights, loading }: { href: string; trafficLights: boolean; loading: boolean }) {
+/** Splits an address for the URL bar: the host, and the path + query + hash after it. */
+export function splitReplayAddress(href: string): { host: string; path: string } {
   const shown = href.replace(/^https?:\/\//, '')
-  const slash = shown.indexOf('/')
-  const host = slash < 0 ? shown : shown.slice(0, slash)
-  const path = slash < 0 ? '' : shown.slice(slash)
+  const cut = shown.search(/[/?#]/)
+  return cut < 0 ? { host: shown, path: '' } : { host: shown.slice(0, cut), path: shown.slice(cut) }
+}
+
+export function BrowserBar({ href, trafficLights, loading }: { href: string; trafficLights: boolean; loading: boolean }) {
+  const { host, path } = splitReplayAddress(href)
+  // Once the recording is past the site root, where it is (path, query, hash) is what matters:
+  // it leads and keeps its room, and the host dims and gives way first.
+  const primary = path && path !== '/' ? 'path' : 'host'
   return (
     <div data-slot="replay-preview-bar">
       {trafficLights ? (
@@ -310,9 +317,9 @@ export function BrowserBar({ href, trafficLights, loading }: { href: string; tra
         <span data-slot="replay-preview-lock" aria-hidden="true">
           {loading ? <span data-slot="replay-preview-spinner" /> : <Lock size={10} strokeWidth={2.5} />}
         </span>
-        <span data-slot="replay-preview-url" title={href}>
-          <span>{host}</span>
-          <span>{path}</span>
+        <span data-slot="replay-preview-url" data-primary={primary} title={href}>
+          <span data-part="host">{host}</span>
+          {path ? <span data-part="path">{path}</span> : null}
         </span>
       </div>
       {trafficLights ? <span aria-hidden="true" data-slot="replay-preview-lights-spacer" /> : null}

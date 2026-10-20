@@ -3718,18 +3718,29 @@
   }
 
   :where([data-slot="replay-preview-url"]) {
+    display: flex;
     min-width: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  :where([data-slot="replay-preview-url"] > :first-child) {
+  :where([data-slot="replay-preview-url"] > span) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--muted-foreground, #71717a);
+  }
+
+  /* The primary part is full strength; when space runs out the other one gives way first. */
+  :where([data-slot="replay-preview-url"][data-primary="host"] > [data-part="host"]),
+  :where([data-slot="replay-preview-url"][data-primary="path"] > [data-part="path"]) {
+    flex-shrink: 1;
     color: var(--foreground, #18181b);
   }
 
-  :where([data-slot="replay-preview-url"] > :last-child) {
-    color: var(--muted-foreground, #71717a);
+  :where([data-slot="replay-preview-url"][data-primary="host"] > [data-part="path"]),
+  :where([data-slot="replay-preview-url"][data-primary="path"] > [data-part="host"]) {
+    flex-shrink: 10000;
   }
 
   :where([data-slot="replay-preview-spinner"]) {

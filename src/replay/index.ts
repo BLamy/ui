@@ -18,4 +18,6 @@ export type { ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerPoint, Re
 export { ReplayEventType, ReplayIncrementalSource, ReplayMouseInteraction } from './types';
 export type { ReplayEvent } from './types';
 export { isReplayQaUrl, normalizeReplayEmbedUrl } from './url';
+export { ReplayFile, isRrwebUrl } from './ReplayFile';
+export type { ReplayFileProps } from './ReplayFile';
 export { sanitizeReplayEvent } from './sanitize';

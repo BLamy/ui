@@ -164,6 +164,19 @@ chrome-free `/p/...` route automatically:
 {% embed url="https://loop-qa.replay.io/projects/project-id/journeys/journey-id" /%}
 ```
 
+An embed of an rrweb recording file (a URL ending in `.rrweb`, holding the JSON event
+array or `{ events }`) plays it in the same replay player. The URL goes through the host's
+`AssetResolverProvider`, like STL files and images, and the file is fetched only when the
+player nears the viewport:
+
+```md
+{% embed url="./recording.rrweb" title="Checkout session" %}
+```
+
+`ReplayFile` (`url` plus the player options) is that embed as a component, and
+`isRrwebUrl(url)` the test the renderer uses; both are exported from the root and
+`@brett_lamy/docstream/replay`.
+
 The replay component is also available directly. `ReplayPreview` takes either
 `events` (an rrweb recording you hold: the full player) or `source` (a page URL, an
 event array, or an events endpoint):
@@ -175,7 +188,8 @@ import { ReplayPreview } from "@brett_lamy/docstream"
 <ReplayPreview events={events} initialTime={6400} />
 ```
 
-The player is a browser frame (URL bar that follows the recording's navigations),
+The player is a browser frame (URL bar that follows the recording's navigations, led by
+the path, query and hash once the page is past the site root, with the host dimmed),
 a page-shaped poster until it is ready, play/pause, a scrubber with the recording's
 moments on a rail above it (clicks, console errors, failed requests, navigations,
 custom events; press one to jump), speed, fullscreen, and a drawn cursor whose clicks
@@ -395,6 +409,12 @@ export default defineConfig({
   ],
 })
 ```
+
+The dev server answers `GET {apiBase}/source?mount=…&path=…` (read), `PUT` with JSON
+`{ content }` (edit an existing file) and `POST` with a raw body (create or replace a file,
+folders included: uploads such as `.rrweb` recordings). Writes need a writable mount;
+`apiBase` defaults to `/@docstream`. A `PUT` reloads the page; set `reloadOnWrite: false` on a
+mount whose files hot-update on their own (Markdown an editor autosaves) to skip that.
 
 Reference a named component export or a CSF story from Markdown:
 

@@ -10,6 +10,11 @@ export interface DocstreamSourceMount {
   root: string
   /** Allow PUT requests to edit files in this mount. Defaults to true. */
   writable?: boolean
+  /**
+   * Reload the page after a PUT. Defaults to true. Turn it off for content files whose importers
+   * hot-update themselves (an editor autosaving Markdown), so a save doesn't reload the editor.
+   */
+  reloadOnWrite?: boolean
 }
 
 export interface DocstreamSourcesOptions {
@@ -22,6 +27,7 @@ interface ResolvedMount {
   name: string
   root: string
   writable: boolean
+  reloadOnWrite: boolean
 }
 
 const VIRTUAL_ID = "virtual:docstream-sources"
@@ -38,10 +44,14 @@ function requestUrl(request: IncomingMessage): URL {
   return new URL(request.url ?? "/", "http://docstream.local")
 }
 
-async function requestBody(request: IncomingMessage): Promise<string> {
+async function requestBytes(request: IncomingMessage): Promise<Buffer> {
   const chunks: Buffer[] = []
   for await (const chunk of request) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-  return Buffer.concat(chunks).toString("utf8")
+  return Buffer.concat(chunks)
+}
+
+async function requestBody(request: IncomingMessage): Promise<string> {
+  return (await requestBytes(request)).toString("utf8")
 }
 
 function normalizeRelativePath(value: string): string {
@@ -113,8 +123,19 @@ function installMiddleware(server: ViteDevServer, apiBase: string, viteBase: str
         await fs.writeFile(absolutePath, parsed.content, "utf8")
         const stat = await fs.stat(absolutePath)
         server.watcher.add(absolutePath)
-        server.ws.send({ type: "full-reload", path: "*" })
+        if (mount.reloadOnWrite) server.ws.send({ type: "full-reload", path: "*" })
         return send(response, 200, JSON.stringify({ content: parsed.content, provenance: provenance(url, mount, relativePath, absolutePath, stat.mtimeMs) }))
+      }
+
+      if (request.method === "POST") {
+        // Upload: create (or replace) a file with the raw request body, e.g. a dropped .rrweb recording.
+        if (!mount.writable) return send(response, 403, `Source mount ${mount.name} is read-only`, "text/plain; charset=utf-8")
+        const bytes = await requestBytes(request)
+        await fs.mkdir(path.dirname(absolutePath), { recursive: true })
+        await fs.writeFile(absolutePath, bytes)
+        const stat = await fs.stat(absolutePath)
+        server.watcher.add(absolutePath)
+        return send(response, 201, JSON.stringify({ size: stat.size, provenance: provenance(url, mount, relativePath, absolutePath, stat.mtimeMs) }))
       }
 
       return send(response, 405, "Method not allowed", "text/plain; charset=utf-8")
@@ -129,6 +150,9 @@ function installMiddleware(server: ViteDevServer, apiBase: string, viteBase: str
  * Mount real source directories behind safe Vite dev-server endpoints.
  * Markdown references import live modules from these files, and editor writes
  * go back to disk so Vite's normal watcher/HMR pipeline remains authoritative.
+ *
+ * `GET {apiBase}/source?mount=&path=` reads a file, `PUT` (JSON `{ content }`) edits an existing one,
+ * and `POST` (raw body) creates or replaces one — uploads such as `.rrweb` recordings.
  */
 export function docstreamSources(options: DocstreamSourcesOptions): Plugin {
   const apiBase = `/${(options.apiBase ?? "/@docstream").replace(/^\/+|\/+$/g, "")}`
@@ -148,6 +172,7 @@ export function docstreamSources(options: DocstreamSourcesOptions): Plugin {
           name: mount.name,
           root: path.resolve(config.root, mount.root),
           writable: mount.writable !== false,
+          reloadOnWrite: mount.reloadOnWrite !== false,
         }
       })
     },

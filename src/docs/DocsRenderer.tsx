@@ -27,6 +27,7 @@ import { DocPageActions, type DocPageActionsOptions } from "./PageActions"
 import { useSyncedTab } from "./tabs-sync"
 import { ReplayPreview } from "../replay/ReplayPreview"
 import { isReplayQaUrl } from "../replay/url"
+import { ReplayFile, isRrwebUrl } from "../replay/ReplayFile"
 import { VideoEmbed } from "../video"
 import { StlViewer, isStlUrl } from "../stl"
 import { StrudelPlayer } from "../strudel/StrudelPlayer"
@@ -436,6 +437,9 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
     case "embed": {
       if (isReplayQaUrl(block.url)) {
         return <ReplayPreview source={block.url} title="Replay preview" />
+      }
+      if (isRrwebUrl(block.url)) {
+        return <ReplayFile url={block.url} title={block.title || fileName(block.url)} />
       }
       if (isStlUrl(block.url)) {
         return <AssetStl url={block.url} {...(block.title ? { title: block.title } : {})} />

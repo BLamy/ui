@@ -42,7 +42,7 @@ The package ships TypeScript source with subpath exports so hosts only pull what
 | \`@brett_lamy/docstream/streamdown\` | \`GitbookStreamdown\` plus the few helpers it needs. |
 | \`@brett_lamy/docstream/assets\` | \`setAssetBase\` / \`resolveAsset\`. |
 | \`@brett_lamy/docstream/openapi\` | \`OpenApiOperation\`. |
-| \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, \`formatReplayTime\`, the headless \`ReplayStage\`, marker/pointer helpers, URL helpers, source types. |
+| \`@brett_lamy/docstream/replay\` | \`ReplayPreview\`, \`ReplayEmbed\`, \`ReplayFile\` (a \`.rrweb\` file), \`formatReplayTime\`, the headless \`ReplayStage\`, marker/pointer helpers, URL helpers (\`isRrwebUrl\`), source types. |
 | \`@brett_lamy/docstream/replay/demo\` | \`replayDemoEvents\`, a small synthetic rrweb recording. |
 | \`@brett_lamy/docstream/video\` | \`VideoEmbed\`. |
 | \`@brett_lamy/docstream/playground\` | Live React demos (\`PlaygroundStreamdown\`, \`ReactDemo\`, almost-node runtime + helpers). Needs \`@agent-wasm/core\`. |
@@ -822,7 +822,7 @@ graph LR
 
 {% embed url="https://www.youtube.com/watch?v=aqz-KE-bpKQ" title="Big Buck Bunny" %}
 
-Embed attributes: \`url\`, \`title\`, \`poster\`, and boolean \`autoplay\` / \`loop\` / \`muted\` / \`controls\`. A trailing end tag is tolerated. YouTube URLs become player iframes, direct \`.mp4/.webm/.ogg\` URLs become native video, Loop QA replay URLs become a \`ReplayPreview\`, and anything else falls back to a link card.
+Embed attributes: \`url\`, \`title\`, \`poster\`, and boolean \`autoplay\` / \`loop\` / \`muted\` / \`controls\`. A trailing end tag is tolerated. YouTube URLs become player iframes, direct \`.mp4/.webm/.ogg\` URLs become native video, Loop QA replay URLs become a \`ReplayPreview\`, \`.rrweb\` recording files (resolved through the host's \`AssetResolverProvider\`, fetched when scrolled near) play in the replay player, and anything else falls back to a link card.
 
 ## Content refs
 
