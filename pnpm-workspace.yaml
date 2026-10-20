@@ -1,4 +1,6 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  # docstream's and the editor's standalone playgrounds (each package's own dev site)
+  - 'packages/*/demo'
   - 'registry'

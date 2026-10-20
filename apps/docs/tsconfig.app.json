@@ -28,8 +28,22 @@
     "eslint.config.cjs",
     "eslint.config.mjs"
   ],
-  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "examples/**/*.ts", "examples/**/*.tsx", "pages/nav.json"],
+  "include": [
+    "src/**/*.js",
+    "src/**/*.jsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "examples/**/*.ts",
+    "examples/**/*.tsx",
+    "pages/nav.json"
+  ],
   "references": [
+    {
+      "path": "../../packages/docstream-editor/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/docstream/tsconfig.lib.json"
+    },
     {
       "path": "../../registry/tsconfig.lib.json"
     },
