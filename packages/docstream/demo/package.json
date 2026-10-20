@@ -12,13 +12,8 @@
   "dependencies": {
     "@agent-wasm/core": "^0.4.0",
     "@brett_lamy/docstream": "workspace:*",
-    "hast-util-to-html": "^9.0.5",
-    "lowlight": "^3.3.0",
-    "lucide-react": "^1.17.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "rrweb": "2.0.0-alpha.20",
-    "streamdown": "^2.5.0",
     "yaml": "^2.9.0"
   },
   "devDependencies": {

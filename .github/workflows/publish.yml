@@ -1,9 +1,10 @@
 name: Publish packages
 
-# Publishes every @brett_lamy/* library whose package.json version isn't on npm yet, in dependency order.
-# `pnpm pack` rewrites `workspace:*` to the real versions; `npm publish` then uploads the tarball using
-# npm trusted publishing (OIDC — configure this workflow, publish.yml, as the trusted publisher for each
-# package on npmjs.com) or, if set, the NPM_TOKEN repository secret.
+# Publishes every @brett_lamy/* library whose package.json version isn't on npm yet, in dependency order
+# (PACKAGES below). `pnpm pack` rewrites `workspace:*` to the real versions — so docstream-editor ships pinned
+# to the docstream beside it — and `npm publish` uploads the tarball with npm trusted publishing (OIDC:
+# each package on npmjs.com names BLamy/ui and this workflow, publish.yml, as its trusted publisher), which
+# also attaches provenance. The NPM_TOKEN repository secret is used instead, if set.
 on:
   push:
     branches: [main]
@@ -39,8 +40,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build libraries
-        run: pnpm nx run-many -t build -p @brett_lamy/ui
+      - name: Build and test libraries
+        run: pnpm nx run-many -t build,test -p @brett_lamy/docstream @brett_lamy/docstream-editor @brett_lamy/ui
 
       - name: Publish new versions
         shell: bash
@@ -49,7 +50,9 @@ jobs:
         run: |
           npm install --global npm@latest
           mkdir -p "$RUNNER_TEMP/pkgs"
-          for pkg in ui; do
+          # Dependencies first: the editor needs its docstream on npm, ui needs both.
+          PACKAGES="docstream docstream-editor ui"
+          for pkg in $PACKAGES; do
             NAME=$(node -p "require('./packages/$pkg/package.json').name")
             VERSION=$(node -p "require('./packages/$pkg/package.json').version")
             if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
