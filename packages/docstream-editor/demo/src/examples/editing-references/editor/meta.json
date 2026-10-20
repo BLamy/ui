@@ -1,0 +1,28 @@
+{
+  "title": "Reference chips",
+  "description": "Type `@`, `#` or `$` for a picker. Chips serialize to `@id`, `#id`, `$id` and `[^n]`.",
+  "height": 724,
+  "status": "Live",
+  "variants": [
+    {
+      "id": "freeform",
+      "label": "Free-form"
+    },
+    {
+      "id": "directory",
+      "label": "Host lists"
+    },
+    {
+      "id": "async",
+      "label": "Async search"
+    },
+    {
+      "id": "citations",
+      "label": "Citations"
+    },
+    {
+      "id": "off",
+      "label": "Off"
+    }
+  ]
+}

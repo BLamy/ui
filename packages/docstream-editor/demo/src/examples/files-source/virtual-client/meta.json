@@ -1,0 +1,6 @@
+{
+  "title": "Source refs over an in-memory client",
+  "description": "Each `{% source-ref %}` block edits the file it points at. Change `\"Beta\"` in Badge.js: the file saves after a pause, `onSourceSaved` fires, and the preview re-imports it. The Markdown never changes.",
+  "height": 980,
+  "status": "Live"
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Paste and drop conversions",
+  "description": "What `markdownPasteContent(text)` returns for a clipboard, and what `embedBlockFor(url)` turns a URL into.",
+  "height": 520,
+  "variants": [
+    { "id": "paste", "label": "markdownPasteContent" },
+    { "id": "embed", "label": "embedBlockFor" }
+  ],
+  "status": "Live"
+}
