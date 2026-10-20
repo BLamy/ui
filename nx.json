@@ -30,7 +30,10 @@
           "buildDepsName": "build-deps",
           "watchDepsName": "watch-deps"
         }
-      }
+      },
+      "exclude": [
+        "packages/*/demo/**"
+      ]
     },
     {
       "plugin": "@nx/react/router-plugin",
@@ -41,7 +44,10 @@
         "watchDepsTargetName": "watch-deps",
         "buildDepsTargetName": "build-deps",
         "typecheckTargetName": "typecheck"
-      }
+      },
+      "exclude": [
+        "packages/*/demo/**"
+      ]
     },
     {
       "plugin": "@nx/eslint/plugin",
@@ -60,7 +66,10 @@
         "typecheckTargetName": "typecheck",
         "buildDepsTargetName": "build-deps",
         "watchDepsTargetName": "watch-deps"
-      }
+      },
+      "exclude": [
+        "packages/*/demo/**"
+      ]
     },
     {
       "plugin": "@nx/playwright/plugin",
@@ -73,7 +82,10 @@
       "plugin": "@nx/vitest",
       "options": {
         "testTargetName": "test"
-      }
+      },
+      "exclude": [
+        "packages/*/demo/**"
+      ]
     }
   ],
   "targetDefaults": {

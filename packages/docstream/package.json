@@ -8,8 +8,8 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && vitest run",
+    "typecheck": "tsc -b tsconfig.json",
+    "test": "vitest run",
     "prepack": "npm run build"
   },
   "main": "./dist/index.js",
@@ -27,123 +27,154 @@
   ],
   "exports": {
     ".": {
+      "@org/source": "./src/index.ts",
       "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./gitbook": {
+      "@org/source": "./src/gitbook/index.ts",
       "source": "./src/gitbook/index.ts",
       "types": "./dist/gitbook/index.d.ts",
       "import": "./dist/gitbook/index.js",
       "default": "./dist/gitbook/index.js"
     },
     "./properties": {
+      "@org/source": "./src/docs/DocumentProperties.tsx",
       "source": "./src/docs/DocumentProperties.tsx",
       "types": "./dist/docs/DocumentProperties.d.ts",
       "import": "./dist/docs/DocumentProperties.js",
       "default": "./dist/docs/DocumentProperties.js"
     },
-    "./properties/styles.css": "./dist/docs/properties.css",
+    "./properties/styles.css": {
+      "@org/source": "./src/docs/properties.css",
+      "default": "./dist/docs/properties.css"
+    },
     "./tasks": {
+      "@org/source": "./src/docs/TaskCheckbox.tsx",
       "source": "./src/docs/TaskCheckbox.tsx",
       "types": "./dist/docs/TaskCheckbox.d.ts",
       "import": "./dist/docs/TaskCheckbox.js",
       "default": "./dist/docs/TaskCheckbox.js"
     },
-    "./tasks/styles.css": "./dist/docs/tasks.css",
+    "./tasks/styles.css": {
+      "@org/source": "./src/docs/tasks.css",
+      "default": "./dist/docs/tasks.css"
+    },
     "./streamdown": {
+      "@org/source": "./src/streamdown.tsx",
       "source": "./src/streamdown.tsx",
       "types": "./dist/streamdown.d.ts",
       "import": "./dist/streamdown.js",
       "default": "./dist/streamdown.js"
     },
     "./reference": {
+      "@org/source": "./src/docs/reference.tsx",
       "source": "./src/docs/reference.tsx",
       "types": "./dist/docs/reference.d.ts",
       "import": "./dist/docs/reference.js",
       "default": "./dist/docs/reference.js"
     },
     "./assets": {
+      "@org/source": "./src/assets.ts",
       "source": "./src/assets.ts",
       "types": "./dist/assets.d.ts",
       "import": "./dist/assets.js",
       "default": "./dist/assets.js"
     },
     "./openapi": {
+      "@org/source": "./src/openapi/OpenApiOperation.tsx",
       "source": "./src/openapi/OpenApiOperation.tsx",
       "types": "./dist/openapi/OpenApiOperation.d.ts",
       "import": "./dist/openapi/OpenApiOperation.js",
       "default": "./dist/openapi/OpenApiOperation.js"
     },
     "./replay": {
+      "@org/source": "./src/replay/index.ts",
       "source": "./src/replay/index.ts",
       "types": "./dist/replay/index.d.ts",
       "import": "./dist/replay/index.js",
       "default": "./dist/replay/index.js"
     },
     "./replay/demo": {
+      "@org/source": "./src/replay/demo/index.ts",
       "source": "./src/replay/demo/index.ts",
       "types": "./dist/replay/demo/index.d.ts",
       "import": "./dist/replay/demo/index.js",
       "default": "./dist/replay/demo/index.js"
     },
     "./video": {
+      "@org/source": "./src/video/index.ts",
       "source": "./src/video/index.ts",
       "types": "./dist/video/index.d.ts",
       "import": "./dist/video/index.js",
       "default": "./dist/video/index.js"
     },
     "./stl": {
+      "@org/source": "./src/stl/index.ts",
       "source": "./src/stl/index.ts",
       "types": "./dist/stl/index.d.ts",
       "import": "./dist/stl/index.js",
       "default": "./dist/stl/index.js"
     },
     "./strudel": {
+      "@org/source": "./src/strudel/index.ts",
       "source": "./src/strudel/index.ts",
       "types": "./dist/strudel/index.d.ts",
       "import": "./dist/strudel/index.js",
       "default": "./dist/strudel/index.js"
     },
     "./viz": {
+      "@org/source": "./src/viz/index.ts",
       "source": "./src/viz/index.ts",
       "types": "./dist/viz/index.d.ts",
       "import": "./dist/viz/index.js",
       "default": "./dist/viz/index.js"
     },
     "./playground": {
+      "@org/source": "./src/playground/index.ts",
       "source": "./src/playground/index.ts",
       "types": "./dist/playground/index.d.ts",
       "import": "./dist/playground/index.js",
       "default": "./dist/playground/index.js"
     },
     "./source": {
+      "@org/source": "./src/source/index.ts",
       "source": "./src/source/index.ts",
       "types": "./dist/source/index.d.ts",
       "import": "./dist/source/index.js",
       "default": "./dist/source/index.js"
     },
     "./demo": {
+      "@org/source": "./src/demo/index.ts",
       "source": "./src/demo/index.ts",
       "types": "./dist/demo/index.d.ts",
       "import": "./dist/demo/index.js",
       "default": "./dist/demo/index.js"
     },
     "./vite": {
+      "@org/source": "./src/vite/index.ts",
       "source": "./src/vite/index.ts",
       "types": "./dist/vite/index.d.ts",
       "import": "./dist/vite/index.js",
       "default": "./dist/vite/index.js"
     },
     "./site": {
+      "@org/source": "./src/site/index.ts",
       "source": "./src/site/index.ts",
       "types": "./dist/site/index.d.ts",
       "import": "./dist/site/index.js",
       "default": "./dist/site/index.js"
     },
-    "./site/styles.css": "./dist/site/site.css",
-    "./styles.css": "./dist/styles.css"
+    "./site/styles.css": {
+      "@org/source": "./src/site/site.css",
+      "default": "./dist/site/site.css"
+    },
+    "./styles.css": {
+      "@org/source": "./src/styles.css",
+      "default": "./dist/styles.css"
+    }
   },
   "dependencies": {
     "@strudel/web": "1.3.0",
@@ -177,18 +208,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BLamy/docstream.git"
+    "url": "git+https://github.com/BLamy/ui.git",
+    "directory": "packages/docstream"
   },
   "devDependencies": {
     "@agent-wasm/core": "^0.4.0",
     "@brett_lamy/viz-engine": "^0.2.1",
     "@types/node": "^24.0.0",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.7",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
     "happy-dom": "^20.14.5",
-    "typescript": "^5.5.4",
     "vite": "^7.0.0",
     "vitest": "^3.2.4"
   },
-  "module": "./dist/index.js"
+  "module": "./dist/index.js",
+  "homepage": "https://blamy.github.io/ui/#/docstream",
+  "bugs": {
+    "url": "https://github.com/BLamy/ui/issues"
+  }
 }

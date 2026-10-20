@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && vitest run",
+    "typecheck": "tsc -b tsconfig.json",
+    "test": "vitest run",
     "prepack": "npm run build"
   },
   "main": "./dist/index.js",
@@ -24,27 +24,33 @@
   ],
   "exports": {
     ".": {
+      "@org/source": "./src/index.ts",
       "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./editor": {
+      "@org/source": "./src/editor/Editor.tsx",
       "source": "./src/editor/Editor.tsx",
       "types": "./dist/editor/Editor.d.ts",
       "import": "./dist/editor/Editor.js",
       "default": "./dist/editor/Editor.js"
     },
     "./convert": {
+      "@org/source": "./src/editor/convert.ts",
       "source": "./src/editor/convert.ts",
       "types": "./dist/editor/convert.d.ts",
       "import": "./dist/editor/convert.js",
       "default": "./dist/editor/convert.js"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": {
+      "@org/source": "./src/styles.css",
+      "default": "./dist/styles.css"
+    }
   },
   "dependencies": {
-    "@brett_lamy/docstream": "1.19.1",
+    "@brett_lamy/docstream": "workspace:*",
     "gpu-lexer": "0.0.2",
     "lucide-react": "^1.17.0",
     "react-aria": "^3.52.1"
@@ -65,7 +71,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BLamy/docstream-editor.git"
+    "url": "git+https://github.com/BLamy/ui.git",
+    "directory": "packages/docstream-editor"
   },
   "devDependencies": {
     "@tiptap/core": "^3.26.1",
@@ -78,15 +85,18 @@
     "@tiptap/react": "^3.26.1",
     "@tiptap/starter-kit": "^3.26.1",
     "@tiptap/suggestion": "^3.26.1",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
     "happy-dom": "^20.14.5",
     "react": "^19",
     "react-dom": "^19",
-    "typescript": "^5.6.0",
     "vitest": "^3.2.4"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "homepage": "https://blamy.github.io/ui/#/docstream-editor",
+  "bugs": {
+    "url": "https://github.com/BLamy/ui/issues"
   }
 }

@@ -7,6 +7,8 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@brett_lamy/docstream": "workspace:*",
+    "@brett_lamy/docstream-editor": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

@@ -40,6 +40,10 @@ const pkg = Object.values(
   }),
 )[0]!
 
+const docstream = Object.values(
+  import.meta.glob<{ version: string }>("../../../docstream/package.json", { import: "default", eager: true }),
+)[0]!
+
 describe("editor dependency boundary", () => {
   it("never imports the almost-node playground", () => {
     expect(Object.keys(sources).length).toBeGreaterThan(5)
@@ -60,15 +64,18 @@ describe("editor dependency boundary", () => {
   it("publishes every entry from dist/ and loads each in plain Node", () => {
     const exports = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).exports as Record<
       string,
-      string | { source: string; types: string; import: string }
+      { source?: string; types: string; import: string; default: string; "@org/source": string }
     >
     const specs: string[] = []
     for (const [name, target] of Object.entries(exports)) {
-      if (typeof target === "string") {
-        expect(target, name).toMatch(/^\.\/dist\/.*\.css$/)
-        expect(existsSync(join(root, target)), target).toBe(true)
+      // Workspace consumers read the sources (`@org/source`); everyone else gets dist/.
+      if (!target.source) {
+        expect(target.default, name).toMatch(/^\.\/dist\/.*\.css$/)
+        expect(existsSync(join(root, target.default)), target.default).toBe(true)
+        expect(target["@org/source"], name).toBe(target.default.replace("./dist/", "./src/"))
         continue
       }
+      expect(target["@org/source"], name).toBe(target.source)
       expect(target.import, name).toBe(target.source.replace("./src/", "./dist/").replace(/\.tsx?$/, ".js"))
       expect(target.types, name).toBe(target.import.replace(/\.js$/, ".d.ts"))
       expect(existsSync(join(root, target.types)), target.types).toBe(true)
@@ -78,7 +85,9 @@ describe("editor dependency boundary", () => {
     expect(() => execFileSync("node", ["--input-type=module", "-e", script], { cwd: root, stdio: "pipe" })).not.toThrow()
   })
 
+  // `pnpm pack` turns `workspace:*` into docstream's exact version, so the two always ship as a pair.
   it("pins docstream to its own version", () => {
-    expect(pkg.dependencies["@brett_lamy/docstream"]).toBe(pkg.version)
+    expect(pkg.dependencies["@brett_lamy/docstream"]).toBe("workspace:*")
+    expect(docstream.version).toBe(pkg.version)
   })
 })

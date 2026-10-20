@@ -10,11 +10,18 @@ import { describe, expect, it } from "vitest"
 
 const root = resolve(__dirname, "..")
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-  exports: Record<string, string | { source: string; import: string; types: string }>
+  exports: Record<string, ExportTarget>
   dependencies: Record<string, string>
   peerDependencies: Record<string, string>
   peerDependenciesMeta: Record<string, { optional?: boolean }>
 }
+
+/* A script entry carries `source` (and the monorepo's `@org/source`, the same file) plus the built `import` and
+   `types`; a stylesheet is the built file, with `@org/source` pointing workspace consumers at its source. */
+type ExportTarget =
+  | { "@org/source": string; source: string; import: string; types: string; default: string }
+  | { "@org/source": string; default: string }
+const isScript = (t: ExportTarget): t is Extract<ExportTarget, { source: string }> => "source" in t
 
 const CSS_IMPORT = /@import\s+(?:url\()?["']([^"']+)["']/g
 const IMPORT = /(?:import|export)\s[^'"]*?from\s*["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']\s*\)|import\s+["']([^"']+)["']/g
@@ -62,14 +69,15 @@ function graph(entry: string, { dynamic = true } = {}): { files: string[]; bare:
 const entries = Object.entries(pkg.exports)
   .filter(([name]) => name !== "./playground")
   .flatMap(([name, target]): [string, string][] =>
-    typeof target === "string" ? [[name, target]] : [[name, target.source], [name, target.import], [name, target.types]],
+    isScript(target) ? [[name, target.source], [name, target.import], [name, target.types]] : [[name, target.default], [name, target["@org/source"]]],
   )
 
 describe("entry boundaries", () => {
   it("publishes every entry from dist/, with sources behind the `source` condition", () => {
     for (const [name, target] of Object.entries(pkg.exports)) {
-      if (typeof target === "string") {
-        expect(target, name).toMatch(/^\.\/dist\/.*\.css$/)
+      expect(target["@org/source"], name).toBe(isScript(target) ? target.source : target.default.replace("./dist/", "./src/"))
+      if (!isScript(target)) {
+        expect(target.default, name).toMatch(/^\.\/dist\/.*\.css$/)
         continue
       }
       expect(target.source, name).toMatch(/^\.\/src\/.*\.tsx?$/)
@@ -103,7 +111,7 @@ describe("entry boundaries", () => {
   // imports, no stylesheet imports on the eager path.
   it("loads every dist entry in plain Node (except the optional-peer entries)", () => {
     const specs = Object.entries(pkg.exports)
-      .filter(([name, target]) => typeof target !== "string" && name !== "./playground" && name !== "./viz")
+      .filter(([name, target]) => isScript(target) && name !== "./playground" && name !== "./viz")
       .map(([name]) => `@brett_lamy/docstream${name.slice(1)}`)
     const script = `for (const s of ${JSON.stringify(specs)}) await import(s)`
     expect(() => execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: root, stdio: "pipe" })).not.toThrow()

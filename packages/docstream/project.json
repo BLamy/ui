@@ -1,19 +1,49 @@
 {
-  "name": "docstream",
+  "name": "@brett_lamy/docstream",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "packages/docstream/src",
   "targets": {
-    "typecheck": {
+    "build": {
       "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
-        "command": "tsc -p packages/docstream/tsconfig.json --noEmit"
+        "command": "node scripts/build.mjs",
+        "cwd": "{projectRoot}"
       }
     },
-    "lint": {
+    "typecheck": {
       "executor": "nx:run-commands",
+      "cache": true,
       "options": {
-        "command": "eslint packages/docstream"
+        "command": "tsc -b tsconfig.json --pretty",
+        "cwd": "{projectRoot}"
+      },
+      "dependsOn": [],
+      "inputs": [
+        "default",
+        "^default"
+      ]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "vitest run",
+        "cwd": "{projectRoot}"
       }
     }
   }

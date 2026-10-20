@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@agent-wasm/core": "^0.4.0",
+    "@brett_lamy/docstream": "workspace:*",
     "hast-util-to-html": "^9.0.5",
     "lowlight": "^3.3.0",
     "lucide-react": "^1.17.0",
