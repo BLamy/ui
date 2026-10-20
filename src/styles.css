@@ -443,6 +443,15 @@
   margin: 4px 0 6px;
 }
 
+/* A step's body starts at the top, so a step without a title has its first line beside its number. */
+:is(.docs-step-main, .docs-step-media-body) > [data-docstream-blocks] > :first-child {
+  margin-top: 0;
+}
+
+.docs-step-main > [data-docstream-blocks]:first-child {
+  padding-top: 2px;
+}
+
 /* A step whose heading opens with a thumbnail: the image in its own column, the title and body beside it. */
 .docs-step-media {
   display: flex;
