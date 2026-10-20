@@ -379,10 +379,15 @@ Call the API.
 ### OpenAPI Operations
 
 ```md
-{% openapi-operation spec="petstore.yaml" path="/store/orders" method="get" /%}
+{% openapi-operation spec="petstore" path="/pet/{petId}" method="get" %}
+[petstore](specs/petstore.json)
+{% endopenapi-operation %}
 ```
 
-When a spec cannot be resolved, the renderer displays a fallback asking for an OpenAPI spec URL.
+The body is one link to the spec (JSON or YAML); `spec` is a name that round-trips but isn't
+read. The link goes through the asset resolver (see [Assets and OpenAPI Specs](#assets-and-openapi-specs)),
+so a relative path can name a file next to the page — inside `DocsSite`, a file in its VFS. Without
+a link the block asks for a spec URL; a spec that fails to load shows the error.
 
 ### Inline video clips
 
@@ -390,10 +395,10 @@ Direct media embeds can opt into browser-safe inline playback. `muted` is
 important when `autoplay` is enabled:
 
 ```md
-{% embed url="/generated/example/clips/offsets.mp4"
-  title="A reader resumes from its bookmark"
-  autoplay="true" loop="true" muted="true" controls="false" %}
+{% embed url="/generated/example/clips/offsets.mp4" title="A reader resumes from its bookmark" autoplay="true" loop="true" muted="true" controls="false" %}
 ```
+
+A tag must fit on one line: split across lines, it parses as an ordinary paragraph.
 
 The attributes round-trip through `parseMarkdown` and `serializeMarkdown` and
 are rendered as a native `<video playsInline>` element.
@@ -812,18 +817,24 @@ heading, the image takes a column of its own and the step's title and body sit b
 
 ## Assets and OpenAPI Specs
 
-Relative image and OpenAPI spec paths can be resolved against an asset base:
+Relative image, embed and OpenAPI spec paths can be resolved against a file in a GitHub
+repository. `setAssetBase(repo, branch, filePath)` takes the repository, the branch and the path
+of the Markdown file being rendered; relative paths then resolve next to that file on
+`raw.githubusercontent.com`. Pass `null`s to clear it.
 
 ```ts
-import { setAssetBase } from "@brett_lamy/docstream"
+import { resolveAsset, setAssetBase } from "@brett_lamy/docstream"
 
-setAssetBase("/docs/assets/")
+// Rendering docs/guide/intro.md from BLamy/docstream@main:
+setAssetBase("BLamy/docstream", "main", "docs/guide/intro.md")
+
+resolveAsset("images/flow.png")
+// → "https://raw.githubusercontent.com/BLamy/docstream/main/docs/guide/images/flow.png"
+resolveAsset("https://cdn.example.com/a.png") // http(s), data: and blob: URLs pass through
 ```
 
-You can also resolve paths yourself with `resolveAsset`.
-
 An app that opens Markdown from a folder can resolve each asset itself. Wrap the rendered document in
-`AssetResolverProvider`; images, figures, `.stl` and `.strudel` embeds ask it for the URL to load (a `blob:`
+`AssetResolverProvider`; images, figures, `.stl`, `.strudel` and `.rrweb` embeds and OpenAPI spec links ask it for the URL to load (a `blob:`
 URL of the file, say). Return nothing to fall back to `resolveAsset`. A promise is fine: STL and Strudel
 embeds show a placeholder until it settles.
 
@@ -865,13 +876,13 @@ import { AssetResolverProvider, MarkdownContent } from "@brett_lamy/docstream"
 ### Parser and Serializer
 
 - `parseMarkdown(markdown)`: Converts a full markdown document into a `DocumentNode`.
-- `parseBlocks(markdown)`: Parses markdown into block nodes.
+- `parseBlocks(lines)`: Parses an array of lines (`markdown.split("\n")`) into block nodes, without frontmatter or document-level citations.
 - `serializeMarkdown(doc)`: Converts a `DocumentNode` back to markdown.
 - `serializeBlocks(blocks)`: Serializes block nodes.
 - `parseInline(markdown)`: Parses inline markdown nodes.
 - `serializeInline(nodes)`: Serializes inline nodes.
 - `plainText(nodes)`: Extracts plain text from inline nodes.
-- `refDefinitions(markdown)`: Reads reference-style link definitions.
+- `refDefinitions` / `footnoteDefinitions`: Module-level `Map`s of the reference-link and footnote definitions, filled by `parseMarkdown` and read by `parseInline` (call `parseMarkdown` first when parsing inline text that uses `[text][ref]` or `[^1]`).
 - `packageManagerCommands(npmCommand, overrides)`: The npm / pnpm / yarn / bun forms of a command.
 - `documentOutline(doc)` / `slugify(text)`: Headings (incl. titled tab sets) with anchor ids, for a TOC.
 - `flattenForPlainMarkdown(doc)`: docstream-only blocks (commands, titled tabs) as plain Markdown.
@@ -886,14 +897,20 @@ The package CSS is intentionally token-driven. It uses normal CSS variables and 
 
 ```css
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --border: 214.3 31.8% 91.4%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --primary: 221.2 83.2% 53.3%;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --primary: #2563eb;
 }
 ```
+
+The tokens are read as complete colors (`var(--border)`), so give each one a full color —
+hex, `rgb()`, `hsl()`, `oklch()`. Bare HSL channels (`214.3 31.8% 91.4%`, the shadcn v3
+convention) aren't colors on their own; wrap them (`--border: hsl(214.3 31.8% 91.4%)`) or set
+docstream's own `--gb-*` tokens instead.
 
 Import the CSS once, then set tokens globally in your app. The command box's
 terminal glyph has its own tokens (`--gb-term-bg`, `--gb-term-fg`), so setting

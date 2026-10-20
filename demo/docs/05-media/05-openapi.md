@@ -4,15 +4,15 @@ description: Point a block at an OpenAPI spec and an operation, and docstream re
 
 # OpenAPI operations
 
-Don't hand-write endpoint docs that drift from the API. Name the operation and link the spec, and docstream fetches the spec in the reader's browser and renders the operation from it:
+Don't hand-write endpoint docs that drift from the API. Name the operation and link the spec, and docstream loads the spec and renders the operation from it. The spec here is [`specs/petstore.json`](specs/petstore.json), a file in this site's docs folder right next to this page, so the link is relative, the same as on GitHub:
 
 {% openapi-operation spec="petstore" path="/pet/{petId}" method="get" %}
-[petstore](https://petstore3.swagger.io/api/v3/openapi.json)
+[petstore](specs/petstore.json)
 {% endopenapi-operation %}
 
 ```md
 {% openapi-operation spec="petstore" path="/pet/{petId}" method="get" %}
-[petstore](https://petstore3.swagger.io/api/v3/openapi.json)
+[petstore](specs/petstore.json)
 {% endopenapi-operation %}
 ```
 
@@ -23,7 +23,7 @@ Don't hand-write endpoint docs that drift from the API. Name the operation and l
 | `path` | The key under `paths` in the spec, exactly as written there, braces included: `/pet/{petId}`. |
 | `method` | `get`, `post`, `put`, `delete`… in any case. Defaults to `get`. |
 | `spec` | A name for the spec. It is kept with the block and round-trips, but the renderer reads the URL from the body. |
-| Body | One Markdown link, `[name](url)`, to the spec. JSON or YAML. |
+| Body | One Markdown link, `[name](url)`, to the spec, JSON or YAML: a relative path to a file next to the page, or any URL. |
 
 `{% openapi %}…{% endopenapi %}` is accepted as an alias.
 
@@ -40,32 +40,45 @@ From the operation and the spec around it:
 - **A cURL sample**: the server plus the path, with a bearer `Authorization` header when the operation needs auth.
 - **An example response**: synthesized from the 2xx JSON schema. It uses each field's `example` when there is one, the first `enum` value otherwise, then a placeholder for its type.
 
-Specs are fetched once per URL and cached for the page, so ten blocks against the same spec cost one request.
+Specs are loaded once per URL and cached for the page, so ten blocks against the same spec cost one request.
+
+## Where the spec comes from
+
+The spec link goes through docstream's [asset resolver](06-assets.md), like an image or a 3D model:
+
+| Host | `[api](specs/api.json)` loads |
+| --- | --- |
+| `DocsSite` | The file `specs/api.json` from the files you gave the site, resolved against the page's folder. This site passes its `docs/` folder's `.json` and `.yaml` files along with the Markdown: `import.meta.glob("../docs/**/*.{md,json,yaml,yml}", …)`. See [Docs sites](../02-docs-site/04-loading-files.md). |
+| An `AssetResolverProvider` | Whatever your resolver returns for `specs/api.json` — a `blob:` URL of a file the reader opened, a signed URL… |
+| `setAssetBase(repo, branch, filePath)` | The file in that GitHub repository, next to `filePath`. |
+| Nothing | The URL as written, relative to the page's URL. |
+
+A full URL (`https://…/openapi.json`) is fetched as is; the server must then send CORS headers that allow your docs' origin.
 
 ## More Petstore
 
 The pet store inventory needs an API key, so its Authorizations section is filled in:
 
 {% openapi-operation spec="petstore" path="/store/inventory" method="get" %}
-[petstore](https://petstore3.swagger.io/api/v3/openapi.json)
+[petstore](specs/petstore.json)
 {% endopenapi-operation %}
 
 Finding pets by status shows a query parameter and an array response:
 
 {% openapi-operation spec="petstore" path="/pet/findByStatus" method="get" %}
-[petstore](https://petstore3.swagger.io/api/v3/openapi.json)
+[petstore](specs/petstore.json)
 {% endopenapi-operation %}
 
-## Your own spec, in YAML
+## YAML specs
 
-A spec can be any URL the browser can fetch, including a static file next to your docs. This one is served from this site, `/docstream/specs/model-library.yaml`. Its `/models` description contains a `{% hint %}`, which docstream renders, and its schemas use `$ref`, `enum` and `example`:
+YAML works the same way. This spec is [`specs/model-library.yaml`](specs/model-library.yaml), also in the docs folder. Its `/models` description contains a `{% hint %}`, which docstream renders, and its schemas use `$ref`, `enum` and `example`:
 
 {% openapi-operation spec="model-library" path="/models" method="get" %}
-[model-library](/docstream/specs/model-library.yaml)
+[model-library](specs/model-library.yaml)
 {% endopenapi-operation %}
 
 {% openapi-operation spec="model-library" path="/models/{modelId}" method="get" %}
-[model-library](/docstream/specs/model-library.yaml)
+[model-library](specs/model-library.yaml)
 {% endopenapi-operation %}
 
 ```yaml title="model-library.yaml (excerpt)"
@@ -92,7 +105,7 @@ A text spec is parsed as JSON when it starts with `{`, and as YAML otherwise.
 | The spec loads but has no such operation | "Operation GET /pets not found in spec." |
 
 {% hint style="warning" %}
-The spec is fetched by the reader's browser, so it must be served with CORS headers that allow your docs' origin. Petstore sends `Access-Control-Allow-Origin: *`. Many internal APIs don't, so serve a copy of the spec next to your docs instead.
+A spec on another origin is fetched by the reader's browser, so it must be served with CORS headers that allow your docs' origin. Many internal APIs don't — keep a copy of the spec in your docs folder instead, as this page does, and it loads from the VFS with no request at all.
 {% endhint %}
 
 ## OpenApiOperation
@@ -105,6 +118,7 @@ import { OpenApiOperation } from "@brett_lamy/docstream"
 
 export function Endpoint() {
   return <OpenApiOperation specUrl="https://petstore3.swagger.io/api/v3/openapi.json" path="/pet/{petId}" method="get" />
+  // A relative specUrl goes through the AssetResolverProvider above it, as in Markdown.
 }
 ```
 

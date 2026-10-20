@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { parse as parseYaml } from "yaml"
 
+import { useAsset } from "../asset-resolver"
 import { MarkdownContent } from "../docs/DocsRenderer"
 import { HighlightedCode } from "../docs/HighlightedCode"
 
@@ -98,15 +99,22 @@ export function OpenApiOperation({
 }) {
   const [spec, setSpec] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  // The spec link goes through the host's asset resolver like any other file the page points
+  // at, so `[api](openapi.json)` can name a file in the host's VFS. Undefined while it resolves.
+  const url = useAsset(specUrl)
 
   useEffect(() => {
-    if (!specUrl) return
+    if (!url) return
+    let live = true
     setSpec(null)
     setError(null)
-    loadSpec(specUrl)
-      .then(setSpec)
-      .catch((e) => setError(String(e.message ?? e)))
-  }, [specUrl])
+    loadSpec(url)
+      .then((s) => live && setSpec(s))
+      .catch((e) => live && setError(String(e.message ?? e)))
+    return () => {
+      live = false
+    }
+  }, [url])
 
   if (!specUrl) return <div className="oas oas-empty">Set an OpenAPI spec URL…</div>
   if (error) return <div className="oas oas-empty">⚠︎ {error}</div>

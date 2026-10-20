@@ -11,10 +11,16 @@
    - A page's title is, in order: its SUMMARY.md label, frontmatter `title`, its first
      `# heading`, then the file name (`quick-start.md` → "Quick start"). Frontmatter
      `description` is its lede and `hidden: true` keeps it out of the sidebar.
+   - Every other file in the docs root is an asset (`tree.assets`): DocsSite serves it to the
+     pages, so `![logo](images/logo.svg)` or an OpenAPI block's `[api](specs/api.json)` loads
+     the file from the VFS.
    Everything here is pure (no React, no DOM), so a static build or a test can use it. */
 import { parseDocument, isMap } from "yaml"
 
-export type DocsFiles = Record<string, string> | ReadonlyArray<{ path: string; content: string }>
+/** A file's contents: text, or a `Blob` for binary assets (images, models). Pages must be text. */
+export type DocsFileContent = string | Blob
+
+export type DocsFiles = Record<string, DocsFileContent> | ReadonlyArray<{ path: string; content: DocsFileContent }>
 
 export interface DocsPage {
   /** Source path relative to the docs root, e.g. `01-guides/02-install.md`. */
@@ -50,6 +56,8 @@ export interface DocsTree {
   byPath: Map<string, DocsPage>
   /** The common folder stripped from every input path (`"docs/"`), or `""`. */
   root: string
+  /** Every non-Markdown file under the root, by path relative to it (`specs/api.json`). */
+  assets: Map<string, DocsFileContent>
 }
 
 export interface BuildDocsTreeOptions {
@@ -69,6 +77,8 @@ export const SITE_FRONTMATTER_KEYS = ["title", "description", "order", "hidden",
 const MARKDOWN = /\.(md|markdown|mdx)$/i
 const INDEX = /^(readme|index)$/i
 const PREFIX = /^(\d+)[-_. ]+(?=.)/
+
+const isBlob = (v: unknown): v is Blob => typeof Blob !== "undefined" && v instanceof Blob
 
 export function isMarkdownPath(path: string): boolean {
   return MARKDOWN.test(path)
@@ -197,10 +207,10 @@ export function plainTitle(text: string): string {
     .trim()
 }
 
-function toEntries(files: DocsFiles): Array<{ path: string; content: string }> {
+function toEntries(files: DocsFiles): Array<{ path: string; content: DocsFileContent }> {
   return Array.isArray(files)
     ? files.map((f) => ({ path: f.path, content: f.content }))
-    : Object.entries(files as Record<string, string>).map(([path, content]) => ({ path, content }))
+    : Object.entries(files as Record<string, DocsFileContent>).map(([path, content]) => ({ path, content }))
 }
 
 function commonRoot(paths: string[]): string {
@@ -410,11 +420,18 @@ function walkPages(nav: DocsNavItem[], bySlug: Map<string, DocsPage>, out: DocsP
 
 /** Build pages and the sidebar from a set of files. Non-Markdown files are ignored. */
 export function buildDocsTree(files: DocsFiles, options: BuildDocsTreeOptions = {}): DocsTree {
-  const entries = toEntries(files)
+  const all = toEntries(files)
     .map((f) => ({ path: normalizePath(f.path), content: f.content }))
-    .filter((f) => isMarkdownPath(f.path) && typeof f.content === "string" && (!options.include || options.include(f.path)))
+    .filter((f) => !options.include || options.include(f.path))
+  const entries = all.filter((f): f is { path: string; content: string } => isMarkdownPath(f.path) && typeof f.content === "string")
   const root = options.root !== undefined ? (normalizePath(options.root) ? `${normalizePath(options.root)}/` : "") : commonRoot(entries.map((f) => f.path))
   const inRoot = entries.filter((f) => f.path.startsWith(root)).map((f) => ({ path: f.path.slice(root.length), content: f.content }))
+  const assets = new Map<string, DocsFileContent>()
+  for (const f of all) {
+    if (!isMarkdownPath(f.path) && f.path.startsWith(root) && (typeof f.content === "string" || isBlob(f.content))) {
+      assets.set(f.path.slice(root.length), f.content)
+    }
+  }
 
   const summaryFile = options.summary === false ? undefined : inRoot.find((f) => /^summary\.md$/i.test(f.path))
   const drafts = inRoot.filter((f) => f !== summaryFile).map((f) => draftPage(f.path, f.content))
@@ -437,7 +454,15 @@ export function buildDocsTree(files: DocsFiles, options: BuildDocsTreeOptions = 
     finalByPath.set(p.path, p)
   }
   const order = listed.map((p) => finalBySlug.get(p.slug)!).filter((p) => !p.hidden)
-  return { pages, order, nav, bySlug: finalBySlug, byPath: finalByPath, root }
+  return { pages, order, nav, bySlug: finalBySlug, byPath: finalByPath, root, assets }
+}
+
+/** The asset (non-Markdown file) `href` names from `from`, with its root-relative path; null when none. */
+export function findLinkedAsset(tree: DocsTree, from: DocsPage, href: string): { path: string; content: DocsFileContent } | null {
+  const resolved = resolveRelativePath(from.path, href)
+  if (!resolved) return null
+  const content = tree.assets.get(resolved.path)
+  return content === undefined ? null : { path: resolved.path, content }
 }
 
 /** The page `href` points at from `from` — a relative `.md` path, a folder, or a slug. */

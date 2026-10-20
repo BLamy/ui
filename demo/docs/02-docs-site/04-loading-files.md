@@ -74,9 +74,34 @@ Files your app creates — notes, generated reports, an AI agent's output, a use
 {% endtab %}
 {% endtabs %}
 
-## Images and other files
+## Files beside your pages
 
-Non-Markdown files are ignored by the tree, but your pages can still show them. Relative image and embed paths go through docstream's asset resolver: call `setAssetBase` or wrap the site in an `AssetResolverProvider` to point them at your files. See [Assets](../05-media/06-assets.md).
+Hand DocsSite more than Markdown and the other files become the site's assets. A page links to them with relative paths, as on GitHub, and DocsSite serves each one from the VFS — as a `blob:` URL of its contents, made once and revoked when the file changes:
+
+```txt title="docs/"
+api/
+  pets.md
+  specs/
+    pets.json
+images/
+  logo.svg
+```
+
+```md title="docs/api/pets.md"
+![Acme](../images/logo.svg)
+
+{% openapi-operation spec="pets" path="/pets" method="get" %}
+[pets](specs/pets.json)
+{% endopenapi-operation %}
+
+Download [the spec](specs/pets.json).
+```
+
+- Images, video, 3D models, replays, Strudel files and **OpenAPI specs** all load this way — everything that goes through docstream's [asset resolver](../05-media/06-assets.md). The [OpenAPI page](../05-media/05-openapi.md) on this site loads its specs from `05-media/specs/` in the docs folder.
+- A plain link to a file (`[the spec](specs/pets.json)`) opens it in a new tab.
+- Text files work as strings. For binary files (images, `.stl`), pass a `Blob` as the content: `{ "images/logo.png": await (await fetch(url)).blob() }`.
+- With Vite, widen the glob to the text types you keep there — this site uses `import.meta.glob("../docs/**/*.{md,json,yaml,yml}", { query: "?raw", import: "default", eager: true })`. Binary files are better served as usual (Vite's `public/` folder) and linked by URL.
+- A link DocsSite doesn't find in the VFS goes to your own `AssetResolverProvider` if the site is inside one, then to `setAssetBase`, then stays as written.
 
 ## Checking a docs folder
 

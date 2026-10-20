@@ -8,7 +8,7 @@ DocsSite reads the paths of the files you give it and nothing else — no config
 
 ## Which files become pages
 
-Every file ending in `.md`, `.markdown` or `.mdx` is a page. Everything else — images, JSON, `.txt` — is ignored, so you can hand over a whole repository tree. Narrow it further with `treeOptions.include`:
+Every file ending in `.md`, `.markdown` or `.mdx` is a page. Every other file under the docs root — a JSON spec, an image, a model — is an **asset**: it never becomes a page or a sidebar entry, but the pages can use it (see [Files beside your pages](04-loading-files.md#files-beside-your-pages)). So you can hand over a whole repository tree. Narrow it further with `treeOptions.include`:
 
 ```tsx
 <DocsSite files={files} treeOptions={{ include: (path) => !path.startsWith("drafts/") }} />
@@ -112,6 +112,7 @@ tree.order.map((page) => `https://docs.example.com/#/${page.slug}`)
 | `nav` | The sidebar: `group`, `page`, `folder` and `link` items, each `page` / `folder` / `group` with `children`. |
 | `bySlug`, `byPath` | Lookups by URL slug and by source path. |
 | `root` | The folder stripped from the input paths (`"docs/"`). |
+| `assets` | Every non-Markdown file under the root, by its path relative to it. |
 
 Each `DocsPage` carries `path`, `slug`, `title`, `description`, `markdown` (the file as written), `body` (what's rendered), `frontmatter`, `hidden` and `breadcrumbs`. `createDocsSearchIndex(tree)` builds the same search the ⌘K dialog uses.
 
@@ -126,6 +127,7 @@ Each `DocsPage` carries `path`, `slug`, `title`, `description`, `markdown` (the 
 | `normalizePath(path)` | `./docs//a/../b.md` → `docs/b.md` |
 | `resolveRelativePath(from, href)` | Resolves a link written in `from`; `null` for external URLs |
 | `findLinkedPage(tree, page, href)` | The page (and `#hash`) a link points at, or `null` |
+| `findLinkedAsset(tree, page, href)` | The asset a link points at, or `null` |
 | `readFrontmatter(markdown)` | The frontmatter as values, never executing YAML |
 | `searchableText(markdown)` | Markdown → plain text, the way search indexes it |
 

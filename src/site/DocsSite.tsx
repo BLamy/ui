@@ -9,6 +9,7 @@
    with `routing="memory"` for a site embedded in another page. */
 import {
   useCallback,
+  useContext,
   useEffect,
   useId,
   useMemo,
@@ -22,12 +23,13 @@ import {
 } from "react"
 import { ArrowLeft, ArrowRight, ChevronRight, FileText, Hash, Menu, Moon, PencilLine, Search, Sun, X } from "lucide-react"
 
+import { AssetResolverContext, AssetResolverProvider, type AssetResolver } from "../asset-resolver"
 import { MarkdownContent, type DocRenderOptions, type LivePreviewRenderer, type SourceReferenceRenderer } from "../docs/DocsRenderer"
 import { DocPageActions, type DocPageActionsOptions } from "../docs/PageActions"
 import { documentOutline, type OutlineEntry } from "../gitbook/outline"
 import { parseMarkdown } from "../gitbook/parse"
 import { createDocsSearchIndex, type DocsSearchResult } from "./search"
-import { buildDocsTree, findLinkedPage, type BuildDocsTreeOptions, type DocsFiles, type DocsNavItem, type DocsPage, type DocsTree } from "./tree"
+import { buildDocsTree, findLinkedAsset, findLinkedPage, type BuildDocsTreeOptions, type DocsFileContent, type DocsFiles, type DocsNavItem, type DocsPage, type DocsTree } from "./tree"
 
 export type DocsSiteRouting = "hash" | "history" | "memory"
 export type DocsSiteTheme = "light" | "dark"
@@ -485,6 +487,56 @@ function useActiveHeading(scroller: RefObject<HTMLElement | null>, outline: Outl
   return active
 }
 
+const MIME: Record<string, string> = {
+  json: "application/json",
+  yaml: "application/yaml",
+  yml: "application/yaml",
+  svg: "image/svg+xml",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  stl: "model/stl",
+  rrweb: "application/json",
+  txt: "text/plain",
+  csv: "text/csv",
+}
+
+/**
+ * Serves the tree's assets to the current page: a link resolved against the page's path that
+ * names a file in the VFS loads as a `blob:` URL of it (made once per file and content, revoked
+ * when the content changes or the site unmounts). Anything else goes to the host's resolver.
+ */
+function useVfsAssets(tree: DocsTree, page: DocsPage | undefined): AssetResolver | null {
+  const outer = useContext(AssetResolverContext)
+  const urls = useRef(new Map<string, { content: DocsFileContent; url: string }>())
+  useEffect(() => {
+    const map = urls.current
+    return () => {
+      for (const { url } of map.values()) URL.revokeObjectURL(url)
+      map.clear()
+    }
+  }, [])
+  return useMemo(() => {
+    if (!page || !tree.assets.size || typeof URL.createObjectURL !== "function") return outer
+    return (href: string) => {
+      const asset = findLinkedAsset(tree, page, href)
+      if (!asset) return outer ? outer(href) : undefined
+      const cached = urls.current.get(asset.path)
+      if (cached?.content === asset.content) return cached.url
+      if (cached) URL.revokeObjectURL(cached.url)
+      const ext = asset.path.slice(asset.path.lastIndexOf(".") + 1).toLowerCase()
+      const blob = typeof asset.content === "string" ? new Blob([asset.content], { type: MIME[ext] ?? "text/plain" }) : asset.content
+      const url = URL.createObjectURL(blob)
+      urls.current.set(asset.path, { content: asset.content, url })
+      return url
+    }
+  }, [tree, page, outer])
+}
+
 function cssLength(v: number | string | undefined, fallback: string) {
   return v === undefined ? fallback : typeof v === "number" ? `${v}px` : v
 }
@@ -597,6 +649,8 @@ export function DocsSite(props: DocsSiteProps) {
   }, [shown, toc])
   const activeHeading = useActiveHeading(scrollerRef, outline, shown?.slug ?? "")
 
+  const resolveAsset = useVfsAssets(tree, shown)
+
   // Links written as relative `.md` paths (or `#anchors`) get real route hrefs, so they
   // navigate in place and still open in a new tab. Demos keep their own links.
   useEffect(() => {
@@ -610,7 +664,18 @@ export function DocsSite(props: DocsSiteProps) {
         if (a.dataset.dsHref !== undefined) continue
         const original = a.getAttribute("href") ?? ""
         const linked = findLinkedPage(tree, shown, original)
-        if (!linked) continue
+        if (!linked) {
+          // A link to a file in the VFS (`[the spec](api.json)`) opens that file.
+          if (resolveAsset && findLinkedAsset(tree, shown, original)) {
+            const url = resolveAsset(original)
+            if (typeof url === "string") {
+              a.dataset.dsHref = original
+              a.setAttribute("href", url)
+              a.setAttribute("target", "_blank")
+            }
+          }
+          continue
+        }
         a.dataset.dsHref = original
         a.dataset.dsSlug = linked.page.slug
         a.dataset.dsHash = linked.hash
@@ -623,7 +688,7 @@ export function DocsSite(props: DocsSiteProps) {
     const observer = new MutationObserver(rewrite)
     observer.observe(article, { childList: true, subtree: true })
     return () => observer.disconnect()
-  }, [shown, tree, href])
+  }, [shown, tree, href, resolveAsset])
 
   const onArticleClick = (e: ReactMouseEvent) => {
     if (!plainClick(e) || e.defaultPrevented) return
@@ -643,18 +708,20 @@ export function DocsSite(props: DocsSiteProps) {
   const pageUrl = shown && typeof window !== "undefined" && routing !== "memory" ? new URL(href(shown.slug), window.location.href).href : undefined
 
   const content = shown ? (
-    <MarkdownContent
-      key={shown.slug}
-      markdown={shown.body}
-      liveRenderer={liveRenderer}
-      sourceRenderer={sourceRenderer}
-      demoResolver={demoResolver}
-      demoRuntime={demoRuntime}
-      demoDependencies={demoDependencies}
-      demoVFS={demoVFS}
-      onTaskStateChange={onTaskStateChange}
-      documentProperties={documentProperties}
-    />
+    <AssetResolverProvider resolve={resolveAsset}>
+      <MarkdownContent
+        key={shown.slug}
+        markdown={shown.body}
+        liveRenderer={liveRenderer}
+        sourceRenderer={sourceRenderer}
+        demoResolver={demoResolver}
+        demoRuntime={demoRuntime}
+        demoDependencies={demoDependencies}
+        demoVFS={demoVFS}
+        onTaskStateChange={onTaskStateChange}
+        documentProperties={documentProperties}
+      />
+    </AssetResolverProvider>
   ) : null
 
   const rootStyle = {

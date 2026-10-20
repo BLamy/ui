@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DocsSite } from "./DocsSite"
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -132,5 +132,31 @@ describe("DocsSite", () => {
     click(link)
     expect(host.querySelector(".inner .ds-site-page-title")?.textContent).toBe("Two")
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Acme docs")
+  })
+
+  it("serves files from the VFS to the page: images and OpenAPI specs", async () => {
+    const spec = { openapi: "3.0.0", paths: { "/pets": { get: { summary: "List pets", responses: {} } } } }
+    const fetchSpy = vi.fn(async (url: string) => new Response(JSON.stringify(spec), { status: 200, headers: { "content-type": "application/json" } }))
+    vi.stubGlobal("fetch", fetchSpy)
+    try {
+      const files = {
+        "docs/README.md": "# Home",
+        "docs/api/pets.md": '# Pets\n\n![logo](../img/logo.svg)\n\nGet [the spec](specs/pets.json).\n\n{% openapi-operation spec="pets" path="/pets" method="get" %}\n[pets](specs/pets.json)\n{% endopenapi-operation %}\n',
+        "docs/api/specs/pets.json": JSON.stringify(spec),
+        "docs/img/logo.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"/>",
+      }
+      render(<DocsSite files={files} routing="memory" initialPath="api/pets" />)
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 20))
+      })
+      expect(host.querySelector<HTMLImageElement>(".ds-site-article img")!.getAttribute("src")).toMatch(/^blob:/)
+      expect(String(fetchSpy.mock.calls[0]?.[0])).toMatch(/^blob:/)
+      expect(host.querySelector(".ds-site-article")!.textContent).toContain("List pets")
+      const download = [...host.querySelectorAll<HTMLAnchorElement>(".ds-site-article a")].find((a) => a.textContent === "the spec")!
+      expect(download.getAttribute("href")).toMatch(/^blob:/)
+      expect(download.target).toBe("_blank")
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

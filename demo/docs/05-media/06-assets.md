@@ -6,7 +6,7 @@ description: How relative image, model, music and recording paths turn into URLs
 
 Markdown written in a repo points at files next to it: `![Diagram](images/flow.png)`, `{% embed url="models/part.stl" %}`. Those paths mean nothing to the browser showing your page, so docstream lets the host say where they live. The document keeps the paths **as written**, and so does Copy page. Only rendering resolves them.
 
-Two mechanisms, from simplest to most flexible:
+Two mechanisms, from simplest to most flexible. (A [`DocsSite`](../02-docs-site/04-loading-files.md#files-beside-your-pages) brings its own resolver: files you hand it beside the Markdown load straight from its VFS.)
 
 | | `setAssetBase` | `AssetResolverProvider` |
 | --- | --- | --- |
@@ -22,7 +22,8 @@ Two mechanisms, from simplest to most flexible:
 | `{% embed %}` of `.stl`, `.strudel`, `.rrweb` | the resolver, then `resolveAsset` |
 | An embed's `poster` | `resolveAsset` only |
 | A video's own `url` (`.mp4`, `.webm`, `.ogg`) and YouTube | not resolved: used as written |
-| Links, content refs, OpenAPI spec URLs | not resolved |
+| An OpenAPI block's spec link: `[api](specs/api.json)` | the resolver, then `resolveAsset` |
+| Links and content refs | not resolved (inside a `DocsSite`, a link to a file in its VFS opens that file) |
 
 ## setAssetBase and resolveAsset
 

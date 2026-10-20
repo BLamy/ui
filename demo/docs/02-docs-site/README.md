@@ -59,7 +59,7 @@ Then read the [configuration reference](../02-reference/config.md).
 
 ## Not just Vite
 
-`files` is a plain `{ [path]: markdown }` object (or `[{ path, content }]`), so the source can be anything. [Loading files](04-loading-files.md) shows Vite, a GitHub repository fetched at runtime, and a Node build step. The tree builder is a pure function, `buildDocsTree(files)`, if you want the pages and the sidebar without the React shell — for a static build, a sitemap, or your own layout.
+`files` is a plain `{ [path]: content }` object (or `[{ path, content }]`), so the source can be anything. Files that aren't Markdown — an OpenAPI spec, an image — come along as assets the pages can link to. [Loading files](04-loading-files.md) shows Vite, a GitHub repository fetched at runtime, and a Node build step. The tree builder is a pure function, `buildDocsTree(files)`, if you want the pages and the sidebar without the React shell — for a static build, a sitemap, or your own layout.
 
 {% content-ref url="01-file-tree.md" %}
 File tree rules — how folders, README, SUMMARY.md and frontmatter become the sidebar

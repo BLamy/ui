@@ -141,6 +141,54 @@ Four ways to write a link, all rendered the same:
 
 Ordered lists may also use `)` delimiters (`1)`, `2)`). A list item owns everything indented past its marker, so code fences, quotes and further lists can live inside one. Bullet characters, numbering, the space after the marker and the continuation indent all round-trip as written.
 
+### Start numbers and list boundaries
+
+An ordered list counts from its first number, and a change of bullet character (`-`, `*`, `+`) or ordered delimiter (`.`, `)`) starts a new list — both as in CommonMark:
+
+{% tabs sync="example" %}
+{% tab title="Preview" %}
+{% columns %}
+{% column %}
+3. Picks up at three
+4. then four
+5. then five
+{% endcolumn %}
+{% column %}
+- One list
+
+* A second list
+* (the bullet changed)
+
+1. Steps
+2. continue
+
+1) New delimiter,
+2) new list
+{% endcolumn %}
+{% endcolumns %}
+{% endtab %}
+{% tab title="Markdown" %}
+```md
+3. Picks up at three
+4. then four
+5. then five
+
+- One list
+
+* A second list
+* (the bullet changed)
+
+1. Steps
+2. continue
+
+1) New delimiter,
+2) new list
+```
+{% endtab %}
+{% endtabs %}
+
+Items that keep the same bullet stay in one list across blank lines, and repeated numbers (`1.` `1.` `1.`) still count up when rendered.
+
 ## Task lists
 
 GFM task lists, extended with six more states. `[ ]` and `[x]` behave as everywhere else; the others draw a distinct icon and a state-name tooltip (hover a box):

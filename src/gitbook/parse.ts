@@ -1099,6 +1099,14 @@ interface ParsedList {
 
 const LIST_ITEM_RE = /^(\s*)([-*+]|\d+[.)])(\s+)(.*)$/
 
+/** Whether `marker` continues a list opened by `first`: CommonMark starts a new list when the
+    bullet character (`-`, `*`, `+`) or the ordered delimiter (`.`, `)`) changes. */
+function sameListKind(first: string, marker: string): boolean {
+  const ordered = /^\d/.test(first)
+  if (ordered !== /^\d/.test(marker)) return false
+  return ordered ? first.slice(-1) === marker.slice(-1) : first === marker
+}
+
 // Indent-aware list parser: deeper-indented marker lines become nested lists
 // inside the item (handled recursively via parseBlocks on dedented lines).
 // The markers, numbering, padding, continuation indent and blank lines between items are recorded
@@ -1123,7 +1131,7 @@ function parseList(lines: string[], start: number): ParsedList {
 
   while (i < lines.length) {
     const m = lines[i].match(LIST_ITEM_RE)
-    if (!m || m[1].length !== baseIndent || /^\d/.test(m[2]) !== ordered) break
+    if (!m || m[1].length !== baseIndent || !sameListKind(first[2], m[2])) break
 
     let content = m[4]
     let checked: boolean | undefined
@@ -1184,7 +1192,7 @@ function parseList(lines: string[], start: number): ParsedList {
     // skip a single blank line between sibling items
     if (i < lines.length && !lines[i].trim()) {
       const after = lines[i + 1]?.match(/^(\s*)([-*+]|\d+[.)])\s+/)
-      if (after && after[1].length === baseIndent && /^\d/.test(after[2]) === ordered) {
+      if (after && after[1].length === baseIndent && sameListKind(first[2], after[2])) {
         gap = 1
         blankLine = lines[i]
         i++

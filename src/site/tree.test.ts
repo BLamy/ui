@@ -77,6 +77,11 @@ describe("buildDocsTree", () => {
     expect(t.order.map((p) => p.slug)).toEqual(["", "guides/install", "guides/deeper"])
   })
 
+  it("keeps the other files under the root as assets", () => {
+    expect([...tree.assets.keys()].sort()).toEqual(["images/logo.png", "notes.txt"])
+    expect(tree.assets.get("images/logo.png")).toBe("binary")
+  })
+
   it("accepts an array of files and an explicit root", () => {
     const t = buildDocsTree([{ path: "site/docs/a.md", content: "# A" }, { path: "site/b.md", content: "# B" }], { root: "site" })
     expect(t.pages.map((p) => p.slug).sort()).toEqual(["b", "docs/a"])

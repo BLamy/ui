@@ -522,7 +522,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
     case "list": {
       const Tag = block.ordered ? "ol" : "ul"
       return (
-        <Tag className={block.task ? "docs-tasklist" : undefined}>
+        <Tag className={block.task ? "docs-tasklist" : undefined} start={block.ordered && block.start !== undefined && block.start !== 1 ? block.start : undefined}>
           {block.items.map((item, i) => (
             <li key={i} data-task-state={block.task ? getTaskState(item) : undefined}>
               {block.task && <TaskCheckbox state={getTaskState(item)} label={item.children.filter((b) => b.type === "paragraph").map((b) => b.type === "paragraph" ? plainText(b.children) : "").join(" ") || "Task"}
