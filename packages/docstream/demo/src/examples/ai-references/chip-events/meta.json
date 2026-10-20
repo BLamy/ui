@@ -1,0 +1,8 @@
+{
+  "title": "Reference events",
+  "description": "A nested `DocstreamRefContext.Provider` logs every chip click. **Custom chips** adds `renderReference`, turning mentions into avatar chips while tags, codebases and citations fall back to the defaults.",
+  "variants": [
+    { "id": "default", "label": "Default chips" },
+    { "id": "custom", "label": "Custom chips" }
+  ]
+}

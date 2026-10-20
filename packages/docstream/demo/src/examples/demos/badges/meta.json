@@ -1,0 +1,10 @@
+{
+  "title": "Status badges",
+  "description": "One file, three looks: the variant switch hands the component a `variant` prop.",
+  "status": "Live",
+  "variants": [
+    { "id": "soft", "label": "Soft" },
+    { "id": "solid", "label": "Solid" },
+    { "id": "outline", "label": "Outline" }
+  ]
+}

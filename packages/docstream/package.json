@@ -1,0 +1,194 @@
+{
+  "name": "@brett_lamy/docstream",
+  "version": "1.19.1",
+  "description": "GitBook-aware readonly markdown and AI stream renderer.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && vitest run",
+    "prepack": "npm run build"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/__fixtures__",
+    "README.md"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./gitbook": {
+      "source": "./src/gitbook/index.ts",
+      "types": "./dist/gitbook/index.d.ts",
+      "import": "./dist/gitbook/index.js",
+      "default": "./dist/gitbook/index.js"
+    },
+    "./properties": {
+      "source": "./src/docs/DocumentProperties.tsx",
+      "types": "./dist/docs/DocumentProperties.d.ts",
+      "import": "./dist/docs/DocumentProperties.js",
+      "default": "./dist/docs/DocumentProperties.js"
+    },
+    "./properties/styles.css": "./dist/docs/properties.css",
+    "./tasks": {
+      "source": "./src/docs/TaskCheckbox.tsx",
+      "types": "./dist/docs/TaskCheckbox.d.ts",
+      "import": "./dist/docs/TaskCheckbox.js",
+      "default": "./dist/docs/TaskCheckbox.js"
+    },
+    "./tasks/styles.css": "./dist/docs/tasks.css",
+    "./streamdown": {
+      "source": "./src/streamdown.tsx",
+      "types": "./dist/streamdown.d.ts",
+      "import": "./dist/streamdown.js",
+      "default": "./dist/streamdown.js"
+    },
+    "./reference": {
+      "source": "./src/docs/reference.tsx",
+      "types": "./dist/docs/reference.d.ts",
+      "import": "./dist/docs/reference.js",
+      "default": "./dist/docs/reference.js"
+    },
+    "./assets": {
+      "source": "./src/assets.ts",
+      "types": "./dist/assets.d.ts",
+      "import": "./dist/assets.js",
+      "default": "./dist/assets.js"
+    },
+    "./openapi": {
+      "source": "./src/openapi/OpenApiOperation.tsx",
+      "types": "./dist/openapi/OpenApiOperation.d.ts",
+      "import": "./dist/openapi/OpenApiOperation.js",
+      "default": "./dist/openapi/OpenApiOperation.js"
+    },
+    "./replay": {
+      "source": "./src/replay/index.ts",
+      "types": "./dist/replay/index.d.ts",
+      "import": "./dist/replay/index.js",
+      "default": "./dist/replay/index.js"
+    },
+    "./replay/demo": {
+      "source": "./src/replay/demo/index.ts",
+      "types": "./dist/replay/demo/index.d.ts",
+      "import": "./dist/replay/demo/index.js",
+      "default": "./dist/replay/demo/index.js"
+    },
+    "./video": {
+      "source": "./src/video/index.ts",
+      "types": "./dist/video/index.d.ts",
+      "import": "./dist/video/index.js",
+      "default": "./dist/video/index.js"
+    },
+    "./stl": {
+      "source": "./src/stl/index.ts",
+      "types": "./dist/stl/index.d.ts",
+      "import": "./dist/stl/index.js",
+      "default": "./dist/stl/index.js"
+    },
+    "./strudel": {
+      "source": "./src/strudel/index.ts",
+      "types": "./dist/strudel/index.d.ts",
+      "import": "./dist/strudel/index.js",
+      "default": "./dist/strudel/index.js"
+    },
+    "./viz": {
+      "source": "./src/viz/index.ts",
+      "types": "./dist/viz/index.d.ts",
+      "import": "./dist/viz/index.js",
+      "default": "./dist/viz/index.js"
+    },
+    "./playground": {
+      "source": "./src/playground/index.ts",
+      "types": "./dist/playground/index.d.ts",
+      "import": "./dist/playground/index.js",
+      "default": "./dist/playground/index.js"
+    },
+    "./source": {
+      "source": "./src/source/index.ts",
+      "types": "./dist/source/index.d.ts",
+      "import": "./dist/source/index.js",
+      "default": "./dist/source/index.js"
+    },
+    "./demo": {
+      "source": "./src/demo/index.ts",
+      "types": "./dist/demo/index.d.ts",
+      "import": "./dist/demo/index.js",
+      "default": "./dist/demo/index.js"
+    },
+    "./vite": {
+      "source": "./src/vite/index.ts",
+      "types": "./dist/vite/index.d.ts",
+      "import": "./dist/vite/index.js",
+      "default": "./dist/vite/index.js"
+    },
+    "./site": {
+      "source": "./src/site/index.ts",
+      "types": "./dist/site/index.d.ts",
+      "import": "./dist/site/index.js",
+      "default": "./dist/site/index.js"
+    },
+    "./site/styles.css": "./dist/site/site.css",
+    "./styles.css": "./dist/styles.css"
+  },
+  "dependencies": {
+    "@strudel/web": "1.3.0",
+    "acorn": "^8.15.0",
+    "framer-motion": "^13.1.1",
+    "gpu-lexer": "^0.0.2",
+    "katex": "^0.18.5",
+    "lucide-react": "^1.17.0",
+    "pele": "1.6.0",
+    "react-aria": "^3.52.1",
+    "rrweb": "2.0.0-alpha.20",
+    "yaml": "^2.9.0"
+  },
+  "peerDependencies": {
+    "@agent-wasm/core": ">=0.4.0",
+    "@brett_lamy/viz-engine": ">=0.2.0",
+    "react": ">=18",
+    "react-dom": ">=18",
+    "vite": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "@agent-wasm/core": {
+      "optional": true
+    },
+    "@brett_lamy/viz-engine": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BLamy/docstream.git"
+  },
+  "devDependencies": {
+    "@agent-wasm/core": "^0.4.0",
+    "@brett_lamy/viz-engine": "^0.2.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.7",
+    "happy-dom": "^20.14.5",
+    "typescript": "^5.5.4",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
+  },
+  "module": "./dist/index.js"
+}

@@ -1,0 +1,74 @@
+.rt-panel {
+  border: 1px solid var(--gb-border);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.rt-panel > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--gb-border);
+  background: var(--gb-muted);
+}
+
+.rt-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.rt-actions select,
+.rt-actions button {
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--gb-border);
+  background: var(--gb-panel);
+  color: inherit;
+}
+
+.rt-pre {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--gb-code-bg);
+  color: var(--gb-code-fg);
+}
+
+.rt-drop {
+  min-height: 90px;
+  margin: 10px 12px 0;
+  padding: 4px 10px;
+  border: 1.5px dashed var(--gb-border);
+  border-radius: 8px;
+  color: var(--gb-muted-foreground);
+  display: grid;
+  align-items: center;
+}
+
+.rt-drop:focus {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: 1px;
+}
+
+.rt-drop [data-docstream] {
+  color: var(--gb-panel-foreground, inherit);
+}
+
+.rt-vfs {
+  margin: 8px 12px 10px;
+  font-size: 12px;
+  color: var(--gb-muted-foreground);
+}

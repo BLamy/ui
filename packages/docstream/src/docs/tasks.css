@@ -1,0 +1,13 @@
+.docs-task-control { position: relative; display: inline-flex; width: 21px; height: 21px; flex: 0 0 21px; vertical-align: text-bottom; color: var(--muted-foreground, #7a7a7a); }
+.docs-task-control .docs-task-checkbox { position: absolute; inset: 0; box-sizing: border-box; appearance: none; margin: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; box-shadow: none; }
+.docs-task-checkbox:focus-visible { outline: 2px solid var(--primary, #a87900); outline-offset: 3px; }
+.docs-task-state-icon { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.docs-task-control[data-task-state="verified"], .docs-task-control[data-task-state="in-progress"], .docs-task-control[data-task-state="implemented"] { color: var(--primary, #a87900); }
+.docs-task-control[data-task-state="blocked"], .docs-task-control[data-task-state="refuted"] { color: var(--destructive, #bd3d36); }
+.docs-task-state-menu { position: fixed; z-index: 10000; box-sizing: border-box; width: 284px; max-height: calc(100vh - 16px); overflow: auto; padding: 5px; border: 1px solid var(--border, #dedede); border-radius: 10px; background: var(--popover, #fff); color: var(--popover-foreground, #222); box-shadow: 0 8px 32px #0003, 0 1px 3px #0001; font-size: 13px; line-height: 1.4; }
+.docs-task-state-menu > button { display: grid; grid-template-columns: 20px minmax(0, 1fr) 14px; align-items: center; gap: 9px; width: 100%; min-height: 35px; padding: 7px 8px; border: 0; border-radius: 5px; color: inherit; background: transparent; font: inherit; text-align: left; cursor: pointer; outline: none; }
+.docs-task-state-menu > button:hover, .docs-task-state-menu > button:focus { color: var(--accent-foreground, #222); background: var(--accent, #eee); }
+.docs-task-state-menu > button > svg:first-child { color: var(--muted-foreground, #777); }
+.docs-task-state-menu > button[aria-checked="true"] > svg { color: var(--primary, #a87900); }
+.docs-task-tooltip { position: fixed; z-index: 10001; transform: translate(-50%, -100%); border-radius: 5px; padding: 4px 8px; color: #fff; background: #303030; box-shadow: 0 2px 8px #0002; font: 12px/1.4 system-ui, sans-serif; white-space: nowrap; pointer-events: none; }
+.docs-tasklist li > .docs-task-control { margin-top: 2px; }

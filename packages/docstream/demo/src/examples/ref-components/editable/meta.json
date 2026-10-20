@@ -1,0 +1,6 @@
+{
+  "title": "Editable properties and tasks",
+  "description": "`DocumentProperties` with `onChange`, and `DocsRenderer` with `onTaskStateChange`. Every edit goes AST → `serializeMarkdown`, and the YAML comment survives.",
+  "height": 420,
+  "status": "Live"
+}

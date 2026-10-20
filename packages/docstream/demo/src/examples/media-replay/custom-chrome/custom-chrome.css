@@ -1,0 +1,114 @@
+.cc {
+  display: grid;
+  gap: 10px;
+  max-width: 720px;
+  margin: 0 auto;
+  font: 13px/1.4 system-ui, sans-serif;
+}
+
+/* A dark "device" around the page; the stage scales the 1280×800 recording to fit. */
+.cc-screen {
+  border-radius: 14px;
+  padding: 10px;
+  background: linear-gradient(160deg, #1f2937, #0f172a);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.25);
+}
+
+.cc-screen [data-replay-stage] {
+  border-radius: 6px;
+}
+
+.cc-loading {
+  aspect-ratio: 16 / 10;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+}
+
+/* Drawn in recorded-viewport px, counter-scaled so it stays 18px on screen. */
+.cc-pointer {
+  position: absolute;
+  left: -9px;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgb(244 63 94 / 0.85);
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.9);
+  transform-origin: center;
+  transition: box-shadow 0.15s;
+}
+
+.cc-pointer[data-clicking] {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 12px rgb(244 63 94 / 0.35);
+}
+
+.cc-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cc-bar > button {
+  font: inherit;
+  min-width: 36px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in oklab, currentColor 22%, transparent);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cc-time {
+  font-variant-numeric: tabular-nums;
+  min-width: 3.5em;
+}
+
+.cc-scrubber {
+  position: relative;
+  flex: 1;
+  height: 22px;
+}
+
+.cc-scrubber input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cc-scrubber::before,
+.cc-progress {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  height: 4px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.cc-scrubber::before {
+  right: 0;
+  background: color-mix(in oklab, currentColor 15%, transparent);
+}
+
+.cc-progress {
+  background: #f43f5e;
+}
+
+.cc-marker {
+  position: absolute;
+  top: 5px;
+  width: 4px;
+  height: 12px;
+  padding: 0;
+  min-width: 0;
+  margin-left: -2px;
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+}

@@ -1,0 +1,29 @@
+{
+  "name": "docstream-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/copy-sw.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/copy-sw.mjs",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 vite build",
+    "postbuild": "node scripts/prune-dist.mjs"
+  },
+  "dependencies": {
+    "@agent-wasm/core": "^0.4.0",
+    "hast-util-to-html": "^9.0.5",
+    "lowlight": "^3.3.0",
+    "lucide-react": "^1.17.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "rrweb": "2.0.0-alpha.20",
+    "streamdown": "^2.5.0",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^7.0.0",
+    "vite-plugin-node-polyfills": "^0.28.0"
+  }
+}

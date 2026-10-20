@@ -1,0 +1,10 @@
+{
+  "title": "VideoEmbed playground",
+  "description": "Flip the flags to see what each one does. Direct files take every flag; a YouTube iframe ignores them.",
+  "status": "Needs network",
+  "variants": [
+    { "id": "mp4", "label": "MP4" },
+    { "id": "webm", "label": "WebM" },
+    { "id": "youtube", "label": "YouTube" }
+  ]
+}
