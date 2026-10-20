@@ -76,6 +76,17 @@ describe("DocsSite", () => {
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Acme docs")
   })
 
+  it("keeps its hash routes under basePath, so one app can host several sites", () => {
+    window.history.replaceState(null, "", "/#/acme/reference/theming#dark-mode")
+    render(<DocsSite files={FILES} basePath="acme" />)
+    expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Theming")
+    expect(host.querySelector(".ds-site-brand")?.getAttribute("href")).toBe("#/acme")
+    click(host.querySelector('.ds-site-nav-link[href="#/acme/guides/quick-start"]'))
+    expect(window.location.hash).toBe("#/acme/guides/quick-start")
+    const link = host.querySelector<HTMLAnchorElement>(".ds-site-article [data-docstream] a")!
+    expect(link.getAttribute("href")).toBe("#/acme/reference/theming#dark-mode")
+  })
+
   it("accepts old bare-hash links by slug", () => {
     window.history.replaceState(null, "", "/#theming")
     render(<DocsSite files={FILES} />)

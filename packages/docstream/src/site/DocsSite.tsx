@@ -54,7 +54,8 @@ export interface DocsSiteProps extends Omit<DocRenderOptions, "pageActions"> {
   links?: DocsSiteLink[]
   /** `"hash"` (default): `#/guides/install`. `"history"`: real paths under `basePath`. `"memory"`: no URL. */
   routing?: DocsSiteRouting
-  /** URL prefix for `routing="history"` (e.g. `"/docs"`). */
+  /** Where the site's routes start: the path prefix for `routing="history"` (`"/docs"` → `/docs/guides/install`),
+   *  or the hash prefix for `routing="hash"` (`"docs"` → `#/docs/guides/install`), so one app can host several sites. */
   basePath?: string
   /** First page for `routing="memory"` (a slug, e.g. `"guides/install"`). */
   initialPath?: string
@@ -118,8 +119,14 @@ function decode(s: string): string {
   }
 }
 
-/** `#/a/b#c` → slug `a/b`, hash `c`. A bare `#name` (old-style link) is looked up as a slug. */
-function readHashLocation(tree: DocsTree): { slug: string; hash: string } {
+/** Strips `basePath` from the front of a route path (`docs/guides` → `guides`). */
+function underBase(path: string, basePath: string): string {
+  const base = trimSlashes(basePath)
+  return base && (path === base || path.startsWith(`${base}/`)) ? trimSlashes(path.slice(base.length)) : path
+}
+
+/** `#/a/b#c` → slug `a/b`, hash `c` (after `basePath`). A bare `#name` (old-style link) is looked up as a slug. */
+function readHashLocation(tree: DocsTree, basePath: string): { slug: string; hash: string } {
   const raw = window.location.hash.slice(1)
   if (!raw.startsWith("/")) {
     const loose = decode(raw)
@@ -128,14 +135,12 @@ function readHashLocation(tree: DocsTree): { slug: string; hash: string } {
     return match ? { slug: match.slug, hash: "" } : { slug: "", hash: loose }
   }
   const at = raw.indexOf("#")
-  return { slug: decode(trimSlashes(at >= 0 ? raw.slice(0, at) : raw)), hash: at >= 0 ? decode(raw.slice(at + 1)) : "" }
+  const path = trimSlashes(at >= 0 ? raw.slice(0, at) : raw)
+  return { slug: decode(underBase(path, basePath)), hash: at >= 0 ? decode(raw.slice(at + 1)) : "" }
 }
 
 function readHistoryLocation(basePath: string): { slug: string; hash: string } {
-  const base = trimSlashes(basePath)
-  let path = trimSlashes(window.location.pathname)
-  if (base && (path === base || path.startsWith(`${base}/`))) path = path.slice(base.length)
-  return { slug: decode(trimSlashes(path)), hash: decode(window.location.hash.slice(1)) }
+  return { slug: decode(underBase(trimSlashes(window.location.pathname), basePath)), hash: decode(window.location.hash.slice(1)) }
 }
 
 function useDocsRouter(tree: DocsTree, routing: DocsSiteRouting, basePath: string, initialPath: string | undefined) {
@@ -144,7 +149,7 @@ function useDocsRouter(tree: DocsTree, routing: DocsSiteRouting, basePath: strin
       const [slug, hash = ""] = trimSlashes(initialPath ?? "").split("#")
       return { slug: slug ?? "", hash }
     }
-    return routing === "history" ? readHistoryLocation(basePath) : readHashLocation(tree)
+    return routing === "history" ? readHistoryLocation(basePath) : readHashLocation(tree, basePath)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routing, basePath, tree])
   const [location, setLocation] = useState<Location>(() => ({ ...read(), key: 0 }))
@@ -159,11 +164,9 @@ function useDocsRouter(tree: DocsTree, routing: DocsSiteRouting, basePath: strin
   const href = useCallback(
     (slug: string, hash = "") => {
       const h = hash ? `#${hash}` : ""
-      if (routing === "history") {
-        const base = trimSlashes(basePath)
-        return `/${[base, slug].filter(Boolean).join("/")}${slug ? "" : base ? "/" : ""}${h}`
-      }
-      return `#/${slug}${h}`
+      const base = trimSlashes(basePath)
+      if (routing === "history") return `/${[base, slug].filter(Boolean).join("/")}${slug ? "" : base ? "/" : ""}${h}`
+      return `#/${[base, slug].filter(Boolean).join("/")}${h}`
     },
     [routing, basePath],
   )

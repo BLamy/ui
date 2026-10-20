@@ -11,6 +11,8 @@ description: Hash, history or in-memory routing; relative Markdown links that na
 ```
 
 Pages live in the URL hash — `/#/guides/install`, `/#/guides/install#npm` for a section. Any static host serves it with no rewrites (this site is on GitHub Pages). Old single-word hashes such as `#streaming` are looked up as page slugs, so links to a previous one-page layout keep working.
+
+`basePath` works here too: `<DocsSite files={files} basePath="docstream" />` answers `#/docstream/guides/install`, which lets one app host several sites side by side. The [BL site](https://blamy.github.io/ui/#/docstream) serves each library's docs this way, under one header.
 {% endtab %}
 
 {% tab title="history" %}
