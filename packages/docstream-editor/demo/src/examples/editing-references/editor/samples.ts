@@ -66,7 +66,7 @@ An editor that rewrites Markdown on save turns every edit into a noisy diff[^1].
 
 Put the caret after a sentence, type /cite and press Enter: the next free number is inserted.
 
-[^1]: https://blamy.github.io/docstream/ "docstream"
+[^1]: https://blamy.github.io/ui/#/docstream "docstream"
 [^2]: https://prosemirror.net/docs/guide/ "ProseMirror guide"
 `,
     tip: "Hover a citation for its label. Definitions live in the Markdown — add [^3]: … on the right.",

@@ -74,7 +74,7 @@ export class MiniSyntaxError extends Error {
   }
 }
 
-const WS = /[ \n\r\t ]/
+const WS = /[ \n\r\t\u00a0]/
 const WORD = /[\p{L}\p{Nl}0-9~\-#.^_]/u
 const NUMBER = /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?/
 
@@ -278,8 +278,11 @@ export function miniAtoms(node: MiniNode, { ops = true }: { ops?: boolean } = {}
     if ("op" in n) {
       if (!ops) return
       if (n.op === "fast" || n.op === "slow") visit(n.amount)
-      else if (n.op === "euclid") (visit(n.pulses), visit(n.steps), visit(n.rotation))
-      else if (n.op === "tail") visit(n.value)
+      else if (n.op === "euclid") {
+        visit(n.pulses)
+        visit(n.steps)
+        visit(n.rotation)
+      } else if (n.op === "tail") visit(n.value)
       else if (n.op === "range") visit(n.to)
       return
     }

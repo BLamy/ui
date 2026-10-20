@@ -78,7 +78,7 @@ graph LR
   R --> DEMO[demos · code · diagrams · media]
 ```
 
-The parser and serializer are a plain-data, lossless pair — `serializeMarkdown(parseMarkdown(md)) === md` — which is what lets [docstream-editor](https://github.com/BLamy/docstream-editor) edit these same pages visually without disturbing a byte you didn't touch. See [Parser and serializer](07-reference/02-parser-api.md).
+The parser and serializer are a plain-data, lossless pair — `serializeMarkdown(parseMarkdown(md)) === md` — which is what lets [docstream-editor](https://github.com/BLamy/ui/tree/main/packages/docstream-editor) edit these same pages visually without disturbing a byte you didn't touch. See [Parser and serializer](07-reference/02-parser-api.md).
 
 ## Where to next
 

@@ -152,6 +152,6 @@ Seen at ![Checkout](./shots/checkout.svg "thumbnail: 0:39.8") in the recording; 
 Files from the host's project: resolveAsset, pickFile, uploadFile, onDropEmbeds
 {% endcontent-ref %}
 
-{% content-ref url="https://blamy.github.io/docstream/#/media/assets" %}
+{% content-ref url="https://blamy.github.io/ui/#/docstream/media/assets" %}
 Assets and relative paths in docstream's renderer
 {% endcontent-ref %}

@@ -103,7 +103,7 @@ Write the URL you would copy from the address bar (`watch?v=` or `youtu.be/`). d
 
 Everything that isn't a known player falls back to a card with the URL, so an unknown embed still works as a link and never shows up blank:
 
-{% embed url="https://github.com/BLamy/docstream" %}
+{% embed url="https://github.com/BLamy/ui/tree/main/packages/docstream" %}
 
 ## The VideoEmbed component
 

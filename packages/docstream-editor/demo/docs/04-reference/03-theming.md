@@ -180,5 +180,5 @@ Every element the editor draws has a stable `gb-*` class. These are the useful h
 | `gb-react-demo-editor` | `ReactDemoEditor`'s root. |
 
 {% hint style="info" %}
-**The parity contract:** each `.gb-*` block mirrors its read-only twin in `@brett_lamy/docstream/styles.css` (`.docs-*`), with the same radii, spacing, palette and type scale. Change a token and both follow. For docstream's side of the contract, see [docstream's theming page](https://blamy.github.io/docstream/#/reference/theming).
+**The parity contract:** each `.gb-*` block mirrors its read-only twin in `@brett_lamy/docstream/styles.css` (`.docs-*`), with the same radii, spacing, palette and type scale. Change a token and both follow. For docstream's side of the contract, see [docstream's theming page](https://blamy.github.io/ui/#/docstream/reference/theming).
 {% endhint %}

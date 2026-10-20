@@ -24,7 +24,9 @@ function faceNormal(p: Float32Array, o: number, out: Float32Array) {
   const vx = p[o + 6]! - p[o]!, vy = p[o + 7]! - p[o + 1]!, vz = p[o + 8]! - p[o + 2]!
   let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx
   const len = Math.hypot(nx, ny, nz) || 1
-  nx /= len, ny /= len, nz /= len
+  nx /= len
+  ny /= len
+  nz /= len
   for (let k = 0; k < 3; k++) {
     out[o + k * 3] = nx
     out[o + k * 3 + 1] = ny
@@ -45,7 +47,10 @@ function finish(positions: Float32Array, triangles: number): StlMesh {
       if (v > max[k]!) max[k] = v
     }
   }
-  if (!triangles) min.fill(0), max.fill(0)
+  if (!triangles) {
+    min.fill(0)
+    max.fill(0)
+  }
   return { positions, normals, triangles, min, max }
 }
 

@@ -47,7 +47,7 @@ tags: [docs, launch]
 | `{ defaultOpen: true }` | The sheet, expanded. |
 | `false` | No sheet. The frontmatter is still kept and saved. |
 
-The sheet appears only when the Markdown *has* frontmatter. A document without frontmatter has no sheet, and adding the first property is up to your app: see [Commands](#commands-for-hosts) below. How docstream reads frontmatter (delimiters, the YAML subset, rendering options) is on docstream's [Properties and tasks](https://blamy.github.io/docstream/#/writing/properties-and-tasks) page.
+The sheet appears only when the Markdown *has* frontmatter. A document without frontmatter has no sheet, and adding the first property is up to your app: see [Commands](#commands-for-hosts) below. How docstream reads frontmatter (delimiters, the YAML subset, rendering options) is on docstream's [Properties and tasks](https://blamy.github.io/ui/#/docstream/writing/properties-and-tasks) page.
 
 {% hint style="info" %}
 **On this docs site**, frontmatter whose only keys are site metadata (`title`, `description`, `order`, `hidden`, `icon`) drives the sidebar and page header and isn't shown as a sheet. In the editor, *all* frontmatter is properties.

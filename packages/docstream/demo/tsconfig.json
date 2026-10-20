@@ -1,47 +1,21 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "lib": [
-      "es2022",
-      "dom",
-      "dom.iterable"
-    ],
+    "lib": ["es2022", "dom", "dom.iterable"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
-    "noEmit": true,
-    "types": [
-      "vite/client"
-    ],
-    "paths": {
-      "@brett_lamy/docstream": [
-        "../src/index.ts"
-      ],
-      "@brett_lamy/docstream/site": [
-        "../src/site/index.ts"
-      ],
-      "@brett_lamy/docstream/playground": [
-        "../src/playground/index.ts"
-      ],
-      "@brett_lamy/docstream/replay": [
-        "../src/replay/index.ts"
-      ],
-      "@brett_lamy/docstream/replay/demo": [
-        "../src/replay/demo/index.ts"
-      ],
-      "@brett_lamy/docstream/stl": [
-        "../src/stl/index.ts"
-      ],
-      "@brett_lamy/docstream/strudel": [
-        "../src/strudel/index.ts"
-      ]
-    }
+    "types": ["vite/client"],
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "out-tsc",
+    "tsBuildInfoFile": "out-tsc/tsconfig.tsbuildinfo",
+    "customConditions": ["@org/source"]
   },
-  "include": [
-    "src",
-    "docs.test.ts",
-    "../src/env.d.ts"
-  ]
+  "include": ["src", "../src/env.d.ts"],
+  "exclude": ["out-tsc", "dist", "node_modules"],
+  "references": []
 }

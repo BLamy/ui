@@ -62,7 +62,7 @@ const demoResolver = createGlobDemoResolver({
 <GitbookEditor markdown={markdown} onChange={setMarkdown} demoResolver={demoResolver} />
 ```
 
-Pass the same resolver your docs site renders with, and the editor shows each demo exactly as the published page will. A resolver is any object with `meta(src)`, `files(src)` and `load(src)` (and optionally `list()` and `href(src)`). The demo above uses a hand-written one over two imported components; its `resolver.ts` is in the demo's **Code** tab. docstream's [Demos](https://blamy.github.io/docstream/#/interactive/demos) page covers folders, `meta.json` and variants.
+Pass the same resolver your docs site renders with, and the editor shows each demo exactly as the published page will. A resolver is any object with `meta(src)`, `files(src)` and `load(src)` (and optionally `list()` and `href(src)`). The demo above uses a hand-written one over two imported components; its `resolver.ts` is in the demo's **Code** tab. docstream's [Demos](https://blamy.github.io/ui/#/docstream/interactive/demos) page covers folders, `meta.json` and variants.
 
 ### demoRuntime
 
@@ -88,7 +88,7 @@ const demoRuntime = createAlmostNodeDemoRuntime()
 ```
 
 {% hint style="info" %}
-This site doesn't install `@agent-wasm/core`, so the demos on this page can't run inline files for real. They pass a stand-in `demoRuntime` that shows what it was called with. In your app, `createAlmostNodeDemoRuntime()` bundles and runs the files in the browser instead. See docstream's [Inline demos](https://blamy.github.io/docstream/#/interactive/inline-demos).
+This site doesn't install `@agent-wasm/core`, so the demos on this page can't run inline files for real. They pass a stand-in `demoRuntime` that shows what it was called with. In your app, `createAlmostNodeDemoRuntime()` bundles and runs the files in the browser instead. See docstream's [Inline demos](https://blamy.github.io/ui/#/docstream/interactive/inline-demos).
 {% endhint %}
 
 ## Copy and paste demos between editors
@@ -215,6 +215,6 @@ The renderer in this demo is a stand-in: it evaluates plain JavaScript modules a
 Extensions and composition
 {% endcontent-ref %}
 
-{% content-ref url="https://blamy.github.io/docstream/#/interactive/demos" %}
+{% content-ref url="https://blamy.github.io/ui/#/docstream/interactive/demos" %}
 docstream: demos, demo folders and meta.json
 {% endcontent-ref %}

@@ -7,7 +7,7 @@ export const SAMPLES = {
     markdown: `# Release notes
 
 Docstream renders **bold**, _italic_, ~~struck~~ and \`inline code\`, plus
-[links](https://github.com/BLamy/docstream), autolinks like https://pele.run,
+[links](https://github.com/BLamy/ui/tree/main/packages/docstream), autolinks like https://pele.run,
 and chips: ask @brett about #streaming.
 
 > Blockquotes hold full markdown — even **lists**:

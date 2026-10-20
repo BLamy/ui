@@ -208,7 +208,7 @@ function Root() {
 }
 ```
 
-Try it: [the pricing table alone, yearly](https://blamy.github.io/docstream/?demo=demos/pricing&variant=yearly).
+Try it: [the pricing table alone, yearly](https://blamy.github.io/ui/?demo=docstream:demos/pricing&variant=yearly).
 
 | Function | Signature | Notes |
 | --- | --- | --- |

@@ -1078,7 +1078,7 @@ function parseSteps(lines: string[]): { items: StepNode[]; end: number } {
   return parseItems(lines, "step", (_, body): StepNode => {
     // GitBook convention: the step's first heading is its title
     const { blocks: inner, end } = parseBody(body)
-    let title = ""
+    const title = ""
     const heading = inner[0]?.type === "heading" ? inner[0] : undefined
     const step: StepNode = { type: "step", title, children: inner }
     if (heading) {
@@ -1136,7 +1136,7 @@ function parseList(lines: string[], start: number): ParsedList {
     let content = m[4]
     let checked: boolean | undefined
     let checkMark: string | undefined
-    const taskMatch = content.match(/^\[([ xX~?bd!\-])\]\s+(.*)$/)
+    const taskMatch = content.match(/^\[([ xX~?bd!-])\]\s+(.*)$/)
     if (taskMatch) {
       list.task = true
       checked = /[xX]/.test(taskMatch[1])

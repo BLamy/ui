@@ -24,7 +24,7 @@ Type a trigger character at the start of a word and a picker opens. Keep typing 
 - **`$` is opt-in.** With no `codebases` source there's no `$` picker, so typing `$5` or `$HOME` in prose never opens a menu.
 
 {% hint style="info" %}
-Chips also come from Markdown, with or without a picker. When a page loads (or is pasted in), any `@id`, `#id` or `$id` at a word boundary becomes a chip, even with `references={false}`. A sigil in the middle of a word is plain text, so `brett@example.com` and `C#` stay as written. To keep a sigil literal, put it in a code span. The parsing rules are on [docstream's site](https://blamy.github.io/docstream/#/ai/references-and-citations).
+Chips also come from Markdown, with or without a picker. When a page loads (or is pasted in), any `@id`, `#id` or `$id` at a word boundary becomes a chip, even with `references={false}`. A sigil in the middle of a word is plain text, so `brett@example.com` and `C#` stay as written. To keep a sigil literal, put it in a code span. The parsing rules are on [docstream's site](https://blamy.github.io/ui/#/docstream/ai/references-and-citations).
 {% endhint %}
 
 ## Feeding the pickers
@@ -98,7 +98,7 @@ Agents are people too: @reviewer approved it[^1].
 [^1]: https://example.com/review "Review thread"
 ````
 
-How a chip looks and what a click on it does in the *published* page is the renderer's job. docstream gives hosts `onReferenceClick` and custom chip renderers, and its [references page](https://blamy.github.io/docstream/#/ai/references-and-citations) covers both.
+How a chip looks and what a click on it does in the *published* page is the renderer's job. docstream gives hosts `onReferenceClick` and custom chip renderers, and its [references page](https://blamy.github.io/ui/#/docstream/ai/references-and-citations) covers both.
 
 ## In a custom editor
 

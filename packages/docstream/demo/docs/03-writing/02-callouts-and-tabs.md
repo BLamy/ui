@@ -358,7 +358,7 @@ import "@brett_lamy/docstream/styles.css"
 {% endtab %}
 {% tab title="From source" %}
 ```sh
-git clone https://github.com/BLamy/docstream && cd docstream
+git clone https://github.com/BLamy/ui/tree/main/packages/docstream && cd docstream
 npm install && npm run build
 ```
 
@@ -380,7 +380,7 @@ import "@brett_lamy/docstream/styles.css"
 {% endtab %}
 {% tab title="From source" %}
 ```sh
-git clone https://github.com/BLamy/docstream && cd docstream
+git clone https://github.com/BLamy/ui/tree/main/packages/docstream && cd docstream
 npm install && npm run build
 ```
 

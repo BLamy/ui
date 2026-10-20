@@ -64,7 +64,7 @@ interface SourceFileSnapshot {
 - `write` saves it. The block shows **Saving…** and then **Saved**, or the error.
 - `importModule` loads the module to preview. It runs on mount and again after every save, so the preview always shows the file as saved.
 
-docstream ships two clients. `createViteSourceClient(apiBase?)` talks to the dev-server endpoints that `docstreamSources()` from `@brett_lamy/docstream/vite` installs, and imports modules through Vite, so TypeScript, JSX and HMR all work. `createBundledSourceClient(modules)` previews modules compiled into a production bundle, and refuses `read` and `write`. Without a `sourceClient` the block is just its header, and the reference round-trips untouched. Setting up the plugin is covered in docstream's [Source files](https://blamy.github.io/docstream/#/interactive/source-files) page.
+docstream ships two clients. `createViteSourceClient(apiBase?)` talks to the dev-server endpoints that `docstreamSources()` from `@brett_lamy/docstream/vite` installs, and imports modules through Vite, so TypeScript, JSX and HMR all work. `createBundledSourceClient(modules)` previews modules compiled into a production bundle, and refuses `read` and `write`. Without a `sourceClient` the block is just its header, and the reference round-trips untouched. Setting up the plugin is covered in docstream's [Source files](https://blamy.github.io/ui/#/docstream/interactive/source-files) page.
 
 ### Writing your own client
 
@@ -159,6 +159,6 @@ The code pane is a plain `<textarea>`, not a highlighted code editor.
 Demo blocks: live examples with their files
 {% endcontent-ref %}
 
-{% content-ref url="https://blamy.github.io/docstream/#/interactive/source-files" %}
+{% content-ref url="https://blamy.github.io/ui/#/docstream/interactive/source-files" %}
 docstream: source files and the Vite plugin
 {% endcontent-ref %}

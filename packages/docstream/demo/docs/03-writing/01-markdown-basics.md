@@ -37,13 +37,13 @@ On this docs site the first `# heading` of a file is the page title. It's drawn 
 
 {% tabs sync="example" %}
 {% tab title="Preview" %}
-**Bold** and __bold__, *italic* and _italic_, ***both at once***, ~~strikethrough~~, and `inline code`. Emphasis nests: **bold with _italic_ inside**, and spans links and chips: **ask @brett** or *[read the source](https://github.com/BLamy/docstream)*.
+**Bold** and __bold__, *italic* and _italic_, ***both at once***, ~~strikethrough~~, and `inline code`. Emphasis nests: **bold with _italic_ inside**, and spans links and chips: **ask @brett** or *[read the source](https://github.com/BLamy/ui/tree/main/packages/docstream)*.
 
 Code spans can hold backticks if you use more of them: ``a `tick` inside``.
 {% endtab %}
 {% tab title="Markdown" %}
 ````md
-**Bold** and __bold__, *italic* and _italic_, ***both at once***, ~~strikethrough~~, and `inline code`. Emphasis nests: **bold with _italic_ inside**, and spans links and chips: **ask @brett** or *[read the source](https://github.com/BLamy/docstream)*.
+**Bold** and __bold__, *italic* and _italic_, ***both at once***, ~~strikethrough~~, and `inline code`. Emphasis nests: **bold with _italic_ inside**, and spans links and chips: **ask @brett** or *[read the source](https://github.com/BLamy/ui/tree/main/packages/docstream)*.
 
 Code spans can hold backticks if you use more of them: ``a `tick` inside``.
 ````
@@ -58,11 +58,11 @@ Four ways to write a link, all rendered the same:
 
 {% tabs sync="example" %}
 {% tab title="Preview" %}
-- Inline: [the docstream repo](https://github.com/BLamy/docstream "Docstream on GitHub")
+- Inline: [the docstream repo](https://github.com/BLamy/ui/tree/main/packages/docstream "Docstream on GitHub")
 - Reference: [Pele][pele], collapsed [KaTeX][], and shortcut [GitBook]
-- Bare autolink: https://blamy.github.io/docstream/
+- Bare autolink: https://blamy.github.io/ui/#/docstream
 - Angle autolink: <https://www.npmjs.com/package/@brett_lamy/docstream>
-- HTML: <a href="https://github.com/BLamy/docstream/issues">open an issue</a>
+- HTML: <a href="https://github.com/BLamy/ui/issues">open an issue</a>
 
 [pele]: https://pele.run "Pele, the Mermaid renderer"
 [katex]: https://katex.org
@@ -70,11 +70,11 @@ Four ways to write a link, all rendered the same:
 {% endtab %}
 {% tab title="Markdown" %}
 ````md
-- Inline: [the docstream repo](https://github.com/BLamy/docstream "Docstream on GitHub")
+- Inline: [the docstream repo](https://github.com/BLamy/ui/tree/main/packages/docstream "Docstream on GitHub")
 - Reference: [Pele][pele], collapsed [KaTeX][], and shortcut [GitBook]
-- Bare autolink: https://blamy.github.io/docstream/
+- Bare autolink: https://blamy.github.io/ui/#/docstream
 - Angle autolink: <https://www.npmjs.com/package/@brett_lamy/docstream>
-- HTML: <a href="https://github.com/BLamy/docstream/issues">open an issue</a>
+- HTML: <a href="https://github.com/BLamy/ui/issues">open an issue</a>
 
 [pele]: https://pele.run "Pele, the Mermaid renderer"
 [katex]: https://katex.org

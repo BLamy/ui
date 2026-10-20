@@ -112,7 +112,7 @@ const LINKS = `# Page links and embeds
 [Slash menu](02-slash-menu.md)
 {% endcontent-ref %}
 
-{% content-ref url="https://github.com/BLamy/docstream-editor" %}
+{% content-ref url="https://github.com/BLamy/ui/tree/main/packages/docstream-editor" %}
 The docstream-editor repository
 {% endcontent-ref %}
 

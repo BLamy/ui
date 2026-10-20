@@ -33,7 +33,7 @@ export function greet(name: string): string {
 - **Fence spelling is kept**: backticks vs tildes, fence length, and longer outer fences around nested ones.
 - **Syntax highlighting** comes from [gpu-lexer](https://gpu-lexer.vercel.app/), the language-agnostic WebGPU lexer docstream's renderer uses, so the editor and the page agree. It loads on the first code block. It is cached by block text, and it re-highlights in the background as you type. Without WebGPU, code stays plain text and is still fully editable.
 
-For how fences render on the published page (copy buttons, collapsing, the full attribute list), see docstream's [Code](https://blamy.github.io/docstream/#/writing/code) page.
+For how fences render on the published page (copy buttons, collapsing, the full attribute list), see docstream's [Code](https://blamy.github.io/ui/#/docstream/writing/code) page.
 
 ### Live fences
 
@@ -50,7 +50,7 @@ The entry defaults to `/src/main.tsx` for `tsx` and `/src/main.jsx` otherwise. L
 
 ### Strudel fences
 
-A `strudel` fence (or `/strudel`) gets docstream's Strudel player above its source, so a music pattern plays from the editor as it does on the page. See docstream's [Music](https://blamy.github.io/docstream/#/media/music) page.
+A `strudel` fence (or `/strudel`) gets docstream's Strudel player above its source, so a music pattern plays from the editor as it does on the page. See docstream's [Music](https://blamy.github.io/ui/#/docstream/media/music) page.
 
 ## Install commands
 
@@ -63,7 +63,7 @@ A `strudel` fence (or `/strudel`) gets docstream's Strudel player above its sour
 | **npm** | The command itself. Several lines switch the block to its multi-line form. |
 | **pnpm**, **yarn**, **bun** | A verbatim override (`pnpm="…"`). The placeholder shows what docstream would derive. Leave it empty to keep deriving. |
 
-Insert a box with `/install` (the **Install command** item). A `sync` key is kept as written. docstream's [install commands](https://blamy.github.io/docstream/#/writing/code) section has the full derivation table.
+Insert a box with `/install` (the **Install command** item). A `sync` key is kept as written. docstream's [install commands](https://blamy.github.io/ui/#/docstream/writing/code) section has the full derivation table.
 
 ## Math
 
@@ -77,7 +77,7 @@ $$
 $$
 ````
 
-The result pane is docstream's `MathFormula` component, so the editor and the published page typeset with the same KaTeX build and settings. Math is display math only: docstream has no inline `$…$` form, and a `$` before a letter in prose is a [codebase chip](03-references-and-citations.md). See docstream's [Math and diagrams](https://blamy.github.io/docstream/#/writing/math-and-diagrams) page.
+The result pane is docstream's `MathFormula` component, so the editor and the published page typeset with the same KaTeX build and settings. Math is display math only: docstream has no inline `$…$` form, and a `$` before a letter in prose is a [codebase chip](03-references-and-citations.md). See docstream's [Math and diagrams](https://blamy.github.io/ui/#/docstream/writing/math-and-diagrams) page.
 
 ## Mermaid diagrams
 
@@ -93,7 +93,7 @@ graph LR
 ```
 ````
 
-The diagram is `PeleDiagram`, the same component docstream's renderer draws with, so a diagram that renders in the editor renders on the page. The diagram types Pele draws, with a gallery, are on docstream's [Math and diagrams](https://blamy.github.io/docstream/#/writing/math-and-diagrams) page.
+The diagram is `PeleDiagram`, the same component docstream's renderer draws with, so a diagram that renders in the editor renders on the page. The diagram types Pele draws, with a gallery, are on docstream's [Math and diagrams](https://blamy.github.io/ui/#/docstream/writing/math-and-diagrams) page.
 
 ## Next
 

@@ -39,7 +39,7 @@ A Markdown table cell is a single line. If you press `Enter` (or insert a line b
 
 ### Card tables
 
-`<table data-view="cards">` is GitBook's card grid. The editor edits it as an ordinary table: the first cell of each row is the card title. The `data-view` attribute and the table's HTML form are carried through untouched (`GbTable` keeps `view`), so the page still renders cards. See docstream's [Layout](https://blamy.github.io/docstream/#/writing/layout) page for how cards render.
+`<table data-view="cards">` is GitBook's card grid. The editor edits it as an ordinary table: the first cell of each row is the card title. The `data-view` attribute and the table's HTML form are carried through untouched (`GbTable` keeps `view`), so the page still renders cards. See docstream's [Layout](https://blamy.github.io/ui/#/docstream/writing/layout) page for how cards render.
 
 ## Hints
 
@@ -59,7 +59,7 @@ The tab strip is live: click a tab to show it, type in the active tab's title to
 - **Sync keys.** `{% tabs sync="pm" %}` is kept as written. There's no control for it, and readers' choices sync on the published page.
 - Which tab is showing in the editor is editor state only. It is never saved.
 
-See docstream's [Callouts and tabs](https://blamy.github.io/docstream/#/writing/callouts-and-tabs) page for how tabs collapse, sync and become sections.
+See docstream's [Callouts and tabs](https://blamy.github.io/ui/#/docstream/writing/callouts-and-tabs) page for how tabs collapse, sync and become sections.
 
 ## Steppers
 
@@ -95,13 +95,13 @@ An embed is its preview with a URL field below:
 
 ## Changelogs
 
-`{% updates %}` holds one `{% update date="…" %}` per entry. Each update has a date picker and a body of ordinary blocks. `/updates` inserts one dated today, with a **What changed** heading. `format=` is kept. See docstream's [Changelogs](https://blamy.github.io/docstream/#/writing/changelogs) page.
+`{% updates %}` holds one `{% update date="…" %}` per entry. Each update has a date picker and a body of ordinary blocks. `/updates` inserts one dated today, with a **What changed** heading. `format=` is kept. See docstream's [Changelogs](https://blamy.github.io/ui/#/docstream/writing/changelogs) page.
 
 {% demo src="editing-layout/editor" variants="updates:Updates" %}
 
 ## OpenAPI operations
 
-`{% openapi-operation %}` shows docstream's rendered operation (method, parameters, responses, a cURL sample) with four fields above it: spec name, method, path and spec URL. The operation reloads when the URL or path changes. `/openapi` inserts one for `GET /`. See docstream's [OpenAPI](https://blamy.github.io/docstream/#/media/openapi) page.
+`{% openapi-operation %}` shows docstream's rendered operation (method, parameters, responses, a cURL sample) with four fields above it: spec name, method, path and spec URL. The operation reloads when the URL or path changes. `/openapi` inserts one for `GET /`. See docstream's [OpenAPI](https://blamy.github.io/ui/#/docstream/media/openapi) page.
 
 ## Next
 

@@ -105,7 +105,7 @@ Editor and renderer accept the same host plumbing, so a page looks the same in b
 
 Pasting a docs page's **Copy page ▾** output shows the same page in the editor, demos and their inline files included. Copying a demo out of the editor writes the same clipboard format docstream's own **Copy demo** button does. See [Demo blocks](../03-files-and-demos/04-demo-blocks.md).
 
-For renderer details, go to docstream's own docs: the [parser and serializer](https://blamy.github.io/docstream/#/reference/parser-api), the [AST](https://blamy.github.io/docstream/#/reference/ast), [streaming AI answers](https://blamy.github.io/docstream/#/ai/streaming), and [docs sites](https://blamy.github.io/docstream/#/docs-site) like this one.
+For renderer details, go to docstream's own docs: the [parser and serializer](https://blamy.github.io/ui/#/docstream/reference/parser-api), the [AST](https://blamy.github.io/ui/#/docstream/reference/ast), [streaming AI answers](https://blamy.github.io/ui/#/docstream/ai/streaming), and [docs sites](https://blamy.github.io/ui/#/docstream/docs-site) like this one.
 
 ## Next
 

@@ -59,7 +59,7 @@ export function resolveAsset(url: string) {
 Keep `resolveAsset` stable (a module function, or `useCallback`). Every block that uses it re-resolves its URL when the function changes.
 {% endhint %}
 
-Video embeds (`.mp4`, YouTube) don't go through `resolveAsset`. Their URL is used as given. docstream's [asset page](https://blamy.github.io/docstream/#/media/assets) has the renderer's side of the same rules.
+Video embeds (`.mp4`, YouTube) don't go through `resolveAsset`. Their URL is used as given. docstream's [asset page](https://blamy.github.io/ui/#/docstream/media/assets) has the renderer's side of the same rules.
 
 ## pickFile: the host's file chooser
 
@@ -142,7 +142,7 @@ In edit mode the block also has its URL field (placeholder `https://… or ./fil
 {% embed url="./music/printer.strudel" %}
 ```
 
-A model or pattern without a `title` is captioned with its file name, taken from the URL as written (a `blob:` URL has no name). The replay player loads rrweb only when the block nears the viewport. Strudel loads its audio engine on the first press of play. docstream's media pages cover each player: [3D models](https://blamy.github.io/docstream/#/media/3d-models), [music](https://blamy.github.io/docstream/#/media/music), [session replays](https://blamy.github.io/docstream/#/media/replays).
+A model or pattern without a `title` is captioned with its file name, taken from the URL as written (a `blob:` URL has no name). The replay player loads rrweb only when the block nears the viewport. Strudel loads its audio engine on the first press of play. docstream's media pages cover each player: [3D models](https://blamy.github.io/ui/#/docstream/media/3d-models), [music](https://blamy.github.io/ui/#/docstream/media/music), [session replays](https://blamy.github.io/ui/#/docstream/media/replays).
 
 <details>
 <summary>What the demo's host does</summary>

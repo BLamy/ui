@@ -11,17 +11,26 @@
     "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
-    "noEmit": true,
     "types": [
       "vite/client"
     ],
-    "paths": {
-      "@brett_lamy/docstream-editor": [
-        "../src/index.ts"
-      ]
-    }
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "out-tsc",
+    "tsBuildInfoFile": "out-tsc/tsconfig.tsbuildinfo",
+    "customConditions": [
+      "@org/source"
+    ]
   },
   "include": [
-    "src"
-  ]
+    "src",
+    "../../docstream/src/env.d.ts"
+  ],
+  "exclude": [
+    "out-tsc",
+    "dist",
+    "node_modules"
+  ],
+  "references": []
 }

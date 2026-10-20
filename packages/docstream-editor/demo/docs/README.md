@@ -4,10 +4,10 @@ description: A WYSIWYG editor for GitBook-flavored Markdown on Tiptap, with docs
 
 # docstream-editor
 
-`@brett_lamy/docstream-editor` edits the Markdown that [docstream](https://blamy.github.io/docstream/) renders. Hints, tabs, steppers, install boxes, live demos, Mermaid, math, task states and frontmatter all show up as real blocks you can edit. When you're done, it hands back GitBook-flavored Markdown: the parts you edited are re-serialized, and everything else comes back byte for byte.
+`@brett_lamy/docstream-editor` edits the Markdown that [docstream](https://blamy.github.io/ui/#/docstream) renders. Hints, tabs, steppers, install boxes, live demos, Mermaid, math, task states and frontmatter all show up as real blocks you can edit. When you're done, it hands back GitBook-flavored Markdown: the parts you edited are re-serialized, and everything else comes back byte for byte.
 
 {% hint style="info" %}
-This site is itself a folder of Markdown, published with docstream's [`DocsSite`](https://blamy.github.io/docstream/#/docs-site). Every editor on these pages is a real, mounted `GitbookEditor`. Open **Copy page ▾** on any page and paste the result into the playground below: the editor shows the same page.
+This site is itself a folder of Markdown, published with docstream's [`DocsSite`](https://blamy.github.io/ui/#/docstream/docs-site). Every editor on these pages is a real, mounted `GitbookEditor`. Open **Copy page ▾** on any page and paste the result into the playground below: the editor shows the same page.
 {% endhint %}
 
 {% demo src="start-hero/playground" %}

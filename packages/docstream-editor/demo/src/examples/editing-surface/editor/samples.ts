@@ -15,7 +15,7 @@ Everything a page usually needs is a **plain block** in the editor: headings, pa
 - [x] Changelog written
 - [ ] Docs updated
 
-> Ship small, ship often. A quote can hold **formatting** and [links](https://blamy.github.io/docstream/).
+> Ship small, ship often. A quote can hold **formatting** and [links](https://blamy.github.io/ui/#/docstream).
 
 \`\`\`sh
 npm version minor && git push --follow-tags
@@ -43,7 +43,7 @@ Spellings survive: *star italic*, __underscore bold__, \`\`code with a \` backti
 
 Reference-style links resolve through their definition: [the docstream site][docs].
 
-[docs]: https://blamy.github.io/docstream/ "docstream"
+[docs]: https://blamy.github.io/ui/#/docstream "docstream"
 `
 
 const PRESERVED = `# Kept as written

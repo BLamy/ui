@@ -19,7 +19,7 @@ export function normalizeLabel(label: string): string {
 // dashes. Codebase ids may also carry `/` (`$org/repo`). A letter start keeps prices
 // like $5 plain text.
 const REFERENCE_BODY_RE = /^[@#]([A-Za-z_][\w.-]*)/
-const CODEBASE_BODY_RE = /^\$([A-Za-z_][\w.\/-]*)/
+const CODEBASE_BODY_RE = /^\$([A-Za-z_][\w./-]*)/
 const SIGIL_KIND = { "@": "mention", "#": "tag", $: "codebase" } as const
 const KIND_SIGIL = { mention: "@", tag: "#", codebase: "$" } as const
 // Chips are only recognized at start-of-input or after whitespace, open brackets or an emphasis marker,

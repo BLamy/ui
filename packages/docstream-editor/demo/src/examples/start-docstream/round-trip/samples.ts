@@ -3,7 +3,7 @@ export const SAMPLES: Record<string, string> = {
   "Emphasis spellings": `***Both*** marks, __bold__ with underscores, _italic_ too,
 and an escaped snake\\_case word.
 
-A link inside bold: **[docs](https://blamy.github.io/docstream/)**, and bold inside a link: [**docs**](https://blamy.github.io/docstream/).
+A link inside bold: **[docs](https://blamy.github.io/ui/#/docstream)**, and bold inside a link: [**docs**](https://blamy.github.io/ui/#/docstream).
 `,
   "List markers": `* Star bullets
 * stay stars
@@ -14,9 +14,9 @@ A link inside bold: **[docs](https://blamy.github.io/docstream/)**, and bold ins
 - [~] In progress
 - [b] Blocked
 `,
-  "Links and definitions": `Read the [renderer docs][docstream], or <https://github.com/BLamy/docstream-editor>.
+  "Links and definitions": `Read the [renderer docs][docstream], or <https://github.com/BLamy/ui/tree/main/packages/docstream-editor>.
 
-[docstream]: https://blamy.github.io/docstream/ "docstream"
+[docstream]: https://blamy.github.io/ui/#/docstream "docstream"
 `,
   "GitBook blocks": `{% hint style="warning" %}
 Production deploys freeze at **17:00 UTC** on Fridays.

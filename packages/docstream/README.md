@@ -115,7 +115,7 @@ export function Answer({ text, isStreaming }: { text: string; isStreaming: boole
 `DocsSite` publishes a folder of Markdown as a GitBook-style site. Give it every file you
 have — it keeps the `.md` files, builds the sidebar from the folders (or a GitBook
 `SUMMARY.md`) and renders each page through docstream. The docstream site
-(https://blamy.github.io/docstream/) is one: the repo's `demo/docs/` folder.
+(https://blamy.github.io/ui/#/docstream) is one: the repo's `demo/docs/` folder.
 
 ```tsx
 import { createRoot } from "react-dom/client"

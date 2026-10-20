@@ -30,7 +30,7 @@ Hints, tabs and steppers are **real nodes**.
 
 Cited claim [^1], ask @brett.
 
-[docs]: https://blamy.github.io/docstream/
+[docs]: https://blamy.github.io/ui/#/docstream
 
 [^1]: https://example.com/source "A source"
 `

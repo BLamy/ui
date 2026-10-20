@@ -442,7 +442,7 @@ function serializeBlock(b: Block): string {
       // Pipes inside cells are escaped so they don't break the GFM row (unless a code span wrote them bare).
       const cell = (c: Inline[]) => serializeInline(c, { tableCell: true })
       // An empty cell is written `| |`, as authors do.
-      const row = (cells: Inline[][]) => `|${cells.map((c) => ` ${cell(c)} `.replace(/^  $/, " ")).join("|")}|`
+      const row = (cells: Inline[][]) => `|${cells.map((c) => ` ${cell(c)} `.replace(/^ {2}$/, " ")).join("|")}|`
       const columns = b.header.length
       const align = b.align?.some((a) => a) ? b.align : undefined
       const recorded = b.delimiterRow

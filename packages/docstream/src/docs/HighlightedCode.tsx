@@ -11,7 +11,7 @@ type Span = {
    light and dark backgrounds alike. Hosts can retheme via the --docs-tok-* custom properties. */
 
 function escapeHtml(value: string) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;")
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
 }
 
 function spansToHtml(code: string, spans: Span[]) {

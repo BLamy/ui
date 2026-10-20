@@ -157,7 +157,7 @@ The table may span lines, as above, or sit on one. An HTML table **without** `da
 **Code** — fences, titles, line numbers and install commands
 {% endcontent-ref %}
 
-{% content-ref url="https://github.com/BLamy/docstream" %}
+{% content-ref url="https://github.com/BLamy/ui/tree/main/packages/docstream" %}
 The docstream repository on GitHub
 {% endcontent-ref %}
 {% endtab %}
@@ -167,7 +167,7 @@ The docstream repository on GitHub
 **Code** — fences, titles, line numbers and install commands
 {% endcontent-ref %}
 
-{% content-ref url="https://github.com/BLamy/docstream" %}
+{% content-ref url="https://github.com/BLamy/ui/tree/main/packages/docstream" %}
 The docstream repository on GitHub
 {% endcontent-ref %}
 ````

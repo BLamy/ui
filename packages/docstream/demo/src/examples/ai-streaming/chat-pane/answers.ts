@@ -67,5 +67,5 @@ export const FALLBACK = (question: string) => `I only know three canned answers 
 Lead with the answer, cite sources with footnotes [^1], and use docstream blocks only where they help.
 {% endhint %}
 
-[^1]: https://blamy.github.io/docstream/ "docstream docs"
+[^1]: https://blamy.github.io/ui/#/docstream "docstream docs"
 `
