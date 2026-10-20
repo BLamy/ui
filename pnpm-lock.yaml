@@ -268,6 +268,12 @@ importers:
       '@tiptap/suggestion':
         specifier: 3.30.5
         version: 3.30.5(@floating-ui/dom@1.8.0)(@tiptap/core@3.30.5(@tiptap/pm@3.30.5))(@tiptap/pm@3.30.5)
+      docstream-editor-playground:
+        specifier: workspace:*
+        version: link:../../packages/docstream-editor/demo
+      docstream-playground:
+        specifier: workspace:*
+        version: link:../../packages/docstream/demo
       highlight.js:
         specifier: 11.11.2
         version: 11.11.2

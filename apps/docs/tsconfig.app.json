@@ -39,6 +39,12 @@
   ],
   "references": [
     {
+      "path": "../../packages/docstream/demo"
+    },
+    {
+      "path": "../../packages/docstream-editor/demo"
+    },
+    {
       "path": "../../packages/docstream-editor/tsconfig.lib.json"
     },
     {

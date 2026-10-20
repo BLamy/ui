@@ -3270,7 +3270,7 @@
         }
       ],
       "meta": {
-        "page": "docstream",
+        "page": "markdown-view",
         "exports": [
           "MarkdownView",
           "HlPre",

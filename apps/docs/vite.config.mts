@@ -2,7 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import type { Plugin } from 'vite';
 import { aliases } from '../../tools/alias.mjs';
 import { getServiceWorkerContent } from '@agent-wasm/core/next';
@@ -116,6 +116,26 @@ function extractInlinedBinaries(): Plugin {
   };
 }
 
+/* `virtual:bl-site-files`: file lists the site reports on without bundling the files — packages/ui's source modules (the
+   roadmap's module map) and the number of Markdown pages in each library's docs folder (the landing page's count). */
+function siteFiles(): Plugin {
+  const ID = 'virtual:bl-site-files';
+  const list = (dir: string, keep: (f: string) => boolean) =>
+    readdirSync(new URL(dir, import.meta.url), { recursive: true, encoding: 'utf8' }).filter(keep).map((f) => f.split('\\').join('/')).sort();
+  return {
+    name: 'bl-site-files',
+    resolveId: (id) => (id === ID ? `\0${ID}` : null),
+    load(id) {
+      if (id !== `\0${ID}`) return null;
+      const isModule = (f: string) => /\.(tsx?|js)$/.test(f) && !/\.(test|stories)\.|\.dom\.test\.|__fixtures__/.test(f);
+      const uiModules = ['components', 'lib'].flatMap((d) => list(`../../packages/ui/src/${d}`, isModule).map((f) => `${d}/${f}`));
+      const md = (f: string) => f.endsWith('.md');
+      const libraryPages = list('../../packages/docstream/demo/docs', md).length + list('../../packages/docstream-editor/demo/docs', md).length;
+      return `export const uiModules = ${JSON.stringify(uiModules)};\nexport const libraryPages = ${libraryPages};\n`;
+    },
+  };
+}
+
 export default defineConfig(() => ({
   root: import.meta.dirname,
   base: process.env.GITHUB_ACTIONS ? '/ui/' : '/',
@@ -128,7 +148,7 @@ export default defineConfig(() => ({
     port: 4206,
     host: 'localhost',
   },
-  plugins: [react(), tailwindcss(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation(), extractInlinedBinaries()],
+  plugins: [react(), tailwindcss(), siteFiles(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation(), extractInlinedBinaries()],
   resolve: {
     conditions: ['@org/source'], alias: aliases,
     // The registry and app share Docstream's demo contexts even when optional runtime peers differ.
@@ -164,13 +184,8 @@ export default defineConfig(() => ({
       'highlight.js/lib/languages/*',
       'lowlight',
       'lowlight > highlight.js',
-      // docstream pulls CommonJS deps (style-to-js, debug) the browser can't import unbundled; pre-bundle it whole.
-      '@brett_lamy/ui > @brett_lamy/docstream',
-      '@brett_lamy/ui > @brett_lamy/docstream-editor',
-      // ReplayPreview's player (rrweb loads from it lazily).
-      '@brett_lamy/ui > @brett_lamy/docstream/replay',
-      // The live example card (ReactDemo with an in-page preview).
-      '@brett_lamy/docstream/playground',
+      // docstream and its editor are workspace sources: never pre-bundled (a pre-bundled copy would bring its own
+      // contexts — the demo registry, references — apart from the one the source imports), their deps are found as usual.
     ],
   },
   // PGlite's worker (examples/pglite/worker) imports the engine, which code-splits: workers must build as ES modules.

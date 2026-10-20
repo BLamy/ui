@@ -59,7 +59,8 @@
     "apps/docs": {
       "entry": [
         "src/page-export.ts",
-        "examples/*/*/index.tsx"
+        "examples/*/*/index.tsx",
+        "src/site/virtual.d.ts"
       ],
       "project": [
         "src/**/*.{ts,tsx}",
