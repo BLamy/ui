@@ -1,13 +1,47 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "lib": ["es2022", "dom", "dom.iterable"],
+    "lib": [
+      "es2022",
+      "dom",
+      "dom.iterable"
+    ],
     "module": "esnext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": [
+      "vite/client"
+    ],
+    "paths": {
+      "@brett_lamy/docstream": [
+        "../src/index.ts"
+      ],
+      "@brett_lamy/docstream/site": [
+        "../src/site/index.ts"
+      ],
+      "@brett_lamy/docstream/playground": [
+        "../src/playground/index.ts"
+      ],
+      "@brett_lamy/docstream/replay": [
+        "../src/replay/index.ts"
+      ],
+      "@brett_lamy/docstream/replay/demo": [
+        "../src/replay/demo/index.ts"
+      ],
+      "@brett_lamy/docstream/stl": [
+        "../src/stl/index.ts"
+      ],
+      "@brett_lamy/docstream/strudel": [
+        "../src/strudel/index.ts"
+      ]
+    }
   },
-  "include": ["src", "vite.config.ts"]
+  "include": [
+    "src",
+    "docs.test.ts",
+    "../src/env.d.ts"
+  ]
 }

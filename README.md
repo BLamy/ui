@@ -20,6 +20,7 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 - Attribute-aware direct video embeds for muted, looping inline clips in long-form posts.
 - Optional `VizEmbed` integration for mounting deterministic `@brett_lamy/viz-engine` scenes in a document.
 - Vite source mounts for rendering and editing real component or Storybook files without copying implementations into Markdown.
+- `DocsSite` (`@brett_lamy/docstream/site`): a GitBook-style documentation site from a folder of Markdown — sidebar from the file tree or `SUMMARY.md`, ⌘K search, an outline, breadcrumbs, previous / next and in-place relative links.
 
 ## Installation
 
@@ -108,6 +109,34 @@ export function Answer({ text, isStreaming }: { text: string; isStreaming: boole
 ```
 
 `isStreaming` adds `aria-busy` and a `data-streaming` attribute to the wrapper. `isAnimating` is also accepted for compatibility with stream UI state.
+
+## Docs Sites
+
+`DocsSite` publishes a folder of Markdown as a GitBook-style site. Give it every file you
+have — it keeps the `.md` files, builds the sidebar from the folders (or a GitBook
+`SUMMARY.md`) and renders each page through docstream. The docstream site
+(https://blamy.github.io/docstream/) is one: the repo's `demo/docs/` folder.
+
+```tsx
+import { createRoot } from "react-dom/client"
+import { DocsSite } from "@brett_lamy/docstream/site"
+import "@brett_lamy/docstream/styles.css"
+
+const files = import.meta.glob("./docs/**/*.md", { query: "?raw", import: "default", eager: true })
+
+createRoot(document.getElementById("root")!).render(<DocsSite files={files} title="Acme" />)
+```
+
+- `README.md` / `index.md` is a folder's page (the root one is home); top-level folders are
+  sidebar groups; numeric prefixes (`01-intro.md`) order entries and are dropped from URLs;
+  frontmatter `title`, `description`, `order` and `hidden` refine it.
+- Relative links (`[Install](../guides/install.md#npm)`) navigate in place.
+- ⌘K full-text search, an "On this page" outline, breadcrumbs, previous / next, "Copy page",
+  optional "Edit this page", light / dark, and a phone layout driven by the site's own width.
+- `routing="hash"` (default, any static host), `"history"` (with `basePath`) or `"memory"`
+  (an embedded site). Every `MarkdownContent` renderer prop (`demoResolver`, `liveRenderer`, …)
+  passes through.
+- `buildDocsTree(files)` is the pure tree builder behind it, for static builds and link checks.
 
 ## Render Parsed Documents
 

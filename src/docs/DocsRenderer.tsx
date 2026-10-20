@@ -358,8 +358,10 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
     }
     case "heading": {
       const Tag = `h${block.level}` as const
+      // The same anchor `documentOutline` reports, so a table of contents can link to it.
+      const text = plainText(block.children)
       return (
-        <Tag>
+        <Tag id={text ? slugify(text) : undefined}>
           <InlineText nodes={block.children} />
         </Tag>
       )

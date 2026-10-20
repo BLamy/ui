@@ -1,0 +1,12 @@
+{
+  "title": "Markdown playground",
+  "description": "Type on the left, docstream renders on the right. Task boxes and properties write back into the source.",
+  "height": 560,
+  "status": "Live",
+  "variants": [
+    { "id": "basics", "label": "Basics" },
+    { "id": "blocks", "label": "Blocks" },
+    { "id": "properties", "label": "Properties" },
+    { "id": "tasks", "label": "Tasks" }
+  ]
+}

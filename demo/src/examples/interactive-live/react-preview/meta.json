@@ -1,0 +1,10 @@
+{
+  "title": "ReactCodePreview",
+  "description": "`ReactCodePreview` from `@brett_lamy/docstream/playground`, lazily imported: it writes the files into an almost-node VFS, runs `vite`, and serves the app into a sandboxed iframe.",
+  "height": 520,
+  "status": "almost-node",
+  "variants": [
+    { "id": "counter", "label": "Counter" },
+    { "id": "todos", "label": "Multi-file" }
+  ]
+}

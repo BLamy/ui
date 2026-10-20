@@ -1,15 +1,22 @@
-import { StrictMode, useEffect, useState } from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DemoFullscreen, DocstreamRefContext, GitbookStreamdown, MarkdownContent, SourcePreview, createBundledSourceClient, createViteSourceClient, demoFromSearch, type CitationPreviewResolver, type SourceReferenceRenderer } from '@brett_lamy/docstream';
+import { DemoFullscreen, DocstreamRefContext, SourcePreview, createBundledSourceClient, createViteSourceClient, demoFromSearch, type CitationPreviewResolver, type SourceReferenceRenderer } from '@brett_lamy/docstream';
+import { DocsSite, humanize, type BuildDocsTreeOptions } from '@brett_lamy/docstream/site';
 import '@brett_lamy/docstream/styles.css';
 import './site.css';
 import { demoResolver } from './demos';
 import { demoRuntime } from './inline-demo-runtime';
-import { PAGES } from './content';
 import * as ButtonModule from './examples/Button';
 import * as ButtonStoriesModule from './examples/Button.stories';
 import { liveRenderer } from './live-renderer';
-import { ReactDemoLive } from './react-demo-live';
+
+/* The whole site is the docs/ folder: DocsSite keeps the Markdown, builds the sidebar from the
+   folders, and renders every page through docstream. Add a file there and it's on the site. */
+const files = import.meta.glob('../docs/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+
+// Folder names are humanized ("getting-started" → "Getting started"); these read better spelled out.
+const FOLDER_TITLES: Record<string, string> = { ai: 'AI', media: 'Media & embeds' };
+const treeOptions: BuildDocsTreeOptions = { folderTitle: (name) => FOLDER_TITLES[name] ?? humanize(name) };
 
 const bundledSourceClient = createBundledSourceClient({
   'Button.tsx': ButtonModule,
@@ -37,152 +44,46 @@ const citationPreviews: CitationPreviewResolver = (citation) => {
   return null;
 };
 
-const STREAM_SOURCE = `## Live stream demo
-
-This markdown is arriving **a few words at a time** and re-rendering through \`GitbookStreamdown\` with \`isStreaming\`.
-
-{% hint style="info" %}
-Notice the hint renders before its closing tag has streamed in.
-{% endhint %}
-
-\`\`\`ts
-// even code fences render progressively
-const chunks = await model.stream(prompt)
-for await (const c of chunks) append(c)
-\`\`\`
-
-- lists build up item by item
-- tables and math work the same way
-
-Pistachio is your strongest seasonal climber — up 18% quarter over quarter [^1], with the sharpest lift on weekend afternoons [^2]. Ask @brett about the #seasonal push. Rocky Road keeps sliding [^3].
-
-Done — the stream restarts in a few seconds.
-
-[^1]: https://scoopdata.io/q3 "ScoopData Q3 report"
-[^2]: https://trends.google.com/ice-cream "Google Trends"
-[^3]: https://marketbasket.io/flavors "Market Basket"`;
-
-function StreamDemo() {
-  const [n, setN] = useState(0);
-  const words = STREAM_SOURCE.split(/(?<=\s)/);
-  useEffect(() => {
-    const t = setInterval(() => setN((x) => (x >= words.length ? (x > words.length + 20 ? 0 : x + 1) : x + 2)), 90);
-    return () => clearInterval(t);
-  }, [words.length]);
-  const md = words.slice(0, Math.min(n, words.length)).join('');
-  const streaming = n < words.length;
-  return (
-    <div className="site-stream">
-      <GitbookStreamdown markdown={md} isStreaming={streaming} isAnimating={streaming} demoResolver={demoResolver} />
-    </div>
-  );
-}
-
-type Theme = 'light' | 'dark';
-
-function initialTheme(): Theme {
-  const fromUrl = new URLSearchParams(location.search).get('theme');
-  if (fromUrl === 'light' || fromUrl === 'dark') return fromUrl;
-  const saved = localStorage.getItem('docstream-demo-theme');
-  if (saved === 'light' || saved === 'dark') return saved;
-  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function useTheme(): [Theme, () => void] {
-  const [theme, setTheme] = useState<Theme>(initialTheme);
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
-  const toggle = () => setTheme((t) => {
-    const next = t === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('docstream-demo-theme', next);
-    return next;
-  });
-  return [theme, toggle];
-}
-
-const SunMoon = ({ theme }: { theme: Theme }) => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {theme === 'dark'
-      ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>
-      : <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />}
+const Logo = () => (
+  <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+    <rect width="32" height="32" rx="8" fill="var(--primary)" />
+    <path d="M9 10.5h9M9 16h14M9 21.5h6" stroke="var(--primary-foreground)" strokeWidth="2.6" strokeLinecap="round" />
+    <circle cx="21.5" cy="21.5" r="2" fill="var(--primary-foreground)" />
   </svg>
 );
 
+const GITHUB = 'https://github.com/BLamy/docstream';
+const SITE = 'https://blamy.github.io/docstream/';
+
 function App() {
-  const [theme, toggleTheme] = useTheme();
-  // Hash routing keeps the current page across the one-time reload the
-  // almost-node service worker triggers when it first installs.
-  const [page, setPage] = useState(() => window.location.hash.slice(1) || PAGES[0].id);
-  const cur = PAGES.find((p) => p.id === page) ?? PAGES[0];
-  useEffect(() => {
-    if (window.location.hash.slice(1) !== page) window.location.hash = page;
-    window.scrollTo(0, 0);
-  }, [page]);
-  useEffect(() => {
-    const onHash = () => setPage(window.location.hash.slice(1) || PAGES[0].id);
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-  const i = PAGES.indexOf(cur);
-  const prev = PAGES[i - 1];
-  const next = PAGES[i + 1];
-  const pagerButton = (p: typeof cur, label: string) => (
-    <button onClick={() => setPage(p.id)}>
-      <small>{label}</small>
-      <strong>{p.title}</strong>
-    </button>
-  );
   return (
-    <div className="site">
-      <nav className="site-nav" aria-label="Pages">
-        <div className="site-brand">
-          docstream
-          <button type="button" className="site-theme" onClick={toggleTheme} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
-            <SunMoon theme={theme} />
-          </button>
-        </div>
-        <div className="site-tagline">GitBook-aware markdown & AI stream renderer</div>
-        {PAGES.map((p) => (
-          <button key={p.id} className="site-link" aria-current={p.id === page ? 'page' : undefined} onClick={() => setPage(p.id)}>
-            {p.title}
-          </button>
-        ))}
-        <div className="site-foot">
-          <a href="https://www.npmjs.com/package/@brett_lamy/docstream">npm</a>
-          {' · '}
-          <a href="https://github.com/BLamy/docstream">GitHub</a>
-          <div style={{ marginTop: 4 }}>rendered with docstream</div>
-        </div>
-      </nav>
-      <main className="site-main">
-        <div className="site-page">
-          <DocstreamRefContext.Provider value={{ resolveCitationPreview: citationPreviews }}>
-            <MarkdownContent
-              key={cur.id}
-              markdown={cur.markdown}
-              liveRenderer={liveRenderer}
-              sourceRenderer={sourceRenderer}
-              demoResolver={demoResolver}
-              demoRuntime={demoRuntime}
-              pageActions={{ transform: (md) => `${md.trim()}\n\n---\n\nSource: https://blamy.github.io/docstream/#${cur.id}\n` }}
-            />
-            {cur.id === 'streaming' ? <StreamDemo /> : null}
-          </DocstreamRefContext.Provider>
-          {cur.id === 'live-demos' ? <ReactDemoLive /> : null}
-          <div className="site-pager">
-            <span>{prev ? pagerButton(prev, '← Previous') : null}</span>
-            <span>{next ? pagerButton(next, 'Next →') : null}</span>
-          </div>
-        </div>
-      </main>
-    </div>
+    <DocstreamRefContext.Provider value={{ resolveCitationPreview: citationPreviews }}>
+      <DocsSite
+        files={files}
+        treeOptions={treeOptions}
+        title="docstream"
+        logo={<Logo />}
+        links={[
+          { label: 'GitHub', href: GITHUB },
+          { label: 'npm', href: 'https://www.npmjs.com/package/@brett_lamy/docstream' },
+        ]}
+        themeStorageKey="docstream-demo-theme"
+        liveRenderer={liveRenderer}
+        sourceRenderer={sourceRenderer}
+        demoResolver={demoResolver}
+        demoRuntime={demoRuntime}
+        pageActions={(page) => ({ transform: (md) => `${md.trim()}\n\n---\n\nSource: ${SITE}#/${page.slug}\n` })}
+        editUrl={(page) => `${GITHUB}/edit/main/demo/docs/${page.path}`}
+        sidebarFooter={<>This site is a folder of Markdown, rendered by <a href="#/docs-site">DocsSite</a>.</>}
+      />
+    </DocstreamRefContext.Provider>
   );
 }
 
 /** `?demo=<page>/<example>` renders one demo alone (the viewer's "Open in new tab"). */
 function Fullscreen({ src, variant }: { src: string; variant?: string }) {
-  useTheme();
+  const theme = new URLSearchParams(location.search).get('theme') ?? localStorage.getItem('docstream-demo-theme');
+  document.documentElement.dataset.theme = theme === 'dark' || (!theme && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   return <div data-docstream=""><DemoFullscreen src={src} variant={variant} resolver={demoResolver} /></div>;
 }
 

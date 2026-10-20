@@ -1,0 +1,5 @@
+{
+  "title": "Package-manager derivation",
+  "description": "`packageManagerCommands` — the function behind `{% command %}`. Type any npm or npx command.",
+  "status": "Live"
+}

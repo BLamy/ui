@@ -3,8 +3,9 @@
    `MarkdownContent` calls this for every `{% code live="true" %}` jsx/tsx
    fence. The first line of the fence carries a `// demo:<name>` marker that
    selects a real mounted component from the registry below — every entry
-   mounts the REAL exported component from the package. */
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+   mounts the REAL exported component from the package. A fence without a
+   marker runs as written, in almost-node (loaded on first use). */
+import { Suspense, lazy, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   GitbookStreamdown,
   MarkdownContent,
@@ -127,10 +128,26 @@ const REGISTRY: Record<string, () => ReactNode> = {
   'parse-explorer': () => <ParseExplorerDemo />,
 };
 
-export function liveRenderer({ files, entry, title }: LivePreviewProps): ReactNode {
+const ReactCodePreview = lazy(() =>
+  import('@brett_lamy/docstream/playground').then((m) => ({ default: m.ReactCodePreview })),
+);
+
+// The service worker lives under the site's base (/docstream/); every almost-node preview on a
+// page shares it, so each one must register it there. Stable identity — it lands in effect deps.
+const WORKSPACE_OPTIONS = { basePath: import.meta.env.BASE_URL.replace(/\/$/, '') };
+
+export function liveRenderer(props: LivePreviewProps): ReactNode {
+  const { files, entry, title } = props;
   const code = files[entry] ?? '';
   const marker = /^\/\/\s*demo:([\w-]+)/.exec(code.split('\n', 1)[0] ?? '');
-  const demo = marker ? REGISTRY[marker[1]] : undefined;
+  if (!marker) {
+    return (
+      <Suspense fallback={<div className="docs-demo-runtime-status">Loading the almost-node runtime…</div>}>
+        <ReactCodePreview files={files} entry={entry} title={title} workspaceOptions={WORKSPACE_OPTIONS} collapsedCodeLines={props.collapsedCodeLines} expandedCodeLines={props.expandedCodeLines} />
+      </Suspense>
+    );
+  }
+  const demo = REGISTRY[marker[1]];
   return (
     <section data-live-example={marker?.[1] ?? 'unknown'} style={{ border: '1px solid #d8d8e4', borderRadius: 12, margin: '16px 0', overflow: 'hidden' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 14px', borderBottom: '1px solid #e6e6ee', background: '#fafafc', fontSize: 12, fontWeight: 700, color: '#5b5bd6' }}>

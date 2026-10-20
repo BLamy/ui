@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/docstream",
-  "version": "1.18.1",
+  "version": "1.19.0",
   "description": "GitBook-aware readonly markdown and AI stream renderer.",
   "publishConfig": {
     "access": "public"
@@ -136,6 +136,13 @@
       "import": "./dist/vite/index.js",
       "default": "./dist/vite/index.js"
     },
+    "./site": {
+      "source": "./src/site/index.ts",
+      "types": "./dist/site/index.d.ts",
+      "import": "./dist/site/index.js",
+      "default": "./dist/site/index.js"
+    },
+    "./site/styles.css": "./dist/site/site.css",
     "./styles.css": "./dist/styles.css"
   },
   "dependencies": {
