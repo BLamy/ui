@@ -1,3 +1,4 @@
+import { stepTitleText } from "./thumbnail"
 import type {
   Block,
   CitationDef,
@@ -94,7 +95,7 @@ function tagsFor(b: TaggedNode): [string, string] {
 function stepHeading(s: StepNode): string {
   if (s.heading !== undefined) {
     const again = parseBlocks(s.heading.split("\n"))
-    if (again.length === 1 && again[0].type === "heading" && plainText(again[0].children) === s.title) return s.heading
+    if (again.length === 1 && again[0].type === "heading" && stepTitleText(again[0].children) === s.title) return s.heading
   }
   return s.title ? `### ${s.title}` : ""
 }

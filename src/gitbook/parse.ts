@@ -1,3 +1,4 @@
+import { stepTitleText } from "./thumbnail"
 import type {
   Block,
   CodeBlockNode,
@@ -1081,7 +1082,7 @@ function parseSteps(lines: string[]): { items: StepNode[]; end: number } {
     const heading = inner[0]?.type === "heading" ? inner[0] : undefined
     const step: StepNode = { type: "step", title, children: inner }
     if (heading) {
-      step.title = plainText(heading.children)
+      step.title = stepTitleText(heading.children)
       inner.shift()
       // The title heading as written (level, formatting, blank lines before it), where not `### title`.
       const written = body.slice(0, (heading.gap ?? 0) + (heading.setext ? 2 : 1)).join("\n")

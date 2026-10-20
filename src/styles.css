@@ -443,6 +443,25 @@
   margin: 4px 0 6px;
 }
 
+/* A step whose heading opens with a thumbnail: the image in its own column, the title and body beside it. */
+.docs-step-media {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.docs-step-media-body {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .docs-step-media {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
 .docs-embed {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -1710,6 +1729,124 @@
 
 .docs-inline-img-link {
   text-decoration: none !important;
+}
+
+/* Thumbnail images (`![alt](src "thumbnail: 0:39.8")`): a small frame with a badge; hover or focus
+   opens a card with the full image. First in a paragraph, the text runs beside it. */
+/* Float, not flex: the text keeps its own first line, so a list marker lines up with it. */
+.docs-media {
+  display: flow-root;
+}
+
+.docs-media > .docs-thumb,
+.docs-media > .docs-thumb-link {
+  float: left;
+  margin: 3px 14px 4px 0;
+}
+
+.docs-media-body {
+  display: block;
+  overflow: hidden;
+}
+
+.docs-thumb-link {
+  text-decoration: none !important;
+}
+
+.docs-thumb {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  vertical-align: top;
+  border-radius: 10px;
+  outline: none;
+}
+
+.docs-thumb-frame {
+  position: relative;
+  display: block;
+  width: var(--docs-thumb-width, 168px);
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid var(--gb-border);
+  border-radius: 10px;
+  background: var(--gb-muted, #f4f4f5);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  cursor: zoom-in;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.docs-thumb-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+}
+
+.docs-thumb:hover .docs-thumb-frame,
+.docs-thumb:focus-visible .docs-thumb-frame {
+  border-color: var(--gb-panel-foreground, #18181b);
+  box-shadow: 0 0 0 2px var(--gb-border);
+}
+
+.docs-thumb-badge {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  color: #f4f4f5;
+  background: rgba(39, 39, 42, 0.78);
+  font: 500 12px/1.4 var(--gb-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.docs-thumb-card {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 60;
+  display: block;
+  width: min(var(--docs-thumb-card-width, 720px), calc(100vw - 32px));
+  overflow: hidden;
+  padding: 10px;
+  border: 1px solid var(--gb-border);
+  border-radius: 16px;
+  background: var(--gb-panel);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s;
+  pointer-events: none;
+}
+
+.docs-thumb-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.docs-thumb-card .docs-thumb-badge {
+  right: 18px;
+  bottom: 18px;
+  font-size: 14px;
+}
+
+.docs-thumb:hover .docs-thumb-card,
+.docs-thumb:focus-visible .docs-thumb-card {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-thumb-card {
+    transition: none;
+  }
 }
 
 .oas {

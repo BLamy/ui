@@ -874,6 +874,10 @@ Three forms parse to a figure block: a solo markdown image line, a solo HTML \`<
 
 Inline images (GitHub badge style) also work inside paragraphs, with optional links: <a href="https://www.npmjs.com/package/@brett_lamy/docstream"><img src="https://img.shields.io/npm/v/%40brett_lamy%2Fdocstream" alt="npm version"></a>
 
+An image whose title starts with \`thumbnail\` is a thumbnail: a small framed image with an optional badge (\`"thumbnail: 0:39.8"\`) that opens a card with the full image on hover or focus. First in a paragraph or list item, the text runs beside it; first in a stepper step's heading, the image takes a column and the title and the step's body sit beside it.
+
+![Placeholder screen](https://placehold.co/1280x800/e8e8f2/5b5bd6/png?text=Overview "thumbnail: 0:39.8") The console Overview loads for the signed-in operator, and the ticker falls back to "Stats unavailable — retrying". Hover the thumbnail for the full screenshot.
+
 ## Tables
 
 GFM pipe tables (escaped pipes and pipes inside inline code are handled):

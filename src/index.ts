@@ -87,6 +87,7 @@ export type {
 export type { ReplayEvent } from "./replay/types"
 export { isReplayQaUrl, normalizeReplayEmbedUrl } from "./replay/url"
 export { ReplayFile, isRrwebUrl } from "./replay/ReplayFile"
+export { ImageThumbnail, leadingThumbnail, thumbnailLabel } from "./docs/ImageThumbnail"
 export type { ReplayFileProps } from "./replay/ReplayFile"
 export { VideoEmbed } from "./video"
 export type { VideoEmbedProps } from "./video"

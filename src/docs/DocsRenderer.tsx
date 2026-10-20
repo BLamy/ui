@@ -10,11 +10,11 @@ import {
   XCircle,
 } from "lucide-react"
 
-import type { Block, CodeBlockNode, CommandNode, DocumentNode, Inline, PackageManager, SourceRefNode } from "../gitbook/ast"
+import type { Block, CodeBlockNode, CommandNode, DocumentNode, Inline, PackageManager, SourceRefNode, StepNode } from "../gitbook/ast"
 import { PACKAGE_MANAGERS, packageManagerCommands } from "../gitbook/package-managers"
 import { slugify } from "../gitbook/outline"
 import { resolveAsset, useAsset } from "../assets"
-import { parseMarkdown } from "../gitbook/parse"
+import { parseBlocks, parseMarkdown } from "../gitbook/parse"
 import { serializeMarkdown } from "../gitbook/serialize"
 import { DocstreamDemoContext, DocstreamDemoRuntimeContext, DocstreamDemoVFSContext } from "../demo/context"
 import type { DemoVFS } from "../demo/vfs"
@@ -36,6 +36,7 @@ import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
 import { HighlightedCode } from "./HighlightedCode"
 import { CitationSources, InlineReference } from "./reference"
+import { ImageThumbnail, leadingThumbnail, thumbnailLabel } from "./ImageThumbnail"
 import { DocumentProperties } from "./DocumentProperties"
 import { TaskCheckbox, TaskStateChangeContext, type TaskStateChangeHandler } from "./TaskCheckbox"
 import { getTaskState } from "../gitbook/tasks"
@@ -103,6 +104,8 @@ function InlineText({ nodes }: { nodes: Inline[] }) {
           if (!emphasized && !n.link) return <InlineReference key={i} node={n} />
           el = <InlineReference node={n} />
         } else if (n.type === "image") {
+          const label = thumbnailLabel(n)
+          if (label !== null) return <ImageThumbnail key={i} image={n} label={label} />
           const img = (
             <AssetImg
               url={n.src}
@@ -334,12 +337,25 @@ function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, {
 function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & Renderers) {
   const onTaskStateChange = useContext(TaskStateChangeContext)
   switch (block.type) {
-    case "paragraph":
+    case "paragraph": {
+      // A paragraph that opens with a thumbnail sets its text beside it.
+      const lead = leadingThumbnail(block.children)
+      if (lead) {
+        return (
+          <p className="docs-media">
+            <ImageThumbnail image={lead.image} label={lead.label} />
+            <span className="docs-media-body">
+              <InlineText nodes={lead.rest} />
+            </span>
+          </p>
+        )
+      }
       return (
         <p>
           <InlineText nodes={block.children} />
         </p>
       )
+    }
     case "heading": {
       const Tag = `h${block.level}` as const
       return (
@@ -426,10 +442,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
                 <div className="docs-step-badge">{i + 1}</div>
                 {i < block.steps.length - 1 && <div className="docs-step-line" />}
               </div>
-              <div className="docs-step-main">
-                {s.title && <div className="docs-step-title">{s.title}</div>}
-                <Blocks blocks={s.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
-              </div>
+              <StepMain step={s} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
             </div>
           ))}
         </div>
@@ -599,6 +612,40 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
 
 function isReactLanguage(language: string | null): boolean {
   return language === "jsx" || language === "tsx" || language === "react"
+}
+
+/**
+ * A step's title and body. A title heading that opens with a thumbnail image puts the image in a column
+ * of its own, with the title and the body beside it.
+ */
+function StepMain({ step, liveRenderer, sourceRenderer }: { step: StepNode } & Renderers) {
+  const lead = useMemo(() => {
+    if (!step.heading) return null
+    const [heading] = parseBlocks(step.heading.split("\n").filter((line) => line.trim()))
+    return heading?.type === "heading" ? leadingThumbnail(heading.children) : null
+  }, [step.heading])
+  const body = <Blocks blocks={step.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+  if (!lead) {
+    return (
+      <div className="docs-step-main">
+        {step.title && <div className="docs-step-title">{step.title}</div>}
+        {body}
+      </div>
+    )
+  }
+  return (
+    <div className="docs-step-main docs-step-media">
+      <ImageThumbnail image={lead.image} label={lead.label} />
+      <div className="docs-step-media-body">
+        {step.title && (
+          <div className="docs-step-title">
+            <InlineText nodes={lead.rest} />
+          </div>
+        )}
+        {body}
+      </div>
+    </div>
+  )
 }
 
 function Blocks({ blocks, inline, liveRenderer, sourceRenderer }: { blocks: Block[]; inline?: boolean } & Renderers) {

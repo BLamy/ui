@@ -756,6 +756,31 @@ Both round-trip through `parseMarkdown`/`serializeMarkdown`, are kept as they ar
 by Copy page, and a half-streamed one-line `{% command %}` is held back until it
 closes.
 
+## Thumbnail images
+
+An image whose Markdown title starts with `thumbnail` renders as a thumbnail: a small framed
+image, an optional badge (the text after `thumbnail:`), and a card with the full image on hover or
+focus. Any other renderer shows an ordinary image with a tooltip.
+
+```md
+![Overview](./shots/overview.jpg "thumbnail: 0:39.8") The console Overview loads with an Unauthorized banner.
+
+{% stepper %}
+{% step %}
+### ![Overview](./shots/overview.jpg "thumbnail") 0:39.8
+
+The console Overview loads with an Unauthorized banner.
+{% endstep %}
+{% endstepper %}
+```
+
+First in a paragraph or list item, the text runs beside the thumbnail. First in a stepper step's
+heading, the image takes a column of its own and the step's title and body sit beside it; the step's
+`title` is the heading text without the image. `thumbnailLabel(image)` (the badge, or `null`),
+`leadingThumbnail(inlines)` and `ImageThumbnail` are exported from the root; `thumbnailLabel` and
+`stepTitleText` from `/gitbook`. Size it with `--docs-thumb-width` (default 168px) and
+`--docs-thumb-card-width` (720px).
+
 ## Assets and OpenAPI Specs
 
 Relative image and OpenAPI spec paths can be resolved against an asset base:
