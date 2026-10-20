@@ -485,7 +485,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         <a className="docs-content-ref" href={block.url}>
           <File className="size-4" />
           <span>
-            <InlineText nodes={block.children} />
+            <InlineText nodes={withoutLinks(block.children)} />
           </span>
           <ChevronRight className="size-4 ml-auto" />
         </a>
@@ -662,6 +662,15 @@ function Blocks({ blocks, inline, liveRenderer, sourceRenderer }: { blocks: Bloc
       ))}
     </div>
   )
+}
+
+/** A card that is itself a link shows its label's links as text: an `<a>` can't hold another. */
+function withoutLinks(nodes: Inline[]): Inline[] {
+  return nodes.map((n) => {
+    if (n.type === "reference" || !("link" in n) || n.link === undefined) return n
+    const { link: _link, ...rest } = n as Inline & { link?: string }
+    return rest as Inline
+  })
 }
 
 export interface DocRenderOptions {

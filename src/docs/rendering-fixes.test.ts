@@ -1,10 +1,10 @@
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
-import { MarkdownContent } from "../docs/DocsRenderer"
-import type { ListNode } from "./ast"
-import { parseMarkdown } from "./parse"
-import { serializeMarkdown } from "./serialize"
+import { MarkdownContent } from "./DocsRenderer"
+import type { ListNode } from "../gitbook/ast"
+import { parseMarkdown } from "../gitbook/parse"
+import { serializeMarkdown } from "../gitbook/serialize"
 
 const lists = (md: string) => parseMarkdown(md).children.filter((b): b is ListNode => b.type === "list")
 
@@ -39,5 +39,15 @@ describe("ordered list start", () => {
   it("leaves lists that start at 1 alone", () => {
     const html = renderToStaticMarkup(createElement(MarkdownContent, { markdown: "1. one\n2. two\n" }))
     expect(html).not.toMatch(/start=/)
+  })
+})
+
+describe("content refs", () => {
+  it("show links in their label as text, so the card's own link isn't nested", () => {
+    const html = renderToStaticMarkup(
+      createElement(MarkdownContent, { markdown: '{% content-ref url="b.md" %}\nSee [the slash menu](b.md) for more\n{% endcontent-ref %}\n' }),
+    )
+    expect(html.match(/<a\b/g)).toHaveLength(1)
+    expect(html).toContain("the slash menu")
   })
 })
