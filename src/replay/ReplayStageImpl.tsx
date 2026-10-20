@@ -178,7 +178,10 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
           callbacks.current.onFinish?.()
         }
       })
-      replayer.pause(initialTime)
+      // rrweb applies only events stamped before the pause point, so pausing at 0 would leave out the
+      // mutations recorded with the first snapshot (a trimmed recording stamps everything before its
+      // window there): 1ms in, the first frame is the page as recorded at the start.
+      replayer.pause(Math.max(initialTime, 1))
       replayerRef.current = replayer
       fedCountRef.current = prepared.length
       let duration = meta.duration
