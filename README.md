@@ -29,7 +29,7 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 ```sh
 pnpm add @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block \
   @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm \
-  @tiptap/react @tiptap/starter-kit @tiptap/suggestion
+  @tiptap/react @tiptap/starter-kit @tiptap/suggestion react react-dom
 ```
 
 React and the TipTap packages (including `@tiptap/extension-code`) are peer dependencies. `@brett_lamy/docstream` is a runtime dependency (pinned to the same version as the editor) because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers. Nothing in the install runs a build script, and the editor never references Docstream's optional almost-node playground (`@agent-wasm/core`) — see `liveRenderer` below to opt in.
@@ -115,10 +115,23 @@ export function EditorPage() {
 
 ## Props
 
+Every prop is optional.
+
 ```ts
 export interface GitbookEditorProps {
-  markdown: string
-  onChange: (markdown: string) => void
+  markdown?: string
+  onChange?: (markdown: string) => void
+  documentProperties?: boolean | { defaultOpen?: boolean } // default true
+  toolbar?: boolean // default true
+  slashMenu?: boolean | { items?: SlashItem[] } // default true
+  references?: boolean | ReferenceSources // default true
+  editable?: boolean // default true
+  placeholder?: string // default "Write, or type / to insert a block…"
+  className?: string
+  autofocus?: boolean // default false
+  disableHistory?: boolean // default false
+  extensions?: AnyExtension[]
+  onEditorReady?: (editor: Editor | null) => void
   onKeyDown?: (event: KeyboardEvent) => boolean
   onPaste?: (event: ClipboardEvent) => boolean
   imagePaste?: "inline" | "chip"
@@ -135,11 +148,30 @@ export interface GitbookEditorProps {
   onDemoFilesChange?: (files: Readonly<Record<string, DemoFile[]>>, change: DemoVFSChange) => void
   pastedDemoFiles?: "inline" | "vfs"
   demoClipboard?: boolean
+  sourceClient?: SourceReferenceClient
+  sourcePreview?: boolean // default true
+  sourceAutoSave?: boolean | number // default true (500ms)
+  onSourceSaved?: (snapshot: SourceFileSnapshot) => void
+  onSourceError?: (error: Error) => void
+  resolveAsset?: AssetResolver
+  pickFile?: FilePicker
+  uploadFile?: FileUploader
+  onDropEmbeds?: (data: DataTransfer) => Promise<readonly string[]> | readonly string[] | null
 }
 ```
 
-- `markdown`: Source markdown to load into the editor.
+- `markdown`: Source markdown. When given, the editor is controlled; omit it for an uncontrolled
+  editor that starts empty.
 - `onChange`: Called with serialized markdown whenever TipTap content changes.
+- `documentProperties`, `toolbar`, `slashMenu`, `references`, `editable`, `placeholder`, `className`,
+  `autofocus`: the property sheet, the formatting toolbar, the `/` menu, the `@` / `#` / `$`
+  pickers (see [Mentions, channels, and codebases](#mentions-channels-and-codebases)), read-only
+  mode, the empty-document placeholder, the wrapper class (`gb <className>`), focus on mount.
+- `disableHistory`, `extensions`, `onEditorReady`: Yjs-style integrations — turn off StarterKit's
+  undo/redo, append TipTap extensions, receive the TipTap `Editor` (and `null` on teardown).
+- `autofocus`, `placeholder`, `slashMenu`, `references`, `disableHistory` and `extensions` are
+  read when the TipTap editor is created; changing them later has no effect, so remount (e.g. with
+  a `key`) to switch them. `editable` follows the prop at any time.
 - `onKeyDown` / `onPaste`: Optional host hooks that run before the built-in editor behavior;
   return `true` when the application handled the event.
 - `imagePaste`, `attachments`, `onAttachmentAdd`, `onAttachmentRemove`, `onAttachmentOpen`:
@@ -160,6 +192,9 @@ export interface GitbookEditorProps {
 
 - `demoVFS`, `onDemoFilesChange`, `pastedDemoFiles`, `demoClipboard`: demo copy / paste and the
   demo virtual file system — see [Copy and paste demos between editors](#copy-and-paste-demos-between-editors).
+- `sourceClient`, `sourcePreview`, `sourceAutoSave`, `onSourceSaved`, `onSourceError`: edit the
+  files behind `{% source-ref %}` blocks — see [Edit a referenced source file](#edit-a-referenced-source-file).
+- `resolveAsset`, `pickFile`, `uploadFile`, `onDropEmbeds`: see [Files from the host's project](#files-from-the-hosts-project).
 
 The editor tracks the last markdown it emitted so normal controlled updates do not continuously reset the TipTap document. Passing a different external `markdown` value replaces the editor content.
 
@@ -412,36 +447,53 @@ are edited under the box. `sync` is preserved. Insert one with `/install command
 
 ## Slash Menu
 
-The editor includes a slash menu extension for inserting supported block structures. Type `/` in an empty paragraph to open block insertion options.
+The editor includes a slash menu extension for inserting supported block structures. Type `/` at the
+start of a line or after a space to open block insertion options; typing filters them by title and
+keywords. Pass `slashMenu={{ items }}` (default list: `SLASH_ITEMS`) for your own items, or
+`slashMenu={false}` to turn it off.
 
 ## Conversion Helpers
 
 Use the conversion helpers when you need to inspect or transform editor state directly.
 
 ```ts
-import { astToTiptap, tiptapToAst } from "@brett_lamy/docstream-editor"
-import { parseMarkdown, serializeMarkdown } from "@brett_lamy/docstream"
+import { astToTiptap, serializeEditorMarkdown, tiptapToAst } from "@brett_lamy/docstream-editor"
+import { parseMarkdown } from "@brett_lamy/docstream"
 
 const ast = parseMarkdown(markdown)
 const tiptapJson = astToTiptap(ast)
-const markdownAgain = serializeMarkdown(tiptapToAst(tiptapJson))
+const back = tiptapToAst(tiptapJson)
+// TipTap JSON has no place for footnote definitions; carry them across as GitbookEditor does.
+if (ast.citations?.length) back.citations = ast.citations
+const markdownAgain = serializeEditorMarkdown(back) // === markdown
 ```
 
 Exports:
 
-- `GitbookEditor`
-- `GitbookEditorProps`
-- `astToTiptap`
-- `tiptapToAst`
-- `PMNode`
-- `EditorAttachment`
-- `serializeEditorMarkdown`
-- `markdownPasteContent` (the Markdown-paste parser behind `markdownPaste`)
-- `SourceFileEditor`
-- `SourceFileEditorProps`
+- `GitbookEditor`, `GitbookEditorProps`, `embedBlockFor`, and the prop types `EditorAttachment`,
+  `FilePicker`, `FilePickKind`, `FileUploader`, `AssetResolver`
+- `astToTiptap`, `tiptapToAst`, `PMNode`, `serializeEditorMarkdown`, `markdownPasteContent` (the
+  Markdown-paste parser behind `markdownPaste`)
+- `SourceFileEditor`, `SourceFileEditorProps`, `ReactDemoEditor`, `ReactDemoEditorProps`
+- `GbDocumentProperties`, `DocumentPropertiesEditor`, `GbTaskItem`, plus Docstream's `TaskCheckbox`,
+  `TASK_STATE_ICONS`, `TASK_STATES`, `TaskState`, `DocumentPropertiesNode`
+- Building blocks for custom editors: `createGitbookExtensions`, `GitbookExtensionOptions`,
+  `ReferenceSources`, `getGitbookSchema`, `GbCode`, `GbTable`, `GbLinkInner`, `GbMarkSpelling`,
+  `gitbookNodes`, `GbCodeBlock`, `GbCommand`, `GbDemo`, `GbReference`, `GbAttachment`, `formatBytes`,
+  `SlashMenu`, `createSlashMenu`, `SLASH_ITEMS`, `SlashItem`, `createReferenceSuggestion`,
+  `resolveReferenceOptions`, `ReferenceOption`, `ReferenceSource`, `ReferenceSuggestionOptions`,
+  `ReferenceTrigger`, `SuggestionMenuView`, `createSuggestionRender`, `SuggestionMenuItem`
+- Demo clipboard and VFS: `clipboardForDoc`, `lookupDemoSource`, `payloadContent`,
+  `registerPayloadFiles`, `selectionClipboard`, `useEditorClipboard`, `ClipboardBridge`,
+  `DemoSources`, `PastedDemoFiles`, plus Docstream's `DOCSTREAM_CLIPBOARD_TYPE`, `createDemoVFS`,
+  `readDocstreamClipboard`, `useDemoVFS`, `useDemoVFSFiles`, `DemoVFS`, `DemoVFSChange`,
+  `DemoVFSEntry`, `DocstreamClipboardPayload`
 
-Applications that only need the core editor can import the narrow entrypoint. It avoids loading
-the source-file and React playground integrations:
+Two narrow entrypoints are also published. `./editor` exports only `GitbookEditor`, `embedBlockFor`
+and their types — it still loads every node view (including the source-file editor used by
+`{% source-ref %}` blocks), but not `ReactDemoEditor` or the building-block re-exports. `./convert`
+exports the conversion functions (plus `pmToDemo`, `pmDemoFiles`, `pmToCommand`) and depends only
+on `@brett_lamy/docstream/gitbook` — no React, no TipTap:
 
 ```tsx
 import { GitbookEditor } from "@brett_lamy/docstream-editor/editor"
@@ -452,16 +504,27 @@ import { astToTiptap } from "@brett_lamy/docstream-editor/convert"
 
 The editor CSS is designed to sit beside `@brett_lamy/docstream/styles.css` and inherit the same application theme tokens. In a shadcn-style app, define your theme variables globally and import both CSS entrypoints once.
 
+The editor reads the tokens as complete colors (`var(--card, #ffffff)`), so define them as colors —
+not as shadcn v3 HSL channel triplets such as `0 0% 100%`, which would produce invalid values:
+
 ```css
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --border: 214.3 31.8% 91.4%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --primary: 221.2 83.2% 53.3%;
+  --card: #ffffff;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --border: #e2e8f0;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --primary: #2563eb;
 }
 ```
+
+Editor-specific tokens (`--gb-radius`, `--gb-code-bg`, the `--gb-info` / `--gb-success` /
+`--gb-warning` / `--gb-danger` hint palette, …) are declared on `.gb`, so override them there. The
+slash / reference menus and the attachment hover card render into `document.body` and read the
+host tokens (plus `--popover` / `--popover-foreground`) from `:root`.
 
 The editor exposes classes such as `gb`, `gb-toolbar`, `gb-tool`, `gb-tool-active`, and `gb-content` for host app overrides.
 
@@ -480,8 +543,18 @@ Docstream and every other dependency left as imports:
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./editor": { "types": "./dist/editor/Editor.d.ts", "import": "./dist/editor/Editor.js" },
-    "./convert": { "types": "./dist/editor/convert.d.ts", "import": "./dist/editor/convert.js" },
+    "./editor": {
+      "source": "./src/editor/Editor.tsx",
+      "types": "./dist/editor/Editor.d.ts",
+      "import": "./dist/editor/Editor.js",
+      "default": "./dist/editor/Editor.js"
+    },
+    "./convert": {
+      "source": "./src/editor/convert.ts",
+      "types": "./dist/editor/convert.d.ts",
+      "import": "./dist/editor/convert.js",
+      "default": "./dist/editor/convert.js"
+    },
     "./styles.css": "./dist/styles.css"
   }
 }

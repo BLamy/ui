@@ -1,0 +1,9 @@
+{
+  "title": "Read-only editor vs. renderer",
+  "description": "`<GitbookEditor toolbar={false} editable={false} />` beside docstream's `MarkdownContent` on the same string.",
+  "variants": [
+    { "id": "editor", "label": "GitbookEditor" },
+    { "id": "renderer", "label": "MarkdownContent" }
+  ],
+  "status": "Live"
+}

@@ -1,0 +1,6 @@
+{
+  "title": "getGitbookSchema()",
+  "description": "Type Markdown on the left: it goes through `parseMarkdown` → `astToTiptap` → `schema.nodeFromJSON` → `check()`, the path a collaboration host takes between Markdown and a shared document.",
+  "height": 640,
+  "status": "Live"
+}

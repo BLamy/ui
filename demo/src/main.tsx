@@ -1,167 +1,65 @@
-import { StrictMode, useEffect, useState } from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MarkdownContent } from '@brett_lamy/docstream';
-import type { SourceFileSnapshot, SourceReferenceClient } from '@brett_lamy/docstream/source';
-import { GitbookEditor, type EditorAttachment } from '@brett_lamy/docstream-editor';
+import { DemoFullscreen, demoFromSearch } from '@brett_lamy/docstream';
+import { DocsSite, humanize, type BuildDocsTreeOptions } from '@brett_lamy/docstream/site';
 import '@brett_lamy/docstream/styles.css';
 import '@brett_lamy/docstream-editor/styles.css';
-import { PAGES } from './content';
+import './site.css';
+import { demoResolver } from './demos';
 import { liveRenderer } from './live-renderer';
 
-const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif";
-const MONO = "ui-monospace,'SF Mono',Menlo,Consolas,monospace";
+/* The whole site is the docs/ folder, published by docstream's DocsSite: the sidebar comes from
+   the folders, and every page is rendered by docstream. Live editors are {% demo %} folders. */
+const files = import.meta.glob('../docs/**/*.{md,json,yaml,yml}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
-const demoVirtualFiles = new Map([['src/Button.tsx', 'export default function Button() {\n  return <button>Virtual file</button>\n}\n']]);
-const demoSourceClient: SourceReferenceClient = {
-  async read(reference) {
-    return {
-      content: demoVirtualFiles.get(reference.path) ?? '',
-      provenance: { mount: reference.mount, path: reference.path, exportName: reference.exportName, kind: reference.kind },
-    };
-  },
-  async write(reference, content) {
-    demoVirtualFiles.set(reference.path, content);
-    return {
-      content,
-      provenance: { mount: reference.mount, path: reference.path, exportName: reference.exportName, kind: reference.kind },
-    };
-  },
-  async importModule() {
-    return {};
-  },
-};
+const FOLDER_TITLES: Record<string, string> = { api: 'API' };
+const treeOptions: BuildDocsTreeOptions = { folderTitle: (name) => FOLDER_TITLES[name] ?? humanize(name) };
 
-const SEED = `# Release notes draft
+const Logo = () => (
+  <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
+    <rect width="32" height="32" rx="8" fill="var(--primary)" />
+    <path d="M9 10.5h9M9 16h7M9 21.5h5" stroke="var(--primary-foreground)" strokeWidth="2.6" strokeLinecap="round" />
+    <path d="m18.5 22.5 5.5-5.5 1.8 1.8-5.5 5.5-2.4.6z" fill="var(--primary-foreground)" />
+  </svg>
+);
 
-{% hint style="info" %}
-Edit me — this hint is a real GitBook block.
-{% endhint %}
-
-## Highlights
-
-- Editor and renderer share one AST
-- Slash menu: press \`/\` on an empty line
-- Reference chips: type \`@\` or \`#\`, citations via /citation
-
-Ask @brett about the #seasonal numbers [^1].
-
-[^1]: https://scoopdata.io/q3 "ScoopData Q3"
-
-\`\`\`ts
-const answer = 42
-\`\`\`
-
-\`\`\`mermaid
-graph LR
-  Draft[Edit source below] --> Preview[Live diagram above]
-\`\`\`
-
-{% source-ref mount="demo" path="src/Button.tsx" export="default" kind="component" title="Virtual Button" %}
-
-`;
-
-function Playground() {
-  const [md, setMd] = useState(SEED);
-  const [savedFile, setSavedFile] = useState<SourceFileSnapshot | null>(null);
-  const [imagePaste, setImagePaste] = useState<'inline' | 'chip'>('inline');
-  const [attachments, setAttachments] = useState<EditorAttachment[]>([]);
-  return (
-    <div style={{ display: 'flex', gap: 16, alignItems: 'stretch', margin: '18px 0', minHeight: 420 }}>
-      <div style={{ flex: 1, minWidth: 0, border: '1px solid #e2e2ea', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '8px 14px', borderBottom: '1px solid #eee', fontSize: 12, fontWeight: 700, color: '#77777f' }}>
-          GitbookEditor
-          <label data-demo-image-paste="" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
-            Pasted images
-            <select value={imagePaste} onChange={(e) => setImagePaste(e.target.value as 'inline' | 'chip')} style={{ font: 'inherit' }}>
-              <option value="inline">inline</option>
-              <option value="chip">chip</option>
-            </select>
-          </label>
-        </div>
-        <GitbookEditor
-          imagePaste={imagePaste}
-          attachments={attachments}
-          onAttachmentAdd={({ file: _file, ...a }) => setAttachments((prev) => [...prev, a])}
-          onAttachmentRemove={(ids) => setAttachments((prev) => prev.filter((a) => !ids.includes(a.id)))}
-          markdown={SEED}
-          onChange={setMd}
-          placeholder="Write something…"
-          sourceClient={demoSourceClient}
-          sourcePreview={false}
-          onSourceSaved={setSavedFile}
-        />
-        <div data-demo-file-save="" style={{ padding: '8px 14px', borderTop: '1px solid #eee', fontSize: 11, color: '#77777f' }}>
-          {savedFile ? `Saved ${savedFile.provenance.path}: ${savedFile.content.length} bytes` : 'Virtual file autosave ready'}
-        </div>
-      </div>
-      <div style={{ flex: 1, minWidth: 0, border: '1px solid #e2e2ea', borderRadius: 12, overflow: 'hidden', background: '#fafafc' }}>
-        <div style={{ padding: '8px 14px', borderBottom: '1px solid #eee', fontSize: 12, fontWeight: 700, color: '#77777f' }}>Serialized markdown (live)</div>
-        <pre style={{ margin: 0, padding: 14, fontFamily: MONO, fontSize: 12, lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'break-word' }}>{md}</pre>
-      </div>
-    </div>
-  );
-}
-
-function ReadonlyPlayground() {
-  return (
-    <div style={{ border: '1px solid #e2e2ea', borderRadius: 12, overflow: 'hidden', margin: '18px 0' }}>
-      <div style={{ padding: '8px 14px', borderBottom: '1px solid #eee', fontSize: 12, fontWeight: 700, color: '#77777f' }}>
-        GitbookEditor · toolbar={'{false}'} editable={'{false}'}
-      </div>
-      <GitbookEditor markdown={SEED} toolbar={false} editable={false} />
-    </div>
-  );
-}
+const GITHUB = 'https://github.com/BLamy/docstream-editor';
+const SITE = 'https://blamy.github.io/docstream-editor/';
 
 function App() {
-  const [page, setPage] = useState(PAGES[0].id);
-  const cur = PAGES.find((p) => p.id === page) ?? PAGES[0];
-  useEffect(() => { window.scrollTo(0, 0); }, [page]);
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: FONT, color: '#16161d' }}>
-      <nav style={{ width: 240, flexShrink: 0, borderRight: '1px solid #e6e6ee', padding: '20px 12px', position: 'sticky', top: 0, height: '100vh', boxSizing: 'border-box', background: '#fafafc' }}>
-        <div style={{ fontWeight: 800, fontSize: 17, padding: '0 10px 4px', letterSpacing: '-0.2px' }}>docstream-editor</div>
-        <div style={{ fontSize: 11.5, color: '#77777f', padding: '0 10px 14px' }}>GitBook markdown WYSIWYG on Tiptap</div>
-        {PAGES.map((p) => (
-          <button key={p.id} onClick={() => setPage(p.id)}
-            style={{ display: 'block', width: '100%', textAlign: 'left', border: 0, borderRadius: 8, padding: '7px 10px', fontSize: 13.5, fontFamily: 'inherit', cursor: 'pointer', marginBottom: 2, background: p.id === page ? '#e8e8f2' : 'transparent', fontWeight: p.id === page ? 650 : 450, color: 'inherit' }}>
-            {p.title}
-          </button>
-        ))}
-        <div style={{ position: 'absolute', bottom: 16, left: 22, right: 12, fontSize: 11, color: '#9a9aa2' }}>
-          <a href="https://www.npmjs.com/package/@brett_lamy/docstream-editor" style={{ color: '#5b5bd6' }}>npm</a>
-          {' · '}
-          <a href="https://github.com/BLamy/docstream-editor" style={{ color: '#5b5bd6' }}>GitHub</a>
-          <div style={{ marginTop: 4 }}>prose rendered with docstream</div>
-        </div>
-      </nav>
-      <main style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: cur.demo === 'playground' ? 1100 : 760, padding: '28px 32px 80px', boxSizing: 'border-box' }}>
-          <MarkdownContent markdown={cur.markdown} liveRenderer={liveRenderer} />
-          {cur.demo === 'playground' ? <Playground /> : null}
-          {cur.demo === 'readonly' ? <ReadonlyPlayground /> : null}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 48, borderTop: '1px solid #e6e6ee', paddingTop: 16 }}>
-            {(() => {
-              const i = PAGES.indexOf(cur);
-              const prev = PAGES[i - 1]; const next = PAGES[i + 1];
-              const btn = (p: typeof cur, label: string) => (
-                <button onClick={() => setPage(p.id)} style={{ border: '1px solid #e2e2ea', background: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 13, fontFamily: 'inherit', cursor: 'pointer' }}>
-                  <span style={{ color: '#9a9aa2', display: 'block', fontSize: 11 }}>{label}</span>
-                  <span style={{ fontWeight: 650 }}>{p.title}</span>
-                </button>
-              );
-              return (<>
-                <span>{prev ? btn(prev, '← Previous') : null}</span>
-                <span>{next ? btn(next, 'Next →') : null}</span>
-              </>);
-            })()}
-          </div>
-        </div>
-      </main>
-    </div>
+    <DocsSite
+      files={files}
+      treeOptions={treeOptions}
+      title="docstream-editor"
+      logo={<Logo />}
+      links={[
+        { label: 'GitHub', href: GITHUB },
+        { label: 'npm', href: 'https://www.npmjs.com/package/@brett_lamy/docstream-editor' },
+        { label: 'docstream', href: 'https://blamy.github.io/docstream/' },
+      ]}
+      themeStorageKey="docstream-editor-demo-theme"
+      liveRenderer={liveRenderer}
+      demoResolver={demoResolver}
+      pageActions={(page) => ({ transform: (md) => `${md.trim()}\n\n---\n\nSource: ${SITE}#/${page.slug}\n` })}
+      editUrl={(page) => `${GITHUB}/edit/main/demo/docs/${page.path}`}
+      sidebarFooter={<>A folder of Markdown, published with docstream's <a href="https://blamy.github.io/docstream/#/docs-site">DocsSite</a>.</>}
+    />
   );
+}
+
+/** `?demo=<page>/<example>` renders one demo alone (the viewer's "Open in new tab"). */
+function Fullscreen({ src, variant }: { src: string; variant?: string }) {
+  const theme = new URLSearchParams(location.search).get('theme') ?? localStorage.getItem('docstream-editor-demo-theme');
+  document.documentElement.dataset.theme = theme === 'dark' || (!theme && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  return <div data-docstream=""><DemoFullscreen src={src} variant={variant} resolver={demoResolver} /></div>;
+}
+
+function Root() {
+  const deepLink = demoFromSearch();
+  return deepLink ? <Fullscreen src={deepLink.src} variant={deepLink.variant} /> : <App />;
 }
 
 createRoot(document.getElementById('root') as HTMLElement).render(
-  <StrictMode><App /></StrictMode>
+  <StrictMode><Root /></StrictMode>
 );

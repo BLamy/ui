@@ -1,0 +1,10 @@
+{
+  "title": "Your own useEditor()",
+  "description": "The GitBook extensions in a plain TipTap `useEditor`, with a host extension appended. Switch to **disableHistory** to see undo / redo disappear, as a Yjs host needs.",
+  "height": 600,
+  "variants": [
+    { "id": "history", "label": "default" },
+    { "id": "no-history", "label": "disableHistory" }
+  ],
+  "status": "Live"
+}

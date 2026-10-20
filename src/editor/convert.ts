@@ -205,6 +205,18 @@ function inlineToPM(nodes: Inline[]): PMNode[] {
       if (!n.text) return marked({ type: "gbEmptyLink" }, n)
       return marked({ type: "text", text: n.text }, n)
     })
+    .flatMap(splitHardBreaks)
+}
+
+/** A `\`-newline hard break inside a text run is a real line break in the editor. */
+function splitHardBreaks(n: PMNode): PMNode[] {
+  if (n.type !== "text" || !n.text?.includes("\\\n") || n.marks?.some((m) => m.type === "code")) return [n]
+  const out: PMNode[] = []
+  n.text.split("\\\n").forEach((part, i) => {
+    if (i) out.push({ type: "hardBreak", ...(n.marks?.length ? { marks: n.marks } : {}) })
+    if (part) out.push({ ...n, text: part })
+  })
+  return out
 }
 
 const paragraphPM = (children: Inline[]): PMNode => {
@@ -454,9 +466,12 @@ function applyMarks(inline: Inline, marks: PMNode["marks"]) {
   }
 }
 
-function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
+/** `lineBreak`: what a hard break becomes — `\\` + newline, or a space where a line can't end (a table cell). */
+function pmTextToInline(nodes: PMNode[] | undefined, lineBreak = "\\\n"): Inline[] {
   if (!nodes) return []
+  const breaks = new Set<Inline>()
   return nodes
+    .map((n): PMNode => (n.type === "hardBreak" ? { ...n, type: "text", text: lineBreak, attrs: { lineBreak: true } } : n))
     .filter(
       (n) =>
         (n.type === "text" && n.text) ||
@@ -503,13 +518,39 @@ function pmTextToInline(nodes: PMNode[] | undefined): Inline[] {
         inline = { type: "text", text: n.type === "gbEmptyLink" ? "" : n.text! } satisfies TextNode
       }
       applyMarks(inline, n.marks)
+      if (n.attrs?.lineBreak) breaks.add(inline)
       return inline
     })
+    .reduce<Inline[]>((out, inline) => {
+      // A line break is part of the text run around it (the parser keeps `a\\\nb` as one run).
+      const prev = out[out.length - 1]
+      if (prev && (breaks.has(inline) || breaks.has(prev)) && sameRun(prev, inline)) {
+        out[out.length - 1] = { ...(prev as TextNode), text: (prev as TextNode).text + (inline as TextNode).text }
+        if (breaks.has(inline)) breaks.add(out[out.length - 1]!)
+      } else out.push(inline)
+      return out
+    }, [])
+}
+
+/** Two text inlines with the same marks and details, differing only in their text. */
+function sameRun(a: Inline, b: Inline): boolean {
+  if (a.type !== "text" || b.type !== "text") return false
+  const { text: _a, ...ra } = a
+  const { text: _b, ...rb } = b
+  return JSON.stringify(ra) === JSON.stringify(rb)
 }
 
 function pmCellToInline(cell: PMNode): Inline[] {
-  // table cells contain paragraphs; flatten the first one
-  return pmTextToInline(cell.content?.[0]?.content)
+  // A Markdown table cell is one line: its paragraphs (Enter in a cell) and hard breaks join
+  // with spaces, so no text is lost.
+  const out: Inline[] = []
+  for (const p of cell.content ?? []) {
+    const inlines = pmTextToInline(p.content, " ")
+    if (!inlines.length) continue
+    if (out.length) out.push({ type: "text", text: " " })
+    out.push(...inlines)
+  }
+  return out
 }
 
 function pmToBlock(n: PMNode): Block | null {
@@ -766,7 +807,38 @@ export function pmToCommand(a: Record<string, unknown>): CommandNode {
 }
 
 function pmToBlocks(nodes: PMNode[] | undefined): Block[] {
-  return (nodes ?? []).map(pmToBlock).filter((b): b is Block => b !== null)
+  return separateAdjacentLists((nodes ?? []).map(pmToBlock).filter((b): b is Block => b !== null))
+}
+
+/**
+ * Two lists side by side stay two lists only if their markers differ: in Markdown (CommonMark,
+ * and docstream's parser) a list continues while the bullet (`-` `*` `+`) or the ordered
+ * delimiter (`.` `)`) stays the same. A list made in the editor right after another of its kind
+ * gets the other marker, so saving and reopening doesn't merge them.
+ */
+function separateAdjacentLists(blocks: Block[]): Block[] {
+  for (let i = 1; i < blocks.length; i++) {
+    const prev = blocks[i - 1]!
+    const cur = blocks[i]!
+    if (prev.type !== "list" || cur.type !== "list" || prev.ordered !== cur.ordered) continue
+    if (cur.ordered) {
+      if ((prev.delimiter ?? ".") !== (cur.delimiter ?? ".")) continue
+      const { delimiter: _d, ...rest } = cur
+      // Per-item markers carry their own delimiter (`2)`); rewrite them to the list's new one.
+      const delimiter = prev.delimiter === ")" ? "." : ")"
+      const items = cur.items.map((it) => (it.marker ? { ...it, marker: it.marker.replace(/[.)]$/, delimiter) } : it))
+      blocks[i] = delimiter === ")" ? { ...rest, items, delimiter } : { ...rest, items }
+    } else {
+      if ((prev.bullet ?? "-") !== (cur.bullet ?? "-")) continue
+      const bullet = prev.bullet === undefined ? "*" : undefined
+      // Item markers are the list's bullet now; a stale per-item one would undo the split.
+      const next = { ...cur, items: cur.items.map(({ marker: _m, ...it }) => it) } as typeof cur
+      if (bullet) next.bullet = bullet
+      else delete next.bullet
+      blocks[i] = next
+    }
+  }
+  return blocks
 }
 
 export function tiptapToAst(doc: PMNode): DocumentNode {

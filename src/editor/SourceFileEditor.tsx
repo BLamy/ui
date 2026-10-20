@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { FileCode2, Save } from "lucide-react"
 import { SourcePreview, type SourceFileSnapshot, type SourceReferenceClient } from "@brett_lamy/docstream/source"
 import type { SourceRefNode } from "@brett_lamy/docstream/gitbook"
@@ -25,8 +25,16 @@ export function SourceFileEditor({ reference, client, className, preview = true,
   const [revision, setRevision] = useState(0)
   const [status, setStatus] = useState<"loading" | "ready" | "saving" | "error">("loading")
   const [error, setError] = useState<string | null>(null)
+  // The file is read when *which* file changes — not when the host re-renders with a new
+  // callback or an equal reference object, which would throw away unsaved edits.
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
+  const referenceKey = JSON.stringify([reference.mount, reference.path, reference.exportName ?? null, reference.kind ?? null])
+  const referenceRef = useRef(reference)
+  referenceRef.current = reference
 
   useEffect(() => {
+    const reference = referenceRef.current
     let cancelled = false
     setStatus("loading")
     setError(null)
@@ -42,13 +50,13 @@ export function SourceFileEditor({ reference, client, className, preview = true,
         const next = asError(cause)
         setError(next.message)
         setStatus("error")
-        onError?.(next)
+        onErrorRef.current?.(next)
       },
     )
     return () => {
       cancelled = true
     }
-  }, [client, onError, reference])
+  }, [client, referenceKey])
 
   const save = useCallback(async () => {
     setStatus("saving")

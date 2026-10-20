@@ -229,6 +229,8 @@ export function createGitbookExtensions(options: GitbookExtensionOptions = {}): 
     StarterKit.configure({
       codeBlock: false,
       code: false,
+      // Markdown has no underline: Mod+U would make formatting that's lost on save.
+      underline: false,
       ...(disableHistory ? { undoRedo: false } : {}),
     }),
     GbCode,

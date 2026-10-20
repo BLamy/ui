@@ -1,0 +1,10 @@
+{
+  "title": "SourceFileEditor on its own",
+  "description": "Pick an export. Story files merge the default export's `args` with the story's. The stories import Button.js, so a save to Button.js changes every story too.",
+  "height": 720,
+  "variants": [
+    { "id": "manual", "label": "Save button" },
+    { "id": "auto", "label": "autoSave" }
+  ],
+  "status": "Live"
+}

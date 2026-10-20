@@ -1,0 +1,6 @@
+{
+  "title": "Round trip, stage by stage",
+  "description": "`parseMarkdown` → `astToTiptap` → the editor's ProseMirror schema → `tiptapToAst` → `serializeEditorMarkdown`. Pick a sample or type your own: the badge compares output to input byte for byte.",
+  "height": 640,
+  "status": "Live"
+}

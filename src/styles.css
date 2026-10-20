@@ -866,8 +866,8 @@
   min-width: 230px;
   max-height: 320px;
   overflow-y: auto;
-  background: var(--popover, #ffffff);
-  color: var(--popover-foreground, #111827);
+  background: var(--popover, var(--card, #ffffff));
+  color: var(--popover-foreground, var(--foreground, #111827));
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);

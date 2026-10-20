@@ -137,6 +137,8 @@ export function createSuggestionRender<Item extends SuggestionMenuItem>(emptyLab
     MenuProps<Item> & RefAttributes<MenuHandle>
   >
   let renderer: ReactRenderer<MenuHandle, MenuProps<Item>> | null = null
+  // The menu opening, between onStart and the microtask that mounts it (see onStart).
+  let opening: { props: SuggestionProps<Item> } | null = null
   const menuProps = (props: SuggestionProps<Item>): MenuProps<Item> => ({
     items: props.items,
     command: props.command,
@@ -145,18 +147,29 @@ export function createSuggestionRender<Item extends SuggestionMenuItem>(emptyLab
   })
   return () => ({
     onStart: (props: SuggestionProps<Item>) => {
-      const r = new ReactRenderer(View, {
-        editor: props.editor,
-        props: menuProps(props),
+      // A suggestion can start inside a transaction React dispatched while rendering (content
+      // set from props); mounting the menu there would flushSync during render. Mount it just
+      // after, with the latest props, unless it closed in between.
+      const pending = { props }
+      opening = pending
+      queueMicrotask(() => {
+        if (opening !== pending) return
+        opening = null
+        const r = new ReactRenderer(View, {
+          editor: pending.props.editor,
+          props: menuProps(pending.props),
+        })
+        renderer = r
+        document.body.appendChild(r.element)
       })
-      renderer = r
-      document.body.appendChild(r.element)
     },
     onUpdate: (props: SuggestionProps<Item>) => {
+      if (opening) opening.props = props
       renderer?.updateProps(menuProps(props))
     },
     onKeyDown: ({ event }: { event: KeyboardEvent }) => {
       if (event.key === "Escape") {
+        opening = null
         renderer?.destroy()
         renderer?.element.remove()
         renderer = null
@@ -165,6 +178,7 @@ export function createSuggestionRender<Item extends SuggestionMenuItem>(emptyLab
       return renderer?.ref?.onKeyDown(event) ?? false
     },
     onExit: () => {
+      opening = null
       renderer?.element.remove()
       renderer?.destroy()
       renderer = null

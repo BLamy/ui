@@ -1,0 +1,6 @@
+{
+  "title": "Images already in the Markdown",
+  "description": "Relative image paths resolve through the host's `resolveAsset`; `attachment:` images load as chips from `attachments`. Hover a thumbnail or the chip. Untick **resolveAsset** to see the paths fail to load.",
+  "height": 640,
+  "status": "Live"
+}

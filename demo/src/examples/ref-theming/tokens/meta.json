@@ -1,0 +1,12 @@
+{
+  "title": "Theme tokens",
+  "description": "Host tokens (`--card`, `--border`, `--primary`, …) on a wrapper restyle the whole editor; editor tokens (`--gb-radius`, the hint palette) are overridden on `.gb`.",
+  "height": 720,
+  "variants": [
+    { "id": "default", "label": "Default" },
+    { "id": "brand", "label": "Brand" },
+    { "id": "midnight", "label": "Midnight" },
+    { "id": "paper", "label": "Paper" }
+  ],
+  "status": "Live"
+}

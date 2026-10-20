@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { EditorContent, useEditor, type Editor as TiptapEditor } from "@tiptap/react"
+import { EditorContent, useEditor, useEditorState, type Editor as TiptapEditor } from "@tiptap/react"
 import type { AnyExtension } from "@tiptap/core"
 import {
   Bold,
@@ -229,23 +229,35 @@ function ToolbarButton({
 
 function Toolbar({ editor }: { editor: TiptapEditor }) {
   const chain = () => editor.chain().focus()
+  // Tiptap 3 doesn't re-render on every transaction, so read the marks under the selection
+  // through useEditorState — the buttons light up as the caret moves into bold text.
+  const active = useEditorState({
+    editor,
+    selector: ({ editor: e }) => ({
+      bold: e.isActive("bold"),
+      italic: e.isActive("italic"),
+      strike: e.isActive("strike"),
+      code: e.isActive("code"),
+      link: e.isActive("link"),
+    }),
+  })
   return (
     <div className="gb-toolbar">
-      <ToolbarButton title="Bold" active={editor.isActive("bold")} onClick={() => chain().toggleBold().run()}>
+      <ToolbarButton title="Bold" active={active.bold} onClick={() => chain().toggleBold().run()}>
         <Bold className="size-4" />
       </ToolbarButton>
-      <ToolbarButton title="Italic" active={editor.isActive("italic")} onClick={() => chain().toggleItalic().run()}>
+      <ToolbarButton title="Italic" active={active.italic} onClick={() => chain().toggleItalic().run()}>
         <Italic className="size-4" />
       </ToolbarButton>
-      <ToolbarButton title="Strike" active={editor.isActive("strike")} onClick={() => chain().toggleStrike().run()}>
+      <ToolbarButton title="Strike" active={active.strike} onClick={() => chain().toggleStrike().run()}>
         <Strikethrough className="size-4" />
       </ToolbarButton>
-      <ToolbarButton title="Inline code" active={editor.isActive("code")} onClick={() => chain().toggleCode().run()}>
+      <ToolbarButton title="Inline code" active={active.code} onClick={() => chain().toggleCode().run()}>
         <CodeIcon className="size-4" />
       </ToolbarButton>
       <ToolbarButton
         title="Link"
-        active={editor.isActive("link")}
+        active={active.link}
         onClick={() => {
           const url = window.prompt("URL")
           if (url) chain().setLink({ href: url }).run()
@@ -573,6 +585,11 @@ export function GitbookEditor({
   useEffect(() => vfs.subscribe((change) => onFilesChange.current?.(vfs.files(), change)), [vfs])
 
   // Surface the editor instance to the host (for awareness, commands, etc.).
+  // `editable` can change after mount (Tiptap only reads it when the editor is created).
+  useEffect(() => {
+    if (editor && editor.isEditable !== editable) editor.setEditable(editable)
+  }, [editor, editable])
+
   useEffect(() => {
     onEditorReady?.(editor ?? null)
     return () => onEditorReady?.(null)
