@@ -253,7 +253,7 @@ this form.
 
 ## Files from the host's project
 
-An app that edits Markdown from a folder can plug in its own files. All three props are optional.
+An app that edits Markdown from a folder can plug in its own files. All four props are optional.
 
 ```tsx
 <GitbookEditor
@@ -267,13 +267,21 @@ An app that edits Markdown from a folder can plug in its own files. All three pr
   onDropEmbeds={(data) =>
     data.types.includes("Files") ? copyIntoProject([...data.files]).then((paths) => paths.map((p) => `./${p}`)) : null
   }
+  // Adds "Upload…" to embed and image blocks; dropped or pasted files that aren't images land here too.
+  uploadFile={(file) => saveNextToDocument(file).then((path) => `./${path}`)}
 />
 ```
 
-- `resolveAsset` covers figures, inline images and `.stl` / `.strudel` embeds (they wait for a promise).
+- `resolveAsset` covers figures, inline images and `.stl` / `.strudel` / `.rrweb` embeds (they wait for a promise).
+  A `.rrweb` embed is an rrweb recording (a JSON event array) played in docstream's replay player.
 - `pickFile` resolves to the URL to write, or nothing when the user cancels.
 - `onDropEmbeds` decides synchronously: return `null` and the editor handles the drop as before (images
   inline, demo blocks). `embedBlockFor(url)` is the block a URL becomes.
+- `uploadFile(file, { kind })` stores the file and resolves to the URL to write, or nothing to skip it.
+  Dropped or pasted files that aren't images (`.rrweb` recordings, `.stl` models, …) are uploaded and
+  embedded where they land; images still go inline (or to chips) as before, and `onDropEmbeds` sees
+  drops first. With docstream's Vite plugin, `POST /@docstream/source?mount=…&path=…` with the file as
+  the body writes it to disk.
 
 ## Edit a referenced source file
 

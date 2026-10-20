@@ -23,13 +23,14 @@ import {
   FileCode2,
   GripVertical,
   Plus,
+  Upload,
   X,
   XCircle,
 } from "lucide-react"
 
 // The root entry (unlike `/replay`) keeps rrweb behind a dynamic import. The editor never
 // imports `/playground`: live previews run only through a host-supplied `liveRenderer`.
-import { DocsRenderer, MathFormula, PeleDiagram, ReplayPreview, SplitResult, isReplayQaUrl } from "@brett_lamy/docstream"
+import { DocsRenderer, MathFormula, PeleDiagram, ReplayFile, ReplayPreview, SplitResult, isReplayQaUrl, isRrwebUrl } from "@brett_lamy/docstream"
 import { useAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
 import { packageManagerCommands, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/docstream/gitbook"
@@ -439,6 +440,29 @@ function PickFileButton({ kind, current, onPick, label }: { kind: FilePickKind; 
   )
 }
 
+/** "Upload…": a native file chooser whose file goes to the host's `uploadFile`. Rendered only when the host has one. */
+function UploadFileButton({ kind, onPick, label }: { kind: FilePickKind; onPick: (url: string) => void; label: string }) {
+  const { uploadFile } = useEditorRuntime()
+  if (!uploadFile) return null
+  return (
+    <label className="gb-pick-file">
+      <Upload className="size-3.5" aria-hidden="true" /> {label}
+      <input
+        type="file"
+        hidden
+        {...(kind === "image" ? { accept: "image/*" } : {})}
+        onChange={async (event) => {
+          const file = event.currentTarget.files?.[0]
+          event.currentTarget.value = ""
+          if (!file) return
+          const url = await uploadFile(file, { kind })
+          if (url) onPick(url)
+        }}
+      />
+    </label>
+  )
+}
+
 // STL and Strudel files go through the host's asset resolver (a blob: URL of a local file, say).
 // A resolved URL (blob:) has no file name in it: the title falls back to the one written in the document.
 const fileName = (url: string) => url.split(/[?#]/)[0]!.split("/").pop() || url
@@ -466,6 +490,9 @@ function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
     <NodeViewWrapper className="gb-embed" contentEditable={false}>
       {isReplayQaUrl(url) ? (
         <ReplayPreview source={url} title="Replay preview" />
+      ) : isRrwebUrl(url) ? (
+        // An rrweb recording file, through the host's asset resolver like STL and Strudel files.
+        <ReplayFile url={url} title={node.attrs.title ? title : fileName(url)} />
       ) : isStlUrl(url) ? (
         <ResolvedStl url={url} {...(node.attrs.title ? { title } : {})} />
       ) : isStrudelFile(url) ? (
@@ -491,11 +518,12 @@ function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
           <input
             className="gb-inline-input gb-embed-input"
             value={url}
-            placeholder="https://… or ./file.stl"
+            placeholder="https://… or ./file.stl, ./session.rrweb"
             aria-label="Embed URL"
             onChange={(e) => updateAttributes({ url: e.target.value })}
           />
           <PickFileButton kind="embed" current={url} label="Choose file…" onPick={(next) => updateAttributes({ url: next })} />
+          <UploadFileButton kind="embed" label="Upload…" onPick={(next) => updateAttributes({ url: next })} />
         </div>
       )}
     </NodeViewWrapper>
@@ -1069,6 +1097,7 @@ function FigureView({ node, updateAttributes, editor }: NodeViewProps) {
               onChange={(e) => updateAttributes({ src: e.target.value })}
             />
             <PickFileButton kind="image" current={src} label="Choose image…" onPick={(next) => updateAttributes({ src: next })} />
+            <UploadFileButton kind="image" label="Upload…" onPick={(next) => updateAttributes({ src: next })} />
           </div>
           <input
             className="gb-inline-input"

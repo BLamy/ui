@@ -31,6 +31,7 @@ import {
   attachmentName,
   collectAttachmentIds,
   imageFilesFrom,
+  otherFilesFrom,
   newAttachmentId,
   readFileAsDataURL,
   type EditorAttachment,
@@ -45,13 +46,13 @@ import {
   type PastedDemoFiles,
 } from "./demo-clipboard"
 import { createGitbookExtensions, type ReferenceSources } from "./extensions"
-import { EditorRuntimeProvider, type FilePicker } from "./runtime"
+import { EditorRuntimeProvider, type FilePicker, type FileUploader } from "./runtime"
 import { AssetResolverProvider, type AssetResolver } from "@brett_lamy/docstream/assets"
 import type { SlashItem } from "./slash-menu"
 import { DocumentPropertiesEditor } from "./document-properties"
 
 export type { EditorAttachment } from "./attachments"
-export type { FilePicker, FilePickKind } from "./runtime"
+export type { FilePicker, FilePickKind, FileUploader } from "./runtime"
 export type { AssetResolver } from "@brett_lamy/docstream/assets"
 
 export interface GitbookEditorProps {
@@ -168,6 +169,13 @@ export interface GitbookEditorProps {
   resolveAsset?: AssetResolver
   /** Adds "Choose file…" to embed and image blocks. Resolve with the URL to write, or nothing when cancelled. */
   pickFile?: FilePicker
+  /**
+   * Stores a file the user uploads and resolves to the URL to write (e.g. "./recording.rrweb"). With it,
+   * embed and image blocks get "Upload…", and dropped or pasted files that aren't images (`.rrweb`
+   * recordings, `.stl` models, …) are uploaded and embedded where they land. `onDropEmbeds` still
+   * sees drops first.
+   */
+  uploadFile?: FileUploader
   /**
    * A drop on the editor: return the URLs to embed at the drop point (images become figures, anything
    * else an embed) — e.g. after copying dropped files next to the document — or `null` to let the
@@ -290,6 +298,7 @@ export function GitbookEditor({
   demoClipboard = true,
   resolveAsset,
   pickFile,
+  uploadFile,
   onDropEmbeds,
 }: GitbookEditorProps) {
   const [ownVFS] = useState(() => createDemoVFS())
@@ -304,9 +313,25 @@ export function GitbookEditor({
   // Ids of the attachment chips in the document, to report removals.
   const attachmentIds = useRef<Set<string>>(new Set())
   // Latest callbacks for handlers the editor captured at creation.
-  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds })
-  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds }
+  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds, uploadFile })
+  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds, uploadFile }
   const editorRef = useRef<TiptapEditor | null>(null)
+
+  // Pasted/dropped files that aren't images go to the host's `uploadFile`; each URL it returns is embedded.
+  const uploadFiles = (files: File[], at?: number) => {
+    const upload = latest.current.uploadFile
+    const ed = editorRef.current
+    if (!upload || !ed) return
+    const doc = ed.state.doc
+    void Promise.all(files.map((file) => upload(file, { kind: "embed" }).catch(() => null))).then((urls) => {
+      const ed = editorRef.current
+      const content = urls.filter((url): url is string => !!url).map(embedBlockFor)
+      if (!ed || ed.isDestroyed || !content.length) return
+      // The document changed meanwhile: go after the selection, never over it.
+      const pos = at !== undefined && ed.state.doc === doc ? Math.min(at, ed.state.doc.content.size) : ed.state.selection.to
+      ed.chain().focus().insertContentAt(pos, content).run()
+    })
+  }
 
   // Pasted/dropped image files: image blocks ("inline") or attachment chips ("chip").
   const insertImageFiles = (files: File[], at?: number) => {
@@ -454,6 +479,12 @@ export function GitbookEditor({
           insertImageFiles(files)
           return true
         }
+        const uploads = latest.current.uploadFile ? otherFilesFrom(event.clipboardData) : []
+        if (uploads.length) {
+          event.preventDefault()
+          uploadFiles(uploads, view.state.selection.to)
+          return true
+        }
         return latest.current.markdownPaste ? pasteMarkdown(event) : false
       },
       handleDOMEvents: {
@@ -496,10 +527,13 @@ export function GitbookEditor({
           }, () => {})
           return true
         }
+        const at = () => view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos
+        const uploads = latest.current.uploadFile ? otherFilesFrom(event.dataTransfer) : []
         const files = imageFilesFrom(event.dataTransfer)
-        if (!files.length) return false
+        if (!files.length && !uploads.length) return false
         event.preventDefault()
-        insertImageFiles(files, view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos)
+        if (files.length) insertImageFiles(files, at())
+        if (uploads.length) uploadFiles(uploads, at())
         return true
       },
     },
@@ -575,7 +609,8 @@ export function GitbookEditor({
     ...(attachments ? { attachments } : {}),
     ...(onAttachmentOpen ? { onAttachmentOpen } : {}),
     ...(pickFile ? { pickFile } : {}),
-  }), [pickFile, attachments, demoDependencies, demoResolver, demoRuntime, vfs, liveRenderer, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
+    ...(uploadFile ? { uploadFile } : {}),
+  }), [pickFile, uploadFile, attachments, demoDependencies, demoResolver, demoRuntime, vfs, liveRenderer, onAttachmentOpen, onSourceError, onSourceSaved, sourceAutoSave, sourceClient, sourcePreview])
 
   if (!editor) return null
 

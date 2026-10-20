@@ -11,8 +11,16 @@ export type FilePickKind = "embed" | "image"
 /** The host's file chooser. Resolves to the URL to write into the document (e.g. "./models/part.stl"), or nothing when cancelled. */
 export type FilePicker = (request: { kind: FilePickKind; current: string }) => Promise<string | null | undefined>
 
+/**
+ * The host's upload: store a file the user dropped, pasted or chose (copy it next to the document,
+ * send it to a server) and resolve to the URL to write into the document (e.g. "./recording.rrweb"),
+ * or nothing to skip it.
+ */
+export type FileUploader = (file: File, request: { kind: FilePickKind }) => Promise<string | null | undefined>
+
 export interface EditorRuntimeOptions {
   pickFile?: FilePicker
+  uploadFile?: FileUploader
   sourceClient?: SourceReferenceClient
   sourcePreview?: boolean
   sourceAutoSave?: boolean | number

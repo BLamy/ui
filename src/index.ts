@@ -1,6 +1,6 @@
 export { GitbookEditor } from "./editor/Editor"
 export { embedBlockFor } from "./editor/Editor"
-export type { GitbookEditorProps, EditorAttachment, FilePicker, FilePickKind, AssetResolver } from "./editor/Editor"
+export type { GitbookEditorProps, EditorAttachment, FilePicker, FilePickKind, FileUploader, AssetResolver } from "./editor/Editor"
 export { astToTiptap, tiptapToAst, serializeEditorMarkdown, markdownPasteContent } from "./editor/convert"
 export type { PMNode } from "./editor/convert"
 export { GbDocumentProperties, DocumentPropertiesEditor } from "./editor/document-properties"

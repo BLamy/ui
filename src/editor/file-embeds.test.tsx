@@ -119,3 +119,71 @@ describe("file embeds", () => {
     expect([...container.querySelectorAll("button")].some((b) => b.textContent?.includes("Choose file"))).toBe(false)
   })
 })
+
+describe("rrweb recordings and uploads", () => {
+  const rrweb = (name = "session.rrweb") => new File(["[]"], name, { type: "" })
+  // Embedded recordings would fetch their files; nothing here needs them to arrive.
+  beforeEach(() => vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {}))))
+
+  it("an .rrweb embed is a session replay resolved through the host, not a link card", async () => {
+    const resolveAsset = vi.fn(() => new Promise<string>(() => {}))
+    await mount({ markdown: '{% embed url="./checkout.rrweb" %}\n', resolveAsset })
+    expect(container.querySelector('[data-slot="replay-file"]')).not.toBeNull()
+    expect(container.querySelector(".gb-embed-link")).toBeNull()
+  })
+
+  it("dropped files that aren't images go to uploadFile and are embedded where they land", async () => {
+    const uploadFile = vi.fn(async (file: File) => `./uploads/${file.name}`)
+    const { editor, markdown } = await mount({ markdown: "Intro.\n", uploadFile })
+    const data = new DataTransfer()
+    data.items.add(rrweb())
+    let event!: DragEvent
+    await act(async () => {
+      event = drop(editor, data)
+    })
+    await flush()
+    expect(event.defaultPrevented).toBe(true)
+    expect(uploadFile).toHaveBeenCalledWith(expect.any(File), { kind: "embed" })
+    expect(markdown()).toContain('{% embed url="./uploads/session.rrweb" %}')
+  })
+
+  it("a host that claims the drop with onDropEmbeds still wins", async () => {
+    const uploadFile = vi.fn(async () => "./never.rrweb")
+    const { editor, markdown } = await mount({ markdown: "Intro.\n", uploadFile, onDropEmbeds: () => ["./claimed.rrweb"] })
+    const data = new DataTransfer()
+    data.items.add(rrweb())
+    await act(async () => {
+      drop(editor, data)
+    })
+    await flush()
+    expect(uploadFile).not.toHaveBeenCalled()
+    expect(markdown()).toContain("./claimed.rrweb")
+  })
+
+  it("without uploadFile, a dropped recording is left to the editor", async () => {
+    const { editor, markdown } = await mount({ markdown: "Intro.\n" })
+    const data = new DataTransfer()
+    data.items.add(rrweb())
+    let event!: DragEvent
+    await act(async () => {
+      event = drop(editor, data)
+    })
+    await flush()
+    expect(event.defaultPrevented).toBe(false)
+    expect(markdown()).not.toContain("embed")
+  })
+
+  it("Upload… sends the chosen file to uploadFile and writes the URL", async () => {
+    const uploadFile = vi.fn(async (file: File) => `./${file.name}`)
+    const { markdown } = await mount({ markdown: '{% embed url="" %}\n', uploadFile })
+    const input = container.querySelector<HTMLInputElement>('.gb-embed-fields input[type="file"]')!
+    expect(input.closest("label")?.textContent).toContain("Upload")
+    Object.defineProperty(input, "files", { value: [rrweb("cart.rrweb")], configurable: true })
+    await act(async () => {
+      input.dispatchEvent(new Event("change", { bubbles: true }))
+    })
+    await flush()
+    expect(uploadFile).toHaveBeenCalledWith(expect.any(File), { kind: "embed" })
+    expect(markdown()).toContain('{% embed url="./cart.rrweb" %}')
+  })
+})

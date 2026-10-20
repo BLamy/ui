@@ -71,6 +71,11 @@ export function imageFilesFrom(data: DataTransfer | null, { ignoreWithText = fal
   return files
 }
 
+/** The files in a paste or drop that aren't images (recordings, models, …). */
+export function otherFilesFrom(data: DataTransfer | null): File[] {
+  return Array.from(data?.files ?? []).filter((f) => !f.type.startsWith("image/"))
+}
+
 /** Ids of every attachment chip in a document. */
 export function collectAttachmentIds(doc: ProseMirrorNode): Set<string> {
   const ids = new Set<string>()
