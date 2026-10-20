@@ -277,6 +277,9 @@ An app that edits Markdown from a folder can plug in its own files. All four pro
 - `pickFile` resolves to the URL to write, or nothing when the user cancels.
 - `onDropEmbeds` decides synchronously: return `null` and the editor handles the drop as before (images
   inline, demo blocks). `embedBlockFor(url)` is the block a URL becomes.
+- Thumbnail images (`![alt](src "thumbnail: 0:39.8")`, docstream 1.18) show as docstream's thumbnail with its
+  hover card; first in a stepper step's heading, the thumbnail sits beside the title input and survives
+  retitling.
 - `uploadFile(file, { kind })` stores the file and resolves to the URL to write, or nothing to skip it.
   Dropped or pasted files that aren't images (`.rrweb` recordings, `.stl` models, …) are uploaded and
   embedded where they land; images still go inline (or to chips) as before, and `onDropEmbeds` sees

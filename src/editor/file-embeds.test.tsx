@@ -187,3 +187,50 @@ describe("rrweb recordings and uploads", () => {
     expect(markdown()).toContain('{% embed url="./cart.rrweb" %}')
   })
 })
+
+describe("thumbnail images", () => {
+  it("render as docstream thumbnails and round-trip unchanged", async () => {
+    const md = '1. ![Overview](./shots/a.jpg "thumbnail: 0:39.8") The console Overview loads.\n'
+    const { editor, markdown } = await mount({ markdown: md })
+    expect(container.querySelector(".gb-inline-thumb .docs-thumb")).not.toBeNull()
+    expect(container.querySelector(".docs-thumb-badge")?.textContent).toBe("0:39.8")
+    // Any edit re-serializes the document; the image keeps its title.
+    await act(async () => {
+      editor.commands.insertContentAt(editor.state.doc.content.size - 1, " Then it fails.")
+    })
+    expect(markdown()).toContain('![Overview](./shots/a.jpg "thumbnail: 0:39.8") The console Overview loads.')
+  })
+
+  it("other inline images stay plain", async () => {
+    await mount({ markdown: '![Build](./b.svg "Build status") Passing\n' })
+    expect(container.querySelector(".gb-inline-img")).not.toBeNull()
+    expect(container.querySelector(".docs-thumb")).toBeNull()
+  })
+})
+
+describe("stepper thumbnails", () => {
+  const md = [
+    "{% stepper %}",
+    "{% step %}",
+    '### ![Overview](./a.jpg "thumbnail: 0:39.8") Overview loads',
+    "",
+    "Body",
+    "{% endstep %}",
+    "{% endstepper %}",
+    "",
+  ].join("\n")
+
+  it("show beside the step title, and retitling keeps the thumbnail", async () => {
+    const { markdown } = await mount({ markdown: md })
+    expect(container.querySelector(".gb-step-head-thumb .docs-thumb-badge")?.textContent).toBe("0:39.8")
+    const input = container.querySelector<HTMLInputElement>("input.gb-step-title")!
+    expect(input.value).toBe("Overview loads")
+    // Type a new title the way React sees it: the native value setter, then an input event.
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "Overview fails")
+      input.dispatchEvent(new Event("input", { bubbles: true }))
+    })
+    await flush()
+    expect(markdown()).toContain('### ![Overview](./a.jpg "thumbnail: 0:39.8") Overview fails')
+  })
+})

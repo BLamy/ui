@@ -713,6 +713,12 @@
   margin-top: 8px;
 }
 .gb-inline-img-wrap { display: inline-block; vertical-align: middle; }
+/* A thumbnail image (docstream's .docs-thumb, styled by @brett_lamy/docstream/styles.css). First in a
+   paragraph it floats left so the text runs beside it, as in the rendered document. */
+.gb-inline-thumb { display: inline-block; vertical-align: top; }
+/* TipTap wraps the node view in span.node-gbInlineImage, which is the paragraph's child. */
+.gb .ProseMirror p > .node-gbInlineImage:first-child:has(> .gb-inline-thumb) { float: left; margin: 2px 14px 6px 0; }
+.gb .ProseMirror p:has(> .node-gbInlineImage:first-child > .gb-inline-thumb) { display: flow-root; }
 .gb-inline-img { display: inline-block; vertical-align: middle; border-radius: 4px; }
 
 /* ── Math: docstream's card (.docs-split-card), its source pane editable ── */
@@ -1254,3 +1260,7 @@
   .gb-attachment-card,
   .gb-attachment-viewer { animation: none; }
 }
+
+/* A step whose heading opens with a thumbnail: the image beside the title. */
+.gb-step-head-thumb { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.gb-step-head-thumb > .gb-step-title { flex: 1; min-width: 0; }

@@ -30,10 +30,10 @@ import {
 
 // The root entry (unlike `/replay`) keeps rrweb behind a dynamic import. The editor never
 // imports `/playground`: live previews run only through a host-supplied `liveRenderer`.
-import { DocsRenderer, MathFormula, PeleDiagram, ReplayFile, ReplayPreview, SplitResult, isReplayQaUrl, isRrwebUrl } from "@brett_lamy/docstream"
+import { DocsRenderer, ImageThumbnail, leadingThumbnail, MathFormula, PeleDiagram, ReplayFile, ReplayPreview, SplitResult, isReplayQaUrl, isRrwebUrl, thumbnailLabel } from "@brett_lamy/docstream"
 import { useAsset } from "@brett_lamy/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/docstream/openapi"
-import { packageManagerCommands, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/docstream/gitbook"
+import { packageManagerCommands, parseBlocks, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/docstream/gitbook"
 import { VideoEmbed } from "@brett_lamy/docstream/video"
 import { StlViewer, isStlUrl } from "@brett_lamy/docstream/stl"
 import { StrudelPlayer, isStrudelFile, isStrudelLanguage } from "@brett_lamy/docstream/strudel"
@@ -354,7 +354,23 @@ export const GbStepper = Node.create({
   },
 })
 
+// A step heading that opens with a thumbnail image (`### ![shot](a.jpg "thumbnail: 0:39.8") Title`).
+const THUMB_HEADING = /^(\s*#{1,6}[ \t]+!\[[^\]]*\]\([^)]*\)[ \t]*)/
+
+function stepThumbnail(heading: unknown) {
+  if (typeof heading !== "string") return null
+  const [block] = parseBlocks(heading.split("\n").filter((line) => line.trim()))
+  const lead = block?.type === "heading" ? leadingThumbnail(block.children) : null
+  const prefix = THUMB_HEADING.exec(heading)?.[1]
+  return lead && prefix ? { ...lead, prefix } : null
+}
+
 function StepView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
+  const md = (node.attrs.md ?? null) as { heading?: string } | null
+  const thumb = useMemo(() => stepThumbnail(md?.heading), [md?.heading])
+  // Retitling keeps the heading's thumbnail: the heading as written is rewritten around the new title.
+  const setTitle = (title: string) =>
+    updateAttributes(thumb ? { title, md: { ...md, heading: `${thumb.prefix}${title}` } } : { title })
   let index = 0
   try {
     const $pos = editor.state.doc.resolve(getPos()!)
@@ -369,13 +385,14 @@ function StepView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
         <div className="gb-step-line" />
       </div>
       <div className="gb-step-main">
-        <div contentEditable={false}>
+        <div contentEditable={false} className={thumb ? "gb-step-head gb-step-head-thumb" : "gb-step-head"}>
+          {thumb ? <ImageThumbnail image={thumb.image} label={thumb.label} /> : null}
           {editor.isEditable ? (
             <input
               className="gb-inline-input gb-step-title"
               value={node.attrs.title}
               placeholder="Step title…"
-              onChange={(e) => updateAttributes({ title: e.target.value })}
+              onChange={(e) => setTitle(e.target.value)}
             />
           ) : (
             <div className="gb-step-title">{node.attrs.title}</div>
@@ -1317,6 +1334,20 @@ export const GbCodeBlock = CodeBlock.extend({
 
 function InlineImageView({ node }: NodeViewProps) {
   const { src, alt, width, height, link } = node.attrs
+  const title = (node.attrs.md as { title?: string } | null)?.title
+  // `![alt](src "thumbnail: 0:39.8")`: docstream's thumbnail, with its badge and hover card.
+  const label = thumbnailLabel({ type: "image", src, ...(title ? { title } : {}) })
+  if (label !== null) {
+    return (
+      <NodeViewWrapper as="span" className="gb-inline-thumb" contentEditable={false}>
+        <ImageThumbnail image={{ type: "image", src, alt, ...(title ? { title } : {}), ...(link ? { link } : {}) }} label={label} />
+      </NodeViewWrapper>
+    )
+  }
+  return <PlainInlineImage src={src} alt={alt} width={width} height={height} link={link} />
+}
+
+function PlainInlineImage({ src, alt, width, height, link }: { src: string; alt: string; width: string; height: string; link: string }) {
   const resolved = useAsset(src)
   const img = (
     <img
