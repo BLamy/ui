@@ -49,7 +49,8 @@ import { createGitbookExtensions, type ReferenceSources } from "./extensions"
 import { EditorRuntimeProvider, type FilePicker, type FileUploader } from "./runtime"
 import { AssetResolverProvider, type AssetResolver } from "@brett_lamy/docstream/assets"
 import type { SlashItem } from "./slash-menu"
-import { DocumentPropertiesEditor } from "./document-properties"
+import { DocumentEnvScope, DocumentPropertiesEditor } from "./document-properties"
+import type { DocstreamEnvHost } from "@brett_lamy/docstream"
 
 export type { EditorAttachment } from "./attachments"
 export type { FilePicker, FilePickKind, FileUploader } from "./runtime"
@@ -58,6 +59,11 @@ export type { AssetResolver } from "@brett_lamy/docstream/assets"
 export interface GitbookEditorProps {
   /** Editable YAML frontmatter, shown as document properties above the body (default true). */
   documentProperties?: boolean | { defaultOpen?: boolean }
+  /**
+   * Supplies the variables the document declares in its `env` property, for the `{% demo %}` blocks that use them
+   * (docstream's `DocstreamEnvHost`: a keychain, a sign-in). Without one, a gated demo asks the reader for the values.
+   */
+  envHost?: DocstreamEnvHost
   /** Markdown source. When provided, the editor stays in sync with it (controlled). */
   markdown?: string
   /** Called with serialized GitBook markdown on every edit. */
@@ -278,6 +284,7 @@ export function GitbookEditor({
   onChange,
   toolbar = true,
   documentProperties = true,
+  envHost,
   slashMenu = true,
   references = true,
   editable = true,
@@ -638,7 +645,9 @@ export function GitbookEditor({
       <EditorRuntimeProvider value={runtime}>
         <AssetResolverProvider resolve={resolveAsset}>
           <DocstreamDemoVFSContext.Provider value={vfs}>
-            <EditorContent editor={editor} className="gb-content" />
+            <DocumentEnvScope editor={editor} envHost={envHost}>
+              <EditorContent editor={editor} className="gb-content" />
+            </DocumentEnvScope>
           </DocstreamDemoVFSContext.Provider>
         </AssetResolverProvider>
       </EditorRuntimeProvider>

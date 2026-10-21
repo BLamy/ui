@@ -1,0 +1,6 @@
+{
+  "title": "Environment variables in the editor",
+  "description": "The document's **Properties** declare `env: [GITHUB_TOKEN]`, so its demo block waits for the token, from `envHost` or the page around the editor. Add another name to `env` and use it in a demo to see the gate.",
+  "height": 640,
+  "status": "Live"
+}

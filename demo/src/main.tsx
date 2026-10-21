@@ -7,6 +7,7 @@ import '@brett_lamy/docstream-editor/styles.css';
 import './site.css';
 import { demoResolver } from './demos';
 import { liveRenderer } from './live-renderer';
+import { useGithubEnv } from './github-env';
 
 /* The whole site is the docs/ folder, published by docstream's DocsSite: the sidebar comes from
    the folders, and every page is rendered by docstream. Live editors are {% demo %} folders. */
@@ -27,7 +28,10 @@ const GITHUB = 'https://github.com/BLamy/docstream-editor';
 const SITE = 'https://blamy.github.io/docstream-editor/';
 
 function App() {
+  // Pages that declare `env: [GITHUB_TOKEN]` get it from a GitHub sign-in (see github-env.tsx).
+  const github = useGithubEnv();
   return (
+    <>
     <DocsSite
       files={files}
       treeOptions={treeOptions}
@@ -41,10 +45,13 @@ function App() {
       themeStorageKey="docstream-editor-demo-theme"
       liveRenderer={liveRenderer}
       demoResolver={demoResolver}
+      envHost={github.host}
       pageActions={(page) => ({ transform: (md) => `${md.trim()}\n\n---\n\nSource: ${SITE}#/${page.slug}\n` })}
       editUrl={(page) => `${GITHUB}/edit/main/demo/docs/${page.path}`}
       sidebarFooter={<>A folder of Markdown, published with docstream's <a href="https://blamy.github.io/docstream/#/docs-site">DocsSite</a>.</>}
     />
+    {github.dialog}
+    </>
   );
 }
 

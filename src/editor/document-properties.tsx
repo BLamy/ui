@@ -1,6 +1,9 @@
 import { useEditorState, type Editor } from "@tiptap/react"
 import { Extension } from "@tiptap/core"
+import type { ReactNode } from "react"
 import type { DocumentPropertiesNode } from "@brett_lamy/docstream/gitbook"
+import { readDocumentProperties } from "@brett_lamy/docstream/gitbook"
+import { DocstreamEnvProvider, envNamesFromProperties, type DocstreamEnvHost } from "@brett_lamy/docstream"
 import { DocumentProperties } from "@brett_lamy/docstream/properties"
 
 declare module "@tiptap/core" {
@@ -33,4 +36,20 @@ export function DocumentPropertiesEditor({ editor, defaultOpen = false }: { edit
   if (!state.properties) return null
   return <DocumentProperties properties={state.properties} defaultOpen={defaultOpen}
     onChange={state.editable ? (properties) => { editor.commands.setDocumentProperties(properties) } : undefined} />
+}
+
+/**
+ * The document's `env` property for the examples inside the editor: a `{% demo %}` that uses one of the declared
+ * variables waits behind docstream's gate until `envHost` (or the reader) supplies it, as it does in a rendered page.
+ */
+export function DocumentEnvScope({ editor, envHost, children }: { editor: Editor; envHost?: DocstreamEnvHost; children: ReactNode }) {
+  const names = useEditorState({
+    editor,
+    selector: ({ editor }) => {
+      const properties = editor.state.doc.attrs.properties as DocumentPropertiesNode | null
+      return properties ? envNamesFromProperties(readDocumentProperties(properties).values).join(",") : ""
+    },
+  })
+  if (!names && !envHost) return <>{children}</>
+  return <DocstreamEnvProvider declared={names ? names.split(",") : []} host={envHost}>{children}</DocstreamEnvProvider>
 }
