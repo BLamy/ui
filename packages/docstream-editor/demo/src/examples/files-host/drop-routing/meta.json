@@ -1,0 +1,11 @@
+{
+  "title": "Who handles a drop",
+  "description": "Pick a wiring and drop the sample files. `onDropEmbeds` runs first and can claim a drop; unclaimed images go inline; any other file goes to `uploadFile`. Pastes never reach `onDropEmbeds`.",
+  "height": 760,
+  "variants": [
+    { "id": "upload", "label": "uploadFile" },
+    { "id": "claim", "label": "onDropEmbeds" },
+    { "id": "both", "label": "both" }
+  ],
+  "status": "Live"
+}

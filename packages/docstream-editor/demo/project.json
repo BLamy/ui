@@ -1,0 +1,15 @@
+{
+  "name": "docstream-editor-playground",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "{projectRoot}"
+      }
+    }
+  }
+}

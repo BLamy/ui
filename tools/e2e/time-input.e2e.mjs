@@ -65,6 +65,7 @@ test.describe('basic demo', () => {
 
   test('is keyboard-reachable, labelled, and described by its preview', async ({ page }) => {
     const field = page.getByRole('textbox', { name: 'When' });
+    await expect(page.locator(PREVIEW)).toBeVisible(); // the default text's reading
     for (let i = 0; i < 3 && !(await field.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab');
     await expect(field).toBeFocused();
     const describedBy = await field.getAttribute('aria-describedby');
@@ -74,6 +75,9 @@ test.describe('basic demo', () => {
 
   test('keeps the old preview, dimmed, while a new one is being read, and never shows offsets of old text', async ({ page }) => {
     const field = page.getByRole('textbox', { name: 'When' });
+    // The old preview: the default text's reading, settled.
+    await expect(page.locator(PREVIEW)).toBeVisible();
+    await expect(page.locator(ROOT)).not.toHaveAttribute('data-pending', /.*/);
     await field.click();
     await field.press('ControlOrMeta+a');
     // One key, then look at once (a single round trip): the 120 ms debounce has not fired yet.

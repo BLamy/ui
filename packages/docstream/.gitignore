@@ -1,0 +1,6 @@
+node_modules
+dist
+demo/node_modules
+demo/dist
+demo/public/__sw__.js
+demo/public/assets/

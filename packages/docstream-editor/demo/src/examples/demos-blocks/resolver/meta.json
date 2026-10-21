@@ -1,0 +1,6 @@
+{
+  "title": "Demo blocks in the editor",
+  "description": "Edit a block's `src` or title in its header, or open **Files** on the inline one. Untick **demoResolver** and the first two blocks have nothing to render; untick **demoRuntime** and the inline one shows its code.",
+  "height": 900,
+  "status": "Live"
+}

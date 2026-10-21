@@ -1,0 +1,5 @@
+{
+  "title": "Editor and renderer",
+  "description": "Left: `GitbookEditor` with `markdown` / `onChange`. Right: docstream's `MarkdownContent` rendering the same state.",
+  "status": "Live"
+}

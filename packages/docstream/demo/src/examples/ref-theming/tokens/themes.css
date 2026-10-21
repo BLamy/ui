@@ -1,0 +1,65 @@
+/* Two ways to theme docstream, side by side.
+
+   1. Host tokens on an ANCESTOR (.ref-theme-midnight): the shadcn way. docstream defines
+      every --gb-* token on [data-docstream] as var(--host-token, default), so setting
+      --card / --border / --primary on any wrapper flows in through the var() fallbacks.
+
+   2. --gb-* tokens on the [data-docstream] element ITSELF (.ref-theme-brand): needed for
+      tokens with no host equivalent (the hint palette, --gb-code-bg, pill shadows). They
+      must sit on that element (or a descendant) — on an ancestor they'd be overridden,
+      because docstream re-declares them on [data-docstream]. */
+
+.ref-theme-frame {
+  border-radius: 14px;
+  padding: 20px 24px;
+  background: var(--background, #ffffff);
+  color: var(--foreground, #18181b);
+  border: 1px solid rgba(128, 128, 128, 0.25);
+}
+
+/* 1 — host tokens on a wrapper. */
+.ref-theme-midnight {
+  color-scheme: dark; /* code highlighting switches to its dark palette */
+  --background: #0b0b12;
+  --foreground: #e6e6f0;
+  --card: #14141f;
+  --card-foreground: #e6e6f0;
+  --muted: #1c1c2a;
+  --muted-foreground: #9a9ab3;
+  --border: #2a2a3d;
+  --accent: #23233a;
+  --accent-foreground: #e6e6f0;
+  --primary: #8b8bf0;
+  --primary-foreground: #0b0b12;
+}
+
+/* Shadows have no host token; darken them on the docstream element for a dark surface. */
+.ref-theme-midnight [data-docstream] {
+  --gb-pill: #2a2a3a;
+  --gb-pill-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+  --gb-menu-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* 2 — --gb-* tokens on the [data-docstream] element (MarkdownContent's className). */
+.ref-theme-brand[data-docstream] {
+  --gb-primary: #0f766e;
+  --gb-border: #99f6e4;
+  --gb-panel: #f0fdfa;
+  --gb-code-bg: rgba(15, 118, 110, 0.08);
+  --gb-info: #0d9488;
+  --gb-info-border: rgba(13, 148, 136, 0.5);
+  --gb-info-bg: rgba(13, 148, 136, 0.08);
+  --gb-warning: #c2410c;
+  --gb-warning-border: rgba(194, 65, 12, 0.5);
+  --gb-warning-bg: rgba(194, 65, 12, 0.08);
+  /* Syntax colors are their own custom properties. */
+  --docs-tok-keyword: #0f766e;
+  --docs-tok-string: #b45309;
+  --docs-tok-function: #1d4ed8;
+}
+
+/* Pele (mermaid) reads --pele-* on .docs-mermaid-preview; override one directly. */
+.ref-theme-brand .docs-mermaid-preview {
+  --pele-accent: #0f766e;
+  --pele-line: #0d9488;
+}

@@ -1,0 +1,8 @@
+{
+  "title": "Export preview",
+  "description": "A src-only demo tag and a titled install box, resolved live. **Inline** keeps it renderable docstream; **Plain** flattens it for an LLM prompt. The **Copy page** button here uses the same options plus a `transform` and a custom `prompt`.",
+  "variants": [
+    { "id": "inline", "label": "Inline" },
+    { "id": "plain", "label": "Plain" }
+  ]
+}

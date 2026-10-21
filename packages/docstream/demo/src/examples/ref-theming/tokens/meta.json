@@ -1,0 +1,11 @@
+{
+  "title": "One document, three themes",
+  "description": "The same `MarkdownContent` with no tokens, with shadcn host tokens on a wrapper, and with `--gb-*` tokens on the element itself. Open the Code view for `themes.css`.",
+  "height": 720,
+  "status": "Live",
+  "variants": [
+    { "id": "default", "label": "Defaults" },
+    { "id": "midnight", "label": "Host tokens" },
+    { "id": "brand", "label": "--gb-* tokens" }
+  ]
+}

@@ -2,7 +2,7 @@
   "name": "markdown-view",
   "title": "MarkdownView",
   "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
-  "page": "docstream",
+  "page": "markdown-view",
   "exports": [
     "MarkdownView",
     "HlPre",

@@ -145,7 +145,7 @@
     {
       "section": "Editors and workbench",
       "pages": [
-        { "id": "docstream", "title": "Markdown" },
+        { "id": "markdown-view", "title": "Markdown" },
         { "id": "markdown-editor", "title": "MarkdownEditor" },
         { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
         { "id": "pencilkit", "title": "PencilKit" },

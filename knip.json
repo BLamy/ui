@@ -32,9 +32,6 @@
         "eslint-plugin-react-hooks",
         "happy-dom",
         "@electron/packager"
-      ],
-      "ignoreBinaries": [
-        "wait-on"
       ]
     },
     "packages/ui": {
@@ -55,13 +52,15 @@
         "**/*.{ts,tsx}"
       ],
       "ignoreDependencies": [
-        "@brett_lamy/ui"
+        "@brett_lamy/ui",
+        "buffer"
       ]
     },
     "apps/docs": {
       "entry": [
         "src/page-export.ts",
-        "examples/*/*/index.tsx"
+        "examples/*/*/index.tsx",
+        "src/site/virtual.d.ts"
       ],
       "project": [
         "src/**/*.{ts,tsx}",

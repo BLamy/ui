@@ -1,0 +1,7 @@
+{
+  "title": "AI answer pane",
+  "description": "A chat UI on `GitbookStreamdown`: answers stream in, **Stop** freezes them mid-block, each finished answer gets its own **Copy page**, and chip clicks reach `onReferenceClick`.",
+  "height": 600,
+  "bleed": true,
+  "status": "Live"
+}

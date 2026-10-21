@@ -1,6 +1,6 @@
 # BL UI
 
-BL UI is an iOS-flavored React component monorepo built with Nx and pnpm. It contains the component library, the shadcn registry, a Storybook catalog, and a GitBook-style documentation app.
+BL UI is an iOS-flavored React component monorepo built with Nx and pnpm. It contains the component library, the shadcn registry, docstream and docstream-editor (merged in with their history), a Storybook catalog, and the BL site — a landing page, every library's docs, and the [roadmap](https://blamy.github.io/ui/#/roadmap) for splitting `@brett_lamy/ui` into packages.
 
 Two ways to use it, from the same source files:
 
@@ -10,8 +10,10 @@ Two ways to use it, from the same source files:
 ## Workspace layout
 
 - `packages/ui` — the core library, published as [`@brett_lamy/ui`](https://www.npmjs.com/package/@brett_lamy/ui): restyled react-aria/shadcn primitives, the iOS containers (NavigationStack, SplitView, TabView, sheets and drawers), icons, motion, theme, the Composer and PencilKit. Files import each other as `@/components/ui/<x>` and `@/lib/<x>`, the same paths a registry install uses. Stories and unit tests live next to their sources.
+- `packages/docstream` — [`@brett_lamy/docstream`](https://www.npmjs.com/package/@brett_lamy/docstream), the GitBook-flavored Markdown renderer; its docs are `demo/docs/` (a standalone playground: `pnpm nx dev docstream-playground`).
+- `packages/docstream-editor` — [`@brett_lamy/docstream-editor`](https://www.npmjs.com/package/@brett_lamy/docstream-editor), the WYSIWYG editor for it; released in lockstep (same version as the docstream it pins).
 - `registry` — the shadcn registry source. `registry/blocks/<slug>` are the blocks (product-specific compositions with their own components: `t3-clone`, `discord-clone`, `loop-qa`, `map-chat`, …); `registry/components/*.json` are docs metadata for the library's items. See [registry/README.md](registry/README.md).
-- `apps/docs` — the documentation site (`pages/*.md` + `pages/nav.json`, live examples in `examples/<page>/<example>`)
+- `apps/docs` — the BL site: the landing page and library pages (`src/site/`, from the manifest `src/site/libraries.ts`), the roadmap (`roadmap/*.md`), docstream's and the editor's docs (mounted with DocsSite at `#/docstream`, `#/docstream-editor`), and the ui docs (`pages/*.md` + `pages/nav.json`, live examples in `examples/<page>/<example>`)
 - `apps/catalog` — the Storybook catalog (stories from `packages/ui`, the registry blocks and `apps/catalog/stories`)
 - `tools` — workspace scripts: `registry` (registry build), `tokens` (token generator and lint), `docs` (install sections, variant tables, Markdown export, copy-page check), `codemod` (one-off migrations), `vr` (Playwright visual regression), `smoke-stories.mjs`
 - `docs` — design notes (the 2.0 plan and decision log)

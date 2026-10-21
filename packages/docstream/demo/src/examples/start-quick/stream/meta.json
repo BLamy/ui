@@ -1,0 +1,11 @@
+{
+  "title": "Streaming answer",
+  "description": "`GitbookStreamdown` re-parses the partial answer on every chunk: unterminated hints and fences render as they grow, and half-typed `[^1` / `@da` tokens are held back.",
+  "height": 560,
+  "status": "Live",
+  "variants": [
+    { "id": "slow", "label": "Slow" },
+    { "id": "normal", "label": "Normal" },
+    { "id": "fast", "label": "Fast" }
+  ]
+}

@@ -13,10 +13,11 @@
   },
   "dependencies": {
     "@agent-wasm/core": "0.4.0",
-    "@brett_lamy/docstream": "1.19.0",
+    "@brett_lamy/docstream": "workspace:*",
     "@brett_lamy/ui": "workspace:*",
     "@visual-json/react": "0.4.0",
     "@visual-json/yaml": "0.4.0",
+    "buffer": "^6.0.3",
     "react-aria-components": "^1.20.0",
     "use-fs": "2.1.0"
   },

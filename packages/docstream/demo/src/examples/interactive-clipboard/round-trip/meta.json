@@ -1,0 +1,6 @@
+{
+  "title": "Copy → paste round trip",
+  "description": "**Copy** builds the docstream clipboard for a src-only demo (its files come from the host resolver). **Paste** reads `application/x-docstream+json`, registers the files in a demo VFS under `pasted/…`, and renders the src-only tag from the VFS — through the site's almost-node runtime.",
+  "status": "Clipboard",
+  "height": 640
+}

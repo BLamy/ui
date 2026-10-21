@@ -11,6 +11,12 @@
     },
     {
       "path": "./registry"
+    },
+    {
+      "path": "./packages/docstream-editor/demo"
+    },
+    {
+      "path": "./packages/docstream/demo"
     }
   ]
 }

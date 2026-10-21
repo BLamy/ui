@@ -1,6 +1,6 @@
-/* BL UI documentation shell — a port of the original HTML design prototype. */
+/* BL UI documentation shell — a port of the original HTML design prototype. The site (../site/site.tsx) puts its header
+   above it and owns the theme. */
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
-import { AppearanceProvider, type Appearance } from '@/lib/theme';
 import { GitbookStreamdown } from '@brett_lamy/docstream';
 import { BLOCK_COUNT, demoResolver } from '../demos';
 import { BLOCK_ORDER, BLOCK_PAGES, isBlockPage, NAV, PAGES, PAGE_ORDER, pageMdPath, pageSource, pageUrl, SITE_URL } from '../pages';
@@ -15,30 +15,6 @@ function slugFromHash(): string {
   const id = window.location.hash.replace(/^#\/?/, '');
   return PAGES[id] ? id : 'introduction';
 }
-const THEME_KEY = 'bldocs-theme';
-
-/* `?theme=` wins (handy for links and screenshots), then the saved choice, then the OS preference. */
-function initialAppearance(): Appearance {
-  if (typeof window === 'undefined') return 'light';
-  const q = new URLSearchParams(window.location.search).get('theme');
-  if (q === 'light' || q === 'dark') return q;
-  const saved = window.localStorage.getItem(THEME_KEY);
-  if (saved === 'light' || saved === 'dark') return saved;
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function ThemeToggle({ appearance, onToggle }: { appearance: Appearance; onToggle: () => void }) {
-  const dark = appearance === 'dark';
-  return (
-    <button className="dk-theme" onClick={onToggle} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-      title={dark ? 'Light mode' : 'Dark mode'}>
-      {dark
-        ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4.2" /><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" /></svg>
-        : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z" /></svg>}
-    </button>
-  );
-}
-
 function Logo({ size = 26 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 34 34" style={{ flexShrink: 0 }} aria-hidden="true">
@@ -53,7 +29,7 @@ function Logo({ size = 26 }: { size?: number }) {
   );
 }
 
-function NavHeader({ onClose, theme }: { onClose?: () => void; theme: ReactNode }) {
+function NavHeader({ onClose }: { onClose?: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '16px 16px 10px' }}>
       <Logo />
@@ -61,7 +37,6 @@ function NavHeader({ onClose, theme }: { onClose?: () => void; theme: ReactNode 
         <div style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '-.2px', lineHeight: 1.1 }}>BL UI</div>
         <div style={{ fontSize: 10.5, color: 'var(--dk-muted)', fontWeight: 600, letterSpacing: '.4px' }}>DOCUMENTATION</div>
       </div>
-      {theme}
       {onClose ? (
         <button onClick={onClose} aria-label="Close navigation" style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, color: 'var(--dk-muted)' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
@@ -148,14 +123,6 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
   const [navOpen, setNavOpen] = useState(false);
-  const [appearance, setAppearance] = useState<Appearance>(initialAppearance);
-  useEffect(() => { document.documentElement.dataset.theme = appearance; }, [appearance]);
-  const toggleTheme = () => setAppearance((a) => {
-    const next = a === 'dark' ? 'light' : 'dark';
-    window.localStorage.setItem(THEME_KEY, next);
-    return next;
-  });
-  const theme = <ThemeToggle appearance={appearance} onToggle={toggleTheme} />;
   const [w, setW] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1400));
   useEffect(() => {
     const onR = () => setW(window.innerWidth);
@@ -237,11 +204,10 @@ export default function App() {
   };
 
   return (
-    <AppearanceProvider value={appearance}>
-    <div style={{ height: '100vh', display: 'flex', overflow: 'hidden' }}>
+    <div style={{ height: '100%', display: 'flex', overflow: 'hidden' }}>
       {fixedNav ? (
         <div style={{ width: 262, flexShrink: 0, background: 'var(--dk-side)', borderRight: '1px solid var(--dk-border)', display: 'flex', flexDirection: 'column' }}>
-          <NavHeader theme={theme} />
+          <NavHeader />
           <NavList slug={slug} pick={pick} lastDoc={lastDoc.current} />
           <NavFooter />
         </div>
@@ -254,7 +220,6 @@ export default function App() {
             </button>
             <span style={{ fontSize: 13.5, fontWeight: 700 }}>BL UI Docs</span>
             <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--dk-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>/ {page.title}</span>
-            {theme}
           </div>
         ) : null}
         <div id={SCROLL_ID} className="dk-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
@@ -285,13 +250,12 @@ export default function App() {
         <div>
           <div onClick={() => setNavOpen(false)} style={scrimStyle} />
           <div style={drawerStyle}>
-            <NavHeader theme={theme} onClose={() => setNavOpen(false)} />
+            <NavHeader onClose={() => setNavOpen(false)} />
             <NavList slug={slug} pick={pick} lastDoc={lastDoc.current} />
             <NavFooter />
           </div>
         </div>
       ) : null}
     </div>
-    </AppearanceProvider>
   );
 }

@@ -9,7 +9,7 @@ import '@brett_lamy/registry/styles.css';
 import '@brett_lamy/docstream/styles.css';
 import { DemoFullscreen, demoFromSearch } from '@brett_lamy/docstream';
 import { AppearanceProvider } from '@/lib/theme';
-import App from './app/app';
+import Site from './site/site';
 import RenderPage from './app/render-page';
 import { demoResolver } from './demos';
 import MotionTools, { initMotionTools } from './motion-tools';
@@ -24,6 +24,15 @@ const root = ReactDOM.createRoot(
 /* `?demo=<page>/<example>` (or `blocks/<slug>`, with `&variant=`) renders one demo full screen — the demo viewer's
    "Open in new tab" link. `&theme=dark|light`, else the docs' saved / OS appearance. */
 const demo = demoFromSearch();
+/* A library's own demos are namespaced: `?demo=docstream:<page>/<example>` (its docs site writes those links). */
+const LIBRARY_DEMOS = {
+  docstream: () => import('docstream-playground/demos'),
+  'docstream-editor': () => import('docstream-editor-playground/demos'),
+} as const;
+const libraryDemo = demo && /^(docstream-editor|docstream):(.+)$/.exec(demo.src);
+const LibraryDemo = libraryDemo ? lazy(() => LIBRARY_DEMOS[libraryDemo[1] as keyof typeof LIBRARY_DEMOS]().then((m) => ({
+  default: () => <DemoFullscreen src={libraryDemo[2]} variant={demo?.variant} resolver={m.demoResolver} style={{ width: '100vw', height: '100dvh' }} />,
+}))) : null;
 const search = new URLSearchParams(window.location.search);
 /* `?render[&resolver=0]` renders arbitrary docstream Markdown like a page (the Copy page round-trip check). */
 const render = search.has('render');
@@ -41,6 +50,10 @@ root.render(
       <AppearanceProvider value={appearance}>
         <Suspense fallback={null}><E2eHarness name={harness} /></Suspense>
       </AppearanceProvider>
+    ) : LibraryDemo ? (
+      <AppearanceProvider value={appearance}>
+        <div data-docstream=""><Suspense fallback={null}><LibraryDemo /></Suspense></div>
+      </AppearanceProvider>
     ) : demo ? (
       <AppearanceProvider value={appearance}>
         <DemoFullscreen src={demo.src} variant={demo.variant} resolver={demoResolver} style={{ width: '100vw', height: '100dvh' }} />
@@ -49,7 +62,7 @@ root.render(
       <AppearanceProvider value={appearance}>
         <RenderPage resolver={search.get('resolver') !== '0'} />
       </AppearanceProvider>
-    ) : <App />}
+    ) : <Site />}
     <MotionTools initiallyOpen={motionParams} />
   </StrictMode>,
 );
