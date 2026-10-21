@@ -3,21 +3,24 @@
    recommendations, Wi-Fi networks with a QR code, and developer sign-in buttons that run a real device-code login
    (GitHub, Fly.io, Netlify, Replay) and keep the token encrypted with a passkey. Wide: three tiled columns. Tablet: list + detail with the sidebar floating. Phone: one column at
    a time, pushed like iOS. All sample data is invented. */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PasskeyEnrollDialog } from '@/components/ui/passkey-enroll-dialog';
 import { SplitView, SplitViewDetail, SplitViewSidebar, SplitViewSupplementary, type SplitViewSelection } from '@/components/ui/split-view';
 import { Toaster, createToastQueue } from '@/components/ui/toast';
 import { BLProvider, useAppearance } from '@/lib/theme';
+import type { Tailscale } from '@/lib/tailscale';
+import { TailscaleProvider, useOptionalTailscale } from '@/lib/tailscale-react';
 import type { Vault as PasskeyVault } from '@/lib/vault';
 import { VaultProvider } from '@/lib/vault-react';
 import type { CategoryId } from './data';
 import { Detail } from './detail';
-import { SERVICES, deviceAuth, type DeviceAuth, type DeviceGrant, type ServiceId } from './device-auth';
+import { SERVICES, createDeviceAuth, type DeviceAuth, type DeviceGrant, type ServiceId } from './device-auth';
 import { ItemList } from './item-list';
 import { useClock } from './parts';
 import { Sidebar } from './sidebar';
 import { SignInCredenza, serviceItemId } from './sign-in';
 import { SignInsProvider, useSignInStore } from './sign-ins';
+import { passwordsTailnetOptions, tailnetOrProxy } from './tailnet';
 import { firstEntry, sectionsFor, useVault, type Selection } from './vault';
 
 /** Passwords' accent: iOS system blue (light #007AFF, dark #0A84FF). */
@@ -32,9 +35,13 @@ export interface ApplePasswordsProps {
   initialItem?: string;
   /** Advance the verification-code clock (with Date.now). Pass false for still frames (screenshots). Default true. */
   live?: boolean;
-  /** Runs the Developer Sign-In buttons' device flows and checks their tokens. Defaults to the real flows through
-      almostnode's CORS proxy; `createDeviceAuth({ fetch })` picks the transport, `createDemoDeviceAuth()` fakes it. */
+  /** Runs the Developer Sign-In buttons' device flows and checks their tokens. Defaults to the real flows: through the
+      tailnet when this tab is signed in to Tailscale with an exit node online, else almostnode's CORS proxy.
+      `createDeviceAuth({ fetch })` picks the transport, `createDemoDeviceAuth()` fakes it. */
   auth?: DeviceAuth;
+  /** The Tailscale controller the sign-ins may use. Default: one sharing the Safari block's saved node (restored without
+      a prompt when there is one). `false`: always the CORS proxy. */
+  tailscale?: Tailscale | false;
   /** Open the sign-in sheet for this service on load. */
   initialSignIn?: ServiceId;
   /** The passkey vault the sign-ins are encrypted in. Defaults to one named `apple-passwords-sign-ins` in IndexedDB. */
@@ -43,17 +50,22 @@ export interface ApplePasswordsProps {
 
 const PASSKEY_VAULT = { id: 'apple-passwords-sign-ins', rp: { name: 'Passwords' }, userName: 'Developer sign-ins' };
 
-export default function ApplePasswords({ passkeyVault, ...props }: ApplePasswordsProps) {
-  return (
+export default function ApplePasswords({ passkeyVault, tailscale, ...props }: ApplePasswordsProps) {
+  const app = (
     <VaultProvider vault={passkeyVault} options={PASSKEY_VAULT}>
       <Passwords {...props} />
     </VaultProvider>
   );
+  // A demo auth needs no network; otherwise the sign-ins may go through the tailnet.
+  if (tailscale === false || props.auth) return app;
+  return tailscale ? <TailscaleProvider tailscale={tailscale}>{app}</TailscaleProvider> : <TailscaleProvider options={passwordsTailnetOptions()}>{app}</TailscaleProvider>;
 }
 
 const formatDay = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-function Passwords({ initialCategory = 'all', initialItem, live = true, auth = deviceAuth, initialSignIn }: Omit<ApplePasswordsProps, 'passkeyVault'>) {
+function Passwords({ initialCategory = 'all', initialItem, live = true, auth: authProp, initialSignIn }: Omit<ApplePasswordsProps, 'passkeyVault' | 'tailscale'>) {
+  const tailnet = useOptionalTailscale();
+  const auth = useMemo(() => authProp ?? createDeviceAuth({ fetch: tailnetOrProxy(tailnet) }), [authProp, tailnet]);
   const dark = useAppearance() === 'dark';
   const vault = useVault();
   const now = useClock(live);

@@ -340,7 +340,6 @@ export function createDeviceAuth({ fetch: f = corsProxy() }: { fetch?: Fetch } =
   };
 }
 
-export const deviceAuth = createDeviceAuth();
 
 /* ── Demo ── an invented code (and an invented token) that approve a moment after the sheet's button is pressed,
    so the whole flow can be walked through without an account or a network. */

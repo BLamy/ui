@@ -73,6 +73,8 @@ export function useSignInStore(auth: DeviceAuth) {
     recheck: (id: ServiceId) => { const g = grants[id]; if (g) run(id, g); },
     /** Encrypted in the vault, rather than held for this page. */
     isSaved: (id: ServiceId) => id in saved && !(id in session),
+    /** False while an unlocked vault is still decrypting the saved sign-ins. */
+    loaded: passkeys.status !== 'unlocked' || meta.status === 'ready' || meta.status === 'error',
     passkeys,
   };
 }

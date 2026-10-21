@@ -2,7 +2,10 @@
    service buttons open a Credenza that morphs Requesting → the code and the button that opens the service →
    Signed In (or an error with Try Again). The token is kept by the sign-in store (sign-ins.tsx) and shown as an
    item whose detail starts with ServiceCard: who the token belongs to and what it can see, fetched with it. */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import type { Tailscale } from '@/lib/tailscale';
+import { useOptionalTailscale } from '@/lib/tailscale-react';
+import { TailscaleLoginButton } from '@/components/ui/tailscale-login-button';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Credenza } from '@/components/ui/credenza';
@@ -13,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { SERVICES, type DeviceAuth, type DeviceGrant, type DevicePrompt, type ServiceId } from './device-auth';
 import { Card, CopyButton, SiteTile } from './parts';
 import { useSignIns, type SignInCheck } from './sign-ins';
+import { pickExitNode, tailnetReady } from './tailnet';
 
 /** The vault item a service's token is saved as. */
 export const serviceItemId = (id: ServiceId) => 'service-' + id;
@@ -59,7 +63,34 @@ export function ServiceButtons({ onOpen }: { onOpen: (id: ServiceId) => void }) 
           );
         })}
       </div>
+      <NetworkRow />
     </SplitViewSection>
+  );
+}
+
+const NO_TAILNET = () => () => {};
+function useTailnetSnapshot(t: Tailscale | null) {
+  return useSyncExternalStore(t?.subscribe ?? NO_TAILNET, () => t?.getSnapshot() ?? null, () => null);
+}
+
+/** Which way the sign-ins go: the tailnet (and its exit node) when it can carry them, else the CORS proxy. */
+function NetworkRow() {
+  const tailscale = useOptionalTailscale();
+  const snap = useTailnetSnapshot(tailscale);
+  if (!tailscale || !snap) return null;
+  const exit = tailnetReady(snap) ? snap.peers.find((p) => p.id === pickExitNode(snap)) : undefined;
+  return (
+    <div className="mt-2.5 flex items-center gap-2 px-1 text-caption text-muted-foreground" aria-live="polite">
+      <Icon name={exit ? 'check-circle-fill' : 'globe'} size={13} className={cn('shrink-0', exit && 'text-success')} />
+      <span className="min-w-0 flex-1">
+        {exit ? <>Signing in through Tailscale, via <span className="font-medium text-foreground">{exit.name.split('.')[0]}</span></>
+          : snap.status === 'connected' ? 'Tailscale has no exit node online, so sign-ins use a CORS proxy.'
+          : 'Sign-ins use a CORS proxy.'}
+      </span>
+      {exit ? null : snap.status === 'connected' ? null : (
+        <TailscaleLoginButton size="sm" variant="outline" labels={{ signIn: 'Use Tailscale' }} className="shrink-0" />
+      )}
+    </div>
   );
 }
 
