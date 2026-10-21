@@ -183,6 +183,30 @@ A normal click clears any marked state, then checks the empty box as `[x]`; righ
 Shift+F10 opens the icon state picker. `TaskCheckbox` and `TASK_STATE_ICONS` are exported from
 `@brett_lamy/docstream/tasks`; `TASK_STATES`, `getTaskState` and `taskMarker` from `/gitbook`.
 
+## Environment variables for examples
+
+A page lists the environment variables its examples need in its frontmatter:
+
+```markdown
+---
+env: [GITHUB_TOKEN, NETLIFY_AUTH_TOKEN]
+---
+```
+
+A `{% demo %}` or live code fence whose source mentions one of them (as a whole word) doesn't run
+when the page loads. It shows a gate, and its module isn't imported, until the values are loaded:
+
+- **From the host:** pass `envHost` to `GitbookStreamdown` / `DocsRenderer` / `MarkdownContent` /
+  `DocsSite`, a `DocstreamEnvHost`. Its `request(names)` resolves with the values it could get,
+  from a keychain or after a login; `label` names the gate's button and `describe(name)` adds a
+  hint beside each variable.
+- **Without a host:** the gate asks the reader for the values and keeps them in memory for the page.
+
+In-page demos read the values with `useDocstreamEnv().values`. Inline demos that run in almost-node,
+and live code fences, get them as `process.env.NAME` (`injectEnv` writes a module the entry imports
+first). Values loaded once are shared by every example on the page. `env` can also be passed as a
+render option, and `DocsSite` reads it from each page's frontmatter.
+
 ## Video and Replay QA embeds
 
 `embed` blocks accept direct `.mp4`, `.webm`, and `.ogg` assets, YouTube URLs,
