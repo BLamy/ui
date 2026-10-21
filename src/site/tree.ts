@@ -10,7 +10,8 @@
      and titles. Frontmatter `order` overrides the prefix.
    - A page's title is, in order: its SUMMARY.md label, frontmatter `title`, its first
      `# heading`, then the file name (`quick-start.md` → "Quick start"). Frontmatter
-     `description` is its lede and `hidden: true` keeps it out of the sidebar.
+     `description` is its lede, `hidden: true` keeps it out of the sidebar and `layout: wide`
+     gives it the full width.
    - Every other file in the docs root is an asset (`tree.assets`): DocsSite serves it to the
      pages, so `![logo](images/logo.svg)` or an OpenAPI block's `[api](specs/api.json)` loads
      the file from the VFS.
@@ -72,7 +73,7 @@ export interface BuildDocsTreeOptions {
 }
 
 /** Frontmatter keys that describe the page to the site rather than the reader. */
-export const SITE_FRONTMATTER_KEYS = ["title", "description", "order", "hidden", "icon", "env"] as const
+export const SITE_FRONTMATTER_KEYS = ["title", "description", "order", "hidden", "icon", "env", "layout"] as const
 
 const MARKDOWN = /\.(md|markdown|mdx)$/i
 const INDEX = /^(readme|index)$/i

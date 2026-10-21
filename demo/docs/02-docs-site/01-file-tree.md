@@ -57,6 +57,8 @@ Guides
 | Frontmatter `order: 3` | Overrides the prefix. For a folder, put it in the folder's README. |
 | No prefix, no `order` | After the ordered entries, alphabetically by title. |
 | Frontmatter `hidden: true` | Out of the sidebar and previous / next — but the URL, links and search still find it. |
+| Frontmatter `layout: wide` | The page gets the full width and no outline. |
+| Frontmatter `env` | Variables the page's examples need (see Environment variables). |
 | Loose pages at the root | Listed above the groups, after the home page. |
 
 ## Titles

@@ -206,6 +206,61 @@
   color: var(--ds-site-fg);
 }
 
+/* Header tabs: the site's sections (`tabs`). In the drawer they sit above the navigation. */
+.ds-site .ds-site-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ds-site .ds-site-tabs-header {
+  margin-left: 18px;
+  align-self: stretch;
+}
+
+.ds-site .ds-site-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--ds-site-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ds-site .ds-site-tab:hover {
+  background: var(--ds-site-hover);
+  color: var(--ds-site-fg);
+}
+
+.ds-site .ds-site-tab[aria-current="page"] {
+  color: var(--ds-site-fg);
+}
+
+.ds-site .ds-site-tabs-header .ds-site-tab[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: calc((var(--ds-site-header-h) - 31px) / -2);
+  left: 10px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+.ds-site .ds-site-tabs-drawer {
+  padding: 4px 12px 8px;
+  border-bottom: 1px solid var(--ds-site-border);
+}
+
+.ds-site .ds-site-tabs-drawer .ds-site-tab[aria-current="page"] {
+  background: var(--ds-site-hover);
+}
+
 /* Body: sidebar | scroller (article + outline) */
 .ds-site .ds-site-body {
   display: flex;
@@ -379,6 +434,14 @@
   flex: 1;
   min-width: 0;
   max-width: var(--ds-site-content-w);
+}
+
+.ds-site .ds-site-columns[data-layout="wide"] .ds-site-main {
+  max-width: var(--ds-site-wide-w, 1240px);
+}
+
+.ds-site .ds-site-columns[data-layout="wide"] .ds-site-toc {
+  display: none;
 }
 
 .ds-site .ds-site-article {
@@ -771,6 +834,10 @@
 
   .ds-site .ds-site-menu {
     display: inline-grid;
+  }
+
+  .ds-site .ds-site-tabs-header {
+    display: none;
   }
 
   .ds-site .ds-site-header {

@@ -41,6 +41,44 @@ export interface DocsSiteLink {
   icon?: ReactNode
 }
 
+/** A section of the site in the header, like GitBook's spaces: the sidebar shows only its pages. */
+export interface DocsSiteTab {
+  title: string
+  /** Slug prefix of its pages: `"blocks"` takes `blocks` and `blocks/…`. `""` takes every page no other tab claims. */
+  path: string
+  /** Where the tab goes. Default: the first of its pages in reading order. */
+  slug?: string
+}
+
+const trimPath = (p: string) => p.replace(/^\/+|\/+$/g, "")
+
+/** The tab a page belongs to: the longest `path` that prefixes its slug, else the catch-all (`""`) tab. */
+export function tabForSlug(tabs: readonly DocsSiteTab[], slug: string): DocsSiteTab | undefined {
+  let best: DocsSiteTab | undefined
+  for (const t of tabs) {
+    const p = trimPath(t.path)
+    if (p && (slug === p || slug.startsWith(`${p}/`)) && (!best || p.length > trimPath(best.path).length)) best = t
+  }
+  return best ?? tabs.find((t) => !trimPath(t.path))
+}
+
+/** The sidebar items whose pages belong to `tab` (groups and folders keep only those; empty ones go). */
+function navForTab(items: DocsNavItem[], tabs: readonly DocsSiteTab[], tab: DocsSiteTab): DocsNavItem[] {
+  const out: DocsNavItem[] = []
+  for (const item of items) {
+    if (item.kind === "link") {
+      if (tab === tabs.find((t) => !trimPath(t.path))) out.push(item)
+      continue
+    }
+    const children = navForTab(item.children, tabs, tab)
+    if (item.kind === "page") {
+      if (tabForSlug(tabs, item.slug) === tab) out.push({ ...item, children })
+      else out.push(...children)
+    } else if (children.length) out.push({ ...item, children })
+  }
+  return out
+}
+
 export interface DocsSiteProps extends Omit<DocRenderOptions, "pageActions"> {
   /** The files to publish: `{ path: content }` or `[{ path, content }]`. Only Markdown is kept. */
   files?: DocsFiles
@@ -53,6 +91,11 @@ export interface DocsSiteProps extends Omit<DocRenderOptions, "pageActions"> {
   logo?: ReactNode
   /** Header links (GitHub, npm, …). */
   links?: DocsSiteLink[]
+  /**
+   * Sections in the header (`[{ title: "Components", path: "" }, { title: "Blocks", path: "blocks" }]`): each owns the
+   * pages under its `path`, the sidebar and Previous / Next stay inside the current one, and search covers them all.
+   */
+  tabs?: DocsSiteTab[]
   /** `"hash"` (default): `#/guides/install`. `"history"`: real paths under `basePath`. `"memory"`: no URL. */
   routing?: DocsSiteRouting
   /** URL prefix for `routing="history"` (e.g. `"/docs"`). */
@@ -550,6 +593,7 @@ export function DocsSite(props: DocsSiteProps) {
     title,
     logo,
     links = [],
+    tabs,
     routing = "hash",
     basePath = "",
     initialPath,
@@ -701,9 +745,11 @@ export function DocsSite(props: DocsSiteProps) {
     go(a.dataset.dsSlug ?? "", a.dataset.dsHash ?? "")
   }
 
-  const index = shown ? tree.order.indexOf(shown) : -1
-  const prev = index > 0 ? tree.order[index - 1] : undefined
-  const next = index >= 0 ? tree.order[index + 1] : undefined
+  const activeTab = tabs?.length ? tabForSlug(tabs, shown?.slug ?? location.slug) : undefined
+  const order = activeTab ? tree.order.filter((p) => tabForSlug(tabs!, p.slug) === activeTab) : tree.order
+  const index = shown ? order.indexOf(shown) : -1
+  const prev = index > 0 ? order[index - 1] : undefined
+  const next = index >= 0 ? order[index + 1] : undefined
 
   const actions = shown ? (typeof pageActions === "function" ? pageActions(shown) : pageActions) : false
   const pageMarkdown = shown ? `# ${shown.title}\n\n${shown.description ? `${shown.description}\n\n` : ""}${shown.body}` : ""
@@ -748,7 +794,28 @@ export function DocsSite(props: DocsSiteProps) {
       {title ? <span className="ds-site-title">{title}</span> : null}
     </a>
   )
-  const navTree = <NavList items={tree.nav} current={shown?.slug ?? location.slug} href={(s) => href(s)} go={(s) => go(s)} />
+  const navItems = activeTab ? navForTab(tree.nav, tabs!, activeTab) : tree.nav
+  const navTree = <NavList items={navItems} current={shown?.slug ?? location.slug} href={(s) => href(s)} go={(s) => go(s)} />
+  const tabTarget = (t: DocsSiteTab) => t.slug ?? tree.order.find((p) => tabForSlug(tabs!, p.slug) === t)?.slug ?? trimPath(t.path)
+  const tabBar = (where: "header" | "drawer") => tabs?.length ? (
+    <nav className={`ds-site-tabs ds-site-tabs-${where}`} aria-label="Sections">
+      {tabs.map((t) => (
+        <a
+          key={t.title}
+          className="ds-site-tab"
+          href={href(tabTarget(t))}
+          aria-current={t === activeTab ? "page" : undefined}
+          onClick={(e) => {
+            if (!plainClick(e)) return
+            e.preventDefault()
+            go(tabTarget(t))
+          }}
+        >
+          {t.title}
+        </a>
+      ))}
+    </nav>
+  ) : null
 
   return (
     <div
@@ -764,6 +831,7 @@ export function DocsSite(props: DocsSiteProps) {
           <Menu size={18} aria-hidden="true" />
         </button>
         {brand}
+        {tabBar("header")}
         <div className="ds-site-header-spacer" />
         {search ? (
           <button type="button" className="ds-site-search-btn" onClick={() => setSearchOpen(true)} aria-label="Search documentation" aria-keyshortcuts="Meta+K Control+K">
@@ -796,7 +864,8 @@ export function DocsSite(props: DocsSiteProps) {
         </nav>
 
         <div className="ds-site-scroll" ref={scrollerRef}>
-          <div className="ds-site-columns">
+          {/* Frontmatter `layout: wide` widens the column (galleries, full-width demos) and drops the outline. */}
+          <div className="ds-site-columns" data-layout={shown?.frontmatter.layout === "wide" ? "wide" : undefined}>
             <main className="ds-site-main" ref={articleRef} onClick={onArticleClick}>
               {shown ? (
                 <article className="ds-site-article">
@@ -941,6 +1010,7 @@ export function DocsSite(props: DocsSiteProps) {
                 <X size={18} aria-hidden="true" />
               </button>
             </div>
+            {tabBar("drawer")}
             <div className="ds-site-sidebar-scroll">{navTree}</div>
             {sidebarFooter ? <div className="ds-site-sidebar-foot">{sidebarFooter}</div> : null}
           </nav>

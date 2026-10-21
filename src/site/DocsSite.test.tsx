@@ -36,6 +36,37 @@ const click = (el: Element | null) =>
   })
 
 describe("DocsSite", () => {
+  it("puts sections in the header as tabs; the sidebar and pager stay inside the current one", () => {
+    const files = {
+      "SUMMARY.md": "## Getting started\n\n* [Intro](README.md)\n* [Button](button.md)\n\n## Blocks\n\n* [Blocks](blocks/README.md)\n  * [Notes](blocks/notes.md)\n  * [Music](blocks/music.md)\n",
+      "README.md": "# Intro\n\nHi.",
+      "button.md": "# Button\n\nPress.",
+      "blocks/README.md": "# Blocks\n\nAll of them.",
+      "blocks/notes.md": "---\nlayout: wide\n---\n\n# Notes\n\nWide.",
+      "blocks/music.md": "# Music\n\nPlay.",
+    }
+    const tabs = [{ title: "Components", path: "" }, { title: "Blocks", path: "blocks" }]
+    render(<DocsSite files={files} tabs={tabs} routing="memory" initialPath="button" />)
+    const tabLinks = () => [...host.querySelectorAll(".ds-site-tabs-header .ds-site-tab")]
+    expect(tabLinks().map((a) => a.textContent)).toEqual(["Components", "Blocks"])
+    expect(tabLinks()[0]!.getAttribute("aria-current")).toBe("page")
+    expect(text(".ds-site-sidebar .ds-site-nav-link")).toEqual(["Intro", "Button"])
+    // The last Components page has no Next into Blocks.
+    expect(host.querySelector('.ds-site-pager-link[data-dir="next"]')).toBeNull()
+
+    click(tabLinks()[1]!)
+    expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Blocks")
+    expect(tabLinks()[1]!.getAttribute("aria-current")).toBe("page")
+    expect(text(".ds-site-sidebar .ds-site-nav-link")).toEqual(["Blocks", "Notes", "Music"])
+    expect(host.querySelector('.ds-site-pager-link[data-dir="prev"]')).toBeNull()
+
+    click(host.querySelector('.ds-site-pager-link[data-dir="next"]'))
+    expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Notes")
+    expect(host.querySelector(".ds-site-columns")?.getAttribute("data-layout")).toBe("wide")
+    // `layout` is site frontmatter: no property sheet for it.
+    expect(host.querySelector("[data-document-properties]")).toBeNull()
+  })
+
   it("builds the sidebar from the files and opens on the home page", () => {
     render(<DocsSite files={FILES} title="Acme" routing="memory" />)
     expect(text(".ds-site-nav-group-title")).toEqual(["Guides", "Reference"])

@@ -21,6 +21,22 @@ description: Branding, theme and colors, page actions, edit links, footers, per-
 
 `title` shows in the header and the browser tab (`"Install — Acme"`). `accentColor` recolors links, the active sidebar item, the breadcrumb, the outline marker and focus rings. Header links open in a new tab; with an `icon`, narrow layouts show the icon alone.
 
+## Sections in the header
+
+`tabs` puts the site's sections in the header, like GitBook's spaces. Each tab owns the pages under its `path` (`""` takes every page no other tab claims). The sidebar lists only the current tab's pages, Previous / Next stay inside it, and ⌘K search still covers everything. On a narrow screen the tabs move to the top of the navigation drawer.
+
+```tsx
+<DocsSite
+  files={files}
+  tabs={[
+    { title: "Components", path: "" },
+    { title: "Blocks", path: "blocks" },
+  ]}
+/>
+```
+
+A tab goes to its first page in reading order; set `slug` to send it somewhere else. A page with frontmatter `layout: wide` gets the full width (up to `--ds-site-wide-w`, 1240px) and no outline — for galleries and full-size demos.
+
 ## Light, dark and your own tokens
 
 The built-in palette has a light and a dark set. The header's switch flips them and remembers the choice in `localStorage`; `?theme=dark` in the URL wins for one visit (handy for screenshots).
