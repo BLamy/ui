@@ -1,14 +1,17 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AppearanceProvider } from '@/lib/theme';
-import { createDemoDeviceAuth, createDeviceAuth, corsProxy } from './device-auth';
+import { createVault } from '@/lib/vault';
+import { createDemoDeviceAuth } from './device-auth';
 import ApplePasswords from './page';
 
 const meta: Meta<typeof ApplePasswords> = {
   title: 'Blocks/Apple Passwords',
   component: ApplePasswords,
   parameters: { layout: 'fullscreen' },
-  // The code clock stands still so frames are repeatable; pass `live: true` to watch codes roll over.
+  // The code clock stands still so frames are repeatable; pass `live: true` to watch codes roll over. The Developer
+  // Sign-In buttons are real: they sign in to your accounts through almostnode's CORS proxy and, with a passkey, keep
+  // the tokens encrypted in this browser.
   args: { live: false },
 };
 export default meta;
@@ -58,19 +61,18 @@ export const Phone: Story = { render: (args) => <Frame width={390} height={844}>
 
 export const PhoneDark: Story = { render: (args) => dark(<Frame width={390} height={844}><ApplePasswords {...args} /></Frame>) };
 
-/** Developer Sign-In: GitHub's device code in the sheet. The demo flow approves when you press the button. */
+/** Developer Sign-In with an invented GitHub device code (the demo flow approves when you press the button). Every
+    other story runs the real flows. */
+/** The demo's invented tokens go in a vault of their own, never beside real sign-ins. */
+const demoVault = createVault({ id: 'apple-passwords-demo', rp: { name: 'Passwords' } });
+
 export const SignIn: Story = {
-  args: { initialSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }) },
+  args: { initialSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }), passkeyVault: demoVault },
   render: (args) => <Full><ApplePasswords {...args} /></Full>,
 };
 
 export const SignInPhone: Story = {
-  args: { initialSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }) },
+  args: { initialSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }), passkeyVault: demoVault },
   render: (args) => <Frame width={390} height={844}><ApplePasswords {...args} /></Frame>,
 };
 
-/** The real flows through almostnode's CORS proxy: the buttons sign in to your own accounts. */
-export const LiveSignIn: Story = {
-  args: { auth: createDeviceAuth({ fetch: corsProxy('https://almostnode-cors-proxy.langtail.workers.dev/?url=') }) },
-  render: (args) => <Full><ApplePasswords {...args} /></Full>,
-};

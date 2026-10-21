@@ -6312,7 +6312,7 @@
       "name": "apple-passwords",
       "type": "registry:block",
       "title": "Apple Passwords",
-      "description": "Apple's Passwords app: category tiles with counts (All, Passkeys, Codes, Wi-Fi, Security, Deleted) and shared groups, a searchable item list, and a detail with copy buttons, a password that morphs into view, verification codes with a countdown ring, a “Copied” HUD, edit mode, security recommendations by severity, Wi-Fi networks with a QR code, and Developer Sign-In buttons (GitHub, Fly.io, Netlify, Replay) that run a device-code login in a sheet and save the token as an item. Three columns on desktop, two on tablet, a pushed stack on phones; light and dark.",
+      "description": "Apple's Passwords app: category tiles with counts (All, Passkeys, Codes, Wi-Fi, Security, Deleted) and shared groups, a searchable item list, and a detail with copy buttons, a password that morphs into view, verification codes with a countdown ring, a “Copied” HUD, edit mode, security recommendations by severity, Wi-Fi networks with a QR code, and Developer Sign-In buttons (GitHub, Fly.io, Netlify, Replay) that run the real device-code logins through almostnode's CORS proxy, keep the tokens encrypted with a passkey, and check each token against its service. Three columns on desktop, two on tablet, a pushed stack on phones; light and dark.",
       "categories": [
         "application",
         "security"
@@ -6328,6 +6328,8 @@
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/passkey-enroll-dialog.json",
+        "https://blamy.github.io/ui/r/passkey-vault.json",
         "https://blamy.github.io/ui/r/progress-ring.json",
         "https://blamy.github.io/ui/r/qr-svg.json",
         "https://blamy.github.io/ui/r/search-field.json",
@@ -6364,6 +6366,11 @@
           "path": "registry/blocks/apple-passwords/sign-in.tsx",
           "type": "registry:component",
           "target": "components/blocks/apple-passwords/sign-in.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-passwords/sign-ins.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/sign-ins.tsx"
         },
         {
           "path": "registry/blocks/apple-passwords/parts.tsx",

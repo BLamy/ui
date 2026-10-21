@@ -6,8 +6,11 @@
    - Netlify  `netlify login`: an OAuth ticket the user authorizes; poll it, then exchange it for a token.
    - Replay   `replayio login`: an auth request keyed by a random hex key; poll it, then refresh through Auth0.
 
-   None of these endpoints send CORS headers, so a browser needs a proxy: pass `fetch: corsProxy(prefix)`. The block
-   defaults to `demoDeviceAuth`, which walks the same steps with an invented code and approves itself. */
+   None of these endpoints send CORS headers, so a browser goes through a proxy. Like almostnode, the default is
+   almostnode's CORS proxy, overridden by `localStorage.__corsProxyUrl` or `createDeviceAuth({ fetch })` (a desktop
+   shell or server can pass plain fetch). Once signed in, `check` proves the token still works — and refreshes
+   Replay's, which lasts an hour — by asking the service who it belongs to and listing a few of its things.
+   `createDemoDeviceAuth` walks the same steps with an invented code, for screenshots and tests. */
 
 export type ServiceId = 'github' | 'fly' | 'netlify' | 'replay';
 
@@ -44,6 +47,34 @@ export interface DeviceGrant {
   /** Who signed in: a login or an email, for the saved item's user name. */
   account: string;
   scope?: string;
+  /** Replay: the rotating Auth0 refresh token, and when the access token runs out (epoch ms). */
+  refreshToken?: string;
+  expiresAt?: number;
+  /** Epoch ms. */
+  createdAt: number;
+}
+
+/** What the token can see right now, fetched with it. */
+export interface DeviceProfile {
+  account: string;
+  name?: string;
+  avatar?: string;
+  /** A few of the account's things — repositories, apps, sites — the way the app builder lists them in its pickers. */
+  resources?: { label: string; items: string[] };
+}
+
+export interface CheckResult {
+  /** The grant to keep: a refreshed one when the service rotated the token. */
+  grant: DeviceGrant;
+  profile: DeviceProfile;
+}
+
+/** The service turned the token down (revoked, expired): sign in again. */
+export class TokenRejectedError extends Error {
+  constructor(service: string) {
+    super(`${service} no longer accepts this token. Sign in again.`);
+    this.name = 'TokenRejectedError';
+  }
 }
 
 export interface SignInOptions {
@@ -54,16 +85,27 @@ export interface SignInOptions {
 
 export interface DeviceAuth {
   signIn: (service: ServiceId, options: SignInOptions) => Promise<DeviceGrant>;
+  /** Uses the token: who it belongs to and a few of their things. Throws `TokenRejectedError` when it no longer works. */
+  check: (service: ServiceId, grant: DeviceGrant, signal: AbortSignal) => Promise<CheckResult>;
   /** Sends the user to the prompt's URL. Defaults to a new tab; the demo approves instead. */
   open?: (prompt: DevicePrompt) => void;
 }
 
 type Fetch = (url: string, init?: RequestInit) => Promise<Response>;
 
+/** almostnode's public CORS proxy (its `DEFAULT_CORS_PROXY_URL`). */
+export const DEFAULT_CORS_PROXY = 'https://almostnode-cors-proxy.langtail.workers.dev/?url=';
+
 /** A fetch that routes every request through a CORS proxy taking the target as an encoded suffix
-    (`https://proxy.example/?url=` + encodeURIComponent(url)). */
-export function corsProxy(prefix: string): Fetch {
-  return (url, init) => fetch(prefix + encodeURIComponent(url), init);
+    (`https://proxy.example/?url=` + encodeURIComponent(url)). Without a prefix it uses `localStorage.__corsProxyUrl`
+    (almostnode's override) or the default proxy, read on each request. */
+export function corsProxy(prefix?: string): Fetch {
+  return (url, init) => fetch(proxyPrefix(prefix) + encodeURIComponent(url), init);
+}
+
+function proxyPrefix(prefix?: string) {
+  if (prefix) return prefix;
+  try { return localStorage.getItem('__corsProxyUrl')?.trim() || DEFAULT_CORS_PROXY; } catch { return DEFAULT_CORS_PROXY; }
 }
 
 function sleep(ms: number, signal: AbortSignal) {
@@ -126,7 +168,7 @@ async function github(f: Fetch, o: SignInOptions): Promise<DeviceGrant> {
   }, o);
   const me: { login?: string } = await f('https://api.github.com/user', { signal: o.signal, headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/vnd.github+json' } })
     .then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
-  return { accessToken, scope, account: me.login ?? 'GitHub user' };
+  return { accessToken, scope, account: me.login ?? 'GitHub user', createdAt: Date.now() };
 }
 
 async function fly(f: Fetch, { signal, onPrompt }: SignInOptions): Promise<DeviceGrant> {
@@ -145,14 +187,33 @@ async function fly(f: Fetch, { signal, onPrompt }: SignInOptions): Promise<Devic
     const p = await f(`${api}/${encodeURIComponent(s.id)}`, { signal }).catch((e) => { if (signal.aborted) throw e; return null; });
     const token = p?.ok ? (await p.json() as { access_token?: string }).access_token : undefined;
     if (token) {
-      const viewer = await f('https://api.fly.io/graphql', {
-        method: 'POST', signal, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ query: '{ viewer { email } }' }),
-      }).then((r) => r.json() as Promise<{ data?: { viewer?: { email?: string } } }>).catch(() => ({} as { data?: { viewer?: { email?: string } } }));
-      return { accessToken: token, account: viewer.data?.viewer?.email ?? 'Fly.io user' };
+      const viewer = await flyGraphql<{ viewer?: { email?: string } }>(f, token, '{ viewer { ... on User { email } ... on Macaroon { email } } }', signal)
+        .catch(() => undefined);
+      return { accessToken: token, account: viewer?.viewer?.email ?? 'Fly.io user', createdAt: Date.now() };
     }
   }
   throw new Error('The sign-in expired. Try again.');
+}
+
+/** Fly's macaroon tokens (fm1r_/fm2_) go in a FlyV1 header; older personal tokens are Bearer — as flyctl does. */
+function flyAuthorization(token: string) {
+  const t = token.trim();
+  if (/^(FlyV1|Bearer)\s+/i.test(t)) return t;
+  return t.split(',').some((part) => ['fm1r', 'fm2'].includes(part.trim().split('_', 1)[0])) ? `FlyV1 ${t}` : `Bearer ${t}`;
+}
+
+async function flyGraphql<T>(f: Fetch, token: string, query: string, signal: AbortSignal): Promise<T> {
+  const r = await f('https://api.fly.io/graphql', {
+    method: 'POST', signal, headers: { 'Content-Type': 'application/json', Authorization: flyAuthorization(token) },
+    body: JSON.stringify({ query }),
+  });
+  if (r.status === 401 || r.status === 403) throw new TokenRejectedError('Fly.io');
+  if (!r.ok) throw new Error(`Fly.io answered ${r.status}.`);
+  const j = await r.json() as { data?: T; errors?: { message: string; extensions?: { code?: string } }[] };
+  // A bad token is a 200 whose errors say UNAUTHORIZED.
+  if (j.errors?.some((e) => e.extensions?.code === 'UNAUTHORIZED')) throw new TokenRejectedError('Fly.io');
+  if (!j.data) throw new Error(j.errors?.map((e) => e.message).join(', ') || 'Fly.io sent no data.');
+  return j.data;
 }
 
 async function netlify(f: Fetch, { signal, onPrompt }: SignInOptions): Promise<DeviceGrant> {
@@ -170,7 +231,7 @@ async function netlify(f: Fetch, { signal, onPrompt }: SignInOptions): Promise<D
     const x = await f(`${api}/${encodeURIComponent(id)}/exchange`, { method: 'POST', signal });
     if (x.status !== 201) throw new Error(`Netlify token exchange failed (${x.status}).`);
     const t = await x.json() as { access_token: string; user_email?: string };
-    return { accessToken: t.access_token, account: t.user_email ?? 'Netlify user' };
+    return { accessToken: t.access_token, account: t.user_email ?? 'Netlify user', createdAt: Date.now() };
   }
   throw new Error('The sign-in expired. Try again.');
 }
@@ -178,6 +239,52 @@ async function netlify(f: Fetch, { signal, onPrompt }: SignInOptions): Promise<D
 function jwtClaim(jwt: string, claim: string) {
   try { return JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))[claim] as string | undefined; } catch { return undefined; }
 }
+
+/* ── Checks: use the token, the way the app builder fills its pickers ── */
+async function getJson<T>(f: Fetch, url: string, service: string, signal: AbortSignal, headers: Record<string, string>): Promise<T> {
+  const r = await f(url, { signal, headers: { Accept: 'application/json', ...headers } });
+  if (r.status === 401 || r.status === 403) throw new TokenRejectedError(service);
+  if (!r.ok) throw new Error(`${service} answered ${r.status}.`);
+  return r.json() as Promise<T>;
+}
+
+const CHECKS: Record<ServiceId, (f: Fetch, g: DeviceGrant, signal: AbortSignal) => Promise<CheckResult>> = {
+  async github(f, g, signal) {
+    const h = { Authorization: `Bearer ${g.accessToken}`, Accept: 'application/vnd.github+json' };
+    const [me, repos] = await Promise.all([
+      getJson<{ login: string; name?: string | null; avatar_url?: string }>(f, 'https://api.github.com/user', 'GitHub', signal, h),
+      getJson<{ full_name: string }[]>(f, 'https://api.github.com/user/repos?sort=pushed&per_page=5', 'GitHub', signal, h),
+    ]);
+    return {
+      grant: { ...g, account: me.login },
+      profile: { account: me.login, name: me.name ?? undefined, avatar: me.avatar_url, resources: { label: 'Recently Pushed', items: repos.map((r) => r.full_name) } },
+    };
+  },
+  async fly(f, g, signal) {
+    const d = await flyGraphql<{ viewer?: { email?: string; name?: string }; apps?: { nodes?: { name: string }[] } }>(
+      f, g.accessToken, '{ viewer { ... on User { email name } ... on Macaroon { email } } apps(first: 5) { nodes { name } } }', signal);
+    const account = d.viewer?.email ?? g.account;
+    return { grant: { ...g, account }, profile: { account, name: d.viewer?.name, resources: { label: 'Apps', items: (d.apps?.nodes ?? []).map((a) => a.name) } } };
+  },
+  async netlify(f, g, signal) {
+    const h = { Authorization: `Bearer ${g.accessToken}` };
+    const api = 'https://api.netlify.com/api/v1';
+    const [me, sites] = await Promise.all([
+      getJson<{ email?: string; full_name?: string; avatar_url?: string }>(f, `${api}/user`, 'Netlify', signal, h),
+      getJson<{ name: string }[]>(f, `${api}/sites?per_page=5&sort_by=updated_at`, 'Netlify', signal, h),
+    ]);
+    const account = me.email ?? g.account;
+    return { grant: { ...g, account }, profile: { account, name: me.full_name, avatar: me.avatar_url, resources: { label: 'Sites', items: sites.map((x) => x.name) } } };
+  },
+  async replay(f, g, signal) {
+    // An hour-long access token: refresh it a minute before it runs out.
+    const grant = !g.expiresAt || g.expiresAt < Date.now() + 60_000
+      ? (g.refreshToken ? await replayRefresh(f, g.refreshToken, signal) : (() => { throw new TokenRejectedError('Replay'); })())
+      : g;
+    const t = grant.accessToken;
+    return { grant, profile: { account: grant.account, name: jwtClaim(t, 'name'), avatar: jwtClaim(t, 'picture') } };
+  },
+};
 
 async function replay(f: Fetch, { signal, onPrompt }: SignInOptions): Promise<DeviceGrant> {
   const key = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, '0')).join('');
@@ -203,21 +310,37 @@ async function replay(f: Fetch, { signal, onPrompt }: SignInOptions): Promise<De
     }
     refreshToken = j.data?.closeAuthRequest?.token;
   }
+  return replayRefresh(f, refreshToken, signal);
+}
+
+/** Auth0 rotates the refresh token on every exchange, so the new one replaces the old (as replayio does). */
+async function replayRefresh(f: Fetch, refreshToken: string, signal: AbortSignal): Promise<DeviceGrant> {
   const t = await f('https://webreplay.us.auth0.com/oauth/token', {
     method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ audience: 'https://api.replay.io', scope: 'openid profile', grant_type: 'refresh_token', client_id: REPLAY_AUTH0_CLIENT_ID, refresh_token: refreshToken }),
   });
-  const x = await t.json() as { access_token?: string; error?: string };
+  const x = await t.json().catch(() => ({})) as { access_token?: string; refresh_token?: string; error?: string };
+  if (x.error === 'invalid_grant' || t.status === 401 || t.status === 403) throw new TokenRejectedError('Replay');
   if (!x.access_token) throw new Error(`Replay token exchange failed${x.error ? `: ${x.error}` : ''}.`);
-  return { accessToken: x.access_token, account: jwtClaim(x.access_token, 'email') ?? jwtClaim(x.access_token, 'sub') ?? 'Replay user' };
+  const exp = Number(jwtClaim(x.access_token, 'exp'));
+  return {
+    accessToken: x.access_token, refreshToken: x.refresh_token ?? refreshToken, createdAt: Date.now(),
+    expiresAt: Number.isFinite(exp) ? exp * 1000 : Date.now() + 3_600_000,
+    account: jwtClaim(x.access_token, 'email') ?? jwtClaim(x.access_token, 'sub') ?? 'Replay user',
+  };
 }
 
 const FLOWS: Record<ServiceId, (f: Fetch, o: SignInOptions) => Promise<DeviceGrant>> = { github, fly, netlify, replay };
 
-/** The real flows. Pass `fetch: corsProxy(…)` in a browser; a desktop shell or server can use plain fetch. */
-export function createDeviceAuth({ fetch: f = (url, init) => fetch(url, init) }: { fetch?: Fetch } = {}): DeviceAuth {
-  return { signIn: (service, options) => FLOWS[service](f, options) };
+/** The real flows, through almostnode's CORS proxy unless you pass a `fetch`. */
+export function createDeviceAuth({ fetch: f = corsProxy() }: { fetch?: Fetch } = {}): DeviceAuth {
+  return {
+    signIn: (service, options) => FLOWS[service](f, options),
+    check: (service, grant, signal) => CHECKS[service](f, grant, signal),
+  };
 }
+
+export const deviceAuth = createDeviceAuth();
 
 /* ── Demo ── an invented code (and an invented token) that approve a moment after the sheet's button is pressed,
    so the whole flow can be walked through without an account or a network. */
@@ -246,9 +369,12 @@ export function createDemoDeviceAuth({ promptDelay = 700, approveDelay = 1600 } 
       });
       await sleep(approveDelay, signal);
       const token = { github: 'gho_', fly: 'fm2_', netlify: 'nfp_', replay: 'rpl_' }[service] + DEMO_CODES[service].replace('-', '').toLowerCase() + 'x'.repeat(24);
-      return { accessToken: token, account: DEMO_ACCOUNTS[service], scope: service === 'github' ? 'repo, read:org, gist' : undefined };
+      return { accessToken: token, account: DEMO_ACCOUNTS[service], scope: service === 'github' ? 'repo, read:org, gist' : undefined, createdAt: Date.now() };
+    },
+    async check(service, grant) {
+      const resources = { github: { label: 'Recently Pushed', items: ['juneokafor/garden-planner', 'juneokafor/dotfiles'] }, fly: { label: 'Apps', items: ['garden-planner-api'] },
+        netlify: { label: 'Sites', items: ['okafor-studio', 'garden-planner'] }, replay: undefined }[service];
+      return { grant, profile: { account: grant.account, name: 'June Okafor', resources } };
     },
   };
 }
-
-export const demoDeviceAuth = createDemoDeviceAuth();

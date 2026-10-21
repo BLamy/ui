@@ -14,6 +14,8 @@ export function useVault() {
     add: (account: Account) => setAccounts((list) => [...list, account]),
     /** Adds the account, or replaces the one with its id (signing in to a service again). */
     upsert: (account: Account) => setAccounts((list) => [...list.filter((a) => a.id !== account.id), account]),
+    /** Removes an item outright (a signed-out service), without a stop in Recently Deleted. */
+    drop: (id: string) => setAccounts((list) => (list.some((a) => a.id === id) ? list.filter((a) => a.id !== id) : list)),
     remove: (id: string) => {
       const a = accounts.find((x) => x.id === id);
       if (!a) return;

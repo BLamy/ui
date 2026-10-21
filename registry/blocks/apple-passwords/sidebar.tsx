@@ -20,7 +20,7 @@ const TILES: { id: CategoryId; label: string; icon: IconName; color: string }[] 
   { id: 'deleted', label: 'Deleted', icon: 'trash', color: '#FF9500' },
 ];
 
-export function Sidebar({ vault, onSignIn }: { vault: Vault; onSignIn: (id: ServiceId) => void }) {
+export function Sidebar({ vault, onOpenService }: { vault: Vault; onOpenService: (id: ServiceId) => void }) {
   const n = counts(vault);
   return (
     <>
@@ -38,7 +38,7 @@ export function Sidebar({ vault, onSignIn }: { vault: Vault; onSignIn: (id: Serv
               badge={vault.accounts.filter((a) => a.group === g.id).length} />
           ))}
         </SplitViewSection>
-        <ServiceButtons vault={vault} onSignIn={onSignIn} />
+        <ServiceButtons onOpen={onOpenService} />
         <div className="mt-5 flex items-center gap-2 px-2.5 text-[12.5px] text-muted-foreground">
           <span className="flex -space-x-1.5">
             {GROUPS[0].members.map((m) => <Avatar key={m.f} c={m} size={20} className="ring-2 ring-sidebar" />)}

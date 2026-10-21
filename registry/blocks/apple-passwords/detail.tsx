@@ -13,6 +13,8 @@ import { GROUPS, SEVERITY, type Account, type WifiNetwork } from './data';
 import {
   Card, CodeValue, CopyButton, DetailHeader, Field, PasswordValue, RevealButton, SiteTile, WifiTile, useCode, type CodeClock,
 } from './parts';
+import type { ServiceId } from './device-auth';
+import { ServiceCard } from './sign-in';
 import type { Entry, Vault } from './vault';
 
 export function Detail({ entry, vault, now, editing, onEditing }: {
@@ -51,7 +53,9 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
   const revealed = pinned || hover;
   const group = GROUPS.find((g) => g.id === a.group);
   const { code } = useCode(a.otp ?? '', now);
-  const edit = editing && !deleted;
+  // A signed-in service: its token is managed by the sign-in (Check Again, Sign Out), not edited by hand.
+  const service = a.token && !deleted ? a.id.slice('service-'.length) as ServiceId : null;
+  const edit = editing && !deleted && !service;
 
   const toggleEdit = () => {
     if (edit) {
@@ -66,7 +70,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
   return (
     <>
       <SplitViewHeader
-        trailing={deleted ? null : (
+        trailing={deleted || service ? null : (
           <Button variant={edit ? 'default' : 'ghost'} size="sm" onPress={toggleEdit} className={cn('mr-1 min-w-[58px]', !edit && 'text-primary')}>
             {edit ? 'Done' : 'Edit'}
           </Button>
@@ -95,6 +99,7 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
         ) : null}
 
         {a.issue && !deleted ? <IssueCard account={a} /> : null}
+        {service ? <ServiceCard id={service} /> : null}
 
         <Card>
           <Field label="User Name" trailing={!edit ? <CopyButton label="User Name" value={a.username} /> : null}>
