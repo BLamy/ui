@@ -74,6 +74,86 @@ export interface TailscaleConnectOptions {
    *  address. The bundled Go build panics (a nil connection closed in its dial race) when a name resolves to several
    *  addresses and one dial fails, so the name path is opt-in. */
   exitNodeDial?: 'address' | 'name';
+  /** Root certificates (PEM) the client verifies TLS with. The Go runtime in a browser has no certificate store, so without
+   *  them every HTTPS fetch fails with "x509: certificate signed by unknown authority". Default: Mozilla's CA store
+   *  (lib/tailscale-roots, ~180 KB, loaded with the client). A function is called once, at start. */
+  caCertificates?: string | (() => Promise<string>);
+}
+
+/** Where the client reads its root certificates: Go's x509 on js/wasm reads `SSL_CERT_FILE`, through `globalThis.fs`. */
+export const TAILSCALE_CERT_FILE = '/etc/ssl/cert.pem';
+
+type GoFs = Record<string, unknown> & {
+  open?: (path: string, flags: number, mode: number, cb: (err: unknown, fd?: number) => void) => void;
+  read?: (fd: number, buf: Uint8Array, offset: number, length: number, position: number | null, cb: (err: unknown, n?: number) => void) => void;
+  fstat?: (fd: number, cb: (err: unknown, stat?: unknown) => void) => void;
+  stat?: (path: string, cb: (err: unknown, stat?: unknown) => void) => void;
+  lstat?: (path: string, cb: (err: unknown, stat?: unknown) => void) => void;
+  close?: (fd: number, cb: (err: unknown) => void) => void;
+};
+
+let rootsBytes: Uint8Array | null = null;
+
+/** Gives the Go runtime the root certificates: a read-only file at TAILSCALE_CERT_FILE in its `fs` (the package's own `fs` is a
+ *  stub that fails every call, so x509 finds no roots), and SSL_CERT_FILE in the environment of every `Go` it creates. The
+ *  way almostnode's worker does it, without a whole virtual file system. Idempotent; later calls replace the bundle. */
+export function installTailscaleRoots(pem: string) {
+  rootsBytes = new TextEncoder().encode(pem);
+  const g = globalThis as { Go?: new () => { env?: Record<string, string> }; fs?: GoFs };
+  if (typeof g.Go === 'function' && !(g.Go as { blRoots?: boolean }).blRoots) {
+    const Base = g.Go;
+    const WithRoots = class extends Base {
+      static blRoots = true;
+      constructor() {
+        super();
+        this.env = { ...this.env, SSL_CERT_FILE: TAILSCALE_CERT_FILE };
+      }
+    };
+    g.Go = WithRoots;
+  }
+  const base = g.fs;
+  if (!base || base.blRoots) return;
+  const files = new Map<number, { pos: number }>();
+  let nextFd = 0x7f00;
+  const stat = () => {
+    const now = Date.now();
+    return { dev: 0, ino: 0, mode: 0o100444, nlink: 1, uid: 0, gid: 0, rdev: 0, size: rootsBytes!.length, blksize: 4096, blocks: Math.ceil(rootsBytes!.length / 512), atimeMs: now, mtimeMs: now, ctimeMs: now };
+  };
+  const ours = (path: string) => path === TAILSCALE_CERT_FILE && rootsBytes !== null;
+  g.fs = Object.assign(Object.create(base) as GoFs, {
+    blRoots: true,
+    open(path: string, flags: number, mode: number, cb: (err: unknown, fd?: number) => void) {
+      if (!ours(path)) return base.open?.(path, flags, mode, cb);
+      const fd = nextFd++;
+      files.set(fd, { pos: 0 });
+      cb(null, fd);
+    },
+    fstat(fd: number, cb: (err: unknown, stat?: unknown) => void) {
+      if (!files.has(fd)) return base.fstat?.(fd, cb);
+      cb(null, stat());
+    },
+    stat(path: string, cb: (err: unknown, stat?: unknown) => void) {
+      if (!ours(path)) return base.stat?.(path, cb);
+      cb(null, stat());
+    },
+    lstat(path: string, cb: (err: unknown, stat?: unknown) => void) {
+      if (!ours(path)) return base.lstat?.(path, cb);
+      cb(null, stat());
+    },
+    read(fd: number, buf: Uint8Array, offset: number, length: number, position: number | null, cb: (err: unknown, n?: number) => void) {
+      const file = files.get(fd);
+      if (!file) return base.read?.(fd, buf, offset, length, position, cb);
+      const from = position ?? file.pos;
+      const chunk = rootsBytes!.subarray(from, from + length);
+      buf.set(chunk, offset);
+      if (position === null) file.pos = from + chunk.length;
+      cb(null, chunk.length);
+    },
+    close(fd: number, cb: (err: unknown) => void) {
+      if (!files.delete(fd)) return base.close?.(fd, cb);
+      cb(null);
+    },
+  });
 }
 
 /** Records the WebSockets a client instance opens (control, DERP), so a dead instance's can be closed: after a Go panic their
@@ -197,7 +277,14 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
   return {
     async start(o) {
       if (!options.wasmURL) throw new Error('createTailscaleConnectClient needs `wasmURL` (where main.wasm is served).');
-      const mod = await (options.load ?? (() => import('@agent-wasm/tailscale-connect') as unknown as Promise<TailscaleConnectModule>))();
+      const [mod, roots] = await Promise.all([
+        (options.load ?? (() => import('@agent-wasm/tailscale-connect') as unknown as Promise<TailscaleConnectModule>))(),
+        typeof options.caCertificates === 'string' ? options.caCertificates
+          : options.caCertificates ? options.caCertificates()
+          : import('@/lib/tailscale-roots').then((m) => m.default),
+      ]);
+      // After the module: it defines the `Go` class and its stub `fs`, which this extends.
+      installTailscaleRoots(roots);
       const state = new Map(Object.entries(o.state ?? {}));
       if (o.exitNodeId) exitNodeId = o.exitNodeId;
       releaseSockets = trackSockets();

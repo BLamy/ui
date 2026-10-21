@@ -272,3 +272,42 @@ describe('exit nodes', () => {
   });
 });
 
+
+describe('root certificates', () => {
+  it("give every Go runtime SSL_CERT_FILE and serve the bundle from its fs, leaving other calls to the stub", async () => {
+    const { installTailscaleRoots, TAILSCALE_CERT_FILE } = await import('@/lib/tailscale-connect');
+    const g = globalThis as { Go?: unknown; fs?: unknown };
+    const saved = { Go: g.Go, fs: g.fs };
+    const enosys = () => Object.assign(new Error('not implemented'), { code: 'ENOSYS' });
+    g.Go = class { env: Record<string, string> = { HOME: '/' }; };
+    g.fs = { open: (_p: string, _f: number, _m: number, cb: (e: unknown) => void) => cb(enosys()), writeSync: () => 3 };
+    try {
+      installTailscaleRoots('-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n');
+      const Go = g.Go as new () => { env: Record<string, string> };
+      expect(new Go().env).toEqual({ HOME: '/', SSL_CERT_FILE: TAILSCALE_CERT_FILE });
+      const fs = g.fs as Record<string, (...a: unknown[]) => unknown>;
+      const call = <T>(name: string, ...args: unknown[]) => new Promise<T>((resolve, reject) => fs[name]!(...args, (e: unknown, v: T) => (e ? reject(e) : resolve(v))));
+      // os.ReadFile on js/wasm: open, fstat for the size, reads with position null until 0, close.
+      const fd = await call<number>('open', TAILSCALE_CERT_FILE, 0, 0);
+      const size = (await call<{ size: number; mode: number }>('fstat', fd)).size;
+      const buf = new Uint8Array(size + 8);
+      let got = 0;
+      for (let n = -1; n !== 0; got += n) n = await call<number>('read', fd, buf, got, 16, null);
+      await call('close', fd);
+      expect(new TextDecoder().decode(buf.subarray(0, got))).toContain('BEGIN CERTIFICATE');
+      expect(got).toBe(size);
+      await expect(call('open', '/etc/passwd', 0, 0)).rejects.toMatchObject({ code: 'ENOSYS' });
+      expect(fs.writeSync!(1, new Uint8Array(3))).toBe(3); // the stub's console output still works
+      installTailscaleRoots('x'); // idempotent: no second wrapper
+      expect(new Go().env.SSL_CERT_FILE).toBe(TAILSCALE_CERT_FILE);
+    } finally {
+      g.Go = saved.Go;
+      g.fs = saved.fs;
+    }
+  });
+
+  it('bundles Mozilla roots and loads them with the client', async () => {
+    const roots = (await import('@/lib/tailscale-roots')).default;
+    expect((roots.match(/-----BEGIN CERTIFICATE-----/g) ?? []).length).toBeGreaterThan(100);
+  });
+});

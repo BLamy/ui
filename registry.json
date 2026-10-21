@@ -4685,7 +4685,8 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/tailscale.json"
+        "https://blamy.github.io/ui/r/tailscale.json",
+        "https://blamy.github.io/ui/r/tailscale-roots.json"
       ],
       "files": [
         {
@@ -5967,6 +5968,23 @@
           "path": "packages/ui/src/lib/syntax.ts",
           "type": "registry:lib",
           "target": "lib/syntax.ts"
+        }
+      ]
+    },
+    {
+      "name": "tailscale-roots",
+      "type": "registry:lib",
+      "title": "Tailscale Roots",
+      "description": "Tailscale Roots — part of BL UI's library (lib/tailscale-roots.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/tailscale-roots.ts",
+          "type": "registry:lib",
+          "target": "lib/tailscale-roots.ts"
         }
       ]
     },
