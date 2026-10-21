@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DemoFullscreen, demoFromSearch } from '@brett_lamy/docstream';
 import { DocsSite, humanize, type BuildDocsTreeOptions } from '@brett_lamy/docstream/site';
@@ -30,6 +30,8 @@ const SITE = 'https://blamy.github.io/docstream-editor/';
 function App() {
   // Pages that declare `env: [GITHUB_TOKEN]` get it from a GitHub sign-in (see github-env.tsx).
   const github = useGithubEnv();
+  // Re-render the footer when the keychain changes (a token saved or forgotten).
+  const saved = useSyncExternalStore(github.keychain.subscribe, () => github.keychain.names.join(','));
   return (
     <>
     <DocsSite
@@ -48,7 +50,10 @@ function App() {
       envHost={github.host}
       pageActions={(page) => ({ transform: (md) => `${md.trim()}\n\n---\n\nSource: ${SITE}#/${page.slug}\n` })}
       editUrl={(page) => `${GITHUB}/edit/main/demo/docs/${page.path}`}
-      sidebarFooter={<>A folder of Markdown, published with docstream's <a href="https://blamy.github.io/docstream/#/docs-site">DocsSite</a>.</>}
+      sidebarFooter={<>
+        A folder of Markdown, published with docstream's <a href="https://blamy.github.io/docstream/#/docs-site">DocsSite</a>.
+        {saved ? <> Your keychain holds {saved.split(',').join(', ')}. <button type="button" className="gh-env-forget" onClick={() => void github.keychain.reset()}>Forget</button></> : null}
+      </>}
     />
     {github.dialog}
     </>

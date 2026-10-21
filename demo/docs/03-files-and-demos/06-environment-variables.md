@@ -13,7 +13,7 @@ env: [GITHUB_TOKEN]
 ---
 ```
 
-A `{% demo %}` whose code mentions one of them doesn't run until the value is there: it shows a gate, and its module isn't imported. This page declares `GITHUB_TOKEN`, so the example below waits too. Press **Sign in with GitHub**, enter the device code at github.com (or paste a token), and it runs. The token stays in this tab and is sent only to `api.github.com`.
+A `{% demo %}` whose code mentions one of them doesn't run until the value is there: it shows a gate, and its module isn't imported. This page declares `GITHUB_TOKEN`, so the example below waits too. Press **Sign in with GitHub**, create a passkey for this site's keychain, enter the device code at github.com (or paste a token), and it runs. The token is saved in the keychain, encrypted with your passkey, and is sent only to `api.github.com`. Next time the button says **Unlock with Passkey**: one biometric prompt opens every example whose variables are saved. The keychain is docstream's `createEnvKeychain` and `keychainEnvHost`.
 
 {% demo src="demos-env/editor" %}
 

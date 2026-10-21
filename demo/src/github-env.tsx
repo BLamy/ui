@@ -1,14 +1,15 @@
-/* The demo site's DocstreamEnvHost: it answers GITHUB_TOKEN by signing in to GitHub with a device code (RFC 8628, the
-   GitHub CLI's flow) or with a token you paste. GitHub's login endpoints send no CORS headers, so the device flow goes
-   through almostnode's public CORS proxy; the token itself is only ever sent to api.github.com. It is kept in
-   sessionStorage, so it lasts for this tab. A real site would keep it in a keychain instead (see the BL UI docs). */
+/* The demo site's DocstreamEnvHost: variables live in a passkey keychain (docstream's createEnvKeychain), encrypted with
+   your fingerprint or face. GITHUB_TOKEN, when the keychain doesn't hold it yet, comes from signing in to GitHub with a
+   device code (RFC 8628, the GitHub CLI's flow) or a token you paste. GitHub's login endpoints send no CORS headers, so
+   the device flow goes through almostnode's public CORS proxy; the token itself is only ever sent to api.github.com.
+   Next visit, the gate says "Unlock with Passkey": one biometric prompt opens every example whose variables are saved. */
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import type { DocstreamEnvHost } from '@brett_lamy/docstream';
+import { createEnvKeychain, keychainEnvHost, type DocstreamEnvHost, type EnvKeychain } from '@brett_lamy/docstream';
 
 const PROXY = 'https://almostnode-cors-proxy.langtail.workers.dev/?url=';
 const CLIENT_ID = 'Ov23li3di39s0mmKf6HE'; // a public OAuth app with the device flow enabled
 const SCOPE = 'read:user repo';
-const STORAGE_KEY = 'docstream-editor-demo-github-token';
+const KEYCHAIN_ID = 'docstream-editor-demo';
 
 const viaProxy = (url: string, body: Record<string, string>, signal: AbortSignal) =>
   fetch(PROXY + encodeURIComponent(url), {
@@ -49,24 +50,19 @@ async function deviceFlow(signal: AbortSignal, onPrompt: (p: Prompt) => void): P
 type Pending = { resolve: (token: string) => void; reject: (e: Error) => void };
 
 /** The host and the dialog it opens. Render `dialog` once anywhere in the page. */
-export function useGithubEnv(): { host: DocstreamEnvHost; dialog: ReactNode } {
+export function useGithubEnv(): { host: DocstreamEnvHost; keychain: EnvKeychain; dialog: ReactNode } {
   const [pending, setPending] = useState<Pending | null>(null);
-  const host = useRef<DocstreamEnvHost>({
-    label: 'Sign in with GitHub',
+  const keychain = useRef(createEnvKeychain({ id: KEYCHAIN_ID, rpName: 'docstream-editor docs', userName: 'Demo tokens' })).current;
+  const host = useRef<DocstreamEnvHost>(keychainEnvHost(keychain, {
+    signInLabel: 'Sign in with GitHub',
     describe: (name) => (name === 'GITHUB_TOKEN' ? 'GitHub device sign-in, or paste a token' : undefined),
-    request: (names) => {
-      if (!names.includes('GITHUB_TOKEN')) return Promise.resolve({});
-      let saved: string | null = null;
-      try { saved = sessionStorage.getItem(STORAGE_KEY); } catch { /* storage off */ }
-      if (saved) return Promise.resolve({ GITHUB_TOKEN: saved });
-      return new Promise<string>((resolve, reject) => setPending({ resolve, reject })).then((token) => {
-        try { sessionStorage.setItem(STORAGE_KEY, token); } catch { /* storage off: this page only */ }
-        return { GITHUB_TOKEN: token };
-      });
-    },
-  }).current;
+    // Only for what the keychain doesn't hold; what this returns is saved in it.
+    obtain: (names) => names.includes('GITHUB_TOKEN')
+      ? new Promise<string>((resolve, reject) => setPending({ resolve, reject })).then((token) => ({ GITHUB_TOKEN: token }))
+      : Promise.resolve({}),
+  })).current;
   const dialog = pending ? <GithubDialog pending={pending} onDone={() => setPending(null)} /> : null;
-  return { host, dialog };
+  return { host, keychain, dialog };
 }
 
 function GithubDialog({ pending, onDone }: { pending: Pending; onDone: () => void }) {
