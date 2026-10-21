@@ -1,21 +1,15 @@
-/* BL UI documentation shell — a port of the original HTML design prototype. */
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+/* BL UI documentation: docstream's DocsSite over the docs' Markdown. Components and Blocks are the header's tabs; the
+   sidebar comes from pages/nav.json (as a SUMMARY.md) and the blocks from pages/blocks.md, so every URL stays what it
+   was (`#/composer`, `#/blocks`, `#/blocks/apple-notes`). */
+import { useMemo, useState, type MouseEvent, type ReactNode } from 'react';
+import { DocstreamEnvProvider } from '@brett_lamy/docstream';
+import { DocsSite, type DocsPage, type DocsSiteTab } from '@brett_lamy/docstream/site';
 import { AppearanceProvider, type Appearance } from '@/lib/theme';
-import { GitbookStreamdown, documentEnv, parseMarkdown, type DocstreamEnvHost } from '@brett_lamy/docstream';
-import { BLOCK_COUNT, demoResolver } from '../demos';
-import { BLOCK_ORDER, BLOCK_PAGES, isBlockPage, NAV, PAGES, PAGE_ORDER, pageMdPath, pageSource, pageUrl, SITE_URL } from '../pages';
+import { demoResolver } from '../demos';
 import { EnvKeychain } from '../env-keychain';
+import { BLOCK_PAGES, NAV, SITE_BLOCKS, SITE_URL, pageMdPath, pageSource, pageUrl } from '../pages';
 import './shell.css';
 
-const SCROLL_ID = 'bldocs-scroll';
-const BLOCKS_ID = 'blocks';
-
-/* Routes live in the hash — `#/composer`, `#/blocks`, `#/blocks/apple-notes` — so every page has a link and GitHub Pages needs no rewrites. */
-function slugFromHash(): string {
-  if (typeof window === 'undefined') return 'introduction';
-  const id = window.location.hash.replace(/^#\/?/, '');
-  return PAGES[id] ? id : 'introduction';
-}
 const THEME_KEY = 'bldocs-theme';
 
 /* `?theme=` wins (handy for links and screenshots), then the saved choice, then the OS preference. */
@@ -26,18 +20,6 @@ function initialAppearance(): Appearance {
   const saved = window.localStorage.getItem(THEME_KEY);
   if (saved === 'light' || saved === 'dark') return saved;
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function ThemeToggle({ appearance, onToggle }: { appearance: Appearance; onToggle: () => void }) {
-  const dark = appearance === 'dark';
-  return (
-    <button className="dk-theme" onClick={onToggle} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-      title={dark ? 'Light mode' : 'Dark mode'}>
-      {dark
-        ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4.2" /><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" /></svg>
-        : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z" /></svg>}
-    </button>
-  );
 }
 
 function Logo({ size = 26 }: { size?: number }) {
@@ -54,249 +36,84 @@ function Logo({ size = 26 }: { size?: number }) {
   );
 }
 
-function NavHeader({ onClose, theme }: { onClose?: () => void; theme: ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '16px 16px 10px' }}>
-      <Logo />
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '-.2px', lineHeight: 1.1 }}>BL UI</div>
-        <div style={{ fontSize: 10.5, color: 'var(--dk-muted)', fontWeight: 600, letterSpacing: '.4px' }}>DOCUMENTATION</div>
-      </div>
-      {theme}
-      {onClose ? (
-        <button onClick={onClose} aria-label="Close navigation" style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, color: 'var(--dk-muted)' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-        </button>
-      ) : null}
-    </div>
-  );
+const TABS: DocsSiteTab[] = [
+  { title: 'Components', path: '' },
+  { title: 'Blocks', path: SITE_BLOCKS },
+];
+
+/* Links to another docs page are written as https://blamy.github.io/ui/#/<id> (so a copied page still works elsewhere);
+   in the site a plain click on one changes the hash, which DocsSite routes in place. */
+function followSiteLinks(e: MouseEvent) {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const href = (e.target as HTMLElement).closest('a')?.getAttribute('href') ?? '';
+  if (!href.startsWith(`${SITE_URL}/#/`)) return;
+  e.preventDefault();
+  window.location.hash = href.slice(SITE_URL.length + 1);
 }
 
-function NavItem({ id, title, slug, pick }: { id: string; title: string; slug: string; pick: (id: string) => void }) {
-  const active = id === slug;
-  return (
-    <button data-page={id} className="dk-nav" onClick={() => pick(id)}
-      aria-current={active ? 'page' : undefined}
-      style={active ? { background: 'var(--dk-active)', color: 'var(--dk-accent)', fontWeight: 600 } : undefined}>
-      {title}
-    </button>
-  );
+/** The docs as DocsSite's virtual file system: a SUMMARY.md for the sidebar, one file per page. */
+function docsFiles(): Record<string, string> {
+  const files: Record<string, string> = {};
+  const summary: string[] = ['# Table of contents', ''];
+  for (const { section, pages } of NAV.sections) {
+    summary.push(`## ${section}`, '');
+    for (const p of pages) {
+      summary.push(`* [${p.title}](${p.id}.md)`);
+      files[`${p.id}.md`] = pageSource(p.id);
+    }
+    summary.push('');
+  }
+  // Blocks: the overview, then one wide page per block.
+  summary.push('## Blocks', '', `* [Overview](${SITE_BLOCKS}/README.md)`);
+  files[`${SITE_BLOCKS}/README.md`] = `---\nlayout: wide\n---\n\n${pageSource(SITE_BLOCKS)}`;
+  for (const b of BLOCK_PAGES) {
+    const file = `${b.id}.md`;
+    summary.push(`* [${b.title}](${file})`);
+    files[file] = `---\nlayout: wide\n---\n\n${pageSource(b.id)}`;
+  }
+  files['SUMMARY.md'] = summary.join('\n') + '\n';
+  return files;
 }
 
-const sectionTitle: CSSProperties = { padding: '16px 10px 5px', fontSize: 10.5, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-muted)' };
-
-/** Components lists the docs; Blocks lists the blocks, one page each. */
-function NavList({ slug, pick, lastDoc }: { slug: string; pick: (id: string) => void; lastDoc: string }) {
-  const onBlocks = isBlockPage(slug);
-  return (
-    <div className="dk-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 10px 10px' }}>
-      <div className="dk-topnav">
-        <button className="dk-topnav-item" data-page="docs" aria-current={!onBlocks ? 'page' : undefined} onClick={() => pick(onBlocks ? lastDoc : slug)}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5" /></svg>
-          Components
-        </button>
-        <button className="dk-topnav-item" data-page={BLOCKS_ID} aria-current={onBlocks ? 'page' : undefined} onClick={() => pick(onBlocks ? slug : BLOCKS_ID)}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" /></svg>
-          Blocks
-          <span className="dk-topnav-count">{BLOCK_COUNT}</span>
-        </button>
-      </div>
-      {onBlocks ? (
-        <div>
-          <div style={sectionTitle}>Blocks</div>
-          <NavItem id={BLOCKS_ID} title="Overview" slug={slug} pick={pick} />
-          {BLOCK_PAGES.map((b) => <NavItem key={b.id} id={b.id} title={b.title} slug={slug} pick={pick} />)}
-        </div>
-      ) : NAV.sections.map((sec) => (
-        <div key={sec.section}>
-          <div style={sectionTitle}>{sec.section}</div>
-          {sec.pages.map((p) => <NavItem key={p.id} id={p.id} title={p.title} slug={slug} pick={pick} />)}
-        </div>
-      ))}
-    </div>
-  );
+/** A page's content, in the wrappers the docs' content styles hang on; pages that declare `env` get the keychain. */
+function renderPage(page: DocsPage, content: ReactNode) {
+  const wide = page.frontmatter.layout === 'wide';
+  const body = <div className={wide ? 'dk-doc dk-doc-wide' : 'dk-doc'} onClick={followSiteLinks}><div className="dk-md"><div className="wb-md">{content}</div></div></div>;
+  if (!Array.isArray(page.frontmatter.env) && typeof page.frontmatter.env !== 'string') return body;
+  return <EnvKeychain>{(host) => <DocstreamEnvProvider host={host}>{body}</DocstreamEnvProvider>}</EnvKeychain>;
 }
 
-function NavFooter() {
-  return (
-    <div style={{ padding: '12px 16px', borderTop: '1px solid var(--dk-border)', fontSize: 12, lineHeight: 1.9 }}>
-      <div><a href="https://github.com/BLamy/ui">GitHub repository →</a></div>
-      <div style={{ fontSize: 10.5, color: 'var(--dk-faint)', fontFamily: 'ui-monospace,Menlo,monospace', marginTop: 4 }}>rendered with Docstream</div>
-    </div>
-  );
-}
-
-/** One page: its Markdown file through docstream — demos from the resolver, "Copy page" from page actions. */
-function DocPage({ id, markdown }: { id: string; markdown: string }) {
-  // A page that declares `env` gets the keychain (and its Tailscale node) to load its examples' variables; others don't load it.
-  const needsEnv = useMemo(() => documentEnv(parseMarkdown(markdown)).length > 0, [markdown]);
-  const page = (envHost?: DocstreamEnvHost) => (
-    <div className="dk-md">
-      <div className="wb-md">
-        <GitbookStreamdown
-          markdown={markdown}
-          demoResolver={demoResolver}
-          envHost={envHost}
-          pageActions={{ markdownUrl: `${import.meta.env.BASE_URL}${pageMdPath(id)}`, pageUrl: pageUrl(id) }}
-        />
-      </div>
-    </div>
-  );
-  return needsEnv ? <EnvKeychain>{page}</EnvKeychain> : page();
-}
+const GITHUB = 'https://github.com/BLamy/ui';
 
 export default function App() {
-  const [slug, setSlug] = useState(slugFromHash);
-  useEffect(() => {
-    const onHash = () => { setSlug(slugFromHash()); setNavOpen(false); };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-  const [navOpen, setNavOpen] = useState(false);
+  const files = useMemo(docsFiles, []);
   const [appearance, setAppearance] = useState<Appearance>(initialAppearance);
-  useEffect(() => { document.documentElement.dataset.theme = appearance; }, [appearance]);
-  const toggleTheme = () => setAppearance((a) => {
-    const next = a === 'dark' ? 'light' : 'dark';
-    window.localStorage.setItem(THEME_KEY, next);
-    return next;
-  });
-  const theme = <ThemeToggle appearance={appearance} onToggle={toggleTheme} />;
-  const [w, setW] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1400));
-  useEffect(() => {
-    const onR = () => setW(window.innerWidth);
-    window.addEventListener('resize', onR);
-    return () => window.removeEventListener('resize', onR);
-  }, []);
-
-  const page = PAGES[slug];
-  const markdown = pageSource(slug);
-  useEffect(() => { document.title = `${page.title} — BL UI`; }, [page.title]);
-  // Prev / next stay inside the section you're reading: the component docs, or the blocks.
-  const order = isBlockPage(slug) ? BLOCK_ORDER : PAGE_ORDER;
-  const idx = order.indexOf(slug);
-  const prev = idx > 0 ? order[idx - 1] : null;
-  const next = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null;
-  // Components returns to the docs page you left for Blocks.
-  const lastDoc = useRef('introduction');
-  if (!isBlockPage(slug)) lastDoc.current = slug;
-  const toc: Array<{ text: string; h3: boolean }> = [];
-  let fenced = false;
-  markdown.split('\n').forEach((l) => {
-    if (l.startsWith('```')) fenced = !fenced;
-    if (fenced) return;
-    // A titled tab set (`{% tabs title="Installation" %}`) renders as an h2 section heading.
-    const m2 = l.match(/^## (.+)$/) ?? l.match(/^\{% tabs title="([^"]+)"/);
-    const m3 = l.match(/^### (.+)$/);
-    if (m2) toc.push({ text: m2[1].replace(/`/g, ''), h3: false });
-    else if (m3) toc.push({ text: m3[1].replace(/`/g, ''), h3: true });
-  });
-
-  const fixedNav = w >= 900;
-  const overlayNav = w < 900;
-  const hasToc = !page.wide && toc.length > 0 && w >= 1220;
-
-  const pick = (id: string) => {
-    if (!PAGES[id]) return;
-    if (window.location.hash !== '#/' + id) window.history.pushState(null, '', '#/' + id);
-    setSlug(id); setNavOpen(false);
-    setTimeout(() => { const sc = document.getElementById(SCROLL_ID); if (sc) sc.scrollTop = 0; }, 30);
-  };
-
-  /* Headings come from the page's Markdown only, so demos' own headings never shift the TOC index. */
-  const jumpHead = (index: number) => {
-    const sc = document.getElementById(SCROLL_ID); if (!sc) return;
-    const h = sc.querySelectorAll('.dk-md :is(h2, h3):not(.docs-demo *)')[index];
-    if (h) sc.scrollTop += h.getBoundingClientRect().top - sc.getBoundingClientRect().top - 22;
-  };
-
-  /* Links to another docs page (https://blamy.github.io/ui/#/<id> in the Markdown) navigate in place. */
-  const onDocClick = (e: MouseEvent) => {
-    const a = (e.target as HTMLElement).closest('a');
-    if (!a) return;
-    const href = a.getAttribute('href') || '';
-    const target = href.startsWith(`${SITE_URL}/#/`) ? href.slice(SITE_URL.length + 3) : null;
-    if (target && PAGES[target]) { e.preventDefault(); pick(target); }
-  };
-
-  const drawerStyle: CSSProperties = {
-    position: 'fixed', top: 0, bottom: 0, left: 0, width: 280, maxWidth: '85%', zIndex: 91, background: 'var(--dk-side)',
-    boxShadow: navOpen ? '0 0 44px rgba(0,0,0,.25)' : 'none', display: 'flex', flexDirection: 'column',
-    transform: navOpen ? 'none' : 'translateX(-102%)', transition: 'transform .38s cubic-bezier(.32,.72,0,1)',
-  };
-  const scrimStyle: CSSProperties = {
-    position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(0,0,0,.35)',
-    opacity: navOpen ? 1 : 0, pointerEvents: navOpen ? 'auto' : 'none', transition: 'opacity .3s',
-  };
-
-  const pn = (id: string | null, dir: 'prev' | 'next'): ReactNode => {
-    if (!id) return null;
-    return (
-      <button className="dk-pn" onClick={() => pick(id)}
-        style={dir === 'prev' ? { textAlign: 'left' } : { textAlign: 'right', marginLeft: 'auto' }}>
-        <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--dk-muted)', marginBottom: 3 }}>
-          {dir === 'prev' ? '← Previous' : 'Next →'}
-        </span>
-        <span style={{ display: 'block', fontSize: 14, fontWeight: 650, color: 'var(--dk-fg)' }}>{PAGES[id]?.title || id}</span>
-      </button>
-    );
-  };
-
   return (
     <AppearanceProvider value={appearance}>
-    <div style={{ height: '100vh', display: 'flex', overflow: 'hidden' }}>
-      {fixedNav ? (
-        <div style={{ width: 262, flexShrink: 0, background: 'var(--dk-side)', borderRight: '1px solid var(--dk-border)', display: 'flex', flexDirection: 'column' }}>
-          <NavHeader theme={theme} />
-          <NavList slug={slug} pick={pick} lastDoc={lastDoc.current} />
-          <NavFooter />
-        </div>
-      ) : null}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        {overlayNav ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', height: 50, borderBottom: '1px solid var(--dk-border)', background: 'var(--dk-bg)', flexShrink: 0 }}>
-            <button onClick={() => setNavOpen(true)} aria-label="Open navigation" style={{ border: 0, background: 'none', cursor: 'pointer', padding: 6, display: 'grid', color: 'var(--dk-icon)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16" /></svg>
-            </button>
-            <span style={{ fontSize: 13.5, fontWeight: 700 }}>BL UI Docs</span>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--dk-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>/ {page.title}</span>
-            {theme}
-          </div>
-        ) : null}
-        <div id={SCROLL_ID} className="dk-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-          <div className={page.wide ? 'dk-doc dk-doc-wide' : 'dk-doc'} onClick={onDocClick} style={{
-            maxWidth: page.wide ? 1240 : 780, margin: '0 auto', boxSizing: 'border-box',
-            padding: page.wide && w < 600 ? '26px 14px 90px' : '34px 34px 90px',
-          }}>
-            <div className="dk-pagehead">
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-accent)' }}>{page.section}</div>
-            </div>
-            <DocPage key={slug} id={slug} markdown={markdown} />
-            <div style={{ display: 'flex', gap: 12, marginTop: 44 }}>
-              {pn(prev, 'prev')}
-              {pn(next, 'next')}
-            </div>
-          </div>
-        </div>
-      </div>
-      {hasToc ? (
-        <div className="dk-scroll" style={{ width: 198, flexShrink: 0, minHeight: 0, overflowY: 'auto', boxSizing: 'border-box', padding: '36px 20px 20px', borderLeft: '1px solid var(--dk-border2)' }}>
-          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', color: 'var(--dk-muted)', marginBottom: 8 }}>On this page</div>
-          {toc.map((t, i) => (
-            <button key={i} className="dk-toc" onClick={() => jumpHead(i)} style={t.h3 ? { paddingLeft: 12 } : undefined}>{t.text}</button>
-          ))}
-        </div>
-      ) : null}
-      {overlayNav ? (
-        <div>
-          <div onClick={() => setNavOpen(false)} style={scrimStyle} />
-          <div style={drawerStyle}>
-            <NavHeader theme={theme} onClose={() => setNavOpen(false)} />
-            <NavList slug={slug} pick={pick} lastDoc={lastDoc.current} />
-            <NavFooter />
-          </div>
-        </div>
-      ) : null}
-    </div>
+      <DocsSite
+        files={files}
+        tabs={TABS}
+        title="BL UI"
+        logo={<Logo />}
+        links={[{ label: 'GitHub', href: GITHUB }]}
+        theme={appearance}
+        themeStorageKey={false}
+        onThemeChange={(next) => {
+          setAppearance(next);
+          window.localStorage.setItem(THEME_KEY, next);
+        }}
+        accentColor="#0A84FF"
+        demoResolver={demoResolver}
+        documentProperties={false}
+        pageActions={(page) => {
+          const id = page.slug || 'introduction';
+          return { markdownUrl: `${import.meta.env.BASE_URL}${pageMdPath(id)}`, pageUrl: pageUrl(id) };
+        }}
+        editUrl={(page) => (page.path.startsWith(`${SITE_BLOCKS}/`) ? undefined : `${GITHUB}/edit/main/apps/docs/pages/${page.path}`)}
+        documentTitle={(page) => `${page.title} — BL UI`}
+        renderPage={renderPage}
+        sidebarFooter={<span style={{ fontSize: 11, opacity: 0.7 }}>Rendered with Docstream</span>}
+      />
     </AppearanceProvider>
   );
 }

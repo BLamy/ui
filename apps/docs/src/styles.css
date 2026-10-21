@@ -313,6 +313,10 @@ a:hover {
 .dk-doc-wide .dk-md [data-docstream] [data-docstream-blocks] > .docs-demo {
   margin: 0 0 18px;
 }
+/* In DocsSite the column has no text padding to reach past. */
+.ds-site .dk-md [data-docstream] [data-docstream-blocks] > .docs-demo {
+  margin: 18px 0;
+}
 /* The single-file demo card (preview, code under it). */
 .dk-md .docs-demo-single .docs-react-demo {
   margin: 0;

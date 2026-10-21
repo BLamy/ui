@@ -64,6 +64,9 @@ function structure() {
       else lines.push(`${pad}${el.tagName.toLowerCase()}${el.className ? '.' + [...c][0] : ''}`);
     }
   };
+  // In the docs site the page's `# title` is the site's heading, outside the Markdown's blocks.
+  const siteTitle = document.querySelector('.ds-site-page-title');
+  if (siteTitle && article) lines.push(`h1 ${text(siteTitle)}`);
   if (article) walk(article, 0);
   return lines;
 }
@@ -81,7 +84,7 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 1400, height: 900 }, permissions: ['clipboard-read', 'clipboard-write'] });
 const settle = async (page) => {
   await page.waitForTimeout(1200);
-  const h = await page.evaluate(() => document.getElementById('bldocs-scroll')?.scrollHeight ?? 900);
+  const h = await page.evaluate(() => (document.querySelector('.ds-site-scroll') ?? document.getElementById('bldocs-scroll'))?.scrollHeight ?? 900);
   await page.setViewportSize({ width: 1400, height: Math.min(h, 16000) });
   await page.waitForTimeout(1500);
 };

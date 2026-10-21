@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
-/* Every docs page, full length, opened from the sidebar; then the Blocks gallery. */
+/* Every docs page, full length (DocsSite scrolls inside .ds-site-scroll); then the Blocks gallery. */
 const BASE = process.env.DOCS_URL || 'http://localhost:4417';
 const NAV = JSON.parse(readFileSync(new URL('../../apps/docs/pages/nav.json', import.meta.url), 'utf8'));
 const pages = NAV.sections.flatMap((s) => s.pages.map((p) => p.id));
@@ -11,12 +11,11 @@ for (const id of pages) {
     await page.route(/arcgisonline|openstreetmap|tile\./, (route) => route.abort());
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 1400, height: 900 });
-    await page.goto(BASE, { waitUntil: 'load' });
-    await page.locator('.dk-nav').first().waitFor();
-    await page.locator(`.dk-nav[data-page="${id}"]`).first().click();
+    await page.goto(`${BASE}/#/${id}`, { waitUntil: 'load' });
+    await page.locator('.ds-site-article').first().waitFor();
     // Grow the viewport to the page's full height so the inner scroller shows everything.
     await page.waitForTimeout(1500);
-    const h = await page.evaluate(() => document.getElementById('bldocs-scroll')?.scrollHeight ?? 900);
+    const h = await page.evaluate(() => document.querySelector('.ds-site-scroll')?.scrollHeight ?? 900);
     await page.setViewportSize({ width: 1400, height: Math.min(h, 16000) });
     await page.waitForTimeout(1500);
     await expect(page.locator('[data-highlighter="pending"]')).toHaveCount(0, { timeout: 30000 });
@@ -37,7 +36,7 @@ for (const theme of ['light', 'dark']) {
     await page.setViewportSize({ width: 1400, height: 900 });
     await page.goto(`${BASE}/?theme=${theme}#/blocks`, { waitUntil: 'load' });
     await page.locator('[data-docstream-demo]').first().waitFor();
-    const h = await page.evaluate(() => document.getElementById('bldocs-scroll')?.scrollHeight ?? 900);
+    const h = await page.evaluate(() => document.querySelector('.ds-site-scroll')?.scrollHeight ?? 900);
     await page.setViewportSize({ width: 1400, height: Math.min(h, 16000) });
     // Each preview lazy-loads once it is near the viewport; wait until no card is still loading.
     await expect(page.locator('[data-docstream-demo] .docs-demo-loading')).toHaveCount(0, { timeout: 20000 });
