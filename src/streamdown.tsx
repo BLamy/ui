@@ -37,6 +37,8 @@ export function GitbookStreamdown({
   pageActions,
   documentProperties,
   onTaskStateChange,
+  envHost,
+  env,
 }: GitbookStreamdownProps) {
   const content = markdown ?? children ?? ""
   const gitbookDoc = useMemo(
@@ -63,6 +65,8 @@ export function GitbookStreamdown({
         pageActions={isStreaming ? false : pageActions}
         documentProperties={documentProperties}
         onTaskStateChange={onTaskStateChange}
+        envHost={envHost}
+        env={env}
       />
     </div>
   )

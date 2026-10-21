@@ -16,8 +16,8 @@ export interface InlineDemoPreviewProps extends InlineDemoRuntimeProps {
   workspaceOptions?: Partial<AlmostNodeWorkspaceOptions>
 }
 
-function filesKey(files: DemoFile[], entry: string, dependencies: Record<string, string> | undefined) {
-  return JSON.stringify([entry, dependencies ?? null, files.map((f) => [f.path, f.content])])
+function filesKey(files: DemoFile[], entry: string, dependencies: Record<string, string> | undefined, env: InlineDemoRuntimeProps["env"]) {
+  return JSON.stringify([entry, dependencies ?? null, env ?? null, files.map((f) => [f.path, f.content])])
 }
 
 export function InlineDemoPreview({
@@ -26,16 +26,17 @@ export function InlineDemoPreview({
   entry,
   variant,
   dependencies,
+  env,
   port = 4173,
   sandbox = "allow-scripts allow-same-origin allow-forms allow-modals",
   workspaceOptions,
 }: InlineDemoPreviewProps) {
   // Content-keyed so re-renders (variant switches, parent state) never restart Vite.
-  const key = filesKey(files, entry, dependencies)
+  const key = filesKey(files, entry, dependencies, env)
   const project = useMemo(
     () => {
       try {
-        return { value: createInlineDemoProject(files, { entry, dependencies }) }
+        return { value: createInlineDemoProject(files, { entry, dependencies, ...(env ? { env } : {}) }) }
       } catch (error) {
         return { error: error instanceof Error ? error.message : String(error) }
       }

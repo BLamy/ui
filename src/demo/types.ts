@@ -80,6 +80,8 @@ export interface InlineDemoRuntimeProps {
   variant?: string
   /** Extra npm dependencies (`{ "@brett_lamy/ui": "^1.2.0" }`) the files may import. */
   dependencies?: Record<string, string>
+  /** The page's environment variables this demo uses (frontmatter `env`), as `process.env` for the demo. */
+  env?: Readonly<Record<string, string>>
 }
 
 /**

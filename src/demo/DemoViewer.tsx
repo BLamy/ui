@@ -42,6 +42,7 @@ import { PathBreadcrumb } from "./PathBreadcrumb"
 import { languageForPath } from "./glob"
 import { useDemoVFSContext, useDemoVFSEntry, type DemoVFS } from "./vfs"
 import { cssToSurface, surfaceStyle, surfaceToCss } from "./surface"
+import { EnvGate, useEnvGate } from "../doc-env"
 import type { DemoComponent, DemoFile, DemoMeta, DemoResolver, DemoVariant, InlineDemoRuntime } from "./types"
 
 export interface DemoViewerProps {
@@ -275,6 +276,7 @@ type PreviewSource =
   | { kind: "runtime"; render: (variant: string | undefined) => ReactNode }
   | { kind: "streaming" }
   | { kind: "unavailable" }
+  | { kind: "env"; names: readonly string[]; title: string }
 
 export const NO_RUNTIME_NOTE = "Live preview needs the playground runtime. The code is shown instead."
 
@@ -292,6 +294,13 @@ function DemoCanvas({ src, preview, variant, bleed, look }: {
   bleed?: boolean
   look?: CanvasLook
 }) {
+  if (preview.kind === "env") {
+    return (
+      <div className="docs-demo-canvas docs-demo-canvas-env" data-variant={variant}>
+        <EnvGate names={preview.names} title={preview.title} />
+      </div>
+    )
+  }
   if (preview.kind === "unavailable" || preview.kind === "streaming") {
     return (
       <div className="docs-demo-note" role="note" data-variant={variant}>
@@ -733,7 +742,13 @@ export function DemoViewer(props: DemoViewerProps) {
   const hookResolver = tryResolver ? resolver : undefined
   const meta = useMeta(hookResolver, src)
   const resolvedFiles = useFiles(hookResolver, src, near)
-  const component = useComponent(hookResolver, src, near)
+  // Declared env variables the demo's sources use gate it: the module isn't even imported until they're loaded.
+  const sourceTexts = useMemo(() => {
+    const list = resolvedFiles.status === "ready" ? resolvedFiles.value : !tryResolver || resolvedFiles.status === "error" ? inlineFiles : null
+    return list ? list.map((f) => f.content) : null
+  }, [tryResolver, inlineFiles, resolvedFiles])
+  const envGate = useEnvGate(sourceTexts)
+  const component = useComponent(hookResolver, src, near && envGate.open)
   const resolverFailed = meta.status === "error" || resolvedFiles.status === "error" || component.status === "error"
   const mode: "resolver" | "inline" | "none" =
     tryResolver && !(inlineFiles && resolverFailed) ? "resolver" : inlineFiles ? "inline" : "none"
@@ -766,13 +781,17 @@ export function DemoViewer(props: DemoViewerProps) {
   const baseId = useId()
 
   const { runtime, dependencies } = runtimeOptions
+  const envValues = envGate.values
+  const envMissing = envGate.missing
   const preview: PreviewSource = useMemo(() => {
+    if (mode === "inline" && props.streaming) return { kind: "streaming" }
+    if (envMissing?.length) return { kind: "env", names: envMissing, title }
     if (mode !== "inline") return { kind: "component", component }
-    if (props.streaming) return { kind: "streaming" }
     if (!runtime || !inlineFiles) return { kind: "unavailable" }
     const entry = inlineFiles[0].path
-    return { kind: "runtime", render: (v) => runtime({ src, title, files: inlineFiles, entry, variant: v, dependencies }) }
-  }, [mode, component, props.streaming, runtime, inlineFiles, src, title, dependencies])
+    const env = Object.keys(envValues).length ? { env: envValues } : {}
+    return { kind: "runtime", render: (v) => runtime({ src, title, files: inlineFiles, entry, variant: v, dependencies, ...env }) }
+  }, [mode, component, props.streaming, runtime, inlineFiles, src, title, dependencies, envMissing, envValues])
   const runnable = preview.kind !== "unavailable"
 
   if (mode === "none") {

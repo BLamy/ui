@@ -118,6 +118,8 @@ export interface InlineDemoProjectOptions {
   entry?: string
   /** Extra npm dependencies (merged over a `package.json` among the files, if any). */
   dependencies?: Record<string, string>
+  /** Environment variables, set as `process.env` before the demo runs (see `injectEnv`). */
+  env?: Readonly<Record<string, string>>
 }
 
 export interface InlineDemoProject {
@@ -190,5 +192,23 @@ createRoot(document.getElementById("root")).render(
 `
   }
   const entry = wrapped ? WRAPPER_ENTRY : entryPath
+  if (options.env && Object.keys(options.env).length) injectEnv(map, entry, options.env)
   return { files: createReactDemoFiles(map, { entry, dependencies }), entry, wrapped }
+}
+
+/** Where `injectEnv` writes the values; the entry imports it first. */
+export const ENV_MODULE = "/src/docstream-env.js"
+
+/**
+ * Makes `env` the project's `process.env` (and `globalThis.__DOCSTREAM_ENV__`): writes a module that
+ * sets them and imports it at the top of `entry`, so it runs before anything the entry imports.
+ */
+export function injectEnv(map: Record<string, AlmostNodeFileContent>, entry: string, env: Readonly<Record<string, string>>) {
+  map[ENV_MODULE] = `const env = ${JSON.stringify(env)}
+globalThis.process = globalThis.process ?? { env: {} }
+globalThis.process.env = Object.assign(globalThis.process.env ?? {}, env)
+globalThis.__DOCSTREAM_ENV__ = env
+`
+  const source = map[entry]
+  if (typeof source === "string") map[entry] = `import ${JSON.stringify(ENV_MODULE)}\n${source}`
 }

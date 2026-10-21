@@ -3214,6 +3214,95 @@
   line-height: 1.5;
 }
 
+/* An example waiting for the page's env variables (frontmatter `env`). */
+.docs-demo-canvas-env {
+  display: grid;
+  place-items: center;
+  padding: 20px 14px;
+}
+.docs-env-gate {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 420px);
+  padding: 14px 16px;
+  border: 1px solid var(--gb-border);
+  border-radius: 10px;
+  background: var(--gb-background);
+  color: var(--gb-foreground);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.docs-env-gate-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.docs-env-gate-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--gb-primary) 14%, transparent);
+  color: var(--gb-primary);
+  flex: none;
+}
+.docs-env-gate-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.docs-env-gate-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.docs-env-gate-list span,
+.docs-env-gate-note {
+  color: var(--gb-muted-foreground);
+  font-size: 12.5px;
+}
+.docs-env-gate-form {
+  display: grid;
+  gap: 8px;
+}
+.docs-env-gate-form label {
+  display: grid;
+  gap: 4px;
+}
+.docs-env-gate-form input {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--gb-border);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+}
+.docs-env-gate-button {
+  justify-self: start;
+  font: inherit;
+  font-weight: 600;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gb-primary);
+  color: var(--gb-primary-foreground, #fff);
+  cursor: pointer;
+}
+.docs-env-gate-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.docs-env-gate-error {
+  margin: 0;
+  color: var(--gb-destructive, #d93025);
+  font-size: 12.5px;
+}
+
 .docs-demo-loading {
   display: grid;
   place-items: center;

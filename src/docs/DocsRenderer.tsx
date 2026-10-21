@@ -40,6 +40,8 @@ import { ImageThumbnail, leadingThumbnail, thumbnailLabel } from "./ImageThumbna
 import { DocumentProperties } from "./DocumentProperties"
 import { TaskCheckbox, TaskStateChangeContext, type TaskStateChangeHandler } from "./TaskCheckbox"
 import { getTaskState } from "../gitbook/tasks"
+import { readDocumentProperties } from "../gitbook/properties"
+import { DocstreamEnvProvider, EnvGate, envNamesFromProperties, useEnvGate, type DocstreamEnvHost } from "../doc-env"
 import { plainText } from "../gitbook/inline"
 
 type MathRenderer = (formula: string) => string
@@ -88,6 +90,8 @@ export interface LivePreviewProps {
   title: string
   collapsedCodeLines?: number
   expandedCodeLines?: number
+  /** The page's environment variables this example uses (frontmatter `env`), once loaded. */
+  env?: Readonly<Record<string, string>>
 }
 
 export type LivePreviewRenderer = (props: LivePreviewProps) => ReactNode
@@ -380,14 +384,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         return <StrudelPlayer code={block.code} {...(block.title ? { title: block.title } : {})} />
       }
       if (block.live && isReactLanguage(block.language) && liveRenderer) {
-        const entry = block.entry ?? "/src/main.jsx"
-        return liveRenderer({
-          files: { [entry]: block.code },
-          entry,
-          title: block.title ?? "Live React preview",
-          collapsedCodeLines: block.collapsedCodeLines,
-          expandedCodeLines: block.expandedCodeLines,
-        })
+        return <LiveFence block={block} liveRenderer={liveRenderer} />
       }
       return (
         <div className="docs-code" data-language={block.language ?? undefined}>
@@ -673,6 +670,23 @@ function withoutLinks(nodes: Inline[]): Inline[] {
   })
 }
 
+/** A live code fence: gated on the page's env variables it mentions, then handed to the host's renderer. */
+function LiveFence({ block, liveRenderer }: { block: CodeBlockNode; liveRenderer: LivePreviewRenderer }) {
+  const sources = useMemo(() => [block.code], [block.code])
+  const gate = useEnvGate(sources)
+  const title = block.title ?? "Live React preview"
+  if (gate.missing?.length) return <EnvGate names={gate.missing} title={title} />
+  const entry = block.entry ?? "/src/main.jsx"
+  return liveRenderer({
+    files: { [entry]: block.code },
+    entry,
+    title,
+    collapsedCodeLines: block.collapsedCodeLines,
+    expandedCodeLines: block.expandedCodeLines,
+    ...(gate.used?.length ? { env: gate.values } : {}),
+  })
+}
+
 export interface DocRenderOptions {
   /** Make rendered task checkboxes interactive. Update the supplied item and re-render to persist a choice. */
   onTaskStateChange?: TaskStateChangeHandler
@@ -699,6 +713,24 @@ export interface DocRenderOptions {
    * `true` uses the defaults; an object passes options to `DocPageActions`.
    */
   pageActions?: boolean | DocPageActionsOptions
+  /**
+   * Supplies the values of the environment variables the page declares (frontmatter `env`), e.g.
+   * from a keychain or a login. Without one, gated examples ask the reader for the values.
+   */
+  envHost?: DocstreamEnvHost
+  /** Variables to declare in addition to the frontmatter's `env`. */
+  env?: readonly string[]
+}
+
+/** The variables a document declares in its frontmatter's `env`. */
+export function documentEnv(doc: DocumentNode): string[] {
+  return doc.properties ? envNamesFromProperties(readDocumentProperties(doc.properties).values) : []
+}
+
+function withEnv(doc: DocumentNode, { envHost, env }: DocRenderOptions, children: ReactNode) {
+  const declared = [...new Set([...(env ?? []), ...documentEnv(doc)])]
+  if (!declared.length && !envHost) return children
+  return <DocstreamEnvProvider declared={declared} host={envHost}>{children}</DocstreamEnvProvider>
 }
 
 function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange }: DocRenderOptions, children: ReactNode) {
@@ -749,16 +781,18 @@ export function MarkdownContent({
   className,
   documentProperties = true,
   onTaskStateChange,
+  envHost,
+  env,
 }: { markdown: string; className?: string } & Renderers & DocRenderOptions) {
   const doc = useMemo(() => parseMarkdown(markdown), [markdown])
   return withDemoContext(
     { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange },
-    <div data-docstream="" className={className}>
+    withEnv(doc, { envHost, env }, <div data-docstream="" className={className}>
       <PageActionsBar markdown={markdown} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       <CitationSources citations={doc.citations} />
-    </div>,
+    </div>),
   )
 }
 
@@ -774,15 +808,17 @@ export function DocsRenderer({
   markdown,
   documentProperties = true,
   onTaskStateChange,
+  envHost,
+  env,
 }: { doc: DocumentNode; /** Source for page actions; defaults to `serializeMarkdown(doc)`. */ markdown?: string } & Renderers & DocRenderOptions) {
   return withDemoContext(
     { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange },
-    <article className="docs-article">
+    withEnv(doc, { envHost, env }, <article className="docs-article">
       <PageActionsBar markdown={markdown ?? (() => serializeMarkdown(doc))} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
       <Blocks blocks={doc.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
       <CitationSources citations={doc.citations} />
-    </article>,
+    </article>),
   )
 }
 

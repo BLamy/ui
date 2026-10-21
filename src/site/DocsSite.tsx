@@ -24,6 +24,7 @@ import {
 import { ArrowLeft, ArrowRight, ChevronRight, FileText, Hash, Menu, Moon, PencilLine, Search, Sun, X } from "lucide-react"
 
 import { AssetResolverContext, AssetResolverProvider, type AssetResolver } from "../asset-resolver"
+import { envNamesFromProperties } from "../doc-env"
 import { MarkdownContent, type DocRenderOptions, type LivePreviewRenderer, type SourceReferenceRenderer } from "../docs/DocsRenderer"
 import { DocPageActions, type DocPageActionsOptions } from "../docs/PageActions"
 import { documentOutline, type OutlineEntry } from "../gitbook/outline"
@@ -573,6 +574,7 @@ export function DocsSite(props: DocsSiteProps) {
     demoVFS,
     onTaskStateChange,
     documentProperties,
+    envHost,
     className,
     style,
   } = props
@@ -720,6 +722,8 @@ export function DocsSite(props: DocsSiteProps) {
         demoVFS={demoVFS}
         onTaskStateChange={onTaskStateChange}
         documentProperties={documentProperties}
+        envHost={envHost}
+        env={envNamesFromProperties(shown.frontmatter)}
       />
     </AssetResolverProvider>
   ) : null

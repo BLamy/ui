@@ -72,7 +72,7 @@ export interface BuildDocsTreeOptions {
 }
 
 /** Frontmatter keys that describe the page to the site rather than the reader. */
-export const SITE_FRONTMATTER_KEYS = ["title", "description", "order", "hidden", "icon"] as const
+export const SITE_FRONTMATTER_KEYS = ["title", "description", "order", "hidden", "icon", "env"] as const
 
 const MARKDOWN = /\.(md|markdown|mdx)$/i
 const INDEX = /^(readme|index)$/i
