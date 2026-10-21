@@ -1,5 +1,5 @@
-/* The sidebar: Passwords' category tiles (icon, count, name) over the shared groups. Tiles and group rows
-   select into the SplitView's sidebar column, so on a phone they push the list. */
+/* The sidebar: Passwords' category tiles (icon, count, name) over the shared groups and the developer sign-in
+   buttons. Tiles and group rows select into the SplitView's sidebar column, so on a phone they push the list. */
 import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { NumberMorph } from '@/components/ui/number-morph';
@@ -7,6 +7,8 @@ import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, use
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { GROUPS, type CategoryId } from './data';
+import type { ServiceId } from './device-auth';
+import { ServiceButtons } from './sign-in';
 import { counts, type Vault } from './vault';
 
 const TILES: { id: CategoryId; label: string; icon: IconName; color: string }[] = [
@@ -18,7 +20,7 @@ const TILES: { id: CategoryId; label: string; icon: IconName; color: string }[] 
   { id: 'deleted', label: 'Deleted', icon: 'trash', color: '#FF9500' },
 ];
 
-export function Sidebar({ vault }: { vault: Vault }) {
+export function Sidebar({ vault, onSignIn }: { vault: Vault; onSignIn: (id: ServiceId) => void }) {
   const n = counts(vault);
   return (
     <>
@@ -36,6 +38,7 @@ export function Sidebar({ vault }: { vault: Vault }) {
               badge={vault.accounts.filter((a) => a.group === g.id).length} />
           ))}
         </SplitViewSection>
+        <ServiceButtons vault={vault} onSignIn={onSignIn} />
         <div className="mt-5 flex items-center gap-2 px-2.5 text-[12.5px] text-muted-foreground">
           <span className="flex -space-x-1.5">
             {GROUPS[0].members.map((m) => <Avatar key={m.f} c={m} size={20} className="ring-2 ring-sidebar" />)}

@@ -20,6 +20,8 @@ export interface Account {
   group?: string;
   issue?: { severity: Severity; kind: string; detail: string };
   deleted?: string;
+  /** The secret is an access token from a device sign-in (labelled "Token", not "Password"). */
+  token?: boolean;
 }
 
 export interface WifiNetwork {

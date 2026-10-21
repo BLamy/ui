@@ -101,11 +101,11 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             {edit ? <InlineInput label="User Name" value={draft.username} onChange={(v) => setDraft({ ...draft, username: v })} /> : <span className="select-text">{a.username}</span>}
           </Field>
           {a.password != null ? (
-            <Field label="Password" last={!a.passkey && !a.otp && !edit}
+            <Field label={a.token ? 'Token' : 'Password'} last={!a.passkey && !a.otp && !edit}
               trailing={!edit ? (
                 <>
                   <RevealButton revealed={pinned} onToggle={() => setPinned((p) => !p)} />
-                  <CopyButton label="Password" value={a.password} />
+                  <CopyButton label={a.token ? 'Token' : 'Password'} value={a.password} />
                 </>
               ) : null}>
               {edit ? (

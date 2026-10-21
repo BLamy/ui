@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AppearanceProvider } from '@/lib/theme';
+import { createDemoDeviceAuth, createDeviceAuth, corsProxy } from './device-auth';
 import ApplePasswords from './page';
 
 const meta: Meta<typeof ApplePasswords> = {
@@ -56,3 +57,20 @@ export const Tablet: Story = { render: (args) => <Frame width={834} height={800}
 export const Phone: Story = { render: (args) => <Frame width={390} height={844}><ApplePasswords {...args} /></Frame> };
 
 export const PhoneDark: Story = { render: (args) => dark(<Frame width={390} height={844}><ApplePasswords {...args} /></Frame>) };
+
+/** Developer Sign-In: GitHub's device code in the sheet. The demo flow approves when you press the button. */
+export const SignIn: Story = {
+  args: { initialSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }) },
+  render: (args) => <Full><ApplePasswords {...args} /></Full>,
+};
+
+export const SignInPhone: Story = {
+  args: { initialSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }) },
+  render: (args) => <Frame width={390} height={844}><ApplePasswords {...args} /></Frame>,
+};
+
+/** The real flows through almostnode's CORS proxy: the buttons sign in to your own accounts. */
+export const LiveSignIn: Story = {
+  args: { auth: createDeviceAuth({ fetch: corsProxy('https://almostnode-cors-proxy.langtail.workers.dev/?url=') }) },
+  render: (args) => <Full><ApplePasswords {...args} /></Full>,
+};

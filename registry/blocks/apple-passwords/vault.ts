@@ -12,6 +12,8 @@ export function useVault() {
     update: (id: string, patch: Partial<Account>) =>
       setAccounts((list) => list.map((a) => (a.id === id ? { ...a, ...patch, modified: 'Today' } : a))),
     add: (account: Account) => setAccounts((list) => [...list, account]),
+    /** Adds the account, or replaces the one with its id (signing in to a service again). */
+    upsert: (account: Account) => setAccounts((list) => [...list.filter((a) => a.id !== account.id), account]),
     remove: (id: string) => {
       const a = accounts.find((x) => x.id === id);
       if (!a) return;
