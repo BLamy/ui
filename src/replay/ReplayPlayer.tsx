@@ -1,7 +1,8 @@
 /* The player behind `ReplayPreview`: an rrweb session replay in a browser frame. The headless `ReplayStage`
    plays the recording (rrweb loads lazily, on first render); this adds the chrome around it: a URL bar that
    follows the recording's navigations, play/pause, a scrubber with the recording's moments on a rail above
-   it, a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready a
+   it, a speed control, fullscreen, a drawn cursor whose clicks ripple, and DevTools: Console and Network buttons
+   in the top bar with what had been logged and requested by the playhead, which open a DevTools panel over the page. Until the player is ready a
    poster (a page-shaped skeleton by default) holds the frame's exact size, so nothing jumps.
 
    Plain React + plain CSS (`@layer docstream.replay` in styles.css, `[data-slot]` hooks). Keys (focus inside
@@ -15,6 +16,8 @@ import {
 import { useReducedMotion } from 'framer-motion'
 import { Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
 import { ReplayStage } from './ReplayStage'
+import { DevtoolsButtons, DevtoolsPanel, type ReplayDevtoolsTab } from './ReplayDevtools'
+import { getReplayDevtools, replayDevtoolsAt } from './devtools'
 import { getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from './markers'
 import type { ReplayMarker, ReplayMarkerKind, ReplayPointerTrack } from './markers'
 import type { ReplayStageHandle } from './stage-types'
@@ -59,6 +62,12 @@ export interface ReplayPlayerOptions {
   markers?: boolean | ReplayMarker[]
   /** Which recorded marker kinds to show (default all). */
   markerKinds?: ReplayMarkerKind[]
+  /** Console and Network buttons (in the top bar, or beside the controls without the browser chrome) that open a
+   *  DevTools panel cut at the playhead. `true` (default) shows them when the recording has console messages or
+   *  requests; `false` hides them. */
+  devtools?: boolean
+  /** Open the DevTools panel on this tab at mount. */
+  defaultDevtoolsTab?: ReplayDevtoolsTab
   /** Draw the recorded pointer and click ripples (default true). */
   cursor?: boolean
   /** `width` (default): the page scales to the frame's width and sets its height. `contain`: fill the frame's
@@ -89,7 +98,7 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 export function ReplayPlayer({
   events, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
   autoplay = false, loop = false, initialTime = 0, speeds = DEFAULT_PLAYER_SPEEDS, markers = true, markerKinds,
-  cursor = true, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
+  cursor = true, devtools = true, defaultDevtoolsTab, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
 }: ReplayPlayerOptions & { events: ReplayEvent[] }) {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -102,6 +111,10 @@ export function ReplayPlayer({
     const list = Array.isArray(markers) ? markers : markers ? recorded : []
     return markerKinds ? list.filter((m) => markerKinds.includes(m.kind)) : list
   }, [markers, recorded, markerKinds])
+
+  const tools = useMemo(() => getReplayDevtools(events), [events])
+  const showTools = devtools && (tools.console.length > 0 || tools.network.length > 0)
+  const [panel, setPanel] = useState<ReplayDevtoolsTab | null>(defaultDevtoolsTab ?? null)
 
   const [visible, setVisible] = useState(!lazy)
   const [ready, setReady] = useState(false)
@@ -195,6 +208,10 @@ export function ReplayPlayer({
     return current
   }, [url, meta.href, recorded, time])
 
+  const toolsState = useMemo(() => replayDevtoolsAt(tools, time), [tools, time])
+  const openTools = (tab: ReplayDevtoolsTab) => setPanel((p) => (p === tab ? null : tab))
+  const toolButtons = showTools ? <DevtoolsButtons state={toolsState} open={panel} onOpen={openTools} /> : null
+
   const w = meta.width || 1280
   const h = meta.height || 800
   const contain = fit === 'contain' || fullscreen
@@ -221,7 +238,7 @@ export function ReplayPlayer({
       }}
       style={style}
     >
-      {chrome === 'browser' ? <BrowserBar href={href} trafficLights={trafficLights} loading={!ready && meta.playable} /> : null}
+      {chrome === 'browser' ? <BrowserBar href={href} trafficLights={trafficLights} loading={!ready && meta.playable} actions={toolButtons} /> : null}
 
       <div data-slot="replay-preview-stage" style={{ '--replay-ar': `${w} / ${h}` } as CSSProperties}>
         {visible && meta.playable ? (
@@ -249,8 +266,19 @@ export function ReplayPlayer({
           </div>
         ) : null}
 
+        {showTools && panel ? (
+          <DevtoolsPanel
+            state={toolsState}
+            at={time}
+            tab={panel}
+            onTab={setPanel}
+            onClose={() => { setPanel(null); rootRef.current?.focus({ preventScroll: true }) }}
+            onSeek={(ms) => handle.seek(ms)}
+          />
+        ) : null}
+
         {controls ? (
-          <div data-slot="replay-preview-center" data-show={(ready && !playing) || undefined}>
+          <div data-slot="replay-preview-center" data-show={(ready && !playing && !(showTools && panel)) || undefined}>
             <button
               type="button"
               tabIndex={-1}
@@ -280,6 +308,7 @@ export function ReplayPlayer({
             onSeek={(ms) => handle.seek(ms)}
             onMarker={jumpTo}
           />
+          {chrome !== 'browser' ? toolButtons : null}
           <button type="button" data-slot="replay-preview-speed" aria-label={`Playback speed ${speed}×`} onClick={() => cycleSpeed(1)}>
             {`${speed}×`}
           </button>
@@ -301,7 +330,7 @@ export function splitReplayAddress(href: string): { host: string; path: string }
   return cut < 0 ? { host: shown, path: '' } : { host: shown.slice(0, cut), path: shown.slice(cut) }
 }
 
-export function BrowserBar({ href, trafficLights, loading }: { href: string; trafficLights: boolean; loading: boolean }) {
+export function BrowserBar({ href, trafficLights, loading, actions }: { href: string; trafficLights: boolean; loading: boolean; actions?: ReactNode }) {
   const { host, path } = splitReplayAddress(href)
   // Once the recording is past the site root, where it is (path, query, hash) is what matters:
   // it leads and keeps its room, and the host dims and gives way first.
@@ -322,7 +351,8 @@ export function BrowserBar({ href, trafficLights, loading }: { href: string; tra
           {path ? <span data-part="path">{path}</span> : null}
         </span>
       </div>
-      {trafficLights ? <span aria-hidden="true" data-slot="replay-preview-lights-spacer" /> : null}
+      {actions ? <div data-slot="replay-preview-actions">{actions}</div>
+        : trafficLights ? <span aria-hidden="true" data-slot="replay-preview-lights-spacer" /> : null}
     </div>
   )
 }

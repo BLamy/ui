@@ -23,6 +23,27 @@ That recording is a 9-second session on a mock storefront: a shopper adds two pr
 | `F` | Fullscreen |
 | `Home` / `End` | Jump to the start / end |
 
+## DevTools
+
+The top bar's Console and Network buttons show what had happened by the playhead. Network shows how many requests had been sent, and in red how many had failed. Console shows how many errors (red) and warnings (amber) had been logged. Press one to open a DevTools panel over the page, docked at the bottom like Chrome's:
+
+- **Console** lists the messages logged so far. Warnings and errors sit on tinted rows, and a message with a stack trace expands to show it. Filter by text or level.
+- **Network** lists the requests sent so far, with status, method, type, time and a waterfall. A request still waiting for its response at the playhead shows as pending. Select a row to see its headers, payload and response.
+
+Scrub backwards and both lists shrink to what DevTools showed at that moment. Press a message's time, or "Go to" on a request, to move the player there. Drag the panel's top edge to resize it; Esc closes it. Without the browser chrome (`chrome="minimal"` or `"none"`), the buttons sit in the controls row.
+
+The panel reads two kinds of event:
+
+| Source | What it adds |
+| --- | --- |
+| rrweb's console plugin (`rrweb/console@1`) | Messages with their level and stack trace. |
+| rrweb's network plugin (`rrweb/network@1`) | Requests with status, timing, headers and bodies. |
+| Custom event `network` (also `request`, `fetch`, `xhr`, `network.error`, `request.failed`, `fetch.failed`) | A request: `{ method, url, status, duration?, requestHeaders?, requestBody?, responseHeaders?, responseBody? }`. |
+| Custom event `error` (also `exception`, `console.error`, `uncaught`) | An uncaught error in the console: `{ label, message, stack? }`. |
+| Custom event `console` (also `log`, `warn`, `info`, `debug`) | A message: `{ level, message }` or `{ level, args }`. |
+
+A request counts as failed when its status is 0 or 400 and up, when it has an `error`, or when its tag says so. The buttons appear only when the recording has messages or requests; `devtools={false}` hides them, and `defaultDevtoolsTab="network"` opens the panel at mount.
+
 ## Three ways in
 
 {% tabs %}
@@ -88,6 +109,8 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `markers` | `boolean \| ReplayMarker[]` | `true` | `true` reads them from the recording, `false` hides the rail, or pass your own. |
 | `markerKinds` | `ReplayMarkerKind[]` | all | Which recorded kinds to show: `click`, `error`, `network`, `navigation`, `custom`. |
 | `cursor` | `boolean` | `true` | Draw the recorded pointer and click ripples. |
+| `devtools` | `boolean` | `true` | The Console and Network buttons and their panel, when the recording has messages or requests. |
+| `defaultDevtoolsTab` | `"console" \| "network"` | none | Open the DevTools panel on this tab at mount. |
 | `fit` | `"width" \| "contain"` | `"width"` | `width`: the page scales to the frame's width and sets its height. `contain`: fill a frame you gave a height, letterboxed. |
 | `poster` | `ReactNode` | a page-shaped skeleton | Shown until the player is ready, at the frame's final size, so nothing jumps. |
 | `lazy` | `boolean` | `true` | Mount the player only when the frame nears the viewport. |
@@ -102,7 +125,7 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 
 ### Demo events
 
-`replayDemoEvents` is the storefront recording used on this page: 58 events, about 9 s, 1280×800, with fixed timestamps so every render is identical. Use it for stories, tests and docs. It lives on its own entry, so it never ends up in your main bundle by accident:
+`replayDemoEvents` is the storefront recording used on this page: 67 events, about 9 s, 1280×800, with fixed timestamps, console messages and the page's requests so every render is identical. Use it for stories, tests and docs. It lives on its own entry, so it never ends up in your main bundle by accident:
 
 ```ts lineNumbers="false"
 import { replayDemoEvents } from "@brett_lamy/docstream/replay/demo"
@@ -147,6 +170,8 @@ import {
   getReplayMarkers,
   getReplayPointerTrack,
   replayPointerAt,
+  getReplayDevtools,
+  replayDevtoolsAt,
 } from "@brett_lamy/docstream/replay"
 
 const meta = getReplayMeta(events)
@@ -159,6 +184,11 @@ const markers = getReplayMarkers(events)
 
 const track = getReplayPointerTrack(events) // { moves, clicks }, in viewport px
 replayPointerAt(track, 4200)                 // { x, y } between recorded points, or null
+
+const tools = getReplayDevtools(events)
+// { console: [{ id, time, level, message, args, trace?, source }], network: [{ id, time, duration?, method, url, name, status?, type, failed, … }] }
+replayDevtoolsAt(tools, 4200)
+// { console, network (each with pending), counts: { requests, failed, errors, warnings, laterMessages, laterRequests } }
 ```
 
 The module also exports the event enums `ReplayEventType`, `ReplayIncrementalSource` and `ReplayMouseInteraction`, and `sanitizeReplayEvent`, the cleanup the player applies to each event before replaying it.
@@ -185,7 +215,7 @@ The player is plain CSS in `@brett_lamy/docstream/styles.css`, inside the `docst
 
 `--card` `--background` `--foreground` `--muted` `--muted-foreground` `--border` `--primary` `--ring` `--destructive` `--success` `--warning` `--tertiary-foreground`
 
-Parts are addressable by `data-slot`: `replay-preview` (with `data-state="loading|paused|playing"` and `data-chrome`), `replay-preview-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`.
+Parts are addressable by `data-slot`: `replay-preview` (with `data-state="loading|paused|playing"` and `data-chrome`), `replay-preview-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`; the DevTools are `replay-devtools-buttons` (each `replay-devtools-button` has `data-tab`) and the panel `replay-devtools`.
 
 ## See also
 

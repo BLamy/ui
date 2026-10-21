@@ -135,6 +135,56 @@ describe("player behaviour", () => {
     expect(ref.current!.getCurrentTime()).toBe(2000)
   })
 
+  it("shows Console and Network buttons with what had happened by the playhead, and opens DevTools over the page", async () => {
+    stage.time = 8000
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} />)
+    const bar = el.querySelector('[data-slot="replay-preview-bar"]')!
+    const network = bar.querySelector<HTMLButtonElement>('[data-tab="network"]')!
+    const consoleButton = bar.querySelector<HTMLButtonElement>('[data-tab="console"]')!
+    expect(network.getAttribute("aria-label")).toBe("Network: 8 requests, 1 failed")
+    expect(network.querySelector('[data-part="failed"]')?.textContent).toBe("1")
+    expect(consoleButton.getAttribute("aria-label")).toBe("Console: 1 error, 1 warning")
+
+    await act(async () => network.click())
+    const panel = el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')!
+    expect(panel.closest('[data-slot="replay-preview-stage"]')).toBeTruthy()
+    const rows = [...panel.querySelectorAll("tbody tr")]
+    expect(rows.map((r) => r.querySelector("td")!.textContent)).toEqual(["trail", "app-4f2a.js", "app-4f2a.css", "products?collection=trail", "cart", "cart", "validate?code=FALL25", "checkout"])
+    const failed = panel.querySelector<HTMLElement>("tr[data-failed]")!
+    expect(failed.textContent).toContain("500")
+    await act(async () => failed.click())
+    expect(panel.querySelector('[data-slot="replay-devtools-detail"]')!.textContent).toContain("Request URL/api/checkout")
+    const response = [...panel.querySelectorAll<HTMLButtonElement>('[data-slot="replay-devtools-detail-tabs"] [role=tab]')].find((b) => b.textContent === "Response")!
+    await act(async () => response.click())
+    expect(panel.querySelector('[data-slot="replay-devtools-body"]')!.textContent).toContain('"error": "internal_error"')
+
+    // The panel's own tabs switch to the Console; a message's time seeks the player.
+    const tab = [...panel.querySelectorAll<HTMLButtonElement>('[data-slot="replay-devtools-tabs"] [role=tab]')].find((b) => b.textContent?.startsWith("Console"))!
+    await act(async () => tab.click())
+    const messages = [...el.querySelectorAll('[data-slot="replay-devtools-message"]')]
+    expect(messages.map((m) => m.getAttribute("data-level"))).toEqual(["log", "info", "info", "warn", "error"])
+    expect(messages.at(-1)!.textContent).toContain("Uncaught TypeError")
+    await act(async () => messages[0]!.querySelector<HTMLButtonElement>('[data-part="time"]')!.click())
+    expect(stage.calls.at(-1)).toBe("seek:240")
+
+    // Esc closes it, without reaching the player's keys.
+    const before = stage.calls.length
+    press(el.querySelector('[data-slot="replay-devtools"]')!, "Escape")
+    expect(el.querySelector('[data-slot="replay-devtools"]')).toBeNull()
+    press(el.querySelector('[data-slot="replay-preview-bar"]')!, "x")
+    expect(stage.calls.length).toBe(before)
+  })
+
+  it("cuts DevTools at the playhead and can be turned off", async () => {
+    stage.time = 2000
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="network" />)
+    expect(el.querySelector('[data-tab="network"]')!.getAttribute("aria-label")).toBe("Network: 5 requests, 0 failed")
+    expect(el.querySelector('[data-slot="replay-devtools-status"]')!.textContent).toContain("3 more later in the recording")
+    expect(renderToString(<ReplayPreview events={replayDemoEvents} devtools={false} />)).not.toContain("replay-devtools")
+    // Without the browser chrome the buttons sit in the controls row.
+    expect(renderToString(<ReplayPreview events={replayDemoEvents} chrome="minimal" />)).toMatch(/replay-preview-controls.*replay-devtools-buttons/s)
+  })
+
   it("maps keys: space/k toggle, arrows and j/l seek, Home/End jump, < > cycle speed", async () => {
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} />)
     const last = () => stage.calls[stage.calls.length - 1]
