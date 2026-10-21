@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import type { Folder } from './data';
 import { fileDragProps, hasComputerFiles, useDropTarget } from './drag';
 import { FolderTree } from './folder-tree';
-import { FileView, viewerLabel } from './file-views';
+import { DataModeToggle, FileView, viewerLabel, type DataMode } from './file-views';
 import { NoteList } from './note-list';
 import { EditorTools, NoteEditor } from './note-editor';
 import { ItemMenu, RenameField } from './item-menu';
@@ -49,7 +49,7 @@ function FolderRows({ notes, folders }: { notes: NotesState; folders: Folder[] }
   </div>;
 }
 
-/** Files that aren't notes. A model, image or JSON/YAML file opens in its viewer; anything else is listed by name, dimmed. Every row
+/** Files that aren't notes. A model, image, JSON/YAML, CSV or code file opens in its viewer; anything else is listed by name, dimmed. Every row
     drags onto a note to embed it, or onto another location to move or copy it. */
 function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: OtherFile[]; onOpen: (id: string) => void }) {
   if (!files.length) return null;
@@ -62,7 +62,7 @@ function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: Oth
           <button type="button" {...fileDragProps(f.path)} onClick={() => onOpen(f.id)} aria-current={selected || undefined} title={f.path}
             className={cn('flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg border-0 bg-transparent px-2 text-left text-subhead text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
               selected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')}>
-            {f.kind === 'stl' || f.kind === 'image' ? <Icon name={f.kind === 'stl' ? 'cube' : 'photo'} size={18} className={cn('shrink-0', !selected && 'text-primary')} />
+            {f.kind === 'stl' || f.kind === 'image' || f.kind === 'csv' ? <Icon name={f.kind === 'stl' ? 'cube' : f.kind === 'csv' ? 'table' : 'photo'} size={18} className={cn('shrink-0', !selected && 'text-primary')} />
               : <TreeFileIcon name={f.name} className="shrink-0" />}
             <span className="min-w-0 flex-1 truncate">{f.name}{where}</span>
           </button>
@@ -144,6 +144,7 @@ export function NoteColumn({ notes }: { notes: NotesState }) {
   const model = notes.selectedFile;
   const [source, setSource] = useState(false);
   const [format, setFormat] = useState(false);
+  const [dataMode, setDataMode] = useState<DataMode>('visual');
   const editorRef = useRef<MarkdownEditorHandle | null>(null);
   const compose = <BarButton label="New note" onPress={() => notes.startCreating('file')}><Icon name="compose" /></BarButton>;
   const tools = n ? <EditorTools editorRef={editorRef} format={format} onFormat={() => setFormat((v) => !v)} source={source} onSource={() => setSource((v) => !v)} /> : null;
@@ -152,8 +153,11 @@ export function NoteColumn({ notes }: { notes: NotesState }) {
     : <span title={`${n.file.path} · ${notes.fileStatus(n).label} · Double-click to rename`}
       onDoubleClick={() => { if (!n.file.standalone) notes.setRenaming({ id: n.id, in: 'title' }); }}>{n.file.name}</span> : undefined;
   if (!n && model) return <SplitViewDetail aria-label={viewerLabel(model)}>
-    <SplitViewHeader title={<span title={model.path}>{model.name}</span>} titleAlign="leading" trailing={compose} />
-    <SplitViewContent key={model.id}><FileView notes={notes} file={model} /></SplitViewContent>
+    <SplitViewHeader title={<span title={model.path}>{model.name}</span>} titleAlign="leading" trailing={<>
+      {model.kind === 'json' || model.kind === 'yaml' ? <DataModeToggle mode={dataMode} onChange={setDataMode} /> : null}
+      {compose}
+    </>} />
+    <SplitViewContent key={`${model.id}:${dataMode}`}><FileView notes={notes} file={model} mode={dataMode} /></SplitViewContent>
   </SplitViewDetail>;
   return <SplitViewDetail aria-label="Note">
     <SplitViewHeader title={name} titleAlign="leading" trailing={n ? <>

@@ -48,6 +48,18 @@ The rail marks what happened: clicks as small ticks, then console errors, failed
 
 Keys work anywhere inside the player: **Space** / **K** play and pause, **←** **→** seek 5 s, **J** / **L** 10 s, **<** **>** change speed, **F** full screen, **Home** / **End** jump to the ends. rrweb and its stylesheet load the first time a player mounts, and with `lazy` (the default) that happens only once the frame nears the viewport.
 
+## DevTools
+
+The top bar's Console and Network buttons show what had happened by the playhead. Network shows the requests sent so far, with the failed ones counted in red. Console shows errors in red and warnings in amber. Press one to open a DevTools panel over the page, docked at the bottom like Chrome's. **Console** lists what had been logged, on tinted rows for warnings and errors, with expandable stack traces. **Network** lists the requests with status, method, type, time and a waterfall. A request still in flight shows as pending, and selecting a row shows its headers, payload and response. Scrub backwards and both lists shrink to what DevTools showed then. Press a time to jump there, or Esc to close.
+
+{% demo src="replay-preview/devtools" %}
+
+```tsx
+<ReplayPreview events={events} initialTime={8000} defaultDevtoolsTab="network" />
+```
+
+The panel reads rrweb's console and network plugins (`rrweb/console@1`, `rrweb/network@1`) and custom events: `network` with `{ method, url, status, … }`, `error` with `{ label, message, stack? }`, and `console` with `{ level, message }`. The buttons show only when the recording has messages or requests, and `devtools={false}` turns them off. `getReplayDevtools(events)` and `replayDevtoolsAt(tools, ms)` give you the same lists and counts for your own UI.
+
 ## Driving it from outside
 
 `playerRef` hands you `play`, `pause`, `seek`, `toggle` and `getCurrentTime`; `onTimeUpdate` reports the playhead every frame while playing, and after each seek. Here the recording's own markers (`getReplayMarkers`) become a chronology that seeks the player and dims the steps still ahead.
@@ -114,6 +126,8 @@ Record with rrweb (`record({ emit })`) and pass the events. To embed instead of 
 | `markers` | `true` | `true` reads them from the recording, `false` hides the rail, or pass `ReplayMarker[]`. |
 | `markerKinds` | all | Which recorded kinds to show. |
 | `cursor` | `true` | Draw the recorded pointer and click ripples. |
+| `devtools` | `true` | Console and Network buttons and their DevTools panel, when the recording has messages or requests. |
+| `defaultDevtoolsTab` | — | `console` or `network`: open the panel on that tab at mount. |
 | `fit` | `width` | `width`: the page sets the frame's height. `contain`: fill a sized frame and letterbox the page. |
 | `poster` | page skeleton | Shown until the player is ready. |
 | `lazy` | `true` | Mount the player once the frame nears the viewport. |

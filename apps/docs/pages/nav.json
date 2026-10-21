@@ -101,7 +101,8 @@
         { "id": "scroll-area", "title": "ScrollArea" },
         { "id": "separator", "title": "Separator" },
         { "id": "kbd", "title": "Kbd" },
-        { "id": "qr-svg", "title": "QrSvg" }
+        { "id": "qr-svg", "title": "QrSvg" },
+        { "id": "spreadsheet", "title": "Spreadsheet" }
       ]
     },
     {

@@ -1,0 +1,24 @@
+{
+  "name": "spreadsheet",
+  "title": "Spreadsheet",
+  "description": "A virtualized grid of string cells for CSV-sized and million-row data: an ARIA grid with keyboard navigation, range selection, in-place editing, tab-separated copy / cut / paste, undo and resizable columns. Sorting a number or date column is an exact 64-bit bitonic sort in a WebGPU compute shader, and number columns show histograms tallied on the GPU; both fall back to the CPU with the same answers. The status bar shows the selection's sum and average and which engine sorted.",
+  "page": "spreadsheet",
+  "files": [
+    "components/spreadsheet.tsx"
+  ],
+  "exports": [
+    "Spreadsheet",
+    "spreadsheetVariants",
+    "columnName"
+  ],
+  "imports": [
+    "Spreadsheet"
+  ],
+  "types": [
+    "SpreadsheetProps",
+    "SpreadsheetHandle",
+    "SpreadsheetCell",
+    "SpreadsheetSelection",
+    "SpreadsheetSortInfo"
+  ]
+}

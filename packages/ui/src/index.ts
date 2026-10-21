@@ -378,9 +378,11 @@ export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, Countdown
 // ReplayPreview lives in docstream; re-exported here (see components/replay-preview.tsx)
 export {
   ReplayPreview, formatReplayTime, replayDemoEvents, getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt,
+  getReplayDevtools, replayDevtoolsAt,
 } from './components/replay-preview';
 export type {
   ReplayPreviewHandle, ReplayPreviewProps, ReplayEvent, ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack,
+  ReplayConsoleEntry, ReplayConsoleLevel, ReplayDevtools, ReplayDevtoolsState, ReplayDevtoolsTab, ReplayRequest,
 } from './components/replay-preview';
 // The STL viewer lives in docstream; re-exported here (see components/stl-viewer.tsx)
 export { StlViewer, parseStl, isStlUrl } from './components/stl-viewer';
@@ -534,6 +536,20 @@ export { SchemaTree, schemaTreeVariants } from './components/schema-tree';
 export type { SchemaTreeProps } from './components/schema-tree';
 export { SqlConsole, sqlConsoleVariants } from './components/sql-console';
 export type { SqlConsoleProps } from './components/sql-console';
+
+// Spreadsheet: a virtualized grid with GPU sorting and histograms, and the CSV reader it pairs with
+export { Spreadsheet, spreadsheetVariants, columnName } from './components/spreadsheet';
+export type { SpreadsheetProps, SpreadsheetHandle, SpreadsheetCell, SpreadsheetSelection, SpreadsheetSortInfo } from './components/spreadsheet';
+export {
+  parseCellNumber, parseCellDate, inferColumnType, columnNumbers, sortKeys, sortPermutationCpu, sortTextPermutation, sortRows,
+  selectionStats, columnHistogram, histogramCpu, binScale, GPU_MIN_ROWS, MAX_BINS,
+} from './lib/spreadsheet';
+export type {
+  SpreadsheetColumnType, SpreadsheetSortDirection, SpreadsheetSort, SpreadsheetEngine, SpreadsheetRanOn, SpreadsheetSortResult,
+  SpreadsheetEngineOptions, SelectionStats, SpreadsheetHistogram,
+} from './lib/spreadsheet';
+export { parseCsv, stringifyCsv, csvField, detectDelimiter, delimiterForPath } from './lib/csv';
+export type { CsvDelimiter, CsvFormat, CsvParseResult, CsvParseOptions } from './lib/csv';
 
 
 // ── Filters ──

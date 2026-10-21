@@ -482,7 +482,7 @@ test('right-click renames and deletes notes and folders in place, in the list an
 
 test('the filter shows Markdown files by default, hiding folders without notes, All Files dims everything else, and 3D Models lists STL files', async ({ page }) => {
   await seed(page, {
-    'README.md': '# Readme', 'package.json': '{}', 'LICENSE': 'MIT', 'docs/guide.md': '# Guide', 'src/app.ts': 'export {}', 'assets/logo.png': 'png', 'Empty': null,
+    'README.md': '# Readme', 'package.json': '{}', 'LICENSE': 'MIT', 'data.bin': 'x', 'docs/guide.md': '# Guide', 'src/app.ts': 'export {}', 'assets/logo.png': 'png', 'Empty': null,
     'case/part.stl': 'solid part\nendsolid part\n',
   }, 'Project');
   await addFolder(page, 'Project');
@@ -502,7 +502,7 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await page.getByRole('menuitemradio', { name: 'All Files' }).click();
   await expect(folderRow('src')).toBeVisible();
   await expect(folderRow('assets')).toBeVisible();
-  await expect(others.getByRole('listitem')).toHaveText([/LICENSE$/, /package\.json$/]);
+  await expect(others.getByRole('listitem')).toHaveText([/LICENSE$/, /data\.bin$/, /package\.json$/]);
   await expect(row(page, 'README.md')).toBeVisible();
   await folderRow('src').click();
   await expect(others.getByRole('listitem')).toHaveText([/app\.ts$/]);
@@ -513,8 +513,8 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await current(page).locator('label').filter({ has: page.getByRole('radio', { name: 'Tree view', exact: true }) }).click();
   const tree = current(page).getByRole('tree', { name: 'Folders and files' });
   // Files Notes can't open are listed (dimmed, draggable onto a note) but never selected.
-  await tree.getByRole('treeitem', { name: 'LICENSE', exact: true }).click();
-  await expect(tree.getByRole('treeitem', { name: 'LICENSE', exact: true })).not.toHaveAttribute('aria-selected', 'true');
+  await tree.getByRole('treeitem', { name: 'data.bin', exact: true }).click();
+  await expect(tree.getByRole('treeitem', { name: 'data.bin', exact: true })).not.toHaveAttribute('aria-selected', 'true');
   await expect(tree.getByRole('treeitem', { name: 'src', exact: true })).toBeVisible();
   await current(page).getByRole('button', { name: 'Filter files', exact: true }).click();
   await page.getByRole('menuitemradio', { name: 'Markdown' }).click();
@@ -532,11 +532,13 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await expect(page.locator('.docstream-stl')).toBeVisible();
 });
 
-test('images open in an image viewer, JSON in visual-json (edits save to the file) and YAML read-only', async ({ page }) => {
+test('images open in an image viewer, JSON in visual-json (edits save to the file), YAML read-only or as code, CSV in the spreadsheet and source in the code editor', async ({ page }) => {
   await seed(page, {
     'art/logo.svg': '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20" fill="red"/></svg>',
     'data/config.json': '{\n  "name": "case",\n  "size": 2\n}\n',
     'data/ci.yaml': '# CI\nname: build\n',
+    'data/parts.csv': 'part,qty\nnozzle,4\nsheet,2\n',
+    'src/sum.ts': 'export const sum = (a: number, b: number) => a + b;\n',
   }, 'Project');
   await addFolder(page, 'Project');
   const filter = current(page).getByRole('button', { name: 'Filter files', exact: true });
@@ -563,5 +565,28 @@ test('images open in an image viewer, JSON in visual-json (edits save to the fil
   await others.getByRole('button', { name: /ci\.yaml/ }).click();
   const yaml = page.locator('[aria-label="YAML"]');
   await expect(yaml).toContainText('build');
-  await expect(yaml).toContainText('read-only');
+  await expect(yaml).toContainText('Read-only');
+  // The Code view edits YAML as text, comments and all.
+  await page.getByRole('radio', { name: 'Code' }).check({ force: true });
+  await expect(yaml.getByRole('textbox', { name: 'ci.yaml' })).toHaveValue('# CI\nname: build\n');
+  await page.getByRole('radio', { name: 'Visual' }).check({ force: true });
+
+  await current(page).getByRole('button', { name: 'Project', exact: true }).click();
+  await filter.click();
+  await page.getByRole('menuitemradio', { name: 'Spreadsheets (CSV)' }).click();
+  await current(page).getByRole('button', { name: 'Open folder data', exact: true }).click();
+  await others.getByRole('button', { name: /parts\.csv/ }).click();
+  const sheet = page.locator('[aria-label="Spreadsheet"]').getByRole('grid', { name: 'parts.csv' });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole('columnheader', { name: 'qty' })).toBeVisible();
+  await expect(sheet.getByRole('gridcell', { name: 'nozzle' })).toBeVisible();
+
+  await current(page).getByRole('button', { name: 'Project', exact: true }).click();
+  await filter.click();
+  await page.getByRole('menuitemradio', { name: 'Code & Text' }).click();
+  await current(page).getByRole('button', { name: 'Open folder src', exact: true }).click();
+  await others.getByRole('button', { name: /sum\.ts/ }).click();
+  const code = page.locator('[aria-label="Code"]');
+  await expect(code.getByRole('textbox', { name: 'sum.ts' })).toHaveValue(/export const sum/);
+  await expect(code).toContainText('TS · Saved');
 });

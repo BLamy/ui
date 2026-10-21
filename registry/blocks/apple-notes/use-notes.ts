@@ -4,12 +4,14 @@ import { BROWSER_ROOT, FileConflict, fileId, fileKind, folderId as fileFolderId,
 
 export type NotesView = 'list' | 'tree';
 /** All Files lists everything (files Notes can't open dimmed); each type lists only its files, and the folders with some in them. */
-export type FileFilter = 'all' | 'markdown' | 'stl' | 'image' | 'data';
+export type FileFilter = 'all' | 'markdown' | 'stl' | 'image' | 'data' | 'sheet' | 'code';
 /** The kinds a filter other than Markdown lists. */
-export const FILTER_KINDS: Record<Exclude<FileFilter, 'all' | 'markdown'>, readonly FileKind[]> = { stl: ['stl'], image: ['image'], data: ['json', 'yaml'] };
-/** Files that open in the detail column: models, images and data. */
-export const viewable = (kind: FileKind) => kind === 'stl' || kind === 'image' || kind === 'json' || kind === 'yaml';
-/** A file that isn't a note: a model, image or data file opens in its viewer, anything else is listed by name. */
+export const FILTER_KINDS: Record<Exclude<FileFilter, 'all' | 'markdown'>, readonly FileKind[]> = {
+  stl: ['stl'], image: ['image'], data: ['json', 'yaml'], sheet: ['csv'], code: ['code'],
+};
+/** Files that open in the detail column: models, images, data, spreadsheets and code. */
+export const viewable = (kind: FileKind) => kind !== 'markdown' && kind !== 'other';
+/** A file that isn't a note: a model, image, data, spreadsheet or code file opens in its viewer, anything else is listed by name. */
 export interface OtherFile { id: string; path: string; name: string; folder: string; kind: FileKind }
 /** Files dragged onto another location, waiting for Move or Copy. */
 export interface Transfer { paths: string[]; to: Folder }
@@ -132,7 +134,7 @@ export function useNotes({ folder: initialFolder = ROOT_FOLDER.id, note: initial
 
   return {
     notes, folder, folders, roots, others, filter, setFilter, shown, listed, trail, rootFolder, selected, selectedId, query, view, count, files, drafts, creating, renaming, deleting,
-    /** The file open in the detail column, when the selection is a model, image or data file rather than a note. */
+    /** The file open in the detail column, when the selection is a model, image, data, spreadsheet or code file rather than a note. */
     selectedFile: others.find((o) => o.id === selectedId && viewable(o.kind)) ?? null,
     transfer, setTransfer,
     folderId: folder.id, sidebarId: rootFolder?.id ?? null,

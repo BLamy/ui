@@ -2081,7 +2081,7 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@1.21.0",
+        "@brett_lamy/docstream-editor@1.22.1",
         "@tiptap/core@3.30.5",
         "@tiptap/pm@3.30.5",
         "class-variance-authority@^0.7.1",
@@ -2320,6 +2320,23 @@
           "CRON_FIELDS"
         ]
       }
+    },
+    {
+      "name": "csv",
+      "type": "registry:lib",
+      "title": "CSV",
+      "description": "CSV and TSV as rows of strings (RFC 4180): quoted fields, \"\" escapes and line breaks inside quotes, CRLF or LF, a BOM, and delimiter detection. parseCsv remembers how the text was written so stringifyCsv writes an edited table back the same way.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/csv.ts",
+          "type": "registry:lib",
+          "target": "lib/csv.ts"
+        }
+      ]
     },
     {
       "name": "date-field",
@@ -3225,8 +3242,8 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/docstream@1.21.0",
-        "@brett_lamy/docstream-editor@1.21.0",
+        "@brett_lamy/docstream@1.22.1",
+        "@brett_lamy/docstream-editor@1.22.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -3256,7 +3273,7 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/docstream@1.21.0"
+        "@brett_lamy/docstream@1.22.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3905,9 +3922,9 @@
       "name": "replay-preview",
       "type": "registry:ui",
       "title": "ReplayPreview",
-      "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
+      "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, Console and Network buttons that open a DevTools panel cut at the playhead (requests, failures, errors), a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@1.21.0"
+        "@brett_lamy/docstream@1.22.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -3927,7 +3944,9 @@
           "getReplayMarkers",
           "getReplayMeta",
           "getReplayPointerTrack",
-          "replayPointerAt"
+          "replayPointerAt",
+          "getReplayDevtools",
+          "replayDevtoolsAt"
         ]
       }
     },
@@ -4319,6 +4338,61 @@
       }
     },
     {
+      "name": "spreadsheet-model",
+      "type": "registry:lib",
+      "title": "Spreadsheet model",
+      "description": "The data side of Spreadsheet, with no UI: column types, reading cells as numbers and dates, exact order-preserving 64-bit sort keys, sortRows (a WebGPU bitonic sort for number and date columns, natural text order on the CPU), selection statistics and column histograms tallied on the GPU, each with a CPU fallback that gives the same answer.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/webgpu.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/spreadsheet-gpu.ts",
+          "type": "registry:lib",
+          "target": "lib/spreadsheet-gpu.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/spreadsheet.ts",
+          "type": "registry:lib",
+          "target": "lib/spreadsheet.ts"
+        }
+      ]
+    },
+    {
+      "name": "spreadsheet",
+      "type": "registry:ui",
+      "title": "Spreadsheet",
+      "description": "A virtualized grid of string cells for CSV-sized and million-row data: an ARIA grid with keyboard navigation, range selection, in-place editing, tab-separated copy / cut / paste, undo and resizable columns. Sorting a number or date column is an exact 64-bit bitonic sort in a WebGPU compute shader, and number columns show histograms tallied on the GPU; both fall back to the CPU with the same answers. The status bar shows the selection's sum and average and which engine sorted.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/csv.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/spreadsheet-model.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/spreadsheet.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/spreadsheet.tsx"
+        }
+      ],
+      "meta": {
+        "page": "spreadsheet",
+        "exports": [
+          "Spreadsheet",
+          "spreadsheetVariants",
+          "columnName"
+        ]
+      }
+    },
+    {
       "name": "sql-console",
       "type": "registry:ui",
       "title": "SqlConsole",
@@ -4387,7 +4461,7 @@
       "title": "StlViewer",
       "description": "A 3D preview of an .stl model, binary or ASCII: WebGL with no dependencies, drag to orbit, pinch or ⌘-scroll to zoom, double-click to reset, and the triangle count and size under it. The model takes the theme's primary color.",
       "dependencies": [
-        "@brett_lamy/docstream@1.21.0"
+        "@brett_lamy/docstream@1.22.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4414,7 +4488,7 @@
       "title": "StrudelPlayer",
       "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time.",
       "dependencies": [
-        "@brett_lamy/docstream@1.21.0"
+        "@brett_lamy/docstream@1.22.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4446,7 +4520,7 @@
       "title": "StrudelRack",
       "description": "Studio hardware generated from Strudel code: a rack of devices, one per track, with mute/solo pads, a channel fader, synth and key LCDs, TR-style step keys for the mini-notation and LED-ring knobs for each effect. Every control edits the code in place. Knob, Fader and StepGrid are exported on their own.",
       "dependencies": [
-        "@brett_lamy/docstream@1.21.0"
+        "@brett_lamy/docstream@1.22.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4477,7 +4551,7 @@
       "title": "Strudel syntax tree",
       "description": "Strudel code as a syntax tree: the JavaScript (acorn) read as a song — tempo, tracks, method chains with typed arguments — every mini-notation string parsed with source ranges, and edits that rewrite only the characters they touch.",
       "dependencies": [
-        "@brett_lamy/docstream@1.21.0"
+        "@brett_lamy/docstream@1.22.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -5961,7 +6035,8 @@
         "gpu-lexer@0.0.3"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/webgpu.json"
       ],
       "files": [
         {
@@ -6022,6 +6097,23 @@
           "path": "packages/ui/src/lib/tokens.generated.ts",
           "type": "registry:lib",
           "target": "lib/tokens.generated.ts"
+        }
+      ]
+    },
+    {
+      "name": "webgpu",
+      "type": "registry:lib",
+      "title": "Webgpu",
+      "description": "Webgpu — part of BL UI's library (lib/webgpu.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/webgpu.ts",
+          "type": "registry:lib",
+          "target": "lib/webgpu.ts"
         }
       ]
     },
@@ -6116,7 +6208,7 @@
         "media"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@1.21.0"
+        "@brett_lamy/docstream@1.22.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -6183,7 +6275,7 @@
       "name": "apple-notes",
       "type": "registry:block",
       "title": "Apple Notes clone",
-      "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. Each sidebar location is its own master list in a NavigationStack: folders push, file leaves open the note. The top-right control switches to the library's file Tree. Right-click any folder, note or location to rename, duplicate or delete it in place. The filter shows All Files or one type (Markdown, 3D models, images, JSON & YAML); an STL model opens in a 3D viewer, an image in an image viewer, and JSON or YAML in visual-json (JSON edits save back to the file). Embeds load from the note's folder, \"Choose file…\" picks any file in it, and dragging rows (or files from your computer) onto a note embeds them; drop computer files on a folder to copy them in, or drag files onto another location to move or copy them. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
+      "description": "Apple Notes for your Markdown files, with the Docstream rich editor. Add multiple folders under On My Mac; their handles are remembered across reloads. Each sidebar location is its own master list in a NavigationStack: folders push, file leaves open the note. The top-right control switches to the library's file Tree. Right-click any folder, note or location to rename, duplicate or delete it in place. The filter shows All Files or one type (Markdown, 3D models, images, JSON & YAML, spreadsheets, code & text); an STL model opens in a 3D viewer, an image in an image viewer, JSON or YAML in visual-json or as code (JSON edits save back to the file), a CSV or TSV in the library's GPU-sorted Spreadsheet, and source and text files in a code editor highlighted by gpu-lexer. Spreadsheet and code edits autosave (⌘S saves at once), and a file changed outside Notes reloads, or asks which copy to keep when you have edits. Embeds load from the note's folder, \"Choose file…\" picks any file in it, and dragging rows (or files from your computer) onto a note embeds them; drop computer files on a folder to copy them in, or drag files onto another location to move or copy them. Includes OPFS personal notes, autosave, native document properties, task state icons and menus, folder-backed live examples, unseen external-edit blue dots and conflict recovery. Starts with no sample content. Responsive SplitView on desktop, tablet and phone.",
       "categories": [
         "notes",
         "productivity",
@@ -6193,7 +6285,7 @@
         "use-fs@2.1.0",
         "react-aria-components@^1.20.0",
         "@agent-wasm/core@0.4.0",
-        "@brett_lamy/docstream@1.21.0",
+        "@brett_lamy/docstream@1.22.1",
         "@visual-json/react@0.4.0",
         "@visual-json/yaml@0.4.0"
       ],
@@ -6202,6 +6294,7 @@
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/csv.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
@@ -6214,7 +6307,10 @@
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/split-view.json",
+        "https://blamy.github.io/ui/r/spreadsheet.json",
         "https://blamy.github.io/ui/r/stl-viewer.json",
+        "https://blamy.github.io/ui/r/syntax.json",
+        "https://blamy.github.io/ui/r/syntax-highlighting.json",
         "https://blamy.github.io/ui/r/text-field.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/tree.json",
@@ -6290,6 +6386,11 @@
           "path": "registry/blocks/apple-notes/file-views.tsx",
           "type": "registry:component",
           "target": "components/blocks/apple-notes/file-views.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-notes/code-editor.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/code-editor.tsx"
         },
         {
           "path": "registry/blocks/apple-notes/folder-tree.tsx",
@@ -6441,7 +6542,7 @@
       ],
       "dependencies": [
         "use-fs@2.1.0",
-        "@brett_lamy/docstream@1.21.0"
+        "@brett_lamy/docstream@1.22.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -7935,7 +8036,7 @@
         "audio"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@1.21.0"
+        "@brett_lamy/docstream@1.22.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",

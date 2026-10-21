@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (90 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (91 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -1292,6 +1292,23 @@ Defined in `@/components/ui/split-view`. Base classes:
 | --- | --- |
 | `default` (default) | `px-2.5 pt-4 pb-1.5 text-footnote font-semibold tracking-[-.1px] text-muted-foreground` |
 | `prominent` | `px-1 pt-6 pb-2 text-title font-bold tracking-[-.2px] text-foreground` |
+
+## Spreadsheet
+
+### `spreadsheetVariants`
+
+Defined in `@/components/ui/spreadsheet`. Base classes:
+
+```text
+relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground shadow-hairline
+```
+
+**`density`** — default `compact`
+
+| Value | Adds |
+| --- | --- |
+| `compact` (default) | — |
+| `comfortable` | — |
 
 ## SqlConsole
 

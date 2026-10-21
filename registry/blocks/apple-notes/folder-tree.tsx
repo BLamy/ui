@@ -21,7 +21,7 @@ export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: F
     // Models, images and data files open in their viewers; under All Files, everything else is listed beside them, dimmed.
     const rest = (parent: string): Node[] => notes.others
       .filter((o) => notes.listed(o) && o.folder === parent && (!q || o.name.toLowerCase().includes(q)))
-      .map((o) => ({ id: o.id, name: o.name, other: o, ...(o.kind === 'stl' ? { icon: 'cube' as const } : o.kind === 'image' ? { icon: 'photo' as const }
+      .map((o) => ({ id: o.id, name: o.name, other: o, ...(o.kind === 'stl' ? { icon: 'cube' as const } : o.kind === 'image' ? { icon: 'photo' as const } : o.kind === 'csv' ? { icon: 'table' as const }
         : viewable(o.kind) ? {} : { dimmed: true, detailTitle: 'Drag onto a note to embed it' }) }));
     const sorted = (items: Node[]) => items.sort((a, b) => a.name.localeCompare(b.name));
     const build = (parent: string): Node[] => [...notes.folders

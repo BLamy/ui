@@ -6,6 +6,10 @@
    context) or — in the default `auto` engine — the only adapter is a software one (SwiftShader in headless CI,
    llvmpipe), a deliberately small fallback — comments, strings, numbers, keywords, calls — labels the code at once,
    and the element says so with `data-highlighter="fallback"`. It is a degraded mode, not a second highlighter. */
+import { navigatorGpu, probeWebGPU, webgpuProbeResult } from '@/lib/webgpu';
+
+export { probeWebGPU } from '@/lib/webgpu';
+export type { WebGPUProbe } from '@/lib/webgpu';
 
 export type SyntaxTokenType =
   | 'plain'
@@ -48,78 +52,16 @@ export type SyntaxEngine = 'auto' | 'gpu' | 'fallback';
 
 /* ── WebGPU state ── */
 
-/** What the one-time adapter probe found: a `hardware` adapter, only a `software`/fallback one (or the probe timed
-    out), or `none` (no `navigator.gpu`, no adapter, insecure context, SSR). */
-export type WebGPUProbe = 'hardware' | 'software' | 'none';
-
 type GpuState = 'unknown' | 'ready' | 'unavailable';
 let gpuState: GpuState = 'unknown';
-let probeState: WebGPUProbe | null = null;
-let probePromise: Promise<WebGPUProbe> | null = null;
-
-/** How long the probe waits for an adapter before `auto` settles on the fallback. */
-const PROBE_TIMEOUT = 2500;
-const SOFTWARE_ADAPTER = /swiftshader|llvmpipe|lavapipe|software|microsoft basic/i;
-
-interface ProbeAdapterInfo {
-  vendor?: string;
-  architecture?: string;
-  device?: string;
-  description?: string;
-  isFallbackAdapter?: boolean;
-}
-interface ProbeAdapter {
-  isFallbackAdapter?: boolean;
-  info?: ProbeAdapterInfo;
-  requestAdapterInfo?: () => Promise<ProbeAdapterInfo>;
-}
-interface ProbeGpu {
-  requestAdapter(): Promise<ProbeAdapter | null>;
-}
-
-const navigatorGpu = (): ProbeGpu | undefined =>
-  typeof navigator === 'undefined' ? undefined : (navigator as Navigator & { gpu?: ProbeGpu }).gpu;
-
-async function classifyAdapter(adapter: ProbeAdapter | null): Promise<WebGPUProbe> {
-  if (!adapter) return 'none';
-  let info = adapter.info;
-  if (!info && typeof adapter.requestAdapterInfo === 'function') info = await adapter.requestAdapterInfo().catch(() => undefined);
-  if (adapter.isFallbackAdapter || info?.isFallbackAdapter) return 'software';
-  const text = [info?.vendor, info?.architecture, info?.device, info?.description].filter(Boolean).join(' ');
-  return SOFTWARE_ADAPTER.test(text) ? 'software' : 'hardware';
-}
-
-/** Probe WebGPU once per page (cached): is there an adapter, and is it real hardware? Settles within ~2.5 s; a probe
-    that takes longer counts as `software` (so `auto` falls back), and a late answer still updates later lexes. */
-export function probeWebGPU(): Promise<WebGPUProbe> {
-  if (probePromise) return probePromise;
-  const gpu = navigatorGpu();
-  if (!gpu) {
-    probeState = 'none';
-    return (probePromise = Promise.resolve<WebGPUProbe>('none'));
-  }
-  const request = Promise.resolve()
-    .then(() => gpu.requestAdapter())
-    .then(classifyAdapter, (): WebGPUProbe => 'none');
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<WebGPUProbe>((resolve) => {
-    timer = setTimeout(() => resolve('software'), PROBE_TIMEOUT);
-  });
-  void request.then((r) => {
-    clearTimeout(timer);
-    probeState = r;
-  });
-  probePromise = Promise.race([request, timeout]).then((r) => (probeState ??= r));
-  return probePromise;
-}
 
 /** Whether `engine` (default `auto`) should use gpu-lexer here. `false` when there is no `navigator.gpu`
     (Firefox/Safari without it, insecure contexts, SSR), the probe found no adapter, or a lex found WebGPU
     unavailable — and, for `auto`, when the probe found only a software adapter. `true` means "worth trying" while
     the probe is still pending. */
 export function webgpuSupported(engine: SyntaxEngine = 'auto'): boolean {
-  if (engine === 'fallback' || gpuState === 'unavailable' || probeState === 'none') return false;
-  if (engine === 'auto' && probeState === 'software') return false;
+  if (engine === 'fallback' || gpuState === 'unavailable' || webgpuProbeResult() === 'none') return false;
+  if (engine === 'auto' && webgpuProbeResult() === 'software') return false;
   return !!navigatorGpu();
 }
 

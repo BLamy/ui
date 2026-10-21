@@ -1,0 +1,25 @@
+{
+  "name": "csv",
+  "title": "CSV",
+  "description": "CSV and TSV as rows of strings (RFC 4180): quoted fields, \"\" escapes and line breaks inside quotes, CRLF or LF, a BOM, and delimiter detection. parseCsv remembers how the text was written so stringifyCsv writes an edited table back the same way.",
+  "files": [
+    "lib/csv.ts"
+  ],
+  "exports": [
+    "parseCsv",
+    "stringifyCsv",
+    "csvField",
+    "detectDelimiter",
+    "delimiterForPath"
+  ],
+  "imports": [
+    "parseCsv",
+    "stringifyCsv"
+  ],
+  "types": [
+    "CsvDelimiter",
+    "CsvFormat",
+    "CsvParseResult",
+    "CsvParseOptions"
+  ]
+}

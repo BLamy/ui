@@ -9,14 +9,19 @@ import { useFileChanges } from './use-file-changes';
 export const BROWSER_ROOT = 'browser-notes';
 export const LINKED_FILES = 'linked-files';
 const markdown = (name: string) => /\.mdx?$/i.test(name);
+/** Source and plain-text files, by extension or by a name that has none. */
+const CODE = /\.(?:[cm]?[jt]sx?|py|rb|rs|go|java|kts?|swift|c|h|cc|cpp|cxx|hpp|cs|php|sh|bash|zsh|fish|ps1|sql|css|scss|sass|less|html?|xml|vue|svelte|astro|toml|ini|cfg|conf|lua|r|dart|scala|clj|exs?|erl|hs|ml|elm|zig|nim|pl|graphql|gql|proto|tf|hcl|wgsl|glsl|txt|log|diff|patch|env|gitignore|gitattributes|editorconfig|npmrc|prettierrc|eslintrc)$|(?:^|\/)(?:Dockerfile|Makefile|LICENSE|README|CODEOWNERS|Procfile)$/i;
 /** The file types Notes opens: Markdown in the editor, STL models in the 3D viewer, images in an image viewer, JSON and
-    YAML in visual-json. Everything else is listed only. */
-export type FileKind = 'markdown' | 'stl' | 'image' | 'json' | 'yaml' | 'other';
+    YAML in visual-json (or as code), CSV and TSV in the Spreadsheet, source and text files in the code editor.
+    Everything else is listed only. */
+export type FileKind = 'markdown' | 'stl' | 'image' | 'json' | 'yaml' | 'csv' | 'code' | 'other';
 export const fileKind = (name: string): FileKind => markdown(name) ? 'markdown'
   : /\.stl$/i.test(name) ? 'stl'
   : /\.(png|jpe?g|gif|webp|avif|svg|bmp|ico)$/i.test(name) ? 'image'
   : /\.json$/i.test(name) ? 'json'
-  : /\.ya?ml$/i.test(name) ? 'yaml' : 'other';
+  : /\.ya?ml$/i.test(name) ? 'yaml'
+  : /\.(csv|tsv|tab)$/i.test(name) ? 'csv'
+  : CODE.test(name) ? 'code' : 'other';
 const parentPath = (path: string) => {
   const separator = path.lastIndexOf('/');
   return separator < 0 ? '' : path.slice(0, separator);

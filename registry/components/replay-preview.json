@@ -1,7 +1,7 @@
 {
   "name": "replay-preview",
   "title": "ReplayPreview",
-  "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, a drawn cursor with click ripples, and a skeleton poster while the player loads.",
+  "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, Console and Network buttons that open a DevTools panel cut at the playhead (requests, failures, errors), a drawn cursor with click ripples, and a skeleton poster while the player loads.",
   "page": "replay-preview",
   "exports": [
     "ReplayPreview",
@@ -9,7 +9,9 @@
     "getReplayMarkers",
     "getReplayMeta",
     "getReplayPointerTrack",
-    "replayPointerAt"
+    "replayPointerAt",
+    "getReplayDevtools",
+    "replayDevtoolsAt"
   ],
   "imports": [
     "ReplayPreview"
@@ -19,6 +21,12 @@
     "ReplayMarker",
     "ReplayMarkerKind",
     "ReplayMeta",
-    "ReplayPointerTrack"
+    "ReplayPointerTrack",
+    "ReplayConsoleEntry",
+    "ReplayConsoleLevel",
+    "ReplayDevtools",
+    "ReplayDevtoolsState",
+    "ReplayDevtoolsTab",
+    "ReplayRequest"
   ]
 }

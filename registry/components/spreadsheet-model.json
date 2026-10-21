@@ -1,0 +1,41 @@
+{
+  "name": "spreadsheet-model",
+  "title": "Spreadsheet model",
+  "description": "The data side of Spreadsheet, with no UI: column types, reading cells as numbers and dates, exact order-preserving 64-bit sort keys, sortRows (a WebGPU bitonic sort for number and date columns, natural text order on the CPU), selection statistics and column histograms tallied on the GPU, each with a CPU fallback that gives the same answer.",
+  "files": [
+    "lib/spreadsheet.ts",
+    "lib/spreadsheet-gpu.ts"
+  ],
+  "exports": [
+    "parseCellNumber",
+    "parseCellDate",
+    "inferColumnType",
+    "columnNumbers",
+    "sortKeys",
+    "sortPermutationCpu",
+    "sortTextPermutation",
+    "sortRows",
+    "selectionStats",
+    "columnHistogram",
+    "histogramCpu",
+    "binScale",
+    "GPU_MIN_ROWS",
+    "MAX_BINS"
+  ],
+  "imports": [
+    "sortRows",
+    "columnHistogram",
+    "selectionStats"
+  ],
+  "types": [
+    "SpreadsheetColumnType",
+    "SpreadsheetSortDirection",
+    "SpreadsheetSort",
+    "SpreadsheetEngine",
+    "SpreadsheetRanOn",
+    "SpreadsheetSortResult",
+    "SpreadsheetEngineOptions",
+    "SelectionStats",
+    "SpreadsheetHistogram"
+  ]
+}

@@ -27,7 +27,8 @@ export function ViewToggle({ view, onChange }: { view: NotesView; onChange: (v: 
     ]} />;
 }
 
-/** Beside the search field: All Files, then one file type at a time (Markdown, the default, and STL models). The
+/** Beside the search field: All Files, then one file type at a time (Markdown, the default, models, images, data,
+    spreadsheets and code). The
     icon fills while the list isn't Markdown only. */
 export function FilterMenu({ filter, onChange }: { filter: FileFilter; onChange: (f: FileFilter) => void }) {
   return <DropdownMenu>
@@ -42,6 +43,8 @@ export function FilterMenu({ filter, onChange }: { filter: FileFilter; onChange:
       <DropdownMenuItem id="stl" icon={<Icon name="cube" size={20} />}>3D Models (STL)</DropdownMenuItem>
       <DropdownMenuItem id="image" icon={<Icon name="photo" size={20} />}>Images</DropdownMenuItem>
       <DropdownMenuItem id="data" icon={<Icon name="list" size={20} />}>JSON &amp; YAML</DropdownMenuItem>
+      <DropdownMenuItem id="sheet" icon={<Icon name="table" size={20} />}>Spreadsheets (CSV)</DropdownMenuItem>
+      <DropdownMenuItem id="code" icon={<Icon name="doc" size={20} />}>Code &amp; Text</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>;
 }
