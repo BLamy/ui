@@ -182,6 +182,7 @@
       "section": "Storage and security",
       "pages": [
         { "id": "passkey-vault", "title": "Passkey vault" },
+        { "id": "env-variables", "title": "Example environment variables" },
         { "id": "pglite", "title": "PGlite" },
         { "id": "sql-console", "title": "SqlConsole" },
         { "id": "tailscale-login", "title": "Sign in with Tailscale" },

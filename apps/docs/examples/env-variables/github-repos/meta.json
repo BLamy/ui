@@ -1,0 +1,5 @@
+{
+  "title": "Your GitHub repositories",
+  "description": "Reads `GITHUB_TOKEN` with `useDocstreamEnv()` and lists the repositories you pushed to last.",
+  "status": "Live"
+}

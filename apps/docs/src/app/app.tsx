@@ -1,9 +1,10 @@
 /* BL UI documentation shell — a port of the original HTML design prototype. */
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { AppearanceProvider, type Appearance } from '@/lib/theme';
-import { GitbookStreamdown } from '@brett_lamy/docstream';
+import { GitbookStreamdown, documentEnv, parseMarkdown, type DocstreamEnvHost } from '@brett_lamy/docstream';
 import { BLOCK_COUNT, demoResolver } from '../demos';
 import { BLOCK_ORDER, BLOCK_PAGES, isBlockPage, NAV, PAGES, PAGE_ORDER, pageMdPath, pageSource, pageUrl, SITE_URL } from '../pages';
+import { EnvKeychain } from '../env-keychain';
 import './shell.css';
 
 const SCROLL_ID = 'bldocs-scroll';
@@ -127,17 +128,21 @@ function NavFooter() {
 
 /** One page: its Markdown file through docstream — demos from the resolver, "Copy page" from page actions. */
 function DocPage({ id, markdown }: { id: string; markdown: string }) {
-  return (
+  // A page that declares `env` gets the keychain (and its Tailscale node) to load its examples' variables; others don't load it.
+  const needsEnv = useMemo(() => documentEnv(parseMarkdown(markdown)).length > 0, [markdown]);
+  const page = (envHost?: DocstreamEnvHost) => (
     <div className="dk-md">
       <div className="wb-md">
         <GitbookStreamdown
           markdown={markdown}
           demoResolver={demoResolver}
+          envHost={envHost}
           pageActions={{ markdownUrl: `${import.meta.env.BASE_URL}${pageMdPath(id)}`, pageUrl: pageUrl(id) }}
         />
       </div>
     </div>
   );
+  return needsEnv ? <EnvKeychain>{page}</EnvKeychain> : page();
 }
 
 export default function App() {
