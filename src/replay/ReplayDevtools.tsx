@@ -96,7 +96,8 @@ export function DevtoolsPanel({ state, at, tab, onTab, onClose, onSeek }: {
       style={{ height: `${height}%` }}
     >
       <div data-slot="replay-devtools-resize" aria-hidden="true" onPointerDown={resize} />
-      <div data-slot="replay-devtools-tabs" role="tablist" aria-label="DevTools panels">
+      <div data-slot="replay-devtools-tabs">
+        <div data-slot="replay-devtools-tablist" role="tablist" aria-label="DevTools panels">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -114,6 +115,7 @@ export function DevtoolsPanel({ state, at, tab, onTab, onClose, onSeek }: {
             {t.id === 'network' && state.counts.failed ? <span data-part="failed">{state.counts.failed}</span> : null}
           </button>
         ))}
+        </div>
         <span data-part="at">As of {time(at)}</span>
         <button type="button" data-slot="replay-devtools-close" aria-label="Close DevTools" onClick={onClose}><X size={14} /></button>
       </div>
@@ -306,13 +308,15 @@ function RequestDetail({ request, onClose, onSeek }: { request: Row; onClose: ()
   ]
   return (
     <div data-slot="replay-devtools-detail">
-      <div data-slot="replay-devtools-detail-tabs" role="tablist" aria-label={`${request.name} details`}>
+      <div data-slot="replay-devtools-detail-tabs">
         <button type="button" aria-label="Close request details" data-slot="replay-devtools-close" onClick={onClose}><X size={13} /></button>
-        {(['headers', 'payload', 'response'] as const).map((t) => (
-          <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
-            {t[0]!.toUpperCase() + t.slice(1)}
-          </button>
-        ))}
+        <div data-slot="replay-devtools-tablist" role="tablist" aria-label={`${request.name} details`}>
+          {(['headers', 'payload', 'response'] as const).map((t) => (
+            <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
+              {t[0]!.toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
       <div data-slot="replay-devtools-detail-body">
         {tab === 'headers' ? (
