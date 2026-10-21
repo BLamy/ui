@@ -8,6 +8,8 @@ export type { TaskCheckboxProps, TaskStateChangeHandler } from "./docs/TaskCheck
 export { TASK_STATES, getTaskState, taskMarker, taskStateFromMarker } from "./gitbook/tasks"
 export { DocstreamEnvProvider, EnvGate, envNamesFromProperties, useDocstreamEnv, useEnvGate, usedEnvNames } from "./doc-env"
 export type { DocstreamEnv, DocstreamEnvHost, DocstreamEnvProviderProps, DocstreamEnvValues } from "./doc-env"
+export { createEnvKeychain, keychainEnvHost } from "./env-keychain"
+export type { EnvKeychain, EnvKeychainOptions, EnvKeychainStatus, KeychainEnvHostOptions } from "./env-keychain"
 export { DocumentProperties } from "./docs/DocumentProperties"
 export type { DocumentPropertiesProps } from "./docs/DocumentProperties"
 export { readDocumentProperties, removeDocumentProperty, setDocumentProperty } from "./gitbook/properties"

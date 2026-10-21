@@ -66,3 +66,4 @@ body {
 .gh-env-paste label { grid-column: 1 / -1; font-size: 13px; color: var(--muted-foreground); }
 .gh-env-paste input { font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: inherit; }
 .gh-env-cancel { display: block; margin-left: auto; }
+.gh-env-forget { padding: 0; border: 0; background: none; color: var(--primary); font: inherit; cursor: pointer; text-decoration: underline; }

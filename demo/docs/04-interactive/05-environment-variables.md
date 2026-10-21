@@ -13,11 +13,11 @@ env: [GITHUB_TOKEN]
 ---
 ```
 
-This page does. Any example on it whose code mentions `GITHUB_TOKEN` doesn't run when the page loads: it shows a button, and its module isn't even imported until the token is there. Press it, sign in to GitHub (a device code, like `gh auth login`) or paste a token, and the example runs with it.
+This page does. Any example on it whose code mentions `GITHUB_TOKEN` doesn't run when the page loads: it shows a button, and its module isn't even imported until the token is there. Press it, create a passkey for this site's keychain, sign in to GitHub (a device code, like `gh auth login`) or paste a token, and the example runs with it.
 
 {% demo src="environment-variables/github-repos" %}
 
-The token stays in this tab (sessionStorage) and is sent only to `api.github.com`. Every example on the page shares it: the one below runs at once now.
+The token goes into a **keychain** encrypted with your passkey (Touch ID, Face ID, Windows Hello or a security key), and is sent only to `api.github.com`. Every example on the page shares it: the one below runs at once now. Come back later and the button says **Unlock with Passkey**: one biometric prompt, and every example whose variables are in the keychain opens, with no sign-in.
 
 ## In almost-node: `process.env`
 
@@ -55,6 +55,23 @@ createRoot(document.getElementById("root")).render(<Whoami />)
 
 An example is gated when its source mentions a declared name as a whole word — `GITHUB_TOKEN` in a comment counts, `MY_GITHUB_TOKEN_2` doesn't. Examples that use none of the page's variables run straight away.
 
+## A passkey keychain
+
+docstream ships the keychain this page uses. `createEnvKeychain` keeps values encrypted with AES-GCM under a key derived from the passkey's PRF output, so reading them takes the reader's biometrics; the names it holds are readable while locked, which is how the button knows to say "unlock". `keychainEnvHost` turns it into a host:
+
+```tsx
+import { createEnvKeychain, keychainEnvHost } from "@brett_lamy/docstream"
+
+const keychain = createEnvKeychain({ id: "my-docs", rpName: "My docs" })
+const envHost = keychainEnvHost(keychain, {
+  signInLabel: "Sign in with GitHub",
+  // Only for what the keychain doesn't hold yet; what it returns is saved.
+  obtain: async (names) => ({ GITHUB_TOKEN: await signInWithGitHub() }),
+})
+```
+
+A press creates the keychain the first time (a passkey prompt) or unlocks it, asks `obtain` for anything missing, and answers with **everything** the keychain holds, so every example those values cover opens together. There is no recovery key: a lost passkey only means signing in again (`keychain.reset()`). Without passkey PRF support, values are kept for the page only.
+
 ## Supplying the values
 
 The renderer asks the host. Pass an `envHost` to `DocsSite`, `GitbookStreamdown`, `DocsRenderer` or `MarkdownContent`:
@@ -75,7 +92,7 @@ const envHost: DocstreamEnvHost = {
 <DocsSite files={files} envHost={envHost} />
 ```
 
-This site's host is about 120 lines (`demo/src/github-env.tsx`): GitHub's device flow through a CORS proxy, with a paste-a-token fallback, kept in sessionStorage. The [BL UI docs](https://blamy.github.io/ui/#/env-variables) answer from a passkey-encrypted keychain instead, with device sign-ins for GitHub, Fly.io, Netlify and Replay.
+This site's host (`demo/src/github-env.tsx`) is that keychain plus GitHub's device flow through a CORS proxy, with a paste-a-token fallback. The [BL UI docs](https://blamy.github.io/ui/#/env-variables) answer from their Passwords keychain, with device sign-ins for GitHub, Fly.io, Netlify and Replay.
 
 {% hint style="info" %}
 Without an `envHost`, the gate asks the reader to type the values, and keeps them in memory for the page.

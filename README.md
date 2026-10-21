@@ -202,6 +202,11 @@ when the page loads. It shows a gate, and its module isn't imported, until the v
   hint beside each variable.
 - **Without a host:** the gate asks the reader for the values and keeps them in memory for the page.
 
+For a passkey keychain, use `createEnvKeychain` and `keychainEnvHost`. Values are kept encrypted
+with a key derived from the passkey's PRF output, and the names are readable while locked. A press
+unlocks it with one biometric prompt, signs in (`obtain`) only for what it doesn't hold, saves that,
+and answers with everything it holds, so every example those values cover opens together.
+
 In-page demos read the values with `useDocstreamEnv().values`. Inline demos that run in almost-node,
 and live code fences, get them as `process.env.NAME` (`injectEnv` writes a module the entry imports
 first). Values loaded once are shared by every example on the page. `env` can also be passed as a

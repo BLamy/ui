@@ -20,11 +20,13 @@ export type DocstreamEnvValues = Readonly<Record<string, string>>
 export interface DocstreamEnvHost {
   /**
    * Resolves with the values it could get (unlocking a keychain or signing in as needed). Names it
-   * leaves out stay missing and the example stays gated; a rejection is shown on the gate.
+   * leaves out stay missing and the example stays gated; a rejection is shown on the gate. It may
+   * resolve with more than it was asked for — everything an unlocked keychain holds, say — and every
+   * example those values cover opens too.
    */
   request: (names: readonly string[]) => Promise<Record<string, string>>
-  /** The gate's button, e.g. "Load from Keychain". Default "Load Variables". */
-  label?: string
+  /** The gate's button, e.g. "Load from Keychain", or one for the names this gate needs. Default "Load Variables". */
+  label?: string | ((names: readonly string[]) => string)
   /** A short line about one variable, e.g. "Sign in with GitHub" — shown beside its name. */
   describe?: (name: string) => string | undefined
 }
@@ -95,7 +97,7 @@ export function DocstreamEnvProvider({ declared = [], host, children }: Docstrea
     const missing = names.filter((n) => valuesRef.current[n] === undefined)
     if (!missing.length || !effectiveHost) return valuesRef.current
     const got = await effectiveHost.request(missing)
-    const kept = Object.fromEntries(Object.entries(got).filter(([k, v]) => missing.includes(k) && typeof v === "string"))
+    const kept = Object.fromEntries(Object.entries(got).filter(([, v]) => typeof v === "string"))
     setOwn((v) => ({ ...v, ...kept }))
     return { ...valuesRef.current, ...kept }
   }, [effectiveHost])
@@ -176,7 +178,7 @@ export function EnvGate({ names, title }: { names: readonly string[]; title?: st
             ))}
           </ul>
           <button type="button" className="docs-env-gate-button" onClick={() => void load()} disabled={busy}>
-            {busy ? "Waiting…" : host.label ?? "Load Variables"}
+            {busy ? "Waiting…" : (typeof host.label === "function" ? host.label(names) : host.label) ?? "Load Variables"}
           </button>
         </>
       ) : (
