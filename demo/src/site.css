@@ -41,3 +41,28 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* The GitHub sign-in the environment-variables page asks for (github-env.tsx). */
+.gh-env-dialog {
+  width: min(92vw, 420px);
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--background);
+  color: var(--foreground);
+  font: 14px/1.5 system-ui, sans-serif;
+}
+.gh-env-dialog::backdrop { background: rgb(0 0 0 / 0.35); }
+.gh-env-dialog h2 { margin: 0 0 10px; font-size: 17px; }
+.gh-env-dialog p { margin: 0 0 10px; }
+.gh-env-code { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+.gh-env-code code { padding: 8px 12px; border-radius: 8px; background: var(--muted); font-size: 22px; font-weight: 650; letter-spacing: 0.12em; }
+.gh-env-dialog button { font: inherit; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--muted); color: inherit; cursor: pointer; }
+.gh-env-dialog button[type="submit"], .gh-env-code button { border-color: transparent; background: var(--primary); color: var(--primary-foreground); }
+.gh-env-dialog button:disabled { opacity: 0.55; cursor: default; }
+.gh-env-wait { color: var(--muted-foreground); font-size: 13px; }
+.gh-env-error { color: #d93025; }
+.gh-env-paste { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; margin: 14px 0 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.gh-env-paste label { grid-column: 1 / -1; font-size: 13px; color: var(--muted-foreground); }
+.gh-env-paste input { font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: inherit; }
+.gh-env-cancel { display: block; margin-left: auto; }

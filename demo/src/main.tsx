@@ -9,6 +9,7 @@ import { demoRuntime } from './inline-demo-runtime';
 import * as ButtonModule from './examples/Button';
 import * as ButtonStoriesModule from './examples/Button.stories';
 import { liveRenderer } from './live-renderer';
+import { useGithubEnv } from './github-env';
 
 /* The whole site is the docs/ folder: DocsSite keeps the Markdown, builds the sidebar from the
    folders, and renders every page through docstream. Add a file there and it's on the site.
@@ -57,6 +58,8 @@ const GITHUB = 'https://github.com/BLamy/docstream';
 const SITE = 'https://blamy.github.io/docstream/';
 
 function App() {
+  // Pages that declare `env: [GITHUB_TOKEN]` get it from a GitHub sign-in (see github-env.tsx).
+  const github = useGithubEnv();
   return (
     <DocstreamRefContext.Provider value={{ resolveCitationPreview: citationPreviews }}>
       <DocsSite
@@ -73,10 +76,12 @@ function App() {
         sourceRenderer={sourceRenderer}
         demoResolver={demoResolver}
         demoRuntime={demoRuntime}
+        envHost={github.host}
         pageActions={(page) => ({ transform: (md) => `${md.trim()}\n\n---\n\nSource: ${SITE}#/${page.slug}\n` })}
         editUrl={(page) => `${GITHUB}/edit/main/demo/docs/${page.path}`}
         sidebarFooter={<>This site is a folder of Markdown, rendered by <a href="#/docs-site">DocsSite</a>.</>}
       />
+      {github.dialog}
     </DocstreamRefContext.Provider>
   );
 }
