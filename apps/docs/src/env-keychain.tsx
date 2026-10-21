@@ -78,14 +78,20 @@ function Keychain({ children }: { children: (host: DocstreamEnvHost) => ReactNod
     if (passkeys.status === 'unlocked' && (!store.loaded || typedMeta.status === 'loading' || typedMeta.status === 'locked')) return;
     const missing = pending.names.filter((n) => !valueOf(n));
     if (!missing.length) {
-      pending.resolve(Object.fromEntries(pending.names.map((n) => [n, valueOf(n)!])));
+      // Everything the keychain holds, not only what this gate asked for: one unlock opens every example it covers.
+      const all: Record<string, string> = { ...typedSaved, ...typedSession };
+      for (const [name, service] of Object.entries(ENV_SERVICES)) {
+        const token = store.grants[service]?.accessToken;
+        if (token) all[name] = token;
+      }
+      pending.resolve({ ...all, ...Object.fromEntries(pending.names.map((n) => [n, valueOf(n)!])) });
       setPending(null);
       return;
     }
     const service = ENV_SERVICES[missing[0]!];
     if (service) setSignIn(service);
     else setTyping(missing[0]!);
-  }, [pending, signIn, typing, passkeys, valueOf, store.loaded, typedMeta.status]);
+  }, [pending, signIn, typing, passkeys, valueOf, store.loaded, store.grants, typedSaved, typedSession, typedMeta.status]);
 
   const cancel = (message: string) => {
     pending?.reject(new Error(message));
