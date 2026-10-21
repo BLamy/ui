@@ -226,9 +226,12 @@ Inherent to running Tailscale in a page:
 - **Relayed only**: no UDP in browsers, so all traffic goes through DERP over WebSockets: slower than a native client.
 - **HTTP only**: the client exposes `fetch`; there are no raw TCP sockets, and WebSockets to tailnet hosts are not covered.
 - **Buffered**: request and response bodies cross into WebAssembly as whole base64 strings, so large bodies cost memory and nothing streams.
-- **Public hosts**: with an exit node, public names need DNS that works inside the client. This adapter does what almostnode does: it resolves the name over DNS-over-HTTPS (`dohUrl`, default Cloudflare, from the page's own network, or through the exit node with `dnsVia: 'exit-node'`), passes the address to the client as `ipMap` and fetches the name; if that fails it dials the address with the name as `Host` and TLS name, and reports both errors if that fails too.
+- **Public hosts**: with an exit node, public names need DNS that works inside the client. The adapter resolves the name over DNS-over-HTTPS (`dohUrl`, default Cloudflare, from the page's own network, or through the exit node with `dnsVia: 'exit-node'`) and dials that one address, with the name as the `Host` header and TLS server name. Dialling the name instead lets the bundled Go build race several addresses, and when one dial fails it closes a nil connection and panics; `exitNodeDial: 'name'` restores almostnode's way (the address handed over as `ipMap`, the name fetched, the address as a fallback).
 - **The tab is the device**: closing it takes the device offline; a restored session reconnects when the page loads again.
-- **Panics**: the Go runtime can crash; the status becomes `error` and **Try again** starts a fresh client.
+- **Panics**: the Go runtime exits on a panic. Its control and DERP sockets are closed (otherwise each later message throws "Go program has already exited"), and with a saved session a fresh client starts by itself and picks the saved exit node again. A second panic within a minute leaves the status at `error`, and **Try again** starts a fresh client.
+- **Sign-in with a saved session**: **Sign in** first lets the saved node sign itself back in (`restoreTimeoutMs`, default 20 s) and asks for an interactive login only if the client says it needs one; asking straight away would cancel the restore.
+- **The popup**: once it shows the sign-in page (opener cleared), the page leaves it alone — closing or navigating a window it no longer owns only earns the browser's "unsafe attempt" warning. A popup that never left its blank page is closed when the client connects.
+- **Exit node**: the choice is saved with the session and set again when the session is restored.
 
 ## Testing
 

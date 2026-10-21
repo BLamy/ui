@@ -58,6 +58,8 @@ export interface TailscaleClientStartOptions {
   authKey?: string;
   /** The saved state map (node keys, profile), or null for a new node. */
   state: Record<string, string> | null;
+  /** The exit node to start with (a restored session's choice); the controller also sets it again once running. */
+  exitNodeId?: string | null;
   /** Called with the whole map after the client writes to it. */
   onState: (state: Record<string, string>) => void;
   onEvent: (event: TailscaleClientEvent) => void;
@@ -101,6 +103,8 @@ export interface TailscaleSession {
   v: 1;
   hostname: string;
   state: Record<string, string>;
+  /** The exit node in use when it was saved; chosen again when the session is restored. */
+  exitNodeId?: string | null;
 }
 
 export interface TailscalePersistence {
@@ -118,7 +122,7 @@ function readSession(value: unknown): TailscaleSession | null {
     if (typeof s !== 'string') return null;
     state[k] = s;
   }
-  return { v: 1, hostname: v.hostname, state };
+  return { v: 1, hostname: v.hostname, state, ...(typeof v.exitNodeId === 'string' ? { exitNodeId: v.exitNodeId } : {}) };
 }
 
 /** Nothing outlives the page (the default when no persistence is given). Every visit is a new device. */
@@ -269,6 +273,8 @@ export interface TailscaleOptions {
   lockName?: string | false;
   /** How long an auth-key sign-in may take before it is reported as failed (ms). Default 30 000. */
   authKeyTimeoutMs?: number;
+  /** How long Sign In waits for a saved session to sign itself back in before asking for an interactive login. Default 20 s. */
+  restoreTimeoutMs?: number;
   /** The default policy for `fetch` and `matches` (the service-worker router takes its own). */
   policy?: TailscalePolicy;
   env?: TailscaleEnv;
@@ -343,6 +349,11 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
   let clientState: TailscaleClientState = 'NoState';
   let loginRequested = false;
   let popup: TailscalePopup | null = null;
+  let popupAway = false; // the popup has been sent to the sign-in page (cross-origin, opener cleared)
+  /** Resolved by the client's next settled state (signIn waits for it before asking for an interactive login). */
+  let stateWaiters: Array<(state: TailscaleClientState) => void> = [];
+  let lastCrash = 0;
+  let currentHostname: string | null = null; // the running client's, for saving state that arrives before a session exists
   let session: TailscaleSession | null = null;
   let sessionLoaded: Promise<void> | null = null;
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -396,7 +407,7 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
     const state = pendingState;
     pendingState = null;
     if (!state) return;
-    session = { v: 1, hostname, state };
+    session = { v: 1, hostname, state, ...(session?.exitNodeId ? { exitNodeId: session.exitNodeId } : {}) };
     try {
       await persistence.save(session);
       set({ hasSession: true, warning: null });
@@ -428,7 +439,12 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
 
   function closePopup() {
     const p = popup;
+    const away = popupAway;
     popup = null;
+    popupAway = false;
+    // Once it shows login.tailscale.com (opener cleared) the page no longer owns it: closing or navigating it then only earns
+    // the browser's "unsafe attempt" warning. Tailscale's page says when it is done; a blank one is still ours to close.
+    if (away) return;
     try {
       if (p && !p.closed) p.close();
     } catch { /* ignore */ }
@@ -437,17 +453,21 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
   function showLoginUrl(url: string | null) {
     if (url === null) return set({ loginUrl: null });
     if (!isSafeLoginUrl(url)) return fail(new TailscaleError('login-url', `Refused to open the sign-in URL ${JSON.stringify(url.slice(0, 80))}.`));
+    const repeat = snap.loginUrl === url;
     set({ loginUrl: url });
     const p = popup;
-    if (p && !p.closed) {
+    if (p && !popupAway && !p.closed) {
       try {
         p.opener = null;
         p.location.replace(url);
+        popupAway = true;
         return;
       } catch {
         popup = null;
       }
     }
+    // The popup already shows a sign-in page: the same URL again needs nothing; a new one goes to the badge's link.
+    if (popupAway && repeat) return;
     options.onLoginUrl?.(url);
   }
 
@@ -469,8 +489,19 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
   function onEvent(gen: number, event: TailscaleClientEvent) {
     if (gen !== generation) return;
     if (event.error) {
-      void stop(false);
-      fail(new TailscaleError('client', event.error));
+      // The Go runtime exits on a panic. With a saved session, start a fresh client once (not twice in a minute) and pick the
+      // exit node again; otherwise report it.
+      const wasRunning = clientState === 'Running';
+      void stop(false).then(() => { // stop() saves state still waiting to be written, so `session` is current here
+        set({ exitNodeId: null });
+        if (wasRunning && session && Date.now() - lastCrash > 60_000) {
+          lastCrash = Date.now();
+          set({ status: 'loading', warning: 'Tailscale stopped unexpectedly and is reconnecting.' });
+          ensureClient().catch((e: unknown) => fail(e instanceof TailscaleError ? e : new TailscaleError('client', event.error!)));
+        } else {
+          fail(new TailscaleError('client', event.error!));
+        }
+      });
       return;
     }
     if (event.netMap !== undefined) {
@@ -492,15 +523,44 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
     if (event.loginUrl !== undefined) showLoginUrl(event.loginUrl);
     if (event.state) {
       clientState = event.state;
+      if (clientState !== 'NoState' && clientState !== 'Starting') {
+        const waiters = stateWaiters;
+        stateWaiters = [];
+        waiters.forEach((w) => w(clientState));
+      }
       if (clientState === 'InUseOtherUser') return fail(new TailscaleError('in-use', 'The session belongs to a different user.'));
       if (clientState === 'Running') {
         loginRequested = false;
         clearAuthTimer();
         closePopup();
         set({ loginUrl: null });
+        restoreExitNode(gen);
       }
     }
     if (snap.status !== 'error' || event.state === 'Running') set({ status: derive(), ...(event.state === 'Running' ? { error: null } : {}) });
+  }
+
+  /** Picks the saved exit node again once a restored client is running (the client starts without one). */
+  function restoreExitNode(gen: number) {
+    const id = session?.exitNodeId;
+    if (!id || snap.exitNodeId === id || !client?.setExitNode) return;
+    const c = client;
+    // The net map with the peers may arrive just after Running: give it a moment.
+    setTimeout(() => {
+      if (gen !== generation || client !== c || snap.exitNodeId === id) return;
+      if (!snap.peers.some((p) => p.id === id && p.exitNode)) return;
+      Promise.resolve(c.setExitNode!(id)).then(() => { if (gen === generation) set({ exitNodeId: id, warning: null }); }, () => {});
+    }, 250);
+  }
+
+  /** The client's next settled state (anything past Starting), or null after `ms`. */
+  function waitForState(ms: number): Promise<TailscaleClientState | null> {
+    if (clientState !== 'NoState' && clientState !== 'Starting') return Promise.resolve(clientState);
+    return new Promise((resolve) => {
+      const t = setTimeout(() => { stateWaiters = stateWaiters.filter((w) => w !== done); resolve(null); }, ms);
+      const done = (s: TailscaleClientState) => { clearTimeout(t); resolve(s); };
+      stateWaiters.push(done);
+    });
   }
 
   function clearAuthTimer() {
@@ -545,6 +605,7 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
         throw new TailscaleError('client', 'Stopped while starting.');
       }
       const hostname = session?.hostname ?? options.hostname ?? randomHostname();
+      currentHostname = hostname;
       clientState = 'NoState';
       try {
         await c.start({
@@ -552,6 +613,7 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
           controlUrl: options.controlUrl,
           authKey,
           state: session?.state ?? null,
+          exitNodeId: session?.exitNodeId ?? null,
           onState: (state) => { if (gen === generation) scheduleSave(state, hostname); },
           onEvent: (e) => onEvent(gen, e),
         });
@@ -590,7 +652,11 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
     starting = null;
     clientState = 'NoState';
     loginRequested = false;
-    if (pendingState && session) await flush(session.hostname);
+    const waiters = stateWaiters;
+    stateWaiters = [];
+    waiters.forEach((w) => w('Stopped'));
+    const host = session?.hostname ?? currentHostname;
+    if (pendingState && host) await flush(host);
     if (!keepLock) {
       releaseLock?.();
       releaseLock = null;
@@ -662,9 +728,14 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
           }, options.authKeyTimeoutMs ?? 30_000);
         }
         loginRequested = true;
+        try { await loadSession(); } catch { /* ensureClient reports it */ }
+        const restoring = !!session && !client && !starting;
         const c = await ensureClient(authKey);
         set({ status: derive() });
-        if (interactive && clientState !== 'Running') await c.login();
+        // A saved session usually signs straight back in: asking for an interactive login now would cancel that (and its
+        // control-key fetch). Wait for the client to say whether it needs one.
+        if (interactive && restoring) await waitForState(options.restoreTimeoutMs ?? 20_000);
+        if (interactive && clientState !== 'Running' && loginRequested) await c.login();
       } catch (e) {
         if (!loginRequested && !(e instanceof TailscaleError)) return; // cancelled
         fail(e instanceof TailscaleError ? e : new TailscaleError('client', e instanceof Error ? e.message : String(e), { cause: e }));
@@ -711,6 +782,11 @@ export function createTailscale(options: TailscaleOptions = {}): Tailscale {
       if (id !== null && !snap.peers.some((p) => p.id === id && p.exitNode)) throw new TailscaleError('client', 'That device is not an exit node on this tailnet.');
       await client.setExitNode(id);
       set({ exitNodeId: id });
+      if (pendingState && currentHostname) await flush(currentHostname);
+      if (session) {
+        session = { ...session, exitNodeId: id };
+        try { await persistence.save(session); } catch { /* the choice still holds for this visit */ }
+      }
     },
     matches(url, method = 'GET') {
       return matchTailscalePolicy(url, method, policy, typeof location !== 'undefined' ? location.origin : undefined).route;

@@ -69,6 +69,37 @@ export interface TailscaleConnectOptions {
   dnsVia?: 'page' | 'exit-node';
   /** The `fetch` for a `page` lookup. Default `globalThis.fetch`. */
   dnsFetch?: typeof fetch;
+  /** How a public name is fetched through an exit node. `address` (default): dial the looked-up address, keeping the name as
+   *  the Host header and TLS server name. `name`: fetch the name with the address handed over as `ipMap`, falling back to the
+   *  address. The bundled Go build panics (a nil connection closed in its dial race) when a name resolves to several
+   *  addresses and one dial fails, so the name path is opt-in. */
+  exitNodeDial?: 'address' | 'name';
+}
+
+/** Records the WebSockets a client instance opens (control, DERP), so a dead instance's can be closed: after a Go panic their
+ *  callbacks would each throw "Go program has already exited". Returns a function that closes them and stops recording. */
+function trackSockets(): () => void {
+  const Original = globalThis.WebSocket;
+  if (typeof Original !== 'function') return () => {};
+  const open = new Set<WebSocket>();
+  const Tracked = function (this: unknown, url: string | URL, protocols?: string | string[]) {
+    const ws = new Original(url, protocols);
+    if (/(^|\.)tailscale\.com$|derp/i.test(new URL(String(url), 'https://x').hostname)) {
+      open.add(ws);
+      ws.addEventListener('close', () => open.delete(ws));
+    }
+    return ws;
+  } as unknown as typeof WebSocket;
+  Object.assign(Tracked, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 });
+  Tracked.prototype = Original.prototype;
+  globalThis.WebSocket = Tracked;
+  return () => {
+    if (globalThis.WebSocket === Tracked) globalThis.WebSocket = Original;
+    for (const ws of open) {
+      try { ws.close(); } catch { /* already gone */ }
+    }
+    open.clear();
+  };
 }
 
 /** The client keeps its prefs as hex-encoded JSON under `profile-…` keys, and a login can write `CorpDNS: false` back;
@@ -127,6 +158,7 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
   let ipn: TailscaleIpn | null = null;
   let disposed = false;
   let exitNodeId: string | null = null;
+  let releaseSockets: () => void = () => {};
   /** Public host name → address and when to forget it. Cleared whenever the exit node changes. */
   const addresses = new Map<string, { ip: string; until: number }>();
   /** What the client has been told: host name → address. It dials the address for the name (keeping the name for Host and TLS). */
@@ -167,6 +199,8 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
       if (!options.wasmURL) throw new Error('createTailscaleConnectClient needs `wasmURL` (where main.wasm is served).');
       const mod = await (options.load ?? (() => import('@agent-wasm/tailscale-connect') as unknown as Promise<TailscaleConnectModule>))();
       const state = new Map(Object.entries(o.state ?? {}));
+      if (o.exitNodeId) exitNodeId = o.exitNodeId;
+      releaseSockets = trackSockets();
       const instance = await mod.createIPN({
         authKey: o.authKey ?? '',
         controlURL: o.controlUrl,
@@ -179,8 +213,9 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
             o.onState(Object.fromEntries(state));
           },
         },
-        panicHandler: (error) => o.onEvent({ error }),
+        panicHandler: (error) => { releaseSockets(); o.onEvent({ error }); },
         ...dnsSettings(options.acceptDns !== false),
+        ...(exitNodeId ? exitNodeSettings(exitNodeId) : {}),
       });
       if (disposed) return;
       ipn = instance;
@@ -198,7 +233,7 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
           }
         },
         notifyBrowseToURL: (url) => o.onEvent({ loginUrl: url }),
-        notifyPanicRecover: (error) => o.onEvent({ error }),
+        notifyPanicRecover: (error) => { releaseSockets(); o.onEvent({ error }); },
       });
     },
     login() {
@@ -235,23 +270,35 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
       let res: Awaited<ReturnType<TailscaleIpn['fetch']>>;
       if (viaExit) {
         const ip = await resolvePublic(url.hostname);
-        if (ipMap[url.hostname] !== ip) {
-          ipMap[url.hostname] = ip;
-          await applyConfig();
-        }
-        try {
-          res = await ipn.fetch(structured(req.url));
-        } catch (primary) {
+        const reason = (e: unknown) => (e instanceof Error ? e.message : typeof e === 'string' ? e : (e as { message?: string } | null)?.message ?? String(e));
+        // One literal address: the client dials it directly, never racing several (see `exitNodeDial`).
+        const byAddress = () => {
           const direct = new URL(req.url);
           direct.hostname = ip;
           const withHost = { ...headers };
           for (const name of Object.keys(withHost)) if (name.toLowerCase() === 'host') delete withHost[name];
           withHost.Host = url.host;
+          return ipn!.fetch({ ...structured(direct.href), headers: withHost, ...(url.protocol === 'https:' ? { tlsServerName: url.hostname } : {}) });
+        };
+        if (options.exitNodeDial === 'name') {
+          if (ipMap[url.hostname] !== ip) {
+            ipMap[url.hostname] = ip;
+            await applyConfig();
+          }
           try {
-            res = await ipn.fetch({ ...structured(direct.href), headers: withHost, ...(url.protocol === 'https:' ? { tlsServerName: url.hostname } : {}) });
-          } catch (fallback) {
-            const reason = (e: unknown) => (e instanceof Error ? e.message : typeof e === 'string' ? e : (e as { message?: string } | null)?.message ?? String(e));
-            throw new Error(`${url.hostname} (${ip}) could not be fetched through the exit node. Fetching the name: ${reason(primary)}. Fetching the address: ${reason(fallback)}.`);
+            res = await ipn.fetch(structured(req.url));
+          } catch (primary) {
+            try {
+              res = await byAddress();
+            } catch (fallback) {
+              throw new Error(`${url.hostname} (${ip}) could not be fetched through the exit node. Fetching the name: ${reason(primary)}. Fetching the address: ${reason(fallback)}.`);
+            }
+          }
+        } else {
+          try {
+            res = await byAddress();
+          } catch (e) {
+            throw new Error(`${url.hostname} (${ip}) could not be fetched through the exit node: ${reason(e)}.`);
           }
         }
       } else {
@@ -265,6 +312,7 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
       // The Go runtime has no shutdown: a disposed instance stops being used and is collected with the page.
       disposed = true;
       ipn = null;
+      releaseSockets();
     },
   };
 }

@@ -47,8 +47,13 @@ describe('createTailscaleConnectClient', () => {
     expect(f.calls[0]).toBe('http://nas.tail1234.ts.net/');
     expect(f.calls[1]).toEqual({ url: 'http://nas.tail1234.ts.net/', method: 'POST', headers: { 'x-a': '1' }, bodyBase64: btoa('hi'), redirect: undefined });
 
+    // A panic ends the Go program: with a session, one fresh client starts and signs back in; a second panic soon after is an error.
     f.panic('runtime: out of memory');
-    expect(t.getSnapshot().error?.message).toBe('runtime: out of memory');
+    await vi.waitFor(() => expect(f.mod.createIPN).toHaveBeenCalledTimes(2));
+    expect(t.getSnapshot().warning).toMatch(/reconnecting/);
+    await vi.waitFor(() => expect(t.getSnapshot().status).not.toBe('loading'));
+    f.panic('runtime: out of memory');
+    await vi.waitFor(() => expect(t.getSnapshot().error?.message).toBe('runtime: out of memory'));
     await t.dispose();
   });
 
@@ -164,8 +169,19 @@ describe('exit nodes', () => {
     await t.dispose();
   });
 
-  it('with an exit node: looks a public name up over DNS-over-HTTPS, tells the client (ipMap) and fetches the name', async () => {
+  it('with an exit node: looks a public name up and dials the address, with the name as Host and SNI', async () => {
     const { t, f } = await connect();
+    await t.setExitNode('nExit1');
+    const res = toResponse(await t.fetch({ url: 'https://example.com/a?b=1', headers: [['accept', 'text/html']] }));
+    // The client dialled one literal address (no name, so no dial race in Go).
+    expect(await res.text()).toBe('served https://93.184.216.34/a?b=1');
+    expect(dnsCalls).toEqual(['https://cloudflare-dns.com/dns-query?name=example.com&type=A']);
+    expect(f.fetches).toEqual([{ url: 'https://93.184.216.34/a?b=1', method: 'GET', headers: { accept: 'text/html', Host: 'example.com' }, bodyBase64: undefined, redirect: undefined, tlsServerName: 'example.com' }]);
+    await t.dispose();
+  });
+
+  it("with exitNodeDial 'name': tells the client the address (ipMap) and fetches the name", async () => {
+    const { t, f } = await connect({ exitNodeDial: 'name' });
     await t.setExitNode('nExit1');
     const res = toResponse(await t.fetch({ url: 'https://example.com/a?b=1', headers: [['accept', 'text/html']] }));
     expect(await res.text()).toBe('served https://example.com/a?b=1');
@@ -176,8 +192,8 @@ describe('exit nodes', () => {
     await t.dispose();
   });
 
-  it('falls back to dialling the address, with the name as Host and SNI, when the client ignores the map', async () => {
-    const { t, f } = await connect({}, true, true);
+  it("with exitNodeDial 'name': falls back to dialling the address when the client ignores the map", async () => {
+    const { t, f } = await connect({ exitNodeDial: 'name' }, true, true);
     await t.setExitNode('nExit1');
     const res = toResponse(await t.fetch({ url: 'https://example.com/a?b=1', headers: [['accept', 'text/html']] }));
     expect(await res.text()).toBe('served https://93.184.216.34/a?b=1');
@@ -189,7 +205,7 @@ describe('exit nodes', () => {
     const f = exitNodeModule();
     const ipn = await f.mod.createIPN({ authKey: '', panicHandler: () => {} });
     const failing: TailscaleConnectModule = { createIPN: async () => ({ ...ipn, fetch: async () => { throw new Error('dial tcp: i/o timeout'); } }) };
-    const t = createTailscale({ client: createTailscaleConnectClient({ wasmURL: '/w', load: async () => failing, dnsFetch }), auth: { mode: 'auth-key', authKey: 'k' }, env: { open: () => null, locks: null } });
+    const t = createTailscale({ client: createTailscaleConnectClient({ wasmURL: '/w', load: async () => failing, dnsFetch, exitNodeDial: 'name' }), auth: { mode: 'auth-key', authKey: 'k' }, env: { open: () => null, locks: null } });
     await t.signIn();
     await vi.waitFor(() => expect(t.getSnapshot().status).toBe('connected'));
     await t.setExitNode('nExit1').catch(() => {});
@@ -212,7 +228,7 @@ describe('exit nodes', () => {
     f.sendMap();
     f.sendMap();
     const res = toResponse(await t.fetch({ url: 'https://example.com/a' }));
-    expect(await res.text()).toBe('served https://example.com/a');
+    expect(await res.text()).toBe('served https://93.184.216.34/a');
     expect(t.getSnapshot().exitNodeId).toBe('nExit1');
     await t.dispose();
   });

@@ -51,7 +51,8 @@ describe('interactive sign-in', () => {
     await until(() => t.getSnapshot().status === 'connected');
     expect(popup.replaced[0]).toMatch(/^https:\/\/login\.tailscale\.example\/a\//);
     expect(popup.opener).toBeNull();
-    expect(popup.closed).toBe(true);
+    // Once it has gone to the sign-in page the popup is no longer ours to close (the browser only warns); Tailscale's page ends it.
+    expect(popup.closed).toBe(false);
     expect(statuses).toEqual(['signing-in', 'loading', 'signing-in', 'connected']);
     const s = t.getSnapshot();
     expect(s.selfName).toMatch(/^bl-[a-z0-9]{6}\.example-tailnet\.ts\.net$/);
@@ -99,7 +100,13 @@ describe('interactive sign-in', () => {
     disposers.push(b.t.dispose);
     await b.t.signIn();
     await until(() => b.t.getSnapshot().status === 'connected');
+    // The Go runtime exits on a panic: a saved session starts one fresh client by itself…
     b.fake.crash('panic: ValueOf: invalid value');
+    await until(() => b.fake.starts === 2);
+    await until(() => b.t.getSnapshot().status === 'connected');
+    // …but a second panic soon after is reported, and Try again starts a new client.
+    b.fake.crash('panic: ValueOf: invalid value');
+    await until(() => b.t.getSnapshot().status === 'error');
     expect(b.t.getSnapshot().error).toMatchObject({ reason: 'client', message: 'panic: ValueOf: invalid value' });
     await b.t.signIn(); // retry starts a new client
     await until(() => b.t.getSnapshot().status === 'connected');
@@ -160,6 +167,29 @@ describe('sessions', () => {
     expect(second.t.getSnapshot()).toMatchObject({ status: 'idle', hasSession: false, selfName: null });
     expect(await persistence.load()).toBeNull();
     release();
+  });
+
+  it('Sign In with a saved session waits for it to sign back in (no interactive login) and picks the saved exit node again', async () => {
+    const persistence = memoryTailscalePersistence();
+    await persistence.save({ v: 1, hostname: 'h', state: { k: 'v' }, exitNodeId: 'node-exit' });
+    const { t, fake, popup } = setup({ persistence, autoConnect: false }, { exitNodes: ['exit'] });
+    const login = vi.spyOn(fake.client, 'login');
+    disposers.push(t.dispose);
+    await t.signIn();
+    await until(() => t.getSnapshot().status === 'connected');
+    expect(login).not.toHaveBeenCalled();
+    expect(popup.closed).toBe(true); // still blank, so still ours to close
+    await until(() => t.getSnapshot().exitNodeId === 'node-exit');
+  });
+
+  it('remembers the exit node with the session', async () => {
+    const persistence = memoryTailscalePersistence();
+    const { t } = setup({ persistence }, { exitNodes: ['exit'] });
+    disposers.push(t.dispose);
+    await t.signIn();
+    await until(() => t.getSnapshot().status === 'connected');
+    await t.setExitNode('node-exit');
+    expect((await persistence.load())?.exitNodeId).toBe('node-exit');
   });
 
   it('disconnect keeps the session; connect resumes it; autoConnect false waits', async () => {
