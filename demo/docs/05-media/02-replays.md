@@ -50,7 +50,7 @@ An inspection is a moment where someone looked at a request or a console message
 
 {% demo src="media-replay/inspect" %}
 
-The current inspection is the latest one at or before the playhead, so scrubbing works both ways: back before the first inspection, the panel it opened closes. Close the panel yourself and it stays closed until the next inspection. A panel an inspection opened leaves keyboard focus where it was. `playerRef.current.inspect(id)` jumps to an inspection and opens it, for a chronology beside the player.
+The current inspection is the latest one at or before the playhead. Seeking never closes the panel: going to another request, earlier or later, leaves it open. A panel an inspection opened leaves keyboard focus where it was, and closes by itself after 5 s of playback with no new request, console message or inspection (`autoCloseDevtools`, in ms, or `false`); paused, it stays. Close it yourself and it stays closed until the next inspection; click or scroll in it and it's yours, so it never closes by itself. `playerRef.current.inspect(id)` jumps to an inspection and opens it, for a chronology beside the player.
 
 ```tsx
 <ReplayPreview
@@ -179,6 +179,7 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `disableDevtools` | `boolean` | `false` | Remove the Console and Network buttons, their panel and the inspections. (The older `devtools={false}` does the same.) |
 | `defaultDevtoolsTab` | `"console" \| "network"` | none | Open the DevTools panel on this tab at mount. |
 | `har` / `consoleLog` | `object \| string` / `string` | none | A HAR and a console log recorded alongside; their requests and messages join DevTools. |
+| `autoCloseDevtools` | `number \| false` | `5000` | An inspection-opened DevTools panel closes after this many ms of playback with no new request, message or inspection. |
 | `inspections` | `ReplayInspection[]` | none | Requests and messages to open DevTools on as playback reaches them, added to the recording's own `inspect` events. |
 | `fit` | `"width" \| "contain"` | `"width"` | `width`: the page scales to the frame's width and sets its height. `contain`: fill a frame you gave a height, letterboxed. |
 | `poster` | `ReactNode` | a page-shaped skeleton | Shown until the player is ready, at the frame's final size, so nothing jumps. |

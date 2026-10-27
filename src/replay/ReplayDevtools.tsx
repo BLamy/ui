@@ -59,14 +59,17 @@ export function DevtoolsButtons({ state, open, onOpen }: {
 
 /** The panel over the page: Console and Network, cut at the playhead. `inspection` selects and marks its target;
  *  `autoFocus` (default true) moves focus into the panel as it opens — off when an inspection opened it mid-play. */
-export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, autoFocus = true }: {
+export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, autoFocus = true, onInteract }: {
   state: ReplayDevtoolsState; tab: ReplayDevtoolsTab; onTab: (tab: ReplayDevtoolsTab) => void
   onClose: () => void; onSeek: (ms: number) => void; inspection?: ResolvedReplayInspection | null; autoFocus?: boolean
+  /** Any click, scroll or key in the panel (the player then treats it as the user's). */
+  onInteract?: () => void
 }) {
   const panel = useRef<HTMLDivElement>(null)
   // Opened by an inspection, the panel starts taller: its point is the request's details.
   const [height, setHeight] = useState(inspection ? 72 : 58)
-  useEffect(() => { if (autoFocus) panel.current?.focus({ preventScroll: true }) }, [autoFocus])
+  // Focus moves in as the panel opens (not later, when the user is already working in it).
+  useEffect(() => { if (autoFocus) panel.current?.focus({ preventScroll: true }) }, [])
 
   // Drag the top edge to resize, as a fraction of the stage.
   const resize = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -83,6 +86,7 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
   }
 
   const onKeyDown = (e: ReactKeyboardEvent) => {
+    onInteract?.()
     if (e.key === 'Escape') { e.stopPropagation(); onClose() }
     // The player's own keys (space, arrows, J/K/L) stay out of the panel.
     else if (!(e.target as HTMLElement).closest('input')) e.stopPropagation()
@@ -97,6 +101,8 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
       aria-label="DevTools"
       tabIndex={-1}
       onKeyDown={onKeyDown}
+      onPointerDown={onInteract}
+      onWheel={onInteract}
       style={{ height: `${height}%` }}
     >
       <div data-slot="replay-devtools-resize" aria-hidden="true" onPointerDown={resize} />

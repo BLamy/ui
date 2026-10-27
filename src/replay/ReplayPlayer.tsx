@@ -91,6 +91,10 @@ export interface ReplayPlayerOptions {
   har?: unknown
   /** A console log recorded alongside (`<ISO time> [level] message` lines): its messages join the Console. */
   consoleLog?: string
+  /** A DevTools panel an inspection opened closes after this long (ms of playback) without a new request, console
+   *  message or inspection (default 5000). `false` keeps it open. A panel you opened or touched never closes by
+   *  itself. */
+  autoCloseDevtools?: number | false
   /** Draw the recorded pointer and click ripples (default true). */
   cursor?: boolean
   /** `width` (default): the page scales to the frame's width and sets its height. `contain`: fill the frame's
@@ -109,6 +113,18 @@ export interface ReplayPlayerOptions {
   style?: CSSProperties
 }
 
+/** The latest of sorted `times` at or before `t`, or undefined. */
+function latestAtOrBefore(times: readonly number[], t: number): number | undefined {
+  let lo = 0
+  let hi = times.length
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    if (times[mid]! <= t) lo = mid + 1
+    else hi = mid
+  }
+  return lo ? times[lo - 1] : undefined
+}
+
 export function formatReplayTime(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000))
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
@@ -121,7 +137,7 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 export function ReplayPlayer({
   events: recordingEvents, har, consoleLog, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
   autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers, markerKinds,
-  cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
+  cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
 }: ReplayPlayerOptions & { events: ReplayEvent[] }) {
   // The recording plus whatever was recorded beside it (a HAR, a console log), as one event list for DevTools,
@@ -316,22 +332,40 @@ export function ReplayPlayer({
 
   const toolsState = useMemo(() => replayDevtoolsAt(tools, time), [tools, time])
   const openTools = (tab: ReplayDevtoolsTab) => { setAutoOpened(false); setPanel((p) => (p === tab ? null : tab)) }
+  // Clicking, scrolling or typing in a panel an inspection opened makes it the user's: it won't close by itself.
+  const claimPanel = () => setAutoOpened(false)
 
   // Inspect mode: the inspection at the playhead opens DevTools on what it found. Only a change of inspection does
-  // (closing the panel keeps it closed until the next one); scrubbing back before the first closes what it opened.
+  // (closing the panel keeps it closed until the next one). Seeking never closes it: going to another request,
+  // before or after the inspection, leaves the panel where it is. A panel the user opened, or has touched, stays
+  // theirs: an inspection switches its tab but never closes it.
   const inspection = showTools ? replayInspectionAt(resolved, time) : undefined
   const inspectionId = inspection?.id
   const inspectionTab = inspection?.tab
   const lastInspection = useRef<string | undefined>(undefined)
+  const panelRef = useRef(panel)
+  panelRef.current = panel
   useEffect(() => {
     if (inspectionId === lastInspection.current) return
-    const had = lastInspection.current
     lastInspection.current = inspectionId
-    if (inspectionTab) {
-      setPanel(inspectionTab)
-      setAutoOpened(true)
-    } else if (had !== undefined && autoOpened) setPanel(null)
-  }, [inspectionId, inspectionTab, autoOpened])
+    if (!inspectionTab) return
+    if (panelRef.current === null) setAutoOpened(true)
+    setPanel(inspectionTab)
+  }, [inspectionId, inspectionTab])
+
+  // An auto-opened panel closes once playback has gone `autoCloseDevtools` ms (recording time) without a new
+  // request, console message or inspection. Paused, it stays.
+  const activity = useMemo(
+    () => [...tools.network.map((r) => r.time), ...tools.console.map((m) => m.time), ...resolved.map((i) => i.time)].sort((a, b) => a - b),
+    [tools, resolved],
+  )
+  const openedAt = useRef(0)
+  useEffect(() => { if (autoOpened && panel) openedAt.current = time }, [autoOpened, panel])
+  useEffect(() => {
+    if (autoCloseDevtools === false || !autoOpened || !panel || !playing) return
+    const last = Math.max(openedAt.current, latestAtOrBefore(activity, time) ?? -Infinity)
+    if (time >= last && time - last >= autoCloseDevtools) setPanel(null)
+  }, [time, playing, autoOpened, panel, activity, autoCloseDevtools])
   const toolButtons = showTools ? <DevtoolsButtons state={toolsState} open={panel} onOpen={openTools} /> : null
 
   const w = meta.width || 1280
@@ -397,6 +431,7 @@ export function ReplayPlayer({
             onSeek={(ms) => handle.seek(ms)}
             inspection={inspection}
             autoFocus={!autoOpened}
+            onInteract={claimPanel}
           />
         ) : null}
 

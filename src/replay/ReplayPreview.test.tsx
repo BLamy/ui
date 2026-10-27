@@ -228,14 +228,56 @@ describe("player behaviour", () => {
     expect(panel()).toBeNull()
     await playTo(7200)
     expect(panel()!.querySelector('[data-slot="replay-devtools-message"][data-inspected]')!.textContent).toContain("is deprecated")
-    // Back before the first inspection, the panel it opened closes.
+    // Seeking back before the first inspection (going to another request) leaves the panel open: no flicker.
     await playTo(3000)
-    expect(panel()).toBeNull()
+    expect(panel()).not.toBeNull()
 
     // The handle jumps to an inspection by id.
     act(() => ref.current!.inspect("warn"))
     expect(stage.calls.at(-1)).toBe("seek:7000")
     expect(panel()!.querySelector('[role=tab][aria-selected="true"]')!.textContent).toBe("Console")
+  })
+
+  it("an auto-opened panel closes after 5 s of playback with no new request, message or inspection; not paused, not once touched", async () => {
+    stage.time = 7000
+    const inspections = [{ time: 7600, request: "/api/checkout", label: "Checkout answered 500" }]
+    // The demo recording's activity stops at 7.9 s (its last console error); it runs to ~8.6 s, so stretch the
+    // playhead past the end of the events the way a longer recording would.
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={inspections} />)
+    const props = () => stage.props as ReplayStageProps
+    const playTo = (ms: number) => act(async () => props().onTimeUpdate?.(ms))
+    const playing = (p: boolean) => act(async () => props().onPlayingChange?.(p))
+    const panel = () => el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')
+
+    await playing(true)
+    await playTo(7650)
+    expect(panel()).not.toBeNull()
+    await playTo(12_800) // 4.9 s after the last activity (7.9 s)
+    expect(panel()).not.toBeNull()
+    await playing(false)
+    await playTo(13_500) // paused: stays
+    expect(panel()).not.toBeNull()
+    await playing(true)
+    await playTo(13_600)
+    expect(panel()).toBeNull()
+
+    // Reopened by the inspection, then touched: it's the user's now and doesn't close by itself.
+    await playTo(7000)
+    await playTo(7650)
+    expect(panel()).not.toBeNull()
+    await act(async () => void panel()!.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })))
+    await playTo(20_000)
+    expect(panel()).not.toBeNull()
+  })
+
+  it("autoCloseDevtools={false} keeps an auto-opened panel open", async () => {
+    stage.time = 7000
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 7600, request: "/api/checkout" }]} autoCloseDevtools={false} />)
+    const props = () => stage.props as ReplayStageProps
+    await act(async () => props().onPlayingChange?.(true))
+    await act(async () => props().onTimeUpdate?.(7650))
+    await act(async () => props().onTimeUpdate?.(30_000))
+    expect(el.querySelector('[data-slot="replay-devtools"]')).not.toBeNull()
   })
 
   it("disableDevtools removes the buttons, the panel and the inspections", async () => {
