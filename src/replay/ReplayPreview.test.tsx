@@ -185,6 +185,60 @@ describe("player behaviour", () => {
     expect(renderToString(<ReplayPreview events={replayDemoEvents} chrome="minimal" />)).toMatch(/replay-preview-controls.*replay-devtools-buttons/s)
   })
 
+  it("follows inspections: DevTools opens on each one's request or message as playback reaches it, without stopping", async () => {
+    stage.time = 1000
+    const ref: { current: ReplayPreviewHandle | null } = { current: null }
+    const inspections = [
+      { time: 7600, request: "/api/checkout", label: "Checkout answered 500" },
+      { id: "warn", time: 7000, message: "is deprecated", label: "The promo call uses a deprecated field" },
+    ]
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={inspections} playerRef={ref} />)
+    const playTo = (ms: number) => act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(ms))
+    const panel = () => el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')
+    expect(panel()).toBeNull()
+    const rail = [...el.querySelectorAll('[data-slot="replay-preview-markers"] button')].map((b) => b.getAttribute("aria-label") ?? "")
+    expect(rail.some((l) => l.includes("Checkout answered 500"))).toBe(true)
+    expect(rail.some((l) => l.includes("The promo call uses a deprecated field"))).toBe(true)
+
+    // The console inspection: its message is marked, focus stays put.
+    await playTo(7100)
+    expect(panel()!.querySelector('[role=tab][aria-selected="true"]')!.textContent).toBe("Console")
+    expect(panel()!.querySelector('[data-slot="replay-devtools-message"][data-inspected]')!.textContent).toContain("is deprecated")
+    expect(panel()!.contains(document.activeElement)).toBe(false)
+
+    // The network one: Network tab, the request selected and its details open. Nothing paused the stage.
+    await playTo(7700)
+    expect(panel()!.querySelector('[role=tab][aria-selected="true"]')!.textContent).toMatch(/^Network/)
+    const row = panel()!.querySelector<HTMLElement>("tbody tr[data-inspected]")!
+    expect(row.getAttribute("aria-selected")).toBe("true")
+    expect(row.textContent).toContain("checkout")
+    expect(panel()!.querySelector('[data-slot="replay-devtools-detail"]')!.textContent).toContain("Request URL/api/checkout")
+    expect(stage.calls.filter((c) => c.startsWith("pause"))).toEqual([])
+
+    // Closed, it stays closed through the same inspection; scrubbing back to the previous one opens it again.
+    await act(async () => panel()!.querySelector<HTMLButtonElement>('[aria-label="Close DevTools"]')!.click())
+    await playTo(8200)
+    expect(panel()).toBeNull()
+    await playTo(7200)
+    expect(panel()!.querySelector('[data-slot="replay-devtools-message"][data-inspected]')!.textContent).toContain("is deprecated")
+    // Back before the first inspection, the panel it opened closes.
+    await playTo(3000)
+    expect(panel()).toBeNull()
+
+    // The handle jumps to an inspection by id.
+    act(() => ref.current!.inspect("warn"))
+    expect(stage.calls.at(-1)).toBe("seek:7000")
+    expect(panel()!.querySelector('[role=tab][aria-selected="true"]')!.textContent).toBe("Console")
+  })
+
+  it("disableDevtools removes the buttons, the panel and the inspections", async () => {
+    stage.time = 8000
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} disableDevtools inspections={[{ time: 7600, request: "/api/checkout", label: "Checkout answered 500" }]} />)
+    expect(el.querySelector('[data-slot="replay-devtools-buttons"]')).toBeNull()
+    expect(el.querySelector('[data-slot="replay-devtools"]')).toBeNull()
+    expect(el.innerHTML).not.toContain("Checkout answered 500")
+  })
+
   it("maps keys: space/k toggle, arrows and j/l seek, Home/End jump, < > cycle speed", async () => {
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} />)
     const last = () => stage.calls[stage.calls.length - 1]

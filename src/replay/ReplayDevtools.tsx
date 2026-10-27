@@ -5,10 +5,12 @@
    waiting at the playhead shows as pending), and a request's row opens its headers, payload and response.
 
    Everything is a function of the playhead: scrub back and the lists shrink to what DevTools showed then. A row's
-   time jumps the player there. Esc closes the panel. Plain React + plain CSS, like the player. */
+   time jumps the player there. Esc closes the panel. An inspection (inspections.ts) selects its request or
+   message and marks it. Plain React + plain CSS, like the player. */
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { ChevronRight, CircleX, Info, Network, SquareTerminal, TriangleAlert, X } from 'lucide-react'
 import type { ReplayConsoleEntry, ReplayDevtoolsState, ReplayRequest } from './devtools'
+import type { ResolvedReplayInspection } from './inspections'
 
 export type ReplayDevtoolsTab = 'console' | 'network'
 
@@ -55,14 +57,16 @@ export function DevtoolsButtons({ state, open, onOpen }: {
   )
 }
 
-/** The panel over the page: Console and Network, cut at the playhead. */
-export function DevtoolsPanel({ state, at, tab, onTab, onClose, onSeek }: {
-  state: ReplayDevtoolsState; at: number; tab: ReplayDevtoolsTab; onTab: (tab: ReplayDevtoolsTab) => void
-  onClose: () => void; onSeek: (ms: number) => void
+/** The panel over the page: Console and Network, cut at the playhead. `inspection` selects and marks its target;
+ *  `autoFocus` (default true) moves focus into the panel as it opens — off when an inspection opened it mid-play. */
+export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, autoFocus = true }: {
+  state: ReplayDevtoolsState; tab: ReplayDevtoolsTab; onTab: (tab: ReplayDevtoolsTab) => void
+  onClose: () => void; onSeek: (ms: number) => void; inspection?: ResolvedReplayInspection | null; autoFocus?: boolean
 }) {
   const panel = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(58)
-  useEffect(() => { panel.current?.focus({ preventScroll: true }) }, [])
+  // Opened by an inspection, the panel starts taller: its point is the request's details.
+  const [height, setHeight] = useState(inspection ? 72 : 58)
+  useEffect(() => { if (autoFocus) panel.current?.focus({ preventScroll: true }) }, [autoFocus])
 
   // Drag the top edge to resize, as a fraction of the stage.
   const resize = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -116,10 +120,11 @@ export function DevtoolsPanel({ state, at, tab, onTab, onClose, onSeek }: {
           </button>
         ))}
         </div>
-        <span data-part="at">As of {time(at)}</span>
         <button type="button" data-slot="replay-devtools-close" aria-label="Close DevTools" onClick={onClose}><X size={14} /></button>
       </div>
-      {tab === 'console' ? <ConsolePane state={state} onSeek={onSeek} /> : <NetworkPane state={state} onSeek={onSeek} />}
+      {tab === 'console'
+        ? <ConsolePane state={state} onSeek={onSeek} inspected={inspection?.tab === 'console' ? inspection : null} />
+        : <NetworkPane state={state} onSeek={onSeek} inspected={inspection?.tab === 'network' ? inspection : null} />}
     </div>
   )
 }
@@ -129,7 +134,9 @@ export function DevtoolsPanel({ state, at, tab, onTab, onClose, onSeek }: {
 type LevelFilter = 'all' | 'error' | 'warn' | 'info'
 const LEVEL_ICON = { error: CircleX, warn: TriangleAlert, info: Info } as const
 
-function ConsolePane({ state, onSeek }: { state: ReplayDevtoolsState; onSeek: (ms: number) => void }) {
+function ConsolePane({ state, onSeek, inspected }: {
+  state: ReplayDevtoolsState; onSeek: (ms: number) => void; inspected: ResolvedReplayInspection | null
+}) {
   const [query, setQuery] = useState('')
   const [level, setLevel] = useState<LevelFilter>('all')
   const list = useRef<HTMLDivElement>(null)
@@ -139,12 +146,17 @@ function ConsolePane({ state, onSeek }: { state: ReplayDevtoolsState; onSeek: (m
       (level === 'all' || (level === 'info' ? e.level === 'info' || e.level === 'log' || e.level === 'debug' : e.level === level)) &&
       (!q || e.message.toLowerCase().includes(q)))
   }, [state.console, query, level])
-  // Follow new messages as they're logged, unless you've scrolled up to read.
+  // Follow new messages as they're logged, unless you've scrolled up to read (or an inspection is showing one).
   const pinned = useRef(true)
+  const inspectedId = inspected?.messageId
+  const shown = inspectedId !== undefined && rows.some((r) => r.id === inspectedId)
   useEffect(() => {
     const el = list.current
-    if (el && pinned.current) el.scrollTop = el.scrollHeight
-  }, [rows.length])
+    if (el && pinned.current && !shown) el.scrollTop = el.scrollHeight
+  }, [rows.length, shown])
+  useEffect(() => {
+    if (shown) list.current?.querySelector('[data-inspected]')?.scrollIntoView?.({ block: 'nearest' })
+  }, [shown, inspected?.id])
   return (
     <div data-slot="replay-devtools-pane" data-pane="console">
       <div data-slot="replay-devtools-toolbar">
@@ -167,7 +179,7 @@ function ConsolePane({ state, onSeek }: { state: ReplayDevtoolsState; onSeek: (m
         aria-label="Console messages"
         onScroll={(e) => { const el = e.currentTarget; pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8 }}
       >
-        {rows.map((entry) => <ConsoleRow key={entry.id} entry={entry} onSeek={onSeek} />)}
+        {rows.map((entry) => <ConsoleRow key={entry.id} entry={entry} onSeek={onSeek} inspected={entry.id === inspectedId} />)}
         {!rows.length ? <p data-slot="replay-devtools-empty">{state.console.length ? 'No messages match the filter' : 'Nothing logged yet'}</p> : null}
         {state.counts.laterMessages ? <p data-slot="replay-devtools-later">{state.counts.laterMessages} more later in the recording</p> : null}
       </div>
@@ -175,7 +187,7 @@ function ConsolePane({ state, onSeek }: { state: ReplayDevtoolsState; onSeek: (m
   )
 }
 
-function ConsoleRow({ entry, onSeek }: { entry: ReplayConsoleEntry; onSeek: (ms: number) => void }) {
+function ConsoleRow({ entry, onSeek, inspected }: { entry: ReplayConsoleEntry; onSeek: (ms: number) => void; inspected: boolean }) {
   const Glyph = entry.level === 'error' || entry.level === 'warn' || entry.level === 'info' ? LEVEL_ICON[entry.level] : null
   const body = (
     <>
@@ -184,7 +196,7 @@ function ConsoleRow({ entry, onSeek }: { entry: ReplayConsoleEntry; onSeek: (ms:
     </>
   )
   return (
-    <div data-slot="replay-devtools-message" data-level={entry.level}>
+    <div data-slot="replay-devtools-message" data-level={entry.level} data-inspected={inspected || undefined}>
       {entry.trace?.length ? (
         <details>
           <summary>{body}</summary>
@@ -203,10 +215,20 @@ type Row = ReplayRequest & { pending: boolean }
 
 const statusText = (r: Row) => (r.pending ? '(pending)' : r.status === undefined ? (r.failed ? '(failed)' : '—') : r.status === 0 ? '(failed)' : String(r.status))
 
-function NetworkPane({ state, onSeek }: { state: ReplayDevtoolsState; onSeek: (ms: number) => void }) {
+function NetworkPane({ state, onSeek, inspected }: {
+  state: ReplayDevtoolsState; onSeek: (ms: number) => void; inspected: ResolvedReplayInspection | null
+}) {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<RequestFilter>('all')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const inspectedId = inspected?.requestId
+  const [selectedId, setSelectedId] = useState<string | null>(inspectedId ?? null)
+  const table = useRef<HTMLDivElement>(null)
+  // A new inspection selects its request (once it has been sent) and brings its row into view.
+  useEffect(() => { if (inspectedId) setSelectedId(inspectedId) }, [inspected?.id, inspectedId])
+  const sent = inspectedId !== undefined && state.network.some((r) => r.id === inspectedId)
+  useEffect(() => {
+    if (sent) table.current?.querySelector('[data-inspected]')?.scrollIntoView?.({ block: 'nearest' })
+  }, [sent, inspected?.id])
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     return state.network.filter((r) =>
@@ -235,7 +257,7 @@ function NetworkPane({ state, onSeek }: { state: ReplayDevtoolsState; onSeek: (m
         </div>
       </div>
       <div data-slot="replay-devtools-network">
-        <div data-slot="replay-devtools-table-wrap">
+        <div ref={table} data-slot="replay-devtools-table-wrap">
           <table data-slot="replay-devtools-table">
             <thead>
               <tr>
@@ -251,6 +273,7 @@ function NetworkPane({ state, onSeek }: { state: ReplayDevtoolsState; onSeek: (m
                   data-failed={(r.failed && !r.pending) || undefined}
                   data-pending={r.pending || undefined}
                   aria-selected={r.id === selectedId}
+                  data-inspected={r.id === inspectedId || undefined}
                   tabIndex={0}
                   onClick={() => setSelectedId(r.id === selectedId ? null : r.id)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id === selectedId ? null : r.id) } }}

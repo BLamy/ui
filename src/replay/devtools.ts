@@ -17,6 +17,8 @@ export type ReplayConsoleLevel = 'log' | 'info' | 'warn' | 'error' | 'debug'
 export interface ReplayConsoleEntry {
   /** Stable id (`console-<n>`). */
   id: string
+  /** The recording's own id for the message (`payload.id` of a custom event), which an inspection can name. */
+  key?: string
   /** Milliseconds from the start of the recording. */
   time: number
   level: ReplayConsoleLevel
@@ -33,6 +35,9 @@ export interface ReplayConsoleEntry {
 export interface ReplayRequest {
   /** Stable id (`request-<n>`). */
   id: string
+  /** The recording's own id for the request (`id` / `requestId`, e.g. a Replay request id), which an
+   *  inspection can name. */
+  key?: string
   /** When the request was sent, in ms from the start of the recording. */
   time: number
   /** How long it took, when known: the response arrived at `time + duration`. */
@@ -153,6 +158,7 @@ export function getReplayDevtools(events: readonly ReplayEvent[]): ReplayDevtool
     // request was sent that far before it (its own duration, for a lone request).
     const sent = Math.max(0, startTime !== undefined && batchEnd !== undefined ? at - (batchEnd - startTime) : at - (duration ?? 0))
     requests.push({
+      key: str(raw.requestId) ?? str(raw.id),
       time: sent,
       duration,
       method: (str(raw.method) ?? 'GET').toUpperCase(),
@@ -197,10 +203,10 @@ export function getReplayDevtools(events: readonly ReplayEvent[]): ReplayDevtool
         const detail = str(payload.message) ?? str(payload.detail)
         const message = detail ? `Uncaught ${label}: ${detail}` : `Uncaught ${label}`
         const trace = Array.isArray(payload.stack) ? payload.stack.map(String) : str(payload.stack)?.split('\n').map((l) => l.trim()).filter(Boolean)
-        consoleEntries.push({ time, level: 'error', message, args: [message], trace: trace?.length ? trace : undefined, source: 'exception' })
+        consoleEntries.push({ key: str(payload.id), time, level: 'error', message, args: [message], trace: trace?.length ? trace : undefined, source: 'exception' })
       } else if (CONSOLE_TAGS.has(tag)) {
         const args = Array.isArray(payload.args) ? payload.args.map((a) => asText(a) ?? '') : [str(payload.message) ?? str(payload.label) ?? asText(payload.detail) ?? '']
-        consoleEntries.push({ time, level: levelOf(payload.level ?? tag), message: args.join(' '), args, source: 'custom' })
+        consoleEntries.push({ key: str(payload.id), time, level: levelOf(payload.level ?? tag), message: args.join(' '), args, source: 'custom' })
       }
     }
   }

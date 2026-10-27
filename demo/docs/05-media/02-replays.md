@@ -42,7 +42,37 @@ The panel reads two kinds of event:
 | Custom event `error` (also `exception`, `console.error`, `uncaught`) | An uncaught error in the console: `{ label, message, stack? }`. |
 | Custom event `console` (also `log`, `warn`, `info`, `debug`) | A message: `{ level, message }` or `{ level, args }`. |
 
-A request counts as failed when its status is 0 or 400 and up, when it has an `error`, or when its tag says so. The buttons appear only when the recording has messages or requests; `devtools={false}` hides them, and `defaultDevtoolsTab="network"` opens the panel at mount.
+A request counts as failed when its status is 0 or 400 and up, when it has an `error`, or when its tag says so. The buttons appear only when the recording has messages, requests or inspections. `disableDevtools` removes them, the panel and the inspections; `defaultDevtoolsTab="network"` opens the panel at mount.
+
+## Inspections
+
+An inspection is a moment where someone looked at a request or a console message: "at 0:07.6 we inspected `POST /api/checkout`, and it answered 500". The player follows them by default. As the playhead reaches one, DevTools opens on its tab with that request (or message) selected and marked. Playback doesn't stop. Each inspection is also a checkpoint on the rail, labelled with what was found.
+
+{% demo src="media-replay/inspect" %}
+
+The current inspection is the latest one at or before the playhead, so scrubbing works both ways: back before the first inspection, the panel it opened closes. Close the panel yourself and it stays closed until the next inspection. A panel an inspection opened leaves keyboard focus where it was. `playerRef.current.inspect(id)` jumps to an inspection and opens it, for a chronology beside the player.
+
+```tsx
+<ReplayPreview
+  events={events}
+  inspections={[
+    { time: 6800, request: "/api/promo/validate?code=FALL25", label: "FALL25 validates" },
+    { time: 7600, request: "2465.48", label: "Checkout answers 500" },
+    { time: 7900, tab: "console", message: "Uncaught TypeError", label: "applyPromo crashes" },
+  ]}
+/>
+```
+
+| Field | What it does |
+| --- | --- |
+| `time` | When, in ms from the start of the recording. |
+| `request` | The request to select: the recording's id for it (a request's `requestId` or `id`, such as a Replay request id), else its URL or path. A URL that was requested more than once picks the request sent nearest `time`. |
+| `message` | The console message to select: a custom console event's `id`, else text it contains (the last such message by `time`). |
+| `tab` | `"network"` or `"console"`. Defaults to `network` when `request` is set. |
+| `label` | What was found: the checkpoint's label on the rail. |
+| `id` | For `inspect(id)`. Defaults to `inspect-<n>`. |
+
+A recording can carry its own: a custom event tagged `inspect` with the same fields as its payload (`record.addCustomEvent("inspect", { request, label })`), so an `.rrweb` file embedded in a page brings its inspections with it. They join any passed as `inspections`. `getReplayInspections(events)`, `resolveReplayInspections(inspections, getReplayDevtools(events))` and `replayInspectionAt(resolved, ms)` give you the same for your own UI.
 
 ## Three ways in
 
@@ -109,13 +139,14 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `markers` | `boolean \| ReplayMarker[]` | `true` | `true` reads them from the recording, `false` hides the rail, or pass your own. |
 | `markerKinds` | `ReplayMarkerKind[]` | all | Which recorded kinds to show: `click`, `error`, `network`, `navigation`, `custom`. |
 | `cursor` | `boolean` | `true` | Draw the recorded pointer and click ripples. |
-| `devtools` | `boolean` | `true` | The Console and Network buttons and their panel, when the recording has messages or requests. |
+| `disableDevtools` | `boolean` | `false` | Remove the Console and Network buttons, their panel and the inspections. (The older `devtools={false}` does the same.) |
 | `defaultDevtoolsTab` | `"console" \| "network"` | none | Open the DevTools panel on this tab at mount. |
+| `inspections` | `ReplayInspection[]` | none | Requests and messages to open DevTools on as playback reaches them, added to the recording's own `inspect` events. |
 | `fit` | `"width" \| "contain"` | `"width"` | `width`: the page scales to the frame's width and sets its height. `contain`: fill a frame you gave a height, letterboxed. |
 | `poster` | `ReactNode` | a page-shaped skeleton | Shown until the player is ready, at the frame's final size, so nothing jumps. |
 | `lazy` | `boolean` | `true` | Mount the player only when the frame nears the viewport. |
 | `active` | `boolean` | `true` | `false` renders an empty placeholder frame and mounts nothing. |
-| `playerRef` | `Ref<ReplayPreviewHandle>` | none | `play(offset?)`, `pause(offset?)`, `seek(ms)`, `toggle()`, `getCurrentTime()`. |
+| `playerRef` | `Ref<ReplayPreviewHandle>` | none | `play(offset?)`, `pause(offset?)`, `seek(ms)`, `toggle()`, `getCurrentTime()`, `inspect(id)`. |
 | `onTimeUpdate` | `(ms) => void` | none | The playhead. |
 | `onPlayingChange` | `(playing) => void` | none | The play state. |
 | `onMarkerPress` | `(marker) => void` | none | A pressed rail mark. |

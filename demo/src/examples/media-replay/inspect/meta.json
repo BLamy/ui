@@ -1,0 +1,5 @@
+{
+  "title": "Inspections: DevTools follows what was looked at",
+  "description": "A chronology of what a debugger inspected. As playback reaches each step, DevTools opens on its request or message; press a step to jump there with `inspect(id)`.",
+  "status": "Live"
+}

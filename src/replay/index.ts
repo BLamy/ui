@@ -18,6 +18,8 @@ export type { ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerPoint, Re
 export { getReplayDevtools, replayDevtoolsAt, requestName } from './devtools';
 export type { ReplayConsoleEntry, ReplayConsoleLevel, ReplayDevtools, ReplayDevtoolsState, ReplayRequest } from './devtools';
 export type { ReplayDevtoolsTab } from './ReplayDevtools';
+export { getReplayInspections, replayInspectionAt, resolveReplayInspections } from './inspections';
+export type { ReplayInspection, ReplayInspectionTab, ResolvedReplayInspection } from './inspections';
 export { ReplayEventType, ReplayIncrementalSource, ReplayMouseInteraction } from './types';
 export type { ReplayEvent } from './types';
 export { isReplayQaUrl, normalizeReplayEmbedUrl } from './url';

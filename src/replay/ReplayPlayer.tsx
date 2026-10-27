@@ -2,7 +2,8 @@
    plays the recording (rrweb loads lazily, on first render); this adds the chrome around it: a URL bar that
    follows the recording's navigations, play/pause, a scrubber with the recording's moments on a rail above
    it, a speed control, fullscreen, a drawn cursor whose clicks ripple, and DevTools: Console and Network buttons
-   in the top bar with what had been logged and requested by the playhead, which open a DevTools panel over the page. Until the player is ready a
+   in the top bar with what had been logged and requested by the playhead, which open a DevTools panel over the page,
+   and inspections (inspections.ts) that open it on a request or message as playback reaches them. Until the player is ready a
    poster (a page-shaped skeleton by default) holds the frame's exact size, so nothing jumps.
 
    Plain React + plain CSS (`@layer docstream.replay` in styles.css, `[data-slot]` hooks). Keys (focus inside
@@ -18,6 +19,7 @@ import { Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
 import { ReplayStage } from './ReplayStage'
 import { DevtoolsButtons, DevtoolsPanel, type ReplayDevtoolsTab } from './ReplayDevtools'
 import { getReplayDevtools, replayDevtoolsAt } from './devtools'
+import { getReplayInspections, replayInspectionAt, resolveReplayInspections, type ReplayInspection } from './inspections'
 import { getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from './markers'
 import type { ReplayMarker, ReplayMarkerKind, ReplayPointerTrack } from './markers'
 import type { ReplayStageHandle } from './stage-types'
@@ -36,6 +38,8 @@ export interface ReplayPreviewHandle {
   seek(ms: number): void
   toggle(): void
   getCurrentTime(): number
+  /** Jump to an inspection (by its id) and open DevTools on what it found. */
+  inspect(id: string): void
 }
 
 /** Options shared by every `ReplayPreview` (an `events` player or a `source` embed). */
@@ -63,11 +67,17 @@ export interface ReplayPlayerOptions {
   /** Which recorded marker kinds to show (default all). */
   markerKinds?: ReplayMarkerKind[]
   /** Console and Network buttons (in the top bar, or beside the controls without the browser chrome) that open a
-   *  DevTools panel cut at the playhead. `true` (default) shows them when the recording has console messages or
-   *  requests; `false` hides them. */
+   *  DevTools panel cut at the playhead, shown when the recording has console messages, requests or inspections.
+   *  `disableDevtools` removes them, the panel and the inspections. */
+  disableDevtools?: boolean
+  /** @deprecated Use `disableDevtools`. `false` is the same as `disableDevtools`. */
   devtools?: boolean
   /** Open the DevTools panel on this tab at mount. */
   defaultDevtoolsTab?: ReplayDevtoolsTab
+  /** Moments where a request or console message was inspected. As playback reaches one, DevTools opens on its
+   *  tab with that request or message selected and the label above it; playback doesn't stop. Added to the
+   *  recording's own `inspect` custom events, and to the rail as checkpoints. */
+  inspections?: ReplayInspection[]
   /** Draw the recorded pointer and click ripples (default true). */
   cursor?: boolean
   /** `width` (default): the page scales to the frame's width and sets its height. `contain`: fill the frame's
@@ -98,7 +108,7 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 export function ReplayPlayer({
   events, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
   autoplay = false, loop = false, initialTime = 0, speeds = DEFAULT_PLAYER_SPEEDS, markers = true, markerKinds,
-  cursor = true, devtools = true, defaultDevtoolsTab, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
+  cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
 }: ReplayPlayerOptions & { events: ReplayEvent[] }) {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -107,14 +117,26 @@ export function ReplayPlayer({
   const meta = useMemo(() => getReplayMeta(events), [events])
   const track = useMemo(() => getReplayPointerTrack(events), [events])
   const recorded = useMemo(() => getReplayMarkers(events), [events])
-  const shown = useMemo(() => {
-    const list = Array.isArray(markers) ? markers : markers ? recorded : []
-    return markerKinds ? list.filter((m) => markerKinds.includes(m.kind)) : list
-  }, [markers, recorded, markerKinds])
 
+  const toolsOn = devtools && !disableDevtools
   const tools = useMemo(() => getReplayDevtools(events), [events])
-  const showTools = devtools && (tools.console.length > 0 || tools.network.length > 0)
+  const resolved = useMemo(
+    () => (toolsOn ? resolveReplayInspections([...getReplayInspections(events), ...(inspections ?? [])], tools) : []),
+    [toolsOn, events, inspections, tools],
+  )
+  const showTools = toolsOn && (tools.console.length > 0 || tools.network.length > 0 || resolved.length > 0)
   const [panel, setPanel] = useState<ReplayDevtoolsTab | null>(defaultDevtoolsTab ?? null)
+  // Whether an inspection (rather than a press) opened the panel: it then leaves focus where it was.
+  const [autoOpened, setAutoOpened] = useState(false)
+
+  const shown = useMemo(() => {
+    // Inspections from the prop join the rail as checkpoints (the recording's own are already among `recorded`).
+    const own: ReplayMarker[] = toolsOn ? (inspections ?? []).map((inspection, i) => ({
+      id: `inspection-${i}`, kind: 'custom', time: Math.max(0, inspection.time), label: inspection.label ?? 'Inspected',
+    })) : []
+    const list = Array.isArray(markers) ? markers : markers ? [...recorded, ...own].sort((a, b) => a.time - b.time) : []
+    return markerKinds ? list.filter((m) => markerKinds.includes(m.kind)) : list
+  }, [markers, recorded, markerKinds, inspections, toolsOn])
 
   const [visible, setVisible] = useState(!lazy)
   const [ready, setReady] = useState(false)
@@ -151,12 +173,22 @@ export function ReplayPlayer({
     return () => clearTimeout(timer)
   }, [ready, reduced])
 
+  const resolvedRef = useRef(resolved)
+  resolvedRef.current = resolved
   const handle = useMemo<ReplayPreviewHandle>(() => ({
     play: (offset) => { setFinished(false); stage.current?.play(offset) },
     pause: (offset) => stage.current?.pause(offset),
     seek: (ms) => { setFinished(false); stage.current?.seek(ms) },
     toggle: () => { setFinished(false); stage.current?.toggle() },
     getCurrentTime: () => stage.current?.getCurrentTime() ?? 0,
+    inspect: (id) => {
+      const inspection = resolvedRef.current.find((x) => x.id === id)
+      if (!inspection) return
+      setFinished(false)
+      stage.current?.seek(inspection.time)
+      setPanel(inspection.tab)
+      setAutoOpened(false)
+    },
   }), [])
   useImperativeHandle(playerRef, () => handle, [handle])
 
@@ -209,7 +241,23 @@ export function ReplayPlayer({
   }, [url, meta.href, recorded, time])
 
   const toolsState = useMemo(() => replayDevtoolsAt(tools, time), [tools, time])
-  const openTools = (tab: ReplayDevtoolsTab) => setPanel((p) => (p === tab ? null : tab))
+  const openTools = (tab: ReplayDevtoolsTab) => { setAutoOpened(false); setPanel((p) => (p === tab ? null : tab)) }
+
+  // Inspect mode: the inspection at the playhead opens DevTools on what it found. Only a change of inspection does
+  // (closing the panel keeps it closed until the next one); scrubbing back before the first closes what it opened.
+  const inspection = showTools ? replayInspectionAt(resolved, time) : undefined
+  const inspectionId = inspection?.id
+  const inspectionTab = inspection?.tab
+  const lastInspection = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    if (inspectionId === lastInspection.current) return
+    const had = lastInspection.current
+    lastInspection.current = inspectionId
+    if (inspectionTab) {
+      setPanel(inspectionTab)
+      setAutoOpened(true)
+    } else if (had !== undefined && autoOpened) setPanel(null)
+  }, [inspectionId, inspectionTab, autoOpened])
   const toolButtons = showTools ? <DevtoolsButtons state={toolsState} open={panel} onOpen={openTools} /> : null
 
   const w = meta.width || 1280
@@ -269,11 +317,12 @@ export function ReplayPlayer({
         {showTools && panel ? (
           <DevtoolsPanel
             state={toolsState}
-            at={time}
             tab={panel}
             onTab={setPanel}
             onClose={() => { setPanel(null); rootRef.current?.focus({ preventScroll: true }) }}
             onSeek={(ms) => handle.seek(ms)}
+            inspection={inspection}
+            autoFocus={!autoOpened}
           />
         ) : null}
 
