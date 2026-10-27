@@ -302,6 +302,10 @@ export interface EmbedNode extends BlockSpacing {
   muted?: boolean
   controls?: boolean
   poster?: string
+  /** For an `.rrweb` recording: a HAR and a console log recorded alongside, whose requests and messages join
+   *  the player's DevTools. */
+  har?: string
+  log?: string
   /** The tag as written (with its `{% endembed %}`), reused while it still says the same. */
   raw?: string
 }

@@ -26,3 +26,4 @@ export { isReplayQaUrl, normalizeReplayEmbedUrl } from './url';
 export { ReplayFile, isRrwebUrl, splitReplayFragment } from './ReplayFile';
 export type { ReplayFileProps } from './ReplayFile';
 export { sanitizeReplayEvent } from './sanitize';
+export { consoleLogToReplayEvents, harToReplayEvents, mergeReplaySources } from './sources';

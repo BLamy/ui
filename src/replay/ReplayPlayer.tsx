@@ -21,6 +21,7 @@ import { ReplayStage } from './ReplayStage'
 import { DevtoolsButtons, DevtoolsPanel, type ReplayDevtoolsTab } from './ReplayDevtools'
 import { getReplayDevtools, replayDevtoolsAt } from './devtools'
 import { getReplayInspections, replayInspectionAt, resolveReplayInspections, type ReplayInspection } from './inspections'
+import { mergeReplaySources } from './sources'
 import { getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from './markers'
 import type { ReplayMarker, ReplayMarkerKind, ReplayPointerTrack } from './markers'
 import type { ReplayStageHandle } from './stage-types'
@@ -84,6 +85,11 @@ export interface ReplayPlayerOptions {
    *  tab with that request or message selected and the label above it; playback doesn't stop. Added to the
    *  recording's own `inspect` custom events, and to the rail as checkpoints. */
   inspections?: ReplayInspection[]
+  /** A HAR (object or JSON text) recorded alongside: its requests join the DevTools Network list, on their own
+   *  timestamps (sources.ts). Its `log._inspections` join `inspections`. */
+  har?: unknown
+  /** A console log recorded alongside (`<ISO time> [level] message` lines): its messages join the Console. */
+  consoleLog?: string
   /** Draw the recorded pointer and click ripples (default true). */
   cursor?: boolean
   /** `width` (default): the page scales to the frame's width and sets its height. `contain`: fill the frame's
@@ -112,11 +118,13 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 }
 
 export function ReplayPlayer({
-  events, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
+  events: recordingEvents, har, consoleLog, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
   autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers = true, markerKinds,
   cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
 }: ReplayPlayerOptions & { events: ReplayEvent[] }) {
+  // The recording plus whatever was recorded beside it (a HAR, a console log), as one event list.
+  const events = useMemo(() => mergeReplaySources(recordingEvents, { har, consoleLog }), [recordingEvents, har, consoleLog])
   const rootRef = useRef<HTMLDivElement>(null)
   const stage = useRef<ReplayStageHandle>(null)
   const reduced = useReducedMotion()

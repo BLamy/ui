@@ -74,6 +74,28 @@ The current inspection is the latest one at or before the playhead, so scrubbing
 
 A recording can carry its own: a custom event tagged `inspect` with the same fields as its payload (`record.addCustomEvent("inspect", { request, label })`), so an `.rrweb` file embedded in a page brings its inspections with it. They join any passed as `inspections`. `getReplayInspections(events)`, `resolveReplayInspections(inspections, getReplayDevtools(events))` and `replayInspectionAt(resolved, ms)` give you the same for your own UI.
 
+## HAR and console logs
+
+DevTools can also read what was recorded beside the rrweb events: a HAR (the network log a browser or proxy exports) and a console log. Their requests and messages join the Network and Console lists on their own timestamps, so a HAR captured during the same session lines up with the replay. Anything stamped before the recording starts shows at its first moment, anything after at its last.
+
+```md
+{% embed url="./recording.rrweb" har="./network.har" log="./console.log" %}
+```
+
+```tsx
+<ReplayPreview events={events} har={harJson} consoleLog={logText} />
+```
+
+The console log is one message per line, an ISO time, the level in brackets and the text; indented lines continue the message above:
+
+```
+2026-06-12T21:01:35.297Z [info] storefront ready
+2026-06-12T21:01:38.420Z [error] Uncaught TypeError: Cannot read properties of undefined (reading 'total')
+  at applyPromo (checkout.ts:88)
+```
+
+A HAR entry's `_requestId` is the id an inspection can name, and `log._inspections` (`{ at, request | message, label }`) carries inspections with the HAR. `harToReplayEvents`, `consoleLogToReplayEvents` and `mergeReplaySources(events, { har, consoleLog })` do the same reading for your own UI.
+
 ## Time window
 
 A long recording often matters for a few seconds of it. `timeWindow={[start, end]}` (ms) marks that segment: the player opens at its start with the segment highlighted on the scrubber, and Play plays it and stops at its end. Play again replays it; with `loop` it goes round. The rest of the recording is still there: scrub or seek outside the segment and playback runs on to the end of the recording, and moving back inside makes the segment hold again.
@@ -156,6 +178,7 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `cursor` | `boolean` | `true` | Draw the recorded pointer and click ripples. |
 | `disableDevtools` | `boolean` | `false` | Remove the Console and Network buttons, their panel and the inspections. (The older `devtools={false}` does the same.) |
 | `defaultDevtoolsTab` | `"console" \| "network"` | none | Open the DevTools panel on this tab at mount. |
+| `har` / `consoleLog` | `object \| string` / `string` | none | A HAR and a console log recorded alongside; their requests and messages join DevTools. |
 | `inspections` | `ReplayInspection[]` | none | Requests and messages to open DevTools on as playback reaches them, added to the recording's own `inspect` events. |
 | `fit` | `"width" \| "contain"` | `"width"` | `width`: the page scales to the frame's width and sets its height. `contain`: fill a frame you gave a height, letterboxed. |
 | `poster` | `ReactNode` | a page-shaped skeleton | Shown until the player is ready, at the frame's final size, so nothing jumps. |

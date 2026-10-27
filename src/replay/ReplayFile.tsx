@@ -3,9 +3,28 @@ import { useAsset } from '../asset-resolver';
 import { ReplayPreview } from './ReplayPreview';
 import type { ReplayPlayerOptions } from './ReplayPlayer';
 
-export interface ReplayFileProps extends Omit<ReplayPlayerOptions, 'url'> {
+export interface ReplayFileProps extends Omit<ReplayPlayerOptions, 'url' | 'har' | 'consoleLog'> {
   /** The `.rrweb` file as written in the document; the host's asset resolver maps it to a loadable URL. */
   url: string;
+  /** A `.har` file recorded alongside (resolved the same way): its requests join DevTools' Network list. */
+  har?: string;
+  /** A console log recorded alongside (`<ISO time> [level] message` lines): its messages join the Console. */
+  log?: string;
+}
+
+/** The text of a file the asset resolver maps, fetched once `enabled`; undefined until then or when it fails. */
+function useAssetText(url: string | undefined, enabled: boolean): { text?: string; done: boolean } {
+  const src = useAsset(url ?? '');
+  const [state, setState] = useState<{ text?: string; done: boolean }>({ done: !url });
+  useEffect(() => {
+    if (!url || !enabled || src === undefined) return;
+    const controller = new AbortController();
+    fetch(src, { signal: controller.signal })
+      .then((r) => (r.ok ? r.text() : undefined))
+      .then((text) => setState({ text, done: true }), () => !controller.signal.aborted && setState({ done: true }));
+    return () => controller.abort();
+  }, [url, src, enabled]);
+  return url ? state : { done: true };
 }
 
 /**
@@ -14,7 +33,7 @@ export interface ReplayFileProps extends Omit<ReplayPlayerOptions, 'url'> {
  * viewport, so a page of recordings doesn't download them all up front. A media fragment on the URL,
  * `recording.rrweb#t=4.7,7.4` (seconds), is its `timeWindow`.
  */
-export function ReplayFile({ url, ...options }: ReplayFileProps) {
+export function ReplayFile({ url, har, log, ...options }: ReplayFileProps) {
   const { file, segment } = splitReplayFragment(url);
   const src = useAsset(file);
   const ref = useRef<HTMLDivElement>(null);
@@ -29,8 +48,20 @@ export function ReplayFile({ url, ...options }: ReplayFileProps) {
     return () => io.disconnect();
   }, [near]);
 
-  if (!near || src === undefined) return <div ref={ref} className="docstream-asset-pending" data-slot="replay-file" aria-busy="true" />;
-  return <ReplayPreview source={{ kind: 'events-url', url: src }} chrome="browser" timeWindow={segment} {...options} />;
+  const harFile = useAssetText(har, near);
+  const logFile = useAssetText(log, near);
+
+  if (!near || src === undefined || !harFile.done || !logFile.done) return <div ref={ref} className="docstream-asset-pending" data-slot="replay-file" aria-busy="true" />;
+  return (
+    <ReplayPreview
+      source={{ kind: 'events-url', url: src }}
+      chrome="browser"
+      timeWindow={segment}
+      har={harFile.text}
+      consoleLog={logFile.text}
+      {...options}
+    />
+  );
 }
 
 /** Splits `#t=start,end` (a media fragment, in seconds; `#t=start` runs to the end) off a recording's URL. */

@@ -389,6 +389,8 @@ function serializeBlock(b: Block): string {
         attr("url", b.url),
         b.title ? attr("title", b.title) : "",
         b.poster ? attr("poster", b.poster) : "",
+        b.har ? attr("har", b.har) : "",
+        b.log ? attr("log", b.log) : "",
         b.autoplay === undefined ? "" : attr("autoplay", b.autoplay),
         b.loop === undefined ? "" : attr("loop", b.loop),
         b.muted === undefined ? "" : attr("muted", b.muted),

@@ -7,6 +7,8 @@ import { act, type ReactElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AssetResolverProvider } from "../asset-resolver"
 import { MarkdownContent } from "../docs/DocsRenderer"
+import { parseMarkdown } from "../gitbook/parse"
+import { serializeMarkdown } from "../gitbook/serialize"
 import { replayDemoEvents } from "./demo"
 import { BrowserBar, splitReplayAddress } from "./ReplayPlayer"
 import { ReplayFile, isRrwebUrl, splitReplayFragment } from "./ReplayFile"
@@ -81,6 +83,27 @@ describe("ReplayFile", () => {
     expect(fetchMock).toHaveBeenCalledWith("/assets/recording-abc.rrweb", expect.anything())
     expect(host.querySelector('[data-slot="replay-preview-scrubber"]')).not.toBeNull()
     expect(host.querySelector('[data-slot="replay-preview-bar"]')).not.toBeNull()
+  })
+
+  it("an embed's har= and log= join the player's DevTools, and round-trip through the markdown", async () => {
+    const start = replayDemoEvents[0]!.timestamp
+    const iso = (ms: number) => new Date(start + ms).toISOString()
+    const har = { log: { entries: [{ startedDateTime: iso(500), time: 120, request: { method: "GET", url: "https://shop.test/api/extra" }, response: { status: 503, content: {} } }] } }
+    const files: Record<string, string> = {
+      "/a/recording.rrweb": JSON.stringify(replayDemoEvents),
+      "/a/network.har": JSON.stringify(har),
+      "/a/console.log": `${iso(400)} [warn] from the log file\n`,
+    }
+    const fetchMock = vi.fn(async (url: string) => new Response(files[url] ?? "", { status: files[url] ? 200 : 404 }))
+    vi.stubGlobal("fetch", fetchMock)
+    const md = '{% embed url="./recording.rrweb" har="./network.har" log="./console.log" %}\n'
+    const resolve = (url: string) => "/a/" + url.slice(2)
+    await act(async () => root.render(<AssetResolverProvider resolve={resolve}><MarkdownContent markdown={md} /></AssetResolverProvider>))
+    await settle()
+    expect(fetchMock.mock.calls.map((c) => c[0]).sort()).toEqual(["/a/console.log", "/a/network.har", "/a/recording.rrweb"])
+    const player = host.querySelector('[data-slot="replay-preview"]')!
+    expect(player.querySelector('[data-tab="network"]')).not.toBeNull()
+    expect(serializeMarkdown(parseMarkdown('{% embed url="./r.rrweb" har="./n.har" log="./c.log" %}'))).toContain('har="./n.har" log="./c.log"')
   })
 
   it("an embed of a .rrweb file renders the replay, not a link card", async () => {
