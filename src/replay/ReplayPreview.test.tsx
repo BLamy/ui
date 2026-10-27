@@ -239,6 +239,65 @@ describe("player behaviour", () => {
     expect(el.innerHTML).not.toContain("Checkout answered 500")
   })
 
+  it("a time window opens at its start, highlights it, and plays just it until you scrub outside", async () => {
+    stage.time = 3000
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} timeWindow={[3000, 5000]} />)
+    const props = () => stage.props as ReplayStageProps
+    const tick = (ms: number) => act(async () => { stage.time = ms; props().onTimeUpdate?.(ms) })
+    const playing = (p: boolean) => act(async () => props().onPlayingChange?.(p))
+    expect(props().initialTime).toBe(3000)
+    expect(props().loop).toBe(false)
+    const band = el.querySelector<HTMLElement>('[data-slot="replay-preview-window"]')!
+    expect(band.style.getPropertyValue("--replay-window-start")).toBe(String(3000 / DEMO_DURATION))
+    expect(band.style.getPropertyValue("--replay-window-size")).toBe(String(2000 / DEMO_DURATION))
+    expect(el.querySelector('input[type="range"]')!.getAttribute("aria-valuetext")).toContain("segment 0:03 to 0:05")
+
+    // Play from inside: at the window's end the stage pauses there, and the center button replays the segment.
+    const playButton = el.querySelector<HTMLButtonElement>('[data-slot="replay-preview-play"]')!
+    await act(async () => playButton.click())
+    expect(stage.calls.at(-1)).toBe("play:")
+    await playing(true)
+    await tick(4200)
+    expect(stage.calls.at(-1)).toBe("play:")
+    await tick(5020)
+    expect(stage.calls.at(-1)).toBe("pause:5000")
+    await playing(false)
+    expect(el.querySelector('[data-slot="replay-preview-center"] button')!.getAttribute("aria-label")).toBe("Replay the segment")
+    await act(async () => playButton.click())
+    expect(stage.calls.at(-1)).toBe("play:3000")
+
+    // Scrubbed past the window, playback runs on to the end of the recording.
+    await act(async () => {
+      const input = el.querySelector<HTMLInputElement>('input[type="range"]')!
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "6000")
+      input.dispatchEvent(new Event("input", { bubbles: true }))
+    })
+    expect(stage.calls.at(-1)).toBe("seek:6000")
+    await playing(true)
+    await tick(7000)
+    expect(stage.calls.filter((c) => c === "pause:5000")).toHaveLength(1)
+    // Back inside it, the window holds again.
+    await act(async () => void el.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true })))
+    expect(stage.calls.at(-1)).toBe("seek:0")
+    await tick(5100)
+    expect(stage.calls.filter((c) => c === "pause:5000")).toHaveLength(1)
+    const ref: { current: ReplayPreviewHandle | null } = { current: null }
+    await mount(<ReplayPreview events={replayDemoEvents} lazy={false} timeWindow={[3000, 5000]} playerRef={ref} />)
+    act(() => ref.current!.seek(3500))
+    await playing(true)
+    await tick(5000)
+    expect(stage.calls.at(-1)).toBe("pause:5000")
+  })
+
+  it("with loop, a time window goes round again from its start", async () => {
+    stage.time = 3000
+    await mount(<ReplayPreview events={replayDemoEvents} lazy={false} timeWindow={[3000, 5000]} loop />)
+    const props = () => stage.props as ReplayStageProps
+    await act(async () => props().onPlayingChange?.(true))
+    await act(async () => props().onTimeUpdate?.(5010))
+    expect(stage.calls.at(-1)).toBe("seek:3000")
+  })
+
   it("maps keys: space/k toggle, arrows and j/l seek, Home/End jump, < > cycle speed", async () => {
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} />)
     const last = () => stage.calls[stage.calls.length - 1]

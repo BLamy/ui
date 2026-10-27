@@ -23,6 +23,6 @@ export type { ReplayInspection, ReplayInspectionTab, ResolvedReplayInspection } 
 export { ReplayEventType, ReplayIncrementalSource, ReplayMouseInteraction } from './types';
 export type { ReplayEvent } from './types';
 export { isReplayQaUrl, normalizeReplayEmbedUrl } from './url';
-export { ReplayFile, isRrwebUrl } from './ReplayFile';
+export { ReplayFile, isRrwebUrl, splitReplayFragment } from './ReplayFile';
 export type { ReplayFileProps } from './ReplayFile';
 export { sanitizeReplayEvent } from './sanitize';

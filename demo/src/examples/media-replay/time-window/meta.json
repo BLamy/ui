@@ -1,0 +1,5 @@
+{
+  "title": "A time window: play the segment that matters",
+  "description": "The scrubber highlights 0:06.2–0:08.0, where checkout fails. Play stops at its end; scrub outside it to play the rest.",
+  "status": "Live"
+}

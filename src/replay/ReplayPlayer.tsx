@@ -3,7 +3,8 @@
    follows the recording's navigations, play/pause, a scrubber with the recording's moments on a rail above
    it, a speed control, fullscreen, a drawn cursor whose clicks ripple, and DevTools: Console and Network buttons
    in the top bar with what had been logged and requested by the playhead, which open a DevTools panel over the page,
-   and inspections (inspections.ts) that open it on a request or message as playback reaches them. Until the player is ready a
+   and inspections (inspections.ts) that open it on a request or message as playback reaches them. A time window
+   highlights a segment on the scrubber, opens there and plays just that, until you scrub outside it. Until the player is ready a
    poster (a page-shaped skeleton by default) holds the frame's exact size, so nothing jumps.
 
    Plain React + plain CSS (`@layer docstream.replay` in styles.css, `[data-slot]` hooks). Keys (focus inside
@@ -56,9 +57,14 @@ export interface ReplayPlayerOptions {
   /** Play/pause, scrubber, speed and fullscreen (default true). */
   controls?: boolean
   autoplay?: boolean
+  /** Restart at the end (with a `timeWindow`, at the window's end, from its start). */
   loop?: boolean
-  /** Where the player starts, in ms from the start. */
+  /** Where the player starts, in ms from the start (default 0, or the `timeWindow`'s start). */
   initialTime?: number
+  /** `[start, end]` in ms: the segment that matters. The player opens at `start` with the segment highlighted on the
+   *  scrubber, and playing from inside it stops at `end` (play again to replay it). Scrub or seek outside it and
+   *  playback runs on through the rest of the recording. */
+  timeWindow?: readonly [number, number]
   /** Speeds the speed button cycles through; the first is the initial speed (default 1, 2, 4, 0.5). */
   speeds?: number[]
   /** Markers on the scrubber rail: `true` (default) reads them from the recording, `false` hides the rail,
@@ -107,7 +113,7 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 
 export function ReplayPlayer({
   events, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
-  autoplay = false, loop = false, initialTime = 0, speeds = DEFAULT_PLAYER_SPEEDS, markers = true, markerKinds,
+  autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers = true, markerKinds,
   cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
 }: ReplayPlayerOptions & { events: ReplayEvent[] }) {
@@ -138,12 +144,23 @@ export function ReplayPlayer({
     return markerKinds ? list.filter((m) => markerKinds.includes(m.kind)) : list
   }, [markers, recorded, markerKinds, inspections, toolsOn])
 
+  // The time window, clamped to the recording; dropped when it's empty.
+  const span = useMemo(() => {
+    if (!timeWindow) return null
+    const start = Math.max(0, Math.min(timeWindow[0], meta.duration))
+    const end = Math.max(start, Math.min(timeWindow[1], meta.duration))
+    return end - start >= 1 ? { start, end } : null
+  }, [timeWindow, meta.duration])
+  const initialTime = initialTimeProp ?? span?.start ?? 0
+
   const [visible, setVisible] = useState(!lazy)
   const [ready, setReady] = useState(false)
   const [posterGone, setPosterGone] = useState(false)
   const [time, setTime] = useState(initialTime)
   const [playing, setPlaying] = useState(false)
   const [finished, setFinished] = useState(false)
+  // Stopped at the window's end: the center button replays the segment.
+  const [windowDone, setWindowDone] = useState(false)
   const [speedIndex, setSpeedIndex] = useState(0)
   const [fullscreen, setFullscreen] = useState(false)
   const duration = meta.duration
@@ -175,25 +192,71 @@ export function ReplayPlayer({
 
   const resolvedRef = useRef(resolved)
   resolvedRef.current = resolved
-  const handle = useMemo<ReplayPreviewHandle>(() => ({
-    play: (offset) => { setFinished(false); stage.current?.play(offset) },
-    pause: (offset) => stage.current?.pause(offset),
-    seek: (ms) => { setFinished(false); stage.current?.seek(ms) },
-    toggle: () => { setFinished(false); stage.current?.toggle() },
-    getCurrentTime: () => stage.current?.getCurrentTime() ?? 0,
-    inspect: (id) => {
-      const inspection = resolvedRef.current.find((x) => x.id === id)
-      if (!inspection) return
+  // The window, the playhead and the play state, for the handle (which never re-creates) and onTime.
+  const spanRef = useRef(span)
+  spanRef.current = span
+  const timeRef = useRef(initialTime)
+  const playingRef = useRef(false)
+  // Whether playback is held to the window: it is when it starts (or is moved) inside it.
+  const inWindow = (ms: number) => !!spanRef.current && ms >= spanRef.current.start && ms < spanRef.current.end
+  const held = useRef(inWindow(initialTime))
+  const handle = useMemo<ReplayPreviewHandle>(() => {
+    const play = (offset?: number) => {
+      const w = spanRef.current
+      if (!w) { setFinished(false); return stage.current?.play(offset) }
+      let from = offset ?? timeRef.current
+      // Play at the window's end replays the window.
+      if (w && offset === undefined && Math.abs(from - w.end) < 60) from = w.start
+      held.current = inWindow(from)
       setFinished(false)
-      stage.current?.seek(inspection.time)
-      setPanel(inspection.tab)
-      setAutoOpened(false)
-    },
-  }), [])
+      setWindowDone(false)
+      if (from !== timeRef.current) stage.current?.play(from)
+      else stage.current?.play(offset)
+    }
+    const seek = (ms: number) => {
+      held.current = inWindow(ms)
+      setFinished(false)
+      setWindowDone(false)
+      stage.current?.seek(ms)
+    }
+    return {
+      play,
+      pause: (offset) => stage.current?.pause(offset),
+      seek,
+      toggle: () => {
+        if (!spanRef.current) { setFinished(false); return stage.current?.toggle() }
+        return playingRef.current ? stage.current?.pause() : play()
+      },
+      getCurrentTime: () => stage.current?.getCurrentTime() ?? 0,
+      inspect: (id) => {
+        const inspection = resolvedRef.current.find((x) => x.id === id)
+        if (!inspection) return
+        seek(inspection.time)
+        setPanel(inspection.tab)
+        setAutoOpened(false)
+      },
+    }
+  }, [])
   useImperativeHandle(playerRef, () => handle, [handle])
 
-  const onTime = useCallback((ms: number) => { setTime(ms); onTimeUpdate?.(ms) }, [onTimeUpdate])
+  const onTime = useCallback((ms: number) => {
+    timeRef.current = ms
+    // Held to the window: stop at its end, or go round again with `loop`.
+    const w = spanRef.current
+    if (w && held.current && playingRef.current && ms >= w.end) {
+      if (loop) stage.current?.seek(w.start)
+      else {
+        stage.current?.pause(w.end)
+        setWindowDone(true)
+        ms = w.end
+        timeRef.current = ms
+      }
+    }
+    setTime(ms)
+    onTimeUpdate?.(ms)
+  }, [onTimeUpdate, loop])
   const onPlaying = useCallback((p: boolean) => {
+    playingRef.current = p
     setPlaying(p)
     if (p) setFinished(false)
     onPlayingChange?.(p)
@@ -295,7 +358,7 @@ export function ReplayPlayer({
             events={events}
             fit="contain"
             speed={speed}
-            loop={loop}
+            loop={loop && !span}
             autoplay={autoplay}
             initialTime={initialTime}
             showMouse={false}
@@ -331,11 +394,11 @@ export function ReplayPlayer({
             <button
               type="button"
               tabIndex={-1}
-              aria-label={finished ? 'Replay from the start' : 'Play'}
+              aria-label={finished ? 'Replay from the start' : windowDone ? 'Replay the segment' : 'Play'}
               // The overlay leaves as playback starts; keep focus (and the keys) in the player.
               onClick={() => { rootRef.current?.focus({ preventScroll: true }); toggle() }}
             >
-              {finished ? <RotateCcw size={22} strokeWidth={2.4} /> : <Play size={22} strokeWidth={2.4} fill="currentColor" />}
+              {finished || windowDone ? <RotateCcw size={22} strokeWidth={2.4} /> : <Play size={22} strokeWidth={2.4} fill="currentColor" />}
             </button>
           </div>
         ) : null}
@@ -352,6 +415,7 @@ export function ReplayPlayer({
           <Scrubber
             time={time}
             duration={duration}
+            span={span}
             markers={shown}
             disabled={!ready}
             onSeek={(ms) => handle.seek(ms)}
@@ -440,8 +504,8 @@ const PointerOverlay = memo(function PointerOverlay({ track, time, reduced }: { 
   )
 })
 
-function Scrubber({ time, duration, markers, disabled, onSeek, onMarker }: {
-  time: number; duration: number; markers: ReplayMarker[]; disabled: boolean
+function Scrubber({ time, duration, span, markers, disabled, onSeek, onMarker }: {
+  time: number; duration: number; span: { start: number; end: number } | null; markers: ReplayMarker[]; disabled: boolean
   onSeek: (ms: number) => void; onMarker: (m: ReplayMarker) => void
 }) {
   const max = Math.max(1, duration)
@@ -460,6 +524,14 @@ function Scrubber({ time, duration, markers, disabled, onSeek, onMarker }: {
   }, [markers, max])
   return (
     <div data-slot="replay-preview-scrubber" data-markers={markers.length ? '' : undefined}>
+      {span ? (
+        <div
+          data-slot="replay-preview-window"
+          aria-hidden="true"
+          title={`${formatReplayTime(span.start)}–${formatReplayTime(span.end)}`}
+          style={{ '--replay-window-start': span.start / max, '--replay-window-size': (span.end - span.start) / max } as CSSProperties}
+        />
+      ) : null}
       {markers.length ? (
         <div data-slot="replay-preview-markers">
           {markers.map((m) => (
@@ -479,13 +551,16 @@ function Scrubber({ time, duration, markers, disabled, onSeek, onMarker }: {
       <input
         type="range"
         aria-label="Playback position"
-        aria-valuetext={`${formatReplayTime(value)} of ${formatReplayTime(duration)}`}
+        aria-valuetext={`${formatReplayTime(value)} of ${formatReplayTime(duration)}${span ? `, segment ${formatReplayTime(span.start)} to ${formatReplayTime(span.end)}` : ''}`}
         min={0}
         max={max}
         step={10}
         value={value}
         disabled={disabled}
-        style={{ '--replay-progress': `${(value / max) * 100}%` } as CSSProperties}
+        style={{
+          '--replay-progress': `${(value / max) * 100}%`,
+          ...(span ? { '--replay-progress-start': `${(span.start / max) * 100}%` } : {}),
+        } as CSSProperties}
         onChange={(e) => onSeek(Number(e.currentTarget.value))}
       />
     </div>

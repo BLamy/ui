@@ -9,7 +9,7 @@ import { AssetResolverProvider } from "../asset-resolver"
 import { MarkdownContent } from "../docs/DocsRenderer"
 import { replayDemoEvents } from "./demo"
 import { BrowserBar, splitReplayAddress } from "./ReplayPlayer"
-import { ReplayFile, isRrwebUrl } from "./ReplayFile"
+import { ReplayFile, isRrwebUrl, splitReplayFragment } from "./ReplayFile"
 
 const renderToString = untypedRenderToString as (element: ReactElement) => string
 const createRoot = untypedCreateRoot as (el: Element) => { render(node: ReactElement): void; unmount(): void }
@@ -23,6 +23,17 @@ describe("isRrwebUrl", () => {
   it("matches .rrweb paths, with or without a query or hash", () => {
     for (const url of ["./recording.rrweb", "https://cdn.test/a/b.RRWEB?v=2", "x.rrweb#t=3", " y.rrweb "]) expect(isRrwebUrl(url), url).toBe(true)
     for (const url of ["./recording.json", "https://x.test/rrweb", "a.rrweb.json", ""]) expect(isRrwebUrl(url), url).toBe(false)
+  })
+})
+
+describe("splitReplayFragment", () => {
+  it("reads a #t=start,end media fragment (seconds) as the time window, and resolves the file without it", () => {
+    expect(splitReplayFragment("./recording.rrweb#t=4.7,7.4")).toEqual({ file: "./recording.rrweb", segment: [4700, 7400] })
+    expect(splitReplayFragment("a.rrweb#t=12")).toEqual({ file: "a.rrweb", segment: [12000, Infinity] })
+    expect(splitReplayFragment("a.rrweb#x=1&t=npt:2,3")).toEqual({ file: "a.rrweb", segment: [2000, 3000] })
+    expect(splitReplayFragment("a.rrweb#t=5,2")).toEqual({ file: "a.rrweb", segment: undefined })
+    expect(splitReplayFragment("a.rrweb#top")).toEqual({ file: "a.rrweb#top" })
+    expect(splitReplayFragment("a.rrweb")).toEqual({ file: "a.rrweb" })
   })
 })
 

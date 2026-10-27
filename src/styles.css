@@ -4260,6 +4260,24 @@
     transform: translateY(5px);
   }
 
+  /* The time window: a band under the track, on the same geometry as the markers (4px padding, half a thumb). */
+  :where([data-slot="replay-preview-window"]) {
+    position: absolute;
+    top: 50%;
+    left: calc(10px + (100% - 20px) * var(--replay-window-start, 0));
+    width: max(4px, calc((100% - 20px) * var(--replay-window-size, 1)));
+    height: 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary, #4f46e5) 34%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary, #4f46e5) 60%, transparent);
+    translate: 0 -50%;
+    pointer-events: none;
+  }
+
+  :where([data-slot="replay-preview-scrubber"][data-markers] > [data-slot="replay-preview-window"]) {
+    translate: 0 calc(-50% + 5px);
+  }
+
   :where([data-slot="replay-preview-markers"] > button) {
     position: absolute;
     top: 50%;
@@ -4309,6 +4327,8 @@
   }
 
   :where([data-slot="replay-preview-scrubber"] > input[type="range"]) {
+    /* Above the time-window band. */
+    position: relative;
     --replay-track: 4px;
     --replay-thumb: 12px;
     appearance: none;
@@ -4331,8 +4351,11 @@
   [data-slot="replay-preview-scrubber"] > input[type="range"]::-webkit-slider-runnable-track {
     height: var(--replay-track);
     border-radius: 999px;
+    /* Played: from the time window's start (0 without one) to the playhead. */
     background: linear-gradient(
       to right,
+      color-mix(in srgb, var(--muted-foreground, #71717a) 26%, transparent) var(--replay-progress-start, 0%),
+      var(--primary, #4f46e5) var(--replay-progress-start, 0%),
       var(--primary, #4f46e5) var(--replay-progress, 0%),
       color-mix(in srgb, var(--muted-foreground, #71717a) 26%, transparent) var(--replay-progress, 0%)
     );

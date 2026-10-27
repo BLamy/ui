@@ -74,6 +74,18 @@ The current inspection is the latest one at or before the playhead, so scrubbing
 
 A recording can carry its own: a custom event tagged `inspect` with the same fields as its payload (`record.addCustomEvent("inspect", { request, label })`), so an `.rrweb` file embedded in a page brings its inspections with it. They join any passed as `inspections`. `getReplayInspections(events)`, `resolveReplayInspections(inspections, getReplayDevtools(events))` and `replayInspectionAt(resolved, ms)` give you the same for your own UI.
 
+## Time window
+
+A long recording often matters for a few seconds of it. `timeWindow={[start, end]}` (ms) marks that segment: the player opens at its start with the segment highlighted on the scrubber, and Play plays it and stops at its end. Play again replays it; with `loop` it goes round. The rest of the recording is still there: scrub or seek outside the segment and playback runs on to the end of the recording, and moving back inside makes the segment hold again.
+
+{% demo src="media-replay/time-window" %}
+
+```tsx
+<ReplayPreview events={events} timeWindow={[6200, 8000]} />
+```
+
+An `.rrweb` embed takes its window from the URL: `{% embed url="./checkout.rrweb#t=6.2,8" %}`.
+
 ## Three ways in
 
 {% tabs %}
@@ -83,6 +95,8 @@ An embed whose URL ends in `.rrweb` renders `ReplayFile`. The file is a JSON arr
 ```md
 {% embed url="./recordings/signup.rrweb" title="Sign-up flow" %}
 ```
+
+A media fragment on the URL sets the [time window](#time-window), in seconds: `./recordings/signup.rrweb#t=4.7,7.4` opens at 0:04.7 and plays to 0:07.4; `#t=12` runs from 0:12 to the end.
 {% endtab %}
 
 {% tab title="Replay / Loop QA URL" %}
@@ -134,7 +148,8 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `trafficLights` | `boolean` | `true` | The macOS window buttons in `browser` chrome. |
 | `controls` | `boolean` | `true` | Play/pause, scrubber, speed, fullscreen. `controls={false}` with `chrome="none"` is a still frame at `initialTime`. |
 | `autoplay` / `loop` | `boolean` | `false` | Start on load; restart at the end. |
-| `initialTime` | `number` | `0` | Where the player starts, in ms. |
+| `initialTime` | `number` | `0`, or the window's start | Where the player starts, in ms. |
+| `timeWindow` | `[number, number]` | none | The segment that matters, in ms: highlighted on the scrubber, where the player opens, and where playing from inside it stops. Scrubbing outside it plays on. |
 | `speeds` | `number[]` | `[1, 2, 4, 0.5]` | What the speed button cycles through. The first is the starting speed. |
 | `markers` | `boolean \| ReplayMarker[]` | `true` | `true` reads them from the recording, `false` hides the rail, or pass your own. |
 | `markerKinds` | `ReplayMarkerKind[]` | all | Which recorded kinds to show: `click`, `error`, `network`, `navigation`, `custom`. |
@@ -227,7 +242,7 @@ The module also exports the event enums `ReplayEventType`, `ReplayIncrementalSou
 ## URL helpers
 
 ```ts
-import { isReplayQaUrl, normalizeReplayEmbedUrl, isRrwebUrl } from "@brett_lamy/docstream"
+import { isReplayQaUrl, normalizeReplayEmbedUrl, isRrwebUrl, splitReplayFragment } from "@brett_lamy/docstream"
 
 normalizeReplayEmbedUrl("https://app.example.com/projects/p1/explorations/t9")
 // "https://app.example.com/p/p1/tasks/t9"
@@ -236,6 +251,7 @@ normalizeReplayEmbedUrl("not a url") // null
 isReplayQaUrl("https://app.replay.io/recording/abc") // true: *.replay.io
 isReplayQaUrl("https://example.com/p/p1/tasks/t9")   // true: a /p/ route
 isRrwebUrl("./session.rrweb?v=2")                     // true
+splitReplayFragment("./session.rrweb#t=4.7,7.4")      // { file: "./session.rrweb", segment: [4700, 7400] }
 ```
 
 `normalizeReplayEmbedUrl` rewrites `/projects/:id/(tasks|journeys|test-runs|explorations)/:rid` to `/p/:id/…` (`explorations` becomes `tasks`), leaves other http(s) URLs as they are, and returns `null` for anything that isn't an http(s) URL.
