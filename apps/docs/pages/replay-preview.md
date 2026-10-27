@@ -2,7 +2,7 @@
 
 A session replay in a browser window. `ReplayPreview` plays an [rrweb](https://github.com/rrweb-io/rrweb) recording with docstream's headless `ReplayStage` and wraps it in browser chrome: a URL bar that follows the recording's navigations, play/pause, a scrubber with the recording's moments on a rail above it, a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready, a page-shaped skeleton holds the frame at the recording's aspect ratio, so nothing jumps when the page appears.
 
-`ReplayPreview` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (1.7.0, `@brett_lamy/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part. The registry item adds `@brett_lamy/docstream` as its one npm dependency.
+`ReplayPreview` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (since 1.7.0, `@brett_lamy/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part. The registry item adds `@brett_lamy/docstream` as its one npm dependency.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -58,7 +58,26 @@ The top bar's Console and Network buttons show what had happened by the playhead
 <ReplayPreview events={events} initialTime={8000} defaultDevtoolsTab="network" />
 ```
 
-The panel reads rrweb's console and network plugins (`rrweb/console@1`, `rrweb/network@1`) and custom events: `network` with `{ method, url, status, … }`, `error` with `{ label, message, stack? }`, and `console` with `{ level, message }`. The buttons show only when the recording has messages or requests, and `devtools={false}` turns them off. `getReplayDevtools(events)` and `replayDevtoolsAt(tools, ms)` give you the same lists and counts for your own UI.
+The panel reads rrweb's console and network plugins (`rrweb/console@1`, `rrweb/network@1`) and custom events: `network` with `{ method, url, status, … }`, `error` with `{ label, message, stack? }`, and `console` with `{ level, message }`. The buttons show only when the recording has messages, requests or inspections, and `disableDevtools` removes them. `getReplayDevtools(events)` and `replayDevtoolsAt(tools, ms)` give you the same lists and counts for your own UI.
+
+## Inspections
+
+An inspection is a moment where someone (you, a debugging agent) looked at a request or a console message. Inspect is the player's default mode: as the playhead reaches an inspection, DevTools opens on its tab with that request or message selected and marked, and playback carries on. Each one is also a checkpoint on the rail, labelled with what was found. Scrubbing works both ways, and a panel you close stays closed until the next inspection. `playerRef.current.inspect(id)` jumps to one.
+
+{% demo src="replay-preview/inspections" %}
+
+```tsx
+<ReplayPreview
+  events={events}
+  inspections={[
+    { time: 6800, request: '/api/promo/validate?code=FALL25', label: 'FALL25 validates' },
+    { time: 7600, request: '2465.48', label: 'Checkout answers 500' },
+    { time: 7900, tab: 'console', message: 'Uncaught TypeError', label: 'applyPromo crashes' },
+  ]}
+/>
+```
+
+`request` names the request by the recording's id for it (a request's `requestId` or `id`, such as a Replay request id) or by URL or path. `message` names a console message by id or by text it contains. A recording can carry its own as custom events tagged `inspect`, so an `.rrweb` file brings its inspections with it.
 
 ## Driving it from outside
 
@@ -143,12 +162,13 @@ rrweb doesn't fix a file format, so the example takes an event array, `{ events:
 | `markers` | `true` | `true` reads them from the recording, `false` hides the rail, or pass `ReplayMarker[]`. |
 | `markerKinds` | all | Which recorded kinds to show. |
 | `cursor` | `true` | Draw the recorded pointer and click ripples. |
-| `devtools` | `true` | Console and Network buttons and their DevTools panel, when the recording has messages or requests. |
+| `disableDevtools` | `false` | Remove the Console and Network buttons, their DevTools panel and the inspections. (`devtools={false}` does the same.) |
 | `defaultDevtoolsTab` | — | `console` or `network`: open the panel on that tab at mount. |
+| `inspections` | — | `ReplayInspection[]`: requests and messages to open DevTools on as playback reaches them. |
 | `fit` | `width` | `width`: the page sets the frame's height. `contain`: fill a sized frame and letterbox the page. |
 | `poster` | page skeleton | Shown until the player is ready. |
 | `lazy` | `true` | Mount the player once the frame nears the viewport. |
-| `playerRef` | — | `{ play, pause, seek, toggle, getCurrentTime }`. |
+| `playerRef` | — | `{ play, pause, seek, toggle, getCurrentTime, inspect }`. |
 | `onTimeUpdate` · `onPlayingChange` · `onMarkerPress` | — | Playhead (ms), play state, a pressed marker. |
 
 ## Styling
