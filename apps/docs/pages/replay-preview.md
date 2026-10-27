@@ -108,6 +108,23 @@ Record with rrweb (`record({ emit })`) and pass the events. To embed instead of 
 
 `replayDemoEvents`, from `@brett_lamy/docstream/replay/demo` (also re-exported by `@/components/ui/replay-preview`), is a small synthetic recording (58 events, 20 KB): a shopper on a mock storefront whose checkout fails with a promo code.
 
+## Drop a recording
+
+Drag an rrweb file onto the frame and it starts playing. Drop another on the player to swap it. Without a file at hand, download the demo recording under the frame and drag it back in. The player sits inside a [`FileDropZone`](#/file-upload), so the browse button and keyboard drops come with it. The file is read in the browser and never uploaded.
+
+{% demo src="replay-preview/drop-a-recording" %}
+
+```tsx
+const [events, setEvents] = useState<ReplayEvent[]>()
+
+<FileDropZone multiple={false} rules={{ accept: ['.rrweb', '.json'] }}
+  onFiles={async ([{ file }]) => setEvents(JSON.parse(await file.text()))}>
+  {events ? () => <ReplayPreview key={events.length} events={events} autoplay /> : undefined}
+</FileDropZone>
+```
+
+rrweb doesn't fix a file format, so the example takes an event array, `{ events: [...] }`, or one event per line, gzipped or not, and checks `getReplayMeta(events).playable` (a full snapshot to start from) before handing the events over. A new `key` remounts the player, so each dropped recording plays from its start (the example keys on a drop counter, so dropping the same file again restarts it too).
+
 ## Props
 
 | Prop | Default | Effect |

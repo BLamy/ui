@@ -10,7 +10,7 @@ const meta: Meta<typeof ApplePasswords> = {
   component: ApplePasswords,
   parameters: { layout: 'fullscreen' },
   // The code clock stands still so frames are repeatable; pass `live: true` to watch codes roll over. The Developer
-  // Sign-In buttons are real: they sign in to your accounts through almostnode's CORS proxy and, with a passkey, keep
+  // Sign-In buttons are real: they sign in to your accounts through our CORS proxy and, with a passkey, keep
   // the tokens encrypted in this browser.
   args: { live: false },
 };

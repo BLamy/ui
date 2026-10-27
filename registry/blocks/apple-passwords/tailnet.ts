@@ -1,5 +1,5 @@
 /* The sign-ins' network. A browser can't call GitHub's, Fly's, Netlify's or Replay's login endpoints itself (no CORS), so
-   by default they go through almostnode's CORS proxy. When this tab is signed in to Tailscale and an exit node is online
+   by default they go through our CORS proxy (workers/cors-proxy). When this tab is signed in to Tailscale and an exit node is online
    they go through the tailnet instead: the WebAssembly client fetches them as the exit node, and the proxy never sees the
    tokens. The node is the one the Safari block signs in (same saved session and Web Lock), so signing in there is enough. */
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect';

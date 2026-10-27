@@ -1,0 +1,9 @@
+{
+  "name": "bl-cors-proxy",
+  "private": true,
+  "description": "The CORS proxy the browser-side sign-ins go through (Cloudflare Worker). Outside the pnpm workspace on purpose.",
+  "scripts": {
+    "dev": "npx wrangler@4 dev --port 8788",
+    "deploy": "npx wrangler@4 deploy"
+  }
+}

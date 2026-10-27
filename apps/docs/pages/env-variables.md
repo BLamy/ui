@@ -31,7 +31,7 @@ These docs answer from the keychain the [Apple Passwords](#/blocks/apple-passwor
 | `NETLIFY_AUTH_TOKEN` | Netlify |
 | `REPLAY_API_KEY`, `RECORD_REPLAY_API_KEY` | Replay |
 
-When this tab is signed in to Tailscale (in the [Safari](#/blocks/safari) block, say) and an exit node is online, the sign-ins go through the tailnet; otherwise they go through almostnode's CORS proxy.
+When this tab is signed in to Tailscale (in the [Safari](#/blocks/safari) block, say) and an exit node is online, the sign-ins go through the tailnet; otherwise they go through BL's own CORS proxy, a Cloudflare Worker.
 
 ## In your own docs
 

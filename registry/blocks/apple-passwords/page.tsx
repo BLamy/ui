@@ -36,7 +36,7 @@ export interface ApplePasswordsProps {
   /** Advance the verification-code clock (with Date.now). Pass false for still frames (screenshots). Default true. */
   live?: boolean;
   /** Runs the Developer Sign-In buttons' device flows and checks their tokens. Defaults to the real flows: through the
-      tailnet when this tab is signed in to Tailscale with an exit node online, else almostnode's CORS proxy.
+      tailnet when this tab is signed in to Tailscale with an exit node online, else our CORS proxy.
       `createDeviceAuth({ fetch })` picks the transport, `createDemoDeviceAuth()` fakes it. */
   auth?: DeviceAuth;
   /** The Tailscale controller the sign-ins may use. Default: one sharing the Safari block's saved node (restored without

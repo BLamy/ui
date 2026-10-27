@@ -1,0 +1,9 @@
+name = "bl-cors-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://blamy.github.io"
+# Any target, like almostnode's proxy. List hostnames (comma separated) to narrow it.
+ALLOWED_HOSTS = "*"

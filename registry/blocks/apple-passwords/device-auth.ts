@@ -6,8 +6,8 @@
    - Netlify  `netlify login`: an OAuth ticket the user authorizes; poll it, then exchange it for a token.
    - Replay   `replayio login`: an auth request keyed by a random hex key; poll it, then refresh through Auth0.
 
-   None of these endpoints send CORS headers, so a browser goes through a proxy. Like almostnode, the default is
-   almostnode's CORS proxy, overridden by `localStorage.__corsProxyUrl` or `createDeviceAuth({ fetch })` (a desktop
+   None of these endpoints send CORS headers, so a browser goes through a proxy. The default is our own
+   CORS proxy (workers/cors-proxy, a Cloudflare Worker), overridden by `localStorage.__corsProxyUrl` or `createDeviceAuth({ fetch })` (a desktop
    shell or server can pass plain fetch). Once signed in, `check` proves the token still works — and refreshes
    Replay's, which lasts an hour — by asking the service who it belongs to and listing a few of its things.
    `createDemoDeviceAuth` walks the same steps with an invented code, for screenshots and tests. */
@@ -93,12 +93,12 @@ export interface DeviceAuth {
 
 type Fetch = (url: string, init?: RequestInit) => Promise<Response>;
 
-/** almostnode's public CORS proxy (its `DEFAULT_CORS_PROXY_URL`). */
-export const DEFAULT_CORS_PROXY = 'https://almostnode-cors-proxy.langtail.workers.dev/?url=';
+/** Our CORS proxy (workers/cors-proxy): any target, for pages on blamy.github.io and localhost. */
+export const DEFAULT_CORS_PROXY = 'https://bl-cors-proxy.brett-lamy.workers.dev/?url=';
 
 /** A fetch that routes every request through a CORS proxy taking the target as an encoded suffix
     (`https://proxy.example/?url=` + encodeURIComponent(url)). Without a prefix it uses `localStorage.__corsProxyUrl`
-    (almostnode's override) or the default proxy, read on each request. */
+    (the same override almostnode reads) or the default proxy, read on each request. */
 export function corsProxy(prefix?: string): Fetch {
   return (url, init) => fetch(proxyPrefix(prefix) + encodeURIComponent(url), init);
 }
@@ -332,7 +332,7 @@ async function replayRefresh(f: Fetch, refreshToken: string, signal: AbortSignal
 
 const FLOWS: Record<ServiceId, (f: Fetch, o: SignInOptions) => Promise<DeviceGrant>> = { github, fly, netlify, replay };
 
-/** The real flows, through almostnode's CORS proxy unless you pass a `fetch`. */
+/** The real flows, through our CORS proxy unless you pass a `fetch`. */
 export function createDeviceAuth({ fetch: f = corsProxy() }: { fetch?: Fetch } = {}): DeviceAuth {
   return {
     signIn: (service, options) => FLOWS[service](f, options),
