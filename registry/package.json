@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@agent-wasm/core": "0.4.0",
-    "@brett_lamy/docstream": "1.24.0",
+    "@brett_lamy/docstream": "1.24.1",
     "@brett_lamy/ui": "workspace:*",
     "@visual-json/react": "0.4.0",
     "@visual-json/yaml": "0.4.0",
