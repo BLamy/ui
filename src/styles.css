@@ -5015,8 +5015,8 @@
   }
 
   :where([data-slot="replay-devtools-node"]) {
-    display: flex;
-    align-items: baseline;
+    /* Inline text, not flex: a flex item would drop the space before each attribute. */
+    display: block;
     padding-inline-end: 12px;
     white-space: nowrap;
     cursor: default;
@@ -5038,7 +5038,7 @@
 
   :where([data-slot="replay-devtools-node"] [data-part="twisty"]) {
     display: inline-grid;
-    flex-shrink: 0;
+    vertical-align: -2px;
     place-items: center;
     width: 16px;
     height: 14px;

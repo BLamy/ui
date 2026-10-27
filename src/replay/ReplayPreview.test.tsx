@@ -287,7 +287,8 @@ describe("player behaviour", () => {
   it("an element inspection opens Elements on the element, ancestors expanded, and highlights it on the page", async () => {
     // The replayed page, as the stage's iframe document would hold it.
     const doc = document.implementation.createHTMLDocument("page")
-    doc.body.innerHTML = '<main><form><input placeholder="Search tasks" class="field"><button>Go</button></form></main>'
+    // rrweb marks replayed hover with `:hover` classes; DevTools shows the page's own.
+    doc.body.innerHTML = '<main class=":hover"><form><input placeholder="Search tasks" class="field :hover"><button>Go</button></form></main>'
     const input = doc.querySelector("input")!
     input.getBoundingClientRect = () => ({ left: 40, top: 60, width: 220, height: 32, right: 260, bottom: 92, x: 40, y: 60, toJSON() {} }) as DOMRect
     stage.doc = doc
@@ -297,7 +298,8 @@ describe("player behaviour", () => {
     const panel = el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')!
     expect(panel.querySelector('[role=tab][aria-selected="true"]')!.textContent).toBe("Elements")
     const selected = panel.querySelector('[data-slot="replay-devtools-node"][data-selected]')!
-    expect(selected.textContent).toContain('placeholder="Search tasks"')
+    expect(selected.textContent).toBe('<input placeholder="Search tasks" class="field"></input>')
+    expect(panel.textContent).not.toContain(":hover")
     // Its ancestors are open: html, body, main and form all show their children.
     expect([...panel.querySelectorAll('[data-slot="replay-devtools-node"][aria-expanded="true"]')].map((n) => n.querySelector('[data-part="tag"]')!.textContent)).toEqual(["<html", "<body", "<main", "<form"])
     expect(panel.querySelector('[data-slot="replay-devtools-breadcrumb"]')!.textContent).toBe("htmlbodymainforminput.field")

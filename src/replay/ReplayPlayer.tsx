@@ -154,7 +154,8 @@ function ScreenshotCaptures({ shots, time, playing, reduced }: {
 function ElementHighlight({ el }: { el: Element }) {
   const r = el.getBoundingClientRect()
   if (!r.width && !r.height) return null
-  const tag = el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/)[0] : '')
+  const first = (el.getAttribute('class') ?? '').split(/\s+/).find((c) => c && !c.startsWith(':') && !c.startsWith('rrweb-') && !c.startsWith('rr_'))
+  const tag = el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + (first ? `.${first}` : '')
   return (
     <div data-slot="replay-preview-highlight" aria-hidden="true" style={{ left: r.left, top: r.top, width: r.width, height: r.height }}>
       <span data-part="label" data-below={r.top < 28 || undefined}>

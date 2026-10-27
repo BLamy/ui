@@ -441,6 +441,14 @@ export interface ElementsProps {
 
 const MAX_CHILDREN = 300
 
+/** An attribute's value as the page wrote it: rrweb's own markers (`:hover` classes for replayed hover state,
+ *  `rrweb-*` classes) are left out. Null when nothing is left of a class attribute. */
+function pageValue(name: string, value: string): string | null {
+  if (name !== 'class') return value
+  const kept = value.split(/\s+/).filter((c) => c && !c.startsWith(':') && !c.startsWith('rrweb-') && !c.startsWith('rr_'))
+  return kept.length ? kept.join(' ') : null
+}
+
 /** The replayed page's DOM as a collapsible tree, Chrome's Elements panel in miniature. */
 function ElementsPane({ getDocument, selected, onSelect, onHover }: ElementsProps) {
   const doc = getDocument()
@@ -486,7 +494,8 @@ function ElementsPane({ getDocument, selected, onSelect, onHover }: ElementsProp
 const crumb = (el: Element) => {
   const tag = el.tagName.toLowerCase()
   const id = el.id ? `#${el.id}` : ''
-  const cls = typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''
+  const classes = pageValue('class', el.getAttribute('class') ?? '')
+  const cls = classes ? '.' + classes.split(' ').slice(0, 2).join('.') : ''
   return tag + id + cls
 }
 
@@ -506,9 +515,15 @@ function ElementRow({ node, depth, expanded, selected, onToggle, onSelect, onHov
   const kids = [...el.childNodes].filter((c) => c.nodeType === Node.ELEMENT_NODE || (c.nodeType === Node.TEXT_NODE && c.textContent?.trim()))
   const open = expanded.has(el)
   const isSelected = el === selected
-  const attrs = [...el.attributes].map((a) => (
-    <span key={a.name} data-part="attr"> <span data-part="attr-name">{a.name}</span>{a.value !== '' ? <>=&quot;<span data-part="attr-value">{clip(a.value, 80)}</span>&quot;</> : null}</span>
-  ))
+  const attrs = [...el.attributes].flatMap((a) => {
+    const value = pageValue(a.name, a.value)
+    if (value === null) return []
+    return [
+      <span key={a.name} data-part="attr">
+        {' '}<span data-part="attr-name">{a.name}</span>{value !== '' ? <>=&quot;<span data-part="attr-value">{clip(value, 80)}</span>&quot;</> : null}
+      </span>,
+    ]
+  })
   // A lone short text child shows inline, as Chrome does.
   const inlineText = kids.length === 1 && kids[0]!.nodeType === Node.TEXT_NODE && (kids[0]!.textContent?.trim().length ?? 0) <= 80 ? kids[0]!.textContent!.trim() : null
   return (
