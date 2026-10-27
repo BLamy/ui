@@ -106,6 +106,25 @@ describe("ReplayFile", () => {
     expect(serializeMarkdown(parseMarkdown('{% embed url="./r.rrweb" har="./n.har" log="./c.log" %}'))).toContain('har="./n.har" log="./c.log"')
   })
 
+  it("plays the recording before the HAR arrives, then adds its requests without touching the stage", async () => {
+    const start = replayDemoEvents[0]!.timestamp
+    const har = { log: { entries: [{ startedDateTime: new Date(start + 100).toISOString(), time: 10, request: { method: "GET", url: "https://shop.test/api/late" }, response: { status: 200, content: {} } }] } }
+    let releaseHar!: () => void
+    const harReady = new Promise<void>((resolve) => { releaseHar = resolve })
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url === "/a/network.har") { await harReady; return new Response(JSON.stringify(har), { status: 200 }) }
+      return new Response(JSON.stringify(replayDemoEvents), { status: 200 })
+    }))
+    const resolve = (url: string) => "/a/" + url.slice(2)
+    await act(async () => root.render(<AssetResolverProvider resolve={resolve}><ReplayFile url="./recording.rrweb" har="./network.har" lazy={false} defaultDevtoolsTab="network" initialTime={9000} /></AssetResolverProvider>))
+    await settle()
+    const status = () => host.querySelector('[data-slot="replay-devtools-status"]')?.textContent ?? ""
+    expect(host.querySelector('[data-slot="replay-preview"]')).not.toBeNull()
+    expect(status()).toMatch(/^8 requests/)
+    await act(async () => { releaseHar(); await new Promise((r) => setTimeout(r, 20)) })
+    expect(status()).toMatch(/^9 requests/)
+  })
+
   it("an embed of a .rrweb file renders the replay, not a link card", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ events: replayDemoEvents }), { status: 200 })))
     await act(async () => root.render(<MarkdownContent markdown={'{% embed url="https://cdn.test/session.rrweb" %}\n'} />))

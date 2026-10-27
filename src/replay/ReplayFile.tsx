@@ -12,7 +12,7 @@ export interface ReplayFileProps extends Omit<ReplayPlayerOptions, 'url' | 'har'
   log?: string;
 }
 
-/** The text of a file the asset resolver maps, fetched once `enabled`; undefined until then or when it fails. */
+/** The text of a file the asset resolver maps, fetched once `enabled`; undefined until it arrives or if it fails. */
 function useAssetText(url: string | undefined, enabled: boolean): { text?: string; done: boolean } {
   const src = useAsset(url ?? '');
   const [state, setState] = useState<{ text?: string; done: boolean }>({ done: !url });
@@ -28,8 +28,9 @@ function useAssetText(url: string | undefined, enabled: boolean): { text?: strin
 }
 
 /**
- * An rrweb recording file (a JSON event array, or `{ events }`), played in the replay browser frame.
- * The URL goes through `AssetResolverProvider`, and the file is fetched only once the frame nears the
+ * An rrweb recording file (a JSON event array, or `{ events }`), played in the replay browser frame. A HAR and a
+ * console log recorded beside it are fetched alongside and join DevTools when they arrive, without holding up
+ * (or restarting) the replay. The URL goes through `AssetResolverProvider`, and the file is fetched only once the frame nears the
  * viewport, so a page of recordings doesn't download them all up front. A media fragment on the URL,
  * `recording.rrweb#t=4.7,7.4` (seconds), is its `timeWindow`.
  */
@@ -51,7 +52,8 @@ export function ReplayFile({ url, har, log, ...options }: ReplayFileProps) {
   const harFile = useAssetText(har, near);
   const logFile = useAssetText(log, near);
 
-  if (!near || src === undefined || !harFile.done || !logFile.done) return <div ref={ref} className="docstream-asset-pending" data-slot="replay-file" aria-busy="true" />;
+  // The recording plays as soon as it's here; the HAR and the log join DevTools whenever they arrive.
+  if (!near || src === undefined) return <div ref={ref} className="docstream-asset-pending" data-slot="replay-file" aria-busy="true" />;
   return (
     <ReplayPreview
       source={{ kind: 'events-url', url: src }}

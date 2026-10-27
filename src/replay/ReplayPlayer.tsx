@@ -124,13 +124,15 @@ export function ReplayPlayer({
   cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
 }: ReplayPlayerOptions & { events: ReplayEvent[] }) {
-  // The recording plus whatever was recorded beside it (a HAR, a console log), as one event list.
+  // The recording plus whatever was recorded beside it (a HAR, a console log), as one event list for DevTools,
+  // inspections and markers. The stage, the clock and the pointer read the recording alone, so a HAR or a log that
+  // arrives while it plays only adds to DevTools: the page replay never restarts.
   const events = useMemo(() => mergeReplaySources(recordingEvents, { har, consoleLog }), [recordingEvents, har, consoleLog])
   const rootRef = useRef<HTMLDivElement>(null)
   const stage = useRef<ReplayStageHandle>(null)
   const reduced = useReducedMotion()
-  const meta = useMemo(() => getReplayMeta(events), [events])
-  const track = useMemo(() => getReplayPointerTrack(events), [events])
+  const meta = useMemo(() => getReplayMeta(recordingEvents), [recordingEvents])
+  const track = useMemo(() => getReplayPointerTrack(recordingEvents), [recordingEvents])
   const recorded = useMemo(() => getReplayMarkers(events), [events])
 
   const toolsOn = devtools && !disableDevtools
@@ -364,7 +366,7 @@ export function ReplayPlayer({
         {visible && meta.playable ? (
           <ReplayStage
             ref={stage}
-            events={events}
+            events={recordingEvents}
             fit="contain"
             speed={speed}
             loop={loop && !span}
