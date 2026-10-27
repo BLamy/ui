@@ -79,6 +79,16 @@ An inspection is a moment where someone (you, a debugging agent) looked at a req
 
 `request` names the request by the recording's id for it (a request's `requestId` or `id`, such as a Replay request id) or by URL or path. `message` names a console message by id or by text it contains. A recording can carry its own as custom events tagged `inspect`, so an `.rrweb` file brings its inspections with it.
 
+## Elements, Sources and screenshots
+
+DevTools also has an **Elements** tab, the replayed page's DOM at the playhead as a collapsible tree, and, when the player has a debugger's `evidence`, a **Sources** tab. An inspection with an `element` selector opens Elements on that element and highlights it on the page with DevTools' blue box. Sources shows the code the debugger read, each line with its hit count and the lines it looked at highlighted, and its logpoints as breakpoints whose watch value flashes blue beside the line as each hit lands. Screenshots in the evidence are taken as playback reaches them: the stage flashes and the shot shrinks to a thumbnail in the bottom-left corner while the page plays on.
+
+```tsx
+<ReplayPreview events={events} evidence={{ sources, logpoints, screenshots }} />
+```
+
+A `.rrweb` embed takes it as a file: `{% embed url="./recording.rrweb" evidence="./evidence.json" %}`.
+
 ## HAR and console logs
 
 DevTools can also read what was recorded beside the rrweb events: a HAR (the network log browsers export) and a console log, one `<ISO time> [level] message` per line. Their requests and messages join the Network and Console lists on their own timestamps, and, with `markers`, the rail marks the failed requests and console errors.
@@ -187,6 +197,7 @@ rrweb doesn't fix a file format, so the example takes an event array, `{ events:
 | `cursor` | `true` | Draw the recorded pointer and click ripples. |
 | `disableDevtools` | `false` | Remove the Console and Network buttons, their DevTools panel and the inspections. (`devtools={false}` does the same.) |
 | `defaultDevtoolsTab` | — | `console` or `network`: open the panel on that tab at mount. |
+| `evidence` | — | A debugger's source excerpts, logpoints and screenshots (object or JSON): the Sources tab and screenshot captures. |
 | `har` · `consoleLog` | — | A HAR (object or JSON) and a console log recorded alongside; their requests and messages join DevTools. |
 | `inspections` | — | `ReplayInspection[]`: requests and messages to open DevTools on as playback reaches them. |
 | `fit` | `width` | `width`: the page sets the frame's height. `contain`: fill a sized frame and letterbox the page. |
