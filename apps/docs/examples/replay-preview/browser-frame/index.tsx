@@ -6,7 +6,7 @@ import { ReplayPreview, replayDemoEvents } from '@/components/ui/replay-preview'
 export default function BrowserFrame() {
   return (
     <div style={{ width: '100%', maxWidth: 760 }}>
-      <ReplayPreview events={replayDemoEvents} initialTime={6400} />
+      <ReplayPreview events={replayDemoEvents} initialTime={6400} markers />
     </div>
   )
 }

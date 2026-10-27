@@ -1,6 +1,6 @@
 # ReplayPreview
 
-A session replay in a browser window. `ReplayPreview` plays an [rrweb](https://github.com/rrweb-io/rrweb) recording with docstream's headless `ReplayStage` and wraps it in browser chrome: a URL bar that follows the recording's navigations, play/pause, a scrubber with the recording's moments on a rail above it, a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready, a page-shaped skeleton holds the frame at the recording's aspect ratio, so nothing jumps when the page appears.
+A session replay in a browser window. `ReplayPreview` plays an [rrweb](https://github.com/rrweb-io/rrweb) recording with docstream's headless `ReplayStage` and wraps it in browser chrome: a URL bar that follows the recording's navigations, play/pause, a plain seek bar (with `markers`, the recording's moments on a rail above it), a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready, a page-shaped skeleton holds the frame at the recording's aspect ratio, so nothing jumps when the page appears.
 
 `ReplayPreview` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (since 1.7.0, `@brett_lamy/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part. The registry item adds `@brett_lamy/docstream` as its one npm dependency.
 
@@ -38,12 +38,12 @@ Using docstream directly is the same component: `import { ReplayPreview } from '
 
 ## Browser frame
 
-The rail marks what happened: clicks as small ticks, then console errors, failed requests, navigations and custom events (checkpoints) as coloured dots. Press one to jump there. Everything is driven by the playhead (the cursor, the ripples, the URL), so scrubbing backwards replays it all.
+The seek bar is plain by default. With `markers` (this demo has it), a rail above it marks what happened: clicks as small ticks, then console errors, failed requests, navigations and custom events (checkpoints) as coloured dots. Press one to jump there. Everything is driven by the playhead (the cursor, the ripples, the URL), so scrubbing backwards replays it all.
 
 {% demo src="replay-preview/browser-frame" %}
 
 ```tsx
-<ReplayPreview events={events} initialTime={6400} />
+<ReplayPreview events={events} initialTime={6400} markers />
 ```
 
 Keys work anywhere inside the player: **Space** / **K** play and pause, **←** **→** seek 5 s, **J** / **L** 10 s, **<** **>** change speed, **F** full screen, **Home** / **End** jump to the ends. rrweb and its stylesheet load the first time a player mounts, and with `lazy` (the default) that happens only once the frame nears the viewport.
@@ -62,7 +62,7 @@ The panel reads rrweb's console and network plugins (`rrweb/console@1`, `rrweb/n
 
 ## Inspections
 
-An inspection is a moment where someone (you, a debugging agent) looked at a request or a console message. Inspect is the player's default mode: as the playhead reaches an inspection, DevTools opens on its tab with that request or message selected and marked, and playback carries on. Each one is also a checkpoint on the rail, labelled with what was found. Scrubbing works both ways, and a panel you close stays closed until the next inspection. `playerRef.current.inspect(id)` jumps to one.
+An inspection is a moment where someone (you, a debugging agent) looked at a request or a console message. Inspect is the player's default mode: as the playhead reaches an inspection, DevTools opens on its tab with that request or message selected and marked, and playback carries on. With `markers`, each one is also a checkpoint on the rail, labelled with what was found. Scrubbing works both ways, and a panel you close stays closed until the next inspection. `playerRef.current.inspect(id)` jumps to one.
 
 {% demo src="replay-preview/inspections" %}
 
@@ -81,7 +81,7 @@ An inspection is a moment where someone (you, a debugging agent) looked at a req
 
 ## HAR and console logs
 
-DevTools can also read what was recorded beside the rrweb events: a HAR (the network log browsers export) and a console log, one `<ISO time> [level] message` per line. Their requests and messages join the Network and Console lists on their own timestamps, and the rail marks the failed requests and console errors.
+DevTools can also read what was recorded beside the rrweb events: a HAR (the network log browsers export) and a console log, one `<ISO time> [level] message` per line. Their requests and messages join the Network and Console lists on their own timestamps, and, with `markers`, the rail marks the failed requests and console errors.
 
 ```tsx
 <ReplayPreview events={events} har={harJson} consoleLog={logText} />
@@ -182,7 +182,7 @@ rrweb doesn't fix a file format, so the example takes an event array, `{ events:
 | `initialTime` | `0`, or the window's start | Where the player starts (ms). |
 | `timeWindow` | — | `[start, end]` (ms): the segment to open at, highlight and play; scrubbing outside it plays on. |
 | `speeds` | `[1, 2, 4, 0.5]` | What the speed button cycles through; the first is the initial speed. |
-| `markers` | `true` | `true` reads them from the recording, `false` hides the rail, or pass `ReplayMarker[]`. |
+| `markers` | `false` | A marker rail above the seek bar: `true` reads them from the recording, or pass `ReplayMarker[]`. Off by default since docstream 1.26. |
 | `markerKinds` | all | Which recorded kinds to show. |
 | `cursor` | `true` | Draw the recorded pointer and click ripples. |
 | `disableDevtools` | `false` | Remove the Console and Network buttons, their DevTools panel and the inspections. (`devtools={false}` does the same.) |
