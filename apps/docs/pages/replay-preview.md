@@ -79,6 +79,16 @@ An inspection is a moment where someone (you, a debugging agent) looked at a req
 
 `request` names the request by the recording's id for it (a request's `requestId` or `id`, such as a Replay request id) or by URL or path. `message` names a console message by id or by text it contains. A recording can carry its own as custom events tagged `inspect`, so an `.rrweb` file brings its inspections with it.
 
+## HAR and console logs
+
+DevTools can also read what was recorded beside the rrweb events: a HAR (the network log browsers export) and a console log, one `<ISO time> [level] message` per line. Their requests and messages join the Network and Console lists on their own timestamps, and the rail marks the failed requests and console errors.
+
+```tsx
+<ReplayPreview events={events} har={harJson} consoleLog={logText} />
+```
+
+A `.rrweb` embed takes them as files: `{% embed url="./recording.rrweb" har="./network.har" log="./console.log" %}`.
+
 ## Time window
 
 A long recording often matters for a few seconds of it. `timeWindow={[start, end]}` (ms) marks that segment: the player opens at its start with the segment highlighted on the scrubber, and Play plays it and stops at its end. Play again replays it, and `loop` goes round it. Scrub or seek outside the segment and playback runs on to the end of the recording; move back inside and the segment holds again.
@@ -177,6 +187,7 @@ rrweb doesn't fix a file format, so the example takes an event array, `{ events:
 | `cursor` | `true` | Draw the recorded pointer and click ripples. |
 | `disableDevtools` | `false` | Remove the Console and Network buttons, their DevTools panel and the inspections. (`devtools={false}` does the same.) |
 | `defaultDevtoolsTab` | — | `console` or `network`: open the panel on that tab at mount. |
+| `har` · `consoleLog` | — | A HAR (object or JSON) and a console log recorded alongside; their requests and messages join DevTools. |
 | `inspections` | — | `ReplayInspection[]`: requests and messages to open DevTools on as playback reaches them. |
 | `fit` | `width` | `width`: the page sets the frame's height. `contain`: fill a sized frame and letterbox the page. |
 | `poster` | page skeleton | Shown until the player is ready. |
