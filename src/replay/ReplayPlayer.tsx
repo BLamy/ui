@@ -18,10 +18,11 @@ import {
 import { useReducedMotion } from 'framer-motion'
 import { Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
 import { ReplayStage } from './ReplayStage'
-import { DevtoolsButtons, DevtoolsPanel, type ElementsProps, type ReplayDevtoolsTab } from './ReplayDevtools'
+import { DevtoolsButtons, DevtoolsPanel, type ElementsProps, type ReplayDevtoolsTab, type SourcesProps } from './ReplayDevtools'
 import { getReplayDevtools, replayDevtoolsAt } from './devtools'
 import { getReplayInspections, replayInspectionAt, resolveReplayInspections, type ReplayInspection } from './inspections'
 import { mergeReplaySources } from './sources'
+import { resolveReplayEvidence, type ReplayEvidence } from './evidence'
 import { getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from './markers'
 import type { ReplayMarker, ReplayMarkerKind, ReplayPointerTrack } from './markers'
 import type { ReplayStageHandle } from './stage-types'
@@ -95,6 +96,9 @@ export interface ReplayPlayerOptions {
    *  message or inspection (default 5000). `false` keeps it open. A panel you opened or touched never closes by
    *  itself. */
   autoCloseDevtools?: number | false
+  /** What a debugger gathered (evidence.ts): source it read and logpoints it set, in DevTools' Sources tab, and
+   *  screenshots it took, captured over the page as playback reaches them. An object or JSON text. */
+  evidence?: ReplayEvidence | string
   /** Draw the recorded pointer and click ripples (default true). */
   cursor?: boolean
   /** `width` (default): the page scales to the frame's width and sets its height. `contain`: fill the frame's
@@ -111,6 +115,38 @@ export interface ReplayPlayerOptions {
   onMarkerPress?: (marker: ReplayMarker) => void
   className?: string
   style?: CSSProperties
+}
+
+/** The debugger's screenshots as macOS takes them: as playback reaches one, the stage flashes and the shot shrinks
+ *  to a thumbnail in the bottom-left corner, where it stays a few seconds over the still-playing page (click it to
+ *  open the full image). Only forward playback across the moment takes one, not scrubbing or seeking. */
+function ScreenshotCaptures({ shots, time, playing, reduced }: {
+  shots: { time: number; src: string; label?: string }[]; time: number; playing: boolean; reduced: boolean
+}) {
+  const last = useRef(time)
+  const [capture, setCapture] = useState<{ n: number; src: string; label?: string } | null>(null)
+  useEffect(() => {
+    const prev = last.current
+    last.current = time
+    // A frame's step forward while playing (a seek jumps further, or backwards).
+    if (!playing || time <= prev || time - prev > 1000) return
+    const shot = shots.filter((s) => s.time > prev && s.time <= time).at(-1)
+    if (shot) setCapture((c) => ({ n: (c?.n ?? 0) + 1, src: shot.src, label: shot.label }))
+  }, [time, playing, shots])
+  useEffect(() => {
+    if (!capture) return
+    const t = setTimeout(() => setCapture(null), reduced ? 3000 : 4200)
+    return () => clearTimeout(t)
+  }, [capture, reduced])
+  if (!capture) return null
+  return (
+    <div key={capture.n} data-slot="replay-preview-capture" data-reduced={reduced || undefined}>
+      <div data-part="flash" aria-hidden="true" />
+      <a data-part="thumbnail" href={capture.src} target="_blank" rel="noreferrer" title={capture.label ?? 'Screenshot'}>
+        <img src={capture.src} alt={capture.label ?? 'Screenshot from the recording'} />
+      </a>
+    </div>
+  )
 }
 
 /** DevTools' element highlight over the replayed page: the element's box, in recorded-viewport px (the stage
@@ -150,7 +186,7 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 }
 
 export function ReplayPlayer({
-  events: recordingEvents, har, consoleLog, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
+  events: recordingEvents, har, consoleLog, evidence, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
   autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers, markerKinds,
   cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
@@ -168,11 +204,15 @@ export function ReplayPlayer({
 
   const toolsOn = devtools && !disableDevtools
   const tools = useMemo(() => getReplayDevtools(events), [events])
-  const resolved = useMemo(
-    () => (toolsOn ? resolveReplayInspections([...getReplayInspections(events), ...(inspections ?? [])], tools) : []),
-    [toolsOn, events, inspections, tools],
-  )
-  const showTools = toolsOn && (tools.console.length > 0 || tools.network.length > 0 || resolved.length > 0)
+  const proof = useMemo(() => resolveReplayEvidence(evidence, meta.start, meta.duration), [evidence, meta.start, meta.duration])
+  const hasSources = proof.files.length > 0
+  const resolved = useMemo(() => {
+    if (!toolsOn) return []
+    // Each moment the debugger looked at source opens Sources there.
+    const reads = proof.reads.map((r) => ({ time: r.time, tab: 'sources' as const, source: { path: r.path, line: r.line }, label: r.label }))
+    return resolveReplayInspections([...getReplayInspections(events), ...(inspections ?? []), ...reads], tools)
+  }, [toolsOn, events, inspections, tools, proof])
+  const showTools = toolsOn && (tools.console.length > 0 || tools.network.length > 0 || resolved.length > 0 || hasSources)
   const [panel, setPanel] = useState<ReplayDevtoolsTab | null>(defaultDevtoolsTab ?? null)
   // Whether an inspection (rather than a press) opened the panel: it then leaves focus where it was.
   const [autoOpened, setAutoOpened] = useState(false)
@@ -399,6 +439,19 @@ export function ReplayPlayer({
     ? { getDocument, selected: selectedElement, onSelect: (el) => { claimPanel(); setPicked(el) }, onHover: setHovered }
     : undefined
   const highlighted = panel === 'elements' ? (hovered?.isConnected ? hovered : selectedElement) : null
+
+  // Sources: the inspection's file and line unless a file was picked in the list.
+  const [pickedPath, setPickedPath] = useState<string | null>(null)
+  useEffect(() => { setPickedPath(null) }, [inspection?.id])
+  const sources: SourcesProps | undefined = showTools && hasSources
+    ? {
+        evidence: proof,
+        at: time,
+        path: pickedPath ?? inspection?.source?.path ?? null,
+        line: pickedPath ? undefined : inspection?.source?.line,
+        onPath: (p) => { claimPanel(); setPickedPath(p) },
+      }
+    : undefined
   const toolButtons = showTools ? <DevtoolsButtons state={toolsState} open={panel} onOpen={openTools} /> : null
 
   const w = meta.width || 1280
@@ -454,6 +507,8 @@ export function ReplayPlayer({
           />
         ) : null}
 
+        {proof.screenshots.length ? <ScreenshotCaptures shots={proof.screenshots} time={time} playing={playing} reduced={!!reduced} /> : null}
+
         {!posterGone ? (
           <div data-slot="replay-preview-poster" data-leaving={ready || undefined}>
             {poster ?? <PagePoster empty={!meta.playable} />}
@@ -471,6 +526,7 @@ export function ReplayPlayer({
             autoFocus={!autoOpened}
             onInteract={claimPanel}
             elements={elements}
+            sources={sources}
           />
         ) : null}
 

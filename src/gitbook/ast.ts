@@ -306,6 +306,8 @@ export interface EmbedNode extends BlockSpacing {
    *  the player's DevTools. */
   har?: string
   log?: string
+  /** And a debugger's evidence: source, logpoints, screenshots. */
+  evidence?: string
   /** The tag as written (with its `{% endembed %}`), reused while it still says the same. */
   raw?: string
 }

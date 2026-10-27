@@ -636,6 +636,7 @@ function parseBody(lines: string[], firstGap = 0): { blocks: Block[]; end: numbe
           ...(tag.attrs.poster ? { poster: tag.attrs.poster } : {}),
           ...(tag.attrs.har ? { har: tag.attrs.har } : {}),
           ...(tag.attrs.log ? { log: tag.attrs.log } : {}),
+          ...(tag.attrs.evidence ? { evidence: tag.attrs.evidence } : {}),
           ...(booleanAttr(tag.attrs, "autoplay") === undefined
             ? {}
             : { autoplay: booleanAttr(tag.attrs, "autoplay") }),

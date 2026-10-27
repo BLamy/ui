@@ -451,7 +451,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         return <ReplayPreview source={block.url} title="Replay preview" />
       }
       if (isRrwebUrl(block.url)) {
-        return <ReplayFile url={block.url} title={block.title || fileName(block.url)} {...(block.har ? { har: block.har } : {})} {...(block.log ? { log: block.log } : {})} />
+        return <ReplayFile url={block.url} title={block.title || fileName(block.url)} {...(block.har ? { har: block.har } : {})} {...(block.log ? { log: block.log } : {})} {...(block.evidence ? { evidence: block.evidence } : {})} />
       }
       if (isStlUrl(block.url)) {
         return <AssetStl url={block.url} {...(block.title ? { title: block.title } : {})} />

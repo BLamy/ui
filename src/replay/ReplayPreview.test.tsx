@@ -312,6 +312,44 @@ describe("player behaviour", () => {
     stage.doc = null
   })
 
+  it("a logpoint's first hit opens Sources on its line; its watch value follows the hits; a screenshot is captured on the way", async () => {
+    const evidence = {
+      sources: [{ path: "https://shop.test/src/checkout.ts", lines: [{ line: 87, text: "const total = res.total", hits: 2 }, { line: 88, text: "applyPromo(total)", hits: 2 }], focus: [88] }],
+      logpoints: [{ path: "https://shop.test/src/checkout.ts", line: 88, expression: "total", hits: [{ at: 2000, value: "130" }, { at: 3000, value: "117" }] }],
+      screenshots: [{ at: 2500, src: "/shots/pay.jpg", label: "Pay" }],
+    }
+    stage.time = 1000
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} evidence={evidence} />)
+    const props = () => stage.props as ReplayStageProps
+    const playTo = (ms: number) => act(async () => props().onTimeUpdate?.(ms))
+    await act(async () => props().onPlayingChange?.(true))
+    await playTo(2100)
+    const panel = el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')!
+    expect(panel.querySelector('[role=tab][aria-selected="true"]')!.textContent).toBe("Sources")
+    expect(panel.querySelector('[data-slot="replay-devtools-files"] [aria-current]')!.textContent).toBe("checkout.ts")
+    const line88 = () => panel.querySelector('[data-slot="replay-devtools-code-line"][data-line="88"]')!
+    expect(line88().hasAttribute("data-focus")).toBe(true)
+    expect(line88().hasAttribute("data-breakpoint")).toBe(true)
+    expect(line88().querySelector('[data-part="watch"]')!.textContent).toBe("total = 130")
+    expect(el.querySelector('[data-slot="replay-preview-capture"]')).toBeNull()
+    // Playing on: the screenshot is captured (flash + thumbnail), and the next hit's value lands.
+    await playTo(2600)
+    const capture = el.querySelector('[data-slot="replay-preview-capture"]')!
+    expect(capture.querySelector("img")!.getAttribute("src")).toBe("/shots/pay.jpg")
+    expect(capture.querySelector('[data-part="flash"]')).not.toBeNull()
+    await playTo(3100)
+    expect(line88().querySelector('[data-part="watch"]')!.textContent).toBe("total = 117")
+  })
+
+  it("a seek past a screenshot doesn't take it", async () => {
+    stage.time = 1000
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} evidence={{ screenshots: [{ at: 2500, src: "/s.jpg" }] }} />)
+    const props = () => stage.props as ReplayStageProps
+    await act(async () => props().onPlayingChange?.(true))
+    await act(async () => props().onTimeUpdate?.(6000))
+    expect(el.querySelector('[data-slot="replay-preview-capture"]')).toBeNull()
+  })
+
   it("disableDevtools removes the buttons, the panel and the inspections", async () => {
     stage.time = 8000
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} disableDevtools inspections={[{ time: 7600, request: "/api/checkout", label: "Checkout answered 500" }]} />)

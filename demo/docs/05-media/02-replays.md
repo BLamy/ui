@@ -79,6 +79,20 @@ A recording can carry its own: a custom event tagged `inspect` with the same fie
 
 The **Elements** tab shows the replayed page's DOM at the playhead as a collapsible tree, Chrome's panel in miniature: tags, attributes and short text inline, a breadcrumb of the selected element's ancestors underneath. An inspection with an `element` selector opens it on that element (its ancestors expanded), and while the tab is open the selected element, or the one under the pointer in the tree, is highlighted on the page with DevTools' blue box and a tag-and-size label. Click any node to select it. The tree reads the live page, so it changes as the recording plays.
 
+## Sources and screenshots
+
+A debugger's evidence (`evidence`, or `evidence=` on a `.rrweb` embed: an object or a JSON file) adds two things. **Sources**, a DevTools tab: the source it read, each line with its hit count and the lines it was looking at highlighted, and its logpoints, a breakpoint on the line and, beside it, the watch value at the playhead, flashing blue as each new hit lands. A logpoint's first hit, or an excerpt read at a time, opens Sources there. And **screenshots**: as playback reaches one, the stage flashes and the shot shrinks to a thumbnail in the bottom-left corner, as macOS takes a screenshot, while the page plays on.
+
+```json
+{
+  "sources": [{ "path": "src/Profile.jsx", "lines": [{ "line": 61, "text": "setVersion(updated)", "hits": 1 }], "focus": [61] }],
+  "logpoints": [{ "path": "src/Profile.jsx", "line": 61, "expression": "res.status", "hits": [{ "at": "2026-10-19T21:02:08.807Z", "value": "409" }] }],
+  "screenshots": [{ "at": "2026-10-19T21:02:09.100Z", "src": "/shots/saved.jpg", "label": "Saved! toast" }]
+}
+```
+
+Times are ISO strings on the recording's clock, or ms from its start. `resolveReplayEvidence(evidence, start, duration)` reads it for your own UI.
+
 ## HAR and console logs
 
 DevTools can also read what was recorded beside the rrweb events: a HAR (the network log a browser or proxy exports) and a console log. Their requests and messages join the Network and Console lists on their own timestamps, so a HAR captured during the same session lines up with the replay. Anything stamped before the recording starts shows at its first moment, anything after at its last.
@@ -183,6 +197,7 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `cursor` | `boolean` | `true` | Draw the recorded pointer and click ripples. |
 | `disableDevtools` | `boolean` | `false` | Remove the Console and Network buttons, their panel and the inspections. (The older `devtools={false}` does the same.) |
 | `defaultDevtoolsTab` | `"console" \| "network"` | none | Open the DevTools panel on this tab at mount. |
+| `evidence` | `ReplayEvidence \| string` | none | A debugger's source excerpts, logpoints and screenshots: the Sources tab and screenshot captures. |
 | `har` / `consoleLog` | `object \| string` / `string` | none | A HAR and a console log recorded alongside; their requests and messages join DevTools. |
 | `autoCloseDevtools` | `number \| false` | `5000` | An inspection-opened DevTools panel closes after this many ms of playback with no new request, message or inspection. |
 | `inspections` | `ReplayInspection[]` | none | Requests and messages to open DevTools on as playback reaches them, added to the recording's own `inspect` events. |

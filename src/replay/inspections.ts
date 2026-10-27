@@ -11,7 +11,7 @@
 import type { ReplayConsoleEntry, ReplayDevtools, ReplayRequest } from './devtools'
 import { ReplayEventType, type ReplayEvent } from './types'
 
-export type ReplayInspectionTab = 'network' | 'console' | 'elements'
+export type ReplayInspectionTab = 'network' | 'console' | 'elements' | 'sources'
 
 export interface ReplayInspection {
   /** Stable id; defaults to `inspect-<n>`. */
@@ -26,6 +26,8 @@ export interface ReplayInspection {
   message?: string
   /** The element to select in the Elements tab (and highlight on the page): a CSS selector. */
   element?: string
+  /** The source to show in the Sources tab: a file's path and, optionally, a line. */
+  source?: { path: string; line?: number }
   /** What was found, shown above the panel while the inspection is current. */
   label?: string
 }
@@ -42,6 +44,7 @@ export interface ResolvedReplayInspection {
   messageId?: string
   /** The CSS selector of the element to select and highlight. */
   element?: string
+  source?: { path: string; line?: number }
 }
 
 export const INSPECT_TAG = 'inspect'
@@ -89,11 +92,12 @@ export function resolveReplayInspections(inspections: readonly ReplayInspection[
       return {
         id: inspection.id ?? `inspect-${i}`,
         time: Math.max(0, inspection.time),
-        tab: inspection.tab ?? (inspection.request ? 'network' : inspection.message ? 'console' : 'elements'),
+        tab: inspection.tab ?? (inspection.request ? 'network' : inspection.message ? 'console' : inspection.source ? 'sources' : 'elements'),
         label: inspection.label,
         requestId: request?.id,
         messageId: message?.id,
         element: inspection.element,
+        source: inspection.source,
       } satisfies ResolvedReplayInspection
     })
     .sort((a, b) => a.time - b.time)

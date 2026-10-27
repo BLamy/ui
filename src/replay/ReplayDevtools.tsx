@@ -10,9 +10,10 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { ChevronRight, CircleX, Info, Network, SquareTerminal, TriangleAlert, X } from 'lucide-react'
 import type { ReplayConsoleEntry, ReplayDevtoolsState, ReplayRequest } from './devtools'
+import { sourceName, type ResolvedReplayEvidence } from './evidence'
 import type { ResolvedReplayInspection } from './inspections'
 
-export type ReplayDevtoolsTab = 'console' | 'network' | 'elements'
+export type ReplayDevtoolsTab = 'console' | 'network' | 'elements' | 'sources'
 
 const time = (ms: number) => {
   const s = Math.max(0, ms) / 1000
@@ -59,13 +60,15 @@ export function DevtoolsButtons({ state, open, onOpen }: {
 
 /** The panel over the page: Console and Network, cut at the playhead. `inspection` selects and marks its target;
  *  `autoFocus` (default true) moves focus into the panel as it opens — off when an inspection opened it mid-play. */
-export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, autoFocus = true, onInteract, elements }: {
+export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, autoFocus = true, onInteract, elements, sources }: {
   state: ReplayDevtoolsState; tab: ReplayDevtoolsTab; onTab: (tab: ReplayDevtoolsTab) => void
   onClose: () => void; onSeek: (ms: number) => void; inspection?: ResolvedReplayInspection | null; autoFocus?: boolean
   /** Any click, scroll or key in the panel (the player then treats it as the user's). */
   onInteract?: () => void
   /** The Elements tab: the replayed page's document, the selected element, and selection / hover callbacks. */
   elements?: ElementsProps
+  /** The Sources tab: the debugger's source excerpts and logpoints. */
+  sources?: SourcesProps
 }) {
   const panel = useRef<HTMLDivElement>(null)
   // Opened by an inspection, the panel starts taller: its point is the request's details.
@@ -97,6 +100,7 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
   const tabs: { id: ReplayDevtoolsTab; label: string }[] = [
     ...(elements ? [{ id: 'elements' as const, label: 'Elements' }] : []),
     { id: 'console', label: 'Console' },
+    ...(sources ? [{ id: 'sources' as const, label: 'Sources' }] : []),
     { id: 'network', label: 'Network' },
   ]
   return (
@@ -141,6 +145,7 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
       {tab === 'console'
         ? <ConsolePane state={state} onSeek={onSeek} inspected={inspection?.tab === 'console' ? inspection : null} />
         : tab === 'elements' && elements ? <ElementsPane {...elements} />
+        : tab === 'sources' && sources ? <SourcesPane {...sources} />
         : <NetworkPane state={state} onSeek={onSeek} inspected={inspection?.tab === 'network' ? inspection : null} />}
     </div>
   )
@@ -544,6 +549,77 @@ function ElementRow({ node, depth, expanded, selected, onToggle, onSelect, onHov
         </>
       ) : null}
     </>
+  )
+}
+
+/* ── Sources ─────────────────────────────────────────────────────────────────────── */
+
+export interface SourcesProps {
+  evidence: ResolvedReplayEvidence
+  /** The playhead (ms): which logpoint hit is current. */
+  at: number
+  /** The file (and line) to show: an inspection's, or the one picked in the list. */
+  path: string | null
+  line?: number
+  onPath: (path: string) => void
+}
+
+/** The debugger's view of the source: a file list, and the file's lines with their hit counts, the lines it read
+ *  highlighted, breakpoints on its logpoints and, beside each, the watch value at the playhead (flashing blue as a
+ *  new hit lands). */
+function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
+  const current = evidence.files.find((f) => f.path === path) ?? evidence.files[0]
+  const code = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const target = line ?? current?.focus?.[0]
+    if (target === undefined) return
+    code.current?.querySelector(`[data-line="${target}"]`)?.scrollIntoView?.({ block: 'center' })
+  }, [current?.path, line])
+  if (!current) return <div data-slot="replay-devtools-pane" data-pane="sources"><p data-slot="replay-devtools-empty">No sources were read</p></div>
+  const points = evidence.logpoints.filter((lp) => lp.path === current.path)
+  const focus = new Set(current.focus)
+  // A logpoint on a line the excerpt doesn't hold still gets a row of its own.
+  const rows = [...current.lines]
+  for (const lp of points) if (!rows.some((r) => r.line === lp.line)) rows.push({ line: lp.line, text: '' })
+  rows.sort((a, b) => a.line - b.line)
+  return (
+    <div data-slot="replay-devtools-pane" data-pane="sources">
+      <div data-slot="replay-devtools-sources">
+        <ul data-slot="replay-devtools-files" aria-label="Files">
+          {evidence.files.map((f) => (
+            <li key={f.path}>
+              <button type="button" aria-current={f.path === current.path || undefined} title={f.path} onClick={() => onPath(f.path)}>
+                {sourceName(f.path)}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div ref={code} data-slot="replay-devtools-code" aria-label={current.path}>
+          {rows.map((r, i) => {
+            const lp = points.find((p) => p.line === r.line)
+            const hitIndex = lp ? lp.hits.filter((h) => h.time <= at).length - 1 : -1
+            const hit = lp && hitIndex >= 0 ? lp.hits[hitIndex] : undefined
+            const gap = i > 0 && r.line - rows[i - 1]!.line > 1
+            return (
+              <div key={r.line}>
+                {gap ? <div data-slot="replay-devtools-code-gap" aria-hidden="true">⋯</div> : null}
+                <div data-slot="replay-devtools-code-line" data-line={r.line} data-focus={focus.has(r.line) || r.line === line || undefined} data-breakpoint={lp ? '' : undefined}>
+                  <span data-part="hits">{r.hits ?? ''}</span>
+                  <span data-part="lineno">{lp ? <i data-part="breakpoint" title={`Logpoint: ${lp.expression}`} /> : null}{r.line}</span>
+                  <span data-part="text">{r.text || (lp ? ' ' : '')}</span>
+                  {hit ? (
+                    <span key={hitIndex} data-part="watch" title={lp!.expression}>
+                      {lp!.expression.length <= 48 ? <span data-part="watch-expr">{lp!.expression} = </span> : null}
+                      {clip(hit.value.replace(/\s+/g, ' '), 160)}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
   )
 }
 

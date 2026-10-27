@@ -3,13 +3,15 @@ import { useAsset } from '../asset-resolver';
 import { ReplayPreview } from './ReplayPreview';
 import type { ReplayPlayerOptions } from './ReplayPlayer';
 
-export interface ReplayFileProps extends Omit<ReplayPlayerOptions, 'url' | 'har' | 'consoleLog'> {
+export interface ReplayFileProps extends Omit<ReplayPlayerOptions, 'url' | 'har' | 'consoleLog' | 'evidence'> {
   /** The `.rrweb` file as written in the document; the host's asset resolver maps it to a loadable URL. */
   url: string;
   /** A `.har` file recorded alongside (resolved the same way): its requests join DevTools' Network list. */
   har?: string;
   /** A console log recorded alongside (`<ISO time> [level] message` lines): its messages join the Console. */
   log?: string;
+  /** A debugger's evidence (evidence.ts): source, logpoints and screenshots. */
+  evidence?: string;
 }
 
 /** The text of a file the asset resolver maps, fetched once `enabled`; undefined until it arrives or if it fails. */
@@ -34,7 +36,7 @@ function useAssetText(url: string | undefined, enabled: boolean): { text?: strin
  * viewport, so a page of recordings doesn't download them all up front. A media fragment on the URL,
  * `recording.rrweb#t=4.7,7.4` (seconds), is its `timeWindow`.
  */
-export function ReplayFile({ url, har, log, ...options }: ReplayFileProps) {
+export function ReplayFile({ url, har, log, evidence, ...options }: ReplayFileProps) {
   const { file, segment } = splitReplayFragment(url);
   const src = useAsset(file);
   const ref = useRef<HTMLDivElement>(null);
@@ -51,6 +53,7 @@ export function ReplayFile({ url, har, log, ...options }: ReplayFileProps) {
 
   const harFile = useAssetText(har, near);
   const logFile = useAssetText(log, near);
+  const evidenceFile = useAssetText(evidence, near);
 
   // The recording plays as soon as it's here; the HAR and the log join DevTools whenever they arrive.
   if (!near || src === undefined) return <div ref={ref} className="docstream-asset-pending" data-slot="replay-file" aria-busy="true" />;
@@ -61,6 +64,7 @@ export function ReplayFile({ url, har, log, ...options }: ReplayFileProps) {
       timeWindow={segment}
       har={harFile.text}
       consoleLog={logFile.text}
+      evidence={evidenceFile.text}
       {...options}
     />
   );

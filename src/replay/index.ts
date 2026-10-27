@@ -27,3 +27,5 @@ export { ReplayFile, isRrwebUrl, splitReplayFragment } from './ReplayFile';
 export type { ReplayFileProps } from './ReplayFile';
 export { sanitizeReplayEvent } from './sanitize';
 export { consoleLogToReplayEvents, harToReplayEvents, mergeReplaySources } from './sources';
+export { resolveReplayEvidence, sourceName } from './evidence';
+export type { ReplayEvidence, ReplayLogpoint, ReplayLogpointHit, ReplayScreenshot, ReplaySourceFile, ReplaySourceLine, ResolvedReplayEvidence } from './evidence';
