@@ -11,19 +11,21 @@
 import type { ReplayConsoleEntry, ReplayDevtools, ReplayRequest } from './devtools'
 import { ReplayEventType, type ReplayEvent } from './types'
 
-export type ReplayInspectionTab = 'network' | 'console'
+export type ReplayInspectionTab = 'network' | 'console' | 'elements'
 
 export interface ReplayInspection {
   /** Stable id; defaults to `inspect-<n>`. */
   id?: string
   /** Milliseconds from the start of the recording. */
   time: number
-  /** The DevTools tab to open (default: `network` when `request` is set, else `console`). */
+  /** The DevTools tab to open (default: `network` when `request` is set, `console` for `message`, else `elements`). */
   tab?: ReplayInspectionTab
   /** The request to select: the recording's id for it (`key`), or its URL. */
   request?: string
   /** The console message to select: the recording's id for it (`key`), or text it contains. */
   message?: string
+  /** The element to select in the Elements tab (and highlight on the page): a CSS selector. */
+  element?: string
   /** What was found, shown above the panel while the inspection is current. */
   label?: string
 }
@@ -38,6 +40,8 @@ export interface ResolvedReplayInspection {
   requestId?: string
   /** The `ReplayConsoleEntry.id` to select, when the target was found. */
   messageId?: string
+  /** The CSS selector of the element to select and highlight. */
+  element?: string
 }
 
 export const INSPECT_TAG = 'inspect'
@@ -54,8 +58,8 @@ export function getReplayInspections(events: readonly ReplayEvent[]): ReplayInsp
     const data = (event.data ?? {}) as { tag?: unknown; payload?: Record<string, unknown> }
     if (data.tag !== INSPECT_TAG) continue
     const p = data.payload ?? {}
-    const tab = p.tab === 'network' || p.tab === 'console' ? p.tab : undefined
-    out.push({ id: str(p.id), time: event.timestamp - start, tab, request: str(p.request), message: str(p.message), label: str(p.label) })
+    const tab = p.tab === 'network' || p.tab === 'console' || p.tab === 'elements' ? p.tab : undefined
+    out.push({ id: str(p.id), time: event.timestamp - start, tab, request: str(p.request), message: str(p.message), element: str(p.element), label: str(p.label) })
   }
   return out
 }
@@ -85,10 +89,11 @@ export function resolveReplayInspections(inspections: readonly ReplayInspection[
       return {
         id: inspection.id ?? `inspect-${i}`,
         time: Math.max(0, inspection.time),
-        tab: inspection.tab ?? (inspection.request ? 'network' : 'console'),
+        tab: inspection.tab ?? (inspection.request ? 'network' : inspection.message ? 'console' : 'elements'),
         label: inspection.label,
         requestId: request?.id,
         messageId: message?.id,
+        element: inspection.element,
       } satisfies ResolvedReplayInspection
     })
     .sort((a, b) => a.time - b.time)

@@ -18,7 +18,7 @@ import {
 import { useReducedMotion } from 'framer-motion'
 import { Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
 import { ReplayStage } from './ReplayStage'
-import { DevtoolsButtons, DevtoolsPanel, type ReplayDevtoolsTab } from './ReplayDevtools'
+import { DevtoolsButtons, DevtoolsPanel, type ElementsProps, type ReplayDevtoolsTab } from './ReplayDevtools'
 import { getReplayDevtools, replayDevtoolsAt } from './devtools'
 import { getReplayInspections, replayInspectionAt, resolveReplayInspections, type ReplayInspection } from './inspections'
 import { mergeReplaySources } from './sources'
@@ -111,6 +111,21 @@ export interface ReplayPlayerOptions {
   onMarkerPress?: (marker: ReplayMarker) => void
   className?: string
   style?: CSSProperties
+}
+
+/** DevTools' element highlight over the replayed page: the element's box, in recorded-viewport px (the stage
+ *  overlay's space), with a tag-and-size label. Read on every render, so it follows the element as the page moves. */
+function ElementHighlight({ el }: { el: Element }) {
+  const r = el.getBoundingClientRect()
+  if (!r.width && !r.height) return null
+  const tag = el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/)[0] : '')
+  return (
+    <div data-slot="replay-preview-highlight" aria-hidden="true" style={{ left: r.left, top: r.top, width: r.width, height: r.height }}>
+      <span data-part="label" data-below={r.top < 28 || undefined}>
+        <b>{tag}</b> {Math.round(r.width)} × {Math.round(r.height)}
+      </span>
+    </div>
+  )
 }
 
 /** The latest of sorted `times` at or before `t`, or undefined. */
@@ -335,6 +350,7 @@ export function ReplayPlayer({
   // Clicking, scrolling or typing in a panel an inspection opened makes it the user's: it won't close by itself.
   const claimPanel = () => setAutoOpened(false)
 
+
   // Inspect mode: the inspection at the playhead opens DevTools on what it found. Only a change of inspection does
   // (closing the panel keeps it closed until the next one). Seeking never closes it: going to another request,
   // before or after the inspection, leaves the panel where it is. A panel the user opened, or has touched, stays
@@ -366,6 +382,23 @@ export function ReplayPlayer({
     const last = Math.max(openedAt.current, latestAtOrBefore(activity, time) ?? -Infinity)
     if (time >= last && time - last >= autoCloseDevtools) setPanel(null)
   }, [time, playing, autoOpened, panel, activity, autoCloseDevtools])
+
+  // Elements: the inspection's element (by selector, looked up in the page at the playhead) unless one was picked
+  // in the tree; hovering a row previews another. The highlighted one gets DevTools' overlay on the page.
+  const getDocument = useCallback(() => stage.current?.getDocument?.() ?? null, [])
+  const [picked, setPicked] = useState<Element | null>(null)
+  const [hovered, setHovered] = useState<Element | null>(null)
+  const inspectedSelector = inspection?.element
+  useEffect(() => { setPicked(null) }, [inspection?.id])
+  const selectedElement = (() => {
+    if (picked?.isConnected) return picked
+    if (!inspectedSelector) return null
+    try { return getDocument()?.querySelector(inspectedSelector) ?? null } catch { return null }
+  })()
+  const elements: ElementsProps | undefined = showTools && ready
+    ? { getDocument, selected: selectedElement, onSelect: (el) => { claimPanel(); setPicked(el) }, onHover: setHovered }
+    : undefined
+  const highlighted = panel === 'elements' ? (hovered?.isConnected ? hovered : selectedElement) : null
   const toolButtons = showTools ? <DevtoolsButtons state={toolsState} open={panel} onOpen={openTools} /> : null
 
   const w = meta.width || 1280
@@ -408,7 +441,12 @@ export function ReplayPlayer({
             initialTime={initialTime}
             showMouse={false}
             className="replay-preview__page"
-            overlay={cursor ? <PointerOverlay track={track} time={time} reduced={!!reduced} /> : null}
+            overlay={
+              <>
+                {highlighted ? <ElementHighlight el={highlighted} /> : null}
+                {cursor ? <PointerOverlay track={track} time={time} reduced={!!reduced} /> : null}
+              </>
+            }
             onReady={() => setReady(true)}
             onTimeUpdate={onTime}
             onPlayingChange={onPlaying}
@@ -432,6 +470,7 @@ export function ReplayPlayer({
             inspection={inspection}
             autoFocus={!autoOpened}
             onInteract={claimPanel}
+            elements={elements}
           />
         ) : null}
 

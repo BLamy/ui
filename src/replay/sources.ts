@@ -83,7 +83,7 @@ export function harToReplayEvents(har: unknown): ReplayEvent[] {
     const i = obj(raw)
     const at = time(i.at)
     if (at === undefined) continue
-    out.push(custom(at, 'inspect', { request: str(i.request), message: str(i.message), tab: str(i.tab), label: str(i.label), id: str(i.id) }))
+    out.push(custom(at, 'inspect', { request: str(i.request), message: str(i.message), element: str(i.element), tab: str(i.tab), label: str(i.label), id: str(i.id) }))
   }
   return out
 }

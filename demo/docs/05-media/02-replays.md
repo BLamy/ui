@@ -68,11 +68,16 @@ The current inspection is the latest one at or before the playhead. Seeking neve
 | `time` | When, in ms from the start of the recording. |
 | `request` | The request to select: the recording's id for it (a request's `requestId` or `id`, such as a Replay request id), else its URL or path. A URL that was requested more than once picks the request sent nearest `time`. |
 | `message` | The console message to select: a custom console event's `id`, else text it contains (the last such message by `time`). |
-| `tab` | `"network"` or `"console"`. Defaults to `network` when `request` is set. |
+| `element` | A CSS selector: DevTools opens on **Elements** with that element selected, and the page shows it highlighted. |
+| `tab` | `"network"`, `"console"` or `"elements"`. Defaults to `network` for a `request`, `console` for a `message`, else `elements`. |
 | `label` | What was found: the checkpoint's label on the marker rail (with `markers`). |
 | `id` | For `inspect(id)`. Defaults to `inspect-<n>`. |
 
 A recording can carry its own: a custom event tagged `inspect` with the same fields as its payload (`record.addCustomEvent("inspect", { request, label })`), so an `.rrweb` file embedded in a page brings its inspections with it. They join any passed as `inspections`. `getReplayInspections(events)`, `resolveReplayInspections(inspections, getReplayDevtools(events))` and `replayInspectionAt(resolved, ms)` give you the same for your own UI.
+
+## Elements
+
+The **Elements** tab shows the replayed page's DOM at the playhead as a collapsible tree, Chrome's panel in miniature: tags, attributes and short text inline, a breadcrumb of the selected element's ancestors underneath. An inspection with an `element` selector opens it on that element (its ancestors expanded), and while the tab is open the selected element, or the one under the pointer in the tree, is highlighted on the page with DevTools' blue box and a tag-and-size label. Click any node to select it. The tree reads the live page, so it changes as the recording plays.
 
 ## HAR and console logs
 

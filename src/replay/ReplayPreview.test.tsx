@@ -21,6 +21,7 @@ const stage = vi.hoisted(() => ({
   calls: [] as string[],
   props: null as null | { speed?: number },
   time: 2000,
+  doc: null as Document | null,
 }))
 vi.mock("./ReplayStage", () => ({
   preloadReplayStage: () => Promise.resolve(),
@@ -34,6 +35,7 @@ vi.mock("./ReplayStage", () => ({
       getCurrentTime: () => stage.time,
       getDuration: () => 9000,
       isPlaying: () => false,
+      getDocument: () => stage.doc,
     }))
     return (
       <div data-stub-stage="">
@@ -186,7 +188,9 @@ describe("player behaviour", () => {
     stage.time = 2000
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="network" />)
     expect(el.querySelector('[data-tab="network"]')!.getAttribute("aria-label")).toBe("Network: 5 requests, 0 failed")
-    expect(el.querySelector('[data-slot="replay-devtools-status"]')!.textContent).toContain("3 more later in the recording")
+    // No status bar under the list (the button carries the count).
+    expect(el.querySelector('[data-slot="replay-devtools-status"]')).toBeNull()
+    expect(el.querySelectorAll('[data-slot="replay-devtools-table"] tbody tr')).toHaveLength(5)
     expect(renderToString(<ReplayPreview events={replayDemoEvents} devtools={false} />)).not.toContain("replay-devtools")
     // Without the browser chrome the buttons sit in the controls row.
     expect(renderToString(<ReplayPreview events={replayDemoEvents} chrome="minimal" />)).toMatch(/replay-preview-controls.*replay-devtools-buttons/s)
@@ -278,6 +282,34 @@ describe("player behaviour", () => {
     await act(async () => props().onTimeUpdate?.(7650))
     await act(async () => props().onTimeUpdate?.(30_000))
     expect(el.querySelector('[data-slot="replay-devtools"]')).not.toBeNull()
+  })
+
+  it("an element inspection opens Elements on the element, ancestors expanded, and highlights it on the page", async () => {
+    // The replayed page, as the stage's iframe document would hold it.
+    const doc = document.implementation.createHTMLDocument("page")
+    doc.body.innerHTML = '<main><form><input placeholder="Search tasks" class="field"><button>Go</button></form></main>'
+    const input = doc.querySelector("input")!
+    input.getBoundingClientRect = () => ({ left: 40, top: 60, width: 220, height: 32, right: 260, bottom: 92, x: 40, y: 60, toJSON() {} }) as DOMRect
+    stage.doc = doc
+    stage.time = 1000
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 1500, element: 'input[placeholder="Search tasks"]', label: "The search box" }]} />)
+    await act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(1600))
+    const panel = el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')!
+    expect(panel.querySelector('[role=tab][aria-selected="true"]')!.textContent).toBe("Elements")
+    const selected = panel.querySelector('[data-slot="replay-devtools-node"][data-selected]')!
+    expect(selected.textContent).toContain('placeholder="Search tasks"')
+    // Its ancestors are open: html, body, main and form all show their children.
+    expect([...panel.querySelectorAll('[data-slot="replay-devtools-node"][aria-expanded="true"]')].map((n) => n.querySelector('[data-part="tag"]')!.textContent)).toEqual(["<html", "<body", "<main", "<form"])
+    expect(panel.querySelector('[data-slot="replay-devtools-breadcrumb"]')!.textContent).toBe("htmlbodymainforminput.field")
+    const box = el.querySelector<HTMLElement>('[data-slot="replay-preview-highlight"]')!
+    expect([box.style.left, box.style.top, box.style.width, box.style.height]).toEqual(["40px", "60px", "220px", "32px"])
+    expect(box.textContent).toBe("input.field 220 × 32")
+    // Clicking another node selects it; the tree is the user's now.
+    const button = [...panel.querySelectorAll<HTMLElement>('[data-slot="replay-devtools-node"]')].find((n) => n.textContent?.startsWith("<button"))!
+    await act(async () => button.click())
+    expect(panel.querySelector('[data-slot="replay-devtools-node"][data-selected]')!.textContent).toContain("<button")
+    expect(el.querySelector('[data-slot="replay-devtools-status"]')).toBeNull()
+    stage.doc = null
   })
 
   it("disableDevtools removes the buttons, the panel and the inspections", async () => {

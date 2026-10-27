@@ -118,7 +118,7 @@ describe("ReplayFile", () => {
     const resolve = (url: string) => "/a/" + url.slice(2)
     await act(async () => root.render(<AssetResolverProvider resolve={resolve}><ReplayFile url="./recording.rrweb" har="./network.har" lazy={false} defaultDevtoolsTab="network" initialTime={9000} /></AssetResolverProvider>))
     await settle()
-    const status = () => host.querySelector('[data-slot="replay-devtools-status"]')?.textContent ?? ""
+    const status = () => host.querySelector('[data-tab="network"]')?.getAttribute("aria-label")?.replace(/^Network: /, "") ?? ""
     expect(host.querySelector('[data-slot="replay-preview"]')).not.toBeNull()
     expect(status()).toMatch(/^8 requests/)
     await act(async () => { releaseHar(); await new Promise((r) => setTimeout(r, 20)) })

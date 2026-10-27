@@ -12,7 +12,7 @@ import { ChevronRight, CircleX, Info, Network, SquareTerminal, TriangleAlert, X 
 import type { ReplayConsoleEntry, ReplayDevtoolsState, ReplayRequest } from './devtools'
 import type { ResolvedReplayInspection } from './inspections'
 
-export type ReplayDevtoolsTab = 'console' | 'network'
+export type ReplayDevtoolsTab = 'console' | 'network' | 'elements'
 
 const time = (ms: number) => {
   const s = Math.max(0, ms) / 1000
@@ -59,11 +59,13 @@ export function DevtoolsButtons({ state, open, onOpen }: {
 
 /** The panel over the page: Console and Network, cut at the playhead. `inspection` selects and marks its target;
  *  `autoFocus` (default true) moves focus into the panel as it opens — off when an inspection opened it mid-play. */
-export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, autoFocus = true, onInteract }: {
+export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, autoFocus = true, onInteract, elements }: {
   state: ReplayDevtoolsState; tab: ReplayDevtoolsTab; onTab: (tab: ReplayDevtoolsTab) => void
   onClose: () => void; onSeek: (ms: number) => void; inspection?: ResolvedReplayInspection | null; autoFocus?: boolean
   /** Any click, scroll or key in the panel (the player then treats it as the user's). */
   onInteract?: () => void
+  /** The Elements tab: the replayed page's document, the selected element, and selection / hover callbacks. */
+  elements?: ElementsProps
 }) {
   const panel = useRef<HTMLDivElement>(null)
   // Opened by an inspection, the panel starts taller: its point is the request's details.
@@ -92,7 +94,11 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
     else if (!(e.target as HTMLElement).closest('input')) e.stopPropagation()
   }
 
-  const tabs: { id: ReplayDevtoolsTab; label: string }[] = [{ id: 'console', label: 'Console' }, { id: 'network', label: 'Network' }]
+  const tabs: { id: ReplayDevtoolsTab; label: string }[] = [
+    ...(elements ? [{ id: 'elements' as const, label: 'Elements' }] : []),
+    { id: 'console', label: 'Console' },
+    { id: 'network', label: 'Network' },
+  ]
   return (
     <div
       ref={panel}
@@ -116,7 +122,11 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
             aria-selected={tab === t.id}
             onClick={() => onTab(t.id)}
             onKeyDown={(e) => {
-              if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); onTab(t.id === 'console' ? 'network' : 'console') }
+              if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault()
+                const i = tabs.findIndex((x) => x.id === t.id) + (e.key === 'ArrowRight' ? 1 : -1)
+                onTab(tabs[(i + tabs.length) % tabs.length]!.id)
+              }
             }}
             tabIndex={tab === t.id ? 0 : -1}
           >
@@ -130,6 +140,7 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
       </div>
       {tab === 'console'
         ? <ConsolePane state={state} onSeek={onSeek} inspected={inspection?.tab === 'console' ? inspection : null} />
+        : tab === 'elements' && elements ? <ElementsPane {...elements} />
         : <NetworkPane state={state} onSeek={onSeek} inspected={inspection?.tab === 'network' ? inspection : null} />}
     </div>
   )
@@ -310,11 +321,6 @@ function NetworkPane({ state, onSeek, inspected }: {
         </div>
         {selected ? <RequestDetail request={selected} onClose={() => setSelectedId(null)} onSeek={onSeek} /> : null}
       </div>
-      <div data-slot="replay-devtools-status">
-        <span>{state.counts.requests} {state.counts.requests === 1 ? 'request' : 'requests'}</span>
-        {state.counts.failed ? <span data-part="failed">{state.counts.failed} failed</span> : null}
-        {state.counts.laterRequests ? <span>{state.counts.laterRequests} more later in the recording</span> : null}
-      </div>
     </div>
   )
 }
@@ -376,6 +382,168 @@ function Section({ title, rows }: { title: string; rows: [string, string][] }) {
   )
 }
 
+const HIGHLIGHT_MAX = 64 * 1024
+
+type Span = { type: string; start: number; end: number }
+
+/** A request or response body, syntax-highlighted by gpu-lexer (loaded on first use; the same model and token
+ *  colors as docstream's code blocks). Plain until the spans arrive, and plain past 64 KB. A <div> of spans, not
+ *  <pre><code>, so a host's code-block styles (cards, margins, inline-code pills) can't reach it. */
 function Body({ text, empty }: { text?: string; empty: string }) {
-  return text !== undefined ? <pre data-slot="replay-devtools-body">{text}</pre> : <p data-slot="replay-devtools-empty">{empty}</p>
+  const [spans, setSpans] = useState<{ for: string; spans: Span[] } | null>(null)
+  useEffect(() => {
+    if (text === undefined || !text || text.length > HIGHLIGHT_MAX) return
+    let cancelled = false
+    import('gpu-lexer')
+      .then(({ parse }) => parse(text))
+      .then((result: Span[]) => { if (!cancelled) setSpans({ for: text, spans: result }) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [text])
+  if (text === undefined) return <p data-slot="replay-devtools-empty">{empty}</p>
+  const current = spans?.for === text ? spans.spans : null
+  return (
+    <div data-slot="replay-devtools-body">
+      {current ? highlight(text, current) : text}
+    </div>
+  )
 }
+
+function highlight(code: string, spans: Span[]) {
+  const out: (string | JSX.Element)[] = []
+  let cursor = 0
+  spans.forEach((span, i) => {
+    if (span.start > cursor) out.push(code.slice(cursor, span.start))
+    const piece = code.slice(span.start, span.end)
+    out.push(span.type === 'plain' ? piece : <span key={i} className={`docs-tok docs-tok-${span.type}`}>{piece}</span>)
+    cursor = span.end
+  })
+  if (cursor < code.length) out.push(code.slice(cursor))
+  return out
+}
+
+/* ── Elements ────────────────────────────────────────────────────────────────────── */
+
+export interface ElementsProps {
+  /** The replayed page's document, read fresh on every render (the page changes as it plays). */
+  getDocument: () => Document | null
+  /** The selected element (an inspection's, or the one clicked in the tree). */
+  selected: Element | null
+  onSelect: (el: Element) => void
+  /** Hovering a row highlights its element on the page; null when the pointer leaves the tree. */
+  onHover: (el: Element | null) => void
+}
+
+const MAX_CHILDREN = 300
+
+/** The replayed page's DOM as a collapsible tree, Chrome's Elements panel in miniature. */
+function ElementsPane({ getDocument, selected, onSelect, onHover }: ElementsProps) {
+  const doc = getDocument()
+  const root = doc?.documentElement ?? null
+  // Expanded nodes (live DOM nodes, so the tree survives the page mutating under it).
+  const [expanded] = useState(() => new Set<Node>())
+  const [, bump] = useState(0)
+  const toggle = (node: Node) => {
+    if (expanded.has(node)) expanded.delete(node)
+    else expanded.add(node)
+    bump((n) => n + 1)
+  }
+  // A new selection opens its ancestors and scrolls into view.
+  const tree = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!selected) return
+    for (let n: Node | null = selected.parentNode; n && n !== doc; n = n.parentNode) expanded.add(n)
+    bump((n) => n + 1)
+    requestAnimationFrame(() => tree.current?.querySelector('[data-selected]')?.scrollIntoView?.({ block: 'nearest' }))
+  }, [selected, doc, expanded])
+
+  if (!root) return <div data-slot="replay-devtools-pane" data-pane="elements"><p data-slot="replay-devtools-empty">The page isn't loaded yet</p></div>
+  const path: Element[] = []
+  for (let n: Element | null = selected && selected.isConnected ? selected : null; n; n = n.parentElement) path.unshift(n)
+  return (
+    <div data-slot="replay-devtools-pane" data-pane="elements">
+      <div ref={tree} data-slot="replay-devtools-elements" role="tree" aria-label="Elements" onPointerLeave={() => onHover(null)}>
+        <ElementRow node={root} depth={0} expanded={expanded} selected={selected} onToggle={toggle} onSelect={onSelect} onHover={onHover} />
+      </div>
+      {path.length ? (
+        <div data-slot="replay-devtools-breadcrumb" aria-label="Selected element's ancestors">
+          {path.map((el, i) => (
+            <button key={i} type="button" data-current={el === selected || undefined} onClick={() => onSelect(el)} onPointerEnter={() => onHover(el)} onPointerLeave={() => onHover(null)}>
+              {crumb(el)}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+const crumb = (el: Element) => {
+  const tag = el.tagName.toLowerCase()
+  const id = el.id ? `#${el.id}` : ''
+  const cls = typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''
+  return tag + id + cls
+}
+
+const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
+
+function ElementRow({ node, depth, expanded, selected, onToggle, onSelect, onHover }: {
+  node: Node; depth: number; expanded: Set<Node>; selected: Element | null
+  onToggle: (node: Node) => void; onSelect: (el: Element) => void; onHover: (el: Element | null) => void
+}) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent?.replace(/\s+/g, ' ').trim()
+    return text ? <div data-slot="replay-devtools-node" data-kind="text" style={{ paddingInlineStart: depth * 14 + 16 }}>{clip(text, 140)}</div> : null
+  }
+  if (node.nodeType !== Node.ELEMENT_NODE) return null
+  const el = node as Element
+  const tag = el.tagName.toLowerCase()
+  const kids = [...el.childNodes].filter((c) => c.nodeType === Node.ELEMENT_NODE || (c.nodeType === Node.TEXT_NODE && c.textContent?.trim()))
+  const open = expanded.has(el)
+  const isSelected = el === selected
+  const attrs = [...el.attributes].map((a) => (
+    <span key={a.name} data-part="attr"> <span data-part="attr-name">{a.name}</span>{a.value !== '' ? <>=&quot;<span data-part="attr-value">{clip(a.value, 80)}</span>&quot;</> : null}</span>
+  ))
+  // A lone short text child shows inline, as Chrome does.
+  const inlineText = kids.length === 1 && kids[0]!.nodeType === Node.TEXT_NODE && (kids[0]!.textContent?.trim().length ?? 0) <= 80 ? kids[0]!.textContent!.trim() : null
+  return (
+    <>
+      <div
+        data-slot="replay-devtools-node"
+        data-kind="element"
+        data-selected={isSelected || undefined}
+        role="treeitem"
+        aria-selected={isSelected}
+        aria-expanded={kids.length && inlineText === null ? open : undefined}
+        tabIndex={isSelected ? 0 : -1}
+        style={{ paddingInlineStart: depth * 14 }}
+        onClick={() => onSelect(el)}
+        onPointerEnter={() => onHover(el)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(el) }
+          else if ((e.key === 'ArrowRight' && !open) || (e.key === 'ArrowLeft' && open)) { e.preventDefault(); onToggle(el) }
+        }}
+      >
+        {kids.length && inlineText === null ? (
+          <button type="button" data-part="twisty" aria-label={open ? 'Collapse' : 'Expand'} tabIndex={-1} onClick={(e) => { e.stopPropagation(); onToggle(el) }}>
+            <ChevronRight size={11} style={{ rotate: open ? '90deg' : '0deg' }} />
+          </button>
+        ) : <span data-part="twisty" />}
+        <span data-part="tag">&lt;{tag}</span>{attrs}<span data-part="tag">&gt;</span>
+        {inlineText !== null ? <><span data-part="text">{clip(inlineText, 80)}</span><span data-part="tag">&lt;/{tag}&gt;</span></> : null}
+        {kids.length && inlineText === null && !open ? <><span data-part="ellipsis">…</span><span data-part="tag">&lt;/{tag}&gt;</span></> : null}
+        {!kids.length ? <span data-part="tag">&lt;/{tag}&gt;</span> : null}
+      </div>
+      {open && inlineText === null ? (
+        <>
+          {kids.slice(0, MAX_CHILDREN).map((child, i) => (
+            <ElementRow key={i} node={child} depth={depth + 1} expanded={expanded} selected={selected} onToggle={onToggle} onSelect={onSelect} onHover={onHover} />
+          ))}
+          {kids.length > MAX_CHILDREN ? <div data-slot="replay-devtools-node" data-kind="text" style={{ paddingInlineStart: (depth + 1) * 14 + 16 }}>… {kids.length - MAX_CHILDREN} more</div> : null}
+          <div data-slot="replay-devtools-node" data-kind="close" style={{ paddingInlineStart: depth * 14 + 16 }}><span data-part="tag">&lt;/{tag}&gt;</span></div>
+        </>
+      ) : null}
+    </>
+  )
+}
+

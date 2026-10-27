@@ -4171,6 +4171,38 @@
     translate: 1px 0;
   }
 
+  /* DevTools' element highlight over the replayed page (stage overlay space: recorded-viewport px). */
+  :where([data-slot="replay-preview-highlight"]) {
+    position: absolute;
+    box-sizing: border-box;
+    background: rgba(111, 168, 220, 0.42);
+    outline: 1px solid rgba(63, 130, 213, 0.9);
+    pointer-events: none;
+  }
+
+  :where([data-slot="replay-preview-highlight"] > [data-part="label"]) {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #2b2b2b;
+    color: #e8e8e8;
+    font: 500 calc(11px / var(--replay-scale, 1)) / 1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  :where([data-slot="replay-preview-highlight"] > [data-part="label"][data-below]) {
+    top: calc(100% + 4px);
+    bottom: auto;
+  }
+
+  :where([data-slot="replay-preview-highlight"] > [data-part="label"] > b) {
+    color: #e7a8e8;
+    font-weight: 600;
+  }
+
   /* ── controls ────────────────────────────────────────────────── */
   :where([data-slot="replay-preview-controls"]) {
     display: flex;
@@ -4905,6 +4937,95 @@
   :where([data-slot="replay-devtools-table"] tbody tr:focus-visible) {
     box-shadow: inset 0 0 0 2px var(--ring, #6366f1);
   }
+  /* Elements: the replayed page's DOM, Chrome's colors in the player's tokens. */
+  :where([data-pane="elements"]) {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  :where([data-slot="replay-devtools-elements"]) {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 4px 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+  }
+
+  :where([data-slot="replay-devtools-node"]) {
+    display: flex;
+    align-items: baseline;
+    padding-inline-end: 12px;
+    white-space: nowrap;
+    cursor: default;
+  }
+
+  :where([data-slot="replay-devtools-node"][data-kind="element"]:hover) {
+    background: color-mix(in srgb, var(--primary, #2563eb) 7%, transparent);
+  }
+
+  :where([data-slot="replay-devtools-node"][data-selected]) {
+    background: color-mix(in srgb, var(--primary, #2563eb) 16%, transparent);
+    box-shadow: inset 3px 0 0 var(--primary, #2563eb);
+  }
+
+  :where([data-slot="replay-devtools-node"]:focus-visible) {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--ring, #6366f1);
+  }
+
+  :where([data-slot="replay-devtools-node"] [data-part="twisty"]) {
+    display: inline-grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 16px;
+    height: 14px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--replay-devtools-dim);
+    cursor: pointer;
+  }
+
+  :where([data-slot="replay-devtools-node"] [data-part="tag"]) { color: light-dark(#881280, #5db0d7); }
+  :where([data-slot="replay-devtools-node"] [data-part="attr-name"]) { color: light-dark(#994500, #9bbbdc); }
+  :where([data-slot="replay-devtools-node"] [data-part="attr-value"]) { color: light-dark(#1a1aa6, #f29766); }
+  :where([data-slot="replay-devtools-node"][data-kind="text"], [data-slot="replay-devtools-node"] [data-part="text"]) { color: var(--foreground, #18181b); }
+  :where([data-slot="replay-devtools-node"] [data-part="ellipsis"]) { padding-inline: 2px; color: var(--replay-devtools-dim); }
+
+  :where([data-slot="replay-devtools-breadcrumb"]) {
+    display: flex;
+    flex-shrink: 0;
+    gap: 2px;
+    padding: 3px 8px;
+    overflow-x: auto;
+    border-top: 1px solid var(--border, #e4e4e7);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  :where([data-slot="replay-devtools-breadcrumb"] > button) {
+    margin: 0;
+    padding: 1px 5px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--replay-devtools-dim);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :where([data-slot="replay-devtools-breadcrumb"] > button[data-current]) {
+    color: var(--foreground, #18181b);
+    background: color-mix(in srgb, var(--primary, #2563eb) 14%, transparent);
+  }
+
   /* The inspected request or message: a bar down its leading edge (the selection tint shows it's open). */
   :where([data-slot="replay-devtools-table"] tbody tr[data-inspected], [data-slot="replay-devtools-message"][data-inspected]) {
     box-shadow: inset 3px 0 0 var(--primary, #2563eb);
@@ -4962,7 +5083,7 @@
   :where([data-slot="replay-devtools-detail-body"]) {
     flex: 1 1 0%;
     min-height: 0;
-    padding: 6px 0;
+    padding: 4px 0 0;
     overflow: auto;
     overscroll-behavior: contain;
   }
@@ -5016,7 +5137,7 @@
 
   :where([data-slot="replay-devtools-body"]) {
     margin: 0;
-    padding: 4px 12px;
+    padding: 0 12px 8px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 11.5px;
     white-space: pre-wrap;

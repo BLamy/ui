@@ -13,6 +13,8 @@ export interface ReplayStageHandle {
   getCurrentTime(): number
   getDuration(): number
   isPlaying(): boolean
+  /** The replayed page's document (rrweb's iframe), once the player is up. */
+  getDocument?(): Document | null
 }
 
 export interface ReplayStageLayout {

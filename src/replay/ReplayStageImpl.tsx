@@ -126,6 +126,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
       },
       getCurrentTime: time,
       isPlaying: () => playingRef.current,
+      getDocument: () => replayerRef.current?.iframe.contentDocument ?? null,
       getDuration() {
         try {
           return replayerRef.current?.getMetaData().totalTime ?? meta.duration
