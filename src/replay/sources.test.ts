@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { getReplayDevtools } from "./devtools"
 import { getReplayInspections } from "./inspections"
+import { getReplayMarkers } from "./markers"
 import { consoleLogToReplayEvents, harToReplayEvents, mergeReplaySources } from "./sources"
 import type { ReplayEvent } from "./types"
 
@@ -83,3 +84,18 @@ describe("consoleLogToReplayEvents", () => {
     expect(tools.console.map((m) => m.time)).toEqual([10_000])
   })
 })
+
+describe("markers from the sources", () => {
+  it("mark failed requests, console errors and inspections, not every request and message", () => {
+    const merged = mergeReplaySources(recording, {
+      har,
+      consoleLog: `${iso(1000)} [info] ready\n${iso(6000)} [error] Uncaught TypeError: boom\n`,
+    })
+    expect(getReplayMarkers(merged).filter((m) => m.kind !== "click").map((m) => [m.kind, m.time, m.label])).toEqual([
+      ["custom", 2500, "q=tea answered"],
+      ["network", 4050, "POST 0"],
+      ["error", 6000, "Console error"],
+    ])
+  })
+})
+

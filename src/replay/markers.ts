@@ -91,6 +91,9 @@ export function getReplayMeta(events: readonly ReplayEvent[]): ReplayMeta {
 
 const ERROR_TAGS = new Set(['error', 'exception', 'console.error', 'uncaught'])
 const NETWORK_TAGS = new Set(['network', 'network.error', 'request.failed', 'fetch.failed'])
+const FAILED_TAGS = new Set(['network.error', 'request.failed', 'fetch.failed'])
+// Console messages (from a console log, say) mark the rail only when they're errors.
+const CONSOLE_TAGS = new Set(['console', 'log', 'warn', 'warning', 'info', 'debug'])
 const NAVIGATION_TAGS = new Set(['navigation', 'navigate', 'route'])
 
 /**
@@ -150,9 +153,13 @@ export function getReplayMarkers(events: readonly ReplayEvent[]): ReplayMarker[]
         const label = text(payload.label)
         if (ERROR_TAGS.has(tag)) push({ kind: 'error', time, label: label ?? 'Error', detail })
         else if (NETWORK_TAGS.has(tag)) {
-          const status = text(payload.status)
-          const method = text(payload.method) ?? 'GET'
-          push({ kind: 'network', time, label: label ?? `${method} ${status ?? 'failed'}`, detail })
+          // A failed request marks the rail (the same rule as DevTools: an error, a failure tag, status 0 or 400 and
+          // up); one that answered, or never did within the recording, doesn't.
+          const code = typeof payload.status === 'number' ? payload.status : undefined
+          const failed = FAILED_TAGS.has(tag) || !!payload.error || code === 0 || (code !== undefined && code >= 400)
+          if (failed) push({ kind: 'network', time, label: label ?? `${text(payload.method) ?? 'GET'} ${code ?? 'failed'}`, detail })
+        } else if (CONSOLE_TAGS.has(tag)) {
+          if (payload.level === 'error' || payload.level === 'assert') push({ kind: 'error', time, label: label ?? 'Console error', detail })
         } else if (NAVIGATION_TAGS.has(tag)) push({ kind: 'navigation', time, label: label ?? 'Navigated', detail })
         else push({ kind: 'custom', time, label: label ?? tag, detail })
         break
