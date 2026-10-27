@@ -79,6 +79,18 @@ An inspection is a moment where someone (you, a debugging agent) looked at a req
 
 `request` names the request by the recording's id for it (a request's `requestId` or `id`, such as a Replay request id) or by URL or path. `message` names a console message by id or by text it contains. A recording can carry its own as custom events tagged `inspect`, so an `.rrweb` file brings its inspections with it.
 
+## Time window
+
+A long recording often matters for a few seconds of it. `timeWindow={[start, end]}` (ms) marks that segment: the player opens at its start with the segment highlighted on the scrubber, and Play plays it and stops at its end. Play again replays it, and `loop` goes round it. Scrub or seek outside the segment and playback runs on to the end of the recording; move back inside and the segment holds again.
+
+{% demo src="replay-preview/time-window" %}
+
+```tsx
+<ReplayPreview events={events} timeWindow={[6200, 8000]} />
+```
+
+A `.rrweb` embed in markdown takes its window from the URL, as a media fragment in seconds: `{% embed url="./checkout.rrweb#t=6.2,8" %}`.
+
 ## Driving it from outside
 
 `playerRef` hands you `play`, `pause`, `seek`, `toggle` and `getCurrentTime`; `onTimeUpdate` reports the playhead every frame while playing, and after each seek. Here the recording's own markers (`getReplayMarkers`) become a chronology that seeks the player and dims the steps still ahead.
@@ -157,7 +169,8 @@ rrweb doesn't fix a file format, so the example takes an event array, `{ events:
 | `title` | `Session replay` | The player's accessible name. |
 | `controls` | `true` | Play/pause, scrubber, speed and fullscreen. |
 | `autoplay` · `loop` | `false` | Start playing on load; restart at the end. |
-| `initialTime` | `0` | Where the player starts (ms). |
+| `initialTime` | `0`, or the window's start | Where the player starts (ms). |
+| `timeWindow` | — | `[start, end]` (ms): the segment to open at, highlight and play; scrubbing outside it plays on. |
 | `speeds` | `[1, 2, 4, 0.5]` | What the speed button cycles through; the first is the initial speed. |
 | `markers` | `true` | `true` reads them from the recording, `false` hides the rail, or pass `ReplayMarker[]`. |
 | `markerKinds` | all | Which recorded kinds to show. |
