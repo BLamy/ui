@@ -24,6 +24,7 @@ export default function ReplayPlayerDemo({ variant = "browser" }: { variant?: st
         playerRef={player}
         onTimeUpdate={setTime}
         onPlayingChange={setPlaying}
+        markers
         onMarkerPress={(m) => setPressed(`${m.kind}: ${m.label}`)}
         title="Northwind checkout recording"
       />

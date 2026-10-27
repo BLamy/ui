@@ -57,8 +57,15 @@ describe("formatReplayTime", () => {
 })
 
 describe("events mode markup", () => {
-  it("renders the browser chrome, poster, controls and the recording's markers", () => {
+  it("a plain seek bar by default: no marker rail", () => {
     const html = renderToString(<ReplayPreview events={replayDemoEvents} />)
+    expect(html).toContain('data-slot="replay-preview-scrubber"')
+    expect(html).not.toContain("replay-preview-markers")
+    expect(html).not.toContain("data-kind=")
+  })
+
+  it("renders the browser chrome, poster, controls and, with markers, the recording's markers", () => {
+    const html = renderToString(<ReplayPreview events={replayDemoEvents} markers />)
     for (const slot of ["replay-preview", "replay-preview-bar", "replay-preview-stage", "replay-preview-poster", "replay-preview-controls", "replay-preview-scrubber", "replay-preview-markers"]) {
       expect(html, slot).toContain(`data-slot="${slot}"`)
     }
@@ -192,7 +199,7 @@ describe("player behaviour", () => {
       { time: 7600, request: "/api/checkout", label: "Checkout answered 500" },
       { id: "warn", time: 7000, message: "is deprecated", label: "The promo call uses a deprecated field" },
     ]
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={inspections} playerRef={ref} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={inspections} playerRef={ref} markers />)
     const playTo = (ms: number) => act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(ms))
     const panel = () => el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')
     expect(panel()).toBeNull()
@@ -341,7 +348,7 @@ describe("player behaviour", () => {
 
   it("a marker button seeks a beat before its moment and reports the press", async () => {
     const pressed: string[] = []
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} onMarkerPress={(m) => pressed.push(m.kind)} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} onMarkerPress={(m) => pressed.push(m.kind)} markers />)
     const error = el.querySelector<HTMLElement>('[data-slot="replay-preview-markers"] [data-kind="error"]')!
     await act(async () => error.click())
     const seek = stage.calls.find((c) => c.startsWith("seek:"))!

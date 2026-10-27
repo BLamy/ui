@@ -12,7 +12,7 @@ docstream plays [rrweb](https://github.com/rrweb-io/rrweb) recordings: the DOM o
 {% embed url="/docstream/replays/checkout.rrweb" title="Checkout fails with a 500" %}
 ```
 
-That recording is a 9-second session on a mock storefront: a shopper adds two products, opens the cart, types an email and a promo code, and "Place order" fails. The rail above the scrubber marks each click, the `POST /api/checkout` 500 and the error that follows. Press a mark to jump to it. Click inside the player and use the keyboard:
+That recording is a 9-second session on a mock storefront: a shopper adds two products, opens the cart, types an email and a promo code, and "Place order" fails. The seek bar is plain by default; with `markers`, a rail above it marks each click, the `POST /api/checkout` 500 and the error that follows, and pressing a mark jumps to it. Click inside the player and use the keyboard:
 
 | Key | Action |
 | --- | --- |
@@ -46,7 +46,7 @@ A request counts as failed when its status is 0 or 400 and up, when it has an `e
 
 ## Inspections
 
-An inspection is a moment where someone looked at a request or a console message: "at 0:07.6 we inspected `POST /api/checkout`, and it answered 500". The player follows them by default. As the playhead reaches one, DevTools opens on its tab with that request (or message) selected and marked. Playback doesn't stop. Each inspection is also a checkpoint on the rail, labelled with what was found.
+An inspection is a moment where someone looked at a request or a console message: "at 0:07.6 we inspected `POST /api/checkout`, and it answered 500". The player follows them by default. As the playhead reaches one, DevTools opens on its tab with that request (or message) selected and marked. Playback doesn't stop. With `markers`, each inspection is also a checkpoint on the rail, labelled with what was found.
 
 {% demo src="media-replay/inspect" %}
 
@@ -69,7 +69,7 @@ The current inspection is the latest one at or before the playhead, so scrubbing
 | `request` | The request to select: the recording's id for it (a request's `requestId` or `id`, such as a Replay request id), else its URL or path. A URL that was requested more than once picks the request sent nearest `time`. |
 | `message` | The console message to select: a custom console event's `id`, else text it contains (the last such message by `time`). |
 | `tab` | `"network"` or `"console"`. Defaults to `network` when `request` is set. |
-| `label` | What was found: the checkpoint's label on the rail. |
+| `label` | What was found: the checkpoint's label on the marker rail (with `markers`). |
 | `id` | For `inspect(id)`. Defaults to `inspect-<n>`. |
 
 A recording can carry its own: a custom event tagged `inspect` with the same fields as its payload (`record.addCustomEvent("inspect", { request, label })`), so an `.rrweb` file embedded in a page brings its inspections with it. They join any passed as `inspections`. `getReplayInspections(events)`, `resolveReplayInspections(inspections, getReplayDevtools(events))` and `replayInspectionAt(resolved, ms)` give you the same for your own UI.
@@ -173,7 +173,7 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `initialTime` | `number` | `0`, or the window's start | Where the player starts, in ms. |
 | `timeWindow` | `[number, number]` | none | The segment that matters, in ms: highlighted on the scrubber, where the player opens, and where playing from inside it stops. Scrubbing outside it plays on. |
 | `speeds` | `number[]` | `[1, 2, 4, 0.5]` | What the speed button cycles through. The first is the starting speed. |
-| `markers` | `boolean \| ReplayMarker[]` | `true` | `true` reads them from the recording, `false` hides the rail, or pass your own. |
+| `markers` | `boolean \| ReplayMarker[]` | `false` | A marker rail above the seek bar: `true` reads them from the recording, or pass your own. Off by default since 1.26. |
 | `markerKinds` | `ReplayMarkerKind[]` | all | Which recorded kinds to show: `click`, `error`, `network`, `navigation`, `custom`. |
 | `cursor` | `boolean` | `true` | Draw the recorded pointer and click ripples. |
 | `disableDevtools` | `boolean` | `false` | Remove the Console and Network buttons, their panel and the inspections. (The older `devtools={false}` does the same.) |

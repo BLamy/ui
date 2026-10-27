@@ -68,8 +68,9 @@ export interface ReplayPlayerOptions {
   timeWindow?: readonly [number, number]
   /** Speeds the speed button cycles through; the first is the initial speed (default 1, 2, 4, 0.5). */
   speeds?: number[]
-  /** Markers on the scrubber rail: `true` (default) reads them from the recording, `false` hides the rail,
-   *  or pass your own. */
+  /** Markers on a rail above the scrubber: off by default (a plain seek bar). `true` reads them from the
+   *  recording (clicks, failed requests, console errors, navigations, checkpoints, inspections), or pass your
+   *  own. Giving `markerKinds` turns the recorded ones on. */
   markers?: boolean | ReplayMarker[]
   /** Which recorded marker kinds to show (default all). */
   markerKinds?: ReplayMarkerKind[]
@@ -119,7 +120,7 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 
 export function ReplayPlayer({
   events: recordingEvents, har, consoleLog, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
-  autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers = true, markerKinds,
+  autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers, markerKinds,
   cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
 }: ReplayPlayerOptions & { events: ReplayEvent[] }) {
@@ -148,7 +149,7 @@ export function ReplayPlayer({
     const own: ReplayMarker[] = toolsOn ? (inspections ?? []).map((inspection, i) => ({
       id: `inspection-${i}`, kind: 'custom', time: Math.max(0, inspection.time), label: inspection.label ?? 'Inspected',
     })) : []
-    const list = Array.isArray(markers) ? markers : markers ? [...recorded, ...own].sort((a, b) => a.time - b.time) : []
+    const list = Array.isArray(markers) ? markers : markers ?? !!markerKinds ? [...recorded, ...own].sort((a, b) => a.time - b.time) : []
     return markerKinds ? list.filter((m) => markerKinds.includes(m.kind)) : list
   }, [markers, recorded, markerKinds, inspections, toolsOn])
 
