@@ -297,7 +297,7 @@ describe("player behaviour", () => {
     expect(el.querySelector('[data-slot="replay-devtools"]')).toBeNull()
   })
 
-  it("an element inspection switches open DevTools to Elements on the element, ancestors expanded, and highlights it on the page", async () => {
+  it("an element inspection highlights it on the page without switching DevTools; Elements opens on it, ancestors expanded", async () => {
     // The replayed page, as the stage's iframe document would hold it.
     const doc = document.implementation.createHTMLDocument("page")
     // rrweb marks replayed hover with `:hover` classes; DevTools shows the page's own.
@@ -310,7 +310,13 @@ describe("player behaviour", () => {
     await act(async () => el.querySelector<HTMLElement>('[data-slot="replay-devtools-buttons"] button')!.click())
     await act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(1600))
     const panel = el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')!
-    expect(panel.querySelector('[role=tab][aria-selected="true"]')!.textContent).toBe("Elements")
+    const tab = () => panel.querySelector('[role=tab][aria-selected="true"]')!.textContent
+    const opened = tab()
+    expect(opened).not.toBe("Elements")
+    const highlight = el.querySelector<HTMLElement>('[data-slot="replay-preview-highlight"]')!
+    expect(highlight.textContent).toBe("input.field 220 × 32")
+    await act(async () => [...panel.querySelectorAll<HTMLElement>("[role=tab]")].find((t) => t.textContent === "Elements")!.click())
+    expect(tab()).toBe("Elements")
     const selected = panel.querySelector('[data-slot="replay-devtools-node"][data-selected]')!
     expect(selected.textContent).toBe('<input placeholder="Search tasks" class="field"></input>')
     expect(panel.textContent).not.toContain(":hover")
@@ -360,6 +366,17 @@ describe("player behaviour", () => {
     await playTo(3100)
     expect(watch().querySelector('[data-part="value"]')!.textContent).toBe("117")
     expect(watch().querySelector('[data-part="count"]')!.textContent).toBe("2/2")
+  })
+
+  it("plays slower between inspections close together, then picks the chosen speed back up", async () => {
+    stage.time = 0
+    await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 2000, request: "/api/checkout" }, { time: 2500, request: "/api/checkout" }]} />)
+    const props = () => stage.props as ReplayStageProps
+    expect(props().speed).toBe(1)
+    await act(async () => props().onTimeUpdate?.(2100))
+    expect(props().speed).toBeCloseTo(0.2)
+    await act(async () => props().onTimeUpdate?.(2600))
+    expect(props().speed).toBe(1)
   })
 
   it("Sources lines are syntax-highlighted, lexed as one excerpt", async () => {

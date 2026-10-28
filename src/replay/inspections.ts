@@ -112,3 +112,15 @@ export function replayInspectionAt(inspections: readonly ResolvedReplayInspectio
   }
   return current
 }
+
+/** The speed to play at `time` so the inspection there stays up at least `dwell` ms of wall time before the next one
+ *  replaces it: `speed`, or slower while the next is closer than `dwell × speed` of recording. Inspections at the same
+ *  instant can't be told apart, so the slowest is a tenth of `speed`. */
+export function replayInspectionDwellSpeed(inspections: readonly ResolvedReplayInspection[], time: number, speed: number, dwell: number): number {
+  if (dwell <= 0) return speed
+  const current = replayInspectionAt(inspections, time)
+  if (!current) return speed
+  const next = inspections.find((x) => x.time > time)
+  if (!next) return speed
+  return Math.min(speed, Math.max((next.time - current.time) / dwell, speed / 10))
+}

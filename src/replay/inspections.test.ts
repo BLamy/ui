@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { getReplayDevtools } from "./devtools"
-import { getReplayInspections, replayInspectionAt, resolveReplayInspections } from "./inspections"
+import { getReplayInspections, replayInspectionAt, replayInspectionDwellSpeed, resolveReplayInspections } from "./inspections"
 import { getReplayMarkers } from "./markers"
 import type { ReplayEvent } from "./types"
 
@@ -60,5 +60,17 @@ describe("inspections", () => {
     expect(replayInspectionAt(resolved, 1500)?.id).toBe("inspect-0")
     expect(replayInspectionAt(resolved, 2499)?.id).toBe("inspect-0")
     expect(replayInspectionAt(resolved, 9000)?.id).toBe("inspect-1")
+  })
+
+  it("slows playback between inspections closer than the dwell, so each stays up long enough", () => {
+    const list = [1000, 1500, 9000].map((time, i) => ({ id: `i${i}`, time, tab: "console" as const }))
+    // Before the first: full speed. 1000 → 1500 is 500 ms of recording: at 2× it would last 250 ms; slowed to 0.2×, 2.5 s.
+    expect(replayInspectionDwellSpeed(list, 500, 2, 2500)).toBe(2)
+    expect(replayInspectionDwellSpeed(list, 1200, 2, 2500)).toBeCloseTo(0.2)
+    // 1500 → 9000 is 7.5 s of recording, 3.75 s at 2×: no slowing, nor after the last.
+    expect(replayInspectionDwellSpeed(list, 2000, 2, 2500)).toBe(2)
+    expect(replayInspectionDwellSpeed(list, 9500, 2, 2500)).toBe(2)
+    // Back to back: no slower than a tenth of the speed.
+    expect(replayInspectionDwellSpeed([{ ...list[0]!, time: 1000 }, { ...list[1]!, time: 1001 }], 1000, 1, 2500)).toBe(0.1)
   })
 })

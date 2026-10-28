@@ -20,7 +20,7 @@ import { Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
 import { ReplayStage } from './ReplayStage'
 import { DevtoolsButtons, DevtoolsPanel, type ElementsProps, type ReplayDevtoolsTab, type SourcesProps } from './ReplayDevtools'
 import { getReplayDevtools, replayDevtoolsAt } from './devtools'
-import { getReplayInspections, replayInspectionAt, resolveReplayInspections, type ReplayInspection } from './inspections'
+import { getReplayInspections, replayInspectionAt, replayInspectionDwellSpeed, resolveReplayInspections, type ReplayInspection } from './inspections'
 import { mergeReplaySources } from './sources'
 import { resolveReplayEvidence, type ReplayEvidence } from './evidence'
 import { getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt } from './markers'
@@ -96,6 +96,10 @@ export interface ReplayPlayerOptions {
    *  message or inspection (default 5000). `false` keeps it open. A panel you opened or touched never closes by
    *  itself. */
   autoCloseDevtools?: number | false
+  /** Each inspection stays up at least this long (ms of wall time) before the next one switches DevTools: playback
+   *  slows between inspections closer than that, then picks the chosen speed back up (default 2500). `false` never
+   *  slows. */
+  inspectionDwell?: number | false
   /** What a debugger gathered (evidence.ts): source it read and logpoints it set, in DevTools' Sources tab, and
    *  screenshots it took, captured over the page as playback reaches them. An object or JSON text. */
   evidence?: ReplayEvidence | string
@@ -189,7 +193,7 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 export function ReplayPlayer({
   events: recordingEvents, har, consoleLog, evidence, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
   autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers, markerKinds,
-  cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
+  cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, inspectionDwell = 2500, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
 }: ReplayPlayerOptions & { events: ReplayEvent[] }) {
   // The recording plus whatever was recorded beside it (a HAR, a console log), as one event list for DevTools,
@@ -395,10 +399,12 @@ export function ReplayPlayer({
   // Inspect mode: the inspection at the playhead opens DevTools on what it found. Only a change of inspection does
   // (closing the panel keeps it closed until the next one). Seeking never closes it: going to another request,
   // before or after the inspection, leaves the panel where it is. A panel the user opened, or has touched, stays
-  // theirs: an inspection switches its tab but never closes it. An element inspection only switches an open panel.
+  // theirs: an inspection switches its tab but never closes it. An element inspection only highlights the element.
   const inspection = showTools ? replayInspectionAt(resolved, time) : undefined
   const inspectionId = inspection?.id
   const inspectionTab = inspection?.tab
+  // Inspections close together play slower, so each gets its moment before the next replaces it.
+  const playSpeed = showTools && inspectionDwell ? replayInspectionDwellSpeed(resolved, time, speed, inspectionDwell) : speed
   const lastInspection = useRef<string | undefined>(undefined)
   const panelRef = useRef(panel)
   panelRef.current = panel
@@ -406,8 +412,8 @@ export function ReplayPlayer({
     if (inspectionId === lastInspection.current) return
     lastInspection.current = inspectionId
     if (!inspectionTab) return
-    // An element is only worth a tab switch: it doesn't open a closed panel (the page highlight shows it).
-    if (inspectionTab === 'elements' && panelRef.current === null) return
+    // An element shows on the page (DevTools' highlight), so it never opens or switches the panel.
+    if (inspectionTab === 'elements') return
     if (panelRef.current === null) setAutoOpened(true)
     setPanel(inspectionTab)
   }, [inspectionId, inspectionTab])
@@ -441,7 +447,8 @@ export function ReplayPlayer({
   const elements: ElementsProps | undefined = showTools && ready
     ? { getDocument, selected: selectedElement, onSelect: (el) => { claimPanel(); setPicked(el) }, onHover: setHovered }
     : undefined
-  const highlighted = panel === 'elements' ? (hovered?.isConnected ? hovered : selectedElement) : null
+  // With Elements open, the tree's hovered or selected element; otherwise an element inspection's own.
+  const highlighted = panel === 'elements' ? (hovered?.isConnected ? hovered : selectedElement) : inspectedSelector ? selectedElement : null
 
   // Sources: the inspection's file and line unless a file was picked in the list.
   const [pickedPath, setPickedPath] = useState<string | null>(null)
@@ -491,7 +498,7 @@ export function ReplayPlayer({
             ref={stage}
             events={recordingEvents}
             fit="contain"
-            speed={speed}
+            speed={playSpeed}
             loop={loop && !span}
             autoplay={autoplay}
             initialTime={initialTime}

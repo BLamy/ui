@@ -50,7 +50,7 @@ An inspection is a moment where someone looked at a request or a console message
 
 {% demo src="media-replay/inspect" %}
 
-The current inspection is the latest one at or before the playhead. Seeking never closes the panel: going to another request, earlier or later, leaves it open. A panel an inspection opened leaves keyboard focus where it was, and closes by itself after 5 s of playback with no new request, console message or inspection (`autoCloseDevtools`, in ms, or `false`); paused, it stays. Close it yourself and it stays closed until the next inspection; click or scroll in it and it's yours, so it never closes by itself. `playerRef.current.inspect(id)` jumps to an inspection and opens it, for a chronology beside the player.
+The current inspection is the latest one at or before the playhead. Seeking never closes the panel: going to another request, earlier or later, leaves it open. A panel an inspection opened leaves keyboard focus where it was, and closes by itself after 5 s of playback with no new request, console message or inspection (`autoCloseDevtools`, in ms, or `false`); paused, it stays. Close it yourself and it stays closed until the next inspection; click or scroll in it and it's yours, so it never closes by itself. Inspections close together slow playback down, so each stays up at least 2.5 s before the next replaces it (`inspectionDwell`, in ms, or `false`); the chosen speed comes back once they spread out. `playerRef.current.inspect(id)` jumps to an inspection and opens it, for a chronology beside the player.
 
 ```tsx
 <ReplayPreview
@@ -68,7 +68,7 @@ The current inspection is the latest one at or before the playhead. Seeking neve
 | `time` | When, in ms from the start of the recording. |
 | `request` | The request to select: the recording's id for it (a request's `requestId` or `id`, such as a Replay request id), else its URL or path. A URL that was requested more than once picks the request sent nearest `time`. |
 | `message` | The console message to select: a custom console event's `id`, else text it contains (the last such message by `time`). |
-| `element` | A CSS selector: DevTools opens on **Elements** with that element selected, and the page shows it highlighted. |
+| `element` | A CSS selector: the page shows that element highlighted, as DevTools' element picker does, without opening or switching the panel. **Elements** opens on it selected. |
 | `tab` | `"network"`, `"console"` or `"elements"`. Defaults to `network` for a `request`, `console` for a `message`, else `elements`. |
 | `label` | What was found: the checkpoint's label on the marker rail (with `markers`). |
 | `id` | For `inspect(id)`. Defaults to `inspect-<n>`. |
@@ -77,7 +77,7 @@ A recording can carry its own: a custom event tagged `inspect` with the same fie
 
 ## Elements
 
-The **Elements** tab shows the replayed page's DOM at the playhead as a collapsible tree, Chrome's panel in miniature: tags, attributes and short text inline, a breadcrumb of the selected element's ancestors underneath. An inspection with an `element` selector opens it on that element (its ancestors expanded), and while the tab is open the selected element, or the one under the pointer in the tree, is highlighted on the page with DevTools' blue box and a tag-and-size label. Click any node to select it. The tree reads the live page, so it changes as the recording plays.
+The **Elements** tab shows the replayed page's DOM at the playhead as a collapsible tree, Chrome's panel in miniature: tags, attributes and short text inline, a breadcrumb of the selected element's ancestors underneath. An inspection with an `element` selector highlights that element on the page whatever the panel shows, and the tab opens on it (its ancestors expanded). While the tab is open the selected element, or the one under the pointer in the tree, is highlighted on the page with DevTools' blue box and a tag-and-size label. Click any node to select it. The tree reads the live page, so it changes as the recording plays.
 
 ## Sources and screenshots
 
@@ -200,6 +200,7 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `evidence` | `ReplayEvidence \| string` | none | A debugger's source excerpts, logpoints and screenshots: the Sources tab and screenshot captures. |
 | `har` / `consoleLog` | `object \| string` / `string` | none | A HAR and a console log recorded alongside; their requests and messages join DevTools. |
 | `autoCloseDevtools` | `number \| false` | `5000` | An inspection-opened DevTools panel closes after this many ms of playback with no new request, message or inspection. |
+| `inspectionDwell` | `number \| false` | `2500` | Each inspection stays up at least this many ms of wall time: playback slows between inspections closer than that. |
 | `inspections` | `ReplayInspection[]` | none | Requests and messages to open DevTools on as playback reaches them, added to the recording's own `inspect` events. |
 | `fit` | `"width" \| "contain"` | `"width"` | `width`: the page scales to the frame's width and sets its height. `contain`: fill a frame you gave a height, letterboxed. |
 | `poster` | `ReactNode` | a page-shaped skeleton | Shown until the player is ready, at the frame's final size, so nothing jumps. |
