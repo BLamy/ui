@@ -29,7 +29,7 @@ import { TailscaleRouter, useTailscaleRouter } from '@brett_lamy/ui'
 
 {% demo src="tailscale-router/intercept" %}
 
-The demo's service worker is real (the library's `tailscale-sw.js`, registered on this site). Sign in with your Tailscale account and fetch one of your own services: on this https site, use an `https://<machine>.<tailnet>.ts.net/` URL (turn on HTTPS certificates for your tailnet), since browsers block `http://` requests from an https page before any service worker sees them. `*.ts.net` names do not exist on the public internet, which is why a request sent while signed out fails.
+The demo's service worker is real (the library's `tailscale-sw.js`, registered on this site while the demo is open) and routes every cross-origin request (`intercept: 'all'`). Sign in with your Tailscale account and fetch anything: one of your own services by its `https://<machine>.<tailnet>.ts.net/` name (turn on HTTPS certificates for your tailnet), or a public site, which goes through an exit node the demo picks once you are connected. On this https site use `https://` URLs, since browsers block `http://` requests from an https page before any service worker sees them. A response the tailnet answered says `via routed`. The demo excludes `cloudflare-dns.com`, the DNS-over-HTTPS server the client looks public names up with, so the lookups are not routed back into the client.
 
 ## Set up
 
@@ -77,7 +77,7 @@ The default routes only what looks like it lives on a tailnet: `*.ts.net` names 
 | `hosts` | `[]` | `api.internal` (exactly), `*.corp.example` (its subdomains), `.corp.example` (the domain and subdomains), or an address or range. |
 | `cidrs` | `[]` | Subnet routes, `192.168.1.0/24`, `fd00:1::/64`. A bare address is a /32 or /128. |
 | `shortNames` | `false` | MagicDNS short names (`http://nas/`: one label, no dot). Off so a typo does not leave the browser. |
-| `intercept` | `tailnet` | `all` routes every cross-origin request (an exit node's job; see Limits). |
+| `intercept` | `tailnet` | `all` routes every cross-origin request. Public sites then need an exit node (`tailscale.setExitNode`), and the client's DNS-over-HTTPS server belongs in `exclude` (default `cloudflare-dns.com`), or its lookups are routed back into the client. |
 | `exclude` | `[]` | Hosts and ranges never routed, even with `all`. |
 | `schemes`, `methods` | both, all | Narrow by scheme or method. |
 | `sameOrigin` | `false` | Also route the page's own origin. |
@@ -85,7 +85,7 @@ The default routes only what looks like it lives on a tailnet: `*.ts.net` names 
 | `maxBodyBytes` | 32 MiB | Bigger request bodies are not routed. |
 | `timeoutMs` | 60 000 | How long to wait for the response headers (then 504). |
 
-Never routed, whatever the policy says: navigations, anything that is not http(s), loopback (`localhost`, `*.localhost`, `127.0.0.0/8`, `::1`), and the page's own origin unless `sameOrigin`. A host or range that cannot be read throws `TailscalePolicyError`, and so does `hosts: ['*']`: routing everything is `intercept: 'all'`, a choice you spell out.
+Never routed, whatever the policy says: navigations, anything that is not http(s), loopback (`localhost`, `*.localhost`, `127.0.0.0/8`, `::1`), Tailscale's own services (`*.tailscale.com`, `*.tailscale.io`: the client's control, DERP and log connections, which cannot go through the tailnet they set up), and the page's own origin unless `sameOrigin`. A host or range that cannot be read throws `TailscalePolicyError`, and so does `hosts: ['*']`: routing everything is `intercept: 'all'`, a choice you spell out.
 
 `shouldRoute(request)` has the last word in the page, for rules a static list cannot express. It runs only for requests the policy already matched; return false to send one to the network.
 
@@ -110,7 +110,7 @@ Never routed, whatever the policy says: navigations, anything that is not http(s
 - **Navigations are not routed**: links, iframes and `location` changes to another origin are not requests from a controlled page, so a worker cannot answer them. Use `fetch` (or an `<img>`, `<video>`, script, stylesheet, font: subresources are routed).
 - **WebSockets** are not requests a worker sees. **EventSource** is, but the WebAssembly client returns whole bodies, so a stream arrives when it ends.
 - **Streaming**: the worker streams whatever the client gives it; the WebAssembly client buffers. Request bodies are always read whole (up to `maxBodyBytes`).
-- **Redirects**: the client follows them (`redirect: 'follow'`); `manual` returns the 3xx as is, not an opaque redirect; `error` fails.
+- **Redirects**: the client follows them (`redirect: 'follow'`; through an exit node it follows them itself, looking each public name up the same way); `manual` returns the 3xx as is, not an opaque redirect; `error` fails.
 - **Credentials and cookies**: the browser's cookies are not sent and `Set-Cookie` in a routed response is ignored (a response a worker makes never touches the cookie jar). Use `Authorization` headers for tailnet services.
 - **CORS**: the worker answers cross-origin requests with your origin allowed, so your page can read tailnet responses; the tailnet server's own CORS headers do not matter.
 - **Mixed content**: on an https page, a request for `http://100.x.y.z/` is blocked by the browser's mixed-content rules, by the Fetch specification before the worker sees it (from the specs; not verified here). Use `https://<device>.<tailnet>.ts.net` names (Tailscale can issue certificates for them; TLS is then done inside the client) or serve the page from `localhost` while developing.

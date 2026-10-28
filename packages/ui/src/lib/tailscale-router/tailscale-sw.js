@@ -118,6 +118,7 @@
     const host = u.hostname.toLowerCase();
     const addr = parseAddress(host);
     if (host === 'localhost' || host.endsWith('.localhost') || (addr && (inCidr(addr, LOOPBACK_V4) || inCidr(addr, LOOPBACK_V6)))) return { route: false, reason: 'loopback' };
+    if (/(^|\.)tailscale\.(com|io)$/.test(host)) return { route: false, reason: 'tailscale' };
     if (policy.methods && policy.methods.indexOf(method.toUpperCase()) < 0) return { route: false, reason: 'method' };
     if (hostIn(host, addr, policy.exclude)) return { route: false, reason: 'excluded' };
     if (policy.intercept === 'all') return { route: true, reason: 'all' };

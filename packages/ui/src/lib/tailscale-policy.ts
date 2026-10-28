@@ -6,7 +6,7 @@
    The default is an allowlist: a request is routed only if its host looks like it lives on a tailnet (`*.ts.net`,
    100.64.0.0/10, fd7a:115c:a1e0::/48) or you named it (`hosts`, `cidrs`). Routing every cross-origin request is a
    separate, explicit choice (`intercept: 'all'`). Never routed, whatever the policy says: the page's own origin
-   (unless `sameOrigin`), loopback, anything that is not http(s), and what `exclude` names. */
+   (unless `sameOrigin`), loopback, Tailscale's own services (`*.tailscale.com`, `*.tailscale.io`), anything that is not http(s), and what `exclude` names. */
 
 /** `tailnet` (default): the built-in tailnet names and addresses plus `hosts` and `cidrs`. `all`: every cross-origin http(s) request. */
 export type TailscaleIntercept = 'tailnet' | 'all';
@@ -57,7 +57,7 @@ export interface ResolvedTailscalePolicy {
 
 export type TailscaleMatchReason =
   | 'tailnet-name' | 'tailnet-address' | 'host' | 'cidr' | 'short-name' | 'all'
-  | 'invalid-url' | 'scheme' | 'same-origin' | 'loopback' | 'method' | 'excluded' | 'no-match';
+  | 'invalid-url' | 'scheme' | 'same-origin' | 'loopback' | 'tailscale' | 'method' | 'excluded' | 'no-match';
 
 export interface TailscaleMatch {
   route: boolean;
@@ -247,13 +247,15 @@ function positive(value: number | undefined, fallback: number): number {
 
 /* ── matching ── */
 
+const isTailscaleService = (host: string) => /(^|\.)tailscale\.(com|io)$/.test(host);
+
 const isLoopback = (host: string, a: Address | null) =>
   host === 'localhost' || host.endsWith('.localhost') || (a !== null && (inCidr(a, LOOPBACK_V4) || inCidr(a, LOOPBACK_V6)));
 
 /**
  * Would a request for `url` be routed? `origin` is the page's origin (to leave its own requests alone).
  * Decisions are made in a fixed order, so `reason` says which rule decided: not a URL, scheme, same origin, loopback,
- * method, `exclude`, then the inclusions.
+ * Tailscale's own services, method, `exclude`, then the inclusions.
  */
 export function matchTailscalePolicy(url: string | URL, method: string, policy: ResolvedTailscalePolicy, origin?: string): TailscaleMatch {
   let u: URL;
@@ -268,6 +270,8 @@ export function matchTailscalePolicy(url: string | URL, method: string, policy: 
   const host = u.hostname.toLowerCase();
   const addr = parseAddress(host);
   if (isLoopback(host, addr)) return { route: false, reason: 'loopback' };
+  // The client's own connections (control, DERP, logs) cannot go through the tailnet they set up.
+  if (isTailscaleService(host)) return { route: false, reason: 'tailscale' };
   if (policy.methods && !policy.methods.includes(method.toUpperCase())) return { route: false, reason: 'method' };
   if (hostIn(host, addr, policy.exclude)) return { route: false, reason: 'excluded' };
 

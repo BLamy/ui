@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/ui",
-  "version": "5.10.0",
+  "version": "5.10.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

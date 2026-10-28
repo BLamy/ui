@@ -115,9 +115,14 @@ export function installTailscaleRoots(pem: string) {
   if (!base || base.blRoots) return;
   const files = new Map<number, { pos: number }>();
   let nextFd = 0x7f00;
+  // Shaped like Node's fs.Stats: Go's syscall.Open calls `isDirectory()` on what fstat returns (fs_js.go), and a missing
+  // method is a panic that ends the runtime on the first HTTPS fetch.
   const stat = () => {
     const now = Date.now();
-    return { dev: 0, ino: 0, mode: 0o100444, nlink: 1, uid: 0, gid: 0, rdev: 0, size: rootsBytes!.length, blksize: 4096, blocks: Math.ceil(rootsBytes!.length / 512), atimeMs: now, mtimeMs: now, ctimeMs: now };
+    return {
+      dev: 0, ino: 0, mode: 0o100444, nlink: 1, uid: 0, gid: 0, rdev: 0, size: rootsBytes!.length, blksize: 4096, blocks: Math.ceil(rootsBytes!.length / 512), atimeMs: now, mtimeMs: now, ctimeMs: now,
+      isDirectory: () => false, isFile: () => true, isSymbolicLink: () => false,
+    };
   };
   const ours = (path: string) => path === TAILSCALE_CERT_FILE && rootsBytes !== null;
   g.fs = Object.assign(Object.create(base) as GoFs, {
@@ -338,62 +343,23 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
     },
     async fetch(req: TailscaleRequest): Promise<TailscaleResponse> {
       if (!ipn) throw new Error('The Tailscale client is not running.');
-      const method = (req.method ?? 'GET').toUpperCase();
-      const url = new URL(req.url);
-      // Through an exit node a public name needs an address: look it up, tell the client (`ipMap`) and fetch the name as asked —
-      // the way almostnode does. If the client ignores the map, dial the address with the name kept as the Host header and the
-      // TLS server name instead.
-      const viaExit = exitNodeId !== null && isPublicName(url.hostname);
-      const simple = !viaExit && method === 'GET' && !req.body && !req.headers?.length && (req.redirect ?? 'follow') === 'follow';
-      const headers = Object.fromEntries(req.headers ?? []);
-      const structured = (target: string, extra: Record<string, unknown> = {}) => ({
-        url: target,
-        method,
-        headers,
-        bodyBase64: req.body ? bytesToBase64(req.body) : undefined,
-        redirect: req.redirect,
-        ...extra,
-      });
-      let res: Awaited<ReturnType<TailscaleIpn['fetch']>>;
-      if (viaExit) {
-        const ip = await resolvePublic(url.hostname);
-        const reason = (e: unknown) => (e instanceof Error ? e.message : typeof e === 'string' ? e : (e as { message?: string } | null)?.message ?? String(e));
-        // One literal address: the client dials it directly, never racing several (see `exitNodeDial`).
-        const byAddress = () => {
-          const direct = new URL(req.url);
-          direct.hostname = ip;
-          const withHost = { ...headers };
-          for (const name of Object.keys(withHost)) if (name.toLowerCase() === 'host') delete withHost[name];
-          withHost.Host = url.host;
-          return ipn!.fetch({ ...structured(direct.href), headers: withHost, ...(url.protocol === 'https:' ? { tlsServerName: url.hostname } : {}) });
-        };
-        if (options.exitNodeDial === 'name') {
-          if (ipMap[url.hostname] !== ip) {
-            ipMap[url.hostname] = ip;
-            await applyConfig();
-          }
-          try {
-            res = await ipn.fetch(structured(req.url));
-          } catch (primary) {
-            try {
-              res = await byAddress();
-            } catch (fallback) {
-              throw new Error(`${url.hostname} (${ip}) could not be fetched through the exit node. Fetching the name: ${reason(primary)}. Fetching the address: ${reason(fallback)}.`);
-            }
-          }
-        } else {
-          try {
-            res = await byAddress();
-          } catch (e) {
-            throw new Error(`${url.hostname} (${ip}) could not be fetched through the exit node: ${reason(e)}.`);
-          }
-        }
-      } else {
-        // The minimal build only takes a URL string; the structured form needs a build that has it (almostnode's does).
-        res = await ipn.fetch(simple ? req.url : structured(req.url));
+      // Through an exit node, redirects are followed here rather than in the client (as almostnode does): a redirect to another
+      // public name (google.com → www.google.com) needs that name looked up and dialled the same way, which the client cannot do.
+      if (exitNodeId === null || (req.redirect ?? 'follow') !== 'follow' || !isPublicName(new URL(req.url).hostname)) return fetchOnce(req);
+      let current: TailscaleRequest = { ...req, redirect: 'manual' };
+      for (let hop = 0; ; hop++) {
+        const res = await fetchOnce(current);
+        const location = REDIRECT_STATUSES.has(res.status) ? res.headers.find(([k]) => k.toLowerCase() === 'location')?.[1] : undefined;
+        if (!location) return res;
+        if (hop >= MAX_REDIRECTS) throw new Error(`${req.url} redirected more than ${MAX_REDIRECTS} times.`);
+        const next = new URL(location, current.url);
+        if (next.protocol !== 'http:' && next.protocol !== 'https:') return res;
+        // 303, and 301/302 after a POST, continue as a GET without a body (the Fetch standard's rule).
+        const toGet = res.status === 303 ? (current.method ?? 'GET').toUpperCase() !== 'HEAD' : (res.status === 301 || res.status === 302) && (current.method ?? 'GET').toUpperCase() === 'POST';
+        current = toGet
+          ? { ...current, url: next.href, method: 'GET', body: null, headers: current.headers?.filter(([k]) => !/^content-/i.test(k)) }
+          : { ...current, url: next.href };
       }
-      const body = res.bodyBase64 !== undefined ? base64ToBytes(res.bodyBase64) : res.text ? new TextEncoder().encode(await res.text()) : null;
-      return { url: viaExit ? req.url : res.url ?? req.url, status: res.status, statusText: res.statusText ?? '', headers: Object.entries(res.headers ?? {}), body };
     },
     dispose() {
       // The Go runtime has no shutdown: a disposed instance stops being used and is collected with the page.
@@ -402,4 +368,67 @@ export function createTailscaleConnectClient(options: TailscaleConnectOptions): 
       releaseSockets();
     },
   };
+
+  async function fetchOnce(req: TailscaleRequest): Promise<TailscaleResponse> {
+    if (!ipn) throw new Error('The Tailscale client is not running.');
+    const method = (req.method ?? 'GET').toUpperCase();
+    const url = new URL(req.url);
+    // Through an exit node a public name needs an address: look it up, tell the client (`ipMap`) and fetch the name as asked —
+    // the way almostnode does. If the client ignores the map, dial the address with the name kept as the Host header and the
+    // TLS server name instead.
+    const viaExit = exitNodeId !== null && isPublicName(url.hostname);
+    const simple = !viaExit && method === 'GET' && !req.body && !req.headers?.length && (req.redirect ?? 'follow') === 'follow';
+    const headers = Object.fromEntries(req.headers ?? []);
+    const structured = (target: string, extra: Record<string, unknown> = {}) => ({
+      url: target,
+      method,
+      headers,
+      bodyBase64: req.body ? bytesToBase64(req.body) : undefined,
+      redirect: req.redirect,
+      ...extra,
+    });
+    let res: Awaited<ReturnType<TailscaleIpn['fetch']>>;
+    if (viaExit) {
+      const ip = await resolvePublic(url.hostname);
+      const reason = (e: unknown) => (e instanceof Error ? e.message : typeof e === 'string' ? e : (e as { message?: string } | null)?.message ?? String(e));
+      // One literal address: the client dials it directly, never racing several (see `exitNodeDial`).
+      const byAddress = () => {
+        const direct = new URL(req.url);
+        direct.hostname = ip;
+        const withHost = { ...headers };
+        for (const name of Object.keys(withHost)) if (name.toLowerCase() === 'host') delete withHost[name];
+        withHost.Host = url.host;
+        return ipn!.fetch({ ...structured(direct.href), headers: withHost, ...(url.protocol === 'https:' ? { tlsServerName: url.hostname } : {}) });
+      };
+      if (options.exitNodeDial === 'name') {
+        if (ipMap[url.hostname] !== ip) {
+          ipMap[url.hostname] = ip;
+          await applyConfig();
+        }
+        try {
+          res = await ipn.fetch(structured(req.url));
+        } catch (primary) {
+          try {
+            res = await byAddress();
+          } catch (fallback) {
+            throw new Error(`${url.hostname} (${ip}) could not be fetched through the exit node. Fetching the name: ${reason(primary)}. Fetching the address: ${reason(fallback)}.`);
+          }
+        }
+      } else {
+        try {
+          res = await byAddress();
+        } catch (e) {
+          throw new Error(`${url.hostname} (${ip}) could not be fetched through the exit node: ${reason(e)}.`);
+        }
+      }
+    } else {
+      // The minimal build only takes a URL string; the structured form needs a build that has it (almostnode's does).
+      res = await ipn.fetch(simple ? req.url : structured(req.url));
+    }
+    const body = res.bodyBase64 !== undefined ? base64ToBytes(res.bodyBase64) : res.text ? new TextEncoder().encode(await res.text()) : null;
+    return { url: viaExit ? req.url : res.url ?? req.url, status: res.status, statusText: res.statusText ?? '', headers: Object.entries(res.headers ?? {}), body };
+  }
 }
+
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+const MAX_REDIRECTS = 20;

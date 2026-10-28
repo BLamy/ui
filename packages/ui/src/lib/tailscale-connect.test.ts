@@ -176,7 +176,7 @@ describe('exit nodes', () => {
     // The client dialled one literal address (no name, so no dial race in Go).
     expect(await res.text()).toBe('served https://93.184.216.34/a?b=1');
     expect(dnsCalls).toEqual(['https://cloudflare-dns.com/dns-query?name=example.com&type=A']);
-    expect(f.fetches).toEqual([{ url: 'https://93.184.216.34/a?b=1', method: 'GET', headers: { accept: 'text/html', Host: 'example.com' }, bodyBase64: undefined, redirect: undefined, tlsServerName: 'example.com' }]);
+    expect(f.fetches).toEqual([{ url: 'https://93.184.216.34/a?b=1', method: 'GET', headers: { accept: 'text/html', Host: 'example.com' }, bodyBase64: undefined, redirect: 'manual', tlsServerName: 'example.com' }]);
     await t.dispose();
   });
 
@@ -188,7 +188,7 @@ describe('exit nodes', () => {
     // almostnode's way: the lookup is the page's own request, and the name goes to the client with its address.
     expect(dnsCalls).toEqual(['https://cloudflare-dns.com/dns-query?name=example.com&type=A']);
     expect(f.configured.at(-1)).toMatchObject({ useExitNode: true, ExitNodeID: 'nExit1', CorpDNS: true, ipMap: { 'example.com': '93.184.216.34' } });
-    expect(f.fetches).toEqual([{ url: 'https://example.com/a?b=1', method: 'GET', headers: { accept: 'text/html' }, bodyBase64: undefined, redirect: undefined }]);
+    expect(f.fetches).toEqual([{ url: 'https://example.com/a?b=1', method: 'GET', headers: { accept: 'text/html' }, bodyBase64: undefined, redirect: 'manual' }]);
     await t.dispose();
   });
 
@@ -197,7 +197,7 @@ describe('exit nodes', () => {
     await t.setExitNode('nExit1');
     const res = toResponse(await t.fetch({ url: 'https://example.com/a?b=1', headers: [['accept', 'text/html']] }));
     expect(await res.text()).toBe('served https://93.184.216.34/a?b=1');
-    expect(f.fetches.at(-1)).toEqual({ url: 'https://93.184.216.34/a?b=1', method: 'GET', headers: { accept: 'text/html', Host: 'example.com' }, bodyBase64: undefined, redirect: undefined, tlsServerName: 'example.com' });
+    expect(f.fetches.at(-1)).toEqual({ url: 'https://93.184.216.34/a?b=1', method: 'GET', headers: { accept: 'text/html', Host: 'example.com' }, bodyBase64: undefined, redirect: 'manual', tlsServerName: 'example.com' });
     await t.dispose();
   });
 
@@ -230,6 +230,43 @@ describe('exit nodes', () => {
     const res = toResponse(await t.fetch({ url: 'https://example.com/a' }));
     expect(await res.text()).toBe('served https://93.184.216.34/a');
     expect(t.getSnapshot().exitNodeId).toBe('nExit1');
+    await t.dispose();
+  });
+
+  it('follows redirects itself through an exit node, looking each new public name up (the client cannot)', async () => {
+    const f = exitNodeModule();
+    const ipn = await f.mod.createIPN({ authKey: '', panicHandler: () => {} });
+    const seen: unknown[] = [];
+    const redirecting: TailscaleConnectModule = {
+      createIPN: async () => ({
+        ...ipn,
+        fetch: async (req) => {
+          seen.push(req);
+          const r = req as { url: string; method: string; tlsServerName?: string };
+          if (r.tlsServerName === 'example.com') return { status: 301, headers: { location: 'https://www.example.com/home' }, bodyBase64: '' };
+          if (r.method === 'POST') return { status: 303, headers: { location: '/done' }, bodyBase64: '' };
+          return { status: 200, headers: {}, bodyBase64: btoa(`served ${r.url} for ${r.tlsServerName} by ${r.method}`) };
+        },
+      }),
+    };
+    const t = createTailscale({ client: createTailscaleConnectClient({ wasmURL: '/w', load: async () => redirecting, dnsFetch }), auth: { mode: 'auth-key', authKey: 'k' }, env: { open: () => null, locks: null } });
+    await t.signIn();
+    await vi.waitFor(() => expect(t.getSnapshot().status).toBe('connected'));
+    await t.setExitNode('nExit1');
+    dnsCalls.length = 0;
+    const res = await t.fetch({ url: 'https://example.com/' });
+    expect(res.status).toBe(200);
+    expect(res.url).toBe('https://www.example.com/home');
+    expect(new TextDecoder().decode(res.body!)).toBe('served https://10.0.0.1/home for www.example.com by GET');
+    expect(dnsCalls.map((u) => new URL(u).searchParams.get('name'))).toEqual(['example.com', 'www.example.com']);
+    expect(seen.every((r) => (r as { redirect?: string }).redirect === 'manual')).toBe(true);
+    // A 303 after a POST continues as a GET without the body.
+    seen.length = 0;
+    const posted = await t.fetch({ url: 'https://www.example.com/form', method: 'POST', body: new Uint8Array([1]), headers: [['content-type', 'text/plain']] });
+    expect(posted.url).toBe('https://www.example.com/done');
+    expect(seen.at(-1)).toMatchObject({ method: 'GET', bodyBase64: undefined, headers: { Host: 'www.example.com' } });
+    // `manual` is left to the caller.
+    expect((await t.fetch({ url: 'https://example.com/', redirect: 'manual' })).status).toBe(301);
     await t.dispose();
   });
 
@@ -287,9 +324,14 @@ describe('root certificates', () => {
       expect(new Go().env).toEqual({ HOME: '/', SSL_CERT_FILE: TAILSCALE_CERT_FILE });
       const fs = g.fs as Record<string, (...a: unknown[]) => unknown>;
       const call = <T>(name: string, ...args: unknown[]) => new Promise<T>((resolve, reject) => fs[name]!(...args, (e: unknown, v: T) => (e ? reject(e) : resolve(v))));
-      // os.ReadFile on js/wasm: open, fstat for the size, reads with position null until 0, close.
+      // os.ReadFile on js/wasm: open (which asks fstat(fd).isDirectory(), syscall/fs_js.go), fstat for the size, reads with
+      // position null until 0, close. A stat without isDirectory panics the Go runtime.
       const fd = await call<number>('open', TAILSCALE_CERT_FILE, 0, 0);
-      const size = (await call<{ size: number; mode: number }>('fstat', fd)).size;
+      const st = await call<{ size: number; mode: number; isDirectory: () => boolean; isFile: () => boolean }>('fstat', fd);
+      expect(st.isDirectory()).toBe(false);
+      expect(st.isFile()).toBe(true);
+      expect((await call<{ isDirectory: () => boolean }>('stat', TAILSCALE_CERT_FILE)).isDirectory()).toBe(false);
+      const size = st.size;
       const buf = new Uint8Array(size + 8);
       let got = 0;
       for (let n = -1; n !== 0; got += n) n = await call<number>('read', fd, buf, got, 16, null);

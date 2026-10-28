@@ -1,25 +1,47 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import wasmURL from '@agent-wasm/tailscale-connect/main.wasm?url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
 import { webStorageTailscalePersistence } from '@/lib/tailscale'
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect'
-import { TailscaleProvider } from '@/lib/tailscale-react'
+import { exitNodeName, exitNodePeers, pickExitNode } from '@/lib/tailscale-exit'
+import { TailscaleProvider, useTailscale, useTailscaleStatus } from '@/lib/tailscale-react'
 import { useTailscaleRouter } from '@/lib/tailscale-router/react'
 
-// A real service worker (tailscale-sw.js) in front of your tailnet. Sign in,
-// then send plain fetch() calls: the worker hands the ones for *.ts.net and
-// Tailscale addresses (100.64.0.0/10) to this page, which answers them through
-// Tailscale's client. Signed out, they go to the normal network, where these
-// names do not exist. On an https page, ask for https:// tailnet URLs (enable
-// HTTPS certificates in your tailnet): the browser blocks http:// requests from
-// an https page before any service worker sees them.
+// A real service worker (tailscale-sw.js) in front of your tailnet, routing
+// every cross-origin request (`intercept: 'all'`). Sign in, then send plain
+// fetch() calls: the worker hands them to this page, which answers them
+// through Tailscale's client. Your devices (*.ts.net, 100.x) are reached
+// directly; public sites go through an exit node, picked for you once you are
+// connected. Signed out, requests go to the normal network. The DNS-over-HTTPS
+// server the client looks public names up with is excluded, or each lookup
+// would be routed back into the client. On an https page, ask for https://
+// URLs: the browser blocks http:// requests before any service worker sees them.
 
 interface Result { status: string; via: string; body: string }
 
+/** Picks an online exit node once connected (public sites need one), and says which. */
+function ExitNode() {
+  const tailscale = useTailscale()
+  const snapshot = useTailscaleStatus()
+  const connected = snapshot.status === 'connected'
+  const id = connected && !snapshot.exitNodeId ? pickExitNode(snapshot) : null
+  useEffect(() => { if (id) void tailscale.setExitNode(id).catch(() => {}) }, [id, tailscale])
+  if (!connected) return null
+  const current = snapshot.peers.find((p) => p.id === snapshot.exitNodeId)
+  return (
+    <p className="m-0 text-footnote text-foreground/70" data-testid="exit-node">
+      {current ? `Exit node: ${exitNodeName(current)}${current.online ? '' : ' (offline)'}`
+        : exitNodePeers(snapshot).length ? 'No exit node online: only your devices can be reached.'
+        : 'Your tailnet has no exit node: only your devices can be reached.'}
+    </p>
+  )
+}
+
 function Console() {
-  const router = useTailscaleRouter()
+  // Leaving the demo removes the worker, so it does not route the rest of this site's requests.
+  const router = useTailscaleRouter({ policy: { intercept: 'all', exclude: ['cloudflare-dns.com'] }, unregisterOnDispose: true })
   const [url, setUrl] = useState('')
   const [result, setResult] = useState<Result | null>(null)
 
@@ -40,7 +62,7 @@ function Console() {
         setResult({ status: `${res.status}`, via, body })
       }
     } catch (e) {
-      setResult({ status: 'failed', via: 'network', body: e instanceof Error ? e.message : String(e) })
+      setResult({ status: 'failed', via: 'no response', body: e instanceof Error ? e.message : String(e) })
     }
   }
 
@@ -50,7 +72,7 @@ function Console() {
         Service worker: {router.status}{router.detail ? ` (${router.detail})` : ''} · {router.routed} routed
       </p>
       <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); void send(url) }}>
-        <Input aria-label="URL" placeholder="https://your-machine.your-tailnet.ts.net/" value={url} onChange={(e) => setUrl(e.target.value)} />
+        <Input aria-label="URL" placeholder="https://example.com/ or https://your-machine.your-tailnet.ts.net/" value={url} onChange={(e) => setUrl(e.target.value)} />
         <Button type="submit" variant="secondary">Fetch</Button>
       </form>
       <div className="flex flex-wrap gap-2">
@@ -79,6 +101,7 @@ export default function Intercept() {
           <TailscaleLoginButton />
           <TailscaleStatusBadge compact />
         </div>
+        <ExitNode />
         <Console />
       </TailscaleProvider>
     </div>
