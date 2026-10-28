@@ -81,7 +81,7 @@ An inspection is a moment where someone (you, a debugging agent) looked at a req
 
 ## Elements, Sources and screenshots
 
-DevTools also has an **Elements** tab, the replayed page's DOM at the playhead as a collapsible tree, and, when the player has a debugger's `evidence`, a **Sources** tab. An inspection with an `element` selector opens Elements on that element and highlights it on the page with DevTools' blue box. Sources shows the code the debugger read, each line with its hit count and the lines it looked at highlighted, and its logpoints as breakpoints whose watch value flashes blue beside the line as each hit lands. Screenshots in the evidence are taken as playback reaches them: the stage flashes and the shot shrinks to a thumbnail in the bottom-left corner while the page plays on.
+DevTools also has an **Elements** tab, the replayed page's DOM at the playhead as a collapsible tree, and, when the player has a debugger's `evidence`, a **Sources** tab. An inspection with an `element` selector opens Elements on that element and highlights it on the page with DevTools' blue box. Sources shows the code the debugger read, each line with its hit count and the lines it looked at highlighted, and its logpoints as breakpoints. A **Watch** panel beside the code lists each logpoint’s expression, its hit count at the playhead and its value, which flashes blue as each hit lands; the line of the latest hit is marked in the code. Screenshots in the evidence are taken as playback reaches them: the stage flashes and the shot shrinks to a thumbnail in the bottom-left corner while the page plays on.
 
 ```tsx
 <ReplayPreview events={events} evidence={{ sources, logpoints, screenshots }} />
