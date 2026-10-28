@@ -284,7 +284,14 @@ describe("player behaviour", () => {
     expect(el.querySelector('[data-slot="replay-devtools"]')).not.toBeNull()
   })
 
-  it("an element inspection opens Elements on the element, ancestors expanded, and highlights it on the page", async () => {
+  it("an element inspection doesn't open a closed DevTools", async () => {
+    stage.time = 1000
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 1500, element: "main" }]} />)
+    await act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(1600))
+    expect(el.querySelector('[data-slot="replay-devtools"]')).toBeNull()
+  })
+
+  it("an element inspection switches open DevTools to Elements on the element, ancestors expanded, and highlights it on the page", async () => {
     // The replayed page, as the stage's iframe document would hold it.
     const doc = document.implementation.createHTMLDocument("page")
     // rrweb marks replayed hover with `:hover` classes; DevTools shows the page's own.
@@ -294,6 +301,7 @@ describe("player behaviour", () => {
     stage.doc = doc
     stage.time = 1000
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 1500, element: 'input[placeholder="Search tasks"]', label: "The search box" }]} />)
+    await act(async () => el.querySelector<HTMLElement>('[data-slot="replay-devtools-buttons"] button')!.click())
     await act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(1600))
     const panel = el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')!
     expect(panel.querySelector('[role=tab][aria-selected="true"]')!.textContent).toBe("Elements")

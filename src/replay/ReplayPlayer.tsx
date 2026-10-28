@@ -395,7 +395,7 @@ export function ReplayPlayer({
   // Inspect mode: the inspection at the playhead opens DevTools on what it found. Only a change of inspection does
   // (closing the panel keeps it closed until the next one). Seeking never closes it: going to another request,
   // before or after the inspection, leaves the panel where it is. A panel the user opened, or has touched, stays
-  // theirs: an inspection switches its tab but never closes it.
+  // theirs: an inspection switches its tab but never closes it. An element inspection only switches an open panel.
   const inspection = showTools ? replayInspectionAt(resolved, time) : undefined
   const inspectionId = inspection?.id
   const inspectionTab = inspection?.tab
@@ -406,6 +406,8 @@ export function ReplayPlayer({
     if (inspectionId === lastInspection.current) return
     lastInspection.current = inspectionId
     if (!inspectionTab) return
+    // An element is only worth a tab switch: it doesn't open a closed panel (the page highlight shows it).
+    if (inspectionTab === 'elements' && panelRef.current === null) return
     if (panelRef.current === null) setAutoOpened(true)
     setPanel(inspectionTab)
   }, [inspectionId, inspectionTab])

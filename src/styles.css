@@ -4559,6 +4559,8 @@
      foreground (a theme's own --muted-foreground or --destructive is often tuned for larger text). */
   :where([data-slot="replay-preview"]) {
     --replay-devtools-dim: color-mix(in srgb, var(--foreground, #18181b) 68%, var(--card, #ffffff));
+    /* The panel: the card, see-through enough to show the replayed pointer under it. */
+    --replay-devtools-bg: color-mix(in srgb, var(--card, #ffffff) 84%, transparent);
     --replay-devtools-red: color-mix(in srgb, var(--destructive, #dc2626) 74%, var(--foreground, #18181b));
     --replay-devtools-amber: color-mix(in srgb, var(--warning, #b45309) 56%, var(--foreground, #18181b));
   }
@@ -4633,7 +4635,8 @@
     overflow: hidden;
     outline: none;
     color: var(--foreground, #18181b);
-    background: var(--card, #ffffff);
+    /* See-through, so the replayed pointer stays visible under the panel. */
+    background: var(--replay-devtools-bg);
     border-top: 1px solid var(--border, #e4e4e7);
     box-shadow: 0 -12px 32px -16px rgba(0, 0, 0, 0.3);
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -4948,7 +4951,7 @@
     padding: 0 8px;
     border-bottom: 1px solid var(--border, #e4e4e7);
     color: var(--replay-devtools-dim);
-    background: var(--card, #ffffff);
+    background: var(--replay-devtools-bg);
     font-weight: 500;
     text-align: start;
     white-space: nowrap;
