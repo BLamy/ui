@@ -4661,7 +4661,8 @@
     height: 30px;
     padding-inline: 4px;
     border-bottom: 1px solid var(--border, #e4e4e7);
-    background: color-mix(in srgb, var(--muted, #f4f4f5) 70%, transparent);
+    /* Only a tint over the panel's own see-through background, so the bar shows the page under it too. */
+    background: color-mix(in srgb, var(--foreground, #18181b) 4%, transparent);
   }
 
   :where([data-slot="replay-devtools-tabs"] > button, [data-slot="replay-devtools-detail-tabs"] > button) {

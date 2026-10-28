@@ -15,6 +15,12 @@ import type { ReplayStageHandle, ReplayStageProps } from "./stage-types"
 const renderToString = untypedRenderToString as (element: ReactElement) => string
 const createRoot = untypedCreateRoot as (el: Element) => { render(node: ReactElement): void; unmount(): void }
 
+// gpu-lexer needs WebGPU: a stand-in that marks `const` a keyword and identifiers before "(" functions.
+vi.mock("gpu-lexer", () => ({
+  parse: async (code: string) =>
+    [...code.matchAll(/\bconst\b|\w+(?=\()/g)].map((m) => ({ type: m[0] === "const" ? "keyword" : "function", start: m.index!, end: m.index! + m[0].length })),
+}))
+
 // The rrweb stage is a lazy boundary around a real Replayer, which needs a browser. Swap it for a stub
 // that reports ready and records the calls the player chrome makes.
 const stage = vi.hoisted(() => ({
@@ -354,6 +360,19 @@ describe("player behaviour", () => {
     await playTo(3100)
     expect(watch().querySelector('[data-part="value"]')!.textContent).toBe("117")
     expect(watch().querySelector('[data-part="count"]')!.textContent).toBe("2/2")
+  })
+
+  it("Sources lines are syntax-highlighted, lexed as one excerpt", async () => {
+    const evidence = {
+      sources: [{ path: "src/checkout.ts", lines: [{ line: 87, text: "const total = res.total" }, { line: 88, text: "applyPromo(total)" }] }],
+    }
+    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} evidence={evidence} defaultDevtoolsTab="sources" />)
+    await act(async () => {})
+    const tokens = (line: number) =>
+      [...el.querySelectorAll(`[data-slot="replay-devtools-code-line"][data-line="${line}"] .docs-tok`)].map((t) => `${t.className}:${t.textContent}`)
+    expect(tokens(87)).toEqual(["docs-tok docs-tok-keyword:const"])
+    expect(tokens(88)).toEqual(["docs-tok docs-tok-function:applyPromo"])
+    expect(el.querySelector('[data-slot="replay-devtools-code-line"][data-line="88"] [data-part="text"]')!.textContent).toBe("applyPromo(total)")
   })
 
   it("a seek past a screenshot doesn't take it", async () => {

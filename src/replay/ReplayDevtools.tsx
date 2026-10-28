@@ -391,10 +391,9 @@ const HIGHLIGHT_MAX = 64 * 1024
 
 type Span = { type: string; start: number; end: number }
 
-/** A request or response body, syntax-highlighted by gpu-lexer (loaded on first use; the same model and token
- *  colors as docstream's code blocks). Plain until the spans arrive, and plain past 64 KB. A <div> of spans, not
- *  <pre><code>, so a host's code-block styles (cards, margins, inline-code pills) can't reach it. */
-function Body({ text, empty }: { text?: string; empty: string }) {
+/** gpu-lexer's spans for `text` (loaded on first use; the same model and token colors as docstream's code blocks):
+ *  null until they arrive, for empty text, and past 64 KB. */
+function useSpans(text: string | undefined): Span[] | null {
   const [spans, setSpans] = useState<{ for: string; spans: Span[] } | null>(null)
   useEffect(() => {
     if (text === undefined || !text || text.length > HIGHLIGHT_MAX) return
@@ -405,25 +404,48 @@ function Body({ text, empty }: { text?: string; empty: string }) {
       .catch(() => {})
     return () => { cancelled = true }
   }, [text])
+  return spans && spans.for === text ? spans.spans : null
+}
+
+/** A request or response body, syntax-highlighted. Plain until the spans arrive. A <div> of spans, not
+ *  <pre><code>, so a host's code-block styles (cards, margins, inline-code pills) can't reach it. */
+function Body({ text, empty }: { text?: string; empty: string }) {
+  const spans = useSpans(text)
   if (text === undefined) return <p data-slot="replay-devtools-empty">{empty}</p>
-  const current = spans?.for === text ? spans.spans : null
   return (
     <div data-slot="replay-devtools-body">
-      {current ? highlight(text, current) : text}
+      {spans ? highlight(text, spans) : text}
     </div>
   )
 }
 
-function highlight(code: string, spans: Span[]) {
+function highlight(code: string, spans: Span[], offset = 0) {
   const out: (string | JSX.Element)[] = []
   let cursor = 0
   spans.forEach((span, i) => {
-    if (span.start > cursor) out.push(code.slice(cursor, span.start))
-    const piece = code.slice(span.start, span.end)
+    const start = Math.max(span.start - offset, 0)
+    const end = Math.min(span.end - offset, code.length)
+    if (end <= start) return
+    if (start > cursor) out.push(code.slice(cursor, start))
+    const piece = code.slice(start, end)
     out.push(span.type === 'plain' ? piece : <span key={i} className={`docs-tok docs-tok-${span.type}`}>{piece}</span>)
-    cursor = span.end
+    cursor = end
   })
   if (cursor < code.length) out.push(code.slice(cursor))
+  return out
+}
+
+/** Spans for the excerpt's lines by line number, lexed as one text (so a line reads in its neighbours' context) and
+ *  cut back into lines. */
+function lineSpans(lines: { line: number; text: string }[], spans: Span[] | null) {
+  if (!spans) return null
+  const out = new Map<number, { offset: number; spans: Span[] }>()
+  let offset = 0
+  for (const { line, text } of lines) {
+    const start = offset
+    out.set(line, { offset: start, spans: spans.filter((s) => s.end > start && s.start < start + text.length) })
+    offset += text.length + 1
+  }
   return out
 }
 
@@ -593,6 +615,7 @@ function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
   const paused = watches.reduce<(typeof watches)[number] | undefined>((a, w) => (w.hit && (!a?.hit || w.hit.time >= a.hit.time) ? w : a), undefined)
   const pausedLine = paused?.lp.path === current?.path ? paused?.lp.line : undefined
   const target = line ?? pausedLine ?? current?.focus?.[0]
+  const sourceSpans = useSpans(current?.lines.map((r) => r.text).join('\n'))
   useEffect(() => {
     if (target === undefined) return
     code.current?.querySelector(`[data-line="${target}"]`)?.scrollIntoView?.({ block: 'center' })
@@ -604,6 +627,7 @@ function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
   const rows = [...current.lines]
   for (const lp of points) if (!rows.some((r) => r.line === lp.line)) rows.push({ line: lp.line, text: '' })
   rows.sort((a, b) => a.line - b.line)
+  const lexed = lineSpans(current.lines, sourceSpans)
   const digits = String(rows.at(-1)?.line ?? 0).length
   return (
     <div data-slot="replay-devtools-pane" data-pane="sources">
@@ -633,7 +657,7 @@ function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
                 >
                   <span data-part="hits">{r.hits ?? ''}</span>
                   <span data-part="lineno">{lp ? <i data-part="breakpoint" title={`Logpoint: ${lp.expression}`} /> : null}{r.line}</span>
-                  <span data-part="text">{r.text || ' '}</span>
+                  <span data-part="text">{r.text ? (lexed?.has(r.line) ? highlight(r.text, lexed.get(r.line)!.spans, lexed.get(r.line)!.offset) : r.text) : ' '}</span>
                 </div>
               </div>
             )
