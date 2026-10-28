@@ -314,7 +314,7 @@ describe("player behaviour", () => {
     stage.doc = null
   })
 
-  it("a logpoint's first hit opens Sources on its line; its watch value follows the hits; a screenshot is captured on the way", async () => {
+  it("a logpoint's first hit opens Sources on its line; its watch value follows the hits in the Watch panel; a screenshot is captured on the way", async () => {
     const evidence = {
       sources: [{ path: "https://shop.test/src/checkout.ts", lines: [{ line: 87, text: "const total = res.total", hits: 2 }, { line: 88, text: "applyPromo(total)", hits: 2 }], focus: [88] }],
       logpoints: [{ path: "https://shop.test/src/checkout.ts", line: 88, expression: "total", hits: [{ at: 2000, value: "130" }, { at: 3000, value: "117" }] }],
@@ -332,7 +332,11 @@ describe("player behaviour", () => {
     const line88 = () => panel.querySelector('[data-slot="replay-devtools-code-line"][data-line="88"]')!
     expect(line88().hasAttribute("data-focus")).toBe(true)
     expect(line88().hasAttribute("data-breakpoint")).toBe(true)
-    expect(line88().querySelector('[data-part="watch"]')!.textContent).toBe("total = 130")
+    expect(line88().hasAttribute("data-paused")).toBe(true)
+    const watch = () => panel.querySelector('[data-slot="replay-devtools-watch"] li')!
+    expect(watch().querySelector('[data-part="expr"]')!.textContent).toBe("total")
+    expect(watch().querySelector('[data-part="value"]')!.textContent).toBe("130")
+    expect(watch().querySelector('[data-part="count"]')!.textContent).toBe("1/2")
     expect(el.querySelector('[data-slot="replay-preview-capture"]')).toBeNull()
     // Playing on: the screenshot is captured (flash + thumbnail), and the next hit's value lands.
     await playTo(2600)
@@ -340,7 +344,8 @@ describe("player behaviour", () => {
     expect(capture.querySelector("img")!.getAttribute("src")).toBe("/shots/pay.jpg")
     expect(capture.querySelector('[data-part="flash"]')).not.toBeNull()
     await playTo(3100)
-    expect(line88().querySelector('[data-part="watch"]')!.textContent).toBe("total = 117")
+    expect(watch().querySelector('[data-part="value"]')!.textContent).toBe("117")
+    expect(watch().querySelector('[data-part="count"]')!.textContent).toBe("2/2")
   })
 
   it("a seek past a screenshot doesn't take it", async () => {

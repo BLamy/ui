@@ -7,7 +7,7 @@
    Everything is a function of the playhead: scrub back and the lists shrink to what DevTools showed then. A row's
    time jumps the player there. Esc closes the panel. An inspection (inspections.ts) selects its request or
    message and marks it. Plain React + plain CSS, like the player. */
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { ChevronRight, CircleX, Info, Network, SquareTerminal, TriangleAlert, X } from 'lucide-react'
 import type { ReplayConsoleEntry, ReplayDevtoolsState, ReplayRequest } from './devtools'
 import { sourceName, type ResolvedReplayEvidence } from './evidence'
@@ -579,17 +579,24 @@ export interface SourcesProps {
   onPath: (path: string) => void
 }
 
-/** The debugger's view of the source: a file list, and the file's lines with their hit counts, the lines it read
- *  highlighted, breakpoints on its logpoints and, beside each, the watch value at the playhead (flashing blue as a
- *  new hit lands). */
+/** The debugger's view of the source: a file list; the file's lines with their hit counts, the lines it read
+ *  highlighted and breakpoints on its logpoints; and a Watch panel with each logpoint's expression and its value at
+ *  the playhead (flashing blue as a new hit lands), the line of the latest hit marked in the code. */
 function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
   const current = evidence.files.find((f) => f.path === path) ?? evidence.files[0]
   const code = useRef<HTMLDivElement>(null)
+  // Each logpoint's latest hit at the playhead, and the latest of those: where the debugger is "paused".
+  const watches = evidence.logpoints.map((lp) => {
+    const index = lp.hits.filter((h) => h.time <= at).length - 1
+    return { lp, index, hit: index >= 0 ? lp.hits[index] : undefined }
+  })
+  const paused = watches.reduce<(typeof watches)[number] | undefined>((a, w) => (w.hit && (!a?.hit || w.hit.time >= a.hit.time) ? w : a), undefined)
+  const pausedLine = paused?.lp.path === current?.path ? paused?.lp.line : undefined
+  const target = line ?? pausedLine ?? current?.focus?.[0]
   useEffect(() => {
-    const target = line ?? current?.focus?.[0]
     if (target === undefined) return
     code.current?.querySelector(`[data-line="${target}"]`)?.scrollIntoView?.({ block: 'center' })
-  }, [current?.path, line])
+  }, [current?.path, target])
   if (!current) return <div data-slot="replay-devtools-pane" data-pane="sources"><p data-slot="replay-devtools-empty">No sources were read</p></div>
   const points = evidence.logpoints.filter((lp) => lp.path === current.path)
   const focus = new Set(current.focus)
@@ -597,6 +604,7 @@ function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
   const rows = [...current.lines]
   for (const lp of points) if (!rows.some((r) => r.line === lp.line)) rows.push({ line: lp.line, text: '' })
   rows.sort((a, b) => a.line - b.line)
+  const digits = String(rows.at(-1)?.line ?? 0).length
   return (
     <div data-slot="replay-devtools-pane" data-pane="sources">
       <div data-slot="replay-devtools-sources">
@@ -609,30 +617,49 @@ function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
             </li>
           ))}
         </ul>
-        <div ref={code} data-slot="replay-devtools-code" aria-label={current.path}>
+        <div ref={code} data-slot="replay-devtools-code" aria-label={current.path} style={{ '--replay-devtools-lineno': `${digits}ch` } as CSSProperties}>
           {rows.map((r, i) => {
             const lp = points.find((p) => p.line === r.line)
-            const hitIndex = lp ? lp.hits.filter((h) => h.time <= at).length - 1 : -1
-            const hit = lp && hitIndex >= 0 ? lp.hits[hitIndex] : undefined
             const gap = i > 0 && r.line - rows[i - 1]!.line > 1
             return (
               <div key={r.line}>
                 {gap ? <div data-slot="replay-devtools-code-gap" aria-hidden="true">⋯</div> : null}
-                <div data-slot="replay-devtools-code-line" data-line={r.line} data-focus={focus.has(r.line) || r.line === line || undefined} data-breakpoint={lp ? '' : undefined}>
+                <div
+                  data-slot="replay-devtools-code-line"
+                  data-line={r.line}
+                  data-focus={focus.has(r.line) || r.line === line || undefined}
+                  data-paused={r.line === pausedLine || undefined}
+                  data-breakpoint={lp ? '' : undefined}
+                >
                   <span data-part="hits">{r.hits ?? ''}</span>
                   <span data-part="lineno">{lp ? <i data-part="breakpoint" title={`Logpoint: ${lp.expression}`} /> : null}{r.line}</span>
-                  <span data-part="text">{r.text || (lp ? ' ' : '')}</span>
-                  {hit ? (
-                    <span key={hitIndex} data-part="watch" title={lp!.expression}>
-                      {lp!.expression.length <= 48 ? <span data-part="watch-expr">{lp!.expression} = </span> : null}
-                      {clip(hit.value.replace(/\s+/g, ' '), 160)}
-                    </span>
-                  ) : null}
+                  <span data-part="text">{r.text || ' '}</span>
                 </div>
               </div>
             )
           })}
         </div>
+        {watches.length ? (
+          <section data-slot="replay-devtools-watch" aria-label="Watch">
+            <h3 data-part="title">Watch</h3>
+            <ul>
+              {watches.map(({ lp, index, hit }) => (
+                <li key={`${lp.path}:${lp.line}:${lp.expression}`} data-current={paused?.lp === lp || undefined}>
+                  <button type="button" data-part="where" title={`${lp.path}:${lp.line}`} onClick={() => onPath(lp.path)}>
+                    {sourceName(lp.path)}:{lp.line}
+                    <span data-part="count">{index >= 0 ? `${index + 1}/${lp.hits.length}` : `0/${lp.hits.length}`}</span>
+                  </button>
+                  <code data-part="expr">{lp.expression}</code>
+                  {hit ? (
+                    <code key={index} data-part="value">{clip(hit.value, 400)}</code>
+                  ) : (
+                    <span data-part="pending">Not hit yet</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </div>
     </div>
   )

@@ -5154,8 +5154,10 @@
 
   :where([data-slot="replay-devtools-code-line"] > [data-part="lineno"]) {
     position: relative;
-    flex: 0 0 5ch;
-    padding-inline-end: 10px;
+    flex: 0 0 auto;
+    box-sizing: content-box;
+    min-width: var(--replay-devtools-lineno, 4ch);
+    padding-inline: 14px 10px;
     color: var(--replay-devtools-dim);
     text-align: end;
   }
@@ -5175,23 +5177,89 @@
     color: var(--foreground, #18181b);
   }
 
-  /* A logpoint's watch value: lands in blue, then settles. */
-  :where([data-slot="replay-devtools-code-line"] > [data-part="watch"]) {
-    margin-inline-start: 14px;
-    padding: 0 6px;
+  /* The line of the latest logpoint hit at the playhead. */
+  :where([data-slot="replay-devtools-code-line"][data-paused]) {
+    background: color-mix(in srgb, #3b82f6 16%, transparent);
+    box-shadow: inset 2px 0 #3b82f6;
+  }
+
+  /* Watch: each logpoint's expression and its value at the playhead; a new hit lands in blue, then settles. */
+  :where([data-slot="replay-devtools-watch"]) {
+    flex: 0 0 auto;
+    width: min(280px, 34%);
+    overflow: auto;
+    overscroll-behavior: contain;
+    border-inline-start: 1px solid var(--border, #e4e4e7);
+    font: 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  :where([data-slot="replay-devtools-watch"] [data-part="title"]) {
+    margin: 0;
+    padding: 6px 10px;
+    border-block-end: 1px solid var(--border, #e4e4e7);
+    color: var(--replay-devtools-dim);
+    font: 600 11px/1.4 system-ui, sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  :where([data-slot="replay-devtools-watch"] ul) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  :where([data-slot="replay-devtools-watch"] li) {
+    display: grid;
+    gap: 2px;
+    padding: 6px 10px;
+    border-block-end: 1px solid color-mix(in srgb, var(--border, #e4e4e7) 60%, transparent);
+  }
+
+  :where([data-slot="replay-devtools-watch"] li[data-current]) {
+    box-shadow: inset 2px 0 #3b82f6;
+  }
+
+  :where([data-slot="replay-devtools-watch"] [data-part="where"]) {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--replay-devtools-dim);
+    font: inherit;
+    font-size: 10.5px;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  :where([data-slot="replay-devtools-watch"] [data-part="expr"]) {
+    color: var(--foreground, #18181b);
+    font: inherit;
+    overflow-wrap: anywhere;
+  }
+
+  :where([data-slot="replay-devtools-watch"] [data-part="value"]) {
+    justify-self: start;
+    max-width: 100%;
+    padding: 1px 6px;
     border-radius: 4px;
     color: light-dark(#1d4ed8, #93c5fd);
     background: color-mix(in srgb, #3b82f6 12%, transparent);
-    white-space: nowrap;
+    font: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
     animation: replay-watch-flash 1.1s ease-out;
   }
 
-  :where([data-slot="replay-devtools-code-line"] [data-part="watch-expr"]) {
+  :where([data-slot="replay-devtools-watch"] [data-part="pending"]) {
     color: var(--replay-devtools-dim);
+    font-style: italic;
   }
 
   :where([data-slot="replay-devtools-code-gap"]) {
-    padding-inline-start: calc(9ch + 16px);
+    padding-inline-start: calc(4ch + 6px + var(--replay-devtools-lineno, 4ch) + 24px);
     color: var(--replay-devtools-dim);
     line-height: 1.2;
   }
