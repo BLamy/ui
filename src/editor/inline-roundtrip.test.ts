@@ -164,7 +164,7 @@ const DOCUMENT_ROUND_TRIP_CASES = [
   '{% openapi src="petstore" path="/pets" method="get" %}\n[petstore](https://x.dev/openapi.json)\n{% endopenapi %}\n',
   '{% embed url="https://x.dev/v" %}\n{% endembed %}\n',
   // a recording with its HAR, console log and evidence
-  '{% embed url="./r.rrweb#t=8,10.85" title="Session replay" har="./network.har" log="./console.log" evidence="./evidence.json" %}\n',
+  '{% embed url="./r.rrweb#t=8,10.85" title="Session replay" har="./network.har" log="./console.log" evidence="./evidence.json" captions="./captions.vtt" %}\n',
   '{% file src="a.pdf" caption="A" %}\n',
   '{% component path="a.tsx" %}\n{% endcomponent %}\n',
   '{% include "x.md" %}\n',

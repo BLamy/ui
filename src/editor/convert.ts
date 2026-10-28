@@ -311,6 +311,7 @@ function blockContentToPM(b: Block): PMNode {
       if (b.har !== undefined) attrs.har = b.har
       if (b.log !== undefined) attrs.log = b.log
       if (b.evidence !== undefined) attrs.evidence = b.evidence
+      if (b.captions !== undefined) attrs.captions = b.captions
       return { type: "gbEmbed", attrs }
     }
     case "content-ref": {
@@ -640,6 +641,7 @@ function pmContentToBlock(n: PMNode): Block | null {
       if (typeof n.attrs?.har === "string") embed.har = n.attrs.har
       if (typeof n.attrs?.log === "string") embed.log = n.attrs.log
       if (typeof n.attrs?.evidence === "string") embed.evidence = n.attrs.evidence
+      if (typeof n.attrs?.captions === "string") embed.captions = n.attrs.captions
       return embed
     }
     case "gbContentRef": {

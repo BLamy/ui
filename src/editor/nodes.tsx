@@ -560,10 +560,11 @@ export const GbEmbed = Node.create({
       muted: { default: null },
       controls: { default: null },
       poster: { default: null },
-      // A recording's HAR, console log and debugger evidence (`.rrweb` embeds), carried through edits.
+      // A recording's HAR, console log, debugger evidence and captions (`.rrweb` embeds), carried through edits.
       har: { default: null },
       log: { default: null },
       evidence: { default: null },
+      captions: { default: null },
     }
   },
   parseHTML() {
