@@ -308,6 +308,8 @@ export interface EmbedNode extends BlockSpacing {
   log?: string
   /** And a debugger's evidence: source, logpoints, screenshots. */
   evidence?: string
+  /** And captions: a WebVTT file on the recording's clock. */
+  captions?: string
   /** The tag as written (with its `{% endembed %}`), reused while it still says the same. */
   raw?: string
 }

@@ -106,6 +106,25 @@ describe("ReplayFile", () => {
     expect(serializeMarkdown(parseMarkdown('{% embed url="./r.rrweb" har="./n.har" log="./c.log" %}'))).toContain('har="./n.har" log="./c.log"')
   })
 
+  it("an embed's captions= shows the cue at the playhead, the CC button hides it, and it round-trips", async () => {
+    const files: Record<string, string> = {
+      "/a/recording.rrweb": JSON.stringify(replayDemoEvents),
+      "/a/captions.vtt": "WEBVTT\n\n1\n00:00.000 --> 00:02.000\nStep 1: <v Agent>open the cart</v>\n\n00:02.000 --> 00:04.000\nStep 2: pay\n",
+    }
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(files[url] ?? "", { status: files[url] ? 200 : 404 })))
+    const md = '{% embed url="./recording.rrweb" captions="./captions.vtt" %}\n'
+    await act(async () => root.render(<AssetResolverProvider resolve={(url) => "/a/" + url.slice(2)}><MarkdownContent markdown={md} /></AssetResolverProvider>))
+    await settle()
+    const player = host.querySelector('[data-slot="replay-preview"]')!
+    const track = () => player.querySelector('[data-slot="replay-preview-captions-track"]')
+    expect(track()!.textContent).toBe("Step 1: open the cart")
+    const cc = player.querySelector<HTMLButtonElement>('[data-slot="replay-preview-captions"]')!
+    await act(async () => cc.click())
+    expect(cc.getAttribute("aria-pressed")).toBe("false")
+    expect(track()).toBeNull()
+    expect(serializeMarkdown(parseMarkdown(md))).toContain('captions="./captions.vtt"')
+  })
+
   it("plays the recording before the HAR arrives, then adds its requests without touching the stage", async () => {
     const start = replayDemoEvents[0]!.timestamp
     const har = { log: { entries: [{ startedDateTime: new Date(start + 100).toISOString(), time: 10, request: { method: "GET", url: "https://shop.test/api/late" }, response: { status: 200, content: {} } }] } }

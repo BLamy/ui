@@ -4203,6 +4203,46 @@
     font-weight: 600;
   }
 
+  /* Captions: the cue at the playhead, centred over the bottom of the page (the top while DevTools covers it). */
+  :where([data-slot="replay-preview-captions-track"]) {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 12px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding-inline: 4%;
+    pointer-events: none;
+  }
+
+  :where([data-slot="replay-preview-captions-track"][data-top]) {
+    top: 12px;
+    bottom: auto;
+  }
+
+  :where([data-slot="replay-preview-captions-track"] > [data-part="cue"]) {
+    max-width: 100%;
+    padding: 5px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    font: 500 13px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    text-align: center;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    /* An agent's narration can run long: three lines at most, so the page stays in view. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+
+  :where([data-slot="replay-preview-captions"][aria-pressed="false"]) {
+    color: var(--muted-foreground, #71717a);
+  }
+
   /* A screenshot, taken as macOS takes them: a flash, then the shot shrinks to the bottom-left corner. */
   :where([data-slot="replay-preview-capture"]) {
     position: absolute;

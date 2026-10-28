@@ -16,10 +16,11 @@ import {
   type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type Ref,
 } from 'react'
 import { useReducedMotion } from 'framer-motion'
-import { Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
+import { Captions, CaptionsOff, Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
 import { ReplayStage } from './ReplayStage'
 import { DevtoolsButtons, DevtoolsPanel, type ElementsProps, type ReplayDevtoolsTab, type SourcesProps } from './ReplayDevtools'
 import { getReplayDevtools, replayDevtoolsAt } from './devtools'
+import { parseWebVTT, replayCaptionsAt, type ReplayCaption } from './captions'
 import { getReplayInspections, replayInspectionAt, replayInspectionDwellSpeed, resolveReplayInspections, type ReplayInspection } from './inspections'
 import { mergeReplaySources } from './sources'
 import { resolveReplayEvidence, type ReplayEvidence } from './evidence'
@@ -103,6 +104,9 @@ export interface ReplayPlayerOptions {
   /** What a debugger gathered (evidence.ts): source it read and logpoints it set, in DevTools' Sources tab, and
    *  screenshots it took, captured over the page as playback reaches them. An object or JSON text. */
   evidence?: ReplayEvidence | string
+  /** Captions (WebVTT text) on the recording's clock: each cue shows over the page while the playhead is in it,
+   *  and a CC button turns them off and on. */
+  captions?: string
   /** Draw the recorded pointer and click ripples (default true). */
   cursor?: boolean
   /** `width` (default): the page scales to the frame's width and sets its height. `contain`: fill the frame's
@@ -169,6 +173,18 @@ function ElementHighlight({ el }: { el: Element }) {
   )
 }
 
+/** The captions at the playhead, over the bottom of the page (the top while DevTools covers the bottom). */
+function CaptionTrack({ cues, time, raised }: { cues: readonly ReplayCaption[]; time: number; raised: boolean }) {
+  const showing = replayCaptionsAt(cues, time)
+  return (
+    <div data-slot="replay-preview-captions-track" data-top={raised || undefined} aria-live="polite">
+      {showing.map((c) => (
+        <span key={`${c.start}:${c.text}`} data-part="cue">{c.text}</span>
+      ))}
+    </div>
+  )
+}
+
 /** The latest of sorted `times` at or before `t`, or undefined. */
 function latestAtOrBefore(times: readonly number[], t: number): number | undefined {
   let lo = 0
@@ -191,7 +207,7 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 }
 
 export function ReplayPlayer({
-  events: recordingEvents, har, consoleLog, evidence, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
+  events: recordingEvents, har, consoleLog, evidence, captions, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
   autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers, markerKinds,
   cursor = true, disableDevtools = false, devtools = true, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, inspectionDwell = 2500, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
   className, style,
@@ -210,6 +226,8 @@ export function ReplayPlayer({
   const toolsOn = devtools && !disableDevtools
   const tools = useMemo(() => getReplayDevtools(events), [events])
   const proof = useMemo(() => resolveReplayEvidence(evidence, meta.start, meta.duration), [evidence, meta.start, meta.duration])
+  const cues = useMemo(() => (captions ? parseWebVTT(captions) : []), [captions])
+  const [captionsOn, setCaptionsOn] = useState(true)
   const hasSources = proof.files.length > 0
   const resolved = useMemo(() => {
     if (!toolsOn) return []
@@ -517,6 +535,8 @@ export function ReplayPlayer({
           />
         ) : null}
 
+        {captionsOn && cues.length ? <CaptionTrack cues={cues} time={time} raised={!!(showTools && panel)} /> : null}
+
         {proof.screenshots.length ? <ScreenshotCaptures shots={proof.screenshots} time={time} playing={playing} reduced={!!reduced} /> : null}
 
         {!posterGone ? (
@@ -573,6 +593,11 @@ export function ReplayPlayer({
             onMarker={jumpTo}
           />
           {chrome !== 'browser' ? toolButtons : null}
+          {cues.length ? (
+            <button type="button" data-slot="replay-preview-captions" aria-label="Captions" aria-pressed={captionsOn} onClick={() => setCaptionsOn((on) => !on)}>
+              {captionsOn ? <Captions size={16} /> : <CaptionsOff size={16} />}
+            </button>
+          ) : null}
           <button type="button" data-slot="replay-preview-speed" aria-label={`Playback speed ${speed}×`} onClick={() => cycleSpeed(1)}>
             {`${speed}×`}
           </button>

@@ -3,7 +3,7 @@ import { useAsset } from '../asset-resolver';
 import { ReplayPreview } from './ReplayPreview';
 import type { ReplayPlayerOptions } from './ReplayPlayer';
 
-export interface ReplayFileProps extends Omit<ReplayPlayerOptions, 'url' | 'har' | 'consoleLog' | 'evidence'> {
+export interface ReplayFileProps extends Omit<ReplayPlayerOptions, 'url' | 'har' | 'consoleLog' | 'evidence' | 'captions'> {
   /** The `.rrweb` file as written in the document; the host's asset resolver maps it to a loadable URL. */
   url: string;
   /** A `.har` file recorded alongside (resolved the same way): its requests join DevTools' Network list. */
@@ -12,6 +12,8 @@ export interface ReplayFileProps extends Omit<ReplayPlayerOptions, 'url' | 'har'
   log?: string;
   /** A debugger's evidence (evidence.ts): source, logpoints and screenshots. */
   evidence?: string;
+  /** Captions: a WebVTT file on the recording's clock. */
+  captions?: string;
 }
 
 /** The text of a file the asset resolver maps, fetched once `enabled`; undefined until it arrives or if it fails. */
@@ -36,7 +38,7 @@ function useAssetText(url: string | undefined, enabled: boolean): { text?: strin
  * viewport, so a page of recordings doesn't download them all up front. A media fragment on the URL,
  * `recording.rrweb#t=4.7,7.4` (seconds), is its `timeWindow`.
  */
-export function ReplayFile({ url, har, log, evidence, ...options }: ReplayFileProps) {
+export function ReplayFile({ url, har, log, evidence, captions, ...options }: ReplayFileProps) {
   const { file, segment } = splitReplayFragment(url);
   const src = useAsset(file);
   const ref = useRef<HTMLDivElement>(null);
@@ -54,6 +56,7 @@ export function ReplayFile({ url, har, log, evidence, ...options }: ReplayFilePr
   const harFile = useAssetText(har, near);
   const logFile = useAssetText(log, near);
   const evidenceFile = useAssetText(evidence, near);
+  const captionsFile = useAssetText(captions, near);
 
   // The recording plays as soon as it's here; the HAR and the log join DevTools whenever they arrive.
   if (!near || src === undefined) return <div ref={ref} className="docstream-asset-pending" data-slot="replay-file" aria-busy="true" />;
@@ -65,6 +68,7 @@ export function ReplayFile({ url, har, log, evidence, ...options }: ReplayFilePr
       har={harFile.text}
       consoleLog={logFile.text}
       evidence={evidenceFile.text}
+      captions={captionsFile.text}
       {...options}
     />
   );

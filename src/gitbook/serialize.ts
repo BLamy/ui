@@ -392,6 +392,7 @@ function serializeBlock(b: Block): string {
         b.har ? attr("har", b.har) : "",
         b.log ? attr("log", b.log) : "",
         b.evidence ? attr("evidence", b.evidence) : "",
+        b.captions ? attr("captions", b.captions) : "",
         b.autoplay === undefined ? "" : attr("autoplay", b.autoplay),
         b.loop === undefined ? "" : attr("loop", b.loop),
         b.muted === undefined ? "" : attr("muted", b.muted),

@@ -115,6 +115,26 @@ The console log is one message per line, an ISO time, the level in brackets and 
 
 A HAR entry's `_requestId` is the id an inspection can name, and `log._inspections` (`{ at, request | message, label }`) carries inspections with the HAR. `harToReplayEvents`, `consoleLogToReplayEvents` and `mergeReplaySources(events, { har, consoleLog })` do the same reading for your own UI.
 
+## Captions
+
+`captions` (WebVTT text), or `captions=` on a `.rrweb` embed (a `.vtt` file beside it), puts a caption over the page while the playhead is in a cue: an agent's narration, or the steps of a walkthrough. Cue times are on the recording's clock (from its first event), and a time window doesn't shift them. The caption sits at the bottom of the page, at the top while DevTools is open, and a **CC** button in the controls turns captions off and on. Cue settings, `STYLE` and `REGION` blocks are ignored; voice spans keep their text.
+
+```markdown
+{% embed url="./recording.rrweb" captions="./captions.vtt" %}
+```
+
+```
+WEBVTT
+
+00:00:01.500 --> 00:00:04.000
+Step 1: Open the cart
+
+00:00:04.000 --> 00:00:09.200
+Step 2: Apply WELCOME10 and pay
+```
+
+`parseWebVTT(text)` and `replayCaptionsAt(cues, ms)` give you the cues for your own player.
+
 ## Time window
 
 A long recording often matters for a few seconds of it. `timeWindow={[start, end]}` (ms) marks that segment: the player opens at its start with the segment highlighted on the scrubber, and Play plays it and stops at its end. Play again replays it; with `loop` it goes round. The rest of the recording is still there: scrub or seek outside the segment and playback runs on to the end of the recording, and moving back inside makes the segment hold again.
@@ -198,6 +218,7 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `disableDevtools` | `boolean` | `false` | Remove the Console and Network buttons, their panel and the inspections. (The older `devtools={false}` does the same.) |
 | `defaultDevtoolsTab` | `"console" \| "network"` | none | Open the DevTools panel on this tab at mount. |
 | `evidence` | `ReplayEvidence \| string` | none | A debugger's source excerpts, logpoints and screenshots: the Sources tab and screenshot captures. |
+| `captions` | `string` | none | WebVTT captions on the recording's clock, shown over the page; a CC button toggles them. |
 | `har` / `consoleLog` | `object \| string` / `string` | none | A HAR and a console log recorded alongside; their requests and messages join DevTools. |
 | `autoCloseDevtools` | `number \| false` | `5000` | An inspection-opened DevTools panel closes after this many ms of playback with no new request, message or inspection. |
 | `inspectionDwell` | `number \| false` | `2500` | Each inspection stays up at least this many ms of wall time: playback slows between inspections closer than that. |
