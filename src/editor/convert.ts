@@ -308,6 +308,9 @@ function blockContentToPM(b: Block): PMNode {
       if (b.loop !== undefined) attrs.loop = b.loop
       if (b.muted !== undefined) attrs.muted = b.muted
       if (b.controls !== undefined) attrs.controls = b.controls
+      if (b.har !== undefined) attrs.har = b.har
+      if (b.log !== undefined) attrs.log = b.log
+      if (b.evidence !== undefined) attrs.evidence = b.evidence
       return { type: "gbEmbed", attrs }
     }
     case "content-ref": {
@@ -634,6 +637,9 @@ function pmContentToBlock(n: PMNode): Block | null {
       if (typeof n.attrs?.loop === "boolean") embed.loop = n.attrs.loop
       if (typeof n.attrs?.muted === "boolean") embed.muted = n.attrs.muted
       if (typeof n.attrs?.controls === "boolean") embed.controls = n.attrs.controls
+      if (typeof n.attrs?.har === "string") embed.har = n.attrs.har
+      if (typeof n.attrs?.log === "string") embed.log = n.attrs.log
+      if (typeof n.attrs?.evidence === "string") embed.evidence = n.attrs.evidence
       return embed
     }
     case "gbContentRef": {
