@@ -1,10 +1,12 @@
-/* Actions tab: workflows sidebar and workflow runs. */
+/* Actions tab: workflows sidebar and workflow runs (live: the latest 30 runs; a workflow filters those). A run opens
+   on GitHub. */
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { RUNS, WORKFLOWS, type WorkflowRun } from './data';
+import type { WorkflowRun } from './data';
 import { Box, Oct, ghButton, Branch, type Layout } from './parts';
 import { FilterMenus } from './lists';
+import { Loaded, useLoad, useRepo } from './repo-context';
 
 export const RUN_ICON: Record<WorkflowRun['status'], ReactNode> = {
   success: <Oct name="checkFill" className="text-[var(--gh-open)]" />,
@@ -14,8 +16,17 @@ export const RUN_ICON: Record<WorkflowRun['status'], ReactNode> = {
 };
 
 export function ActionsView({ ui }: { ui: Layout }) {
+  const { source } = useRepo();
+  const load = useLoad(source.id + ':runs', source.runs);
   const [workflow, setWorkflow] = useState('all');
-  const runs = RUNS.filter((r) => workflow === 'all' || r.workflow === workflow);
+  return <Loaded load={load}>{(data) => <Runs ui={ui} data={data} workflow={workflow} setWorkflow={setWorkflow} />}</Loaded>;
+}
+
+function Runs({ ui, data, workflow, setWorkflow }: {
+  ui: Layout; data: { total: number; workflows: string[]; runs: WorkflowRun[] }; workflow: string; setWorkflow: (w: string) => void;
+}) {
+  const runs = data.runs.filter((r) => workflow === 'all' || r.workflow === workflow);
+  const workflows = [...new Set([...data.workflows, ...data.runs.map((r) => r.workflow)])];
   const item = (id: string, label: string) => (
     <button key={id} type="button" onClick={() => setWorkflow(id)}
       className={cn('relative flex h-8 w-full cursor-pointer items-center rounded-md border-0 bg-transparent px-2 text-left text-detail text-foreground hover:bg-secondary',
@@ -32,7 +43,7 @@ export function ActionsView({ ui }: { ui: Layout }) {
             <Button className={cn(ghButton(), 'h-7 px-2 text-caption')}>New workflow</Button>
           </div>
           {item('all', 'All workflows')}
-          {WORKFLOWS.map((w) => item(w, w))}
+          {workflows.map((w) => item(w, w))}
         </aside>
       ) : null}
       <div className="min-w-0 flex-1">
@@ -40,7 +51,7 @@ export function ActionsView({ ui }: { ui: Layout }) {
         <p className="mt-0 mb-4 text-muted-foreground">Showing runs from {workflow === 'all' ? 'all workflows' : 'the ' + workflow + ' workflow'}</p>
         <Box header={
           <>
-            <b className="font-semibold">{workflow === 'all' ? 184 : runs.length} workflow runs</b>
+            <b className="font-semibold">{(workflow === 'all' ? data.total : runs.length).toLocaleString('en-US')} workflow runs</b>
             <FilterMenus ui={ui} names={['Event', 'Status', 'Branch', 'Actor']} onLabel={() => {}} />
           </>
         }>
@@ -48,7 +59,9 @@ export function ActionsView({ ui }: { ui: Layout }) {
             <div key={r.id} className="flex items-start gap-3 border-t border-border px-4 py-3 first:border-t-0 hover:bg-muted">
               <span className="pt-0.5">{RUN_ICON[r.status]}</span>
               <div className="min-w-0 flex-1">
-                <div className="truncate font-semibold">{r.title}</div>
+                {r.url
+                  ? <a href={r.url} target="_blank" rel="noreferrer" className="block truncate font-semibold text-foreground no-underline hover:text-primary hover:underline">{r.title}</a>
+                  : <div className="truncate font-semibold">{r.title}</div>}
                 <div className="mt-1 text-caption text-muted-foreground">
                   <b className="font-semibold">{r.workflow}</b> #{r.number}: {r.event} by {r.actor.login}
                 </div>
@@ -66,6 +79,7 @@ export function ActionsView({ ui }: { ui: Layout }) {
               ) : null}
             </div>
           ))}
+          {!runs.length ? <div className="px-4 py-10 text-center text-muted-foreground">No workflow runs yet.</div> : null}
         </Box>
       </div>
     </div>

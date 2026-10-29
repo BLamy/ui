@@ -84,6 +84,10 @@ const Ctx = createContext<(SignInStore & { signIn: (id: ServiceId) => void; save
 export function SignInsProvider({ value, children }: { value: NonNullable<ContextType<typeof Ctx>>; children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
+/** The nearest keychain's sign-ins, or null outside one (a block that reuses an enclosing keychain when there is one). */
+export function useOptionalSignIns() {
+  return useContext(Ctx);
+}
 export function useSignIns() {
   const v = useContext(Ctx);
   if (!v) throw new Error('useSignIns needs SignInsProvider');

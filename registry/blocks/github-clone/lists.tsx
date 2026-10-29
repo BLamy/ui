@@ -3,16 +3,19 @@ import { type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
 import { cn } from '@/lib/utils';
-import { LABELS, type Label } from './data';
+import type { Label, User } from './data';
 import { AvatarStack, Counter, LabelChip, Oct, StateIcon, ghButton, type OctName, type StateKind, type Layout, type Nav } from './parts';
+import { useLoad, useRepo } from './repo-context';
 
 export function ListToolbar({ ui, nav, q, setQ, placeholder, newLabel }: { ui: Layout; nav: Nav; q: string; setQ: (q: string) => void; placeholder: string; newLabel: string }) {
+  const { source } = useRepo();
+  const labels = useLoad(source.id + ':labels', source.labels).data;
   return (
     <div className="mb-4 flex flex-wrap items-center gap-2">
       <SearchField value={q} onChange={setQ} placeholder={placeholder} aria-label="Search"
         className="h-8 min-w-[200px] flex-1 rounded-md border border-border bg-muted px-2 py-0 text-detail [&_input]:text-detail [&_svg]:size-4" />
       <div className="flex">
-        <Button className={cn(ghButton(), 'rounded-r-none')} onPress={nav.labels}><Oct name="tag" className="text-muted-foreground" />Labels{!ui.phone ? <Counter>{Object.keys(LABELS).length}</Counter> : null}</Button>
+        <Button className={cn(ghButton(), 'rounded-r-none')} onPress={nav.labels}><Oct name="tag" className="text-muted-foreground" />Labels{!ui.phone && labels ? <Counter>{labels.length}</Counter> : null}</Button>
         <Button className={cn(ghButton(), '-ml-px rounded-l-none')}><Oct name="history" className="text-muted-foreground" />Milestones</Button>
       </div>
       <Button className={ghButton(true)}>{newLabel}</Button>
@@ -21,13 +24,14 @@ export function ListToolbar({ ui, nav, q, setQ, placeholder, newLabel }: { ui: L
 }
 
 export function StateToggle({ value, onChange, open, closed, closedIcon }: {
-  value: 'open' | 'closed'; onChange: (v: 'open' | 'closed') => void; open: number; closed: number; closedIcon: OctName;
+  value: 'open' | 'closed'; onChange: (v: 'open' | 'closed') => void; open?: number; closed?: number; closedIcon: OctName;
 }) {
-  const item = (v: 'open' | 'closed', icon: OctName, n: number, label: string) => (
+  /** Counts arrive separately from the rows (live: a search total); until then just the label. */
+  const item = (v: 'open' | 'closed', icon: OctName, n: number | undefined, label: string) => (
     <button type="button" onClick={() => onChange(v)} aria-pressed={value === v}
       className={cn('flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-detail hover:bg-secondary',
         value === v ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
-      <Oct name={icon} />{n} {label}
+      <Oct name={icon} />{n != null ? n.toLocaleString('en-US') + ' ' : ''}{label}
     </button>
   );
   return <div className="flex items-center gap-1">{item('open', 'issue', open, 'Open')}{item('closed', closedIcon, closed, 'Closed')}</div>;
@@ -49,7 +53,7 @@ export function FilterMenus({ ui, names, onLabel }: { ui: Layout; names: string[
 }
 
 export function ItemRow({ ui, state, title, labels, meta, assignees, comments, status, onOpen }: {
-  ui: Layout; state: StateKind; title: string; labels: Label[]; meta: ReactNode; assignees: { login: string; f: string; l: string }[];
+  ui: Layout; state: StateKind; title: string; labels: Label[]; meta: ReactNode; assignees: User[];
   comments: number; status?: ReactNode; onOpen?: () => void;
 }) {
   return (

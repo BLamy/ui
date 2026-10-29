@@ -71,7 +71,7 @@ export const GITHUB_TINT = { light: PRIMER.light.tint, dark: PRIMER.dark.tint } 
 const GENERIC = {
   check: 'check', x: 'xmark', chevDown: 'chevron-down', chevRight: 'chevron-right', chevLeft: 'chevron-left',
   search: 'magnifyingglass', plus: 'plus', bell: 'bell', menu: 'menu', link: 'link', gear: 'gear', copy: 'copy',
-  kebab: 'ellipsis', sidebar: 'sidebar', star: 'star',
+  kebab: 'ellipsis', sidebar: 'sidebar', star: 'star', lock: 'lock', retry: 'arrow-clockwise', external: 'arrow-up-right',
 } as const satisfies Record<string, IconName>;
 const OCT: Record<string, ReactNode> = {
   code: <path d="M5.2 4.2 1.5 8l3.7 3.8M10.8 4.2 14.5 8l-3.7 3.8" />,
@@ -192,7 +192,7 @@ export function AvatarStack({ users, size = 20 }: { users: User[]; size?: number
   return (
     <span className="flex">
       {users.map((u, i) => (
-        <Avatar key={u.login} c={u} size={size} className="ring-2 ring-background" style={{ marginLeft: i ? -size / 3 : 0 }} />
+        <Avatar key={u.login} c={u} src={u.avatar} size={size} className="ring-2 ring-background" style={{ marginLeft: i ? -size / 3 : 0 }} />
       ))}
     </span>
   );
@@ -296,7 +296,7 @@ export function DiffStat({ add, del }: { add: number; del: number }) {
 
 const ROW_BG = { add: 'bg-[var(--gh-add)]', del: 'bg-[var(--gh-del)]', hunk: 'bg-[var(--gh-hunk)]', ctx: '' };
 const NUM_BG = { add: 'bg-[var(--gh-add-num)]', del: 'bg-[var(--gh-del-num)]', hunk: 'bg-[var(--gh-hunk)]', ctx: '' };
-export function DiffView({ path, patch, add, del }: { path: string; patch: string; add: number; del: number }) {
+export function DiffView({ path, patch, add, del, note }: { path: string; patch: string; add: number; del: number; note?: string }) {
   const [open, setOpen] = useState(true);
   const rows = useMemo(() => parsePatch(patch), [patch]);
   /* The diff's code lines are lexed as one source (hunk headers left out), so strings and comments that span
@@ -315,7 +315,9 @@ export function DiffView({ path, patch, add, del }: { path: string; patch: strin
         <span className="min-w-0 truncate font-mono text-caption font-semibold text-foreground">{path}</span>
         <Oct name="copy" size={14} className="shrink-0 text-muted-foreground" />
       </div>
-      {open ? (
+      {open && !patch ? (
+        <div className="px-4 py-6 text-center text-caption text-muted-foreground">{note ?? 'No changes to show.'}</div>
+      ) : open ? (
         <div className="overflow-x-auto font-mono text-caption leading-5">
           <table className="w-full border-collapse" data-highlighter={highlighter} data-language={languageFromPath(path)}>
             <tbody>
@@ -380,6 +382,7 @@ export interface Layout {
 export type Nav = {
   openPath: (p: string) => void;
   openPr: (n: number | null) => void;
+  openIssue: (n: number | null) => void;
   clone: () => void;
   labels: () => void;
 };

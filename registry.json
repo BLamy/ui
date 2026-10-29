@@ -6431,7 +6431,7 @@
       "name": "apple-passwords",
       "type": "registry:block",
       "title": "Apple Passwords",
-      "description": "Apple's Passwords app: category tiles with counts (All, Passkeys, Codes, Wi-Fi, Security, Deleted) and shared groups, a searchable item list, and a detail with copy buttons, a password that morphs into view, verification codes with a countdown ring, a “Copied” HUD, edit mode, security recommendations by severity, Wi-Fi networks with a QR code, and Developer Sign-In buttons (GitHub, Fly.io, Netlify, Replay) that run the real device-code logins, going through the tailnet when this tab is signed in to Tailscale with an exit node (the Safari block's node) and BL's CORS proxy (a Cloudflare Worker) otherwise, keep the tokens encrypted with a passkey, and check each token against its service. Three columns on desktop, two on tablet, a pushed stack on phones; light and dark.",
+      "description": "Apple's Passwords app: category tiles with counts (All, Passkeys, Codes, Wi-Fi, Security, Deleted) and shared groups, a searchable item list, and a detail with copy buttons, a password that morphs into view, verification codes with a countdown ring, a “Copied” HUD, edit mode, security recommendations by severity, Wi-Fi networks with a QR code, and Developer Sign-In buttons (GitHub, Fly.io, Netlify, Replay) that run the real device-code logins, going through the tailnet when this tab is signed in to Tailscale with an exit node (the Safari block's node) and BL's CORS proxy (a Cloudflare Worker) otherwise, keep the tokens encrypted with a passkey, and check each token against its service; other blocks reuse that keychain through PasswordsKeychain and useKeychainSignIn (the GitHub clone reads its GitHub token there). Three columns on desktop, two on tablet, a pushed stack on phones; light and dark.",
       "categories": [
         "application",
         "security"
@@ -6495,6 +6495,11 @@
           "path": "registry/blocks/apple-passwords/sign-ins.tsx",
           "type": "registry:component",
           "target": "components/blocks/apple-passwords/sign-ins.tsx"
+        },
+        {
+          "path": "registry/blocks/apple-passwords/keychain.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/keychain.tsx"
         },
         {
           "path": "registry/blocks/apple-passwords/tailnet.ts",
@@ -7052,10 +7057,11 @@
       "name": "github-clone",
       "type": "registry:block",
       "title": "GitHub clone",
-      "description": "A GitHub repository page: file browser with README and code viewer, issue and pull request lists with labels, a pull request conversation with review timeline, merge box and comment composer, a unified diff for Files changed, and Actions runs. Primer colors in light and dark; collapses to a phone layout with pushed screens.",
+      "description": "A GitHub repository page over GitHub's real data: signed in with GitHub in the Passwords keychain (the same passkey-encrypted device sign-in the Passwords block and the docs use, so no second sign-in), it reads any repository you pick — owner/name, a github.com URL, or your recently pushed ones — straight from the GitHub REST API: README and file browser with a code viewer per branch, issue and pull request lists with labels and counts, an issue or pull request conversation (comments, commits, labels, review requests, reviews, merges) whose comment composer posts real comments, reviewers, checks and a merge box, a unified diff for Files changed, and Actions runs. Loading, rate-limit, not-found and signed-out states; responses cached for the session. Without a sign-in it shows an invented sample repository, offline, with a Sign in with GitHub button. Primer colors in light and dark; collapses to a phone layout with pushed screens.",
       "categories": [
         "application",
-        "dashboard"
+        "dashboard",
+        "developer"
       ],
       "dependencies": [],
       "registryDependencies": [
@@ -7068,19 +7074,23 @@
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/navigation-stack.json",
         "https://blamy.github.io/ui/r/progress.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/syntax.json",
         "https://blamy.github.io/ui/r/syntax-highlighting.json",
         "https://blamy.github.io/ui/r/tab-view.json",
+        "https://blamy.github.io/ui/r/tailscale.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/tree.json",
         "https://blamy.github.io/ui/r/utils.json",
-        "https://blamy.github.io/ui/r/workbench-theme.json"
+        "https://blamy.github.io/ui/r/workbench-theme.json",
+        "https://blamy.github.io/ui/r/apple-passwords.json"
       ],
       "files": [
         {
@@ -7132,6 +7142,21 @@
           "path": "registry/blocks/github-clone/parts.tsx",
           "type": "registry:component",
           "target": "components/blocks/github-clone/parts.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/repo-context.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/repo-context.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/source.ts",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/source.ts"
+        },
+        {
+          "path": "registry/blocks/github-clone/github-api.ts",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/github-api.ts"
         },
         {
           "path": "registry/blocks/github-clone/data.ts",

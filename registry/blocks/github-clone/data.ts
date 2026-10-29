@@ -1,11 +1,15 @@
 /* Sample data for the GitHub clone block: one repository (acme/orbit) with its files, issues, pull requests,
-   a pull request conversation + diff, and workflow runs. Times are fixed strings so renders are deterministic. */
+   a pull request conversation + diff, and workflow runs. Times are fixed strings so renders are deterministic.
+   The types here are also the shapes github-api.ts maps GitHub's REST responses into, so every screen draws the
+   sample repository and a live one the same way (source.ts picks which). */
 
 export interface User {
   login: string;
   /** First / last name — what the Avatar's initials are drawn from. */
   f: string;
   l: string;
+  /** Profile picture (live data); the initials show without it. */
+  avatar?: string;
 }
 
 export interface Label {
@@ -38,7 +42,40 @@ export const LABELS = {
   question: { name: 'question', color: '#d876e3', description: 'Further information is requested' },
 } satisfies Record<string, Label>;
 
-export const REPO = {
+export interface Repo {
+  owner: string;
+  name: string;
+  description: string;
+  homepage: string;
+  topics: string[];
+  /** Counts as GitHub prints them ('12.4k'). */
+  stars: string;
+  forks: string;
+  watchers: string;
+  license: string;
+  /** The default branch. */
+  branch: string;
+  branches: string[];
+  branchCount: number;
+  tagCount: number;
+  commitCount: string;
+  release: { tag: string; when: string; count: number } | null;
+  languages: { name: string; pct: number; color: string }[];
+  contributors: User[];
+  contributorCount: number;
+  lastCommit: LastCommit | null;
+  private?: boolean;
+  url?: string;
+}
+
+export interface LastCommit {
+  author: User;
+  message: string;
+  sha: string;
+  when: string;
+}
+
+export const REPO: Repo = {
   owner: 'acme',
   name: 'orbit',
   description: 'Type-safe background jobs for TypeScript, backed by Postgres. Retries, cron, rate limits and a tiny dashboard — no Redis required.',
@@ -74,6 +111,8 @@ export interface FileNode {
   when: string;
   children?: FileNode[];
   content?: string;
+  /** Bytes (live trees), so huge files aren't fetched. */
+  size?: number;
 }
 
 const README = `# Orbit
@@ -398,6 +437,12 @@ export interface Issue {
   comments: number;
   assignees: User[];
   milestone?: string;
+  url?: string;
+}
+
+/** An issue or pull request opened in full: its description and where it lives. */
+export interface IssueDetail extends Issue {
+  body: string;
 }
 
 export const ISSUE_COUNTS = { open: 23, closed: 187 };
@@ -426,13 +471,29 @@ export interface PullRequest {
   when: string;
   labels: Label[];
   comments: number;
-  review: ReviewState;
-  checks: 'success' | 'failure' | 'pending';
+  /** Unknown in live lists (GitHub's list endpoints don't say): then not shown. */
+  review?: ReviewState;
+  checks?: 'success' | 'failure' | 'pending';
   head: string;
   base: string;
   commits: number;
   additions: number;
   deletions: number;
+  url?: string;
+}
+
+/** A pull request opened in full: the sidebar's people and milestone, and what the merge box says. */
+export interface PullDetail extends PullRequest {
+  body: string;
+  reviewers: { user: User; state: 'approved' | 'changes' | 'commented' | 'pending' }[];
+  assignees: User[];
+  milestone?: { title: string; pct: number };
+  /** Issues it closes (titles). */
+  closes: string[];
+  changedFiles: number;
+  /** GitHub's mergeable_state: clean, blocked, dirty (conflicts), behind, unstable, unknown… */
+  mergeable: string;
+  headSha?: string;
 }
 
 export const PR_COUNTS = { open: 6, closed: 412 };
@@ -455,11 +516,13 @@ export interface Commit {
 }
 
 export type TimelineItem =
-  | { kind: 'comment'; id: string; author: User; when: string; body: string; role?: 'Author' | 'Member' | 'Contributor' }
+  | { kind: 'comment'; id: string; author: User; when: string; body: string; role?: string; url?: string }
   | { kind: 'commits'; id: string; author: User; when: string; commits: Commit[] }
   | { kind: 'labeled'; id: string; author: User; when: string; labels: Label[] }
   | { kind: 'review'; id: string; author: User; when: string; state: 'approved' | 'commented' | 'changes'; body?: string }
-  | { kind: 'requested'; id: string; author: User; when: string; reviewer: User };
+  | { kind: 'requested'; id: string; author: User; when: string; reviewer: User }
+  /** closed, reopened, merged, renamed, assigned, head_ref_deleted, ready_for_review, convert_to_draft; `text` for the detail. */
+  | { kind: 'event'; id: string; author: User; when: string; event: string; text?: string };
 
 export const PR_COMMITS: Commit[] = [
   { sha: 'a3f9c21', message: 'retry: add jitter strategies (full, equal, decorrelated)', author: USERS.maya, when: 'yesterday' },
@@ -509,19 +572,28 @@ One thing: jitter can push a delay *above* \`maxDelay\` when \`baseDelay\` is la
   },
 ];
 
-export const PR_CHECKS = [
+export interface Check {
+  name: string;
+  status: 'success' | 'failure' | 'pending' | 'neutral';
+  /** How long it ran ('1m 48s'), or what it's doing. */
+  time: string;
+}
+
+export const PR_CHECKS: Check[] = [
   { name: 'CI / test (node 20, postgres 16)', status: 'success', time: '1m 48s' },
   { name: 'CI / test (node 22, postgres 16)', status: 'success', time: '1m 52s' },
   { name: 'CI / lint', status: 'success', time: '31s' },
   { name: 'CodeQL / analyze (javascript)', status: 'success', time: '2m 10s' },
-] as const;
+];
 
 export interface DiffFile {
   path: string;
   additions: number;
   deletions: number;
-  /** Unified-diff hunks (each starts with an `@@ -a,b +c,d @@` header). */
+  /** Unified-diff hunks (each starts with an `@@ -a,b +c,d @@` header); empty when GitHub sends none (binary, too large). */
   patch: string;
+  /** Said instead of a diff when there's no patch. */
+  note?: string;
 }
 
 export const PR_FILES: DiffFile[] = [
@@ -652,6 +724,7 @@ export interface WorkflowRun {
   status: 'success' | 'failure' | 'running' | 'cancelled';
   when: string;
   duration: string;
+  url?: string;
 }
 
 export const WORKFLOWS = ['CI', 'Release', 'CodeQL', 'Docs preview'];

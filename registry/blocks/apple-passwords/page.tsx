@@ -23,6 +23,11 @@ import { SignInsProvider, useSignInStore } from './sign-ins';
 import { passwordsTailnetOptions, tailnetOrProxy } from './tailnet';
 import { firstEntry, sectionsFor, useVault, type Selection } from './vault';
 
+/* Other blocks reach the keychain through this entry (blocks import each other's page only): wrap in
+   <PasswordsKeychain>, read a token with useKeychainSignIn('github'). */
+export { PasswordsKeychain, useKeychainSignIn, type KeychainSignIn, type PasswordsKeychainProps } from './keychain';
+export { createDemoDeviceAuth, type DeviceAuth } from './device-auth';
+
 /** Passwords' accent: iOS system blue (light #007AFF, dark #0A84FF). */
 const PASSWORDS_TINT = { light: '#007AFF', dark: '#0A84FF' } as const;
 /** A new password's tile color until it has a website (iOS system gray). */

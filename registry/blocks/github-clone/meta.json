@@ -1,8 +1,8 @@
 {
   "name": "github-clone",
   "title": "GitHub clone",
-  "description": "A GitHub repository page: file browser with README and code viewer, issue and pull request lists with labels, a pull request conversation with review timeline, merge box and comment composer, a unified diff for Files changed, and Actions runs. Primer colors in light and dark; collapses to a phone layout with pushed screens.",
-  "categories": ["application", "dashboard"],
+  "description": "A GitHub repository page over GitHub's real data: signed in with GitHub in the Passwords keychain (the same passkey-encrypted device sign-in the Passwords block and the docs use, so no second sign-in), it reads any repository you pick — owner/name, a github.com URL, or your recently pushed ones — straight from the GitHub REST API: README and file browser with a code viewer per branch, issue and pull request lists with labels and counts, an issue or pull request conversation (comments, commits, labels, review requests, reviews, merges) whose comment composer posts real comments, reviewers, checks and a merge box, a unified diff for Files changed, and Actions runs. Loading, rate-limit, not-found and signed-out states; responses cached for the session. Without a sign-in it shows an invented sample repository, offline, with a Sign in with GitHub button. Primer colors in light and dark; collapses to a phone layout with pushed screens.",
+  "categories": ["application", "dashboard", "developer"],
   "files": [
     "page.tsx",
     "repo-header.tsx",
@@ -14,6 +14,9 @@
     "actions-tab.tsx",
     "dialogs.tsx",
     "parts.tsx",
+    "repo-context.tsx",
+    "source.ts",
+    "github-api.ts",
     "data.ts"
   ]
 }
