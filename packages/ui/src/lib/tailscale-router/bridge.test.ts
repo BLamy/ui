@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTailscale, type Tailscale } from '@/lib/tailscale';
 import { createFakeTailscaleClient } from '@/lib/tailscale-fake';
-import { encodeTailscalePolicy, resolveTailscalePolicy, type TailscalePolicy } from '@/lib/tailscale-policy';
+import { encodeTailscalePolicy, resolveTailscalePolicy, tailscaleProxyTarget, tailscaleProxyUrl, type TailscalePolicy } from '@/lib/tailscale-policy';
 import { registerTailscaleRouter, tailscaleRouterUnsupportedReason, tailscaleServiceWorkerUrl, type TailscaleRouterOptions } from '@/lib/tailscale-router/bridge';
 import { fakeServiceWorkerContainer, fakeWindowClient, loadServiceWorker } from '../../../test/fake-service-worker';
 
@@ -33,6 +33,16 @@ const routes = {
     }));
   },
   'empty.example-tailnet.ts.net': () => new Response(null, { status: 204 }),
+  'site.example': (req: Request) => {
+    const u = new URL(req.url);
+    if (u.pathname === '/page') {
+      return new Response('<!doctype html><html><head><title>Site</title></head><body><a href="/next">next</a></body></html>', {
+        headers: { 'content-type': 'text/html', 'content-security-policy': "script-src 'none'", 'x-frame-options': 'DENY', 'x-site': '1' },
+      });
+    }
+    return new Response(JSON.stringify({ path: u.pathname + u.search, origin: req.headers.get('origin'), referer: req.headers.get('referer') }), { headers: { 'content-type': 'application/json' } });
+  },
+  'cdn.example': () => new Response('console.log(1)', { headers: { 'content-type': 'text/javascript' } }),
 };
 
 const cleanups: Array<() => Promise<unknown> | void> = [];
@@ -154,6 +164,67 @@ describe('registerTailscaleRouter + tailscale-sw.js', () => {
     fake.client.fetch = () => new Promise(() => undefined);
     const res = await sw.fetch(new Request('http://nas.example-tailnet.ts.net/'));
     expect(res!.status).toBe(504);
+  });
+});
+
+describe('proxied sites (proxyPath)', () => {
+  const PAGE = `${ORIGIN}/__tailnet/https/site.example/page?q=1`;
+  const open = (sw: Awaited<ReturnType<typeof setup>>['sw'], url = PAGE) => sw.fetch(new Request(url), { mode: 'navigate', destination: 'iframe', resultingClientId: 'frame-1' });
+
+  it('serves the site in the frame, without the headers that would stop it, and its script first', async () => {
+    const { sw, fake } = await setup({ proxyPath: '__tailnet/' });
+    const res = await open(sw);
+    expect(res!.status).toBe(200);
+    expect(fake.requests.at(-1)).toMatchObject({ url: 'https://site.example/page?q=1' });
+    expect(res!.headers.get('content-security-policy')).toBeNull();
+    expect(res!.headers.get('x-frame-options')).toBeNull();
+    expect(res!.headers.get('x-site')).toBe('1');
+    const html = await res!.text();
+    expect(html.indexOf('<script>')).toBe(html.indexOf('<head>') + '<head>'.length);
+    expect(html).toContain(JSON.stringify(`${ORIGIN}/__tailnet/`));
+    expect(html).toContain(JSON.stringify('https://site.example/page?q=1'));
+    expect(html).toContain('<a href="/next">');
+  });
+
+  it("routes everything the frame asks for: its own-origin URLs mean the site's, other hosts go as they are", async () => {
+    const { sw, fake } = await setup({ proxyPath: '__tailnet/' });
+    await open(sw);
+    const api = await sw.fetch(new Request(`${ORIGIN}/api/data?x=2`, { method: 'POST', body: '{}' }), { clientId: 'frame-1' });
+    expect(await api!.json()).toEqual({ path: '/api/data?x=2', origin: 'https://site.example', referer: null });
+    const cdn = await sw.fetch(new Request('https://cdn.example/app.js', { mode: 'cors' }), { clientId: 'frame-1' });
+    expect(await cdn!.text()).toBe('console.log(1)');
+    expect(cdn!.headers.get('access-control-allow-origin')).toBe(ORIGIN);
+    expect(fake.requests.map((r) => r.url)).toEqual(['https://site.example/page?q=1', 'https://site.example/api/data?x=2', 'https://cdn.example/app.js']);
+    // Tailscale's own services are never routed, even from a frame; the top page's requests are left to the policy.
+    expect(await sw.fetch(new Request('https://controlplane.tailscale.com/key'), { clientId: 'frame-1' })).toBeNull();
+    const own = await sw.fetch(new Request(`${ORIGIN}/app.js`), { clientId: 'tab-1' });
+    expect(own!.headers.get('x-from')).toBe('network');
+    expect(await sw.fetch(new Request(`${ORIGIN}/app.js`), { clientId: 'tab-1' })).toBeNull();
+  });
+
+  it('serves a document the page already has (respond) without asking the tailnet again', async () => {
+    const respond = (req: { url: string; destination: string }) => (req.destination === 'iframe' && req.url === 'https://site.example/page?q=1'
+      ? { url: req.url, status: 200, headers: [['content-type', 'text/html']] as Array<[string, string]>, body: new TextEncoder().encode('<html><head></head>held</html>') }
+      : null);
+    const { sw, fake } = await setup({ proxyPath: '__tailnet/' }, { respond });
+    const html = await (await open(sw))!.text();
+    expect(html).toContain('held');
+    expect(fake.requests).toHaveLength(0);
+  });
+
+  it('shows an error page in the frame when the tailnet is not there, and never falls back to the network', async () => {
+    const { sw } = await setup({ proxyPath: '__tailnet/' }, {}, false);
+    const res = await open(sw);
+    expect(res!.status).toBe(503);
+    expect(await res!.text()).toContain('bl-tailnet-frame');
+    expect(sw.network).toHaveLength(0);
+  });
+
+  it('builds and reads proxy addresses', () => {
+    expect(tailscaleProxyUrl('https://www.youtube.com/watch?v=1#t', `${ORIGIN}/ui/`)).toBe(`${ORIGIN}/ui/__tailnet/https/www.youtube.com/watch?v=1#t`);
+    expect(tailscaleProxyTarget(`${ORIGIN}/ui/__tailnet/http/nas:8080?x`, `${ORIGIN}/ui/`)).toBe('http://nas:8080/?x');
+    expect(tailscaleProxyTarget(`${ORIGIN}/ui/other`, `${ORIGIN}/ui/`)).toBeNull();
+    expect(() => resolveTailscalePolicy({ proxyPath: '../x' })).toThrow(/proxyPath/);
   });
 });
 

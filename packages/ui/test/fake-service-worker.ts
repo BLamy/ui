@@ -24,10 +24,31 @@ export interface FakeServiceWorkerGlobal {
   clients: FakeWindowClient[];
   /** Calls to the worker's `fetch` (the network fallback). */
   network: Request[];
-  /** Dispatches a fetch event; resolves to the response the worker gave, or null when it did not call respondWith. */
-  fetch(request: Request): Promise<Response | null>;
+  /** Dispatches a fetch event; resolves to the response the worker gave, or null when it did not call respondWith. `event`
+   *  sets the client ids, and the mode and destination a Request built in Node cannot have (`navigate`, `iframe`). */
+  fetch(request: Request, event?: FetchEventInit): Promise<Response | null>;
   message(data: unknown, source: FakeWindowClient, ports?: MessagePort[]): void;
   exposed: { version: number; policy: Record<string, unknown>; match: (url: string, method: string, policy: unknown, origin?: string) => SwMatch };
+}
+
+export interface FetchEventInit {
+  clientId?: string;
+  resultingClientId?: string;
+  mode?: string;
+  destination?: string;
+}
+
+/** `request` with the mode and destination overridden (Node's Request refuses `navigate`). */
+function asRequest(request: Request, init: FetchEventInit): Request {
+  if (!init.mode && !init.destination) return request;
+  return new Proxy(request, {
+    get(target, key) {
+      if (key === 'mode' && init.mode) return init.mode;
+      if (key === 'destination' && init.destination) return init.destination;
+      const v = Reflect.get(target, key, target) as unknown;
+      return typeof v === 'function' ? (v as (...a: unknown[]) => unknown).bind(target) : v;
+    },
+  });
 }
 
 export function loadServiceWorker(scriptUrl: string, network: (r: Request) => Promise<Response> = async () => new Response('from the network', { headers: { 'x-from': 'network' } })): FakeServiceWorkerGlobal {
@@ -36,6 +57,7 @@ export function loadServiceWorker(scriptUrl: string, network: (r: Request) => Pr
   const networkCalls: Request[] = [];
   const self: Record<string, unknown> = {
     location: new URL(scriptUrl),
+    registration: { scope: new URL('./', scriptUrl).href },
     addEventListener: (type: string, fn: Listener) => { (listeners[type] ??= []).push(fn); },
     skipWaiting: () => Promise.resolve(),
     clients: { matchAll: async () => clients, claim: async () => undefined },
@@ -49,9 +71,12 @@ export function loadServiceWorker(scriptUrl: string, network: (r: Request) => Pr
     clients,
     network: networkCalls,
     exposed,
-    async fetch(request) {
+    async fetch(request, init = {}) {
       let responded: Promise<Response> | null = null;
-      const event = { request, respondWith: (p: Promise<Response> | Response) => { responded = Promise.resolve(p); } };
+      const event = {
+        request: asRequest(request, init), clientId: init.clientId ?? '', resultingClientId: init.resultingClientId ?? '',
+        respondWith: (p: Promise<Response> | Response) => { responded = Promise.resolve(p); },
+      };
       for (const l of listeners.fetch ?? []) l(event);
       return responded ? await responded : null;
     },

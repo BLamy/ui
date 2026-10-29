@@ -37,6 +37,10 @@ export interface TailscalePolicy {
   maxBodyBytes?: number;
   /** How long the worker waits for the tailnet client's response headers (ms). Default 60 000. */
   timeoutMs?: number;
+  /** Serve whole sites through the tailnet under this path of the worker's scope, e.g. `__tailnet/`: a frame opened at
+   *  `<scope>__tailnet/https/example.com/a?b` loads https://example.com/a?b, its scripts run, and every request it makes (its
+   *  relative URLs included) is routed, whatever the rest of the policy says. Default none. See `tailscaleProxyUrl`. */
+  proxyPath?: string;
 }
 
 export interface ResolvedTailscalePolicy {
@@ -53,6 +57,7 @@ export interface ResolvedTailscalePolicy {
   whenUnavailable: TailscaleUnavailable;
   maxBodyBytes: number;
   timeoutMs: number;
+  proxyPath: string | null;
 }
 
 export type TailscaleMatchReason =
@@ -238,7 +243,31 @@ export function resolveTailscalePolicy(policy: TailscalePolicy = {}): ResolvedTa
     whenUnavailable,
     maxBodyBytes: positive(policy.maxBodyBytes, DEFAULT_MAX_BODY_BYTES),
     timeoutMs: positive(policy.timeoutMs, DEFAULT_TIMEOUT_MS),
+    proxyPath: proxyPath(policy.proxyPath),
   };
+}
+
+function proxyPath(value: string | null | undefined): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  if (!/^[A-Za-z0-9_-]+\/$/.test(value)) throw new TailscalePolicyError(`proxyPath must be one path segment ending in "/", like "__tailnet/", not "${value}".`);
+  return value;
+}
+
+/** The address a frame opens to load `target` through the tailnet: `<scope><proxyPath><scheme>/<host><path>`. */
+export function tailscaleProxyUrl(target: string | URL, scope: string, path = '__tailnet/'): string {
+  const u = new URL(target);
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new TailscalePolicyError(`Only http(s) can be proxied, not ${u.protocol}`);
+  return new URL(`${path}${u.protocol.slice(0, -1)}/${u.host}${u.pathname}${u.search}${u.hash}`, scope).href;
+}
+
+/** The inverse of `tailscaleProxyUrl`: the site a proxy address loads, or null when `url` is not one. */
+export function tailscaleProxyTarget(url: string, scope: string, path = '__tailnet/'): string | null {
+  const prefix = new URL(path, scope).href;
+  if (!url.startsWith(prefix)) return null;
+  const m = /^(https?)\/([^/?#]+)(.*)$/.exec(url.slice(prefix.length));
+  if (!m) return null;
+  const rest = m[3] ?? '';
+  return `${m[1]}://${m[2]}${rest.startsWith('/') ? rest : `/${rest}`}`;
 }
 
 function positive(value: number | undefined, fallback: number): number {

@@ -290,3 +290,20 @@ describe('failures', () => {
     await expect(loadPage('file:///etc/passwd', canned({}))).rejects.toMatchObject({ reason: 'invalid-url' });
   });
 });
+
+describe('running pages (a proxy)', () => {
+  it('opens HTML at its proxy address with the fetched document, and leaves other kinds as they were', async () => {
+    const fetcher = canned({
+      'https://site.test/a?b=1': () => new Response('<html><head><title>Tom &amp; Jerry</title><script>run()</script></head></html>', { headers: { 'content-type': 'text/html; charset=utf-8', 'x-k': 'v' } }),
+      'https://site.test/pic.png': () => new Response(new Uint8Array([1, 2]), { headers: { 'content-type': 'image/png' } }),
+    });
+    const proxy = { scope: 'https://app.test/ui/' };
+    const page = await loadPage('https://site.test/a?b=1', fetcher, { proxy });
+    expect(page).toMatchObject({ kind: 'live', url: 'https://site.test/a?b=1', title: 'Tom & Jerry', src: 'https://app.test/ui/__tailnet/https/site.test/a?b=1' });
+    if (page.kind !== 'live') throw new Error('not live');
+    expect(new TextDecoder().decode(page.document.body as Uint8Array)).toContain('<script>run()</script>');
+    expect(page.document.headers).toContainEqual(['x-k', 'v']);
+    expect(page.document.headers).toContainEqual(['content-type', 'text/html; charset=utf-8']);
+    expect((await loadPage('https://site.test/pic.png', fetcher, { proxy })).kind).toBe('image');
+  });
+});

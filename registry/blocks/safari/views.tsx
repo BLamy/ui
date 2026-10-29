@@ -1,5 +1,6 @@
-/* What fills the window: a page in its sealed frame, the start page, an error page. */
-import { useRef, useState, type ReactNode } from 'react';
+/* What fills the window: a running page in its frame (or a sealed one where no service worker can serve it), the start page,
+   an error page. */
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatBytes } from '@/lib/format-bytes';
 import { Icon } from '@/lib/icon';
@@ -20,10 +21,54 @@ export interface NavigateOptions {
     open nothing (no popups, no top navigation), and fetch nothing: every address in it was fetched by the page already. */
 const FRAME_SANDBOX = 'allow-same-origin allow-forms';
 
+/** A running page's frame. Its scripts run on this origin (the tailnet router serves it under `__tailnet/` and routes every
+    request it makes), so it is a real page, with the same reach as this one. No top navigation: a page that tries to break out
+    of frames stays put. */
+const LIVE_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads allow-pointer-lock allow-presentation';
+
+export interface LiveCallbacks {
+  /** The frame moved, or its title changed. */
+  onVisit?: (url: string, title: string) => void;
+}
+
+/** A running page. The script the router puts first in it reports where it is (`bl-tailnet-frame`), asks for a new tab
+    (`bl-tailnet-open`) or for the whole browser to go somewhere (`bl-tailnet-go`). */
+function LivePage({ page, onNavigate, onVisit }: { page: Extract<Page, { kind: 'live' }>; onNavigate: (entry: Entry, options?: NavigateOptions) => void } & LiveCallbacks) {
+  const frame = useRef<HTMLIFrameElement>(null);
+  const handlers = useRef({ onNavigate, onVisit });
+  handlers.current = { onNavigate, onVisit };
+  useEffect(() => {
+    const listen = (e: MessageEvent) => {
+      if (e.source !== frame.current?.contentWindow || e.origin !== location.origin) return;
+      const m = e.data as { type?: string; url?: unknown; title?: unknown } | null;
+      if (!m || typeof m.url !== 'string' || !/^https?:/i.test(m.url)) return;
+      if (m.type === 'bl-tailnet-frame') handlers.current.onVisit?.(m.url, typeof m.title === 'string' ? m.title : '');
+      else if (m.type === 'bl-tailnet-open') handlers.current.onNavigate({ url: m.url }, { newTab: true });
+      else if (m.type === 'bl-tailnet-go') handlers.current.onNavigate({ url: m.url });
+    };
+    addEventListener('message', listen);
+    return () => removeEventListener('message', listen);
+  }, []);
+  return (
+    <iframe
+      ref={frame}
+      key={page.src}
+      title={page.title}
+      src={page.src}
+      sandbox={LIVE_SANDBOX}
+      allow="fullscreen; autoplay; clipboard-write; encrypted-media; picture-in-picture"
+      data-slot="safari-frame"
+      data-live=""
+      className="size-full border-0 bg-white"
+    />
+  );
+}
+
 /** A fetched page. Links and forms are caught here and become navigations of the browser, so they are fetched through
     the tailnet like everything else; the frame is never allowed to navigate itself. */
-export function PageView({ page, onNavigate }: { page: Page; onNavigate: (entry: Entry, options?: NavigateOptions) => void }) {
+export function PageView({ page, onNavigate, onVisit }: { page: Page; onNavigate: (entry: Entry, options?: NavigateOptions) => void } & LiveCallbacks) {
   const frame = useRef<HTMLIFrameElement>(null);
+  if (page.kind === 'live') return <LivePage page={page} onNavigate={onNavigate} onVisit={onVisit} />;
 
   const attach = () => {
     const doc = frame.current?.contentDocument;

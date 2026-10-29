@@ -60,6 +60,7 @@ const home: FakeTailnetHandler = (req) => {
     const q = url.searchParams.get('q') ?? '';
     return html(page(`Search: ${q}`, `<h1>Search</h1><p class="lead">You searched this tailnet for <code>${q.replace(/[<>&]/g, '')}</code>.</p><form action="/search" method="get"><input name="q" value="${q.replace(/["<>&]/g, '')}" aria-label="Search"><button>Search</button></form><p>No results: this is a demo tailnet, and the form was sent through it.</p>`));
   }
+  if (url.pathname === '/api/time') return text(JSON.stringify({ node: 'home' }), 'application/json');
   if (url.pathname === '/old') return new Response(null, { status: 302, headers: { location: `http://${WIKI}/` } });
   if (url.pathname !== '/') return html(page('Not found', '<h1>Not found</h1><p>There is nothing at this address.</p>'), 404);
   return html(page('Home', `<h1>Welcome home</h1>
@@ -72,9 +73,9 @@ const home: FakeTailnetHandler = (req) => {
 </div>
 <form action="/search" method="get"><input name="q" placeholder="Search this tailnet" aria-label="Search"><button>Search</button></form>
 <h2>What this page tried</h2>
-<div class="note"><p id="script-ran">A script on this page tried to change this line. It could not run: scripts are switched off.</p>
-<script>document.getElementById('script-ran').textContent = 'A script ran.'</script>
-<p>It also asked a public tracker for a pixel, <img src="http://tracker.example.com/pixel.gif" alt="" width="1" height="1">, which is not on your tailnet, so nothing was sent.</p></div>`));
+<div class="note"><p id="script-ran">A script on this page changes this line when it runs. Where pages cannot run, it stays as it is.</p>
+<script>fetch('/api/time').then((r) => r.json()).then((t) => { document.getElementById('script-ran').textContent = 'A script ran, and fetched /api/time through the tailnet: ' + t.node + ' says hello.' })</script>
+<p>It also asks a public tracker for a pixel, <img src="http://tracker.example.com/pixel.gif" alt="" width="1" height="1">, which is not on your tailnet, so it is never reached.</p></div>`));
 };
 
 const wiki: FakeTailnetHandler = (req) => {

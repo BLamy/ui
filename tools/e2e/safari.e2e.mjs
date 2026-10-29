@@ -5,8 +5,8 @@ import { openDemo, openHarness } from './helpers.mjs';
    sign-in popup); these tests run the block on a dev-only test page (apps/docs/src/e2e-harness.tsx, not a demo) with an
    in-memory tailnet, because they cannot sign in to an account — the same way tools/e2e/tailscale.e2e.mjs does. The one test that touches the real client checks only what
    needs no account: it loads on the press, and the sign-in popup is sent to Tailscale. What they prove: nothing works until
-   Tailscale is connected; once it is, every page, stylesheet and picture comes through the tailnet; a page cannot make
-   requests of its own; and a public address picks an exit node by itself (unless None was chosen, which Try Again overrides) and loads through it. */
+   Tailscale is connected; once it is, pages run, and every page, script, stylesheet, picture and fetch they make comes
+   through the tailnet (the router's service worker answers all of them); and a public address picks an exit node by itself (unless None was chosen, which Try Again overrides) and loads through it. */
 
 const TAILNET = 'demo-tailnet.ts.net';
 const frame = (page) => page.frameLocator('[data-slot=safari-frame]');
@@ -62,45 +62,40 @@ test('signing in lifts the gate and shows the devices on the tailnet', async ({ 
   await expect(page.getByRole('heading', { name: new RegExp(`Devices on ${TAILNET}`, 'i') })).toBeVisible();
 });
 
-test('a page loads through the tailnet: styled, with its images, and with nothing that can run or reach out', async ({ page }) => {
-  const hosts = watchNetwork(page);
+test('a page runs: its scripts, styles, images and its own fetches all come through the tailnet', async ({ page }) => {
+  // Every response the page's frame gets must come from the service worker (the tailnet), never the network.
+  const fromNetwork = [];
+  page.on('response', (res) => { if (res.frame() !== page.mainFrame() && !res.fromServiceWorker()) fromNetwork.push(res.url()); });
   await open(page);
   await signIn(page);
   await page.getByRole('button', { name: /^Home, / }).click();
   const f = frame(page);
   await expect(f.getByRole('heading', { name: 'Welcome home' })).toBeVisible();
   await expect(address(page)).toHaveValue(`home.${TAILNET}`);
+  // The page's script ran and fetched a relative URL, which the worker sent to the page's own server on the tailnet.
+  await expect(f.locator('#script-ran')).toHaveText('A script ran, and fetched /api/time through the tailnet: home says hello.');
 
   const frameHandle = await page.locator('[data-slot=safari-frame]').elementHandle();
   const state = await frameHandle.evaluate((el) => {
     const doc = el.contentDocument;
-    const h1 = doc.querySelector('h1');
     return {
       sandbox: el.getAttribute('sandbox'),
-      csp: doc.querySelector('meta[http-equiv="Content-Security-Policy"]')?.getAttribute('content'),
-      headingSize: getComputedStyle(h1).fontSize, // the stylesheet was fetched and applied
-      background: getComputedStyle(doc.body).backgroundImage.slice(0, 40), // a url() inlined as data:
-      scripts: doc.querySelectorAll('script').length,
-      frames: doc.querySelectorAll('iframe, object, embed').length,
-      imgs: [...doc.querySelectorAll('img')].map((i) => ({ data: (i.getAttribute('src') ?? '').startsWith('data:'), none: !i.hasAttribute('src'), loaded: i.complete && i.naturalWidth > 0 })),
-      scriptLine: doc.getElementById('script-ran').textContent.trim(),
-      requests: el.contentWindow.performance.getEntriesByType('resource').length,
+      src: el.getAttribute('src'),
+      path: el.contentWindow.location.pathname, // the page sees its own path, not the proxy address
+      headingSize: getComputedStyle(doc.querySelector('h1')).fontSize, // the stylesheet came through the tailnet
+      background: getComputedStyle(doc.body).backgroundImage, // and so did the url() it points to
+      imgs: [...doc.querySelectorAll('img')].map((i) => ({ src: i.getAttribute('src'), loaded: i.complete && i.naturalWidth > 0 })),
     };
   });
-  expect(state.sandbox).toBe('allow-same-origin allow-forms');
-  expect(state.csp).toContain("default-src 'none'");
-  expect(state.csp).not.toContain('script-src');
+  expect(state.sandbox).toContain('allow-scripts');
+  expect(state.sandbox).not.toContain('allow-top-navigation');
+  expect(state.src).toMatch(new RegExp(`/__tailnet/http/home\\.${TAILNET.replace(/\./g, '\\.')}/$`));
+  expect(state.path).toBe('/');
   expect(state.headingSize).toBe('34px');
-  expect(state.background).toContain('data:image/svg+xml');
-  expect(state.scripts).toBe(0);
-  expect(state.frames).toBe(0);
-  expect(state.imgs[0]).toMatchObject({ data: true, loaded: true }); // the logo, fetched through the tailnet
-  expect(state.imgs[1]).toMatchObject({ none: true }); // the public tracker's pixel: never fetched
-  expect(state.scriptLine).toMatch(/^A script on this page tried to change this line/); // not "A script ran."
-  expect(state.requests).toBe(0); // the frame itself asked the network for nothing
-
-  // And the page as a whole never contacted a tailnet name or a public host: all of it was the in-memory tailnet.
-  for (const host of hosts) expect(host, host).not.toMatch(/ts\.net$|example\.com$/);
+  expect(state.background).toContain('/dots.svg');
+  expect(state.imgs[0]).toMatchObject({ src: '/logo.svg', loaded: true }); // the logo, fetched through the tailnet
+  expect(state.imgs[1]).toMatchObject({ loaded: false }); // the public tracker's pixel: not on the tailnet, never reached
+  expect(fromNetwork).toEqual([]);
 });
 
 test('links, back and forward, same-page anchors and redirects all go through the browser', async ({ page }) => {
@@ -328,6 +323,6 @@ test('works in dark mode without errors', async ({ page }) => {
   await signIn(page);
   await visit(page, `home.${TAILNET}`);
   await expect(frame(page).getByRole('heading', { name: 'Welcome home' })).toBeVisible();
-  // The browser logs "Blocked script execution" when Playwright's helpers are refused in the script-less frame: that is the sandbox working.
-  expect(errors.filter((e) => !/WebSocket|vite|Blocked script execution/.test(e)), errors.join('\n')).toEqual([]);
+  // The home page asks a public tracker for a pixel; it is not on the tailnet, so the worker answers 502.
+  expect(errors.filter((e) => !/WebSocket|vite|status of 502/.test(e)), errors.join('\n')).toEqual([]);
 });

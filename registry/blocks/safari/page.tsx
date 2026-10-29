@@ -4,10 +4,15 @@
    from your tailnet's devices and your history, reload and stop, a tab strip and a tab overview, and a start page of
    your devices with a report of what was loaded.
 
-   Every page, stylesheet, image and form goes through `tailscale.fetch`, which never falls back to the public network
-   (see loader.ts). Pages are shown as sealed documents — scripts, frames and plug-ins removed, assets inlined, the frame
-   under a Content-Security-Policy that forbids any request of its own — so a page cannot reach out around the tailnet.
-   That makes this a document browser, not an app runtime: pages that need JavaScript show what they have without it.
+   Pages run. Safari registers the tailnet router (lib/tailscale-router, `tailscale-sw.js` served from your site's root) with a
+   `proxyPath`, and opens each page in a frame at `<your site>/__tailnet/<scheme>/<host>/<path>`: the service worker serves
+   the document (the one Safari just fetched through `tailscale.fetch`) and then routes every request the page makes — its
+   scripts' fetches, its relative URLs, its images, fonts and stylesheets — through the tailnet. A script the worker puts first
+   in the page gives it its own path back (`location.pathname` is the site's), keeps links and forms inside the proxy and
+   tells Safari where the page went, so the address bar and history follow it. What it cannot change: the page runs on your
+   site's origin, so it can read this page's storage (the Tailscale session included), `location.host` is yours, cookies are
+   not kept, and WebSockets are not routed. Where no service worker can run (no HTTPS, a private window, tests) pages fall
+   back to sealed documents: scripts removed, assets inlined, nothing able to reach out (loader.ts).
 
    It uses the real Tailscale: Tailscale's own client (Go, as WebAssembly, loaded when someone presses sign in) and the
    real sign-in page, which opens in a popup. The device lives for the tab (sessionStorage). Pass `tailscale` for other
@@ -25,7 +30,10 @@ import { useContainerSize } from '@/lib/container';
 import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { webStorageTailscalePersistence, type Tailscale, type TailscaleOptions } from '@/lib/tailscale';
 import { createTailscaleConnectClient } from '@/lib/tailscale-connect';
+import type { TailscaleResponse } from '@/lib/tailscale';
 import { TailscaleProvider, useTailscale } from '@/lib/tailscale-react';
+import { useTailscaleRouter } from '@/lib/tailscale-router/react';
+import type { TailscaleRoutedRequest } from '@/lib/tailscale-router/bridge';
 import { exitNodesFor } from './exit-node';
 import { Gate } from './gate';
 import { parseAddress, tailnetFetcher } from './loader';
@@ -58,6 +66,9 @@ export function tailnetOptions(): TailscaleOptions {
 
 export { exitNodesFor };
 
+/** Where pages run, under the router's scope: `<scope>__tailnet/https/example.com/`. */
+const PROXY_PATH = '__tailnet/';
+
 /** Narrower than this the tab strip steps aside for the tab overview. */
 const COMPACT_W = 560;
 
@@ -71,7 +82,25 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
   // The exit node is chosen for you when a public site needs one (see exit-node.ts); the menu can still change or clear it.
   const exitNodes = useMemo(() => exitNodesFor(tailscale), [tailscale]);
   const prepare = useCallback((entry: { url: string }) => exitNodes.prepare(entry.url), [exitNodes]);
-  const browser = useBrowser({ fetcher, initialUrls: urls, enabled: connected, prepare });
+  // Documents Safari fetched and is about to open in a frame: the router serves the frame these instead of fetching again.
+  const documents = useRef(new Map<string, TailscaleResponse>());
+  const respond = useCallback((req: TailscaleRoutedRequest) => {
+    if (req.destination !== 'iframe' && req.destination !== 'document') return null;
+    const key = req.url.split('#')[0];
+    const doc = documents.current.get(key) ?? null;
+    documents.current.delete(key);
+    return doc;
+  }, []);
+  const router = useTailscaleRouter({ policy: { proxyPath: PROXY_PATH }, respond, unregisterOnDispose: true });
+  const proxy = useMemo(() => (router.status === 'active' && typeof document !== 'undefined' ? { scope: new URL('./', document.baseURI).href, path: PROXY_PATH } : undefined), [router.status]);
+  const browser = useBrowser({ fetcher, initialUrls: urls, enabled: connected, prepare, proxy });
+  // Hand each newly loaded document over once (a page object is new per load), before its frame asks for it.
+  const handedOver = useRef(new WeakSet<object>());
+  for (const t of browser.state.tabs) {
+    if (t.page?.kind !== 'live' || handedOver.current.has(t.page.document)) continue;
+    handedOver.current.add(t.page.document);
+    documents.current.set(t.page.url.split('#')[0], t.page.document);
+  }
   useEffect(() => { if (!connected) exitNodes.reset(); }, [connected, exitNodes]);
   const [overview, setOverview] = useState(false);
   const [sizeRef, size] = useContainerSize<HTMLDivElement>();
@@ -120,7 +149,7 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
         <main className="relative min-h-0 flex-1 bg-background" aria-busy={tab.status === 'loading'}>
           {tab.status === 'start' ? <StartPage snapshot={snapshot} history={history} totals={browser.state.totals} onOpen={open} />
             : tab.status === 'error' ? <ErrorView error={tab.error} address={entry?.url ?? ''} snapshot={snapshot} optedOut={exitNodes.optedOut} onRetry={retry} />
-            : tab.page ? <PageView page={tab.page} onNavigate={open} />
+            : tab.page ? <PageView page={tab.page} onNavigate={open} onVisit={(url, title) => browser.visited(tab.id, url, title)} />
             : null}
           {overview ? <TabOverview browser={browser} onDone={() => setOverview(false)} /> : null}
         </main>

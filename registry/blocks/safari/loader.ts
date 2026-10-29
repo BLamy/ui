@@ -6,7 +6,8 @@
    Content-Security-Policy that forbids any request of its own, so even a gap in the stripping cannot leak one.
    This is deliberately not a service worker: a worker cannot see navigations or frames, and an http:// subresource on an
    https page is blocked before it sees it. Fetching here has neither limit. */
-import { TailscaleError, toResponse, toTailscaleRequest, type Tailscale } from '@/lib/tailscale';
+import { TailscaleError, toResponse, toTailscaleRequest, type Tailscale, type TailscaleResponse } from '@/lib/tailscale';
+import { tailscaleProxyUrl } from '@/lib/tailscale-policy';
 
 export interface FetchInit {
   method?: string;
@@ -32,6 +33,10 @@ export interface LoadStats {
 
 export type Page =
   | { kind: 'html'; url: string; title: string; srcDoc: string; stats: LoadStats }
+  /** A page that runs: shown in a frame at its proxy address (the tailnet router's `proxyPath`), scripts and all. `url` and
+      `title` follow the frame as it moves; `src` is the address it was opened at; `document` is the HTML already fetched, which
+      the frame is served instead of a second request. */
+  | { kind: 'live'; url: string; title: string; src: string; document: TailscaleResponse; stats: LoadStats }
   | { kind: 'image'; url: string; title: string; src: string; stats: LoadStats }
   | { kind: 'text'; url: string; title: string; text: string; contentType: string; stats: LoadStats }
   | { kind: 'file'; url: string; title: string; contentType: string; size: number; stats: LoadStats };
@@ -385,6 +390,9 @@ export interface LoadOptions {
   /** An application/x-www-form-urlencoded body for POST. */
   body?: string;
   signal?: AbortSignal;
+  /** Run HTML pages: return them as `live` pages opened at their address under this proxy root (`<scope>__tailnet/`), where
+      the tailnet router serves them and everything they ask for. Without it pages are sealed documents (no scripts). */
+  proxy?: { scope: string; path?: string };
 }
 
 const looksLikeHtml = (bytes: ArrayBuffer) => /<(!doctype|html|head|body|title|h1|p|div|a)\b/i.test(new TextDecoder('latin1').decode(bytes.slice(0, 512)));
@@ -407,6 +415,15 @@ export async function loadPage(address: string, fetcher: Fetcher, options: LoadO
   const host = hostOf(url);
   const bytes = await readBytes(res, MAX_DOCUMENT_BYTES, stats);
 
+  if (options.proxy && (type === 'text/html' || type === 'application/xhtml+xml' || (!type && looksLikeHtml(bytes)))) {
+    const html = decode(res, bytes);
+    const title = /<title[^>]*>([^<]*)<\/title>/i.exec(html)?.[1]?.trim() ?? '';
+    const headers: Array<[string, string]> = [];
+    res.headers.forEach((v, k) => { if (k !== 'content-type' && k !== 'content-length' && k !== 'content-encoding') headers.push([k, v]); });
+    headers.push(['content-type', 'text/html; charset=utf-8']);
+    const document: TailscaleResponse = { url, status: res.status, statusText: res.statusText, headers, body: new TextEncoder().encode(html) };
+    return { kind: 'live', url, title: decodeEntities(title) || host, src: tailscaleProxyUrl(url, options.proxy.scope, options.proxy.path), document, stats };
+  }
   if (type === 'text/html' || type === 'application/xhtml+xml' || (!type && looksLikeHtml(bytes))) {
     const ctx: Ctx = { fetcher, signal: options.signal, stats, budget: { assets: MAX_ASSETS }, cache: new Map(), limit: limiter(CONCURRENCY) };
     const { srcDoc, title } = await sealDocument(decode(res, bytes), url, ctx);
@@ -416,6 +433,8 @@ export async function loadPage(address: string, fetcher: Fetcher, options: LoadO
   if (isTextType(type)) return { kind: 'text', url, title: url.split('/').pop() || host, text: decode(res, bytes), contentType: type, stats };
   return { kind: 'file', url, title: url.split('/').pop() || host, contentType: type || 'unknown type', size: bytes.byteLength, stats };
 }
+
+const decodeEntities = (text: string) => text.replace(/&(amp|lt|gt|quot|#39|#x27);/g, (_, e: string) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", '#x27': "'" })[e] ?? _);
 
 /** A sentence for an error page, and what to try. */
 export function describeError(e: unknown): { title: string; detail: string } {

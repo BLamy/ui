@@ -21,7 +21,7 @@
 
   const DEFAULT_POLICY = {
     v: 1, intercept: 'tailnet', hosts: [], cidrs: [], shortNames: false, exclude: [], schemes: ['http', 'https'], methods: null,
-    sameOrigin: false, whenUnavailable: 'network', maxBodyBytes: 32 * 1024 * 1024, timeoutMs: 60000,
+    sameOrigin: false, whenUnavailable: 'network', maxBodyBytes: 32 * 1024 * 1024, timeoutMs: 60000, proxyPath: null,
   };
 
   function parseIPv4(text) {
@@ -142,6 +142,7 @@
       for (const k in DEFAULT_POLICY) out[k] = parsed[k] !== undefined ? parsed[k] : DEFAULT_POLICY[k];
       if (out.intercept !== 'all') out.intercept = 'tailnet';
       if (out.whenUnavailable !== 'error') out.whenUnavailable = 'network';
+      if (typeof out.proxyPath !== 'string' || !/^[A-Za-z0-9_-]+\/$/.test(out.proxyPath)) out.proxyPath = null;
       return out;
     } catch {
       return DEFAULT_POLICY;
@@ -226,6 +227,164 @@
     }
   });
 
+  /* ── proxied sites (policy.proxyPath) ── */
+
+  const PROXY_PREFIX = policy.proxyPath && sw.registration ? new URL(policy.proxyPath, sw.registration.scope).href : null;
+  // Response headers that would stop a proxied page from being framed here or from running its scripts on this origin.
+  const STRIPPED = {
+    'content-security-policy': 1, 'content-security-policy-report-only': 1, 'x-frame-options': 1, 'set-cookie': 1,
+    'cross-origin-opener-policy': 1, 'cross-origin-embedder-policy': 1, 'cross-origin-resource-policy': 1, 'strict-transport-security': 1,
+  };
+  const tailscaleHost = function (host) { return /(^|\.)tailscale\.(com|io)$/.test(host); };
+
+  /** The site a proxy address loads (`<scope><proxyPath>https/example.com/a` → `https://example.com/a`), or null. */
+  function proxyTarget(url) {
+    if (!PROXY_PREFIX || url.indexOf(PROXY_PREFIX) !== 0) return null;
+    const m = /^(https?)\/([^/?#]+)(.*)$/.exec(url.slice(PROXY_PREFIX.length));
+    if (!m) return null;
+    const rest = m[3] || '';
+    return m[1] + '://' + m[2] + (rest.charAt(0) === '/' ? rest : '/' + rest);
+  }
+
+  /** A URL on this origin as the proxied site would have it (`/watch?v=1` → `https://www.youtube.com/watch?v=1`). */
+  function siteUrl(url, origin) {
+    try {
+      const u = new URL(url);
+      const site = proxyTarget(u.href);
+      if (site) return site;
+      return u.origin === sw.location.origin ? origin + u.pathname + u.search : u.href;
+    } catch { return null; }
+  }
+
+  // Which clients (frames) show which site. Kept in the Cache API too: the browser stops an idle worker, and the frame lives on.
+  const frames = new Map();
+  const notFrames = new Set();
+  const FRAME_CACHE = 'bl-ts-frames-v1';
+  let hasFrameCache = false;
+  const frameKey = function (id) { return new Request(sw.location.origin + '/__bl-ts-frame/' + encodeURIComponent(id)); };
+  if (PROXY_PREFIX && typeof caches !== 'undefined') caches.has(FRAME_CACHE).then(function (yes) { hasFrameCache = yes; }, function () { /* no Cache API here */ });
+
+  function rememberFrame(id, origin) {
+    if (!id) return;
+    frames.set(id, origin);
+    notFrames.delete(id);
+    if (typeof caches === 'undefined') return;
+    hasFrameCache = true;
+    caches.open(FRAME_CACHE).then(function (c) { return c.put(frameKey(id), new Response(origin)); }).catch(function () { /* kept in memory only */ });
+  }
+
+  function lookupFrame(id) {
+    if (!id) return Promise.resolve(null);
+    if (frames.has(id)) return Promise.resolve(frames.get(id));
+    if (typeof caches === 'undefined') return Promise.resolve(null);
+    return caches.open(FRAME_CACHE)
+      .then(function (c) { return c.match(frameKey(id)); })
+      .then(function (r) { return r ? r.text() : null; })
+      .then(function (origin) { if (origin) frames.set(id, origin); return origin; })
+      .catch(function () { return null; });
+  }
+
+  sw.addEventListener('activate', function (event) {
+    // Forget frames whose windows are gone.
+    if (typeof caches === 'undefined') return;
+    event.waitUntil(caches.open(FRAME_CACHE).then(function (c) {
+      return Promise.all([c.keys(), sw.clients.matchAll({ includeUncontrolled: true })]).then(function (got) {
+        const live = {};
+        got[1].forEach(function (cl) { live[cl.id] = 1; });
+        return Promise.all(got[0].map(function (req) {
+          const id = decodeURIComponent(req.url.split('/__bl-ts-frame/')[1] || '');
+          return live[id] ? null : c.delete(req);
+        }));
+      });
+    }).catch(function () { /* nothing to forget */ }));
+  });
+
+  /** A value as a JavaScript literal that is safe inside an inline <script> (no "</script>" can end it early). */
+  const literal = function (v) { return JSON.stringify(v).replace(/</g, '\\u003c'); };
+
+  /** An error page for a proxied frame (a document) or a plain error response (anything else). */
+  function failed(proxy, status, message) {
+    if (!proxy.document) return new Response(message, { status: status, headers: { 'content-type': 'text/plain; charset=utf-8', 'x-bl-tailscale': 'error' } });
+    const esc = function (text) { return String(text).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    const html = '<!doctype html><meta charset="utf-8"><title>Can\u2019t open the page</title><body style="font:15px system-ui;margin:3em;color:#555">'
+      + '<h1 style="font-size:20px;color:#222">Can\u2019t open ' + esc(proxy.url) + '</h1><p>' + esc(message) + '</p>'
+      + '<script>parent.postMessage({ type: "bl-tailnet-frame", url: ' + literal(proxy.url) + ', title: document.title, error: ' + literal(String(message)) + ' }, location.origin)</script>';
+    return new Response(html, { status: status, headers: { 'content-type': 'text/html; charset=utf-8', 'x-bl-tailscale': 'error' } });
+  }
+
+  /** Runs first in every proxied page: the page sees its own path (not the proxy address), its links and forms stay in the
+   *  proxy, and the embedding page hears where it is and what it is called. Its origin stays this one: that is the limit. */
+  function frameScript(PREFIX, START) {
+    const here = location.origin;
+    const site = new URL(START).origin;
+    const real = function (u) {
+      const x = new URL(u, location.href);
+      if (x.origin !== here) return x.href;
+      if (x.href.indexOf(PREFIX) === 0) return null;
+      return site + x.pathname + x.search + x.hash;
+    };
+    const proxy = function (u) { const x = new URL(u); return PREFIX + x.protocol.slice(0, -1) + '/' + x.host + x.pathname + x.search + x.hash; };
+    const start = new URL(START);
+    try { history.replaceState(history.state, '', start.pathname + start.search + (location.hash || start.hash)); } catch (e) { /* keep the proxy address */ }
+    let last = '';
+    const report = function () {
+      const url = real(location.href) || START;
+      const key = url + '\n' + document.title;
+      if (key === last) return;
+      last = key;
+      try { parent.postMessage({ type: 'bl-tailnet-frame', url: url, title: document.title }, here); } catch (e) { /* no parent */ }
+    };
+    ['pushState', 'replaceState'].forEach(function (k) {
+      const f = history[k];
+      history[k] = function (...args) { const r = f.apply(this, args); report(); return r; };
+    });
+    addEventListener('popstate', report);
+    addEventListener('hashchange', report);
+    addEventListener('DOMContentLoaded', report);
+    addEventListener('load', report);
+    setInterval(report, 1000);
+    const http = function (u) { return u && /^https?:/i.test(u); };
+    addEventListener('click', function (e) {
+      if (e.defaultPrevented || e.button !== 0) return;
+      const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a || a.hasAttribute('download')) return;
+      const href = a.getAttribute('href') || '';
+      if (href.charAt(0) === '#' || /^(javascript|mailto|tel):/i.test(href)) return;
+      const r = real(a.href);
+      if (!http(r)) return;
+      e.preventDefault();
+      if (a.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey) parent.postMessage({ type: 'bl-tailnet-open', url: r }, here);
+      else if (a.target === '_top' || a.target === '_parent') parent.postMessage({ type: 'bl-tailnet-go', url: r }, here);
+      else location.href = proxy(r);
+    });
+    addEventListener('submit', function (e) {
+      const f = e.target;
+      if (!f || !f.getAttribute) return;
+      const r = real(f.getAttribute('action') ? f.action : location.href);
+      if (http(r)) f.setAttribute('action', proxy(r));
+      f.removeAttribute('target');
+    }, true);
+    window.open = function (u) {
+      if (u) { const r = real(String(u)); if (http(r)) parent.postMessage({ type: 'bl-tailnet-open', url: r }, here); }
+      return null;
+    };
+  }
+
+  /** The document's bytes with the frame script as the first thing in it. */
+  function withFrameScript(chunks, url) {
+    let size = 0;
+    chunks.forEach(function (c) { size += c.byteLength; });
+    const all = new Uint8Array(size);
+    let at = 0;
+    chunks.forEach(function (c) { all.set(c, at); at += c.byteLength; });
+    const text = new TextDecoder().decode(all);
+    const tag = '<script>(' + frameScript.toString() + ')(' + literal(PROXY_PREFIX) + ',' + literal(url) + ')</script>';
+    const head = /<head[^>]*>/i.exec(text);
+    const doctype = /^\s*<!doctype[^>]*>/i.exec(text);
+    const at2 = head ? head.index + head[0].length : doctype ? doctype[0].length : 0;
+    return text.slice(0, at2) + tag + text.slice(at2);
+  }
+
   /* ── requests ── */
 
   const NULL_BODY = { 101: 1, 103: 1, 204: 1, 205: 1, 304: 1 };
@@ -251,17 +410,25 @@
     headers.append('vary', 'Origin');
   }
 
-  function route(event) {
+  function route(event, proxy) {
     const request = event.request;
+    const target = proxy ? proxy.url : request.url;
     const bodyPromise = request.method === 'GET' || request.method === 'HEAD' ? Promise.resolve(null) : request.clone().arrayBuffer();
     return Promise.all([bodyPromise, waitForOwner(1500)]).then(function (got) {
       const body = got[0];
       const owner = got[1];
-      if (body && body.byteLength > policy.maxBodyBytes) return unavailable(request, 'request body too large');
-      if (!owner) return unavailable(request, 'no connected page');
+      // A proxied page has no public network to fall back to: its relative URLs only mean something on the site it shows.
+      if (body && body.byteLength > policy.maxBodyBytes) return proxy ? failed(proxy, 413, 'The request body is too large to send through the tailnet.') : unavailable(request, 'request body too large');
+      if (!owner) return proxy ? failed(proxy, 503, 'No tab is connected to Tailscale.') : unavailable(request, 'no connected page');
       const id = nextId++;
       const headers = [];
       request.headers.forEach(function (v, k) { if (k !== 'cookie') headers.push([k, v]); });
+      if (proxy) {
+        // The site sees itself as the origin and referrer, not this page.
+        const ref = request.referrer && request.referrer !== 'about:client' ? siteUrl(request.referrer, proxy.frameOrigin) : null;
+        if (ref) headers.push(['referer', ref]);
+        if (request.mode === 'cors' || (request.method !== 'GET' && request.method !== 'HEAD')) headers.push(['origin', proxy.frameOrigin]);
+      }
       return new Promise(function (resolve, reject) {
         let controller = null;
         let settled = false;
@@ -278,16 +445,30 @@
           owner.port.postMessage({ type: 'cancel', id: id });
         };
         if (request.signal) request.signal.addEventListener('abort', cancel);
+        let page = null; // a proxied HTML document, gathered whole so the frame script can go in first
         pending.set(id, {
           handle: function (m) {
             if (m.type === 'head') {
               settled = true;
               clearTimeout(timer);
               const h = new Headers();
-              (m.headers || []).forEach(function (pair) { try { h.append(pair[0], pair[1]); } catch { /* forbidden */ } });
+              (m.headers || []).forEach(function (pair) {
+                if (proxy && STRIPPED[pair[0].toLowerCase()]) return;
+                try { h.append(pair[0], pair[1]); } catch { /* forbidden */ }
+              });
               h.set('x-bl-tailscale', 'routed');
               withCors(h, request);
               const status = m.status >= 200 && m.status <= 599 ? m.status : 502;
+              if (proxy && proxy.document) {
+                const finalUrl = typeof m.url === 'string' && /^https?:/.test(m.url) ? m.url : proxy.url;
+                rememberFrame(event.resultingClientId, new URL(finalUrl).origin);
+                if (/html/i.test(h.get('content-type') || '') || !h.get('content-type')) {
+                  h.set('content-type', 'text/html; charset=utf-8');
+                  h.delete('content-length');
+                  page = { chunks: [], status: status, statusText: m.statusText || '', headers: h, url: finalUrl, resolve: resolve };
+                  return;
+                }
+              }
               const stream = NULL_BODY[status] || request.method === 'HEAD' ? null : new ReadableStream({
                 start: function (c) { controller = c; },
                 cancel: cancel,
@@ -295,25 +476,30 @@
               if (!stream) pending.delete(id);
               resolve(new Response(stream, { status: status, statusText: m.statusText || '', headers: h }));
             } else if (m.type === 'chunk') {
-              if (controller && m.data) controller.enqueue(new Uint8Array(m.data));
+              if (page && m.data) page.chunks.push(new Uint8Array(m.data));
+              else if (controller && m.data) controller.enqueue(new Uint8Array(m.data));
             } else if (m.type === 'end') {
               pending.delete(id);
-              if (controller) controller.close();
+              if (page) page.resolve(new Response(withFrameScript(page.chunks, page.url), { status: page.status, statusText: page.statusText, headers: page.headers }));
+              else if (controller) controller.close();
             } else if (m.type === 'error') {
               pending.delete(id);
               clearTimeout(timer);
-              if (controller) controller.error(new TypeError(m.message || 'Tailscale request failed'));
-              else if (!settled) { settled = true; reject(new TypeError(m.message || 'Tailscale request failed')); }
+              if (page) page.resolve(failed(proxy, 502, m.message || 'Tailscale request failed'));
+              else if (controller) controller.error(new TypeError(m.message || 'Tailscale request failed'));
+              else if (!settled) { settled = true; resolve(proxy && proxy.document ? failed(proxy, 502, m.message || 'Tailscale request failed') : Promise.reject(new TypeError(m.message || 'Tailscale request failed'))); }
             } else if (m.type === 'passthrough' || m.type === 'unavailable') {
               pending.delete(id);
               clearTimeout(timer);
-              if (!settled) { settled = true; resolve(m.type === 'passthrough' ? fetch(request) : unavailable(request, 'disconnected')); }
+              if (!settled) { settled = true; resolve(proxy ? failed(proxy, 503, 'Tailscale is not connected.') : m.type === 'passthrough' ? fetch(request) : unavailable(request, 'disconnected')); }
             }
           },
         });
         const message = {
-          type: 'request', id: id, url: request.url, method: request.method, headers: headers, body: body,
-          redirect: request.redirect, credentials: request.credentials, mode: request.mode, destination: request.destination,
+          type: 'request', id: id, url: target, method: request.method, headers: headers, body: body,
+          // A document is fetched as GET by the frame; redirects are followed in the page so the frame learns where it ended up.
+          redirect: proxy && proxy.document ? 'follow' : request.redirect, credentials: request.credentials, mode: request.mode, destination: request.destination,
+          proxied: !!proxy,
         };
         owner.port.postMessage(message, body ? [body] : []);
       });
@@ -322,6 +508,44 @@
 
   sw.addEventListener('fetch', function (event) {
     const request = event.request;
+    if (PROXY_PREFIX) {
+      const site = proxyTarget(request.url);
+      if (site) {
+        // A frame opening a site through the tailnet (or a resource asked for by its proxy address).
+        const isDocument = request.mode === 'navigate' || request.destination === 'iframe' || request.destination === 'document';
+        event.respondWith(lookupFrame(event.clientId).then(function (origin) {
+          return route(event, { url: site, frameOrigin: isDocument ? new URL(site).origin : origin || new URL(site).origin, document: isDocument });
+        }));
+        return;
+      }
+      if (request.mode !== 'navigate' && event.clientId && !notFrames.has(event.clientId)) {
+        // Is this request from a proxied page? Everything it asks for goes through the tailnet; its own-origin URLs mean its site.
+        const known = frames.get(event.clientId);
+        const forFrame = function (origin) {
+          if (!origin) {
+            notFrames.add(event.clientId);
+            return null;
+          }
+          const u = new URL(request.url);
+          if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+          const url = u.origin === sw.location.origin ? origin + u.pathname + u.search : u.href;
+          if (tailscaleHost(new URL(url).hostname)) return null;
+          return { url: url, frameOrigin: origin, document: false };
+        };
+        if (known) {
+          const proxy = forFrame(known);
+          if (proxy) { event.respondWith(route(event, proxy)); return; }
+        } else if (frames.size || hasFrameCache) {
+          // Not seen since this worker started: ask the cache (it outlives the worker), else let the request through untouched.
+          event.respondWith(lookupFrame(event.clientId).then(function (origin) {
+            const proxy = forFrame(origin);
+            if (proxy) return route(event, proxy);
+            return match(request.url, request.method, policy, sw.location.origin).route ? route(event) : fetch(request);
+          }));
+          return;
+        }
+      }
+    }
     if (request.mode === 'navigate') return; // a navigation is the page itself, never the tailnet's
     const m = match(request.url, request.method, policy, sw.location.origin);
     if (!m.route) return; // not ours: the browser handles it as if there were no worker

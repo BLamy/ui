@@ -104,4 +104,24 @@ describe('browser state', () => {
     expect(s.tabs[1]).toMatchObject({ status: 'error', seq: 1 });
     expect(run(s, { type: 'retry-offline' }).tabs[1]).toMatchObject({ status: 'error' }); // nothing left to retry
   });
+
+  it('a running page that moves by itself adds history without reloading; a title change only renames the entry', () => {
+    const doc = { url: 'https://a.test/', status: 200, headers: [], body: null };
+    const live: Page = { kind: 'live', url: 'https://a.test/', title: 'A', src: 'https://app.test/__tailnet/https/a.test/', document: doc, stats };
+    let s = run(initialState(['https://a.test/']), { type: 'loaded', id: 1, seq: 1, page: live });
+    const seq = s.tabs[0].seq;
+    s = run(s, { type: 'visited', id: 1, url: 'https://a.test/', title: 'A, renamed' });
+    expect(s.tabs[0].history).toEqual([{ url: 'https://a.test/', title: 'A, renamed' }]);
+    s = run(s, { type: 'visited', id: 1, url: 'https://a.test/watch?v=1', title: 'Video' });
+    expect(urls(s)).toEqual(['https://a.test/', 'https://a.test/watch?v=1']);
+    expect(s.tabs[0]).toMatchObject({ index: 1, seq, status: 'ready' });
+    // The frame stays where it is: only the address it reports changes.
+    expect(s.tabs[0].page).toMatchObject({ kind: 'live', url: 'https://a.test/watch?v=1', src: live.src });
+    // Going back loads the entry again.
+    s = run(s, { type: 'go', id: 1, delta: -1 });
+    expect(s.tabs[0]).toMatchObject({ index: 0, status: 'loading' });
+    // A sealed page never takes a report.
+    const sealed = run(initialState(['http://b.test/']), { type: 'loaded', id: 1, seq: 1, page: page('http://b.test/') });
+    expect(run(sealed, { type: 'visited', id: 1, url: 'http://b.test/x', title: '' })).toBe(sealed);
+  });
 });

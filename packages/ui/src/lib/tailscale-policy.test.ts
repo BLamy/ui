@@ -91,7 +91,7 @@ describe('resolveTailscalePolicy', () => {
   it('defaults to the tailnet allowlist, network fallback', () => {
     expect(resolveTailscalePolicy()).toEqual({
       v: 1, intercept: 'tailnet', hosts: [], cidrs: [], shortNames: false, exclude: [], schemes: ['http', 'https'], methods: null,
-      sameOrigin: false, whenUnavailable: 'network', maxBodyBytes: 32 * 1024 * 1024, timeoutMs: 60_000,
+      sameOrigin: false, whenUnavailable: 'network', maxBodyBytes: 32 * 1024 * 1024, timeoutMs: 60_000, proxyPath: null,
     });
   });
   it('normalises hosts (case, punycode) and moves addresses to cidrs', () => {

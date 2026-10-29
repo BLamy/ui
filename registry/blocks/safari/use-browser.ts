@@ -3,7 +3,7 @@
    is dropped if the tab has moved on (back, another address, close). Going back or forward loads the entry again: this is
    a client with no cache, so what you see is always what the tailnet says now. */
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import { LoadError, loadPage, type Fetcher, type LoadStats, type Page } from './loader';
+import { LoadError, loadPage, type Fetcher, type LoadOptions, type LoadStats, type Page } from './loader';
 
 export interface Entry {
   url: string;
@@ -53,6 +53,8 @@ type Action =
   /** The connection came up: a tab that failed only for being offline tries again. */
   | { type: 'retry-offline' }
   | { type: 'loaded'; id: number; seq: number; page: Page }
+  /** A running page moved by itself (a link, a form, the site's own routing) or changed its title: the history follows, nothing reloads. */
+  | { type: 'visited'; id: number; url: string; title: string }
   | { type: 'failed'; id: number; seq: number; error: Error };
 
 const blank = (id: number, entry?: Entry): Tab =>
@@ -119,6 +121,22 @@ export function reducer(state: BrowserState, action: Action): BrowserState {
       }));
       return { ...next, totals: addStats(state.totals, action.page.stats, 1) };
     }
+    case 'visited': {
+      const tab = state.tabs.find((t) => t.id === action.id);
+      if (!tab || tab.status !== 'ready' || tab.page?.kind !== 'live') return state;
+      const page = { ...tab.page, url: action.url, title: action.title || tab.page.title };
+      const current = tab.history[tab.index];
+      // The same document (a title change, or a jump to an anchor): the entry is updated, not added.
+      if (current && current.url.split('#')[0] === action.url.split('#')[0]) {
+        return patch(state, action.id, (t) => ({ ...t, page, history: t.history.map((e, i) => (i === t.index ? { ...e, url: action.url, title: page.title } : e)) }));
+      }
+      return patch(state, action.id, (t) => ({
+        ...t,
+        page,
+        history: [...t.history.slice(0, t.index + 1), { url: action.url, title: page.title }],
+        index: t.index + 1,
+      }));
+    }
     case 'failed': {
       const tab = state.tabs.find((t) => t.id === action.id);
       if (!tab || tab.seq !== action.seq) return state;
@@ -137,6 +155,8 @@ export interface UseBrowserOptions {
   initialUrls?: readonly string[];
   /** Awaited before each page is fetched (the tab shows loading meanwhile): Safari selects an exit node here. A rejection is ignored; the load goes on. */
   prepare?: (entry: Entry) => Promise<unknown> | void;
+  /** Run pages: see `LoadOptions.proxy`. Without it pages are sealed documents. */
+  proxy?: LoadOptions['proxy'];
 }
 
 export interface Browser {
@@ -150,13 +170,15 @@ export interface Browser {
   forward(): void;
   reload(): void;
   stop(): void;
+  /** The running page in tab `id` is now at `url` (reported by its frame). */
+  visited(id: number, url: string, title: string): void;
   canGoBack: boolean;
   canGoForward: boolean;
 }
 
 const asEntry = (e: Entry | string): Entry => (typeof e === 'string' ? { url: e } : e);
 
-export function useBrowser({ fetcher, initialUrls, enabled = true, prepare }: UseBrowserOptions): Browser {
+export function useBrowser({ fetcher, initialUrls, enabled = true, prepare, proxy }: UseBrowserOptions): Browser {
   const [state, dispatch] = useReducer(reducer, initialUrls, initialState);
   const prepareRef = useRef(prepare);
   prepareRef.current = prepare;
@@ -194,7 +216,7 @@ export function useBrowser({ fetcher, initialUrls, enabled = true, prepare }: Us
       Promise.resolve()
         .then(() => prepareRef.current?.(entry))
         .catch(() => undefined)
-        .then(() => (ctrl.signal.aborted ? null : loadPage(entry.url, fetcher, { method: entry.method, body: entry.body, signal: ctrl.signal })))
+        .then(() => (ctrl.signal.aborted ? null : loadPage(entry.url, fetcher, { method: entry.method, body: entry.body, signal: ctrl.signal, proxy })))
         .then(
           (page) => { if (page && !ctrl.signal.aborted) dispatch({ type: 'loaded', id, seq, page }); },
           (error) => { if (!ctrl.signal.aborted) dispatch({ type: 'failed', id, seq, error }); },
@@ -206,7 +228,7 @@ export function useBrowser({ fetcher, initialUrls, enabled = true, prepare }: Us
         inflight.current.delete(id);
       }
     }
-  }, [state.tabs, fetcher, enabled]);
+  }, [state.tabs, fetcher, enabled, proxy]);
 
   // Unmounting (and StrictMode's pretend unmount) cancels everything; the effect above starts what is still wanted.
   useEffect(() => () => {
@@ -223,9 +245,10 @@ export function useBrowser({ fetcher, initialUrls, enabled = true, prepare }: Us
   const forward = useCallback(() => dispatch({ type: 'go', id: state.active, delta: 1 }), [state.active]);
   const reload = useCallback(() => dispatch({ type: 'reload', id: state.active }), [state.active]);
   const stop = useCallback(() => dispatch({ type: 'stop', id: state.active }), [state.active]);
+  const visited = useCallback((id: number, url: string, title: string) => dispatch({ type: 'visited', id, url, title }), []);
 
   return {
-    state, tab, navigate, openTab, closeTab, selectTab, back, forward, reload, stop,
+    state, tab, navigate, openTab, closeTab, selectTab, back, forward, reload, stop, visited,
     canGoBack: tab.index >= 0,
     canGoForward: tab.index < tab.history.length - 1,
   };

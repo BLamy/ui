@@ -34,9 +34,14 @@ export interface TailscaleRouterOptions {
   serviceWorkerUrl?: string;
   /** Default: the script's directory. A worker only sees pages under its scope. */
   scope?: string;
-  /** A last say, in the page, for each matched request: return false to send it to the normal network instead. */
+  /** A last say, in the page, for each matched request: return false to send it to the normal network instead. Not asked about
+   *  requests from a proxied site (`policy.proxyPath`): those have nowhere else to go. */
   shouldRoute?: (request: TailscaleRoutedRequest) => boolean | Promise<boolean>;
-  /** Unregister the worker on `dispose()`. Default false: it stays installed, and idle, for the next visit. */
+  /** Answer a routed request yourself, before the tailnet is asked: return a response (say, a document you fetched a moment
+   *  ago and are now opening in a proxy frame), or null to let the tailnet answer. */
+  respond?: (request: TailscaleRoutedRequest) => TailscaleResponse | null | Promise<TailscaleResponse | null>;
+  /** Unregister the worker on `dispose()`, once no other router on this page is using it (a remount — React's StrictMode, or
+   *  leaving and coming back — keeps it). Default false: it stays installed, and idle, for the next visit. */
   unregisterOnDispose?: boolean;
   /** For tests: a stand-in for `navigator.serviceWorker`, and whether the page is a secure context. */
   env?: { serviceWorker?: ServiceWorkerContainer | null; isSecureContext?: boolean };
@@ -93,7 +98,14 @@ interface WorkerRequest {
   credentials: RequestCredentials;
   mode: string;
   destination: string;
+  /** From a site opened through `policy.proxyPath`: routed whatever the policy says. */
+  proxied?: boolean;
 }
+
+/** Routers alive per `navigator.serviceWorker`: an unregister must not land after a newer router's register, which would leave
+    the registration uninstalling — still controlling this page, but no new page or frame. */
+const liveRouters = new WeakMap<object, number>();
+const UNREGISTER_GRACE_MS = 1000;
 
 export function registerTailscaleRouter(options: TailscaleRouterOptions): TailscaleRouterHandle {
   const policy = resolveTailscalePolicy(options.policy);
@@ -111,6 +123,7 @@ export function registerTailscaleRouter(options: TailscaleRouterOptions): Tailsc
   const inflight = new Map<number, AbortController>();
   const connected = () => options.tailscale.getSnapshot().status === 'connected';
   const origin = typeof location !== 'undefined' ? location.origin : undefined;
+  if (container) liveRouters.set(container, (liveRouters.get(container) ?? 0) + 1);
 
   const unsubscribe = options.tailscale.subscribe(() => port?.postMessage({ type: 'status', connected: connected() }));
 
@@ -120,7 +133,7 @@ export function registerTailscaleRouter(options: TailscaleRouterOptions): Tailsc
     try {
       // The worker matched on its copy of the policy; check again here, and give `shouldRoute` its say.
       const req: TailscaleRoutedRequest = { url: m.url, method: m.method, headers: m.headers, destination: m.destination, mode: m.mode };
-      if (!matchTailscalePolicy(m.url, m.method, policy, origin).route || (options.shouldRoute && !(await options.shouldRoute(req)))) {
+      if (!m.proxied && (!matchTailscalePolicy(m.url, m.method, policy, origin).route || (options.shouldRoute && !(await options.shouldRoute(req))))) {
         p.postMessage({ type: 'passthrough', id: m.id });
         return;
       }
@@ -128,11 +141,16 @@ export function registerTailscaleRouter(options: TailscaleRouterOptions): Tailsc
         p.postMessage({ type: 'unavailable', id: m.id });
         return;
       }
-      const res = await options.tailscale.fetch({
+      const res = (await options.respond?.(req)) ?? await options.tailscale.fetch({
         url: m.url, method: m.method, headers: m.headers, body: m.body ? new Uint8Array(m.body) : null, redirect: m.redirect, signal: ac.signal,
       });
       if (m.redirect === 'error' && res.status >= 300 && res.status < 400) throw new TypeError('Redirect refused (redirect: "error").');
-      p.postMessage({ type: 'head', id: m.id, status: res.status, statusText: res.statusText ?? '', headers: res.headers });
+      // A proxied page framed by a cross-origin-isolated page (Document-Isolation-Policy) must be isolated the same way, or it
+      // lands in another agent cluster and neither can reach the other.
+      const headers = m.proxied && (m.destination === 'iframe' || m.destination === 'document') && (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated
+        ? [...res.headers, ['document-isolation-policy', 'isolate-and-credentialless'] as [string, string]]
+        : res.headers;
+      p.postMessage({ type: 'head', id: m.id, status: res.status, statusText: res.statusText ?? '', headers, url: res.url ?? m.url });
       set({ routed: state.routed + 1 });
       if (NULL_BODY.has(res.status) || m.method === 'HEAD' || !res.body) {
         p.postMessage({ type: 'end', id: m.id });
@@ -243,8 +261,11 @@ export function registerTailscaleRouter(options: TailscaleRouterOptions): Tailsc
       } catch { /* worker gone */ }
       port?.close();
       port = null;
+      if (container) liveRouters.set(container, (liveRouters.get(container) ?? 1) - 1);
       if (options.unregisterOnDispose) {
         await ready;
+        await new Promise((r) => setTimeout(r, UNREGISTER_GRACE_MS));
+        if (container && (liveRouters.get(container) ?? 0) > 0) return;
         await registration?.unregister();
       }
     },
