@@ -1,6 +1,11 @@
 {
   "name": "@brett_lamy/ui",
   "version": "5.12.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BLamy/ui.git",
+    "directory": "packages/ui"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
