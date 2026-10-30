@@ -193,6 +193,8 @@ export interface MarkdownViewProps {
   demoResolver?: GitbookStreamdownProps['demoResolver'];
   /** Render mounted component or Storybook source references. */
   sourceRenderer?: GitbookStreamdownProps['sourceRenderer'];
+  /** Configure the sandboxed WASM terminal used by `tui` code fences, or disable it. */
+  tui?: GitbookStreamdownProps['tui'];
   /** Called when an @mention / #tag / citation chip is clicked. */
   onReferenceClick?: (ref: ReferenceNode) => void;
   /** Override chip rendering; return null to fall back to the default chips. */
@@ -200,7 +202,7 @@ export interface MarkdownViewProps {
   className?: string;
   style?: React.CSSProperties;
 }
-export function MarkdownView({ markdown, streaming, demoResolver, sourceRenderer, onReferenceClick, renderReference, className, style }: MarkdownViewProps) {
+export function MarkdownView({ markdown, streaming, demoResolver, sourceRenderer, tui, onReferenceClick, renderReference, className, style }: MarkdownViewProps) {
   const refCtx = React.useMemo<DocstreamRefContextValue>(
     () => ({
       ...(onReferenceClick ? { onReferenceClick } : {}),
@@ -210,7 +212,7 @@ export function MarkdownView({ markdown, streaming, demoResolver, sourceRenderer
   );
   const view = (
     <div data-slot="markdown-view" data-renderer="docstream" className={cn('wb-md', className)} style={style}>
-      <GitbookStreamdown markdown={markdown ?? ''} isStreaming={streaming} demoResolver={demoResolver} sourceRenderer={sourceRenderer} />
+      <GitbookStreamdown markdown={markdown ?? ''} isStreaming={streaming} demoResolver={demoResolver} sourceRenderer={sourceRenderer} tui={tui} />
     </div>
   );
   if (!onReferenceClick && !renderReference) return view;

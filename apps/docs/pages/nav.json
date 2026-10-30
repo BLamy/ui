@@ -147,6 +147,7 @@
       "section": "Editors and workbench",
       "pages": [
         { "id": "docstream", "title": "Markdown" },
+        { "id": "tui-preview", "title": "TuiPreview" },
         { "id": "markdown-editor", "title": "MarkdownEditor" },
         { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
         { "id": "pencilkit", "title": "PencilKit" },

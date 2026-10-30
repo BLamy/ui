@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/ui",
-  "version": "5.11.0",
+  "version": "5.12.0",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -21,6 +21,12 @@
       "@org/source": "./src/theme.css",
       "default": "./dist/theme.css"
     },
+    "./tui": {
+      "@org/source": "./src/components/tui-preview.tsx",
+      "types": "./dist/components/tui-preview.d.ts",
+      "import": "./dist/components/tui-preview.js",
+      "default": "./dist/components/tui-preview.js"
+    },
     "./tailscale-sw.js": {
       "@org/source": "./src/lib/tailscale-router/tailscale-sw.js",
       "default": "./dist/tailscale-sw.js"
@@ -31,7 +37,7 @@
     }
   },
   "dependencies": {
-    "@brett_lamy/docstream": "1.32.0",
+    "@brett_lamy/docstream": "1.33.0",
     "@brett_lamy/docstream-editor": "1.32.0",
     "@internationalized/date": "^3.12.4",
     "@pierre/trees": "1.0.0-beta.6",

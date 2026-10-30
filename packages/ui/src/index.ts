@@ -674,3 +674,6 @@ export { Filmstrip } from './components/filmstrip';
 export type { FilmstripProps, FilmstripFrame } from './components/filmstrip';
 export { Waveform, waveformVariants } from './components/waveform';
 export type { WaveformProps } from './components/waveform';
+
+export { TuiPreview, TuiEmbed, DEFAULT_TUI_RUNTIME_URL, isTuiCodeBlock } from './components/tui-preview';
+export type { TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiTheme } from './components/tui-preview';
