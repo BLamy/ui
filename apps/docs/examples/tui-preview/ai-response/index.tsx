@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { MarkdownView } from '@/components/ui/markdown-view'
-import { program } from '../keyboard/program'
+import { program } from './program'
 
 const answer = ['Here is an interactive terminal counter. Run it, focus the terminal, and press Left or Right.', '', '```typescript tui', program, '```'].join('\n')
 
