@@ -4,6 +4,8 @@ compatibility_date = "2026-10-01"
 workers_dev = true
 
 [vars]
-ALLOWED_ORIGINS = "https://blamy.github.io"
+# The OpenCode/OpenTUI/UI/Docstream Pages sites share this production origin.
+# The demo origins are explicit here; the Worker also permits loopback on other dev ports.
+ALLOWED_ORIGINS = "https://blamy.github.io,http://127.0.0.1:5201,http://localhost:5201"
 # Any target, like almostnode's proxy. List hostnames (comma separated) to narrow it.
 ALLOWED_HOSTS = "*"

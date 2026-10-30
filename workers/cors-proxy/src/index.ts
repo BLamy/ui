@@ -63,7 +63,7 @@ export default {
       return new Response(null, {
         status: 204,
         headers: cors(origin!, {
-          'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, PATCH, DELETE',
+          'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS',
           'Access-Control-Allow-Headers': request.headers.get('Access-Control-Request-Headers') ?? '*',
           'Access-Control-Max-Age': '86400',
         }),
@@ -77,7 +77,8 @@ export default {
       headers,
       body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
       redirect: 'follow',
-    });
+    }).catch(() => null);
+    if (!upstream) return fail(502, 'The upstream provider could not be reached.', origin, env);
 
     const out = cors(origin!);
     upstream.headers.forEach((value, key) => { if (!DROP_RESPONSE.test(key) && key.toLowerCase() !== 'vary') out.set(key, value); });
