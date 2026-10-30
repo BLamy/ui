@@ -275,14 +275,14 @@ export function OpenCode({
         </p>
       )}
       <div className="flex min-h-0 flex-1 flex-wrap">
-        <div className="relative min-h-60 min-w-0 flex-[1_1_420px] bg-[#0d1117] p-2">
+        <div className="relative min-h-60 min-w-0 flex-[1_1_420px] bg-secondary-background p-2">
           <div
             ref={terminal}
             className="h-full min-h-60"
             aria-label={`${title} terminal`}
           />
           {!started && (
-            <p className="absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-sm text-[#aab7c5]">
+            <p className="absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-sm text-secondary-label">
               Start OpenCode to edit files and run commands in this browser.
               Servers opened by the host appear here as live previews.
             </p>

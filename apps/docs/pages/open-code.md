@@ -13,7 +13,8 @@ Start **OpenCode**, then select **Run starter app**. Its HTTP server serves HTML
 The registry includes the component and host bridge. Install `@agent-wasm/core` for the runtime used in this example. The `@brett_lamy/ui/opencode` package export is also available from the current source build; it requires a package release containing this component.
 
 ```tsx
-import { OpenCode, createAgentWasmOpenCodeHost } from '@brett_lamy/ui/opencode';
+import { OpenCode } from '@/components/ui/open-code';
+import { createAgentWasmOpenCodeHost } from '@/lib/open-code-host';
 
 async function createHost() {
   const { createContainer } = await import('@agent-wasm/core');
