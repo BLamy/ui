@@ -7,6 +7,8 @@
    Origin and Referer, and Cloudflare's own headers are dropped on the way out; Set-Cookie on the way back. Nothing is
    logged or stored, so the tokens passing through stay between the page and the service. */
 
+import { openCodePreview } from './opencode-preview';
+
 export interface Env {
   /** Comma separated origins, e.g. "https://blamy.github.io". */
   ALLOWED_ORIGINS?: string;
@@ -49,6 +51,8 @@ function fail(status: number, message: string, origin: string | null, env: Env) 
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const preview = openCodePreview(request);
+    if (preview) return preview;
     const origin = request.headers.get('Origin');
     if (!originAllowed(origin, env)) return fail(403, 'Origin not allowed.', origin, env);
 

@@ -148,6 +148,7 @@
       "pages": [
         { "id": "docstream", "title": "Markdown" },
         { "id": "tui-preview", "title": "TuiPreview" },
+        { "id": "open-code", "title": "OpenCode" },
         { "id": "markdown-editor", "title": "MarkdownEditor" },
         { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
         { "id": "pencilkit", "title": "PencilKit" },

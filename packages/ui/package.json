@@ -32,6 +32,12 @@
       "import": "./dist/components/tui-preview.js",
       "default": "./dist/components/tui-preview.js"
     },
+    "./opencode": {
+      "@org/source": "./src/opencode.ts",
+      "types": "./dist/opencode.d.ts",
+      "import": "./dist/opencode.js",
+      "default": "./dist/opencode.js"
+    },
     "./tailscale-sw.js": {
       "@org/source": "./src/lib/tailscale-router/tailscale-sw.js",
       "default": "./dist/tailscale-sw.js"

@@ -5501,6 +5501,26 @@
       ]
     },
     {
+      "name": "open-code",
+      "type": "registry:ui",
+      "title": "Open Code",
+      "description": "Open Code — part of BL UI's library (components/open-code.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/open-code-host.json",
+        "https://blamy.github.io/ui/r/open-code-preview.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/open-code.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/open-code.tsx"
+        }
+      ]
+    },
+    {
       "name": "passkey-enroll-dialog",
       "type": "registry:ui",
       "title": "Passkey Enroll Dialog",
@@ -5845,6 +5865,41 @@
           "path": "packages/ui/src/lib/morph-path.ts",
           "type": "registry:lib",
           "target": "lib/morph-path.ts"
+        }
+      ]
+    },
+    {
+      "name": "open-code-host",
+      "type": "registry:lib",
+      "title": "Open Code Host",
+      "description": "Open Code Host — part of BL UI's library (lib/open-code-host.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/open-code-host.ts",
+          "type": "registry:lib",
+          "target": "lib/open-code-host.ts"
+        }
+      ]
+    },
+    {
+      "name": "open-code-preview",
+      "type": "registry:lib",
+      "title": "Open Code Preview",
+      "description": "Open Code Preview — part of BL UI's library (lib/open-code-preview.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/open-code-host.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/open-code-preview.ts",
+          "type": "registry:lib",
+          "target": "lib/open-code-preview.ts"
         }
       ]
     },

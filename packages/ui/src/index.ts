@@ -677,3 +677,8 @@ export type { WaveformProps } from './components/waveform';
 
 export { TuiPreview, TuiEmbed, DEFAULT_TUI_RUNTIME_URL, isTuiCodeBlock } from './components/tui-preview';
 export type { TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiTheme } from './components/tui-preview';
+export { OpenCode } from './components/open-code';
+export { DEFAULT_OPENCODE_PREVIEW_URL } from './lib/open-code-preview';
+export type { OpenCodeProps, OpenCodeState } from './components/open-code';
+export { createAlmostNodeOpenCodeHost, createAgentWasmOpenCodeHost, loadOpenCodeRuntime, DEFAULT_OPENCODE_RUNTIME_URL } from './lib/open-code-host';
+export type { OpenCodeHostBridge, OpenCodePort, OpenCodeWorkspaceBridge, OpenCodeProcessBridge, OpenCodeCommand, OpenCodeRuntime, OpenCodeRuntimeSession, AlmostNodeOpenCodeContainer, AlmostNodeOpenCodeOptions } from './lib/open-code-host';
