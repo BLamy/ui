@@ -618,6 +618,8 @@ export function DocsSite(props: DocsSiteProps) {
     demoVFS,
     onTaskStateChange,
     documentProperties,
+    tui,
+    isStreaming,
     envHost,
     className,
     style,
@@ -768,6 +770,8 @@ export function DocsSite(props: DocsSiteProps) {
         demoVFS={demoVFS}
         onTaskStateChange={onTaskStateChange}
         documentProperties={documentProperties}
+        tui={tui}
+        isStreaming={isStreaming}
         envHost={envHost}
         env={envNamesFromProperties(shown.frontmatter)}
       />

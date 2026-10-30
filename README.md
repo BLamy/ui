@@ -19,6 +19,7 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.
 - Attribute-aware direct video embeds for muted, looping inline clips in long-form posts.
 - Optional `VizEmbed` integration for mounting deterministic `@brett_lamy/viz-engine` scenes in a document.
+- Interactive OpenTUI previews in `tui` fences and AI responses, with explicit Run, Stop, source, and runtime status.
 - Vite source mounts for rendering and editing real component or Storybook files without copying implementations into Markdown.
 - `DocsSite` (`@brett_lamy/docstream/site`): a GitBook-style documentation site from a folder of Markdown — sidebar from the file tree or `SUMMARY.md`, ⌘K search, an outline, breadcrumbs, previous / next and in-place relative links.
 
@@ -285,6 +286,56 @@ const stage = useRef<ReplayStageHandle>(null)
   onTimeUpdate={setTime} onPlayingChange={setPlaying} overlay={<MyCursor at={replayPointerAt(track, time)} />} />
 // markers: getReplayMarkers(events) → clicks, console errors, failed requests, navigations, custom events
 ```
+
+## Terminal previews in docs and AI answers
+
+Add `tui` to a TypeScript, TSX, JavaScript, or JSX fence (or use `tui` as the language).
+`MarkdownContent`, `DocsRenderer`, and `GitbookStreamdown` render a bounded terminal preview
+with an expandable source panel. Readers click **Run**, then click the terminal or **Focus terminal**
+to use the keyboard. **Stop** destroys the program; failures show their message and **Retry**.
+
+````md
+```typescript tui title="Hello terminal"
+import { createCliRenderer, TextRenderable } from "@opentui/core"
+
+const renderer = await createCliRenderer({ exitOnCtrlC: false })
+const text = new TextRenderable(renderer, { id: "hello", content: "Hello from OpenTUI!" })
+renderer.root.add(text)
+```
+````
+
+The preview loads the [OpenTUI browser runtime](https://blamy.github.io/opentui/workbench/example/)
+only after Run. It uses an opaque-origin `sandbox="allow-scripts"` iframe and sends only
+the example source, language, and terminal theme. It never forwards the document's environment
+variables. A frame load is not success: the runtime must acknowledge that it rendered the current
+request. Startup and rendering timeouts report errors. Source changes, Stop, and unmount dispose
+the iframe, message listeners, and timers.
+
+`GitbookStreamdown isStreaming` disables Run while an answer is arriving. Unclosed fences also
+stay inert. Completing a response enables Run without executing it automatically.
+
+For response attachments, import the component directly; it needs no optional runtime peer or
+stylesheet. `TuiEmbed` is an alias of `TuiPreview`:
+
+```tsx
+import { TuiPreview } from "@brett_lamy/docstream/tui"
+
+<TuiPreview code={generatedSource} language="tsx" isStreaming={isStreaming} height={360} />
+```
+
+Hosts can configure a trusted self-hosted runtime, including its deployment prefix, or disable previews:
+
+```tsx
+<GitbookStreamdown markdown={answer} isStreaming={isStreaming}
+  tui={{ runtimeUrl: "https://example.com/opentui/workbench/example/", height: 320 }} />
+<MarkdownContent markdown={page} tui={false} />
+```
+
+Runtime URLs can be absolute or relative to the host page and must resolve to HTTP(S) without credentials. `height` is bounded to
+160–720 pixels; the frame follows its container's width. `theme` takes `{ mode, background, foreground }`.
+`startupTimeoutMs` and `renderTimeoutMs` default to 30 seconds each (bounded to 1–120 seconds).
+The component's `onStatusChange` reports `idle`, `starting`, `running`, `error`, or `stopped`;
+the same state is exposed on `data-tui-state` for browser verification.
 
 ## 3D models and Strudel music
 

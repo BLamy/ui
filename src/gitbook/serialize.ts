@@ -1,4 +1,5 @@
 import { stepTitleText } from "./thumbnail"
+import { isTuiCodeBlock } from "../tui/fence"
 import type {
   Block,
   CitationDef,
@@ -271,6 +272,7 @@ export function fenceInfo(b: CodeBlockNode): string {
   // Line numbers default to on for titled fences, off for untitled ones.
   const numbersByDefault = b.title !== null && b.title !== undefined && b.title !== ""
   const attrs = [
+    isTuiCodeBlock(b) && b.language?.toLowerCase() !== "tui" ? " tui" : "",
     b.title ? attr("title", b.title) : "",
     b.lineNumbers !== numbersByDefault || b.lineNumbersExplicit ? attr("lineNumbers", b.lineNumbers) : "",
     b.live ? attr("live", true) : "",
@@ -283,7 +285,7 @@ export function fenceInfo(b: CodeBlockNode): string {
 
 /** The fence settings a code block says, for comparing a recorded info string with the node. */
 function fenceSettings(b: CodeBlockNode): string {
-  return canonical([b.language || null, b.title || null, !!b.lineNumbers, !!b.live, b.entry || null, b.collapsedCodeLines ?? null, b.expandedCodeLines ?? null])
+  return canonical([b.language || null, b.title || null, !!b.lineNumbers, !!b.live, isTuiCodeBlock(b), b.entry || null, b.collapsedCodeLines ?? null, b.expandedCodeLines ?? null])
 }
 
 function serializeCode(b: CodeBlockNode): string {

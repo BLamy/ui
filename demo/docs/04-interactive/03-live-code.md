@@ -7,7 +7,7 @@ description: Run React code fences live, embed multi-file projects with ReactCod
 Folder and inline demos cover components with variants and several files. For a quick snippet, mark a fence **live** and the host's `liveRenderer` takes over. For a whole project — your own files, your own entry, a real Vite dev server — use `ReactCodePreview` from `@brett_lamy/docstream/playground`.
 
 {% hint style="warning" %}
-Anything that runs code in the browser needs the optional peer dependency `@agent-wasm/core` (>= 0.4.0) and an import from `@brett_lamy/docstream/playground` — the only entry that references it. The package root and every other entry never do, so hosts without it typecheck and bundle cleanly, and the runtime itself is still loaded lazily.
+The React playgrounds on this page need the optional peer dependency `@agent-wasm/core` (>= 0.4.0) and an import from `@brett_lamy/docstream/playground` — the only entry that references it. The package root and every other entry never do, so hosts without it typecheck and bundle cleanly, and the runtime itself is still loaded lazily. [Terminal previews](06-terminal-previews.md) use an isolated OpenTUI runtime and need no optional peer.
 {% endhint %}
 
 ## A real project, running here

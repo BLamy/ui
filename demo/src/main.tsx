@@ -78,6 +78,7 @@ function App() {
         sourceRenderer={sourceRenderer}
         demoResolver={demoResolver}
         demoRuntime={demoRuntime}
+        tui={import.meta.env.VITE_OPENTUI_RUNTIME_URL ? { runtimeUrl: import.meta.env.VITE_OPENTUI_RUNTIME_URL } : undefined}
         envHost={github.host}
         pageActions={(page) => ({ transform: (md) => `${md.trim()}\n\n---\n\nSource: ${SITE}#/${page.slug}\n` })}
         editUrl={(page) => `${GITHUB}/edit/main/demo/docs/${page.path}`}

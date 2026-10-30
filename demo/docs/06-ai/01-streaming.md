@@ -4,6 +4,8 @@ description: Render an AI answer while it is still arriving — every docstream 
 
 # Streaming
 
+Responses can include interactive [terminal previews](../04-interactive/06-terminal-previews.md): use a `typescript tui` or `tsx tui` code fence. Run stays disabled until the response finishes and the fence closes, then the reader can run the code in an isolated OpenTUI browser terminal.
+
 `GitbookStreamdown` is built for AI answer panes. Hand it the Markdown received so far, set `isStreaming` while chunks arrive, and every block — hints, tabs, steppers, tables, code, math, citations, even live demos — renders from the partial buffer and grows in place.
 
 ```tsx title="Answer.tsx"

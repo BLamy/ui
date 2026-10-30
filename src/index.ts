@@ -103,6 +103,8 @@ export type { MermaidProps, PeleDrawing } from "./docs/Mermaid"
 export { SplitCard, SplitResult, SplitSource } from "./docs/SplitCard"
 export { isStrudelFile, isStrudelLanguage } from "./strudel/url"
 export type { StrudelPlayerProps } from "./strudel/StrudelPlayer"
+export { DEFAULT_TUI_RUNTIME_URL, TuiPreview, TuiEmbed, isTuiCodeBlock } from "./tui"
+export type { TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiTheme } from "./tui"
 export { OpenApiOperation } from "./openapi/OpenApiOperation"
 export { createInlineDemoProject, createReactDemoFiles } from "./playground/project"
 export type {

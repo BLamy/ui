@@ -43,6 +43,9 @@ import { getTaskState } from "../gitbook/tasks"
 import { readDocumentProperties } from "../gitbook/properties"
 import { DocstreamEnvProvider, EnvGate, envNamesFromProperties, useEnvGate, type DocstreamEnvHost } from "../doc-env"
 import { plainText } from "../gitbook/inline"
+import { TuiPreview, type TuiPreviewOptions } from "../tui/TuiPreview"
+import { TuiContext } from "../tui/context"
+import { isTuiCodeBlock } from "../tui/fence"
 
 type MathRenderer = (formula: string) => string
 let mathRenderer: MathRenderer | null = null
@@ -176,7 +179,7 @@ function codeOnlyTabs(block: Extract<Block, { type: "tabs" }>): CodeBlockNode[] 
   const codes: CodeBlockNode[] = []
   for (const tab of block.tabs) {
     const only = tab.children.length === 1 ? tab.children[0] : null
-    if (!only || only.type !== "code" || only.live || only.language === "mermaid" || isStrudelLanguage(only.language)) return null
+    if (!only || only.type !== "code" || only.live || only.language === "mermaid" || isStrudelLanguage(only.language) || isTuiCodeBlock(only)) return null
     codes.push(only)
   }
   return codes
@@ -340,6 +343,7 @@ function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, {
 
 function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & Renderers) {
   const onTaskStateChange = useContext(TaskStateChangeContext)
+  const tui = useContext(TuiContext)
   switch (block.type) {
     case "paragraph": {
       // A paragraph that opens with a thumbnail sets its text beside it.
@@ -371,6 +375,9 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       )
     }
     case "code":
+      if (isTuiCodeBlock(block) && tui.options !== false) {
+        return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} isStreaming={tui.isStreaming || block.closingFence === ""} />
+      }
       if (block.language === "mermaid") {
         return (
           <Mermaid
@@ -688,6 +695,10 @@ function LiveFence({ block, liveRenderer }: { block: CodeBlockNode; liveRenderer
 }
 
 export interface DocRenderOptions {
+  /** Options for `tui` fenced previews; false shows their source as ordinary code. */
+  tui?: TuiPreviewOptions | false
+  /** Prevents terminal previews from running while source is being streamed. */
+  isStreaming?: boolean
   /** Make rendered task checkboxes interactive. Update the supplied item and re-render to persist a choice. */
   onTaskStateChange?: TaskStateChangeHandler
   /** Show the document's frontmatter as a property sheet (default true). */
@@ -733,14 +744,21 @@ function withEnv(doc: DocumentNode, { envHost, env }: DocRenderOptions, children
   return <DocstreamEnvProvider declared={declared} host={envHost}>{children}</DocstreamEnvProvider>
 }
 
-function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange }: DocRenderOptions, children: ReactNode) {
+function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming }: DocRenderOptions, children: ReactNode) {
   let out = children
+  if (tui !== undefined || isStreaming !== undefined) out = <TuiProvider options={tui} isStreaming={isStreaming}>{out}</TuiProvider>
   if (onTaskStateChange) out = <TaskStateChangeContext.Provider value={onTaskStateChange}>{out}</TaskStateChangeContext.Provider>
   if (demoVFS) out = <DocstreamDemoVFSContext.Provider value={demoVFS}>{out}</DocstreamDemoVFSContext.Provider>
   if (demoRuntime || demoDependencies) {
     out = <DemoRuntimeProvider runtime={demoRuntime} dependencies={demoDependencies}>{out}</DemoRuntimeProvider>
   }
   return demoResolver ? <DocstreamDemoContext.Provider value={demoResolver}>{out}</DocstreamDemoContext.Provider> : out
+}
+
+function TuiProvider({ options, isStreaming, children }: { options?: TuiPreviewOptions | false; isStreaming?: boolean; children: ReactNode }) {
+  const inherited = useContext(TuiContext)
+  const value = useMemo(() => ({ options: options ?? inherited.options, isStreaming: isStreaming ?? inherited.isStreaming }), [options, isStreaming, inherited])
+  return <TuiContext.Provider value={value}>{children}</TuiContext.Provider>
 }
 
 /** Merges runtime options over the inherited ones, keeping a stable context value. */
@@ -783,10 +801,12 @@ export function MarkdownContent({
   onTaskStateChange,
   envHost,
   env,
+  tui,
+  isStreaming,
 }: { markdown: string; className?: string } & Renderers & DocRenderOptions) {
   const doc = useMemo(() => parseMarkdown(markdown), [markdown])
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming },
     withEnv(doc, { envHost, env }, <div data-docstream="" className={className}>
       <PageActionsBar markdown={markdown} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
@@ -810,9 +830,11 @@ export function DocsRenderer({
   onTaskStateChange,
   envHost,
   env,
+  tui,
+  isStreaming,
 }: { doc: DocumentNode; /** Source for page actions; defaults to `serializeMarkdown(doc)`. */ markdown?: string } & Renderers & DocRenderOptions) {
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming },
     withEnv(doc, { envHost, env }, <article className="docs-article">
       <PageActionsBar markdown={markdown ?? (() => serializeMarkdown(doc))} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}

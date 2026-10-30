@@ -39,6 +39,7 @@ export function GitbookStreamdown({
   onTaskStateChange,
   envHost,
   env,
+  tui,
 }: GitbookStreamdownProps) {
   const content = markdown ?? children ?? ""
   const gitbookDoc = useMemo(
@@ -67,6 +68,8 @@ export function GitbookStreamdown({
         onTaskStateChange={onTaskStateChange}
         envHost={envHost}
         env={env}
+        tui={tui}
+        isStreaming={isStreaming}
       />
     </div>
   )

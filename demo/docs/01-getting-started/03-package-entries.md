@@ -140,6 +140,10 @@ The demo system on its own: `DemoViewer`, `DemoFullscreen`, `DemoBlock`, `create
 
 One stylesheet for every block. Import it once. See [Theming](../07-reference/01-theming.md).
 
+### `/tui`
+
+`TuiPreview` and `TuiEmbed` run OpenTUI source in an isolated browser terminal after the reader clicks Run. They show source, startup/render status, errors, Retry, Stop, and keyboard focus controls. The entry needs no optional runtime peer or stylesheet; `tui` fenced code also works in the regular document and streaming renderers. See [Terminal previews](../04-interactive/06-terminal-previews.md).
+
 ## Choosing an entry
 
 | You are building… | Import from |
@@ -150,4 +154,5 @@ One stylesheet for every block. Import it once. See [Theming](../07-reference/01
 | A server route, Worker or agent that reads/writes Markdown | `/gitbook` |
 | A build step that writes `llms.txt` with demo sources inlined | `/demo` (`resolveDemosToMarkdown`) + `/gitbook` |
 | A QA dashboard that only plays recordings | `/replay` |
+| A terminal attachment in an AI response | `/tui` (or `tui` fences in `/streamdown`) |
 | A component gallery backed by real files | `/vite` in `vite.config.ts`, `/source` in the app |
