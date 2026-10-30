@@ -50,7 +50,7 @@ export default defineConfig(() => ({
     },
     lib: {
       // Could also be a dictionary or array of multiple entry points.
-      entry: 'src/index.ts',
+      entry: { index: 'src/index.ts', opencode: 'src/opencode.ts' },
       name: '@brett_lamy/ui',
       fileName: 'index',
       // Change this to the formats you want to support.
