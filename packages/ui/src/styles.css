@@ -704,8 +704,10 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-md :where(li){margin:3px 0}
 .wb-md :where(code){font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.86em;background:var(--secondary);padding:2px 5px;border-radius:5px}
 .wb-md :where(pre){background:var(--code, var(--muted));color:var(--code-foreground, var(--foreground));border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
-/* Leave room for floating copy controls when a code line reaches the right edge. */
-.wb-md .docs-code:has(> .docs-code-copy-float)>pre{padding-inline-end:3rem}
+/* Keep copy controls beside the scrolling code so long lines cannot run underneath them. */
+.wb-md .docs-code:has(> .docs-code-copy-float){display:grid;grid-template-columns:minmax(0,1fr) 3rem;background:var(--gb-code-bg,var(--code,var(--muted)))}
+.wb-md .docs-code:has(> .docs-code-copy-float)>pre{grid-area:1/1;min-width:0;margin:0;border-radius:0;background:transparent}
+.wb-md .docs-code>.docs-code-copy-float{position:static;grid-area:1/2;align-self:start;justify-self:center;margin-block-start:9px}
 /* Docstream's source-and-result cards (Mermaid, math) are already a panel: their source pane isn't a code box. */
 .wb-md :where(.docs-split-source){background:none;color:inherit;border-radius:0;padding:0;margin:0}
 .wb-md :where(pre code){background:none;padding:0;font-size:inherit;color:inherit}

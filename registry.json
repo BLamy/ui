@@ -732,8 +732,24 @@
           "line-height": "1.55",
           "margin": "10px 0"
         },
+        ".wb-md .docs-code:has(> .docs-code-copy-float)": {
+          "display": "grid",
+          "grid-template-columns": "minmax(0,1fr) 3rem",
+          "background": "var(--gb-code-bg,var(--code,var(--muted)))"
+        },
         ".wb-md .docs-code:has(> .docs-code-copy-float)>pre": {
-          "padding-inline-end": "3rem"
+          "grid-area": "1/1",
+          "min-width": "0",
+          "margin": "0",
+          "border-radius": "0",
+          "background": "transparent"
+        },
+        ".wb-md .docs-code>.docs-code-copy-float": {
+          "position": "static",
+          "grid-area": "1/2",
+          "align-self": "start",
+          "justify-self": "center",
+          "margin-block-start": "9px"
         },
         ".wb-md :where(.docs-split-source)": {
           "background": "none",
