@@ -230,7 +230,7 @@ export function OpenCode({
       aria-label={title}
       data-state={state}
     >
-      <header className="flex min-h-11 flex-wrap items-center gap-3 border-b border-border px-3 py-2 text-sm">
+      <header className="flex min-h-11 shrink-0 flex-wrap items-center gap-3 border-b border-border px-3 py-2 text-sm">
         <strong>
           {title}
           {version && (
@@ -275,11 +275,11 @@ export function OpenCode({
           {error}
         </p>
       )}
-      <div className="flex min-h-0 flex-1 flex-wrap">
-        <div className="relative min-h-60 min-w-0 flex-[1_1_420px] bg-muted p-2">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <div className="relative min-h-0 min-w-0 flex-1 bg-muted p-2">
           <div
             ref={terminal}
-            className="h-full min-h-60"
+            className="h-full min-h-0"
             aria-label={`${title} terminal`}
           />
           {state === 'starting' && (
@@ -296,10 +296,10 @@ export function OpenCode({
         </div>
         {ports.length > 0 && (
           <aside
-            className="flex min-h-60 min-w-0 flex-[1_1_400px] flex-col border-l border-border"
+            className="flex min-h-0 min-w-0 flex-1 flex-col border-t border-border md:border-t-0 md:border-l"
             aria-label="App preview"
           >
-            <div className="flex min-h-10 flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
+            <div className="flex min-h-10 shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
               <span>Preview</span>
               {ports.map((port) => (
                 <button
@@ -316,7 +316,7 @@ export function OpenCode({
                 <>
                   <button
                     type="button"
-                    className="ml-auto"
+                    className="ml-auto appearance-none rounded border border-border bg-transparent px-2 py-1 font-sans"
                     onClick={() => setRevision((value) => value + 1)}
                     aria-label="Reload app preview"
                   >
@@ -324,6 +324,7 @@ export function OpenCode({
                   </button>
                   <button
                     type="button"
+                    className="appearance-none rounded border border-border bg-transparent px-2 py-1 font-sans"
                     onClick={() => setSelected(null)}
                     aria-label="Close app preview"
                   >
@@ -356,7 +357,7 @@ export function OpenCode({
           </aside>
         )}
       </div>
-      <p className="m-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+      <p className="m-0 shrink-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">
         Sessions and provider credentials stay in memory. Preview apps run in a
         sandboxed frame.
       </p>
