@@ -18,6 +18,20 @@ Whole apps composed from BL UI parts, in the spirit of shadcn blocks. A block is
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/codex-clone.json{% endcommand %}
 
+{% demo src="blocks/vibecoder" layout="multi" %}
+
+Vibecoder starts the real OpenCode terminal and a starter HTTP server as soon as it opens. Its preview loads HTML, CSS, JavaScript and an API from the same AlmostNode workspace, through **AlmostNode’s service worker**. Try the counter immediately; use OpenCode’s shell to edit a file and select **Reload** to see your change. Connect a provider through **Connection** and `/connect` when you want AI replies.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/vibecoder.json{% endcommand %}
+
+```tsx
+import Vibecoder from '@/components/blocks/vibecoder/page';
+
+<Vibecoder basePath="/my-app" />;
+```
+
+The default factory seeds `index.html`, `style.css`, `app.js` and `server.cjs`, then starts port 3000 automatically when the terminal is ready. **Stop OpenCode** releases that workspace and its server; **Start OpenCode** creates and starts a fresh one. For an existing AlmostNode or agent-wasm workspace, pass `host={bridge}` or a stable `createHost` factory. Custom hosts supply their own files and servers; their ports open automatically. The component’s runtime, preview host, theme and lifecycle callbacks remain configurable. See [OpenCode](https://blamy.github.io/ui/#/open-code) for the host bridge and provider setup.
+
 {% demo src="blocks/interface-builder" layout="multi" %}
 
 The Interface Builder block is Xcode's storyboard for apps made of BL UI. Its library is the kit itself, and scenes are composed from its containers — a TabView of NavigationStacks, a SplitView's columns, lists — where a scene shown inside another is selected and edited in place: click anything you see (⌘-click works the way it does in a design tool), right-click for everything under the pointer, double-click a text to type over it. Segues, outlets, delegates, the first responder and context mean what they mean in React (navigation, refs, callback props, focus and a responder chain, `useContext`); motion is framer-motion's, with spring and curve editors and a timeline; text takes any Google Fonts family through the [FontPicker](https://blamy.github.io/ui/#/font-picker), previewed on the canvas as you hover the list. Every scene lays out for iPhone, iPad and desktop, runs as a live preview, and exports as a React app on the kit.

@@ -33,6 +33,7 @@ export interface OpenCodeProps {
   className?: string;
   style?: CSSProperties;
   theme?: 'light' | 'dark';
+  /** Start when mounted. Set false to require the Start button. */
   autoStart?: boolean;
   onStateChange?: (state: OpenCodeState) => void;
   onReady?: (
@@ -53,14 +54,14 @@ export function OpenCode({
   className,
   style,
   theme = 'dark',
-  autoStart = false,
+  autoStart = true,
   onStateChange,
   onReady,
 }: OpenCodeProps) {
   const terminal = useRef<HTMLDivElement>(null);
   const connection = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(autoStart);
-  const [state, setState] = useState<OpenCodeState>('idle');
+  const [state, setState] = useState<OpenCodeState>(autoStart ? 'starting' : 'idle');
   const [error, setError] = useState('');
   const [ports, setPorts] = useState<OpenCodePort[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
@@ -222,23 +223,23 @@ export function OpenCode({
   return (
     <section
       className={cn(
-        'flex min-w-0 flex-col overflow-hidden rounded-xl border border-separator bg-background',
+        'flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-background font-sans text-foreground',
         className,
       )}
       style={{ height: Math.max(320, height), ...style }}
       aria-label={title}
       data-state={state}
     >
-      <header className="flex min-h-11 flex-wrap items-center gap-3 border-b border-separator px-3 py-2 text-sm">
+      <header className="flex min-h-11 flex-wrap items-center gap-3 border-b border-border px-3 py-2 text-sm">
         <strong>
           {title}
           {version && (
-            <span className="ml-2 font-normal text-secondary-label">
+            <span className="ml-2 font-normal text-muted-foreground">
               v{version}
             </span>
           )}
         </strong>
-        <span className="text-xs text-secondary-label" role="status">
+        <span className="text-xs text-muted-foreground" role="status">
           {state === 'starting'
             ? 'Starting WebAssembly…'
             : state === 'running'
@@ -252,7 +253,7 @@ export function OpenCode({
         <div ref={connection} className="ml-auto" />
         <button
           type="button"
-          className="rounded-md border border-separator px-3 py-1 text-xs focus-visible:outline-2 focus-visible:outline-tint"
+          className="appearance-none rounded-md border border-border bg-transparent px-3 py-1 font-sans text-xs focus-visible:outline-2 focus-visible:outline-ring"
           onClick={() => {
             if (started) {
               setStarted(false);
@@ -269,20 +270,25 @@ export function OpenCode({
       {error && (
         <p
           role="alert"
-          className="m-3 rounded-lg bg-secondary-background p-3 text-sm"
+          className="m-3 rounded-lg bg-muted p-3 text-sm"
         >
           {error}
         </p>
       )}
       <div className="flex min-h-0 flex-1 flex-wrap">
-        <div className="relative min-h-60 min-w-0 flex-[1_1_420px] bg-secondary-background p-2">
+        <div className="relative min-h-60 min-w-0 flex-[1_1_420px] bg-muted p-2">
           <div
             ref={terminal}
             className="h-full min-h-60"
             aria-label={`${title} terminal`}
           />
+          {state === 'starting' && (
+            <p className="pointer-events-none absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-sm text-muted-foreground">
+              Loading OpenCode and its WebAssembly renderer…
+            </p>
+          )}
           {!started && (
-            <p className="absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-sm text-secondary-label">
+            <p className="absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-sm text-muted-foreground">
               Start OpenCode to edit files and run commands in this browser.
               Servers opened by the host appear here as live previews.
             </p>
@@ -290,17 +296,17 @@ export function OpenCode({
         </div>
         {ports.length > 0 && (
           <aside
-            className="flex min-h-60 min-w-0 flex-[1_1_400px] flex-col border-l border-separator"
+            className="flex min-h-60 min-w-0 flex-[1_1_400px] flex-col border-l border-border"
             aria-label="App preview"
           >
-            <div className="flex min-h-10 flex-wrap items-center gap-2 border-b border-separator px-3 py-2 text-xs">
+            <div className="flex min-h-10 flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
               <span>Preview</span>
               {ports.map((port) => (
                 <button
                   key={port.port}
                   type="button"
                   aria-pressed={selected === port.port}
-                  className="rounded border border-separator px-2 py-1 aria-pressed:bg-secondary-background"
+                  className="appearance-none rounded border border-border bg-transparent px-2 py-1 font-sans aria-pressed:bg-muted"
                   onClick={() => setSelected(port.port)}
                 >
                   {port.name ?? `Port ${port.port}`}
@@ -343,14 +349,14 @@ export function OpenCode({
                 }
               />
             ) : (
-              <p className="p-4 text-sm text-secondary-label">
+              <p className="p-4 text-sm text-muted-foreground">
                 Select a port to open its app.
               </p>
             )}
           </aside>
         )}
       </div>
-      <p className="m-0 border-t border-separator px-3 py-2 text-xs text-secondary-label">
+      <p className="m-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">
         Sessions and provider credentials stay in memory. Preview apps run in a
         sandboxed frame.
       </p>

@@ -59,7 +59,7 @@ function fixture() {
 
 it('mounts the configured bridge, opens new ports automatically, and borrows an existing host', async () => {
   const f = fixture();
-  render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} />);
+  render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} autoStart={false} />);
   fireEvent.click(screen.getByRole('button', { name: 'Start OpenCode' }));
   await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
   expect(f.mount.mock.calls[0]?.[0]).toMatchObject({
@@ -96,7 +96,7 @@ it('cleans up a mount that completes after Stop and disposes a factory-owned hos
         resolve = done;
       }),
   );
-  render(<OpenCode createHost={() => f.host} loadRuntime={f.loadRuntime} />);
+  render(<OpenCode createHost={() => f.host} loadRuntime={f.loadRuntime} autoStart={false} />);
   fireEvent.click(screen.getByRole('button', { name: 'Start OpenCode' }));
   await waitFor(() => expect(f.runtime.mount).toHaveBeenCalledTimes(1));
   fireEvent.click(screen.getByRole('button', { name: 'Stop OpenCode' }));
@@ -114,7 +114,7 @@ it('reports service-worker errors and releases an owned host without mounting th
     f.host.previews.ready = async () => {
       throw new Error('Service worker missing');
     };
-  render(<OpenCode createHost={() => f.host} loadRuntime={f.loadRuntime} />);
+  render(<OpenCode createHost={() => f.host} loadRuntime={f.loadRuntime} autoStart={false} />);
   fireEvent.click(screen.getByRole('button', { name: 'Start OpenCode' }));
   await waitFor(() =>
     expect(screen.getByRole('alert').textContent).toBe(
@@ -123,4 +123,36 @@ it('reports service-worker errors and releases an owned host without mounting th
   );
   expect(f.mount).not.toHaveBeenCalled();
   expect(f.host.dispose).toHaveBeenCalledTimes(1);
+});
+
+it('starts on mount, opens an existing app port, and stays stopped until explicitly restarted', async () => {
+  const f = fixture();
+  f.update([
+    { port: 3000, url: `${window.location.origin}/__virtual__/3000/` },
+  ]);
+  const createHost = vi.fn(() => f.host);
+  const view = render(
+    <OpenCode
+      createHost={createHost}
+      loadRuntime={f.loadRuntime}
+      title="Vibecoder"
+    />,
+  );
+  await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
+  expect(screen.getByTitle('Vibecoder · port 3000')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Stop OpenCode' }));
+  view.rerender(
+    <OpenCode
+      createHost={createHost}
+      loadRuntime={f.loadRuntime}
+      title="Vibecoder"
+    />,
+  );
+  expect(f.session.dispose).toHaveBeenCalledTimes(1);
+  expect(f.host.dispose).toHaveBeenCalledTimes(1);
+  expect(createHost).toHaveBeenCalledTimes(1);
+  expect(screen.queryByTitle('Vibecoder · port 3000')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Start OpenCode' }));
+  await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(2));
+  expect(createHost).toHaveBeenCalledTimes(2);
 });

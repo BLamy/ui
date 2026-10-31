@@ -5481,6 +5481,42 @@
       }
     },
     {
+      "name": "workspace",
+      "type": "registry:ui",
+      "title": "Workspace",
+      "description": "Dockable tabs and resizable pane groups, built on react-resizable-panels Workspace. Drag between groups, split at an edge and preserve mounted tab state.",
+      "dependencies": [
+        "react-resizable-panels@4.16.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/workspace.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/workspace.tsx"
+        }
+      ],
+      "meta": {
+        "page": "workspace",
+        "exports": [
+          "Workspace",
+          "WorkspaceTabCloseButton",
+          "WorkspaceToolbar",
+          "useWorkspaceRef",
+          "useWorkspaceCallbackRef",
+          "useParentWorkspace",
+          "useParentTab",
+          "useParentTabState",
+          "useParentTabset",
+          "useParentTabsetState"
+        ]
+      }
+    },
+    {
       "name": "edge-drawer",
       "type": "registry:ui",
       "title": "Edge Drawer",
@@ -8355,6 +8391,46 @@
       ],
       "meta": {
         "entry": "components/blocks/timemachine/page.tsx"
+      }
+    },
+    {
+      "name": "vibecoder",
+      "type": "registry:block",
+      "title": "Vibecoder",
+      "description": "OpenCode v2.2.4 and a live app in one browser workspace. The terminal and starter HTTP server start on mount. Edit the same AlmostNode files from OpenCode and preview the running app through AlmostNode's service worker. Configurable AlmostNode or agent-wasm host bridge, port switching, reload and terminal lifecycle controls.",
+      "categories": [
+        "ai",
+        "application",
+        "developer-tools"
+      ],
+      "dependencies": [
+        "@agent-wasm/core@0.4.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/open-code.json",
+        "https://blamy.github.io/ui/r/open-code-host.json",
+        "https://blamy.github.io/ui/r/theme.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/vibecoder/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/vibecoder/page.tsx"
+        },
+        {
+          "path": "registry/blocks/vibecoder/host.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vibecoder/host.ts"
+        },
+        {
+          "path": "registry/blocks/vibecoder/project.ts",
+          "type": "registry:component",
+          "target": "components/blocks/vibecoder/project.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/vibecoder/page.tsx"
       }
     },
     {
