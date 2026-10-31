@@ -1264,3 +1264,7 @@
 /* A step whose heading opens with a thumbnail: the image beside the title. */
 .gb-step-head-thumb { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
 .gb-step-head-thumb > .gb-step-title { flex: 1; min-width: 0; }
+
+/* Keep rendered diagrams out of the editable selection and fill their split-grid cell. */
+.gb-code .gb-diagram-result { min-width: 0; display: flex; }
+.gb-diagram-result > .docs-split-pane { flex: 1; min-width: 0; }

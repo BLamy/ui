@@ -185,6 +185,26 @@ export const SLASH_ITEMS: SlashItem[] = [
     }),
   },
   {
+    title: "XState diagram",
+    keywords: "state machine statechart graph transitions",
+    icon: Workflow,
+    run: insertBlock({
+      type: "codeBlock",
+      attrs: { language: "xstate", title: null, lineNumbers: false },
+      content: [{ type: "text", text: JSON.stringify({ id: "toggle", initial: "off", states: { off: { on: { TOGGLE: "on" } }, on: { on: { TOGGLE: "off" } } } }, null, 2) }],
+    }),
+  },
+  {
+    title: "tscircuit example",
+    keywords: "circuit pcb schematic electronics tsx",
+    icon: Workflow,
+    run: insertBlock({
+      type: "codeBlock",
+      attrs: { language: "tscircuit", title: null, lineNumbers: false },
+      content: [{ type: "text", text: 'circuit.add(\n  <board width="10mm" height="10mm">\n    <resistor name="R1" resistance="1k" footprint="0402" />\n  </board>\n)' }],
+    }),
+  },
+  {
     title: "Strudel music",
     keywords: "audio song beat pattern live code tidal",
     icon: Music,

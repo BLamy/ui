@@ -581,3 +581,7 @@ Embed nodes preserve the Docstream media attributes (`title`, `poster`,
 editable TipTap document and GitBook markdown. This makes short, muted,
 autoplaying clips round-trip through the editor without losing their playback
 contract.
+
+### Live diagram blocks
+
+`xstate` and `tscircuit` fences use source-and-preview cards like Mermaid. Edit the source directly; the shared Docstream preview updates after a short pause. Type `/` and choose **XState diagram** or **tscircuit example** to insert a starting point. XState reads JSON or static TypeScript `createMachine({...})` configs without executing actions or guards. The isolated hosted tscircuit runtime requires a network connection. Both fence languages are preserved when saving Markdown.

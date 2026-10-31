@@ -100,3 +100,33 @@ The diagram is `PeleDiagram`, the same component docstream's renderer draws with
 {% content-ref url="05-tables-and-layout.md" %}
 [Tables and layout](05-tables-and-layout.md)
 {% endcontent-ref %}
+
+## XState and tscircuit
+
+`xstate` and `tscircuit` fences work like Mermaid: edit the source pane, then watch the preview update after a short pause. Type `/` and choose **XState diagram** or **tscircuit example** to insert a starting point. The result pane stays outside the editable document, and the source is saved as the original Markdown fence.
+
+```xstate
+import { createMachine } from "xstate"
+export const toggle = createMachine({
+  id: "toggle",
+  initial: "off",
+  states: {
+    off: { on: { TOGGLE: "on" } },
+    on: { on: { TOGGLE: "off" } }
+  }
+})
+```
+
+XState accepts JSON configs and static TypeScript machine configs. Actions and guards are never executed. Invalid or unfinished source shows an inline error without stopping editing.
+
+```tscircuit
+circuit.add(
+  <board width="16mm" height="12mm">
+    <resistor name="R1" resistance="1k" footprint="0402" pcbX={-3} schX={-2} />
+    <capacitor name="C1" capacitance="100nF" footprint="0603" pcbX={3} schX={2} />
+    <trace from=".R1 .pin1" to=".C1 .pin1" />
+  </board>
+)
+```
+
+The circuit runs in a cross-origin hosted RunFrame, with schematic, PCB and 3D views. It requires a network connection. Edit component values or positions to redraw the preview; the iframe stays mounted while you type. Regular `tsx` fences remain ordinary code blocks.

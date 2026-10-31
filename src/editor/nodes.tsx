@@ -37,6 +37,8 @@ import { packageManagerCommands, parseBlocks, type DemoInlineFile, type Document
 import { VideoEmbed } from "@brett_lamy/docstream/video"
 import { StlViewer, isStlUrl } from "@brett_lamy/docstream/stl"
 import { StrudelPlayer, isStrudelFile, isStrudelLanguage } from "@brett_lamy/docstream/strudel"
+import { XStatePreview, isXStateLanguage } from "@brett_lamy/docstream/xstate"
+import { TsCircuitPreview, isTsCircuitLanguage } from "@brett_lamy/docstream/tscircuit"
 import { DemoViewer, prefetchDemoSources, useDemoVFSEntry, writeDocstreamClipboard } from "@brett_lamy/docstream/demo"
 import { pmToCommand, pmToDemo } from "./convert"
 import { clipboardForDoc, setActiveDemoDrag } from "./demo-clipboard"
@@ -1212,20 +1214,24 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
   const previewCode = useDebouncedValue(code)
   const language = String(node.attrs.language ?? "").toLowerCase()
   const mermaid = language === "mermaid"
+  const xstate = isXStateLanguage(language)
+  const tscircuit = isTsCircuitLanguage(language)
+  const diagram = mermaid || xstate || tscircuit
+  const diagramKind = xstate ? "xstate" : tscircuit ? "tscircuit" : "mermaid"
   const strudel = isStrudelLanguage(language)
   const { liveRenderer } = useEditorRuntime()
   const live = !!liveRenderer && !!node.attrs.live && (language === "jsx" || language === "tsx" || language === "react")
   const entry = String(node.attrs.entry || (language === "tsx" ? "/src/main.tsx" : "/src/main.jsx"))
   const files = useMemo(() => ({ [entry]: previewCode }), [entry, previewCode])
 
-  // Mermaid: docstream's card, with this block's code as the source pane — edit on the left, Pele draws on the right.
-  if (mermaid) {
+  // The editable code stays in ProseMirror; the shared preview follows debounced edits.
+  if (diagram) {
     return (
-      <NodeViewWrapper className="gb-code gb-code-mermaid docs-mermaid-preview docs-split-card" data-docstream-mermaid="">
+      <NodeViewWrapper className={`gb-code gb-code-mermaid gb-code-${diagramKind} docs-${diagramKind}-preview docs-split-card`} {...{ [`data-docstream-${diagramKind}`]: "" }}>
         <div className="docs-split-grid">
         <div className="docs-split-pane docs-split-source-pane">
           <div className="docs-split-head" contentEditable={false}>
-            <span className="docs-split-label">Mermaid</span>
+            <span className="docs-split-label">{xstate ? "XState" : tscircuit ? "tscircuit" : "Mermaid"}</span>
             {editor.isEditable ? (
               <input
                 className="gb-inline-input gb-code-lang"
@@ -1240,7 +1246,9 @@ function CodeView({ node, updateAttributes, editor }: NodeViewProps) {
             <NodeViewContent {...({ as: "code" } as object)} />
           </pre>
         </div>
-        <PeleDiagram code={previewCode} />
+        <div className="gb-diagram-result" contentEditable={false}>
+          {xstate ? <XStatePreview code={previewCode} /> : tscircuit ? <TsCircuitPreview code={previewCode} /> : <PeleDiagram code={previewCode} />}
+        </div>
         </div>
       </NodeViewWrapper>
     )
