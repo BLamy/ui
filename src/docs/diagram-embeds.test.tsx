@@ -47,6 +47,22 @@ describe("diagram fences", () => {
 })
 
 describe("circuit runtime bridge", () => {
+  it("can restart the runtime after its compiler worker fails to fetch", () => {
+    act(() => root.render(<TsCircuitPreview code="circuit.add(<resistor />)" />))
+    const frame = host.querySelector("iframe")!
+    const origin = new URL(DEFAULT_TSCIRCUIT_RUNTIME_URL).origin
+    const message = (data: unknown) => act(() => window.dispatchEvent(new MessageEvent("message", { source: frame.contentWindow as Window, origin, data })))
+    message({ runframe_type: "runframe_ready_to_receive" })
+    message({ type: "runframe_event", runframe_event: { type: "error", error_message: "Failed to fetch" } })
+    expect(host.querySelector('[role="alert"]')?.textContent).toBe("Failed to fetch")
+    const retry = Array.from(host.querySelectorAll("button")).find((button) => button.textContent === "Retry circuit preview")!
+    expect(retry).toBeDefined()
+    act(() => retry.click())
+    expect(host.querySelector("iframe")).not.toBe(frame)
+    expect(host.querySelector('[role="alert"]')).toBeNull()
+    expect(host.querySelector('[role="status"]')?.textContent).toContain("Loading circuit preview")
+  })
+
   it("checks both frame and origin, sends the newest code when ready and updates without navigation", () => {
     act(() => root.render(<TsCircuitPreview code="first" />))
     const frame = host.querySelector("iframe")!

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { SplitCard, SplitResult, SplitSource } from "../docs/SplitCard"
 
-export const DEFAULT_TSCIRCUIT_RUNTIME_URL = "https://runframe.tscircuit.com/iframe.html"
+export const DEFAULT_TSCIRCUIT_RUNTIME_URL = "https://runframe.vercel.app/iframe.html"
 export const isTsCircuitLanguage = (language?: string | null) => ["tscircuit", "ts-circuit"].includes(language?.toLowerCase() ?? "")
 export interface TsCircuitProps {
   code: string
@@ -67,7 +67,7 @@ export function TsCircuitPreview({ code, runtimeUrl = DEFAULT_TSCIRCUIT_RUNTIME_
   return <SplitResult label="tscircuit">
     <div ref={host} className="docs-tscircuit-result" data-theme={dark ? "dark" : "light"}>
       {status === "loading" ? <p role="status" className="docs-tscircuit-status">Loading circuit preview…</p> : null}
-      {error ? <div className="docs-tscircuit-status"><pre className="docs-mermaid-error" role="alert">{error}</pre>{status === "error" ? <button type="button" className="docs-split-action" onClick={() => setAttempt((n) => n + 1)}>Retry circuit preview</button> : null}</div> : null}
+      {error ? <div className="docs-tscircuit-status"><pre className="docs-mermaid-error" role="alert">{error}</pre><button type="button" className="docs-split-action" onClick={() => setAttempt((n) => n + 1)}>Retry circuit preview</button></div> : null}
       {origin && (typeof window === "undefined" || origin !== window.location.origin) ? <iframe key={`${runtimeUrl}:${attempt}`} ref={frame} src={runtimeUrl} title={title} sandbox="allow-scripts allow-same-origin" loading="eager" referrerPolicy="no-referrer" className="docs-tscircuit-frame" onError={() => { setStatus("error"); setError("Unable to load the circuit runtime.") }} /> : null}
     </div>
   </SplitResult>
