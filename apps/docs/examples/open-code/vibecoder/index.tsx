@@ -37,7 +37,7 @@ export default function Vibecoder() {
       <div className="flex items-center gap-3 text-sm">
         <button
           type="button"
-          className="rounded-lg bg-tint px-4 py-2 text-white disabled:opacity-50"
+          className="rounded-lg bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
           disabled={!host || running}
           onClick={async () => {
             if (!host) return;
