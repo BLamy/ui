@@ -2100,7 +2100,7 @@
       "title": "Composer",
       "description": "The Workbench prompt box as parts: card, Docstream editor, footer pills, draggable bumps, compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@1.34.3",
+        "@brett_lamy/docstream-editor@1.34.4",
         "@tiptap/core@3.30.5",
         "@tiptap/pm@3.30.5",
         "class-variance-authority@^0.7.1",
@@ -3261,8 +3261,8 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3",
-        "@brett_lamy/docstream-editor@1.34.3",
+        "@brett_lamy/docstream@1.34.4",
+        "@brett_lamy/docstream-editor@1.34.4",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -3292,7 +3292,7 @@
       "title": "MarkdownView",
       "description": "Docstream-rendered GitBook-flavored Markdown: headings, hints, tables, tabs, highlighted code.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3943,7 +3943,7 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, Console and Network buttons that open a DevTools panel cut at the playhead (requests, failures, errors), a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4480,7 +4480,7 @@
       "title": "StlViewer",
       "description": "A 3D preview of an .stl model, binary or ASCII: WebGL with no dependencies, drag to orbit, pinch or ⌘-scroll to zoom, double-click to reset, and the triangle count and size under it. The model takes the theme's primary color.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4507,7 +4507,7 @@
       "title": "StrudelPlayer",
       "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4539,7 +4539,7 @@
       "title": "StrudelRack",
       "description": "Studio hardware generated from Strudel code: a rack of devices, one per track, with mute/solo pads, a channel fader, synth and key LCDs, TR-style step keys for the mini-notation and LED-ring knobs for each effect. Every control edits the code in place. Knob, Fader and StepGrid are exported on their own.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -4570,7 +4570,7 @@
       "title": "Strudel syntax tree",
       "description": "Strudel code as a syntax tree: the JavaScript (acorn) read as a song — tempo, tracks, method chains with typed arguments — every mini-notation string parsed with source ranges, and edits that rewrite only the characters they touch.",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -5592,7 +5592,7 @@
       "title": "Tui Preview",
       "description": "Tui Preview — part of BL UI's library (components/tui-preview.tsx).",
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6301,7 +6301,7 @@
         "media"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -6378,7 +6378,7 @@
         "use-fs@2.1.0",
         "react-aria-components@^1.20.0",
         "@agent-wasm/core@0.4.0",
-        "@brett_lamy/docstream@1.34.3",
+        "@brett_lamy/docstream@1.34.4",
         "@visual-json/react@0.4.0",
         "@visual-json/yaml@0.4.0"
       ],
@@ -6640,7 +6640,7 @@
       ],
       "dependencies": [
         "use-fs@2.1.0",
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -8155,7 +8155,7 @@
         "audio"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@1.34.3"
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
