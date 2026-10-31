@@ -48,7 +48,12 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           # An absent optional token must leave npm free to use this job's OIDC identity.
-          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then unset NODE_AUTH_TOKEN; fi
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            unset NODE_AUTH_TOKEN
+            # setup-node writes a token placeholder even for OIDC-only jobs.
+            # Remove that empty credential so npm can exchange the workflow identity.
+            npm config delete '//registry.npmjs.org/:_authToken'
+          fi
           npm install --global npm@latest
           mkdir -p "$RUNNER_TEMP/pkgs"
           for pkg in ui; do

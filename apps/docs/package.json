@@ -5,8 +5,8 @@
   "type": "module",
   "dependencies": {
     "@agent-wasm/core": "0.4.0",
-    "@brett_lamy/docstream": "1.33.0",
-    "@brett_lamy/docstream-editor": "1.32.0",
+    "@brett_lamy/docstream": "1.34.0",
+    "@brett_lamy/docstream-editor": "1.34.0",
     "@brett_lamy/registry": "workspace:*",
     "@brett_lamy/ui": "workspace:*",
     "@tiptap/core": "3.30.5",

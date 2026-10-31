@@ -1,6 +1,6 @@
 {
   "name": "@brett_lamy/ui",
-  "version": "5.12.0",
+  "version": "5.13.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/BLamy/ui.git",
@@ -48,8 +48,8 @@
     }
   },
   "dependencies": {
-    "@brett_lamy/docstream": "1.33.0",
-    "@brett_lamy/docstream-editor": "1.32.0",
+    "@brett_lamy/docstream": "1.34.0",
+    "@brett_lamy/docstream-editor": "1.34.0",
     "@internationalized/date": "^3.12.4",
     "@pierre/trees": "1.0.0-beta.6",
     "@tiptap/core": "3.30.5",

@@ -248,6 +248,36 @@ flowchart LR
   Markdown --> Preview
 \`\`\`
 
+### XState statechart
+
+\`\`\`xstate
+{
+  "id": "request",
+  "initial": "idle",
+  "states": {
+    "idle": { "on": { "FETCH": "loading" } },
+    "loading": { "on": { "RESOLVE": "success", "REJECT": "failure" } },
+    "failure": { "on": { "RETRY": "loading" } },
+    "success": { "type": "final" }
+  }
+}
+\`\`\`
+
+### tscircuit electronics
+
+Edit component values or positions to redraw the schematic. The hosted circuit runtime needs a network connection.
+
+\`\`\`tscircuit
+circuit.add(
+  <board width="16mm" height="12mm">
+    <resistor name="R1" resistance="1k" footprint="0402" pcbX={-3} schX={-2} />
+    <capacitor name="C1" capacitance="100nF" footprint="0603" pcbX={3} schX={2} />
+    <trace from=".R1 .pin1" to=".C1 .pin1" />
+  </board>
+)
+\`\`\`
+
+
 ## Video and embeds
 
 A direct video with a poster and playback attributes. This is MDN's flower clip; playback needs a network connection.

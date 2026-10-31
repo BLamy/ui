@@ -77,6 +77,14 @@ Use the **Markdown**, **Rich editor**, and **Preview** tabs inside the example t
 
 `demoResolver` connects live demo blocks to their components and files. `sourceRenderer` renders component and Storybook references; the example uses Docstream's `SourcePreview` with a bundled source client.
 
+### XState and tscircuit
+
+Use an `xstate` fence for a JSON machine config or TypeScript `createMachine(...)` source. Docstream reads the machine structure and draws a statechart with Pele. Actions and guards are never executed. Initial states, nested states, event transitions, delayed transitions, and final states appear in the diagram.
+
+Use a `tscircuit` fence for a TSX circuit such as `circuit.add(<board>...</board>)`. The source sits beside an isolated [tscircuit RunFrame](https://github.com/tscircuit/runframe) with schematic, PCB, and 3D views. The hosted circuit runtime requires a network connection. Plain `tsx` fences remain code examples.
+
+{% demo src="docstream/diagrams" %}
+
 ### Chat replies
 
 Render each assistant turn with `MarkdownView` and keep your own bubbles for user turns. Fenced code gets highlighting and lists keep their spacing.
