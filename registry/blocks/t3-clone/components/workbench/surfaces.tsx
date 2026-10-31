@@ -122,6 +122,7 @@ export interface SurfaceFilesProps {
 }
 /** A @pierre/trees file tree in Workbench tokens. */
 export function SurfaceFiles({ paths, selected, onSelect, title = 'Project files', className }: SurfaceFilesProps) {
+  const appearance = useWorkbenchAppearance();
   const { model } = useFileTree({
     paths,
     initialExpansion: 'open',
@@ -133,7 +134,7 @@ export function SurfaceFiles({ paths, selected, onSelect, title = 'Project files
   });
   return (
     <div data-slot="surface-files" data-renderer="pierre-trees" className={cn('min-h-0 flex-1 px-2.5 py-2', className)}>
-      <FileTree model={model} header={<strong className="text-[12.5px]">{title}</strong>} className="h-full min-h-[220px]" style={TREE_VARS} />
+      <FileTree model={model} header={<strong className="text-[12.5px]">{title}</strong>} className="h-full min-h-[220px]" style={{ ...TREE_VARS, colorScheme: appearance }} />
     </div>
   );
 }
