@@ -1581,7 +1581,8 @@
   margin-top: 4px;
 }
 
-.docs-mermaid-preview {
+.docs-mermaid-preview,
+.docs-pele-theme {
   /* Pele draws with these; they follow the theme without a redraw. */
   --pele-bg: transparent;
   --pele-fg: var(--gb-panel-foreground, currentColor);

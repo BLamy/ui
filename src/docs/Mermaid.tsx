@@ -71,7 +71,7 @@ export function PeleDiagram({ code, className, children }: { code: string; class
   const drawn = usePele(code, host)
   const playground = pelePlaygroundUrl(code)
   return (
-    <div ref={host} className={`docs-split-pane docs-split-render-pane${className ? ` ${className}` : ""}`}>
+    <div ref={host} className={`docs-split-pane docs-split-render-pane docs-pele-theme${className ? ` ${className}` : ""}`}>
       <div className="docs-split-head">
         <span className="docs-split-label">Pele</span>
         {playground ? (
