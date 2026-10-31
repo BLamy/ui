@@ -1091,3 +1091,9 @@ TeX source for a moment while KaTeX loads.
 ## Related Package
 
 Use `@brett_lamy/docstream-editor` when you need the editable TipTap experience for the same document model.
+
+### XState and tscircuit fences
+
+Use an `xstate` fence for a JSON machine config or static TypeScript `createMachine({...})` source, and a `tscircuit` fence for circuit TSX (`circuit.add(<board>...</board>)`). Both render the source beside its preview, like Mermaid. XState actions and guards are never executed. Circuit code runs in the hosted cross-origin [RunFrame](https://github.com/tscircuit/runframe), which requires a network connection.
+
+The React components `XStateDiagram`, `XStatePreview`, `TsCircuit`, and `TsCircuitPreview` are available from the root entry and the lightweight `/xstate` and `/tscircuit` entries. Result-only previews support custom live editors.

@@ -321,6 +321,43 @@ Beyond these, Pele draws requirement, C4, block, packet, kanban, architecture, r
 - A tab set whose tabs are all mermaid fences stays a normal tab set — each tab gets its own card — rather than [collapsing](02-callouts-and-tabs.md#code-only-tabs-collapse) into one code block.
 - Very long sources don't fit in a URL, so their card has no **Open in Playground** link.
 
+## XState statecharts
+
+An `xstate` fence accepts a JSON machine config or static TypeScript `createMachine(...)` source. Docstream reads its structure without running imports, actions, guards or context initializers. Dynamic state definitions, computed keys and spreads show an inline error. XState resolves nested and `#id` targets, and Pele draws the chart using the page theme.
+
+```xstate
+import { createMachine } from "xstate"
+
+export const request = createMachine({
+  id: "request",
+  initial: "idle",
+  states: {
+    idle: { on: { FETCH: "loading" } },
+    loading: { on: { RESOLVE: "success", REJECT: "failure" } },
+    failure: { on: { RETRY: "loading" } },
+    success: { type: "final" }
+  }
+})
+```
+
+Import `XStateDiagram` or the result-only `XStatePreview` from `@brett_lamy/docstream/xstate` to use them directly. The parser and XState load only when a statechart is displayed.
+
+## tscircuit examples
+
+A `tscircuit` (or `ts-circuit`) fence renders TSX source beside schematic, PCB, and 3D views. The [RunFrame runtime](https://github.com/tscircuit/runframe) runs code in an isolated cross-origin iframe and worker; the hosted runtime requires a network connection. Regular `tsx` fences stay ordinary code.
+
+```tscircuit
+circuit.add(
+  <board width="16mm" height="12mm">
+    <resistor name="R1" resistance="1k" footprint="0402" pcbX={-3} schX={-2} />
+    <capacitor name="C1" capacitance="100nF" footprint="0603" pcbX={3} schX={2} />
+    <trace from=".R1 .pin1" to=".C1 .pin1" />
+  </board>
+)
+```
+
+`TsCircuit` and the result-only `TsCircuitPreview` are exported from `@brett_lamy/docstream/tscircuit`. Both take `code`, an optional `title`, and an optional `runtimeUrl` for a compatible runtime hosted on a separate origin. Syntax errors are shown as text; editing the source sends it to the existing frame. Load failures show a retry button.
+
 ## Split cards
 
 Math and diagrams share one layout, the **split card**. It is a size container: when the card is at least **640px** wide, source and result sit side by side; narrower — a phone, a column, a demo pane — the source stacks above the result. The breakpoint follows the card's own width, not the window's, so a diagram inside a [column](04-layout.md#columns) stacks even on a wide screen:

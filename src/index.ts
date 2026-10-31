@@ -1,6 +1,10 @@
 // The root entry never references `@agent-wasm/core` (almost-node). Live code fences and
 // inline-file demos run only when the host passes a runtime — see `@brett_lamy/docstream/playground`.
 export { GitbookStreamdown } from "./streamdown"
+export { XStateDiagram, XStatePreview, isXStateLanguage } from "./xstate"
+export type { XStateDiagramProps } from "./xstate"
+export { TsCircuit, TsCircuitPreview, DEFAULT_TSCIRCUIT_RUNTIME_URL, isTsCircuitLanguage } from "./tscircuit"
+export type { TsCircuitProps } from "./tscircuit"
 export type { GitbookStreamdownProps } from "./streamdown"
 export { DocsRenderer, MarkdownContent, MathFormula, documentEnv } from "./docs/DocsRenderer"
 export { TaskCheckbox, TASK_STATE_ICONS } from "./docs/TaskCheckbox"

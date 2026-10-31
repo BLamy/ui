@@ -34,6 +34,8 @@ import { StrudelPlayer } from "../strudel/StrudelPlayer"
 import { isStrudelFile, isStrudelLanguage } from "../strudel/url"
 import { OpenApiOperation } from "../openapi/OpenApiOperation"
 import { Mermaid } from "./Mermaid"
+import { XStateDiagram, isXStateLanguage } from "../xstate"
+import { TsCircuit, isTsCircuitLanguage } from "../tscircuit"
 import { HighlightedCode } from "./HighlightedCode"
 import { CitationSources, InlineReference } from "./reference"
 import { ImageThumbnail, leadingThumbnail, thumbnailLabel } from "./ImageThumbnail"
@@ -179,7 +181,7 @@ function codeOnlyTabs(block: Extract<Block, { type: "tabs" }>): CodeBlockNode[] 
   const codes: CodeBlockNode[] = []
   for (const tab of block.tabs) {
     const only = tab.children.length === 1 ? tab.children[0] : null
-    if (!only || only.type !== "code" || only.live || only.language === "mermaid" || isStrudelLanguage(only.language) || isTuiCodeBlock(only)) return null
+    if (!only || only.type !== "code" || only.live || only.language === "mermaid" || isXStateLanguage(only.language) || isTsCircuitLanguage(only.language) || isStrudelLanguage(only.language) || isTuiCodeBlock(only)) return null
     codes.push(only)
   }
   return codes
@@ -375,6 +377,8 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       )
     }
     case "code":
+      if (isXStateLanguage(block.language)) return <XStateDiagram code={block.code} />
+      if (isTsCircuitLanguage(block.language)) return <TsCircuit code={block.code} title={block.title ?? undefined} />
       if (isTuiCodeBlock(block) && tui.options !== false) {
         return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} isStreaming={tui.isStreaming || block.closingFence === ""} />
       }

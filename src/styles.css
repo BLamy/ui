@@ -5458,6 +5458,13 @@
   }
 }
 
+/* Hosted tscircuit is isolated from page styles. Invert its light canvas as a whole in a dark host. */
+.docs-tscircuit-result { position: relative; min-width: 0; }
+.docs-tscircuit-frame { display: block; width: 100%; height: 440px; border: 0; background: #fff; color-scheme: light; }
+.docs-tscircuit-result[data-theme="dark"] .docs-tscircuit-frame { filter: invert(1) hue-rotate(180deg); }
+.docs-tscircuit-status { padding: 12px; font-size: 13px; color: var(--muted-foreground, currentColor); }
+.docs-tscircuit-status .docs-mermaid-error { margin: 0 0 8px; padding: 0; }
+
 /* Keep every rendered table variant flush, after the shared block spacing rules. */
 :is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-table, table, .docs-cards) {
   margin-block-start: 0;
