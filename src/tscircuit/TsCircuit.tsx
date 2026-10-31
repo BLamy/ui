@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { SplitCard, SplitResult, SplitSource } from "../docs/SplitCard"
+import { TSCIRCUIT_COMPILER_WORKER_URL } from "./worker"
 
 export const DEFAULT_TSCIRCUIT_RUNTIME_URL = "https://runframe.vercel.app/iframe.html"
 export const isTsCircuitLanguage = (language?: string | null) => ["tscircuit", "ts-circuit"].includes(language?.toLowerCase() ?? "")
@@ -46,6 +47,7 @@ export function TsCircuitPreview({ code, runtimeUrl = DEFAULT_TSCIRCUIT_RUNTIME_
     setError("")
     if (!origin || origin === window.location.origin) { setError("The tscircuit runtime must use a separate HTTP(S) origin."); setStatus("error"); return }
     const send = () => frame.current?.contentWindow?.postMessage({ runframe_type: "runframe_props_changed", runframe_props: {
+      evalVersion: "0.0.1675", evalWebWorkerBlobUrl: TSCIRCUIT_COMPILER_WORKER_URL,
       fsMap: { "main.tsx": latestCode.current }, entrypoint: "main.tsx", defaultActiveTab: "schematic", availableTabs: ["schematic", "pcb", "cad"], showCodeTab: false, showToggleFullScreen: false,
     } }, origin)
     const receive = (event: MessageEvent) => {

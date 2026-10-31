@@ -74,7 +74,7 @@ describe("circuit runtime bridge", () => {
     expect(send).not.toHaveBeenCalled()
     act(() => root.render(<TsCircuitPreview code="latest" />))
     message(frame.contentWindow as Window, origin, { runframe_type: "runframe_ready_to_receive" })
-    expect(send).toHaveBeenLastCalledWith(expect.objectContaining({ runframe_props: expect.objectContaining({ fsMap: { "main.tsx": "latest" }, defaultActiveTab: "schematic" }) }), origin)
+    expect(send).toHaveBeenLastCalledWith(expect.objectContaining({ runframe_props: expect.objectContaining({ evalVersion: "0.0.1675", evalWebWorkerBlobUrl: expect.stringMatching(/^data:application\/javascript/), fsMap: { "main.tsx": "latest" }, defaultActiveTab: "schematic" }) }), origin)
     act(() => root.render(<TsCircuitPreview code="edited" />))
     expect(host.querySelector("iframe")).toBe(frame)
     expect(send).toHaveBeenLastCalledWith(expect.objectContaining({ runframe_props: { fsMap: { "main.tsx": "edited" } } }), origin)
