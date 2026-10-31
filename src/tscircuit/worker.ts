@@ -12,8 +12,16 @@ const timer = setTimeout(() => controller.abort(), 30000);
 try {
   const response = await fetch("https://cdn.jsdelivr.net/npm/@tscircuit/eval@0.0.1675/dist/webworker/entrypoint.js", { signal: controller.signal });
   if (!response.ok) throw new Error("Compiler request failed (" + response.status + ")");
-  const compiler = new Blob([await response.arrayBuffer()], { type: "application/javascript" });
-  await import(new FileReaderSync().readAsDataURL(compiler));
+  // WebKit cannot read blobs in a data-URL worker (webkit.org/b/258443).
+  // Encode the downloaded bytes directly, without a Blob or FileReader.
+  const compiler = new Uint8Array(await response.arrayBuffer());
+  const chunks = [];
+  // A multiple of three keeps base64 padding in the final chunk only. Small
+  // chunks also avoid argument-count limits with the ~19 MB compiler bundle.
+  for (let offset = 0; offset < compiler.length; offset += 24576) {
+    chunks.push(btoa(String.fromCharCode(...compiler.subarray(offset, offset + 24576))));
+  }
+  await import("data:application/javascript;base64," + chunks.join(""));
 } catch (error) {
   // Report startup errors through RunFrame's Comlink requests so its normal
   // error callback, and the preview's retry control, can handle them.
