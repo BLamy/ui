@@ -682,3 +682,14 @@ export { DEFAULT_OPENCODE_PREVIEW_URL } from './lib/open-code-preview';
 export type { OpenCodeProps, OpenCodeState } from './components/open-code';
 export { createAlmostNodeOpenCodeHost, createAgentWasmOpenCodeHost, loadOpenCodeRuntime, DEFAULT_OPENCODE_RUNTIME_URL } from './lib/open-code-host';
 export type { OpenCodeHostBridge, OpenCodePort, OpenCodeWorkspaceBridge, OpenCodeProcessBridge, OpenCodeCommand, OpenCodeRuntime, OpenCodeRuntimeSession, AlmostNodeOpenCodeContainer, AlmostNodeOpenCodeOptions } from './lib/open-code-host';
+
+export {
+  Workspace, WorkspaceTabCloseButton, WorkspaceToolbar,
+  useWorkspaceRef, useWorkspaceCallbackRef, useParentWorkspace,
+  useParentTab, useParentTabState, useParentTabset, useParentTabsetState,
+} from './components/workspace';
+export type {
+  WorkspaceProps, WorkspaceModel, WorkspaceModelInput, WorkspaceImperativeHandle,
+  WorkspaceChangedMeta, WorkspaceChangeReason, WorkspaceClassNames, WorkspaceStyles,
+  WorkspaceNode, TabNode, TabsetNode, SplitNode, TabDropTarget, TabRenderProps,
+} from './components/workspace';

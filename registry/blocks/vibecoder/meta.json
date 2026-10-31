@@ -1,0 +1,8 @@
+{
+  "name": "vibecoder",
+  "title": "Vibecoder",
+  "description": "OpenCode v2.2.4 and a live app in one browser workspace. The terminal and starter HTTP server start on mount. Edit the same AlmostNode files from OpenCode and preview the running app through AlmostNode's service worker. Configurable AlmostNode or agent-wasm host bridge, port switching, reload and terminal lifecycle controls.",
+  "categories": ["ai", "application", "developer-tools"],
+  "files": ["page.tsx", "host.ts", "project.ts"],
+  "dependencies": ["@agent-wasm/core"]
+}

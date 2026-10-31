@@ -1,0 +1,18 @@
+{
+  "name": "workspace",
+  "title": "Workspace",
+  "description": "Dockable tabs and resizable pane groups, built on react-resizable-panels Workspace. Drag between groups, split at an edge and preserve mounted tab state.",
+  "page": "workspace",
+  "exports": [
+    "Workspace",
+    "WorkspaceTabCloseButton",
+    "WorkspaceToolbar",
+    "useWorkspaceRef",
+    "useWorkspaceCallbackRef",
+    "useParentWorkspace",
+    "useParentTab",
+    "useParentTabState",
+    "useParentTabset",
+    "useParentTabsetState"
+  ]
+}

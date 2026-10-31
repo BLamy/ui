@@ -4,7 +4,7 @@ OpenCode's real v2.2.4 terminal UI, rendered by OpenTUI WebAssembly, connected t
 
 {% demo src="open-code/vibecoder" %}
 
-Start **OpenCode**, then select **Run starter app**. Its HTTP server serves HTML, CSS, JavaScript and an API route from the virtual filesystem. Try the counter in the preview. With a provider connected, ask OpenCode to edit `index.html` or `style.css`; select **Reload** to see the change.
+The [Vibecoder block](https://blamy.github.io/ui/#/blocks/vibecoder) starts OpenCode and the starter app automatically when it opens. Its HTTP server serves HTML, CSS, JavaScript and an API route from the virtual filesystem. Try the counter in the preview. With a provider connected, ask OpenCode to edit `index.html` or `style.css`; select **Reload** to see the change.
 
 ## Installation
 
@@ -47,7 +47,7 @@ Use `OpenCodeHostBridge` for another runtime. Supply `id`, `directory`, `workspa
 <OpenCode host={bridge} loadRuntime={() => import('./opencode-runtime')} />
 ```
 
-The default trusted runtime module is [the OpenCode fork on GitHub Pages](https://blamy.github.io/opencode/runtime.js). It downloads only after Start. `runtimeUrl` points to a self-hosted copy; `loadRuntime` can return a bundled implementation of the same `mount()` contract. Upstream installs document-wide terminal state, so only one OpenCode runtime can run per document. Multiple components can remain idle.
+The default trusted runtime module is [the OpenCode fork on GitHub Pages](https://blamy.github.io/opencode/runtime.js). It downloads and starts when the component mounts. Pass `autoStart={false}` to wait for the Start button. `runtimeUrl` points to a self-hosted copy; `loadRuntime` can return a bundled implementation of the same `mount()` contract. Upstream installs document-wide terminal state, so only one OpenCode runtime can run per document. Multiple components can remain idle.
 
 ## Provider connection
 
@@ -63,7 +63,7 @@ Select **Connection** for the Tailscale/Cloudflare explanation. Tailscale routes
 | `title`                      | Accessible component and frame name. Defaults to `OpenCode`.    |
 | `height`                     | Component height in pixels. Defaults to `620`.                  |
 | `theme`                      | `dark` or `light`. Changing it restarts the session.            |
-| `autoStart`                  | Start on mount. Defaults to `false`.                            |
+| `autoStart`                  | Start on mount. Defaults to `true`; `false` enables manual Start.                            |
 | `onReady`                    | Receives the mounted runtime session and host.                  |
 | `onStateChange`              | Observes idle, starting, running, error and stopped.            |
 

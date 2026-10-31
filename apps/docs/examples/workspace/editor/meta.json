@@ -1,0 +1,7 @@
+{
+  "title": "A workspace that moves with you",
+  "description": "Drag tabs between groups, drop onto an edge to split, resize panes and maximize a group. Counter values and drafts survive every move.",
+  "height": 560,
+  "layout": "multi",
+  "bleed": true
+}
