@@ -5563,6 +5563,7 @@
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/open-code-browser.json",
         "https://blamy.github.io/ui/r/open-code-host.json",
         "https://blamy.github.io/ui/r/open-code-preview.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -5924,6 +5925,41 @@
       ]
     },
     {
+      "name": "open-code-browser-agent",
+      "type": "registry:lib",
+      "title": "Open Code Browser Agent",
+      "description": "Open Code Browser Agent — part of BL UI's library (lib/open-code-browser-agent.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/open-code-browser-agent.ts",
+          "type": "registry:lib",
+          "target": "lib/open-code-browser-agent.ts"
+        }
+      ]
+    },
+    {
+      "name": "open-code-browser",
+      "type": "registry:lib",
+      "title": "Open Code Browser",
+      "description": "Open Code Browser — part of BL UI's library (lib/open-code-browser.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/open-code-host.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/open-code-browser.ts",
+          "type": "registry:lib",
+          "target": "lib/open-code-browser.ts"
+        }
+      ]
+    },
+    {
       "name": "open-code-host",
       "type": "registry:lib",
       "title": "Open Code Host",
@@ -5948,6 +5984,8 @@
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/open-code-browser.json",
+        "https://blamy.github.io/ui/r/open-code-browser-agent.json",
         "https://blamy.github.io/ui/r/open-code-host.json"
       ],
       "files": [

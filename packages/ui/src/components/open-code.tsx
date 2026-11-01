@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
+import { createOpenCodeBrowser } from '@/lib/open-code-browser';
 import {
   connectOpenCodePreview,
   DEFAULT_OPENCODE_PREVIEW_URL,
@@ -35,6 +36,8 @@ export interface OpenCodeProps {
   theme?: 'light' | 'dark';
   /** Start when mounted. Set false to require the Start button. */
   autoStart?: boolean;
+  /** Attach Agent Browser-compatible MCP tools for the selected app iframe. */
+  browserTools?: boolean;
   onStateChange?: (state: OpenCodeState) => void;
   onReady?: (
     session: OpenCodeRuntimeSession,
@@ -55,6 +58,7 @@ export function OpenCode({
   style,
   theme = 'dark',
   autoStart = true,
+  browserTools = true,
   onStateChange,
   onReady,
 }: OpenCodeProps) {
@@ -68,7 +72,10 @@ export function OpenCode({
   const [revision, setRevision] = useState(0);
   const [version, setVersion] = useState('');
   const [previewSession, setPreviewSession] = useState('');
+  const [previewPath, setPreviewPath] = useState('/');
   const [bridge, setBridge] = useState<OpenCodeHostBridge>();
+  const [browserConnected, setBrowserConnected] = useState(false);
+  const browser = useMemo(() => createOpenCodeBrowser({ onConnectedChange: setBrowserConnected }), []);
   const callbacks = useRef({ onStateChange, onReady });
   callbacks.current = { onStateChange, onReady };
   useEffect(() => {
@@ -88,6 +95,7 @@ export function OpenCode({
       if (cleaned) return;
       cleaned = true;
       unsubscribe?.();
+      browser.reset();
       session?.dispose();
       owned?.dispose?.();
     };
@@ -95,6 +103,7 @@ export function OpenCode({
     setError('');
     setPorts([]);
     setSelected(null);
+    setPreviewPath('/');
     void (async () => {
       if (host && createHost)
         throw new Error('Choose host or createHost, not both.');
@@ -123,6 +132,7 @@ export function OpenCode({
             url: openCodePreviewUrl(port, window.location.href),
           }));
           const added = next.filter((port) => !previous.has(port.port));
+          if (added.length) setPreviewPath('/');
           previous = new Set(next.map((port) => port.port));
           setPorts(next);
           setSelected(
@@ -145,6 +155,12 @@ export function OpenCode({
         : loadOpenCodeRuntime(runtimeUrl));
       if (cancelled) return;
       setVersion(runtime.version ?? '');
+      const mcpServers = [
+        ...(nextHost?.mcpServers ?? []),
+        ...(browserTools && nextHost?.previews ? [browser.server] : []),
+      ];
+      if (mcpServers.length && runtime.capabilities?.hostMcp !== 1)
+        throw new Error('This OpenCode runtime needs the host MCP update. Update runtimeUrl or set browserTools={false}.');
       session = await runtime.mount({
         container: terminalElement,
         connectionContainer: connectionElement,
@@ -152,6 +168,7 @@ export function OpenCode({
         directory: nextHost?.directory,
         workspaceBridge: nextHost?.workspaceBridge,
         processBridge: nextHost?.processBridge,
+        mcpServers,
       });
       if (cancelled) {
         session.dispose();
@@ -188,6 +205,8 @@ export function OpenCode({
     runtimeUrl,
     previewRuntimeUrl,
     theme,
+    browserTools,
+    browser,
   ]);
 
   const active = ports.find((port) => port.port === selected);
@@ -208,6 +227,7 @@ export function OpenCode({
           previewFrame.session,
           active.port,
           window.location.href,
+          previewPath,
         )
       : '';
   useEffect(() => {
@@ -219,8 +239,10 @@ export function OpenCode({
       port: selected,
       url: previewSrc,
       onError: setError,
+      browser: browserTools ? browser : undefined,
+      onNavigate: (path) => { setPreviewPath(path); setRevision((value) => value + 1); },
     });
-  }, [bridge, previewSrc, previewFrame, selected]);
+  }, [bridge, previewSrc, previewFrame, selected, browser, browserTools]);
   useEffect(() => {
     if (selected === null || !ports.some((port) => port.port === selected))
       return;
@@ -310,13 +332,18 @@ export function OpenCode({
           >
             <div className="flex min-h-10 shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
               <span>Preview</span>
+              {browserTools && active && (
+                <span className="text-muted-foreground" title="Agent Browser-compatible tools connected to this app iframe">
+                  Browser MCP · {browserConnected ? 'ready' : 'connecting'}
+                </span>
+              )}
               {ports.map((port) => (
                 <button
                   key={port.port}
                   type="button"
                   aria-pressed={selected === port.port}
                   className="appearance-none rounded border border-border bg-transparent px-2 py-1 font-sans aria-pressed:bg-muted"
-                  onClick={() => setSelected(port.port)}
+                  onClick={() => { setPreviewPath('/'); setSelected(port.port); }}
                 >
                   {port.name ?? `Port ${port.port}`}
                 </button>

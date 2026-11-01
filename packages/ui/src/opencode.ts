@@ -15,6 +15,7 @@ export type {
   OpenCodeWorkspaceBridge,
   OpenCodeProcessBridge,
   OpenCodeCommand,
+  OpenCodeMcpServer,
   OpenCodeRuntime,
   OpenCodeRuntimeSession,
   AlmostNodeOpenCodeContainer,
