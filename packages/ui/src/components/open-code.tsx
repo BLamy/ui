@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import {
   connectOpenCodePreview,
@@ -192,11 +192,20 @@ export function OpenCode({
 
   const active = ports.find((port) => port.port === selected);
   const frame = useRef<HTMLIFrameElement>(null);
+  // The AlmostNode worker owns one MessagePort. Replaced frames need a fresh
+  // scope so a previous worker cannot send requests to its closed connection.
+  const previewFrame = useMemo(
+    () => ({
+      key: `${previewSession}:${selected}:${revision}`,
+      session: crypto.randomUUID(),
+    }),
+    [previewSession, selected, revision],
+  );
   const previewSrc =
     active && previewSession
       ? openCodePreviewFrameUrl(
           previewRuntimeUrl,
-          previewSession,
+          previewFrame.session,
           active.port,
           window.location.href,
         )
@@ -206,12 +215,12 @@ export function OpenCode({
     return connectOpenCodePreview({
       frame: frame.current,
       host: bridge,
-      session: previewSession,
+      session: previewFrame.session,
       port: selected,
       url: previewSrc,
       onError: setError,
     });
-  }, [bridge, previewSrc, previewSession, selected, revision]);
+  }, [bridge, previewSrc, previewFrame, selected]);
   useEffect(() => {
     if (selected === null || !ports.some((port) => port.port === selected))
       return;
@@ -335,7 +344,7 @@ export function OpenCode({
             </div>
             {active ? (
               <iframe
-                key={`${active.port}:${revision}`}
+                key={previewFrame.key}
                 ref={frame}
                 src={previewSrc}
                 title={`${title} · ${active.name ?? `port ${active.port}`}`}

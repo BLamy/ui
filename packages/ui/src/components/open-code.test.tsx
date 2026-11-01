@@ -156,3 +156,33 @@ it('starts on mount, opens an existing app port, and stays stopped until explici
   await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(2));
   expect(createHost).toHaveBeenCalledTimes(2);
 });
+
+it('reconnects preview frames on reload and port changes without restarting OpenCode', async () => {
+  const f = fixture();
+  const port = (value: number) => ({
+    port: value,
+    url: `${window.location.origin}/__virtual__/${value}/`,
+  });
+  f.update([port(3000)]);
+  render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} />);
+  await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
+  const initial = screen.getByTitle('OpenCode · port 3000');
+  const initialUrl = new URL(initial.getAttribute('src') ?? '');
+  fireEvent.click(screen.getByRole('button', { name: 'Reload app preview' }));
+  const reloaded = screen.getByTitle('OpenCode · port 3000');
+  const reloadUrl = new URL(reloaded.getAttribute('src') ?? '');
+  expect(reloaded).not.toBe(initial);
+  expect(reloadUrl.pathname).not.toBe(initialUrl.pathname);
+  expect(reloadUrl.searchParams.get('port')).toBe('3000');
+  f.update([port(3000), port(3001)]);
+  expect(screen.getByTitle('OpenCode · port 3001')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Port 3000' }));
+  const returnedUrl = new URL(
+    screen.getByTitle('OpenCode · port 3000').getAttribute('src') ?? '',
+  );
+  expect(returnedUrl.pathname).not.toBe(initialUrl.pathname);
+  expect(returnedUrl.pathname).not.toBe(reloadUrl.pathname);
+  expect(f.mount).toHaveBeenCalledTimes(1);
+  expect(f.host.dispose).not.toHaveBeenCalled();
+  expect(f.session.dispose).not.toHaveBeenCalled();
+});
