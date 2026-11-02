@@ -56,7 +56,7 @@ export function ScreenFrame({ events, evidence, viewport, crop, onCrop, order, c
     return () => clearTimeout(t);
   }, [order]);
 
-  const scope = useRef(() => false);
+  const scope = useRef<() => boolean>(() => false);
   scope.current = () => {
     const doc = stage.current?.getDocument?.();
     if (!doc?.body) return false;

@@ -40,7 +40,9 @@ The Interface Builder block is Xcode's storyboard for apps made of BL UI. Its li
 
 {% demo src="blocks/replay-canvas" layout="multi" %}
 
-The Replay Canvas block takes an app apart from its rrweb recordings, on a canvas like the Interface Builder's. Each recording is read for the pages it visits, the layers that open over them (dialogs, menus, sheets, popovers, toasts) and the states they go through. Each frame is the recording itself in a paused [ReplayStage](https://blamy.github.io/ui/#/replay-preview), with a layer cropped to just its panel beside the page it opened over. Segues run from where the click landed to what it opened, labelled with what was clicked. Recordings fold into one map: pages merge by route (`/projects/1` and `/projects/3` are `/projects/:id`), title or structure; layers merge by kind, structure and buttons; states merge by the control that led to them. Every recording you add (drop rrweb `.json` files anywhere on it) confirms what's already there and fills in what isn't. Select a frame or a segue to see the moments it was seen at and play the recording from there.
+The Replay Canvas block takes an app apart from its rrweb recordings, on a canvas like the Interface Builder's. Each recording is read for the pages it visits, the layers that open over them (dialogs, menus, sheets, popovers, toasts) and the states they go through. Each frame is the recording itself in a paused [ReplayStage](https://blamy.github.io/ui/#/replay-preview), with a layer cropped to just its panel beside the page it opened over. Segues run from where the click landed to what it opened, labelled with what was clicked. Recordings fold into one map: pages merge by route (`/projects/1` and `/projects/3` are `/projects/:id`), title or structure; layers merge by kind, structure and buttons; states merge by the control that led to them. Every recording you add (drop rrweb `.json` files anywhere on it) confirms what's already there and fills in what isn't. Select a frame or a segue to see the moments it was seen at and play the recording from there. The arrow button hides the arrows and leaves the dots where clicks landed; select a dot to draw its arrow.
+
+The demo needs a Replay sign-in (`REPLAY_API_KEY`, loaded from the keychain). Signed in, it lists your [Replay QA](https://qa.replay.io) projects and, for each, its test runs: every journey run in one go of the suite, newest first. Pick a test run and the recording of each journey in it loads into the recordings, a few at a time, and folds into the map. Outside the docs, pass the token as `replayApiKey`.
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/replay-canvas.json{% endcommand %}
 
@@ -48,6 +50,7 @@ The Replay Canvas block takes an app apart from its rrweb recordings, on a canva
 import ReplayCanvas from '@/components/blocks/replay-canvas/page';
 
 <ReplayCanvas recordings={[{ id: 'checkout', name: 'Checkout', events }, …]} />;
+<ReplayCanvas replayApiKey={replayAccessToken} />; // your Replay QA projects and test runs
 ```
 
 {% demo src="blocks/video-editor" layout="multi" %}

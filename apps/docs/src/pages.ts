@@ -28,7 +28,7 @@ export const SITE_BLOCKS = 'blocks';
 
 /* Blocks: one page each, cut from pages/blocks.md (one `{% demo src="blocks/<slug>" %}` and the prose under it
    per block, in that file's order). The Blocks page itself becomes the overview: its intro and a list of them. */
-const blockMetas = import.meta.glob<{ title: string; description?: string }>('../../../registry/blocks/*/meta.json', { eager: true, import: 'default' });
+const blockMetas = import.meta.glob<{ title: string; description?: string; env?: string[] }>('../../../registry/blocks/*/meta.json', { eager: true, import: 'default' });
 const BLOCK_DEMO = /^\{% demo src="blocks\/([\w-]+)"/;
 const blockSections = (() => {
   const lines = (sources[`../pages/${SITE_BLOCKS}.md`] ?? '').split('\n');
@@ -42,10 +42,10 @@ const blockSections = (() => {
   return { intro: intro.join('\n').trim(), blocks };
 })();
 
-/** The block pages, in the order pages/blocks.md lists them. */
-export const BLOCK_PAGES: Array<PageInfo & { description: string }> = blockSections.blocks.map(({ slug }) => {
+/** The block pages, in the order pages/blocks.md lists them; `env`, the variables the block's demo reads (meta.json). */
+export const BLOCK_PAGES: Array<PageInfo & { description: string; env?: string[] }> = blockSections.blocks.map(({ slug }) => {
   const meta = blockMetas[`../../../registry/blocks/${slug}/meta.json`];
-  return { id: `${SITE_BLOCKS}/${slug}`, title: meta?.title ?? slug, description: meta?.description ?? '', section: 'Blocks', wide: true };
+  return { id: `${SITE_BLOCKS}/${slug}`, title: meta?.title ?? slug, description: meta?.description ?? '', env: meta?.env, section: 'Blocks', wide: true };
 });
 
 function blockSource(id: string) {
@@ -63,7 +63,7 @@ function blockSource(id: string) {
 export const PAGE_LIST: PageInfo[] = [
   ...NAV.sections.flatMap((s) => s.pages.map((p) => ({ ...p, section: s.section }))),
   ...NAV.standalone,
-  ...BLOCK_PAGES.map(({ description: _, ...page }) => page),
+  ...BLOCK_PAGES.map(({ description: _, env: __, ...page }) => page),
 ];
 export const PAGES: Record<string, PageInfo> = Object.fromEntries(PAGE_LIST.map((p) => [p.id, p]));
 

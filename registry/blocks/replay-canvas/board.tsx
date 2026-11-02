@@ -1,8 +1,9 @@
 'use client';
 /* The board: every page and layer state as a frame on the core Canvas, named above like a design tool's frames, and
    segues drawn from where the click landed to what it opened, labelled with what was clicked. Click a frame or a
-   segue (its line or its label) to select it; double-click a frame to zoom to it. Selecting dims everything that
-   isn't connected to the selection. */
+   segue (its line, its dot or its label) to select it; double-click a frame to zoom to it. Selecting dims everything
+   that isn't connected to the selection. With arrows hidden only the dots where clicks landed stay; selecting one
+   draws its arrow. */
 import { useMemo, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Canvas, CanvasFrame, useCanvas } from '@/components/ui/canvas';
 import { fitCamera, unionRect, type Camera, type Rect } from '@/lib/canvas-math';
@@ -45,11 +46,13 @@ export interface BoardProps {
   selection: Selection;
   onSelect: (s: Selection) => void;
   showDismiss: boolean;
+  /** Draw every segue's arrow; off, only their dots show, and a selected segue's arrow. */
+  showArrows: boolean;
   /** Which evidence each frame shows (index into its state's evidence), by frame key. */
   shown: Record<string, number>;
 }
 
-export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera, onCameraChange, selection, onSelect, showDismiss, shown }: BoardProps) {
+export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera, onCameraChange, selection, onSelect, showDismiss, showArrows, shown }: BoardProps) {
   const [hover, setHover] = useState<string | null>(null);
   const byKey = useMemo(() => new Map(boxes.map((b) => [b.key, b])), [boxes]);
   const paths = useMemo(() => {
@@ -133,7 +136,8 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
           </div>
         );
       })}
-      <Segues paths={paths} related={related?.segues ?? null} hover={hover} />
+      <Segues paths={paths} related={related?.segues ?? null} hover={hover}
+        drawn={showArrows ? null : selection?.kind === 'segue' ? selection.id : ''} />
       {selectedBox && <CanvasFrame frame={{ ...selectedBox, rot: 0 }} />}
     </Canvas>
   );
@@ -167,7 +171,8 @@ function FrameTitle({ box }: { box: FrameBox }) {
   );
 }
 
-function Segues({ paths, related, hover }: { paths: SeguePath[]; related: Set<string> | null; hover: string | null }) {
+/** `drawn`: null draws every arrow; otherwise only that segue's (the others are just their dots). */
+function Segues({ paths, related, hover, drawn }: { paths: SeguePath[]; related: Set<string> | null; hover: string | null; drawn: string | null }) {
   const { zoom } = useCanvas();
   const w = 2 / zoom;
   const head = 12 / zoom;
@@ -178,20 +183,26 @@ function Segues({ paths, related, hover }: { paths: SeguePath[]; related: Set<st
           const on = hover === s.id || related?.has(s.id);
           const dim = related && !related.has(s.id);
           const a1 = angle + Math.PI - 0.45, a2 = angle + Math.PI + 0.45;
+          const arrow = drawn === null || drawn === s.id;
           return (
             <g key={s.id} className={cn('transition-opacity duration-200', dim && 'opacity-20')}>
-              <path d={d} fill="none" className="[pointer-events:stroke] stroke-transparent" strokeWidth={14 / zoom} data-rc-segue={s.id} />
-              <path d={d} fill="none" className={SEGUE_STROKE[s.kind]} strokeWidth={on ? w * 1.8 : w} strokeDasharray={s.kind === 'dismiss' ? `${6 / zoom} ${5 / zoom}` : undefined} />
-              <circle cx={start.x} cy={start.y} r={on ? 7 / zoom : 5 / zoom} className={cn(SEGUE_FILL[s.kind], 'stroke-background')} strokeWidth={2 / zoom} />
-              <path
-                d={`M ${end.x} ${end.y} L ${end.x + Math.cos(a1) * head} ${end.y + Math.sin(a1) * head} L ${end.x + Math.cos(a2) * head} ${end.y + Math.sin(a2) * head} Z`}
-                className={SEGUE_FILL[s.kind]}
-              />
+              {arrow && (
+                <>
+                  <path d={d} fill="none" className="[pointer-events:stroke] stroke-transparent" strokeWidth={14 / zoom} data-rc-segue={s.id} />
+                  <path d={d} fill="none" className={SEGUE_STROKE[s.kind]} strokeWidth={on ? w * 1.8 : w} strokeDasharray={s.kind === 'dismiss' ? `${6 / zoom} ${5 / zoom}` : undefined} />
+                  <path
+                    d={`M ${end.x} ${end.y} L ${end.x + Math.cos(a1) * head} ${end.y + Math.sin(a1) * head} L ${end.x + Math.cos(a2) * head} ${end.y + Math.sin(a2) * head} Z`}
+                    className={SEGUE_FILL[s.kind]}
+                  />
+                </>
+              )}
+              <circle cx={start.x} cy={start.y} r={on ? 7 / zoom : 5 / zoom} className={cn(SEGUE_FILL[s.kind], 'cursor-pointer stroke-background [pointer-events:all]')} strokeWidth={2 / zoom} data-rc-segue={s.id} />
             </g>
           );
         })}
       </svg>
       {paths.map(({ segue: s, mid }) => {
+        if (drawn !== null && drawn !== s.id) return null;
         const on = hover === s.id || related?.has(s.id);
         const dim = related && !related.has(s.id);
         // Labels crowd a zoomed-out board: there they show for the hovered segue and the selection's.

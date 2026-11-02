@@ -8027,7 +8027,7 @@
       "name": "replay-canvas",
       "type": "registry:block",
       "title": "Replay Canvas",
-      "description": "An app taken apart from its rrweb recordings, on a Figma-style canvas. Every recording is read for the pages it visits, the layers that open over them (dialogs, menus, sheets, popovers, toasts, found by being added at the top of the body or revealed by a class or attribute) and the states they go through; each frame is the recording itself (ReplayStage) paused at that moment, a layer cropped to just its panel and laid out beside the page it opened over. Segues run from where the click landed to what it opened, labelled with what was clicked: navigate, present, update and dismiss. Recordings fold into one map — pages by route pattern (/projects/:id), title or skeleton, layers by kind, structure and buttons, states by the control that led to them — so every recording added confirms what's there (counted) and fills in what isn't. Select a frame or segue to see the moments it was seen at and play the recording from there in ReplayPreview; drop more rrweb .json files anywhere to add them. Sample: four sessions of a mock project tracker.",
+      "description": "An app taken apart from its rrweb recordings, on a Figma-style canvas. Every recording is read for the pages it visits, the layers that open over them (dialogs, menus, sheets, popovers, toasts, found by being added at the top of the body or revealed by a class or attribute) and the states they go through; each frame is the recording itself (ReplayStage) paused at that moment, a layer cropped to just its panel and laid out beside the page it opened over. Segues run from where the click landed to what it opened, labelled with what was clicked: navigate, present, update and dismiss. Recordings fold into one map — pages by route pattern (/projects/:id), title or skeleton, layers by kind, structure and buttons, states by the control that led to them — so every recording added confirms what's there (counted) and fills in what isn't. Select a frame or segue to see the moments it was seen at and play the recording from there in ReplayPreview; drop more rrweb .json files anywhere to add them. Signed in to Replay, it lists your Replay QA projects and their test runs; pick a test run to load the recording of every journey in it. Hide the arrows to see only the dots where clicks landed; select a dot to draw its arrow. Sample: four sessions of a mock project tracker.",
       "categories": [
         "developer",
         "design",
@@ -8035,7 +8035,8 @@
         "application"
       ],
       "dependencies": [
-        "react-aria-components@^1.20.0"
+        "react-aria-components@^1.20.0",
+        "@brett_lamy/docstream@1.34.4"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -8046,6 +8047,8 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/replay-preview.json",
+        "https://blamy.github.io/ui/r/search-field.json",
+        "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -8094,6 +8097,16 @@
           "path": "registry/blocks/replay-canvas/toolbar.tsx",
           "type": "registry:component",
           "target": "components/blocks/replay-canvas/toolbar.tsx"
+        },
+        {
+          "path": "registry/blocks/replay-canvas/qa.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-canvas/qa.ts"
+        },
+        {
+          "path": "registry/blocks/replay-canvas/qa-panel.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/replay-canvas/qa-panel.tsx"
         },
         {
           "path": "registry/blocks/replay-canvas/recordings.ts",

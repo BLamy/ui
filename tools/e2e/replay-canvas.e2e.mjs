@@ -39,6 +39,24 @@ test('selects a segue from its label and shows where it was seen', async ({ page
   await expect(inspector).toContainText('seen 2× in 2 recordings');
 });
 
+test('hides the arrows but keeps their dots; a dot draws its arrow', async ({ page }) => {
+  const arrows = page.locator('path[data-rc-segue]');
+  const dots = page.locator('circle[data-rc-segue]');
+  await expect(dots.first()).toBeAttached();
+  const n = await dots.count();
+  await expect(arrows).toHaveCount(n);
+  await page.getByRole('button', { name: /^Hide arrows/ }).click();
+  await expect(arrows).toHaveCount(0);
+  await expect(dots).toHaveCount(n);
+  const id = await dots.first().getAttribute('data-rc-segue');
+  await dots.first().click({ force: true });
+  await expect(page.locator('[data-slot=replay-canvas-inspector]')).toContainText('Segue');
+  await expect(arrows).toHaveCount(1);
+  await expect(arrows.first()).toHaveAttribute('data-rc-segue', id);
+  await page.getByRole('button', { name: 'Show arrows' }).click();
+  await expect(arrows).toHaveCount(n);
+});
+
 test('folds a recording added from a file into the same map', async ({ page }) => {
   // The first sample recording again, as a dropped file: everything it shows is already on the map, so the map
   // doesn't grow, but what it confirms is counted.

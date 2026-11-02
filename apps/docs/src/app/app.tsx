@@ -69,7 +69,8 @@ function docsFiles(): Record<string, string> {
   for (const b of BLOCK_PAGES) {
     const file = `${b.id}.md`;
     summary.push(`* [${b.title}](${file})`);
-    files[file] = `---\nlayout: wide\n---\n\n${pageSource(b.id)}`;
+    const env = b.env?.length ? `env: [${b.env.join(', ')}]\n` : '';
+    files[file] = `---\nlayout: wide\n${env}---\n\n${pageSource(b.id)}`;
   }
   files['SUMMARY.md'] = summary.join('\n') + '\n';
   return files;

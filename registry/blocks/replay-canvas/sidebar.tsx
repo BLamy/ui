@@ -1,7 +1,8 @@
 'use client';
 /* The leading pane: the recordings the map is built from (turn one off to see what it contributed, add more from
-   files — each one added folds into the same map), and the map's outline, pages with their states and the layers
+   files — each one added folds into the same map, or from a Replay QA test run above them), and the map's outline, pages with their states and the layers
    opened over them, to select and fly to. */
+import type { ReactNode } from 'react';
 import { FileTrigger } from 'react-aria-components';
 import { Checkbox } from '@/components/ui/checkbox';
 import { PlainButton } from '@/components/ui/plain-button';
@@ -23,9 +24,11 @@ export interface SidebarProps {
   onAdd: (files: File[]) => void;
   selection: Selection;
   onSelect: (key: string) => void;
+  /** The Replay QA pane, above the recordings, when signed in to Replay. */
+  qa?: ReactNode;
 }
 
-export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection, onSelect }: SidebarProps) {
+export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection, onSelect, qa }: SidebarProps) {
   const summary = new Map(map.recordings.map((r) => [r.id, r]));
   const selected = selection?.kind === 'frame' ? selection.key : null;
   const row = (key: string, icon: string, label: string, depth: number, extra?: string) => (
@@ -47,6 +50,12 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
 
   return (
     <div data-slot="replay-canvas-sidebar" className="flex h-full min-h-0 flex-col border-r border-border bg-sidebar">
+      {qa && (
+        <div className="flex max-h-[45%] min-h-48 shrink-0 flex-col border-b border-border">
+          <div role="heading" aria-level={2} className="px-3 pt-3 pb-1 text-caption1 font-semibold uppercase tracking-wide text-muted-foreground">Replay QA</div>
+          {qa}
+        </div>
+      )}
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
         <div role="heading" aria-level={2} className="text-caption1 font-semibold uppercase tracking-wide text-muted-foreground">Recordings</div>
         <FileTrigger acceptedFileTypes={['application/json', '.json']} allowsMultiple onSelect={(list) => list && onAdd([...list])}>
@@ -55,7 +64,7 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
           </PlainButton>
         </FileTrigger>
       </div>
-      <ul className="m-0 flex list-none flex-col gap-0.5 px-2 pb-2">
+      <ul className="m-0 flex max-h-64 shrink-0 list-none flex-col gap-0.5 overflow-y-auto px-2 pb-2">
         {recordings.map((r) => {
           const s = summary.get(r.id);
           return (

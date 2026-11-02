@@ -4,8 +4,11 @@
    and folded into one map: each frame is the recording itself paused at that moment, a layer cropped to just the
    layer, beside the page it opened over; segues run from where the click landed to what it opened, saying what was
    clicked. The more recordings, the fuller the map: what they agree on merges (and is counted), what's new is added.
-   Drop rrweb .json files (an event array, `{ events }`, or a list of `{ name, events }`) anywhere on it. */
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+   Drop rrweb .json files (an event array, `{ events }`, or a list of `{ name, events }`) anywhere on it. Signed in to
+   Replay (`replayApiKey`, or REPLAY_API_KEY from the docs page's env), it lists your Replay QA projects and their test
+   runs; pressing one loads every journey's recording in it. */
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { useDocstreamEnv } from '@brett_lamy/docstream';
 import { getReplayMeta, type ReplayEvent } from '@/components/ui/replay-preview';
 import { fitCamera, unionRect, type Camera, type Rect } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
@@ -16,6 +19,8 @@ import { analyzeRecordings, type Recording } from './analyze';
 import { Board, type Selection } from './board';
 import { Inspector } from './inspector';
 import { layoutMap, type Crops } from './layout';
+import { QaAuthError, createQaClient, type QaProject, type QaTestRun } from './qa';
+import { QaPanel, type QaLoad } from './qa-panel';
 import { SAMPLE_RECORDINGS } from './recordings';
 import { Sidebar, type SourceRecording } from './sidebar';
 import { ToolButton } from './toolbar';
@@ -25,6 +30,11 @@ export type { Recording } from './analyze';
 export interface ReplayCanvasProps {
   /** The rrweb recordings to map (the Tandem sample sessions by default). */
   recordings?: Recording[];
+  /** A Replay access token: lists your Replay QA projects and loads their test runs' recordings. Defaults to
+   *  REPLAY_API_KEY from the docs page's env (the Replay sign-in). */
+  replayApiKey?: string;
+  /** The Replay QA API to ask (a staging or PR-preview server's `…/api/v1`); qa.replay.io's by default. */
+  replayQaApi?: string;
   /** Light or dark chrome; defaults to the ambient appearance. */
   appearance?: 'light' | 'dark';
   className?: string;
@@ -47,8 +57,20 @@ async function readRecordings(file: File): Promise<Recording[]> {
   return [];
 }
 
-export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, appearance, className }: ReplayCanvasProps) {
+/** Journeys loaded at once from a test run. */
+const QA_PARALLEL = 4;
+
+/** An rrweb stream plays once it has a Meta followed by a FullSnapshot. */
+const playable = (events: ReplayEvent[]) => events.some((e, i) => e.type === 2 && events[i - 1]?.type === 4);
+
+export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApiKey, replayQaApi, appearance, className }: ReplayCanvasProps) {
   const ambient = useAppearance();
+  const env = useDocstreamEnv();
+  const apiKey = replayApiKey ?? env.values.REPLAY_API_KEY;
+  const qa = useMemo(() => (apiKey ? createQaClient(apiKey, replayQaApi) : null), [apiKey, replayQaApi]);
+  const [qaLoad, setQaLoad] = useState<QaLoad | null>(null);
+  const qaLoading = useRef<AbortController | null>(null);
+  useEffect(() => () => qaLoading.current?.abort(), []);
   const [ref, size] = useContainerSize<HTMLDivElement>({ width: 1280, height: 760 });
   const narrow = size.width < 960;
   const [sources, setSources] = useState<SourceRecording[]>(() => recordings.map((r) => ({ ...r, enabled: true })));
@@ -57,6 +79,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, appearanc
   const [selection, setSelection] = useState<Selection>(null);
   const [shown, setShown] = useState<Record<string, number>>({});
   const [showDismiss, setShowDismiss] = useState(false);
+  const [showArrows, setShowArrows] = useState(true);
   const [panes, setPanes] = useState<{ nav: boolean; inspector: boolean } | null>(null);
   const [dropping, setDropping] = useState(false);
   const canvas = useRef<HTMLDivElement>(null);
@@ -104,6 +127,45 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, appearanc
     if (read.length) setSources((s) => [...s, ...read.map((r) => ({ ...r, enabled: true }))]);
   };
 
+  // A test run replaces the recordings with its journeys', added a few at a time as they arrive.
+  const openTestRun = (project: QaProject, run: QaTestRun) => {
+    if (!qa) return;
+    qaLoading.current?.abort();
+    const ctl = new AbortController();
+    qaLoading.current = ctl;
+    setSources([]); setCrops({}); setSelection(null); setShown({});
+    setQaLoad({ projectId: project.id, runId: run.id, done: 0, total: run.runs.length, empty: 0, loading: true });
+    const update = (f: (l: QaLoad) => QaLoad) => setQaLoad((l) => (l && l.runId === run.id && !ctl.signal.aborted ? f(l) : l));
+    const queue = [...run.runs];
+    let ready: SourceRecording[] = [];
+    const flush = () => {
+      if (!ready.length || ctl.signal.aborted) return;
+      const batch = ready;
+      ready = [];
+      setSources((s) => [...s, ...batch]);
+    };
+    const worker = async () => {
+      for (let r = queue.shift(); r && !ctl.signal.aborted; r = queue.shift()) {
+        let ok = false;
+        try {
+          const events = (await qa.recording(project.id, r.id, ctl.signal)).sort((a, b) => a.timestamp - b.timestamp);
+          ok = playable(events);
+          if (ok) ready.push({ id: `qa-${r.id}`, name: r.journey_name || r.goal || r.id, events, enabled: true });
+        } catch (e) {
+          if (ctl.signal.aborted) return;
+          if (e instanceof QaAuthError) { update((l) => ({ ...l, error: e.message })); ctl.abort(); return; }
+        }
+        update((l) => ({ ...l, done: l.done + 1, empty: l.empty + (ok ? 0 : 1) }));
+      }
+    };
+    const timer = setInterval(flush, 700);
+    void Promise.all(Array.from({ length: QA_PARALLEL }, worker)).finally(() => {
+      clearInterval(timer);
+      flush();
+      setQaLoad((l) => (l && l.runId === run.id ? { ...l, loading: false } : l));
+    });
+  };
+
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     setDropping(false);
@@ -128,6 +190,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, appearanc
             {enabled.length} recording{enabled.length === 1 ? '' : 's'} → {map.pages.length} pages · {map.overlays.length} layers · {states} frames · {map.segues.length} segues
           </p>
           <div className="flex-1" />
+          <ToolButton icon="arrow-up-right" label={showArrows ? 'Hide arrows (dots stay; select one to see its arrow)' : 'Show arrows'} active={showArrows} onPress={() => setShowArrows((v) => !v)} />
           <ToolButton icon="xmark-circle" label={showDismiss ? 'Hide dismissals' : 'Show dismissals'} active={showDismiss} onPress={() => setShowDismiss((v) => !v)} />
           <ToolButton icon="magnifyingglass" label="Zoom to fit (⌘0)" onPress={() => fitTo(unionRect(boxes))} />
           <ToolButton icon="sidebar" label={inspectorOpen ? 'Hide inspector' : 'Show inspector'} active={inspectorOpen} className="-scale-x-100" onPress={() => setPanes({ nav: navOpen, inspector: !inspectorOpen })} />
@@ -143,6 +206,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, appearanc
                 onAdd={(files) => void add(files)}
                 selection={selection}
                 onSelect={focus}
+                qa={qa && <QaPanel client={qa} load={qaLoad} onOpen={openTestRun} />}
               />
             </div>
           )}
@@ -159,11 +223,14 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, appearanc
               selection={selection}
               onSelect={setSelection}
               showDismiss={showDismiss}
+              showArrows={showArrows}
               shown={shown}
             />
             {!enabled.length && (
               <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-footnote text-muted-foreground">
-                <div><Icon name="download" size={28} sw={1.6} className="mx-auto mb-2" />Drop rrweb recordings (.json) to map the app they were recorded in.</div>
+                <div><Icon name="download" size={28} sw={1.6} className="mx-auto mb-2" />
+                  {qaLoad?.loading ? 'Loading the test run’s recordings…' : qa ? 'Pick a Replay QA test run, or drop rrweb recordings (.json), to map the app they were recorded in.' : 'Drop rrweb recordings (.json) to map the app they were recorded in.'}
+                </div>
               </div>
             )}
             {dropping && <div className="pointer-events-none absolute inset-2 rounded-panel border-2 border-dashed border-primary bg-primary/8" />}
