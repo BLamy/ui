@@ -493,3 +493,212 @@ test.describe('phone', () => {
     expect(size.height).toBeGreaterThanOrEqual(44);
   });
 });
+
+/* The PM's findings: each one failed before, and stays fixed. */
+test.describe('regressions', () => {
+  const shared = (page, route) => page.goto(`${SB}/iframe.html?id=blocks-github-clone--shared-repository&viewMode=story#/acme/orbit/${route}`);
+
+  test('an edit never overwrites a commit that landed meanwhile', async ({ page }) => {
+    await shared(page, 'edit/main/README.md');
+    const editor = page.getByRole('textbox', { name: 'Contents of README.md' });
+    await expect(editor).toHaveValue(/Orbit/, { timeout: 30_000 });
+    await editor.fill('# Mine\n');
+    // Someone else commits, and the page revalidates.
+    await page.evaluate(async () => {
+      const s = globalThis.__githubSharedServer;
+      const url = 'https://api.github.com/repos/acme/orbit/contents/README.md';
+      const { sha } = await (await s.fetch(url + '?ref=main')).json();
+      await s.fetch(url, { method: 'PUT', body: JSON.stringify({ message: 'theirs', content: btoa('# Theirs\n'), branch: 'main', sha }) });
+    });
+    await page.getByRole('button', { name: 'Reload from GitHub' }).click();
+    await page.getByRole('button', { name: 'Commit changes' }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'changed on GitHub while you were editing' })).toBeVisible();
+    await expect(editor).toHaveValue('# Mine\n');
+    const text = await page.evaluate(async () => (await globalThis.__githubSharedServer.fetch('https://api.github.com/repos/acme/orbit/readme', { headers: { accept: 'application/vnd.github.raw+json' } })).text());
+    expect(text).toBe('# Theirs\n');
+  });
+
+  test('drafts survive leaving; Cancel asks; no-change commits are off', async ({ page }) => {
+    await page.goto(story('light', 'issues/489'));
+    const box = page.getByRole('textbox', { name: 'Add a comment' });
+    await box.fill('half a thought', { timeout: 30_000 });
+    await page.getByRole('tab', { name: /^Pull requests/ }).click();
+    await page.goBack();
+    await expect(box).toHaveValue('half a thought');
+    await expect(page.getByText('Your unsent comment is still here.')).toBeVisible();
+
+    await page.goto(story('light', 'edit/main/README.md'));
+    await page.reload();
+    const editor = page.getByRole('textbox', { name: 'Contents of README.md' });
+    await expect(editor).toHaveValue(/Orbit/, { timeout: 30_000 });
+    await expect(page.getByRole('button', { name: 'Commit changes' })).toBeDisabled();
+    await editor.fill('# Changed\n');
+    await page.getByRole('tab', { name: /^Issues/ }).click();
+    await page.goBack();
+    await expect(editor).toHaveValue('# Changed\n');
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(page.getByRole('alertdialog', { name: 'Discard your changes?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Keep editing' }).click();
+    await expect(editor).toHaveValue('# Changed\n');
+  });
+
+  test('a failed refresh keeps the screen and what you typed', async ({ page }) => {
+    await shared(page, 'issues/489');
+    const box = page.getByRole('textbox', { name: 'Add a comment' });
+    await box.fill('still here', { timeout: 30_000 });
+    await page.evaluate(() => { for (let i = 0; i < 4; i++) globalThis.__githubSharedServer.fail(/GET \/repos\/acme\/orbit\/issues\/489/, 500, 'Server Error'); });
+    await page.getByRole('button', { name: 'Reload from GitHub' }).click();
+    await expect(page.getByText(/Couldn’t refresh this/).first()).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible();
+    await expect(box).toHaveValue('still here');
+  });
+
+  test('back crosses a repository switch; picks honor their route', async ({ page }) => {
+    await page.goto(story('light', 'issues'));
+    await expect(page.getByRole('heading', { name: 'Issues' })).toBeAttached({ timeout: 30_000 });
+    const pick = async (text) => {
+      await page.getByRole('button', { name: /^Repository / }).click();
+      await page.getByRole('textbox', { name: /Search repositories/ }).fill(text);
+      await page.getByRole('button', { name: 'Open', exact: true }).click();
+    };
+    await pick('octo/hello-world');
+    await expect(page.getByRole('button', { name: /Repository octo\/hello-world/ })).toBeVisible();
+    await page.goBack();
+    await expect(page.getByRole('button', { name: /Repository acme\/orbit/ })).toBeVisible();
+    await expect(page).toHaveURL(/#\/acme\/orbit\/issues/);
+    await pick('octo/hello-world');
+    await expect(page.getByRole('button', { name: /Repository octo\/hello-world/ })).toBeVisible();
+    await pick('https://github.com/acme/orbit/pull/488');
+    await expect(page.getByRole('heading', { level: 1, name: /jitter/ })).toBeVisible();
+    await pick('octo/hello-world');
+    await expect(page.getByRole('button', { name: /Repository octo\/hello-world/ })).toBeVisible();
+    await pick('acme/orbit');
+    await expect(page.getByRole('link', { name: 'Folder src' })).toBeVisible();
+  });
+
+  test('tags and shas take no commits; a missing file says so', async ({ page }) => {
+    await page.goto(story('light', 'blob/v3.2.0/README.md'));
+    await page.getByRole('button', { name: 'More file actions' }).click({ timeout: 30_000 });
+    await expect(page.getByRole('menuitem', { name: /Edit file/ })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await page.goto(story('light', 'edit/v3.2.0/README.md'));
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'You can’t commit here' })).toBeVisible({ timeout: 30_000 });
+    await page.goto(story('light', 'delete/main/nope.txt'));
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Nothing to delete' })).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('settings: rename with topics, archive and unarchive, owner row', async ({ page }) => {
+    await open(page, 'settings');
+    await page.getByRole('textbox', { name: 'Repository name' }).fill('orbit2');
+    await page.getByRole('textbox', { name: 'Topics' }).fill('queues, postgres');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('button', { name: /Repository acme\/orbit2/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Archive', exact: true }).click();
+    await page.getByRole('textbox', { name: /to confirm/ }).fill('acme/orbit2');
+    await page.getByRole('button', { name: 'I understand' }).click();
+    await expect(page.getByRole('button', { name: 'Unarchive', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Unarchive', exact: true }).click();
+    await page.getByRole('textbox', { name: /to confirm/ }).fill('acme/orbit2');
+    await page.getByRole('button', { name: 'I understand' }).click();
+    await expect(page.getByRole('button', { name: 'Archive', exact: true })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Settings' }).getByRole('link', { name: 'Collaborators' }).click();
+    await expect(page.getByRole('button', { name: 'Remove acme' })).toHaveCount(0);
+    await page.getByLabel('Role for jonasw').selectOption('triage');
+    await expect(page.getByLabel('Role for jonasw')).toHaveValue('triage');
+  });
+
+  test('refused writes: REST and GraphQL, naming the action, once', async ({ page }) => {
+    await open(page, 'writes-refused');
+    await page.getByRole('button', { name: 'Unpin' }).click({ timeout: 30_000 });
+    await expect(page.getByRole('alert').filter({ hasText: 'Resource not accessible' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Unpin' })).toBeVisible();
+    await page.getByRole('button', { name: 'Dismiss this error' }).first().click();
+    await page.getByRole('textbox', { name: 'Add a comment' }).fill('Keep me');
+    await page.getByRole('button', { name: 'Comment', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Couldn’t post your comment' })).toHaveCount(1);
+  });
+
+  test('task lists write back; readers can’t tick them', async ({ page }) => {
+    await page.goto(story('light', 'issues/480'));
+    const boxes = page.locator('[id^="composer"]').locator('xpath=preceding::input[@type="checkbox"]');
+    await expect(boxes).toHaveCount(3, { timeout: 30_000 });
+    await boxes.nth(1).click();
+    await expect(boxes.nth(1)).toBeChecked();
+  });
+
+  test('navigation moves focus and announces', async ({ page }) => {
+    await page.goto(story('light', 'issues/489'));
+    await page.getByRole('link', { name: '#483' }).first().click({ timeout: 30_000 });
+    await expect(page.getByRole('heading', { level: 1, name: /lockstep/ })).toBeFocused();
+    await expect(page.locator('[role="status"][aria-live="polite"]').first()).toHaveText('#483');
+  });
+
+  test('without write access: fork, edit there, open the pull request back', async ({ page }) => {
+    await open(page, 'read-only');
+    await page.getByRole('tab', { name: 'Code' }).click({ timeout: 30_000 });
+    await page.getByRole('link', { name: 'File README.md' }).click();
+    await page.getByRole('button', { name: 'More file actions' }).click();
+    await page.getByRole('menuitem', { name: 'Fork and edit file' }).click();
+    await page.getByRole('button', { name: 'Fork this repository' }).click();
+    await expect(page.getByRole('button', { name: /Repository you\/orbit/ })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Contents of README.md' }).fill('# Better\n');
+    await page.getByRole('button', { name: 'Commit changes' }).click();
+    await expect(page.getByRole('button', { name: /Repository acme\/orbit/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Open a pull request' })).toBeVisible();
+    await page.getByRole('button', { name: 'Create pull request' }).click();
+    await expect(page.getByRole('tab', { name: /^Files changed/ })).toBeVisible();
+    await expect(page.getByText('you:main').first()).toBeVisible();
+  });
+
+  test('revert, re-request, commit a suggestion, expand, bulk, autocomplete', async ({ page }) => {
+    await page.goto(story('light', 'pull/473'));
+    await page.getByRole('button', { name: 'Revert' }).click({ timeout: 30_000 });
+    await expect(page.getByRole('heading', { level: 1, name: /Revert/ })).toBeVisible();
+
+    await page.goto(story('light', 'pull/484/files'));
+    await page.reload();
+    await page.getByRole('button', { name: 'Commit suggestion' }).click({ timeout: 30_000 });
+    await expect(page.getByRole('button', { name: 'Unresolve conversation' })).toBeVisible();
+    await page.getByRole('tab', { name: /^Conversation/ }).click();
+    await page.getByRole('button', { name: 'Re-request review from maya-chen' }).click();
+    await expect(page.getByText('Changes requested', { exact: true })).toHaveCount(0);
+
+    await page.goto(story('light', 'pull/488/files'));
+    await page.reload();
+    const diff = page.locator('[id="diff-docs/retries.md"]');
+    await diff.getByRole('button', { name: 'Expand all' }).click({ timeout: 30_000 });
+    await expect(diff.getByRole('button', { name: 'Expand all' })).toHaveCount(0);
+
+    await page.goto(story('light', 'issues'));
+    await page.reload();
+    await page.getByRole('checkbox', { name: /Select “Drop Node 18/ }).click({ timeout: 30_000 });
+    await page.getByRole('checkbox', { name: /Select “Add an OpenTelemetry/ }).click().catch(() => undefined);
+    await page.getByRole('button', { name: 'Mark selected issues as' }).click();
+    await page.getByRole('menuitem', { name: 'Closed as not planned' }).click();
+    await expect(page.getByRole('link', { name: 'Drop Node 18 support in v4' })).toHaveCount(0);
+
+    await page.getByRole('link', { name: /rolled-back/ }).click();
+    const box = page.getByRole('textbox', { name: 'Add a comment' });
+    await box.click();
+    await box.pressSequentially('thanks @may');
+    await page.getByRole('list', { name: 'People to mention' }).getByRole('button', { name: /maya-chen/ }).click();
+    await expect(box).toHaveValue('thanks @maya-chen ');
+    await box.pressSequentially('see #48');
+    await expect(page.getByRole('list', { name: /to reference/ })).toBeVisible();
+  });
+
+  test('phone: long titles wrap, wide tables scroll, the main targets are 44px', async ({ page }) => {
+    await page.setViewportSize(phone);
+    await open(page, 'issue-on-phone');
+    await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible({ timeout: 30_000 });
+    for (const name of ['Bold', 'Add reaction']) {
+      const box = await page.getByRole('button', { name }).first().boundingBox();
+      expect(box.height, name).toBeGreaterThanOrEqual(44);
+      expect(box.width, name).toBeGreaterThanOrEqual(44);
+    }
+    const kebab = await page.getByRole('button', { name: /Comment actions/ }).first().boundingBox();
+    expect(kebab.height).toBeGreaterThanOrEqual(44);
+  });
+});

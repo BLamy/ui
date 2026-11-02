@@ -13,7 +13,7 @@ import { Md } from './markdown';
 import { Box, CodeView, Counter, FileTree, Oct, ghButton, type OctName } from './parts';
 import { Menu } from './pickers';
 import { RefPicker } from './refs';
-import { Loaded, Pending, useCan, useLoad, useNav, useRepo } from './repo-context';
+import { Loaded, Pending, useCan, useCopy, useLoad, useNav, useRepo } from './repo-context';
 
 /** Files GitHub's own viewer won't show inline either. */
 const TOO_LARGE = 1_000_000;
@@ -44,6 +44,7 @@ export function CodeHome({ gitRef }: { gitRef: string }) {
   return (
     <div className="flex gap-6">
       <div className="min-w-0 flex-1 space-y-4">
+        <h1 className="sr-only">{repo.owner}/{repo.name}</h1>
         <RecentlyPushed />
         <CodeToolbar gitRef={gitRef} />
         <Loaded load={tree} className="min-h-40">{(nodes) => <FileTable nodes={nodes} gitRef={gitRef} />}</Loaded>
@@ -93,7 +94,8 @@ function NoReadme({ gitRef }: { gitRef: string }) {
 
 /** Nothing committed yet: how to start, for those who can. */
 function EmptyRepo() {
-  const { repo, ui, notify } = useRepo();
+  const { repo, ui } = useRepo();
+  const copy = useCopy();
   const can = useCan();
   const nav = useNav();
   const clone = `https://github.com/${repo.owner}/${repo.name}.git`;
@@ -110,7 +112,7 @@ function EmptyRepo() {
           </div>
           <div className="relative">
             <pre className="m-0 overflow-x-auto rounded-md border border-border bg-muted p-3 font-mono text-caption leading-5" tabIndex={0}>{script}</pre>
-            <Button aria-label="Copy commands" className={cn(ghButton(), 'absolute top-2 right-2 h-7 w-7 px-0')} onPress={() => { void navigator.clipboard?.writeText(script).catch(() => {}); notify('Commands copied'); }}><Oct name="copy" size={14} /></Button>
+            <Button aria-label="Copy commands" className={cn(ghButton(), 'absolute top-2 right-2 h-7 w-7 px-0')} onPress={() => void copy(script, 'Commands copied')}><Oct name="copy" size={14} /></Button>
           </div>
         </>
       ) : <p className="m-0 text-muted-foreground">Nothing has been pushed yet.</p>}
@@ -142,9 +144,11 @@ export function Readme({ markdown, dir, gitRef }: { markdown: string; dir: strin
 }
 
 export function CodeToolbar({ gitRef, dir = '' }: { gitRef: string; dir?: string }) {
-  const { repo, ui } = useRepo();
+  const { repo, ui, source } = useRepo();
   const nav = useNav();
   const can = useCan();
+  const names = useLoad(source.id + ':refnames', source.refNames).data;
+  const onBranch = !gitRef || gitRef === repo.branch || !names || names.branches.includes(gitRef);
   return (
     <div className="flex flex-wrap items-center gap-2">
       <RefPicker value={gitRef} path={dir} />
@@ -154,17 +158,20 @@ export function CodeToolbar({ gitRef, dir = '' }: { gitRef: string; dir?: string
           <GhLink to={{ s: 'tags' }} className="flex items-center gap-1.5 rounded-md px-2 py-1 text-muted-foreground no-underline hover:text-primary"><Oct name="tag" /><b className="text-foreground">{repo.tagCount}</b> Tag{repo.tagCount === 1 ? '' : 's'}</GhLink>
         </>
       ) : null}
+      {repo.parent && can.push ? (
+        <Button className={ghButton()} onPress={() => nav.openRepo(repo.parent!, { s: 'compare', head: `${repo.owner}:${gitRef || repo.branch}`, create: true })}><Oct name="pr" />Contribute</Button>
+      ) : null}
       <span className="flex-1" />
       <Button className={cn(ghButton(), ui.wide ? 'w-[200px] justify-start text-muted-foreground' : 'w-8 px-0')} aria-label="Go to file" onPress={nav.goToFile}>
         <Oct name="search" />{ui.wide ? <><span className="flex-1 text-left">Go to file</span><kbd className="rounded border border-border px-1 font-mono text-caption2">t</kbd></> : null}
       </Button>
-      {can.push ? (
+      {can.push && onBranch ? (
         <Menu label="Add file" trigger={<><Oct name="plus" />{!ui.phone ? 'Add file' : null}<Oct name="chevDown" size={12} /></>} entries={[
           { id: 'new', label: 'Create new file', icon: <Oct name="fileAdd" size={14} />, onAction: () => nav.go({ s: 'new-file', ref: gitRef, dir }) },
           { id: 'workflow', label: 'New workflow', icon: <Oct name="play" size={14} />, onAction: () => nav.go({ s: 'new-file', ref: gitRef, dir: '.github/workflows', name: 'ci.yml', content: 'name: CI\non:\n  push:\n    branches: [main]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n', message: 'Add a workflow' }) },
         ]} />
       ) : null}
-      <Button className={ghButton(true)} onPress={nav.clone}><Oct name="code" />{!ui.phone ? 'Code' : null}<Oct name="chevDown" size={12} /></Button>
+      <Button aria-label="Clone or download" className={ghButton(true)} onPress={nav.clone}><Oct name="code" />{!ui.phone ? 'Code' : null}<Oct name="chevDown" size={12} /></Button>
     </div>
   );
 }
@@ -312,10 +319,12 @@ export function AboutSections() {
 }
 
 /** A folder listing or a file viewer, with GitHub's file-tree sidebar at wide widths. */
-export function PathView({ path, gitRef, line, blame }: { path: string; gitRef: string; line?: number; blame?: boolean }) {
-  const { repo, ui, notify } = useRepo();
+export function PathView({ path, gitRef, line, lineEnd, blame }: { path: string; gitRef: string; line?: number; lineEnd?: number; blame?: boolean }) {
+  const { repo, ui, source } = useRepo();
+  const copy = useCopy();
   const nav = useNav();
   const tree = useTree(gitRef);
+  const truncated = useLoad(`${source.id}:truncated:${gitRef}`, () => source.treeTruncated(gitRef)).data;
   const parts = path.split('/');
   const crumbs = (
     <nav aria-label="Path" className="flex min-w-0 flex-wrap items-center gap-1 text-callout">
@@ -327,7 +336,7 @@ export function PathView({ path, gitRef, line, blame }: { path: string; gitRef: 
         </span>
       ))}
       <Button aria-label={`Copy path ${path}`} className="ml-1 grid size-6 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:text-primary group-data-[phone=true]/gh:size-11"
-        onPress={() => { void navigator.clipboard?.writeText(path).catch(() => {}); notify('Path copied'); }}><Oct name="copy" size={14} /></Button>
+        onPress={() => void copy(path, 'Path copied')}><Oct name="copy" size={14} /></Button>
     </nav>
   );
   return (
@@ -347,12 +356,16 @@ export function PathView({ path, gitRef, line, blame }: { path: string; gitRef: 
             ) : null}
             <div className="min-w-0 flex-1 space-y-4">
               <div className="flex flex-wrap items-center gap-2"><RefPicker value={gitRef} path={path} />{crumbs}</div>
+              {truncated ? <p role="status" className="m-0 rounded-md border border-border bg-muted px-3 py-2 text-caption text-muted-foreground">This repository is too big for GitHub to list at once, so the file tree is partial. Folders still open one at a time.</p> : null}
               {!node ? (
+                truncated ? <AskedDirectly path={path} gitRef={gitRef} parts={parts} /> : (
                 <Box className="px-6 py-12 text-center text-muted-foreground" role="alert">
                   <p className="mt-0 mb-3"><b className="font-semibold text-foreground">{path}</b> isn’t on {gitRef || repo.branch}.</p>
                   <GhLink to={{ s: 'code', ref: gitRef || undefined }} className={cn(ghButton(), 'no-underline')}>Go to the top of this branch</GhLink>
                 </Box>
-              ) : node.type === 'dir' ? (
+                )
+              ) : node.special ? <SpecialEntry node={node} gitRef={gitRef} />
+              : node.type === 'dir' ? (
                 <>
                   <FolderActions path={path} gitRef={gitRef} />
                   <FileTable nodes={node.children ?? []} parent={parts.slice(0, -1).join('/')} path={path} gitRef={gitRef} />
@@ -361,7 +374,7 @@ export function PathView({ path, gitRef, line, blame }: { path: string; gitRef: 
               ) : (
                 <>
                   <Box className="px-4 py-3"><LastCommit path={path} gitRef={gitRef} /></Box>
-                  <FileViewer node={node} gitRef={gitRef} line={line} blame={blame} />
+                  <FileViewer node={node} gitRef={gitRef} line={line} lineEnd={lineEnd} blame={blame} />
                 </>
               )}
             </div>
@@ -372,10 +385,50 @@ export function PathView({ path, gitRef, line, blame }: { path: string; gitRef: 
   );
 }
 
+/** Past the end of a truncated tree: ask GitHub about this one path. */
+function AskedDirectly({ path, gitRef, parts }: { path: string; gitRef: string; parts: string[] }) {
+  const { source, repo } = useRepo();
+  const info = useLoad(`${source.id}:path-info:${gitRef}:${path}`, () => source.pathInfo(path, gitRef));
+  return (
+    <Loaded load={info}>
+      {(node) => !node ? (
+        <Box className="px-6 py-12 text-center text-muted-foreground" role="alert"><b className="font-semibold text-foreground">{path}</b> isn’t on {gitRef || repo.branch}.</Box>
+      ) : node.special ? <SpecialEntry node={node} gitRef={gitRef} />
+      : node.type === 'dir' ? <FileTable nodes={node.children ?? []} parent={parts.slice(0, -1).join('/')} path={path} gitRef={gitRef} />
+      : <FileViewer node={node} gitRef={gitRef} />}
+    </Loaded>
+  );
+}
+
+/** A submodule points at another repository's commit; a symlink at another path. Neither is a file to show. */
+function SpecialEntry({ node, gitRef }: { node: FileNode; gitRef: string }) {
+  const { source } = useRepo();
+  const target = useLoad(`${source.id}:link:${gitRef}:${node.path}`, () => (node.special === 'symlink' ? source.file(node.path, gitRef) : null)).data;
+  const resolved = target ? [...node.path.split('/').slice(0, -1), ...target.trim().split('/')].reduce<string[]>((all, p) => (p === '..' ? all.slice(0, -1) : p === '.' ? all : [...all, p]), []).join('/') : '';
+  return (
+    <Box className="px-6 py-10 text-center">
+      <Oct name={node.special === 'submodule' ? 'commit' : 'link'} size={24} className="text-muted-foreground" />
+      {node.special === 'submodule' ? (
+        <>
+          <h2 className="mt-3 mb-1 text-title font-semibold">{node.name} is a submodule</h2>
+          <p className="m-0 text-muted-foreground">It points at commit <code className="font-mono text-caption">{node.objectSha?.slice(0, 7) ?? 'unknown'}</code> of another repository. Its address is in <GhLink to={{ s: 'code', ref: gitRef || undefined, path: '.gitmodules' }}>.gitmodules</GhLink>.</p>
+        </>
+      ) : (
+        <>
+          <h2 className="mt-3 mb-1 text-title font-semibold">{node.name} is a symbolic link</h2>
+          {target ? <p className="m-0 text-muted-foreground">It points to <GhLink to={{ s: 'code', ref: gitRef || undefined, path: resolved }} className="font-mono text-caption text-primary underline">{target.trim()}</GhLink>.</p> : null}
+        </>
+      )}
+    </Box>
+  );
+}
+
 function FolderActions({ path, gitRef }: { path: string; gitRef: string }) {
+  const { source, repo } = useRepo();
   const nav = useNav();
   const can = useCan();
-  if (!can.push) return null;
+  const names = useLoad(source.id + ':refnames', source.refNames).data;
+  if (!can.push || (gitRef && gitRef !== repo.branch && names && !names.branches.includes(gitRef))) return null;
   return <div className="flex justify-end"><Button className={ghButton()} onPress={() => nav.go({ s: 'new-file', ref: gitRef, dir: path })}><Oct name="plus" />Add file here</Button></div>;
 }
 
@@ -389,10 +442,14 @@ function FolderReadme({ node, gitRef }: { node: FileNode; gitRef: string }) {
 
 type FileMode = 'preview' | 'code' | 'blame';
 
-export function FileViewer({ node, gitRef, line, blame }: { node: FileNode; gitRef: string; line?: number; blame?: boolean }) {
+export function FileViewer({ node, gitRef, line, lineEnd, blame }: { node: FileNode; gitRef: string; line?: number; lineEnd?: number; blame?: boolean }) {
   const { source, repo, ui, notify } = useRepo();
+  const copy = useCopy();
   const nav = useNav();
   const can = useCan();
+  const names = useLoad(source.id + ':refnames', source.refNames).data;
+  const last = useLoad(`${source.id}:last:${gitRef}:${node.path}`, () => source.lastCommit(node.path, gitRef)).data;
+  const onBranch = !gitRef || gitRef === repo.branch || !names || names.branches.includes(gitRef);
   const tooLarge = (node.size ?? 0) > TOO_LARGE;
   const isImage = IMAGE.test(node.name);
   const file = useLoad<string | null>(`${source.id}:file:${gitRef}:${node.path}:${tooLarge || isImage}`, () => (tooLarge || isImage ? null : source.file(node.path, gitRef)));
@@ -436,16 +493,21 @@ export function FileViewer({ node, gitRef, line, blame }: { node: FileNode; gitR
         ) : null}
         {!ui.phone && file.data != null ? <span className="text-caption text-muted-foreground">{lines} lines · {(code.length / 1024).toFixed(1)} KB</span> : null}
         <span className="flex-1" />
-        <a href={blobUrl} target="_blank" rel="noreferrer" className={cn(ghButton(), 'h-7 px-2.5 text-caption no-underline')}>Raw</a>
+        {source.live || !isText
+          ? <a href={blobUrl} target="_blank" rel="noreferrer" className={cn(ghButton(), 'h-7 px-2.5 text-caption no-underline')}>Raw</a>
+          // The sample isn't on github.com: show its own bytes.
+          : <Button className={cn(ghButton(), 'h-7 px-2.5 text-caption')} onPress={() => window.open(URL.createObjectURL(new Blob([code], { type: 'text/plain' })), '_blank', 'noopener')}>Raw</Button>}
         {isText ? <SyntaxHighlightingCopyButton value={code} label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')} /> : null}
         <Menu label="More file actions" triggerClassName={cn(ghButton(), 'h-7 w-7 px-0')} trigger={<Oct name="kebab" />} entries={[
           isText ? { id: 'download', label: 'Download', icon: <Oct name="download" size={14} />, onAction: download } : null,
           { id: 'history', label: 'History', icon: <Oct name="history" size={14} />, onAction: () => nav.go({ s: 'commits', ref: gitRef || undefined, path: node.path }) },
-          { id: 'link', label: 'Copy permalink', icon: <Oct name="link" size={14} />, onAction: () => { void navigator.clipboard?.writeText(`https://github.com/${source.full}/blob/${encodedRef}/${rawPath}`).catch(() => {}); notify('Link copied'); } },
-          { id: 'path', label: 'Copy path', icon: <Oct name="copy" size={14} />, onAction: () => { void navigator.clipboard?.writeText(node.path).catch(() => {}); notify('Path copied'); } },
-          can.push && isText ? { separator: true, id: 'sep' } : null,
-          can.push && isText ? { id: 'edit', label: 'Edit file', icon: <Oct name="pencil" size={14} />, onAction: () => nav.go({ s: 'edit', ref: gitRef || undefined, path: node.path, mode: 'edit' }) } : null,
-          can.push ? { id: 'delete', label: 'Delete file', danger: true, icon: <Oct name="trash" size={14} />, onAction: () => nav.go({ s: 'edit', ref: gitRef || undefined, path: node.path, mode: 'delete' }) } : null,
+          // A permalink names the commit, so it keeps pointing at this version after the branch moves on.
+          last?.fullSha ? { id: 'link', label: 'Copy permalink', icon: <Oct name="link" size={14} />, onAction: () => void copy(`https://github.com/${source.full}/blob/${last.fullSha}/${rawPath}`, 'Permalink copied') } : null,
+          { id: 'path', label: 'Copy path', icon: <Oct name="copy" size={14} />, onAction: () => void copy(node.path, 'Path copied') },
+          can.participate && onBranch && isText ? { separator: true, id: 'sep' } : null,
+          // Without write access this is where forking starts, as on GitHub.
+          can.participate && onBranch && isText ? { id: 'edit', label: can.push ? 'Edit file' : 'Fork and edit file', icon: <Oct name="pencil" size={14} />, onAction: () => nav.go({ s: 'edit', ref: gitRef || undefined, path: node.path, mode: 'edit' }) } : null,
+          can.push && onBranch ? { id: 'delete', label: 'Delete file', danger: true, icon: <Oct name="trash" size={14} />, onAction: () => nav.go({ s: 'edit', ref: gitRef || undefined, path: node.path, mode: 'delete' }) } : null,
         ]} />
       </div>
     }>
@@ -460,32 +522,41 @@ export function FileViewer({ node, gitRef, line, blame }: { node: FileNode; gitR
             : !text ? <div className="px-4 py-10 text-center text-muted-foreground">This file is empty.</div>
             : mode === 'blame' ? <BlameView path={node.path} text={text} gitRef={gitRef} />
             : mode === 'preview' ? <Readme markdown={text} dir={node.path.split('/').slice(0, -1).join('/')} gitRef={gitRef} />
-            : <LinkedCode path={node.path} code={text} line={line} gitRef={gitRef} />}
+            : <LinkedCode path={node.path} code={text} line={line} lineEnd={lineEnd} gitRef={gitRef} />}
         </Loaded>
       )}
     </Box>
   );
 }
 
-/** The code, plus a line gutter you can link to: a click puts the line in the URL and the share link. */
-function LinkedCode({ path, code, line, gitRef }: { path: string; code: string; line?: number; gitRef: string }) {
+/** The code, plus a line gutter you can link to: a click puts the line in the URL, shift-click makes it a range. */
+function LinkedCode({ path, code, line, lineEnd, gitRef }: { path: string; code: string; line?: number; lineEnd?: number; gitRef: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  const nav = useNav();
   useEffect(() => {
     if (!line) return;
     ref.current?.querySelector(`[data-line="${line}"]`)?.scrollIntoView({ block: 'center' });
   }, [line]);
   const count = code.replace(/\n$/, '').split('\n').length;
+  const on = (n: number) => !!line && n >= line && n <= (lineEnd ?? line);
+  const base = { s: 'code' as const, ref: gitRef || undefined, path };
   return (
     <div ref={ref} className="relative overflow-x-auto" tabIndex={0} role="region" aria-label={`Code of ${path}`}>
       <div className="flex min-w-max">
         <div className="flex shrink-0 flex-col py-2 text-right font-mono text-caption2 leading-5 select-none">
           {Array.from({ length: count }, (_, i) => (
-            <GhLink key={i} data-line={i + 1} to={{ s: 'code', ref: gitRef || undefined, path, line: i + 1 }} aria-label={`Line ${i + 1}`}
-              className={cn('block h-5 px-2 text-muted-foreground no-underline hover:text-primary', line === i + 1 && 'bg-(--gh-hl) font-semibold text-foreground')}>{i + 1}</GhLink>
+            <GhLink key={i} data-line={i + 1} to={{ ...base, line: i + 1 }} aria-label={`Line ${i + 1}`}
+              onClick={(e) => {
+                if (!e.shiftKey || !line) return;
+                e.preventDefault();
+                e.stopPropagation();
+                nav.go({ ...base, line: Math.min(line, i + 1), lineEnd: Math.max(line, i + 1) }, { replace: true });
+              }}
+              className={cn('block h-5 px-2 text-muted-foreground no-underline hover:text-primary', on(i + 1) && 'bg-(--gh-hl) font-semibold text-foreground')}>{i + 1}</GhLink>
           ))}
         </div>
         <div className="relative min-w-0 flex-1">
-          {line ? <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 h-5 bg-(--gh-hl)" style={{ top: 8 + (line - 1) * 20 }} /> : null}
+          {line ? <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bg-(--gh-hl)" style={{ top: 8 + (line - 1) * 20, height: ((lineEnd ?? line) - line + 1) * 20 }} /> : null}
           <CodeView path={path} code={code} lineNumbers={false} />
         </div>
       </div>

@@ -58,19 +58,19 @@ function ReleaseCard({ r, full }: { r: Release; full?: boolean }) {
           <Button className={cn(ghButton(), 'text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteRelease(r.id); notify('Release deleted'); nav.go({ s: 'releases' }, { replace: true }); })}>Delete</Button>
         </div>
       ) : null}
-      <ActionError error={act.error} className="px-4 pb-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="px-4 pb-2" />
       {r.body ? <Md markdown={r.body} className="border-t border-border px-4 py-3" /> : null}
       <div className="border-t border-border">
-        <h3 className="m-0 bg-muted px-4 py-2 text-caption font-semibold">Assets {r.assets.length + (r.draft ? 0 : 2)}</h3>
+        <h2 className="m-0 bg-muted px-4 py-2 text-caption font-semibold">Assets {r.assets.length + (r.draft || !source.live ? 0 : 2)}</h2>
         <ul className="m-0 list-none p-0">
           {r.assets.map((a) => (
             <li key={a.id} className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-1.5 text-caption">
-              <Oct name="zip" size={14} className="text-muted-foreground" /><a href={a.url} className="min-w-0 flex-1 truncate font-semibold text-primary no-underline hover:underline">{a.name}</a>
+              <Oct name="zip" size={14} className="text-muted-foreground" />{source.live ? <a href={a.url} className="min-w-0 flex-1 truncate font-semibold text-primary no-underline hover:underline">{a.name}</a> : <span className="min-w-0 flex-1 truncate font-semibold">{a.name}</span>}
               <span className="text-muted-foreground">{size(a.size)} · {a.downloads.toLocaleString('en-US')} downloads</span>
             </li>
           ))}
-          {!r.draft && r.zip ? <li className="flex items-center gap-2 border-t border-border px-4 py-1.5 text-caption"><Oct name="zip" size={14} className="text-muted-foreground" /><a href={r.zip} className="font-semibold text-primary no-underline hover:underline">Source code (zip)</a></li> : null}
-          {!r.draft && r.tar ? <li className="flex items-center gap-2 border-t border-border px-4 py-1.5 text-caption"><Oct name="zip" size={14} className="text-muted-foreground" /><a href={r.tar} className="font-semibold text-primary no-underline hover:underline">Source code (tar.gz)</a></li> : null}
+          {!r.draft && r.zip && source.live ? <li className="flex items-center gap-2 border-t border-border px-4 py-1.5 text-caption"><Oct name="zip" size={14} className="text-muted-foreground" /><a href={r.zip} className="font-semibold text-primary no-underline hover:underline">Source code (zip)</a></li> : null}
+          {!r.draft && r.tar && source.live ? <li className="flex items-center gap-2 border-t border-border px-4 py-1.5 text-caption"><Oct name="zip" size={14} className="text-muted-foreground" /><a href={r.tar} className="font-semibold text-primary no-underline hover:underline">Source code (tar.gz)</a></li> : null}
         </ul>
       </div>
     </section>
@@ -132,6 +132,7 @@ export function ReleaseForm({ tag: initialTag, editing }: { tag?: string; editin
     if (r) { setTag(r.tag); setName(r.name); setBody(r.body); setPrerelease(r.prerelease); setTarget(r.target); }
   }, [existing.data]);
   if (!can.push) return <Box className="px-6 py-12 text-center text-muted-foreground">Only people who can push to {source.full} can publish releases.</Box>;
+  if (existing.error) return <Failed error={existing.error} what={`There’s no release for the tag ${editing} to edit.`} />;
   const save = (draft: boolean) => {
     if (!tag.trim()) return;
     void act.run(async () => {
@@ -149,19 +150,19 @@ export function ReleaseForm({ tag: initialTag, editing }: { tag?: string; editin
       <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); save(false); }}>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 font-semibold">Tag <span className="sr-only">(required)</span>
-            <Input aria-required="true" autoFocus value={tag} onChange={(e) => setTag(e.target.value)} placeholder="v1.0.0" className="h-9 rounded-md border border-border bg-background font-mono text-caption font-normal" />
+            <Input aria-required="true" autoFocus value={tag} onChange={(e) => setTag(e.target.value)} placeholder="v1.0.0" className="h-9 rounded-md border border-border bg-background font-mono text-caption font-normal group-data-[phone=true]/gh:h-11" />
             <span className="text-caption font-normal text-muted-foreground">{tag.trim() ? (known ? 'Existing tag.' : 'A new tag, created when this is published.') : 'Choose an existing tag or name a new one.'}</span>
           </label>
           {!editing ? (
             <label className="grid gap-1 font-semibold">Target
-              <select value={target} onChange={(e) => setTarget(e.target.value)} className="box-border h-9 rounded-md border border-border bg-background px-1 font-mono text-caption font-normal text-foreground">
+              <select value={target} onChange={(e) => setTarget(e.target.value)} className="box-border h-9 rounded-md border border-border bg-background px-1 font-mono text-caption font-normal text-foreground group-data-[phone=true]/gh:h-11">
                 {(names?.branches ?? [repo.branch]).map((b) => <option key={b}>{b}</option>)}
               </select>
             </label>
           ) : null}
         </div>
         <label className="grid gap-1 font-semibold">Release title
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 rounded-md border border-border bg-background font-normal" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 rounded-md border border-border bg-background font-normal group-data-[phone=true]/gh:h-11" />
         </label>
         <div className="grid gap-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -173,7 +174,7 @@ export function ReleaseForm({ tag: initialTag, editing }: { tag?: string; editin
         </div>
         <p className="m-0 text-caption text-muted-foreground">Attaching binaries happens on GitHub: its upload host doesn’t accept browser requests.</p>
         <Checkbox isSelected={prerelease} onChange={setPrerelease} className="text-detail">Set as a pre-release</Checkbox>
-        <ActionError error={act.error} />
+        <ActionError error={act.error} onDismiss={act.clear} />
         <div className="flex flex-wrap justify-end gap-2">
           <Button className={ghButton()} onPress={() => nav.back()}>Cancel</Button>
           {!editing || existing.data?.draft ? <Button className={ghButton()} isDisabled={act.busy || !tag.trim()} onPress={() => save(true)}>Save draft</Button> : null}

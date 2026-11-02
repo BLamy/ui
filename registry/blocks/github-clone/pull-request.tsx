@@ -17,11 +17,12 @@ import { AssigneeSection, LabelSection, LockSection, MetaColumn, MilestoneSectio
 import { Box, DiffStat, FlowPanel, Oct, StatePill, UnderlineTab, ghButton, PR_STATE } from './parts';
 import { Menu, SelectMenu } from './pickers';
 import type { PullTab } from './route';
-import { ActionError, Failed, Loaded, useAction, useCan, useLoad, useNav, usePoll, useRepo } from './repo-context';
+import { ActionError, Failed, Loaded, useAction, useCan, useCopy, useDraft, useLoad, useNav, usePoll, useRepo } from './repo-context';
 import { CommentCard, Thread, participantsOf } from './thread';
 
 export function PullRequestView({ number, tab = 'conversation', commit }: { number: number; tab?: PullTab; commit?: string }) {
   const { source, ui, viewer } = useRepo();
+  const copy = useCopy();
   const nav = useNav();
   const can = useCan();
   const pull = useLoad(`${source.id}:pull:${number}`, () => source.pull(number));
@@ -47,7 +48,7 @@ export function PullRequestView({ number, tab = 'conversation', commit }: { numb
           <>
             {titleDraft != null ? (
               <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (titleDraft.trim()) void act.run(async () => { await source.updatePull(number, { title: titleDraft.trim() }); setTitleDraft(null); }); }}>
-                <Input aria-label="Pull request title" autoFocus value={titleDraft} onChange={(e) => setTitleDraft(e.target.value)} className="h-9 min-w-[200px] flex-1 rounded-md border border-border bg-background text-title" />
+                <Input aria-label="Pull request title" autoFocus value={titleDraft} onChange={(e) => setTitleDraft(e.target.value)} className="h-9 min-w-[200px] flex-1 rounded-md border border-border bg-background text-title group-data-[phone=true]/gh:h-11" />
                 <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !titleDraft.trim()}>Save</Button>
                 <Button className={ghButton()} onPress={() => { setTitleDraft(null); act.clear(); }}>Cancel</Button>
               </form>
@@ -62,7 +63,7 @@ export function PullRequestView({ number, tab = 'conversation', commit }: { numb
                 </div>
               </div>
             )}
-            <ActionError error={act.error} className="mt-2" />
+            <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
             <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-border pb-4 text-muted-foreground">
               <StatePill state={PR_STATE[pr.state]} />
               <span className="leading-7">
@@ -71,7 +72,7 @@ export function PullRequestView({ number, tab = 'conversation', commit }: { numb
                 {pr.state === 'merged' && pr.mergedWhen ? ` ${pr.mergedWhen}` : ''}
               </span>
               <Button aria-label={`Copy branch name ${pr.head}`} className="grid size-6 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:text-primary group-data-[phone=true]/gh:size-11"
-                onPress={() => { void navigator.clipboard?.writeText(pr.head).catch(() => {}); }}><Oct name="copy" size={14} /></Button>
+                onPress={() => void copy(pr.head, 'Branch name copied')}><Oct name="copy" size={14} /></Button>
             </div>
             <TabView placement="top" selectedKey={tab} onSelectionChange={(k) => nav.go({ s: 'pull', n: number, tab: k as PullTab }, { replace: true })} className="mt-2">
               <TabViewBar variant="plain" className="overflow-x-auto border-b border-border [scrollbar-width:none]">
@@ -107,7 +108,7 @@ function BaseBranch({ pr, canEdit }: { pr: PullDetail; canEdit: boolean }) {
       <SelectMenu title="Choose a base branch" triggerLabel={`Base branch: ${pr.base}. Change`} triggerClassName="inline cursor-pointer rounded-md border-0 bg-primary/10 px-1.5 py-0.5 font-mono text-caption text-primary outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary"
         trigger={<>{pr.base}<Oct name="chevDown" size={10} className="ml-1" /></>} selected={[pr.base]} items={(names?.branches ?? []).filter((b) => b !== pr.head).map((b) => ({ id: b, label: b }))} filterPlaceholder="Filter branches"
         onApply={(ids) => { if (ids[0]) void act.run(() => source.updatePull(pr.number, { base: ids[0] })); }} />
-      <ActionError error={act.error} />
+      <ActionError error={act.error} onDismiss={act.clear} />
     </>
   );
 }
@@ -130,6 +131,7 @@ export function Conversation({ pr, checks, threads, canEdit }: { pr: PullDetail;
     return all;
   }, [])), [threads]);
   const isOpen = pr.state === 'open' || pr.state === 'draft';
+  const pendingThreads = threads.filter((t) => t.comments.some((c) => c.pending));
   const canReopen = pr.state === 'closed';
   const summary = [`${pr.reviewers.length} reviewer${pr.reviewers.length === 1 ? '' : 's'}`, pr.labels.length ? `${pr.labels.length} label${pr.labels.length === 1 ? '' : 's'}` : null, pr.milestone].filter(Boolean).join(' · ');
   return (
@@ -144,7 +146,7 @@ export function Conversation({ pr, checks, threads, canEdit }: { pr: PullDetail;
         {extras?.closes.length ? (
           <div className="border-b border-border py-4 text-caption">
             <div className="mb-2 font-semibold text-muted-foreground">Development</div>
-            <p className="m-0 text-muted-foreground">Successfully merging this pull request may close these issues.</p>
+            <p className="m-0 text-muted-foreground">{pr.state === 'merged' ? 'Merging this pull request closed these issues.' : 'Successfully merging this pull request may close these issues.'}</p>
             {extras.closes.map((c) => (
               <p key={c.number} className="mt-2 mb-0 flex items-center gap-1.5"><Oct name={c.state === 'open' ? 'issue' : 'issueClosed'} size={14} className={c.state === 'open' ? 'text-(--gh-open)' : 'text-(--gh-done)'} />
                 <GhLink to={{ s: 'issue', n: c.number }} className="font-semibold text-foreground no-underline hover:text-primary">{c.title} #{c.number}</GhLink></p>
@@ -158,7 +160,17 @@ export function Conversation({ pr, checks, threads, canEdit }: { pr: PullDetail;
       <div className={cn('min-w-0 flex-1', ui.wide && '-order-1')}>
         <Thread number={n} authorLogin={pr.author.login} locked={pr.locked} canEditBody={canEdit} saveBody={(body) => source.updatePull(n, { body })}
           threadsFor={(id) => (id != null ? inReviewCounts.get(id) : undefined)} renderThreads={(list) => <div className="space-y-2">{list.map((t) => <ThreadCard key={t.id} thread={t} number={n} showContext />)}</div>}
-          footer={isOpen ? <MergeBox pr={pr} checks={checks} threads={threads} /> : <MergedBox pr={pr} />}
+          footer={
+            <>
+              {pendingThreads.length ? (
+                <section aria-label="Your pending review" className={cn('space-y-2 pt-4', !ui.phone && 'pl-14')}>
+                  <h2 className="m-0 text-detail font-semibold">Your pending review <span className="font-normal text-muted-foreground">· only you can see these until you submit it on Files changed</span></h2>
+                  {pendingThreads.map((t) => <ThreadCard key={t.id} thread={t} number={n} showContext />)}
+                </section>
+              ) : null}
+              {isOpen ? <MergeBox pr={pr} checks={checks} threads={threads} /> : <MergedBox pr={pr} />}
+            </>
+          }
           actions={({ text, submit, busy }) => {
             const mine = viewer?.login === pr.author.login;
             if (!(can.push || (mine && can.participate))) return null;
@@ -166,7 +178,7 @@ export function Conversation({ pr, checks, threads, canEdit }: { pr: PullDetail;
             if (canReopen && !pr.headDeleted) return <Button className={ghButton()} isDisabled={busy || act.busy} onPress={() => void act.run(async () => { if (await submit()) await source.updatePull(n, { state: 'open' }); })}><Oct name="pr" className="text-(--gh-open)" />Reopen{text.trim() ? ' with comment' : ' pull request'}</Button>;
             return null;
           }} />
-        <ActionError error={act.error} className="mt-2" />
+        <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
       </div>
     </div>
   );
@@ -174,8 +186,29 @@ export function Conversation({ pr, checks, threads, canEdit }: { pr: PullDetail;
 
 /* ── Review threads ── */
 
+/** ```suggestion fences in a review comment: what to replace the commented lines with. */
+export const suggestionOf = (body: string): string | null => /```suggestion[^\n]*\n([\s\S]*?)```/.exec(body)?.[1] ?? null;
+
+/** Replaces lines `from`..`to` (1-based) with `text`. */
+export function applyLines(file: string, from: number, to: number, text: string): string {
+  const lines = file.split('\n');
+  lines.splice(from - 1, to - from + 1, ...text.replace(/\n$/, '').split('\n'));
+  return lines.join('\n');
+}
+
 export function ThreadCard({ thread, number, showContext }: { thread: ReviewThread; number: number; showContext?: boolean }) {
-  const { source } = useRepo();
+  const { source, notify } = useRepo();
+  const pull = useLoad(`${source.id}:pull:${number}`, () => source.pull(number)).data;
+  const can = useCan();
+  const suggestion = thread.comments.map((c) => suggestionOf(c.body)).find((x) => x != null) ?? null;
+  const canCommit = suggestion != null && !thread.outdated && !thread.resolved && thread.side === 'RIGHT' && thread.line != null && !!pull && !pull.headDeleted && !pull.fromFork && (pull.state === 'open' || pull.state === 'draft') && can.push;
+  const commitSuggestion = () => void act.run(async () => {
+    const [text, sha] = await Promise.all([source.file(thread.path, pull!.head), source.fileSha(thread.path, pull!.head)]);
+    if (text == null || !sha) throw new Error('that file isn’t on the branch any more');
+    await source.putFile({ path: thread.path, content: applyLines(text, thread.startLine ?? thread.line!, thread.line!, suggestion!), message: `Apply suggestion to ${thread.path}`, branch: pull!.head, sha });
+    await source.setThreadResolved(thread.id, number, true);
+    notify('Suggestion committed');
+  }, 'commit the suggestion');
   const [open, setOpen] = useState(!thread.resolved);
   const [reply, setReply] = useState<string | null>(null);
   const act = useAction();
@@ -215,11 +248,12 @@ export function ThreadCard({ thread, number, showContext }: { thread: ReviewThre
             ) : (
               <div className="flex flex-wrap items-center gap-2">
                 {thread.canReply ? <Button className={cn(ghButton(), 'flex-1 justify-start text-muted-foreground')} onPress={() => setReply('')}>Reply…</Button> : null}
+                {canCommit ? <Button className={ghButton(true)} isDisabled={act.busy} onPress={commitSuggestion}>Commit suggestion</Button> : null}
                 {thread.resolved ? (thread.canUnresolve ? <Button className={ghButton()} isDisabled={act.busy} onPress={() => void act.run(() => source.setThreadResolved(thread.id, number, false))}>Unresolve conversation</Button> : null)
                   : thread.canResolve ? <Button className={ghButton()} isDisabled={act.busy} onPress={() => void act.run(() => source.setThreadResolved(thread.id, number, true))}>Resolve conversation</Button> : null}
               </div>
             )}
-            <ActionError error={act.error} className="mt-2" />
+            <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
           </div>
         </>
       ) : null}
@@ -339,14 +373,14 @@ export function MergeBox({ pr, checks, threads }: { pr: PullDetail; checks: Chec
               {method !== 'rebase' ? (
                 <>
                   <label className="grid gap-1 font-semibold">Commit message
-                    <Input value={title} onChange={(e) => setTitle(e.target.value)} className="h-8 rounded-md border border-border bg-background font-normal" />
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} className="h-8 rounded-md border border-border bg-background font-normal group-data-[phone=true]/gh:h-11" />
                   </label>
                   <label className="grid gap-1 font-semibold">Extended description
                     <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="box-border w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 font-sans text-detail font-normal text-foreground outline-none select-text focus:border-primary" />
                   </label>
                 </>
               ) : <p className="m-0 text-muted-foreground">{METHOD.rebase.hint}</p>}
-              <ActionError error={act.error} />
+              <ActionError error={act.error} onDismiss={act.clear} />
               <div className="flex flex-wrap justify-end gap-2">
                 <Button className={ghButton()} isDisabled={act.busy} onPress={() => setConfirming(false)}>Cancel</Button>
                 <Button className={ghButton(true)} isDisabled={act.busy} onPress={() => void merge()}>{act.busy ? 'Merging…' : METHOD[method].confirm}</Button>
@@ -359,7 +393,7 @@ export function MergeBox({ pr, checks, threads }: { pr: PullDetail; checks: Chec
                 <Menu label="Merge options" isDisabled={!can.push || methods.length < 2} triggerClassName={cn(ghButton(!blocked), 'rounded-l-none border-l-white/30 px-2')} trigger={<Oct name="chevDown" size={12} />} placement="top end"
                   entries={methods.map((m) => ({ id: m, label: METHOD[m].option, hint: METHOD[m].hint, selected: m === method, onAction: () => setMethod(m) }))} />
               </div>
-              {repo.merge.auto && can.push && (blocked || running) && !pr.autoMerge && !draft ? (
+              {repo.merge.auto && can.push && state !== 'dirty' && state !== 'behind' && (state === 'blocked' || running > 0) && !pr.autoMerge && !draft ? (
                 <Button className={ghButton()} isDisabled={act.busy} onPress={() => void act.run(() => source.setAutoMerge(pr.nodeId, pr.number, method))}>Enable auto-merge</Button>
               ) : null}
               {pr.autoMerge ? (
@@ -371,7 +405,7 @@ export function MergeBox({ pr, checks, threads }: { pr: PullDetail; checks: Chec
               <span className="min-w-0 flex-1 text-caption text-muted-foreground" role={blocked ? 'status' : undefined}>
                 {blocked ?? 'You can also merge this with the command line.'}
               </span>
-              <ActionError error={act.error} className="w-full" />
+              <ActionError error={act.error} onDismiss={act.clear} className="w-full" />
             </div>
           )}
         </div>
@@ -384,6 +418,7 @@ export function MergeBox({ pr, checks, threads }: { pr: PullDetail; checks: Chec
 /** After the merge or close: what happened, and the branch housekeeping. */
 function MergedBox({ pr }: { pr: PullDetail }) {
   const { source, ui, notify } = useRepo();
+  const nav = useNav();
   const can = useCan();
   const act = useAction();
   const merged = pr.state === 'merged';
@@ -400,6 +435,9 @@ function MergedBox({ pr }: { pr: PullDetail }) {
               {pr.headDeleted ? 'The head branch is gone.' : <>The <b className="font-semibold">{pr.head}</b> branch can be safely deleted{merged ? '.' : ' once you don’t need it.'}</>}
             </div>
           </div>
+          {merged && can.push ? (
+            <Button className={ghButton()} isDisabled={act.busy} onPress={() => void act.run(async () => { nav.go({ s: 'pull', n: await source.revert(pr.nodeId, pr.number, `Revert "${pr.title}"`) }); }, 'open the revert pull request')}><Oct name="history" />Revert</Button>
+          ) : null}
           {!pr.headDeleted && sameRepo && can.push ? (
             <Button className={ghButton()} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteBranch(pr.head); notify(`Branch ${pr.head} deleted`); })}><Oct name="trash" />Delete branch</Button>
           ) : null}
@@ -407,7 +445,7 @@ function MergedBox({ pr }: { pr: PullDetail }) {
             <Button className={ghButton()} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.createBranchAt(pr.head, pr.headSha); notify(`Branch ${pr.head} restored`); })}>Restore branch</Button>
           ) : null}
         </div>
-        <ActionError error={act.error} className="mt-2" />
+        <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
       </section>
     </div>
   );
@@ -436,7 +474,8 @@ export function CheckRow({ check: c }: { check: Check }) {
 }
 
 export function PullCommits({ number }: { number: number }) {
-  const { source, ui, notify } = useRepo();
+  const { source, ui } = useRepo();
+  const copy = useCopy();
   const commits = useLoad(`${source.id}:commits:${number}`, () => source.pullCommits(number));
   return (
     <div className={cn('relative', !ui.phone && 'pl-8')}>
@@ -452,7 +491,7 @@ export function PullCommits({ number }: { number: number }) {
                   </div>
                 </div>
                 <GhLink to={{ s: 'commit', sha: c.fullSha }} className={cn(ghButton(), 'h-7 px-2 font-mono text-caption no-underline')}>{c.sha}</GhLink>
-                <Button aria-label={`Copy full SHA ${c.sha}`} className={cn(ghButton(), 'h-7 w-7 px-0')} onPress={() => { void navigator.clipboard?.writeText(c.fullSha).catch(() => {}); notify('SHA copied'); }}><Oct name="copy" size={14} /></Button>
+                <Button aria-label={`Copy full SHA ${c.sha}`} className={cn(ghButton(), 'h-7 w-7 px-0')} onPress={() => void copy(c.fullSha, 'SHA copied')}><Oct name="copy" size={14} /></Button>
               </div>
             ))}
             {!list.length ? <div className="px-4 py-8 text-center text-muted-foreground">No commits.</div> : null}
@@ -527,7 +566,7 @@ export function FilesChanged({ pr, commit }: { pr: PullDetail; commit?: string }
           )}
         </Loaded>
       )}
-      <ActionError error={act.error} className="mt-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
     </>
   );
 }
@@ -536,13 +575,15 @@ export function FilesChanged({ pr, commit }: { pr: PullDetail; commit?: string }
 function ReviewMenu({ pr, pending, disabled }: { pr: PullDetail; pending: { id: number; count: number } | null; disabled: boolean }) {
   const { source, viewer } = useRepo();
   const [open, setOpen] = useState(false);
-  const [body, setBody] = useState('');
+  const draft = useDraft(`${source.id}:review:${pr.number}`);
+  const body = draft.value;
+  const setBody = draft.set;
   const [event, setEvent] = useState<ReviewEvent>('COMMENT');
   const act = useAction();
   const mine = viewer?.login === pr.author.login;
   const submit = () => {
     if (event === 'REQUEST_CHANGES' && !body.trim() && !pending) return;
-    void act.run(async () => { await source.submitReview(pr.number, { event, body, pendingId: pending?.id, headSha: pr.headSha }); setOpen(false); setBody(''); setEvent('COMMENT'); });
+    void act.run(async () => { await source.submitReview(pr.number, { event, body, pendingId: pending?.id, headSha: pr.headSha }); setOpen(false); draft.clear(); setEvent('COMMENT'); }, 'submit your review');
   };
   const needsText = (event === 'COMMENT' || event === 'REQUEST_CHANGES') && !body.trim() && !pending;
   const option = (id: ReviewEvent, title: string, hint: string, off?: boolean) => (
@@ -558,17 +599,17 @@ function ReviewMenu({ pr, pending, disabled }: { pr: PullDetail; pending: { id: 
       </div>
       {open ? (
         <div className="mt-2 rounded-md border border-border bg-background p-3 sm:w-[480px]">
-          <h3 className="mt-0 mb-2 text-detail font-semibold">Finish your review</h3>
+          <h2 className="mt-0 mb-2 text-detail font-semibold">Finish your review</h2>
           <MarkdownField label="Review summary" value={body} onChange={setBody} autoFocus rows={4} placeholder="Leave a comment" onSubmit={submit} disabled={act.busy} />
           <div className="mt-2 grid gap-1">
             {option('COMMENT', 'Comment', 'Submit general feedback without explicit approval.')}
             {option('APPROVE', 'Approve', mine ? 'You can’t approve your own pull request.' : 'Submit feedback and approve merging these changes.', mine)}
             {option('REQUEST_CHANGES', 'Request changes', mine ? 'You can’t request changes on your own pull request.' : 'Submit feedback that must be addressed before merging.', mine)}
           </div>
-          <ActionError error={act.error} className="mt-2" />
+          <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
           <div className="mt-2 flex flex-wrap justify-end gap-2">
             {pending ? <Button className={cn(ghButton(), 'mr-auto text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.discardReview(pr.number, pending.id); setOpen(false); })}>Discard review</Button> : null}
-            <Button className={ghButton()} onPress={() => setOpen(false)}>Cancel</Button>
+            <Button className={ghButton()} onPress={() => setOpen(false)}>Close</Button>
             <Button className={ghButton(true)} isDisabled={act.busy || needsText} onPress={submit}>{act.busy ? 'Submitting…' : 'Submit review'}</Button>
           </div>
         </div>

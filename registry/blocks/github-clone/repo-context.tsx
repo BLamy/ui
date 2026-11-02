@@ -80,6 +80,8 @@ export function useCan() {
 export interface Load<T> {
   data?: T;
   error?: unknown;
+  /** Checking again failed, and `data` is the last good answer. Not an outage for this screen, just a note on it. */
+  staleError?: unknown;
   loading: boolean;
   /** Ask again (a failed request isn't cached). */
   retry: () => void;
@@ -110,7 +112,13 @@ export function useLoad<T>(key: string, load: () => Maybe<T>): Load<T> {
   const retry = useCallback(() => setTick((t) => t + 1), []);
   if ('error' in asked) return { error: asked.error, loading: false, retry };
   if (!(asked.value instanceof Promise)) return { data: asked.value as T, loading: false, retry };
-  if (done?.id === id) return { data: done.data, error: done.error, loading: false, retry };
+  if (done?.id === id) {
+    // A refresh that fails keeps what's on screen (and any text being typed there) unless the thing is really gone or
+    // the sign-in is dead: those change what the screen should be.
+    const gone = done.error instanceof GitHubError && (done.error.kind === 'notFound' || done.error.kind === 'auth');
+    if (done.error && !gone && lastAnswers.has(key)) return { data: lastAnswers.get(key) as T, staleError: done.error, loading: false, retry };
+    return { data: done.data, error: done.error, loading: false, retry };
+  }
   // Still asking: keep what we have for this key on screen.
   if (done?.key === key && !done.error) return { data: done.data, loading: true, retry };
   if (lastAnswers.has(key)) return { data: lastAnswers.get(key) as T, loading: true, retry };
@@ -121,7 +129,17 @@ export function useLoad<T>(key: string, load: () => Maybe<T>): Load<T> {
 export function Loaded<T>({ load, children, pending, className }: { load: Load<T>; children: (data: T) => ReactNode; pending?: ReactNode; className?: string }) {
   if (load.error) return <Failed error={load.error} retry={load.retry} className={className} />;
   if (load.loading && load.data === undefined) return <>{pending ?? <Pending className={className} />}</>;
-  return <>{children(load.data as T)}</>;
+  return (
+    <>
+      {load.staleError ? (
+        <p role="status" className="mt-0 mb-2 flex flex-wrap items-center gap-2 rounded-md border border-(--gh-attention)/50 bg-(--gh-attention)/10 px-3 py-1.5 text-caption">
+          <span className="min-w-0 flex-1">Couldn’t refresh this, so it may be out of date: {load.staleError instanceof Error ? load.staleError.message : String(load.staleError)}</span>
+          <Button className={cn(ghButton(), 'h-7 px-2 text-caption')} onPress={load.retry}>Try again</Button>
+        </p>
+      ) : null}
+      {children(load.data as T)}
+    </>
+  );
 }
 
 /** A quiet delay before it shows: answers that are nearly instant never flash a spinner. */
@@ -154,7 +172,7 @@ export function Failed({ error, retry, className, what }: { error: unknown; retr
     <Box className={cn('grid place-items-center px-6 py-12 text-center', className)}>
       <div role="alert" className="contents">
         <Oct name={icon} size={24} className="text-muted-foreground" />
-        <h3 className="mt-3 mb-1 text-callout font-semibold">{title}</h3>
+        <h2 className="mt-3 mb-1 text-callout font-semibold">{title}</h2>
         <p className="m-0 max-w-[420px] text-detail text-muted-foreground">{message}</p>
       </div>
       <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -166,36 +184,94 @@ export function Failed({ error, retry, className, what }: { error: unknown; retr
   );
 }
 
-/** A write that didn't take: GitHub's own words, in place, next to what you were doing. */
-export function ActionError({ error, className }: { error: unknown; className?: string }) {
+/** A write that didn't take: what you were doing and GitHub's own words, in place, until you dismiss it or try again. */
+export function ActionError({ error, className, onDismiss }: { error: unknown; className?: string; onDismiss?: () => void }) {
   if (!error) return null;
   const message = error instanceof Error ? error.message : String(error);
   return (
     <p role="alert" className={cn('m-0 flex items-start gap-1.5 text-caption text-(--gh-closed)', className)}>
-      <Oct name="x" size={14} className="mt-px shrink-0" /><span className="min-w-0">{message}</span>
+      <Oct name="x" size={14} className="mt-px shrink-0" /><span className="min-w-0 flex-1">{message}</span>
+      {onDismiss ? <Button aria-label="Dismiss this error" className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-caption underline outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary" onPress={onDismiss}>Dismiss</Button> : null}
     </p>
   );
 }
 
-/** Runs a write: `busy` while it's out, `error` if it fails; returns whether it worked. */
+/** Runs a write: `busy` while it's out, `error` if it fails; returns what it returned. `what` names it in the error ("close the issue"). */
 export function useAction() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-  const run = useCallback(async <T,>(work: () => Promise<T>): Promise<T | undefined> => {
+  const run = useCallback(async <T,>(work: () => Promise<T>, what?: string): Promise<T | undefined> => {
     setBusy(true);
     setError(null);
     try {
       return await work();
     } catch (e) {
-      if (alive.current) setError(e);
+      if (alive.current) setError(what ? new Error(`Couldn’t ${what}: ${e instanceof Error ? e.message : String(e)}`) : e);
       return undefined;
     } finally {
       if (alive.current) setBusy(false);
     }
   }, []);
   return { busy, error, run, clear: useCallback(() => setError(null), []) };
+}
+
+/* ── Drafts ── What you've typed outlives the screen: it's here when you come back, and leaving the page warns first. */
+const drafts = new Map<string, string>();
+let warning = false;
+const warnOnLeave = (e: BeforeUnloadEvent) => { if (drafts.size) e.preventDefault(); };
+const trackDrafts = () => {
+  if (warning || typeof addEventListener === 'undefined') return;
+  warning = true;
+  addEventListener('beforeunload', warnOnLeave);
+};
+
+/** Text that survives navigation. `dirty`: it differs from `initial`. `restored`: it was already here when this mounted. */
+export function useDraft(key: string, initial = '') {
+  const [restored] = useState(() => drafts.has(key));
+  const [value, setValue] = useState(() => drafts.get(key) ?? initial);
+  // A different thing being edited in the same component (another file, another issue).
+  const shown = useRef(key);
+  const [, redraw] = useState(0);
+  if (shown.current !== key) { shown.current = key; }
+  const current = key === shown.current ? value : drafts.get(key) ?? initial;
+  const set = useCallback((v: string) => {
+    if (v === initial) drafts.delete(key);
+    else { drafts.set(key, v); trackDrafts(); }
+    setValue(v);
+    redraw((n) => n + 1);
+  }, [key, initial]);
+  const clear = useCallback(() => { drafts.delete(key); setValue(initial); }, [key, initial]);
+  // `initial` arrives late when it comes from GitHub: follow it until someone types.
+  useEffect(() => { if (!drafts.has(key)) setValue(initial); }, [key, initial]);
+  return { value: current, set, clear, dirty: drafts.has(key), restored };
+}
+
+/** Copies, and says so only if it worked. */
+export function useCopy() {
+  const { notify } = useRepo();
+  return useCallback(async (text: string, what = 'Copied') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      notify(what);
+    } catch {
+      notify('Couldn’t copy: the browser refused');
+    }
+  }, [notify]);
+}
+
+/** Cancel, which asks first when there's something to lose. */
+export function CancelButton({ dirty, onCancel, label = 'Cancel', isDisabled }: { dirty: boolean; onCancel: () => void; label?: string; isDisabled?: boolean }) {
+  const [asking, setAsking] = useState(false);
+  if (!asking) return <Button className={ghButton()} isDisabled={isDisabled} onPress={() => (dirty ? setAsking(true) : onCancel())}>{label}</Button>;
+  return (
+    <span role="alertdialog" aria-label="Discard your changes?" className="flex flex-wrap items-center gap-2">
+      <span className="font-semibold">Discard your changes?</span>
+      <Button className={ghButton()} onPress={() => setAsking(false)}>Keep editing</Button>
+      <Button className={cn(ghButton(), 'text-(--gh-closed)')} onPress={onCancel}>Discard</Button>
+    </span>
+  );
 }
 
 /** Asks `refresh` every `ms` while `active` and the page is visible: GitHub's slow answers (mergeability, running checks). */

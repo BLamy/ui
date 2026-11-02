@@ -8,7 +8,7 @@ export type SettingsPage = 'general' | 'merging' | 'branches' | 'collaborators';
 export type PeoplePage = 'stargazers' | 'watchers' | 'contributors';
 
 export type Route =
-  | { s: 'code'; ref?: string; path?: string; line?: number; blame?: boolean }
+  | { s: 'code'; ref?: string; path?: string; line?: number; lineEnd?: number; blame?: boolean }
   | { s: 'commits'; ref?: string; path?: string; author?: string; page?: number }
   | { s: 'commit'; sha: string }
   | { s: 'edit'; ref?: string; path: string; mode: 'edit' | 'delete' }
@@ -67,7 +67,7 @@ export function toPath(r: Route, defaultBranch = 'main'): string {
       if (!r.path && !r.ref) return '';
       if (!r.path) return `tree/${ref(r.ref)}`;
       if (r.blame) return `blame/${ref(r.ref)}/${encPath(r.path)}`;
-      return `${r.line ? 'blob' : 'tree'}/${ref(r.ref)}/${encPath(r.path)}${r.line ? `#L${r.line}` : ''}`;
+      return `${r.line ? 'blob' : 'tree'}/${ref(r.ref)}/${encPath(r.path)}${r.line ? `#L${r.line}${r.lineEnd ? `-L${r.lineEnd}` : ''}` : ''}`;
     }
     case 'commits': return withQuery(`commits/${ref(r.ref)}${r.path ? '/' + encPath(r.path) : ''}`, { author: r.author, page: r.page });
     case 'commit': return `commit/${r.sha}`;
@@ -112,12 +112,12 @@ export function fromPath(rawPath: string, refs: string[] = []): Route | null {
     if (known) return { ref: known, path: joined.slice(known.length + 1) };
     return { ref: decoded[0], path: decoded.slice(1).join('/') };
   };
-  const lineOf = /^L(\d+)/.exec(hash);
+  const lineOf = /^L(\d+)(?:-L(\d+))?/.exec(hash);
   switch (head) {
     case undefined: return { s: 'code' };
     case 'tree': case 'blob': case 'raw': {
       const { ref, path } = refAndPath(rest);
-      return { s: 'code', ref, path, line: lineOf ? Number(lineOf[1]) : undefined };
+      return { s: 'code', ref, path, line: lineOf ? Number(lineOf[1]) : undefined, lineEnd: lineOf?.[2] ? Number(lineOf[2]) : undefined };
     }
     case 'blame': {
       const { ref, path } = refAndPath(rest);

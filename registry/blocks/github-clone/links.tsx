@@ -9,15 +9,17 @@ import { useNav, useRepo } from './repo-context';
 
 const ring = 'rounded-[2px] outline-none focus-visible:ring-2 focus-visible:ring-primary';
 
-export function GhLink({ to, children, className, onNavigate, ...rest }: { to: Route; children: ReactNode; className?: string; onNavigate?: () => void } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>) {
+export function GhLink({ to, children, className, onNavigate, onClick, ...rest }: { to: Route; children: ReactNode; className?: string; onNavigate?: () => void } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>) {
   const nav = useNav();
-  const click = (e: MouseEvent) => {
+  const click = (e: MouseEvent<HTMLAnchorElement>) => {
+    onClick?.(e);
+    if (e.defaultPrevented) return;
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
     onNavigate?.();
     nav.go(to);
   };
-  return <a href={nav.url(to)} onClick={click} className={cn(ring, className ?? 'text-primary no-underline hover:underline')} {...rest}>{children}</a>;
+  return <a href={nav.url(to)} onClick={click} className={cn(ring, className ?? 'text-primary underline underline-offset-2')} {...rest}>{children}</a>;
 }
 
 /** Someone's GitHub profile (the block has no profile pages, so it leaves). */

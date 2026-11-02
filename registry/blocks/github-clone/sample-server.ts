@@ -116,6 +116,8 @@ export interface ServerOptions {
   scopes?: string;
 }
 
+const KNOWN_QUALIFIERS = new Set(['repo', 'is', 'state', 'reason', 'author', 'assignee', 'mentions', 'commenter', 'involves', 'label', 'milestone', 'no', 'review', 'review-requested', 'reviewed-by', 'head', 'base', 'draft', 'status', 'created', 'updated', 'closed', 'merged', 'user', 'org', 'sort', 'in', 'language']);
+
 class HttpError extends Error {
   constructor(readonly status: number, message: string, readonly errors?: unknown) { super(message); }
 }
@@ -136,6 +138,7 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
   const failures: { match: RegExp; status: number; message: string; headers?: Record<string, string> }[] = [];
   let nextId = 900_000;
   const log: { method: string; url: string; body?: unknown }[] = [];
+  let refuse: string | null = null;
 
   const iso = (t = clock) => new Date(t).toISOString();
   /** Writes advance the clock a minute: events keep their order and read as just now. */
@@ -450,7 +453,8 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     const out: { key: string; value: string; negate: boolean }[] = [];
     const words: string[] = [];
     for (const m of q.matchAll(/(-?)([\w-]+):(?:"([^"]*)"|(\S+))|"([^"]*)"|(\S+)/g)) {
-      if (m[2]) out.push({ key: m[2].toLowerCase(), value: m[3] ?? m[4] ?? '', negate: m[1] === '-' });
+      if (m[2] && KNOWN_QUALIFIERS.has(m[2].toLowerCase())) out.push({ key: m[2].toLowerCase(), value: m[3] ?? m[4] ?? '', negate: m[1] === '-' });
+      else if (m[2]) words.push(m[0].toLowerCase());
       else words.push((m[5] ?? m[6]).toLowerCase());
     }
     return { qualifiers: out, words };
@@ -502,6 +506,13 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
         case 'head': return pr?.head.toLowerCase() === v;
         case 'base': return pr?.base.toLowerCase() === v;
         case 'draft': return !!pr && pr.draft === (v === 'true');
+        case 'created': case 'updated': case 'closed': case 'merged': {
+          const m = /^([<>]=?)?(.+)$/.exec(value);
+          const at = key === 'created' ? i.created_at : key === 'updated' ? i.updated_at : key === 'closed' ? i.closed_at : pr?.merged_at;
+          if (!at || !m) return false;
+          const [t, want] = [Date.parse(at), Date.parse(m[2])];
+          return m[1] === '>=' ? t >= want : m[1] === '>' ? t > want : m[1] === '<=' ? t <= want : m[1] === '<' ? t < want : at.startsWith(m[2]);
+        }
         case 'status': {
           if (!pr) return false;
           const state = rollup(r, pullShas(r, pr).headSha);
@@ -697,8 +708,9 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
   /* Repository */
   add('GET', '/repos/:owner/:repo', ({ repo }) => ok(repoJson(repo)));
   add('PATCH', '/repos/:owner/:repo', ({ repo, body }) => {
+    // Unarchiving is the one change an archived repository takes.
+    if (repo.archived && body.archived === false && can(repo, 'admin')) repo.archived = false;
     must(repo, 'admin');
-    if (body.archived === false && repo.archived) repo.archived = false;
     for (const k of ['description', 'homepage', 'has_issues', 'has_wiki', 'has_projects', 'has_discussions', 'allow_merge_commit', 'allow_squash_merge', 'allow_rebase_merge', 'allow_auto_merge', 'delete_branch_on_merge', 'allow_update_branch', 'archived'] as const) {
       if (k in body) (repo as any)[k] = body[k];
     }
@@ -837,6 +849,8 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     const ref = String(body.ref ?? '');
     const m = /^refs\/(heads|tags)\/(.+)$/.exec(ref);
     if (!m) invalid('Reference name must start with \'refs/\'.');
+    // git check-ref-format's rules.
+    if (/\.\.|[\s~^:?*[\\]|@\{|\/\/|^\/|\/$|\.$|\.lock(\/|$)|(^|\/)\./.test(m![2])) invalid(`${ref} is not a valid ref name.`);
     const store = m![1] === 'heads' ? repo.git.branches : repo.git.tags;
     if (store.has(m![2])) invalid('Reference already exists');
     if (!repo.git.commits.has(body.sha)) invalid('Object does not exist');
@@ -922,6 +936,7 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     if (prev !== undefined && !body.sha) invalid('Invalid request.\n\n"sha" wasn\'t supplied.', [{ field: 'sha', code: 'missing' }]);
     if (prev !== undefined && body.sha !== hashOf(prev)) throw new HttpError(409, `${path} does not match ${body.sha}`);
     if (prev === undefined && body.sha) throw new HttpError(409, `${path} does not exist`);
+    if (head && path.split('/').slice(0, -1).some((_, i, parts) => head.files.has(parts.slice(0, i + 1).join('/')))) invalid('Invalid path: part of it is a file.');
     const files = new Map(head?.files ?? []);
     const text = decode(String(body.content ?? ''));
     files.set(path, text);
@@ -1447,6 +1462,8 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     for (const login of body.reviewers ?? []) {
       if (login === i.user) invalid('Review cannot be requested from pull request author.');
       if (!p.requested_reviewers.includes(login)) {
+        // Asking again clears their previous verdict from the merge box, as on GitHub.
+        for (const v of p.reviews) if (v.user === login && (v.state === 'APPROVED' || v.state === 'CHANGES_REQUESTED')) v.state = 'DISMISSED';
         p.requested_reviewers.push(login);
         event(i, { event: 'review_requested', reviewer: login });
       }
@@ -1941,9 +1958,41 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
         if (!r || !p || !n) throw new GraphQLProblem('Could not resolve to a node with the global id.', 'NOT_FOUND');
         if (!can(r, 'write')) throw new GraphQLProblem(`${viewer} does not have the correct permissions to execute this mutation.`, 'FORBIDDEN');
         if (op === 'EnableAutoMerge' && !r.allow_auto_merge) throw new GraphQLProblem('Auto merge is not allowed for this repository', 'UNPROCESSABLE');
+        if (op === 'EnableAutoMerge') {
+          const state = mergeability(r, p, n).mergeable_state;
+          if (state === 'dirty') throw new GraphQLProblem('Pull request has merge conflicts', 'UNPROCESSABLE');
+          if (state === 'clean') throw new GraphQLProblem('Pull request is in clean status', 'UNPROCESSABLE');
+        }
         p.auto_merge = op === 'EnableAutoMerge' ? { method: String(variables.method).toLowerCase(), by: viewer! } : null;
         event(n, { event: op === 'EnableAutoMerge' ? 'auto_merge_enabled' : 'auto_merge_disabled' });
         return { result: { pullRequest: { id: variables.id } } };
+      }
+      case 'RevertPull': {
+        authed();
+        const r = repoOfNode(variables.id);
+        const n = r ? gqlIssue(r, variables.id) : undefined;
+        const p = n ? r!.pulls.get(n.number) : undefined;
+        if (!r || !p || !n) throw new GraphQLProblem('Could not resolve to a node with the global id.', 'NOT_FOUND');
+        if (!p.merged_at) throw new GraphQLProblem('Only merged pull requests can be reverted.', 'UNPROCESSABLE');
+        if (!can(r, 'write')) throw new GraphQLProblem(`${viewer} does not have the correct permissions to execute this mutation.`, 'FORBIDDEN');
+        const branch = `revert-${p.number}-${p.head.replace(/\W+/g, '-')}`;
+        if (r.git.branches.has(branch)) throw new GraphQLProblem('A branch with that name already exists.', 'UNPROCESSABLE');
+        const tip = r.git.resolve(p.base)!;
+        const files = new Map(tip.files);
+        const before = r.git.mergeBase(p.frozen!.base, p.frozen!.head)?.files ?? new Map<string, string>();
+        for (const f of pullDiff(r, p)) {
+          const old = before.get(f.path);
+          if (old === undefined) files.delete(f.path);
+          else files.set(f.path, old);
+        }
+        const title = String(variables.title ?? `Revert "${n.title}"`);
+        r.git.branches.set(branch, tip.sha);
+        commitTo(r, branch, title, files);
+        const number = nextNumber(r);
+        const at = tick();
+        r.issues.set(number, { number, title, body: `Reverts #${p.number}`, state: 'open', state_reason: null, user: viewer!, created_at: at, updated_at: at, closed_at: null, labels: [], assignees: [], milestone: null, locked: false, active_lock_reason: null, comments: [], events: [], reactions: [] });
+        r.pulls.set(number, { number, base: p.base, head: branch, draft: false, merged_at: null, merged_by: null, merge_commit_sha: null, requested_reviewers: [], requested_teams: [], reviews: [], review_comments: [], threads: [], maintainer_can_modify: true, auto_merge: null, viewed: [] });
+        return { result: { revertPullRequest: { number } } };
       }
       case 'MarkFileViewed':
       case 'UnmarkFileViewed': {
@@ -2001,6 +2050,11 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
       const payload = a.bytes ?? a.text ?? (a.json === undefined ? null : JSON.stringify(a.json));
       return new Response(status === 204 || status === 205 ? null : (payload as BodyInit | null), { status, headers: { ...base, ...a.headers } });
     };
+    if (refuse) {
+      const isMutation = u.pathname === '/graphql' && /^\s*mutation\b/.test(String(body?.query));
+      if (isMutation) return reply({ json: { data: null, errors: [{ message: refuse, type: 'FORBIDDEN' }] } });
+      if (method !== 'GET' && u.pathname !== '/graphql') return reply({ status: 403, json: { message: refuse } });
+    }
     const fail = failures.find((f) => f.match.test(`${method} ${u.pathname}`));
     if (fail) {
       failures.splice(failures.indexOf(fail), 1);
@@ -2043,6 +2097,8 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     now: () => clock,
     /** The next request matching `match` ("METHOD /path" as a regular expression) answers `status`. */
     fail(match: RegExp, status: number, message: string, headers?: Record<string, string>) { failures.push({ match, status, message, headers }); },
+    /** Every write (REST and GraphQL) answers 403 with `message`, or goes through again with null. */
+    refuseWrites(message: string | null) { refuse = message; },
     /** Every request so far. */
     log,
     /** The data itself, for test setup and assertions. */

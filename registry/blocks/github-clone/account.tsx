@@ -120,7 +120,7 @@ function Notifications({ gh, onFollow }: { gh: GitHub; onFollow: (url?: string) 
         <span className="flex-1" />
         <Button className={ghButton()} isDisabled={!unread || act.busy} onPress={() => void act.run(() => markAllNotificationsRead(gh))}>Mark all as read</Button>
       </div>
-      <ActionError error={act.error} />
+      <ActionError error={act.error} onDismiss={act.clear} />
       <Loaded load={load} pending={<p className="m-0 text-caption text-muted-foreground">Loading…</p>}>
         {(list) => list.length ? (
           <ul className="m-0 max-h-[56vh] list-none overflow-auto rounded-xl border border-border p-0">
@@ -150,14 +150,14 @@ function NewRepo({ gh, owner, onCreated }: { gh: GitHub; owner: string; onCreate
   return (
     <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); void act.run(async () => onCreated(await createRepo(gh, { name: name.trim(), description, private: visibility === 'private', autoInit: readme }))); }}>
       <label className="grid gap-1 text-footnote font-semibold">Repository name
-        <span className="flex items-center gap-1 font-normal text-muted-foreground">{owner} / <Input data-autofocus required value={name} onChange={(e) => setName(e.target.value)} className="h-9 min-w-0 flex-1 rounded-md border border-border bg-background font-mono text-caption" /></span>
+        <span className="flex items-center gap-1 font-normal text-muted-foreground">{owner} / <Input data-autofocus required value={name} onChange={(e) => setName(e.target.value)} className="h-9 min-w-0 flex-1 rounded-md border border-border bg-background font-mono text-caption group-data-[phone=true]/gh:h-11" /></span>
       </label>
       <label className="grid gap-1 text-footnote font-semibold">Description (optional)
-        <Input value={description} onChange={(e) => setDescription(e.target.value)} className="h-9 rounded-md border border-border bg-background font-normal" />
+        <Input value={description} onChange={(e) => setDescription(e.target.value)} className="h-9 rounded-md border border-border bg-background font-normal group-data-[phone=true]/gh:h-11" />
       </label>
       <Segmented aria-label="Visibility" value={visibility} onChange={setVisibility} options={[{ id: 'public', label: 'Public' }, { id: 'private', label: 'Private' }]} />
       <label className="flex cursor-pointer items-center gap-2 text-footnote"><input type="checkbox" checked={readme} onChange={(e) => setReadme(e.target.checked)} />Add a README</label>
-      <ActionError error={act.error} />
+      <ActionError error={act.error} onDismiss={act.clear} />
       <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !name.trim()}>{act.busy ? 'Creating…' : 'Create repository'}</Button>
     </form>
   );

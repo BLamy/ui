@@ -94,6 +94,10 @@ export interface RepoSource {
 
   /* Code */
   tree: (ref: string) => Maybe<FileNode[]>;
+  /** GitHub cut the recursive listing short: this repository's too big to list at once, and folders are read one at a time instead. */
+  treeTruncated: (ref: string) => Maybe<boolean>;
+  /** One path, asked of GitHub directly: a file, or a folder and what's in it; null when it isn't there. */
+  pathInfo: (path: string, ref: string) => Maybe<FileNode | null>;
   /** The README's Markdown, or null when there is none. */
   readme: (ref: string) => Maybe<string | null>;
   /** A file's text, or null when it is binary. */
@@ -167,6 +171,10 @@ export interface RepoSource {
   pullThreads: (n: number) => Maybe<PullThreads>;
   createPull: (o: { title: string; body: string; head: string; base: string; draft: boolean; maintainerCanModify?: boolean }) => Promise<number>;
   updatePull: (n: number, patch: { title?: string; body?: string; state?: 'open' | 'closed'; base?: string }) => Promise<void>;
+  /** Opens a pull request undoing a merged one; resolves to its number. */
+  revert: (nodeId: string, n: number, title: string) => Promise<number>;
+  /** Branch names in another repository (your fork, for compare). */
+  branchNamesOf: (full: string) => Maybe<string[]>;
   merge: (n: number, o: { method: 'merge' | 'squash' | 'rebase'; title?: string; message?: string; sha?: string }) => Promise<void>;
   updateBranch: (n: number) => Promise<void>;
   setDraft: (nodeId: string, n: number, draft: boolean) => Promise<void>;

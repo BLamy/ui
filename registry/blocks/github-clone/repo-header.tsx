@@ -18,7 +18,7 @@ import { ActionError, useAction, useCan, useLoad, useNav, useRepo } from './repo
 const plain = cn(ghButton(), 'bg-transparent');
 
 export function GlobalHeader({ width }: { width: number }) {
-  const { source, openPicker, repo, ui, openApp, gh, viewer } = useRepo();
+  const { source, openPicker, repo, ui, openApp, gh, viewer, notify } = useRepo();
   const nav = useNav();
   const can = useRepoCan();
   const [owner, name] = source.full.split('/');
@@ -44,13 +44,13 @@ export function GlobalHeader({ width }: { width: number }) {
       </Button>
       <span className="flex-1" />
       {width >= 900 ? (
-        <Button onPress={() => nav.search()} className="flex h-8 w-[300px] cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-2 text-left text-detail text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:border-primary">
+        <Button isDisabled={!repo} onPress={() => nav.search()} className="flex h-8 w-[300px] cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-2 text-left text-detail text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:border-primary">
           <Oct name="search" />
           <span className="flex-1">Type <kbd className="rounded border border-border px-1 font-mono text-caption2">/</kbd> to search</span>
         </Button>
-      ) : <Button aria-label="Search" className={cn(plain, 'w-8 px-0 text-muted-foreground')} onPress={() => nav.search()}><Oct name="search" /></Button>}
+      ) : <Button aria-label="Search" isDisabled={!repo} className={cn(plain, 'w-8 px-0 text-muted-foreground')} onPress={() => nav.search()}><Oct name="search" /></Button>}
       {ui.wide ? <span className="h-5 w-px bg-border" /> : null}
-      <Button aria-label="Reload from GitHub" className={cn(plain, 'w-8 px-0 text-muted-foreground')} onPress={() => source.refresh()}><Oct name="retry" /></Button>
+      <Button aria-label="Reload from GitHub" className={cn(plain, 'w-8 px-0 text-muted-foreground')} onPress={() => { source.refresh(); notify(source.live ? 'Reloading from GitHub' : 'Reloaded'); }}><Oct name="retry" /></Button>
       {createEntries.some(Boolean) ? (
         <Menu label="Create new" triggerClassName={cn(plain, 'gap-1 px-2 text-muted-foreground')} trigger={<><Oct name="plus" /><Oct name="chevDown" size={12} /></>} entries={createEntries} />
       ) : null}
@@ -172,7 +172,7 @@ export function RepoHeader() {
           </div>
         ) : null}
       </div>
-      <ActionError error={act.error} className="mt-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
       {!ui.wide ? (
         <div className="mt-3 space-y-3">
           {repo.description ? <p className="m-0 text-detail leading-5 text-muted-foreground">{repo.description}</p> : null}
@@ -210,17 +210,17 @@ function ForkDialog({ onClose }: { onClose: () => void }) {
       <form className="grid gap-3 px-4 pt-2 pb-4" onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <p className="m-0 text-caption text-muted-foreground">A fork is a copy of {source.full}, in your account, that you can change and propose back.</p>
         <label className="grid gap-1 font-semibold">Owner
-          <select value={owner} onChange={(e) => setOwner(e.target.value)} className="box-border h-9 rounded-md border border-border bg-background px-1 font-sans text-detail font-normal text-foreground">
+          <select value={owner} onChange={(e) => setOwner(e.target.value)} className="box-border h-9 rounded-md border border-border bg-background px-1 font-sans text-detail font-normal text-foreground group-data-[phone=true]/gh:h-11">
             {viewer ? <option value={viewer.login}>{viewer.login}</option> : null}
             {orgs.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         </label>
         <label className="grid gap-1 font-semibold">Repository name
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 rounded-md border border-border bg-background font-mono text-caption font-normal" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 rounded-md border border-border bg-background font-mono text-caption font-normal group-data-[phone=true]/gh:h-11" />
         </label>
         <label className="flex cursor-pointer items-center gap-2"><input type="checkbox" checked={branchOnly} onChange={(e) => setBranchOnly(e.target.checked)} />Copy the <b className="font-mono text-caption font-semibold">{repo.branch}</b> branch only</label>
         {mine ? <p role="alert" className="m-0 text-caption text-(--gh-closed)">You own this repository, so a fork needs a different owner.</p> : null}
-        <ActionError error={act.error} />
+        <ActionError error={act.error} onDismiss={act.clear} />
         <div className="flex justify-end gap-2">
           <Button className={ghButton()} onPress={onClose}>Cancel</Button>
           <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !name.trim() || mine}>{act.busy ? 'Forking…' : 'Create fork'}</Button>

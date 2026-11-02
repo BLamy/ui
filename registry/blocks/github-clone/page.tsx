@@ -6,12 +6,12 @@
    Our UI over GitHub's data: signed in with GitHub in the Passwords keychain (the same passkey vault the Passwords block
    and the docs' "Load from Keychain" use, see ../apple-passwords/keychain.tsx), the block reads and writes the repository
    you pick straight on api.github.com, opening on your most recently pushed one (or `repo`). Without a token it runs the
-   invented acme/orbit on a small GitHub in the page (sample-server.ts): every workflow works, and nothing leaves the page.
+   invented acme/orbit on a small GitHub in the page (sample-server.ts): every workflow works, and nothing you do leaves the page.
    `token` or `github` bypass the keychain; `keychain={false}` keeps it out entirely. */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
+import { NavigationStack, type Screen as StackScreen } from '@/components/ui/navigation-stack';
 import { TabView, TabViewBar, TabViewList, TabViewPanels } from '@/components/ui/tab-view';
 import { Toaster, createToastQueue } from '@/components/ui/toast';
 import { WorkbenchTheme } from '@/components/ui/workbench-theme';
@@ -140,21 +140,33 @@ function GithubApp({ width, dark, repo: initialRepo, token, github, sample: asSa
   });
   const full = useSample ? SAMPLE_REPO : chosen ?? (liveClient ? recent.data ?? null : SAMPLE_REPO);
   const source = useMemo(() => (full ? githubRepo(gh, full, { live: isLive }) : null), [gh, full, isLive]);
-  const first = useRef<{ id: string; route: Route } | null>(null);
-  if (source && !first.current) first.current = { id: source.id, route: fromHash?.route ?? initialRouteOf({ ...rest, width, dark }) };
-  const pendingRoute = useRef<Route | null>(null);
+  /* The screen to open a repository on: the one asked for at the start, then whatever each switch asks for. */
+  const began = useRef(false);
+  const startRoute = useRef<Route | null>(null);
+  if (source && !began.current) {
+    began.current = true;
+    startRoute.current = fromHash?.route ?? initialRouteOf({ ...rest, width, dark });
+  }
   /** The open repository's navigation: a link into the repository you're already in just goes there. */
   const navRef = useRef<Nav | null>(null);
-  const openRepo = useCallback((next: string, route?: Route | null) => {
+  /** Where you are now, and the repositories you came through, so Back crosses a switch. */
+  const routeRef = useRef<Route>({ s: 'code' });
+  const trail = useRef<{ full: string; route: Route }[]>([]);
+  const openRepo = useCallback((next: string, route?: Route | null, o?: { fromHistory?: boolean }) => {
     if (next.toLowerCase() === full?.toLowerCase() && !useSample) {
-      if (route) navRef.current?.go(route);
+      if (route) navRef.current?.go(route, o?.fromHistory ? { replace: true } : undefined);
       return;
     }
-    pendingRoute.current = route ?? null;
+    if (full && !o?.fromHistory) {
+      trail.current.push({ full, route: routeRef.current });
+      // A new history entry, so the browser's back returns here. The new screen fills in its exact address when it mounts.
+      if (syncUrl) history.pushState(null, '', `#/${next}`);
+    }
+    startRoute.current = route ?? null;
     setUseSample(false);
     setChosen(next);
     if (liveClient) writeLast(account, next);
-  }, [account, liveClient, full, useSample]);
+  }, [account, liveClient, full, useSample, syncUrl]);
   const ui: Layout = { phone: width < 640, wide: width >= 1012, dark };
   const [toastQueue] = useState(() => createToastQueue());
   const picker = source ? (
@@ -162,7 +174,7 @@ function GithubApp({ width, dark, repo: initialRepo, token, github, sample: asSa
       onPick={(next, route) => {
         setPicking(false);
         if (next) openRepo(next, route);
-        else { pendingRoute.current = null; setUseSample(true); setChosen(null); }
+        else { startRoute.current = null; setUseSample(true); setChosen(null); }
       }} />
   ) : null;
   if (!source) {
@@ -179,10 +191,10 @@ function GithubApp({ width, dark, repo: initialRepo, token, github, sample: asSa
       </div>
     );
   }
-  const start = first.current?.id === source.id ? first.current.route : pendingRoute.current ?? { s: 'code' as const };
+  const start = startRoute.current ?? { s: 'code' as const };
   return (
     <>
-      <RepoScreens key={source.id} ui={ui} width={width} source={source} keychain={keychain} openPicker={() => setPicking(true)} gh={gh} start={start} openRepo={openRepo} navRef={navRef} syncUrl={syncUrl} toast={(m) => toastQueue.show({ variant: 'hud', title: m })} />
+      <RepoScreens key={source.id} ui={ui} width={width} source={source} keychain={keychain} openPicker={() => setPicking(true)} gh={gh} start={start} openRepo={openRepo} navRef={navRef} routeRef={routeRef} backAcross={() => { const last = trail.current.pop(); if (last) openRepo(last.full, last.route, { fromHistory: true }); return !!last; }} syncUrl={syncUrl} toast={(m) => toastQueue.show({ variant: 'hud', title: m })} />
       {picker}
       <Toaster queue={toastQueue} inline placement="bottom" />
     </>
@@ -196,8 +208,8 @@ function parseHash(): { full: string; route: Route | null } | null {
   return { full: m[1], route: fromPath(m[2] ?? '') };
 }
 
-function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openRepo, navRef, syncUrl, toast }: {
-  ui: Layout; width: number; source: ReturnType<typeof githubRepo>; keychain: ReturnType<typeof useKeychainSignIn>; openPicker: () => void; gh: GitHub; start: Route; openRepo: (full: string, r?: Route | null) => void; navRef: { current: Nav | null }; syncUrl?: boolean; toast: (m: string) => void;
+function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openRepo, navRef, routeRef, backAcross, syncUrl, toast }: {
+  ui: Layout; width: number; source: ReturnType<typeof githubRepo>; keychain: ReturnType<typeof useKeychainSignIn>; openPicker: () => void; gh: GitHub; start: Route; openRepo: (full: string, r?: Route | null, o?: { fromHistory?: boolean }) => void; navRef: { current: Nav | null }; routeRef: { current: Route }; backAcross: () => boolean; syncUrl?: boolean; toast: (m: string) => void;
 }) {
   const [route, setRoute] = useState<Route>(start);
   const stack = useRef<Route[]>([]);
@@ -227,6 +239,8 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
     },
     back() {
       if (syncUrl) { history.back(); return; }
+      // Back across a repository switch once this repository has nothing left to go back to.
+      if (!stack.current.length && backAcross()) return;
       setRoute((current) => stack.current.pop() ?? chainOf(current).at(-2) ?? { s: 'code' });
     },
     url: (r) => `https://github.com/${source.full}${toPath(r, branch) ? '/' + toPath(r, branch) : ''}`,
@@ -245,6 +259,29 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
   }), [source.full, branch, refNames.join(), syncUrl, hashOf, openRepo]);
 
   navRef.current = nav;
+  routeRef.current = route;
+
+  /* Moving to another screen moves focus to its heading and says where you are: without this, a link click leaves focus on
+     nothing and a screen reader silent. Changing a filter or page stays put, since you're still working there. */
+  const rootRef = useRef<HTMLDivElement>(null);
+  const screenOf = (r: Route) => toPath(r).split(/[?#]/)[0];
+  const shownScreen = useRef(screenOf(route));
+  useEffect(() => {
+    const screen = screenOf(route);
+    if (screen === shownScreen.current) return;
+    shownScreen.current = screen;
+    let tries = 0;
+    const find = () => {
+      const heading = [...(rootRef.current?.querySelectorAll<HTMLElement>('h1') ?? [])].filter((h) => !h.closest('[inert]')).at(-1);
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.focus({ preventScroll: true });
+      } else if (tries++ < 20) setTimeout(find, 50);
+      else scroller.current?.focus({ preventScroll: true });
+    };
+    // A form on the new screen may have claimed focus on purpose (autoFocus): leave it.
+    setTimeout(() => { if (!document.activeElement?.closest('input,textarea,select')) find(); }, 30);
+  }, [route]);
 
   // The browser's back and forward, and hand-edited hashes.
   useEffect(() => {
@@ -253,7 +290,7 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
     const onPop = () => {
       const hit = parseHash();
       if (!hit) return;
-      if (hit.full.toLowerCase() !== source.full.toLowerCase()) { openRepo(hit.full, hit.route); return; }
+      if (hit.full.toLowerCase() !== source.full.toLowerCase()) { openRepo(hit.full, hit.route, { fromHistory: true }); return; }
       setRoute(hit.route ?? { s: 'code' });
     };
     addEventListener('popstate', onPop);
@@ -279,7 +316,7 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (e.metaKey || e.ctrlKey || e.altKey || t?.closest('input,textarea,select,[contenteditable="true"],[role="dialog"]')) return;
-      if (e.key === '/') { e.preventDefault(); setSearchOpen({}); }
+      if (e.key === '/' && repo.data) { e.preventDefault(); setSearchOpen({}); }
       if (e.key === 't' && repo.data) { e.preventDefault(); setFileOpen(true); }
     };
     addEventListener('keydown', onKey);
@@ -299,7 +336,7 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
   const tab = tabOf(route);
 
   /* Phone: the tab's list is the root screen; everything else pushes on top. */
-  const screens: Screen[] = repo.data ? chain.map((r, i): Screen => (i === 0 ? {
+  const screens: StackScreen[] = repo.data ? chain.map((r, i): StackScreen => (i === 0 ? {
     key: 'repo', title: name, content: <RepoPage route={r} tab={tab} />, hideChromeOnScroll: false, onRefresh: async () => source.refresh(),
     leading: <Button aria-label="Open menu" onPress={() => setAppView('menu')} className={cn(ghButton(), 'ml-2 px-0')}><Oct name="menu" /></Button>,
     trailing: (
@@ -310,10 +347,13 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
     ),
   } : {
     key: `${r.s}:${i}`, title: titleOf(r), content: <ScreenFor route={r} />, hideChromeOnScroll: false, onRefresh: async () => source.refresh(),
+    trailing: <Button aria-label="Search" className={cn(ghButton(), 'mr-2 bg-transparent px-0')} onPress={() => setSearchOpen({})}><Oct name="search" /></Button>,
   })) : [{ key: 'repo', title: name, content: failed, hideChromeOnScroll: false, leading: <Button aria-label="Choose repository" onPress={openPicker} className={cn(ghButton(), 'ml-2 px-0')}><Oct name="menu" /></Button> }];
 
   return (
     <RepoProvider value={state}>
+      <div ref={rootRef} className="contents">
+      <div role="status" aria-live="polite" className="sr-only">{titleOf(route)}</div>
       {ui.phone ? (
         <>
           {!source.live ? <SampleNotice /> : null}
@@ -323,9 +363,10 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
         <>
           <GlobalHeader width={width} />
           {!source.live ? <SampleNotice /> : null}
-          <main ref={scroller} className="bl-scroll min-h-0 flex-1 overflow-y-auto">{repo.data ? <RepoPage route={route} tab={tab} /> : failed}</main>
+          <main ref={scroller} tabIndex={-1} className="bl-scroll min-h-0 flex-1 overflow-y-auto outline-none">{repo.data ? <RepoPage route={route} tab={tab} /> : failed}</main>
         </>
       )}
+      </div>
       {repo.data ? (
         <>
           <CloneDialog open={cloneOpen} onClose={() => setCloneOpen(false)} compact={ui.phone} />
@@ -344,7 +385,7 @@ function SampleNotice() {
   return (
     <div role="note" className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-(--gh-attention)/10 px-4 py-1 text-caption text-muted-foreground">
       <Oct name="book" size={14} />
-      <span className="min-w-0 flex-1">Sample repository: invented data on a small GitHub in this page. Everything works; nothing leaves the page.</span>
+      <span className="min-w-0 flex-1">Sample repository: invented data on a small GitHub in this page. What you do here stays here. Links to people and topics go to the real github.com, where this repository doesn’t exist.</span>
       {keychain && !keychain.token && !keychain.locked ? <Button className="cursor-pointer border-0 bg-transparent p-0 text-caption font-semibold text-primary outline-none data-hovered:underline data-focus-visible:ring-2 data-focus-visible:ring-primary group-data-[phone=true]/gh:min-h-11" onPress={keychain.signIn}>Sign in with GitHub</Button> : null}
     </div>
   );
@@ -379,11 +420,35 @@ function titleOf(r: Route): string {
   }
 }
 
+/** A screen that breaks stays one broken screen: the header, the tabs and your drafts (held outside it) carry on. */
+class ScreenBoundary extends Component<{ screen: string; children: ReactNode }, { error: unknown; screen: string }> {
+  override state = { error: null as unknown, screen: this.props.screen };
+  static getDerivedStateFromError(error: unknown) { return { error }; }
+  static getDerivedStateFromProps(props: { screen: string }, state: { screen: string }) {
+    return props.screen === state.screen ? null : { error: null, screen: props.screen };
+  }
+  override render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div role="alert" className="grid place-items-center rounded-md border border-border px-6 py-12 text-center">
+        <Oct name="x" size={24} className="text-muted-foreground" />
+        <h1 className="mt-3 mb-1 text-title font-semibold">This screen hit a bug</h1>
+        <p className="mt-0 mb-4 max-w-[480px] text-muted-foreground">It’s a problem in this example, not on GitHub. Anything you were typing is kept. {this.state.error instanceof Error ? this.state.error.message : ''}</p>
+        <Button className={ghButton()} onPress={() => this.setState({ error: null })}>Try again</Button>
+      </div>
+    );
+  }
+}
+
 /** A screen that isn't one of the tabs' roots. */
-function ScreenFor({ route: r }: { route: Route }) {
+function ScreenFor({ route }: { route: Route }) {
+  return <ScreenBoundary screen={toPath(route)}><Screen route={route} /></ScreenBoundary>;
+}
+
+function Screen({ route: r }: { route: Route }) {
   const { ui } = useRepo();
   switch (r.s) {
-    case 'code': return r.path ? <PathView path={r.path} gitRef={r.ref ?? ''} line={r.line} blame={r.blame} /> : <div className={cn(ui.phone && 'p-4')}><CodeHome gitRef={r.ref ?? ''} /></div>;
+    case 'code': return r.path ? <PathView path={r.path} gitRef={r.ref ?? ''} line={r.line} lineEnd={r.lineEnd} blame={r.blame} /> : <div className={cn(ui.phone && 'p-4')}><CodeHome gitRef={r.ref ?? ''} /></div>;
     case 'commits': return <CommitsPage gitRef={r.ref} path={r.path} author={r.author} page={r.page} />;
     case 'commit': return <CommitPage sha={r.sha} />;
     case 'edit': return r.mode === 'edit' ? <EditFile path={r.path} gitRef={r.ref} /> : <DeleteFile path={r.path} gitRef={r.ref} />;

@@ -141,7 +141,7 @@ function RunActions({ run, compact }: { run: WorkflowRun; compact?: boolean }) {
         can.push && active ? { id: 'cancel', label: 'Cancel run', onAction: () => void act.run(async () => { await source.cancelRun(run.id); notify('Cancel requested'); }) } : null,
         can.push && !active ? { id: 'delete', label: 'Delete run', danger: true, onAction: () => void act.run(async () => { await source.deleteRun(run.id); notify('Run deleted'); }) } : null,
       ]} />
-      <ActionError error={act.error} className="w-full" />
+      <ActionError error={act.error} onDismiss={act.clear} className="w-full" />
     </>
   );
 }
@@ -183,7 +183,7 @@ function WorkflowMenu({ workflow, onDispatch }: { workflow: Workflow; onDispatch
         { id: 'toggle', label: workflow.active ? 'Disable workflow' : 'Enable workflow', onAction: () => void act.run(() => source.setWorkflowEnabled(workflow.id, !workflow.active)) },
         workflow.url ? { id: 'github', label: 'Open on GitHub', href: workflow.url, onAction: () => {} } : null,
       ]} />
-      <ActionError error={act.error} className="w-full" />
+      <ActionError error={act.error} onDismiss={act.clear} className="w-full" />
     </div>
   );
 }
@@ -224,7 +224,7 @@ function DispatchForm({ workflow, onClose }: { workflow: Workflow; onClose: () =
           )}
         </label>
       ))}
-      <ActionError error={act.error} />
+      <ActionError error={act.error} onDismiss={act.clear} />
       <div className="flex justify-end gap-2">
         <Button className={ghButton()} onPress={onClose}>Cancel</Button>
         <Button type="submit" className={ghButton(true)} isDisabled={act.busy || missing || inputs.data?.dispatchable === false}>{act.busy ? 'Starting…' : 'Run workflow'}</Button>
@@ -273,7 +273,7 @@ export function RunPage({ id }: { id: number }) {
                 {r.url && source.live ? <a href={r.url} target="_blank" rel="noreferrer" className={cn(ghButton(), 'no-underline')}>Open on GitHub<Oct name="external" size={12} /></a> : null}
               </div>
             </div>
-            <ActionError error={act.error} className="mb-3" />
+            <ActionError error={act.error} onDismiss={act.clear} className="mb-3" />
             <h2 className="mt-0 mb-2 text-callout font-semibold">Jobs</h2>
             <div className="space-y-3">
               {r.jobs.map((j) => <JobCard key={j.id} job={j} />)}

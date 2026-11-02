@@ -142,9 +142,19 @@ export const NotFound: Story = {
 
 /** GitHub says no: every write in this one comes back 403, and reads run out of rate limit if you keep going. */
 const refused = createSampleGitHub();
-for (let i = 0; i < 50; i++) refused.server.fail(/^(POST|PATCH|PUT|DELETE) \/(?!graphql)/, 403, 'Resource not accessible by integration');
+refused.server.refuseWrites('Resource not accessible by integration');
+// Tests change the world behind the page's back through this (someone else pushing, a token being revoked).
+(globalThis as { __githubCloneServer?: unknown }).__githubCloneServer = refused.server;
 export const WritesRefused: Story = {
   args: { github: refused.gh, sample: true, repo: 'acme/orbit', initialRoute: 'issues/489' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+/** Someone else's commit lands while you edit: tests reach the server to make it happen. */
+const shared = createSampleGitHub();
+(globalThis as { __githubSharedServer?: unknown }).__githubSharedServer = shared.server;
+export const SharedRepository: Story = {
+  args: { github: shared.gh, sample: true, repo: 'acme/orbit', syncUrl: true },
   render: (args) => <Full><GithubClone {...args} /></Full>,
 };
 

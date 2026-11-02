@@ -9,7 +9,7 @@ import { BranchLink, GhLink, UserLink } from './links';
 import { MarkdownField, Md } from './markdown';
 import { LabelChip, Oct, ghButton, type OctName } from './parts';
 import { Menu } from './pickers';
-import { ActionError, Loaded, useAction, useCan, useLoad, useRepo } from './repo-context';
+import { ActionError, Loaded, useAction, useCan, useCopy, useDraft, useLoad, useRepo } from './repo-context';
 
 /* ── Reactions ── */
 const ALL_REACTIONS: ReactionContent[] = ['+1', '-1', 'laugh', 'hooray', 'confused', 'heart', 'rocket', 'eyes'];
@@ -23,7 +23,7 @@ export function ReactionBar({ target, reactions, className }: { target: CommentT
   const mine = useLoad<Partial<Record<ReactionContent, number>>>(`${source.id}:reactions:${key}:${any}:${viewer?.login ?? ''}`, () => (any && viewer ? source.myReactions(target) : {})).data ?? {};
   const act = useAction();
   const toggle = (c: ReactionContent) => act.run(async () => { if (mine[c]) await source.unreact(target, mine[c]!); else await source.react(target, c); });
-  const chip = 'inline-flex h-6 cursor-pointer items-center gap-1 rounded-full border px-2 text-caption outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-disabled:cursor-default group-data-[phone=true]/gh:h-9';
+  const chip = 'inline-flex h-6 cursor-pointer items-center gap-1 rounded-full border px-2 text-caption outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-disabled:cursor-default group-data-[phone=true]/gh:h-11 group-data-[phone=true]/gh:min-w-11';
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
       {participate ? (
@@ -36,7 +36,7 @@ export function ReactionBar({ target, reactions, className }: { target: CommentT
           <span aria-hidden="true">{REACTION_GLYPH[c]}</span>{reactions[c]}
         </Button>
       ))}
-      <ActionError error={act.error} />
+      <ActionError error={act.error} onDismiss={act.clear} />
     </div>
   );
 }
@@ -69,7 +69,8 @@ export interface CommentProps {
 }
 
 export function CommentCard({ author, when, at, body, role, url, verb = 'commented', tone, edited, target, number, reactions, onQuote, onSaveBody, canEdit, canDelete, compact, children }: CommentProps) {
-  const { source, ui, notify } = useRepo();
+  const { source, ui } = useRepo();
+  const copy = useCopy();
   const [editing, setEditing] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const act = useAction();
@@ -89,9 +90,9 @@ export function CommentCard({ author, when, at, body, role, url, verb = 'comment
           <span className="min-w-0 truncate">{verb} {url ? <a href={url} target="_blank" rel="noreferrer" title={at ? new Date(at).toLocaleString() : undefined} className="text-inherit no-underline hover:underline">{when}</a> : when}{edited ? ' · edited' : ''}</span>
           <span className="flex-1" />
           {role && !ui.phone ? <span className="rounded-full border border-border px-2 text-caption leading-[18px] font-medium">{role}</span> : null}
-          <Menu label={`Comment actions for ${author.login}`} triggerClassName="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:bg-secondary group-data-[phone=true]/gh:size-9"
+          <Menu label={`Comment actions for ${author.login}`} triggerClassName="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:bg-secondary group-data-[phone=true]/gh:size-11"
             trigger={<Oct name="kebab" />} entries={[
-              url ? { id: 'copy', label: 'Copy link', onAction: () => { void navigator.clipboard?.writeText(url).catch(() => {}); notify('Link copied'); } } : null,
+              url ? { id: 'copy', label: 'Copy link', onAction: () => void copy(url, 'Link copied') } : null,
               onQuote ? { id: 'quote', label: 'Quote reply', onAction: () => onQuote(body.split('\n').map((l) => `> ${l}`).join('\n') + '\n\n') } : null,
               url ? { id: 'github', label: 'Open on GitHub', href: url, onAction: () => {} } : null,
               canEdit ? { separator: true, id: 'sep' } : null,
@@ -102,7 +103,7 @@ export function CommentCard({ author, when, at, body, role, url, verb = 'comment
         {editing != null ? (
           <div className="p-3">
             <MarkdownField label="Edit comment" value={editing} onChange={setEditing} onSubmit={() => void save()} autoFocus />
-            <ActionError error={act.error} className="mt-2" />
+            <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
             <div className="mt-2 flex justify-end gap-2">
               <Button className={ghButton()} isDisabled={act.busy} onPress={() => { setEditing(null); act.clear(); }}>Cancel</Button>
               <Button className={ghButton(true)} isDisabled={act.busy} onPress={() => void save()}>{act.busy ? 'Saving…' : 'Update comment'}</Button>
@@ -110,7 +111,11 @@ export function CommentCard({ author, when, at, body, role, url, verb = 'comment
           </div>
         ) : (
           <>
-            <Md markdown={body} className="px-4 py-3" />
+            <Md markdown={body} className="px-4 py-3" onTaskToggle={canEdit ? (next) => void act.run(async () => {
+              if (onSaveBody) await onSaveBody(next);
+              else if (target) await source.editComment(target, next);
+            }, 'update the task list') : undefined} />
+            <ActionError error={editing == null ? act.error : null} onDismiss={act.clear} className="px-4 pb-2" />
             {children}
             {target && reactions ? <ReactionBar target={target} reactions={reactions} className="px-4 pb-3" /> : null}
           </>
@@ -118,7 +123,7 @@ export function CommentCard({ author, when, at, body, role, url, verb = 'comment
         {confirming ? (
           <div role="alertdialog" aria-label="Delete this comment?" className="flex flex-wrap items-center gap-2 border-t border-border bg-muted px-4 py-2">
             <span className="min-w-0 flex-1 font-semibold">Delete this comment?</span>
-            <ActionError error={act.error} />
+            <ActionError error={act.error} onDismiss={act.clear} />
             <Button className={ghButton()} isDisabled={act.busy} onPress={() => setConfirming(false)}>Cancel</Button>
             <Button className={cn(ghButton(), 'text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void remove()}>{act.busy ? 'Deleting…' : 'Delete'}</Button>
           </div>
@@ -264,19 +269,26 @@ export function Thread({ number, authorLogin, saveBody, canEditBody, locked, foo
   const { source, viewer, ui, repo, keychain } = useRepo();
   const can = useCan();
   const timeline = useLoad(`${source.id}:timeline:${number}`, () => source.timeline(number));
-  const [draft, setDraft] = useState('');
+  const stored = useDraft(`${source.id}:comment:${number}`);
+  const draft = stored.value;
+  const setDraft = stored.set;
   const act = useAction();
   const items = timeline.data ?? [];
   const submit = async () => {
     const body = draft.trim();
     if (!body) return true;
-    const ok = await act.run(async () => { await source.comment(number, body); return true; });
-    if (ok) setDraft('');
+    const ok = await act.run(async () => { await source.comment(number, body); return true; }, 'post your comment');
+    if (ok) stored.clear();
     return !!ok;
   };
   const quote = (t: string) => {
-    setDraft((d) => (d ? d.trimEnd() + '\n\n' : '') + t);
-    document.getElementById(`composer-${number}`)?.querySelector('textarea')?.focus();
+    setDraft((draft ? draft.trimEnd() + '\n\n' : '') + t);
+    // After the menu has finished handing focus back to its button.
+    setTimeout(() => {
+      const area = document.getElementById(`composer-${number}`)?.querySelector('textarea');
+      area?.focus();
+      area?.setSelectionRange(area.value.length, area.value.length);
+    }, 60);
   };
   const lockedOut = locked && !can.triage;
   return (
@@ -311,10 +323,11 @@ export function Thread({ number, authorLogin, saveBody, canEditBody, locked, foo
             <p className="m-0 rounded-md border border-border bg-muted px-4 py-3 text-muted-foreground"><Oct name="lock" size={14} className="mr-1.5" />This conversation has been locked and limited to collaborators.</p>
           ) : (
             <>
-              <h3 className="mt-0 mb-2 text-detail font-semibold">Add a comment</h3>
+              <h2 className="mt-0 mb-2 text-detail font-semibold">Add a comment</h2>
+              {stored.restored && draft ? <p role="status" className="mt-0 mb-2 text-caption text-muted-foreground">Your unsent comment is still here.</p> : null}
               <MarkdownField label="Add a comment" value={draft} onChange={setDraft} onSubmit={() => void submit()} disabled={act.busy}
                 footer={source.live ? <span className="ml-auto">Posts to {source.full} as {viewer.login}</span> : <span className="ml-auto">Sample: stays in this page</span>} />
-              <ActionError error={act.error} className="mt-2" />
+              <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
             </>
           )}
           {viewer && !lockedOut && !repo.archived ? (

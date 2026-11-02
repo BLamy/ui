@@ -104,7 +104,7 @@ export function createGitHub({ token, fetch: f = (u, i) => fetch(u, i), now = Da
       throw new GitHubError(403, message + hint, 'forbidden');
     }
     if (res.status === 422 || res.status === 409 || res.status === 405 || res.status === 410) {
-      const details = (body.errors ?? []).map((e) => (typeof e === 'string' ? e : e.message || [e.field, e.code].filter(Boolean).join(' '))).filter(Boolean);
+      const details = (body.errors ?? []).map((e) => (typeof e === 'string' ? e : e.message || sentenceOf(e))).filter(Boolean);
       throw new GitHubError(res.status, details.length ? details.join(' ') : message, 'validation');
     }
     throw new GitHubError(res.status, message, 'other');
@@ -219,6 +219,16 @@ export function createGitHub({ token, fetch: f = (u, i) => fetch(u, i), now = Da
     /** Everything read again. */
     refresh: () => invalidate(''),
   };
+}
+
+/** GitHub's field errors as a sentence ("name already_exists" isn't one). */
+function sentenceOf(e: { field?: string; code?: string; resource?: string }): string {
+  const field = (e.field ?? e.resource ?? 'That').replace(/_/g, ' ');
+  const name = field.charAt(0).toUpperCase() + field.slice(1);
+  if (e.code === 'already_exists') return `${name} already exists.`;
+  if (e.code === 'missing_field' || e.code === 'missing') return `${name} is required.`;
+  if (e.code === 'invalid') return `${name} isn’t valid.`;
+  return [name, e.code?.replace(/_/g, ' ')].filter(Boolean).join(' ');
 }
 
 /* One client per token for the session, so going back to a repository (or remounting the block) is instant. */
@@ -343,7 +353,7 @@ export function languagesOf(bytes: Record<string, number>): Repo['languages'] {
 }
 
 /** The flat recursive tree as nested FileNodes. */
-export function treeOf(entries: { path: string; type: string; size?: number }[]): FileNode[] {
+export function treeOf(entries: { path: string; type: string; size?: number; mode?: string; sha?: string }[]): FileNode[] {
   const root: FileNode[] = [];
   const dirs = new Map<string, FileNode[]>([['', root]]);
   // Parents come before children in GitHub's listing, but don't rely on it.
@@ -351,7 +361,10 @@ export function treeOf(entries: { path: string; type: string; size?: number }[])
     const at = e.path.lastIndexOf('/');
     const parent = dirs.get(at < 0 ? '' : e.path.slice(0, at));
     if (!parent) continue;
-    const node: FileNode = { name: e.path.slice(at + 1), path: e.path, type: e.type === 'tree' ? 'dir' : 'file', commit: '', when: '', size: e.size };
+    const node: FileNode = {
+      name: e.path.slice(at + 1), path: e.path, type: e.type === 'tree' ? 'dir' : 'file', commit: '', when: '', size: e.size,
+      special: e.type === 'commit' ? 'submodule' : e.mode === '120000' ? 'symlink' : undefined, objectSha: e.sha,
+    };
     if (node.type === 'dir') dirs.set(e.path, (node.children = []));
     parent.push(node);
   }
@@ -790,6 +803,11 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
     return Array.isArray(res) ? (res as T) : 'computing';
   };
 
+  const recursiveTree = (ref: string) => gh.get<{ tree: { path: string; type: string; size?: number; mode?: string; sha?: string }[]; truncated: boolean }>(`${r}/git/trees/${encodeURIComponent(ref || 'HEAD')}?recursive=1`).catch((e: unknown) => {
+    if (e instanceof GitHubError && e.status === 409) return { tree: [], truncated: false };
+    throw e;
+  });
+
   const source: RepoSource = {
     id: `${live ? 'live' : 'sample'}:${gh.id}:${full}`,
     live,
@@ -878,11 +896,20 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
     },
 
     async tree(ref) {
-      const t = await gh.get<{ tree: { path: string; type: string; size?: number }[]; truncated: boolean }>(`${r}/git/trees/${encodeURIComponent(ref || 'HEAD')}?recursive=1`).catch((e: unknown) => {
-        if (e instanceof GitHubError && e.status === 409) return { tree: [], truncated: false };
+      return treeOf((await recursiveTree(ref)).tree);
+    },
+    treeTruncated: async (ref) => (await recursiveTree(ref)).truncated,
+    async pathInfo(p, ref) {
+      const hit = await gh.get<{ name: string; path: string; type: string; size?: number; sha?: string } | { name: string; path: string; type: string; size?: number; sha?: string }[]>(`${r}/contents/${encPath(p)}${refQuery(ref)}`).catch((e: unknown) => {
+        if (e instanceof GitHubError && e.kind === 'notFound') return null;
         throw e;
       });
-      return treeOf(t.tree);
+      if (!hit) return null;
+      const node = (x: { name: string; path: string; type: string; size?: number; sha?: string }): FileNode => ({
+        name: x.name, path: x.path, type: x.type === 'dir' ? 'dir' : 'file', commit: '', when: '', size: x.size, objectSha: x.sha, special: x.type === 'submodule' ? 'submodule' : x.type === 'symlink' ? 'symlink' : undefined,
+      });
+      if (Array.isArray(hit)) return { name: p.split('/').at(-1) ?? p, path: p, type: 'dir', commit: '', when: '', children: hit.map(node) };
+      return node(hit);
     },
     readme: (ref) => gh.get<string>(`${r}/readme${refQuery(ref)}`, 'raw').catch((e: unknown) => {
       if (e instanceof GitHubError && e.kind === 'notFound') return null;
@@ -1244,6 +1271,13 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
       touched(n);
       codeTouched();
     },
+    async revert(id, n, title) {
+      const res = await gh.mutate<{ result: { revertPullRequest: { number: number } } }>(`mutation RevertPull($id: ID!, $title: String) { result: revertPullRequest(input: { pullRequestId: $id, title: $title }) { revertPullRequest { number } } }`, { id, title });
+      touched(n);
+      codeTouched();
+      return res.result.revertPullRequest.number;
+    },
+    branchNamesOf: async (other) => (await gh.getAll<{ name: string }>(`/repos/${other}/branches?per_page=100`, 2)).map((b) => b.name),
     async updateBranch(n) {
       await gh.send('PUT', `${r}/pulls/${n}/update-branch`, {});
       touched(n);

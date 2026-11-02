@@ -85,6 +85,9 @@ export interface FileNode {
   /** Bytes, so huge files aren't fetched. */
   size?: number;
   fullSha?: string;
+  /** Not a plain file: a pointer to another repository's commit, or a link to another path. */
+  special?: 'submodule' | 'symlink';
+  objectSha?: string;
 }
 
 /** A branch or tag as the branches and tags pages list them. */

@@ -15,11 +15,11 @@ import { AssigneeSection, LabelSection, LockSection, MetaColumn, MilestoneSectio
 import { Box, LabelChip, Oct, StatePill, ghButton } from './parts';
 import { Menu, SelectMenu } from './pickers';
 import { DEFAULT_ISSUE_Q } from './route';
-import { ActionError, Failed, Loaded, useAction, useCan, useLoad, useNav, useRepo } from './repo-context';
+import { ActionError, CancelButton, Failed, Loaded, useAction, useCan, useDraft, useLoad, useNav, useRepo } from './repo-context';
 import { Thread, participantsOf } from './thread';
 
 export function IssueList({ q, page = 1 }: { q?: string; page?: number }) {
-  const { source, repo } = useRepo();
+  const { source, repo, notify } = useRepo();
   const nav = useNav();
   const can = useCan();
   const query = q ?? DEFAULT_ISSUE_Q;
@@ -27,18 +27,52 @@ export function IssueList({ q, page = 1 }: { q?: string; page?: number }) {
   const issues = useLoad(`${source.id}:issues:${query}:${page}`, () => source.searchIssues(query, page));
   const counts = useLoad(source.id + ':counts', source.counts).data;
   const labels = useLoad(source.id + ':labels', source.labels).data ?? [];
+  const people = useLoad(source.id + ':assignable', source.assignable).data ?? [];
+  const milestones = useLoad(source.id + ':milestones:open', () => source.milestones('open')).data ?? [];
+  const [picked, setPicked] = useState<number[]>([]);
+  const act = useAction();
   if (!repo.has.issues) {
     return <Box className="grid place-items-center px-6 py-16 text-center"><Oct name="issue" size={24} className="text-muted-foreground" /><h2 className="mt-3 mb-1 text-title font-semibold">Issues are turned off</h2><p className="m-0 text-muted-foreground">This repository doesn’t use GitHub Issues.{can.admin ? ' Turn them on in Settings.' : ''}</p></Box>;
   }
   const state = queryState(query);
   const filtered = !/^\s*is:(open|closed)\s*$/.test(query);
+  const rows = issues.data?.items ?? [];
+  const chosen = rows.filter((i) => picked.includes(i.number)).map((i) => i.number);
+  /* The same write once per issue: GitHub has no bulk endpoint. Stops at the first refusal and says how far it got. */
+  const bulk = (what: string, patch: Parameters<typeof source.updateIssue>[1]) => void act.run(async () => {
+    let done = 0;
+    try {
+      for (const n of chosen) { await source.updateIssue(n, patch); done++; }
+    } catch (e) {
+      throw new Error(`${e instanceof Error ? e.message : String(e)} (${done} of ${chosen.length} done)`);
+    }
+    setPicked([]);
+    notify(`Updated ${done} issue${done === 1 ? '' : 's'}`);
+  }, what);
   return (
     <div>
       <h1 className="sr-only">Issues</h1>
       <ListToolbar query={query} onQuery={(x) => go(x)} placeholder="Search all issues" canCreate={can.participate} newLabel="New issue" onNew={() => nav.go({ s: 'new-issue' })} />
       <ActiveFilters query={query} base={DEFAULT_ISSUE_Q} onQuery={(x) => go(x)} labels={labels} />
+      <ActionError error={act.error} onDismiss={act.clear} className="mb-2" />
+      {chosen.length ? (
+        <div role="toolbar" aria-label="Selected issues" className="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/8 px-3 py-1.5">
+          <b className="font-semibold" role="status">{chosen.length} selected</b>
+          <span className="flex-1" />
+          <Menu label="Mark selected issues as" trigger={<>Mark as<Oct name="chevDown" size={12} /></>} entries={[
+            { id: 'open', label: 'Open', onAction: () => bulk('reopen those issues', { state: 'open' }) },
+            { id: 'done', label: 'Closed as completed', onAction: () => bulk('close those issues', { state: 'closed', stateReason: 'completed' }) },
+            { id: 'no', label: 'Closed as not planned', onAction: () => bulk('close those issues', { state: 'closed', stateReason: 'not_planned' }) },
+          ]} />
+          <SelectMenu title="Replace labels on selected issues" trigger={<>Label<Oct name="chevDown" size={12} /></>} items={labels.map((l) => ({ id: l.name, label: l.name, leading: <span className="size-3.5 shrink-0 rounded-full" style={{ background: l.color }} /> }))} selected={[]} multiple filterPlaceholder="Filter labels" onApply={(ids) => bulk('label those issues', { labels: ids })} />
+          <SelectMenu title="Assign selected issues" trigger={<>Assign<Oct name="chevDown" size={12} /></>} items={people.map(userPick)} selected={[]} multiple filterPlaceholder="Filter users" onApply={(ids) => bulk('assign those issues', { assignees: ids })} />
+          <SelectMenu title="Set milestone on selected issues" trigger={<>Milestone<Oct name="chevDown" size={12} /></>} items={milestones.map((m) => ({ id: String(m.number), label: m.title }))} selected={[]} clearLabel="No milestone" empty="No milestones" onApply={(ids) => bulk('set that milestone', { milestone: ids[0] ? Number(ids[0]) : null })} />
+          <Button className={ghButton()} onPress={() => setPicked([])}>Clear</Button>
+        </div>
+      ) : null}
       <Box header={
         <div className="flex w-full flex-wrap items-center gap-x-2">
+          {can.triage && rows.length ? <input type="checkbox" aria-label="Select all on this page" checked={chosen.length === rows.length} onChange={(e) => setPicked(e.target.checked ? rows.map((i) => i.number) : [])} className="size-4 cursor-pointer group-data-[phone=true]/gh:size-6" /> : null}
           <StateToggle value={state} onChange={(v) => go(setQueryState(query, v))} open={filtered ? undefined : counts?.issues.open} closed={filtered ? undefined : counts?.issues.closed} closedIcon="check" />
           {filtered && issues.data?.total != null ? <span className="text-caption text-muted-foreground" role="status">{issues.data.total.toLocaleString('en-US')} result{issues.data.total === 1 ? '' : 's'}</span> : null}
           <FilterMenus query={query} onQuery={(x) => go(x)} />
@@ -50,23 +84,24 @@ export function IssueList({ q, page = 1 }: { q?: string; page?: number }) {
               {data.items.map((i) => (
                 <ItemRow key={i.number} state={i.state === 'open' ? 'open' : i.stateReason === 'not_planned' ? 'draft' : 'closed'} stateText={i.state === 'open' ? 'Open' : i.stateReason === 'not_planned' ? 'Closed as not planned' : 'Closed'} title={i.title} labels={i.labels} to={{ s: 'issue', n: i.number }}
                   onLabel={(l) => go(setQualifier(query, 'label', [l]))}
+                  selected={picked.includes(i.number)} onSelect={can.triage ? (on) => setPicked((p) => (on ? [...p, i.number] : p.filter((x) => x !== i.number))) : undefined}
                   meta={<>#{i.number} {i.state === 'open' ? 'opened' : 'was closed'} <span title={i.at ? new Date(i.at).toLocaleString() : undefined}>{i.when}</span> by {i.author.login}{i.milestone ? <span className="ml-2 inline-flex items-center gap-1"><Oct name="milestone" size={12} />{i.milestone}</span> : null}{i.locked ? <span className="ml-2 inline-flex items-center gap-1"><Oct name="lock" size={12} />Locked</span> : null}</>}
                   assignees={i.assignees} comments={i.comments} />
               ))}
               {data.items.length === 0 ? (
                 <div className="px-4 py-14 text-center">
                   <Oct name="issue" size={24} className="text-muted-foreground" />
-                  <h2 className="mt-3 mb-1 text-title font-semibold">{filtered ? 'No results matched your search.' : `No ${state} issues.`}</h2>
-                  {filtered ? <p className="m-0 text-muted-foreground">Try fewer filters. Search looks at titles, descriptions and comments.</p> : null}
+                  <h2 className="mt-3 mb-1 text-title font-semibold">{page > 1 ? `There’s no page ${page}.` : filtered ? 'No results matched your search.' : `No ${state} issues.`}</h2>
+                  {page > 1 ? <Button className={ghButton()} onPress={() => go(query)}>Back to the first page</Button> : filtered ? <p className="m-0 text-muted-foreground">Try fewer filters. Search looks at titles, descriptions and comments.</p> : null}
                 </div>
               ) : null}
             </div>
           )}
         </Loaded>
       </Box>
-      {issues.data ? <Pagination data={issues.data} go={(p) => go(query, p)} /> : null}
+      {issues.data?.items.length ? <Pagination data={issues.data} go={(p) => go(query, p)} /> : null}
       <p className="mt-4 text-center text-caption text-muted-foreground">
-        <b className="font-semibold">ProTip!</b> Add <Button className="inline cursor-pointer border-0 bg-transparent p-0 outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary" onPress={() => go(`${query} no:assignee`)}><code className="rounded bg-secondary px-1 font-mono">no:assignee</code></Button> to see everything that’s not assigned.
+        <b className="font-semibold">ProTip!</b> Add <Button className="inline cursor-pointer border-0 bg-transparent p-0 outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary" onPress={() => go(/(?:^|\s)no:assignee\b/.test(query) ? query : `${query} no:assignee`)}><code className="rounded bg-secondary px-1 font-mono">no:assignee</code></Button> to see everything that’s not assigned.
       </p>
     </div>
   );
@@ -82,7 +117,7 @@ export function IssueView({ number }: { number: number }) {
   const issue = useLoad(`${source.id}:issue:${number}`, () => source.issue(number));
   const extras = useLoad(`${source.id}:issue-extras:${number}`, () => source.issueExtras(number)).data;
   const timeline = useLoad(`${source.id}:timeline:${number}`, () => source.timeline(number)).data ?? [];
-  const [titleDraft, setTitleDraft] = useState<string | null>(null);
+  const [titleEdit, setTitleEdit] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const act = useAction();
   const isPull = issue.data?.url?.includes('/pull/');
@@ -100,22 +135,22 @@ export function IssueView({ number }: { number: number }) {
           const save = (patch: Parameters<typeof source.updateIssue>[1]) => source.updateIssue(number, patch);
           return (
             <>
-              {titleDraft != null ? (
-                <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (titleDraft.trim()) void act.run(async () => { await save({ title: titleDraft.trim() }); setTitleDraft(null); }); }}>
-                  <Input aria-label="Issue title" autoFocus value={titleDraft} onChange={(e) => setTitleDraft(e.target.value)} className="h-9 min-w-[200px] flex-1 rounded-md border border-border bg-background text-title" />
-                  <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !titleDraft.trim()}>Save</Button>
-                  <Button className={ghButton()} onPress={() => { setTitleDraft(null); act.clear(); }}>Cancel</Button>
+              {titleEdit != null ? (
+                <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (titleEdit.trim()) void act.run(async () => { await save({ title: titleEdit.trim() }); setTitleEdit(null); }, 'rename the issue'); }}>
+                  <Input aria-label="Issue title" autoFocus value={titleEdit} onChange={(e) => setTitleEdit(e.target.value)} className="h-9 min-w-[200px] flex-1 rounded-md border border-border bg-background text-title group-data-[phone=true]/gh:h-11" />
+                  <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !titleEdit.trim()}>Save</Button>
+                  <Button className={ghButton()} onPress={() => { setTitleEdit(null); act.clear(); }}>Cancel</Button>
                 </form>
               ) : (
                 <div className="flex items-start gap-3">
-                  <h1 className={cn('m-0 min-w-0 flex-1 leading-tight font-normal', ui.phone ? 'text-title' : 'text-[32px]')}>{i.title} <span className="font-light text-muted-foreground">#{i.number}</span></h1>
+                  <h1 className={cn('m-0 min-w-0 flex-1 leading-tight font-normal break-words', ui.phone ? 'text-title' : 'text-[32px]')}>{i.title} <span className="font-light text-muted-foreground">#{i.number}</span></h1>
                   <div className="flex shrink-0 gap-2 pt-1">
-                    {canEdit ? <Button className={ghButton()} onPress={() => setTitleDraft(i.title)}>Edit</Button> : null}
+                    {canEdit ? <Button className={ghButton()} onPress={() => setTitleEdit(i.title)}>Edit</Button> : null}
                     {can.participate && !ui.phone ? <Button className={ghButton(true)} onPress={() => nav.go({ s: 'new-issue' })}>New issue</Button> : null}
                   </div>
                 </div>
               )}
-              <ActionError error={act.error} className="mt-2" />
+              <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
               <div className="mt-3 mb-2 flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-border pb-4 text-muted-foreground">
                 <StatePill state={i.state === 'open' ? 'open' : closedPill(i.stateReason)} label={i.state === 'closed' && i.stateReason === 'not_planned' ? 'Closed as not planned' : undefined} />
                 <span className="leading-6"><UserLink user={i.author} className="font-semibold text-foreground" /> opened this issue {i.when} · {i.comments} comment{i.comments === 1 ? '' : 's'}</span>
@@ -186,8 +221,12 @@ export function NewIssue({ title = '', body = '' }: { title?: string; body?: str
   const labelList = useLoad(source.id + ':labels', source.labels).data ?? [];
   const people = useLoad(source.id + ':assignable', source.assignable).data ?? [];
   const milestones = useLoad(source.id + ':milestones:open', () => source.milestones('open')).data ?? [];
-  const [t, setT] = useState(title);
-  const [b, setB] = useState(body);
+  const titleDraft = useDraft(`${source.id}:new-issue:title`, title);
+  const bodyDraft = useDraft(`${source.id}:new-issue:body`, body);
+  const t = titleDraft.value;
+  const setT = titleDraft.set;
+  const b = bodyDraft.value;
+  const setB = bodyDraft.set;
   const [labels, setLabels] = useState<string[]>([]);
   const [assignees, setAssignees] = useState<string[]>([]);
   const [milestone, setMilestone] = useState<number | null>(null);
@@ -198,8 +237,10 @@ export function NewIssue({ title = '', body = '' }: { title?: string; body?: str
     if (!t.trim()) return;
     void act.run(async () => {
       const n = await source.createIssue({ title: t.trim(), body: b, labels, assignees, milestone });
+      titleDraft.clear();
+      bodyDraft.clear();
       nav.go({ s: 'issue', n }, { replace: true });
-    });
+    }, 'create the issue');
   };
   const applyTemplate = (x: (typeof templates)[number]) => { setT(x.title); setB(x.body); setLabels(x.labels); };
   const chosen = useMemo(() => labelList.filter((l) => labels.includes(l.name)), [labelList, labels]);
@@ -217,16 +258,16 @@ export function NewIssue({ title = '', body = '' }: { title?: string; body?: str
         <div className="min-w-0 flex-1 space-y-3">
           <label className="grid gap-1">
             <span className="font-semibold">Title <span className="text-(--gh-closed)">*</span></span>
-            <Input aria-required="true" aria-invalid={touched && !t.trim()} autoFocus value={t} onChange={(e) => setT(e.target.value)} placeholder="Title" className="h-9 rounded-md border border-border bg-background" />
+            <Input aria-required="true" aria-invalid={touched && !t.trim()} autoFocus value={t} onChange={(e) => setT(e.target.value)} placeholder="Title" className="h-9 rounded-md border border-border bg-background group-data-[phone=true]/gh:h-11" />
             {touched && !t.trim() ? <span role="alert" className="text-caption text-(--gh-closed)">A title is required.</span> : null}
           </label>
           <div className="grid gap-1">
             <span className="font-semibold">Description</span>
             <MarkdownField label="Description" value={b} onChange={setB} onSubmit={submit} rows={10} placeholder="Type your description here…" disabled={act.busy} />
           </div>
-          <ActionError error={act.error} />
+          <ActionError error={act.error} onDismiss={act.clear} />
           <div className="flex justify-end gap-2">
-            <Button className={ghButton()} isDisabled={act.busy} onPress={() => nav.back()}>Cancel</Button>
+            <CancelButton dirty={titleDraft.dirty || bodyDraft.dirty} isDisabled={act.busy} onCancel={() => { titleDraft.clear(); bodyDraft.clear(); nav.back(); }} />
             <Button type="submit" className={ghButton(true)} isDisabled={act.busy}>{act.busy ? 'Creating…' : 'Create'}</Button>
           </div>
         </div>

@@ -42,7 +42,7 @@ export function LabelSection({ value, editable, onSave, query }: { value: Label[
           ))}
         </div>
       ) : <span className="text-muted-foreground">None yet</span>}
-      <ActionError error={act.error} className="mt-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
     </Section>
   );
 }
@@ -59,7 +59,7 @@ export function AssigneeSection({ value, editable, onSave }: { value: User[]; ed
       {value.length ? value.map((u) => <div key={u.login} className="mb-1.5"><UserChip user={u} /></div>) : (
         <span className="text-muted-foreground">No one{editable && viewer ? <> — <Button className="inline cursor-pointer border-0 bg-transparent p-0 text-caption text-primary outline-none data-hovered:underline data-focus-visible:ring-2 data-focus-visible:ring-primary" onPress={() => void act.run(() => onSave([viewer.login]))}>assign yourself</Button></> : null}</span>
       )}
-      <ActionError error={act.error} className="mt-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
     </Section>
   );
 }
@@ -80,7 +80,7 @@ export function MilestoneSection({ value, editable, onSave }: { value?: Mileston
           <GhLink to={{ s: 'milestone', n: value.number }} className="mt-1.5 block font-semibold text-foreground no-underline hover:text-primary">{value.title}</GhLink>
         </>
       ) : <span className="text-muted-foreground">No milestone</span>}
-      <ActionError error={act.error} className="mt-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
     </Section>
   );
 }
@@ -113,6 +113,9 @@ export function ReviewerSection({ value, editable, author, onRequest, onRemove, 
         <div key={r.user.login} className="mb-1.5 flex items-center gap-2">
           <UserChip user={r.user} className="min-w-0 flex-1" />
           <span title={REVIEWER_ICON[r.state][1]}>{REVIEWER_ICON[r.state][0]}<span className="sr-only">{REVIEWER_ICON[r.state][1]}</span></span>
+          {editable && r.state !== 'pending' && !r.isTeam ? (
+            <Button aria-label={`Re-request review from ${r.user.login}`} className={gear} onPress={() => void act.run(() => onRequest([r.user.login], []), 're-request that review')}><Oct name="retry" size={12} /></Button>
+          ) : null}
           {editable && onDismiss && (r.state === 'approved' || r.state === 'changes') && r.reviewId ? (
             <Button aria-label={`Dismiss ${r.user.login}’s review`} className={gear} onPress={() => { setDismissing(r); setWhy(''); }}><Oct name="x" size={12} /></Button>
           ) : null}
@@ -130,7 +133,7 @@ export function ReviewerSection({ value, editable, author, onRequest, onRemove, 
           </div>
         </form>
       ) : null}
-      <ActionError error={act.error} className="mt-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
     </Section>
   );
 }
@@ -141,7 +144,7 @@ export function NotificationSection({ subscribed, disabled, onToggle }: { subscr
     <Section title="Notifications">
       <Button className={cn(ghButton(), 'w-full')} isDisabled={disabled || act.busy} onPress={() => void act.run(() => onToggle(!subscribed))}><Oct name="bell" />{subscribed ? 'Unsubscribe' : 'Subscribe'}</Button>
       <p className="mt-2 mb-0 text-muted-foreground">{subscribed ? 'You’re receiving notifications from this thread.' : 'You’re not receiving notifications from this thread.'}</p>
-      <ActionError error={act.error} className="mt-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
     </Section>
   );
 }
@@ -179,7 +182,7 @@ export function LockSection({ locked, reason, number }: { locked: boolean; reaso
       ) : (
         <Button className={cn(ghButton(), 'w-full')} onPress={() => setAsking(true)}><Oct name="lock" />Lock conversation</Button>
       )}
-      <ActionError error={act.error} className="mt-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
     </Section>
   );
 }

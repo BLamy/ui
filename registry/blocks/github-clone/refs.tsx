@@ -75,7 +75,7 @@ export function RefPicker({ value, path = '' }: { value: string; path?: string }
               <Button className="flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-3 py-2 text-left text-caption text-foreground outline-none data-hovered:bg-accent data-focus-visible:ring-2 data-focus-visible:ring-primary group-data-[phone=true]/gh:min-h-11" isDisabled={act.busy} onPress={create}>
                 <Oct name="branch" />Create branch <b className="font-mono font-semibold">{q.trim()}</b> from {current}
               </Button>
-              <ActionError error={act.error} className="px-3 pb-2" />
+              <ActionError error={act.error} onDismiss={act.clear} className="px-3 pb-2" />
             </div>
           ) : null}
           <footer className="border-t border-border px-3 py-1.5 text-caption">
@@ -126,13 +126,13 @@ export function BranchesPage({ page = 1 }: { page?: number }) {
             <Button className={ghButton()} onPress={() => setCreating(false)}>Cancel</Button>
             <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !newName.trim()}>Create</Button>
           </div>
-          <ActionError error={act.error} className="sm:col-span-3" />
+          <ActionError error={act.error} onDismiss={act.clear} className="sm:col-span-3" />
         </form>
       ) : null}
       <label className="mb-3 flex h-8 items-center gap-2 rounded-md border border-border bg-background px-2 text-muted-foreground group-data-[phone=true]/gh:h-11">
         <Oct name="search" /><input aria-label="Search branches" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search branches on this page" className="min-w-0 flex-1 border-0 bg-transparent font-sans text-detail text-foreground outline-none select-text" />
       </label>
-      {!creating ? <ActionError error={act.error} className="mb-2" /> : null}
+      {!creating ? <ActionError error={act.error} onDismiss={act.clear} className="mb-2" /> : null}
       <Loaded load={branches}>
         {(data) => {
           const rows = data.items.filter((b) => !q || b.name.toLowerCase().includes(q.toLowerCase()));
@@ -200,7 +200,7 @@ export function TagsPage({ page = 1 }: { page?: number }) {
         <GhLink to={{ s: 'releases' }} className={cn(ghButton(), 'no-underline')}>Releases</GhLink>
         {can.push ? <Button className={ghButton(true)} onPress={() => nav.go({ s: 'new-release' })}>Draft a new release</Button> : null}
       </div>
-      <ActionError error={act.error} className="mb-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mb-2" />
       <Loaded load={tags}>
         {(data) => (
           <>
@@ -211,8 +211,8 @@ export function TagsPage({ page = 1 }: { page?: number }) {
                     <GhLink to={{ s: 'code', ref: t.name }} className="font-semibold text-foreground no-underline hover:text-primary"><Oct name="tag" size={14} className="mr-1.5 text-muted-foreground" />{t.name}</GhLink>
                     {t.commit ? <div className="mt-0.5 truncate text-caption text-muted-foreground">{t.commit.when} · <GhLink to={{ s: 'commit', sha: t.sha }} className="font-mono text-muted-foreground no-underline hover:text-primary">{t.sha.slice(0, 7)}</GhLink> · {t.commit.message}</div> : null}
                   </div>
-                  <a href={archive(t.name, 'zip')} className="text-caption text-primary no-underline hover:underline">zip</a>
-                  <a href={archive(t.name, 'tar.gz')} className="text-caption text-primary no-underline hover:underline">tar.gz</a>
+                  {source.live ? <a href={archive(t.name, 'zip')} className="text-caption text-primary no-underline hover:underline">zip</a> : null}
+                  {source.live ? <a href={archive(t.name, 'tar.gz')} className="text-caption text-primary no-underline hover:underline">tar.gz</a> : null}
                   {can.push ? (
                     deleting === t.name ? (
                       <span className="flex items-center gap-2">

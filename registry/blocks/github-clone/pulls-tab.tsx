@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ActiveFilters, FilterMenus, ItemRow, ListToolbar, Pagination, StateToggle, queryState, setQualifier, setQueryState } from './lists';
-import { Box, Oct, PR_STATE } from './parts';
+import { Box, Oct, PR_STATE, ghButton } from './parts';
 import { DEFAULT_PULL_Q } from './route';
 import { Loaded, useCan, useLoad, useNav, useRepo } from './repo-context';
 
@@ -54,14 +54,15 @@ export function PullList({ q, page = 1 }: { q?: string; page?: number }) {
               {data.items.length === 0 ? (
                 <div className="px-4 py-14 text-center">
                   <Oct name="pr" size={24} className="text-muted-foreground" />
-                  <h2 className="mt-3 mb-1 text-title font-semibold">{filtered ? 'No results matched your search.' : `No ${state} pull requests.`}</h2>
+                  <h2 className="mt-3 mb-1 text-title font-semibold">{page > 1 ? `There’s no page ${page}.` : filtered ? 'No results matched your search.' : `No ${state} pull requests.`}</h2>
+                  {page > 1 ? <Button className={ghButton()} onPress={() => go(query)}>Back to the first page</Button> : null}
                 </div>
               ) : null}
             </div>
           )}
         </Loaded>
       </Box>
-      {pulls.data ? <Pagination data={pulls.data} go={(p) => go(query, p)} /> : null}
+      {pulls.data?.items.length ? <Pagination data={pulls.data} go={(p) => go(query, p)} /> : null}
     </div>
   );
 }

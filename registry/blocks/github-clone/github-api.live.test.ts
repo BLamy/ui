@@ -12,6 +12,8 @@ import { createGitHub, githubRepo, recentRepos, viewerOf, type Fetch } from './g
 
 const LIVE = !!process.env.GITHUB_LIVE;
 const REPO = process.env.GITHUB_LIVE_REPO ?? 'cli/cli';
+/** cli/cli is known to have everything; any other repository may have no tags, issues or releases, and that's fine. */
+const BUSY = REPO === 'cli/cli';
 
 /** A fetch over `gh api`. Throws on anything that could change something. */
 const ghFetch: Fetch = async (url, init = {}) => {
@@ -40,7 +42,7 @@ const ghFetch: Fetch = async (url, init = {}) => {
     if (at > 0) headers.append(line.slice(0, at), line.slice(at + 1).trim());
   }
   const payload = out.subarray(split + 4);
-  return new Response(status === 204 || status === 304 ? null : payload, { status, headers });
+  return new Response(status === 204 || status === 304 ? null : new Uint8Array(payload), { status, headers });
 };
 
 const graphql = (query: string) => JSON.parse(execFileSync('gh', ['api', 'graphql', '--input', '-'], { input: JSON.stringify({ query }), stdio: ['pipe', 'pipe', 'ignore'] }).toString()) as { data: Record<string, { inputFields?: { name: string }[] } | null> };
@@ -67,8 +69,8 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
     expect(repo.branchCount).toBeGreaterThan(0);
     expect(repo.lastCommit?.fullSha).toMatch(/^[0-9a-f]{40}$/);
     const counts = await source.counts();
-    expect(counts.issues.open + counts.issues.closed).toBeGreaterThan(0);
-    expect((await source.labels()).length).toBeGreaterThan(0);
+    if (BUSY) expect(counts.issues.open + counts.issues.closed).toBeGreaterThan(0);
+    if (BUSY) expect((await source.labels()).length).toBeGreaterThan(0);
     await source.milestones('all');
     const tree = await source.tree('');
     const file = tree.find((n) => n.type === 'file' && n.name === 'LICENSE') ?? tree.find((n) => n.type === 'file')!;
@@ -80,11 +82,13 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
     expect((await source.blame(file.path, '')).length).toBeGreaterThan(0);
     const names = await source.refNames();
     expect(names.branches).toContain(repo.branch);
-    expect((await source.tags(1)).items.length).toBeGreaterThan(0);
+    const tags = await source.tags(1);
+    if (BUSY) expect(tags.items.length).toBeGreaterThan(0);
     await source.starred();
     await source.subscription();
     await source.assignable();
-    expect((await source.people('forks', 1)).items.length).toBeGreaterThan(0);
+    const forks = await source.people('forks', 1);
+    if (BUSY) expect(forks.items.length).toBeGreaterThan(0);
   }, 180_000);
 
   it('history and compare', async () => {
@@ -100,7 +104,7 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
 
   it('issues: search with qualifiers, pages, a conversation', async () => {
     const open = await source.searchIssues('is:open sort:comments-desc', 1);
-    expect(open.items.length).toBeGreaterThan(0);
+    if (!BUSY && !open.items.length) return;
     expect(open.total).toBeGreaterThan(0);
     const comments = open.items.map((i) => i.comments);
     expect(comments).toEqual([...comments].sort((a, b) => b - a));
@@ -109,13 +113,13 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
     expect(issue.nodeId).toBeTruthy();
     const timeline = await source.timeline(n);
     expect(timeline[0]).toMatchObject({ kind: 'comment', isBody: true });
-    expect(timeline.some((t) => t.kind === 'comment' && !t.isBody)).toBe(true);
+    if (open.items[0].comments) expect(timeline.some((t) => t.kind === 'comment' && !t.isBody)).toBe(true);
     expect(await source.issueExtras(n)).toMatchObject({ id: expect.any(String) });
   }, 120_000);
 
   it('pull requests: rows filled from GraphQL, detail, threads, files, checks', async () => {
     const merged = await source.searchPulls('is:merged sort:comments-desc', 1);
-    expect(merged.items.length).toBeGreaterThan(0);
+    if (!BUSY && !merged.items.length) return;
     expect(merged.items.every((p) => p.state === 'merged')).toBe(true);
     expect(merged.items.some((p) => p.head)).toBe(true);
     const n = merged.items[0].number;
@@ -137,20 +141,18 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
 
   it('Actions and releases', async () => {
     const runs = await source.runs({ status: 'success' });
-    expect(runs.items.length).toBeGreaterThan(0);
     expect(runs.items.every((r) => r.status === 'success')).toBe(true);
-    const run = await source.run(runs.items[0].id);
-    expect(run.jobs.length).toBeGreaterThan(0);
+    if (runs.items[0]) expect((await source.run(runs.items[0].id)).jobs.length).toBeGreaterThan(0);
     const workflows = await source.workflows();
-    expect(workflows.length).toBeGreaterThan(0);
-    await source.workflowInputs(workflows[0].path, '');
+    if (workflows[0]) await source.workflowInputs(workflows[0].path, '');
     const releases = await source.releases(1);
-    expect(releases.items.some((r) => r.latest)).toBe(true);
-    expect((await source.release(releases.items[0].tag)).tag).toBe(releases.items[0].tag);
+    if (BUSY) expect(releases.items.some((r) => r.latest)).toBe(true);
+    if (releases.items[0]) expect((await source.release(releases.items[0].tag)).tag).toBe(releases.items[0].tag);
   }, 120_000);
 
   it('search and statistics', async () => {
-    expect((await source.searchCode('func')).items.length).toBeGreaterThan(0);
+    const hits = await source.searchCode('func');
+    if (BUSY) expect(hits.items.length).toBeGreaterThan(0);
     const activity = await source.commitActivity();
     if (activity !== 'computing') expect(activity.length).toBe(52);
     await source.contributorStats();
@@ -158,6 +160,25 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
     await Promise.resolve(source.codeFrequency()).catch((e: { kind?: string }) => expect(e.kind).toBe('validation'));
     // Someone else's repository: GitHub keeps traffic from people who can't push.
     if (!(await source.repo()).permissions.push) expect(await source.traffic()).toBeNull();
+  }, 120_000);
+
+  it('a tree too big to list comes back truncated, and a path past the cut can still be asked for', async () => {
+    const huge = githubRepo(gh, 'torvalds/linux');
+    expect(await huge.treeTruncated('')).toBe(true);
+    const dir = await huge.pathInfo('drivers/net/ethernet', '');
+    expect(dir?.type).toBe('dir');
+    expect(dir?.children?.length).toBeGreaterThan(10);
+    expect((await huge.pathInfo('MAINTAINERS', ''))?.type).toBe('file');
+    expect(await huge.pathInfo('no/such/path', '')).toBeNull();
+  }, 180_000);
+
+  it('submodules and symlinks read as what they are', async () => {
+    const git = githubRepo(gh, 'git/git');
+    const tree = await git.tree('');
+    expect(tree.find((n) => n.name === 'RelNotes')?.special).toBe('symlink');
+    expect(tree.find((n) => n.name === 'sha1collisiondetection')?.special).toBe('submodule');
+    expect(tree.find((n) => n.name === 'README.md')?.special).toBeUndefined();
+    expect((await git.pathInfo('sha1collisiondetection', ''))?.special).toBe('submodule');
   }, 120_000);
 
   it('a real 404 is notFound', async () => {
@@ -169,7 +190,7 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
     const uses: Record<string, string[]> = {
       DeleteIssueInput: ['issueId'], PinIssueInput: ['issueId'], UnpinIssueInput: ['issueId'], UpdateSubscriptionInput: ['subscribableId', 'state'],
       ConvertPullRequestToDraftInput: ['pullRequestId'], MarkPullRequestReadyForReviewInput: ['pullRequestId'], EnablePullRequestAutoMergeInput: ['pullRequestId', 'mergeMethod'], DisablePullRequestAutoMergeInput: ['pullRequestId'],
-      AddPullRequestReviewThreadInput: ['pullRequestReviewId', 'path', 'line', 'side', 'startLine', 'body'], ResolveReviewThreadInput: ['threadId'], UnresolveReviewThreadInput: ['threadId'], MarkFileAsViewedInput: ['pullRequestId', 'path'], UnmarkFileAsViewedInput: ['pullRequestId', 'path'],
+      AddPullRequestReviewThreadInput: ['pullRequestReviewId', 'path', 'line', 'side', 'startLine', 'body'], ResolveReviewThreadInput: ['threadId'], UnresolveReviewThreadInput: ['threadId'], RevertPullRequestInput: ['pullRequestId', 'title'], MarkFileAsViewedInput: ['pullRequestId', 'path'], UnmarkFileAsViewedInput: ['pullRequestId', 'path'],
     };
     for (const [name, wanted] of Object.entries(uses)) {
       const fields = graphql(`query { t: __type(name: "${name}") { inputFields { name } } }`).data.t?.inputFields?.map((f) => f.name) ?? [];

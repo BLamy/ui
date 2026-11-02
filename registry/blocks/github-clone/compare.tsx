@@ -9,12 +9,11 @@ import { cn } from '@/lib/utils';
 import type { Comparison } from './data';
 import { CommitRow } from './commits';
 import { DiffFiles } from './diff';
-import { GitHubError } from './github-api';
 import { GhLink } from './links';
 import { MarkdownField } from './markdown';
 import { Box, Oct, ghButton } from './parts';
 import { SelectMenu } from './pickers';
-import { ActionError, Failed, Pending, useAction, useCan, useLoad, useNav, useRepo } from './repo-context';
+import { ActionError, Failed, Pending, useAction, useCan, useDraft, useLoad, useNav, useRepo } from './repo-context';
 
 export function ComparePage({ base: baseProp, head: headProp, create }: { base?: string; head?: string; create?: boolean }) {
   const { source, repo, ui, viewer } = useRepo();
@@ -29,8 +28,17 @@ export function ComparePage({ base: baseProp, head: headProp, create }: { base?:
   const template = useLoad(source.id + ':pull-template', source.pullTemplate).data;
   const [show, setShow] = useState(!!create);
   useEffect(() => { if (create) setShow(true); }, [create]);
-  const refItems = (names?.branches ?? []).map((b) => ({ id: b, label: b, description: b === repo.branch ? 'default branch' : undefined }));
-  const forkHeads = forks.filter((f) => f.full).map((f) => ({ id: `${f.login}:${repo.branch}`, label: `${f.login}:${repo.branch}`, description: `From the fork ${f.full}` }));
+  const refItems = [
+    ...(names?.branches ?? []).map((b) => ({ id: b, label: b, description: b === repo.branch ? 'default branch' : undefined })),
+    ...(names?.tags ?? []).map((t) => ({ id: t, label: t, description: 'tag' })),
+  ];
+  // Your fork's branches by name; other forks' default branch, since asking each one would spend the rate limit.
+  const myFork = forks.find((f) => f.login === viewer?.login && f.full);
+  const mine = useLoad<string[]>(`${source.id}:fork-branches:${myFork?.full ?? ''}`, () => (myFork?.full ? source.branchNamesOf(myFork.full) : [])).data ?? [];
+  const forkHeads = [
+    ...mine.map((b) => ({ id: `${viewer!.login}:${b}`, label: `${viewer!.login}:${b}`, description: `From your fork ${myFork!.full}` })),
+    ...forks.filter((f) => f.full && f.login !== viewer?.login).map((f) => ({ id: `${f.login}:${repo.branch}`, label: `${f.login}:${repo.branch}`, description: `From the fork ${f.full}` })),
+  ];
   const go = (o: { base?: string; head?: string }) => nav.go({ s: 'compare', base: o.base ?? base, head: o.head ?? head, create: show || undefined }, { replace: true });
   const c = compare.data;
   const canOpen = can.signedIn && !repo.archived && !!c && c.ahead > 0 && !existing;
@@ -92,8 +100,13 @@ function PullForm({ base, head, comparison, template }: { base: string; head: st
   const nav = useNav();
   const first = comparison.commits[0];
   const one = comparison.commits.length === 1;
-  const [title, setTitle] = useState(one ? first.message : head.split(':').at(-1)!.split('/').at(-1)!.replace(/[-_]/g, ' ').replace(/^./, (c) => c.toUpperCase()));
-  const [body, setBody] = useState((one && first.body) || template || '');
+  const key = `${source.id}:new-pull:${base}...${head}`;
+  const titleDraft = useDraft(`${key}:title`, one ? first.message : head.split(':').at(-1)!.split('/').at(-1)!.replace(/[-_]/g, ' ').replace(/^./, (c) => c.toUpperCase()));
+  const bodyDraft = useDraft(`${key}:body`, (one && first.body) || template || '');
+  const title = titleDraft.value;
+  const setTitle = titleDraft.set;
+  const body = bodyDraft.value;
+  const setBody = bodyDraft.set;
   const [draft, setDraft] = useState(false);
   const [maintainer, setMaintainer] = useState(true);
   const [touched, setTouched] = useState(false);
@@ -104,15 +117,17 @@ function PullForm({ base, head, comparison, template }: { base: string; head: st
     if (!title.trim()) return;
     void act.run(async () => {
       const n = await source.createPull({ title: title.trim(), body, head, base, draft, maintainerCanModify: fromFork ? maintainer : undefined });
+      titleDraft.clear();
+      bodyDraft.clear();
       nav.go({ s: 'pull', n }, { replace: true });
-    });
+    }, 'open the pull request');
   };
   return (
     <form className="mb-4 flex gap-4" onSubmit={(e) => { e.preventDefault(); submit(); }} aria-label="New pull request">
       {!ui.phone && viewer ? <Avatar c={viewer} src={viewer.avatar} size={40} /> : null}
       <div className="min-w-0 flex-1 space-y-3">
         <label className="grid gap-1 font-semibold">Add a title
-          <Input aria-required="true" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} className="h-9 rounded-md border border-border bg-background font-normal" />
+          <Input aria-required="true" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} className="h-9 rounded-md border border-border bg-background font-normal group-data-[phone=true]/gh:h-11" />
           {touched && !title.trim() ? <span role="alert" className="text-caption font-normal text-(--gh-closed)">A title is required.</span> : null}
         </label>
         <div className="grid gap-1">
@@ -120,7 +135,7 @@ function PullForm({ base, head, comparison, template }: { base: string; head: st
           <MarkdownField label="Description" value={body} onChange={setBody} onSubmit={submit} rows={8} placeholder="Describe your changes. Writing “Closes” and an issue’s number links it." disabled={act.busy} />
         </div>
         {fromFork ? <Checkbox isSelected={maintainer} onChange={setMaintainer} className="text-detail">Allow edits by maintainers</Checkbox> : null}
-        <ActionError error={act.error instanceof GitHubError ? act.error : act.error} />
+        <ActionError error={act.error} onDismiss={act.clear} />
         <div className="flex flex-wrap items-center justify-end gap-3">
           <Checkbox isSelected={draft} onChange={setDraft} className="text-detail">Create as draft</Checkbox>
           <Button type="submit" className={ghButton(true)} isDisabled={act.busy}>{act.busy ? 'Creating…' : draft ? 'Create draft pull request' : 'Create pull request'}</Button>

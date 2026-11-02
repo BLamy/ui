@@ -3,13 +3,13 @@
    repository. <MarkdownField> is GitHub's comment box: Write / Preview, the formatting toolbar, ⌘↵ to submit. Plain Enter
    always means a new line, so a half-written comment can't be posted by accident. GitHub has no API for uploading
    attachments, so there's no paperclip here: paste a link instead. */
-import { useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { TextArea, TextField } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { cn } from '@/lib/utils';
 import { Oct, githubMarkdown, type OctName } from './parts';
-import { useRepo } from './repo-context';
+import { useLoad, useRepo } from './repo-context';
 
 const API_SAFE = /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i;
 
@@ -59,13 +59,46 @@ export function resolveRelative(md: string, full: string, ref: string, dir: stri
     .replace(/(<img\b[^>]*\bsrc=")([^"]+)(")/gi, (_, a: string, href: string, b: string) => `${a}${fix(href, true)}${b}`));
 }
 
+/** A link to `javascript:` and friends keeps its words and loses its target: GitHub strips them too. */
+export const withoutScriptLinks = (md: string) => md.replace(/\[([^\]]*)\]\(\s*(?:javascript|vbscript|data):[^)]*\)/gi, '$1');
+
+/** Flips the `index`th task in Markdown; null when there's no such task. */
+export function toggleTask(md: string, index: number): string | null {
+  let at = -1;
+  let hit = false;
+  const next = outsideCode(md, (text) => text.replace(/^(\s*(?:[-*+]|\d+[.)])\s+\[)([ xX])(\])/gm, (m, a: string, mark: string, b: string) => {
+    at++;
+    if (at !== index) return m;
+    hit = true;
+    return a + (mark === ' ' ? 'x' : ' ') + b;
+  }));
+  return hit ? next : null;
+}
+
 /** Markdown as GitHub shows it. `dir` set: a file in the repository, whose relative links resolve from that folder. */
-export function Md({ markdown, className, dir, gitRef }: { markdown: string; className?: string; dir?: string; gitRef?: string }) {
+export function Md({ markdown, className, dir, gitRef, onTaskToggle }: { markdown: string; className?: string; dir?: string; gitRef?: string; onTaskToggle?: (next: string) => void }) {
   const { source, nav, repo } = useRepo();
   const resolved = dir !== undefined ? resolveRelative(markdown, source.full, gitRef || repo?.branch || 'HEAD', dir) : markdown;
   // `{%` opens a block in the renderer's dialect; on GitHub it's just text.
-  const text = autolink(resolved, source.full).replace(/\{%/g, '{\\%');
+  const text = autolink(withoutScriptLinks(resolved), source.full).replace(/\{%/g, '{\\%');
+  const root = useRef<HTMLDivElement>(null);
+  // Task boxes are real checkboxes in the rendered Markdown: they work when you can edit it, and say they don't otherwise.
+  useEffect(() => {
+    for (const box of root.current?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]') ?? []) box.disabled = !onTaskToggle;
+    // Keyboard users scroll wide tables and code with the arrow keys.
+    for (const el of root.current?.querySelectorAll<HTMLElement>('pre,table') ?? []) el.tabIndex = 0;
+  });
   const follow = (e: MouseEvent) => {
+    const box = (e.target as Element).closest('input[type="checkbox"]');
+    if (box) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!onTaskToggle) return;
+      const index = [...(root.current?.querySelectorAll('input[type="checkbox"]') ?? [])].indexOf(box);
+      const next = toggleTask(markdown, index);
+      if (next != null) onTaskToggle(next);
+      return;
+    }
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     const a = (e.target as Element).closest('a');
     const href = a?.getAttribute('href');
@@ -76,8 +109,9 @@ export function Md({ markdown, className, dir, gitRef }: { markdown: string; cla
   };
   return (
     // A click on a link inside rendered Markdown; the links themselves stay keyboard-reachable anchors.
-    <div onClickCapture={follow}>
-      <MarkdownView markdown={text} className={cn(githubMarkdown, 'bg-background text-detail leading-[1.5]', className)} />
+    <div ref={root} onClickCapture={follow}>
+      {/* Wide tables and long code scroll inside the comment rather than being cut off by it. */}
+      <MarkdownView markdown={text} className={cn(githubMarkdown, 'bg-background text-detail leading-[1.5] break-words [&_pre]:overflow-x-auto [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto', className)} />
     </div>
   );
 }
@@ -110,8 +144,30 @@ export interface MarkdownFieldProps {
 }
 
 export function MarkdownField({ value, onChange, onSubmit, label, placeholder = 'Add your comment here…', autoFocus, rows = 6, disabled, footer, className }: MarkdownFieldProps) {
+  const { source } = useRepo();
   const [tab, setTab] = useState<'write' | 'preview'>('write');
   const area = useRef<HTMLTextAreaElement>(null);
+  /* @people and #issues while typing: the word at the caret, and what it could be. */
+  const [caret, setCaret] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
+  const [at, setAt] = useState(0);
+  const word = /(?:^|[\s(])([@#])([\w-]*)$/.exec(value.slice(0, caret));
+  const asking = !dismissed && tab === 'write' && word ? word[1] : null;
+  const typed = word?.[2] ?? '';
+  const people = useLoad(`${source.id}:assignable:${asking === '@'}`, () => (asking === '@' ? source.assignable() : [])).data ?? [];
+  const items = useLoad(`${source.id}:ref-suggestions:${asking === '#' ? typed : ''}:${asking === '#'}`, () => (asking === '#' ? source.searchIssues(`${typed} sort:updated-desc`, 1) : null)).data?.items ?? [];
+  const pulls = useLoad(`${source.id}:ref-suggestions-pulls:${asking === '#' ? typed : ''}:${asking === '#'}`, () => (asking === '#' ? source.searchPulls(`${typed} sort:updated-desc`, 1) : null)).data?.items ?? [];
+  const suggestions: { insert: string; text: string; detail?: string }[] = asking === '@'
+    ? people.filter((u) => `${u.login} ${u.f} ${u.l}`.toLowerCase().includes(typed.toLowerCase())).slice(0, 6).map((u) => ({ insert: '@' + u.login, text: u.login, detail: `${u.f} ${u.l}`.trim() }))
+    : asking === '#' ? [...items, ...pulls].filter((i) => !typed || String(i.number).startsWith(typed) || i.title.toLowerCase().includes(typed.toLowerCase())).sort((a, b) => b.number - a.number).slice(0, 6).map((i) => ({ insert: '#' + i.number, text: `#${i.number}`, detail: i.title })) : [];
+  const accept = (s: { insert: string }) => {
+    const start = caret - typed.length - 1;
+    const next = value.slice(0, start) + s.insert + ' ' + value.slice(caret);
+    onChange(next);
+    const to = start + s.insert.length + 1;
+    setCaret(to);
+    requestAnimationFrame(() => { area.current?.focus(); area.current?.setSelectionRange(to, to); });
+  };
   const apply = (t: (typeof TOOLS)[number]) => {
     const el = area.current;
     if (!el) return;
@@ -148,7 +204,7 @@ export function MarkdownField({ value, onChange, onSubmit, label, placeholder = 
           <div role="toolbar" aria-label="Formatting" className="ml-auto flex flex-wrap items-center pb-1">
             {TOOLS.map((t) => (
               <Button key={t.label} aria-label={t.label} onPress={() => apply(t)} isDisabled={disabled}
-                className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:bg-secondary group-data-[phone=true]/gh:size-9">
+                className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:bg-secondary group-data-[phone=true]/gh:size-11">
                 <Oct name={t.icon} size={14} />
               </Button>
             ))}
@@ -157,9 +213,17 @@ export function MarkdownField({ value, onChange, onSubmit, label, placeholder = 
       </div>
       <div className="bg-background p-2">
         {tab === 'write' ? (
+          <>
           <TextField aria-label={label} value={value} onChange={onChange} isDisabled={disabled} className="flex">
             <TextArea ref={area} rows={rows} placeholder={placeholder} autoFocus={autoFocus}
+              onSelect={(e) => { setCaret(e.currentTarget.selectionStart); setDismissed(false); }}
               onKeyDown={(e) => {
+                if (suggestions.length) {
+                  if (e.key === 'ArrowDown') { e.preventDefault(); setAt((x) => (x + 1) % suggestions.length); return; }
+                  if (e.key === 'ArrowUp') { e.preventDefault(); setAt((x) => (x - 1 + suggestions.length) % suggestions.length); return; }
+                  if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); accept(suggestions[Math.min(at, suggestions.length - 1)]); return; }
+                  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setDismissed(true); return; }
+                }
                 const mod = e.metaKey || e.ctrlKey;
                 if (mod && e.key === 'Enter') { e.preventDefault(); onSubmit?.(); return; }
                 const tool = mod ? TOOLS.find((t) => t.key === e.key) : undefined;
@@ -167,6 +231,18 @@ export function MarkdownField({ value, onChange, onSubmit, label, placeholder = 
               }}
               className="box-border block w-full min-w-0 resize-y rounded-md border border-border bg-muted px-2 py-1.5 font-sans text-detail leading-5 text-foreground outline-none select-text placeholder:text-muted-foreground data-focused:border-primary data-focused:bg-background data-focused:ring-1 data-focused:ring-primary" />
           </TextField>
+          {suggestions.length ? (
+            <ul aria-label={asking === '@' ? 'People to mention' : 'Issues and pull requests to reference'} className="mx-0 mt-1 mb-0 list-none overflow-hidden rounded-md border border-border bg-popover p-0">
+              {suggestions.map((s, i) => (
+                <li key={s.insert}>
+                  <button type="button" onMouseDown={(e) => { e.preventDefault(); accept(s); }} className={cn('flex min-h-8 w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 py-1 text-left text-caption text-foreground outline-none hover:bg-accent group-data-[phone=true]/gh:min-h-11', i === Math.min(at, suggestions.length - 1) && 'bg-accent')}>
+                    <b className="shrink-0 font-semibold">{s.text}</b><span className="min-w-0 truncate text-muted-foreground">{s.detail}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          </>
         ) : (
           <div className="min-h-24 rounded-md border border-transparent px-2 py-1.5" aria-label={`${label} preview`}>
             {value.trim() ? <Md markdown={value} /> : <p className="m-0 text-detail text-muted-foreground italic">Nothing to preview</p>}

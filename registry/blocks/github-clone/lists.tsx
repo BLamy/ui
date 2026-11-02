@@ -167,13 +167,14 @@ export function ActiveFilters({ query, base, onQuery, labels }: { query: string;
 
 /* ── Rows ── */
 
-export function ItemRow({ state, title, to, labels, meta, assignees, comments, status, onLabel, stateText }: {
-  state: StateKind; title: string; to: Route; labels: Label[]; meta: ReactNode; assignees: User[]; comments: number; status?: ReactNode; onLabel?: (l: string) => void; stateText: string;
+export function ItemRow({ state, title, to, labels, meta, assignees, comments, status, onLabel, stateText, selected, onSelect }: {
+  state: StateKind; title: string; to: Route; labels: Label[]; meta: ReactNode; assignees: User[]; comments: number; status?: ReactNode; onLabel?: (l: string) => void; stateText: string; selected?: boolean; onSelect?: (on: boolean) => void;
 }) {
   const { ui } = useRepo();
   const nav = useNav();
   return (
     <div className="relative flex gap-2 border-t border-border px-4 py-2 first:border-t-0 hover:bg-muted group-data-[phone=true]/gh:py-3">
+      {onSelect ? <input type="checkbox" aria-label={`Select “${title}”`} checked={!!selected} onChange={(e) => onSelect(e.target.checked)} className="relative z-1 mt-1 size-4 shrink-0 cursor-pointer group-data-[phone=true]/gh:size-6" /> : null}
       <span className="contents"><StateIcon state={state} className="mt-[3px]" /><span className="sr-only">{stateText}</span></span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">

@@ -39,7 +39,7 @@ function LabelForm({ initial, onCancel, onSave, submit }: { initial?: Label; onC
         {PRESET.map((c) => <Button key={c} aria-label={`Use color ${c}`} onPress={() => setColor(c)} className="size-5 cursor-pointer rounded-full border border-border outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary group-data-[phone=true]/gh:size-9" style={{ background: '#' + c }} />)}
       </div>
       {!valid ? <p role="alert" className="m-0 text-caption text-(--gh-closed)">Colors are six hex digits.</p> : null}
-      <ActionError error={act.error} />
+      <ActionError error={act.error} onDismiss={act.clear} />
       <div className="flex justify-end gap-2">
         <Button className={ghButton()} onPress={onCancel}>Cancel</Button>
         <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !name.trim() || !valid}>{act.busy ? 'Saving…' : submit}</Button>
@@ -68,7 +68,7 @@ export function LabelsPage() {
         <Oct name="search" /><input aria-label="Search labels" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search all labels" className="min-w-0 flex-1 border-0 bg-transparent font-sans text-detail text-foreground outline-none select-text" />
       </label>
       {creating ? <Box className="mb-3"><LabelForm submit="Create label" onCancel={() => setCreating(false)} onSave={async (l) => { await source.createLabel(l); setCreating(false); notify('Label created'); }} /></Box> : null}
-      <ActionError error={act.error} className="mb-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mb-2" />
       <Loaded load={labels}>
         {(list) => {
           const rows = list.filter((l) => !q || l.name.toLowerCase().includes(q.toLowerCase()) || l.description?.toLowerCase().includes(q.toLowerCase()));
@@ -121,7 +121,7 @@ function MilestoneForm({ initial, submit, onCancel, onSave }: { initial?: Milest
         <label className="grid gap-1 font-semibold">Due date (optional)<input type="date" value={due} onChange={(e) => setDue(e.target.value)} className="box-border h-8 rounded-md border border-border bg-background px-2 font-sans text-detail font-normal text-foreground group-data-[phone=true]/gh:h-11" /></label>
       </div>
       <div className="grid gap-1"><span className="font-semibold">Description</span><MarkdownField label="Description" value={description} onChange={setDescription} rows={3} placeholder="What’s in this milestone?" /></div>
-      <ActionError error={act.error} />
+      <ActionError error={act.error} onDismiss={act.clear} />
       <div className="flex justify-end gap-2">
         <Button className={ghButton()} onPress={onCancel}>Cancel</Button>
         <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !title.trim()}>{act.busy ? 'Saving…' : submit}</Button>
@@ -148,7 +148,7 @@ export function MilestonesPage({ state = 'open' }: { state?: 'open' | 'closed' }
         {can.triage ? <Button className={ghButton(true)} onPress={() => setCreating(!creating)}>New milestone</Button> : null}
       </div>
       {creating ? <Box className="mb-3"><MilestoneForm submit="Create milestone" onCancel={() => setCreating(false)} onSave={async (m) => { await source.createMilestone(m); setCreating(false); notify('Milestone created'); }} /></Box> : null}
-      <ActionError error={act.error} className="mb-2" />
+      <ActionError error={act.error} onDismiss={act.clear} className="mb-2" />
       <Box header={<StateToggle value={state} onChange={(v) => nav.go({ s: 'milestones', state: v }, { replace: true })} open={all.filter((m) => m.state === 'open').length} closed={all.filter((m) => m.state === 'closed').length} closedIcon="check" />}>
         <Loaded load={milestones} className="rounded-none border-0">
           {(list) => (

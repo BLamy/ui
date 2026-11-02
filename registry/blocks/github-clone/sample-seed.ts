@@ -190,7 +190,7 @@ const ISSUE_SPECS: IssueSpec[] = [
     comments: Array.from({ length: 7 }, (_, i) => comment(['maya-chen', 'jonasw', 'priya-r'][i % 3], hours(70 - i * 6), ['Graph attached in the incident doc.', 'Seen this in staging too.', 'Full jitter looks best in the simulations.'][i % 3])),
     events: [ev('jonasw', hours(60), 'cross-referenced', { source: 488 })],
   },
-  { n: 480, title: 'Expose job attempt history in the dashboard', by: 'jonasw', at: days(5), labels: ['enhancement'], assignees: ['jonasw'], body: 'The dashboard only shows the latest attempt. PR #484 adds a timeline.' },
+  { n: 480, title: 'Expose job attempt history in the dashboard', by: 'jonasw', at: days(5), labels: ['enhancement'], assignees: ['jonasw'], body: 'The dashboard only shows the latest attempt. PR #484 adds a timeline.\n\n- [x] Attempt history API\n- [ ] Timeline component\n- [ ] Empty state' },
   { n: 477, title: 'Typo in getting-started: "enqueu" → "enqueue"', by: 'orbit-bot', at: days(7), labels: ['documentation', 'good first issue'], body: 'Found by the docs spell checker.', comments: [comment('leodm', days(6), 'I can take this one.')] },
   { n: 474, title: 'Drop Node 18 support in v4', by: 'maya-chen', at: days(8), labels: ['breaking change', 'question'], milestone: 2, body: 'Node 18 reached end of life. Dropping it lets us use `using` and native `fetch` everywhere. Any objections?', comments: Array.from({ length: 18 }, (_, i) => comment(['samokafor', 'avakim', 'priya-r', 'leodm', 'maya-chen'][i % 5], days(7.8 - i * 0.3), ['Fine by us.', 'We are still on 18 until December.', 'Could we wait for 4.1?', 'No objection.', 'Noted, thanks all.'][i % 5])) },
   { n: 472, title: 'SQLite adapter: busy timeout when two workers claim at once', by: 'leodm', at: days(14), labels: ['bug', 'help wanted'], assignees: ['priya-r'], body: 'Reproduces with `concurrency: 2` on the SQLite adapter. `SQLITE_BUSY` after about a minute.', comments: Array.from({ length: 5 }, (_, i) => comment(['priya-r', 'leodm'][i % 2], days(13 - i), ['Is WAL on?', 'Yes, WAL is on.'][i % 2])) },
@@ -370,7 +370,7 @@ The random source is injectable, so tests stay deterministic.`,
   orbitRepo.pulls.set(484, blankPull({
     number: 484, base: 'main', head: 'dash/attempts',
     reviews: [review(200_010, 'maya-chen', 'CHANGES_REQUESTED', hours(9), attempts.sha, 'The timeline needs an empty state and `Timeline`’s props need types.')],
-    review_comments: [{ id: 300_010, review_id: 200_010, user: 'maya-chen', body: 'Type this prop: `{ job: JobRecord }`.', path: 'src/dashboard/timeline.tsx', line: 3, start_line: null, side: 'RIGHT', commit_id: attempts.sha, created_at: hours(9), updated_at: hours(9), thread: 400_010, reactions: [] }],
+    review_comments: [{ id: 300_010, review_id: 200_010, user: 'maya-chen', body: 'Type this prop:\n\n```suggestion\nexport function Timeline({ job }: { job: JobRecord }) {\n```', path: 'src/dashboard/timeline.tsx', line: 3, start_line: null, side: 'RIGHT', commit_id: attempts.sha, created_at: hours(9), updated_at: hours(9), thread: 400_010, reactions: [] }],
     threads: [{ id: 400_010, resolved: false, resolved_by: null }],
     requested_reviewers: ['priya-r'],
   }));

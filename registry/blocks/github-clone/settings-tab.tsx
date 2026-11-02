@@ -60,8 +60,9 @@ function General() {
   const toggle = (patch: RepoSettings) => void features.run(() => source.update(patch));
   const save = () => void act.run(async () => {
     const nextTopics = topics.split(',').map((t) => t.trim().toLowerCase().replace(/\s+/g, '-')).filter(Boolean);
-    const full = await source.update({ description, homepage, ...(name !== repo.name ? { name } : {}) });
+    // Topics first: a rename changes the address they'd be sent to.
     if (nextTopics.join() !== repo.topics.join()) await source.setTopics(nextTopics);
+    const full = await source.update({ description, homepage, ...(name !== repo.name ? { name } : {}) });
     notify('Settings saved');
     if (full !== source.full) nav.openRepo(full, { s: 'settings' });
   });
@@ -74,8 +75,9 @@ function General() {
           <label className="grid gap-1 font-semibold">Description<Input value={description} onChange={(e) => setDescription(e.target.value)} className="h-8 rounded-md border border-border bg-background font-normal group-data-[phone=true]/gh:h-11" /></label>
           <label className="grid gap-1 font-semibold">Website<Input value={homepage} onChange={(e) => setHomepage(e.target.value)} placeholder="https://" className="h-8 rounded-md border border-border bg-background font-normal group-data-[phone=true]/gh:h-11" /></label>
           <label className="grid gap-1 font-semibold">Topics<Input value={topics} onChange={(e) => setTopics(e.target.value)} placeholder="Separated by commas" className="h-8 rounded-md border border-border bg-background font-normal group-data-[phone=true]/gh:h-11" /></label>
-          <ActionError error={act.error} />
-          <div><Button type="submit" className={ghButton(true)} isDisabled={act.busy || !name.trim()}>{act.busy ? 'Saving…' : 'Save changes'}</Button></div>
+          <ActionError error={act.error} onDismiss={act.clear} />
+          {repo.archived ? <p className="m-0 text-caption text-muted-foreground">Archived repositories can’t change. Unarchive it below first.</p> : null}
+          <div><Button type="submit" className={ghButton(true)} isDisabled={act.busy || !name.trim() || repo.archived}>{act.busy ? 'Saving…' : 'Save changes'}</Button></div>
         </form>
       </Section>
       <Section title="Default branch">
@@ -90,6 +92,7 @@ function General() {
         <Checkbox isSelected={repo.has.projects} isDisabled={features.busy} onChange={(v) => toggle({ has_projects: v })} className="text-detail">Projects</Checkbox>
         <Checkbox isSelected={repo.has.wiki} isDisabled={features.busy} onChange={(v) => toggle({ has_wiki: v })} className="text-detail">Wikis</Checkbox>
         <Checkbox isSelected={repo.has.discussions} isDisabled={features.busy} onChange={(v) => toggle({ has_discussions: v })} className="text-detail">Discussions</Checkbox>
+        <p className="m-0 text-caption text-muted-foreground">Issues has a tab here. Projects, Wikis and Discussions turn on for github.com; this example doesn’t have screens for them.</p>
         <ActionError error={features.error} />
       </Section>
       <Section title="Danger zone" danger>
@@ -145,7 +148,7 @@ function Merging() {
         {row('Allow squash merging', 'Combine all commits from the head branch into one.', repo.merge.squash, (v) => ({ allow_squash_merge: v }), on === 1)}
         {row('Allow rebase merging', 'Add all commits from the head branch without a merge commit.', repo.merge.rebase, (v) => ({ allow_rebase_merge: v }), on === 1)}
         {on === 1 ? <p className="m-0 text-caption text-muted-foreground">At least one method has to stay on.</p> : null}
-        <ActionError error={act.error} />
+        <ActionError error={act.error} onDismiss={act.clear} />
       </Section>
       <Section title="More">
         {row('Allow auto-merge', 'Let people merge automatically once requirements are met.', repo.merge.auto, (v) => ({ allow_auto_merge: v }))}
@@ -178,8 +181,10 @@ function BranchRules() {
   );
 }
 
+const ROLE_VALUE: Record<string, string> = { read: 'pull', pull: 'pull', triage: 'triage', write: 'push', push: 'push', maintain: 'maintain', admin: 'admin' };
+
 function Collaborators() {
-  const { source, notify, viewer } = useRepo();
+  const { source, notify, viewer, repo } = useRepo();
   const people = useLoad(source.id + ':collaborators', source.collaborators);
   const [login, setLogin] = useState('');
   const [permission, setPermission] = useState('push');
@@ -188,14 +193,14 @@ function Collaborators() {
     <>
       <h1 className="m-0 text-title font-semibold">Collaborators</h1>
       <Section title="Add people">
-        <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (login.trim()) void act.run(async () => { await source.addCollaborator(login.trim(), permission); notify(`Invited ${login.trim()}`); setLogin(''); }); }}>
+        <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (login.trim()) void act.run(async () => { const already = people.data?.some((u) => u.login.toLowerCase() === login.trim().toLowerCase()); await source.addCollaborator(login.trim(), permission); notify(already ? `Changed ${login.trim()}’s role` : `Invited ${login.trim()}`); setLogin(''); }, 'add that person'); }}>
           <Input aria-label="GitHub username" placeholder="GitHub username" value={login} onChange={(e) => setLogin(e.target.value)} className="h-8 min-w-[180px] flex-1 rounded-md border border-border bg-background group-data-[phone=true]/gh:h-11" />
           <select aria-label="Role" value={permission} onChange={(e) => setPermission(e.target.value)} className="box-border h-8 rounded-md border border-border bg-background px-1 font-sans text-detail text-foreground group-data-[phone=true]/gh:h-11">
             <option value="pull">Read</option><option value="triage">Triage</option><option value="push">Write</option><option value="maintain">Maintain</option><option value="admin">Admin</option>
           </select>
           <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !login.trim()}>Add</Button>
         </form>
-        <ActionError error={act.error} />
+        <ActionError error={act.error} onDismiss={act.clear} />
       </Section>
       <Section title="People with access">
         <Loaded load={people}>
@@ -205,8 +210,12 @@ function Collaborators() {
                 <li key={u.login} className="flex flex-wrap items-center gap-3 border-t border-border py-2 first:border-t-0">
                   <Avatar c={u} src={u.avatar} size={28} />
                   <UserLink user={u} className="min-w-0 flex-1 truncate font-semibold text-foreground" />
-                  <span className="rounded-full border border-border px-2 text-caption text-muted-foreground">{u.role}</span>
-                  {u.login !== viewer?.login ? <Button aria-label={`Remove ${u.login}`} className={cn(ghButton(), 'h-7 px-2 text-caption')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.removeCollaborator(u.login); notify(`Removed ${u.login}`); })}>Remove</Button> : null}
+                  {u.login === repo.owner ? <span className="rounded-full border border-border px-2 text-caption text-muted-foreground">Owner</span> : (
+                    <select aria-label={`Role for ${u.login}`} value={ROLE_VALUE[u.role] ?? 'push'} disabled={act.busy} onChange={(e) => void act.run(async () => { await source.addCollaborator(u.login, e.target.value); notify(`Changed ${u.login}’s role`); }, 'change that role')} className="box-border h-7 rounded-md border border-border bg-background px-1 font-sans text-caption text-foreground group-data-[phone=true]/gh:h-11">
+                      <option value="pull">Read</option><option value="triage">Triage</option><option value="push">Write</option><option value="maintain">Maintain</option><option value="admin">Admin</option>
+                    </select>
+                  )}
+                  {u.login !== viewer?.login && u.login !== repo.owner ? <Button aria-label={`Remove ${u.login}`} className={cn(ghButton(), 'h-7 px-2 text-caption')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.removeCollaborator(u.login); notify(`Removed ${u.login}`); })}>Remove</Button> : null}
                 </li>
               ))}
             </ul>

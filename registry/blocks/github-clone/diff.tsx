@@ -12,7 +12,7 @@ import type { DiffFile, FileNode, NewReviewComment, ReviewThread } from './data'
 import { GhLink } from './links';
 import { MarkdownField } from './markdown';
 import { Box, DiffStat, FileTree, Oct, ghButton } from './parts';
-import { ActionError, useAction, useRepo } from './repo-context';
+import { ActionError, CancelButton, useAction, useCopy, useDraft, useRepo } from './repo-context';
 
 export type DiffRow = { t: 'hunk' | 'ctx' | 'add' | 'del' | 'note'; text: string; o?: number; n?: number };
 
@@ -62,9 +62,14 @@ export interface DiffViewProps {
 type Selection = { side: 'LEFT' | 'RIGHT'; line: number; start?: number };
 
 export function DiffView({ file, split, viewed, onViewed, review, browseRef }: DiffViewProps) {
-  const { notify, ui } = useRepo();
+  const { ui } = useRepo();
+  const copy = useCopy();
   const [open, setOpen] = useState(!viewed);
-  const rows = useMemo(() => parsePatch(file.patch), [file.patch]);
+  const [fullText, setFullText] = useState<string | null>(null);
+  const expand = useAction();
+  const rows = useMemo(() => withContext(parsePatch(file.patch), fullText), [file.patch, fullText]);
+  const { source: repoSource } = useRepo();
+  const canExpand = !!browseRef && !!file.patch && file.status !== 'removed' && file.status !== 'added' && fullText == null;
   /* The diff's code lines are lexed as one source (hunk headers left out), so strings and comments that span
      lines keep their context; each row then shows its own line's tokens inside the +/- backgrounds. */
   const source = useMemo(() => rows.filter((r) => r.t !== 'hunk' && r.t !== 'note').map((r) => r.text).join('\n'), [rows]);
@@ -81,14 +86,14 @@ export function DiffView({ file, split, viewed, onViewed, review, browseRef }: D
   const num = (r: DiffRow, side: 'LEFT' | 'RIGHT') => {
     const line = side === 'LEFT' ? r.o : r.n;
     return (
-      <td className={cn('w-[1%] min-w-[44px] px-2 text-right align-top text-muted-foreground select-none', NUM_BG[r.t], selected(side, line) && 'bg-(--gh-hl)')}>
+      <td className={cn('w-[1%] min-w-[44px] px-2 text-right align-top select-none', r.t === 'ctx' ? 'text-muted-foreground' : 'text-foreground', NUM_BG[r.t], selected(side, line) && 'bg-(--gh-hl)')}>
         {line ?? ''}
       </td>
     );
   };
   const addButton = (side: 'LEFT' | 'RIGHT', line?: number) => (review?.canComment && line != null ? (
     <button type="button" aria-label={`Comment on line ${line}`} onClick={(e) => pick(side, line, e.shiftKey)}
-      className="absolute top-0 left-0 z-1 grid size-5 cursor-pointer place-items-center rounded-sm border-0 bg-primary text-white opacity-0 outline-none group-hover/line:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary group-data-[phone=true]/gh:relative group-data-[phone=true]/gh:mr-1 group-data-[phone=true]/gh:inline-grid group-data-[phone=true]/gh:size-7 group-data-[phone=true]/gh:bg-transparent group-data-[phone=true]/gh:text-primary group-data-[phone=true]/gh:opacity-100">
+      className="absolute top-0 left-0 z-1 grid size-5 cursor-pointer place-items-center rounded-sm border-0 bg-primary text-white opacity-0 outline-none group-hover/line:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary group-data-[phone=true]/gh:relative group-data-[phone=true]/gh:mr-1 group-data-[phone=true]/gh:inline-grid group-data-[phone=true]/gh:size-7 group-data-[phone=true]/gh:bg-transparent group-data-[phone=true]/gh:text-primary group-data-[phone=true]/gh:opacity-100 group-data-[phone=true]/gh:before:absolute group-data-[phone=true]/gh:before:-inset-2 group-data-[phone=true]/gh:before:content-['']">
       <Oct name="plus" size={12} />
     </button>
   ) : null);
@@ -102,7 +107,7 @@ export function DiffView({ file, split, viewed, onViewed, review, browseRef }: D
         <td colSpan={colSpan} className="border-y border-border bg-muted p-2 font-sans text-detail whitespace-normal">
           <div className="max-w-[820px] space-y-2">
             {here.map((t) => <Fragment key={t.id}>{review!.renderThread(t)}</Fragment>)}
-            {composing ? <LineComposer review={review!} path={file.path} selection={selection} onDone={() => setSelection(null)} /> : null}
+            {composing ? <LineComposer review={review!} path={file.path} selection={selection} lineText={rows.filter((r) => r.n != null && r.n >= (selection.start ?? selection.line) && r.n <= selection.line && r.t !== 'del').map((r) => r.text).join('\n') || undefined} onDone={() => setSelection(null)} /> : null}
           </div>
         </td>
       </tr>
@@ -118,16 +123,18 @@ export function DiffView({ file, split, viewed, onViewed, review, browseRef }: D
         <DiffStat add={file.additions} del={file.deletions} />
         {file.status && STATUS[file.status] ? <span className={cn('rounded-full border px-1.5 text-caption2 leading-4 font-medium', STATUS[file.status][1])}>{STATUS[file.status][0]}</span> : null}
         <span className="min-w-0 font-mono text-caption font-semibold break-all text-foreground">{file.previous ? `${file.previous} → ` : ''}{file.path}</span>
-        <Button aria-label={`Copy path ${file.path}`} onPress={() => { void navigator.clipboard?.writeText(file.path).catch(() => {}); notify('Path copied'); }}
+        <Button aria-label={`Copy path ${file.path}`} onPress={() => void copy(file.path, 'Path copied')}
           className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:text-primary group-data-[phone=true]/gh:size-11">
           <Oct name="copy" size={14} />
         </Button>
         <span className="flex-1" />
+        {canExpand ? <Button className={cn(ghButton(), 'h-7 px-2 text-caption')} isDisabled={expand.busy} onPress={() => void expand.run(async () => setFullText(await repoSource.file(file.path, browseRef!)), 'load the rest of the file')}>{expand.busy ? 'Loading…' : 'Expand all'}</Button> : null}
         {browseRef && file.status !== 'removed' ? <GhLink to={{ s: 'code', ref: browseRef, path: file.path }} className="text-caption text-primary no-underline hover:underline">View file</GhLink> : null}
         {onViewed ? (
           <Checkbox isSelected={!!viewed} onChange={(v) => { onViewed(v); if (v) setOpen(false); }} className="ml-1 text-caption text-foreground">Viewed</Checkbox>
         ) : null}
       </div>
+      <ActionError error={expand.error} onDismiss={expand.clear} className="px-3 py-1" />
       {open ? (
         <>
           {orphaned.length ? (
@@ -193,6 +200,26 @@ export function DiffView({ file, split, viewed, onViewed, review, browseRef }: D
   );
 }
 
+/** The file's unchanged lines between and around the hunks, once the whole file is known. */
+export function withContext(rows: DiffRow[], text: string | null): DiffRow[] {
+  if (text == null) return rows;
+  const lines = text.replace(/\n$/, '').split('\n');
+  const out: DiffRow[] = [];
+  let nextNew = 1;
+  let offset = 0; // old line = new line + offset, outside the hunks.
+  const fill = (upTo: number) => { for (; nextNew < upTo; nextNew++) out.push({ t: 'ctx', text: lines[nextNew - 1] ?? '', o: nextNew + offset, n: nextNew }); };
+  for (const r of rows) {
+    if (r.t === 'hunk') continue;
+    if (r.n != null) fill(r.n);
+    out.push(r);
+    if (r.n != null) nextNew = r.n + 1;
+    if (r.t === 'add') offset--;
+    if (r.t === 'del') offset++;
+  }
+  fill(lines.length + 1);
+  return out;
+}
+
 type SplitSide = { row: DiffRow; tokens?: readonly SyntaxToken[] };
 /** Deletions on the left paired with additions on the right, context on both. */
 function splitRows(rows: DiffRow[], next: () => unknown): { hunk?: string; l?: SplitSide; r?: SplitSide }[] {
@@ -216,23 +243,28 @@ function splitRows(rows: DiffRow[], next: () => unknown): { hunk?: string; l?: S
   return out;
 }
 
-function LineComposer({ review, path, selection, onDone }: { review: DiffReview; path: string; selection: Selection; onDone: () => void }) {
-  const [body, setBody] = useState('');
+function LineComposer({ review, path, selection, lineText, onDone }: { review: DiffReview; path: string; selection: Selection; lineText?: string; onDone: () => void }) {
+  const { source } = useRepo();
+  const draft = useDraft(`${source.id}:line:${path}:${selection.side}:${selection.line}`);
+  const body = draft.value;
+  const setBody = draft.set;
   const act = useAction();
   const send = (mode: 'single' | 'review') => {
     if (!body.trim()) return;
     void act.run(async () => {
       await review.addComment({ path, line: selection.line, side: selection.side, startLine: selection.start, body: body.trim() }, mode);
+      draft.clear();
       onDone();
-    });
+    }, 'add your comment');
   };
   return (
     <div className="rounded-md border border-border bg-background p-2">
       <p className="mt-0 mb-1 text-caption text-muted-foreground">{selection.start ? `Comment on lines ${selection.start} to ${selection.line}` : `Comment on line ${selection.line}`}. Shift-click another line’s + for a range.</p>
-      <MarkdownField label={`Comment on line ${selection.line} of ${path}`} value={body} onChange={setBody} autoFocus rows={3} placeholder="Leave a comment" onSubmit={() => send('review')} disabled={act.busy} />
-      <ActionError error={act.error} className="mt-2" />
+      <MarkdownField label={`Comment on line ${selection.line} of ${path}`} value={body} onChange={setBody} autoFocus rows={3} placeholder="Leave a comment" onSubmit={() => send('review')} disabled={act.busy}
+        footer={selection.side === 'RIGHT' && lineText != null ? <Button className="ml-auto cursor-pointer border-0 bg-transparent p-0 text-caption text-primary outline-none data-hovered:underline data-focus-visible:ring-2 data-focus-visible:ring-primary group-data-[phone=true]/gh:min-h-11" onPress={() => setBody(`${body ? body + '\n\n' : ''}\`\`\`suggestion\n${lineText}\n\`\`\`\n`)}>Suggest a change</Button> : undefined} />
+      <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
       <div className="mt-2 flex flex-wrap justify-end gap-2">
-        <Button className={ghButton()} isDisabled={act.busy} onPress={onDone}>Cancel</Button>
+        <CancelButton dirty={draft.dirty} isDisabled={act.busy} onCancel={() => { draft.clear(); onDone(); }} />
         {!review.pending ? <Button className={ghButton()} isDisabled={act.busy || !body.trim()} onPress={() => send('single')}>Add single comment</Button> : null}
         <Button className={ghButton(true)} isDisabled={act.busy || !body.trim()} onPress={() => send('review')}>{review.pending ? 'Add review comment' : 'Start a review'}</Button>
       </div>

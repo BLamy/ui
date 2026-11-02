@@ -13,13 +13,14 @@ import { Box, DiffStat, Oct, ghButton } from './parts';
 import { SelectMenu } from './pickers';
 import { CheckRow } from './pull-request';
 import { RefPicker } from './refs';
-import { Failed, Loaded, useLoad, useNav, useRepo } from './repo-context';
+import { Failed, Loaded, useCopy, useLoad, useNav, useRepo } from './repo-context';
 
 const dayOf = (c: Commit) => (c.at ? new Date(c.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
 
 /** A commit's row, wherever commits are listed. */
 export function CommitRow({ c }: { c: Commit }) {
-  const { notify, ui } = useRepo();
+  const { ui } = useRepo();
+  const copy = useCopy();
   return (
     <div className="flex items-center gap-3 border-t border-border px-4 py-2.5 first:border-t-0 hover:bg-muted">
       <div className="min-w-0 flex-1">
@@ -30,7 +31,7 @@ export function CommitRow({ c }: { c: Commit }) {
         </div>
       </div>
       <GhLink to={{ s: 'commit', sha: c.fullSha }} className={cn(ghButton(), 'h-7 px-2 font-mono text-caption no-underline')}>{c.sha}</GhLink>
-      <Button aria-label={`Copy full SHA ${c.sha}`} className={cn(ghButton(), 'h-7 w-7 px-0')} onPress={() => { void navigator.clipboard?.writeText(c.fullSha).catch(() => {}); notify('SHA copied'); }}><Oct name="copy" size={14} /></Button>
+      <Button aria-label={`Copy full SHA ${c.sha}`} className={cn(ghButton(), 'h-7 w-7 px-0')} onPress={() => void copy(c.fullSha, 'SHA copied')}><Oct name="copy" size={14} /></Button>
       {!ui.phone ? <GhLink aria-label={`Browse the repository at ${c.sha}`} to={{ s: 'code', ref: c.fullSha }} className={cn(ghButton(), 'h-7 w-7 px-0 no-underline')}><Oct name="code" size={14} /></GhLink> : null}
     </div>
   );
@@ -77,7 +78,8 @@ export function CommitsPage({ gitRef = '', path, author, page = 1 }: { gitRef?: 
 }
 
 export function CommitPage({ sha }: { sha: string }) {
-  const { source, ui, notify } = useRepo();
+  const { source, ui } = useRepo();
+  const copy = useCopy();
   const commit = useLoad(`${source.id}:commit:${sha}`, () => source.commit(sha));
   if (commit.error instanceof GitHubError && (commit.error.kind === 'notFound' || commit.error.kind === 'validation')) {
     return <div className={cn(ui.phone && 'p-4')}><Failed error={new GitHubError(404, '', 'notFound')} what={`There’s no commit ${sha.slice(0, 12)} in ${source.full}.`} /></div>;
@@ -105,7 +107,7 @@ export function CommitPage({ sha }: { sha: string }) {
                 <span className="flex-1" />
                 {c.parents?.length ? <span>{c.parents.length} parent{c.parents.length === 1 ? '' : 's'} {c.parents.map((p) => <GhLink key={p} to={{ s: 'commit', sha: p }} className="ml-1 font-mono text-primary no-underline hover:underline">{p.slice(0, 7)}</GhLink>)}</span> : <span>No parents: the first commit</span>}
                 <span className="flex items-center gap-1">commit <code className="font-mono text-foreground">{c.sha}</code>
-                  <Button aria-label="Copy full SHA" className="grid size-6 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:text-primary group-data-[phone=true]/gh:size-11" onPress={() => { void navigator.clipboard?.writeText(c.fullSha).catch(() => {}); notify('SHA copied'); }}><Oct name="copy" size={14} /></Button>
+                  <Button aria-label="Copy full SHA" className="grid size-6 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:text-primary group-data-[phone=true]/gh:size-11" onPress={() => void copy(c.fullSha, 'SHA copied')}><Oct name="copy" size={14} /></Button>
                 </span>
               </div>
               {c.checks?.length ? <div className="border-t border-border bg-muted">{c.checks.map((k) => <CheckRow key={k.name} check={k} />)}</div> : null}

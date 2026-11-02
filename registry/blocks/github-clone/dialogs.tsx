@@ -14,12 +14,13 @@ import type { FileNode, RepoSummary } from './data';
 import { recentRepos, searchRepos, starredRepos, type GitHub } from './github-api';
 import { LabelChip, Oct, StateIcon, ghButton } from './parts';
 import { parseGitHubUrl, repoFromInput, type Route } from './route';
-import { Loaded, useLoad, useNav, useRepo } from './repo-context';
+import { Loaded, useCopy, useLoad, useNav, useRepo } from './repo-context';
 import { SAMPLE_REPO } from './sample';
 import type { RepoSource } from './source';
 
 export function CloneDialog({ open, onClose, compact }: { open: boolean; onClose: () => void; compact: boolean }) {
-  const { repo, ref, notify, source } = useRepo();
+  const { repo, ref, source } = useRepo();
+  const copy = useCopy();
   const [proto, setProto] = useState('https');
   const url = { https: `https://github.com/${repo.owner}/${repo.name}.git`, ssh: `git@github.com:${repo.owner}/${repo.name}.git`, cli: `gh repo clone ${repo.owner}/${repo.name}` }[proto] ?? '';
   const zip = `https://github.com/${source.full}/archive/refs/heads/${encodeURIComponent(ref || repo.branch)}.zip`;
@@ -32,7 +33,7 @@ export function CloneDialog({ open, onClose, compact }: { open: boolean; onClose
           options={[{ id: 'https', label: 'HTTPS' }, { id: 'ssh', label: 'SSH' }, { id: 'cli', label: 'GitHub CLI' }]} />
         <div className="mt-3 flex h-9 items-center gap-2 rounded-lg border border-border bg-muted pr-1 pl-3">
           <code className="min-w-0 flex-1 truncate font-mono text-footnote">{url}</code>
-          <Button aria-label="Copy URL" className={cn(ghButton(), 'h-7 w-7 px-0')} onPress={() => { void navigator.clipboard?.writeText(url).catch(() => {}); notify('Copied'); }}><Oct name="copy" size={14} /></Button>
+          <Button aria-label="Copy URL" className={cn(ghButton(), 'h-7 w-7 px-0')} onPress={() => void copy(url)}><Oct name="copy" size={14} /></Button>
         </div>
         <p className="mt-2 mb-3 text-caption text-muted-foreground">
           {proto === 'cli' ? 'Work fast with our official CLI.' : proto === 'ssh' ? 'Use a password-protected SSH key.' : 'Clone using the web URL.'}
@@ -249,23 +250,23 @@ export function SearchDialog({ open, onClose, compact, initial }: { open: boolea
         <Input aria-label={`Search ${source.full}`} data-autofocus placeholder="Search code, issues and pull requests" autoComplete="off" spellCheck={false} value={input} onChange={(e) => setInput(e.target.value)} className="font-mono text-footnote" />
         <div className="max-h-[56vh] overflow-auto" role="region" aria-label="Search results" aria-live="polite">
           {!q ? <p className="my-4 text-center text-caption text-muted-foreground">Issue and pull request search takes GitHub’s qualifiers: <code className="font-mono">label:bug</code>, <code className="font-mono">author:someone</code>, <code className="font-mono">is:open</code>.</p> : null}
-          {fileHits.length ? <h3 className={sectionTitle}>Files</h3> : null}
+          {fileHits.length ? <h2 className={sectionTitle}>Files</h2> : null}
           {fileHits.length ? <div className="overflow-hidden rounded-md border border-border">{fileHits.map((f) => <button key={f.path} type="button" className={hit} onClick={() => go({ s: 'code', path: f.path })}><Oct name="file" size={14} className="mt-0.5 shrink-0 text-muted-foreground" /><span className="min-w-0 font-mono text-caption break-all">{f.path}</span></button>)}</div> : null}
-          {issues.data?.items.length ? <h3 className={sectionTitle}>Issues · {issues.data.total}</h3> : null}
+          {issues.data?.items.length ? <h2 className={sectionTitle}>Issues · {issues.data.total}</h2> : null}
           {issues.data?.items.length ? <div className="overflow-hidden rounded-md border border-border">{issues.data.items.slice(0, 5).map((i) => (
             <button key={i.number} type="button" className={hit} onClick={() => go({ s: 'issue', n: i.number })}>
               <StateIcon state={i.state === 'open' ? 'open' : 'closed'} className="mt-0.5" />
               <span className="min-w-0 flex-1"><span className="font-semibold">{i.title}</span> <span className="text-muted-foreground">#{i.number}</span> {i.labels.slice(0, 2).map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} className="ml-1" />)}</span>
             </button>
           ))}{(issues.data.total ?? 0) > 5 ? <button type="button" className={cn(hit, 'text-primary')} onClick={() => go({ s: 'issues', q: `is:open ${q}` })}>See all issues</button> : null}</div> : null}
-          {pulls.data?.items.length ? <h3 className={sectionTitle}>Pull requests · {pulls.data.total}</h3> : null}
+          {pulls.data?.items.length ? <h2 className={sectionTitle}>Pull requests · {pulls.data.total}</h2> : null}
           {pulls.data?.items.length ? <div className="overflow-hidden rounded-md border border-border">{pulls.data.items.slice(0, 5).map((p) => (
             <button key={p.number} type="button" className={hit} onClick={() => go({ s: 'pull', n: p.number })}>
               <StateIcon state={p.state === 'merged' ? 'merged' : p.state === 'closed' ? 'prClosed' : p.state === 'draft' ? 'draft' : 'prOpen'} className="mt-0.5" />
               <span className="min-w-0 flex-1"><span className="font-semibold">{p.title}</span> <span className="text-muted-foreground">#{p.number}</span></span>
             </button>
           ))}{(pulls.data.total ?? 0) > 5 ? <button type="button" className={cn(hit, 'text-primary')} onClick={() => go({ s: 'pulls', q: `is:open ${q}` })}>See all pull requests</button> : null}</div> : null}
-          {code.data?.items.length ? <h3 className={sectionTitle}>Code · {code.data.total}</h3> : null}
+          {code.data?.items.length ? <h2 className={sectionTitle}>Code · {code.data.total}</h2> : null}
           {code.data?.items.length ? <div className="overflow-hidden rounded-md border border-border">{code.data.items.slice(0, 8).map((c) => (
             <button key={c.path} type="button" className={hit} onClick={() => go({ s: 'code', path: c.path })}>
               <Oct name="code" size={14} className="mt-0.5 shrink-0 text-muted-foreground" />
