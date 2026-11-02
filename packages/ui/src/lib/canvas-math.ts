@@ -14,7 +14,7 @@ export interface Frame extends Rect { rot: number }
 
 export interface Camera { x: number; y: number; z: number }
 
-export const MIN_ZOOM = 0.1;
+export const MIN_ZOOM = 0.02;
 export const MAX_ZOOM = 4;
 /** The smallest a frame can be resized to. */
 export const MIN_SIZE = 24;

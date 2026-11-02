@@ -8192,6 +8192,11 @@
           "target": "components/blocks/replay-canvas/qa-panel.tsx"
         },
         {
+          "path": "registry/blocks/replay-canvas/events.ts",
+          "type": "registry:component",
+          "target": "components/blocks/replay-canvas/events.ts"
+        },
+        {
           "path": "registry/blocks/replay-canvas/recordings.ts",
           "type": "registry:component",
           "target": "components/blocks/replay-canvas/recordings.ts"

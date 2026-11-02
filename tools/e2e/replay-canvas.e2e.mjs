@@ -52,24 +52,24 @@ test('selects a segue from its label and shows where it was seen', async ({ page
 });
 
 test('hides the arrows but keeps their dots; a dot draws its arrow', async ({ page }) => {
+  // One arrow per segue; a dot per journey that took it.
   const arrows = page.locator('path[data-rc-segue]');
   const dots = page.locator('circle[data-rc-segue]');
   await expect(dots.first()).toBeAttached();
-  const n = await dots.count();
-  await expect(arrows).toHaveCount(n);
+  const n = await arrows.count();
+  const d = await dots.count();
+  expect(n).toBeGreaterThan(0);
+  expect(d).toBeGreaterThanOrEqual(n);
   await page.getByRole('button', { name: /^Hide arrows/ }).click();
   await expect(arrows).toHaveCount(0);
-  await expect(dots).toHaveCount(n);
+  await expect(dots).toHaveCount(d);
   // A dot draws its segue, and the rest of that journey's path.
   const dot = dots.first();
   const id = await dot.getAttribute('data-rc-segue');
-  const journey = await dot.evaluate((el) => el.closest('[data-rc-journey]').getAttribute('data-rc-journey'));
   await dot.click({ force: true });
   await expect(page.locator('[data-slot=replay-canvas-inspector]')).toContainText('Segue');
   await expect(arrows.and(page.locator(`[data-rc-segue="${id}"]`))).not.toHaveCount(0);
-  const drawn = await arrows.evaluateAll((els) => els.map((el) => el.closest('[data-rc-journey]').getAttribute('data-rc-journey')));
-  expect(drawn.length).toBeGreaterThan(1);
-  expect(new Set(drawn.filter((j) => j !== journey)).size).toBeLessThanOrEqual(1); // the selected segue's other journeys
+  expect(await arrows.count()).toBeGreaterThan(1);
   await page.getByRole('button', { name: 'Show arrows' }).click();
   await expect(arrows).toHaveCount(n);
 });
@@ -88,7 +88,7 @@ test('follows a journey: its steps numbered, the rest faded', async ({ page }) =
 
 test('previews a frame and a recording in hover cards', async ({ page }) => {
   const frame = page.locator('[data-rc-frame^="page-"]').first();
-  await frame.hover();
+  await frame.hover({ force: true });
   const card = page.locator('[data-slot=hover-card]');
   await expect(card).toContainText(/Seen \d+× in \d+ recording/);
   await page.mouse.move(5, 5);

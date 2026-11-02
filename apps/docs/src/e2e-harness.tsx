@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Safari from '@/components/blocks/safari/page'
+import ReplayCanvas, { type Recording } from '@/components/blocks/replay-canvas/page'
 import { createDemoTailnet } from '@/components/blocks/safari/data'
 import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tailscale-login-button'
 import { createFakeTailscaleClient } from '@/lib/tailscale-fake'
@@ -139,11 +140,29 @@ function SafariOnDemoTailnet() {
   )
 }
 
+/** One downloaded Replay QA test run (tools/replay-canvas/serve-recordings.mjs serving `?dir=<project>/<test run>`) in
+ *  Replay Canvas, full screen: how tools/replay-canvas/evaluate.mjs studies the breakdown. */
+function ReplayCanvasLocal() {
+  const params = new URLSearchParams(window.location.search)
+  const base = params.get('recordings') ?? 'http://127.0.0.1:4436'
+  const dir = params.get('dir') ?? ''
+  const [recordings, setRecordings] = useState<Recording[] | null>(null)
+  useEffect(() => {
+    void (async () => {
+      const manifest = await (await fetch(`${base}/${dir}/manifest.json`)).json() as { journeys: { run: string; journey?: string; file?: string }[] }
+      const files = manifest.journeys.filter((j) => j.file)
+      setRecordings(await Promise.all(files.map(async (j) => ({ id: j.run, name: j.journey || j.run, events: await (await fetch(`${base}/${dir}/${j.file}`)).json() }))))
+    })()
+  }, [base, dir])
+  return recordings ? <div className="fixed inset-0" data-harness-ready><ReplayCanvas recordings={recordings} /></div> : <p>Loading {dir}…</p>
+}
+
 const HARNESSES: Record<string, () => React.ReactElement> = {
   'tailscale-sign-in': () => <SignIn />,
   'tailscale-auth-key': () => <AuthKey />,
   'tailscale-router': () => <Router />,
   safari: () => <SafariOnDemoTailnet />,
+  'replay-canvas-local': () => <ReplayCanvasLocal />,
 }
 
 export default function E2eHarness({ name }: { name: string }) {

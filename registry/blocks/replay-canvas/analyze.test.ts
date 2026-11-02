@@ -13,6 +13,9 @@ describe('routeOf', () => {
     expect(routeOf('https://app.test/u/3f9a2c1be0/files/')).toBe('/u/:id/files');
     expect(routeOf('https://app.test/#/inbox/7?x=1')).toBe('/inbox/:id');
     expect(routeOf('/settings', 'https://app.test/projects')).toBe('/settings');
+    // Record-like ids, and documents that aren't pages.
+    expect(routeOf('https://ops.test/incidents/INC-1078')).toBe('/incidents/:id');
+    expect(routeOf('data:text/css,')).toBeUndefined();
   });
 });
 

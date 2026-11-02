@@ -111,7 +111,7 @@ inFrame(point, frame, 4 / z)                                       // hit test a
 | `resizeFrame`, `rotateFrame` | The frame after dragging a handle. |
 | `snapMove` | Alignment snapping for a move, and the guide lines to draw. |
 
-Zoom is clamped to 0.1–4 (`MIN_ZOOM`, `MAX_ZOOM`) and a frame never resizes below 24 (`MIN_SIZE`).
+Zoom is clamped to 0.02–4 (`MIN_ZOOM`, `MAX_ZOOM`: far enough out for a map of a hundred screens) and a frame never resizes below 24 (`MIN_SIZE`).
 
 ## API
 

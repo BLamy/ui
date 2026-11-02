@@ -52,8 +52,15 @@ export interface Journey {
 /** Journey colors, in the order recordings are added. */
 export const JOURNEY_COLORS = ['#0a84ff', '#ff9f0a', '#30d158', '#bf5af2', '#ff375f', '#64d2ff', '#ffd60a', '#ac8e68', '#5e5ce6', '#66d4cf'];
 
-/** Screen px between the curves of journeys that took the same segue. */
+/** Screen px between the dots of journeys that took the same segue, and how many dots one shows. */
 const JOURNEY_SPACING = 7;
+const MAX_DOTS = 6;
+
+/** Below this zoom arrows within a page (a click that changed what's on it) are left to their dots. */
+const WITHIN_PAGE_ZOOM = 0.3;
+
+/** Below this zoom only pages and shared chrome are named on the board. */
+const OVERVIEW_ZOOM = 0.15;
 
 /** Below this zoom only the hovered and selected segues are labelled. */
 const LABEL_ZOOM = 0.42;
@@ -78,6 +85,8 @@ export interface BoardProps {
   showMiniMap: boolean;
   /** Which evidence each frame shows (index into its state's evidence), by frame key. */
   shown: Record<string, number>;
+  /** Show another moment in a frame: one that came out blank moves on to the state's next moment. */
+  onShow: (key: string, index: number) => void;
   /** The recordings as journeys, with their colors. */
   journeys: Journey[];
   /** The journey being followed. */
@@ -85,7 +94,7 @@ export interface BoardProps {
   onJourney: (id: string | null) => void;
 }
 
-export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera, onCameraChange, selection, onSelect, showDismiss, showArrows, showMiniMap, shown, journeys, journey, onJourney }: BoardProps) {
+export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera, onCameraChange, selection, onSelect, showDismiss, showArrows, showMiniMap, shown, onShow, journeys, journey, onJourney }: BoardProps) {
   const [hover, setHover] = useState<string | null>(null);
   const byKey = useMemo(() => new Map(boxes.map((b) => [b.key, b])), [boxes]);
   // One hover card for the board, anchored to the frame or segue under the pointer.
@@ -187,7 +196,8 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
         {boxes.map((box, i) => {
           const node = box.node;
           const state = node.states.find((s) => s.id === box.state)!;
-          const ev = state.evidence[Math.min(shown[box.key] ?? 0, state.evidence.length - 1)];
+          const at = Math.min(shown[box.key] ?? 0, state.evidence.length - 1);
+          const ev = state.evidence[at];
           const rec = ev && recordings.get(ev.recording);
           const dim = followed ? !followed.frames.has(box.key) : related && !related.frames.has(box.key);
           return (
@@ -207,6 +217,7 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
                     crop={crops[box.key]}
                     onCrop={(r) => onCrop(box.key, r)}
                     order={i}
+                    onBlank={at + 1 < state.evidence.length ? () => onShow(box.key, at + 1) : undefined}
                   />
                 )}
               </div>
@@ -298,6 +309,8 @@ function FrameTitle({ box }: { box: FrameBox }) {
   const width = Math.max(64, (box.w + 200) * zoom);
   const roomy = width > 320;
   const named = state.id !== 'base' && state.id !== 'open';
+  // Zoomed far out the names would pile up: only pages and shared chrome keep theirs.
+  if (zoom < OVERVIEW_ZOOM && (named || node.kind === 'overlay')) return null;
   return (
     <div className="pointer-events-none absolute" style={{ left: box.x, top: box.y }}>
       <div
@@ -335,36 +348,55 @@ function Segues({ routes, crops, journeys, related, hover, followed, journey, sh
   const w = 2 / zoom;
   const head = 12 / zoom;
   const color = useMemo(() => new Map(journeys.map((j) => [j.id, j.color])), [journeys]);
-  const curves = useMemo(() => routes.flatMap((r) => r.journeys.map((id, i) => ({
-    route: r, journey: id, path: seguePath(r.segue, r.from, r.to, crops, (i - (r.journeys.length - 1) / 2) * (JOURNEY_SPACING / zoom)),
-  }))), [routes, crops, zoom]);
-  // What stands out: the followed journey, else the selection's segues.
-  const lit = (segue: string, id: string) => (journey ? id === journey : !related || related.has(segue));
-  // Arrows hidden: only the selected segue's and the followed journey's are drawn.
-  const drawn = (segue: string, id: string) => showArrows || segue === selected || (journey === id && !!followed?.has(segue));
+  // One curve per segue, as thick as how many journeys took it; the followed journey's drawn again in its color.
+  const curves = useMemo(() => routes.map((r) => ({ route: r, path: seguePath(r.segue, r.from, r.to, crops) })), [routes, crops]);
+  const arrowhead = (end: { x: number; y: number }, angle: number, size: number) => {
+    const a1 = angle + Math.PI - 0.45, a2 = angle + Math.PI + 0.45;
+    return `M ${end.x} ${end.y} L ${end.x + Math.cos(a1) * size} ${end.y + Math.sin(a1) * size} L ${end.x + Math.cos(a2) * size} ${end.y + Math.sin(a2) * size} Z`;
+  };
   return (
     <>
       <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width={1} height={1} aria-hidden="true">
-        {curves.map(({ route: { segue: s }, journey: id, path: { d, start, end, angle } }) => {
-          const on = hover === s.id || (journey ? id === journey : related?.has(s.id));
-          const a1 = angle + Math.PI - 0.45, a2 = angle + Math.PI + 0.45;
-          const c = color.get(id) ?? 'var(--muted-foreground)';
+        {curves.map(({ route: { segue: s, journeys: took, from, to }, path: { d, start, end, angle } }) => {
+          const mine = !!journey && took.includes(journey);
+          // Zoomed out, only the way between pages is drawn: what a click changed within a page keeps its dots and waits
+          // for a closer look (or the selection, or the followed journey).
+          const within = zoom < WITHIN_PAGE_ZOOM && from.node.id === to.node.id && !mine && !related?.has(s.id) && s.id !== selected;
+          const on = hover === s.id || related?.has(s.id) || mine;
+          const faded = journey ? !mine : related && !related.has(s.id);
+          const weight = w * (1 + 0.45 * Math.log2(Math.max(1, took.length)));
+          const ink = 'color-mix(in srgb, var(--foreground) 55%, transparent)';
+          // Arrows hidden: the selected segue's and the followed journey's are still drawn.
+          const drawn = (showArrows && !within) || s.id === selected || mine;
+          // The journeys that took it, as dots across the start: press one to follow it.
+          const shownDots = took.slice(0, MAX_DOTS);
           return (
-            <g key={`${s.id}:${id}`} data-rc-journey={id} className={cn('transition-opacity duration-200', !lit(s.id, id) && (journey ? 'opacity-10' : 'opacity-20'))}>
-              {drawn(s.id, id) && (
+            <g key={s.id} className={cn('transition-opacity duration-200', faded && (journey ? 'opacity-10' : 'opacity-20'))}>
+              {drawn && (
                 <>
                   <path d={d} fill="none" className="[pointer-events:stroke] stroke-transparent" strokeWidth={10 / zoom} data-rc-segue={s.id} />
-                  <path d={d} fill="none" stroke={c} strokeWidth={on ? w * 1.8 : w} strokeDasharray={s.kind === 'dismiss' ? `${6 / zoom} ${5 / zoom}` : undefined} />
-                  <path d={`M ${end.x} ${end.y} L ${end.x + Math.cos(a1) * head} ${end.y + Math.sin(a1) * head} L ${end.x + Math.cos(a2) * head} ${end.y + Math.sin(a2) * head} Z`} fill={c} />
+                  <path d={d} fill="none" stroke={mine ? color.get(journey!) : ink} strokeWidth={mine ? Math.max(weight, w * 2) : on ? weight * 1.5 : weight}
+                    strokeDasharray={s.kind === 'dismiss' ? `${6 / zoom} ${5 / zoom}` : undefined} />
+                  <path d={arrowhead(end, angle, head)} fill={mine ? color.get(journey!) : ink} />
                 </>
               )}
-              <circle cx={start.x} cy={start.y} r={(on ? 7 : 5) / zoom} fill={c} className="cursor-pointer stroke-background [pointer-events:all]" strokeWidth={2 / zoom} data-rc-segue={s.id} />
+              {shownDots.map((id, i) => {
+                const off = (i - (shownDots.length - 1) / 2) * (JOURNEY_SPACING / zoom);
+                const nx = -Math.sin(angle) * off, ny = Math.cos(angle) * off;
+                const lit = !journey || id === journey;
+                return (
+                  <g key={id} data-rc-journey={id} className={cn(!lit && 'opacity-40')}>
+                    <circle cx={start.x + nx} cy={start.y + ny} r={(id === journey || hover === s.id ? 6 : 4.5) / zoom} fill={color.get(id)}
+                      className="cursor-pointer stroke-background [pointer-events:all]" strokeWidth={1.5 / zoom} data-rc-segue={s.id} />
+                  </g>
+                );
+              })}
             </g>
           );
         })}
       </svg>
       {/* The followed journey's steps, numbered on its dots. */}
-      {followed && curves.filter((cv) => cv.journey === journey && followed.has(cv.route.segue.id)).map(({ route: { segue: s }, path: { start } }) => (
+      {followed && curves.filter((cv) => followed.has(cv.route.segue.id)).map(({ route: { segue: s }, path: { start } }) => (
         <div key={`step:${s.id}`} className="pointer-events-none absolute" style={{ left: start.x, top: start.y }}>
           <span data-rc-step={followed.get(s.id)} className="absolute grid size-5 place-items-center rounded-full text-caption2 font-bold text-white shadow-md ring-2 ring-background"
             style={{ background: color.get(journey!), transform: `translate(-50%, -50%) scale(${1 / zoom})` }}>

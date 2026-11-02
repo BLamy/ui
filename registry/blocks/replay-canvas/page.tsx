@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { analyzeRecordings, type Recording } from './analyze';
 import { Board, JOURNEY_COLORS, type Journey, type Selection } from './board';
 import { Inspector } from './inspector';
+import { playableEvents } from './events';
 import { layoutMap, type Crops } from './layout';
 import { QaAuthError, createQaClient, type QaProject, type QaTestRun } from './qa';
 import { QaPanel, type QaLoad } from './qa-panel';
@@ -58,6 +59,9 @@ async function readRecordings(file: File): Promise<Recording[]> {
   return [];
 }
 
+/** A recording as the canvas keeps it: on, and with events rrweb's player can show (see events.ts). */
+const source = (r: Recording): SourceRecording => ({ ...r, events: playableEvents(r.events), enabled: true });
+
 /** Journeys loaded at once from a test run. */
 const QA_PARALLEL = 4;
 
@@ -74,7 +78,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
   useEffect(() => () => qaLoading.current?.abort(), []);
   const [ref, size] = useContainerSize<HTMLDivElement>({ width: 1280, height: 760 });
   const narrow = size.width < 960;
-  const [sources, setSources] = useState<SourceRecording[]>(() => recordings.map((r) => ({ ...r, enabled: true })));
+  const [sources, setSources] = useState<SourceRecording[]>(() => recordings.map(source));
   const [crops, setCrops] = useState<Crops>({});
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, z: 0.1 });
   const [selection, setSelection] = useState<Selection>(null);
@@ -131,7 +135,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
 
   const add = async (files: File[]) => {
     const read = (await Promise.all(files.map((f) => readRecordings(f).catch(() => [])))).flat();
-    if (read.length) setSources((s) => [...s, ...read.map((r) => ({ ...r, enabled: true }))]);
+    if (read.length) setSources((s) => [...s, ...read.map(source)]);
   };
 
   // A test run replaces the recordings with its journeys', added a few at a time as they arrive.
@@ -157,7 +161,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
         try {
           const events = (await qa.recording(project.id, r.id, ctl.signal)).sort((a, b) => a.timestamp - b.timestamp);
           ok = playable(events);
-          if (ok) ready.push({ id: `qa-${r.id}`, name: r.journey_name || r.goal || r.id, events, enabled: true });
+          if (ok) ready.push(source({ id: `qa-${r.id}`, name: r.journey_name || r.goal || r.id, events }));
         } catch (e) {
           if (ctl.signal.aborted) return;
           if (e instanceof QaAuthError) { update((l) => ({ ...l, error: e.message })); ctl.abort(); return; }
@@ -248,6 +252,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
               journey={journey && enabled.some((s) => s.id === journey) ? journey : null}
               onJourney={setJourney}
               shown={shown}
+              onShow={(key, i) => setShown((s) => ({ ...s, [key]: i }))}
             />
             {!enabled.length && (
               <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-footnote text-muted-foreground">

@@ -48,6 +48,8 @@ export interface PageNode {
   /** The route pattern, when a URL was seen (`/projects/:id`). */
   route?: string;
   titles: string[];
+  /** Its content's first heading, which names it when it has neither a title nor a route. */
+  heading?: string;
   states: ScreenState[];
   recordings: string[];
 }
@@ -123,6 +125,8 @@ export interface AppMap {
 const MAX_EVIDENCE = 8;
 /** How long after an interaction its effects are counted (ms), unless the next one comes first. */
 const WINDOW = 1500;
+/** A page that reloads can take longer to render: its interaction's effects are counted this long. */
+const RELOAD_WINDOW = 5000;
 /** When a state is drawn: this long after the interaction, or just before the next one. */
 const SETTLE = 1200;
 
@@ -140,6 +144,22 @@ const stableClasses = (n: VNode) => classes(n).filter((c) => !STATE_CLASS.test(c
 function sig(n: VNode): string {
   const cls = stableClasses(n).sort().join('.');
   return `${n.tag}${cls ? `.${cls}` : ''}${n.attrs.role ? `[${n.attrs.role}]` : ''}`;
+}
+
+/** A control's text as a name: without the times, dates and counts that change from one recording to the next, or
+ *  the glyphs around it (× Close, ↶ Undo, Personal 2). A name that's only a number is no name. */
+function nameOf(s: string): string {
+  const name = s
+    .replace(/\b\d{1,2}:\d{2}(:\d{2})?\s?([AP]M)?\b/gi, '')
+    .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? \d{1,2}(, \d{4})?\b/g, '')
+    .replace(/\b\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?\b/g, '')
+    .replace(/\b(today|yesterday|just now|\d+ (seconds?|minutes?|hours?|days?) ago)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^[^\p{L}\p{N}]+/u, '')
+    .replace(/\s+\d{1,4}$/, '')
+    .trim();
+  return /^[\d\s.,:/%+-]*$/.test(name) ? '' : name;
 }
 
 function clip(s: string, n = 48): string {
@@ -267,7 +287,7 @@ function contentOf(vdom: VDom, chrome: readonly VNode[], skip: Set<number>): VNo
 
 /** The part of the page an update changed, grown to a whole component (a row, a card), or nothing when the change is
  *  spread over the page. */
-function partOf(vdom: VDom, ids: number[], chrome: readonly VNode[]): VNode | undefined {
+function partOf(vdom: VDom, ids: number[], chrome: readonly VNode[], content?: VNode): VNode | undefined {
   const body = vdom.body();
   const els = ids.map((id) => vdom.get(id)).map((n) => (n && n.type !== 2 ? vdom.get(n.parent) : n)).filter(isElement);
   if (!body || !els.length) return undefined;
@@ -282,9 +302,20 @@ function partOf(vdom: VDom, ids: number[], chrome: readonly VNode[]): VNode | un
     part = up;
   }
   const all = vdom.elements(body).length;
-  if (part.id === body.id || vdom.elements(part).length > all * 0.4) return undefined;
+  // The whole content (or more) isn't a part; a big table re-sorting under its filters still is.
+  if (part.id === body.id || (content && vdom.within(content.id, part.id)) || vdom.elements(part).length > all * (content ? 0.9 : 0.6)) return undefined;
   if (chrome.some((c) => vdom.within(c.id, part!.id))) return undefined;
   return part;
+}
+
+/** Two routes as one template, when they differ in exactly one segment below the top (`/shop/lamps`, `/shop/desks` →
+ *  `/shop/:slug`); a top-level page (/settings, /profile) is its own page. */
+function slugPattern(a: string, b: string): string | undefined {
+  const x = a.split('/'), y = b.split('/');
+  if (x.length !== y.length || x.length < 3) return undefined;
+  const diff = x.map((s, i) => (s === y[i] ? -1 : i)).filter((i) => i >= 0);
+  if (diff.length !== 1 || diff[0] < 2) return undefined;
+  return x.map((s, i) => (i === diff[0] ? (s.startsWith(':') ? s : ':slug') : s)).join('/');
 }
 
 /** A URL's route pattern: the path (or a hash route), ids as `:id`. */
@@ -296,11 +327,13 @@ export function routeOf(href: string | undefined, base?: string): string | undef
   } catch {
     return undefined;
   }
+  // A data: or blob: document (a stylesheet, a download) isn't a page of the app.
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return undefined;
   const path = url.hash.startsWith('#/') ? url.hash.slice(1).split('?')[0] : url.pathname;
   return (
     path
       .split('/')
-      .map((seg) => (/^\d+$/.test(seg) || /^[0-9a-f]{8,}$/i.test(seg) || /^[0-9a-f-]{32,36}$/i.test(seg) || (/\d/.test(seg) && /[a-z]/i.test(seg) && seg.length >= 12) ? ':id' : seg))
+      .map((seg) => (/^\d+$/.test(seg) || /^[0-9a-f]{8,}$/i.test(seg) || /^[0-9a-f-]{32,36}$/i.test(seg) || (/\d/.test(seg) && /[a-z]/i.test(seg) && seg.length >= 12) || /^[a-z]{1,6}-?\d{2,}$/i.test(seg) ? ':id' : seg))
       .join('/')
       .replace(/\/+$/, '') || '/'
   );
@@ -345,11 +378,17 @@ function overlayIdentity(vdom: VDom, n: VNode, type: OverlayType): { key: string
     (type === 'menu' && buttons.length ? `${buttons.slice(0, 3).join(', ')}${buttons.length > 3 ? '…' : ''}` : '') ||
     clip(text, 40) ||
     type;
-  label = clip(label, 48);
+  label = clip(nameOf(label) || type, 48);
   const shape = hash([...skeleton(vdom, n, new Set(), 5)].sort().join('|'));
   const key = type === 'toast' ? `toast|${text.split(' ')[0] ?? ''}` : `${type}|${shape}|${buttons.join(',')}`;
   return { key, label };
 }
+
+/** A control with no name of its own, by what it is. */
+const KIND_NAME: Record<string, string> = {
+  button: 'button', a: 'link', link: 'link', input: 'field', textarea: 'text field', select: 'menu', checkbox: 'checkbox',
+  switch: 'switch', tab: 'tab', menuitem: 'menu item', option: 'option', row: 'row', li: 'list item', tr: 'row', img: 'image', svg: 'icon',
+};
 
 /** What a press landed on: the control it means, its label, and a key that's the same for every item of a list. */
 function triggerOf(vdom: VDom, id: number): { label: string; key: string } {
@@ -361,7 +400,10 @@ function triggerOf(vdom: VDom, id: number): { label: string; key: string } {
     for (let m = vdom.get(n.parent), k = 0; m && k < 4; k++, m = vdom.get(m.parent)) if (vdom.textOf(m)) { n = m; break; }
   }
   if (!n) return { label: 'something', key: 'unknown' };
-  const label = clip(n.attrs['aria-label'] || vdom.textOf(n) || n.attrs.placeholder || n.attrs.title || n.attrs.alt || n.tag, 40);
+  // Its own name, else the nearest name around it (the row or card it's in), else what kind of control it is.
+  const own = (m: VNode) => nameOf(m.attrs['aria-label'] || vdom.textOf(m) || m.attrs.placeholder || m.attrs.title || m.attrs.alt || '');
+  const around = vdom.ancestors(n.id).slice(0, 5).map((m) => (m.attrs['aria-label'] ? nameOf(m.attrs['aria-label']) : '')).find(Boolean);
+  const label = clip(own(n) || around || KIND_NAME[n.attrs.role ?? n.tag] || 'control', 32);
   // An item of a list (a row, a card): keyed by its structure, not its text, so every row's menu is the same segue.
   let path = sig(n);
   for (let m: VNode | undefined = n, k = 0; m && k < 4; k++) {
@@ -381,10 +423,17 @@ interface PageObs {
   route?: string;
   title: string;
   tokens: Set<string>;
+  /** The content's first heading: its name when it has neither title nor route. */
+  heading?: string;
+  /** The words of its content (without chrome). */
+  words: Set<string>;
 }
 
 interface PageEntry {
   node: PageNode;
+  /** The route pattern once two slugs of it were seen (`/incidents/:slug`). */
+  template?: string;
+  words: Set<string>;
   routes: Set<string>;
   titles: Set<string>;
   tokens: Set<string>;
@@ -405,18 +454,34 @@ interface SegueObs {
 class MapBuilder {
   pages: PageEntry[] = [];
   overlays = new Map<string, OverlayNode>();
-  chromes: { node: ChromeNode; tokens: Set<string>; words?: Set<string> }[] = [];
+  chromes: { node: ChromeNode; tokens: Set<string>; words?: Set<string>; place?: string }[] = [];
   segueObs: SegueObs[] = [];
   /** A page frame's content without its chrome, applied when that chrome turns out to be shared. */
   contents = new Map<Evidence, { path: number[]; chrome: string[] }>();
   entry: StateRef | null = null;
   recordings: RecordingSummary[] = [];
+  /** Per page, what each of its states looked like (fingerprints): a later state that looks the same is that state. */
+  looks = new Map<string, Map<string, string>>();
 
-  /** `words` for chrome found by layout rather than landmarks: it must read the same too, or it's just content. */
-  chrome(type: ChromeType, label: string, tokens: Set<string>, page: string, recording: string, ev: Evidence, words?: Set<string>): ChromeNode {
-    let best = this.chromes.find((c) => c.node.type === type && jaccard(c.tokens, tokens) >= 0.6 && (!words || !c.words || jaccard(c.words, words) >= 0.6));
+  lookalike(node: string, fp: string): string | undefined {
+    return this.looks.get(node)?.get(fp);
+  }
+
+  remember(node: string, fp: string, state: string): void {
+    let m = this.looks.get(node);
+    if (!m) this.looks.set(node, (m = new Map()));
+    if (!m.has(fp)) m.set(fp, state);
+  }
+
+  /** `words` and `place` for chrome found by layout rather than landmarks: it must read much the same too, or it's
+   *  just content — less so where it sits in the same place of the layout (a nav whose open section changes). */
+  chrome(type: ChromeType, label: string, tokens: Set<string>, page: string, recording: string, ev: Evidence, words?: Set<string>, place?: string): ChromeNode {
+    const reads = (c: { words?: Set<string>; place?: string }) =>
+      !words || !c.words || jaccard(c.words, words) >= (place && c.place === place ? 0.35 : 0.6);
+    let best = this.chromes.find((c) => c.node.type === type && !!place && c.place === place && reads(c))
+      ?? this.chromes.find((c) => c.node.type === type && jaccard(c.tokens, tokens) >= 0.6 && reads(c));
     if (!best) {
-      best = { node: { kind: 'chrome', id: `chrome-${this.chromes.length + 1}`, type, label, states: [{ id: 'base', label, evidence: [] }], pages: [], recordings: [] }, tokens, words };
+      best = { node: { kind: 'chrome', id: `chrome-${this.chromes.length + 1}`, type, label, states: [{ id: 'base', label, evidence: [] }], pages: [], recordings: [] }, tokens, words, place };
       this.chromes.push(best);
     }
     const n = best.node;
@@ -430,22 +495,40 @@ class MapBuilder {
   page(obs: PageObs, recording: string): PageNode {
     let best: PageEntry | undefined;
     let score = 0;
+    let template: string | undefined;
     for (const p of this.pages) {
       const routeKnown = obs.route !== undefined && p.routes.size > 0;
-      if (routeKnown && !p.routes.has(obs.route!)) continue;
-      const s = routeKnown ? 3 : obs.title && p.titles.has(obs.title) ? 2 : jaccard(obs.tokens, p.tokens) >= 0.8 ? 1 : 0;
-      if (s > score) { best = p; score = s; }
+      let s: number;
+      if (routeKnown && !p.routes.has(obs.route!)) {
+        // Another route can still be this page: the same template with another slug (/shop/lamps, /shop/desks), or
+        // a redirect to the same screen (/ → /login).
+        const alike = jaccard(obs.tokens, p.tokens);
+        const slug = [...p.routes].map((r) => slugPattern(r, obs.route!)).find(Boolean);
+        if (slug && alike >= 0.75) { s = 2.5; if (s > score) template = slug; }
+        else if (alike >= 0.92 && (!obs.title || p.titles.has(obs.title))) s = 2.4;
+        else continue;
+      } else {
+        // By structure alone, a page with another title must also read alike (the same labels: one project's page and
+        // another's), or it's another page in the same layout (a docs site).
+        const retitled = !!obs.title && p.titles.size > 0 && !p.titles.has(obs.title);
+        s = routeKnown ? 3 : obs.title && p.titles.has(obs.title) ? 2
+          : jaccard(obs.tokens, p.tokens) >= 0.8 && (!retitled || jaccard(obs.words, p.words) >= 0.3) ? 1 : 0;
+        if (!s) continue;
+      }
+      if (s > score) { best = p; score = s; if (s !== 2.5) template = undefined; }
     }
     if (!best) {
-      best = { node: { kind: 'page', id: `page-${this.pages.length + 1}`, label: '', titles: [], states: [{ id: 'base', label: 'Page', evidence: [] }], recordings: [] }, routes: new Set(), titles: new Set(), tokens: obs.tokens };
+      best = { node: { kind: 'page', id: `page-${this.pages.length + 1}`, label: '', titles: [], states: [{ id: 'base', label: 'Page', evidence: [] }], recordings: [] }, routes: new Set(), titles: new Set(), tokens: obs.tokens, words: obs.words };
       this.pages.push(best);
     }
+    if (template) { best.template = template; best.routes.add(template); }
     if (obs.route) best.routes.add(obs.route);
     if (obs.title) best.titles.add(obs.title);
     const n = best.node;
-    n.route = [...best.routes][0];
+    n.route = best.template ?? [...best.routes][0];
     n.titles = [...best.titles];
-    n.label = (n.titles.length === 1 ? n.titles[0] : n.route ?? n.titles[0]) || 'Page';
+    if (!n.heading && obs.heading) n.heading = obs.heading;
+    n.label = (n.titles.length === 1 ? n.titles[0] : n.route ?? n.titles[0]) || n.heading || 'Page';
     if (!n.recordings.includes(recording)) n.recordings.push(recording);
     return n;
   }
@@ -499,6 +582,12 @@ class MapBuilder {
       }
       if (s.evidence.length < MAX_EVIDENCE * 2) s.evidence.push(o.ev);
     }
+    // A title every page has (an app that never changes it) doesn't name a page: its route does.
+    const titled = new Map<string, number>();
+    for (const p of this.pages) for (const t of p.titles) titled.set(t, (titled.get(t) ?? 0) + 1);
+    for (const { node: n } of this.pages) {
+      if (n.route && n.titles.length && n.titles.every((t) => (titled.get(t) ?? 0) > 1)) n.label = n.route;
+    }
     return {
       pages: this.pages.map((p) => p.node),
       overlays: [...this.overlays.values()],
@@ -538,6 +627,40 @@ interface Pending {
   texts: number[];
   /** The chrome the click landed in. */
   via?: string;
+  /** When the page last changed after it (ms): its frame is drawn once that's done, not mid-render. */
+  lastChange: number;
+}
+
+/** Attribute changes that only restyle a control under the pointer or focus: they don't make a new state. */
+const NOISE_ATTR = /^(data-(hovered|pressed|focused|focus-visible|focus-within|active|hover|highlighted|state-hover)|aria-activedescendant|aria-describedby|tabindex|title)$/;
+const NOISE_CLASS = /^(hover|hovered|focus|focused|focus-visible|active|pressed|is-hovered|is-focused|is-pressed)$/;
+
+function noiseOnly(before: Record<string, string | undefined>, after: Record<string, unknown>): boolean {
+  return Object.keys(after).every((name) => {
+    if (NOISE_ATTR.test(name)) return true;
+    if (name !== 'class') return false;
+    const was = new Set((before.class ?? '').split(/\s+/).filter(Boolean));
+    const now = new Set(String(after.class ?? '').split(/\s+/).filter(Boolean));
+    return [...was, ...now].filter((c) => was.has(c) !== now.has(c)).every((c) => NOISE_CLASS.test(c));
+  });
+}
+
+/** What a stretch of the page shows, as a hash: its elements (tag, classes and the attributes that change how they
+ *  look or what they say), and its text, without the restyling of hover and focus. Two moments with the same
+ *  fingerprint look the same. */
+function fingerprint(vdom: VDom, root: VNode): string {
+  const parts: string[] = [];
+  const walk = (n: VNode) => {
+    if (n.type === 3) { const t = n.text.trim(); if (t) parts.push(t); return; }
+    if (!isElement(n) || SKIP_TAGS.includes(n.tag)) return;
+    const cls = classes(n).filter((c) => !NOISE_CLASS.test(c)).sort().join('.');
+    const attrs = Object.entries(n.attrs).filter(([k]) => k !== 'class' && k !== 'style' && !NOISE_ATTR.test(k) && !/^data-/.test(k)).map(([k, v]) => `${k}=${v}`).sort().join(',');
+    parts.push(`<${n.tag}.${cls}[${attrs}]`);
+    for (const c of n.children) walk(vdom.get(c)!);
+    parts.push('>');
+  };
+  walk(root);
+  return hash(parts.join('|'));
 }
 
 function revealed(before: Record<string, string | undefined>, after: Record<string, unknown>): string[] | null {
@@ -586,7 +709,8 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
     const path = vdom.path(node.id);
     if (!path) return [];
     const label = clip(node.attrs['aria-label'] || CHROME_LABEL[type], 32);
-    const c = b.chrome(type, label, skeleton(vdom, node, new Set(), 5), pageId, rec.id, { recording: rec.id, time, path, scope: 'chrome' }, landmark ? undefined : wordsOf(vdom, node));
+    const place = landmark ? undefined : [node, ...vdom.ancestors(node.id)].filter(isElement).map(sig).reverse().join('>');
+    const c = b.chrome(type, label, skeleton(vdom, node, new Set(), 5), pageId, rec.id, { recording: rec.id, time, path, scope: 'chrome' }, landmark ? undefined : wordsOf(vdom, node), place);
     return [{ id: c.id, node }];
   });
   /** The page without its chrome, kept with the evidence in case that chrome turns out to be shared. */
@@ -601,15 +725,21 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
     const skip = new Set(open.map((l) => l.node));
     // Pages are told apart by what's in them, not the shell every page shares.
     const found = chromeOf(vdom, skip);
-    const node = b.page({ route, title: vdom.title(), tokens: skeleton(vdom, body, new Set([...skip, ...found.map((f) => f.node.id)])) }, rec.id);
+    const shell = new Set([...skip, ...found.map((f) => f.node.id)]);
+    const heading = vdom.find((e) => /^h[1-3]$/.test(e.tag) && !found.some((f) => vdom.within(e.id, f.node.id)) && !!vdom.textOf(e), body.id);
+    const words = wordsOf(vdom, contentOf(vdom, found.map((f) => f.node), skip) ?? body);
+    const node = b.page({ route, title: vdom.title(), tokens: skeleton(vdom, body, shell), words, heading: heading && clip(nameOf(vdom.textOf(heading)), 40) }, rec.id);
     page = { node: node.id, state: 'base' };
     part = null;
     b.state(node.id, 'base', 'Page', { recording: rec.id, time, hide: paths(open) }, contentNow(chromeNow(node.id, time, found)));
+    b.remember(node.id, fingerprint(vdom, contentOf(vdom, found.map((f) => f.node), skip) ?? body), 'base');
     if (!b.entry) b.entry = { ...page };
   };
 
   const finalize = (p: Pending, next: number) => {
-    const settle = Math.max(p.t + 60, Math.min(next - 40, p.t + SETTLE));
+    // Drawn once the page has settled: after the last change it made (a reload rendering its content can take a few
+    // seconds), at least SETTLE in, and before the next interaction.
+    const settle = Math.max(p.t + 60, Math.min(next - 40, Math.max(p.t + SETTLE, p.lastChange + 150)));
     const titleAfter = vdom.title();
     const link = p.link ? routeOf(p.link, href) : undefined;
     const churn = p.added.length + p.removed.length;
@@ -666,7 +796,7 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
       const state = `after:${p.trigger.key}`;
       const addedText = p.added.map((id) => vdom.get(id)).filter((n) => n && vdom.within(n.id, l.node)).map((n) => (n!.type === 3 ? n!.text : vdom.textOf(n!))).find((s) => s.trim());
       const textNow = p.texts.map((id) => vdom.get(id)?.text ?? '').find((s) => s.trim());
-      const label = clip((addedText || textNow || `After “${p.trigger.label}”`).trim(), 48);
+      const label = clip(nameOf(addedText || textNow || '') || `After “${p.trigger.label}”`, 48);
       b.state(l.id, state, label, { recording: rec.id, time: settle, path: vdom.path(l.node) ?? undefined });
       b.segue('update', p.from, { node: l.id, state }, p.action, p.trigger, p.point, segueEv);
       l.state = state;
@@ -687,7 +817,7 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
     const pageChanged =
       p.added.some((id) => vdom.attached(id) && !inLayer(id) && underBody(vdom, id)) ||
       p.removed.some((id, i) => !closedNodes.has(id) && !inLayer(p.removedFrom[i]) && underBody(vdom, p.removedFrom[i])) ||
-      p.attrs.some((a) => vdom.attached(a.id) && !inLayer(a.id) && !closedNodes.has(a.id) && underBody(vdom, a.id)) ||
+      p.attrs.some((a) => vdom.attached(a.id) && !inLayer(a.id) && !closedNodes.has(a.id) && underBody(vdom, a.id) && !noiseOnly(a.before, a.after)) ||
       p.texts.some((id) => vdom.attached(id) && !inLayer(id) && underBody(vdom, id));
     open = still;
     if (page && pageChanged) {
@@ -695,17 +825,36 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
       // Just the part that changed when the change is in one place (a switch, a row); else the page.
       const onPage = (id: number) => vdom.attached(id) && !inLayer(id) && underBody(vdom, id);
       const touched = [
-        ...p.added.filter(onPage), ...p.attrs.map((a) => a.id).filter(onPage), ...p.texts.filter(onPage),
+        ...p.added.filter(onPage), ...p.attrs.filter((a) => !noiseOnly(a.before, a.after)).map((a) => a.id).filter(onPage), ...p.texts.filter(onPage),
         ...p.removedFrom.filter((id, i) => onPage(id) && !closedNodes.has(p.removed[i])),
       ];
       const chrome = chromeNow(page.node, settle);
-      const changedPart = partOf(vdom, touched, chrome.map((c) => c.node));
+      // The control pressed restyles itself (a chip turns on); what it changed elsewhere (the table it filters) is the
+      // part, unless that restyle is all there is (a switch).
+      const control = [vdom.get(p.target), ...vdom.ancestors(p.target)].find((n) => n && (INTERACTIVE.has(n.tag) || INTERACTIVE_ROLES.has(n.attrs.role ?? '')));
+      // And when content changed (rows came, text changed), restyles alone — the selection moving from one row of a
+      // nav to another — don't widen the part.
+      const restyled = new Set(p.attrs.map((a) => a.id));
+      const content = touched.filter((id) => !restyled.has(id) || p.added.includes(id) || p.texts.includes(id));
+      const shown = content.length ? content : touched;
+      const elsewhere = control ? shown.filter((id) => !vdom.within(id, control.id)) : shown;
+      const main = vdom.find((e) => e.tag === 'main' || e.attrs.role === 'main', vdom.body()?.id) ?? contentOf(vdom, chrome.map((c) => c.node), new Set(open.map((l) => l.node)));
+      const changedPart = partOf(vdom, elsewhere.length ? elsewhere : shown, chrome.map((c) => c.node), main);
       const partPath = changedPart && vdom.path(changedPart.id);
       part = partPath ? changedPart!.id : null;
-      if (partPath) b.state(page.node, state, `After “${p.trigger.label}”`, { recording: rec.id, time: settle, path: partPath, scope: 'part' });
-      else b.state(page.node, state, `After “${p.trigger.label}”`, { recording: rec.id, time: settle, hide: paths(open) }, contentNow(chrome));
-      b.segue('update', p.from, { node: page.node, state }, p.action, p.trigger, p.point, segueEv, p.via);
-      page = { node: page.node, state };
+      // A whole-page state that looks like one the page already has (its first look included) is that state.
+      const body = vdom.body()!;
+      const fp = partPath ? '' : fingerprint(vdom, contentOf(vdom, chrome.map((c) => c.node), new Set(open.map((l) => l.node))) ?? body);
+      const same = fp ? b.lookalike(page.node, fp) : undefined;
+      const target = same ?? state;
+      if (same) { /* nothing new to draw */ }
+      else if (partPath) b.state(page.node, state, `After “${p.trigger.label}”`, { recording: rec.id, time: settle, path: partPath, scope: 'part' });
+      else {
+        b.state(page.node, state, `After “${p.trigger.label}”`, { recording: rec.id, time: settle, hide: paths(open) }, contentNow(chrome));
+        b.remember(page.node, fp, state);
+      }
+      if (!(p.from.node === page.node && p.from.state === target)) b.segue('update', p.from, { node: page.node, state: target }, p.action, p.trigger, p.point, segueEv, p.via);
+      page = { node: page.node, state: target };
       changed = true;
     }
     if (!changed && closed.length && page) b.segue('dismiss', p.from, page, p.action, p.trigger, p.point, segueEv, p.via);
@@ -714,7 +863,7 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
   for (const e of events) {
     const time = e.timestamp - t0;
     const data = (e.data ?? {}) as Record<string, unknown>;
-    if (pending && time > pending.t + WINDOW) {
+    if (pending && time > pending.t + (pending.reload ? RELOAD_WINDOW : WINDOW)) {
       finalize(pending, time);
       pending = null;
     }
@@ -726,7 +875,7 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
     } else if (e.type === 2) {
       vdom.load((data as { node: Parameters<VDom['load']>[0] }).node);
       open = [];
-      if (pending) pending.reload = true;
+      if (pending) { pending.reload = true; pending.lastChange = time; }
       else needEntry = true;
     } else if (e.type === 3) {
       const source = data.source as number;
@@ -735,6 +884,7 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
         const before = m.attributes.map((a) => ({ id: a.id, before: { ...(vdom.get(a.id)?.attrs ?? {}) } as Record<string, string | undefined> }));
         const { added } = vdom.apply(m);
         if (pending) {
+          pending.lastChange = time;
           pending.added.push(...added);
           for (const r of m.removes) { pending.removed.push(r.id); pending.removedFrom.push(r.parentId); }
           m.attributes.forEach((a, i) => pending!.attrs.push({ id: a.id, before: before[i].before, after: a.attributes }));
@@ -769,6 +919,7 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
           reload: false,
           added: [], removedFrom: [], removed: [], attrs: [], texts: [],
           via,
+          lastChange: time,
         };
       }
     }

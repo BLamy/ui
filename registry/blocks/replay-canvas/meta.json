@@ -9,7 +9,7 @@
     "react-aria-components", "@brett_lamy/docstream"
   ],
   "files": [
-    "page.tsx", "analyze.ts", "vdom.ts", "layout.ts", "board.tsx", "frame.tsx", "sidebar.tsx", "inspector.tsx", "toolbar.tsx", "qa.ts", "qa-panel.tsx", "recordings.ts"
+    "page.tsx", "analyze.ts", "vdom.ts", "layout.ts", "board.tsx", "frame.tsx", "sidebar.tsx", "inspector.tsx", "toolbar.tsx", "qa.ts", "qa-panel.tsx", "events.ts", "recordings.ts"
   ],
   "env": [
     "REPLAY_API_KEY"
