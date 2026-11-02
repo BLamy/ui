@@ -6,6 +6,7 @@ import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SyntaxTokens, useSyntaxTokens } from '@/components/ui/syntax-highlighting';
+import { useContainerWidth } from '@/lib/container';
 import { languageFromPath, type SyntaxToken } from '@/lib/syntax';
 import { cn } from '@/lib/utils';
 import type { DiffFile, FileNode, NewReviewComment, ReviewThread } from './data';
@@ -14,7 +15,7 @@ import { MarkdownField } from './markdown';
 import { Box, DiffStat, FileTree, Oct, ghButton } from './parts';
 import { ActionError, CancelButton, useAction, useCopy, useDraft, useRepo } from './repo-context';
 
-export type DiffRow = { t: 'hunk' | 'ctx' | 'add' | 'del' | 'note'; text: string; o?: number; n?: number };
+export type DiffRow = { t: 'hunk' | 'ctx' | 'add' | 'del' | 'note'; text: string; o?: number; n?: number; /** Shown by Expand all: outside the diff, so GitHub won't take comments on it. */ extra?: boolean };
 
 export function parsePatch(patch: string): DiffRow[] {
   const rows: DiffRow[] = [];
@@ -75,11 +76,13 @@ export function DiffView({ file, split, viewed, onViewed, review, browseRef }: D
   const source = useMemo(() => rows.filter((r) => r.t !== 'hunk' && r.t !== 'note').map((r) => r.text).join('\n'), [rows]);
   const { lines, highlighter } = useSyntaxTokens(source, { language: languageFromPath(file.path) });
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [boxRef, boxWidth] = useContainerWidth<HTMLDivElement>(800);
   const threadsAt = (side: 'LEFT' | 'RIGHT', line?: number) => (line == null ? [] : (review?.threads ?? []).filter((t) => t.path === file.path && t.side === side && t.line === line));
   const present = new Set(rows.flatMap((r) => [r.o != null ? `LEFT:${r.o}` : '', r.n != null ? `RIGHT:${r.n}` : '']));
   const orphaned = (review?.threads ?? []).filter((t) => t.path === file.path && (t.line == null || !present.has(`${t.side}:${t.line}`)));
   const pick = (side: 'LEFT' | 'RIGHT', line: number, shift: boolean) => {
-    if (shift && selection && selection.side === side && selection.line !== line) setSelection({ side, line: Math.max(line, selection.line), start: Math.min(line, selection.line) });
+    // A phone has no shift key: with a comment open, tapping another line's + extends it.
+    if ((shift || ui.phone) && selection && selection.side === side && selection.line !== line) setSelection({ side, line: Math.max(line, selection.line), start: Math.min(line, selection.line) });
     else setSelection({ side, line });
   };
   const selected = (side: 'LEFT' | 'RIGHT', line?: number) => !!selection && line != null && selection.side === side && line <= selection.line && line >= (selection.start ?? selection.line);
@@ -105,16 +108,17 @@ export function DiffView({ file, split, viewed, onViewed, review, browseRef }: D
     return (
       <tr>
         <td colSpan={colSpan} className="border-y border-border bg-muted p-2 font-sans text-detail whitespace-normal">
-          <div className="max-w-[820px] space-y-2">
+          {/* The table scrolls sideways under long code lines; a conversation pins to the visible width, or its buttons end up off-screen. */}
+          <div className="sticky left-2 max-w-[820px] space-y-2" style={{ width: Math.max(240, boxWidth - 18) }}>
             {here.map((t) => <Fragment key={t.id}>{review!.renderThread(t)}</Fragment>)}
-            {composing ? <LineComposer review={review!} path={file.path} selection={selection} lineText={rows.filter((r) => r.n != null && r.n >= (selection.start ?? selection.line) && r.n <= selection.line && r.t !== 'del').map((r) => r.text).join('\n') || undefined} onDone={() => setSelection(null)} /> : null}
+            {composing ? <LineComposer review={review!} path={file.path} selection={selection} lineText={(() => { const lines = rows.filter((r) => r.n != null && r.n >= (selection.start ?? selection.line) && r.n <= selection.line && r.t !== 'del'); return lines.length ? lines.map((r) => r.text).join('\n') : undefined; })()} onDone={() => setSelection(null)} /> : null}
           </div>
         </td>
       </tr>
     );
   };
   return (
-    <div id={'diff-' + file.path} className="overflow-hidden rounded-md border border-border">
+    <div ref={boxRef} id={'diff-' + file.path} className="overflow-hidden rounded-md border border-border">
       <div className="sticky top-0 z-2 flex min-h-11 flex-wrap items-center gap-2 border-b border-border bg-muted px-2 py-1.5">
         <Button aria-label={open ? 'Collapse file' : 'Expand file'} aria-expanded={open} onPress={() => setOpen(!open)}
           className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:bg-secondary group-data-[phone=true]/gh:size-11">
@@ -158,11 +162,11 @@ export function DiffView({ file, split, viewed, onViewed, review, browseRef }: D
                         <tr className="group/line">
                           {pair.l ? num(pair.l.row, 'LEFT') : <td className="w-[1%] bg-muted" />}
                           <td className={cn('relative w-1/2 pr-2 pl-5 align-top whitespace-pre-wrap text-foreground', pair.l ? ROW_BG[pair.l.row.t] : 'bg-muted')}>
-                            {pair.l ? <>{addButton('LEFT', pair.l.row.o)}<SyntaxTokens tokens={pair.l.tokens ?? [{ type: 'plain', text: pair.l.row.text }]} /></> : null}
+                            {pair.l ? <>{pair.l.row.extra ? null : addButton('LEFT', pair.l.row.o)}<SyntaxTokens tokens={pair.l.tokens ?? [{ type: 'plain', text: pair.l.row.text }]} /></> : null}
                           </td>
                           {pair.r ? num(pair.r.row, 'RIGHT') : <td className="w-[1%] bg-muted" />}
                           <td className={cn('relative w-1/2 pr-2 pl-5 align-top whitespace-pre-wrap text-foreground', pair.r ? ROW_BG[pair.r.row.t] : 'bg-muted')}>
-                            {pair.r ? <>{addButton('RIGHT', pair.r.row.n)}<SyntaxTokens tokens={pair.r.tokens ?? [{ type: 'plain', text: pair.r.row.text }]} /></> : null}
+                            {pair.r ? <>{pair.r.row.extra ? null : addButton('RIGHT', pair.r.row.n)}<SyntaxTokens tokens={pair.r.tokens ?? [{ type: 'plain', text: pair.r.row.text }]} /></> : null}
                           </td>
                         </tr>
                         {pair.l && pair.l.row.t === 'del' ? below('LEFT', pair.l.row.o, 4) : null}
@@ -181,7 +185,7 @@ export function DiffView({ file, split, viewed, onViewed, review, browseRef }: D
                           {num(r, 'LEFT')}
                           {num(r, 'RIGHT')}
                           <td className="relative pr-6 pl-5 whitespace-pre text-foreground">
-                            {addButton(side, line)}
+                            {r.extra ? null : addButton(side, line)}
                             <span className="inline-block w-4 text-muted-foreground select-none">{r.t === 'add' ? '+' : r.t === 'del' ? '−' : ' '}</span>
                             <SyntaxTokens tokens={tokens ?? [{ type: 'plain', text: r.text }]} />
                           </td>
@@ -207,7 +211,7 @@ export function withContext(rows: DiffRow[], text: string | null): DiffRow[] {
   const out: DiffRow[] = [];
   let nextNew = 1;
   let offset = 0; // old line = new line + offset, outside the hunks.
-  const fill = (upTo: number) => { for (; nextNew < upTo; nextNew++) out.push({ t: 'ctx', text: lines[nextNew - 1] ?? '', o: nextNew + offset, n: nextNew }); };
+  const fill = (upTo: number) => { for (; nextNew < upTo; nextNew++) out.push({ t: 'ctx', text: lines[nextNew - 1] ?? '', o: nextNew + offset, n: nextNew, extra: true }); };
   for (const r of rows) {
     if (r.t === 'hunk') continue;
     if (r.n != null) fill(r.n);
@@ -244,8 +248,9 @@ function splitRows(rows: DiffRow[], next: () => unknown): { hunk?: string; l?: S
 }
 
 function LineComposer({ review, path, selection, lineText, onDone }: { review: DiffReview; path: string; selection: Selection; lineText?: string; onDone: () => void }) {
-  const { source } = useRepo();
-  const draft = useDraft(`${source.id}:line:${path}:${selection.side}:${selection.line}`);
+  const { source, ui } = useRepo();
+  // By file and side, not line: extending the selection to a range keeps what's typed.
+  const draft = useDraft(`${source.id}:line:${path}:${selection.side}`);
   const body = draft.value;
   const setBody = draft.set;
   const act = useAction();
@@ -259,7 +264,7 @@ function LineComposer({ review, path, selection, lineText, onDone }: { review: D
   };
   return (
     <div className="rounded-md border border-border bg-background p-2">
-      <p className="mt-0 mb-1 text-caption text-muted-foreground">{selection.start ? `Comment on lines ${selection.start} to ${selection.line}` : `Comment on line ${selection.line}`}. Shift-click another line’s + for a range.</p>
+      <p className="mt-0 mb-1 text-caption text-muted-foreground">{selection.start ? `Comment on lines ${selection.start} to ${selection.line}` : `Comment on line ${selection.line}`}. {ui.phone ? 'Tap' : 'Shift-click'} another line’s + for a range.</p>
       <MarkdownField label={`Comment on line ${selection.line} of ${path}`} value={body} onChange={setBody} autoFocus rows={3} placeholder="Leave a comment" onSubmit={() => send('review')} disabled={act.busy}
         footer={selection.side === 'RIGHT' && lineText != null ? <Button className="ml-auto cursor-pointer border-0 bg-transparent p-0 text-caption text-primary outline-none data-hovered:underline data-focus-visible:ring-2 data-focus-visible:ring-primary group-data-[phone=true]/gh:min-h-11" onPress={() => setBody(`${body ? body + '\n\n' : ''}\`\`\`suggestion\n${lineText}\n\`\`\`\n`)}>Suggest a change</Button> : undefined} />
       <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />

@@ -6,7 +6,7 @@
    It enforces what GitHub enforces where the UI depends on it: repository roles (read / triage / write / maintain /
    admin), archived repositories, merge conflicts, required reviews and checks, allowed merge methods. Error bodies copy
    GitHub's. `fail()` queues a failure for a request and `latency` slows answers down to show the loading states. */
-import { diffTrees, GitStore, hashOf, type DiffEntry, type GitCommit } from './sample-git';
+import { diffLines, diffTrees, GitStore, hashOf, type DiffEntry, type GitCommit } from './sample-git';
 
 export type Role = 'read' | 'triage' | 'write' | 'maintain' | 'admin';
 const RANK: Record<Role, number> = { read: 0, triage: 1, write: 2, maintain: 3, admin: 4 };
@@ -94,6 +94,8 @@ export interface ServerRepo {
   /** Hidden from readers: GitHub's Traffic API needs push access. */
   traffic?: { views: number[]; clones: number[]; referrers: { referrer: string; count: number; uniques: number }[]; paths: { path: string; title: string; count: number; uniques: number }[] };
   stargazers: string[]; watchers: string[]; subscriptions: Record<string, { subscribed: boolean; ignored: boolean }>;
+  commitComments?: { id: number; sha: string; user: string; body: string; created_at: string; updated_at: string; reactions: ServerReaction[] }[];
+  artifacts?: { id: number; run: number; name: string; size: number; expired: boolean }[];
 }
 
 export interface ServerNotification { id: string; repo: string; subject: { title: string; type: 'Issue' | 'PullRequest' | 'Release'; number?: number }; reason: string; unread: boolean; updated_at: string }
@@ -117,6 +119,15 @@ export interface ServerOptions {
 }
 
 const KNOWN_QUALIFIERS = new Set(['repo', 'is', 'state', 'reason', 'author', 'assignee', 'mentions', 'commenter', 'involves', 'label', 'milestone', 'no', 'review', 'review-requested', 'reviewed-by', 'head', 'base', 'draft', 'status', 'created', 'updated', 'closed', 'merged', 'user', 'org', 'sort', 'in', 'language']);
+
+/** A diff's rows up to and including one line, with the three before it: the shape of GitHub's diff_hunk. */
+function patchRowsUpTo(before: string, after: string, line: number, side: 'LEFT' | 'RIGHT'): string[] {
+  const ops = diffLines(before, after);
+  const at = ops.findIndex((o) => (side === 'RIGHT' ? o.t !== 'del' && o.b === line : o.t !== 'add' && o.a === line));
+  if (at < 0) return [];
+  const rows = ops.slice(Math.max(0, at - 3), at + 1);
+  return [`@@ -${rows[0].a},${rows.length} +${rows[0].b},${rows.length} @@`, ...rows.map((o) => (o.t === 'add' ? '+' : o.t === 'del' ? '-' : ' ') + o.text)];
+}
 
 class HttpError extends Error {
   constructor(readonly status: number, message: string, readonly errors?: unknown) { super(message); }
@@ -308,7 +319,7 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     };
   };
   const fileJson = (f: DiffEntry) => ({
-    filename: f.path, previous_filename: f.previous, status: f.status, additions: f.additions, deletions: f.deletions, changes: f.additions + f.deletions, patch: f.patch || undefined, sha: hashOf(f.path + f.patch),
+    filename: f.path, previous_filename: f.previous, status: f.status, additions: f.additions, deletions: f.deletions, changes: f.additions + f.deletions, patch: f.patch && !f.patch.includes('\0') ? f.patch : undefined, sha: hashOf(f.path + f.patch),
   });
   const repoJson = (r: ServerRepo) => {
     const role = roleIn(r, viewer);
@@ -919,7 +930,7 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
       }
       return ok([...names].map(([name, dir]) => ({ name, path: path ? `${path}/${name}` : name, type: dir ? 'dir' : 'file', sha: hashOf(name), size: dir ? 0 : (c.files.get(path ? `${path}/${name}` : name) ?? '').length })));
     }
-    if (ctx.accept.includes('raw')) return { text };
+    if (ctx.accept.includes('raw')) return text.startsWith('\0base64:') ? { bytes: Uint8Array.from(atob(text.slice(8)), (ch) => ch.charCodeAt(0)) } : { text };
     return ok(contentJson(ctx.repo, path, text));
   });
   const writeBranch = (r: ServerRepo, body: any) => {
@@ -957,6 +968,63 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     return ok({ content: null, commit: { sha: c.sha, message: c.message, html_url: `${web(repo)}/commit/${c.sha}` } });
   });
 
+  /* The Git Data API: blobs, trees and commits by hand, then moving the branch. */
+  const objects = new Map<string, { kind: 'blob'; text: string } | { kind: 'tree'; files: ReadonlyMap<string, string> }>();
+  const binaryOf = (b64: string) => {
+    try { return decode(b64); } catch { return '\0base64:' + b64; } // Bytes that aren't text keep themselves.
+  };
+  add('GET', '/repos/:owner/:repo/git/ref/:ref*', ({ repo, params }) => {
+    const m = /^heads\/(.+)$/.exec(decodeURIComponent(params.ref));
+    const sha = m ? repo.git.branches.get(m[1]) : undefined;
+    if (!sha) notFound();
+    return ok({ ref: 'refs/' + decodeURIComponent(params.ref), object: { sha, type: 'commit' } });
+  });
+  add('GET', '/repos/:owner/:repo/git/commits/:sha', ({ repo, params }) => {
+    const c = repo.git.commits.get(params.sha) ?? notFound();
+    objects.set('tree:' + c!.sha, { kind: 'tree', files: c!.files });
+    return ok({ sha: c!.sha, message: c!.message, tree: { sha: 'tree:' + c!.sha }, parents: c!.parents.map((sha) => ({ sha })) });
+  });
+  add('POST', '/repos/:owner/:repo/git/blobs', ({ repo, body }) => {
+    must(repo, 'write');
+    const text = body.encoding === 'base64' ? binaryOf(String(body.content)) : String(body.content);
+    const sha = hashOf('blob:' + text);
+    objects.set(sha, { kind: 'blob', text });
+    return ok({ sha }, 201);
+  });
+  add('POST', '/repos/:owner/:repo/git/trees', ({ repo, body }) => {
+    must(repo, 'write');
+    const start = objects.get(body.base_tree);
+    if (start?.kind !== 'tree') invalid('base_tree is not a tree');
+    const files = new Map((start as { files: ReadonlyMap<string, string> }).files);
+    for (const e of body.tree as { path: string; sha?: string | null; content?: string }[]) {
+      if (e.sha === null) { if (!files.delete(e.path)) invalid(`GitRPC::BadObjectState: ${e.path} isn't in the tree`); continue; }
+      if (e.path.split('/').slice(0, -1).some((_, i, parts) => files.has(parts.slice(0, i + 1).join('/')))) invalid('Invalid path: part of it is a file.');
+      const blob = e.sha ? objects.get(e.sha) : undefined;
+      files.set(e.path, e.content ?? (blob?.kind === 'blob' ? blob.text : ''));
+    }
+    const sha = hashOf('tree:' + [...files].map(([p, t]) => p + t).join());
+    objects.set(sha, { kind: 'tree', files });
+    return ok({ sha }, 201);
+  });
+  add('POST', '/repos/:owner/:repo/git/commits', ({ repo, body }) => {
+    must(repo, 'write');
+    const tree = objects.get(body.tree);
+    if (tree?.kind !== 'tree') invalid('Tree SHA does not exist');
+    const c = repo.git.commit({ parents: body.parents, message: body.message, author: personOf(viewer!), date: tick(), files: (tree as { files: ReadonlyMap<string, string> }).files });
+    return ok({ sha: c.sha, message: c.message }, 201);
+  });
+  add('PATCH', '/repos/:owner/:repo/git/refs/:ref*', ({ repo, params, body }) => {
+    must(repo, 'write');
+    const m = /^heads\/(.+)$/.exec(decodeURIComponent(params.ref));
+    if (!m || !repo.git.branches.has(m[1])) invalid('Reference does not exist');
+    const c = repo.git.commits.get(body.sha);
+    if (!c) invalid('Object does not exist');
+    repo.git.branches.set(m![1], body.sha);
+    repo.pushed_at = iso();
+    startRunsFor(repo, c!, m![1]);
+    return ok({ ref: `refs/heads/${m![1]}`, object: { sha: body.sha } });
+  });
+
   /* Commits and compare */
   add('GET', '/repos/:owner/:repo/commits', (ctx) => {
     const { repo, query } = ctx;
@@ -974,6 +1042,37 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     if (until) list = list.filter((x) => Date.parse(x.committer.date) <= Date.parse(until));
     return listAnswer(ctx, list, (x) => commitJson(repo, x));
   });
+  const commitCommentJson = (r: ServerRepo, c: NonNullable<ServerRepo['commitComments']>[number]) => ({ id: c.id, body: c.body, user: user(c.user), created_at: c.created_at, updated_at: c.updated_at, html_url: `${web(r)}/commit/${c.sha}#commitcomment-${c.id}`, path: null, line: null, author_association: association(r, c.user), reactions: reactionSummary(c.reactions, '') });
+  add('GET', '/repos/:owner/:repo/commits/:ref/comments', (ctx) => {
+    const c = ctx.repo.git.resolve(decodeURIComponent(ctx.params.ref)) ?? notFound();
+    return listAnswer(ctx, (ctx.repo.commitComments ?? []).filter((x) => x.sha === c!.sha), (x) => commitCommentJson(ctx.repo, x), 100);
+  });
+  add('POST', '/repos/:owner/:repo/commits/:ref/comments', ({ repo, params, body }) => {
+    const me = authed();
+    if (repo.archived) throw new HttpError(403, 'Repository was archived so is read-only.');
+    const c = repo.git.resolve(decodeURIComponent(params.ref)) ?? notFound();
+    if (!String(body.body ?? '').trim()) invalid('Validation Failed', [{ resource: 'CommitComment', code: 'missing_field', field: 'body' }]);
+    const at = tick();
+    const row = { id: id(), sha: c!.sha, user: me, body: body.body, created_at: at, updated_at: at, reactions: [] };
+    (repo.commitComments ??= []).push(row);
+    return ok(commitCommentJson(repo, row), 201);
+  });
+  const commitCommentOr404 = (r: ServerRepo, cid: string) => r.commitComments?.find((x) => String(x.id) === cid) ?? notFound();
+  add('PATCH', '/repos/:owner/:repo/comments/:id', ({ repo, params, body }) => {
+    const c = commitCommentOr404(repo, params.id)!;
+    if (c.user !== viewer && !can(repo, 'write')) throw new HttpError(403, 'Must have write access to edit other people\'s comments.');
+    c.body = body.body;
+    c.updated_at = tick();
+    return ok(commitCommentJson(repo, c));
+  });
+  add('DELETE', '/repos/:owner/:repo/comments/:id', ({ repo, params }) => {
+    const c = commitCommentOr404(repo, params.id)!;
+    if (c.user !== viewer && !can(repo, 'write')) throw new HttpError(403, 'Must have write access to delete other people\'s comments.');
+    repo.commitComments = repo.commitComments?.filter((x) => x !== c);
+    return noContent;
+  });
+  add('GET', '/repos/:owner/:repo/comments/:id/reactions', (ctx) => reactionList(ctx, commitCommentOr404(ctx.repo, ctx.params.id)!.reactions));
+  add('POST', '/repos/:owner/:repo/comments/:id/reactions', ({ repo, params, body }) => reactOn(commitCommentOr404(repo, params.id)!.reactions, body.content));
   add('GET', '/repos/:owner/:repo/commits/:ref/check-runs', ({ repo, params }) => {
     const c = repo.git.resolve(decodeURIComponent(params.ref)) ?? notFound();
     const checks = checksFor(repo, c!.sha);
@@ -1553,6 +1652,19 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     const file = pullDiff(r, p).find((f) => f.path === c.path);
     if (!file) invalid('Validation Failed', [{ resource: 'PullRequestReviewComment', code: 'invalid', field: 'path', message: 'path is not part of the diff' }]);
     if (c.line == null && c.position == null && c.subject_type !== 'file') invalid('Validation Failed', [{ resource: 'PullRequestReviewComment', code: 'missing_field', field: 'line' }]);
+    // GitHub only takes comments on lines in the diff (hunks and their context).
+    if (c.line != null) {
+      let [o, n] = [0, 0];
+      const onDiff = new Set<string>();
+      for (const row of file!.patch.split('\n')) {
+        const h = /^@@ -(\d+)(?:,\d+)? \+(\d+)/.exec(row);
+        if (h) { o = +h[1]; n = +h[2]; continue; }
+        if (row[0] === '+') onDiff.add(`RIGHT:${n++}`);
+        else if (row[0] === '-') onDiff.add(`LEFT:${o++}`);
+        else { onDiff.add(`RIGHT:${n++}`); onDiff.add(`LEFT:${o++}`); }
+      }
+      if (!onDiff.has(`${c.side ?? 'RIGHT'}:${c.line}`)) invalid('Validation Failed', [{ resource: 'PullRequestReviewComment', code: 'custom', field: 'line', message: 'Line could not be resolved: it must be part of the diff.' }]);
+    }
     const thread: ServerThread = { id: id(), resolved: false, resolved_by: null };
     p.threads.push(thread);
     const at = tick();
@@ -1679,6 +1791,26 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
   };
   add('POST', '/repos/:owner/:repo/actions/runs/:id/rerun', ({ repo, params }) => { must(repo, 'write'); rerun(repo, runOr404(repo, params.id)!, false); return ok({}, 201); });
   add('POST', '/repos/:owner/:repo/actions/runs/:id/rerun-failed-jobs', ({ repo, params }) => { must(repo, 'write'); rerun(repo, runOr404(repo, params.id)!, true); return ok({}, 201); });
+  add('POST', '/repos/:owner/:repo/actions/jobs/:id/rerun', ({ repo, params }) => {
+    must(repo, 'write');
+    for (const x of repo.runs) {
+      const j = x.jobs.find((y) => String(y.id) === params.id);
+      if (!j) continue;
+      if (j.status !== 'completed') throw new HttpError(403, 'This job is already running');
+      const at = tick();
+      j.status = 'completed'; j.conclusion = 'success'; j.started_at = at; j.completed_at = at;
+      for (const s of j.steps) { s.status = 'completed'; s.conclusion = 'success'; s.started_at = at; s.completed_at = at; }
+      x.run_attempt++;
+      x.updated_at = at;
+      x.conclusion = x.jobs.some((y) => y.conclusion === 'failure') ? 'failure' : 'success';
+      return ok({}, 201);
+    }
+    return notFound();
+  });
+  add('GET', '/repos/:owner/:repo/actions/runs/:id/artifacts', ({ repo, params }) => {
+    const list = (repo.artifacts ?? []).filter((a) => String(a.run) === params.id);
+    return ok({ total_count: list.length, artifacts: list.map((a) => ({ id: a.id, name: a.name, size_in_bytes: a.size, expired: a.expired })) });
+  });
   add('GET', '/repos/:owner/:repo/actions/jobs/:id/logs', ({ repo, params }) => {
     must(repo, 'read');
     for (const x of repo.runs) {
@@ -1809,15 +1941,33 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
     const m = /^(?:PR|I)_(.+)_\d+$/.exec(nodeId);
     return m ? db.repos.find((r) => r.name === m[1] && roleIn(r, viewer)) : undefined;
   };
+  /** The hunk a comment was made on, ending at its line: from the commit it was made against, so later pushes don't change it. */
+  const hunkAt = (r: ServerRepo, p: ServerPull, c: ServerReviewComment) => {
+    const at = r.git.commits.get(c.commit_id);
+    const { baseSha } = pullShas(r, p);
+    if (!at) return '';
+    const start = r.git.mergeBase(baseSha, at.sha)?.files.get(c.path) ?? '';
+    const rows = patchRowsUpTo(start, at.files.get(c.path) ?? '', c.line, c.side);
+    return rows.join('\n');
+  };
+  /** A line is outdated once the head no longer has the same text there, or its file has left the diff. */
+  const isOutdated = (r: ServerRepo, p: ServerPull, c: ServerReviewComment) => {
+    if (c.side === 'LEFT') return false;
+    const at = r.git.commits.get(c.commit_id)?.files.get(c.path);
+    const now = r.git.commits.get(pullShas(r, p).headSha)?.files.get(c.path);
+    if (at === undefined || now === undefined || !pullDiff(r, p).some((f) => f.path === c.path)) return true;
+    const lineOf = (text: string) => text.split('\n')[c.line - 1];
+    return lineOf(at) !== lineOf(now);
+  };
   const threadJson = (r: ServerRepo, p: ServerPull, t: ServerThread) => {
     const comments = p.review_comments.filter((c) => c.thread === t.id && (p.reviews.find((v) => v.id === c.review_id)?.state !== 'PENDING' || c.user === viewer));
     const first = comments[0];
-    const file = first ? pullDiff(r, p).find((f) => f.path === first.path) : undefined;
+    const outdated = !!first && isOutdated(r, p, first);
     return {
-      id: 'T_' + t.id, isResolved: t.resolved, isOutdated: !!first && first.commit_id !== pullShas(r, p).headSha && !file, path: first?.path, line: first?.line, startLine: first?.start_line, diffSide: first?.side,
+      id: 'T_' + t.id, isResolved: t.resolved, isOutdated: outdated, path: first?.path, line: outdated ? null : first?.line, originalLine: first?.line, startLine: outdated ? null : first?.start_line, diffSide: first?.side,
       resolvedBy: t.resolved_by ? user(t.resolved_by) : null, viewerCanResolve: can(r, 'write') || p.number === -1, viewerCanUnresolve: can(r, 'write'), viewerCanReply: !!viewer,
       comments: { nodes: comments.map((c) => ({
-        databaseId: c.id, id: 'PRRC_' + c.id, body: c.body, author: user(c.user), createdAt: c.created_at, authorAssociation: association(r, c.user), url: `${web(r)}/pull/${p.number}#discussion_r${c.id}`, diffHunk: file?.patch.split('\n').slice(0, 8).join('\n') ?? '',
+        databaseId: c.id, id: 'PRRC_' + c.id, body: c.body, author: user(c.user), createdAt: c.created_at, authorAssociation: association(r, c.user), url: `${web(r)}/pull/${p.number}#discussion_r${c.id}`, diffHunk: hunkAt(r, p, c),
         viewerCanUpdate: c.user === viewer || can(r, 'triage'), viewerCanDelete: c.user === viewer || can(r, 'triage'), pullRequestReview: { databaseId: c.review_id, state: p.reviews.find((v) => v.id === c.review_id)?.state },
       })) },
     };
@@ -1890,6 +2040,7 @@ export function createSampleServer({ seed, latency = 0, viewer: asViewer, scopes
         return { repository: { issue: {
           id: `I_${r.name}_${i.number}`, isPinned: !!i.pinned, viewerSubscription: i.subscribed ? 'SUBSCRIBED' : 'UNSUBSCRIBED', viewerCanDelete: can(r, 'admin'),
           viewerCanSubscribe: !!viewer,
+          closedByPullRequestsReferences: { nodes: [...r.pulls.values()].filter((p) => closingNumbers(r.issues.get(p.number)!.body).includes(i.number)).map((p) => ({ number: p.number, title: r.issues.get(p.number)!.title, state: p.merged_at ? 'MERGED' : r.issues.get(p.number)!.state === 'open' ? 'OPEN' : 'CLOSED' })) },
         } } };
       }
       case 'ReviewThreads': {

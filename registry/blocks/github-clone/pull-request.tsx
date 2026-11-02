@@ -17,7 +17,7 @@ import { AssigneeSection, LabelSection, LockSection, MetaColumn, MilestoneSectio
 import { Box, DiffStat, FlowPanel, Oct, StatePill, UnderlineTab, ghButton, PR_STATE } from './parts';
 import { Menu, SelectMenu } from './pickers';
 import type { PullTab } from './route';
-import { ActionError, Failed, Loaded, useAction, useCan, useCopy, useDraft, useLoad, useNav, usePoll, useRepo } from './repo-context';
+import { ActionError, CancelButton, Failed, Loaded, useAction, useCan, useCopy, useDraft, useLoad, useNav, usePoll, useRepo } from './repo-context';
 import { CommentCard, Thread, participantsOf } from './thread';
 
 export function PullRequestView({ number, tab = 'conversation', commit }: { number: number; tab?: PullTab; commit?: string }) {
@@ -134,8 +134,7 @@ export function Conversation({ pr, checks, threads, canEdit }: { pr: PullDetail;
   const pendingThreads = threads.filter((t) => t.comments.some((c) => c.pending));
   const canReopen = pr.state === 'closed';
   const summary = [`${pr.reviewers.length} reviewer${pr.reviewers.length === 1 ? '' : 's'}`, pr.labels.length ? `${pr.labels.length} label${pr.labels.length === 1 ? '' : 's'}` : null, pr.milestone].filter(Boolean).join(' · ');
-  return (
-    <div className={cn(ui.wide && 'flex gap-6')}>
+  const details = (
       <MetaColumn summary={summary}>
         <ReviewerSection value={pr.reviewers} editable={can.triage && isOpen} author={pr.author.login}
           onRequest={async (add, remove) => { if (add.length) await source.requestReviewers(n, add); if (remove.length) await source.removeReviewers(n, remove); }}
@@ -157,7 +156,11 @@ export function Conversation({ pr, checks, threads, canEdit }: { pr: PullDetail;
         <ParticipantsSection users={participantsOf(timeline)} />
         <LockSection locked={!!pr.locked} reason={pr.lockReason} number={n} />
       </MetaColumn>
-      <div className={cn('min-w-0 flex-1', ui.wide && '-order-1')}>
+  );
+  return (
+    <div className={cn(ui.wide && 'flex gap-6')}>
+      {!ui.wide ? details : null}
+      <div className="min-w-0 flex-1">
         <Thread number={n} authorLogin={pr.author.login} locked={pr.locked} canEditBody={canEdit} saveBody={(body) => source.updatePull(n, { body })}
           threadsFor={(id) => (id != null ? inReviewCounts.get(id) : undefined)} renderThreads={(list) => <div className="space-y-2">{list.map((t) => <ThreadCard key={t.id} thread={t} number={n} showContext />)}</div>}
           footer={
@@ -180,6 +183,7 @@ export function Conversation({ pr, checks, threads, canEdit }: { pr: PullDetail;
           }} />
         <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
       </div>
+      {ui.wide ? details : null}
     </div>
   );
 }
@@ -189,11 +193,17 @@ export function Conversation({ pr, checks, threads, canEdit }: { pr: PullDetail;
 /** ```suggestion fences in a review comment: what to replace the commented lines with. */
 export const suggestionOf = (body: string): string | null => /```suggestion[^\n]*\n([\s\S]*?)```/.exec(body)?.[1] ?? null;
 
-/** Replaces lines `from`..`to` (1-based) with `text`. */
+/** Replaces lines `from`..`to` (1-based) with `text`; an empty suggestion deletes them. */
 export function applyLines(file: string, from: number, to: number, text: string): string {
   const lines = file.split('\n');
-  lines.splice(from - 1, to - from + 1, ...text.replace(/\n$/, '').split('\n'));
+  lines.splice(from - 1, to - from + 1, ...(text === '' ? [] : text.replace(/\n$/, '').split('\n')));
   return lines.join('\n');
+}
+
+/** What a review comment's lines said when it was made: the end of its diff hunk is the commented lines, oldest first. */
+export function reviewedLines(hunk: string, count: number): string[] | null {
+  const rows = hunk.split('\n').filter((l) => l && !l.startsWith('@@') && !l.startsWith('-') && !l.startsWith('\\'));
+  return rows.length >= count ? rows.slice(-count).map((l) => l.slice(1)) : null;
 }
 
 export function ThreadCard({ thread, number, showContext }: { thread: ReviewThread; number: number; showContext?: boolean }) {
@@ -201,27 +211,36 @@ export function ThreadCard({ thread, number, showContext }: { thread: ReviewThre
   const pull = useLoad(`${source.id}:pull:${number}`, () => source.pull(number)).data;
   const can = useCan();
   const suggestion = thread.comments.map((c) => suggestionOf(c.body)).find((x) => x != null) ?? null;
-  const canCommit = suggestion != null && !thread.outdated && !thread.resolved && thread.side === 'RIGHT' && thread.line != null && !!pull && !pull.headDeleted && !pull.fromFork && (pull.state === 'open' || pull.state === 'draft') && can.push;
+  const isPending = thread.comments.some((c) => c.pending);
+  const canCommit = suggestion != null && !isPending && !thread.outdated && !thread.resolved && thread.side === 'RIGHT' && thread.line != null && !!pull && !pull.headDeleted && !pull.fromFork && (pull.state === 'open' || pull.state === 'draft') && can.push;
   const commitSuggestion = () => void act.run(async () => {
     const [text, sha] = await Promise.all([source.file(thread.path, pull!.head), source.fileSha(thread.path, pull!.head)]);
-    if (text == null || !sha) throw new Error('that file isn’t on the branch any more');
-    await source.putFile({ path: thread.path, content: applyLines(text, thread.startLine ?? thread.line!, thread.line!, suggestion!), message: `Apply suggestion to ${thread.path}`, branch: pull!.head, sha });
+    if (text == null || !sha) throw new Error('that file isn’t on the branch any more.');
+    const [from, to] = [thread.startLine ?? thread.line!, thread.line!];
+    // A line number is only a position. If those lines aren't what was reviewed, writing here would overwrite something nobody looked at.
+    const expected = reviewedLines(thread.hunk, to - from + 1);
+    const actual = text.split('\n').slice(from - 1, to);
+    if (!expected || expected.join('\n') !== actual.join('\n')) throw new Error(`line ${from === to ? to : `${from}–${to}`} has changed since this was suggested, so nothing was written. Look at the file and apply it by hand.`);
+    await source.putFile({ path: thread.path, content: applyLines(text, from, to, suggestion!), message: `Apply suggestion to ${thread.path}`, branch: pull!.head, sha });
     await source.setThreadResolved(thread.id, number, true);
     notify('Suggestion committed');
   }, 'commit the suggestion');
   const [open, setOpen] = useState(!thread.resolved);
-  const [reply, setReply] = useState<string | null>(null);
+  const replyDraft = useDraft(`${source.id}:reply:${thread.id}`);
+  const [replying, setReplying] = useState(replyDraft.dirty);
+  const reply = replying ? replyDraft.value : null;
+  const setReply = (v: string | null) => { setReplying(v != null); replyDraft.set(v ?? ''); };
   const act = useAction();
   const hunk = useMemo(() => thread.hunk.split('\n').slice(-5), [thread.hunk]);
   const sendReply = () => {
     if (!reply?.trim()) return;
-    void act.run(async () => { await source.replyToThread(number, thread.comments[0].id, reply.trim()); setReply(null); });
+    void act.run(async () => { await source.replyToThread(number, thread.comments[0].id, reply.trim()); replyDraft.clear(); setReplying(false); }, 'post your reply');
   };
   return (
     <div className="overflow-hidden rounded-md border border-border bg-background">
       <div className="flex min-h-9 flex-wrap items-center gap-2 border-b border-border bg-muted px-2 py-1 text-caption">
         <Button aria-expanded={open} aria-label={open ? 'Collapse thread' : 'Expand thread'} onPress={() => setOpen(!open)} className="grid size-6 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary group-data-[phone=true]/gh:size-11"><Oct name={open ? 'chevDown' : 'chevRight'} size={14} /></Button>
-        <span className="min-w-0 font-mono font-semibold break-all">{thread.path}{thread.line != null ? `:${thread.line}` : ''}</span>
+        <span className="min-w-0 font-mono font-semibold break-all">{thread.path}{thread.line != null ? `:${thread.line}` : thread.originalLine != null ? `, was line ${thread.originalLine}` : ''}</span>
         {thread.outdated ? <span className="rounded-full border border-(--gh-attention) px-1.5 text-caption2 leading-4 text-(--gh-attention)">Outdated</span> : null}
         {thread.comments.some((c) => c.pending) ? <span className="rounded-full border border-(--gh-attention) px-1.5 text-caption2 leading-4 text-(--gh-attention)">Pending</span> : null}
         {thread.resolved ? <span className="text-muted-foreground">{thread.resolvedBy ? `${thread.resolvedBy} marked this as resolved` : 'Resolved'}</span> : null}
@@ -241,7 +260,7 @@ export function ThreadCard({ thread, number, showContext }: { thread: ReviewThre
               <>
                 <MarkdownField label="Reply" value={reply} onChange={setReply} autoFocus rows={3} placeholder="Reply" onSubmit={sendReply} disabled={act.busy} />
                 <div className="mt-2 flex justify-end gap-2">
-                  <Button className={ghButton()} onPress={() => setReply(null)}>Cancel</Button>
+                  <CancelButton dirty={replyDraft.dirty} onCancel={() => { replyDraft.clear(); setReplying(false); }} />
                   <Button className={ghButton(true)} isDisabled={act.busy || !reply.trim()} onPress={sendReply}>{act.busy ? 'Replying…' : 'Reply'}</Button>
                 </div>
               </>
@@ -562,7 +581,13 @@ export function FilesChanged({ pr, commit }: { pr: PullDetail; commit?: string }
         <Loaded load={files}>
           {(list) => (
             <DiffFiles files={list} toolbar={toolbar} review={review} browseRef={pr.headDeleted ? pr.base : pr.head} viewedSet={viewedSet}
-              onViewed={viewer ? (path, v) => { setLocalViewed((m) => ({ ...m, [path]: v })); void act.run(() => source.setFileViewed(pr.nodeId, n, path, v)); } : undefined} />
+              onViewed={viewer ? (path, v) => {
+                setLocalViewed((m) => ({ ...m, [path]: v }));
+                void act.run(async () => { await source.setFileViewed(pr.nodeId, n, path, v); return true; }, 'mark that file').then((ok) => {
+                  // It didn't save, so it isn't viewed.
+                  if (!ok) setLocalViewed((m) => ({ ...m, [path]: !v }));
+                });
+              } : undefined} />
           )}
         </Loaded>
       )}
@@ -608,7 +633,7 @@ function ReviewMenu({ pr, pending, disabled }: { pr: PullDetail; pending: { id: 
           </div>
           <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
           <div className="mt-2 flex flex-wrap justify-end gap-2">
-            {pending ? <Button className={cn(ghButton(), 'mr-auto text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.discardReview(pr.number, pending.id); setOpen(false); })}>Discard review</Button> : null}
+            {pending ? <Button className={cn(ghButton(), 'mr-auto border-(--gh-closed) text-foreground')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.discardReview(pr.number, pending.id); setOpen(false); })}>Discard review</Button> : null}
             <Button className={ghButton()} onPress={() => setOpen(false)}>Close</Button>
             <Button className={ghButton(true)} isDisabled={act.busy || needsText} onPress={submit}>{act.busy ? 'Submitting…' : 'Submit review'}</Button>
           </div>

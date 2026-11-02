@@ -110,7 +110,8 @@ export type Reactions = Partial<Record<ReactionContent, number>>;
 export type CommentTarget =
   | { kind: 'issue'; number: number }
   | { kind: 'issueComment'; id: number }
-  | { kind: 'reviewComment'; id: number };
+  | { kind: 'reviewComment'; id: number }
+  | { kind: 'commitComment'; id: number };
 
 /* ── Issues ── */
 export interface Milestone {
@@ -162,6 +163,8 @@ export interface IssueExtras {
   pinned: boolean;
   subscribed: boolean;
   canDelete: boolean;
+  /** Pull requests that close this when they merge. */
+  closedBy: { number: number; title: string; state: 'open' | 'merged' | 'closed' }[];
 }
 
 export interface IssueDraft {
@@ -275,6 +278,25 @@ export interface CommitDetail extends Commit {
   pulls: { number: number; title: string }[];
 }
 
+export interface CommitComment {
+  id: number;
+  author: User;
+  body: string;
+  when: string;
+  at?: string;
+  url?: string;
+  path?: string | null;
+  line?: number | null;
+  role?: string;
+}
+
+export interface RunArtifact {
+  id: number;
+  name: string;
+  size: number;
+  expired: boolean;
+}
+
 export interface Comparison {
   status: 'identical' | 'ahead' | 'behind' | 'diverged';
   ahead: number;
@@ -311,7 +333,9 @@ export interface ReviewComment {
 export interface ReviewThread {
   id: string;
   path: string;
+  /** Null once outdated: it no longer has a place in the current diff. */
   line: number | null;
+  originalLine?: number | null;
   startLine?: number | null;
   side: 'LEFT' | 'RIGHT';
   resolved: boolean;

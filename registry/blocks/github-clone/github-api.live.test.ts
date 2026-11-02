@@ -97,6 +97,7 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
     expect(page.hasNext).toBe(true);
     const detail = await source.commit(page.items[0].fullSha);
     expect(detail.fullSha).toBe(page.items[0].fullSha);
+    expect(Array.isArray(await source.commitComments(page.items[0].fullSha))).toBe(true);
     const cmp = await source.compare(page.items[3].fullSha, page.items[0].fullSha);
     expect(cmp.ahead).toBeGreaterThan(0);
     expect(cmp.status).toBe('ahead');
@@ -114,7 +115,8 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
     const timeline = await source.timeline(n);
     expect(timeline[0]).toMatchObject({ kind: 'comment', isBody: true });
     if (open.items[0].comments) expect(timeline.some((t) => t.kind === 'comment' && !t.isBody)).toBe(true);
-    expect(await source.issueExtras(n)).toMatchObject({ id: expect.any(String) });
+    expect(await source.issueExtras(n)).toMatchObject({ id: expect.any(String), closedBy: expect.any(Array) });
+    expect(Array.isArray(await source.issueTemplates())).toBe(true);
   }, 120_000);
 
   it('pull requests: rows filled from GraphQL, detail, threads, files, checks', async () => {
@@ -143,6 +145,7 @@ describe.skipIf(!LIVE)('real GitHub, read-only', () => {
     const runs = await source.runs({ status: 'success' });
     expect(runs.items.every((r) => r.status === 'success')).toBe(true);
     if (runs.items[0]) expect((await source.run(runs.items[0].id)).jobs.length).toBeGreaterThan(0);
+    if (runs.items[0]) expect(Array.isArray(await source.artifacts(runs.items[0].id))).toBe(true);
     const workflows = await source.workflows();
     if (workflows[0]) await source.workflowInputs(workflows[0].path, '');
     const releases = await source.releases(1);

@@ -87,7 +87,7 @@ export function LabelsPage() {
                           <span role="alertdialog" aria-label={`Delete ${l.name}?`} className="flex flex-wrap items-center gap-2">
                             <span className="text-caption">Remove it from everything?</span>
                             <Button className={cn(ghButton(), 'h-7 px-2 text-caption')} onPress={() => setDeleting(null)}>Cancel</Button>
-                            <Button className={cn(ghButton(), 'h-7 px-2 text-caption text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteLabel(l.name); setDeleting(null); notify('Label deleted'); })}>Delete</Button>
+                            <Button className={cn(ghButton(), 'h-7 px-2 text-caption border-(--gh-closed) text-foreground')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteLabel(l.name); setDeleting(null); notify('Label deleted'); })}>Delete</Button>
                           </span>
                         ) : (
                           <span className="flex gap-2">
@@ -172,7 +172,7 @@ export function MilestonesPage({ state = 'open' }: { state?: 'open' | 'closed' }
                             <div role="alertdialog" aria-label={`Delete ${m.title}?`} className="mt-2 flex flex-wrap items-center gap-2 text-caption">
                               <span>Delete it? Its items stay.</span>
                               <Button className={cn(ghButton(), 'h-7 px-2 text-caption')} onPress={() => setDeleting(null)}>Cancel</Button>
-                              <Button className={cn(ghButton(), 'h-7 px-2 text-caption text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteMilestone(m.number); setDeleting(null); })}>Delete</Button>
+                              <Button className={cn(ghButton(), 'h-7 px-2 text-caption border-(--gh-closed) text-foreground')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteMilestone(m.number); setDeleting(null); })}>Delete</Button>
                             </div>
                           ) : (
                             <div className="mt-2 flex gap-2">

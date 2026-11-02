@@ -168,6 +168,7 @@ export function CodeToolbar({ gitRef, dir = '' }: { gitRef: string; dir?: string
       {can.push && onBranch ? (
         <Menu label="Add file" trigger={<><Oct name="plus" />{!ui.phone ? 'Add file' : null}<Oct name="chevDown" size={12} /></>} entries={[
           { id: 'new', label: 'Create new file', icon: <Oct name="fileAdd" size={14} />, onAction: () => nav.go({ s: 'new-file', ref: gitRef, dir }) },
+          { id: 'upload', label: 'Upload files', icon: <Oct name="upload" size={14} />, onAction: () => nav.go({ s: 'upload', ref: gitRef, dir }) },
           { id: 'workflow', label: 'New workflow', icon: <Oct name="play" size={14} />, onAction: () => nav.go({ s: 'new-file', ref: gitRef, dir: '.github/workflows', name: 'ci.yml', content: 'name: CI\non:\n  push:\n    branches: [main]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n', message: 'Add a workflow' }) },
         ]} />
       ) : null}
@@ -538,10 +539,14 @@ function LinkedCode({ path, code, line, lineEnd, gitRef }: { path: string; code:
     ref.current?.querySelector(`[data-line="${line}"]`)?.scrollIntoView({ block: 'center' });
   }, [line]);
   const count = code.replace(/\n$/, '').split('\n').length;
-  const on = (n: number) => !!line && n >= line && n <= (lineEnd ?? line);
+  // Addresses can say anything: #L5-L2 means 2 to 5, and lines past the end mean nothing.
+  const [first, last] = line ? [Math.min(line, lineEnd ?? line), Math.max(line, lineEnd ?? line)] : [0, 0];
+  const missing = !!line && first > count;
+  const on = (n: number) => !!line && n >= first && n <= last;
   const base = { s: 'code' as const, ref: gitRef || undefined, path };
   return (
     <div ref={ref} className="relative overflow-x-auto" tabIndex={0} role="region" aria-label={`Code of ${path}`}>
+      {missing ? <p role="status" className="m-0 border-b border-border bg-muted px-3 py-1 font-sans text-caption text-muted-foreground">This file has {count} lines, so there’s no line {first}.</p> : null}
       <div className="flex min-w-max">
         <div className="flex shrink-0 flex-col py-2 text-right font-mono text-caption2 leading-5 select-none">
           {Array.from({ length: count }, (_, i) => (
@@ -556,7 +561,7 @@ function LinkedCode({ path, code, line, lineEnd, gitRef }: { path: string; code:
           ))}
         </div>
         <div className="relative min-w-0 flex-1">
-          {line ? <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bg-(--gh-hl)" style={{ top: 8 + (line - 1) * 20, height: ((lineEnd ?? line) - line + 1) * 20 }} /> : null}
+          {line && !missing ? <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bg-(--gh-hl)" style={{ top: 8 + (first - 1) * 20, height: (Math.min(last, count) - first + 1) * 20 }} /> : null}
           <CodeView path={path} code={code} lineNumbers={false} />
         </div>
       </div>

@@ -13,6 +13,7 @@ export type Route =
   | { s: 'commit'; sha: string }
   | { s: 'edit'; ref?: string; path: string; mode: 'edit' | 'delete' }
   | { s: 'new-file'; ref?: string; dir?: string; name?: string; content?: string; message?: string }
+  | { s: 'upload'; ref?: string; dir?: string }
   | { s: 'branches'; page?: number }
   | { s: 'tags'; page?: number }
   | { s: 'releases'; page?: number }
@@ -31,7 +32,9 @@ export type Route =
   | { s: 'run'; id: number }
   | { s: 'insights'; page?: InsightsPage }
   | { s: 'settings'; page?: SettingsPage }
-  | { s: 'people'; kind: PeoplePage };
+  | { s: 'people'; kind: PeoplePage }
+  /** A GitHub address with no screen here. */
+  | { s: 'elsewhere'; path: string };
 
 export type RepoTab = 'code' | 'issues' | 'pulls' | 'actions' | 'insights' | 'settings';
 
@@ -73,6 +76,7 @@ export function toPath(r: Route, defaultBranch = 'main'): string {
     case 'commit': return `commit/${r.sha}`;
     case 'edit': return `${r.mode === 'edit' ? 'edit' : 'delete'}/${ref(r.ref)}/${encPath(r.path)}`;
     case 'new-file': return `new/${ref(r.ref)}${r.dir ? '/' + encPath(r.dir) : ''}`;
+    case 'upload': return `upload/${ref(r.ref)}${r.dir ? '/' + encPath(r.dir) : ''}`;
     case 'branches': return withQuery('branches', { page: r.page });
     case 'tags': return withQuery('tags', { page: r.page });
     case 'releases': return withQuery('releases', { page: r.page });
@@ -92,6 +96,7 @@ export function toPath(r: Route, defaultBranch = 'main'): string {
     case 'insights': return r.page === 'traffic' ? 'graphs/traffic' : r.page === 'contributors' ? 'graphs/contributors' : r.page === 'commits' ? 'graphs/commit-activity' : r.page === 'code' ? 'graphs/code-frequency' : r.page === 'forks' ? 'network/members' : 'pulse';
     case 'settings': return r.page && r.page !== 'general' ? `settings/${r.page}` : 'settings';
     case 'people': return r.kind === 'contributors' ? 'graphs/contributors' : r.kind;
+    case 'elsewhere': return r.path;
   }
 }
 
@@ -135,6 +140,10 @@ export function fromPath(rawPath: string, refs: string[] = []): Route | null {
     case 'new': {
       const { ref, path } = refAndPath(rest);
       return { s: 'new-file', ref, dir: path || undefined };
+    }
+    case 'upload': {
+      const { ref, path } = refAndPath(rest);
+      return { s: 'upload', ref, dir: path || undefined };
     }
     case 'branches': return { s: 'branches', page: num('page') };
     case 'tags': return { s: 'tags', page: num('page') };
@@ -213,7 +222,7 @@ export function chainOf(r: Route): Route[] {
     case 'commits': return r.path ? [{ s: 'code', ref: r.ref }, { s: 'code', ref: r.ref, path: r.path }, r] : [{ s: 'code', ref: r.ref }, r];
     case 'commit': return [{ s: 'code' }, { s: 'commits' }, r];
     case 'edit': return [{ s: 'code', ref: r.ref }, { s: 'code', ref: r.ref, path: r.path }, r];
-    case 'new-file': return [{ s: 'code', ref: r.ref }, r];
+    case 'new-file': case 'upload': return [{ s: 'code', ref: r.ref }, r];
     case 'branches': case 'tags': case 'releases': case 'people': return [{ s: 'code' }, r];
     case 'release': return [{ s: 'code' }, { s: 'releases' }, r];
     case 'new-release': return [{ s: 'code' }, { s: 'releases' }, r];

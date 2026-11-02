@@ -32,7 +32,7 @@ export function LabelSection({ value, editable, onSave, query }: { value: Label[
     <Section title="Labels" menu={editable ? (
       <SelectMenu title="Apply labels" multiple triggerLabel="Edit labels" triggerClassName={gear} trigger={<Oct name="gear" size={14} />} loading={labels.loading} filterPlaceholder="Filter labels"
         items={(labels.data ?? []).map((l) => ({ id: l.name, label: l.name, description: l.description, leading: <span className="size-3.5 shrink-0 rounded-full" style={{ background: l.color }} /> }))}
-        selected={value.map((l) => l.name)} onApply={(ids) => void act.run(() => onSave(ids))}
+        selected={value.map((l) => l.name)} onApply={(ids) => void act.run(() => onSave(ids), 'update the labels')}
         footer={(_q, close) => <Button className="w-full cursor-pointer border-0 bg-transparent px-3 py-2 text-left text-caption text-primary outline-none data-hovered:bg-accent" onPress={() => { close(); nav.go({ s: 'labels' }); }}>Edit labels</Button>} />
     ) : undefined}>
       {value.length ? (
@@ -54,10 +54,10 @@ export function AssigneeSection({ value, editable, onSave }: { value: User[]; ed
   return (
     <Section title="Assignees" menu={editable ? (
       <SelectMenu title="Assign up to 10 people" multiple triggerLabel="Edit assignees" triggerClassName={gear} trigger={<Oct name="gear" size={14} />} loading={people.loading} filterPlaceholder="Type or choose a user" empty="No one matches"
-        items={(people.data ?? []).map(userPick)} selected={value.map((u) => u.login)} onApply={(ids) => void act.run(() => onSave(ids))} />
+        items={(people.data ?? []).map(userPick)} selected={value.map((u) => u.login)} onApply={(ids) => void act.run(() => onSave(ids), 'update the assignees')} />
     ) : undefined}>
       {value.length ? value.map((u) => <div key={u.login} className="mb-1.5"><UserChip user={u} /></div>) : (
-        <span className="text-muted-foreground">No one{editable && viewer ? <> — <Button className="inline cursor-pointer border-0 bg-transparent p-0 text-caption text-primary outline-none data-hovered:underline data-focus-visible:ring-2 data-focus-visible:ring-primary" onPress={() => void act.run(() => onSave([viewer.login]))}>assign yourself</Button></> : null}</span>
+        <span className="text-muted-foreground">No one{editable && viewer ? <> — <Button className="inline cursor-pointer border-0 bg-transparent p-0 text-caption text-primary outline-none data-hovered:underline data-focus-visible:ring-2 data-focus-visible:ring-primary" onPress={() => void act.run(() => onSave([viewer.login]), 'assign you')}>assign yourself</Button></> : null}</span>
       )}
       <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
     </Section>
@@ -72,7 +72,7 @@ export function MilestoneSection({ value, editable, onSave }: { value?: Mileston
     <Section title="Milestone" menu={editable ? (
       <SelectMenu title="Set milestone" triggerLabel="Edit milestone" triggerClassName={gear} trigger={<Oct name="gear" size={14} />} loading={milestones.loading} filterPlaceholder="Filter milestones" empty="No milestones" clearLabel={value ? 'Clear this milestone' : undefined}
         items={(milestones.data ?? []).map((m) => ({ id: String(m.number), label: m.title, description: m.dueWhen ? `Due ${m.dueWhen}` : undefined }))} selected={value ? [String(value.number)] : []}
-        onApply={(ids) => void act.run(() => onSave(ids[0] ? Number(ids[0]) : null))} />
+        onApply={(ids) => void act.run(() => onSave(ids[0] ? Number(ids[0]) : null), 'set the milestone')} />
     ) : undefined}>
       {value ? (
         <>
@@ -96,7 +96,7 @@ const REVIEWER_ICON: Record<Reviewer['state'], [ReactNode, string]> = {
 export function ReviewerSection({ value, editable, author, onRequest, onRemove, onDismiss }: {
   value: Reviewer[]; editable: boolean; author: string; onRequest: (add: string[], remove: string[]) => Promise<void>; onRemove?: (login: string) => Promise<void>; onDismiss?: (r: Reviewer, message: string) => Promise<void>;
 }) {
-  const { source } = useRepo();
+  const { source, viewer } = useRepo();
   const people = useLoad(source.id + ':assignable', source.assignable);
   const act = useAction();
   const [dismissing, setDismissing] = useState<Reviewer | null>(null);
@@ -107,22 +107,22 @@ export function ReviewerSection({ value, editable, author, onRequest, onRemove, 
     <Section title="Reviewers" menu={editable ? (
       <SelectMenu title="Request up to 15 reviewers" multiple triggerLabel="Edit reviewers" triggerClassName={gear} trigger={<Oct name="gear" size={14} />} loading={people.loading} filterPlaceholder="Type or choose a user" empty="No one matches"
         items={(people.data ?? []).filter((u) => u.login !== author).map(userPick)} selected={requested}
-        onApply={(ids) => void act.run(() => onRequest(ids.filter((x) => !requested.includes(x)), requested.filter((x) => !ids.includes(x))))} />
+        onApply={(ids) => void act.run(() => onRequest(ids.filter((x) => !requested.includes(x)), requested.filter((x) => !ids.includes(x))), 'update the reviewers')} />
     ) : undefined}>
       {value.length ? value.map((r) => (
         <div key={r.user.login} className="mb-1.5 flex items-center gap-2">
           <UserChip user={r.user} className="min-w-0 flex-1" />
           <span title={REVIEWER_ICON[r.state][1]}>{REVIEWER_ICON[r.state][0]}<span className="sr-only">{REVIEWER_ICON[r.state][1]}</span></span>
-          {editable && r.state !== 'pending' && !r.isTeam ? (
+          {editable && r.state !== 'pending' && !r.isTeam && r.user.login !== viewer?.login ? (
             <Button aria-label={`Re-request review from ${r.user.login}`} className={gear} onPress={() => void act.run(() => onRequest([r.user.login], []), 're-request that review')}><Oct name="retry" size={12} /></Button>
           ) : null}
-          {editable && onDismiss && (r.state === 'approved' || r.state === 'changes') && r.reviewId ? (
+          {editable && onDismiss && (r.state === 'approved' || r.state === 'changes') && r.reviewId && r.user.login !== viewer?.login ? (
             <Button aria-label={`Dismiss ${r.user.login}’s review`} className={gear} onPress={() => { setDismissing(r); setWhy(''); }}><Oct name="x" size={12} /></Button>
           ) : null}
         </div>
       )) : <span className="text-muted-foreground">No reviews</span>}
       {dismissing ? (
-        <form className="mt-2 grid gap-2" onSubmit={(e) => { e.preventDefault(); if (why.trim()) void act.run(async () => { await onDismiss!(dismissing, why.trim()); setDismissing(null); }); }}>
+        <form className="mt-2 grid gap-2" onSubmit={(e) => { e.preventDefault(); if (why.trim()) void act.run(async () => { await onDismiss!(dismissing, why.trim()); setDismissing(null); }, 'dismiss that review'); }}>
           <label className="grid gap-1 text-caption">
             <span className="font-semibold">Why dismiss {dismissing.user.login}’s review?</span>
             <input autoFocus value={why} onChange={(e) => setWhy(e.target.value)} className="box-border h-8 rounded-md border border-border bg-background px-2 font-sans text-caption text-foreground outline-none select-text focus:border-primary group-data-[phone=true]/gh:h-11" />
@@ -142,7 +142,7 @@ export function NotificationSection({ subscribed, disabled, onToggle }: { subscr
   const act = useAction();
   return (
     <Section title="Notifications">
-      <Button className={cn(ghButton(), 'w-full')} isDisabled={disabled || act.busy} onPress={() => void act.run(() => onToggle(!subscribed))}><Oct name="bell" />{subscribed ? 'Unsubscribe' : 'Subscribe'}</Button>
+      <Button className={cn(ghButton(), 'w-full')} isDisabled={disabled || act.busy} onPress={() => void act.run(() => onToggle(!subscribed), 'change your subscription')}><Oct name="bell" />{subscribed ? 'Unsubscribe' : 'Subscribe'}</Button>
       <p className="mt-2 mb-0 text-muted-foreground">{subscribed ? 'You’re receiving notifications from this thread.' : 'You’re not receiving notifications from this thread.'}</p>
       <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
     </Section>
@@ -165,9 +165,9 @@ export function LockSection({ locked, reason, number }: { locked: boolean; reaso
   return (
     <Section title="Conversation">
       {locked ? (
-        <Button className={cn(ghButton(), 'w-full')} isDisabled={act.busy} onPress={() => void act.run(() => source.unlock(number))}><Oct name="lock" />Unlock conversation</Button>
+        <Button className={cn(ghButton(), 'w-full')} isDisabled={act.busy} onPress={() => void act.run(() => source.unlock(number), 'unlock the conversation')}><Oct name="lock" />Unlock conversation</Button>
       ) : asking ? (
-        <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); void act.run(async () => { await source.lock(number, why || undefined); setAsking(false); }); }}>
+        <form className="grid gap-2" onSubmit={(e) => { e.preventDefault(); void act.run(async () => { await source.lock(number, why || undefined); setAsking(false); }, 'lock the conversation'); }}>
           <label className="grid gap-1">
             <span className="font-semibold">Reason</span>
             <select value={why} onChange={(e) => setWhy(e.target.value)} className="box-border h-8 rounded-md border border-border bg-background px-1 font-sans text-caption text-foreground group-data-[phone=true]/gh:h-11">

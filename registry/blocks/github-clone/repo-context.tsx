@@ -172,7 +172,7 @@ export function Failed({ error, retry, className, what }: { error: unknown; retr
     <Box className={cn('grid place-items-center px-6 py-12 text-center', className)}>
       <div role="alert" className="contents">
         <Oct name={icon} size={24} className="text-muted-foreground" />
-        <h2 className="mt-3 mb-1 text-callout font-semibold">{title}</h2>
+        {what || !repo ? <h1 className="mt-3 mb-1 text-callout font-semibold">{title}</h1> : <h2 className="mt-3 mb-1 text-callout font-semibold">{title}</h2>}
         <p className="m-0 max-w-[420px] text-detail text-muted-foreground">{message}</p>
       </div>
       <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -227,25 +227,21 @@ const trackDrafts = () => {
   addEventListener('beforeunload', warnOnLeave);
 };
 
-/** Text that survives navigation. `dirty`: it differs from `initial`. `restored`: it was already here when this mounted. */
+/** Text that survives navigation, one per key. `dirty`: it differs from `initial`. `restored`: it was already here when this key first showed. */
 export function useDraft(key: string, initial = '') {
-  const [restored] = useState(() => drafts.has(key));
-  const [value, setValue] = useState(() => drafts.get(key) ?? initial);
-  // A different thing being edited in the same component (another file, another issue).
-  const shown = useRef(key);
-  const [, redraw] = useState(0);
-  if (shown.current !== key) { shown.current = key; }
-  const current = key === shown.current ? value : drafts.get(key) ?? initial;
+  const [held, setHeld] = useState(() => ({ key, value: drafts.get(key) ?? initial, restored: drafts.has(key) }));
+  // Another key is another document: never carry text across.
+  const state = held.key === key ? held : { key, value: drafts.get(key) ?? initial, restored: drafts.has(key) };
+  if (held.key !== key) setHeld(state);
   const set = useCallback((v: string) => {
     if (v === initial) drafts.delete(key);
     else { drafts.set(key, v); trackDrafts(); }
-    setValue(v);
-    redraw((n) => n + 1);
+    setHeld((h) => ({ ...h, key, value: v }));
   }, [key, initial]);
-  const clear = useCallback(() => { drafts.delete(key); setValue(initial); }, [key, initial]);
+  const clear = useCallback(() => { drafts.delete(key); setHeld({ key, value: initial, restored: false }); }, [key, initial]);
   // `initial` arrives late when it comes from GitHub: follow it until someone types.
-  useEffect(() => { if (!drafts.has(key)) setValue(initial); }, [key, initial]);
-  return { value: current, set, clear, dirty: drafts.has(key), restored };
+  useEffect(() => { if (!drafts.has(key)) setHeld((h) => (h.key === key && h.value !== initial ? { ...h, value: initial } : h)); }, [key, initial]);
+  return { value: state.value, set, clear, dirty: drafts.has(key), restored: state.restored };
 }
 
 /** Copies, and says so only if it worked. */
@@ -269,7 +265,7 @@ export function CancelButton({ dirty, onCancel, label = 'Cancel', isDisabled }: 
     <span role="alertdialog" aria-label="Discard your changes?" className="flex flex-wrap items-center gap-2">
       <span className="font-semibold">Discard your changes?</span>
       <Button className={ghButton()} onPress={() => setAsking(false)}>Keep editing</Button>
-      <Button className={cn(ghButton(), 'text-(--gh-closed)')} onPress={onCancel}>Discard</Button>
+      <Button className={cn(ghButton(), 'border-(--gh-closed) text-foreground')} onPress={onCancel}>Discard</Button>
     </span>
   );
 }

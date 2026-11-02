@@ -31,7 +31,7 @@ import { CodeHome, PathView } from './code-tab';
 import { CommitPage, CommitsPage } from './commits';
 import { ComparePage } from './compare';
 import { CloneDialog, GoToFile, RepoPicker, SearchDialog } from './dialogs';
-import { DeleteFile, EditFile, NewFile } from './file-edit';
+import { DeleteFile, EditFile, NewFile, UploadFiles } from './file-edit';
 import { InsightsTab } from './insights-tab';
 import { IssueList, IssueView, NewIssue } from './issues-tab';
 import { LabelsPage, MilestonePage, MilestonesPage } from './labels';
@@ -205,7 +205,8 @@ function parseHash(): { full: string; route: Route | null } | null {
   if (typeof location === 'undefined') return null;
   const m = /^#\/([\w.-]+\/[\w.-]+)(?:\/(.*))?$/.exec(location.hash);
   if (!m) return null;
-  return { full: m[1], route: fromPath(m[2] ?? '') };
+  const rest = m[2] ?? '';
+  return { full: m[1], route: fromPath(rest) ?? { s: 'elsewhere', path: rest } };
 }
 
 function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openRepo, navRef, routeRef, backAcross, syncUrl, toast }: {
@@ -238,10 +239,18 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
       if (!o?.replace) scroller.current?.scrollTo?.({ top: 0 });
     },
     back() {
-      if (syncUrl) { history.back(); return; }
-      // Back across a repository switch once this repository has nothing left to go back to.
-      if (!stack.current.length && backAcross()) return;
-      setRoute((current) => stack.current.pop() ?? chainOf(current).at(-2) ?? { s: 'code' });
+      if (stack.current.length) {
+        if (syncUrl) history.back(); // popstate pops the stack.
+        else setRoute(stack.current.pop()!);
+        return;
+      }
+      // Nothing in this repository to go back to: the one before a switch, else this screen's parent. Never out of the block.
+      if (backAcross()) return;
+      setRoute((current) => {
+        const parent = chainOf(current).at(-2) ?? { s: 'code' as const };
+        if (syncUrl) history.replaceState(null, '', hashOf(parent));
+        return parent;
+      });
     },
     url: (r) => `https://github.com/${source.full}${toPath(r, branch) ? '/' + toPath(r, branch) : ''}`,
     isInternal: (href) => !!parseGitHubUrl(href, refNames)?.route,
@@ -280,7 +289,8 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
       else scroller.current?.focus({ preventScroll: true });
     };
     // A form on the new screen may have claimed focus on purpose (autoFocus): leave it.
-    setTimeout(() => { if (!document.activeElement?.closest('input,textarea,select')) find(); }, 30);
+    // Likewise arrowing along the tabs: focus stays on the tab, or the next arrow goes nowhere.
+    setTimeout(() => { if (!document.activeElement?.closest('input,textarea,select,[role="tablist"]')) find(); }, 30);
   }, [route]);
 
   // The browser's back and forward, and hand-edited hashes.
@@ -291,6 +301,7 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
       const hit = parseHash();
       if (!hit) return;
       if (hit.full.toLowerCase() !== source.full.toLowerCase()) { openRepo(hit.full, hit.route, { fromHistory: true }); return; }
+      stack.current.pop();
       setRoute(hit.route ?? { s: 'code' });
     };
     addEventListener('popstate', onPop);
@@ -357,12 +368,14 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
       {ui.phone ? (
         <>
           {!source.live ? <SampleNotice /> : null}
+          <RefreshNote load={repo} />
           <div className="relative min-h-0 flex-1"><NavigationStack screens={screens} onPop={() => nav.go(chain.at(-2) ?? { s: 'code' }, { replace: true })} /></div>
         </>
       ) : (
         <>
           <GlobalHeader width={width} />
           {!source.live ? <SampleNotice /> : null}
+          <RefreshNote load={repo} />
           <main ref={scroller} tabIndex={-1} className="bl-scroll min-h-0 flex-1 overflow-y-auto outline-none">{repo.data ? <RepoPage route={route} tab={tab} /> : failed}</main>
         </>
       )}
@@ -376,6 +389,17 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
       ) : null}
       <AppMenu view={appView} onView={setAppView} onClose={() => setAppView(null)} compact={ui.phone} gh={gh} viewer={viewer.data} keychain={keychain} live={source.live} onOpen={openRepo} openPicker={openPicker} />
     </RepoProvider>
+  );
+}
+
+/** The repository itself couldn't be re-read: everything under it may be behind, so say it once, at the top. */
+function RefreshNote({ load }: { load: { staleError?: unknown; retry: () => void } }) {
+  if (!load.staleError) return null;
+  return (
+    <p role="status" className="m-0 flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-(--gh-attention)/10 px-4 py-1 text-caption">
+      <span className="min-w-0 flex-1">Couldn’t reach GitHub, so this may be out of date: {load.staleError instanceof Error ? load.staleError.message : String(load.staleError)}</span>
+      <Button className="cursor-pointer border-0 bg-transparent p-0 text-caption font-semibold text-primary outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary group-data-[phone=true]/gh:min-h-11" onPress={load.retry}>Try again</Button>
+    </p>
   );
 }
 
@@ -398,6 +422,7 @@ function titleOf(r: Route): string {
     case 'commit': return r.sha.slice(0, 7);
     case 'edit': return r.mode === 'edit' ? 'Edit' : 'Delete';
     case 'new-file': return 'New file';
+    case 'upload': return 'Upload files';
     case 'branches': return 'Branches';
     case 'tags': return 'Tags';
     case 'releases': return 'Releases';
@@ -417,6 +442,7 @@ function titleOf(r: Route): string {
     case 'insights': return 'Insights';
     case 'settings': return 'Settings';
     case 'people': return r.kind === 'stargazers' ? 'Stargazers' : r.kind === 'watchers' ? 'Watchers' : 'Contributors';
+    case 'elsewhere': return 'Not in this example';
   }
 }
 
@@ -442,7 +468,9 @@ class ScreenBoundary extends Component<{ screen: string; children: ReactNode }, 
 
 /** A screen that isn't one of the tabs' roots. */
 function ScreenFor({ route }: { route: Route }) {
-  return <ScreenBoundary screen={toPath(route)}><Screen route={route} /></ScreenBoundary>;
+  // Another issue, file or pull request is another screen: nothing half-typed or half-open on one may carry over to the next.
+  const key = route.s === 'pull' ? `pull/${route.n}` : route.s === 'code' ? `code/${route.ref ?? ''}/${route.path ?? ''}` : toPath(route).split(/[?#]/)[0];
+  return <ScreenBoundary key={key} screen={toPath(route)}><Screen route={route} /></ScreenBoundary>;
 }
 
 function Screen({ route: r }: { route: Route }) {
@@ -453,6 +481,7 @@ function Screen({ route: r }: { route: Route }) {
     case 'commit': return <CommitPage sha={r.sha} />;
     case 'edit': return r.mode === 'edit' ? <EditFile path={r.path} gitRef={r.ref} /> : <DeleteFile path={r.path} gitRef={r.ref} />;
     case 'new-file': return <NewFile gitRef={r.ref} dir={r.dir} name={r.name} content={r.content} message={r.message} />;
+    case 'upload': return <UploadFiles gitRef={r.ref} dir={r.dir} />;
     case 'branches': return <BranchesPage page={r.page} />;
     case 'tags': return <TagsPage page={r.page} />;
     case 'releases': return <ReleasesPage page={r.page} />;
@@ -472,7 +501,20 @@ function Screen({ route: r }: { route: Route }) {
     case 'insights': return <InsightsTab page={r.page} />;
     case 'settings': return <SettingsTab page={r.page} />;
     case 'people': return <PeoplePage kind={r.kind} />;
+    case 'elsewhere': return <Elsewhere path={r.path} />;
   }
+}
+
+/** A GitHub address this example has no screen for. */
+function Elsewhere({ path }: { path: string }) {
+  const { source } = useRepo();
+  return (
+    <div role="alert" className="grid place-items-center rounded-md border border-border px-6 py-12 text-center">
+      <h1 className="mt-0 mb-1 text-title font-semibold">This example has no screen for that</h1>
+      <p className="mt-0 mb-4 font-mono text-caption break-all text-muted-foreground">/{path}</p>
+      {source.live ? <a href={`https://github.com/${source.full}/${path}`} target="_blank" rel="noreferrer" className={cn(ghButton(), 'no-underline')}>Open on GitHub<Oct name="external" size={12} /></a> : null}
+    </div>
+  );
 }
 
 /** Repo header + tabs; each tab shows its screen. */

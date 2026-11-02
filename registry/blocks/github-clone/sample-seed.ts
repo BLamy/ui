@@ -54,6 +54,9 @@ const FILES = {
   adapters: ['docs/adapters.md', ADAPTERS_MD], started: ['docs/getting-started.md', GETTING_STARTED_MD], retries: ['docs/retries.md', RETRIES_MD], express: ['examples/express/index.ts', EXPRESS_EXAMPLE_TS], next: ['examples/nextjs/route.ts', NEXT_EXAMPLE_TS],
   memory: ['src/adapters/memory.ts', MEMORY_TS], postgres: ['src/adapters/postgres.ts', POSTGRES_TS], types: ['src/adapters/types.ts', ADAPTER_TYPES_TS], create: ['src/create-queue.ts', CREATE_QUEUE_TS], index: ['src/index.ts', INDEX_TS], queue: ['src/queue.ts', QUEUE_TS], retry: ['src/retry.ts', RETRY_TS],
   queueTest: ['test/queue.test.ts', QUEUE_TEST_TS], retryTest: ['test/retry.test.ts', RETRY_TEST_TS],
+  bugTemplate: ['.github/ISSUE_TEMPLATE/bug_report.md', '---\nname: Bug report\nabout: Something isn’t working\ntitle: "Bug: "\nlabels: bug\n---\n\n**What happened?**\n\n**What did you expect?**\n\n**Orbit version:**\n'],
+  featureForm: ['.github/ISSUE_TEMPLATE/feature_request.yml', 'name: Feature request\ndescription: Suggest an idea\ntitle: "Feature: "\nlabels: [enhancement]\nbody:\n  - type: markdown\n    attributes:\n      value: Thanks for writing this up.\n  - type: textarea\n    id: problem\n    attributes:\n      label: What problem does this solve?\n      description: The job you’re trying to do.\n    validations:\n      required: true\n  - type: dropdown\n    id: adapter\n    attributes:\n      label: Which adapter?\n      options:\n        - Postgres\n        - SQLite\n  - type: checkboxes\n    id: checks\n    attributes:\n      label: Before you submit\n      options:\n        - label: I searched existing issues\n'],
+  pullTemplate: ['.github/PULL_REQUEST_TEMPLATE.md', '## What changed\n\n## How it was tested\n'],
 } as const;
 type FileKey = keyof typeof FILES;
 
@@ -91,6 +94,7 @@ const HISTORY: Step[] = [
   { at: days(16), by: 'samokafor', message: 'examples: bump express to v5', files: { express: true } },
   { at: days(14), by: 'jonasw', message: 'ci: run the test matrix on Postgres 16', files: { ci: true } },
   { at: days(13), by: 'priya-r', message: 'docs: docs preview on every push', files: { docsPreview: true } },
+  { at: days(12), by: 'avakim', message: 'chore: issue and pull request templates', files: { bugTemplate: true, featureForm: true, pullTemplate: true } },
   { at: days(9), by: 'jonasw', message: 'perf: claim jobs with SKIP LOCKED (#465)', files: { postgres: 30 } },
   { at: days(8), by: 'avakim', message: 'examples: next.js route handler', files: { next: true } },
   { at: days(7), by: 'jonasw', message: 'docs: transactional enqueue example', files: { started: true } },
@@ -428,6 +432,7 @@ The random source is injectable, so tests stay deterministic.`,
     ...Array.from({ length: 28 }, (_, i) => run(5100 + i, i % 5 === 4 ? 103 : 101, { title: FILLER[i % FILLER.length], n: 1278 - i, event: 'push', actor: ['jonasw', 'priya-r', 'orbit-bot'][i % 3], branch: 'main', sha: main, status: 'completed', conclusion: i % 9 === 8 ? 'failure' : 'success', at: days(10 + i), seconds: 90 + i * 2, failing: i % 9 === 8 ? 'lint' : undefined })),
   ];
   const ciChecks = (runId: number, at: string) => passing(['CI / test (node 20, postgres 16)', 'CI / test (node 22, postgres 16)', 'CI / lint'], at, runId);
+  orbitRepo.artifacts = [{ id: 9001, run: 5003, name: 'coverage-report', size: 182_044, expired: false }, { id: 9002, run: 5003, name: 'dist', size: 48_211, expired: true }];
   orbitRepo.checks[jitter.sha] = [...ciChecks(5003, hours(5.97)), ...passing(['CodeQL / analyze (javascript)'], hours(5.9))];
   orbitRepo.statuses[jitter.sha] = [{ context: 'docs/preview', state: 'success', description: 'Preview deployed', target_url: 'https://orbit.acme.dev/preview/488' }];
   orbitRepo.checks[attempts.sha] = [

@@ -11,6 +11,7 @@ import { CommitRow } from './commits';
 import { DiffFiles } from './diff';
 import { GhLink } from './links';
 import { MarkdownField } from './markdown';
+import { userPick } from './meta';
 import { Box, Oct, ghButton } from './parts';
 import { SelectMenu } from './pickers';
 import { ActionError, Failed, Pending, useAction, useCan, useDraft, useLoad, useNav, useRepo } from './repo-context';
@@ -96,7 +97,7 @@ export function ComparePage({ base: baseProp, head: headProp, create }: { base?:
 }
 
 function PullForm({ base, head, comparison, template }: { base: string; head: string; comparison: Comparison; template: string | null }) {
-  const { source, viewer, ui } = useRepo();
+  const { source, viewer, ui, notify } = useRepo();
   const nav = useNav();
   const first = comparison.commits[0];
   const one = comparison.commits.length === 1;
@@ -108,6 +109,14 @@ function PullForm({ base, head, comparison, template }: { base: string; head: st
   const body = bodyDraft.value;
   const setBody = bodyDraft.set;
   const [draft, setDraft] = useState(false);
+  const [reviewers, setReviewers] = useState<string[]>([]);
+  const [assignees, setAssignees] = useState<string[]>([]);
+  const [labels, setLabels] = useState<string[]>([]);
+  const [milestone, setMilestone] = useState<number | null>(null);
+  const can = useCan();
+  const people = useLoad(source.id + ':assignable', source.assignable).data ?? [];
+  const labelList = useLoad(source.id + ':labels', source.labels).data ?? [];
+  const milestones = useLoad(source.id + ':milestones:open', () => source.milestones('open')).data ?? [];
   const [maintainer, setMaintainer] = useState(true);
   const [touched, setTouched] = useState(false);
   const act = useAction();
@@ -119,6 +128,13 @@ function PullForm({ base, head, comparison, template }: { base: string; head: st
       const n = await source.createPull({ title: title.trim(), body, head, base, draft, maintainerCanModify: fromFork ? maintainer : undefined });
       titleDraft.clear();
       bodyDraft.clear();
+      // The pull request exists now. If the extras are refused, say so on its page rather than fail what already worked.
+      try {
+        if (labels.length || assignees.length || milestone != null) await source.updateIssue(n, { ...(labels.length ? { labels } : {}), ...(assignees.length ? { assignees } : {}), ...(milestone != null ? { milestone } : {}) });
+        if (reviewers.length) await source.requestReviewers(n, reviewers);
+      } catch (e) {
+        notify(`Opened, but couldn’t set everything: ${e instanceof Error ? e.message : String(e)}`);
+      }
       nav.go({ s: 'pull', n }, { replace: true });
     }, 'open the pull request');
   };
@@ -134,6 +150,14 @@ function PullForm({ base, head, comparison, template }: { base: string; head: st
           <span className="font-semibold">Add a description</span>
           <MarkdownField label="Description" value={body} onChange={setBody} onSubmit={submit} rows={8} placeholder="Describe your changes. Writing “Closes” and an issue’s number links it." disabled={act.busy} />
         </div>
+        {can.triage ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <SelectMenu title="Request reviewers" multiple trigger={<><Oct name="eye" />Reviewers{reviewers.length ? ` (${reviewers.length})` : ''}</>} items={people.filter((u) => u.login !== viewer?.login).map(userPick)} selected={reviewers} onApply={setReviewers} filterPlaceholder="Filter users" />
+            <SelectMenu title="Assign people" multiple trigger={<><Oct name="people" />Assignees{assignees.length ? ` (${assignees.length})` : ''}</>} items={people.map(userPick)} selected={assignees} onApply={setAssignees} filterPlaceholder="Filter users" />
+            <SelectMenu title="Apply labels" multiple trigger={<><Oct name="tag" />Labels{labels.length ? ` (${labels.length})` : ''}</>} items={labelList.map((l) => ({ id: l.name, label: l.name, description: l.description, leading: <span className="size-3.5 shrink-0 rounded-full" style={{ background: l.color }} /> }))} selected={labels} onApply={setLabels} filterPlaceholder="Filter labels" />
+            <SelectMenu title="Set milestone" trigger={<><Oct name="milestone" />{milestones.find((m) => m.number === milestone)?.title ?? 'Milestone'}</>} items={milestones.map((m) => ({ id: String(m.number), label: m.title }))} selected={milestone ? [String(milestone)] : []} clearLabel="No milestone" empty="No milestones" onApply={(ids) => setMilestone(ids[0] ? Number(ids[0]) : null)} />
+          </div>
+        ) : null}
         {fromFork ? <Checkbox isSelected={maintainer} onChange={setMaintainer} className="text-detail">Allow edits by maintainers</Checkbox> : null}
         <ActionError error={act.error} onDismiss={act.clear} />
         <div className="flex flex-wrap items-center justify-end gap-3">

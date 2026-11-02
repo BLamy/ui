@@ -15,8 +15,8 @@
    'notFound' (404, also what a private repository looks like to a token that can't see it), 'rateLimit', 'validation'
    (422, with GitHub's field errors) and 'other'. Screens explain them. */
 import type {
-  BlameRange, Check, CodeHit, CommentTarget, Commit, CommitDetail, Comparison, ContributorStat, DiffFile, FileNode, Issue, IssueDetail, IssueExtras, Label, LastCommit, Milestone, Notification, PullDetail, PullExtras, PullRequest, PullThreads,
-  ReactionContent, Reactions, RefInfo, Release, Repo, RepoSummary, Reviewer, ReviewThread, RunDetail, RunJob, TimelineItem, Traffic, User, Workflow, WorkflowInput, WorkflowRun,
+  BlameRange, Check, CodeHit, CommentTarget, Commit, CommitComment, CommitDetail, Comparison, ContributorStat, DiffFile, FileNode, Issue, IssueDetail, IssueExtras, Label, LastCommit, Milestone, Notification, PullDetail, PullExtras, PullRequest, PullThreads,
+  ReactionContent, Reactions, RefInfo, Release, Repo, RepoSummary, Reviewer, ReviewThread, RunArtifact, RunDetail, RunJob, TimelineItem, Traffic, User, Workflow, WorkflowInput, WorkflowRun,
 } from './data';
 import type { Counts, Paged, RepoSource, RunFilter, Subscription } from './source';
 
@@ -647,6 +647,38 @@ export function parseTemplate(text: string, fallback: string): { name: string; a
   return { name: meta.name ?? fallback, about: meta.about ?? meta.description ?? '', title: meta.title ?? '', body: m ? m[2] : text, labels };
 }
 
+/** A YAML issue form, as a Markdown skeleton. GitHub's API creates issues from text, so the form's fields become headings to fill in. */
+export function parseIssueForm(text: string, fallback: string): { name: string; about: string; title: string; body: string; labels: string[] } {
+  const top = (key: string) => unquote(new RegExp(`^${key}\\s*:\\s*(.*)$`, 'm').exec(text)?.[1] ?? '');
+  const labelLine = top('labels');
+  const labels = labelLine.replace(/^\[|\]$/g, '').split(',').map((x) => unquote(x)).filter(Boolean);
+  const sections: string[] = [];
+  let field: { type: string; label?: string; description?: string; value?: string; options: string[]; inOptions: boolean } | null = null;
+  const flush = () => {
+    if (!field || !field.label) { field = null; return; }
+    if (field.type === 'markdown') { field = null; return; }
+    const hint = field.description ? `<!-- ${field.description} -->\n` : '';
+    const answer = field.type === 'checkboxes' ? field.options.map((o) => `- [ ] ${o}`).join('\n') : field.type === 'dropdown' ? `<!-- One of: ${field.options.join(', ')} -->\n` : field.value ?? '';
+    sections.push(`### ${field.label}\n\n${hint}${answer}`.trimEnd());
+    field = null;
+  };
+  for (const line of text.split('\n')) {
+    const type = /^\s*-\s+type:\s*(\S+)/.exec(line);
+    if (type) { flush(); field = { type: unquote(type[1]), options: [], inOptions: false }; continue; }
+    if (!field) continue;
+    const kv = /^\s*(label|description|value)\s*:\s*(.*)$/.exec(line);
+    if (kv && !field.inOptions) { field[kv[1] as 'label' | 'description' | 'value'] = unquote(kv[2]); continue; }
+    if (/^\s*options\s*:/.test(line)) { field.inOptions = true; continue; }
+    if (field.inOptions) {
+      const option = /^\s*-\s+(?:label:\s*)?(.+)$/.exec(line);
+      if (option) field.options.push(unquote(option[1]));
+      else if (/^\s*\w+\s*:/.test(line) && !/^\s*required\s*:/.test(line)) field.inOptions = false;
+    }
+  }
+  flush();
+  return { name: top('name') || fallback, about: top('description'), title: top('title'), body: sections.join('\n\n') + (sections.length ? '\n' : ''), labels };
+}
+
 const SORTS: Record<string, [string, string]> = {
   'created-desc': ['created', 'desc'], 'created-asc': ['created', 'asc'], 'updated-desc': ['updated', 'desc'], 'updated-asc': ['updated', 'asc'], 'comments-desc': ['comments', 'desc'], 'comments-asc': ['comments', 'asc'],
   'reactions-+1-desc': ['reactions-+1', 'desc'], 'reactions-desc': ['reactions', 'desc'],
@@ -671,7 +703,7 @@ const THREAD_QUERY = `query ReviewThreads($owner: String!, $name: String!, $numb
     pullRequest(number: $number) {
       reviewThreads(first: 100) {
         nodes {
-          id isResolved isOutdated path line startLine diffSide resolvedBy { login } viewerCanResolve viewerCanUnresolve viewerCanReply
+          id isResolved isOutdated path line originalLine startLine diffSide resolvedBy { login } viewerCanResolve viewerCanUnresolve viewerCanReply
           comments(first: 100) {
             nodes { databaseId body createdAt authorAssociation url diffHunk viewerCanUpdate viewerCanDelete author { login avatarUrl } pullRequestReview { databaseId state } }
           }
@@ -779,8 +811,8 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
     };
   }
 
-  const reactionPath = (t: CommentTarget) => (t.kind === 'issue' ? `${r}/issues/${t.number}/reactions` : t.kind === 'issueComment' ? `${r}/issues/comments/${t.id}/reactions` : `${r}/pulls/comments/${t.id}/reactions`);
-  const commentPath = (t: CommentTarget) => (t.kind === 'issue' ? `${r}/issues/${t.number}` : t.kind === 'issueComment' ? `${r}/issues/comments/${t.id}` : `${r}/pulls/comments/${t.id}`);
+  const commentPath = (t: CommentTarget) => (t.kind === 'issue' ? `${r}/issues/${t.number}` : t.kind === 'issueComment' ? `${r}/issues/comments/${t.id}` : t.kind === 'commitComment' ? `${r}/comments/${t.id}` : `${r}/pulls/comments/${t.id}`);
+  const reactionPath = (t: CommentTarget) => `${commentPath(t)}/reactions`;
 
   const releaseOf = (x: { id: number; tag_name: string; name: string | null; body: string | null; draft: boolean; prerelease: boolean; author: GhUser; created_at: string; published_at: string | null; target_commitish: string; html_url: string; zipball_url?: string | null; tarball_url?: string | null; assets: { id: number; name: string; size: number; download_count: number; browser_download_url: string }[] }, latest: string | null): Release => ({
     id: x.id, tag: x.tag_name, name: x.name || x.tag_name, body: x.body ?? '', draft: x.draft, prerelease: x.prerelease, latest: x.tag_name === latest, author: userOf(x.author), when: ago(x.published_at ?? x.created_at, now()), at: x.published_at ?? x.created_at, target: x.target_commitish,
@@ -801,6 +833,16 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
     // 202: GitHub is computing the statistics and asks to come back; an empty answer means the same on a fresh repo.
     const res = await gh.get<T | Record<string, never>>(path);
     return Array.isArray(res) ? (res as T) : 'computing';
+  };
+
+  /** One commit of many paths on a branch: the Git Data API, since Contents is one file per commit. */
+  const writeTree = async (branch: string, message: string, entries: ({ path: string; sha: string | null } | { path: string; content: string })[]) => {
+    const ref = await gh.send<{ object: { sha: string } }>('GET', `${r}/git/ref/heads/${encPath(branch)}`);
+    const parent = await gh.send<{ tree: { sha: string } }>('GET', `${r}/git/commits/${ref.object.sha}`);
+    const tree = await gh.post<{ sha: string }>(`${r}/git/trees`, { base_tree: parent.tree.sha, tree: entries.map((e) => ({ path: e.path, mode: '100644', type: 'blob', ...('content' in e ? { content: e.content } : { sha: e.sha }) })) });
+    const commit = await gh.post<{ sha: string }>(`${r}/git/commits`, { message, tree: tree.sha, parents: [ref.object.sha] });
+    await gh.send('PATCH', `${r}/git/refs/heads/${encPath(branch)}`, { sha: commit.sha });
+    return commit.sha;
   };
 
   const recursiveTree = (ref: string) => gh.get<{ tree: { path: string; type: string; size?: number; mode?: string; sha?: string }[]; truncated: boolean }>(`${r}/git/trees/${encodeURIComponent(ref || 'HEAD')}?recursive=1`).catch((e: unknown) => {
@@ -999,7 +1041,10 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
       codeTouched();
     },
     async putFile({ path, content, message, branch, sha }) {
-      const res = await gh.send<{ commit: { sha: string } }>('PUT', `${r}/contents/${encPath(path)}`, { message, content: b64(content), branch, ...(sha ? { sha } : {}) });
+      const res = await gh.send<{ commit: { sha: string } }>('PUT', `${r}/contents/${encPath(path)}`, { message, content: b64(content), branch, ...(sha ? { sha } : {}) }).catch((e: unknown) => {
+        if (!sha && e instanceof GitHubError && e.kind === 'validation' && /\bsha\b/i.test(e.message)) throw new GitHubError(e.status, `A file already exists at ${path}.`, 'validation');
+        throw e;
+      });
       codeTouched();
       return res.commit.sha;
     },
@@ -1007,6 +1052,21 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
       const res = await gh.send<{ commit: { sha: string } }>('DELETE', `${r}/contents/${encPath(path)}`, { message, branch, sha });
       codeTouched();
       return res.commit.sha;
+    },
+
+    async moveFile({ from, to, content, message, branch, sha }) {
+      // The Git Data API doesn't check versions the way Contents does, so check first: same conflict, same protection.
+      const current = await gh.send<{ sha: string }>('GET', `${r}/contents/${encPath(from)}${refQuery(branch)}`);
+      if (sha && current.sha !== sha) throw new GitHubError(409, `${from} does not match ${sha}`, 'validation');
+      const out = await writeTree(branch, message, [{ path: from, sha: null }, { path: to, content }]);
+      codeTouched();
+      return out;
+    },
+    async commitFiles({ files, message, branch }) {
+      const blobs = await Promise.all(files.map(async (f) => ({ path: f.path, sha: (await gh.post<{ sha: string }>(`${r}/git/blobs`, { content: f.base64, encoding: 'base64' })).sha })));
+      const out = await writeTree(branch, message, blobs);
+      codeTouched();
+      return out;
     },
 
     async commits({ ref, path, author, since, until, page }) {
@@ -1029,6 +1089,14 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
     async compare(base, head) {
       const res = await gh.get<{ status: Comparison['status']; ahead_by: number; behind_by: number; commits: GhCommit[]; files?: GhFile[]; html_url: string }>(`${r}/compare/${encodeURIComponent(base)}...${encodeURIComponent(head)}`);
       return { status: res.status, ahead: res.ahead_by, behind: res.behind_by, commits: res.commits.map((c) => commitOf(c, now())), files: (res.files ?? []).map(diffFileOf), url: res.html_url };
+    },
+
+    commitComments: async (sha) => (await gh.getAll<{ id: number; body: string; user: GhUser | null; created_at: string; html_url: string; path?: string | null; line?: number | null; author_association?: string }>(`${r}/commits/${encodeURIComponent(sha)}/comments?per_page=100`, 3)).map((c): CommitComment => ({
+      id: c.id, author: userOf(c.user), body: c.body, when: ago(c.created_at, now()), at: c.created_at, url: c.html_url, path: c.path, line: c.line, role: ROLE[c.author_association ?? ''],
+    })),
+    async addCommitComment(sha, body) {
+      await gh.post(`${r}/commits/${encodeURIComponent(sha)}/comments`, { body });
+      gh.invalidate(`${r}/commits`);
     },
 
     async searchIssues(q, page) {
@@ -1066,13 +1134,13 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
       };
     },
     async issueExtras(n): Promise<IssueExtras | null> {
-      const data = await gh.query<{ repository: { issue: { id: string; isPinned: boolean; viewerSubscription: string; viewerCanDelete: boolean } } }>(
-        `query IssueExtras($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { issue(number: $number) { id isPinned viewerSubscription viewerCanDelete } } }`, { owner, name, number: n }).catch((e: unknown) => {
-        if (e instanceof GitHubError && (e.kind === 'auth' || e.kind === 'rateLimit')) throw e;
-        return null;
-      });
+      const data = await gh.query<{ repository: { issue: { id: string; isPinned: boolean; viewerSubscription: string; viewerCanDelete: boolean; closedByPullRequestsReferences: { nodes: { number: number; title: string; state: string }[] } | null } } }>(
+        `query IssueExtras($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { issue(number: $number) { id isPinned viewerSubscription viewerCanDelete closedByPullRequestsReferences(first: 10, includeClosedPrs: true) { nodes { number title state } } } } }`, { owner, name, number: n });
       const x = data?.repository.issue;
-      return x ? { id: x.id, pinned: x.isPinned, subscribed: x.viewerSubscription === 'SUBSCRIBED', canDelete: x.viewerCanDelete } : null;
+      return x ? {
+        id: x.id, pinned: x.isPinned, subscribed: x.viewerSubscription === 'SUBSCRIBED', canDelete: x.viewerCanDelete,
+        closedBy: (x.closedByPullRequestsReferences?.nodes ?? []).map((p) => ({ number: p.number, title: p.title, state: p.state === 'MERGED' ? 'merged' as const : p.state === 'OPEN' ? 'open' as const : 'closed' as const })),
+      } : null;
     },
     async createIssue(d) {
       const row = await gh.post<GhIssue>(`${r}/issues`, { title: d.title, body: d.body, labels: d.labels, assignees: d.assignees, ...(d.milestone != null ? { milestone: d.milestone } : {}) });
@@ -1125,10 +1193,11 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
     async editComment(t, body) {
       await gh.send('PATCH', commentPath(t), { body });
       if (t.kind === 'issue') touched(t.number);
-      else gh.invalidate(`${r}/issues`, `${r}/pulls`, 'query');
+      else gh.invalidate(`${r}/issues`, `${r}/pulls`, `${r}/comments`, `${r}/commits`, 'query');
     },
     async deleteComment(t, n) {
       await gh.send('DELETE', commentPath(t));
+      gh.invalidate(`${r}/commits`);
       touched(n);
     },
     async myReactions(t) {
@@ -1176,8 +1245,12 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
         if (e instanceof GitHubError && (e.kind === 'notFound' || e.status === 409)) return [];
         throw e;
       });
-      const md = (Array.isArray(list) ? list : []).filter((f) => f.type === 'file' && /\.md$/i.test(f.name));
-      return Promise.all(md.map(async (f) => parseTemplate(await gh.get<string>(`${r}/contents/${encPath(f.path)}`, 'raw'), f.name.replace(/\.md$/i, ''))));
+      const files = (Array.isArray(list) ? list : []).filter((f) => f.type === 'file' && /\.(md|ya?ml)$/i.test(f.name) && !/^config\.ya?ml$/i.test(f.name));
+      return Promise.all(files.map(async (f) => {
+        const text = await gh.get<string>(`${r}/contents/${encPath(f.path)}`, 'raw');
+        const name = f.name.replace(/\.\w+$/, '');
+        return /\.md$/i.test(f.name) ? parseTemplate(text, name) : parseIssueForm(text, name);
+      }));
     },
     pullTemplate: async () => {
       for (const p of ['.github/PULL_REQUEST_TEMPLATE.md', '.github/pull_request_template.md', 'PULL_REQUEST_TEMPLATE.md', 'docs/PULL_REQUEST_TEMPLATE.md']) {
@@ -1217,10 +1290,7 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
     },
     async pullExtras(n): Promise<PullExtras | null> {
       const data = await gh.query<{ repository: { pullRequest: { reviewDecision: PullExtras['decision']; viewerSubscription: string; closingIssuesReferences: { nodes: { number: number; title: string; state: string }[] }; files: { nodes: { path: string; viewerViewedState: string }[] } | null } } }>(
-        `query PullExtras($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { pullRequest(number: $number) { reviewDecision viewerSubscription closingIssuesReferences(first: 20) { nodes { number title state } } files(first: 100) { nodes { path viewerViewedState } } } } }`, { owner, name, number: n }).catch((e: unknown) => {
-        if (e instanceof GitHubError && (e.kind === 'auth' || e.kind === 'rateLimit')) throw e;
-        return null;
-      });
+        `query PullExtras($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { pullRequest(number: $number) { reviewDecision viewerSubscription closingIssuesReferences(first: 20) { nodes { number title state } } files(first: 100) { nodes { path viewerViewedState } } } } }`, { owner, name, number: n });
       const x = data?.repository.pullRequest;
       if (!x) return null;
       return {
@@ -1243,7 +1313,7 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
       const pr = data.repository.pullRequest;
       return {
         threads: pr.reviewThreads.nodes.map((t): ReviewThread => ({
-          id: t.id, path: t.path, line: t.line, startLine: t.startLine, side: t.diffSide === 'LEFT' ? 'LEFT' : 'RIGHT', resolved: t.isResolved, resolvedBy: t.resolvedBy?.login, outdated: t.isOutdated, canResolve: t.viewerCanResolve, canUnresolve: t.viewerCanUnresolve, canReply: t.viewerCanReply,
+          id: t.id, path: t.path, line: t.line, originalLine: t.originalLine ?? t.line, startLine: t.startLine, side: t.diffSide === 'LEFT' ? 'LEFT' : 'RIGHT', resolved: t.isResolved, resolvedBy: t.resolvedBy?.login, outdated: t.isOutdated, canResolve: t.viewerCanResolve, canUnresolve: t.viewerCanUnresolve, canReply: t.viewerCanReply,
           hunk: t.comments.nodes[0]?.diffHunk ?? '',
           comments: t.comments.nodes.map((c) => ({
             id: c.databaseId, author: gqlUser(c.author), body: c.body, when: ago(c.createdAt, now()), at: c.createdAt, role: ROLE[c.authorAssociation ?? ''], url: c.url, reviewId: c.pullRequestReview?.databaseId, pending: c.pullRequestReview?.state === 'PENDING', canEdit: c.viewerCanUpdate, canDelete: c.viewerCanDelete,
@@ -1400,7 +1470,13 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
       await gh.send('DELETE', `${r}/actions/runs/${id}`);
       gh.invalidate(`${r}/actions`);
     },
+    async rerunJob(id) {
+      await gh.post(`${r}/actions/jobs/${id}/rerun`);
+      gh.invalidate(`${r}/actions`, `${r}/commits`, `${r}/pulls`);
+      gh.settleLater(`${r}/actions`, `${r}/commits`);
+    },
     jobLog: (id) => gh.get<string>(`${r}/actions/jobs/${id}/logs`, 'raw'),
+    artifacts: async (run) => (await optional(gh.get<{ artifacts: { id: number; name: string; size_in_bytes: number; expired: boolean }[] }>(`${r}/actions/runs/${run}/artifacts?per_page=100`), { artifacts: [] })).artifacts.map((a): RunArtifact => ({ id: a.id, name: a.name, size: a.size_in_bytes, expired: a.expired })),
 
     async releases(page) {
       const [res, latest] = await Promise.all([gh.getPage<Parameters<typeof releaseOf>[0]>(`${r}/releases?per_page=10`, page), latestTag()]);
@@ -1469,7 +1545,7 @@ export function githubRepo(gh: GitHub, full: string, { live = true }: { live?: b
 interface GhCheckRun { id?: number; name: string; status: string; conclusion: string | null; started_at: string | null; completed_at: string | null; html_url?: string | null; details_url?: string | null; output?: { title?: string | null; summary?: string | null }; app?: { name?: string; slug?: string } | null }
 interface GhStatus { context: string; state: string; description: string | null; target_url?: string | null }
 interface GqlThread {
-  id: string; isResolved: boolean; isOutdated: boolean; path: string; line: number | null; startLine: number | null; diffSide: string; resolvedBy: { login: string } | null; viewerCanResolve: boolean; viewerCanUnresolve: boolean; viewerCanReply: boolean;
+  id: string; isResolved: boolean; isOutdated: boolean; path: string; line: number | null; originalLine: number | null; startLine: number | null; diffSide: string; resolvedBy: { login: string } | null; viewerCanResolve: boolean; viewerCanUnresolve: boolean; viewerCanReply: boolean;
   comments: { nodes: { databaseId: number; body: string; createdAt: string; authorAssociation?: string; url: string; diffHunk: string; viewerCanUpdate: boolean; viewerCanDelete: boolean; author: { login: string; avatarUrl?: string; avatar_url?: string } | null; pullRequestReview?: { databaseId: number; state: string } | null }[] };
 }
 

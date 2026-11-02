@@ -3,7 +3,7 @@
    repository. <MarkdownField> is GitHub's comment box: Write / Preview, the formatting toolbar, ⌘↵ to submit. Plain Enter
    always means a new line, so a half-written comment can't be posted by accident. GitHub has no API for uploading
    attachments, so there's no paperclip here: paste a link instead. */
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { TextArea, TextField } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
 import { MarkdownView } from '@/components/ui/markdown-view';
@@ -62,17 +62,48 @@ export function resolveRelative(md: string, full: string, ref: string, dir: stri
 /** A link to `javascript:` and friends keeps its words and loses its target: GitHub strips them too. */
 export const withoutScriptLinks = (md: string) => md.replace(/\[([^\]]*)\]\(\s*(?:javascript|vbscript|data):[^)]*\)/gi, '$1');
 
+/** Every task in Markdown as a renderer sees it: outside fences and indented code, including in quotes and nested lists. */
+export function taskPositions(md: string): { start: number; checked: boolean }[] {
+  const out: { start: number; checked: boolean }[] = [];
+  let at = 0;
+  let fence: string | null = null;
+  let inList = false;
+  for (const line of md.split('\n')) {
+    const bare = line.replace(/^(?:\s*>)+\s?/, '');
+    const f = /^\s{0,3}(```+|~~~+)/.exec(bare);
+    if (fence) {
+      if (f && f[1].startsWith(fence)) fence = null;
+    } else if (f) {
+      fence = f[1];
+      // A fence at the left margin ends any list above it.
+      if (!/^\s/.test(bare)) inList = false;
+    } else {
+      const m = /^(\s*(?:>\s*)*\s*(?:[-*+]|\d+[.)])\s+\[)([ xX])\]/.exec(line);
+      const indented = /^(?: {4}|\t)/.test(line);
+      // Four spaces is code unless it continues a list.
+      if (m && (!indented || inList)) out.push({ start: at + m[1].length, checked: m[2] !== ' ' });
+      if (/^\s*(?:>\s*)*\s*(?:[-*+]|\d+[.)])\s/.test(line)) inList = !indented || inList;
+      else if (line.trim() && !indented) inList = false;
+    }
+    at += line.length + 1;
+  }
+  return out;
+}
+
 /** Flips the `index`th task in Markdown; null when there's no such task. */
 export function toggleTask(md: string, index: number): string | null {
-  let at = -1;
-  let hit = false;
-  const next = outsideCode(md, (text) => text.replace(/^(\s*(?:[-*+]|\d+[.)])\s+\[)([ xX])(\])/gm, (m, a: string, mark: string, b: string) => {
-    at++;
-    if (at !== index) return m;
-    hit = true;
-    return a + (mark === ' ' ? 'x' : ' ') + b;
-  }));
-  return hit ? next : null;
+  const task = taskPositions(md)[index];
+  if (!task) return null;
+  return md.slice(0, task.start) + (task.checked ? ' ' : 'x') + md.slice(task.start + 1);
+}
+
+/** Whether the caret is inside code, where @ and # are just characters. */
+export function inCode(textBefore: string): boolean {
+  const fences = textBefore.split('\n').filter((l) => /^\s{0,3}(```|~~~)/.test(l)).length;
+  if (fences % 2) return true;
+  const line = textBefore.slice(textBefore.lastIndexOf('\n') + 1);
+  if (/^(?: {4}|\t)/.test(line)) return true;
+  return (line.match(/`/g)?.length ?? 0) % 2 === 1;
 }
 
 /** Markdown as GitHub shows it. `dir` set: a file in the repository, whose relative links resolve from that folder. */
@@ -84,7 +115,11 @@ export function Md({ markdown, className, dir, gitRef, onTaskToggle }: { markdow
   const root = useRef<HTMLDivElement>(null);
   // Task boxes are real checkboxes in the rendered Markdown: they work when you can edit it, and say they don't otherwise.
   useEffect(() => {
-    for (const box of root.current?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]') ?? []) box.disabled = !onTaskToggle;
+    const boxes = [...(root.current?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]') ?? [])];
+    // Toggling writes to the source: if the boxes on screen aren't exactly the tasks we can find there, don't guess which is which.
+    const tasks = taskPositions(markdown);
+    const mapped = boxes.length === tasks.length && boxes.every((b, i) => b.checked === tasks[i].checked);
+    for (const box of boxes) box.disabled = !onTaskToggle || !mapped;
     // Keyboard users scroll wide tables and code with the arrow keys.
     for (const el of root.current?.querySelectorAll<HTMLElement>('pre,table') ?? []) el.tabIndex = 0;
   });
@@ -93,7 +128,7 @@ export function Md({ markdown, className, dir, gitRef, onTaskToggle }: { markdow
     if (box) {
       e.preventDefault();
       e.stopPropagation();
-      if (!onTaskToggle) return;
+      if (!onTaskToggle || (box as HTMLInputElement).disabled) return;
       const index = [...(root.current?.querySelectorAll('input[type="checkbox"]') ?? [])].indexOf(box);
       const next = toggleTask(markdown, index);
       if (next != null) onTaskToggle(next);
@@ -147,11 +182,14 @@ export function MarkdownField({ value, onChange, onSubmit, label, placeholder = 
   const { source } = useRepo();
   const [tab, setTab] = useState<'write' | 'preview'>('write');
   const area = useRef<HTMLTextAreaElement>(null);
+  const listId = useId();
   /* @people and #issues while typing: the word at the caret, and what it could be. */
   const [caret, setCaret] = useState(0);
   const [dismissed, setDismissed] = useState(false);
-  const [at, setAt] = useState(0);
-  const word = /(?:^|[\s(])([@#])([\w-]*)$/.exec(value.slice(0, caret));
+  /** -1 until you arrow into the list: Enter is a new line until you've chosen something. */
+  const [at, setAt] = useState(-1);
+  const before = value.slice(0, caret);
+  const word = inCode(before) ? null : /(?:^|[\s(])([@#])([\w-]*)$/.exec(before);
   const asking = !dismissed && tab === 'write' && word ? word[1] : null;
   const typed = word?.[2] ?? '';
   const people = useLoad(`${source.id}:assignable:${asking === '@'}`, () => (asking === '@' ? source.assignable() : [])).data ?? [];
@@ -166,6 +204,7 @@ export function MarkdownField({ value, onChange, onSubmit, label, placeholder = 
     onChange(next);
     const to = start + s.insert.length + 1;
     setCaret(to);
+    setAt(-1);
     requestAnimationFrame(() => { area.current?.focus(); area.current?.setSelectionRange(to, to); });
   };
   const apply = (t: (typeof TOOLS)[number]) => {
@@ -216,15 +255,17 @@ export function MarkdownField({ value, onChange, onSubmit, label, placeholder = 
           <>
           <TextField aria-label={label} value={value} onChange={onChange} isDisabled={disabled} className="flex">
             <TextArea ref={area} rows={rows} placeholder={placeholder} autoFocus={autoFocus}
-              onSelect={(e) => { setCaret(e.currentTarget.selectionStart); setDismissed(false); }}
+              aria-autocomplete="list" aria-controls={suggestions.length ? listId : undefined} aria-activedescendant={suggestions.length && at >= 0 ? `${listId}-${Math.min(at, suggestions.length - 1)}` : undefined}
+              onSelect={(e) => { const c = e.currentTarget.selectionStart; if (c !== caret) { setCaret(c); setDismissed(false); setAt(-1); } }}
               onKeyDown={(e) => {
-                if (suggestions.length) {
+                const mod = e.metaKey || e.ctrlKey;
+                if (suggestions.length && !mod) {
                   if (e.key === 'ArrowDown') { e.preventDefault(); setAt((x) => (x + 1) % suggestions.length); return; }
-                  if (e.key === 'ArrowUp') { e.preventDefault(); setAt((x) => (x - 1 + suggestions.length) % suggestions.length); return; }
-                  if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); accept(suggestions[Math.min(at, suggestions.length - 1)]); return; }
+                  if (e.key === 'ArrowUp') { e.preventDefault(); setAt((x) => (x <= 0 ? suggestions.length : x) - 1); return; }
+                  if (e.key === 'Tab') { e.preventDefault(); accept(suggestions[Math.max(at, 0)]); return; }
+                  if (e.key === 'Enter' && at >= 0) { e.preventDefault(); accept(suggestions[Math.min(at, suggestions.length - 1)]); return; }
                   if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setDismissed(true); return; }
                 }
-                const mod = e.metaKey || e.ctrlKey;
                 if (mod && e.key === 'Enter') { e.preventDefault(); onSubmit?.(); return; }
                 const tool = mod ? TOOLS.find((t) => t.key === e.key) : undefined;
                 if (tool) { e.preventDefault(); apply(tool); }
@@ -232,15 +273,17 @@ export function MarkdownField({ value, onChange, onSubmit, label, placeholder = 
               className="box-border block w-full min-w-0 resize-y rounded-md border border-border bg-muted px-2 py-1.5 font-sans text-detail leading-5 text-foreground outline-none select-text placeholder:text-muted-foreground data-focused:border-primary data-focused:bg-background data-focused:ring-1 data-focused:ring-primary" />
           </TextField>
           {suggestions.length ? (
-            <ul aria-label={asking === '@' ? 'People to mention' : 'Issues and pull requests to reference'} className="mx-0 mt-1 mb-0 list-none overflow-hidden rounded-md border border-border bg-popover p-0">
-              {suggestions.map((s, i) => (
-                <li key={s.insert}>
-                  <button type="button" onMouseDown={(e) => { e.preventDefault(); accept(s); }} className={cn('flex min-h-8 w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-2 py-1 text-left text-caption text-foreground outline-none hover:bg-accent group-data-[phone=true]/gh:min-h-11', i === Math.min(at, suggestions.length - 1) && 'bg-accent')}>
+            <>
+              <span role="status" className="sr-only">{suggestions.length} suggestions. Arrow keys to choose, Enter or Tab to insert.</span>
+              <ul id={listId} role="listbox" aria-label={asking === '@' ? 'People to mention' : 'Issues and pull requests to reference'} className="mx-0 mt-1 mb-0 list-none overflow-hidden rounded-md border border-border bg-popover p-0">
+                {suggestions.map((s, i) => (
+                  <li key={s.insert} id={`${listId}-${i}`} role="option" aria-selected={i === at} onMouseDown={(e) => { e.preventDefault(); accept(s); }}
+                    className={cn('flex min-h-8 w-full cursor-pointer items-center gap-2 px-2 py-1 text-left text-caption text-foreground hover:bg-accent group-data-[phone=true]/gh:min-h-11', i === at && 'bg-accent')}>
                     <b className="shrink-0 font-semibold">{s.text}</b><span className="min-w-0 truncate text-muted-foreground">{s.detail}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : null}
           </>
         ) : (

@@ -169,7 +169,7 @@ export function BranchesPage({ page = 1 }: { page?: number }) {
                       <div role="alertdialog" aria-label={`Delete ${b.name}?`} className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-(--gh-closed)/50 p-2">
                         <span className="min-w-0 flex-1">Delete <b className="font-mono font-semibold">{b.name}</b>?{b.pull?.state === 'open' ? ' Its open pull request will close.' : ''}</span>
                         <Button className={ghButton()} onPress={() => setDeleting(null)}>Cancel</Button>
-                        <Button className={cn(ghButton(), 'text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteBranch(b.name); setDeleting(null); notify(`Branch ${b.name} deleted`); })}>Delete</Button>
+                        <Button className={cn(ghButton(), 'border-(--gh-closed) text-foreground')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteBranch(b.name); setDeleting(null); notify(`Branch ${b.name} deleted`); })}>Delete</Button>
                       </div>
                     ) : null}
                   </div>
@@ -190,6 +190,10 @@ export function TagsPage({ page = 1 }: { page?: number }) {
   const nav = useNav();
   const can = useCan();
   const tags = useLoad(`${source.id}:tags:${page}`, () => source.tags(page));
+  const names = useLoad(source.id + ':refnames', source.refNames).data?.branches ?? [];
+  const [creating, setCreating] = useState(false);
+  const [tagName, setTagName] = useState('');
+  const [tagFrom, setTagFrom] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
   const act = useAction();
   const archive = (tag: string, ext: string) => `https://github.com/${source.full}/archive/refs/tags/${encodeURIComponent(tag)}.${ext}`;
@@ -198,8 +202,25 @@ export function TagsPage({ page = 1 }: { page?: number }) {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <h1 className="m-0 flex-1 text-title font-semibold">Tags</h1>
         <GhLink to={{ s: 'releases' }} className={cn(ghButton(), 'no-underline')}>Releases</GhLink>
+        {can.push ? <Button className={ghButton()} onPress={() => setCreating(!creating)}>New tag</Button> : null}
         {can.push ? <Button className={ghButton(true)} onPress={() => nav.go({ s: 'new-release' })}>Draft a new release</Button> : null}
       </div>
+      {creating ? (
+        <form className="mb-4 grid gap-2 rounded-md border border-border p-3 sm:grid-cols-[1fr_1fr_auto]" onSubmit={(e) => { e.preventDefault(); if (tagName.trim()) void act.run(async () => { const commit = await source.commit(tagFrom || repo.branch); await source.createTag(tagName.trim(), commit.fullSha); notify(`Tag ${tagName.trim()} created`); setCreating(false); setTagName(''); }, 'create the tag'); }}>
+          <label className="grid gap-1 font-semibold">Tag name
+            <TextInput autoFocus value={tagName} onChange={(e) => setTagName(e.target.value)} placeholder="v1.0.0" className="h-8 rounded-md border border-border bg-background font-mono text-caption font-normal group-data-[phone=true]/gh:h-11" />
+          </label>
+          <label className="grid gap-1 font-semibold">From
+            <select value={tagFrom || repo.branch} onChange={(e) => setTagFrom(e.target.value)} className="box-border h-8 rounded-md border border-border bg-background px-1 font-mono text-caption font-normal text-foreground group-data-[phone=true]/gh:h-11">
+              {names.map((b) => <option key={b}>{b}</option>)}
+            </select>
+          </label>
+          <div className="flex items-end gap-2">
+            <Button className={ghButton()} onPress={() => setCreating(false)}>Cancel</Button>
+            <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !tagName.trim()}>Create</Button>
+          </div>
+        </form>
+      ) : null}
       <ActionError error={act.error} onDismiss={act.clear} className="mb-2" />
       <Loaded load={tags}>
         {(data) => (
@@ -217,7 +238,7 @@ export function TagsPage({ page = 1 }: { page?: number }) {
                     deleting === t.name ? (
                       <span className="flex items-center gap-2">
                         <Button className={cn(ghButton(), 'h-7 px-2 text-caption')} onPress={() => setDeleting(null)}>Cancel</Button>
-                        <Button className={cn(ghButton(), 'h-7 px-2 text-caption text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteTag(t.name); setDeleting(null); notify(`Tag ${t.name} deleted`); })}>Delete</Button>
+                        <Button className={cn(ghButton(), 'h-7 px-2 text-caption border-(--gh-closed) text-foreground')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteTag(t.name); setDeleting(null); notify(`Tag ${t.name} deleted`); })}>Delete</Button>
                       </span>
                     ) : <Button aria-label={`Delete tag ${t.name}`} className={cn(ghButton(), 'h-7 w-7 px-0')} onPress={() => setDeleting(t.name)}><Oct name="trash" size={14} /></Button>
                   ) : null}

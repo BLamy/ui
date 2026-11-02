@@ -9,7 +9,7 @@ import { BranchLink, GhLink, UserLink } from './links';
 import { MarkdownField, Md } from './markdown';
 import { LabelChip, Oct, ghButton, type OctName } from './parts';
 import { Menu } from './pickers';
-import { ActionError, Loaded, useAction, useCan, useCopy, useDraft, useLoad, useRepo } from './repo-context';
+import { ActionError, CancelButton, Loaded, useAction, useCan, useCopy, useDraft, useLoad, useRepo } from './repo-context';
 
 /* ── Reactions ── */
 const ALL_REACTIONS: ReactionContent[] = ['+1', '-1', 'laugh', 'hooray', 'confused', 'heart', 'rocket', 'eyes'];
@@ -22,7 +22,7 @@ export function ReactionBar({ target, reactions, className }: { target: CommentT
   const any = Object.keys(reactions).length > 0;
   const mine = useLoad<Partial<Record<ReactionContent, number>>>(`${source.id}:reactions:${key}:${any}:${viewer?.login ?? ''}`, () => (any && viewer ? source.myReactions(target) : {})).data ?? {};
   const act = useAction();
-  const toggle = (c: ReactionContent) => act.run(async () => { if (mine[c]) await source.unreact(target, mine[c]!); else await source.react(target, c); });
+  const toggle = (c: ReactionContent) => act.run(async () => { if (mine[c]) await source.unreact(target, mine[c]!); else await source.react(target, c); }, 'change your reaction');
   const chip = 'inline-flex h-6 cursor-pointer items-center gap-1 rounded-full border px-2 text-caption outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-disabled:cursor-default group-data-[phone=true]/gh:h-11 group-data-[phone=true]/gh:min-w-11';
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
@@ -71,15 +71,19 @@ export interface CommentProps {
 export function CommentCard({ author, when, at, body, role, url, verb = 'commented', tone, edited, target, number, reactions, onQuote, onSaveBody, canEdit, canDelete, compact, children }: CommentProps) {
   const { source, ui } = useRepo();
   const copy = useCopy();
-  const [editing, setEditing] = useState<string | null>(null);
+  const editKey = target?.kind === 'issue' ? `issue${target.number}` : target ? `${target.kind}${target.id}` : `${number}`;
+  const editDraft = useDraft(`${source.id}:edit-comment:${editKey}`, body === '*No description provided.*' ? '' : body);
+  const [editOpen, setEditOpen] = useState(editDraft.dirty);
+  const editing = editOpen ? editDraft.value : null;
   const [confirming, setConfirming] = useState(false);
   const act = useAction();
   const save = () => act.run(async () => {
     if (onSaveBody) await onSaveBody(editing!);
     else if (target) await source.editComment(target, editing!);
-    setEditing(null);
-  });
-  const remove = () => act.run(async () => { if (target) await source.deleteComment(target, number); setConfirming(false); });
+    editDraft.clear();
+    setEditOpen(false);
+  }, 'save your edit');
+  const remove = () => act.run(async () => { if (target) await source.deleteComment(target, number); setConfirming(false); }, 'delete the comment');
   return (
     <div className={cn('relative flex gap-4', compact ? '' : 'py-4')} id={target?.kind === 'issueComment' ? `issuecomment-${target.id}` : undefined}>
       {!ui.phone && !compact ? <UserLink user={author} className="shrink-0"><Avatar c={author} src={author.avatar} size={40} /></UserLink> : null}
@@ -96,16 +100,16 @@ export function CommentCard({ author, when, at, body, role, url, verb = 'comment
               onQuote ? { id: 'quote', label: 'Quote reply', onAction: () => onQuote(body.split('\n').map((l) => `> ${l}`).join('\n') + '\n\n') } : null,
               url ? { id: 'github', label: 'Open on GitHub', href: url, onAction: () => {} } : null,
               canEdit ? { separator: true, id: 'sep' } : null,
-              canEdit ? { id: 'edit', label: 'Edit', onAction: () => setEditing(body === '*No description provided.*' ? '' : body) } : null,
+              canEdit ? { id: 'edit', label: 'Edit', onAction: () => setEditOpen(true) } : null,
               canDelete ? { id: 'delete', label: 'Delete', danger: true, onAction: () => setConfirming(true) } : null,
             ]} />
         </div>
         {editing != null ? (
           <div className="p-3">
-            <MarkdownField label="Edit comment" value={editing} onChange={setEditing} onSubmit={() => void save()} autoFocus />
+            <MarkdownField label="Edit comment" value={editing} onChange={editDraft.set} onSubmit={() => void save()} autoFocus />
             <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
             <div className="mt-2 flex justify-end gap-2">
-              <Button className={ghButton()} isDisabled={act.busy} onPress={() => { setEditing(null); act.clear(); }}>Cancel</Button>
+              <CancelButton dirty={editDraft.dirty} isDisabled={act.busy} onCancel={() => { editDraft.clear(); setEditOpen(false); act.clear(); }} />
               <Button className={ghButton(true)} isDisabled={act.busy} onPress={() => void save()}>{act.busy ? 'Saving…' : 'Update comment'}</Button>
             </div>
           </div>
@@ -125,7 +129,7 @@ export function CommentCard({ author, when, at, body, role, url, verb = 'comment
             <span className="min-w-0 flex-1 font-semibold">Delete this comment?</span>
             <ActionError error={act.error} onDismiss={act.clear} />
             <Button className={ghButton()} isDisabled={act.busy} onPress={() => setConfirming(false)}>Cancel</Button>
-            <Button className={cn(ghButton(), 'text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void remove()}>{act.busy ? 'Deleting…' : 'Delete'}</Button>
+            <Button className={cn(ghButton(), 'border-(--gh-closed) text-foreground')} isDisabled={act.busy} onPress={() => void remove()}>{act.busy ? 'Deleting…' : 'Delete'}</Button>
           </div>
         ) : null}
       </div>

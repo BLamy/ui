@@ -8,12 +8,13 @@ import { DiffFiles } from './diff';
 import { GitHubError } from './github-api';
 import { GhLink, UserLink } from './links';
 import { Pagination } from './lists';
-import { Md } from './markdown';
+import { MarkdownField, Md } from './markdown';
 import { Box, DiffStat, Oct, ghButton } from './parts';
 import { SelectMenu } from './pickers';
 import { CheckRow } from './pull-request';
 import { RefPicker } from './refs';
-import { Failed, Loaded, useCopy, useLoad, useNav, useRepo } from './repo-context';
+import { ActionError, Failed, Loaded, useAction, useCan, useCopy, useDraft, useLoad, useNav, useRepo } from './repo-context';
+import { CommentCard } from './thread';
 
 const dayOf = (c: Commit) => (c.at ? new Date(c.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '');
 
@@ -77,6 +78,33 @@ export function CommitsPage({ gitRef = '', path, author, page = 1 }: { gitRef?: 
   );
 }
 
+function CommitComments({ sha }: { sha: string }) {
+  const { source, viewer } = useRepo();
+  const can = useCan();
+  const comments = useLoad(`${source.id}:commit-comments:${sha}`, () => source.commitComments(sha));
+  const draft = useDraft(`${source.id}:commit-comment:${sha}`);
+  const act = useAction();
+  const send = () => { if (draft.value.trim()) void act.run(async () => { await source.addCommitComment(sha, draft.value.trim()); draft.clear(); }, 'post your comment'); };
+  return (
+    <section aria-label="Comments on this commit" className="mt-6">
+      <h2 className="mt-0 mb-2 text-callout font-semibold">{comments.data?.length ? `${comments.data.length} comment${comments.data.length === 1 ? '' : 's'}` : 'Comments'}</h2>
+      <Loaded load={comments}>
+        {(list) => <div className="space-y-2">{list.map((c) => {
+          const mine = viewer?.login === c.author.login;
+          return <CommentCard key={c.id} compact author={c.author} when={c.when} at={c.at} body={c.body} role={c.role} url={c.url} number={0} target={{ kind: 'commitComment', id: c.id }} canEdit={can.participate && (mine || can.push)} canDelete={can.participate && (mine || can.push)} />;
+        })}</div>}
+      </Loaded>
+      {can.participate ? (
+        <div className="mt-3">
+          <MarkdownField label="Comment on this commit" value={draft.value} onChange={draft.set} onSubmit={send} rows={3} disabled={act.busy} placeholder="Leave a comment on this commit" />
+          <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
+          <div className="mt-2 flex justify-end"><Button className={ghButton(true)} isDisabled={act.busy || !draft.value.trim()} onPress={send}>{act.busy ? 'Posting…' : 'Comment on this commit'}</Button></div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function CommitPage({ sha }: { sha: string }) {
   const { source, ui } = useRepo();
   const copy = useCopy();
@@ -113,6 +141,7 @@ export function CommitPage({ sha }: { sha: string }) {
               {c.checks?.length ? <div className="border-t border-border bg-muted">{c.checks.map((k) => <CheckRow key={k.name} check={k} />)}</div> : null}
             </section>
             <DiffFiles files={c.files} browseRef={c.fullSha} toolbar={<DiffStat add={c.additions} del={c.deletions} />} empty="This commit changes no files." />
+            <CommitComments sha={c.fullSha} />
           </>
         )}
       </Loaded>

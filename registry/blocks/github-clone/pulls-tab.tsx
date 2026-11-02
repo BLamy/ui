@@ -1,8 +1,9 @@
 /* Pull requests list: the same query box and menus as issues plus Reviews, each row with its real check and review state
    (one GraphQL query fills them all in, since search doesn't say). */
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ActiveFilters, FilterMenus, ItemRow, ListToolbar, Pagination, StateToggle, queryState, setQualifier, setQueryState } from './lists';
+import { ActiveFilters, BulkBar, FilterMenus, ItemRow, ListToolbar, Pagination, StateToggle, queryState, setQualifier, setQueryState } from './lists';
 import { Box, Oct, PR_STATE, ghButton } from './parts';
 import { DEFAULT_PULL_Q } from './route';
 import { Loaded, useCan, useLoad, useNav, useRepo } from './repo-context';
@@ -26,13 +27,18 @@ export function PullList({ q, page = 1 }: { q?: string; page?: number }) {
   const labels = useLoad(source.id + ':labels', source.labels).data ?? [];
   const state = queryState(query);
   const filtered = !/^\s*is:(open|closed)\s*$/.test(query);
+  const [picked, setPicked] = useState<number[]>([]);
+  const rows = pulls.data?.items ?? [];
+  const chosen = rows.filter((p) => picked.includes(p.number)).map((p) => p.number);
   return (
     <div>
       <h1 className="sr-only">Pull requests</h1>
       <ListToolbar query={query} onQuery={(x) => go(x)} placeholder="Search all pull requests" canCreate={!repo.archived && !repo.empty && can.signedIn} newLabel="New pull request" onNew={() => nav.go({ s: 'compare' })} />
       <ActiveFilters query={query} base={DEFAULT_PULL_Q} onQuery={(x) => go(x)} labels={labels} />
+      <BulkBar rows={rows} chosen={chosen} kind="pull" onDone={() => setPicked([])} />
       <Box header={
         <div className="flex w-full flex-wrap items-center gap-x-2">
+          {can.triage && rows.length ? <label className="-m-1 cursor-pointer p-1 group-data-[phone=true]/gh:-m-2.5 group-data-[phone=true]/gh:p-2.5"><input type="checkbox" aria-label="Select all on this page" checked={chosen.length === rows.length} onChange={(e) => setPicked(e.target.checked ? rows.map((p) => p.number) : [])} className="m-0 block size-4 cursor-pointer group-data-[phone=true]/gh:size-6" /></label> : null}
           <StateToggle value={state === 'merged' ? 'closed' : state} onChange={(v) => go(setQueryState(query, v))} open={filtered ? undefined : counts?.pulls.open} closed={filtered ? undefined : counts?.pulls.closed} closedIcon="check" />
           <Button aria-pressed={state === 'merged'} onPress={() => go(setQueryState(query, 'merged'))}
             className={cn('flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-2 py-1 text-detail outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-hovered:bg-secondary group-data-[phone=true]/gh:min-h-11', state === 'merged' ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
@@ -49,6 +55,7 @@ export function PullList({ q, page = 1 }: { q?: string; page?: number }) {
                 <ItemRow key={p.number} state={PR_STATE[p.state]} stateText={STATE_TEXT[p.state]} title={p.title} labels={p.labels} to={{ s: 'pull', n: p.number }} onLabel={(l) => go(setQualifier(query, 'label', [l]))}
                   status={p.checks ? <span title={CHECK_ICON[p.checks][1]} className="inline-flex items-center">{CHECK_ICON[p.checks][0]}<span className="sr-only">{CHECK_ICON[p.checks][1]}</span></span> : undefined}
                   assignees={p.assignees ?? []} comments={p.comments}
+                  selected={picked.includes(p.number)} onSelect={can.triage ? (on) => setPicked((x) => (on ? [...x, p.number] : x.filter((y) => y !== p.number))) : undefined}
                   meta={<>#{p.number} {p.state === 'merged' ? 'merged' : p.state === 'closed' ? 'was closed' : 'opened'} <span title={p.at ? new Date(p.at).toLocaleString() : undefined}>{p.when}</span> by {p.author.login}{p.review ? <> · <span className={p.review === 'approved' ? 'text-(--gh-open)' : p.review === 'changes' ? 'text-(--gh-closed)' : ''}>{REVIEW_TEXT[p.review]}</span></> : null}{p.milestone ? <span className="ml-2 inline-flex items-center gap-1"><Oct name="milestone" size={12} />{p.milestone}</span> : null}</>} />
               ))}
               {data.items.length === 0 ? (

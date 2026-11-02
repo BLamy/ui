@@ -50,7 +50,7 @@ export function GlobalHeader({ width }: { width: number }) {
         </Button>
       ) : <Button aria-label="Search" isDisabled={!repo} className={cn(plain, 'w-8 px-0 text-muted-foreground')} onPress={() => nav.search()}><Oct name="search" /></Button>}
       {ui.wide ? <span className="h-5 w-px bg-border" /> : null}
-      <Button aria-label="Reload from GitHub" className={cn(plain, 'w-8 px-0 text-muted-foreground')} onPress={() => { source.refresh(); notify(source.live ? 'Reloading from GitHub' : 'Reloaded'); }}><Oct name="retry" /></Button>
+      <Button aria-label="Reload from GitHub" className={cn(plain, 'w-8 px-0 text-muted-foreground')} onPress={() => { source.refresh(); void Promise.resolve(source.repo()).then(() => notify('Up to date'), () => notify('Couldn’t reach GitHub')); }}><Oct name="retry" /></Button>
       {createEntries.some(Boolean) ? (
         <Menu label="Create new" triggerClassName={cn(plain, 'gap-1 px-2 text-muted-foreground')} trigger={<><Oct name="plus" /><Oct name="chevDown" size={12} /></>} entries={createEntries} />
       ) : null}

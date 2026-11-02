@@ -9,16 +9,22 @@ import { GitHubError } from './github-api';
 import { GhLink } from './links';
 import { Box, CodeView, Oct, ghButton } from './parts';
 import type { Route } from './route';
-import { ActionError, CancelButton, Loaded, useAction, useCan, useDraft, useLoad, useNav, useRepo } from './repo-context';
+import { ActionError, CancelButton, Loaded, Pending, useAction, useCan, useDraft, useLoad, useNav, useRepo } from './repo-context';
 
 function CommitForm({ busy, error, defaultMessage, gitRef, submitLabel, danger, dirty = false, isDisabled, onSubmit, onCancel }: {
   busy: boolean; error: unknown; defaultMessage: string; gitRef: string; submitLabel: string; danger?: boolean; dirty?: boolean; isDisabled?: boolean;
   onSubmit: (o: { message: string; branch: string; newBranch: string | null }) => void; onCancel: () => void;
 }) {
   const { repo } = useRepo();
-  const [message, setMessage] = useState('');
-  const [details, setDetails] = useState('');
+  const { source } = useRepo();
   const branch = gitRef || repo.branch;
+  const key = `${source.id}:commit-form:${branch}:${defaultMessage}`;
+  const messageDraft = useDraft(`${key}:title`);
+  const detailsDraft = useDraft(`${key}:details`);
+  const message = messageDraft.value;
+  const setMessage = messageDraft.set;
+  const details = detailsDraft.value;
+  const setDetails = detailsDraft.set;
   const [mode, setMode] = useState<'direct' | 'new'>('direct');
   const [newBranch, setNewBranch] = useState('');
   useEffect(() => setNewBranch(`patch-${String(Date.now()).slice(-5)}`), []);
@@ -61,7 +67,13 @@ function useCommit() {
       await source.createBranch(o.newBranch, o.branch);
       madeBranch.current = o.newBranch;
     }
-    await write(o.newBranch ?? o.branch, o.message);
+    try {
+      await write(o.newBranch ?? o.branch, o.message);
+    } catch (e) {
+      // Don't leave an empty branch behind for a commit that didn't happen. If that fails too, the next try reuses it.
+      if (madeBranch.current) await source.deleteBranch(madeBranch.current).then(() => { madeBranch.current = null; }, () => undefined);
+      throw e;
+    }
     // On a fork the point is usually the pull request back to where it came from.
     if (repo.parent) nav.openRepo(repo.parent, { s: 'compare', head: `${repo.owner}:${o.newBranch ?? o.branch}`, create: true });
     else if (o.newBranch) nav.go({ s: 'compare', base: o.branch, head: o.newBranch, create: true }, { replace: true });
@@ -106,6 +118,17 @@ function NotABranch({ gitRef, path }: { gitRef: string; path?: string }) {
   );
 }
 
+/** GitHub refused because the file isn't what you started from. */
+function ConflictNotice({ name, path, gitRef, doing }: { name: string; path: string; gitRef: string; doing: string }) {
+  return (
+    <div role="alert" className="mt-4 rounded-md border border-(--gh-closed)/50 p-3">
+      <p className="mt-0 mb-2 font-semibold text-(--gh-closed)">{name} changed on GitHub while you were {doing}, so nothing was committed.</p>
+      {doing === 'editing' ? <p className="mt-0 mb-2 text-caption text-muted-foreground">Your text is still here. Committing it now would overwrite the other change, so copy what you need, then start again from the newest version.</p> : null}
+      <GhLink to={{ s: 'commits', ref: gitRef || undefined, path }} className="text-caption">See what changed</GhLink>
+    </div>
+  );
+}
+
 export function EditFile({ path, gitRef = '' }: { path: string; gitRef?: string }) {
   const { source, ui, repo } = useRepo();
   const nav = useNav();
@@ -116,18 +139,24 @@ export function EditFile({ path, gitRef = '' }: { path: string; gitRef?: string 
   /* The version you started from, fixed when it first arrives. A refresh must never move this: sending the newest sha with
      text based on an older one is how a commit silently overwrites someone else's. GitHub only says "conflict" if we send the old one. */
   const base = useRef<{ text: string | null; sha: string | null } | null>(null);
-  if (!base.current && text.data !== undefined && sha.data !== undefined) base.current = { text: text.data, sha: sha.data };
+  const dirtyNow = useRef(false);
+  const settled = !text.loading && !sha.loading && text.data !== undefined && sha.data !== undefined;
+  /* Only a fresh answer counts (a screen first paints from its last one), and until you've typed, the newest version is simply what you're editing. */
+  if (settled && (!base.current || (!dirtyNow.current && (base.current.text !== text.data || base.current.sha !== sha.data)))) base.current = { text: text.data!, sha: sha.data! };
   const draftKey = `${source.id}:edit:${gitRef || repo.branch}:${path}`;
   const startedFrom = useDraft(`${draftKey}:base`);
   const draft = useDraft(draftKey, base.current?.text ?? '');
   const [preview, setPreview] = useState(false);
   const { commit, busy, error } = useCommit();
+  dirtyNow.current = draft.dirty;
   const value = draft.value;
   const name = path.split('/').at(-1) ?? path;
+  const newPath = useDraft(`${draftKey}:path`, path);
+  const moved = newPath.value.trim() !== path && !!newPath.value.trim();
+  const clearAll = () => { draft.clear(); startedFrom.clear(); newPath.clear(); };
   // A restored draft was based on the sha it started from, not on whatever's newest now.
   const baseSha = startedFrom.value || base.current?.sha || null;
   useEffect(() => { if (draft.dirty && !startedFrom.value && base.current?.sha) startedFrom.set(base.current.sha); }, [draft.dirty, draft.value]);
-  const leave = (to: Route) => { draft.clear(); startedFrom.clear(); nav.go(to, { replace: true }); };
   if (!onBranch) return <div className={cn(ui.phone && 'p-4')}><NotABranch gitRef={gitRef} path={path} /></div>;
   if (!can.push) return <div className={cn(ui.phone && 'p-4')}><NoPush verb="edit" then={{ s: 'edit', ref: gitRef || undefined, path, mode: 'edit' }} /></div>;
   const conflict = error instanceof GitHubError && error.status === 409;
@@ -135,9 +164,12 @@ export function EditFile({ path, gitRef = '' }: { path: string; gitRef?: string 
     <div className={cn(ui.phone && 'p-4')}>
       <h1 className="mt-0 mb-3 text-title font-semibold break-all">Editing {path}</h1>
       <p className="mt-0 mb-3 text-muted-foreground">on <b className="font-mono text-caption font-semibold">{gitRef || repo.branch}</b></p>
+      <label className="mb-3 grid gap-1 font-semibold">Path (change it to rename or move the file)
+        <Input value={newPath.value} onChange={(e) => newPath.set(e.target.value)} className="h-8 rounded-md border border-border bg-background font-mono text-caption font-normal group-data-[phone=true]/gh:h-11" />
+      </label>
       {draft.restored && draft.dirty ? <p role="status" className="mt-0 mb-3 rounded-md border border-border bg-muted px-3 py-2 text-caption">These are your unsaved edits from earlier. Cancel discards them.</p> : null}
-      <Loaded load={text}>
-        {(original) => original == null ? <Box className="px-6 py-10 text-center text-muted-foreground">Binary files can’t be edited here.</Box> : (
+      <Loaded load={text} pending={<Pending label={`Loading ${name}…`} />}>
+        {(original) => !base.current ? <Pending label={`Loading ${name}…`} /> : original == null ? <Box className="px-6 py-10 text-center text-muted-foreground">Binary files can’t be edited here.</Box> : (
           <>
             <Box header={
               <div role="group" aria-label="Editor view" className="flex gap-0.5 rounded-md bg-secondary p-0.5">
@@ -151,17 +183,16 @@ export function EditFile({ path, gitRef = '' }: { path: string; gitRef?: string 
                   className="box-border block w-full resize-y border-0 bg-background p-3 font-mono text-caption leading-5 text-foreground outline-none select-text focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary" />
               )}
             </Box>
-            {conflict ? (
-              <div role="alert" className="mt-4 rounded-md border border-(--gh-closed)/50 p-3">
-                <p className="mt-0 mb-2 font-semibold text-(--gh-closed)">{name} changed on GitHub while you were editing, so nothing was committed.</p>
-                <p className="mt-0 mb-2 text-caption text-muted-foreground">Your text is still here. Committing it now would overwrite the other change, so copy what you need, then start again from the newest version.</p>
-                <GhLink to={{ s: 'commits', ref: gitRef || undefined, path }} className="text-caption">See what changed</GhLink>
-              </div>
-            ) : null}
+            {conflict ? <ConflictNotice name={name} path={path} gitRef={gitRef} doing="editing" /> : null}
             {!draft.dirty ? <p className="mt-4 mb-0 text-caption text-muted-foreground">Change something to commit it.</p> : null}
-            <CommitForm busy={busy} error={conflict ? null : error} dirty={draft.dirty} isDisabled={!draft.dirty} defaultMessage={`Update ${name}`} gitRef={gitRef} submitLabel="Commit changes"
-              onCancel={() => { draft.clear(); startedFrom.clear(); nav.back(); }}
-              onSubmit={(o) => void commit(o, (branch, message) => source.putFile({ path, content: value, message, branch, sha: baseSha }), (branch) => leave({ s: 'code', ref: branch === repo.branch ? undefined : branch, path }))} />
+            <CommitForm busy={busy} error={conflict ? null : error} dirty={draft.dirty || moved} isDisabled={!draft.dirty && !moved} defaultMessage={moved ? `Rename ${name}` : `Update ${name}`} gitRef={gitRef} submitLabel="Commit changes"
+              onCancel={() => { clearAll(); nav.back(); }}
+              onSubmit={(o) => void commit(o, async (branch, message) => {
+                if (moved) await source.moveFile({ from: path, to: newPath.value.trim(), content: value, message, branch, sha: baseSha });
+                else await source.putFile({ path, content: value, message, branch, sha: baseSha });
+                // Committed, wherever it went: nothing here is unsaved any more.
+                clearAll();
+              }, (branch) => nav.go({ s: 'code', ref: branch === repo.branch ? undefined : branch, path: moved ? newPath.value.trim() : path }, { replace: true }))} />
           </>
         )}
       </Loaded>
@@ -174,20 +205,24 @@ export function DeleteFile({ path, gitRef = '' }: { path: string; gitRef?: strin
   const nav = useNav();
   const can = useCan();
   const sha = useLoad(`${source.id}:sha:${gitRef}:${path}`, () => source.fileSha(path, gitRef));
+  /* The version on screen when you came to delete it. A refresh mustn't turn "delete what I saw" into "delete whatever's there now". */
+  const seen = useRef<string | null>(null);
+  if (!seen.current && !sha.loading && sha.data) seen.current = sha.data;
   const { commit, busy, error } = useCommit();
   const name = path.split('/').at(-1) ?? path;
   const onBranch = useOnBranch(gitRef);
   if (!onBranch) return <div className={cn(ui.phone && 'p-4')}><NotABranch gitRef={gitRef} path={path} /></div>;
   if (!can.push) return <div className={cn(ui.phone && 'p-4')}><NoPush verb="delete" then={{ s: 'edit', ref: gitRef || undefined, path, mode: 'delete' }} /></div>;
-  if (sha.data === null) {
+  if (!sha.loading && sha.data === null) {
     return <div className={cn(ui.phone && 'p-4')}><Box className="px-6 py-10 text-center" role="alert"><h1 className="mt-0 mb-1 text-title font-semibold">Nothing to delete</h1><p className="m-0 text-muted-foreground">There’s no <b className="font-mono text-caption">{path}</b> on {gitRef || repo.branch}.</p></Box></div>;
   }
   return (
     <div className={cn(ui.phone && 'p-4')}>
       <h1 className="mt-0 mb-3 text-title font-semibold break-all">Delete {path}</h1>
       <p className="m-0 text-muted-foreground">This removes the file from <b className="font-mono text-caption font-semibold">{gitRef || repo.branch}</b>. It stays in the history.</p>
-      <CommitForm busy={busy} error={error} defaultMessage={`Delete ${name}`} gitRef={gitRef} submitLabel={sha.data ? 'Delete file' : 'Finding the file…'} isDisabled={!sha.data} danger onCancel={() => nav.back()}
-        onSubmit={(o) => { if (sha.data) void commit(o, (branch, message) => source.deleteFile({ path, message, branch, sha: sha.data! }), (branch) => nav.go({ s: 'code', ref: branch === repo.branch ? undefined : branch, path: path.split('/').slice(0, -1).join('/') || undefined }, { replace: true })); }} />
+      {error instanceof GitHubError && error.status === 409 ? <ConflictNotice name={name} path={path} gitRef={gitRef} doing="deciding" /> : null}
+      <CommitForm busy={busy} error={error instanceof GitHubError && error.status === 409 ? null : error} defaultMessage={`Delete ${name}`} gitRef={gitRef} submitLabel={seen.current ? 'Delete file' : 'Finding the file…'} isDisabled={!seen.current} danger onCancel={() => nav.back()}
+        onSubmit={(o) => { if (seen.current) void commit(o, (branch, message) => source.deleteFile({ path, message, branch, sha: seen.current! }), (branch) => nav.go({ s: 'code', ref: branch === repo.branch ? undefined : branch, path: path.split('/').slice(0, -1).join('/') || undefined }, { replace: true })); }} />
     </div>
   );
 }
@@ -236,6 +271,57 @@ export function NewFile({ gitRef = '', dir = '', name: initialName = '', content
           if (!clean || exists || underFile) return;
           void commit(o, async (branch, m) => { await source.putFile({ path: full, content: body, message: m, branch }); nameDraft.clear(); bodyDraft.clear(); }, (branch) => nav.go({ s: 'code', ref: branch === repo.branch ? undefined : branch, path: full }, { replace: true }));
         }} />
+    </div>
+  );
+}
+
+/** GitHub refuses blobs over 100 MB; the browser has to hold them, so stop well before. */
+const MAX_UPLOAD = 25 * 1024 * 1024;
+
+const toBase64 = (file: File) => new Promise<string>((done, fail) => {
+  const reader = new FileReader();
+  reader.onerror = () => fail(reader.error);
+  reader.onload = () => done(String(reader.result).split(',')[1] ?? '');
+  reader.readAsDataURL(file);
+});
+
+export function UploadFiles({ gitRef = '', dir = '' }: { gitRef?: string; dir?: string }) {
+  const { source, ui, repo } = useRepo();
+  const nav = useNav();
+  const can = useCan();
+  const onBranch = useOnBranch(gitRef);
+  const [files, setFiles] = useState<File[]>([]);
+  const { commit, busy, error } = useCommit();
+  const tooBig = files.filter((f) => f.size > MAX_UPLOAD);
+  const tree = useLoad(`${source.id}:tree:${gitRef}`, () => source.tree(gitRef)).data ?? [];
+  const paths = flat(tree);
+  const pathOf = (f: File) => [dir, f.name].filter(Boolean).join('/');
+  if (!onBranch) return <div className={cn(ui.phone && 'p-4')}><NotABranch gitRef={gitRef} /></div>;
+  if (!can.push) return <div className={cn(ui.phone && 'p-4')}><NoPush verb="upload to" /></div>;
+  return (
+    <div className={cn(ui.phone && 'p-4')}>
+      <h1 className="mt-0 mb-3 text-title font-semibold">Upload files</h1>
+      <p className="mt-0 mb-3 text-muted-foreground">To <b className="font-mono text-caption font-semibold">{dir || '/'}</b> on <b className="font-mono text-caption font-semibold">{gitRef || repo.branch}</b>. One commit for all of them.</p>
+      <label className="grid gap-1 rounded-md border border-dashed border-border p-6 text-center font-semibold">Choose files
+        <input type="file" multiple onChange={(e) => setFiles([...(e.target.files ?? [])])} className="mx-auto font-sans text-caption font-normal" />
+      </label>
+      {files.length ? (
+        <ul aria-label="Files to upload" className="mt-3 mb-0 list-none rounded-md border border-border p-0">
+          {files.map((f) => (
+            <li key={f.name} className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-1.5 first:border-t-0">
+              <Oct name="file" size={14} className="text-muted-foreground" /><span className="min-w-0 flex-1 font-mono text-caption break-all">{pathOf(f)}</span>
+              <span className="text-caption text-muted-foreground">{f.size < 1024 ? `${f.size} B` : `${(f.size / 1024).toFixed(1)} KB`}</span>
+              {paths.includes(pathOf(f)) ? <span className="text-caption text-(--gh-attention)">Replaces the existing file</span> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {tooBig.length ? <p role="alert" className="mt-2 mb-0 text-caption text-(--gh-closed)">{tooBig.map((f) => f.name).join(', ')} {tooBig.length === 1 ? 'is' : 'are'} over 25 MB: too big to upload from here.</p> : null}
+      <CommitForm busy={busy} error={error} defaultMessage={files.length === 1 ? `Add ${files[0].name}` : `Add ${files.length} files`} gitRef={gitRef} submitLabel="Commit changes" dirty={files.length > 0} isDisabled={!files.length || tooBig.length > 0} onCancel={() => nav.back()}
+        onSubmit={(o) => void commit(o, async (branch, message) => {
+          const payload = await Promise.all(files.map(async (f) => ({ path: pathOf(f), base64: await toBase64(f) })));
+          await source.commitFiles({ files: payload, message, branch });
+        }, (branch) => nav.go(dir ? { s: 'code', ref: branch === repo.branch ? undefined : branch, path: dir } : { s: 'code', ref: branch === repo.branch ? undefined : branch }, { replace: true }))} />
     </div>
   );
 }

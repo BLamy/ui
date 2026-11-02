@@ -181,9 +181,9 @@ export function LabelChip({ label, dark, className }: { label: Label; dark: bool
 /* icon, glyph color, pill fill (open states use the merge-button green, draft a fixed gray). */
 const STATE = {
   open: { icon: 'issue', text: 'text-(--gh-open)', pill: 'bg-(--gh-merge)', label: 'Open' },
-  closed: { icon: 'issueClosed', text: 'text-(--gh-done)', pill: 'bg-(--gh-done)', label: 'Closed' },
+  closed: { icon: 'issueClosed', text: 'text-(--gh-done)', pill: 'bg-[color-mix(in_srgb,var(--gh-done)_75%,black)]', label: 'Closed' },
   prOpen: { icon: 'pr', text: 'text-(--gh-open)', pill: 'bg-(--gh-merge)', label: 'Open' },
-  merged: { icon: 'merged', text: 'text-(--gh-done)', pill: 'bg-(--gh-done)', label: 'Merged' },
+  merged: { icon: 'merged', text: 'text-(--gh-done)', pill: 'bg-[color-mix(in_srgb,var(--gh-done)_75%,black)]', label: 'Merged' },
   prClosed: { icon: 'prClosed', text: 'text-(--gh-closed)', pill: 'bg-(--gh-closed)', label: 'Closed' },
   draft: { icon: 'prDraft', text: 'text-muted-foreground', pill: 'bg-(--gh-draft)', label: 'Draft' },
 } satisfies Record<string, { icon: OctName; text: string; pill: string; label: string }>;

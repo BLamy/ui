@@ -6,6 +6,9 @@ import { createSampleGitHub } from './sample';
 import { closingNumbers } from './sample-server';
 import { diffLines, mergeText, patchOf } from './sample-git';
 import type { PullThreads } from './data';
+import { inCode, taskPositions, toggleTask } from './markdown';
+import { applyLines, reviewedLines, suggestionOf } from './pull-request';
+import { fromPath, repoFromInput, toPath } from './route';
 
 const orbit = (o: Parameters<typeof createSampleGitHub>[0] = {}) => {
   const { gh, server } = createSampleGitHub(o);
@@ -359,7 +362,7 @@ describe('pull requests', () => {
     const t = ((await source.pullThreads(488)) as PullThreads).threads[1];
     await source.replyToThread(488, t.comments[0].id, 'a reply');
     expect(((await source.pullThreads(488)) as PullThreads).threads[1].comments.length).toBe(2);
-    await source.addReviewComment(488, { path: 'docs/retries.md', line: 3, side: 'RIGHT', body: 'one-off' }, sha);
+    await source.addReviewComment(488, { path: 'docs/retries.md', line: 9, side: 'RIGHT', body: 'one-off' }, sha);
     expect(((await source.pullThreads(488)) as PullThreads).threads.length).toBe(5);
     await expect(source.addReviewComment(488, { path: 'nope.ts', line: 3, side: 'RIGHT', body: 'x' }, sha)).rejects.toMatchObject({ kind: 'validation' });
   });
@@ -505,5 +508,140 @@ describe('the client', () => {
     expect(await source.viewer()).toBeNull();
     await expect(source.comment(489, 'hi')).rejects.toMatchObject({ kind: 'auth' });
     expect((await source.issue(489)).number).toBe(489);
+  });
+});
+
+describe('code that writes where it means to', () => {
+  it('renames a file in one commit, and refuses if it moved on', async () => {
+    const { source } = orbit();
+    const sha = await source.fileSha('docs/adapters.md', '');
+    const before = (await source.commits({ ref: '', page: 1 })).items[0].fullSha;
+    await source.moveFile({ from: 'docs/adapters.md', to: 'docs/backends.md', content: '# Backends\n', message: 'docs: rename', branch: 'main', sha });
+    expect(await source.file('docs/backends.md', '')).toBe('# Backends\n');
+    await expect(source.file('docs/adapters.md', '')).rejects.toMatchObject({ kind: 'notFound' });
+    const log = (await source.commits({ ref: '', page: 1 })).items;
+    expect(log[0].message).toBe('docs: rename');
+    expect(log[1].fullSha).toBe(before);
+    await expect(source.moveFile({ from: 'docs/backends.md', to: 'x.md', content: 'x', message: 'y', branch: 'main', sha })).rejects.toMatchObject({ status: 409 });
+  });
+  it('uploads several files in one commit, bytes included', async () => {
+    const { source } = orbit();
+    const png = btoa(String.fromCharCode(137, 80, 78, 71, 0, 1, 255));
+    await source.commitFiles({ files: [{ path: 'a/one.txt', base64: btoa('one\n') }, { path: 'a/logo.png', base64: png }], message: 'Add files', branch: 'main' });
+    expect(await source.file('a/one.txt', '')).toBe('one\n');
+    expect(await source.file('a/logo.png', '')).toBeNull();
+    expect((await source.commits({ ref: '', page: 1 })).items[0].message).toBe('Add files');
+  });
+  it('marks a thread outdated once its line changes, and keeps what it was made on', async () => {
+    const { source } = orbit();
+    const thread = async () => (await source.pullThreads(484) as PullThreads).threads[0];
+    const t = await thread();
+    expect(t.outdated).toBe(false);
+    expect(t.line).toBe(3);
+    expect(t.hunk.split('\n').at(-1)).toBe('+export function Timeline({ job }) {');
+    const sha = await source.fileSha('src/dashboard/timeline.tsx', 'dash/attempts');
+    await source.putFile({ path: 'src/dashboard/timeline.tsx', content: '// new first line\n' + await source.file('src/dashboard/timeline.tsx', 'dash/attempts'), message: 'shift', branch: 'dash/attempts', sha });
+    const after = await thread();
+    expect(after.outdated).toBe(true);
+    expect(after.line).toBeNull();
+    expect(after.originalLine).toBe(3);
+    expect(after.hunk).toBe(t.hunk);
+  });
+  it('refuses a comment off the diff, an invalid branch, a path under a file', async () => {
+    const { source } = orbit();
+    const head = (await source.pull(488)).headSha;
+    await expect(source.addReviewComment(488, { path: 'src/retry.ts', line: 9999, side: 'RIGHT', body: 'x' }, head)).rejects.toThrow(/part of the diff/);
+    await expect(source.createBranch('bad name..~', 'main')).rejects.toMatchObject({ kind: 'validation' });
+    await expect(source.putFile({ path: 'README.md/x.txt', content: 'x', message: 'x', branch: 'main' })).rejects.toThrow(/file/);
+  });
+  it('comments on commits, re-runs one job, lists artifacts, makes a tag, reverts', async () => {
+    const { source } = orbit();
+    const head = (await source.commits({ ref: '', page: 1 })).items[0].fullSha;
+    await source.addCommitComment(head, 'Nice');
+    const [c] = await source.commitComments(head) as { id: number; body: string }[];
+    expect(c.body).toBe('Nice');
+    await source.editComment({ kind: 'commitComment', id: c.id }, 'Nicer');
+    expect((await source.commitComments(head) as { body: string }[])[0].body).toBe('Nicer');
+    await source.deleteComment({ kind: 'commitComment', id: c.id }, 0);
+    expect(await source.commitComments(head)).toEqual([]);
+    const failed = await source.run(5001);
+    await source.rerunJob(failed.jobs[0].id);
+    expect((await source.run(5001)).status).toBe('success');
+    expect((await source.artifacts(5003)).map((a) => a.name)).toEqual(['coverage-report', 'dist']);
+    await source.createTag('v9', head);
+    expect((await source.refNames()).tags).toContain('v9');
+    const p = await source.pull(473);
+    const before = await source.file('src/adapters/postgres.ts', '');
+    const n = await source.revert(p.nodeId, 473, 'Revert it');
+    const files = await source.pullFiles(n);
+    expect(files.map((f) => f.path)).toEqual(['src/adapters/postgres.ts']);
+    expect(await source.file('src/adapters/postgres.ts', (await source.pull(n)).head)).not.toBe(before);
+    await expect(source.revert(p.nodeId, 473, 'Again')).rejects.toThrow(/already exists/);
+  });
+  it('knows which pull requests close an issue, and reads templates and forms', async () => {
+    const { source } = orbit();
+    expect((await source.issueExtras(483))?.closedBy.map((p) => p.number)).toEqual([488]);
+    const templates = await source.issueTemplates();
+    expect(templates.map((t) => t.name).sort()).toEqual(['Bug report', 'Feature request']);
+    const form = templates.find((t) => t.name === 'Feature request')!;
+    expect(form).toMatchObject({ title: 'Feature: ', labels: ['enhancement'] });
+    expect(form.body).toContain('### What problem does this solve?');
+    expect(form.body).toContain('- [ ] I searched existing issues');
+    expect(await source.pullTemplate()).toContain('How it was tested');
+  });
+});
+
+describe('tasks', () => {
+  const list = '- [x] done\n- [ ] todo\n\n```\n- [ ] in a fence\n```\n\n    - [ ] indented code\n\n> - [ ] quoted\n\n- parent\n    - [ ] nested\n';
+  it('finds the tasks a renderer would, and only those', () => {
+    expect(taskPositions(list).map((t) => t.checked)).toEqual([true, false, false, false]);
+  });
+  it('flips exactly the one asked for', () => {
+    expect(toggleTask(list, 1)).toContain('- [x] todo');
+    expect(toggleTask(list, 0)).toContain('- [ ] done');
+    expect(toggleTask(list, 2)).toContain('> - [x] quoted');
+    expect(toggleTask(list, 2)).toContain('    - [ ] indented code');
+    expect(toggleTask(list, 3)).toContain('    - [x] nested');
+    expect(toggleTask(list, 9)).toBeNull();
+  });
+  it('tells code from prose for autocomplete', () => {
+    expect(inCode('```\nconst a = ')).toBe(true);
+    expect(inCode('```\ncode\n```\nthanks ')).toBe(false);
+    expect(inCode('run `foo ')).toBe(true);
+    expect(inCode('run `foo` then ')).toBe(false);
+    expect(inCode('    indented ')).toBe(true);
+  });
+});
+
+describe('routes', () => {
+  it('round-trips every kind of address', () => {
+    for (const path of ['issues/12', 'pull/5', 'pull/5/files', 'commit/abc1234', 'blob/main/src/a.ts#L3-L9', 'blame/main/src/a.ts', 'commits/main/src/a.ts', 'releases/tag/v1', 'actions/runs/9', 'settings/merging', 'compare/main...x', 'upload/main/docs', 'milestone/2', 'graphs/traffic']) {
+      const r = fromPath(path);
+      expect(r, path).not.toBeNull();
+      expect(toPath(r!), path).toBe(path);
+    }
+    expect(fromPath('wiki/Home')).toBeNull();
+  });
+  it('accepts only real repository input', () => {
+    expect(repoFromInput('acme/orbit')).toBe('acme/orbit');
+    expect(repoFromInput('https://github.com/acme/orbit/pull/4')).toBe('acme/orbit');
+    for (const bad of ['https://gitlab.com/foo/bar', '../..', 'a/b/c', 'foo']) expect(repoFromInput(bad), bad).toBeNull();
+  });
+});
+
+describe('suggestions', () => {
+  it('replaces lines, and an empty suggestion deletes them', () => {
+    expect(applyLines('a\nb\nc\n', 2, 2, 'B\n')).toBe('a\nB\nc\n');
+    expect(applyLines('a\nb\nc\n', 1, 2, 'x\ny\nz')).toBe('x\ny\nz\nc\n');
+    expect(applyLines('a\nb\nc\n', 2, 2, '')).toBe('a\nc\n');
+  });
+  it('reads what a comment was made on from the end of its hunk', () => {
+    expect(reviewedLines('@@ -1,2 +1,3 @@\n a\n-old\n+b\n+c', 2)).toEqual(['b', 'c']);
+    expect(reviewedLines('@@ -1 +1 @@\n a', 5)).toBeNull();
+  });
+  it('reads suggestion fences', () => {
+    expect(suggestionOf('Try:\n```suggestion\nfoo\n```')).toBe('foo\n');
+    expect(suggestionOf('```suggestion\n```')).toBe('');
+    expect(suggestionOf('no')).toBeNull();
   });
 });

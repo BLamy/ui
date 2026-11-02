@@ -98,11 +98,11 @@ function General() {
       <Section title="Danger zone" danger>
         <div className="flex flex-wrap items-center gap-2">
           <div className="min-w-0 flex-1"><b className="font-semibold">Change visibility</b><p className="m-0 text-caption text-muted-foreground">This repository is {repo.private ? 'private' : 'public'}.</p></div>
-          <Button className={cn(ghButton(), 'text-(--gh-closed)')} onPress={() => { setConfirm('visibility'); setTyped(''); }}>Make {repo.private ? 'public' : 'private'}</Button>
+          <Button className={cn(ghButton(), 'border-(--gh-closed) text-foreground')} onPress={() => { setConfirm('visibility'); setTyped(''); }}>Make {repo.private ? 'public' : 'private'}</Button>
         </div>
         <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
           <div className="min-w-0 flex-1"><b className="font-semibold">{repo.archived ? 'Unarchive' : 'Archive'} this repository</b><p className="m-0 text-caption text-muted-foreground">{repo.archived ? 'It’s read-only now. Unarchive to take changes again.' : 'Mark it read-only for everyone.'}</p></div>
-          <Button className={cn(ghButton(), 'text-(--gh-closed)')} onPress={() => { setConfirm('archive'); setTyped(''); }}>{repo.archived ? 'Unarchive' : 'Archive'}</Button>
+          <Button className={cn(ghButton(), 'border-(--gh-closed) text-foreground')} onPress={() => { setConfirm('archive'); setTyped(''); }}>{repo.archived ? 'Unarchive' : 'Archive'}</Button>
         </div>
         <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
           <div className="min-w-0 flex-1"><b className="font-semibold">Delete this repository</b><p className="m-0 text-caption text-muted-foreground">Needs the delete_repo scope, which this sign-in doesn’t ask for. Do it on GitHub.</p></div>
@@ -120,7 +120,7 @@ function General() {
             <ActionError error={danger.error} />
             <div className="flex justify-end gap-2">
               <Button className={ghButton()} onPress={() => setConfirm(null)}>Cancel</Button>
-              <Button type="submit" className={cn(ghButton(), 'text-(--gh-closed)')} isDisabled={typed !== source.full || danger.busy}>I understand</Button>
+              <Button type="submit" className={cn(ghButton(), 'border-(--gh-closed) text-foreground')} isDisabled={typed !== source.full || danger.busy}>I understand</Button>
             </div>
           </form>
         ) : null}

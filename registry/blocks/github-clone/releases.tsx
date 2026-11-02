@@ -13,7 +13,7 @@ import { GhLink, UserLink } from './links';
 import { Pagination } from './lists';
 import { MarkdownField, Md } from './markdown';
 import { Box, Oct, ghButton } from './parts';
-import { ActionError, Failed, Loaded, useAction, useCan, useLoad, useNav, useRepo } from './repo-context';
+import { ActionError, CancelButton, Failed, Loaded, useAction, useCan, useDraft, useLoad, useNav, useRepo } from './repo-context';
 
 const size = (n: number) => (n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
@@ -47,7 +47,7 @@ function ReleaseCard({ r, full }: { r: Release; full?: boolean }) {
           <div className="flex gap-2">
             {r.draft ? <Button className={ghButton(true)} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.updateRelease(r.id, { draft: false }); notify(`${r.tag} published`); })}>Publish</Button> : null}
             <GhLink to={{ s: 'new-release', editing: r.tag }} aria-label={`Edit ${r.name}`} className={cn(ghButton(), 'w-8 px-0 no-underline')}><Oct name="pencil" size={14} /></GhLink>
-            <Button aria-label={`Delete ${r.name}`} className={cn(ghButton(), 'w-8 px-0 text-(--gh-closed)')} onPress={() => setConfirming(true)}><Oct name="trash" size={14} /></Button>
+            <Button aria-label={`Delete ${r.name}`} className={cn(ghButton(), 'w-8 px-0 border-(--gh-closed) text-foreground')} onPress={() => setConfirming(true)}><Oct name="trash" size={14} /></Button>
           </div>
         ) : null}
       </div>
@@ -55,7 +55,7 @@ function ReleaseCard({ r, full }: { r: Release; full?: boolean }) {
         <div role="alertdialog" aria-label={`Delete ${r.name}?`} className="flex flex-wrap items-center gap-2 border-t border-border bg-muted px-4 py-2">
           <span className="min-w-0 flex-1 font-semibold">Delete this release? Its tag stays.</span>
           <Button className={ghButton()} onPress={() => setConfirming(false)}>Cancel</Button>
-          <Button className={cn(ghButton(), 'text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteRelease(r.id); notify('Release deleted'); nav.go({ s: 'releases' }, { replace: true }); })}>Delete</Button>
+          <Button className={cn(ghButton(), 'border-(--gh-closed) text-foreground')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteRelease(r.id); notify('Release deleted'); nav.go({ s: 'releases' }, { replace: true }); })}>Delete</Button>
         </div>
       ) : null}
       <ActionError error={act.error} onDismiss={act.clear} className="px-4 pb-2" />
@@ -122,14 +122,19 @@ export function ReleaseForm({ tag: initialTag, editing }: { tag?: string; editin
   const names = useLoad(source.id + ':refnames', source.refNames).data;
   const [tag, setTag] = useState(initialTag ?? '');
   const [target, setTarget] = useState(repo.branch);
-  const [name, setName] = useState('');
-  const [body, setBody] = useState('');
+  const draftKey = `${source.id}:release:${editing ?? 'new'}`;
+  const nameDraft = useDraft(`${draftKey}:name`, existing.data?.name ?? '');
+  const bodyDraft = useDraft(`${draftKey}:body`, existing.data?.body ?? '');
+  const name = nameDraft.value;
+  const setName = nameDraft.set;
+  const body = bodyDraft.value;
+  const setBody = bodyDraft.set;
   const [prerelease, setPrerelease] = useState(false);
   const act = useAction();
   const notes = useAction();
   useEffect(() => {
     const r = existing.data;
-    if (r) { setTag(r.tag); setName(r.name); setBody(r.body); setPrerelease(r.prerelease); setTarget(r.target); }
+    if (r) { setTag(r.tag); setPrerelease(r.prerelease); setTarget(r.target); }
   }, [existing.data]);
   if (!can.push) return <Box className="px-6 py-12 text-center text-muted-foreground">Only people who can push to {source.full} can publish releases.</Box>;
   if (existing.error) return <Failed error={existing.error} what={`There’s no release for the tag ${editing} to edit.`} />;
@@ -140,8 +145,10 @@ export function ReleaseForm({ tag: initialTag, editing }: { tag?: string; editin
       const result = r
         ? await source.updateRelease(r.id, { tag: tag.trim(), name, body, prerelease, ...(r.draft && !draft ? { draft: false } : {}) })
         : await source.createRelease({ tag: tag.trim(), target, name: name || tag.trim(), body, draft, prerelease });
+      nameDraft.clear();
+      bodyDraft.clear();
       nav.go(draft ? { s: 'releases' } : { s: 'release', tag: result }, { replace: true });
-    });
+    }, 'save the release');
   };
   const known = names?.tags.includes(tag.trim());
   return (
@@ -176,7 +183,7 @@ export function ReleaseForm({ tag: initialTag, editing }: { tag?: string; editin
         <Checkbox isSelected={prerelease} onChange={setPrerelease} className="text-detail">Set as a pre-release</Checkbox>
         <ActionError error={act.error} onDismiss={act.clear} />
         <div className="flex flex-wrap justify-end gap-2">
-          <Button className={ghButton()} onPress={() => nav.back()}>Cancel</Button>
+          <CancelButton dirty={nameDraft.dirty || bodyDraft.dirty} onCancel={() => { nameDraft.clear(); bodyDraft.clear(); nav.back(); }} />
           {!editing || existing.data?.draft ? <Button className={ghButton()} isDisabled={act.busy || !tag.trim()} onPress={() => save(true)}>Save draft</Button> : null}
           <Button type="submit" className={ghButton(true)} isDisabled={act.busy || !tag.trim()}>{act.busy ? 'Saving…' : existing.data && !existing.data.draft ? 'Update release' : 'Publish release'}</Button>
         </div>

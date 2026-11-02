@@ -4,8 +4,8 @@
    in-page GitHub. `live` says whether writes reach GitHub (the copy changes) and nothing else. `ref` is a branch, tag
    or sha, or '' for the default branch. Any write refreshes every screen showing what it changed (see useLoad). */
 import type {
-  BlameRange, Check, CodeHit, Comparison, Commit, CommitDetail, CommentTarget, ContributorStat, DiffFile, FileNode, Issue, IssueDetail, IssueDraft, IssueExtras, IssuePatch, Label, LastCommit, Milestone, NewReviewComment, PullDetail, PullExtras,
-  PullRequest, PullThreads, ReactionContent, RefInfo, Release, ReleaseDraft, Repo, ReviewEvent, RunDetail, TimelineItem, Traffic, User, Workflow, WorkflowInput, WorkflowRun,
+  BlameRange, Check, CodeHit, Comparison, Commit, CommitComment, CommitDetail, CommentTarget, ContributorStat, DiffFile, FileNode, Issue, IssueDetail, IssueDraft, IssueExtras, IssuePatch, Label, LastCommit, Milestone, NewReviewComment, PullDetail, PullExtras,
+  PullRequest, PullThreads, ReactionContent, RefInfo, Release, ReleaseDraft, Repo, ReviewEvent, RunArtifact, RunDetail, TimelineItem, Traffic, User, Workflow, WorkflowInput, WorkflowRun,
 } from './data';
 
 export type Maybe<T> = T | Promise<T>;
@@ -124,11 +124,17 @@ export interface RepoSource {
   /** Creates or replaces a file; resolves to the new commit's sha. */
   putFile: (o: { path: string; content: string; message: string; branch: string; sha?: string | null }) => Promise<string>;
   deleteFile: (o: { path: string; message: string; branch: string; sha: string }) => Promise<string>;
+  /** Renames a file in one commit, after checking it's still the version you started from. */
+  moveFile: (o: { from: string; to: string; content: string; message: string; branch: string; sha: string | null }) => Promise<string>;
+  /** Commits several files at once (`base64`: their bytes). */
+  commitFiles: (o: { files: { path: string; base64: string }[]; message: string; branch: string }) => Promise<string>;
 
   /* History */
   commits: (o: { ref: string; path?: string; author?: string; since?: string; until?: string; page: number }) => Maybe<Paged<Commit>>;
   commit: (sha: string) => Maybe<CommitDetail>;
   compare: (base: string, head: string) => Maybe<Comparison>;
+  commitComments: (sha: string) => Maybe<CommitComment[]>;
+  addCommitComment: (sha: string, body: string) => Promise<void>;
 
   /* Issues and pull requests */
   /** `q` is GitHub's own search syntax ('is:open label:bug sort:updated-desc'). */
@@ -202,7 +208,9 @@ export interface RepoSource {
   cancelRun: (id: number) => Promise<void>;
   rerun: (id: number, onlyFailed: boolean) => Promise<void>;
   deleteRun: (id: number) => Promise<void>;
+  rerunJob: (id: number) => Promise<void>;
   jobLog: (id: number) => Maybe<string>;
+  artifacts: (run: number) => Maybe<RunArtifact[]>;
 
   /* Releases */
   releases: (page: number) => Maybe<Paged<Release>>;

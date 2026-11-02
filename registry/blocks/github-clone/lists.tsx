@@ -5,14 +5,14 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { Label, Milestone, User } from './data';
+import type { IssuePatch, Label, Milestone, User } from './data';
 import { labelOf } from './github-api';
 import { AvatarStack, Counter, LabelChip, Oct, StateIcon, ghButton, type OctName, type StateKind } from './parts';
 import { Menu } from './pickers';
 import { SelectMenu } from './pickers';
 import { GhLink } from './links';
 import type { Route } from './route';
-import { useLoad, useNav, useRepo } from './repo-context';
+import { ActionError, useAction, useLoad, useNav, useRepo } from './repo-context';
 import type { Paged } from './source';
 
 /* ── Query editing ── */
@@ -174,7 +174,7 @@ export function ItemRow({ state, title, to, labels, meta, assignees, comments, s
   const nav = useNav();
   return (
     <div className="relative flex gap-2 border-t border-border px-4 py-2 first:border-t-0 hover:bg-muted group-data-[phone=true]/gh:py-3">
-      {onSelect ? <input type="checkbox" aria-label={`Select “${title}”`} checked={!!selected} onChange={(e) => onSelect(e.target.checked)} className="relative z-1 mt-1 size-4 shrink-0 cursor-pointer group-data-[phone=true]/gh:size-6" /> : null}
+      {onSelect ? <label className="relative z-1 -m-1 shrink-0 cursor-pointer p-1 group-data-[phone=true]/gh:-m-2.5 group-data-[phone=true]/gh:p-2.5"><input type="checkbox" aria-label={`Select “${title}”`} checked={!!selected} onChange={(e) => onSelect(e.target.checked)} className="m-0 block size-4 cursor-pointer group-data-[phone=true]/gh:size-6" /></label> : null}
       <span className="contents"><StateIcon state={state} className="mt-[3px]" /><span className="sr-only">{stateText}</span></span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
@@ -197,6 +197,50 @@ export function ItemRow({ state, title, to, labels, meta, assignees, comments, s
         <span className="flex shrink-0 items-center gap-1 pt-1 text-caption text-muted-foreground"><Oct name="comment" size={14} />{comments}<span className="sr-only">comments</span></span>
       ) : null}
     </div>
+  );
+}
+
+/** What selected rows can have done to them: one write each, since GitHub has no bulk endpoint. Labels and assignees add, as on GitHub. */
+export function BulkBar({ rows, chosen, kind, onDone }: { rows: { number: number; labels: Label[]; assignees?: User[] }[]; chosen: number[]; kind: 'issue' | 'pull'; onDone: () => void }) {
+  const { source, notify } = useRepo();
+  const labels = useLoad(source.id + ':labels', source.labels).data ?? [];
+  const people = useLoad(source.id + ':assignable', source.assignable).data ?? [];
+  const milestones = useLoad(source.id + ':milestones:open', () => source.milestones('open')).data ?? [];
+  const act = useAction();
+  const noun = kind === 'issue' ? 'issue' : 'pull request';
+  const bulk = (what: string, patch: (row: (typeof rows)[number]) => IssuePatch) => void act.run(async () => {
+    let done = 0;
+    try {
+      for (const row of rows.filter((x) => chosen.includes(x.number))) { await source.updateIssue(row.number, patch(row)); done++; }
+    } catch (e) {
+      // Stops at the first refusal and says how far it got: the rest may well be refused too.
+      throw new Error(`${e instanceof Error ? e.message : String(e)} (${done} of ${chosen.length} done)`);
+    }
+    onDone();
+    notify(`Updated ${done} ${noun}${done === 1 ? '' : 's'}`);
+  }, what);
+  if (!chosen.length && !act.error) return null;
+  return (
+    <>
+      <ActionError error={act.error} onDismiss={act.clear} className="mb-2" />
+      {chosen.length ? (
+        <div role="toolbar" aria-label={`Selected ${noun}s`} className="mb-2 flex flex-wrap items-center gap-2 rounded-md border border-primary/40 bg-primary/8 px-3 py-1.5">
+          <b className="font-semibold" role="status">{chosen.length} selected</b>
+          <span className="flex-1" />
+          <Menu label={`Mark selected ${noun}s as`} trigger={<>Mark as<Oct name="chevDown" size={12} /></>} entries={[
+            { id: 'open', label: 'Open', onAction: () => bulk(`reopen those ${noun}s`, () => ({ state: 'open' })) },
+            ...(kind === 'issue' ? [
+              { id: 'done', label: 'Closed as completed', onAction: () => bulk('close those issues', () => ({ state: 'closed' as const, stateReason: 'completed' as const })) },
+              { id: 'no', label: 'Closed as not planned', onAction: () => bulk('close those issues', () => ({ state: 'closed' as const, stateReason: 'not_planned' as const })) },
+            ] : [{ id: 'closed', label: 'Closed', onAction: () => bulk('close those pull requests', () => ({ state: 'closed' as const })) }]),
+          ]} />
+          <SelectMenu title={`Add labels to selected ${noun}s`} trigger={<>Label<Oct name="chevDown" size={12} /></>} items={labels.map((l) => ({ id: l.name, label: l.name, leading: <span className="size-3.5 shrink-0 rounded-full" style={{ background: l.color }} /> }))} selected={[]} multiple filterPlaceholder="Filter labels" onApply={(ids) => bulk(`label those ${noun}s`, (i) => ({ labels: [...new Set([...i.labels.map((l) => l.name), ...ids])] }))} />
+          <SelectMenu title={`Add assignees to selected ${noun}s`} trigger={<>Assign<Oct name="chevDown" size={12} /></>} items={people.map((u) => ({ id: u.login, label: u.login, leading: <Avatar c={u} src={u.avatar} size={20} /> }))} selected={[]} multiple filterPlaceholder="Filter users" onApply={(ids) => bulk(`assign those ${noun}s`, (i) => ({ assignees: [...new Set([...(i.assignees ?? []).map((u) => u.login), ...ids])] }))} />
+          <SelectMenu title={`Set milestone on selected ${noun}s`} trigger={<>Milestone<Oct name="chevDown" size={12} /></>} items={milestones.map((m) => ({ id: String(m.number), label: m.title }))} selected={[]} clearLabel="No milestone" empty="No milestones" onApply={(ids) => bulk('set that milestone', () => ({ milestone: ids[0] ? Number(ids[0]) : null }))} />
+          <Button className={ghButton()} onPress={onDone}>Clear</Button>
+        </div>
+      ) : null}
+    </>
   );
 }
 

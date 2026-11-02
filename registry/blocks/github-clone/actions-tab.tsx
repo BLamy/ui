@@ -269,16 +269,17 @@ export function RunPage({ id }: { id: number }) {
                     ]} />
                   ) : <Button className={ghButton()} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.rerun(r.id, false); notify('Re-run requested'); })}>Re-run all jobs</Button>
                 ) : null}
-                {can.push && !active ? <Button aria-label="Delete run" className={cn(ghButton(), 'text-(--gh-closed)')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteRun(r.id); notify('Run deleted'); nav.go({ s: 'actions' }, { replace: true }); })}><Oct name="trash" /></Button> : null}
+                {can.push && !active ? <Button aria-label="Delete run" className={cn(ghButton(), 'border-(--gh-closed) text-foreground')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.deleteRun(r.id); notify('Run deleted'); nav.go({ s: 'actions' }, { replace: true }); })}><Oct name="trash" /></Button> : null}
                 {r.url && source.live ? <a href={r.url} target="_blank" rel="noreferrer" className={cn(ghButton(), 'no-underline')}>Open on GitHub<Oct name="external" size={12} /></a> : null}
               </div>
             </div>
             <ActionError error={act.error} onDismiss={act.clear} className="mb-3" />
             <h2 className="mt-0 mb-2 text-callout font-semibold">Jobs</h2>
             <div className="space-y-3">
-              {r.jobs.map((j) => <JobCard key={j.id} job={j} />)}
+              {r.jobs.map((j) => <JobCard key={j.id} job={j} canRerun={can.push && !active} />)}
               {!r.jobs.length ? <Box className="px-6 py-10 text-center text-muted-foreground">No jobs have started yet.</Box> : null}
             </div>
+            <Artifacts run={r.id} url={r.url} />
           </>
         )}
       </Loaded>
@@ -286,8 +287,31 @@ export function RunPage({ id }: { id: number }) {
   );
 }
 
-function JobCard({ job: j }: { job: { id: number; name: string; status: WorkflowRun['status']; duration: string; url?: string; steps: { number: number; name: string; status: WorkflowRun['status']; duration: string }[] } }) {
+/** What the run produced. Downloading goes through GitHub: its archive URLs need the token and redirect to storage a browser can't follow with it. */
+function Artifacts({ run, url }: { run: number; url?: string }) {
   const { source } = useRepo();
+  const list = useLoad(`${source.id}:artifacts:${run}`, () => source.artifacts(run)).data ?? [];
+  if (!list.length) return null;
+  return (
+    <section aria-label="Artifacts" className="mt-6">
+      <h2 className="mt-0 mb-2 text-callout font-semibold">Artifacts</h2>
+      <Box>
+        {list.map((a) => (
+          <div key={a.id} className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-2 first:border-t-0">
+            <Oct name="zip" size={14} className="text-muted-foreground" />
+            <span className="min-w-0 flex-1 font-semibold">{a.name}</span>
+            <span className="text-caption text-muted-foreground">{a.expired ? 'Expired' : a.size > 1e6 ? `${(a.size / 1e6).toFixed(1)} MB` : `${Math.ceil(a.size / 1024)} KB`}</span>
+            {!a.expired && source.live && url ? <a href={url} target="_blank" rel="noreferrer" className="text-caption text-primary underline underline-offset-2">Download on GitHub</a> : null}
+          </div>
+        ))}
+      </Box>
+    </section>
+  );
+}
+
+function JobCard({ job: j, canRerun }: { canRerun: boolean; job: { id: number; name: string; status: WorkflowRun['status']; duration: string; url?: string; steps: { number: number; name: string; status: WorkflowRun['status']; duration: string }[] } }) {
+  const { source, notify } = useRepo();
+  const act = useAction();
   const [open, setOpen] = useState(j.status === 'failure');
   const [showLog, setShowLog] = useState(false);
   const log = useLoad<string | null>(`${source.id}:log:${j.id}:${showLog}`, () => (showLog ? source.jobLog(j.id) : null));
@@ -311,7 +335,11 @@ function JobCard({ job: j }: { job: { id: number; name: string; status: Workflow
             ))}
           </ol>
           <div className="border-t border-border px-4 py-2">
-            <Button className={cn(ghButton(), 'h-7 px-2 text-caption')} onPress={() => setShowLog(!showLog)}>{showLog ? 'Hide log' : 'View log'}</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button className={cn(ghButton(), 'h-7 px-2 text-caption')} onPress={() => setShowLog(!showLog)}>{showLog ? 'Hide log' : 'View log'}</Button>
+              {canRerun ? <Button aria-label={`Re-run job ${j.name}`} className={cn(ghButton(), 'h-7 px-2 text-caption')} isDisabled={act.busy} onPress={() => void act.run(async () => { await source.rerunJob(j.id); notify('Re-run requested'); }, 're-run that job')}>Re-run this job</Button> : null}
+            </div>
+            <ActionError error={act.error} onDismiss={act.clear} className="mt-2" />
             {showLog ? (
               <div className="mt-2">
                 {log.error ? (

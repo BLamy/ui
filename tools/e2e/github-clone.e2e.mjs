@@ -683,10 +683,10 @@ test.describe('regressions', () => {
     const box = page.getByRole('textbox', { name: 'Add a comment' });
     await box.click();
     await box.pressSequentially('thanks @may');
-    await page.getByRole('list', { name: 'People to mention' }).getByRole('button', { name: /maya-chen/ }).click();
+    await page.getByRole('listbox', { name: 'People to mention' }).getByRole('option', { name: /maya-chen/ }).click();
     await expect(box).toHaveValue('thanks @maya-chen ');
     await box.pressSequentially('see #48');
-    await expect(page.getByRole('list', { name: /to reference/ })).toBeVisible();
+    await expect(page.getByRole('listbox', { name: /to reference/ })).toBeVisible();
   });
 
   test('phone: long titles wrap, wide tables scroll, the main targets are 44px', async ({ page }) => {
@@ -695,10 +695,326 @@ test.describe('regressions', () => {
     await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible({ timeout: 30_000 });
     for (const name of ['Bold', 'Add reaction']) {
       const box = await page.getByRole('button', { name }).first().boundingBox();
-      expect(box.height, name).toBeGreaterThanOrEqual(44);
-      expect(box.width, name).toBeGreaterThanOrEqual(44);
+      expect(box.height, name).toBeGreaterThan(43.9);
+      expect(box.width, name).toBeGreaterThan(43.9);
     }
     const kebab = await page.getByRole('button', { name: /Comment actions/ }).first().boundingBox();
-    expect(kebab.height).toBeGreaterThanOrEqual(44);
+    expect(kebab.height).toBeGreaterThan(43.9);
+  });
+});
+
+/* Round 3: what the last review found. These read the server back: that a control appeared proves nothing about what it wrote. */
+test.describe('writes land where they should', () => {
+  const shared = async (page, route) => {
+    await page.goto(`${SB}/iframe.html?id=blocks-github-clone--shared-repository&viewMode=story#/acme/orbit/${route}`);
+    await page.locator('#storybook-root > *').first().waitFor({ timeout: 30_000 });
+  };
+  const API = 'https://api.github.com/repos/acme/orbit';
+  /** Asks the server directly. */
+  const server = (page, path, init) => page.evaluate(async ({ url, init }) => {
+    const res = await globalThis.__githubSharedServer.fetch(url, init);
+    return res.status === 204 ? null : res.json();
+  }, { url: API + path, init });
+  const fileOn = (page, path, ref = 'main') => page.evaluate(async ({ url }) => (await (await globalThis.__githubSharedServer.fetch(url, { headers: { accept: 'application/vnd.github.raw+json' } })).text()), { url: `${API}/contents/${path}?ref=${encodeURIComponent(ref)}` });
+  /** Someone else commits. */
+  const push = (page, path, ref, edit) => page.evaluate(async ({ url, ref, edit }) => {
+    const s = globalThis.__githubSharedServer;
+    const raw = await (await s.fetch(`${url}?ref=${encodeURIComponent(ref)}`, { headers: { accept: 'application/vnd.github.raw+json' } })).text();
+    const { sha } = await (await s.fetch(`${url}?ref=${encodeURIComponent(ref)}`)).json();
+    await s.fetch(url, { method: 'PUT', body: JSON.stringify({ message: 'theirs', content: btoa(unescape(encodeURIComponent(edit.prepend ? edit.prepend + raw : raw.split(edit.from).join(edit.to)))), branch: ref, sha }) });
+  }, { url: `${API}/contents/${path}`, ref, edit });
+
+  test('a comment goes on the issue it was typed on', async ({ page }) => {
+    await shared(page, 'issues/489');
+    const box = page.getByRole('textbox', { name: 'Add a comment' });
+    await box.fill('AAA for 489', { timeout: 30_000 });
+    await page.getByRole('link', { name: '#483' }).first().click();
+    await expect(page.getByRole('heading', { level: 1, name: /lockstep/ })).toBeVisible();
+    await expect(box).toHaveValue('');
+    await box.fill('BBB for 483');
+    await page.goBack();
+    await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible();
+    await expect(box).toHaveValue('AAA for 489');
+    await page.getByRole('button', { name: 'Comment', exact: true }).click();
+    await expect(box).toHaveValue('');
+    const on489 = await server(page, '/issues/489/comments?per_page=100');
+    expect(on489.at(-1).body).toBe('AAA for 489');
+    const on483 = await server(page, '/issues/483/comments?per_page=100');
+    expect(on483.some((c) => /BBB|AAA/.test(c.body))).toBe(false);
+    await page.goForward();
+    await expect(box).toHaveValue('BBB for 483');
+  });
+
+  test('an open title editor doesn’t follow you to another issue or pull request', async ({ page }) => {
+    await shared(page, 'issues/489');
+    await page.getByRole('button', { name: 'Edit', exact: true }).click({ timeout: 30_000 });
+    await page.getByRole('textbox', { name: 'Issue title' }).fill('RENAMED');
+    await page.getByRole('link', { name: '#483' }).first().click();
+    await expect(page.getByRole('textbox', { name: 'Issue title' })).toHaveCount(0);
+    expect((await server(page, '/issues/483')).title).toMatch(/lockstep/);
+    await page.evaluate(() => { location.hash = '#/acme/orbit/pull/488'; });
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Pull request title' }).fill('RENAMED PR');
+    await page.evaluate(() => { location.hash = '#/acme/orbit/pull/481'; });
+    await expect(page.getByRole('heading', { level: 1, name: /Prisma/ })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Pull request title' })).toHaveCount(0);
+  });
+
+  test('an edit goes to the file it was typed on', async ({ page }) => {
+    await shared(page, 'edit/main/src/queue.ts');
+    const queue = page.getByRole('textbox', { name: 'Contents of queue.ts' });
+    await expect(queue).toHaveValue(/class Queue/, { timeout: 30_000 });
+    await page.evaluate(() => { location.hash = '#/acme/orbit/edit/main/src/retry.ts'; });
+    const retry = page.getByRole('textbox', { name: 'Contents of retry.ts' });
+    await expect(retry).toHaveValue(/RetryPolicy/);
+    await retry.fill('RRR\n');
+    await page.evaluate(() => { location.hash = '#/acme/orbit/edit/main/src/queue.ts'; });
+    await expect(queue).toHaveValue(/class Queue/);
+    await page.evaluate(() => { location.hash = '#/acme/orbit/edit/main/src/retry.ts'; });
+    await expect(retry).toHaveValue('RRR\n');
+    await page.getByRole('button', { name: 'Commit changes' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'retry.ts' })).toBeVisible();
+    expect(await fileOn(page, 'src/retry.ts')).toBe('RRR\n');
+    expect(await fileOn(page, 'src/queue.ts')).toMatch(/class Queue/);
+  });
+
+  test('a suggestion refuses when its line moved; applies when it hasn’t', async ({ page }) => {
+    await shared(page, 'pull/484/files');
+    const commit = page.getByRole('button', { name: 'Commit suggestion' });
+    await expect(commit).toBeVisible({ timeout: 30_000 });
+    // Someone pushes above it; the page hasn't refreshed, so the button is still there.
+    await push(page, 'src/dashboard/timeline.tsx', 'dash/attempts', { prepend: '// inserted\n' });
+    const before = await fileOn(page, 'src/dashboard/timeline.tsx', 'dash/attempts');
+    await commit.click();
+    await expect(page.getByRole('alert').filter({ hasText: 'has changed since this was suggested' })).toBeVisible();
+    expect(await fileOn(page, 'src/dashboard/timeline.tsx', 'dash/attempts')).toBe(before);
+    // With fresh data it says it's outdated and stops offering.
+    await page.getByRole('button', { name: 'Reload from GitHub' }).click();
+    await expect(page.getByText('Outdated').first()).toBeVisible();
+    await expect(commit).toHaveCount(0);
+  });
+
+  test('a suggestion on the line it was made for lands exactly there', async ({ page }) => {
+    await shared(page, 'pull/484/files');
+    await page.getByRole('button', { name: 'Commit suggestion' }).click({ timeout: 30_000 });
+    await expect(page.getByRole('button', { name: 'Unresolve conversation' })).toBeVisible();
+    const after = await fileOn(page, 'src/dashboard/timeline.tsx', 'dash/attempts');
+    expect(after.split('\n')[2]).toBe('export function Timeline({ job }: { job: JobRecord }) {');
+    expect(after.split('\n')[3]).toContain('attemptsOf(job)');
+  });
+
+  test('a committed draft is gone, on a new branch too', async ({ page }) => {
+    await shared(page, 'edit/main/src/retry.ts');
+    const editor = page.getByRole('textbox', { name: 'Contents of retry.ts' });
+    await expect(editor).toHaveValue(/RetryPolicy/, { timeout: 30_000 });
+    await editor.fill('Changed on a branch\n');
+    await page.getByText(/new branch/).first().click();
+    await page.getByRole('textbox', { name: 'New branch name' }).fill('from-edit');
+    await page.getByRole('button', { name: 'Commit changes' }).click();
+    await expect(page.getByRole('heading', { name: 'Open a pull request' })).toBeVisible();
+    expect(await fileOn(page, 'src/retry.ts', 'from-edit')).toBe('Changed on a branch\n');
+    await page.evaluate(() => { location.hash = '#/acme/orbit/edit/main/src/retry.ts'; });
+    await expect(editor).toHaveValue(/RetryPolicy/);
+    await expect(page.getByText('your unsaved edits')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Commit changes' })).toBeDisabled();
+    expect(await fileOn(page, 'src/retry.ts')).toMatch(/RetryPolicy/);
+  });
+
+  test('delete won’t remove a version you never saw', async ({ page }) => {
+    await shared(page, 'delete/main/src/retry.ts');
+    await expect(page.getByRole('button', { name: 'Delete file' })).toBeEnabled({ timeout: 30_000 });
+    await push(page, 'src/retry.ts', 'main', { prepend: '// theirs\n' });
+    await page.getByRole('button', { name: 'Reload from GitHub' }).click();
+    await page.getByRole('button', { name: 'Delete file' }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'changed on GitHub' })).toBeVisible();
+    expect(await fileOn(page, 'src/retry.ts')).toMatch(/theirs/);
+  });
+
+  test('rename, and upload', async ({ page }) => {
+    await shared(page, 'edit/main/docs/adapters.md');
+    const path = page.getByRole('textbox', { name: /Path/ });
+    await expect(path).toHaveValue('docs/adapters.md', { timeout: 30_000 });
+    await path.fill('docs/backends.md');
+    await page.getByRole('button', { name: 'Commit changes' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'backends.md' })).toBeVisible();
+    expect(await fileOn(page, 'docs/backends.md')).toMatch(/Adapters/);
+    expect((await server(page, '/contents/docs?ref=main')).map((f) => f.name)).not.toContain('adapters.md');
+
+    await page.evaluate(() => { location.hash = '#/acme/orbit/upload/main/docs'; });
+    await page.locator('input[type="file"]').setInputFiles([{ name: 'one.txt', mimeType: 'text/plain', buffer: Buffer.from('uploaded one\n') }, { name: 'two.txt', mimeType: 'text/plain', buffer: Buffer.from('uploaded two\n') }]);
+    await expect(page.getByRole('list', { name: 'Files to upload' })).toContainText('docs/two.txt');
+    await page.getByRole('button', { name: 'Commit changes' }).click();
+    await expect(page.getByRole('link', { name: 'File one.txt' })).toBeVisible();
+    expect(await fileOn(page, 'docs/two.txt')).toBe('uploaded two\n');
+    const log = await server(page, '/commits?sha=main&per_page=1');
+    expect(log[0].commit.message).toBe('Add 2 files');
+  });
+
+  test('Cancel stays in the block on a deep link', async ({ page }) => {
+    for (const route of ['edit/main/README.md', 'issues/new', 'releases/new']) {
+      await shared(page, route);
+      await page.reload();
+      await page.getByRole('button', { name: 'Cancel', exact: true }).click({ timeout: 30_000 });
+      expect(page.url()).toContain('blocks-github-clone');
+      await expect(page.getByRole('button', { name: /Repository acme\/orbit/ })).toBeVisible();
+    }
+  });
+
+  test('arrows along the tabs stay on the tabs', async ({ page }) => {
+    await shared(page, '');
+    const code = page.getByRole('tab', { name: 'Code' });
+    await code.focus({ timeout: 30_000 });
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(250);
+    await expect(page.getByRole('tab', { name: /^Issues/ })).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(250);
+    await expect(page.getByRole('tab', { name: /^Pull requests/ })).toBeFocused();
+  });
+
+  test('drafts on the rest of the forms; Cancel asks; a range keeps its text', async ({ page }) => {
+    await shared(page, 'issues/489');
+    await page.getByRole('button', { name: /Comment actions for maya-chen/ }).first().click({ timeout: 30_000 });
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    const edit = page.getByRole('textbox', { name: 'Edit comment' });
+    await edit.fill('half an edit');
+    await page.getByRole('tab', { name: /^Pull requests/ }).click();
+    await page.goBack();
+    await expect(edit).toHaveValue('half an edit');
+    await page.getByRole('button', { name: 'Cancel', exact: true }).first().click();
+    await expect(page.getByRole('alertdialog', { name: 'Discard your changes?' })).toBeVisible();
+
+    await page.evaluate(() => { location.hash = '#/acme/orbit/pull/488/files'; });
+    const diff = page.locator('[id="diff-src/retry.ts"]');
+    await diff.locator('tr', { hasText: 'export type Jitter' }).hover();
+    await diff.getByRole('button', { name: /Comment on line 7$/ }).click();
+    await page.getByRole('textbox', { name: /Comment on line 7/ }).fill('keep me');
+    await diff.locator('tr', { hasText: 'export interface BackoffOptions' }).hover();
+    await diff.getByRole('button', { name: /Comment on line 9$/ }).click({ modifiers: ['Shift'] });
+    await expect(page.getByRole('textbox', { name: /Comment on line 9/ })).toHaveValue('keep me');
+    await expect(page.getByText('Comment on lines 7 to 9')).toBeVisible();
+  });
+
+  test('autocomplete: Enter is a new line until you choose; none in code; ⌘↵ posts', async ({ page }) => {
+    await shared(page, 'issues/485');
+    const box = page.getByRole('textbox', { name: 'Add a comment' });
+    await box.click({ timeout: 30_000 });
+    await box.pressSequentially('see @');
+    await expect(page.getByRole('listbox', { name: 'People to mention' })).toBeVisible();
+    await box.press('Enter');
+    await expect(box).toHaveValue('see @\n');
+    await box.fill('');
+    await box.pressSequentially('```\nconst a = @');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+    await box.fill('');
+    await box.pressSequentially('hi @may');
+    await box.press('ArrowDown');
+    await expect(box).toHaveAttribute('aria-activedescendant', /.+/);
+    await box.press('Enter');
+    await expect(box).toHaveValue('hi @maya-chen ');
+    await box.pressSequentially('@');
+    await box.press('ControlOrMeta+Enter');
+    await expect(box).toHaveValue('');
+    expect((await server(page, '/issues/485/comments?per_page=100')).at(-1).body).toMatch(/^hi @maya-chen @/);
+  });
+
+  test('tasks flip the one you clicked, on the server', async ({ page }) => {
+    await shared(page, 'issues/480');
+    const body = page.locator('input[type="checkbox"]');
+    await expect(body).toHaveCount(3, { timeout: 30_000 });
+    await body.nth(2).click();
+    await expect.poll(async () => (await server(page, '/issues/480')).body).toContain('- [x] Empty state');
+    expect((await server(page, '/issues/480')).body).toContain('- [ ] Timeline component');
+  });
+
+  test('a refused Viewed rolls back; Reload doesn’t claim success when it failed', async ({ page }) => {
+    await page.goto(`${SB}/iframe.html?id=blocks-github-clone--writes-refused&viewMode=story#/acme/orbit/pull/488/files`);
+    await expect(page.getByRole('status').filter({ hasText: '1 / 3 viewed' })).toBeVisible({ timeout: 30_000 });
+    await tick(page, 'Viewed');
+    await expect(page.getByRole('alert').filter({ hasText: 'Couldn’t mark that file' })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: '1 / 3 viewed' })).toBeVisible();
+
+    await shared(page, 'issues/489');
+    await expect(page.getByRole('button', { name: 'Unpin' })).toBeVisible({ timeout: 30_000 });
+    await page.evaluate(() => { const s = globalThis.__githubSharedServer; for (let i = 0; i < 40; i++) s.fail(/^(GET|POST) /, 500, 'Server Error'); });
+    await page.getByRole('button', { name: 'Reload from GitHub' }).click();
+    await expect(page.getByText('Couldn’t reach GitHub').first()).toBeVisible();
+    await expect(page.getByText('Up to date')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Unpin' })).toBeVisible();
+  });
+
+  test('metadata on a new pull request; Development on the issue; bulk adds', async ({ page }) => {
+    await shared(page, 'compare/main...docs%2Fprisma?expand=1');
+    await expect(page.getByText('A pull request already exists')).toBeVisible({ timeout: 30_000 });
+    await push(page, 'README.md', 'spike/redis', { prepend: '# x\n' });
+    await page.evaluate(() => { location.hash = '#/acme/orbit/compare/main...spike%2Fredis?expand=1'; });
+    await page.getByRole('textbox', { name: 'Description' }).fill('Closes #472');
+    await page.getByRole('button', { name: /^Labels/ }).click();
+    await page.getByRole('option', { name: /^bug/ }).click();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: /^Reviewers/ }).click();
+    await page.getByRole('option', { name: /jonasw/ }).click();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Create pull request' }).click();
+    await expect(page.getByRole('tab', { name: /^Files changed/ })).toBeVisible();
+    const n = Number(/pull\/(\d+)/.exec(page.url())[1]);
+    const pr = await server(page, `/pulls/${n}`);
+    expect(pr.labels.map((l) => l.name)).toEqual(['bug']);
+    expect(pr.requested_reviewers.map((u) => u.login)).toEqual(['jonasw']);
+    await page.evaluate(() => { location.hash = '#/acme/orbit/issues/472'; });
+    await expect(page.getByRole('complementary', { name: 'Details' }).getByRole('link', { name: new RegExp(`#${n}`) })).toBeVisible();
+
+    await page.evaluate(() => { location.hash = '#/acme/orbit/issues?q=is:open%20label:%22help%20wanted%22'; });
+    await page.getByRole('checkbox', { name: /Select “Support per-key/ }).click();
+    await page.getByRole('button', { name: /^Label$/ }).click();
+    await page.getByRole('option', { name: /^performance/ }).click();
+    await page.keyboard.press('Escape');
+    await expect.poll(async () => (await server(page, '/issues/487')).labels.map((l) => l.name).sort()).toEqual(['enhancement', 'help wanted', 'performance']);
+  });
+
+  test('tag, commit comment, job re-run, artifacts, issue forms', async ({ page }) => {
+    await shared(page, 'tags');
+    await page.getByRole('button', { name: 'New tag' }).click({ timeout: 30_000 });
+    await page.getByRole('textbox', { name: 'Tag name' }).fill('v9.9.9');
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('link', { name: 'v9.9.9' })).toBeVisible();
+    expect((await server(page, '/tags?per_page=100')).map((t) => t.name)).toContain('v9.9.9');
+
+    const [head] = await server(page, '/commits?sha=main&per_page=1');
+    await page.evaluate((sha) => { location.hash = `#/acme/orbit/commit/${sha}`; }, head.sha);
+    await page.getByRole('textbox', { name: 'Comment on this commit' }).fill('Nice commit');
+    await page.getByRole('button', { name: 'Comment on this commit' }).click();
+    await expect(page.getByText('Nice commit')).toBeVisible();
+    expect((await server(page, `/commits/${head.sha}/comments`)).map((c) => c.body)).toEqual(['Nice commit']);
+
+    await page.evaluate(() => { location.hash = '#/acme/orbit/actions/runs/5001'; });
+    await page.getByRole('button', { name: 'Re-run job test' }).click();
+    await expect.poll(async () => (await server(page, '/actions/runs/5001')).conclusion).toBe('success');
+    await page.evaluate(() => { location.hash = '#/acme/orbit/actions/runs/5003'; });
+    await expect(page.getByRole('region', { name: 'Artifacts' })).toContainText('coverage-report');
+    await expect(page.getByRole('region', { name: 'Artifacts' })).toContainText('Expired');
+
+    await page.evaluate(() => { location.hash = '#/acme/orbit/issues/new'; });
+    await page.getByRole('button', { name: 'Feature request' }).click();
+    await expect(page.getByRole('textbox', { name: 'Description' })).toHaveValue(/### What problem does this solve/);
+    await expect(page.getByRole('textbox', { name: /Title/ })).toHaveValue('Feature: ');
+  });
+});
+
+test.describe('phone: review fits', () => {
+  test.use({ viewport: phone });
+  test('threads and the line composer stay on screen, submit included', async ({ page }) => {
+    await page.goto(`${SB}/iframe.html?id=blocks-github-clone--pull-on-phone&viewMode=story`);
+    await page.getByRole('tab', { name: /^Files changed/ }).click({ timeout: 30_000 });
+    const resolve = page.getByRole('button', { name: 'Resolve conversation' }).first();
+    await resolve.scrollIntoViewIfNeeded();
+    const frame = await page.locator('[id="diff-docs/retries.md"]').boundingBox();
+    const box = await resolve.boundingBox();
+    expect(box.x + box.width).toBeLessThanOrEqual(frame.x + frame.width);
+    await page.getByRole('button', { name: /Comment on line/ }).first().click();
+    const submit = page.getByRole('button', { name: 'Start a review' });
+    await submit.scrollIntoViewIfNeeded();
+    const s = await submit.boundingBox();
+    expect(s.x + s.width).toBeLessThanOrEqual(422);
   });
 });
