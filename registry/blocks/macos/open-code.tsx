@@ -8,6 +8,10 @@ import { useOptionalTailscale } from '@/lib/tailscale-react';
 import { PasswordsKeychain, usePasswordsKeychain } from '../apple-passwords/page';
 import { ThemeScope } from '@/lib/theme';
 
+const STARTER_BACKGROUND = '#18181b';
+const STARTER_FOREGROUND = '#fafafa';
+const STARTER_SECONDARY = '#a1a1aa';
+
 const STARTER_FILES = {
   'index.html': `<!doctype html>
 <html lang="en">
@@ -15,10 +19,10 @@ const STARTER_FILES = {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OpenCode workspace</title>
 <style>
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #18181b; color: #fafafa; font: 16px/1.6 system-ui; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: ${STARTER_BACKGROUND}; color: ${STARTER_FOREGROUND}; font: 16px/1.6 system-ui; }
   main { max-width: 360px; padding: 32px; }
   h1 { font-size: 36px; line-height: 1.1; letter-spacing: -.04em; }
-  p { color: #a1a1aa; }
+  p { color: ${STARTER_SECONDARY}; }
   button { border: 0; border-radius: 8px; padding: 12px 20px; font: inherit; cursor: pointer; }
 </style>
 <main>
