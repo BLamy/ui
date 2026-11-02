@@ -405,7 +405,7 @@ export function CanvasMiniMap({ items, position = 'bottom-right', width = 184, h
       aria-hidden="true"
       width={width}
       height={height}
-      className={cn('absolute z-10 cursor-pointer rounded-[10px] bg-popover/90 shadow-[0_4px_16px_--alpha(black/14%),0_0_0_.5px_var(--border)] backdrop-blur-md', CORNER[position], className)}
+      className={cn('absolute z-10 cursor-pointer rounded-ctl bg-popover/90 shadow-[0_4px_16px_--alpha(black/14%),0_0_0_.5px_var(--border)] backdrop-blur-md', CORNER[position], className)}
       onPointerDown={(e) => {
         e.stopPropagation();
         if (e.button !== 0) return;

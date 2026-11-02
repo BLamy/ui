@@ -68,7 +68,7 @@ function Step({ step, code }: { step: MiniStep; code: string }) {
   return (
     <div title={code.slice(step.start, step.end)} style={grow}
       className={cn('flex h-6 min-w-0 items-center justify-center overflow-hidden rounded-[3px] px-0.5 font-mono text-caption2',
-        rest ? 'shadow-[inset_0_0_0_1px_var(--border)]' : 'bg-success/20 text-success')}>
+        rest ? 'shadow-hairline' : 'bg-success/20 text-success')}>
       <span className="truncate">{label}{ops}</span>
     </div>
   );

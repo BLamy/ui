@@ -22,13 +22,13 @@ export function UserCard({ user, className }: UserCardProps) {
   const { id, status } = useChatUserInfo(user);
   return (
     // Full-bleed: cancels the HoverCard's padding so the banner reaches its rounded edges.
-    <div data-slot="user-card" className={cn('-m-4 overflow-hidden rounded-[14px] font-sans', className)}
+    <div data-slot="user-card" className={cn('-m-4 overflow-hidden rounded-card font-sans', className)}
       style={{ '--ck-role': user.role, '--user-card-banner': user.c, '--member-tag': CARD_TAG_COLOR } as CSSProperties}>
       <div className="h-[56px] bg-(--user-card-banner)" />
       <div className="px-4 pb-4">
         <Avatar {...chatUserAvatar(user, 64)} status={status} className="-mt-8 rounded-full ring-[5px] ring-popover" />
         <div className="mt-2 flex items-center gap-1.5">
-          <span className="ck-role truncate text-[17px] leading-tight font-bold text-(--ck-role)">{user.name}</span>
+          <span className="ck-role truncate text-headline leading-tight font-bold text-(--ck-role)">{user.name}</span>
           {user.bot && <span className="rounded-sm bg-(--member-tag) px-1 py-px text-[8.5px] font-extrabold text-white">APP</span>}
         </div>
         {id && <div className="text-caption text-muted-foreground">@{id}</div>}

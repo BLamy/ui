@@ -9,7 +9,9 @@ A card that previews what its trigger points at — a person, a repository, a fi
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card'
+import {
+  HoverCard, HoverCardTrigger, HoverCardHeader,
+} from '@/components/ui/hover-card'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -20,7 +22,9 @@ Import the stylesheet once at your app's entry, then the parts from the package 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@brett_lamy/ui'
+import {
+  HoverCard, HoverCardTrigger, HoverCardHeader,
+} from '@brett_lamy/ui'
 ```
 {% endtab %}
 {% endtabs %}

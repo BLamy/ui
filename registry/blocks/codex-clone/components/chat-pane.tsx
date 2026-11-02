@@ -26,7 +26,7 @@ function DocCard({ doc }: { doc: Doc }) {
   const sections = outlineOf(doc.body).filter((o) => o.level === 2);
   return (
     <div className="-m-4">
-      <div className="h-12 rounded-t-[14px] bg-(image:--doc-cover)" style={{ '--doc-cover': doc.cover } as React.CSSProperties} />
+      <div className="h-12 rounded-t-card bg-(image:--doc-cover)" style={{ '--doc-cover': doc.cover } as React.CSSProperties} />
       <div className="px-4 pt-2.5 pb-4">
         <div className="flex items-center gap-2">
           <span className="text-[18px] leading-none" aria-hidden="true">{doc.emoji}</span>

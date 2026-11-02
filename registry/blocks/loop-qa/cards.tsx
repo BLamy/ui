@@ -58,7 +58,7 @@ export function BugPreview({ bug, className, placement, children }: { bug: Bug; 
 export function RunPreview({ runId, className, placement, children }: { runId: string; className?: string; placement?: HoverCardProps['placement']; children: ReactNode }) {
   return (
     <Preview className={className} placement={placement} cardClassName="w-80" contentClassName="p-0"
-      card={<RunCard runId={runId} compact className="rounded-[14px] border-0 bg-transparent" />}>
+      card={<RunCard runId={runId} compact className="rounded-card border-0 bg-transparent" />}>
       {children}
     </Preview>
   );
@@ -74,7 +74,7 @@ export function ProjectCard({ project: p }: { project: Project }) {
   return (
     <>
       <HoverCardHeader
-        media={<span className="grid size-9 place-items-center rounded-[10px] bg-(--brand) text-[15px] font-semibold text-white" style={{ '--brand': p.brand } as React.CSSProperties}>{p.name[0]}</span>}
+        media={<span className="grid size-9 place-items-center rounded-ctl bg-(--brand) text-subhead font-semibold text-white" style={{ '--brand': p.brand } as React.CSSProperties}>{p.name[0]}</span>}
         title={p.name}
         subtitle={<span className="inline-flex items-center gap-1"><Icon name="globe" size={11} sw={2} />{host(p.url)}</span>}
       />
