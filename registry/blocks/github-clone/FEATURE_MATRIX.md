@@ -8,6 +8,7 @@ It isn't part of the registry item (not in `meta.json`'s files).
 | Status | Meaning |
 | --- | --- |
 | **E2E** | Exercised by clicks and keys in `tools/e2e/github-clone.e2e.mjs` against the in-page GitHub (`sample-server.ts`), and the write read back |
+| **E2E (read back)** | Same, and the test asks the server what was actually written. The stronger claim |
 | **Unit** | Covered through the real client in `sample-server.test.ts` or `github-api.test.ts`, not driven through the UI by the suite |
 | **Built** | Implemented and type-checked, not yet exercised by an automated test |
 | **Partial** | Works with a stated gap |
@@ -49,13 +50,17 @@ author as the client, so agreement between those two is weak evidence. Reads and
 | Go to file (`t`) | E2E | Fuzzy; prefers matches in the file name |
 | Commit history by ref, path, author, with pages | E2E / Unit | |
 | Commit page: message, parents, PRs, checks, diff | E2E | |
+| Commit comments | E2E (read back) / Unit | Whole-commit only; line comments on commits are **Backlog** |
 | Create, edit, delete a file; direct or new branch and PR | E2E | Upload: **Backlog** |
-| Edit never overwrites a commit that landed meanwhile | E2E | The base sha is pinned when editing starts; GitHub's 409 becomes a conflict screen and keeps your text |
+| Edit and delete never overwrite a version you didn't see | E2E (read back) | The version is pinned when you start; GitHub's 409 becomes a conflict screen and keeps your text |
+| Writes go to the file, issue or PR they were typed on | E2E (read back) | Screens keyed by route, drafts by document |
+| Rename or move a file while editing | E2E (read back) | One commit, through the Git Data API, after a version check. **Git Data writes unverified live** |
+| Upload files, several in one commit | E2E (read back) | 25 MB per file here. **Unverified live** |
 | Tags and commits take no commits; no-change commits are off; a missing file says so | E2E | |
 | Without write access: fork, edit there, open the PR back | E2E | Real forks take a moment to appear: **unverified live** |
 | Contribute button on a fork | Built | |
 | Branches page: new, rename, delete, ahead/behind, its PR | E2E / Built | Rename is Built |
-| Tags page, delete, archives | Built | |
+| Tags page, create, delete, archives | E2E (read back) / Built | Create is e2e-driven; the sample hides archives |
 | Releases: list, detail, draft, publish, edit, delete, generated notes | E2E / Unit | Asset upload: **External** (uploads.github.com doesn't allow browsers) |
 | Clone dialog, Download ZIP, GitHub Desktop | Built | Hidden in the sample, which isn't on GitHub |
 | Empty repository | E2E | |
@@ -70,22 +75,25 @@ author as the client, so agreement between those two is weak evidence. Reads and
 | Author, labels, milestone, assignee, sort menus; no:label, no:assignee | E2E / Built | |
 | Pages to the end (search caps at 1000 results) | E2E | The cap is GitHub's: **External** |
 | Create: title, body, Write/Preview, labels, assignees, milestone | E2E | People without triage are told labels etc. aren't theirs to set |
-| Issue templates | Built | Markdown templates only. YAML issue forms: **Backlog** |
+| Issue templates | E2E | Markdown and YAML |
 | Edit title and body | E2E | |
 | Comment; Enter is a new line, ⌘↵ posts; text survives failure | E2E | |
 | Edit, delete, quote comments; copy link | E2E / Built | Quote and delete are Built |
 | Reactions on issues and comments | Unit | Not driven by e2e |
 | Close completed / not planned, close with comment, reopen; counts move | E2E | |
 | Labels, assignees, milestone from the sidebar, with timeline events | E2E | |
+| Development: pull requests that close this issue | E2E | |
 | Lock, unlock, pin, subscribe, delete | Unit | Not driven by e2e |
 | Labels page, milestones page and detail | E2E / Built | Milestone detail is Built |
 | `#12`, `owner/repo#3`, `@user`, sha autolinks | E2E | |
 | Number that's a PR moves to its page | E2E | |
 | Attachments | **External** | GitHub has no upload API; the composer doesn't offer them |
-| @mention and #reference autocomplete | E2E | |
-| Task lists write back; read-only without permission | E2E | |
-| Bulk actions: state, labels, assignees, milestone | E2E / Built | Only state is e2e-driven. One write per issue; stops at a refusal and says how far it got |
-| Comment and form drafts survive leaving; Cancel asks; leaving the page warns | E2E | Restores on return rather than blocking navigation |
+| @mention and #reference autocomplete | E2E | Enter is a new line until you arrow to a choice; none inside code |
+| Task lists write back; read-only without permission; off when they can't be mapped to source | E2E (read back) / Unit | |
+| Bulk actions on issues and PRs: state, labels, assignees, milestone | E2E (read back) / Built | Labels add, as on GitHub. PR bulk is Built. One write each; stops at a refusal and says how far it got |
+| Issue forms (YAML) | E2E | As a Markdown skeleton: the API creates issues from text, so fields become headings. Required-field checks aren't enforced |
+| Drafts survive leaving: comments, edit comment, reply, line comment, review, new issue, new file, new PR, file edit, commit message, release | E2E / Built | Comment, edit comment, line comment and file edit are e2e-driven. Held in memory for the page's life; leaving the page warns. Titles and Settings fields don't persist |
+| Cancel asks when there's something to lose, and never leaves the block | E2E | |
 | Transfer issue, issue types, sub-issues, Projects | **Backlog** / External | Projects needs a `project` scope the sign-in doesn't request, so the filter was removed |
 
 ## Pull requests
@@ -107,19 +115,21 @@ author as the client, so agreement between those two is weak evidence. Reads and
 | Commits tab, per-commit diff, Checks tab | E2E / Built | |
 | Files: unified, split, filter, viewed | E2E | Hide whitespace: **External** (REST has no such parameter) |
 | Line comments, ranges, pending review, submit, discard | E2E / Unit | Ranges are Built |
-| Threads: reply, resolve, outdated | E2E / Unit | |
+| Threads: reply, resolve, outdated | E2E | Outdated comes from the comment's own commit |
 | Self-review blocked | Unit | |
-| Suggest a change, commit a suggestion | E2E | Via the Contents API: GitHub has no suggestion endpoint |
-| Expand diff context | E2E | Whole file at once, not hunk by hunk |
-| Revert a merged PR; re-request review | E2E | |
-| Compare and create PR, draft, template, fork heads | E2E / Unit | Fork heads list the fork's default branch only |
+| Suggest a change, commit a suggestion | E2E (read back) | Refuses if the lines aren't what was reviewed. Via the Contents API: GitHub has no suggestion endpoint. One at a time: batching is **Backlog** |
+| Expand diff context | E2E | Whole file at once, not hunk by hunk. Expanded lines take no comments: they aren't in the diff |
+| Revert a merged PR; re-request review | E2E / Unit | A second revert reports the existing branch but doesn't link to its PR |
+| Metadata on Create PR | E2E (read back) | If the extras are refused, the PR still opens and says so |
+| Compare and create PR, draft, template, tags, fork heads | E2E / Unit | Your fork's branches by name; other forks' default branch only |
 
 ## Actions
 
 | Workflow | Status | Notes |
 | --- | --- | --- |
 | Runs with event, status, branch, actor, workflow filters and pages | E2E / Unit | |
-| Run: jobs, steps, re-run all or failed, cancel, delete | E2E / Unit | |
+| Run: jobs, steps, re-run all, failed or one job, cancel, delete | E2E (read back) / Unit | |
+| Artifacts: list | E2E | Download links to GitHub: its archive URLs need the token and redirect to storage a browser can't follow with it |
 | Job logs | Partial | Sample works. Live redirects to storage that may refuse browsers: **unverified**, and the UI falls back to a GitHub link |
 | Dispatch with inputs from the workflow file | E2E / Unit | Simple YAML reader, not a full parser |
 | Enable, disable, new workflow | E2E / Built | Pushing to `.github/workflows` needs the `workflow` scope the sign-in doesn't request: **External**, untested live |
@@ -176,19 +186,23 @@ Findings from it so far: `stats/code_frequency` answers 422 above 10,000 commits
 
 1. Whatever the PM's next review finds.
 2. A write pass on a sandbox repository, once the owner names one. **External: needs a decision.**
-3. Drive what's only Unit or Built through the UI: reactions, lock, delete issue, rename branch, squash and rebase in the UI.
-4. Phone targets not yet at 44px (inline text links are exempt; the shared NavigationStack back button is 36px high), dark mode review.
-5. Conflict editor, YAML issue forms, file upload, single-job re-run, artifacts, commit comments, tag creation outside releases.
+3. Drive what's only Unit or Built through the UI: reactions, lock, delete issue, rename branch, squash and rebase in the UI, PR bulk.
+4. Phone: the shared NavigationStack back button is 36px high; line numbers and inline text links are small by the inline exception; line ranges in the code view have no touch path.
+5. Conflict editor (links to GitHub today), suggestion batching, line comments on commits, a second revert linking its PR.
 
-## Known problems outside this block
+## Out of scope, on purpose
 
-- `node tools/tokens/check.mjs` fails on `registry/blocks/macos/open-code.tsx` (3 color literals). Not touched by this work.
+This example doesn't present these, and they aren't in the core workflows asked for: Discussions, Wiki, Projects, Security tabs; profile pages and a dashboard;
+webhooks, deploy keys, secrets, environments and rulesets in Settings; editing branch protection (it's read here, with a link). Settings' feature toggles say so.
 
 ## History
 
 - **PM baseline:** read-only viewer, about 60 inert controls, the only write a comment, sample data contradicting itself.
 - **PM round 1 (on milestone 1):** drafts lost, silent overwrite on edit, a failed refresh destroying the screen, back broken across repositories,
   about 10 overstated matrix rows.
+- **PM round 2 (on milestone 2):** comments, titles and file edits landing on the wrong target when navigating between same-kind screens; Commit suggestion overwriting
+  whatever had moved to that line; drafts surviving new-branch commits. The e2e suite missed all three because it checked controls, not what was written.
+- **Milestone 3:** those, the rest of that review's P1s, and every non-blocked gap it listed. 54 e2e workflows with read-backs, 67 unit tests, 12 live checks.
 - **Milestone 2:** all of those, plus the contribution path and parity features. 37 e2e workflows, 53 unit tests, 12 read-only checks against github.com on two repositories.
 - **Milestone 1:** the rewrite above. 25 e2e workflows and 53 unit tests. The e2e run found real bugs: single-select pickers ignoring
   clicks, Escape not closing pickers, loads stuck on their first empty answer, same-repository links going nowhere.
