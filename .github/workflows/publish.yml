@@ -42,6 +42,12 @@ jobs:
       - name: Build libraries
         run: pnpm nx run-many -t build -p @brett_lamy/ui
 
+      # Temporary: the claims npm's trusted publishing sees (payload only, no signature), to match its config.
+      - name: Show OIDC claims
+        run: |
+          TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" | jq -r .value)
+          echo "$TOKEN" | cut -d. -f2 | tr '_-' '/+' | base64 -d 2>/dev/null | jq '{sub, repository, repository_owner, repository_owner_id, repository_id, workflow_ref, job_workflow_ref, ref, environment, event_name, aud}' || true
+
       - name: Publish new versions
         shell: bash
         env:
