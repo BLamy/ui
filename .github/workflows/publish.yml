@@ -55,6 +55,8 @@ jobs:
             npm config delete '//registry.npmjs.org/:_authToken'
           fi
           npm install --global npm@latest
+          # Trusted publishing needs npm 11.5.1+; verbose output says why an OIDC exchange was refused.
+          echo "npm $(npm --version)"
           mkdir -p "$RUNNER_TEMP/pkgs"
           for pkg in ui; do
             NAME=$(node -p "require('./packages/$pkg/package.json').name")
@@ -65,5 +67,5 @@ jobs:
             fi
             TARBALL=$(cd "packages/$pkg" && pnpm pack --pack-destination "$RUNNER_TEMP/pkgs" | tail -1)
             echo "Publishing $NAME@$VERSION ($TARBALL)"
-            npm publish "$TARBALL" --access public
+            npm publish "$TARBALL" --access public --loglevel verbose
           done
