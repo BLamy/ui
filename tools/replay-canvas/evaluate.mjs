@@ -31,7 +31,7 @@ for (const m of manifest) {
     await page.waitForFunction(() => {
       const f = [...document.querySelectorAll('[data-slot=replay-canvas-frame]')];
       return f.length > 0 && f.every((el) => el.hasAttribute('data-rc-scope'));
-    }, null, { timeout: 90_000 }).catch(() => {});
+    }, null, { timeout: 90_000 }).catch(() => undefined); // a frame that never settles is measured as it is
     await page.waitForTimeout(1500);
     await page.locator('[aria-label="Zoom to fit (⌘0)"]').click();
     await page.waitForTimeout(800);
