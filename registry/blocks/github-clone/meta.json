@@ -1,22 +1,52 @@
 {
   "name": "github-clone",
   "title": "GitHub clone",
-  "description": "A GitHub repository page over GitHub's real data: signed in with GitHub in the Passwords keychain (the same passkey-encrypted device sign-in the Passwords block and the docs use, so no second sign-in), it reads any repository you pick — owner/name, a github.com URL, or your recently pushed ones — straight from the GitHub REST API: README and file browser with a code viewer per branch, issue and pull request lists with labels and counts, an issue or pull request conversation (comments, commits, labels, review requests, reviews, merges) whose comment composer posts real comments, reviewers, checks and a merge box, a unified diff for Files changed, and Actions runs. Loading, rate-limit, not-found and signed-out states; responses cached for the session. Without a sign-in it shows an invented sample repository, offline, with a Sign in with GitHub button. Primer colors in light and dark; collapses to a phone layout with pushed screens.",
-  "categories": ["application", "dashboard", "developer"],
+  "description": "A working GitHub repository client. Signed in with GitHub in the Passwords keychain (the same passkey-encrypted device sign-in the Passwords block and the docs use), it reads and writes real repositories straight on GitHub's REST and GraphQL APIs: browse code at any branch, tag or commit; history, blame and go-to-file; edit, create and delete files; branches, tags and releases; issues and pull requests with GitHub's search syntax, filters and pages; comments, reactions, labels, assignees and milestones; compare and open pull requests; line comments, reviews and threads; a truthful merge box with every allowed method; Actions runs, jobs, re-runs and dispatch; Insights; Settings. Every control respects the account's real permissions. Without a sign-in the same code runs against a small GitHub in the page with an invented repository, so every workflow can be tried offline and nothing leaves the page. Primer colors in light and dark; a phone layout with pushed screens that reaches everything the desktop does.",
+  "categories": [
+    "application",
+    "dashboard",
+    "developer"
+  ],
   "files": [
     "page.tsx",
     "repo-header.tsx",
     "code-tab.tsx",
+    "commits.tsx",
+    "refs.tsx",
+    "file-edit.tsx",
+    "compare.tsx",
     "issues-tab.tsx",
     "pulls-tab.tsx",
     "lists.tsx",
     "pull-request.tsx",
+    "thread.tsx",
+    "meta.tsx",
+    "diff.tsx",
+    "labels.tsx",
+    "releases.tsx",
     "actions-tab.tsx",
+    "insights-tab.tsx",
+    "settings-tab.tsx",
+    "people.tsx",
+    "chart.tsx",
+    "account.tsx",
     "dialogs.tsx",
+    "pickers.tsx",
+    "markdown.tsx",
+    "links.tsx",
     "parts.tsx",
     "repo-context.tsx",
+    "route.ts",
     "source.ts",
     "github-api.ts",
-    "data.ts"
+    "data.ts",
+    "sample.ts",
+    "sample-server.ts",
+    "sample-seed.ts",
+    "sample-files.ts",
+    "sample-git.ts"
+  ],
+  "dependencies": [
+    "react-aria-components"
   ]
 }

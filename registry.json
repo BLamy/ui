@@ -7243,29 +7243,30 @@
       "name": "github-clone",
       "type": "registry:block",
       "title": "GitHub clone",
-      "description": "A GitHub repository page over GitHub's real data: signed in with GitHub in the Passwords keychain (the same passkey-encrypted device sign-in the Passwords block and the docs use, so no second sign-in), it reads any repository you pick — owner/name, a github.com URL, or your recently pushed ones — straight from the GitHub REST API: README and file browser with a code viewer per branch, issue and pull request lists with labels and counts, an issue or pull request conversation (comments, commits, labels, review requests, reviews, merges) whose comment composer posts real comments, reviewers, checks and a merge box, a unified diff for Files changed, and Actions runs. Loading, rate-limit, not-found and signed-out states; responses cached for the session. Without a sign-in it shows an invented sample repository, offline, with a Sign in with GitHub button. Primer colors in light and dark; collapses to a phone layout with pushed screens.",
+      "description": "A working GitHub repository client. Signed in with GitHub in the Passwords keychain (the same passkey-encrypted device sign-in the Passwords block and the docs use), it reads and writes real repositories straight on GitHub's REST and GraphQL APIs: browse code at any branch, tag or commit; history, blame and go-to-file; edit, create and delete files; branches, tags and releases; issues and pull requests with GitHub's search syntax, filters and pages; comments, reactions, labels, assignees and milestones; compare and open pull requests; line comments, reviews and threads; a truthful merge box with every allowed method; Actions runs, jobs, re-runs and dispatch; Insights; Settings. Every control respects the account's real permissions. Without a sign-in the same code runs against a small GitHub in the page with an invented repository, so every workflow can be tried offline and nothing leaves the page. Primer colors in light and dark; a phone layout with pushed screens that reaches everything the desktop does.",
       "categories": [
         "application",
         "dashboard",
         "developer"
       ],
-      "dependencies": [],
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/badge.json",
         "https://blamy.github.io/ui/r/button.json",
-        "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/credenza.json",
-        "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/navigation-stack.json",
+        "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/progress.json",
-        "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/syntax.json",
@@ -7273,6 +7274,7 @@
         "https://blamy.github.io/ui/r/tab-view.json",
         "https://blamy.github.io/ui/r/tailscale.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/toast.json",
         "https://blamy.github.io/ui/r/tree.json",
         "https://blamy.github.io/ui/r/utils.json",
         "https://blamy.github.io/ui/r/workbench-theme.json",
@@ -7295,6 +7297,26 @@
           "target": "components/blocks/github-clone/code-tab.tsx"
         },
         {
+          "path": "registry/blocks/github-clone/commits.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/commits.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/refs.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/refs.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/file-edit.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/file-edit.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/compare.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/compare.tsx"
+        },
+        {
           "path": "registry/blocks/github-clone/issues-tab.tsx",
           "type": "registry:component",
           "target": "components/blocks/github-clone/issues-tab.tsx"
@@ -7315,14 +7337,79 @@
           "target": "components/blocks/github-clone/pull-request.tsx"
         },
         {
+          "path": "registry/blocks/github-clone/thread.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/thread.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/meta.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/meta.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/diff.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/diff.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/labels.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/labels.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/releases.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/releases.tsx"
+        },
+        {
           "path": "registry/blocks/github-clone/actions-tab.tsx",
           "type": "registry:component",
           "target": "components/blocks/github-clone/actions-tab.tsx"
         },
         {
+          "path": "registry/blocks/github-clone/insights-tab.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/insights-tab.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/settings-tab.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/settings-tab.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/people.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/people.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/chart.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/chart.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/account.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/account.tsx"
+        },
+        {
           "path": "registry/blocks/github-clone/dialogs.tsx",
           "type": "registry:component",
           "target": "components/blocks/github-clone/dialogs.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/pickers.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/pickers.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/markdown.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/markdown.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/links.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/links.tsx"
         },
         {
           "path": "registry/blocks/github-clone/parts.tsx",
@@ -7333,6 +7420,11 @@
           "path": "registry/blocks/github-clone/repo-context.tsx",
           "type": "registry:component",
           "target": "components/blocks/github-clone/repo-context.tsx"
+        },
+        {
+          "path": "registry/blocks/github-clone/route.ts",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/route.ts"
         },
         {
           "path": "registry/blocks/github-clone/source.ts",
@@ -7348,6 +7440,31 @@
           "path": "registry/blocks/github-clone/data.ts",
           "type": "registry:component",
           "target": "components/blocks/github-clone/data.ts"
+        },
+        {
+          "path": "registry/blocks/github-clone/sample.ts",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/sample.ts"
+        },
+        {
+          "path": "registry/blocks/github-clone/sample-server.ts",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/sample-server.ts"
+        },
+        {
+          "path": "registry/blocks/github-clone/sample-seed.ts",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/sample-seed.ts"
+        },
+        {
+          "path": "registry/blocks/github-clone/sample-files.ts",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/sample-files.ts"
+        },
+        {
+          "path": "registry/blocks/github-clone/sample-git.ts",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/sample-git.ts"
         }
       ],
       "meta": {

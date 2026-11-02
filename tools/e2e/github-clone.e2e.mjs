@@ -1,0 +1,489 @@
+import { expect, test } from '@playwright/test';
+
+/* The GitHub clone's workflows, end to end, on its in-page GitHub (sample-server.ts): every step is real clicks and keys,
+   and each write is checked by what the next screen reads back. Stories give the permission and failure variants, so this
+   runs against Storybook: SB_URL=http://localhost:6006 pnpm e2e github-clone */
+const SB = process.env.SB_URL ?? 'http://localhost:6006';
+const story = (name, route) => `${SB}/iframe.html?id=blocks-github-clone--${name}&viewMode=story${route ? `#/acme/orbit/${route}` : ''}`;
+const open = async (page, name, route) => {
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.goto(story(name, route), { waitUntil: 'load' });
+  await page.locator('#storybook-root > *').first().waitFor({ timeout: 30_000 });
+  return errors;
+};
+const phone = { width: 422, height: 876 };
+
+test.describe('desktop', () => {
+  test('an issue: required title, create, comment, edit, labels, close with a reason, reopen, counts', async ({ page }) => {
+    const errors = await open(page, 'issues-list');
+    const tab = page.getByRole('tab', { name: /^Issues/ });
+    await expect(tab).toContainText('30');
+    await page.getByRole('button', { name: 'New issue' }).click();
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'title is required' })).toBeVisible();
+    await page.getByRole('textbox', { name: /Title/ }).fill('E2E: the widget is broken');
+    await page.getByRole('textbox', { name: 'Description' }).fill('It **broke**.');
+    await page.getByRole('button', { name: 'Preview' }).click();
+    await expect(page.getByLabel('Description preview').locator('strong')).toHaveText('broke');
+    await page.getByRole('button', { name: 'Write' }).click();
+    await page.getByRole('button', { name: /^Labels/ }).click();
+    await page.getByRole('option', { name: /^bug/ }).click();
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('heading', { level: 1, name: /E2E: the widget is broken/ })).toBeVisible();
+    await expect(tab).toContainText('31');
+
+    // Enter is a new line; only ⌘↵ or the button posts.
+    const box = page.getByRole('textbox', { name: 'Add a comment' });
+    await box.fill('First line');
+    await box.press('Enter');
+    await box.pressSequentially('second line');
+    await expect(page.getByText('First line')).toHaveCount(0);
+    await box.press('ControlOrMeta+Enter');
+    await expect(page.getByText(/First line\s*second line/).first()).toBeVisible();
+    await expect(box).toHaveValue('');
+
+    // Edit it.
+    await page.getByRole('button', { name: /Comment actions for you/ }).last().click();
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    await page.getByRole('textbox', { name: 'Edit comment' }).fill('Edited words');
+    await page.getByRole('button', { name: 'Update comment' }).click();
+    await expect(page.getByText('Edited words')).toBeVisible();
+
+    // Labels from the sidebar, applied when the menu closes, and the timeline says so.
+    await page.getByRole('button', { name: 'Edit labels' }).click();
+    await page.getByRole('option', { name: /^performance/ }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('complementary', { name: 'Details' }).getByText('performance')).toBeVisible();
+
+    // Close as not planned; reopen.
+    await page.getByRole('button', { name: 'Close with a reason' }).click();
+    await page.getByRole('menuitem', { name: /Close as not planned/ }).click();
+    await expect(page.getByText('Closed as not planned', { exact: true })).toBeVisible();
+    await expect(tab).toContainText('30');
+    await page.getByRole('button', { name: /Reopen/ }).click();
+    await expect(page.getByText('reopened this')).toBeVisible();
+    await expect(tab).toContainText('31');
+    expect(errors).toEqual([]);
+  });
+
+  test('lists: qualifiers, filter menus, sort, pages, clear', async ({ page }) => {
+    await open(page, 'issues-list');
+    const search = page.getByRole('textbox', { name: 'Search all issues' });
+    await search.fill('is:open author:avakim');
+    await search.press('Enter');
+    await expect(page.getByRole('status').filter({ hasText: 'result' })).toBeVisible();
+    await expect(page.getByText(/opened .* by avakim/).first()).toBeVisible();
+    await expect(page.getByText(/opened .* by samokafor/)).toHaveCount(0);
+    await page.getByRole('button', { name: /Clear current search/ }).click();
+    await expect(page.getByText(/opened .* by samokafor/).first()).toBeVisible();
+
+    await page.getByRole('button', { name: /^Labels/ }).last().click();
+    await page.getByRole('option', { name: /^bug/ }).click();
+    await page.keyboard.press('Escape');
+    await expect(search).toHaveValue(/label:bug/);
+
+    await page.getByRole('button', { name: /Clear current search/ }).click();
+    await page.getByRole('button', { name: 'Page 2' }).click();
+    await expect(page.getByRole('button', { name: 'Page 2' })).toHaveAttribute('aria-current', 'page');
+    await page.getByRole('button', { name: 'Sort' }).click();
+    await page.getByRole('menuitem', { name: 'Most commented' }).click();
+    await expect(search).toHaveValue(/sort:comments-desc/);
+    await expect(page.getByRole('link', { name: 'Drop Node 18 support in v4' })).toBeVisible();
+  });
+
+  test('merge box tells the truth, then a real merge moves everything', async ({ page }) => {
+    await open(page, 'pull-request');
+    const merge = page.getByRole('button', { name: 'Merge pull request' });
+    await expect(merge).toBeEnabled();
+    await merge.click();
+    await page.getByRole('button', { name: 'Confirm merge' }).click();
+    await expect(page.getByText('Pull request successfully merged and closed')).toBeVisible();
+    await expect(page.getByText('Merged', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Delete branch' }).click();
+    await expect(page.getByRole('button', { name: 'Restore branch' })).toBeVisible();
+    // It closed the issue it said it would.
+    await page.getByRole('link', { name: /#483/ }).first().click();
+    await expect(page.getByText('Closed', { exact: true }).first()).toBeVisible();
+    // And its code is on main.
+    await page.getByRole('tab', { name: 'Code' }).click();
+    await page.getByRole('link', { name: 'Folder src' }).click();
+    await page.getByRole('link', { name: 'File retry.ts' }).click();
+    await expect(page.getByLabel('src/retry.ts')).toContainText('applyJitter');
+  });
+
+  for (const [n, text] of [[479, 'conflicts'], [486, 'Draft pull requests'], [484, 'Reviewers asked for changes'], [481, 'approving review']]) {
+    test(`#${n} can't merge and says why`, async ({ page }) => {
+      await page.goto(story('pull-request', `pull/${n}`));
+      await expect(page.getByRole('button', { name: 'Merge pull request' })).toBeDisabled({ timeout: 30_000 });
+      await expect(page.getByRole('region', { name: 'Merge status' }).getByText(new RegExp(text)).first()).toBeVisible();
+    });
+  }
+
+  test('behind: update branch unblocks it; draft: ready for review', async ({ page }) => {
+    await page.goto(story('pull-request', 'pull/478'));
+    await page.getByRole('button', { name: 'Update branch' }).click();
+    await expect(page.getByRole('button', { name: 'Merge pull request' })).toBeEnabled();
+    await page.getByRole('tab', { name: /^Pull requests/ }).click();
+    await page.getByRole('link', { name: /SQLite: poll/ }).click();
+    await page.getByRole('button', { name: 'Ready for review' }).click();
+    await expect(page.getByRole('button', { name: 'Convert to draft' })).toBeVisible();
+    await expect(page.getByText('marked this pull request as ready for review')).toBeVisible();
+  });
+
+  test('close and reopen, edit title, change reviewers', async ({ page }) => {
+    await page.goto(story('pull-request', 'pull/481'));
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Pull request title' }).fill('docs: Prisma guide');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: /docs: Prisma guide/ })).toBeVisible();
+    await page.getByRole('button', { name: /Close pull request/ }).click();
+    await expect(page.getByText('Closed with unmerged commits')).toBeVisible();
+    await page.getByRole('button', { name: /Reopen pull request/ }).click();
+    await expect(page.getByRole('button', { name: 'Merge pull request' })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit reviewers' }).click();
+    await page.getByRole('option', { name: /avakim/ }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByText('requested a review from').last()).toBeVisible();
+    await expect(page.getByRole('complementary', { name: 'Details' }).getByRole('link', { name: 'avakim' })).toBeVisible();
+  });
+
+  test('a review: line comments, a pending review, submit; threads resolve', async ({ page }) => {
+    await page.goto(story('files-changed'));
+    const diff = page.locator('[id="diff-src/retry.ts"]');
+    await diff.waitFor({ timeout: 30_000 });
+    // A thread is on its line.
+    await expect(page.getByText(/decorrelated. from the first commit/)).toBeVisible();
+    await page.getByRole('button', { name: 'Resolve conversation' }).first().click();
+    await expect(page.getByRole('button', { name: 'Unresolve conversation' }).first()).toBeVisible();
+    // Start a review on a line.
+    await diff.locator('tr', { hasText: 'export type Jitter' }).hover();
+    await diff.getByRole('button', { name: /Comment on line 7$/ }).click();
+    await page.getByRole('textbox', { name: /Comment on line 7/ }).fill('Could this be an enum?');
+    await page.getByRole('button', { name: 'Start a review' }).click();
+    await expect(page.getByRole('status').filter({ hasText: '1 comment pending' })).toBeVisible();
+    await diff.locator('tr', { hasText: 'export type Jitter' }).scrollIntoViewIfNeeded();
+    await expect(page.getByText('Could this be an enum?')).toBeVisible();
+    await expect(page.getByText('Pending', { exact: true }).first()).toBeVisible();
+    await page.getByRole('button', { name: /Finish your review/ }).click();
+    await page.getByRole('textbox', { name: 'Review summary' }).fill('Two small things.');
+    await page.getByRole('radio', { name: /Request changes/ }).check();
+    await page.getByRole('button', { name: 'Submit review' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'pending' })).toHaveCount(0);
+    await page.getByRole('tab', { name: /^Conversation/ }).click();
+    await expect(page.getByText('requested changes').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Merge pull request' })).toBeDisabled();
+    await expect(page.getByText('Two small things.')).toBeVisible();
+  });
+
+  test('viewed files, split diff, file filter, commit filter', async ({ page }) => {
+    await page.goto(story('files-changed'));
+    await expect(page.getByRole('status').filter({ hasText: '1 / 3 viewed' })).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('checkbox', { name: 'Viewed' }).first().click();
+    await expect(page.getByRole('status').filter({ hasText: '2 / 3 viewed' })).toBeVisible();
+    await page.getByRole('button', { name: 'Split diff' }).click();
+    await page.getByRole('textbox', { name: 'Filter changed files' }).fill('retries');
+    await expect(page.locator('[id="diff-src/retry.ts"]')).toHaveCount(0);
+    await page.getByRole('textbox', { name: 'Filter changed files' }).fill('');
+    await page.getByRole('button', { name: 'Filter changed files by commit' }).click();
+    await page.getByRole('option', { name: /clamp jittered/ }).click();
+    await expect(page.locator('[id="diff-src/retry.ts"]')).toBeVisible();
+    await expect(page.locator('[id="diff-docs/retries.md"]')).toHaveCount(0);
+  });
+
+  test('code: refs change what you see, blame, history, commit page, go to file, search', async ({ page }) => {
+    await open(page, 'light');
+    await page.getByRole('link', { name: 'Folder src' }).click();
+    await page.getByRole('link', { name: 'File retry.ts' }).click();
+    await expect(page.getByLabel('src/retry.ts')).not.toContainText('applyJitter');
+    // The switcher stays on the file.
+    await page.getByRole('button', { name: /Switch branches or tags/ }).click();
+    await page.getByRole('searchbox', { name: /Find or create a branch/ }).fill('jitter');
+    await page.getByRole('option', { name: /feat\/retry-jitter/ }).click();
+    await expect(page.getByLabel('src/retry.ts')).toContainText('applyJitter');
+    await page.getByRole('button', { name: 'Blame' }).click();
+    await expect(page.getByRole('region', { name: /Blame of src\/retry.ts/ }).getByText('retry: add jitter strategies').first()).toBeVisible();
+    await page.getByRole('button', { name: 'Code' }).click();
+    await page.getByRole('button', { name: 'More file actions' }).click();
+    await page.getByRole('menuitem', { name: 'History' }).click();
+    await page.getByRole('link', { name: /clamp jittered delays/ }).first().click();
+    await expect(page.getByRole('heading', { level: 1, name: /clamp jittered/ })).toBeVisible();
+    await expect(page.getByText(/1 parent/)).toBeVisible();
+    await page.keyboard.press('t');
+    await page.getByRole('textbox', { name: 'Go to file' }).fill('pgres');
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { level: 1, name: 'postgres.ts' })).toBeVisible();
+    await page.keyboard.press('/');
+    await page.getByRole('textbox', { name: /Search acme\/orbit/ }).fill('SKIP LOCKED');
+    await expect(page.getByRole('region', { name: 'Search results' }).getByText('src/adapters/postgres.ts')).toBeVisible();
+  });
+
+  test('edit on a new branch and open a pull request from it, then it conflicts-free merges', async ({ page }) => {
+    await open(page, 'light');
+    await page.getByRole('link', { name: 'File README.md' }).click();
+    await page.getByRole('button', { name: 'More file actions' }).click();
+    await page.getByRole('menuitem', { name: 'Edit file' }).click();
+    const editor = page.getByRole('textbox', { name: 'Contents of README.md' });
+    await editor.fill('# Orbit, edited\n');
+    await page.getByRole('radio', { name: /new branch/ }).check();
+    await page.getByRole('textbox', { name: 'New branch name' }).fill('e2e/readme');
+    await page.getByRole('button', { name: 'Commit changes' }).click();
+    // Lands on compare, form open.
+    await expect(page.getByRole('heading', { name: 'Open a pull request' })).toBeVisible();
+    await expect(page.getByText('1 ahead')).toBeVisible();
+    await page.getByRole('textbox', { name: 'Description' }).fill('Fixes #485');
+    await page.getByRole('checkbox', { name: 'Create as draft' }).click();
+    await page.getByRole('button', { name: 'Create draft pull request' }).click();
+    await expect(page.getByText('Draft', { exact: true }).first()).toBeVisible();
+    await page.getByRole('tab', { name: /^Files changed/ }).click();
+    await expect(page.locator('[id="diff-README.md"]')).toBeVisible();
+  });
+
+  test('new file, branches page, tags page', async ({ page }) => {
+    await open(page, 'light');
+    await page.getByRole('button', { name: 'Add file' }).click();
+    await page.getByRole('menuitem', { name: 'Create new file' }).click();
+    await page.getByRole('textbox', { name: 'File name' }).fill('docs/new-page.md');
+    await page.getByRole('textbox', { name: 'File contents' }).fill('# New page\n');
+    await page.getByRole('button', { name: 'Commit new file' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'new-page.md' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Code' }).click();
+    await page.getByRole('link', { name: /Branches/ }).first().click();
+    await page.getByRole('button', { name: 'New branch' }).click();
+    await page.getByRole('textbox', { name: 'New branch name' }).fill('e2e-branch');
+    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await page.getByRole('button', { name: 'Actions for e2e-branch' }).click();
+    await page.getByRole('menuitem', { name: 'Delete branch' }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Actions for e2e-branch' })).toHaveCount(0);
+  });
+
+  test('star, watch, fork, repository picker across permission levels', async ({ page }) => {
+    await open(page, 'light');
+    const star = page.getByRole('button', { name: /^Star\b/ }).first();
+    await expect(star).toContainText('12.4k');
+    await star.click();
+    await expect(page.getByRole('button', { name: /^Starred/ })).toBeVisible();
+    await page.getByRole('button', { name: /Notifications for acme\/orbit/ }).click();
+    await page.getByRole('menuitem', { name: /All Activity/ }).click();
+    await expect(page.getByRole('button', { name: /Notifications for acme\/orbit: All Activity/ })).toBeVisible();
+    await page.getByRole('button', { name: /Repository acme\/orbit/ }).click();
+    await page.getByRole('textbox', { name: /Search repositories/ }).fill('hello');
+    await page.getByText('octo/hello-world').click();
+    await expect(page.getByRole('button', { name: /Repository octo\/hello-world/ })).toBeVisible();
+    // Read-only here: no Settings; forking is how you change it.
+    await expect(page.getByRole('tab', { name: 'Settings' })).toHaveCount(0);
+    await page.getByRole('button', { name: /^Fork/ }).first().click();
+    await page.getByRole('button', { name: 'Create fork' }).click();
+    await expect(page.getByRole('button', { name: /Repository you\/hello-world/ })).toBeVisible();
+    await expect(page.getByText(/forked from/)).toBeVisible();
+  });
+
+  test('read-only: the UI offers only what the role allows, on code, issues and pull requests', async ({ page }) => {
+    await open(page, 'read-only');
+    await expect(page.getByRole('button', { name: 'Merge pull request' })).toBeDisabled({ timeout: 30_000 });
+    await expect(page.getByRole('region', { name: 'Merge status' }).getByText(/Only people with write access/).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Edit labels' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit reviewers' })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'Settings' })).toHaveCount(0);
+    await page.getByRole('tab', { name: 'Code' }).click();
+    await expect(page.getByRole('button', { name: 'Add file' })).toHaveCount(0);
+    // Commenting is open to anyone signed in.
+    await page.getByRole('tab', { name: /^Issues/ }).click();
+    await page.getByRole('link', { name: /rolled-back/ }).click();
+    await page.getByRole('textbox', { name: 'Add a comment' }).fill('As a reader');
+    await page.getByRole('button', { name: 'Comment', exact: true }).click();
+    await expect(page.getByText('As a reader')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Close/ })).toHaveCount(0);
+  });
+
+  test('archived, empty, signed out, not found, rate limited, refused', async ({ page }) => {
+    await open(page, 'archived');
+    await expect(page.getByText('This repository has been archived', { exact: false }).first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('textbox', { name: 'Add a comment' })).toHaveCount(0);
+
+    await open(page, 'empty-repository');
+    await expect(page.getByRole('heading', { name: 'This repository is empty' })).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: 'Create a README' }).click();
+    await page.getByRole('button', { name: 'Commit new file' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'README.md' })).toBeVisible();
+
+    await open(page, 'signed-out');
+    await expect(page.getByRole('heading', { level: 1, name: /Greeting is not localized/ })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('textbox', { name: 'Add a comment' })).toHaveCount(0);
+    await expect(page.getByText('to join this conversation')).toBeVisible();
+
+    await open(page, 'not-found');
+    await expect(page.getByRole('heading', { name: 'Not found' })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('button', { name: 'Choose a repository' })).toBeVisible();
+
+    await open(page, 'rate-limited');
+    await expect(page.getByRole('heading', { name: 'Rate limited' })).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByRole('tab', { name: 'Code' })).toBeVisible();
+
+    await open(page, 'writes-refused');
+    const box = page.getByRole('textbox', { name: 'Add a comment' });
+    await box.fill('Keep me');
+    await page.getByRole('button', { name: 'Comment', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Resource not accessible' })).toBeVisible();
+    await expect(box).toHaveValue('Keep me');
+  });
+
+  test('actions: filters, a run, re-run failed jobs, cancel, dispatch with inputs, disable', async ({ page }) => {
+    await open(page, 'actions');
+    await page.getByRole('button', { name: /^Status/ }).click();
+    await page.getByRole('option', { name: 'failure' }).click();
+    await page.getByRole('link', { name: /Dashboard: show attempt history/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: /Dashboard: show attempt/ })).toBeVisible();
+    await expect(page.getByText('Failure').first()).toBeVisible();
+    await page.getByRole('button', { name: 'Re-run jobs' }).click();
+    await page.getByRole('menuitem', { name: 'Re-run failed jobs' }).click();
+    await expect(page.getByText('attempt 2')).toBeVisible();
+    await expect(page.getByText('Success').first()).toBeVisible();
+    await page.getByRole('button', { name: /test/ }).first().click();
+    await page.getByRole('button', { name: 'View log' }).click();
+    await expect(page.getByText(/Run test/).first()).toBeVisible();
+    await page.getByRole('tab', { name: 'Actions' }).click();
+    await page.getByRole('complementary', { name: 'Workflows' }).getByRole('link', { name: 'Release' }).click();
+    await page.getByRole('button', { name: 'Run workflow' }).click();
+    await expect(page.getByLabel('Version to publish')).toHaveValue('patch');
+    await page.getByLabel('Version to publish').selectOption('minor');
+    await page.getByRole('button', { name: 'Run workflow' }).last().click();
+    await expect(page.getByRole('status').filter({ hasText: '2 workflow runs' })).toBeVisible();
+    await page.getByRole('button', { name: 'More about Release' }).click();
+    await page.getByRole('menuitem', { name: 'Disable workflow' }).click();
+    await expect(page.getByRole('button', { name: 'Run workflow' })).toHaveCount(0);
+  });
+
+  test('labels and milestones: create, edit, delete; releases: generate notes, publish', async ({ page }) => {
+    await open(page, 'issues-list');
+    await page.getByRole('button', { name: /^Labels/ }).first().click();
+    await page.getByRole('button', { name: 'New label' }).click();
+    await page.getByRole('textbox', { name: 'Label name' }).fill('e2e-label');
+    await page.getByRole('button', { name: 'Create label' }).click();
+    await expect(page.getByRole('button', { name: 'Edit label e2e-label' })).toBeVisible();
+    await page.getByRole('button', { name: 'Delete label e2e-label' }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Edit label e2e-label' })).toHaveCount(0);
+    await page.getByRole('link', { name: /Milestones/ }).click();
+    await page.getByRole('button', { name: 'New milestone' }).click();
+    await page.getByRole('textbox', { name: 'Title' }).fill('e2e-milestone');
+    await page.getByRole('button', { name: 'Create milestone' }).click();
+    await page.getByRole('button', { name: 'Close e2e-milestone' }).click();
+    await expect(page.getByRole('button', { name: 'Close e2e-milestone' })).toHaveCount(0);
+
+    await page.getByRole('tab', { name: 'Code' }).click();
+    await page.getByRole('link', { name: 'Releases' }).click();
+    await page.getByRole('button', { name: 'Draft a new release' }).click();
+    await page.getByRole('textbox', { name: /Tag/ }).fill('v9.9.9');
+    await page.getByRole('button', { name: 'Generate release notes' }).click();
+    await expect(page.getByRole('textbox', { name: 'Release notes' })).toHaveValue(/What's Changed/);
+    await page.getByRole('button', { name: 'Publish release' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'v9.9.9' })).toBeVisible();
+    await expect(page.getByText('Latest')).toBeVisible();
+  });
+
+  test('settings change what the rest of the app does; insights draw from real history', async ({ page }) => {
+    await open(page, 'settings');
+    await page.getByRole('textbox', { name: 'Description' }).fill('A new description');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await page.getByRole('navigation', { name: 'Settings' }).getByRole('link', { name: 'Pull requests' }).click();
+    await page.getByRole('checkbox', { name: 'Allow merge commits' }).click();
+    await page.goto(page.url().replace(/#.*/, '#/acme/orbit'));
+    await page.getByRole('tab', { name: 'Insights' }).click();
+    await expect(page.getByRole('heading', { name: 'Pulse' })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: 'Contributors' }).click();
+    await expect(page.getByText(/maya-chen/).first()).toBeVisible();
+    await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: 'Traffic' }).click();
+    await expect(page.getByText(/unique visitors/)).toBeVisible();
+  });
+
+  test('deep links and the browser back button', async ({ page }) => {
+    await page.goto(story('light', 'issues/489'));
+    await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('link', { name: '#483' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: /lockstep/ })).toBeVisible();
+    expect(page.url()).toContain('#/acme/orbit/issues/483');
+    await page.goBack();
+    await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible({ timeout: 30_000 });
+    // A number that's a pull request moves to its page.
+    await page.goto(story('light', 'issues/488'));
+    await expect(page.getByRole('tab', { name: /^Files changed/ })).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('your work and notifications', async ({ page }) => {
+    await open(page, 'light');
+    await page.getByRole('button', { name: /^Notifications: 3 unread/ }).click();
+    await page.getByRole('button', { name: /Mark “Add exponential backoff/ }).click();
+    await expect(page.getByRole('button', { name: /Mark “Add exponential backoff/ })).toHaveCount(0);
+    await page.getByRole('button', { name: /Jobs enqueued inside/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Your pull requests' }).click();
+    await page.getByRole('radio', { name: 'Assigned' }).click();
+    await expect(page.getByText(/Nothing here/)).toBeVisible();
+  });
+});
+
+test.describe('phone', () => {
+  test.use({ viewport: phone });
+
+  test('the whole issue flow, with details reachable and back', async ({ page }) => {
+    await open(page, 'phone');
+    await page.getByRole('tab', { name: /^Issues/ }).click();
+    await page.getByRole('link', { name: /rolled-back/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible();
+    await page.getByRole('button', { name: /^Details/ }).click();
+    await page.getByRole('button', { name: 'Edit labels' }).click();
+    await page.getByRole('option', { name: /^performance/ }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByText('performance').first()).toBeVisible();
+    await page.getByRole('textbox', { name: 'Add a comment' }).fill('From a phone');
+    await page.getByRole('button', { name: 'Comment', exact: true }).click();
+    await expect(page.getByText('From a phone')).toBeVisible();
+    await page.getByRole('button', { name: /Close/ }).first().click();
+    await expect(page.getByText('Closed', { exact: true }).first()).toBeVisible();
+    await page.getByRole('button', { name: /Back|Issues/ }).first().click();
+    await expect(page.getByRole('link', { name: 'Support per-key rate limits' }).first()).toBeVisible();
+  });
+
+  test('a pull request: metadata, a line comment by touch target, review, merge', async ({ page }) => {
+    await open(page, 'pull-on-phone');
+    await page.getByRole('button', { name: /^Details/ }).click({ timeout: 30_000 });
+    await expect(page.getByRole('button', { name: 'Edit reviewers' })).toBeVisible();
+    await page.getByRole('tab', { name: /^Files changed/ }).click();
+    const plus = page.getByRole('button', { name: /Comment on line/ }).first();
+    await plus.click();
+    await page.getByRole('textbox', { name: /Comment on line/ }).fill('Nit');
+    await page.getByRole('button', { name: 'Add single comment' }).click();
+    await expect(page.getByText('Nit', { exact: true })).toBeVisible();
+    await page.getByRole('tab', { name: /^Conversation/ }).click();
+    await page.getByRole('button', { name: 'Merge pull request' }).click();
+    await page.getByRole('button', { name: 'Confirm merge' }).click();
+    await expect(page.getByText('Pull request successfully merged and closed')).toBeVisible();
+  });
+
+  test('code, filters and actions are all reachable; targets are finger-sized', async ({ page }) => {
+    await open(page, 'phone');
+    const row = page.getByRole('link', { name: 'Folder src' });
+    expect((await row.evaluate((el) => el.parentElement.getBoundingClientRect().height))).toBeGreaterThanOrEqual(44);
+    await row.click();
+    await page.getByRole('link', { name: 'File retry.ts' }).click();
+    await expect(page.getByRole('button', { name: 'Blame' })).toBeVisible();
+    await page.getByRole('button', { name: /Back|src/ }).first().click();
+    await page.getByRole('button', { name: /Back|orbit/ }).first().click();
+    await page.getByRole('tab', { name: /^Issues/ }).click();
+    await page.getByRole('button', { name: /^Author/ }).click();
+    await page.getByRole('option', { name: /avakim/ }).click();
+    await expect(page.getByRole('textbox', { name: 'Search all issues' })).toHaveValue(/author:avakim/);
+    await page.getByRole('tab', { name: 'Actions' }).click();
+    await page.getByRole('button', { name: /All workflows/ }).click();
+    await page.getByRole('option', { name: /^Release/ }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Release' })).toBeVisible();
+    const size = await page.getByRole('button', { name: 'Run workflow' }).boundingBox();
+    expect(size.height).toBeGreaterThanOrEqual(44);
+  });
+});

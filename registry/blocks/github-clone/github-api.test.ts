@@ -2,7 +2,7 @@
    caching, pagination, error kinds and the comment write. No network. */
 import { describe, expect, it, vi } from 'vitest';
 import {
-  GitHubError, ago, compactCount, createGitHub, duration, githubRepo, languagesOf, linkRel, parseRepo, timelineOf, treeOf, type GhEvent,
+  GitHubError, ago, compactCount, createGitHub, duration, githubRepo, languagesOf, linkRel, parseRepo, parseTemplate, parseWorkflowInputs, splitSort, timelineOf, treeOf, type GhEvent,
 } from './github-api';
 
 const NOW = Date.parse('2026-10-29T12:00:00Z');
@@ -124,7 +124,7 @@ describe('githubRepo', () => {
     });
     const repo = await githubRepo(gh, 'BLamy/ui').repo();
     expect(repo).toMatchObject({
-      owner: 'BLamy', name: 'ui', homepage: 'blamy.github.io/ui', stars: '12.4k', forks: '842', license: 'MIT License', branch: 'main',
+      owner: 'BLamy', name: 'ui', homepage: expect.stringContaining('blamy.github.io/ui'), stars: '12.4k', forks: '842', license: 'MIT License', branch: 'main',
       branches: ['main', 'feat/x'], branchCount: 7, tagCount: 0, commitCount: '1,482', release: null, contributorCount: 1,
       lastCommit: { sha: 'abcdef1', message: 'fix: things', when: '3 hours ago' },
     });
@@ -140,13 +140,15 @@ describe('githubRepo', () => {
       ] } },
     });
     const src = githubRepo(gh, 'BLamy/ui');
-    const issues = await src.issues('open');
-    expect(decodeURIComponent(calls[0].url)).toContain('q=repo:BLamy/ui is:issue is:open');
+    const issues = (await src.searchIssues('is:open label:bug sort:updated-desc', 1)).items;
+    const asked = decodeURIComponent(calls[0].url);
+    expect(asked).toContain('q=repo:BLamy/ui is:issue is:open label:bug');
+    expect(asked).toContain('sort=updated&order=desc');
     expect(issues[0]).toMatchObject({ number: 9, when: '2 hours ago', labels: [{ name: 'bug', color: '#d73a4a' }], comments: 3 });
-    const pulls = await src.pulls('closed');
+    const pulls = (await src.searchPulls('label:x', 1)).items;
     expect(pulls[1]).toMatchObject({ number: 8, state: 'merged', when: '1 hour ago' });
+    // GitHub didn't answer the GraphQL half here: rows still draw, without review state.
     expect(pulls[1].review).toBeUndefined();
-    expect(await src.counts()).toEqual({ issues: { open: 2, closed: 2 }, pulls: { open: 2, closed: 2 } });
   });
 
   it('builds a conversation: the description first, then folded commits and labels, reviews and events', async () => {
@@ -195,7 +197,7 @@ describe('githubRepo', () => {
     const p = await src.pull(12);
     expect(p).toMatchObject({ state: 'open', review: 'approved', head: 'feat', base: 'main', changedFiles: 2, mergeable: 'clean', when: 'yesterday' });
     expect(p.reviewers.map((r) => [r.user.login, r.state])).toEqual([['jonas', 'approved'], ['priya', 'commented'], ['ava', 'pending']]);
-    expect(await src.pullChecks(12)).toEqual([
+    expect(await src.pullChecks(12)).toMatchObject([
       { name: 'test', status: 'success', time: '1m 48s' },
       { name: 'lint', status: 'pending', time: 'in progress' },
       { name: 'netlify', status: 'failure', time: 'Deploy failed' },
@@ -224,11 +226,12 @@ describe('githubRepo', () => {
         { id: 2, name: 'CI', display_title: 'wip', run_number: 8, event: 'push', actor: user('maya'), head_branch: 'main', status: 'in_progress', conclusion: null, created_at: H(0.2), updated_at: H(0.1), html_url: 'r2' },
       ] } },
     });
-    const runs = await githubRepo(gh, 'BLamy/ui').runs();
+    const src = githubRepo(gh, 'BLamy/ui');
+    const runs = await src.runs({});
     expect(runs.total).toBe(184);
-    expect(runs.workflows).toEqual([]);
-    expect(runs.runs[0]).toMatchObject({ event: 'pull_request #12', status: 'failure', duration: '22s', branch: 'feat' });
-    expect(runs.runs[1]).toMatchObject({ status: 'running', when: '12 minutes ago' });
+    expect(await src.workflows()).toEqual([]);
+    expect(runs.items[0]).toMatchObject({ event: 'pull_request #12', status: 'failure', duration: '22s', branch: 'feat' });
+    expect(runs.items[1]).toMatchObject({ status: 'running', when: '12 minutes ago' });
   });
 
   it('posts a comment and asks for the conversation again afterwards', async () => {
@@ -251,6 +254,15 @@ describe('githubRepo', () => {
 });
 
 describe('timelineOf', () => {
+  it('reads workflow inputs and templates', () => {
+    expect(parseWorkflowInputs('on:\n  push:\n')).toEqual({ dispatchable: false, inputs: [] });
+    const { dispatchable, inputs } = parseWorkflowInputs('on:\n  workflow_dispatch:\n    inputs:\n      level:\n        description: How much\n        required: true\n        type: choice\n        options:\n          - low\n          - "high"\n      name:\n        default: x\njobs:\n  a: {}\n');
+    expect(dispatchable).toBe(true);
+    expect(inputs).toEqual([{ name: 'level', description: 'How much', required: true, type: 'choice', options: ['low', 'high'] }, { name: 'name', default: 'x' }]);
+    expect(parseTemplate('---\nname: Bug\nabout: Report one\ntitle: "[bug] "\nlabels: bug, urgent\n---\nSteps:\n', 'x')).toEqual({ name: 'Bug', about: 'Report one', title: '[bug] ', body: 'Steps:\n', labels: ['bug', 'urgent'] });
+    expect(splitSort('is:open sort:comments-desc label:x')).toEqual({ q: 'is:open label:x', sort: 'comments', order: 'desc' });
+  });
+
   it('skips pending reviews and events it does not draw', () => {
     expect(timelineOf([{ event: 'reviewed', state: 'pending', user: user('a') }, { event: 'mentioned', actor: user('b') }], NOW)).toEqual([]);
   });

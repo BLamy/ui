@@ -1,9 +1,9 @@
 /* Small GitHub-flavoured pieces the page composes: the palette, octicon-style glyphs, label chips, state icons,
    underline tabs, a line-numbered code view, a unified diff view and a file tree. Code is highlighted by the
    library's SyntaxHighlighting (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { SyntaxHighlighting, SyntaxTokens, useSyntaxTokens } from '@/components/ui/syntax-highlighting';
+import { SyntaxHighlighting } from '@/components/ui/syntax-highlighting';
 import { TabViewIndicator, TabViewPanel, TabViewTab } from '@/components/ui/tab-view';
 import { Tree, type TreeNode } from '@/components/ui/tree';
 import { Icon, type IconName } from '@/lib/icon';
@@ -54,7 +54,7 @@ function primerVars(dark: boolean): CSSProperties {
     '--bl-syntax-highlight': c.hl, '--bl-syntax-highlight-bar': c.hlBar,
     '--gh-inset': c.inset, '--gh-open': c.green, '--gh-done': c.done, '--gh-closed': c.red, '--gh-attention': c.attention,
     '--gh-btn': c.btn, '--gh-btn-hover': c.btnHover, '--gh-add': c.add, '--gh-add-num': c.addNum, '--gh-del': c.del,
-    '--gh-del-num': c.delNum, '--gh-hunk': c.hunk, '--gh-hunk-fg': c.label2, '--gh-folder': c.folder,
+    '--gh-del-num': c.delNum, '--gh-hl': c.hl, '--gh-hunk': c.hunk, '--gh-hunk-fg': c.label2, '--gh-folder': c.folder,
     '--gh-tab': PRIMER_FIXED.tab, '--gh-merge': PRIMER_FIXED.merge, '--gh-merge-hover': PRIMER_FIXED.mergeHover,
     '--gh-merge-border': PRIMER_FIXED.mergeBorder, '--gh-draft': PRIMER_FIXED.draft, '--gh-ink': PRIMER_FIXED.ink,
   } as CSSProperties;
@@ -103,6 +103,32 @@ const OCT: Record<string, ReactNode> = {
   eyeClosed: <path d="M1.8 6.2S4 9.8 8 9.8s6.2-3.6 6.2-3.6M3.8 8.5l-1.2 1.8M12.2 8.5l1.2 1.8M8 9.8v2" />,
   shield: <path d="M8 1.5 2.8 3.4v4c0 3.2 2.2 5.8 5.2 7.1 3-1.3 5.2-3.9 5.2-7.1v-4z" />,
   people: <><circle cx="5.8" cy="5.2" r="2.3" /><path d="M1.6 13.3a4.2 4.2 0 0 1 8.4 0M10.8 3.2a2.2 2.2 0 0 1 0 4.2M12 9.4a3.6 3.6 0 0 1 2.4 3.4" /></>,
+  pencil: <path d="m10.8 2.6 2.6 2.6-8 8-3.3.7.7-3.3zM9.4 4l2.6 2.6" />,
+  trash: <path d="M2.8 4.2h10.4M6.2 4.2V2.6h3.6v1.6M4.2 4.2l.7 9.2h6.2l.7-9.2M6.8 6.8v4.4M9.2 6.8v4.4" />,
+  smile: <><circle cx="8" cy="8" r="6.25" /><path d="M5.4 9.6c.6 1 1.5 1.5 2.6 1.5s2-.5 2.6-1.5" /><circle cx="5.9" cy="6.3" r=".8" fill="currentColor" stroke="none" /><circle cx="10.1" cy="6.3" r=".8" fill="currentColor" stroke="none" /></>,
+  quote: <path d="M2 3.5h12M6 8h8M6 12.5h8M2.5 7.5v5.5" />,
+  pin: <path d="M9.8 1.8 14.2 6.2l-1 1-.9-.2-2.9 2.9.2 2.6-1.1 1.1-2.7-2.7-3.2 3.2M6.3 6.5l-2.6-.2-1 1 2.6 2.7M6.3 6.5l2.9-2.9-.2-.9z" />,
+  bold: <path d="M4.5 2.8h4.1a2.6 2.6 0 0 1 0 5.2H4.5zM4.5 8h4.9a2.6 2.6 0 0 1 0 5.2H4.5z" />,
+  italic: <path d="M6.6 2.8h5M4.4 13.2h5M9.2 2.8 6.8 13.2" />,
+  list: <path d="M6 3.6h8M6 8h8M6 12.4h8M2.2 3.6h.6M2.2 8h.6M2.2 12.4h.6" />,
+  listOrdered: <path d="M6.4 3.6h7.6M6.4 8h7.6M6.4 12.4h7.6M2 2.8l.9-.6v3.6M1.9 7.4c.3-.7 1.9-.6 1.9.4 0 .9-1.9 1.6-1.9 2.2h1.9M2 11.6h1.8l-.9 1.1c.8 0 1 .4 1 .8 0 .9-1.5 1-1.9.5" />,
+  tasklist: <path d="M2 3.4l1.3 1.3L5.5 2.4M8 3.6h6M2 11.2l1.3 1.3 2.2-2.3M8 8h6M8 12.4h6M2.5 7.3h2.5" />,
+  heading: <path d="M3.5 2.8v10.4M12.5 2.8v10.4M3.5 8h9" />,
+  filter: <path d="M1.8 3.5h12.4M4.2 8h7.6M6.6 12.5h2.8" />,
+  download: <path d="M8 2.2v8.2M4.6 7.2 8 10.6l3.4-3.4M2.4 13.8h11.2" />,
+  upload: <path d="M8 10.6V2.4M4.6 5.8 8 2.4l3.4 3.4M2.4 13.8h11.2" />,
+  signout: <path d="M6.2 2.5H3.2a.9.9 0 0 0-.9.9v9.2c0 .5.4.9.9.9h3M10.4 4.8 13.6 8l-3.2 3.2M13.4 8H6" />,
+  globe: <><circle cx="8" cy="8" r="6.25" /><path d="M1.8 8h12.4M8 1.8c2 2 2.7 4 2.7 6.2S10 12.2 8 14.200M8 1.800C6 3.8 5.3 5.8 5.3 8S6 12.2 8 14.2" /></>,
+  archive: <path d="M1.8 3h12.400v3H1.800zM2.8 6v7h10.400V6M6.4 8.800h3.2" />,
+  calendar: <path d="M2.2 3.400h11.600v10.400H2.200zM2.2 6.600h11.600M5.2 1.800v3M10.8 1.800v3" />,
+  milestone: <path d="M8 1.800v2.600M8 11.200v3M2.8 4.400h9l2.2 3.4-2.2 3.400h-9z" />,
+  rocket: <path d="M9.4 2.200c2.2-.7 3.7-.7 4.4 0 .7.7.7 2.2 0 4.400L9.3 11.1 4.9 6.700zM4.9 6.700H2.200L4.4 4.500h2.800M9.3 11.100v2.700l2.2-2.200V8.800M4.4 11.600l-2.2 2.2" />,
+  graph: <path d="M2 2v12h12M5 11V8M8 11V5M11 11V7" />,
+  sliders: <path d="M2.2 4.400h6.600M12 4.400h1.800M2.2 11.600h1.800M7.2 11.600h6.600M10.4 2.800v3.200M5.6 10v3.2" />,
+  columns: <path d="M2 2.800h12v10.400H2zM8 2.800v10.4" />,
+  rows: <path d="M2 2.800h12v10.400H2zM2 8h12" />,
+  fileAdd: <><path d="M3.5 1.800h5.800l3.2 3.200v9.200h-9z" /><path d="M9.2 1.800v3.300h3.300M8 7.500v4M6 9.500h4" /></>,
+  key: <><circle cx="5" cy="11" r="3" /><path d="m7.2 8.8 6-6M10.4 5.600l1.8 1.800M12.2 3.800l1.4 1.4" /></>,
   inbox: <path d="M1.8 9.2 3.6 3.3c.1-.4.5-.8 1-.8h6.8c.5 0 .9.4 1 .8l1.8 5.9v3.3c0 .6-.4 1-1 1H2.8c-.6 0-1-.4-1-1zM1.8 9.2h3.6l1 1.8h3.2l1-1.8h3.6" />,
 };
 export type OctName = keyof typeof OCT | keyof typeof GENERIC;
@@ -168,12 +194,12 @@ export function StateIcon({ state, className }: { state: StateKind; className?: 
   return <Oct name={s.icon} className={cn(s.text, className)} />;
 }
 
-export function StatePill({ state }: { state: StateKind }) {
+export function StatePill({ state, label }: { state: StateKind; label?: string }) {
   const s = STATE[state];
   return (
     <span className={cn('inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-detail font-medium text-white', s.pill)}>
       <Oct name={s.icon} />
-      {s.label}
+      {label ?? s.label}
     </span>
   );
 }
@@ -222,9 +248,9 @@ export function FlowPanel({ id, className, children }: { id: string; className?:
 }
 
 /** GitHub's bordered "Box": rounded, 1px border, optional header row. */
-export function Box({ header, children, className }: { header?: ReactNode; children?: ReactNode; className?: string }) {
+export function Box({ header, children, className, ...rest }: { header?: ReactNode; children?: ReactNode; className?: string } & Omit<HTMLAttributes<HTMLDivElement>, 'children'>) {
   return (
-    <div className={cn('overflow-hidden rounded-md border border-border bg-background', className)}>
+    <div className={cn('overflow-hidden rounded-md border border-border bg-background', className)} {...rest}>
       {header ? <div className="flex min-h-row items-center gap-2 border-b border-border bg-muted px-4 py-2 text-detail">{header}</div> : null}
       {children}
     </div>
@@ -235,7 +261,10 @@ export function Box({ header, children, className }: { header?: ReactNode; child
 export const ghButton = (primary?: boolean) =>
   cn(
     'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-detail font-medium outline-none whitespace-nowrap',
-    'data-focus-visible:ring-2 data-focus-visible:ring-primary data-focus-visible:ring-offset-1',
+    'data-focus-visible:ring-2 data-focus-visible:ring-primary data-focus-visible:ring-offset-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+    'data-disabled:cursor-not-allowed data-disabled:opacity-55 disabled:cursor-not-allowed disabled:opacity-55',
+    // Finger-sized on the phone layout (the block's root says which layout it's in).
+    'group-data-[phone=true]/gh:h-11 group-data-[phone=true]/gh:min-w-11',
     primary
       ? 'border-(--gh-merge-border) bg-(--gh-merge) text-white data-hovered:bg-(--gh-merge-hover)'
       : 'border-border bg-(--gh-btn) text-foreground data-hovered:bg-(--gh-btn-hover)',
@@ -250,30 +279,11 @@ export const githubMarkdown = cn(
 );
 
 /* ── Code view ── GitHub's blob view: 12px mono, 20px lines, a line-number gutter (SyntaxHighlighting, ghost). */
-export function CodeView({ path, code }: { path: string; code: string }) {
+export function CodeView({ path, code, lineNumbers = true }: { path: string; code: string; lineNumbers?: boolean }) {
   return (
-    <SyntaxHighlighting variant="ghost" code={code} language={languageFromPath(path)} lineNumbers aria-label={path}
+    <SyntaxHighlighting variant="ghost" code={code} language={languageFromPath(path)} lineNumbers={lineNumbers} aria-label={path}
       className="[--bl-syntax-font-size:12px] [--bl-syntax-line-height:20px] [--bl-syntax-padding-y:8px]" />
   );
-}
-
-/* ── Unified diff ── parses `@@` hunks into rows with old/new line numbers. */
-type DiffRow = { t: 'hunk' | 'ctx' | 'add' | 'del'; text: string; o?: number; n?: number };
-export function parsePatch(patch: string): DiffRow[] {
-  const rows: DiffRow[] = [];
-  let o = 0;
-  let n = 0;
-  for (const line of patch.split('\n')) {
-    const h = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)/);
-    if (h) {
-      o = +h[1];
-      n = +h[2];
-      rows.push({ t: 'hunk', text: line });
-    } else if (line[0] === '+') rows.push({ t: 'add', text: line.slice(1), n: n++ });
-    else if (line[0] === '-') rows.push({ t: 'del', text: line.slice(1), o: o++ });
-    else rows.push({ t: 'ctx', text: line.slice(1), o: o++, n: n++ });
-  }
-  return rows;
 }
 
 /** Five little squares: GitHub's diffstat. */
@@ -291,57 +301,6 @@ export function DiffStat({ add, del }: { add: number; del: number }) {
         ))}
       </span>
     </span>
-  );
-}
-
-const ROW_BG = { add: 'bg-[var(--gh-add)]', del: 'bg-[var(--gh-del)]', hunk: 'bg-[var(--gh-hunk)]', ctx: '' };
-const NUM_BG = { add: 'bg-[var(--gh-add-num)]', del: 'bg-[var(--gh-del-num)]', hunk: 'bg-[var(--gh-hunk)]', ctx: '' };
-export function DiffView({ path, patch, add, del, note }: { path: string; patch: string; add: number; del: number; note?: string }) {
-  const [open, setOpen] = useState(true);
-  const rows = useMemo(() => parsePatch(patch), [patch]);
-  /* The diff's code lines are lexed as one source (hunk headers left out), so strings and comments that span
-     lines keep their context; each row then shows its own line's tokens inside the +/- backgrounds. */
-  const source = useMemo(() => rows.filter((r) => r.t !== 'hunk').map((r) => r.text).join('\n'), [rows]);
-  const { lines, highlighter } = useSyntaxTokens(source, { language: languageFromPath(path) });
-  let k = 0;
-  return (
-    <div id={'diff-' + path} className="overflow-hidden rounded-md border border-border">
-      <div className="sticky top-0 z-2 flex min-h-11 items-center gap-2 border-b border-border bg-muted px-2 py-1.5">
-        <button type="button" onClick={() => setOpen(!open)} aria-label={open ? 'Collapse file' : 'Expand file'}
-          className="grid size-7 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-muted-foreground hover:bg-secondary">
-          <Oct name={open ? 'chevDown' : 'chevRight'} />
-        </button>
-        <DiffStat add={add} del={del} />
-        <span className="min-w-0 truncate font-mono text-caption font-semibold text-foreground">{path}</span>
-        <Oct name="copy" size={14} className="shrink-0 text-muted-foreground" />
-      </div>
-      {open && !patch ? (
-        <div className="px-4 py-6 text-center text-caption text-muted-foreground">{note ?? 'No changes to show.'}</div>
-      ) : open ? (
-        <div className="overflow-x-auto font-mono text-caption leading-5">
-          <table className="w-full border-collapse" data-highlighter={highlighter} data-language={languageFromPath(path)}>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={i} className={ROW_BG[r.t]}>
-                  {r.t === 'hunk' ? (
-                    <td colSpan={3} className="px-3 py-1 whitespace-pre text-[var(--gh-hunk-fg)]">{r.text}</td>
-                  ) : (
-                    <>
-                      <td className={cn('w-[1%] min-w-[44px] px-2 text-right align-top text-tertiary-foreground select-none', NUM_BG[r.t])}>{r.o ?? ''}</td>
-                      <td className={cn('w-[1%] min-w-[44px] px-2 text-right align-top text-tertiary-foreground select-none', NUM_BG[r.t])}>{r.n ?? ''}</td>
-                      <td className="pr-6 pl-2 whitespace-pre text-foreground">
-                        <span className="inline-block w-4 text-muted-foreground select-none">{r.t === 'add' ? '+' : r.t === 'del' ? '−' : ' '}</span>
-                        <SyntaxTokens tokens={lines[k++] ?? [{ type: 'plain', text: r.text }]} />
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -377,15 +336,6 @@ export interface Layout {
   wide: boolean;
   dark: boolean;
 }
-
-/** Navigation the screens call back into (page.tsx owns the state). */
-export type Nav = {
-  openPath: (p: string) => void;
-  openPr: (n: number | null) => void;
-  openIssue: (n: number | null) => void;
-  clone: () => void;
-  labels: () => void;
-};
 
 export const PR_STATE: Record<PullRequest['state'], StateKind> = { open: 'prOpen', draft: 'draft', merged: 'merged', closed: 'prClosed' };
 

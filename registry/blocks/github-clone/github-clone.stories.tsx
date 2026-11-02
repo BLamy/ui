@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AppearanceProvider } from '@/lib/theme';
 import { createDemoDeviceAuth } from '../apple-passwords/page';
-import { createGitHub } from './github-api';
 import GithubClone from './page';
+import { createSampleGitHub } from './sample';
 
 const meta: Meta<typeof GithubClone> = {
   title: 'Blocks/GitHub clone',
@@ -11,7 +11,7 @@ const meta: Meta<typeof GithubClone> = {
   parameters: { layout: 'fullscreen' },
   // The sample repository unless the Passwords keychain holds a GitHub sign-in (then it's your real repositories).
   // Screenshot stories leave the keychain out so they never depend on this browser's sign-ins.
-  args: { keychain: false },
+  args: { keychain: false, syncUrl: true },
 };
 export default meta;
 /** The desk behind the device frames: a fixed backdrop, not a theme color. */
@@ -22,6 +22,14 @@ type Story = StoryObj<typeof GithubClone>;
 /** The block fills whatever box it's given; these stories give it the viewport or a phone-sized frame. */
 function Full({ children }: { children: ReactNode }) {
   return <div className="h-screen w-full">{children}</div>;
+}
+
+function PhoneFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className="box-border grid min-h-screen place-items-center p-4" style={{ background: DESK }}>
+      <div className="h-[844px] w-[390px] overflow-hidden rounded-[24px] shadow-[0_12px_40px_black] shadow-black/18">{children}</div>
+    </div>
+  );
 }
 
 export const Light: Story = { render: (args) => <Full><GithubClone {...args} /></Full> };
@@ -35,13 +43,7 @@ export const Dark: Story = {
 };
 
 export const Phone: Story = {
-  render: (args) => (
-    <div className="box-border grid min-h-screen place-items-center p-4" style={{ background: DESK }}>
-      <div className="h-[844px] w-[390px] overflow-hidden rounded-[24px] shadow-[0_12px_40px_black] shadow-black/18">
-        <GithubClone {...args} />
-      </div>
-    </div>
-  ),
+  render: (args) => <PhoneFrame><GithubClone {...args} /></PhoneFrame>,
 };
 
 export const PullRequest: Story = {
@@ -93,75 +95,73 @@ export const KeychainDemoSignIn: Story = {
   render: (args) => <Full><GithubClone {...args} /></Full>,
 };
 
-/* ── The live path offline: a GitHub client whose fetch answers from canned REST JSON ── */
-const T = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
-const u = (login: string) => ({ login, avatar_url: '' });
-const R = '/repos/octo/hello-world';
-const ISSUE = { number: 12, title: 'Greeting is not localized', state: 'open', user: u('mona'), created_at: T(30), closed_at: null, labels: [{ name: 'bug', color: 'd73a4a' }], comments: 1, assignees: [], html_url: 'https://github.com/octo/hello-world/issues/12', body: 'Every visitor gets **Hello** in English.', author_association: 'CONTRIBUTOR' };
-const PULL = { number: 14, title: 'Localize the greeting', state: 'open', draft: false, merged_at: null, user: u('octo'), created_at: T(5), labels: [{ name: 'enhancement', color: 'a2eeef' }], comments: 1, head: { ref: 'i18n', sha: 'c0ffee' }, base: { ref: 'main' }, commits: 2, additions: 6, deletions: 1, changed_files: 1, html_url: 'https://github.com/octo/hello-world/pull/14', body: 'Fixes #12.', requested_reviewers: [u('mona')], mergeable_state: 'blocked', author_association: 'OWNER' };
-const CANNED: Record<string, unknown> = {
-  '/user': { login: 'octo', name: 'Octo Cat', avatar_url: '' },
-  '/user/repos': [{ full_name: 'octo/hello-world', description: 'My first repository', private: false }, { full_name: 'octo/dotfiles', description: '', private: true }],
-  [R]: { name: 'hello-world', owner: { login: 'octo' }, description: 'My first repository on GitHub (canned API answers).', homepage: 'octo.example', topics: ['hello', 'demo'], stargazers_count: 2410, forks_count: 1300, subscribers_count: 88, license: { name: 'MIT License' }, default_branch: 'main', private: false, html_url: 'https://github.com/octo/hello-world' },
-  [`${R}/branches`]: [{ name: 'main' }, { name: 'i18n' }],
-  [`${R}/languages`]: { TypeScript: 800, CSS: 150, HTML: 50 },
-  [`${R}/contributors`]: [u('octo'), u('mona')],
-  [`${R}/commits`]: [{ sha: '7fd1a60b01f91b314f59955a4e4d4e80d8edf11d', commit: { message: 'Merge pull request #6 from octo/readme', author: { name: 'Octo Cat', date: T(3) } }, author: u('octo') }],
-  [`${R}/git/trees/HEAD`]: { truncated: false, tree: [
-    { path: 'src', type: 'tree' }, { path: 'src/greet.ts', type: 'blob', size: 120 }, { path: 'README.md', type: 'blob', size: 60 }, { path: 'package.json', type: 'blob', size: 80 },
-  ] },
-  [`${R}/readme`]: '# hello-world\n\nServed by a **stand-in fetch** in the shape of GitHub’s REST API: sign in with GitHub for the real thing.\n',
-  [`${R}/contents/src/greet.ts`]: "export function greet(name: string) {\n  return `Hello, ${name}!`;\n}\n",
-  [`${R}/labels`]: [{ name: 'bug', color: 'd73a4a', description: "Something isn't working" }, { name: 'enhancement', color: 'a2eeef' }],
-  [`${R}/issues/12`]: ISSUE,
-  [`${R}/issues/14`]: { ...PULL, labels: PULL.labels, pull_request: {} },
-  [`${R}/issues/12/timeline`]: [{ event: 'commented', id: 1, actor: u('octo'), created_at: T(20), body: 'Good catch — on it.', author_association: 'OWNER', html_url: '#' }],
-  [`${R}/issues/14/timeline`]: [
-    { event: 'committed', sha: 'aaaaaaa1', message: 'i18n: add messages', author: { name: 'Octo Cat', date: T(5) }, committer: { date: T(5) } },
-    { event: 'review_requested', actor: u('octo'), created_at: T(4), requested_reviewer: u('mona') },
-    { event: 'reviewed', id: 3, user: u('mona'), submitted_at: T(2), state: 'commented', body: 'Should the fallback be English?' },
-  ],
-  [`${R}/pulls/14`]: PULL,
-  [`${R}/pulls/14/reviews`]: [{ user: u('mona'), state: 'COMMENTED' }],
-  [`${R}/pulls/14/commits`]: [{ sha: 'aaaaaaa1', commit: { message: 'i18n: add messages', author: { name: 'Octo Cat', date: T(5) } }, author: u('octo') }],
-  [`${R}/pulls/14/files`]: [{ filename: 'src/greet.ts', additions: 6, deletions: 1, status: 'modified', patch: "@@ -1,3 +1,8 @@\n-export function greet(name: string) {\n+const HELLO: Record<string, string> = { en: 'Hello', fr: 'Bonjour' };\n+\n+export function greet(name: string, lang = 'en') {\n+  const word = HELLO[lang] ?? HELLO.en;\n+  return `${word}, ${name}!`;\n+}\n-  return `Hello, ${name}!`;\n-}" }],
-  [`${R}/commits/c0ffee/check-runs`]: { check_runs: [{ name: 'CI / test', status: 'completed', conclusion: 'success', started_at: T(1), completed_at: T(0.97) }, { name: 'CI / lint', status: 'in_progress', conclusion: null, started_at: T(0.1), completed_at: null }] },
-  [`${R}/commits/c0ffee/status`]: { statuses: [] },
-  [`${R}/actions/runs`]: { total_count: 2, workflow_runs: [{ id: 1, name: 'CI', display_title: 'Localize the greeting', run_number: 31, event: 'pull_request', pull_requests: [{ number: 14 }], actor: u('octo'), head_branch: 'i18n', status: 'in_progress', conclusion: null, created_at: T(0.1), run_started_at: T(0.1), updated_at: T(0.05), html_url: '#' }] },
-  [`${R}/actions/workflows`]: { workflows: [{ name: 'CI', state: 'active' }] },
-};
-function cannedFetch(url: string, init?: RequestInit): Promise<Response> {
-  const p = new URL(url);
-  const path = p.pathname;
-  const delay = new Promise((r) => setTimeout(r, 250));
-  if (init?.method === 'POST') {
-    const { body } = JSON.parse(String(init.body)) as { body: string };
-    return delay.then(() => new Response(JSON.stringify({ id: Date.now(), body, user: u('octo'), created_at: new Date().toISOString(), html_url: `https://github.com${path.replace('/repos', '').replace('/comments', '')}`, author_association: 'OWNER' }), { status: 201 }));
-  }
-  if (path === '/search/issues') {
-    const q = p.searchParams.get('q') ?? '';
-    const items = q.includes('is:issue') ? (q.includes('is:open') ? [ISSUE] : []) : q.includes('is:open') ? [{ ...PULL, pull_request: { merged_at: null } }] : [];
-    return delay.then(() => new Response(JSON.stringify({ total_count: items.length, items })));
-  }
-  const hit = CANNED[path];
-  return delay.then(() => (hit === undefined ? new Response('{"message":"Not Found"}', { status: 404 })
-    : new Response(typeof hit === 'string' ? hit : JSON.stringify(hit), { status: 200, headers: { 'x-ratelimit-limit': '5000', 'x-ratelimit-remaining': '4987', 'x-ratelimit-reset': String(Math.round(Date.now() / 1000) + 3600) } })));
-}
+/* ── The other kinds of repository, on the same small GitHub the sample runs on ── */
 
-/** The live data path without a network: GitHub-shaped answers from a stand-in fetch (a quarter-second each, to show
-    the loading states). Comments "post" to the stand-in. */
+/** The live path without a network: a quarter-second per request, to show the loading states. */
 export const LiveStandIn: Story = {
-  args: { github: createGitHub({ token: 'not-a-real-token', fetch: cannedFetch }), repo: 'octo/hello-world' },
+  args: { github: createSampleGitHub({ latency: 250 }).gh, repo: 'octo/hello-world', syncUrl: true },
   render: (args) => <Full><GithubClone {...args} /></Full>,
 };
 
 export const LiveStandInPhone: Story = {
-  args: { github: createGitHub({ token: 'not-a-real-token', fetch: cannedFetch }), repo: 'octo/hello-world' },
-  render: (args) => (
-    <div className="box-border grid min-h-screen place-items-center p-4" style={{ background: DESK }}>
-      <div className="h-[844px] w-[390px] overflow-hidden rounded-[24px] shadow-[0_12px_40px_black] shadow-black/18">
-        <GithubClone {...args} />
-      </div>
-    </div>
-  ),
+  args: { github: createSampleGitHub({ latency: 250 }).gh, repo: 'octo/hello-world' },
+  render: (args) => <PhoneFrame><GithubClone {...args} /></PhoneFrame>,
 };
+
+/** A repository you can only read: no merge, no labels menu, no Settings; Fork and comment still work. */
+export const ReadOnly: Story = {
+  args: { github: createSampleGitHub({ role: 'read' }).gh, sample: true, repo: 'acme/orbit', initialPullRequest: 488 },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+/** Triage: labels and assignees but no merge. */
+export const Triage: Story = {
+  args: { github: createSampleGitHub({ role: 'triage' }).gh, sample: true, repo: 'acme/orbit', initialRoute: 'issues/489' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+export const Archived: Story = {
+  args: { github: createSampleGitHub().gh, sample: true, repo: 'acme/orbit-legacy', initialRoute: 'issues/1' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+export const EmptyRepository: Story = {
+  args: { github: createSampleGitHub().gh, sample: true, repo: 'you/new-idea' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+export const SignedOut: Story = {
+  args: { github: createSampleGitHub({ viewer: null }).gh, sample: true, repo: 'octo/hello-world', initialRoute: 'issues/12' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+export const NotFound: Story = {
+  args: { github: createSampleGitHub().gh, sample: true, repo: 'nobody/nothing' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+/** GitHub says no: every write in this one comes back 403, and reads run out of rate limit if you keep going. */
+const refused = createSampleGitHub();
+for (let i = 0; i < 50; i++) refused.server.fail(/^(POST|PATCH|PUT|DELETE) \/(?!graphql)/, 403, 'Resource not accessible by integration');
+export const WritesRefused: Story = {
+  args: { github: refused.gh, sample: true, repo: 'acme/orbit', initialRoute: 'issues/489' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+const limited = createSampleGitHub();
+limited.server.fail(/GET \/repos\/acme\/orbit$/, 403, 'API rate limit exceeded', { 'x-ratelimit-remaining': '0' });
+export const RateLimited: Story = {
+  args: { github: limited.gh, sample: true, repo: 'acme/orbit' },
+  render: (args) => <Full><GithubClone {...args} /></Full>,
+};
+
+export const IssuesList: Story = { args: { initialTab: 'issues' }, render: (args) => <Full><GithubClone {...args} /></Full> };
+export const PullsList: Story = { args: { initialTab: 'pulls' }, render: (args) => <Full><GithubClone {...args} /></Full> };
+export const Actions: Story = { args: { initialTab: 'actions' }, render: (args) => <Full><GithubClone {...args} /></Full> };
+export const Insights: Story = { args: { initialTab: 'insights' }, render: (args) => <Full><GithubClone {...args} /></Full> };
+export const Settings: Story = { args: { initialTab: 'settings' }, render: (args) => <Full><GithubClone {...args} /></Full> };
+export const CommitHistory: Story = { args: { initialRoute: 'commits/main' }, render: (args) => <Full><GithubClone {...args} /></Full> };
+export const Blame: Story = { args: { initialRoute: 'blame/main/src/retry.ts' }, render: (args) => <Full><GithubClone {...args} /></Full> };
+export const CompareBranches: Story = { args: { initialRoute: 'compare/main...feat%2Fretry-jitter' }, render: (args) => <Full><GithubClone {...args} /></Full> };
+export const IssueOnPhone: Story = { args: { initialRoute: 'issues/489' }, render: (args) => <PhoneFrame><GithubClone {...args} /></PhoneFrame> };
+export const PullOnPhone: Story = { args: { initialPullRequest: 488 }, render: (args) => <PhoneFrame><GithubClone {...args} /></PhoneFrame> };
