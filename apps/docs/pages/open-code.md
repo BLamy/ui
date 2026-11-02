@@ -6,6 +6,12 @@ OpenCode's real v2.2.4 terminal UI, rendered by OpenTUI WebAssembly, connected t
 
 The [Vibecoder block](https://blamy.github.io/ui/#/blocks/vibecoder) starts OpenCode and the starter app automatically when it opens. Its HTTP server serves HTML, CSS, JavaScript and an API route from the virtual filesystem. Try the counter in the preview. With a provider connected, ask OpenCode to edit `index.html` or `style.css`; select **Reload** to see the change.
 
+Vibecoder saves provider sign-ins and its network connection in the UI library’s **Passwords keychain**. Set up or unlock Passwords before signing in through OpenCode’s `/connect` flow or connecting Tailscale. Provider credentials use `opencode-provider-credentials`; the connection choice, Tailscale node keys and selected exit node use `opencode-connection`. Both slots use the vault’s passkey PRF and AES-GCM encryption in browser storage.
+
+After refreshing, select **Unlock Passwords keychain** once. Vibecoder restarts automatically, loads the saved provider sign-ins and restores the selected connection. Tailscale reconnects as the same device and selects its saved exit node without another Tailscale sign-in. An unavailable exit node leaves provider traffic blocked until you reconnect or choose another connection. Locking Passwords stops the terminal; unlocking restores it. **Explore offline** and the Cloudflare choice are remembered too. Signing out removes the corresponding saved provider credential or Tailscale session. Workspace files and conversations remain in memory.
+
+A runtime advertising `capabilities.credentialStore = 1` and `capabilities.connectionStore = 1` is required. Older runtimes are rejected when a configured store would be ignored. Deploy the companion OpenCode browser runtime together with this UI update.
+
 ## Installation
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/open-code.json{% endcommand %}
@@ -51,20 +57,22 @@ The default trusted runtime module is [the OpenCode fork on GitHub Pages](https:
 
 ## Provider connection
 
-Select **Connection** for the Tailscale/Cloudflare explanation. Tailscale routes provider traffic through your online exit node. The public Cloudflare relay handles provider tokens, prompts and replies in transit. Then use `/connect → OpenAI → Codex device code (legacy)` and approve sign-in yourself. Provider credentials and sessions stay in memory and are cleared on reload. The public free model can return a quota error; it is not a working provider connection.
+Select **Connection** for the Tailscale/Cloudflare explanation. Tailscale routes provider traffic through your online exit node. The public Cloudflare relay handles provider tokens, prompts and replies in transit. Then use `/connect → OpenAI → Codex device code (legacy)` and approve sign-in yourself. Keep the OpenCode authorization dialog open until OpenCode shows **Connected OpenAI**; the official approval page alone does not complete the token exchange. Closing the pending dialog cancels it, and attempts expire after ten minutes. Without a `credentialStore`, provider credentials and sessions stay in memory and are cleared on reload. The example uses the encrypted Passwords slot described above; sessions still stay in memory. The public free model can return a quota error; it is not a working provider connection.
 
 ## Props
 
-| Prop                         | Purpose                                                         |
-| ---------------------------- | --------------------------------------------------------------- |
-| `host` / `createHost`        | Borrow a host or create an owned one when starting. Choose one. |
-| `runtimeUrl` / `loadRuntime` | Hosted browser module or custom runtime loader.                 |
-| `previewRuntimeUrl`          | Separate-origin AlmostNode worker/bootstrap host.               |
-| `title`                      | Accessible component and frame name. Defaults to `OpenCode`.    |
-| `height`                     | Component height in pixels. Defaults to `620`.                  |
-| `theme`                      | `dark` or `light`. Changing it restarts the session.            |
-| `autoStart`                  | Start on mount. Defaults to `true`; `false` enables manual Start.                            |
-| `onReady`                    | Receives the mounted runtime session and host.                  |
-| `onStateChange`              | Observes idle, starting, running, error and stopped.            |
+| Prop                         | Purpose                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `credentialStore`            | Supported encrypted host store. Never prompts or falls back to plaintext. |
+| `connectionStore`            | Encrypted connection choice, Tailscale node session and exit node.        |
+| `host` / `createHost`        | Borrow a host or create an owned one when starting. Choose one.           |
+| `runtimeUrl` / `loadRuntime` | Hosted browser module or custom runtime loader.                           |
+| `previewRuntimeUrl`          | Separate-origin AlmostNode worker/bootstrap host.                         |
+| `title`                      | Accessible component and frame name. Defaults to `OpenCode`.              |
+| `height`                     | Component height in pixels. Defaults to `620`.                            |
+| `theme`                      | `dark` or `light`. Changing it restarts the session.                      |
+| `autoStart`                  | Start on mount and restore after keychain unlock. Defaults to `true`; `false` enables manual Start. |
+| `onReady`                    | Receives the mounted runtime session and host.                            |
+| `onStateChange`              | Observes idle, starting, running, error and stopped.                      |
 
 For small programs embedded in an AI response, use [TuiPreview](https://blamy.github.io/ui/#/tui-preview). Mount `OpenCode` when the response needs a complete editable workspace and app previews. An AI response must not provide an untrusted runtime module URL.

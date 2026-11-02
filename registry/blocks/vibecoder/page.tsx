@@ -1,10 +1,18 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { OpenCodeHostBridge } from '@/lib/open-code-host';
 import { OpenCode, type OpenCodeProps } from '@/components/ui/open-code';
 import { ThemeScope } from '@/lib/theme';
 import { createVibecoderHost } from './host';
+import {
+  PasswordsKeychain,
+  usePasswordsKeychain,
+} from '../apple-passwords/page';
+import {
+  createVaultOpenCodeCredentialStore,
+  createVaultOpenCodeConnectionStore,
+} from '@/lib/open-code-keychain';
 
 export interface VibecoderProps extends Omit<OpenCodeProps, 'autoStart'> {
   /** The app's URL base, e.g. `/ui`. Used by the default AlmostNode workspace. */
@@ -12,9 +20,22 @@ export interface VibecoderProps extends Omit<OpenCodeProps, 'autoStart'> {
 }
 
 /** OpenCode and a live app, ready as soon as this block mounts. */
-export default function Vibecoder({
+export default function Vibecoder(props: VibecoderProps) {
+  return (
+    <PasswordsKeychain
+      tailscale={false}
+      protects="OpenCode provider sign-ins and your Tailscale session"
+    >
+      <Workspace {...props} />
+    </PasswordsKeychain>
+  );
+}
+
+function Workspace({
   host,
   createHost,
+  credentialStore,
+  connectionStore,
   basePath = '',
   title = 'Vibecoder',
   theme = 'dark',
@@ -24,6 +45,18 @@ export default function Vibecoder({
   onStateChange,
   ...props
 }: VibecoderProps) {
+  const keychain = usePasswordsKeychain();
+  const vault = keychain?.vault;
+  const stores = useMemo(
+    () =>
+      vault
+        ? {
+            credentials: createVaultOpenCodeCredentialStore(vault),
+            connection: createVaultOpenCodeConnectionStore(vault),
+          }
+        : undefined,
+    [vault],
+  );
   const createStarter = useCallback(
     () => createVibecoderHost(basePath),
     [basePath],
@@ -34,8 +67,37 @@ export default function Vibecoder({
     <ThemeScope
       scope="terminal"
       appearance={theme}
-      className="h-full min-h-0 w-full"
+      className="flex h-full min-h-0 w-full flex-col"
     >
+      {keychain && (
+        <div className="flex shrink-0 flex-wrap items-center gap-3 px-3 py-2 text-sm">
+          <button
+            type="button"
+            className="rounded-lg border border-separator px-3 py-2 disabled:opacity-50"
+            disabled={
+              vault?.status === 'loading' || vault?.status === 'unsupported'
+            }
+            onClick={() =>
+              vault?.status === 'unlocked'
+                ? vault.lock()
+                : keychain.requestUnlock()
+            }
+          >
+            {vault?.status === 'unlocked'
+              ? 'Lock Passwords keychain'
+              : vault?.status === 'empty'
+                ? 'Set up Passwords keychain'
+                : 'Unlock Passwords keychain'}
+          </button>
+          <span className="text-xs text-secondary-label">
+            {vault?.status === 'unlocked'
+              ? 'Connections saved in Passwords'
+              : vault?.status === 'unsupported'
+                ? 'Encrypted keychain unavailable in this browser'
+                : 'Unlock Passwords to restore Tailscale and provider sign-ins'}
+          </span>
+        </div>
+      )}
       {error && (
         <p
           role="alert"
@@ -46,10 +108,12 @@ export default function Vibecoder({
       )}
       <OpenCode
         {...props}
+        credentialStore={credentialStore ?? stores?.credentials}
+        connectionStore={connectionStore ?? stores?.connection}
         title={title}
         theme={theme}
         height={height}
-        style={{ height: '100%', minHeight: 360, ...style }}
+        style={{ flex: 1, minHeight: 360, ...style }}
         host={host}
         createHost={createHost ?? (host ? undefined : createStarter)}
         autoStart

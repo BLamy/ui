@@ -116,6 +116,13 @@ function extractInlinedBinaries(): Plugin {
   };
 }
 
+// Serve the OpenCode runtime and its rooted SQLite/preload assets from the same local origin.
+// OPENCODE_ASSET_ORIGIN can point at an unpublished local runtime for integration checks.
+// GitHub Pages serves that sibling project on the docs origin; local docs need the same paths.
+const openCodeAssets = {
+  '/opencode/': { target: process.env.OPENCODE_ASSET_ORIGIN ?? 'https://blamy.github.io', changeOrigin: true },
+};
+
 export default defineConfig(() => ({
   root: import.meta.dirname,
   base: process.env.GITHUB_ACTIONS ? '/ui/' : '/',
@@ -123,10 +130,12 @@ export default defineConfig(() => ({
   server: {
     port: 4206,
     host: 'localhost',
+    proxy: openCodeAssets,
   },
   preview: {
     port: 4206,
     host: 'localhost',
+    proxy: openCodeAssets,
   },
   plugins: [react(), tailwindcss(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation(), extractInlinedBinaries()],
   resolve: {

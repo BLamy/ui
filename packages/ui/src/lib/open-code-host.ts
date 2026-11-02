@@ -310,6 +310,18 @@ export function createAlmostNodeOpenCodeHost(
 
 export const createAgentWasmOpenCodeHost = createAlmostNodeOpenCodeHost;
 
+/** Opaque records owned by the runtime, encrypted and unlocked by the host. */
+export interface OpenCodeKeychainStore {
+  readonly version: 1;
+  unlocked(): boolean;
+  load(): Promise<unknown>;
+  save(entries: unknown): Promise<void>;
+  subscribe(listener: () => void): () => void;
+}
+
+export type OpenCodeCredentialStore = OpenCodeKeychainStore;
+export type OpenCodeConnectionStore = OpenCodeKeychainStore;
+
 export interface OpenCodeRuntimeSession {
   dispose(): void;
   exited?: Promise<void>;
@@ -317,6 +329,7 @@ export interface OpenCodeRuntimeSession {
 
 export interface OpenCodeRuntime {
   version?: string;
+  capabilities?: { credentialStore?: 1; connectionStore?: 1 };
   mount(options: {
     container: HTMLElement;
     connectionContainer: HTMLElement;
@@ -324,6 +337,8 @@ export interface OpenCodeRuntime {
     workspaceBridge?: OpenCodeWorkspaceBridge;
     processBridge?: OpenCodeProcessBridge;
     themeMode?: 'light' | 'dark';
+    credentialStore?: OpenCodeCredentialStore;
+    connectionStore?: OpenCodeConnectionStore;
   }): Promise<OpenCodeRuntimeSession>;
 }
 

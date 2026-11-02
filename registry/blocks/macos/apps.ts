@@ -105,6 +105,11 @@ export const APPS: DesktopApp[] = [
     Component: lazy(() => import('../codex-clone/page')),
   },
   {
+    id: 'opencode', name: 'OpenCode', description: 'A live terminal, browser workspace and app previews', keywords: ['terminal', 'shell', 'code', 'ai', 'agent', 'workspace', 'opentui'],
+    tile: ['#404047', '#18181B'], icon: 'terminal', size: { w: 1120, h: 720 },
+    Component: lazy(() => import('./open-code')),
+  },
+  {
     id: 't3', name: 'T3 Code', description: 'Threads, terminal and diffs', keywords: ['ai', 'ide', 'agent', 'code', 'terminal'],
     tile: ['#2B2B31', '#0B0B0E'], icon: 'terminal', size: { w: 1040, h: 660 },
     Component: lazy(() => import('../t3-clone/page')),

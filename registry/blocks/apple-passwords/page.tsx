@@ -25,7 +25,7 @@ import { firstEntry, sectionsFor, useVault, type Selection } from './vault';
 
 /* Other blocks reach the keychain through this entry (blocks import each other's page only): wrap in
    <PasswordsKeychain>, read a token with useKeychainSignIn('github'). */
-export { PasswordsKeychain, useKeychainSignIn, type KeychainSignIn, type PasswordsKeychainProps } from './keychain';
+export { PasswordsKeychain, usePasswordsKeychain, useKeychainSignIn, type KeychainSignIn, type PasswordsKeychainProps } from './keychain';
 export { createDemoDeviceAuth, type DeviceAuth } from './device-auth';
 
 /** Passwords' accent: iOS system blue (light #007AFF, dark #0A84FF). */

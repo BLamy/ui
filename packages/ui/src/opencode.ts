@@ -11,6 +11,9 @@ export {
 } from './lib/open-code-host';
 export type {
   OpenCodeHostBridge,
+  OpenCodeCredentialStore,
+  OpenCodeConnectionStore,
+  OpenCodeKeychainStore,
   OpenCodePort,
   OpenCodeWorkspaceBridge,
   OpenCodeProcessBridge,
@@ -20,3 +23,10 @@ export type {
   AlmostNodeOpenCodeContainer,
   AlmostNodeOpenCodeOptions,
 } from './lib/open-code-host';
+
+export {
+  createVaultOpenCodeCredentialStore,
+  createVaultOpenCodeConnectionStore,
+  OPENCODE_CREDENTIAL_SLOT,
+  OPENCODE_CONNECTION_SLOT,
+} from './lib/open-code-keychain';

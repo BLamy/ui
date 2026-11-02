@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+} from 'react';
 import { cn } from '@/lib/utils';
 import {
   connectOpenCodePreview,
@@ -11,6 +18,8 @@ import {
   loadOpenCodeRuntime,
   openCodePreviewUrl,
   type OpenCodeHostBridge,
+  type OpenCodeCredentialStore,
+  type OpenCodeConnectionStore,
   type OpenCodePort,
   type OpenCodeRuntime,
   type OpenCodeRuntimeSession,
@@ -22,6 +31,10 @@ export type OpenCodeState =
 export interface OpenCodeProps {
   /** Borrow an existing host, or create a fresh one on each Start (disposed on Stop). */
   host?: OpenCodeHostBridge;
+  /** Supported encrypted host store. Locking stops the terminal; autoStart restores it after unlocking. */
+  credentialStore?: OpenCodeCredentialStore;
+  /** Encrypted connection choice, Tailscale session and exit node. Uses the same unlock lifecycle as credentialStore. */
+  connectionStore?: OpenCodeConnectionStore;
   createHost?: () => OpenCodeHostBridge | Promise<OpenCodeHostBridge>;
   runtimeUrl?: string;
   /** Hosts AlmostNode's worker and bootstrap on a separate origin. */
@@ -45,6 +58,8 @@ export interface OpenCodeProps {
 /** A real OpenCode TUI beside the HTTP apps started by its host runtime. */
 export function OpenCode({
   host,
+  credentialStore,
+  connectionStore,
   createHost,
   runtimeUrl,
   previewRuntimeUrl = DEFAULT_OPENCODE_PREVIEW_URL,
@@ -61,7 +76,32 @@ export function OpenCode({
   const terminal = useRef<HTMLDivElement>(null);
   const connection = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(autoStart);
-  const [state, setState] = useState<OpenCodeState>(autoStart ? 'starting' : 'idle');
+  const stores = useMemo(
+    () =>
+      [credentialStore, connectionStore].filter((store) => store !== undefined),
+    [credentialStore, connectionStore],
+  );
+  const keychain = useMemo(
+    () => ({
+      subscribe: (listener: () => void) => {
+        const off = stores.map((store) => store.subscribe(listener));
+        return () => off.forEach((unsubscribe) => unsubscribe());
+      },
+      getSnapshot: () => stores.every((store) => store.unlocked()),
+      getServerSnapshot: () => stores.length === 0,
+    }),
+    [stores],
+  );
+  const unlocked = useSyncExternalStore(
+    keychain.subscribe,
+    keychain.getSnapshot,
+    keychain.getServerSnapshot,
+  );
+  const availability = useRef(unlocked);
+  const [keychainRevision, setKeychainRevision] = useState(0);
+  const [state, setState] = useState<OpenCodeState>(
+    autoStart ? 'starting' : 'idle',
+  );
   const [error, setError] = useState('');
   const [ports, setPorts] = useState<OpenCodePort[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
@@ -74,6 +114,16 @@ export function OpenCode({
   useEffect(() => {
     callbacks.current.onStateChange?.(state);
   }, [state]);
+
+  useEffect(() => {
+    if (availability.current === unlocked) return;
+    availability.current = unlocked;
+    setStarted(unlocked && autoStart);
+    setState(unlocked && autoStart ? 'starting' : 'stopped');
+    setPorts([]);
+    setSelected(null);
+    if (unlocked) setKeychainRevision((value) => value + 1);
+  }, [unlocked, autoStart]);
 
   useEffect(() => {
     if (!started || !terminal.current || !connection.current) return;
@@ -144,6 +194,14 @@ export function OpenCode({
         ? loadRuntime()
         : loadOpenCodeRuntime(runtimeUrl));
       if (cancelled) return;
+      if (credentialStore && runtime.capabilities?.credentialStore !== 1)
+        throw new Error(
+          'This OpenCode runtime needs the encrypted keychain bridge (credentialStore v1). Update the runtime before saving sign-ins.',
+        );
+      if (connectionStore && runtime.capabilities?.connectionStore !== 1)
+        throw new Error(
+          'This OpenCode runtime needs the encrypted connection bridge (connectionStore v1). Update the runtime before restoring Tailscale.',
+        );
       setVersion(runtime.version ?? '');
       session = await runtime.mount({
         container: terminalElement,
@@ -152,6 +210,8 @@ export function OpenCode({
         directory: nextHost?.directory,
         workspaceBridge: nextHost?.workspaceBridge,
         processBridge: nextHost?.processBridge,
+        credentialStore,
+        connectionStore,
       });
       if (cancelled) {
         session.dispose();
@@ -183,20 +243,32 @@ export function OpenCode({
   }, [
     started,
     host,
+    credentialStore,
+    connectionStore,
     createHost,
     loadRuntime,
     runtimeUrl,
     previewRuntimeUrl,
     theme,
+    keychainRevision,
   ]);
 
   const active = ports.find((port) => port.port === selected);
   const frame = useRef<HTMLIFrameElement>(null);
+  // The AlmostNode worker owns one MessagePort. Replaced frames need a fresh
+  // scope so a previous worker cannot send requests to its closed connection.
+  const previewFrame = useMemo(
+    () => ({
+      key: `${previewSession}:${selected}:${revision}`,
+      session: crypto.randomUUID(),
+    }),
+    [previewSession, selected, revision],
+  );
   const previewSrc =
     active && previewSession
       ? openCodePreviewFrameUrl(
           previewRuntimeUrl,
-          previewSession,
+          previewFrame.session,
           active.port,
           window.location.href,
         )
@@ -206,12 +278,12 @@ export function OpenCode({
     return connectOpenCodePreview({
       frame: frame.current,
       host: bridge,
-      session: previewSession,
+      session: previewFrame.session,
       port: selected,
       url: previewSrc,
       onError: setError,
     });
-  }, [bridge, previewSrc, previewSession, selected, revision]);
+  }, [bridge, previewSrc, previewFrame, selected]);
   useEffect(() => {
     if (selected === null || !ports.some((port) => port.port === selected))
       return;
@@ -230,7 +302,7 @@ export function OpenCode({
       aria-label={title}
       data-state={state}
     >
-      <header className="flex min-h-11 flex-wrap items-center gap-3 border-b border-border px-3 py-2 text-sm">
+      <header className="flex min-h-11 shrink-0 flex-wrap items-center gap-3 border-b border-border px-3 py-2 text-sm">
         <strong>
           {title}
           {version && (
@@ -268,18 +340,15 @@ export function OpenCode({
         </button>
       </header>
       {error && (
-        <p
-          role="alert"
-          className="m-3 rounded-lg bg-muted p-3 text-sm"
-        >
+        <p role="alert" className="m-3 rounded-lg bg-muted p-3 text-sm">
           {error}
         </p>
       )}
-      <div className="flex min-h-0 flex-1 flex-wrap">
-        <div className="relative min-h-60 min-w-0 flex-[1_1_420px] bg-muted p-2">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <div className="relative min-h-0 min-w-0 flex-1 bg-muted p-2">
           <div
             ref={terminal}
-            className="h-full min-h-60"
+            className="h-full min-h-0"
             aria-label={`${title} terminal`}
           />
           {state === 'starting' && (
@@ -296,10 +365,10 @@ export function OpenCode({
         </div>
         {ports.length > 0 && (
           <aside
-            className="flex min-h-60 min-w-0 flex-[1_1_400px] flex-col border-l border-border"
+            className="flex min-h-0 min-w-0 flex-1 flex-col border-t border-border md:border-t-0 md:border-l"
             aria-label="App preview"
           >
-            <div className="flex min-h-10 flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
+            <div className="flex min-h-10 shrink-0 flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
               <span>Preview</span>
               {ports.map((port) => (
                 <button
@@ -316,7 +385,7 @@ export function OpenCode({
                 <>
                   <button
                     type="button"
-                    className="ml-auto"
+                    className="ml-auto appearance-none rounded border border-border bg-transparent px-2 py-1 font-sans"
                     onClick={() => setRevision((value) => value + 1)}
                     aria-label="Reload app preview"
                   >
@@ -324,6 +393,7 @@ export function OpenCode({
                   </button>
                   <button
                     type="button"
+                    className="appearance-none rounded border border-border bg-transparent px-2 py-1 font-sans"
                     onClick={() => setSelected(null)}
                     aria-label="Close app preview"
                   >
@@ -334,7 +404,7 @@ export function OpenCode({
             </div>
             {active ? (
               <iframe
-                key={`${active.port}:${revision}`}
+                key={previewFrame.key}
                 ref={frame}
                 src={previewSrc}
                 title={`${title} · ${active.name ?? `port ${active.port}`}`}
@@ -356,9 +426,12 @@ export function OpenCode({
           </aside>
         )}
       </div>
-      <p className="m-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">
-        Sessions and provider credentials stay in memory. Preview apps run in a
-        sandboxed frame.
+      <p className="m-0 shrink-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+        {connectionStore
+          ? 'Connections and provider sign-ins use your Passwords keychain. Unlock it after a refresh to restore them.'
+          : credentialStore
+            ? 'Provider sign-ins use your keychain. Locking it stops this terminal. Sessions stay in memory.'
+            : 'Sessions and provider credentials stay in memory. Preview apps run in a sandboxed frame.'}
       </p>
     </section>
   );

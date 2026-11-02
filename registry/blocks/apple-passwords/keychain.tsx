@@ -100,3 +100,9 @@ export function useKeychainSignIn(id: ServiceId): KeychainSignIn | null {
     forget: () => s.forget(id),
   };
 }
+
+/** Nonsecret access to the shared encrypted vault and its user-initiated setup/unlock control. */
+export function usePasswordsKeychain() {
+  const store = useOptionalSignIns();
+  return store ? { vault: store.passkeys, requestUnlock: store.savePasskey } : null;
+}
