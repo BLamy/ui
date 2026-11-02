@@ -1,11 +1,13 @@
 /* The order summary: the plan and seats, a promotion code (checked against the plan), tax once the billing address
    gives one, and what is due today — every figure follows the form as it changes. Beside the form on a wide host,
-   and in a disclosure above it on a narrow one (with the total on its trigger). */
+   and in a disclosure above it on a narrow one (with the total on its trigger). Resting on the plan's name previews the
+   plan (price, seats, features) once its cards are a step behind. */
 import { useEffect, useRef, useState } from 'react';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
 import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
 import { Form } from '@/components/ui/form';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { PlainButton } from '@/components/ui/plain-button';
@@ -15,7 +17,7 @@ import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { MONEY_FORMAT, longDate, money, renewsOn } from './checkout';
 import { PRODUCT } from './data';
-import { ERROR_INK, ErrorText, Line, Logo, SOFT_INK, Totals } from './parts';
+import { ERROR_INK, ErrorText, Line, Logo, PlanCard, SOFT_INK, Totals } from './parts';
 import { useCheckoutCtx } from './use-checkout';
 
 export function OrderSummary() {
@@ -30,7 +32,10 @@ export function OrderSummary() {
       <div className="flex items-center gap-3">
         <Logo size={44} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-callout font-semibold text-foreground">{PRODUCT.name} {q.plan.name}</div>
+          <HoverCardTrigger isDisabled={c.step === 'plan'}>
+            <div className="truncate text-callout font-semibold text-foreground">{PRODUCT.name} {q.plan.name}</div>
+            <HoverCard placement="bottom start"><PlanCard plan={q.plan} cycle={cycle} /></HoverCard>
+          </HoverCardTrigger>
           <div className={cn('text-footnote', SOFT_INK)}>{seats} {seats === 1 ? 'seat' : 'seats'} · billed {yearly ? 'yearly' : 'monthly'}</div>
         </div>
         {c.step !== 'plan' ? (

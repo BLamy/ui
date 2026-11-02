@@ -8,6 +8,7 @@ import {
   AnimatePresence, MotionConfig, Reorder, animate, motion, useDragControls, useMotionValue, useReducedMotion, useTransform,
   type AnimationPlaybackControls, type DragControls,
 } from 'framer-motion';
+import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
 import { Icon, IC } from '@/lib/icon';
 import { springs } from '@/lib/motion';
 import { chromeOffset, BLStickyCtx, useChromeHidden } from '@/lib/theme';
@@ -242,6 +243,9 @@ export interface ListRowProps extends Pick<VariantProps<typeof listRowVariants>,
   /** Content that spans the row instead of the title (a slider between two icons, a segmented control). It is a
    *  live control area: presses reach it and swipes don't start on it. */
   children?: ReactNode;
+  /** A HoverCard's content about what the row stands for (a person, a file): beside the row while the pointer rests
+   *  on it or keyboard focus is in it. Touch never shows it, so it previews what pressing the row opens. */
+  preview?: ReactNode;
   /** Classes for the row surface (`list-row-content`: padding, gap, min height, background). `className` goes on
    *  the outer wrapper, which also holds the swipe actions. */
   contentClassName?: string;
@@ -278,6 +282,7 @@ export function ListRow(p: ListRowProps) {
   const me = useRef<() => void>(() => undefined);
   const swallow = useRef(false);
   const wantFocus = useRef(false);
+  const card = useHoverCard({ isDisabled: !p.preview });
 
   const trailing: ListRowAction[] = [
     ...(p.onDelete ? [{ label: 'Delete', destructive: true, onAction: p.onDelete }] : []),
@@ -436,7 +441,10 @@ export function ListRow(p: ListRowProps) {
         p.className,
       )}
       // Removal collapses from the measured height to 0 on the tray spring.
-      style={closing != null ? { '--list-row-h': closing + 'px', ...p.style } as CSSProperties : p.style}>
+      style={closing != null ? { '--list-row-h': closing + 'px', ...p.style } as CSSProperties : p.style}
+      onPointerEnter={card.triggerProps.onPointerEnter} onPointerLeave={card.triggerProps.onPointerLeave} onPointerDownCapture={card.triggerProps.onPointerDown}
+      onFocus={card.triggerProps.onFocus} onBlur={card.triggerProps.onBlur}>
+      {p.preview ? <HoverCard {...card.cardProps} triggerRef={wrap} placement="end top">{p.preview}</HoverCard> : null}
       {side && shown.length ? (
         // The action strip tracks the swipe offset; a full swipe hands the whole strip to the outermost action.
         <motion.div ref={strip} data-slot="list-row-actions" onKeyDown={onStripKey}

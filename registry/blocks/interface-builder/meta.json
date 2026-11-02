@@ -38,6 +38,7 @@
     "palette.ts",
     "pick.ts",
     "player.tsx",
+    "previews.tsx",
     "render.tsx",
     "runtime.ts",
     "scope.ts",

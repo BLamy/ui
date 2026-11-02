@@ -2,11 +2,14 @@
    Settings (sidebar + detail), Reminders (tinted rows, shared-selection sections, large titles), Library (a
    nested push/pop stack in the detail), Notes gallery (the supplementary column steps aside) and a frame you
    can drag to resize. Each is a plain composition of the
-   public SplitView parts — nothing here reaches into the component. */
+   public SplitView parts — nothing here reaches into the component. Hover cards preview what a press opens, as the
+   real apps do: a sender's contact card on their avatar, a reminders list's first items on its sidebar row, an
+   album's tracks on its cover. */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { useMove, useFocusRing, mergeProps } from 'react-aria';
 import { Avatar } from '@/components/ui/avatar';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ListRow, ListSection } from '@/components/ui/list';
 import { SearchField } from '@/components/ui/search-field';
 import { SIDEBAR_ICONS } from '@/components/ui/sidebar';
@@ -150,6 +153,26 @@ function MailList() {
   );
 }
 
+/** A sender's contact card: who they are and what else they've sent. */
+function SenderCard({ from }: { from: [string, string] }) {
+  const theirs = [...new Map(Object.values(MAIL).flat().filter((m) => m.from.join() === from.join()).map((m) => [m.subject, m])).values()];
+  return (
+    <div className="flex flex-col gap-3">
+      <HoverCardHeader media={<Avatar c={{ f: from[0], l: from[1] }} size={44} />} title={from.join(' ')}
+        subtitle={`${from[0].toLowerCase()}.${from[1].toLowerCase()}@icloud.com`} />
+      <div className="flex flex-col gap-1">
+        <div className="text-footnote font-semibold text-muted-foreground">{theirs.length} {theirs.length === 1 ? 'message' : 'messages'}</div>
+        {theirs.slice(0, 3).map((m) => (
+          <div key={m.id} className="flex items-baseline gap-2 text-footnote">
+            <span className="min-w-0 flex-1 truncate">{m.subject}</span>
+            <span className="shrink-0 text-muted-foreground">{m.time}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MailMessage() {
   const s = useSplitView();
   const all = Object.values(MAIL).flat();
@@ -166,7 +189,7 @@ function MailMessage() {
         <SplitViewContent>
           <article className="mx-auto max-w-[680px] px-6 pt-5 pb-10">
             <div className="flex items-center gap-3">
-              <Avatar c={{ f: m.from[0], l: m.from[1] }} size={44} />
+              <Avatar c={{ f: m.from[0], l: m.from[1] }} size={44} card={<SenderCard from={m.from} />} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
                   <span className="min-w-0 flex-1 truncate text-body font-semibold">{m.from.join(' ')}</span>
@@ -380,15 +403,39 @@ const RLISTS: Record<string, RList> = {
   travel: { title: 'Travel', color: SYSTEM.pink, icon: 'list', items: ['Adapter', 'Tokyo rail pass', 'Hotel confirmation'] },
 };
 
+/** A list's first few reminders, beside its sidebar row. */
+function RListCard({ l }: { l: RList }) {
+  const more = l.items.length - 5;
+  return (
+    <div className="flex flex-col gap-3">
+      <HoverCardHeader
+        media={<span className="grid size-9 place-items-center rounded-full bg-(--c) text-white" style={{ '--c': l.color } as CSSProperties}><DemoGlyph name={l.icon} size={19} sw={2.4} /></span>}
+        title={l.title} subtitle={`${l.items.length} reminders`} />
+      <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+        {l.items.slice(0, 5).map((t) => (
+          <li key={t} className="flex items-center gap-2.5 text-footnote">
+            <span aria-hidden="true" className="size-3.5 shrink-0 rounded-full shadow-[inset_0_0_0_1.5px_var(--c)]" style={{ '--c': l.color } as CSSProperties} />
+            <span className="min-w-0 flex-1 truncate">{t}</span>
+          </li>
+        ))}
+        {more > 0 ? <li className="pl-6 text-footnote text-muted-foreground">{more} more</li> : null}
+      </ul>
+    </div>
+  );
+}
+
 function RListItem({ id }: { id: string }) {
   const l = RLISTS[id];
   return (
-    <SplitViewItem id={id} tint={l.color} title={l.title} badge={l.items.length}
-      icon={
-        <span className="grid size-[26px] place-items-center rounded-full bg-(--split-item-tint) text-white transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--split-item-tint)">
-          <DemoGlyph name={l.icon} size={15} sw={2.4} />
-        </span>
-      } />
+    <HoverCardTrigger className="flex w-full">
+      <SplitViewItem id={id} tint={l.color} title={l.title} badge={l.items.length}
+        icon={
+          <span className="grid size-[26px] place-items-center rounded-full bg-(--split-item-tint) text-white transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--split-item-tint)">
+            <DemoGlyph name={l.icon} size={15} sw={2.4} />
+          </span>
+        } />
+      <HoverCard placement="end top"><RListCard l={l} /></HoverCard>
+    </HoverCardTrigger>
   );
 }
 
@@ -463,6 +510,24 @@ const Cover = ({ a, className }: { a: Album; className?: string }) => (
     style={{ background: `linear-gradient(135deg, hsl(${a.hue} 80% 62%), hsl(${a.hue + 40} 70% 38%))` }} />
 );
 
+/** An album's cover, credits line and first tracks, over its tile in the grid. */
+function AlbumCard({ a }: { a: Album }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <HoverCardHeader media={<Cover a={a} className="size-12" />} title={a.title} subtitle={`${a.artist} · ${a.year} · ${a.tracks.length} songs`} />
+      <ol className="m-0 flex list-none flex-col gap-1 p-0">
+        {a.tracks.slice(0, 4).map((t, i) => (
+          <li key={t} className="flex items-baseline gap-2.5 text-footnote">
+            <span className="w-3 text-right text-muted-foreground tabular-nums">{i + 1}</span>
+            <span className="min-w-0 flex-1 truncate">{t}</span>
+          </li>
+        ))}
+      </ol>
+      {a.tracks.length > 4 ? <div className="pl-[22px] text-footnote text-muted-foreground">{a.tracks.length - 4} more</div> : null}
+    </div>
+  );
+}
+
 function TrackPage({ a, track }: { a: Album; track: string }) {
   return (
     <>
@@ -530,12 +595,15 @@ function LibraryRoot({ initialAlbum }: { initialAlbum?: string }) {
       <SplitViewContent>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-5 px-5 pt-5 pb-10">
           {ALBUMS.map((a) => (
-            <AriaButton key={a.id} onPress={() => stack.push(<AlbumPage a={a} />, { key: a.id })}
-              className="bl-btn flex cursor-pointer flex-col items-stretch gap-1.5 rounded-ctl border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground outline-none transition-transform duration-150 data-[pressed]:scale-[.97] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
-              <Cover a={a} className="aspect-square w-full" />
-              <span className="mt-0.5 truncate text-detail font-medium">{a.title}</span>
-              <span className="-mt-1 truncate text-footnote text-muted-foreground">{a.artist}</span>
-            </AriaButton>
+            <HoverCardTrigger key={a.id} className="flex">
+              <AriaButton onPress={() => stack.push(<AlbumPage a={a} />, { key: a.id })}
+                className="bl-btn flex w-full cursor-pointer flex-col items-stretch gap-1.5 rounded-ctl border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground outline-none transition-transform duration-150 data-[pressed]:scale-[.97] data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">
+                <Cover a={a} className="aspect-square w-full" />
+                <span className="mt-0.5 truncate text-detail font-medium">{a.title}</span>
+                <span className="-mt-1 truncate text-footnote text-muted-foreground">{a.artist}</span>
+              </AriaButton>
+              <HoverCard placement="end top" className="w-64"><AlbumCard a={a} /></HoverCard>
+            </HoverCardTrigger>
           ))}
         </div>
       </SplitViewContent>

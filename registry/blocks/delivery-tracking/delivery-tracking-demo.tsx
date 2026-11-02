@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { FloatingSheet, type FloatingSheetAppearance, type FloatingSheetTone } from '@/components/ui/floating-sheet';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ProgressStepper, type ProgressStep } from '@/components/ui/progress-stepper';
 import { springs, useReducedMotion } from '@/lib/motion';
 import { themeScopeProps, useAppearance } from '@/lib/theme';
@@ -9,7 +10,7 @@ import { cva } from 'class-variance-authority';
 import { Button } from 'react-aria-components';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { distanceMeters, type LatLng, type MapTarget } from '../map-chat/geo';
+import { distanceMeters, formatDistance, type LatLng, type MapTarget } from '../map-chat/geo';
 import { MAP_ICONS, type MapIconName } from '../map-chat/map-icons';
 import { esriDarkGrayTiles, esriLightGrayTiles, MAP_FONT, TileMap, type MapPin, type MapRoute } from '../map-chat/tile-map';
 
@@ -55,6 +56,7 @@ export interface DeliveryTrackingDemoProps {
 const STORE: LatLng = { lat: 40.7189, lng: -73.9945 };
 const STORE_NAME = 'Bread Alone Bakery';
 const STORE_ADDRESS = '199 Grand St';
+const STORE_HOURS = 'Open until 6 PM';
 /* A few blocks of the Lower East Side, driven to the store. */
 const ROUTE: LatLng[] = [
   { lat: 40.7231, lng: -73.9879 },
@@ -71,6 +73,14 @@ const ORDER_ITEMS = [
   { qty: 1, name: 'Sourdough loaf', price: 9.5 },
   { qty: 2, name: 'Almond croissant', price: 5.25 },
   { qty: 1, name: 'Cold brew, large', price: 5.0 },
+];
+
+/** "From this store": the menu tiles, each previewed on hover. */
+const MENU = [
+  { name: 'Morning bun', price: 4, blurb: 'Laminated croissant dough rolled with orange zest and cinnamon sugar.' },
+  { name: 'Baguette', price: 5.5, blurb: 'Long-fermented, baked through the morning; crackling crust.' },
+  { name: 'Olive focaccia', price: 7, blurb: 'Castelvetrano olives, rosemary and flaky salt on an airy crumb.' },
+  { name: 'Seeded rye', price: 8.5, blurb: 'Dense Danish-style rye with sunflower, flax and pumpkin seeds.' },
 ];
 
 const GIFT_CARDS = [
@@ -118,6 +128,35 @@ function Icon({ name, size = 18 }: { name: MapIconName; size?: number }) {
     </svg>
   );
 }
+
+/** The store's hover card — on its pin and its address: where it is, its hours, and how far your car still has to go. */
+function StoreCard({ accent, remainingMeters, arrived }: { accent: string; remainingMeters: number; arrived: boolean }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <HoverCardHeader
+        media={<span className="grid size-9 place-items-center rounded-[50%] text-white" style={{ background: accent }}><Icon name="store" size={18} /></span>}
+        title={STORE_NAME}
+        subtitle={`${STORE_ADDRESS} · ${STORE_HOURS}`}
+      />
+      <p className="m-0 text-footnote leading-[1.4] text-muted-foreground">
+        Pickup at the counter. {arrived ? 'You’re here.' : `You’re ${formatDistance(remainingMeters)} away.`}
+      </p>
+    </div>
+  );
+}
+
+/** A menu tile's hover card: a bigger swatch of the item, its price and what it is. */
+function MenuCard({ item, index }: { item: (typeof MENU)[number]; index: number }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="aspect-[2/1] w-full rounded-panel [background:var(--ck-tile-bg)]" style={{ '--ck-tile-bg': tileColor(index) } as CSSProperties} />
+      <HoverCardHeader title={item.name} subtitle={STORE_NAME} action={<span className="text-subhead font-semibold tabular-nums">${item.price.toFixed(2)}</span>} />
+      <p className="m-0 text-footnote leading-[1.4] text-muted-foreground">{item.blurb}</p>
+    </div>
+  );
+}
+
+const tileColor = (i: number) => `hsl(${28 + i * 9} 62% ${66 - i * 4}%)`;
 
 /** Point `t` (0–1) of the way along a polyline, by distance. */
 function alongRoute(points: LatLng[], t: number): LatLng {
@@ -168,7 +207,8 @@ function useTween(target: number, ms = 1400) {
  * A DoorDash-style order tracker: a light TileMap under an opaque FloatingSheet that rests
  * at `peek` with the order status and grows into the full page. Everything on the sheet is
  * plain composable content — the stepper, cards and carousel are siblings the host can
- * reorder or replace.
+ * reorder or replace. The store (its pin and its address), the car and each menu tile preview
+ * themselves in a hover card.
  */
 export function DeliveryTrackingDemo({
   stage: controlledStage,
@@ -231,6 +271,7 @@ export function DeliveryTrackingDemo({
   const steps: ProgressStep[] = DELIVERY_STAGES.map((s, i) => ({ id: s.id, label: s.step, icon: <Icon name={STEP_ICONS[i]} size={16} /> }));
 
   const total = ORDER_ITEMS.reduce((sum, item) => sum + item.qty * item.price, 0);
+  const storeCard = <StoreCard accent={accent} remainingMeters={remainingMeters} arrived={arrived} />;
 
   return (
     <div
@@ -257,6 +298,13 @@ export function DeliveryTrackingDemo({
         tileFilter={dark ? 'brightness(.72) saturate(.85) contrast(1.05)' : undefined}
         minZoom={12}
         maxZoom={16}
+        pinPreview={(pin) => (pin.id === 'store' ? storeCard : pin.id === 'car' ? (
+          <HoverCardHeader
+            media={<span className="grid size-9 place-items-center rounded-[50%] bg-secondary text-foreground"><Icon name="car" size={18} /></span>}
+            title="Your car"
+            subtitle={`${etaMinutes} min · ${formatDistance(remainingMeters)} to ${STORE_NAME}`}
+          />
+        ) : null)}
       >
         <div className="pointer-events-none absolute top-3.5 right-3.5 left-3.5 z-4 flex items-center justify-between" data-map-ui>
           <Button className={mapButton} aria-label="Close" onPress={onClose}>
@@ -303,7 +351,11 @@ export function DeliveryTrackingDemo({
                 </AnimatePresence>
               </h2>
               <p className="m-0 mt-1.5 text-subhead text-muted-foreground">
-                Pickup at 12:13 PM · {STORE_ADDRESS}
+                Pickup at 12:13 PM ·{' '}
+                <HoverCardTrigger className="inline">
+                  <span className="cursor-default underline decoration-current/30 decoration-dotted underline-offset-2">{STORE_ADDRESS}</span>
+                  <HoverCard placement="bottom start">{storeCard}</HoverCard>
+                </HoverCardTrigger>
               </p>
             </header>
 
@@ -428,15 +480,18 @@ export function DeliveryTrackingDemo({
 
             <Section title="From this store" action="Browse menu">
               <div className={CAROUSEL}>
-                {['Morning bun', 'Baguette', 'Olive focaccia', 'Seeded rye'].map((name, i) => (
-                  <div key={name} className="flex w-[136px] shrink-0 snap-start flex-col gap-1">
-                    <div
-                      className="aspect-[1.15] w-full rounded-panel [background:var(--ck-tile-bg)]"
-                      style={{ '--ck-tile-bg': `hsl(${28 + i * 9} 62% ${66 - i * 4}%)` } as CSSProperties}
-                    />
-                    <span className="mt-1 text-detail font-semibold">{name}</span>
-                    <span className="text-footnote text-muted-foreground">${(4 + i * 1.5).toFixed(2)}</span>
-                  </div>
+                {MENU.map((item, i) => (
+                  <HoverCardTrigger key={item.name} className="shrink-0 snap-start">
+                    <div className="flex w-[136px] flex-col gap-1">
+                      <div
+                        className="aspect-[1.15] w-full rounded-panel [background:var(--ck-tile-bg)]"
+                        style={{ '--ck-tile-bg': tileColor(i) } as CSSProperties}
+                      />
+                      <span className="mt-1 text-detail font-semibold">{item.name}</span>
+                      <span className="text-footnote text-muted-foreground">${item.price.toFixed(2)}</span>
+                    </div>
+                    <HoverCard placement="top"><MenuCard item={item} index={i} /></HoverCard>
+                  </HoverCardTrigger>
                 ))}
               </div>
             </Section>

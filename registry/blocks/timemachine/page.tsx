@@ -3,8 +3,10 @@
    plays any one in a ReplayPreview. Sessions stay in this browser unless Cloud sync is turned on, which mirrors them
    live to a Durable Streams server (Rivet) so another device can watch too.
    The app marks itself `rr-block rr-ignore`: rrweb records an empty placeholder where it is, and no input inside it,
-   so the recorder never records a replay of itself replaying. */
+   so the recorder never records a replay of itself replaying. Resting on a session in the sidebar previews it in a hover
+   card (detail.tsx's SessionPeek): its last frame, its page and what happened, before you open it. */
 import { useEffect, useMemo, useState } from 'react';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { PlainButton } from '@/components/ui/plain-button';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useContainerWidth } from '@/lib/container';
@@ -13,7 +15,7 @@ import { clearSessions, storageUsage, useSessionCloud, useSessions, type Session
 import { BLProvider, useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { CloudPanel } from './cloud';
-import { SessionDetail } from './detail';
+import { SessionDetail, SessionPeek } from './detail';
 import { bytes, count, dayLabel, duration, timeLabel } from './format';
 
 /** Time Machine's accent: its clock's green. */
@@ -131,22 +133,25 @@ function Row({ s, active, onPick }: { s: SessionInfo; active: boolean; onPick: (
   const span = s.endedAt ? s.endedAt - s.startedAt : s.live ? Date.now() - s.startedAt : null;
   return (
     <li>
-      <PlainButton
-        onPress={onPick}
-        aria-current={active || undefined}
-        className={cn('flex w-full cursor-pointer items-center gap-3 rounded-ctl border-0 px-2.5 py-2 text-left', active ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary')}
-      >
-        <span className={cn('grid size-8 shrink-0 place-items-center rounded-full', active ? 'bg-white/20' : 'bg-secondary-strong text-muted-foreground')}>
-          <Icon name={s.live ? 'circle-fill' : 'clock'} size={s.live ? 11 : 17} sw={1.8} className={s.live && !active ? 'animate-pulse text-destructive' : undefined} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-detail font-semibold">{timeLabel(s.startedAt)}</span>
-          <span className={cn('block truncate text-caption', active ? 'text-white/80' : 'text-muted-foreground')}>
-            {s.live ? 'Recording now' : [span !== null ? duration(span) : null, s.events ? `${count(s.events)} events` : null].filter(Boolean).join(' · ') || 'Session'}
+      <HoverCardTrigger className="flex w-full">
+        <PlainButton
+          onPress={onPick}
+          aria-current={active || undefined}
+          className={cn('flex w-full cursor-pointer items-center gap-3 rounded-ctl border-0 px-2.5 py-2 text-left', active ? 'bg-primary text-primary-foreground' : 'bg-transparent text-foreground hover:bg-secondary')}
+        >
+          <span className={cn('grid size-8 shrink-0 place-items-center rounded-full', active ? 'bg-white/20' : 'bg-secondary-strong text-muted-foreground')}>
+            <Icon name={s.live ? 'circle-fill' : 'clock'} size={s.live ? 11 : 17} sw={1.8} className={s.live && !active ? 'animate-pulse text-destructive' : undefined} />
           </span>
-        </span>
-        {!s.local ? <Icon name="cloud" size={15} sw={1.8} className={active ? 'text-white/80' : 'text-muted-foreground'} /> : null}
-      </PlainButton>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-detail font-semibold">{timeLabel(s.startedAt)}</span>
+            <span className={cn('block truncate text-caption', active ? 'text-white/80' : 'text-muted-foreground')}>
+              {s.live ? 'Recording now' : [span !== null ? duration(span) : null, s.events ? `${count(s.events)} events` : null].filter(Boolean).join(' · ') || 'Session'}
+            </span>
+          </span>
+          {!s.local ? <Icon name="cloud" size={15} sw={1.8} className={active ? 'text-white/80' : 'text-muted-foreground'} /> : null}
+        </PlainButton>
+        <HoverCard placement="end top" className="w-80"><SessionPeek session={s} /></HoverCard>
+      </HoverCardTrigger>
     </li>
   );
 }

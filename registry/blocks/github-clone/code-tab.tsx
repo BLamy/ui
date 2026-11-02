@@ -2,13 +2,13 @@
    The tree is one recursive listing per branch; a file's text and last commit load when it opens. Live trees carry no
    per-file commit (GitHub computes that per file), so the table's commit and age columns stay empty there. */
 import { useState, type ReactNode } from 'react';
-import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { Segmented } from '@/components/ui/segmented';
 import { SyntaxHighlightingCopyButton } from '@/components/ui/syntax-highlighting';
 import { cn } from '@/lib/utils';
+import { CommitMessage, UserAvatar, UserName } from './cards';
 import type { FileNode } from './data';
 import { Box, CodeView, Counter, FileTree, Oct, ghButton, githubMarkdown, type OctName, type Layout, type Nav } from './parts';
 import { Loaded, Pending, useLoad, useRepo } from './repo-context';
@@ -109,9 +109,9 @@ export function LastCommit({ ui, path = '' }: { ui: Layout; path?: string }) {
     <div className="flex w-full min-w-0 items-center gap-2">
       {c ? (
         <>
-          <Avatar c={c.author} src={c.author.avatar} size={24} />
-          <b className="shrink-0 font-semibold">{c.author.login}</b>
-          <span className="min-w-0 truncate text-muted-foreground">{c.message}</span>
+          <UserAvatar user={c.author} size={24} />
+          <UserName user={c.author} className="shrink-0" />
+          <CommitMessage commit={c} className="text-muted-foreground" />
         </>
       ) : <span className="h-6" />}
       <span className="flex-1" />
@@ -189,7 +189,7 @@ export function About() {
       {repo.contributors.length ? (
         <div className={section}>
           <h2 className="mt-0 mb-3 flex items-center gap-2 text-callout font-semibold">Contributors <Counter>{repo.contributorCount}</Counter></h2>
-          <div className="flex flex-wrap gap-1">{repo.contributors.map((u) => <Avatar key={u.login} c={u} src={u.avatar} size={32} />)}</div>
+          <div className="flex flex-wrap gap-1">{repo.contributors.map((u) => <UserAvatar key={u.login} user={u} size={32} />)}</div>
         </div>
       ) : null}
       {repo.languages.length ? (

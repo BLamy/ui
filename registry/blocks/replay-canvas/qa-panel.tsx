@@ -1,7 +1,9 @@
 'use client';
 /* The Replay QA pane: your QA projects, then a project's test runs (newest first, as their pages arrive). Pressing a
-   test run loads the recording of every journey in it into the canvas's recordings. */
+   test run loads the recording of every journey in it into the canvas's recordings. Resting on a project previews
+   its target and bugs; on a test run, its journeys and how each one ended. */
 import { useEffect, useMemo, useState } from 'react';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { PlainButton } from '@/components/ui/plain-button';
 import { SearchField } from '@/components/ui/search-field';
 import { Spinner } from '@/components/ui/spinner';
@@ -63,15 +65,24 @@ export function QaPanel({ client, load, onOpen }: QaPanelProps) {
       <ul aria-label="Replay QA projects" className="m-0 min-h-0 flex-1 list-none overflow-y-auto px-2 pb-2">
         {shown.map((p) => (
           <li key={p.id}>
-            <PlainButton className={rowClass()} onPress={() => setProject(p)}>
-              <span className="flex w-full items-center gap-1.5">
-                <span className="truncate font-medium">{p.name}</span>
-                <Icon name="chevron-right" size={11} sw={2.2} className="ml-auto shrink-0 text-muted-foreground" />
-              </span>
-              <span className="truncate text-caption2 text-muted-foreground">
-                {p.bug_count} bug{p.bug_count === 1 ? '' : 's'} · {when(p.updated_at)}{p.status === 'paused' ? ' · paused' : ''}
-              </span>
-            </PlainButton>
+            <HoverCardTrigger className="flex w-full">
+              <PlainButton className={rowClass()} onPress={() => setProject(p)}>
+                <span className="flex w-full items-center gap-1.5">
+                  <span className="truncate font-medium">{p.name}</span>
+                  <Icon name="chevron-right" size={11} sw={2.2} className="ml-auto shrink-0 text-muted-foreground" />
+                </span>
+                <span className="truncate text-caption2 text-muted-foreground">
+                  {p.bug_count} bug{p.bug_count === 1 ? '' : 's'} · {when(p.updated_at)}{p.status === 'paused' ? ' · paused' : ''}
+                </span>
+              </PlainButton>
+              <HoverCard placement="end top">
+                <HoverCardHeader title={p.name} subtitle={p.target_url ?? p.id} />
+                <div className="mt-3 grid gap-1 text-footnote">
+                  <div>{p.bug_count} bug{p.bug_count === 1 ? '' : 's'} found · {p.status}</div>
+                  <div className="text-muted-foreground">Updated {when(p.updated_at)}</div>
+                </div>
+              </HoverCard>
+            </HoverCardTrigger>
           </li>
         ))}
         {!projects && !error && <li className="grid place-items-center py-6"><Spinner label="Loading QA projects" size={18} /></li>}
@@ -112,26 +123,31 @@ function TestRuns({ client, project, load, onBack, onOpen }: {
           const active = load?.projectId === project.id && load.runId === t.id ? load : null;
           return (
             <li key={t.id}>
-              <PlainButton className={rowClass(!!active)} onPress={() => onOpen(t)} aria-label={`Load test run of ${when(t.startedAt)}`}>
-                <span className="flex w-full items-center gap-1.5">
-                  <span className="truncate font-medium">{when(t.startedAt)}</span>
-                  {t.environment && <span className="truncate text-caption2 text-muted-foreground">{t.environment}</span>}
-                  {active?.loading && <Spinner size={13} className="ml-auto shrink-0" />}
-                </span>
-                <span className="flex items-center gap-2 text-caption2 text-muted-foreground">
-                  <span>{t.runs.length} journey{t.runs.length === 1 ? '' : 's'}</span>
-                  {t.passed > 0 && <span className="text-success">✓ {t.passed}</span>}
-                  {t.failed > 0 && <span className="text-destructive">✗ {t.failed}</span>}
-                  {t.bugs > 0 && <span>{t.bugs} bug{t.bugs === 1 ? '' : 's'}</span>}
-                </span>
-                {active && (
-                  <span className={cn('text-caption2', active.error ? 'text-destructive' : 'text-primary')}>
-                    {active.error ?? (active.loading
-                      ? `Loading recordings ${active.done} of ${active.total}…`
-                      : `${active.done - active.empty} recording${active.done - active.empty === 1 ? '' : 's'} loaded${active.empty ? ` · ${active.empty} without one` : ''}`)}
+              <HoverCardTrigger className="flex w-full">
+                <PlainButton className={rowClass(!!active)} onPress={() => onOpen(t)} aria-label={`Load test run of ${when(t.startedAt)}`}>
+                  <span className="flex w-full items-center gap-1.5">
+                    <span className="truncate font-medium">{when(t.startedAt)}</span>
+                    {t.environment && <span className="truncate text-caption2 text-muted-foreground">{t.environment}</span>}
+                    {active?.loading && <Spinner size={13} className="ml-auto shrink-0" />}
                   </span>
-                )}
-              </PlainButton>
+                  <span className="flex items-center gap-2 text-caption2 text-muted-foreground">
+                    <span>{t.runs.length} journey{t.runs.length === 1 ? '' : 's'}</span>
+                    {t.passed > 0 && <span className="text-success">✓ {t.passed}</span>}
+                    {t.failed > 0 && <span className="text-destructive">✗ {t.failed}</span>}
+                    {t.bugs > 0 && <span>{t.bugs} bug{t.bugs === 1 ? '' : 's'}</span>}
+                  </span>
+                  {active && (
+                    <span className={cn('text-caption2', active.error ? 'text-destructive' : 'text-primary')}>
+                      {active.error ?? (active.loading
+                        ? `Loading recordings ${active.done} of ${active.total}…`
+                        : `${active.done - active.empty} recording${active.done - active.empty === 1 ? '' : 's'} loaded${active.empty ? ` · ${active.empty} without one` : ''}`)}
+                    </span>
+                  )}
+                </PlainButton>
+                <HoverCard placement="end top">
+                  <TestRunPeek run={t} />
+                </HoverCard>
+              </HoverCardTrigger>
             </li>
           );
         })}
@@ -140,5 +156,27 @@ function TestRuns({ client, project, load, onBack, onOpen }: {
         {error && <li role="alert" className="px-2 py-3 text-footnote text-destructive">{error}</li>}
       </ul>
     </div>
+  );
+}
+
+const OUTCOME_DOT: Record<string, string> = { passed: 'bg-success', bug: 'bg-destructive', blocked: 'bg-warning', incomplete: 'bg-warning' };
+const PEEK_JOURNEYS = 8;
+
+/** A test run's hover card: its journeys, each with how it ended. */
+function TestRunPeek({ run }: { run: QaTestRun }) {
+  const rest = run.runs.length - PEEK_JOURNEYS;
+  return (
+    <>
+      <HoverCardHeader title={when(run.startedAt)} subtitle={`${run.environment ?? 'Test run'} · ${run.runs.length} journey${run.runs.length === 1 ? '' : 's'}`} />
+      <ul className="m-0 mt-3 grid list-none gap-1 p-0 text-footnote">
+        {run.runs.slice(0, PEEK_JOURNEYS).map((r) => (
+          <li key={r.id} className="flex min-w-0 items-center gap-2">
+            <span aria-hidden="true" className={cn('size-2 shrink-0 rounded-full', OUTCOME_DOT[r.outcome_status ?? ''] ?? 'bg-muted-foreground/50')} />
+            <span className="truncate" title={r.outcome_status ?? r.status}>{r.journey_name || r.goal || r.id}</span>
+          </li>
+        ))}
+      </ul>
+      {rest > 0 && <p className="mt-1 mb-0 text-caption1 text-muted-foreground">and {rest} more</p>}
+    </>
   );
 }

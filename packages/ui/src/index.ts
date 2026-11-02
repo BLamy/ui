@@ -13,8 +13,8 @@ export type { NumberMorphProps } from './components/number-morph';
 export { IconSwap, Chevron } from './components/icon-swap';
 export type { IconSwapProps, ChevronProps, ChevronDirection } from './components/icon-swap';
 export { AnimatedHeight, ContentSwap } from './components/animated-height';
-export { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasGuides, useCanvas } from './components/canvas';
-export type { CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasFrameProps } from './components/canvas';
+export { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasGuides, CanvasMiniMap, useCanvas } from './components/canvas';
+export type { CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasFrameProps, CanvasMiniMapProps, CanvasMiniMapItem } from './components/canvas';
 export {
   toBoard, toScreen, zoomAt, fitCamera, clampZoom, MIN_ZOOM, MAX_ZOOM, MIN_SIZE,
   rotatePt, centerOf, dist, cornersOf, rectOf, unionRect, intersects, inFrame, distToSegment, distToPolyline,
@@ -171,6 +171,8 @@ export {
 export type { ContextMenuProps } from './components/context-menu';
 export { Tooltip, TooltipTrigger } from './components/tooltip';
 export type { TooltipProps } from './components/tooltip';
+export { HoverCard, HoverCardTrigger, HoverCardHeader, useHoverCard } from './components/hover-card';
+export type { HoverCardProps, HoverCardHeaderProps, HoverCardState, HoverCardTriggerComponentProps, UseHoverCardOptions } from './components/hover-card';
 export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectSection, selectTriggerVariants } from './components/select';
 export type { SelectProps, SelectTriggerProps, SelectContentProps } from './components/select';
 export { ComboBox, ComboBoxInput, ComboBoxContent, ComboBoxItem, ComboBoxSection } from './components/combobox';

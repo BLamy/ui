@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ArtifactChatContainer, type ArtifactChatContainerProps } from '@/components/ui/artifact-chat-container';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Composer, ComposerAddon, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
 import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view';
 import { useAppearance, type Appearance } from '@/lib/theme';
@@ -7,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 import { Button } from 'react-aria-components';
 
-import { formatDistance, formatMinutes, type MapTarget, type MapView } from './geo';
+import { distanceMeters, formatDistance, formatMinutes, walkingMinutes, type MapTarget, type MapView } from './geo';
 import {
   planTurn,
   SUGGESTIONS,
@@ -138,6 +139,37 @@ function ToolRow({ call, chrome }: { call: ToolCallState; chrome: Chrome }) {
       <span className="max-w-[40%] shrink-0 overflow-hidden text-ellipsis whitespace-nowrap tabular-nums">
         {call.status === 'running' ? <span className={chrome.spinner} aria-label="Running" /> : call.result}
       </span>
+    </div>
+  );
+}
+
+/** A place's hover card — on its pin and on every mention of it in the chat: what it is, where, the guide's blurb and
+    tags, and how far a walk it is from you (and which stop it is on the route). Pressing either still flies to it. */
+function PlaceCard({ place, stop }: { place: Place; stop?: number }) {
+  const meta = CATEGORY_META[place.category];
+  const meters = distanceMeters(USER_POSITION, place.position);
+  return (
+    <div className="flex flex-col gap-2">
+      <HoverCardHeader
+        media={(
+          <span className="grid size-9 place-items-center rounded-[50%] text-white" style={{ background: meta.color }}>
+            <Icon name={meta.icon} size={18} />
+          </span>
+        )}
+        title={place.name}
+        subtitle={`${meta.label[0].toUpperCase()}${meta.label.slice(1)} · ${AREAS[place.area]?.label ?? place.area}`}
+      />
+      <p className="m-0 text-footnote leading-[1.4] text-foreground">{place.blurb}</p>
+      {place.tags?.length ? (
+        <div className="flex flex-wrap gap-1">
+          {place.tags.map((t) => <span key={t} className="rounded-[999px] bg-secondary px-2 py-px text-caption text-muted-foreground">{t}</span>)}
+        </div>
+      ) : null}
+      <p className="m-0 flex items-center gap-1.5 text-footnote text-muted-foreground tabular-nums">
+        <Icon name="walk" size={14} />
+        {formatMinutes(walkingMinutes(meters))} walk · {formatDistance(meters)} from you
+        {stop ? <span className="ml-auto font-semibold text-primary">Stop {stop}</span> : null}
+      </p>
     </div>
   );
 }
@@ -328,6 +360,7 @@ export function MapChatDemo({
     [focusPlace, send],
   );
 
+  const stopIndex = useMemo(() => new Map(trip?.stops.map((s, i) => [s.id, i + 1]) ?? []), [trip]);
   const renderReference = useCallback(
     (ref: ReferenceNode): ReactNode | null => {
       if (ref.kind !== 'mention') return null;
@@ -335,29 +368,31 @@ export function MapChatDemo({
       if (!place) return null;
       const meta = CATEGORY_META[place.category];
       return (
-        <Button
-          data-slot="map-chat-ref"
-          className={cn(
-            'mx-px inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border py-px pr-2 pl-1 align-baseline text-[.92em] leading-[1.35] font-semibold',
-            chrome.ref,
-            FONT_INHERIT,
-            'border-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_45%,transparent)] bg-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_16%,transparent)]',
-            '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:bg-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_30%,transparent)]',
-          )}
-          style={{ '--ck-ref-color': meta.color } as CSSProperties}
-          onPress={() => focusPlace(place)}
-        >
-          <span className="grid size-4 place-items-center rounded-[50%] bg-[color:var(--ck-ref-color,var(--primary))] text-white">
-            <Icon name={meta.icon} size={11} stroke={2.4} />
-          </span>
-          {place.name}
-        </Button>
+        <HoverCardTrigger className="align-baseline">
+          <Button
+            data-slot="map-chat-ref"
+            className={cn(
+              'mx-px inline-flex cursor-pointer items-center gap-[5px] rounded-[999px] border py-px pr-2 pl-1 align-baseline text-[.92em] leading-[1.35] font-semibold',
+              chrome.ref,
+              FONT_INHERIT,
+              'border-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_45%,transparent)] bg-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_16%,transparent)]',
+              '[transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] data-hovered:bg-[color:color-mix(in_srgb,var(--ck-ref-color,var(--primary))_30%,transparent)]',
+            )}
+            style={{ '--ck-ref-color': meta.color } as CSSProperties}
+            onPress={() => focusPlace(place)}
+          >
+            <span className="grid size-4 place-items-center rounded-[50%] bg-[color:var(--ck-ref-color,var(--primary))] text-white">
+              <Icon name={meta.icon} size={11} stroke={2.4} />
+            </span>
+            {place.name}
+          </Button>
+          <HoverCard placement="top"><PlaceCard place={place} stop={stopIndex.get(place.id)} /></HoverCard>
+        </HoverCardTrigger>
       );
     },
-    [focusPlace, chrome],
+    [focusPlace, chrome, stopIndex],
   );
 
-  const stopIndex = useMemo(() => new Map(trip?.stops.map((s, i) => [s.id, i + 1]) ?? []), [trip]);
   const pins = useMemo<MapPin[]>(() => {
     const placePins = places.map<MapPin>((place) => {
       const meta = CATEGORY_META[place.category];
@@ -409,6 +444,10 @@ export function MapChatDemo({
             const place = PLACE_BY_ID[pin.id];
             if (place) focusPlace(place);
             else if (pin.id === 'you') setView({ center: USER_POSITION, zoom: Math.max(cameraRef.current.zoom, 15.5) });
+          }}
+          pinPreview={(pin) => {
+            const place = PLACE_BY_ID[pin.id];
+            return place ? <PlaceCard place={place} stop={stopIndex.get(place.id)} /> : null;
           }}
           onMapClick={() => setSelectedId(null)}
           onLocate={() => setView({ center: USER_POSITION, zoom: 15.5 })}

@@ -1,14 +1,16 @@
 /* A reminder: the completion circle, title with priority marks, notes, due date (red when overdue), link, tags,
-   flag, subtasks that fold open, and the info button that opens the details sheet. Also the list icon. */
+   flag, subtasks that fold open, and the info button that opens the details sheet. Also the list icon, and a list's
+   hover card (what's next in it), which the sidebar rows and the smart lists' list headings show. */
 import { useState, type CSSProperties } from 'react';
 import { TASK_STATES } from '@brett_lamy/docstream/gitbook';
 import { TASK_STATE_ICONS } from '@brett_lamy/docstream/tasks';
 import { ContextMenu, ContextMenuContent } from '@/components/ui/context-menu';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { HoverCardHeader } from '@/components/ui/hover-card';
 import { Chevron } from '@/components/ui/icon-swap';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { SYSTEM, dueLabel, stateOf, type Reminder } from './data';
+import { SYSTEM, dueLabel, stateOf, type Reminder, type RList } from './data';
 import type { TaskState } from './markdown-tasks';
 import { useReminders } from './store';
 
@@ -19,6 +21,32 @@ export function ListIcon({ glyph, color, size = 30, className }: { glyph: IconNa
       style={{ width: size, height: size, '--list-color': color } as CSSProperties}>
       <Icon name={glyph} size={size * 0.58} weight="semibold" />
     </span>
+  );
+}
+
+/** A list at a glance: how many are left, the next few by due date (overdue in red), and the file it comes from. */
+export function ListPreview({ list: l, items }: { list: RList; items: Reminder[] }) {
+  const mine = items.filter((r) => r.list === l.id);
+  const open = mine.filter((r) => !r.done).sort((a, b) => (a.due ?? Infinity) - (b.due ?? Infinity));
+  const done = mine.length - open.length;
+  return (
+    <>
+      <HoverCardHeader media={<ListIcon glyph={l.glyph} color={l.color} size={36} />} title={<span style={{ color: l.color }}>{l.name}</span>}
+        subtitle={open.length ? `${open.length} remaining${done ? ` · ${done} completed` : ''}` : done ? `All done · ${done} completed` : 'No reminders'} />
+      {open.length ? (
+        <ul className="m-0 mt-3 flex list-none flex-col gap-1.5 p-0">
+          {open.slice(0, 4).map((r) => (
+            <li key={r.id} className="flex items-center gap-2 text-footnote">
+              <span aria-hidden="true" className="size-3.5 shrink-0 rounded-full shadow-[inset_0_0_0_1.4px_var(--list-color)]" style={{ '--list-color': l.color } as CSSProperties} />
+              <span className="min-w-0 flex-1 truncate text-foreground">{r.title}</span>
+              {r.due != null ? <span className={cn('shrink-0', r.due < 0 ? 'text-destructive' : 'text-muted-foreground')}>{dueLabel(r)}</span> : null}
+            </li>
+          ))}
+          {open.length > 4 ? <li className="pl-5.5 text-caption text-muted-foreground">{open.length - 4} more</li> : null}
+        </ul>
+      ) : null}
+      {l.file ? <div className="mt-2.5 truncate text-caption text-muted-foreground">{l.file.path}</div> : null}
+    </>
   );
 }
 

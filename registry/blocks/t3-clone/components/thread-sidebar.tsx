@@ -7,6 +7,7 @@ import { springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { useOptionalWorkbenchShell } from './workbench/workbench-shell';
 import { Button as UiButton } from '@/components/ui/button';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 
 /* ══ Thread sidebar parts ══
    <ThreadSidebar>
@@ -19,7 +20,8 @@ import { Button as UiButton } from '@/components/ui/button';
      </ThreadList>
      <ThreadSidebarFooter><SidebarNotice/><SidebarFooterItem/> | <SidebarUser/></ThreadSidebarFooter>
    </ThreadSidebar>
-   Inside a WorkbenchShell, picking a thread or starting a new one closes the compact drawer.
+   Inside a WorkbenchShell, picking a thread or starting a new one closes the compact drawer. A ThreadItem's `preview`
+   is a hover card beside the sidebar: what the thread is about before you switch to it.
    (T3 Code's sidebar, kept with the block: the library's generic sidebar is `Sidebar*`.) */
 
 type Div = { className?: string; style?: React.CSSProperties; children?: React.ReactNode };
@@ -218,13 +220,16 @@ export interface ThreadItemProps {
   /** trailing text, e.g. the thread's age */
   meta?: React.ReactNode;
   icon?: IconName | (string & {});
+  /** a HoverCard's content about the thread, beside the sidebar while the pointer rests on the row or keyboard focus
+      is on it */
+  preview?: React.ReactNode;
   onPress?: () => void;
   className?: string;
   children?: React.ReactNode;
 }
-export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left', onPress, className, children }: ThreadItemProps) {
+export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left', preview, onPress, className, children }: ThreadItemProps) {
   const close = useCloseDrawer();
-  return (
+  const row = (
     <Button
       data-slot="thread-item"
       data-status={status}
@@ -248,6 +253,13 @@ export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left'
       {status === 'unread' ? <span aria-label="Unread" className="size-1.5 shrink-0 rounded-full bg-primary" /> : null}
       {meta != null ? <span className="shrink-0 text-[11.5px] text-tertiary-foreground">{meta}</span> : null}
     </Button>
+  );
+  if (!preview) return row;
+  return (
+    <HoverCardTrigger className="flex w-full">
+      {row}
+      <HoverCard placement="right top" offset={14}>{preview}</HoverCard>
+    </HoverCardTrigger>
   );
 }
 

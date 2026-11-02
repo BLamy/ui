@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -14,6 +15,7 @@ import {
   type ClipFrame, type TimelineClip, type TimelineLook, type TimelineTrack,
 } from '@/lib/video-timeline';
 import { useActions } from './actions';
+import { MediaPreview } from './media-panel';
 import { useEditor } from './store';
 import { isTitle, titleData, titleStyles, type TitleStyle } from './titles';
 
@@ -156,7 +158,13 @@ function ClipInspector({ clip, track, index, clock }: { clip: TimelineClip; trac
       <Section>
         <div className="flex items-center gap-2">
           <Icon name={title ? 'textformat' : m?.kind === 'audio' ? 'waveform' : m?.kind === 'image' ? 'photo' : 'video'} size={16} className="shrink-0 text-muted-foreground" />
-          <h2 className="m-0 min-w-0 flex-1 truncate text-subhead font-semibold">{name}</h2>
+          {/* The clip's name previews its source file, as the library's card does. */}
+          {m && !title ? (
+            <HoverCardTrigger className="min-w-0 flex-1">
+              <h2 className="m-0 min-w-0 flex-1 cursor-default truncate text-subhead font-semibold">{name}</h2>
+              <HoverCard placement="start top" className="w-64"><MediaPreview item={m} /></HoverCard>
+            </HoverCardTrigger>
+          ) : <h2 className="m-0 min-w-0 flex-1 truncate text-subhead font-semibold">{name}</h2>}
           {locked ? <Icon name="lock" size={14} aria-label="Locked track" className="text-muted-foreground" /> : null}
         </div>
         <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-caption tabular-nums">

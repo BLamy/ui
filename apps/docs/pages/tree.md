@@ -98,6 +98,7 @@ Trees renders a `tree` of `treeitem`s with `aria-level`, `aria-posinset`, `aria-
 | `gitStatus` | — | Git-style status by node id. |
 | `density` | `'default'` | `'compact'`, `'default'`, `'relaxed'` or a spacing factor. |
 | `contextMenu` | — | `(node) => ContextMenuContent`. |
+| `preview` | — | `(node) => ReactNode`: a [HoverCard](https://blamy.github.io/ui/#/hover-card) beside the row under the pointer (a file's size and last change). Return nothing for rows without one. |
 | `renamingId`, `onRename`, `onRenameEnd` | — | Inline rename. |
 | `canDrag`, `onDragStart`, `onMove`, `canMove`, `externalDrop` | — | Drag and drop. |
 

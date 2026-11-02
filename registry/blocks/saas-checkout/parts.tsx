@@ -1,14 +1,16 @@
 /* Pieces the steps, the summary and the receipt share: the product mark, card-brand marks, field help and error
    text, step validation, the step heading (which takes focus when a step opens) and its Back / submit row, the
-   order's money lines, and the hook that keeps the caret in place while a field formats itself (`4242 4242 …`,
-   `12 / 28`). */
+   order's money lines, the plan's hover card, and the hook that keeps the caret in place while a field formats itself
+   (`4242 4242 …`, `12 / 28`). */
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { HoverCardHeader } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { FieldDescription, FieldError } from '@/components/ui/text-field';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { MONEY_FORMAT, money, percent, type CardBrand, type Quote } from './checkout';
+import { PRODUCT, type Cycle, type Plan } from './data';
 
 /** Error text dark enough to read on white (iOS red alone is 3.5:1); in dark mode it lightens instead. */
 export const ERROR_INK = 'text-[color-mix(in_oklab,var(--destructive)_72%,var(--foreground))]';
@@ -32,6 +34,30 @@ export function Logo({ size = 28 }: { size?: number }) {
         <ellipse cx="12" cy="12" rx="10" ry="4.4" transform="rotate(-24 12 12)" />
       </svg>
     </span>
+  );
+}
+
+/* ── The plan's hover card: on the summary's plan and the receipt's, where the plan cards themselves are a step back.
+   What it costs a seat on this cycle (and the other), the seats it allows and what it adds. ── */
+export function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
+  const yearly = cycle === 'annual';
+  return (
+    <div className="flex flex-col gap-2.5">
+      <HoverCardHeader media={<Logo size={36} />} title={`${PRODUCT.name} ${plan.name}`} subtitle={plan.blurb} />
+      <p className={cn('m-0 text-footnote leading-[18px]', SOFT_INK)}>
+        <span className="font-semibold text-foreground">{money(plan.price[cycle] * 100, true)}</span> per seat / month
+        {yearly ? `, billed yearly (${money(plan.price.monthly * 100, true)} monthly)` : ` (${money(plan.price.annual * 100, true)} billed yearly)`}
+        {' · '}{plan.seats.min > 1 ? `${plan.seats.min}–${plan.seats.max}` : `up to ${plan.seats.max}`} seats
+      </p>
+      <ul className="m-0 flex list-none flex-col gap-1 p-0 text-footnote text-foreground">
+        {plan.features.map((f) => (
+          <li key={f} className="flex items-center gap-1.5">
+            <Icon name="check" size={14} sw={2.6} className="text-primary" />
+            {f}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

@@ -1,17 +1,21 @@
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileDropZone } from '@/components/ui/file-upload';
+import { HoverCard, HoverCardHeader, useHoverCard } from '@/components/ui/hover-card';
 import { Spinner } from '@/components/ui/spinner';
 import { timelineMediaType } from '@/components/ui/video-timeline';
 import { Waveform } from '@/components/ui/waveform';
 import { useMediaFrames, useMediaPeaks } from '@/lib/ffmpeg/react';
+import { formatBytes } from '@/lib/format-bytes';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { formatTimecode } from '@/lib/video-timeline';
-import type { MediaItem } from './store';
+import { useEditor, type MediaItem } from './store';
 
 /* The media library: drop or browse for files (or make the samples), then drag a card onto a track, or press its +
-   to add it (pictures at the end of the main track, sound at the playhead). */
+   to add it (pictures at the end of the main track, sound at the playhead). Resting on a card previews the file in a
+   hover card, as a browser in Final Cut does: a bigger frame, its length, size, picture and sound, and how many clips
+   on the timeline play it. The inspector's clip name shows the same card for the clip's source. */
 
 export type SamplesState = { status: 'idle' | 'making' | 'done' } | { status: 'error'; error: string };
 
@@ -63,11 +67,38 @@ export function MediaPanel({ items, onFiles, onAdd, onRemove, samples, onSamples
   );
 }
 
+const KIND_WORD: Record<MediaItem['kind'], string> = { video: 'Video', audio: 'Audio', image: 'Still image' };
+
+/** A media file's hover card: the frame (or waveform) large, then its facts and its uses on the timeline. */
+export function MediaPreview({ item: m }: { item: MediaItem }) {
+  const ed = useEditor();
+  const uses = ed.project.timeline.tracks.reduce((n, t) => n + t.clips.filter((c) => c.media === m.id).length, 0);
+  const facts = [
+    m.kind !== 'image' && m.status === 'ready' ? formatTimecode(m.duration) : null,
+    m.width && m.height ? `${m.width} × ${m.height}` : null,
+    m.kind === 'video' ? (m.hasAudio ? 'with sound' : 'no sound') : null,
+    formatBytes(m.file.size) || null,
+  ].filter(Boolean);
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className="relative aspect-video overflow-hidden rounded-ctl bg-black"><Thumb item={m} /></div>
+      <HoverCardHeader title={m.name} subtitle={KIND_WORD[m.kind] + (m.file.type ? ` · ${m.file.type}` : '')} />
+      {facts.length ? <p className="m-0 font-mono text-caption text-muted-foreground tabular-nums">{facts.join(' · ')}</p> : null}
+      <p className="m-0 text-footnote text-muted-foreground">
+        {m.status === 'error' ? m.error ?? 'Couldn’t read this file.'
+          : m.status === 'loading' ? 'Reading the file…'
+            : uses ? `In ${uses} ${uses === 1 ? 'clip' : 'clips'} on the timeline.` : 'Not on the timeline yet: drag it onto a track.'}
+      </p>
+    </div>
+  );
+}
+
 function MediaCard({ item: m, onAdd, onRemove }: { item: MediaItem; onAdd: () => void; onRemove: () => void }) {
   const ready = m.status === 'ready';
+  const hover = useHoverCard<HTMLLIElement>();
   return (
-    <li draggable={ready} aria-label={m.name}
-      onDragStart={(e) => { e.dataTransfer.setData(timelineMediaType, m.id); e.dataTransfer.effectAllowed = 'copy'; }}
+    <li draggable={ready} aria-label={m.name} {...hover.triggerProps}
+      onDragStart={(e) => { hover.close(); e.dataTransfer.setData(timelineMediaType, m.id); e.dataTransfer.effectAllowed = 'copy'; }}
       className={cn('group/card relative overflow-hidden rounded-ctl bg-secondary shadow-hairline', ready && 'cursor-grab active:cursor-grabbing')}>
       <div className="relative aspect-video overflow-hidden bg-black">
         <Thumb item={m} />
@@ -89,6 +120,7 @@ function MediaCard({ item: m, onAdd, onRemove }: { item: MediaItem; onAdd: () =>
         <CardButton label={`Remove ${m.name}`} onPress={onRemove}><Icon name="trash" size={13} /></CardButton>
         <CardButton label={`Add ${m.name} to the timeline`} onPress={onAdd} disabled={!ready}><Icon name="plus" size={13} /></CardButton>
       </div>
+      <HoverCard {...hover.cardProps} placement="end top" className="w-64"><MediaPreview item={m} /></HoverCard>
     </li>
   );
 }

@@ -1,16 +1,19 @@
 /* The board's surface: what Freeform does on the core Canvas. The canvas owns navigation (pan, pinch, wheel and
    keyboard zoom, the background); this owns every other pointer and key — items never take events; it hits them by
    geometry — so selection, move, resize, rotate, connect, draw and erase are one state machine (`Gesture`) instead of
-   handlers spread over a dozen elements. Items render in the canvas's board layer, scaled by the camera. */
+   handlers spread over a dozen elements. Items render in the canvas's board layer, scaled by the camera. Resting the
+   pointer on a picture or a link (Select tool, no gesture) opens a hover card about it, found by the same hit test and
+   anchored to a box laid over the item; any press, pan or zoom closes it. */
 import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import type { PencilPoint, PencilTool } from '@/components/ui/pencilkit/constants';
 import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
-import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMarquee, type CanvasPointerInfo } from '@/components/ui/canvas';
+import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMarquee, CanvasMiniMap, type CanvasPointerInfo } from '@/components/ui/canvas';
+import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
 import { dist, handleCursor, intersects, rectOf, resizeFrame, rotateFrame, snapMove, toBoard, toScreen, unionRect, type Camera, type Guide, type HandleId, type Pt, type Rect } from '@/lib/canvas-math';
 import { anchorPoint, boundsOf, connectorGeometry, hitItem, nearestAnchor, strokeFrame } from './geometry';
 import { moveItem, scaleItem, selectionFrame } from './handles';
-import { Connector, ItemView } from './items';
-import { isAttached, isBox, makeConnector, type ConnectorEnd, type ConnectorItem, type Item, type StrokeItem } from './model';
+import { Connector, ItemPreview, ItemView } from './items';
+import { hasFrame, isAttached, isBox, makeConnector, type ConnectorEnd, type ConnectorItem, type Item, type StrokeItem } from './model';
 import { cloneItems, useFreeform, withGroups } from './store';
 
 export type Tool = 'select' | 'hand' | 'draw' | 'connector';
@@ -56,6 +59,12 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
   const [ui, setUi] = useState<Ui>({ marquee: null, guides: [], anchors: null, cursor: 'default' });
   const [preview, setPreview] = useState<ConnectorItem | null>(null);
   const z = camera.z;
+  // The picture or link being previewed, and whether the pointer is on it now (the card outlives it by its close delay).
+  const [peek, setPeek] = useState<string | null>(null);
+  const peekOver = useRef(false);
+  const peekBox = useRef<HTMLSpanElement>(null);
+  const card = useHoverCard<HTMLSpanElement>();
+  const unpeek = () => { peekOver.current = false; card.close(); };
 
   const sel = useMemo(() => selectionFrame(selected, byId, z), [selected, byId, z]);
   const patchUi = (p: Partial<Ui>) => setUi((u) => ({ ...u, ...p }));
@@ -93,6 +102,7 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
 
   /* ── Pointer (the canvas has already taken pan and pinch) ── */
   const onPointerDown = (e: ReactPointerEvent, { screen: s, board: p }: CanvasPointerInfo) => {
+    unpeek();
     if (editing) setEditing(null);
 
     if (tool === 'draw') {
@@ -154,6 +164,16 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
       }
       const anchors = tool === 'connector' ? nearestAnchor(p, items, 30 / z) : null;
       setUi((u) => (u.cursor === cursor && u.anchors?.id === anchors?.id ? u : { ...u, cursor, anchors: anchors ? { id: anchors.id, side: anchors.side } : null }));
+      const over = tool === 'select' && !editing ? hitAt(p) : null;
+      const peekable = over && (over.kind === 'image' || over.kind === 'link') ? over.id : null;
+      if (peekable && (peekable !== peek || !peekOver.current)) {
+        if (peekable !== peek) { card.close(); setPeek(peekable); }
+        peekOver.current = true;
+        card.triggerProps.onPointerEnter(e);
+      } else if (!peekable && peekOver.current) {
+        peekOver.current = false;
+        card.triggerProps.onPointerLeave(e);
+      }
       return;
     }
 
@@ -342,50 +362,68 @@ export function BoardSurface({ camera, onCameraChange, tool, setTool, draw, edit
   };
 
   const fit = useMemo(() => unionRect(items.map((i) => boundsOf(i, byId))), [items, byId]);
+  const peekItem = peek ? byId.get(peek) : undefined;
 
   return (
-    <Canvas
-      camera={camera}
-      onCameraChange={onCameraChange}
-      background={board?.background ?? 'dots'}
-      panning={tool === 'hand'}
-      fit={fit}
-      cursor={ui.cursor}
-      autoFocus
-      aria-label={board ? `${board.title} board` : 'Board'}
-      onCanvasPointerDown={onPointerDown}
-      onCanvasPointerMove={onPointerMove}
-      onCanvasPointerUp={onPointerUp}
-      onCanvasDoubleClick={onDoubleClick}
-      onNavigationStart={() => { g.current = null; live.current = null; }}
-      onCanvasKeyDown={onKeyDown}
-      overlay={!items.length && !live.current ? (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-tertiary-foreground">
-          <div>
-            <div className="text-body font-semibold">A blank board</div>
-            <div className="mt-1 text-footnote">Add a sticky, a shape or a drawing from the toolbar below.</div>
+    // The canvas reports moves only inside it: leaving it is leaving the previewed item too.
+    <div className="contents" onPointerLeave={(e) => { if (peekOver.current) { peekOver.current = false; card.triggerProps.onPointerLeave(e); } }}>
+      <Canvas
+        camera={camera}
+        onCameraChange={onCameraChange}
+        background={board?.background ?? 'dots'}
+        panning={tool === 'hand'}
+        fit={fit}
+        cursor={ui.cursor}
+        autoFocus
+        aria-label={board ? `${board.title} board` : 'Board'}
+        onCanvasPointerDown={onPointerDown}
+        onCanvasPointerMove={onPointerMove}
+        onCanvasPointerUp={onPointerUp}
+        onCanvasDoubleClick={onDoubleClick}
+        onNavigationStart={() => { g.current = null; live.current = null; unpeek(); }}
+        onCanvasKeyDown={onKeyDown}
+        overlay={!items.length && !live.current ? (
+          <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-tertiary-foreground">
+            <div>
+              <div className="text-body font-semibold">A blank board</div>
+              <div className="mt-1 text-footnote">Add a sticky, a shape or a drawing from the toolbar below.</div>
+            </div>
           </div>
-        </div>
-      ) : null}
-    >
-      {items.map((it) => <ItemView key={it.id} item={it} byId={byId} editing={editing === it.id} onText={setText} onGrow={grow} />)}
-      {live.current ? (
-        <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
-          <StrokePath st={{ tool: live.current.tool, color: live.current.color, w: live.current.width, pen: live.current.pen, points: live.current.points, done: false }} />
-        </svg>
-      ) : null}
-      {preview ? <Connector item={preview} byId={byId} preview /> : null}
-
-      {/* Selection */}
-      {selected.map((it) => (it.kind === 'connector'
-        ? <ConnectorHighlight key={it.id} item={it} byId={byId} z={z} />
-        : <CanvasFrame key={it.id} frame={it} dashed={it.locked} />))}
-      {selected.length > 1 && sel.frame ? <CanvasFrame frame={sel.frame} offset={6} /> : null}
-      <CanvasHandles handles={sel.handles} />
-      {ui.anchors ? <Anchors id={ui.anchors.id} side={ui.anchors.side} byId={byId} z={z} /> : null}
-      <CanvasGuides guides={ui.guides} />
-      {ui.marquee ? <CanvasMarquee rect={ui.marquee} /> : null}
-    </Canvas>
+        ) : (
+          // The whole board in the top corner (the toolbar has the bottom); the selection in the tint.
+          <CanvasMiniMap position="top-right" items={items.filter((i) => i.kind !== 'connector').map((i) => ({
+            id: i.id, ...boundsOf(i, byId), className: selection.includes(i.id) ? 'fill-primary' : undefined,
+          }))} />
+        )}
+      >
+        {items.map((it) => <ItemView key={it.id} item={it} byId={byId} editing={editing === it.id} onText={setText} onGrow={grow} />)}
+        {live.current ? (
+          <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
+            <StrokePath st={{ tool: live.current.tool, color: live.current.color, w: live.current.width, pen: live.current.pen, points: live.current.points, done: false }} />
+          </svg>
+        ) : null}
+        {preview ? <Connector item={preview} byId={byId} preview /> : null}
+  
+        {/* Selection */}
+        {selected.map((it) => (it.kind === 'connector'
+          ? <ConnectorHighlight key={it.id} item={it} byId={byId} z={z} />
+          : <CanvasFrame key={it.id} frame={it} dashed={it.locked} />))}
+        {selected.length > 1 && sel.frame ? <CanvasFrame frame={sel.frame} offset={6} /> : null}
+        <CanvasHandles handles={sel.handles} />
+        {ui.anchors ? <Anchors id={ui.anchors.id} side={ui.anchors.side} byId={byId} z={z} /> : null}
+        <CanvasGuides guides={ui.guides} />
+        {ui.marquee ? <CanvasMarquee rect={ui.marquee} /> : null}
+  
+        {/* The hover card's anchor: the previewed item's box, in board units like the item. */}
+        {peekItem && hasFrame(peekItem) ? (
+          <span ref={peekBox} aria-hidden="true" className="pointer-events-none absolute"
+            style={{ left: peekItem.x, top: peekItem.y, width: peekItem.w, height: peekItem.h, transform: peekItem.rot ? `rotate(${peekItem.rot}deg)` : undefined }} />
+        ) : null}
+        {peekItem && (peekItem.kind === 'image' || peekItem.kind === 'link') ? (
+          <HoverCard {...card.cardProps} triggerRef={peekBox} placement="end top" className="w-64"><ItemPreview item={peekItem} /></HoverCard>
+        ) : null}
+      </Canvas>
+    </div>
   );
 }
 

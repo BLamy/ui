@@ -1,6 +1,7 @@
 /* How each kind of item draws on the board. All are absolutely placed in board units inside the canvas's scaled
    layer; none take pointer events (the canvas hits them by geometry), except the text being edited. */
 import { memo, useId, useLayoutEffect, useRef, type CSSProperties } from 'react';
+import { HoverCardHeader } from '@/components/ui/hover-card';
 import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -161,6 +162,33 @@ function LinkCard({ item }: { item: LinkItem }) {
         <span className="line-clamp-2 text-subhead leading-[1.25] font-semibold">{item.title}</span>
         <span className="truncate text-footnote text-muted-foreground">{item.url}</span>
       </span>
+    </div>
+  );
+}
+
+/** What a picture or a link's hover card shows (the surface opens it while the pointer rests on one): the picture
+    full width with its caption, or the link's page — readable at any zoom, where the board may show it a few px wide. */
+export function ItemPreview({ item }: { item: ImageItem | LinkItem }) {
+  if (item.kind === 'image') {
+    return (
+      <figure className="m-0 flex flex-col gap-2">
+        <div className="aspect-[10/7] overflow-hidden rounded-ctl">
+          {item.src ? <img src={item.src} alt="" draggable={false} className="block size-full object-cover" /> : <ImageArt art={item.art ?? 0} />}
+        </div>
+        {item.caption ? <figcaption className="text-headline font-semibold text-foreground">{item.caption}</figcaption> : null}
+      </figure>
+    );
+  }
+  const host = item.url.replace(/^[a-z]+:\/\//i, '').split('/')[0];
+  return (
+    <div className="flex flex-col gap-2">
+      <HoverCardHeader
+        media={<span className="grid size-10 place-items-center rounded-panel text-white" style={{ background: LINK_ACCENT }}><Icon name="globe" size={22} sw={1.8} /></span>}
+        title={host}
+        subtitle="Link"
+      />
+      <p className="m-0 text-subhead leading-[1.3] font-semibold text-foreground">{item.title}</p>
+      <code className="block rounded-ctl bg-secondary px-2 py-1 text-caption break-all text-muted-foreground select-text">{item.url}</code>
     </div>
   );
 }

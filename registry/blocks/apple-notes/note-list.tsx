@@ -5,8 +5,10 @@ import { fileDragProps } from './drag';
 import { ItemMenu, RenameField } from './item-menu';
 import type { NotesState } from './use-notes';
 import { UnreadDot } from './parts';
+import { NotePreview } from './previews';
 
-/** Leaf rows only select the note. They never change the master list's navigation path. */
+/** Leaf rows only select the note. They never change the master list's navigation path. Resting the pointer on one
+    previews it (NotePreview). */
 export function NoteList({ notes, items, onOpen }: { notes: NotesState; items: Note[]; onOpen: (id: string) => void }) {
   return <div>
     {items.map((note) => {
@@ -22,7 +24,7 @@ export function NoteList({ notes, items, onOpen }: { notes: NotesState; items: N
       </div>;
       // Drag a note onto another note to embed (link) it, or onto another location to move or copy it.
       return <div key={note.id} {...(note.file.standalone ? {} : fileDragProps(note.file.path))}><ItemMenu notes={notes} id={note.id} label={note.file.name}>
-        <ListRow divider={false} onPress={() => onOpen(note.id)} onDelete={note.file.standalone ? undefined : () => notes.setDeleting(note.id)}
+        <ListRow divider={false} onPress={() => onOpen(note.id)} preview={<NotePreview notes={notes} note={note} />} onDelete={note.file.standalone ? undefined : () => notes.setDeleting(note.id)}
           className="[&>[data-slot=list-row-content]]:bg-transparent [&>[data-slot=list-row-content]]:px-5"
           title={<span className={cn('relative block rounded-lg px-2 py-2', selected && 'bg-primary text-primary-foreground')}>
             <span className="flex items-center gap-2 text-[15.5px] font-semibold"><span className="min-w-0 flex-1 truncate">{note.file.name}</span>{notes.files.unseen.has(note.id) ? <UnreadDot /> : null}</span>

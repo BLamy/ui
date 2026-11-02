@@ -1,5 +1,5 @@
 import { useState, type PointerEvent } from 'react'
-import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, type CanvasPointerInfo } from '@/components/ui/canvas'
+import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMiniMap, type CanvasPointerInfo } from '@/components/ui/canvas'
 import {
   dist, frameHandles, handleCursor, inFrame, resizeFrame, rotateFrame, snapMove, toScreen,
   type Camera, type Frame, type Guide, type HandleId, type Rect,
@@ -84,9 +84,13 @@ export default function Cards() {
         onCanvasPointerMove={move}
         onCanvasPointerUp={up}
         overlay={
-          <p className="pointer-events-none absolute bottom-2 left-3 m-0 text-footnote text-foreground">
-            Scroll to pan · pinch or ⌘-scroll to zoom · hold Space to drag the view · ⌘0 fits
-          </p>
+          <>
+            <p className="pointer-events-none absolute bottom-2 left-3 m-0 text-footnote text-foreground">
+              Scroll to pan · pinch or ⌘-scroll to zoom · hold Space to drag the view · ⌘0 fits
+            </p>
+            <CanvasMiniMap width={150} height={96}
+              items={cards.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h, className: c.id === picked ? 'fill-primary' : undefined }))} />
+          </>
         }
       >
         {cards.map((c) => (

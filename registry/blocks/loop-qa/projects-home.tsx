@@ -10,6 +10,7 @@ import { Segmented } from '@/components/ui/segmented';
 import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { isOpen } from './agent';
+import { MemberPreview } from './cards';
 import { CREDITS, PROJECTS, SEVERITIES, host, relativeTime, type Project, type Severity } from './data';
 import { Leading, PageActions } from './header';
 import { Empty, Pill, SeverityBar, SiteThumb, Sparkline, StatTile, Pressable } from './parts';
@@ -126,7 +127,9 @@ function ProjectCard({ project: p }: { project: Project }) {
           <span className="inline-flex items-center gap-1"><Icon name="clock" size={12} sw={2} />{relativeTime(p.lastRun)}</span>
           <span className="flex -space-x-1">
             {p.members.map((m, i) => (
-              <span key={m} className="grid size-6 place-items-center rounded-full bg-secondary-strong text-[9.5px] font-semibold tracking-[-.02em] text-foreground ring-2 ring-card" style={{ zIndex: 5 - i } as CSSProperties}>{m}</span>
+              <MemberPreview key={m} initials={m} tone={i}>
+                <span className="grid size-6 place-items-center rounded-full bg-secondary-strong text-[9.5px] font-semibold tracking-[-.02em] text-foreground ring-2 ring-card" style={{ zIndex: 5 - i } as CSSProperties}>{m}</span>
+              </MemberPreview>
             ))}
           </span>
         </div>

@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
      </Canvas>
 
    Children live in the *board layer* (a div translated and scaled by the camera); `overlay` is drawn on top in screen
-   space (an empty state, a minimap). `useCanvas()` gives children the zoom and the coordinate conversions, and the
+   space (an empty state, a `CanvasMiniMap`). `useCanvas()` gives children the zoom and the coordinate conversions, and the
    overlay parts (`CanvasFrame`, `CanvasHandles`, `CanvasMarquee`, `CanvasGuides`) keep their lines the same thickness on
    screen at any zoom. The math (`toBoard`, `zoomAt`, `resizeFrame`, `snapMove` …) is in `@/lib/canvas-math`. */
 
@@ -347,5 +347,83 @@ export function CanvasGuides({ guides }: { guides: Guide[] }) {
         />
       ))}
     </>
+  );
+}
+
+/* ── MiniMap: the whole board in a corner, the view outlined; press or drag on it to move the view there ── */
+
+export interface CanvasMiniMapItem extends Rect {
+  id?: string;
+  /** Fill class for the item's mark (default `fill-muted-foreground/35`); a selected item might be `fill-primary`. */
+  className?: string;
+}
+
+export interface CanvasMiniMapProps {
+  /** What's on the board, in board units: frames, cards, nodes. */
+  items: readonly CanvasMiniMapItem[];
+  /** Which corner it sits in (default `bottom-right`). */
+  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  /** Its size in px (default 184 × 120). */
+  width?: number;
+  height?: number;
+  className?: string;
+}
+
+const CORNER: Record<NonNullable<CanvasMiniMapProps['position']>, string> = {
+  'bottom-right': 'right-3 bottom-3', 'bottom-left': 'bottom-3 left-3', 'top-right': 'top-3 right-3', 'top-left': 'top-3 left-3',
+};
+
+/** An overview of the board for `<Canvas overlay>`: every item as a mark and the view as an outline. Pressing or
+ *  dragging on it centers the view there; the canvas keeps the keyboard (⌘0 fits, arrows are yours). */
+export function CanvasMiniMap({ items, position = 'bottom-right', width = 184, height = 120, className }: CanvasMiniMapProps) {
+  const { camera, size, update } = useCanvas();
+  const pad = 6;
+  // The view in board units, and everything the map has to show: the items and the view.
+  const view: Rect = { x: -camera.x / camera.z, y: -camera.y / camera.z, w: size.width / camera.z, h: size.height / camera.z };
+  let x0 = view.x, y0 = view.y, x1 = view.x + view.w, y1 = view.y + view.h;
+  for (const it of items) {
+    x0 = Math.min(x0, it.x); y0 = Math.min(y0, it.y);
+    x1 = Math.max(x1, it.x + it.w); y1 = Math.max(y1, it.y + it.h);
+  }
+  const k = Math.min((width - pad * 2) / Math.max(1, x1 - x0), (height - pad * 2) / Math.max(1, y1 - y0));
+  // Centered in the map.
+  const ox = pad + ((width - pad * 2) - (x1 - x0) * k) / 2 - x0 * k;
+  const oy = pad + ((height - pad * 2) - (y1 - y0) * k) / 2 - y0 * k;
+  const frozen = useRef<{ k: number; ox: number; oy: number } | null>(null);
+
+  const moveTo = (e: ReactPointerEvent<SVGSVGElement>) => {
+    // While dragging, map with the scale the drag began with, so the map doesn't rescale under the pointer.
+    const m = frozen.current ?? { k, ox, oy };
+    const r = e.currentTarget.getBoundingClientRect();
+    const bx = (e.clientX - r.left - m.ox) / m.k, by = (e.clientY - r.top - m.oy) / m.k;
+    update((c) => ({ ...c, x: size.width / 2 - bx * c.z, y: size.height / 2 - by * c.z }));
+  };
+
+  return (
+    <svg
+      data-slot="canvas-minimap"
+      aria-hidden="true"
+      width={width}
+      height={height}
+      className={cn('absolute z-10 cursor-pointer rounded-[10px] bg-popover/90 shadow-[0_4px_16px_--alpha(black/14%),0_0_0_.5px_var(--border)] backdrop-blur-md', CORNER[position], className)}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        if (e.button !== 0) return;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        frozen.current = { k, ox, oy };
+        moveTo(e);
+      }}
+      onPointerMove={(e) => { e.stopPropagation(); if (frozen.current) moveTo(e); }}
+      onPointerUp={(e) => { e.stopPropagation(); frozen.current = null; }}
+      onPointerCancel={() => { frozen.current = null; }}
+      onDoubleClick={(e) => e.stopPropagation()}
+    >
+      {items.map((it, i) => (
+        <rect key={it.id ?? i} x={ox + it.x * k} y={oy + it.y * k} width={Math.max(1.5, it.w * k)} height={Math.max(1.5, it.h * k)} rx={1.5}
+          className={it.className ?? 'fill-muted-foreground/35'} />
+      ))}
+      <rect data-slot="canvas-minimap-view" x={ox + view.x * k} y={oy + view.y * k} width={view.w * k} height={view.h * k} rx={2}
+        className="fill-primary/8 stroke-primary" strokeWidth={1.5} />
+    </svg>
   );
 }

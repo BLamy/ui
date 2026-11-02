@@ -1,8 +1,11 @@
 /* Strudel Studio — write a Strudel song and play it on hardware generated from its code. The left pane holds the
    code (and its syntax tree); the right is the rack on a masonry grid: drag modules by their titles, resize them
-   from their corners, and every knob, fader, pad and step key rewrites the code while it plays. */
+   from their corners, and every knob, fader, pad and step key rewrites the code while it plays. Resting on a song in
+   the switcher previews it in a hover card (its tempo and the tracks it would put in the rack, as currently edited);
+   the syntax tree previews its tracks and patterns the same way. */
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Segmented } from '@/components/ui/segmented';
 import { StrudelRack } from '@/components/ui/strudel-rack';
 import { playStrudel, stopStrudel, updateStrudel } from '@/components/ui/strudel-player';
@@ -10,7 +13,8 @@ import { parseStrudel, StrudelSyntaxError, type StrudelSong } from '@/components
 import { Tabs, TabList, Tab, TabPanel } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { BLProvider } from '@/lib/theme';
-import { SONGS } from './songs';
+import { cn } from '@/lib/utils';
+import { SONGS, type StudioSong } from './songs';
 import { SyntaxTree } from './syntax-tree';
 
 const OWNER = 'strudel-studio';
@@ -18,6 +22,29 @@ const OWNER = 'strudel-studio';
 export interface StrudelStudioProps {
   /** The starter song to open (an id from songs.ts). */
   initialSong?: string;
+}
+
+/** A song's tempo and tracks, read from its code as edited so far. */
+function SongCard({ song, code }: { song: StudioSong; code: string }) {
+  const parsed = useMemo(() => { try { return parseStrudel(code); } catch { return null; } }, [code]);
+  return (
+    <div className="flex flex-col gap-3">
+      <HoverCardHeader
+        media={<span className="grid size-9 place-items-center rounded-lg bg-success/15 text-success"><Icon name="music-note" size={19} /></span>}
+        title={song.title}
+        subtitle={parsed ? [parsed.tempo ? `${Math.round(parsed.tempo.cps * 240)} bpm` : null, `${parsed.tracks.length} tracks`].filter(Boolean).join(' · ') : 'Doesn’t parse yet'} />
+      {parsed ? (
+        <ul className="m-0 flex list-none flex-col gap-1 p-0">
+          {parsed.tracks.map((t) => (
+            <li key={t.index} className="flex items-baseline gap-2 text-footnote">
+              <span className={cn('min-w-0 flex-1 truncate', t.muted && 'text-muted-foreground line-through')}>{t.label ?? `Track ${t.index + 1}`}</span>
+              <span className="shrink-0 font-mono text-caption2 text-muted-foreground">{t.sound ?? t.kind}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
 }
 
 export default function StrudelStudio({ initialSong = 'night-drive' }: StrudelStudioProps) {
@@ -76,7 +103,15 @@ export default function StrudelStudio({ initialSong = 'night-drive' }: StrudelSt
           <Segmented
             aria-label="Song"
             className="ms-auto"
-            options={SONGS.map((s) => ({ id: s.id, label: s.title }))}
+            options={SONGS.map((s) => ({
+              id: s.id,
+              label: (
+                <HoverCardTrigger>
+                  <span>{s.title}</span>
+                  <HoverCard placement="bottom end" className="w-64"><SongCard song={s} code={codes[s.id] ?? ''} /></HoverCard>
+                </HoverCardTrigger>
+              ),
+            }))}
             value={songId}
             onChange={(id) => {
               setSongId(id);

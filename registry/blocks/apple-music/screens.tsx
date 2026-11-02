@@ -1,8 +1,10 @@
 /* Every screen the app pushes: Listen Now, Browse, Radio, Search, the Library and its sections, and the album,
    artist and playlist pages. `PageView` draws one; the phone's tabs push them as NavigationStack screens
    (`screensFor`) and the wide layout's detail column as SplitViewStack pages. Pages read the player and
-   `open` from `MusicContext`, so a pushed page stays live. */
+   `open` from `MusicContext`, so a pushed page stays live. Album tiles, playlist tiles, artist rows and the album
+   page's artist link preview what they open in a HoverCard (a pointer or keyboard focus; never touch). */
 import { createContext, useContext, useState, type CSSProperties, type ReactNode } from 'react';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { type Screen } from '@/components/ui/navigation-stack';
 import { NowPlayingBars } from '@/components/ui/now-playing-bars';
 import { SearchField } from '@/components/ui/search-field';
@@ -10,7 +12,7 @@ import { Icon, type IconName, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ArtistArt, Artwork, PlaylistArt } from './artwork';
 import {
-  ALBUM, ALBUMS, ALL_SONGS, ARTISTS, PLAYLISTS, STATIONS, albumSongs, fmt, minutes, playlistSongs, type Album, type Song,
+  ALBUM, ALBUMS, ALL_SONGS, ARTISTS, PLAYLISTS, STATIONS, albumSongs, fmt, minutes, playlistSongs, type Album, type Playlist, type Song,
 } from './data';
 import type { Player } from './player';
 
@@ -75,6 +77,70 @@ function PageBody({ page, ctx }: { page: Page; ctx: Ctx }) {
   }
 }
 
+/* ── Hover cards ── what a tile or link opens, at a glance: an album's tracks, an artist's albums, a playlist's
+   length. Built from the library itself. */
+
+/** Wraps a tile, row or link (`className` lays out the wrapper in its place) with the card for what it opens. */
+function Previewed({ card, className, children }: { card: ReactNode; className?: string; children: ReactNode }) {
+  return (
+    <HoverCardTrigger className={className}>
+      {children}
+      <HoverCard placement="end top">{card}</HoverCard>
+    </HoverCardTrigger>
+  );
+}
+
+function AlbumCard({ album: a }: { album: Album }) {
+  const songs = albumSongs(a);
+  return (
+    <>
+      <HoverCardHeader media={<Artwork album={a} size={56} rounded={6} />} title={a.title} subtitle={`${a.artist} · ${a.year}`} />
+      <ol className="m-0 mt-3 list-none p-0">
+        {songs.slice(0, 3).map((s) => (
+          <li key={s.key} className="flex items-baseline gap-2 py-0.5 text-footnote">
+            <span className="w-3 text-right text-muted-foreground tabular-nums">{s.index + 1}</span>
+            <span className="min-w-0 flex-1 truncate text-foreground">{s.track.title}</span>
+            <span className="text-muted-foreground tabular-nums">{fmt(s.track.dur)}</span>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-2 text-caption text-muted-foreground">{a.genre} · {a.tracks.length} songs, {minutes(songs)} minutes · {a.label}</div>
+    </>
+  );
+}
+
+function ArtistCard({ name }: { name: string }) {
+  const albums = ALBUMS.filter((a) => a.artist === name).sort((a, b) => b.year - a.year);
+  const genres = [...new Set(albums.map((a) => a.genre))].join(', ');
+  return (
+    <>
+      <HoverCardHeader media={<ArtistArt artist={name} album={albums[0]} size={48} />} title={name}
+        subtitle={`${genres} · ${albums.length} ${albums.length === 1 ? 'album' : 'albums'}`} />
+      <div className="mt-3 flex gap-2">
+        {albums.slice(0, 4).map((a) => (
+          <div key={a.id} className="w-14 min-w-0">
+            <Artwork album={a} size={56} rounded={5} />
+            <div className="mt-1 truncate text-caption2 text-muted-foreground">{a.year}</div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function PlaylistCard({ playlist: p }: { playlist: Playlist }) {
+  const songs = playlistSongs(p);
+  return (
+    <>
+      <HoverCardHeader media={<PlaylistArt playlist={p} size={56} rounded={6} />} title={p.title} subtitle={p.curator} />
+      <p className="m-0 mt-2.5 text-footnote leading-snug text-foreground">{p.description}</p>
+      <div className="mt-2 truncate text-caption text-muted-foreground">
+        {songs.length} songs, {minutes(songs)} minutes · {[...new Set(songs.map((s) => s.album.artist))].slice(0, 3).join(', ')}
+      </div>
+    </>
+  );
+}
+
 /* ── Building blocks ── */
 
 /** A labelled shelf that scrolls sideways, like every Apple Music home screen. */
@@ -92,13 +158,15 @@ function Shelf({ title, children, onMore }: { title: string; children: ReactNode
 
 function AlbumTile({ album: a, ctx, size = 164, caption }: { album: Album; ctx: Ctx; size?: number; caption?: string }) {
   return (
-    <button type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
-      className="bl-btn group shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground"
-      style={{ width: size }}>
-      <Artwork album={a} size={size} className="transition-[scale,filter] duration-spring-snappy ease-spring-snappy group-hover:brightness-95 group-active:scale-[.97]" />
-      <div className="mt-1.5 truncate text-detail leading-tight font-medium">{a.title}</div>
-      <div className="truncate text-footnote text-muted-foreground">{caption ?? a.artist}</div>
-    </button>
+    <Previewed card={<AlbumCard album={a} />} className="shrink-0 snap-start">
+      <button type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
+        className="bl-btn group shrink-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground"
+        style={{ width: size }}>
+        <Artwork album={a} size={size} className="transition-[scale,filter] duration-spring-snappy ease-spring-snappy group-hover:brightness-95 group-active:scale-[.97]" />
+        <div className="mt-1.5 truncate text-detail leading-tight font-medium">{a.title}</div>
+        <div className="truncate text-footnote text-muted-foreground">{caption ?? a.artist}</div>
+      </button>
+    </Previewed>
   );
 }
 
@@ -174,12 +242,14 @@ function ListenNow({ ctx }: { ctx: Ctx }) {
       </Shelf>
       <Shelf title="Made for You">
         {PLAYLISTS.map((p) => (
-          <button key={p.id} type="button" onClick={() => ctx.open({ kind: 'playlist', id: p.id })}
-            className="bl-btn w-[164px] shrink-0 snap-start cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
-            <PlaylistArt playlist={p} size={164} />
-            <div className="mt-1.5 truncate text-detail font-medium">{p.title}</div>
-            <div className="truncate text-footnote text-muted-foreground">{p.description}</div>
-          </button>
+          <Previewed key={p.id} card={<PlaylistCard playlist={p} />} className="shrink-0 snap-start">
+            <button type="button" onClick={() => ctx.open({ kind: 'playlist', id: p.id })}
+              className="bl-btn w-[164px] shrink-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
+              <PlaylistArt playlist={p} size={164} />
+              <div className="mt-1.5 truncate text-detail font-medium">{p.title}</div>
+              <div className="truncate text-footnote text-muted-foreground">{p.description}</div>
+            </button>
+          </Previewed>
         ))}
       </Shelf>
       <Shelf title="New Releases">
@@ -350,12 +420,14 @@ function AlbumGrid({ albums, ctx }: { albums: Album[]; ctx: Ctx }) {
   return (
     <div className="grid gap-x-4 gap-y-5 px-4 pt-1 pb-4" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${ctx.wide ? 170 : 150}px, 1fr))` }}>
       {albums.map((a) => (
-        <button key={a.id} type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
-          className="bl-btn group min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
-          <Artwork album={a} className="aspect-square w-full transition-[scale] duration-spring-snappy ease-spring-snappy group-active:scale-[.97]" />
-          <div className="mt-1.5 truncate text-detail font-medium">{a.title}</div>
-          <div className="truncate text-footnote text-muted-foreground">{a.artist}</div>
-        </button>
+        <Previewed key={a.id} card={<AlbumCard album={a} />} className="flex">
+          <button type="button" onClick={() => ctx.open({ kind: 'album', id: a.id })}
+            className="bl-btn group w-full min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left [font-family:inherit] text-foreground">
+            <Artwork album={a} className="aspect-square w-full transition-[scale] duration-spring-snappy ease-spring-snappy group-active:scale-[.97]" />
+            <div className="mt-1.5 truncate text-detail font-medium">{a.title}</div>
+            <div className="truncate text-footnote text-muted-foreground">{a.artist}</div>
+          </button>
+        </Previewed>
       ))}
     </div>
   );
@@ -365,14 +437,16 @@ function ArtistList({ ctx }: { ctx: Ctx }) {
   return (
     <div className="pt-1 pl-4">
       {ARTISTS.map((name) => (
-        <button key={name} type="button" onClick={() => ctx.open({ kind: 'artist', name })}
-          className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
-          <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={44} />
-          <span className="flex flex-1 items-center py-3.5 text-body shadow-hairline-b">
-            <span className="flex-1">{name}</span>
-            <Icon name="chevron-right" size={15} weight="bold" className="text-tertiary-foreground" />
-          </span>
-        </button>
+        <Previewed key={name} card={<ArtistCard name={name} />} className="flex w-full">
+          <button type="button" onClick={() => ctx.open({ kind: 'artist', name })}
+            className="bl-btn flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent py-0 pr-4 pl-0 text-left [font-family:inherit] text-foreground">
+            <ArtistArt artist={name} album={ALBUMS.find((a) => a.artist === name)!} size={44} />
+            <span className="flex flex-1 items-center py-3.5 text-body shadow-hairline-b">
+              <span className="flex-1">{name}</span>
+              <Icon name="chevron-right" size={15} weight="bold" className="text-tertiary-foreground" />
+            </span>
+          </button>
+        </Previewed>
       ))}
     </div>
   );
@@ -402,8 +476,10 @@ function AlbumPage({ album: a, ctx }: { album: Album; ctx: Ctx }) {
         <Artwork album={a} size={ctx.wide ? 250 : 260} rounded={10} className="shadow-[0_10px_30px_black] shadow-black/18" />
         <div className={cn('flex min-w-0 flex-col gap-1', ctx.wide ? 'items-start pb-1' : 'items-center')}>
           <h2 className="m-0 text-[24px] leading-tight font-bold tracking-[-.3px]">{a.title}</h2>
-          <button type="button" onClick={() => ctx.open({ kind: 'artist', name: a.artist })}
-            className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-title text-primary">{a.artist}</button>
+          <Previewed card={<ArtistCard name={a.artist} />}>
+            <button type="button" onClick={() => ctx.open({ kind: 'artist', name: a.artist })}
+              className="bl-btn cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-title text-primary">{a.artist}</button>
+          </Previewed>
           <div className="text-[12.5px] font-semibold tracking-[.3px] text-muted-foreground uppercase">{a.genre} · {a.year} · Lossless</div>
           <div className="mt-3.5 w-full"><PillButtons onPlay={() => ctx.player.playFrom(songs, 0)} onShuffle={() => ctx.player.playFrom(songs, (songs.length * 7) % songs.length)} /></div>
         </div>

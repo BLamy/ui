@@ -21,6 +21,7 @@
     "components/message-list.tsx",
     "components/thread-preview.tsx",
     "components/member-list.tsx",
+    "components/user-card.tsx",
     "chat-theme.css",
     "components/chat-shell.tsx",
     "components/chat-shell-context.ts"

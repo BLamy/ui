@@ -69,6 +69,7 @@ The initials are the only content and the `span` has no role or label. In a row 
 | `shape` | `circle` | `square` for a rounded square (radius 30% of the size). |
 | `status` | — | `online`, `idle`, `dnd` or `offline`: a presence dot on the lower right. |
 | `size` | `40` | Width and height in px; font size is `size × 0.38`. |
+| `card` | — | A [HoverCard](https://blamy.github.io/ui/#/hover-card)'s content about them (`HoverCardHeader` and a line or two), shown while the pointer rests on the avatar. |
 | `className` / `style` | — | Merged onto the `span`; `style` is applied after the computed size and gradient, so it can override them. |
 
 With `c`, both names are required: `f[0]` and `l[0]` are read directly, so an empty string yields a missing initial.

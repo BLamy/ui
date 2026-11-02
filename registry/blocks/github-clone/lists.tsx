@@ -1,8 +1,11 @@
-/* Shared pieces of the Issues and Pull requests lists: search toolbar, Open/Closed toggle, filter menus, rows. */
+/* Shared pieces of the Issues and Pull requests lists: search toolbar, Open/Closed toggle, filter menus, rows. A row's
+   title previews the issue or pull request in a hover card, and its assignees' avatars preview each person. */
 import { type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { cn } from '@/lib/utils';
+import { UserCard } from './cards';
 import type { Label, User } from './data';
 import { AvatarStack, Counter, LabelChip, Oct, StateIcon, ghButton, type OctName, type StateKind, type Layout, type Nav } from './parts';
 import { useLoad, useRepo } from './repo-context';
@@ -52,19 +55,25 @@ export function FilterMenus({ ui, names, onLabel }: { ui: Layout; names: string[
   );
 }
 
-export function ItemRow({ ui, state, title, labels, meta, assignees, comments, status, onOpen }: {
+export function ItemRow({ ui, state, title, labels, meta, assignees, comments, status, preview, onOpen }: {
   ui: Layout; state: StateKind; title: string; labels: Label[]; meta: ReactNode; assignees: User[];
-  comments: number; status?: ReactNode; onOpen?: () => void;
+  comments: number; status?: ReactNode;
+  /** The issue / pull request's hover card (cards.tsx), shown from the title. */
+  preview?: ReactNode;
+  onOpen?: () => void;
 }) {
+  const open = (
+    <button type="button" onClick={onOpen}
+      className="cursor-pointer border-0 bg-transparent p-0 text-left text-callout leading-6 font-semibold text-foreground hover:text-primary">
+      {title}
+    </button>
+  );
   return (
     <div className="flex gap-2 border-t border-border px-4 py-2 first:border-t-0 hover:bg-muted">
       <StateIcon state={state} className="mt-[3px]" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-          <button type="button" onClick={onOpen}
-            className="cursor-pointer border-0 bg-transparent p-0 text-left text-callout leading-6 font-semibold text-foreground hover:text-primary">
-            {title}
-          </button>
+          {preview ? <HoverCardTrigger>{open}<HoverCard placement="bottom start" className="w-80">{preview}</HoverCard></HoverCardTrigger> : open}
           {status}
           {labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} />)}
         </div>
@@ -72,7 +81,7 @@ export function ItemRow({ ui, state, title, labels, meta, assignees, comments, s
       </div>
       {!ui.phone ? (
         <div className="flex w-[120px] shrink-0 items-start justify-end gap-4 pt-1">
-          {assignees.length ? <AvatarStack users={assignees} /> : null}
+          {assignees.length ? <AvatarStack users={assignees} card={(u) => <UserCard user={u} />} /> : null}
           {comments ? <span className="flex items-center gap-1 text-caption text-muted-foreground hover:text-primary"><Oct name="comment" />{comments}</span> : null}
         </div>
       ) : comments ? (

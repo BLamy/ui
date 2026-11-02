@@ -1,5 +1,6 @@
 /* The master list lives in NavigationStack, rooted at the sidebar's location. Only folder rows change its screens. */
 import { useRef, useState, type ReactNode } from 'react';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Chevron } from '@/components/ui/icon-swap';
 import { NavigationStack, type Screen } from '@/components/ui/navigation-stack';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { FolderTree } from './folder-tree';
 import { DataModeToggle, FileView, viewerLabel, type DataMode } from './file-views';
 import { NoteList } from './note-list';
 import { EditorTools, NoteEditor } from './note-editor';
+import { FilePreview, FolderPreview } from './previews';
 import { ItemMenu, RenameField } from './item-menu';
 import { BarButton, BottomBar, FilterMenu, NoteMenu, ShareMenu, ViewToggle } from './parts';
 import { viewable, type NotesState, type OtherFile } from './use-notes';
@@ -27,9 +29,10 @@ function useUploadTarget(notes: NotesState, folder: Folder) {
   });
 }
 
+/** A folder: pressing it pushes its screen; resting on it previews what's inside. */
 function FolderRow({ notes, f, className }: { notes: NotesState; f: Folder; className: string }) {
   const { dropProps } = useUploadTarget(notes, f);
-  return <ItemMenu notes={notes} id={f.id} label={f.title}>
+  return <HoverCardTrigger className="flex w-full"><ItemMenu notes={notes} id={f.id} label={f.title} className="min-w-0 flex-1">
     <button type="button" aria-label={`Open folder ${f.title}`} data-tkrow="" {...dropProps}
       onClick={() => notes.openFolder(f.id)}
       className={cn(className, 'cursor-pointer border-0 bg-transparent outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring data-[drop-target]:bg-secondary data-[drop-target]:ring-2 data-[drop-target]:ring-primary')}>
@@ -37,7 +40,7 @@ function FolderRow({ notes, f, className }: { notes: NotesState; f: Folder; clas
       <span className="min-w-0 flex-1 truncate">{f.title}{f.connected === false ? <span className="block text-caption text-muted-foreground">Reconnect folder</span> : null}</span>
       <span className="text-caption text-muted-foreground">{notes.count(f)}</span><Chevron direction="right" size={15} />
     </button>
-  </ItemMenu>;
+  </ItemMenu><HoverCard placement="end top"><FolderPreview notes={notes} folder={f} /></HoverCard></HoverCardTrigger>;
 }
 
 function FolderRows({ notes, folders }: { notes: NotesState; folders: Folder[] }) {
@@ -49,8 +52,9 @@ function FolderRows({ notes, folders }: { notes: NotesState; folders: Folder[] }
   </div>;
 }
 
-/** Files that aren't notes. A model, image, JSON/YAML, CSV or code file opens in its viewer; anything else is listed by name, dimmed. Every row
-    drags onto a note to embed it, or onto another location to move or copy it. */
+/** Files that aren't notes. A model, image, JSON/YAML, CSV or code file opens in its viewer (and previews its type and
+    path on hover); anything else is listed by name, dimmed. Every row drags onto a note to embed it, or onto another
+    location to move or copy it. */
 function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: OtherFile[]; onOpen: (id: string) => void }) {
   if (!files.length) return null;
   return <ul aria-label="Other files" className="m-0 list-none! px-5">
@@ -58,7 +62,7 @@ function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: Oth
       const where = notes.query ? <span className="block truncate text-caption opacity-70">{f.path.split('/').slice(1, -1).join('/')}</span> : null;
       if (viewable(f.kind)) {
         const selected = notes.selectedId === f.id;
-        return <li key={f.id}>
+        return <li key={f.id}><HoverCardTrigger className="flex w-full">
           <button type="button" {...fileDragProps(f.path)} onClick={() => onOpen(f.id)} aria-current={selected || undefined} title={f.path}
             className={cn('flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-lg border-0 bg-transparent px-2 text-left text-subhead text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring',
               selected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')}>
@@ -66,7 +70,8 @@ function OtherFileRows({ notes, files, onOpen }: { notes: NotesState; files: Oth
               : <TreeFileIcon name={f.name} className="shrink-0" />}
             <span className="min-w-0 flex-1 truncate">{f.name}{where}</span>
           </button>
-        </li>;
+          <HoverCard placement="end top"><FilePreview file={f} /></HoverCard>
+        </HoverCardTrigger></li>;
       }
       return <li key={f.id} {...fileDragProps(f.path)} title={`${f.path} · Drag onto a note to embed it`}
         className="flex min-h-11 cursor-grab items-center gap-2 rounded-lg px-2 text-subhead text-muted-foreground opacity-60">

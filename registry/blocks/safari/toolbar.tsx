@@ -1,6 +1,7 @@
 /* Safari's chrome: the toolbar (back, forward, address, reload, Tailscale, tabs), the tab strip and the tab overview. */
 import { useId, useMemo, useState, type FormEvent, type KeyboardEvent, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import { TailscaleMenu } from '@/components/ui/tailscale-menu';
@@ -182,6 +183,28 @@ export function Toolbar({ browser, snapshot, history, totals, inputRef, overview
 
 /* ── the tab strip ── */
 
+const TAB_STATUS: Record<Tab['status'], string> = { start: 'Start Page', loading: 'Loading…', ready: 'Loaded through your tailnet', error: 'Couldn’t be loaded' };
+
+/** A tab's hover card, like Safari's tab preview: its title, full address, how it loaded and how far back its history goes —
+    enough to tell two tabs with the same title apart. */
+function TabCard({ tab }: { tab: Tab }) {
+  const entry = tab.history[tab.index];
+  const back = tab.index;
+  return (
+    <div className="flex flex-col gap-2">
+      <HoverCardHeader
+        media={<span aria-hidden="true" className="grid size-9 place-items-center rounded-ctl bg-secondary text-foreground/70"><Icon name="globe" size={18} /></span>}
+        title={tabTitle(tab)}
+        subtitle={entry ? hostOf(entry.url) : 'New tab'}
+      />
+      {entry ? <code className="block truncate rounded-ctl bg-secondary px-2 py-1 text-caption text-foreground/70 select-text">{displayAddress(entry.url)}</code> : null}
+      <p className="m-0 text-footnote text-muted-foreground">
+        {TAB_STATUS[tab.status]}{back > 0 ? ` · ${back} ${back === 1 ? 'page' : 'pages'} back` : ''}
+      </p>
+    </div>
+  );
+}
+
 export function TabStrip({ browser }: { browser: Browser }) {
   const { tabs, active } = browser.state;
   return (
@@ -190,10 +213,13 @@ export function TabStrip({ browser }: { browser: Browser }) {
         const isActive = tab.id === active;
         return (
           <div key={tab.id} className={cn('group/tab relative flex h-7 max-w-52 min-w-24 flex-1 items-center rounded-lg transition-colors duration-spring-snappy ease-spring-snappy', isActive ? 'bg-secondary' : 'hover:bg-secondary/60')}>
-            <Button variant="quiet" aria-current={isActive ? 'page' : undefined} onPress={() => browser.selectTab(tab.id)} className="h-7 min-w-0 flex-1 justify-start gap-1.5 rounded-lg bg-transparent px-2.5 pr-7 text-footnote font-normal text-foreground data-hovered:bg-transparent">
-              {tab.status === 'loading' ? <Spinner spin size={12} /> : <Icon name="globe" size={12} className="shrink-0 text-foreground/70" />}
-              <span className="min-w-0 truncate">{tabTitle(tab)}</span>
-            </Button>
+            <HoverCardTrigger className="flex min-w-0 flex-1">
+              <Button variant="quiet" aria-current={isActive ? 'page' : undefined} onPress={() => browser.selectTab(tab.id)} className="h-7 min-w-0 flex-1 justify-start gap-1.5 rounded-lg bg-transparent px-2.5 pr-7 text-footnote font-normal text-foreground data-hovered:bg-transparent">
+                {tab.status === 'loading' ? <Spinner spin size={12} /> : <Icon name="globe" size={12} className="shrink-0 text-foreground/70" />}
+                <span className="min-w-0 truncate">{tabTitle(tab)}</span>
+              </Button>
+              <HoverCard placement="bottom start"><TabCard tab={tab} /></HoverCard>
+            </HoverCardTrigger>
             <Button variant="quiet" size="icon" className="absolute top-1 right-1 size-5 p-0 opacity-0 group-focus-within/tab:opacity-100 group-hover/tab:opacity-100" aria-label={`Close ${tabTitle(tab)}`} onPress={() => browser.closeTab(tab.id)}>
               <Icon name="xmark" size={10} />
             </Button>

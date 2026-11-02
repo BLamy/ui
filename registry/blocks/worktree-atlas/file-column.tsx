@@ -1,17 +1,20 @@
 /* The master column: the open worktree's files as a Tree (trees.software). In Files, every file in the checkout,
    with search and uncommitted changes marked; in Changes, a summary of the diff to main (base, ahead / behind,
    lines, uncommitted state) over the files it changes, with Git status. Picking a file opens it in the detail
-   (Files) or scrolls the diff to it (Changes). Reload and Delete sit in the bar. */
+   (Files) or scrolls the diff to it (Changes). Reload and Delete sit in the bar. In Changes, resting on a file previews
+   what it does to main (added, modified or deleted; lines in and out, or why it isn't shown as text) before the diff
+   scrolls to it. */
 import { useMemo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
-import { Tree, type TreeGitStatus } from '@/components/ui/tree';
+import { HoverCardHeader } from '@/components/ui/hover-card';
+import { Tree, type TreeGitStatus, type TreeNode } from '@/components/ui/tree';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { diffItems, isFolder, lineCounts, treeOf } from './files';
 import { BarButton, BranchIcon, Chip, WorktreeChips, branchLabel, shortPath } from './parts';
-import type { FileEntry, Worktree, WorktreeDiff } from './types';
+import type { DiffFile, FileEntry, Worktree, WorktreeDiff } from './types';
 import type { AtlasState } from './use-atlas';
 
 export function Placeholder({ icon, title, detail, children }: { icon?: string; title: string; detail?: string; children?: ReactNode }) {
@@ -47,15 +50,41 @@ function Summary({ w, diff }: { w: Worktree; diff: WorktreeDiff }) {
   );
 }
 
-function FileTree({ atlas, files, gitStatus, search }: {
+const STATUS_WORD = { added: 'Added', modified: 'Modified', deleted: 'Deleted' } as const;
+const STATUS_TONE = { added: 'success', modified: 'primary', deleted: 'destructive' } as const;
+
+/** A changed file's hover card: its name and folder, what the change is, and its lines in and out. */
+function ChangeCard({ file, diff, worktreeId }: { file: DiffFile; diff: WorktreeDiff; worktreeId: string }) {
+  const item = diffItems(diff, worktreeId).find((it) => it.id === file.path);
+  const { added, removed } = lineCounts(item ? [item] : []);
+  const slash = file.path.lastIndexOf('/');
+  return (
+    <div className="flex flex-col gap-2">
+      <HoverCardHeader
+        media={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><Icon name="doc" size={18} /></span>}
+        title={file.path.slice(slash + 1)}
+        subtitle={<span className="font-mono">{slash > 0 ? file.path.slice(0, slash) : '/'}</span>}
+      />
+      <div className="flex flex-wrap items-center gap-2 text-footnote text-muted-foreground tabular-nums">
+        <Chip tone={STATUS_TONE[file.status]}>{STATUS_WORD[file.status]}</Chip>
+        {file.skipped ? <span>{file.skipped === 'binary' ? 'Binary file' : 'Too large to show'}</span>
+          : <span className="font-mono"><span className="text-success">+{added}</span> <span className="text-destructive">−{removed}</span></span>}
+        <span className="ml-auto">against {diff.baseBranch}</span>
+      </div>
+    </div>
+  );
+}
+
+function FileTree({ atlas, files, gitStatus, search, preview }: {
   atlas: AtlasState; files: { path: string; dimmed?: boolean }[]; gitStatus: Record<string, TreeGitStatus>; search?: boolean;
+  preview?: (node: TreeNode) => ReactNode;
 }) {
   const s = useSplitView();
   const items = useMemo(() => treeOf(files), [files]);
   return (
     <Tree aria-label={atlas.view === 'files' ? 'Files' : 'Changed files'} items={items} sort={atlas.view === 'files'} search={search}
       defaultExpanded={atlas.view === 'changes' ? 'all' : 'none'} flatten gitStatus={gitStatus}
-      selectedIds={atlas.filePath ? [atlas.filePath] : []}
+      selectedIds={atlas.filePath ? [atlas.filePath] : []} preview={preview}
       className="min-h-0 flex-1 px-1.5 py-1"
       onSelectionChange={(ids) => {
         const id = ids.find((i) => !isFolder(i));
@@ -76,10 +105,15 @@ function FilesBody({ atlas, files }: { atlas: AtlasState; files: FileEntry[] }) 
 function ChangesBody({ atlas, w, diff }: { atlas: AtlasState; w: Worktree; diff: WorktreeDiff }) {
   const status = useMemo(() => Object.fromEntries(diff.files.map((f) => [f.path, f.status as TreeGitStatus])), [diff.files]);
   const rows = useMemo(() => diff.files.map((f) => ({ path: f.path, dimmed: !!f.skipped })), [diff.files]);
+  const byPath = useMemo(() => new Map(diff.files.map((f) => [f.path, f])), [diff.files]);
+  const preview = (node: TreeNode) => {
+    const file = byPath.get(node.id);
+    return file ? <ChangeCard file={file} diff={diff} worktreeId={w.id} /> : null;
+  };
   return (
     <>
       <Summary w={w} diff={diff} />
-      {diff.files.length ? <FileTree atlas={atlas} files={rows} gitStatus={status} />
+      {diff.files.length ? <FileTree atlas={atlas} files={rows} gitStatus={status} preview={preview} />
         : <Placeholder icon="check-circle" title="Nothing to merge" detail={`Same files as ${diff.baseBranch}.`} />}
     </>
   );

@@ -1,7 +1,10 @@
-/* One session, played: its recorded page in a ReplayPreview, with what's known about it above. */
-import { useEffect, useState } from 'react';
+/* One session, played: its recorded page in a ReplayPreview, with what's known about it above. SessionPeek is the
+   same session at a glance, for the sidebar's hover card (Time Machine's snapshot preview): the page as it was when
+   the session ended, still, with its title, address and what happened in it. */
+import { useEffect, useMemo, useState } from 'react';
+import { HoverCardHeader } from '@/components/ui/hover-card';
 import { PlainButton } from '@/components/ui/plain-button';
-import { ReplayPreview, type ReplayEvent } from '@/components/ui/replay-preview';
+import { getReplayMarkers, ReplayPreview, ReplayStage, type ReplayEvent } from '@/components/ui/replay-preview';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { deleteSession, readSession, type SessionInfo } from '@/lib/session-recorder';
@@ -9,20 +12,56 @@ import { count, duration, fullLabel } from './format';
 
 type Load = { events: ReplayEvent[] } | { error: string } | null;
 
-export function SessionDetail({ session, onDeleted }: { session: SessionInfo; onDeleted: () => void }) {
+/** A session's events, read again when `version` changes. */
+function useSessionEvents(id: string, version = 0): Load {
   const [load, setLoad] = useState<Load>(null);
-  // Bumped to read a session that is still recording again, for the events written since.
-  const [version, setVersion] = useState(0);
-
   useEffect(() => {
     let live = true;
     setLoad(null);
-    readSession(session.id).then(
+    readSession(id).then(
       (events) => { if (live) setLoad({ events: events as unknown as ReplayEvent[] }); },
       (e: unknown) => { if (live) setLoad({ error: e instanceof Error ? e.message : 'Couldn’t read this session' }); },
     );
     return () => { live = false; };
-  }, [session.id, version]);
+  }, [id, version]);
+  return load;
+}
+
+/** The session at a glance: its last frame, still, and what's known about it. */
+export function SessionPeek({ session }: { session: SessionInfo }) {
+  const load = useSessionEvents(session.id);
+  const events = load && 'events' in load ? load.events : null;
+  const span = events && events.length > 1 ? events[events.length - 1].timestamp - events[0].timestamp : null;
+  const marks = useMemo(() => {
+    const m = events ? getReplayMarkers(events) : [];
+    return { clicks: m.filter((x) => x.kind === 'click').length, errors: m.filter((x) => x.kind === 'error').length, pages: m.filter((x) => x.kind === 'navigation').length + 1 };
+  }, [events]);
+  let host = session.url;
+  try { const u = new URL(session.url); host = u.host + u.pathname; } catch { /* not a URL: show it as it is */ }
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid min-h-24 place-items-center overflow-hidden rounded-lg bg-secondary text-muted-foreground">
+        {events && span !== null ? (
+          <ReplayStage events={events} autoplay={false} initialTime={span} showMouse={false} className="pointer-events-none w-full" fallback={<Spinner spin size={20} />} />
+        ) : load && !events ? <span className="p-4 text-footnote">{'error' in load ? load.error : null}</span> : events ? <span className="p-4 text-footnote">Nothing recorded yet</span> : <Spinner spin size={20} />}
+      </div>
+      <HoverCardHeader title={session.title || 'Untitled page'} subtitle={host} />
+      <p className="m-0 flex flex-wrap gap-x-3 gap-y-0.5 text-footnote text-muted-foreground">
+        <span>{session.width} × {session.height}</span>
+        {events ? <span>{plural(marks.clicks, 'click')}</span> : null}
+        {events && marks.pages > 1 ? <span>{plural(marks.pages, 'page')}</span> : null}
+        {marks.errors ? <span className="text-destructive">{plural(marks.errors, 'error')}</span> : null}
+      </p>
+    </div>
+  );
+}
+
+const plural = (n: number, one: string) => `${count(n)} ${one}${n === 1 ? '' : 's'}`;
+
+export function SessionDetail({ session, onDeleted }: { session: SessionInfo; onDeleted: () => void }) {
+  // Bumped to read a session that is still recording again, for the events written since.
+  const [version, setVersion] = useState(0);
+  const load = useSessionEvents(session.id, version);
 
   const events = load && 'events' in load ? load.events : null;
   const span = events && events.length > 1 ? events[events.length - 1].timestamp - events[0].timestamp : session.endedAt ? session.endedAt - session.startedAt : null;

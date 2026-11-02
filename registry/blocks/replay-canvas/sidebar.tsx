@@ -1,10 +1,11 @@
 'use client';
 /* The leading pane: the recordings the map is built from (turn one off to see what it contributed, add more from
    files — each one added folds into the same map, or from a Replay QA test run above them), and the map's outline, pages with their states and the layers
-   opened over them, to select and fly to. */
+   opened over them, to select and fly to. Resting on a recording previews what it contributed to the map. */
 import type { ReactNode } from 'react';
 import { FileTrigger } from 'react-aria-components';
 import { Checkbox } from '@/components/ui/checkbox';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { PlainButton } from '@/components/ui/plain-button';
 import { formatReplayTime } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
@@ -69,14 +70,19 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
           const s = summary.get(r.id);
           return (
             <li key={r.id} className="group flex items-start gap-1 rounded-ctl px-1 py-1 hover:bg-secondary">
-              <Checkbox isSelected={r.enabled} onChange={(on) => onToggle(r.id, on)} className="min-w-0 flex-1 items-start gap-2 text-footnote" aria-label={`Use ${r.name}`}>
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate">{r.name}</span>
-                  <span className="text-caption2 text-muted-foreground">
-                    {s ? `${formatReplayTime(s.duration)} · ${s.interactions} interactions` : `${r.events.length} events`}
+              <HoverCardTrigger className="min-w-0 flex-1">
+                <Checkbox isSelected={r.enabled} onChange={(on) => onToggle(r.id, on)} className="min-w-0 flex-1 items-start gap-2 text-footnote" aria-label={`Use ${r.name}`}>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate">{r.name}</span>
+                    <span className="text-caption2 text-muted-foreground">
+                      {s ? `${formatReplayTime(s.duration)} · ${s.interactions} interactions` : `${r.events.length} events`}
+                    </span>
                   </span>
-                </span>
-              </Checkbox>
+                </Checkbox>
+                <HoverCard placement="end top">
+                  <RecordingPeek recording={r} map={map} />
+                </HoverCard>
+              </HoverCardTrigger>
               <PlainButton aria-label={`Remove ${r.name}`} onPress={() => onRemove(r.id)} className="grid size-5 shrink-0 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-muted-foreground opacity-0 outline-none group-hover:opacity-100 hover:text-foreground data-focus-visible:opacity-100 data-focus-visible:ring-2 data-focus-visible:ring-ring">
                 <Icon name="xmark" size={12} sw={2} />
               </PlainButton>
@@ -101,5 +107,30 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
         ))}
       </nav>
     </div>
+  );
+}
+
+/** A recording's hover card: its name in full, and what the map took from it. */
+function RecordingPeek({ recording, map }: { recording: SourceRecording; map: AppMap }) {
+  const summary = map.recordings.find((x) => x.id === recording.id);
+  const pages = map.pages.filter((p) => p.recordings.includes(recording.id));
+  const layers = map.overlays.filter((o) => o.recordings.includes(recording.id));
+  const segues = map.segues.filter((x) => x.evidence.some((e) => e.recording === recording.id)).length;
+  return (
+    <>
+      <HoverCardHeader
+        media={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><Icon name="play-circle" size={18} sw={1.9} /></span>}
+        title={<span className="line-clamp-2 whitespace-normal">{recording.name}</span>}
+        subtitle={summary ? `${formatReplayTime(summary.duration)} · ${summary.interactions} interactions` : `${recording.events.length} events`}
+      />
+      {recording.enabled ? (
+        <div className="mt-3 grid gap-1 text-footnote">
+          <div>{pages.length} page{pages.length === 1 ? '' : 's'} · {layers.length} layer{layers.length === 1 ? '' : 's'} · {segues} segue{segues === 1 ? '' : 's'}</div>
+          {pages.length > 0 && <div className="truncate text-muted-foreground">{pages.map((p) => p.route ?? p.label).join(', ')}</div>}
+        </div>
+      ) : (
+        <p className="mt-3 mb-0 text-footnote text-muted-foreground">Turned off: the map leaves it out.</p>
+      )}
+    </>
   );
 }

@@ -66,6 +66,7 @@
         { "id": "dropdown-menu", "title": "DropdownMenu" },
         { "id": "context-menu", "title": "ContextMenu" },
         { "id": "tooltip", "title": "Tooltip" },
+        { "id": "hover-card", "title": "Hover Card" },
         { "id": "popover", "title": "Popover" },
         { "id": "dialog", "title": "Dialog" },
         { "id": "sheet", "title": "Sheet" },

@@ -1,16 +1,56 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Input, TextField } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { SplitViewHeader, SplitViewSupplementary, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import type { ChatItem } from '../lib/data';
+import type { ChatItem, Doc } from '../lib/data';
 import type { CodexState } from '../lib/use-codex';
+import { outlineOf } from './doc-outline';
 import { DotOrb } from './dot-orb';
 
 type Message = Extract<ChatItem, { kind: 'message' }>;
 
-/** A document dot made, as a link chip with its cover under it. Opens the document beside the chat. */
+/** The first paragraph of a document's Markdown (callouts, headings, lists and tables skipped), as plain text. */
+const leadOf = (markdown: string) =>
+  markdown
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .find((p) => p && !/^(>|#|[-*+] |\d+\. |\||```|\{%)/.test(p))
+    ?.replace(/[*_`[\]]|\(([^)]*)\)/g, '') ?? '';
+
+/** A document link's hover card: a strip of its cover, emoji and title, its opening paragraph and its sections —
+    what the document is about before you open it beside the chat. */
+function DocCard({ doc }: { doc: Doc }) {
+  const sections = outlineOf(doc.body).filter((o) => o.level === 2);
+  return (
+    <div className="-m-4">
+      <div className="h-12 rounded-t-[14px] bg-(image:--doc-cover)" style={{ '--doc-cover': doc.cover } as React.CSSProperties} />
+      <div className="px-4 pt-2.5 pb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-[18px] leading-none" aria-hidden="true">{doc.emoji}</span>
+          <span className="min-w-0 truncate font-serif text-headline font-bold">{doc.title}</span>
+        </div>
+        <p className="mt-2 mb-0 line-clamp-3 text-footnote leading-[1.45] text-muted-foreground">{leadOf(doc.body)}</p>
+        {sections.length > 0 && (
+          <ul className="mt-3 mb-0 list-none space-y-1 border-t border-border p-0 pt-2.5 text-footnote">
+            {sections.slice(0, 5).map((o) => (
+              <li key={o.text} className="flex items-center gap-2 truncate">
+                <span className="h-px w-2.5 shrink-0 bg-tertiary-foreground" aria-hidden="true" />
+                {o.text}
+              </li>
+            ))}
+            {sections.length > 5 && <li className="pl-[18px] text-tertiary-foreground">{sections.length - 5} more sections</li>}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** A document dot made, as a link chip with its cover under it. Opens the document beside the chat; resting on the
+    chip previews it (DocCard). */
 function DocLink({ codex, id }: { codex: CodexState; id: string }) {
   const s = useSplitView();
   const doc = codex.doc(id);
@@ -21,9 +61,12 @@ function DocLink({ codex, id }: { codex: CodexState; id: string }) {
   };
   return (
     <div className="mt-2 flex flex-col items-start gap-2">
-      <Button variant="secondary" onPress={open} className="h-auto rounded-full px-3.5 py-1.5 text-detail font-normal underline decoration-muted-foreground underline-offset-2">
-        {doc.title}
-      </Button>
+      <HoverCardTrigger>
+        <Button variant="secondary" onPress={open} className="h-auto rounded-full px-3.5 py-1.5 text-detail font-normal underline decoration-muted-foreground underline-offset-2">
+          {doc.title}
+        </Button>
+        <HoverCard placement="top start"><DocCard doc={doc} /></HoverCard>
+      </HoverCardTrigger>
       <Button
         aria-label={`Open ${doc.title}`}
         onPress={open}

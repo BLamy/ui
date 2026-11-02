@@ -1,6 +1,6 @@
 # Tooltip
 
-A small inverted label that names or hints at a control. It opens when the pointer rests on the trigger (after a warm-up delay) or when the trigger receives keyboard focus, closes on Esc, blur or pointer leave, and never opens from touch — as on iOS. It is react-aria's `TooltipTrigger` and `Tooltip`, with an arrow that points back at the trigger. Use it for icon-only buttons and abbreviations; it carries no controls and disappears, so anything users need to read or act on belongs in the page, a [Popover](https://blamy.github.io/ui/#/popover) or a field's help text.
+A small inverted label that names or hints at a control. It opens when the pointer rests on the trigger (after a warm-up delay) or when the trigger receives keyboard focus, closes on Esc, blur or pointer leave, and never opens from touch — as on iOS. It is react-aria's `TooltipTrigger` and `Tooltip`, with an arrow that points back at the trigger. Use it for icon-only buttons and abbreviations; it carries no controls and disappears, so anything users need to read or act on belongs in the page, a [Popover](https://blamy.github.io/ui/#/popover) or a field's help text. To preview what a link, name or row points at — a card with an avatar, detail and actions the pointer can move into — use a [Hover Card](https://blamy.github.io/ui/#/hover-card).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

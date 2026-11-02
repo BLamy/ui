@@ -43,11 +43,11 @@ export interface Channel {
 
 /** Keyed by id; message text can @mention these ids. */
 export const USERS: ChatUsers = {
-  ada: { name: 'Ada', c: '#0A84FF', role: '#7EB6FF' },
-  miles: { name: 'Miles', c: '#BF5AF2', role: '#D8A9F0' },
-  noor: { name: 'Noor', c: '#FF9F0A', role: '#FFC46B' },
-  theo: { name: 'Theo', c: '#32D74B', role: '#8CE8A5' },
-  stitch: { name: 'Stitch', c: '#5E5CE6', role: '#A6A5F2', bot: true },
+  ada: { name: 'Ada', c: '#0A84FF', role: '#7EB6FF', about: 'Eng lead. Evals, the QA pipeline, and too many tabs.', since: 'Feb 2, 2023' },
+  miles: { name: 'Miles', c: '#BF5AF2', role: '#D8A9F0', about: 'Design. Springs over curves, transforms over layout.', since: 'Jun 18, 2023' },
+  noor: { name: 'Noor', c: '#FF9F0A', role: '#FFC46B', about: 'Docs and design systems — atomic tiers enjoyer.', since: 'Mar 4, 2024' },
+  theo: { name: 'Theo', c: '#32D74B', role: '#8CE8A5', about: 'Frontend perf. Will tree-shake your icon set.', since: 'Sep 9, 2024' },
+  stitch: { name: 'Stitch', c: '#5E5CE6', role: '#A6A5F2', bot: true, about: 'The QA evals bot: reads eval-failure PRs, updates them and reruns the eval.', since: 'Jan 15, 2025' },
 };
 
 /** The signed-in user. */

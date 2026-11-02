@@ -1,11 +1,12 @@
 'use client';
-import { useEffect, useMemo, useRef, useState, type DragEvent, type HTMLAttributes, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent, type HTMLAttributes, type KeyboardEvent, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import {
   prepareFileTreeInput, preparePresortedFileTreeInput,
   type FileTreeDensity, type FileTreeDirectoryHandle, type FileTreeIconConfig, type FileTreeRowDecoration, type GitStatus,
 } from '@pierre/trees';
 import { FileTree, useFileTree } from '@pierre/trees/react';
 import { ContextMenu } from '@/components/ui/context-menu';
+import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
 import { SearchField } from '@/components/ui/search-field';
 import { IC, type IconName, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -68,6 +69,9 @@ export interface TreeProps extends Omit<HTMLAttributes<HTMLElement>, 'children' 
   density?: FileTreeDensity;
   /** A `ContextMenuContent` for the node, opened by right-click, long-press or the menu key. */
   contextMenu?: (node: TreeNode) => ReactNode;
+  /** A HoverCard's content about the node (a file's size and last change, a folder's contents), beside its row while
+   *  the pointer rests on it. Return nothing for rows without one. */
+  preview?: (node: TreeNode) => ReactNode;
   /** The row being renamed in place; Return commits (`onRename`), Escape or a click away cancels (`onRenameEnd`). */
   renamingId?: string | null;
   onRename?: (node: TreeNode, name: string) => void;
@@ -157,18 +161,22 @@ function iconConfig(index: Index, icons: TreeProps['icons']): FileTreeIconConfig
 }
 
 /** The path of the row an event came from, through the tree's shadow root. */
-function rowPathOf(e: Event): string | null {
+function rowOf(e: Event): HTMLElement | null {
   for (const el of e.composedPath()) {
-    if (el instanceof HTMLElement && el.dataset.itemPath) return el.dataset.itemPath;
+    if (el instanceof HTMLElement && el.dataset.itemPath) return el;
   }
   return null;
+}
+
+function rowPathOf(e: Event): string | null {
+  return rowOf(e)?.dataset.itemPath ?? null;
 }
 
 const quote = (path: string) => JSON.stringify(path);
 
 export function Tree({
   'aria-label': ariaLabel, items, sort, selectedIds, defaultSelectedIds, onSelectionChange, onAction, defaultExpanded = 'none',
-  expandedIds, search, flatten, icons, gitStatus, density = 'default', contextMenu, renamingId, onRename, onRenameEnd,
+  expandedIds, search, flatten, icons, gitStatus, density = 'default', contextMenu, preview, renamingId, onRename, onRenameEnd,
   canDrag, onDragStart, onMove, canMove, externalDrop, className, ...hostProps
 }: TreeProps) {
   const index = useMemo(() => indexOf(items), [items]);
@@ -444,12 +452,32 @@ export function Tree({
     onAction(node);
   };
 
+  /* The preview belongs to the row under the pointer: moving to another row closes the card, and the next one opens
+     at once (hover cards warm up like tooltips). */
+  const [previewNode, setPreviewNode] = useState<TreeNode | null>(null);
+  const previewRow = useRef<HTMLElement | null>(null);
+  const card = useHoverCard({ isDisabled: !preview });
+  const onPointerMove = (e: ReactPointerEvent<HTMLElement>) => {
+    if (!preview || e.pointerType === 'touch') return;
+    const row = rowOf(e.nativeEvent);
+    const node = row && targetOf(row.dataset.itemPath ?? null);
+    if (!row || !node || !preview(node)) { previewRow.current = null; card.triggerProps.onPointerLeave(e); return; }
+    if (row === previewRow.current) return;
+    previewRow.current = row;
+    card.close();
+    setPreviewNode(node);
+    card.triggerProps.onPointerEnter(e);
+  };
+
   const tree = (
     <FileTree
       model={model}
       data-slot="tree"
       className="flex min-h-0 flex-1 flex-col"
       {...handlers}
+      onPointerMove={preview ? onPointerMove : undefined}
+      onPointerDownCapture={preview ? card.triggerProps.onPointerDown : undefined}
+      onPointerLeave={preview ? (e: ReactPointerEvent<HTMLElement>) => { previewRow.current = null; card.triggerProps.onPointerLeave(e); } : undefined}
       onDoubleClick={(e: MouseEvent<HTMLElement>) => action(e.nativeEvent)}
       onKeyDown={(e: KeyboardEvent<HTMLElement>) => { if (e.key === 'Enter' && !e.nativeEvent.composedPath().some((el) => el instanceof HTMLInputElement)) action(e.nativeEvent); }}
     />
@@ -458,8 +486,11 @@ export function Tree({
     <SearchField aria-label={`Search ${ariaLabel}`} placeholder="Search" className="mb-1.5 shrink-0"
       onChange={(value) => model.setSearch(value || null)} />
   ) : null;
+  const previewCard = preview && previewNode ? (
+    <HoverCard {...card.cardProps} triggerRef={previewRow} placement="end top">{preview(previewNode)}</HoverCard>
+  ) : null;
   if (!contextMenu) {
-    return <div data-slot="tree-root" {...(hostProps as HTMLAttributes<HTMLDivElement>)} className={cn('flex min-h-0 flex-col', className)}>{field}{tree}</div>;
+    return <div data-slot="tree-root" {...(hostProps as HTMLAttributes<HTMLDivElement>)} className={cn('flex min-h-0 flex-col', className)}>{field}{tree}{previewCard}</div>;
   }
   return (
     <ContextMenu
@@ -472,6 +503,7 @@ export function Tree({
       {field}
       {tree}
       {menuNode ? contextMenu(menuNode) : null}
+      {previewCard}
     </ContextMenu>
   );
 }

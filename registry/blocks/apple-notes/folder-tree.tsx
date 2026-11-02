@@ -4,11 +4,13 @@ import { title, type Folder, type Note } from './data';
 import { hasItemMenu, ItemMenuContent } from './item-menu';
 import { viewable, type NotesState, type OtherFile } from './use-notes';
 import { hasComputerFiles, NOTES_FILE } from './drag';
+import { FilePreview, FolderPreview, NotePreview } from './previews';
 
 interface Node extends TreeNode { folder?: Folder; note?: Note; other?: OtherFile; children?: Node[] }
 
 /** The location as a file tree: the library's Tree, with each item's Notes menu and in-place rename. Files drag out
-    (onto a note to embed, onto another location to move or copy); files from your computer drop into a folder. */
+    (onto a note to embed, onto another location to move or copy); files from your computer drop into a folder.
+    Resting on a row previews the note, folder or file. */
 export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: Folder; onOpen: (id: string) => void }) {
   const [opened] = useState(() => [...notes.trail.map((f) => f.id), ...(notes.selected ? [notes.selected.folder] : [])]);
   const nodes = useMemo(() => {
@@ -51,6 +53,11 @@ export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: F
     contextMenu={(node) => {
       const n = node as Node;
       return !n.other && hasItemMenu(notes, n.id) ? <ItemMenuContent notes={notes} id={n.id} label={n.name} place="tree" /> : null;
+    }}
+    preview={(node) => {
+      const n = node as Node;
+      return n.note ? <NotePreview notes={notes} note={n.note} /> : n.folder ? <FolderPreview notes={notes} folder={n.folder} />
+        : n.other ? <FilePreview file={n.other} /> : null;
     }}
     renamingId={renaming}
     onRename={(node, name) => { void notes.files.run(() => notes.rename(node.id, name)); }}

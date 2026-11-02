@@ -1,12 +1,14 @@
 /* The sidebar: iOS / iPadOS Settings (large title, search, account card, inset groups) on phones and tablets —
    on a phone it is the root list and every row pushes — and macOS System Settings (window controls, compact
-   search, dense rows with small icons) on desktop. Rows select panes in the SplitView. */
+   search, dense rows with small icons) on desktop. Rows select panes in the SplitView. Resting on a pane's row
+   previews it (what it's for, what it holds), and on the account's avatar shows the account's contact card. */
 import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/ui/avatar';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { SearchField } from '@/components/ui/search-field';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
-import { ACCOUNT, GROUPS, getPane, type Row, type Values } from './data';
+import { ACCOUNT, GROUPS, getPane, type Pane, type Row, type Values } from './data';
 import { RowView, SearchResults, Tile } from './rows';
 import { useSettings } from './state';
 
@@ -17,32 +19,66 @@ function Disclosure() {
   return useSplitView().collapsed ? <Icon name="chevron-right" size={15} weight="bold" className="text-tertiary-foreground" /> : null;
 }
 
-/** One pane in the iOS sidebar: tile, title, value; blue fill when selected. */
+/** A row's name in a pane, for the preview's "what's inside". */
+const rowName = (r: Row) => ('title' in r && r.title) || (r.t === 'link' ? getPane(r.to)?.title : r.t === 'device' || r.t === 'network' ? r.name : undefined);
+
+/** A pane at a glance: its tile and current value, what it's for, and the first few settings in it. */
+function PanePreview({ pane: p, value }: { pane: Pane; value?: string }) {
+  const inside = [...new Set(p.sections.flatMap((sec) => sec.rows.map(rowName)).filter(Boolean))].slice(0, 4);
+  return (
+    <>
+      <HoverCardHeader media={p.glyph && p.color ? <Tile glyph={p.glyph} color={p.color} size={36} /> : undefined} title={p.title} subtitle={value || undefined} />
+      {p.blurb ? <p className="m-0 mt-2.5 text-footnote leading-snug text-foreground">{p.blurb}</p> : null}
+      {inside.length ? <div className="mt-2.5 text-caption text-muted-foreground">{inside.join(' · ')}</div> : null}
+    </>
+  );
+}
+
+/** One pane in the iOS sidebar: tile, title, value; blue fill when selected. It sits in its hover card's wrapper,
+ *  so the wrapper draws the separator (`last:` must see the rows). */
 function IosItem({ row }: { row: Extract<Row, { t: 'link' }> }) {
   const s = useSettings();
   const p = getPane(row.to);
   if (!p?.glyph || !p.color) return null;
+  const value = valueOf(row, s.values);
   return (
-    <SplitViewItem id={row.to}
-      className="min-h-row gap-3 rounded-ctl px-4 text-body after:absolute after:right-0 after:bottom-0 after:left-[57px] after:h-px after:bg-border last:after:hidden data-selected:after:hidden">
-      <Tile glyph={p.glyph} color={p.color} />
-      <span className="min-w-0 flex-1 truncate">{p.title}</span>
-      <span className="max-w-[45%] truncate text-callout text-muted-foreground group-data-selected/item:text-white/80">{valueOf(row, s.values)}</span>
-      <Disclosure />
-    </SplitViewItem>
+    <HoverCardTrigger className="relative flex w-full after:absolute after:right-0 after:bottom-0 after:left-[57px] after:h-px after:bg-border last:after:hidden has-data-selected:after:hidden">
+      <SplitViewItem id={row.to} className="min-h-row gap-3 rounded-ctl px-4 text-body">
+        <Tile glyph={p.glyph} color={p.color} />
+        <span className="min-w-0 flex-1 truncate">{p.title}</span>
+        <span className="max-w-[45%] truncate text-callout text-muted-foreground group-data-selected/item:text-white/80">{value}</span>
+        <Disclosure />
+      </SplitViewItem>
+      <HoverCard placement="end top"><PanePreview pane={p} value={value} /></HoverCard>
+    </HoverCardTrigger>
   );
 }
 
 function MacItem({ row }: { row: Extract<Row, { t: 'link' }> }) {
+  const s = useSettings();
   const p = getPane(row.to);
   if (!p?.glyph || !p.color) return null;
   return (
-    <SplitViewItem id={row.to} className="min-h-[30px] gap-2 rounded-[7px] px-2 py-[3px] text-footnote">
-      <Tile glyph={p.glyph} color={p.color} size={20} />
-      <span className="min-w-0 flex-1 truncate">{p.title}</span>
-    </SplitViewItem>
+    <HoverCardTrigger className="flex w-full">
+      <SplitViewItem id={row.to} className="min-h-[30px] gap-2 rounded-[7px] px-2 py-[3px] text-footnote">
+        <Tile glyph={p.glyph} color={p.color} size={20} />
+        <span className="min-w-0 flex-1 truncate">{p.title}</span>
+      </SplitViewItem>
+      <HoverCard placement="end top"><PanePreview pane={p} value={valueOf(row, s.values)} /></HoverCard>
+    </HoverCardTrigger>
   );
 }
+
+/** The account's contact card, on its avatar. */
+const ACCOUNT_CARD = (
+  <>
+    <HoverCardHeader media={<Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={44} />} title={`${ACCOUNT.first} ${ACCOUNT.last}`} subtitle="Apple Account" />
+    <div className="mt-3 flex flex-col gap-1 text-footnote text-foreground">
+      <span className="flex items-center gap-2"><Icon name="envelope" size={14} className="text-muted-foreground" />{ACCOUNT.email}</span>
+      <span className="flex items-center gap-2"><Icon name="phone-fill" size={14} className="text-muted-foreground" />{ACCOUNT.phone}</span>
+    </div>
+  </>
+);
 
 /** macOS window controls (close, minimize, zoom): fixed colors. */
 const TRAFFIC_LIGHTS = ['#FF5F57', '#FEBC2E', '#28C840'];
@@ -69,7 +105,7 @@ export function SettingsSidebar() {
           {s.query ? <div className="pt-1">{results}</div> : (
             <>
               <SplitViewItem id="account" className="min-h-row gap-2.5 rounded-[7px] px-2 py-1.5">
-                <Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={32} />
+                <Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={32} card={ACCOUNT_CARD} />
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block truncate text-footnote font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>
                   <span className="block truncate text-caption2 text-muted-foreground group-data-selected/item:text-white/80">Apple Account</span>
@@ -94,7 +130,7 @@ export function SettingsSidebar() {
             <>
               <div className="mb-5 overflow-hidden rounded-panel bg-card">
                 <SplitViewItem id="account" className="min-h-[76px] gap-3.5 rounded-panel px-3 py-2.5">
-                  <Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={56} />
+                  <Avatar c={{ f: ACCOUNT.first, l: ACCOUNT.last }} size={56} card={ACCOUNT_CARD} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-title leading-tight font-semibold">{ACCOUNT.first} {ACCOUNT.last}</span>
                     <span className="mt-0.5 block truncate text-detail text-muted-foreground group-data-selected/item:text-white/80">Apple Account, iCloud, and more</span>

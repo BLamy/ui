@@ -10,6 +10,7 @@ import { ReplayPreview, formatReplayTime, type ReplayPreviewHandle } from '@/com
 import { Icon } from '@/lib/icon';
 import { useDirection } from '@/lib/motion';
 import { isOpen } from './agent';
+import { BugPreview, RunPreview } from './cards';
 import { EXPLORATIONS, PLAYWRIGHT_TESTS, relativeTime, type Bug, type Project } from './data';
 import { BarButton, Panel, SeverityBadge, SeverityBar, StatTile, Pressable } from './parts';
 import { countBySeverity } from './projects-home';
@@ -53,7 +54,7 @@ export function Overview({ project: p }: { project: Project }) {
 
       <div className="grid gap-5 @5xl:grid-cols-[1.25fr_1fr]!">
         <Panel title="Latest findings" icon="sparkle"
-          trailing={latest ? <Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px] text-muted-foreground" onPress={() => qa.open({ kind: 'run', id: latest.id })}>Run #{latest.id.slice(4)}<Icon name="chevron-right" size={12} sw={2.4} /></Button> : null}
+          trailing={latest ? <RunPreview runId={latest.id} placement="bottom end"><Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px] text-muted-foreground" onPress={() => qa.open({ kind: 'run', id: latest.id })}>Run #{latest.id.slice(4)}<Icon name="chevron-right" size={12} sw={2.4} /></Button></RunPreview> : null}
           bodyClassName="px-4 py-3.5 text-[13.5px] [&_p]:my-2 [&_ul]:my-2">
           {latest?.findings ? <MarkdownView markdown={latest.findings} /> : (
             <p className="m-0 text-muted-foreground">{latest ? `${latest.journeys.length} journeys · ${latest.newBugs} new bugs.` : 'Run the project to see findings here.'}</p>
@@ -75,14 +76,16 @@ function BugLine({ bug: b }: { bug: Bug }) {
   const qa = useLoopQA();
   return (
     <li>
-      <Pressable onPress={() => qa.open({ kind: 'bug', id: b.id })}
-        className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-ctl px-2.5 py-2 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.99]">
-        <SeverityBadge severity={b.severity} className="w-[66px] justify-center" />
-        <span className="min-w-0 flex-1">
-          <span className="line-clamp-1 text-footnote font-medium">{b.title}</span>
-          <span className="block text-[11.5px] text-muted-foreground"><span className="font-mono">{b.id}</span> · {relativeTime(b.discovered)}</span>
-        </span>
-      </Pressable>
+      <BugPreview bug={b} className="flex w-full" placement="left top">
+        <Pressable onPress={() => qa.open({ kind: 'bug', id: b.id })}
+          className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-ctl px-2.5 py-2 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.99]">
+          <SeverityBadge severity={b.severity} className="w-[66px] justify-center" />
+          <span className="min-w-0 flex-1">
+            <span className="line-clamp-1 text-footnote font-medium">{b.title}</span>
+            <span className="block text-[11.5px] text-muted-foreground"><span className="font-mono">{b.id}</span> · {relativeTime(b.discovered)}</span>
+          </span>
+        </Pressable>
+      </BugPreview>
     </li>
   );
 }

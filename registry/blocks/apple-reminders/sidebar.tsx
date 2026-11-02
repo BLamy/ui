@@ -1,15 +1,17 @@
 /* The lists column: search, the smart-list tiles (Today, Scheduled, All, Flagged, Completed) with live counts,
    My Lists, then one section per place Markdown task lists come from — In This Browser and each folder you add
-   (both shared with Apple Notes). On a phone it's the root screen and search results show right here. */
+   (both shared with Apple Notes). On a phone it's the root screen and search results show right here. Resting on
+   a list previews what's next in it (ListPreview). */
 import { ContextMenu, ContextMenuContent } from '@/components/ui/context-menu';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { SearchField } from '@/components/ui/search-field';
 import { SplitViewContent, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { SMART, SYSTEM, TODAY_NUMBER, type RList, type Smart } from './data';
 import type { TaskRoot } from './use-task-files';
-import { ListIcon, ReminderRow } from './reminder-row';
+import { ListIcon, ListPreview, ReminderRow } from './reminder-row';
 import { useReminders } from './store';
 import { buildView, countFor } from './views';
 
@@ -43,18 +45,22 @@ function SmartTile({ t }: { t: Smart }) {
   );
 }
 
+/** A list row. It sits in its hover card's wrapper, so the wrapper draws the separator (`last:` must see the rows). */
 function ListItem({ l, collapsed }: { l: RList; collapsed: boolean }) {
   const { items } = useReminders();
   return (
-    <SplitViewItem id={l.id} tint={l.color}
-      className="min-h-[50px] gap-3 rounded-ctl px-3 text-body after:absolute after:right-0 after:bottom-0 after:left-[55px] after:h-px after:bg-border last:after:hidden data-selected:after:hidden">
-      <ListIcon glyph={l.glyph} color={l.color} size={30} className="transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--list-color)" />
-      <span className="min-w-0 flex-1 truncate" title={l.file?.path}>{l.name}
-        {l.file ? <span className="block truncate text-footnote text-muted-foreground group-data-selected/item:text-white/80">{l.file.path.split('/').slice(1).join('/')}</span> : null}
-      </span>
-      <span className="text-muted-foreground tabular-nums group-data-selected/item:text-white/85">{countFor(l.id, items)}</span>
-      {collapsed ? <Icon name="chevron-right" size={14} weight="bold" className="text-tertiary-foreground" /> : null}
-    </SplitViewItem>
+    <HoverCardTrigger className="relative flex w-full after:absolute after:right-0 after:bottom-0 after:left-[55px] after:h-px after:bg-border last:after:hidden has-data-selected:after:hidden">
+      <SplitViewItem id={l.id} tint={l.color}
+        className="min-h-[50px] gap-3 rounded-ctl px-3 text-body">
+        <ListIcon glyph={l.glyph} color={l.color} size={30} className="transition-colors duration-150 group-data-selected/item:bg-white group-data-selected/item:text-(--list-color)" />
+        <span className="min-w-0 flex-1 truncate" title={l.file?.path}>{l.name}
+          {l.file ? <span className="block truncate text-footnote text-muted-foreground group-data-selected/item:text-white/80">{l.file.path.split('/').slice(1).join('/')}</span> : null}
+        </span>
+        <span className="text-muted-foreground tabular-nums group-data-selected/item:text-white/85">{countFor(l.id, items)}</span>
+        {collapsed ? <Icon name="chevron-right" size={14} weight="bold" className="text-tertiary-foreground" /> : null}
+      </SplitViewItem>
+      <HoverCard placement="end top"><ListPreview list={l} items={items} /></HoverCard>
+    </HoverCardTrigger>
   );
 }
 

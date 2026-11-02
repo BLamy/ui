@@ -72,6 +72,7 @@ A `header` passed to `BLList` sticks to the top of the list itself and is measur
 - **Edit mode** slides in radio checks.
 - **Pressable rows** (`onPress`) are real `<button>`s with arrow-key navigation and visible focus rings. The button sits beneath the row's content, so a control in the row is its sibling — never nested inside it.
 - **Rows without `onPress`** are plain containers. A `Switch` or `Slider` in `accessory` (or `trailing`) is named by the row title, and pressing the row's label flips its switch (`labelToggles={false}` opts out).
+- **Previews**: `preview` is a [HoverCard](https://blamy.github.io/ui/#/hover-card)'s content about what the row stands for, opened beside the row while the pointer rests on it or keyboard focus is in it (never by touch).
 
 ## Swipe actions
 

@@ -3,6 +3,7 @@ import { Children, cloneElement, isValidElement, useState, type ComponentProps, 
 import { Button as AriaButton } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
 import { cn } from '@/lib/utils';
 
 /* ══ Avatar — a person, a bot or a workspace, as initials, an image or a glyph ══
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils';
    <Avatar name="Ada Lovelace" color="royalblue" status="online" />          // a name, an accent, a presence dot
    <Avatar name="Stitch" shape="square" icon={<Icon name="sparkle" />} />  // a bot: rounded square, a glyph for initials
    <Avatar name="Ada" src="/ada.png" />                                    // an image (initials while it loads or if it fails)
+   <Avatar name="Ada" card={<HoverCardHeader … />} />                       // a hover card about them
 
    <AvatarGroup max={5}>                                                  // overlapped; press for everyone's names
      <Avatar name="Ada" /> <Avatar name="Miles" /> …
@@ -65,17 +67,28 @@ export interface AvatarProps extends Omit<ComponentProps<'span'>, 'children'>, V
   status?: AvatarStatus;
   /** Width and height in px (default 40). */
   size?: number;
+  /** A HoverCard's content about them (HoverCardHeader and a line or two), shown while the pointer rests on the
+   *  avatar or keyboard focus lands on it. */
+  card?: ReactNode;
 }
 
-export function Avatar({ c, name, initials, color, src, icon, status, size = 40, shape, className, style, ...props }: AvatarProps) {
+export function Avatar({ c, name, initials, color, src, icon, status, size = 40, shape, card, className, style, ref, ...props }: AvatarProps) {
   const [failed, setFailed] = useState<string | null>(null);
+  const hover = useHoverCard<HTMLSpanElement>({ isDisabled: !card });
+  const { ref: cardRef, ...cardHandlers } = hover.triggerProps;
   // A contact's two initials stay two text nodes, as they always were: one node would kern the pair differently.
   const label = initials ?? (c ? <>{c.f[0]}{c.l[0]}</> : initialsOf(name ?? ''));
   const h = hue(c ? c.f + c.l : (name ?? ''));
   const image = src && failed !== src ? src : undefined;
-  return (
+  const el = (
     <span
       data-slot="avatar"
+      ref={(node) => {
+        cardRef.current = node;
+        if (typeof ref === 'function') ref(node);
+        else if (ref) ref.current = node;
+      }}
+      {...(card ? cardHandlers : null)}
       role={props['aria-label'] ? 'img' : undefined}
       className={cn(avatarVariants({ shape }), (status || image) && 'relative', className)}
       // Size and the gradient are computed per render and handed to the classes as variables.
@@ -99,6 +112,7 @@ export function Avatar({ c, name, initials, color, src, icon, status, size = 40,
       )}
     </span>
   );
+  return card ? <>{el}<HoverCard {...hover.cardProps}>{card}</HoverCard></> : el;
 }
 
 /* ══ AvatarGroup ══ */

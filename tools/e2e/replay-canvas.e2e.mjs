@@ -57,6 +57,29 @@ test('hides the arrows but keeps their dots; a dot draws its arrow', async ({ pa
   await expect(arrows).toHaveCount(n);
 });
 
+test('previews a frame and a recording in hover cards', async ({ page }) => {
+  const frame = page.locator('[data-rc-frame]').first();
+  await frame.hover();
+  const card = page.locator('[data-slot=hover-card]');
+  await expect(card).toContainText(/Seen \d+× in \d+ recording/);
+  await page.mouse.move(5, 5);
+  await expect(card).toHaveCount(0);
+  await page.locator('[data-slot=replay-canvas-sidebar] [data-slot=hover-card-trigger]').first().hover();
+  await expect(card).toContainText(/\d+ pages? · \d+ layers? · \d+ segues?/);
+});
+
+test('the minimap outlines the view and moves it when pressed', async ({ page }) => {
+  const map = page.locator('[data-slot=canvas-minimap]');
+  await expect(map.locator('rect')).toHaveCount(19); // 18 frames and the view
+  const board = page.locator('[data-slot=canvas-board]');
+  const before = await board.evaluate((el) => el.style.transform);
+  const box = await map.boundingBox();
+  await page.mouse.click(box.x + 8, box.y + 8);
+  await expect.poll(() => board.evaluate((el) => el.style.transform)).not.toBe(before);
+  await page.getByRole('button', { name: 'Hide minimap' }).click();
+  await expect(map).toHaveCount(0);
+});
+
 test('folds a recording added from a file into the same map', async ({ page }) => {
   // The first sample recording again, as a dropped file: everything it shows is already on the map, so the map
   // doesn't grow, but what it confirms is counted.

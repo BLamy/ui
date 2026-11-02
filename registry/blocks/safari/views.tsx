@@ -2,6 +2,7 @@
    an error page. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { formatBytes } from '@/lib/format-bytes';
 import { Icon } from '@/lib/icon';
 import type { TailscalePeer, TailscaleSnapshot } from '@/lib/tailscale';
@@ -220,6 +221,40 @@ const labelOf = (host: string) => {
   return first.charAt(0).toUpperCase() + first.slice(1);
 };
 
+/** A device's hover card, as Safari's Favorites preview a bookmark: its MagicDNS name, its tailnet addresses, whether it is
+    online, and whether it carries public sites (the exit node in use) or could. */
+export function PeerCard({ peer, exitNodeId }: { peer: TailscalePeer; exitNodeId: string | null }) {
+  const host = peerHost(peer);
+  return (
+    <div className="flex flex-col gap-2.5">
+      <HoverCardHeader
+        media={<span aria-hidden="true" className="grid size-10 place-items-center rounded-card bg-secondary text-headline font-semibold">{initialOf(host)}</span>}
+        title={labelOf(host)}
+        subtitle={host}
+      />
+      <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-footnote">
+        <dt className="text-muted-foreground">Status</dt>
+        <dd className="m-0 flex items-center gap-1.5">
+          <span aria-hidden="true" className={cn('size-1.5 rounded-full', peer.online ? 'bg-success' : 'bg-muted-foreground/50')} />
+          {peer.online ? 'Online' : 'Offline'}
+        </dd>
+        {peer.addresses.length ? (
+          <>
+            <dt className="text-muted-foreground">Addresses</dt>
+            <dd className="m-0 min-w-0 font-mono break-all select-text">{peer.addresses.join(', ')}</dd>
+          </>
+        ) : null}
+        {peer.exitNode ? (
+          <>
+            <dt className="text-muted-foreground">Exit node</dt>
+            <dd className="m-0">{peer.id && peer.id === exitNodeId ? 'In use: public sites go through it' : 'Offered; choose it in the shield menu'}</dd>
+          </>
+        ) : null}
+      </dl>
+    </div>
+  );
+}
+
 export function StartPage({ snapshot, history, totals, onOpen }: {
   snapshot: TailscaleSnapshot;
   history: Entry[];
@@ -239,11 +274,14 @@ export function StartPage({ snapshot, history, totals, onOpen }: {
                 const host = peerHost(p);
                 return (
                   <li key={host} className="contents">
-                    <Button variant="ghost" onPress={() => onOpen({ url: `http://${host}/` })} aria-label={`${labelOf(host)}, ${host}`}
-                      className="h-auto flex-col gap-1.5 rounded-card p-2 text-foreground">
-                      <span className="grid size-14 place-items-center rounded-card bg-secondary text-title font-semibold">{initialOf(host)}</span>
-                      <span className="max-w-full truncate text-footnote">{labelOf(host)}</span>
-                    </Button>
+                    <HoverCardTrigger className="flex w-full">
+                      <Button variant="ghost" onPress={() => onOpen({ url: `http://${host}/` })} aria-label={`${labelOf(host)}, ${host}`}
+                        className="h-auto w-full flex-col gap-1.5 rounded-card p-2 text-foreground">
+                        <span className="grid size-14 place-items-center rounded-card bg-secondary text-title font-semibold">{initialOf(host)}</span>
+                        <span className="max-w-full truncate text-footnote">{labelOf(host)}</span>
+                      </Button>
+                      <HoverCard><PeerCard peer={p} exitNodeId={snapshot.exitNodeId} /></HoverCard>
+                    </HoverCardTrigger>
                   </li>
                 );
               })}
@@ -278,7 +316,7 @@ export function StartPage({ snapshot, history, totals, onOpen }: {
           <p className="m-0 text-footnote text-foreground/70">
             Everything Safari loaded in this window went through {snapshot.selfName ? <strong className="font-semibold text-foreground">{snapshot.selfName.replace(/\.$/, '')}</strong> : 'your tailnet'}. Nothing was requested outside it.{' '}
             {snapshot.exitNodeId
-              ? <>Public sites go through the exit node <strong className="font-semibold text-foreground">{snapshot.peers.find((p) => p.id === snapshot.exitNodeId)?.name.split('.')[0] ?? snapshot.exitNodeId}</strong>.</>
+              ? <>Public sites go through the exit node <ExitNodeName snapshot={snapshot} />.</>
               : 'No exit node is chosen, so only your devices can be reached; choose one in the shield menu to browse the public internet.'}
           </p>
           <dl className="m-0 grid grid-cols-3 gap-3 text-center">
@@ -293,5 +331,18 @@ export function StartPage({ snapshot, history, totals, onOpen }: {
         </section>
       </div>
     </div>
+  );
+}
+
+/** The exit node named in the report, with its device card on hover (the shield menu shows and changes it). */
+function ExitNodeName({ snapshot }: { snapshot: TailscaleSnapshot }) {
+  const peer = snapshot.peers.find((p) => p.id === snapshot.exitNodeId);
+  const name = <strong className="font-semibold text-foreground">{peer?.name.split('.')[0] ?? snapshot.exitNodeId}</strong>;
+  if (!peer) return name;
+  return (
+    <HoverCardTrigger className="inline">
+      <span className="cursor-default underline decoration-foreground/30 decoration-dotted underline-offset-2">{name}</span>
+      <HoverCard placement="top"><PeerCard peer={peer} exitNodeId={snapshot.exitNodeId} /></HoverCard>
+    </HoverCardTrigger>
   );
 }

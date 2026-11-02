@@ -1,0 +1,17 @@
+{
+  "name": "hover-card",
+  "title": "Hover Card",
+  "description": "A card that previews what a trigger points at (a person, link, file or commit) while the pointer rests on it or keyboard focus lands on it; the pointer can move into it, one is open at a time, and touch never opens it.",
+  "page": "hover-card",
+  "exports": [
+    "HoverCard",
+    "HoverCardTrigger",
+    "HoverCardHeader",
+    "useHoverCard"
+  ],
+  "imports": [
+    "HoverCard",
+    "HoverCardTrigger",
+    "HoverCardHeader"
+  ]
+}

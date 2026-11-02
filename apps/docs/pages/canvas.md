@@ -76,6 +76,14 @@ A selection outline that is 1px at 100% zoom is 0.1px at 10%. These parts divide
 | `CanvasMarquee` | The rubber band of a drag-select. |
 | `CanvasGuides` | Alignment guides from `snapMove`. |
 
+### MiniMap
+
+`CanvasMiniMap` goes in `overlay` instead: the whole board in a corner, every item a mark and the view an outline. Press or drag on it to move the view there (the map holds its scale while you drag, so it doesn't rescale under the pointer). Pass the items' rects in board units; a `className` per item fills its mark (`fill-primary` for the selection). `position` picks the corner (`bottom-right` by default), `width` and `height` its size (184 × 120).
+
+```tsx
+<Canvas overlay={<CanvasMiniMap items={cards.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h }))} />}>…</Canvas>
+```
+
 `useCanvas()` returns the zoom, the canvas size and the conversions (`toBoard(e)`, `toScreen(p)`, `local(e)`) to anything rendered inside, and `update(fn)` to move the camera yourself.
 
 ## The math
@@ -121,7 +129,7 @@ Zoom is clamped to 0.1–4 (`MIN_ZOOM`, `MAX_ZOOM`) and a frame never resizes be
 | `aria-label` | "Canvas" | The region's name. |
 | `className` / `style` | — | Merged onto the canvas element. |
 
-The canvas carries `data-slot="canvas"`, the board layer `data-slot="canvas-board"`, and the overlay parts `canvas-frame`, `canvas-handle`, `canvas-marquee` and `canvas-guide`.
+The canvas carries `data-slot="canvas"`, the board layer `data-slot="canvas-board"`, and the overlay parts `canvas-frame`, `canvas-handle`, `canvas-marquee`, `canvas-guide` and `canvas-minimap` (its view outline `canvas-minimap-view`).
 
 ## Accessibility and motion
 

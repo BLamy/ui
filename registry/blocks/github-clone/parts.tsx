@@ -187,12 +187,12 @@ export function Counter({ children, className }: { children: ReactNode; classNam
   );
 }
 
-/** Overlapping avatars (assignees, contributors). */
-export function AvatarStack({ users, size = 20 }: { users: User[]; size?: number }) {
+/** Overlapping avatars (assignees, contributors); `card` gives each its hover card (cards.tsx's UserCard). */
+export function AvatarStack({ users, size = 20, card }: { users: User[]; size?: number; card?: (user: User) => ReactNode }) {
   return (
     <span className="flex">
       {users.map((u, i) => (
-        <Avatar key={u.login} c={u} src={u.avatar} size={size} className="ring-2 ring-background" style={{ marginLeft: i ? -size / 3 : 0 }} />
+        <Avatar key={u.login} c={u} src={u.avatar} size={size} card={card?.(u)} className="ring-2 ring-background" style={{ marginLeft: i ? -size / 3 : 0 }} />
       ))}
     </span>
   );

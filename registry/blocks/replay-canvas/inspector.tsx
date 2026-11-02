@@ -8,15 +8,9 @@ import { ReplayPreview, formatReplayTime } from '@/components/ui/replay-preview'
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { AppMap, Evidence, OverlayNode, PageNode, Recording, Segue, SegueKind } from './analyze';
-import { actionVerb, LAYER_ICON, type Selection } from './board';
+import { actionVerb, KIND_TEXT, LAYER_ICON, type Selection } from './board';
 import { frameKey } from './layout';
 
-const KIND_TEXT: Record<SegueKind, string> = {
-  navigate: 'Goes to another page',
-  present: 'Opens a layer over the page',
-  update: 'Changes what’s on screen',
-  dismiss: 'Closes a layer',
-};
 const KIND_DOT: Record<SegueKind, string> = {
   navigate: 'bg-primary', present: 'bg-chart-2', update: 'bg-warning', dismiss: 'bg-muted-foreground',
 };

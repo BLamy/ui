@@ -1,8 +1,10 @@
 /* Row renderers: one component per row kind, drawn as an iOS inset-grouped ListRow on phone and tablet and as a
-   dense macOS System Settings row on desktop. PaneView lays a pane's sections out; SearchResults lists hits. */
+   dense macOS System Settings row on desktop. PaneView lays a pane's sections out; SearchResults lists hits.
+   A saved password's row previews the sign-in on hover (never the password itself). */
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ListRow, ListSection, type ListRowProps } from '@/components/ui/list';
 import { Segmented } from '@/components/ui/segmented';
 import { Slider } from '@/components/ui/slider';
@@ -11,7 +13,7 @@ import { TextMorph } from '@/components/ui/text-morph';
 import { IC, Icon, type IconProps } from '@/lib/icon';
 import { type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import { MARKS, SEARCH, getPane, iconFor, notifSummary, pathTo, type Glyph, type Pane, type Row, type Section, type Values } from './data';
+import { LOGINS, MARKS, SEARCH, getPane, iconFor, notifSummary, pathTo, type Glyph, type Pane, type Row, type Section, type Values } from './data';
 import { useSettings } from './state';
 
 /* ── Icons ── */
@@ -43,15 +45,16 @@ function WifiBars({ bars }: { bars: 1 | 2 | 3 }) {
 }
 
 /* ── Row chrome ── */
-type ShellProps = Pick<ListRowProps, 'title' | 'subtitle' | 'leading' | 'trailing' | 'accessory' | 'checked' | 'onPress' | 'center'> & { last?: boolean };
+type ShellProps = Pick<ListRowProps, 'title' | 'subtitle' | 'leading' | 'trailing' | 'accessory' | 'checked' | 'onPress' | 'center' | 'preview'> & { last?: boolean };
 
 /** macOS group rows get a hairline above every row but the first, inset like the system's. */
 const macSep = 'before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-border first:before:hidden';
 
-/** iOS: a ListRow (a control accessory makes it a plain row whose label flips the switch). macOS: a dense row. */
-function Shell({ last, ...p }: ShellProps) {
+/** iOS: a ListRow (a control accessory makes it a plain row whose label flips the switch). macOS: a dense row, in
+ *  the hover card's wrapper when it has a `preview` (the wrapper then draws the hairline: `first:` sees the rows). */
+function Shell({ last, preview, ...p }: ShellProps) {
   const { layout } = useSettings();
-  if (layout !== 'desktop') return <ListRow {...p} divider={!last} />;
+  if (layout !== 'desktop') return <ListRow {...p} preview={preview} divider={!last} />;
   const { accessory: a } = p;
   const body = (
     <>
@@ -66,11 +69,14 @@ function Shell({ last, ...p }: ShellProps) {
         : a}
     </>
   );
-  const cls = cn('relative flex min-h-[38px] w-full items-center gap-2.5 px-3 py-[7px] text-left text-footnote text-foreground', macSep);
-  return p.onPress ? (
+  const cls = cn('relative flex min-h-[38px] w-full items-center gap-2.5 px-3 py-[7px] text-left text-footnote text-foreground', !preview && macSep);
+  const row = p.onPress ? (
     <button type="button" onClick={p.onPress}
       className={cn(cls, 'bl-btn cursor-pointer border-0 bg-transparent [font-family:inherit] transition-colors duration-150 hover:bg-secondary/60 active:bg-accent')}>{body}</button>
   ) : <div className={cls}>{body}</div>;
+  return preview ? (
+    <HoverCardTrigger className={cn('relative flex w-full', macSep)}>{row}<HoverCard placement="end top">{preview}</HoverCard></HoverCardTrigger>
+  ) : row;
 }
 
 /** A row that holds a control or a chart instead of a title (slider, segmented, appearance, usage). */
@@ -175,7 +181,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
       return <Plain last={last}><Meter row={row} /></Plain>;
     case 'login':
       return <Shell last={last} leading={<LetterTile site={row.site} color={row.color} size={s.layout === 'desktop' ? 22 : 32} />} title={row.site} subtitle={row.user}
-        accessory="chevron" onPress={() => s.open(row.to)} />;
+        accessory="chevron" onPress={() => s.open(row.to)} preview={<LoginPreview row={row} />} />;
     case 'secret':
       return <SecretRow title={row.title} value={row.value} last={last} />;
   }
@@ -281,6 +287,19 @@ const LetterTile = ({ site, color, size }: { site: string; color: string; size: 
   <span aria-hidden="true" className="grid shrink-0 place-items-center font-bold text-white"
     style={{ width: size, height: size, borderRadius: size * 0.235, background: color, fontSize: size * 0.48 }}>{site[0].toUpperCase()}</span>
 );
+
+/** A saved sign-in at a glance: site, account, when it last changed. The password stays in its pane. */
+function LoginPreview({ row }: { row: Extract<Row, { t: 'login' }> }) {
+  const login = LOGINS.find((l) => l.site === row.site);
+  return (
+    <>
+      <HoverCardHeader media={<LetterTile site={row.site} color={row.color} size={40} />} title={row.site} subtitle={row.user} />
+      <div className="mt-3 flex items-center gap-1.5 text-footnote text-muted-foreground">
+        <Icon name="key" size={14} />Password{login ? ` · Updated ${login.updated}` : ''}
+      </div>
+    </>
+  );
+}
 
 /** Password: dots until tapped, then the letters morph in. */
 function SecretRow({ title, value, last }: { title: string; value: string; last?: boolean }) {

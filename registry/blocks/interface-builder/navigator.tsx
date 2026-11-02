@@ -2,7 +2,8 @@
    move, → and ← open and close, typing searches, Return on a scene focuses it — and stays in step with the canvas: select a row and the canvas selects it;
    select on the canvas and the outline opens to it. Every scene lists its view tree (slots by name), its First
    Responder and Exit proxies, and the segues that leave it. Badges say what a node is wired to: @outlet, ƒ binding,
-   ↻ repeat, if, ⚡ actions, ✦ motion. */
+   ↻ repeat, if, ⚡ actions, ✦ motion. Resting on a scene, a segue or a context previews it in a hover card (previews.tsx):
+   the scene as the canvas draws it, a segue's two ends and what it hands over, a context's fields. */
 import { useMemo, useState } from 'react';
 import { PlainButton } from '@/components/ui/plain-button';
 import { Segmented } from '@/components/ui/segmented';
@@ -12,6 +13,7 @@ import { nodeLabel, specOf } from './catalog';
 import { LibraryList } from './library';
 import { type ContextDef, type Doc, type Node, type Scene, type Segue } from './model';
 import { newContext, newScene, SEGUE_KINDS } from './ops';
+import { ContextCard, SceneCard, SegueCard } from './previews';
 import { useBuilder, type Selection } from './store';
 import { SEGUE_GLYPH } from './storyboard';
 import { pathTo } from './tree';
@@ -52,6 +54,15 @@ function itemsOf(doc: Doc): Item[] {
       ],
     })),
   ];
+}
+
+/** Every row's item by id, for its hover card. */
+function byId(items: Item[], into = new Map<string, Item>()): Map<string, Item> {
+  for (const it of items) {
+    into.set(it.id, it);
+    if ('children' in it) byId(it.children, into);
+  }
+  return into;
 }
 
 /** The outline row for the store's selection. */
@@ -128,6 +139,16 @@ export function Outline({ onFocusScene }: { onFocusScene: (id: string) => void }
   const items = useMemo(() => itemsOf(b.doc), [b.doc]);
   const selected = keyOf(b.selection);
   const nodes = useMemo(() => items.map(toNode), [items]);
+  const index = useMemo(() => byId(items), [items]);
+  const preview = (row: TreeNode) => {
+    const it = index.get(row.id);
+    switch (it?.kind) {
+      case 'scene': return <SceneCard scene={it.scene} doc={b.doc} />;
+      case 'segue': return <SegueCard segue={it.segue} doc={b.doc} />;
+      case 'context': return <ContextCard ctx={it.ctx} />;
+      default: return null;
+    }
+  };
 
   // Open the outline to whatever the canvas selected (the Tree scrolls the selected row into view).
   const opened = useMemo(() => {
@@ -157,6 +178,7 @@ export function Outline({ onFocusScene }: { onFocusScene: (id: string) => void }
         selectedIds={selected ? [selected] : []}
         onSelectionChange={([k]) => { if (k != null) b.select(selectionOf(k, b.doc)); }}
         onAction={(node) => { if (node.id.startsWith('scene:')) onFocusScene(node.id.slice(6)); }}
+        preview={preview}
         className="min-h-0 flex-1 px-1.5 py-1"
       />
       <div className="flex shrink-0 items-center gap-1 border-t border-border p-1.5">

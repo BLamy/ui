@@ -386,6 +386,14 @@ export const CREDITS = { used: 3_418.5, total: 5_000, renews: 'Oct 1' };
 
 export const ME = { name: 'Brett Lamy', initials: 'BL', email: 'brett@loopqa.dev', plan: 'Team' };
 
+/** The workspace's people, by the initials projects list them under (Share dialog, member hover cards). */
+export const MEMBERS: Record<string, { name: string; email: string; role: string }> = {
+  BL: { name: ME.name, email: ME.email, role: 'Admin' },
+  MK: { name: 'Maya Kim', email: 'maya@loopqa.dev', role: 'QA lead' },
+  AR: { name: 'Ari Rosen', email: 'ari@loopqa.dev', role: 'Engineer' },
+  JS: { name: 'Jordan Shah', email: 'jordan@loopqa.dev', role: 'Product' },
+};
+
 export const TRACKERS = [
   { id: 'linear', name: 'Linear', detail: 'File bugs as Linear issues in a team', color: '#5E6AD2' },
   { id: 'github', name: 'GitHub Issues', detail: 'Open issues in a repository', color: '#24292F' },

@@ -1,14 +1,15 @@
 /* The end of the flow: a burst for the rare moment, what was bought, and the receipt — its number, the date, the card,
-   the money lines and the renewal. "Go to dashboard" hands over to the host app. */
+   the money lines and the renewal (the plan previews itself on hover). "Go to dashboard" hands over to the host app. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Celebrate } from '@/components/ui/celebrate';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { BRAND_NAMES, longDate, money, renewsOn, slugify } from './checkout';
 import { PRODUCT } from './data';
-import { BrandMark, SOFT_INK, Totals } from './parts';
+import { BrandMark, PlanCard, SOFT_INK, Totals } from './parts';
 import { useCheckoutCtx } from './use-checkout';
 
 export function ReceiptView({ onDashboard }: { onDashboard: () => void }) {
@@ -27,7 +28,12 @@ export function ReceiptView({ onDashboard }: { onDashboard: () => void }) {
 
   const rows: [string, ReactNode][] = [
     ['Date paid', longDate(r.paidAt)],
-    ['Plan', `${r.quote.plan.name} · ${r.seats} ${r.seats === 1 ? 'seat' : 'seats'} · ${r.cycle === 'annual' ? 'yearly' : 'monthly'}`],
+    ['Plan', (
+      <HoverCardTrigger>
+        <span className="truncate">{r.quote.plan.name} · {r.seats} {r.seats === 1 ? 'seat' : 'seats'} · {r.cycle === 'annual' ? 'yearly' : 'monthly'}</span>
+        <HoverCard placement="bottom end"><PlanCard plan={r.quote.plan} cycle={r.cycle} /></HoverCard>
+      </HoverCardTrigger>
+    )],
     ...(r.account.workspace ? [['Workspace', `${PRODUCT.domain}/${slugify(r.account.workspace)}`] as [string, string]] : []),
     ['Payment method', (
       <span className="inline-flex items-center gap-2">

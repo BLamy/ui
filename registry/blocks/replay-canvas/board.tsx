@@ -3,13 +3,16 @@
    segues drawn from where the click landed to what it opened, labelled with what was clicked. Click a frame or a
    segue (its line, its dot or its label) to select it; double-click a frame to zoom to it. Selecting dims everything
    that isn't connected to the selection. With arrows hidden only the dots where clicks landed stay; selecting one
-   draws its arrow. */
-import { useMemo, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { Canvas, CanvasFrame, useCanvas } from '@/components/ui/canvas';
+   draws its arrow. Resting the pointer on a frame or a segue previews it in a hover card: what it is, where it was
+   seen and how often. */
+import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { Canvas, CanvasFrame, CanvasMiniMap, useCanvas } from '@/components/ui/canvas';
+import { HoverCard, HoverCardHeader, useHoverCard } from '@/components/ui/hover-card';
+import { formatReplayTime } from '@/components/ui/replay-preview';
 import { fitCamera, unionRect, type Camera, type Rect } from '@/lib/canvas-math';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import type { AppMap, OverlayType, Recording, SegueKind } from './analyze';
+import type { AppMap, Evidence, OverlayType, Recording, SegueKind } from './analyze';
 import { ScreenFrame } from './frame';
 import { frameKey, seguePath, type Crops, type FrameBox, type SeguePath } from './layout';
 
@@ -27,6 +30,14 @@ const SEGUE_FILL: Record<SegueKind, string> = {
 };
 const SEGUE_PILL: Record<SegueKind, string> = {
   navigate: 'bg-primary text-primary-foreground', present: 'bg-chart-2 text-background', update: 'bg-warning text-background', dismiss: 'bg-secondary text-muted-foreground',
+};
+
+/** What each kind of segue does, as the inspector and hover cards say it. */
+export const KIND_TEXT: Record<SegueKind, string> = {
+  navigate: 'Goes to another page',
+  present: 'Opens a layer over the page',
+  update: 'Changes what’s on screen',
+  dismiss: 'Closes a layer',
 };
 
 /** Below this zoom only the hovered and selected segues are labelled. */
@@ -48,13 +59,30 @@ export interface BoardProps {
   showDismiss: boolean;
   /** Draw every segue's arrow; off, only their dots show, and a selected segue's arrow. */
   showArrows: boolean;
+  /** The board in a corner, the view outlined (press or drag on it to move there). */
+  showMiniMap: boolean;
   /** Which evidence each frame shows (index into its state's evidence), by frame key. */
   shown: Record<string, number>;
 }
 
-export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera, onCameraChange, selection, onSelect, showDismiss, showArrows, shown }: BoardProps) {
+export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera, onCameraChange, selection, onSelect, showDismiss, showArrows, showMiniMap, shown }: BoardProps) {
   const [hover, setHover] = useState<string | null>(null);
   const byKey = useMemo(() => new Map(boxes.map((b) => [b.key, b])), [boxes]);
+  // One hover card for the board, anchored to the frame or segue under the pointer.
+  const peek = useHoverCard();
+  const [peeked, setPeeked] = useState<Exclude<Selection, null> | null>(null);
+  const peekAt = useRef<HTMLElement | null>(null);
+  const onPeek = (e: ReactPointerEvent) => {
+    if (e.pointerType === 'touch' || e.buttons) return;
+    const el = (e.target as Element).closest?.('[data-rc-segue],[data-rc-frame]') as HTMLElement | null;
+    if (!el) { peekAt.current = null; peek.triggerProps.onPointerLeave(e); return; }
+    if (el === peekAt.current) return;
+    peekAt.current = el;
+    peek.close();
+    const segue = el.getAttribute('data-rc-segue');
+    setPeeked(segue ? { kind: 'segue', id: segue } : { kind: 'frame', key: el.getAttribute('data-rc-frame')! });
+    peek.triggerProps.onPointerEnter(e);
+  };
   const paths = useMemo(() => {
     const out: SeguePath[] = [];
     for (const s of map.segues) {
@@ -88,60 +116,132 @@ export function Board({ map, boxes, recordings, viewport, crops, onCrop, camera,
 
   const selectedBox = selection?.kind === 'frame' ? byKey.get(selection.key) : undefined;
   return (
-    <Canvas
-      aria-label="App map"
-      camera={camera}
-      onCameraChange={onCameraChange}
-      fit={fit}
-      className="size-full bg-secondary"
-      onCanvasPointerDown={(e) => onSelect(pick(e))}
-      onCanvasPointerMove={(e) => {
-        const p = pick(e);
-        const next = p?.kind === 'segue' ? p.id : null;
-        if (next !== hover) setHover(next);
-      }}
-      onCanvasDoubleClick={(e) => {
-        const p = pick(e);
-        const box = p?.kind === 'frame' ? byKey.get(p.key) : undefined;
-        const host = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        if (box) onCameraChange(fitCamera({ ...box, y: box.y - 40, h: box.h + 40 }, { width: host.width, height: host.height }, 48));
-      }}
-    >
-      {boxes.map((box, i) => {
-        const node = box.node;
-        const state = node.states.find((s) => s.id === box.state)!;
-        const ev = state.evidence[Math.min(shown[box.key] ?? 0, state.evidence.length - 1)];
-        const rec = ev && recordings.get(ev.recording);
-        const dim = related && !related.frames.has(box.key);
-        return (
-          <div key={box.key} className={cn('transition-opacity duration-200', dim && 'opacity-35')}>
-            <FrameTitle box={box} />
-            <div
-              data-rc-frame={box.key}
-              className={cn('absolute overflow-hidden', node.kind === 'page' ? 'bg-background shadow-lg' : 'drop-shadow-xl')}
-              style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
-            >
-              {rec && (
-                <ScreenFrame
-                  key={`${ev.recording}@${ev.time}`}
-                  events={rec.events}
-                  evidence={ev}
-                  viewport={viewport}
-                  crop={crops[box.key]}
-                  onCrop={(r) => onCrop(box.key, r)}
-                  order={i}
-                />
-              )}
+    // React derives pointer leave from the tree, so this box-less wrapper hears the pointer leave the board.
+    <div className="contents" onPointerLeave={(e) => { peekAt.current = null; peek.triggerProps.onPointerLeave(e); }}>
+      <Canvas
+        aria-label="App map"
+        camera={camera}
+        onCameraChange={onCameraChange}
+        fit={fit}
+        className="size-full bg-secondary"
+        overlay={showMiniMap && boxes.length ? (
+          <CanvasMiniMap items={boxes.map((b) => ({
+            id: b.key, x: b.x, y: b.y, w: b.w, h: b.h,
+            className: selection?.kind === 'frame' && selection.key === b.key ? 'fill-primary' : related?.frames.has(b.key) ? 'fill-primary/45' : undefined,
+          }))} />
+        ) : null}
+        onCanvasPointerDown={(e) => { peek.close(); onSelect(pick(e)); }}
+        onNavigationStart={peek.close}
+        onCanvasPointerMove={(e) => {
+          onPeek(e);
+          const p = pick(e);
+          const next = p?.kind === 'segue' ? p.id : null;
+          if (next !== hover) setHover(next);
+        }}
+        onCanvasDoubleClick={(e) => {
+          const p = pick(e);
+          const box = p?.kind === 'frame' ? byKey.get(p.key) : undefined;
+          const host = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          if (box) onCameraChange(fitCamera({ ...box, y: box.y - 40, h: box.h + 40 }, { width: host.width, height: host.height }, 48));
+        }}
+      >
+        {boxes.map((box, i) => {
+          const node = box.node;
+          const state = node.states.find((s) => s.id === box.state)!;
+          const ev = state.evidence[Math.min(shown[box.key] ?? 0, state.evidence.length - 1)];
+          const rec = ev && recordings.get(ev.recording);
+          const dim = related && !related.frames.has(box.key);
+          return (
+            <div key={box.key} className={cn('transition-opacity duration-200', dim && 'opacity-35')}>
+              <FrameTitle box={box} />
+              <div
+                data-rc-frame={box.key}
+                className={cn('absolute overflow-hidden', node.kind === 'page' ? 'bg-background shadow-lg' : 'drop-shadow-xl')}
+                style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
+              >
+                {rec && (
+                  <ScreenFrame
+                    key={`${ev.recording}@${ev.time}`}
+                    events={rec.events}
+                    evidence={ev}
+                    viewport={viewport}
+                    crop={crops[box.key]}
+                    onCrop={(r) => onCrop(box.key, r)}
+                    order={i}
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
-      <Segues paths={paths} related={related?.segues ?? null} hover={hover}
-        drawn={showArrows ? null : selection?.kind === 'segue' ? selection.id : ''} />
-      {selectedBox && <CanvasFrame frame={{ ...selectedBox, rot: 0 }} />}
-    </Canvas>
+          );
+        })}
+        <Segues paths={paths} related={related?.segues ?? null} hover={hover}
+          drawn={showArrows ? null : selection?.kind === 'segue' ? selection.id : ''} />
+        {selectedBox && <CanvasFrame frame={{ ...selectedBox, rot: 0 }} />}
+        {peeked && (
+          <HoverCard {...peek.cardProps} triggerRef={peekAt} placement={peeked.kind === 'frame' ? 'end top' : 'top'}>
+            <Peek target={peeked} map={map} byKey={byKey} recordings={recordings} />
+          </HoverCard>
+        )}
+      </Canvas>
+    </div>
   );
 }
+
+/** What a hover card says about a frame or a segue: what it is, how often it was seen, and in which recordings. */
+function Peek({ target, map, byKey, recordings }: {
+  target: Exclude<Selection, null>; map: AppMap; byKey: Map<string, FrameBox>; recordings: Map<string, Recording>;
+}) {
+  const nameOf = (key: string) => {
+    const box = byKey.get(key);
+    const state = box?.node.states.find((s) => s.id === box.state);
+    return box ? (state && state.id !== 'base' && state.id !== 'open' ? state.label : box.node.label) : key;
+  };
+  const seen = (evidence: Evidence[]) => {
+    const recs = [...new Set(evidence.map((e) => e.recording))];
+    const first = evidence[0];
+    return (
+      <div className="mt-3 grid gap-1 text-footnote text-muted-foreground">
+        <div>Seen {evidence.length}× in {recs.length} recording{recs.length === 1 ? '' : 's'}</div>
+        {first && <div className="truncate">First at {formatReplayTime(first.time)} in {recordings.get(first.recording)?.name ?? first.recording}</div>}
+      </div>
+    );
+  };
+  if (target.kind === 'segue') {
+    const s = map.segues.find((x) => x.id === target.id);
+    if (!s) return null;
+    return (
+      <>
+        <HoverCardHeader
+          media={<span className={cn('grid size-9 place-items-center rounded-full', SEGUE_PILL[s.kind])}><Icon name={SEGUE_ICON[s.kind]} size={16} sw={2} /></span>}
+          title={`${actionVerb(s.action)} “${s.label}”`}
+          subtitle={KIND_TEXT[s.kind]}
+        />
+        <div className="mt-3 grid gap-1 text-footnote">
+          <div className="truncate"><span className="text-muted-foreground">From </span>{nameOf(frameKey(s.from))}</div>
+          <div className="truncate"><span className="text-muted-foreground">To </span>{nameOf(frameKey(s.to))}</div>
+        </div>
+        {seen(s.evidence)}
+      </>
+    );
+  }
+  const box = byKey.get(target.key);
+  if (!box) return null;
+  const node = box.node;
+  const state = node.states.find((x) => x.id === box.state)!;
+  return (
+    <>
+      <HoverCardHeader
+        media={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><Icon name={node.kind === 'page' ? 'doc' : LAYER_ICON[node.type]} size={17} sw={1.9} /></span>}
+        title={nameOf(box.key)}
+        subtitle={node.kind === 'page' ? node.route ?? 'Page' : `${node.type} over ${nameOf(`${node.hosts[0]}/base`)}`}
+      />
+      {node.states.length > 1 && <div className="mt-3 text-footnote text-muted-foreground">{node.states.length} states · this is {node.states.indexOf(state) === 0 ? 'how it opens' : `“${state.label}”`}</div>}
+      {seen(state.evidence)}
+    </>
+  );
+}
+
+const SEGUE_ICON: Record<SegueKind, string> = { navigate: 'arrow-right', present: 'square-on-square', update: 'arrow-clockwise', dismiss: 'xmark' };
 
 /** A frame's name tag, above its top-left corner at a constant size on screen. */
 function FrameTitle({ box }: { box: FrameBox }) {

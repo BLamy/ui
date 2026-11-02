@@ -7,6 +7,7 @@ import { SyntaxHighlighting, SyntaxHighlightingContent, SyntaxHighlightingCopyBu
 import { useContainerWidth } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
+import { BugPreview } from './cards';
 import { PLAYWRIGHT_TESTS, relativeTime, type PlaywrightTest, type Project } from './data';
 import { PageActions } from './header';
 import { Empty, Pill, type PillTone, Pressable } from './parts';
@@ -50,8 +51,19 @@ export function TestsTab({ project }: { project: Project }) {
   );
 }
 
-export function TestSource({ test: t }: { test: PlaywrightTest }) {
+/** The bug a test was generated from: opens it, and previews it on hover. */
+function FromBug({ id }: { id: string }) {
   const qa = useLoopQA();
+  const bug = qa.bugs.find((b) => b.id === id);
+  const link = (
+    <Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px]" onPress={() => qa.open({ kind: 'bug', id })}>
+      From <span className="font-mono">{id}</span><Icon name="chevron-right" size={12} sw={2.4} />
+    </Button>
+  );
+  return <span className="ml-auto flex">{bug ? <BugPreview bug={bug} placement="bottom end">{link}</BugPreview> : link}</span>;
+}
+
+export function TestSource({ test: t }: { test: PlaywrightTest }) {
   const s = STATE[t.status];
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -59,9 +71,7 @@ export function TestSource({ test: t }: { test: PlaywrightTest }) {
         <Pill tone={s.tone}><Icon name={s.icon} size={11} sw={2.6} />{s.label}</Pill>
         <span className="text-[12.5px] text-muted-foreground">{t.runs} runs · {t.duration} · last {relativeTime(t.lastRun)}</span>
         {t.fromBug ? (
-          <Button size="sm" variant="ghost" className="ml-auto h-7 rounded-md px-2 text-[12.5px]" onPress={() => qa.open({ kind: 'bug', id: t.fromBug! })}>
-            From <span className="font-mono">{t.fromBug}</span><Icon name="chevron-right" size={12} sw={2.4} />
-          </Button>
+          <FromBug id={t.fromBug} />
         ) : null}
       </div>
       <SyntaxHighlighting code={t.code} language="ts" className="overflow-hidden rounded-card border border-border">

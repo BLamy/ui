@@ -2,8 +2,10 @@ import { createContext, useContext, type ComponentProps, type CSSProperties, typ
 import { Button, ToggleButton, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Avatar } from '@/components/ui/avatar';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { chatUserAvatar, useChatUsers, type ChatUser } from './chat-users';
+import { UserCard } from './user-card';
 import { cn } from '@/lib/utils';
 
 /* ══ Message — one row of a transcript, from parts ══
@@ -17,7 +19,8 @@ import { cn } from '@/lib/utils';
      </MessageBody>
      <MessageActions><MessageAction label="Add 👍">👍</MessageAction></MessageActions>
    </Message>
-   The row provides its author to the parts, so MessageAvatar / MessageAuthor need no props. Message text is Markdown. */
+   The row provides its author to the parts, so MessageAvatar / MessageAuthor need no props. Message text is Markdown.
+   The avatar, the author's name and every @mention show that user's profile (UserCard) as a hover card. */
 
 interface MessageContextValue {
   user?: ChatUser;
@@ -82,7 +85,7 @@ export function MessageAvatar({ user: userProp, size = 36, className, style }: M
   if (variant === 'continued' || !user) {
     return <span data-slot="message-avatar" aria-hidden className={cn('shrink-0', className)} style={{ width: size, ...style }} />;
   }
-  return <Avatar {...chatUserAvatar(user, size)} className={className} style={style} />;
+  return <Avatar {...chatUserAvatar(user, size)} card={<UserCard user={user} />} className={className} style={style} />;
 }
 
 export function MessageBody({ className, ...props }: ComponentProps<'div'>) {
@@ -96,10 +99,17 @@ export function MessageHeader({ className, ...props }: ComponentProps<'div'>) {
 /** The author's name in their role color; defaults to the row's user. */
 export function MessageAuthor({ className, children, ...props }: ComponentProps<'span'>) {
   const { user } = useContext(MessageContext);
-  return (
-    <span data-slot="message-author" className={cn('ck-role text-[13.5px] font-bold text-(--ck-role)', className)} {...props}>
+  const author = (
+    <span data-slot="message-author" className={cn('ck-role text-[13.5px] font-bold text-(--ck-role)', user && 'cursor-default hover:underline', className)} {...props}>
       {children ?? user?.name}
     </span>
+  );
+  if (!user) return author;
+  return (
+    <HoverCardTrigger>
+      {author}
+      <HoverCard placement="right top" offset={10}><UserCard user={user} /></HoverCard>
+    </HoverCardTrigger>
   );
 }
 
@@ -130,9 +140,12 @@ export function MessageContent({ className, children, ...props }: ComponentProps
           renderReference={(ref) => {
             const user = ref.kind === 'mention' ? users[ref.id] : undefined;
             return user ? (
-              <span data-slot="mention" className="rounded-sm bg-primary/12 dark:bg-primary/16 px-[3px] py-0 font-semibold text-link">
-                @{user.name}
-              </span>
+              <HoverCardTrigger>
+                <span data-slot="mention" className="cursor-default rounded-sm bg-primary/12 dark:bg-primary/16 px-[3px] py-0 font-semibold text-link hover:bg-primary/20">
+                  @{user.name}
+                </span>
+                <HoverCard placement="top start"><UserCard user={user} /></HoverCard>
+              </HoverCardTrigger>
             ) : null;
           }}
         />

@@ -5,10 +5,12 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type FocusEvent as ReactFocusEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
+import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
 import { cn } from '@/lib/utils';
 import { Button } from 'react-aria-components';
 import { MAP_ICONS, type MapIconName } from './map-icons';
@@ -58,6 +60,12 @@ export interface TileMapProps {
   pins?: MapPin[];
   route?: MapRoute | null;
   onPinClick?: (pin: MapPin) => void;
+  /**
+   * A hover card about a pin (the place it marks), opened while the pointer rests on its marker or label or keyboard
+   * focus lands on it, as a maps app previews a place before you pick it. Return nothing for pins without one. Any
+   * pan, pinch or wheel closes it: the pins move out from under it.
+   */
+  pinPreview?: (pin: MapPin) => ReactNode;
   /** Fired on a tap that did not pan the map or hit a pin. */
   onMapClick?: () => void;
   tileUrl?: TileUrlFn;
@@ -199,6 +207,7 @@ export function TileMap({
   pins = [],
   route,
   onPinClick,
+  pinPreview,
   onMapClick,
   tileUrl = esriDarkGrayTiles,
   attribution = ESRI_ATTRIBUTION,
@@ -215,6 +224,12 @@ export function TileMap({
   style,
 }: TileMapProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  // One hover card for every pin: it follows the pin under the pointer (or focus), anchored to that pin's marker.
+  const card = useHoverCard({ isDisabled: !pinPreview });
+  const [cardPinId, setCardPinId] = useState<string | null>(null);
+  const cardAnchor = useRef<HTMLElement | null>(null);
+  const closeCard = useRef(card.close);
+  closeCard.current = card.close;
   const [size, setSize] = useState<Size>({ width: 0, height: 0 });
   const [cam, setCam] = useState<MapView>(() => {
     if (!isBoundsTarget(view)) return view;
@@ -331,6 +346,7 @@ export function TileMap({
     if (!root || !interactive) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      closeCard.current();
       cancelAnimationFrame(animRef.current);
       const rect = root.getBoundingClientRect();
       const speed = e.deltaMode === 1 ? 0.06 : e.ctrlKey ? 0.01 : 0.0025;
@@ -353,6 +369,7 @@ export function TileMap({
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!interactive || e.button !== 0) return;
     if ((e.target as HTMLElement).closest('[data-map-ui]')) return;
+    card.close();
     cancelAnimationFrame(animRef.current);
     rootRef.current?.setPointerCapture(e.pointerId);
     pointers.current.set(e.pointerId, local(e));
@@ -413,6 +430,17 @@ export function TileMap({
     const q = project(p, cam.zoom);
     return { x: q.x - c.x + size.width / 2, y: q.y - c.y + size.height / 2 };
   };
+
+  /** Points the card at this pin (and its marker) before it opens. */
+  const aimCard = (pin: MapPin, button: HTMLElement) => {
+    cardAnchor.current = button.querySelector<HTMLElement>('[data-slot="tile-map-pin-marker"]') ?? button;
+    if (cardPinId !== pin.id) {
+      card.close();
+      setCardPinId(pin.id);
+    }
+  };
+  const cardPin = pinPreview && cardPinId ? pins.find((p) => p.id === cardPinId) : undefined;
+  const cardContent = cardPin ? pinPreview?.(cardPin) : null;
 
   const z = Math.round(cam.zoom);
   const ordered = [...pins].sort((a, b) => Number(a.selected ?? false) - Number(b.selected ?? false));
@@ -484,6 +512,20 @@ export function TileMap({
                   e.stopPropagation();
                   onPinClick?.(pin);
                 }}
+                {...(pinPreview ? {
+                  onPointerEnter: (e: ReactPointerEvent<HTMLButtonElement>) => {
+                    if (!pinPreview(pin)) return;
+                    aimCard(pin, e.currentTarget);
+                    card.triggerProps.onPointerEnter(e);
+                  },
+                  onPointerLeave: card.triggerProps.onPointerLeave,
+                  onFocus: (e: ReactFocusEvent<HTMLButtonElement>) => {
+                    if (!pinPreview(pin)) return;
+                    aimCard(pin, e.currentTarget);
+                    card.triggerProps.onFocus(e);
+                  },
+                  onBlur: card.triggerProps.onBlur,
+                } : null)}
               >
                 {pin.callout != null && (
                   <span className="pointer-events-auto absolute bottom-[23px] left-1/2 [transform:translateX(-50%)] rounded-ctl bg-(--tile-map-callout) px-2.5 py-[5px] text-footnote leading-[1.1] font-bold tracking-[-.01em] whitespace-nowrap text-white shadow-[0_4px_12px_rgba(0,0,0,.25)] after:absolute after:-bottom-[5px] after:left-1/2 after:size-2.5 after:[transform:translateX(-50%)_rotate(45deg)] after:rounded-[2px] after:bg-inherit">
@@ -528,6 +570,9 @@ export function TileMap({
           })}
         </div>
       )}
+      {cardContent ? (
+        <HoverCard {...card.cardProps} triggerRef={cardAnchor} placement="top" offset={10} arrow>{cardContent}</HoverCard>
+      ) : null}
       {controls && (
         <div data-slot="tile-map-controls" className="pointer-events-auto absolute top-3.5 right-3.5 z-3 flex flex-col gap-2.5" data-map-ui>
           {onLocate && (

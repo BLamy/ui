@@ -72,7 +72,7 @@ export default function DiscordClone({
     );
 
   return (
-    <ChatUsersProvider users={USERS}>
+    <ChatUsersProvider users={USERS} presence={PRESENCE}>
       <ChatShell tint={tint} appearance={appearance} className={className} style={style}>
         <ChatShellNav>
           <TabView orientation="vertical" defaultSelectedKey="blui" className="contents">

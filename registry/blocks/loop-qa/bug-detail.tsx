@@ -12,6 +12,7 @@ import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { StatusMenu } from './bugs';
+import { RunPreview } from './cards';
 import {
   BUG_CONSOLE, BUG_NETWORK, FEATURED_BUG, PROJECTS, SEVERITIES, SEVERITY_LABEL, TRACKERS, bugReport, dateTime, relativeTime,
   type Bug, type Severity,
@@ -213,7 +214,7 @@ function Details({ bug: b, project }: { bug: Bug; project: string }) {
   const rows: [string, string, ReactNode][] = [
     ['Discovered', 'clock', <>{relativeTime(b.discovered)} <span className="text-muted-foreground">· {dateTime(b.discovered)}</span></>],
     ['Type', 'sparkle', `${b.kind}`],
-    ['Source', 'checklist', <Button key="run" variant="link" size={null} className="h-auto p-0 text-footnote" onPress={() => qa.open({ kind: 'run', id: b.runId })}>Test run #{b.runId.slice(4)}</Button>],
+    ['Source', 'checklist', <RunPreview key="run" runId={b.runId}><Button variant="link" size={null} className="h-auto p-0 text-footnote" onPress={() => qa.open({ kind: 'run', id: b.runId })}>Test run #{b.runId.slice(4)}</Button></RunPreview>],
     ['Journey', 'network', b.journey],
     ['Project', 'folder-closed', project],
     ['Webhook', 'paperplane', tracker ? `Filed in ${tracker.name}` : 'Not sent'],

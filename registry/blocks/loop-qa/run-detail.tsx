@@ -11,6 +11,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
+import { BugPreview } from './cards';
 import { LIVE_PLAN, dateTime, relativeTime, type Journey, type Run } from './data';
 import { PageActions } from './header';
 import { EnvBadge, Panel, RunStatusBadge, SectionLabel, SeverityBadge, Pressable } from './parts';
@@ -136,12 +137,14 @@ function JourneyRow({ journey: j }: { journey: Journey }) {
             <ul className="m-0 list-none px-3 pb-2 pl-9">
               {bugs.map((b) => (
                 <li key={b.id}>
-                  <Pressable onPress={() => qa.open({ kind: 'bug', id: b.id })}
-                    className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-[9px] px-2 py-1.5 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.99]">
-                    <SeverityBadge severity={b.severity} />
-                    <span className="min-w-0 flex-1 truncate text-footnote">{b.title}</span>
-                    <span className="shrink-0 text-[11.5px] text-muted-foreground">{relativeTime(b.discovered)}</span>
-                  </Pressable>
+                  <BugPreview bug={b} className="flex w-full" placement="right top">
+                    <Pressable onPress={() => qa.open({ kind: 'bug', id: b.id })}
+                      className="flex w-full cursor-pointer items-center justify-start gap-2.5 rounded-[9px] px-2 py-1.5 text-left whitespace-normal data-hovered:bg-muted! data-pressed:not-aria-expanded:scale-[.99]">
+                      <SeverityBadge severity={b.severity} />
+                      <span className="min-w-0 flex-1 truncate text-footnote">{b.title}</span>
+                      <span className="shrink-0 text-[11.5px] text-muted-foreground">{relativeTime(b.discovered)}</span>
+                    </Pressable>
+                  </BugPreview>
                 </li>
               ))}
             </ul>

@@ -1,11 +1,13 @@
 /* The middle column: the selected category's items with search. Rows are SplitViewItems, so they select the
-   detail beside them — or push it on a phone. */
+   detail beside them — or push it on a phone. Resting on a sign-in previews it (AccountPreview). */
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { SearchField } from '@/components/ui/search-field';
 import { SplitViewContent, SplitViewEmpty, SplitViewHeader, SplitViewItem, SplitViewToggle } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { SEVERITY } from './data';
 import { CodeValue, SiteTile, WifiTile, type CodeClock } from './parts';
+import { AccountPreview } from './previews';
 import { categoryTitle, type Entry, type EntrySection, type Selection } from './vault';
 
 export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
@@ -48,7 +50,7 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
 
 function Row({ entry: e, category, now }: { entry: Entry; category: Selection; now: CodeClock }) {
   const a = e.account;
-  return (
+  const row = (
     <SplitViewItem id={e.id} variant="row" className="min-h-[58px] py-2">
       {e.kind === 'wifi' ? (
         <WifiTile />
@@ -69,4 +71,11 @@ function Row({ entry: e, category, now }: { entry: Entry; category: Selection; n
       ) : null}
     </SplitViewItem>
   );
+  // Wi-Fi rows already show all a network has but its password.
+  return a ? (
+    <HoverCardTrigger className="flex w-full">
+      {row}
+      <HoverCard placement="end top"><AccountPreview account={a} /></HoverCard>
+    </HoverCardTrigger>
+  ) : row;
 }

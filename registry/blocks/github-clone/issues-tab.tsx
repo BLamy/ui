@@ -3,6 +3,7 @@
    state; the search box filters what's loaded. */
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { IssueCard, UserName } from './cards';
 import { labelOf } from './github-api';
 import { Box, LabelChip, Oct, StatePill, type Layout, type Nav } from './parts';
 import { FilterMenus, ItemRow, ListToolbar, StateToggle } from './lists';
@@ -39,7 +40,8 @@ export function IssueList({ ui, nav, labelFilter }: { ui: Layout; nav: Nav; labe
               <>
                 {rows.map((i) => (
                   <ItemRow key={i.number} ui={ui} state={i.state === 'open' ? 'open' : 'closed'} title={i.title} labels={i.labels} onOpen={() => nav.openIssue(i.number)}
-                    meta={<>#{i.number} {i.state === 'open' ? 'opened' : 'was closed'} {i.when} by {i.author.login}{i.milestone ? <span className="ml-2 inline-flex items-center gap-1"><Oct name="history" size={12} />{i.milestone}</span> : null}</>}
+                    preview={<IssueCard ui={ui} issue={i} />}
+                    meta={<>#{i.number} {i.state === 'open' ? 'opened' : 'was closed'} {i.when} by <UserName user={i.author} className="font-normal text-muted-foreground" />{i.milestone ? <span className="ml-2 inline-flex items-center gap-1"><Oct name="history" size={12} />{i.milestone}</span> : null}</>}
                     assignees={i.assignees} comments={i.comments} />
                 ))}
                 {rows.length === 0 ? <div className="px-4 py-10 text-center text-muted-foreground">{list.length ? 'No results matched your search.' : `No ${state} issues.`}</div> : null}
@@ -74,7 +76,7 @@ export function IssueView({ ui, number, nav }: { ui: Layout; number: number; nav
             </h1>
             <div className="mt-3 mb-2 flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-border pb-4 text-muted-foreground">
               <StatePill state={i.state === 'open' ? 'open' : 'closed'} />
-              <span className="leading-6"><b className="font-semibold text-foreground">{i.author.login}</b> opened this issue {i.when} · {i.comments} comment{i.comments === 1 ? '' : 's'}</span>
+              <span className="leading-6"><UserName user={i.author} /> opened this issue {i.when} · {i.comments} comment{i.comments === 1 ? '' : 's'}</span>
               {i.labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} />)}
             </div>
             <Thread ui={ui} number={i.number} authorLogin={i.author.login}

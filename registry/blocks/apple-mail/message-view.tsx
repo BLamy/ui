@@ -1,14 +1,53 @@
 /* A message: sender header with avatar, subject, body with quoted text drawn as Mail's tinted quote bar,
-   attachment tiles, and the earlier messages of the conversation as cards that expand in place. */
-import { useState, type ReactNode } from 'react';
+   attachment tiles, and the earlier messages of the conversation as cards that expand in place. The sender's
+   avatar and name, and every To / Cc name, open the person's contact card on hover, as Mail's address
+   tokens do. */
+import { Fragment, useState, type ReactNode } from 'react';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Avatar } from '@/components/ui/avatar';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Chevron } from '@/components/ui/icon-swap';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { ME, initials, longTime, relativeTime, type Attachment, type Message, type Person, type ThreadEntry } from './data';
+import { MESSAGES, ME, VIPS, initials, longTime, relativeTime, type Attachment, type Message, type Person, type ThreadEntry } from './data';
 
-const names = (xs: Person[]) => xs.map((x) => (x.email === ME.email ? 'Me' : x.name)).join(', ');
+const nameOf = (x: Person) => (x.email === ME.email ? 'Me' : x.name);
+
+/** A person's contact card: who they are, their address, the VIP star, and the last thing they sent you. */
+function ContactCard({ who }: { who: Person }) {
+  const last = MESSAGES.filter((m) => m.from.email === who.email && m.box !== 'junk' && m.box !== 'trash')
+    .sort((a, b) => b.date.getTime() - a.date.getTime())[0];
+  const me = who.email === ME.email;
+  return (
+    <>
+      <HoverCardHeader media={<Avatar c={initials(who)} size={44} />} title={who.name} subtitle={who.email}
+        action={VIPS.has(who.email) ? <Icon name="star-fill" size={16} aria-label="VIP" className="text-warning" /> : null} />
+      {last && !me ? (
+        <div className="mt-3 border-t border-border pt-2.5">
+          <div className="text-caption font-semibold text-muted-foreground">Last Message · {relativeTime(last.date)}</div>
+          <div className="mt-0.5 truncate text-subhead text-foreground">{last.subject}</div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+/** A name that opens its contact card. */
+function Contact({ who, children }: { who: Person; children: ReactNode }) {
+  return (
+    <HoverCardTrigger>
+      {children}
+      <HoverCard placement="bottom start"><ContactCard who={who} /></HoverCard>
+    </HoverCardTrigger>
+  );
+}
+
+/** "Ana, Me, Wei": each name its own contact card. */
+function Names({ people }: { people: Person[] }) {
+  return people.map((x, i) => (
+    <Fragment key={x.email}>{i ? ', ' : null}<Contact who={x}><span className="truncate text-foreground">{nameOf(x)}</span></Contact></Fragment>
+  ));
+}
 
 function Body({ lines }: { lines: string[] }) {
   // Consecutive "> " lines form one quote block.
@@ -52,15 +91,17 @@ function AttachmentTile({ a }: { a: Attachment }) {
 function Header({ from, to, cc, date, trailing }: { from: Person; to: Person[]; cc?: Person[]; date: Date; trailing?: ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <Avatar c={initials(from)} size={40} />
+      <Avatar c={initials(from)} size={40} card={<ContactCard who={from} />} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <span className="min-w-0 flex-1 truncate text-callout font-semibold">{from.name}</span>
+          <span className="flex min-w-0 flex-1 text-callout font-semibold">
+            <Contact who={from}><span className="truncate">{from.name}</span></Contact>
+          </span>
           <span className="shrink-0 text-footnote text-muted-foreground">{relativeTime(date)}</span>
           {trailing}
         </div>
-        <div className="truncate text-[13.5px] text-muted-foreground">To: <span className="text-foreground">{names(to)}</span></div>
-        {cc?.length ? <div className="truncate text-[13.5px] text-muted-foreground">Cc: <span className="text-foreground">{names(cc)}</span></div> : null}
+        <div className="truncate text-[13.5px] text-muted-foreground">To: <Names people={to} /></div>
+        {cc?.length ? <div className="truncate text-[13.5px] text-muted-foreground">Cc: <Names people={cc} /></div> : null}
       </div>
     </div>
   );
@@ -75,7 +116,7 @@ function EarlierMessage({ e }: { e: ThreadEntry }) {
         <Avatar c={initials(e.from)} size={30} />
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline gap-2">
-            <span className="min-w-0 flex-1 truncate text-subhead font-semibold">{e.from.email === ME.email ? 'Me' : e.from.name}</span>
+            <span className="min-w-0 flex-1 truncate text-subhead font-semibold">{nameOf(e.from)}</span>
             <span className="shrink-0 text-footnote text-muted-foreground">{relativeTime(e.date)}</span>
           </span>
           <span className={cn('block truncate text-detail text-muted-foreground transition-opacity duration-200', open && 'opacity-0')}>{e.body[0]}</span>

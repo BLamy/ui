@@ -36,6 +36,7 @@
     "project-files.tsx",
     "item-menu.tsx",
     "dialogs.tsx",
+    "previews.tsx",
     "data.ts"
   ]
 }

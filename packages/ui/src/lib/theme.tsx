@@ -184,9 +184,13 @@ export function BLProvider({ dark: darkProp, tint, safeTop, children, className,
       )}
       style={{ ...tintVars(tint), '--bl-safe-top': safe + 'px', ...style } as CSSProperties}
     >
-      <UNSAFE_PortalProvider getContainer={getContainer}>
-        <BLSafeCtx.Provider value={safe}>{children}</BLSafeCtx.Provider>
-      </UNSAFE_PortalProvider>
+      {/* Overlays portal into this root and inherit its theme from it, so a ThemeScope outside (a docs page's light
+          scope around a dark block) must not dress them as well. */}
+      <ThemeScopeContext.Provider value={null}>
+        <UNSAFE_PortalProvider getContainer={getContainer}>
+          <BLSafeCtx.Provider value={safe}>{children}</BLSafeCtx.Provider>
+        </UNSAFE_PortalProvider>
+      </ThemeScopeContext.Provider>
       {safe ? (
         <div
           className="pointer-events-none absolute left-1/2 z-400 h-[35px] w-[118px] -translate-x-1/2 rounded-[18px] bg-black"

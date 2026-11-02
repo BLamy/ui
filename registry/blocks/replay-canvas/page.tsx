@@ -80,6 +80,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
   const [shown, setShown] = useState<Record<string, number>>({});
   const [showDismiss, setShowDismiss] = useState(false);
   const [showArrows, setShowArrows] = useState(true);
+  const [showMiniMap, setShowMiniMap] = useState(true);
   const [panes, setPanes] = useState<{ nav: boolean; inspector: boolean } | null>(null);
   const [dropping, setDropping] = useState(false);
   const canvas = useRef<HTMLDivElement>(null);
@@ -192,6 +193,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
           <div className="flex-1" />
           <ToolButton icon="arrow-up-right" label={showArrows ? 'Hide arrows (dots stay; select one to see its arrow)' : 'Show arrows'} active={showArrows} onPress={() => setShowArrows((v) => !v)} />
           <ToolButton icon="xmark-circle" label={showDismiss ? 'Hide dismissals' : 'Show dismissals'} active={showDismiss} onPress={() => setShowDismiss((v) => !v)} />
+          <ToolButton icon="grid" label={showMiniMap ? 'Hide minimap' : 'Show minimap'} active={showMiniMap} onPress={() => setShowMiniMap((v) => !v)} />
           <ToolButton icon="magnifyingglass" label="Zoom to fit (⌘0)" onPress={() => fitTo(unionRect(boxes))} />
           <ToolButton icon="sidebar" label={inspectorOpen ? 'Hide inspector' : 'Show inspector'} active={inspectorOpen} className="-scale-x-100" onPress={() => setPanes({ nav: navOpen, inspector: !inspectorOpen })} />
         </header>
@@ -224,6 +226,7 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
               onSelect={setSelection}
               showDismiss={showDismiss}
               showArrows={showArrows}
+              showMiniMap={showMiniMap}
               shown={shown}
             />
             {!enabled.length && (

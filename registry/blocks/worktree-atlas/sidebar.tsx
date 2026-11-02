@@ -2,18 +2,21 @@
    and beside it every project folds open to its worktrees: five at first, then Show more for twenty, then twenty
    more at a time. Right-click (or long-press) a worktree for its menu, Delete included. Below them, the opened
    folders (for the browser source), each one reconnectable after a restart and removable. Rescan and Add Folder
-   sit in the bar; the footer says where the data comes from and what a scan is reading. */
+   sit in the bar; the footer says where the data comes from and what a scan is reading. Resting on a worktree previews
+   it in a hover card (its folder, HEAD, pull request, size and age), so two agent branches can be told apart before
+   either is opened. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { PlainButton } from '@/components/ui/plain-button';
 import { Button } from '@/components/ui/button';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { relativeTime } from './data';
-import { BarButton, ChangesIcon, FolderIcon, branchLabel, shortPath } from './parts';
+import { formatBytes, relativeTime } from './data';
+import { BarButton, BranchIcon, ChangesIcon, FolderIcon, WorktreeChips, branchLabel, shortPath } from './parts';
 import type { Project, Worktree } from './types';
 import type { AtlasState, AtlasView } from './use-atlas';
 
@@ -51,22 +54,59 @@ function Rail({ atlas }: { atlas: AtlasState }) {
 const sortWorktrees = (ws: Worktree[]) =>
   [...ws].sort((a, b) => Number(b.primary) - Number(a.primary) || (b.modified ?? 0) - (a.modified ?? 0));
 
-function WorktreeItem({ atlas, w }: { atlas: AtlasState; w: Worktree }) {
+/** A worktree's hover card: the branch and folder, what it is (chips), and the facts the row has no room for. */
+function WorktreeCard({ p, w }: { p: Project; w: Worktree }) {
+  const facts: [string, ReactNode][] = [
+    ['HEAD', <span className="font-mono">{w.head}</span>],
+    ['Merges into', p.baseBranch],
+    ...(w.modified ? [['Changed', relativeTime(w.modified)] as [string, ReactNode]] : []),
+    ...(w.size ? [['On disk', formatBytes(w.size)] as [string, ReactNode]] : []),
+  ];
+  return (
+    <div className="flex flex-col gap-2.5">
+      <HoverCardHeader
+        media={<span className="grid size-9 place-items-center rounded-ctl bg-secondary text-muted-foreground"><BranchIcon size={18} /></span>}
+        title={<span className={cn(!w.branch && 'italic')}>{branchLabel(w)}</span>}
+        subtitle={p.name}
+      />
+      <code className="block rounded-ctl bg-secondary px-2 py-1 text-caption break-all text-muted-foreground select-text">{shortPath(w.path)}</code>
+      <span className="flex flex-wrap gap-1 empty:hidden"><WorktreeChips w={w} /></span>
+      <dl className="m-0 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-footnote">
+        {facts.map(([k, v]) => (
+          <div key={k} className="contents">
+            <dt className="text-muted-foreground">{k}</dt>
+            <dd className="m-0 min-w-0 truncate">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {w.pullRequest ? (
+        <a href={w.pullRequest.url} target="_blank" rel="noreferrer" className="text-footnote text-primary no-underline hover:underline">
+          Open pull request #{w.pullRequest.number}
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+function WorktreeItem({ atlas, p, w }: { atlas: AtlasState; p: Project; w: Worktree }) {
   const s = useSplitView();
   const show = (view: AtlasView) => { atlas.showView(view); atlas.open(w.id); s.select('sidebar', w.id); };
   return (
     <ContextMenu>
-      <SplitViewItem id={w.id} className="min-h-[34px] py-1 pl-10">
-        <span className="flex min-w-0 flex-1 items-center gap-2" title={shortPath(w.path)}>
-          <span className={cn('min-w-0 flex-1 truncate text-subhead leading-[1.3]', !w.branch && 'italic', (w.missing || w.unreachable) && 'opacity-55')}>
-            {branchLabel(w)}
+      <HoverCardTrigger className="flex w-full">
+        <SplitViewItem id={w.id} className="min-h-[34px] w-full py-1 pl-10">
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <span className={cn('min-w-0 flex-1 truncate text-subhead leading-[1.3]', !w.branch && 'italic', (w.missing || w.unreachable) && 'opacity-55')}>
+              {branchLabel(w)}
+            </span>
+            {w.locked ? <Icon name="lock" size={13} className="shrink-0 text-muted-foreground group-data-selected/item:text-primary-foreground/80" /> : null}
+            <span className="shrink-0 text-caption text-muted-foreground tabular-nums group-data-selected/item:text-primary-foreground/80">
+              {w.primary ? 'Primary' : relativeTime(w.modified)}
+            </span>
           </span>
-          {w.locked ? <Icon name="lock" size={13} className="shrink-0 text-muted-foreground group-data-selected/item:text-primary-foreground/80" /> : null}
-          <span className="shrink-0 text-caption text-muted-foreground tabular-nums group-data-selected/item:text-primary-foreground/80">
-            {w.primary ? 'Primary' : relativeTime(w.modified)}
-          </span>
-        </span>
-      </SplitViewItem>
+        </SplitViewItem>
+        <HoverCard placement="end top"><WorktreeCard p={p} w={w} /></HoverCard>
+      </HoverCardTrigger>
       <ContextMenuContent aria-label={`${branchLabel(w)} actions`} onAction={(key) => {
         if (key === 'files' || key === 'changes') show(key);
         else if (key === 'copy') void navigator.clipboard?.writeText(w.path);
@@ -104,7 +144,7 @@ function ProjectGroup({ atlas, p, where, expanded, onExpandedChange }: {
       <AnimatedHeight>
         {expanded ? (
           <div className="flex flex-col gap-px pb-1">
-            {shown.map((w) => <WorktreeItem key={w.id} atlas={atlas} w={w} />)}
+            {shown.map((w) => <WorktreeItem key={w.id} atlas={atlas} p={p} w={w} />)}
             {rows.length > limit ? (
               <PlainButton onPress={() => setLimit(nextLimit(limit))}
                 className="bl-btn flex h-8 w-full cursor-pointer items-center rounded-ctl border-0 bg-transparent pl-10 text-left [font-family:inherit] text-subhead text-muted-foreground outline-none data-[hovered]:text-foreground data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring">

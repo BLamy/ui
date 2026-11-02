@@ -1,6 +1,7 @@
 /* The sidebar: the mark, a search field that opens ⌘K, All projects, every project with its open-bug count (a
    spinner while a run is live on it), and a footer with the credit meter, notifications and the account. Tiled at
-   regular width, floating over the page on a tablet, the root of the stack on a phone. */
+   regular width, floating over the page on a tablet, the root of the stack on a phone. Resting on a project previews
+   it (cards.tsx). */
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -11,6 +12,7 @@ import { cn } from '@/lib/utils';
 import type { CSSProperties } from 'react';
 import { isOpen } from './agent';
 import { CREDITS, ME, NOTIFICATIONS, PROJECTS, relativeTime } from './data';
+import { ProjectPreview } from './cards';
 import { Avatar, BarButton, LoopMark, Pressable } from './parts';
 import { useLoopQA } from './state';
 
@@ -54,7 +56,7 @@ export function AppSidebar() {
                 key={p.id}
                 id={p.id}
                 tint={SELECTED}
-                title={<span className={cn(p.status === 'paused' && 'text-muted-foreground')}>{p.name}</span>}
+                title={<ProjectPreview project={p} className="w-full"><span className={cn('truncate', p.status === 'paused' && 'text-muted-foreground')}>{p.name}</span></ProjectPreview>}
                 icon={<span className="grid size-[18px] place-items-center"><span className="size-2.5 rounded-sm bg-(--brand)" style={{ '--brand': p.brand } as CSSProperties} /></span>}
                 badge={live.has(p.id) ? <Spinner size={13} /> : openCount(p.id) ? <NumberMorph value={openCount(p.id)} /> : null}
               />

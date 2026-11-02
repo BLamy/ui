@@ -1,8 +1,10 @@
 /* The detail column: an account (username, password, passkey, verification code, websites, notes, edit
-   mode), a security recommendation on top of its account, a deleted item, or a Wi-Fi network with its QR code. */
+   mode), a security recommendation on top of its account, a deleted item, or a Wi-Fi network with its QR code.
+   "Shared In" previews the group's members on hover. */
 import { useState, type ReactNode } from 'react';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
 import { QRSvg } from '@/components/ui/qr-svg';
 import { SplitViewContent, SplitViewEmpty, SplitViewHeader } from '@/components/ui/split-view';
@@ -14,6 +16,7 @@ import {
   Card, CodeValue, CopyButton, DetailHeader, Field, PasswordValue, RevealButton, SiteTile, WifiTile, useCode, type CodeClock,
 } from './parts';
 import type { ServiceId } from './device-auth';
+import { GroupPreview } from './previews';
 import { ServiceCard } from './sign-in';
 import type { Entry, Vault } from './vault';
 
@@ -185,7 +188,10 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
             <Card>
               <Field label="Shared In" last>
                 {group ? (
-                  <span className="inline-flex items-center gap-1.5"><Icon name="people" size={16} className="text-primary" />{group.name} · {group.members.length + 1} people</span>
+                  <HoverCardTrigger>
+                    <span className="inline-flex items-center gap-1.5"><Icon name="people" size={16} className="text-primary" />{group.name} · {group.members.length + 1} people</span>
+                    <HoverCard placement="bottom start"><GroupPreview group={group} vault={vault} /></HoverCard>
+                  </HoverCardTrigger>
                 ) : <span className="text-muted-foreground">Only You</span>}
               </Field>
             </Card>

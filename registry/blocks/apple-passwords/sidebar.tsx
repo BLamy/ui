@@ -1,13 +1,16 @@
 /* The sidebar: Passwords' category tiles (icon, count, name) over the shared groups and the developer sign-in
-   buttons. Tiles and group rows select into the SplitView's sidebar column, so on a phone they push the list. */
+   buttons. Tiles and group rows select into the SplitView's sidebar column, so on a phone they push the list.
+   A group row and the family avatars preview who's in the group. */
 import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/ui/avatar';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, useSplitView } from '@/components/ui/split-view';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { GROUPS, type CategoryId } from './data';
 import type { ServiceId } from './device-auth';
+import { GroupPreview } from './previews';
 import { ServiceButtons } from './sign-in';
 import { counts, type Vault } from './vault';
 
@@ -31,17 +34,23 @@ export function Sidebar({ vault, onOpenService }: { vault: Vault; onOpenService:
         </div>
         <SplitViewSection title="Shared Groups" className="mt-2">
           {GROUPS.map((g) => (
-            <SplitViewItem key={g.id} id={'group:' + g.id}
-              icon={<Icon name="people" size={20} />}
-              title={g.name}
-              subtitle={g.members.map((m) => m.f).join(', ')}
-              badge={vault.accounts.filter((a) => a.group === g.id).length} />
+            <HoverCardTrigger key={g.id} className="flex w-full">
+              <SplitViewItem id={'group:' + g.id}
+                icon={<Icon name="people" size={20} />}
+                title={g.name}
+                subtitle={g.members.map((m) => m.f).join(', ')}
+                badge={vault.accounts.filter((a) => a.group === g.id).length} />
+              <HoverCard placement="end top"><GroupPreview group={g} vault={vault} /></HoverCard>
+            </HoverCardTrigger>
           ))}
         </SplitViewSection>
         <ServiceButtons onOpen={onOpenService} />
         <div className="mt-5 flex items-center gap-2 px-2.5 text-[12.5px] text-muted-foreground">
           <span className="flex -space-x-1.5">
-            {GROUPS[0].members.map((m) => <Avatar key={m.f} c={m} size={20} className="ring-2 ring-sidebar" />)}
+            {GROUPS[0].members.map((m) => (
+              <Avatar key={m.f} c={m} size={20} className="ring-2 ring-sidebar"
+                card={<HoverCardHeader media={<Avatar c={m} size={40} />} title={`${m.f} ${m.l}`} subtitle={`${GROUPS[0].name} · Shared passwords`} />} />
+            ))}
           </span>
           Family members can see passwords in Family.
         </div>

@@ -12,7 +12,8 @@ import { Switch } from '@/components/ui/switch';
 import { TextField } from '@/components/ui/text-field';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { PROJECTS, TRACKERS, host } from './data';
+import { MemberPreview } from './cards';
+import { MEMBERS, PROJECTS, TRACKERS, host } from './data';
 import { Avatar } from './parts';
 import { useLoopQA, type DialogName } from './state';
 
@@ -58,8 +59,8 @@ function Share() {
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {p.members.map((m, i) => (
             <li key={m} className="flex items-center gap-2.5">
-              <Avatar initials={m} tone={i} />
-              <span className="flex-1 text-[13.5px]">{MEMBER_NAMES[m] ?? m}</span>
+              <MemberPreview initials={m} tone={i}><Avatar initials={m} tone={i} /></MemberPreview>
+              <span className="flex-1 text-[13.5px]">{MEMBERS[m]?.name ?? m}</span>
               <span className="text-caption text-muted-foreground">{i === 0 ? 'Owner' : 'Member'}</span>
             </li>
           ))}
@@ -72,8 +73,6 @@ function Share() {
     </div>
   );
 }
-
-const MEMBER_NAMES: Record<string, string> = { BL: 'Brett Lamy', MK: 'Maya Kim', AR: 'Ari Rosen', JS: 'Jordan Shah' };
 
 function Settings() {
   const qa = useLoopQA();

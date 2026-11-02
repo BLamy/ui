@@ -11,6 +11,7 @@ import { MarkdownView } from '@/components/ui/markdown-view';
 import { Progress } from '@/components/ui/progress';
 import { TabView, TabViewBar, TabViewFooter, TabViewList, TabViewPanels } from '@/components/ui/tab-view';
 import { cn } from '@/lib/utils';
+import { CommitMessage, UserAvatar, UserCard, UserName } from './cards';
 import type { Check, FileNode, PullDetail, TimelineItem, User } from './data';
 import { AvatarStack, Box, DiffStat, DiffView, FileTree, FlowPanel, LabelChip, Oct, StatePill, UnderlineTab, ghButton, githubMarkdown, Branch, PR_STATE, type OctName, type Layout, type Nav } from './parts';
 import { Loaded, useLoad, useRepo } from './repo-context';
@@ -48,7 +49,7 @@ export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }
             <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-border pb-4 text-muted-foreground">
               <StatePill state={PR_STATE[p.state]} />
               <span className="leading-6">
-                <b className="font-semibold text-foreground">{p.author.login}</b> {p.state === 'merged' ? 'merged' : 'wants to merge'} {p.commits} commit{p.commits === 1 ? '' : 's'} into <Branch>{p.base}</Branch> from <Branch>{p.head}</Branch>
+                <UserName user={p.author} /> {p.state === 'merged' ? 'merged' : 'wants to merge'} {p.commits} commit{p.commits === 1 ? '' : 's'} into <Branch>{p.base}</Branch> from <Branch>{p.head}</Branch>
               </span>
             </div>
             <TabView placement="top" selectedKey={sub} onSelectionChange={(k) => setSub(String(k))} className="mt-2">
@@ -99,13 +100,13 @@ export function Conversation({ ui, pr, checks }: { ui: Layout; pr: PullDetail; c
           <div className={side}>
             <div className={sideTitle}>Reviewers<Oct name="gear" size={14} /></div>
             {pr.reviewers.length ? pr.reviewers.map((r) => (
-              <div key={r.user.login} className="mb-1.5 flex items-center gap-2"><Avatar c={r.user} src={r.user.avatar} size={20} /><b className="flex-1 font-semibold">{r.user.login}</b>{REVIEWER_ICON[r.state]}</div>
+              <div key={r.user.login} className="mb-1.5 flex items-center gap-2"><UserAvatar user={r.user} size={20} /><span className="min-w-0 flex-1"><UserName user={r.user} /></span>{REVIEWER_ICON[r.state]}</div>
             )) : <span className="text-muted-foreground">No reviews</span>}
           </div>
           <div className={side}>
             <div className={sideTitle}>Assignees<Oct name="gear" size={14} /></div>
             {pr.assignees.length ? pr.assignees.map((u) => (
-              <div key={u.login} className="mb-1.5 flex items-center gap-2"><Avatar c={u} src={u.avatar} size={20} /><b className="font-semibold">{u.login}</b></div>
+              <div key={u.login} className="mb-1.5 flex items-center gap-2"><UserAvatar user={u} size={20} /><UserName user={u} /></div>
             )) : <span className="text-muted-foreground">No one assigned</span>}
           </div>
           <div className={side}>
@@ -131,7 +132,7 @@ export function Conversation({ ui, pr, checks }: { ui: Layout; pr: PullDetail; c
           {participants.length ? (
             <div className={side}>
               <div className={sideTitle}>Participants</div>
-              <AvatarStack users={participants} size={26} />
+              <AvatarStack users={participants} size={26} card={(u) => <UserCard user={u} />} />
             </div>
           ) : null}
         </aside>
@@ -229,11 +230,11 @@ export function CommentCard({ ui, author, when, body, role, verb = 'commented', 
 }) {
   return (
     <div className="relative flex gap-4 py-4">
-      {!ui.phone ? <Avatar c={author} src={author.avatar} size={40} /> : null}
+      {!ui.phone ? <UserAvatar user={author} size={40} /> : null}
       <div className={cn('relative z-1 min-w-0 flex-1 overflow-hidden rounded-md border bg-background', tone === 'author' ? 'border-primary/40' : 'border-border')}>
         <div className={cn('flex items-center gap-1.5 border-b px-4 py-2 text-muted-foreground', tone === 'author' ? 'border-primary/40 bg-primary/8' : 'border-border bg-muted')}>
-          {ui.phone ? <Avatar c={author} src={author.avatar} size={20} /> : null}
-          <b className="shrink-0 font-semibold whitespace-nowrap text-foreground">{author.login}</b>
+          {ui.phone ? <UserAvatar user={author} size={20} /> : null}
+          <UserName user={author} className="shrink-0 whitespace-nowrap" />
           <span className="min-w-0 truncate">{verb} {url ? <a href={url} target="_blank" rel="noreferrer" className="text-inherit no-underline hover:underline">{when}</a> : when}</span>
           <span className="flex-1" />
           {role && !ui.phone ? <span className="rounded-full border border-border px-2 text-caption leading-[18px] font-medium">{role}</span> : null}
@@ -270,7 +271,7 @@ const EVENTS: Record<string, { icon: OctName; badge?: string; text: (detail?: st
 
 export function TimelineEntry({ ui, item, authorLogin }: { ui: Layout; item: TimelineItem; authorLogin?: string }) {
   const who = (u: User) => (
-    <><Avatar c={u} src={u.avatar} size={20} className="mr-1.5 inline-grid align-[-5px]" /><b className="font-semibold text-foreground">{u.login}</b></>
+    <><UserAvatar user={u} size={20} className="mr-1.5 inline-grid align-[-5px]" /><UserName user={u} /></>
   );
   switch (item.kind) {
     case 'comment':
@@ -282,8 +283,8 @@ export function TimelineEntry({ ui, item, authorLogin }: { ui: Layout; item: Tim
           <ul className="mt-2 mb-0 list-none space-y-1.5 p-0">
             {item.commits.map((c) => (
               <li key={c.sha} className="flex items-center gap-2">
-                <Avatar c={c.author} src={c.author.avatar} size={16} />
-                <span className="min-w-0 flex-1 truncate text-foreground">{c.message}</span>
+                <UserAvatar user={c.author} size={16} />
+                <span className="flex min-w-0 flex-1"><CommitMessage commit={c} className="text-foreground" /></span>
                 <Oct name="check" size={14} className="shrink-0 text-[var(--gh-open)]" />
                 <code className="shrink-0 font-mono text-caption">{c.sha}</code>
               </li>
@@ -298,7 +299,7 @@ export function TimelineEntry({ ui, item, authorLogin }: { ui: Layout; item: Tim
         </TimelineEvent>
       );
     case 'requested':
-      return <TimelineEvent ui={ui} icon="eye">{who(item.author)} requested a review from <b className="font-semibold text-foreground">{item.reviewer.login}</b> {item.when}</TimelineEvent>;
+      return <TimelineEvent ui={ui} icon="eye">{who(item.author)} requested a review from <UserName user={item.reviewer} /> {item.when}</TimelineEvent>;
     case 'review':
       return (
         <>
@@ -408,9 +409,9 @@ export function CommitList({ ui, number }: { ui: Layout; number: number }) {
             {list.map((c) => (
               <div key={c.sha} className="flex items-center gap-3 border-t border-border px-4 py-3 first:border-t-0 hover:bg-muted">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold">{c.message}</div>
+                  <div className="flex min-w-0 font-semibold"><CommitMessage commit={c} /></div>
                   <div className="mt-1 flex items-center gap-1.5 text-caption text-muted-foreground">
-                    <Avatar c={c.author} src={c.author.avatar} size={16} /><b className="font-semibold text-foreground">{c.author.login}</b> committed {c.when}
+                    <UserAvatar user={c.author} size={16} /><UserName user={c.author} /> committed {c.when}
                     {!source.live ? <Oct name="check" size={14} className="text-[var(--gh-open)]" /> : null}
                   </div>
                 </div>

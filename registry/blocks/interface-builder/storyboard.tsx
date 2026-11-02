@@ -12,7 +12,7 @@
    - Drag the round handle on a selection (or ⌃-drag a node) to another scene for a segue, or from a container to
      embed the scene; drag a dock to move its scene; drag the entry arrow. */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { Canvas, CanvasFrame, CanvasGuides, useCanvas, type CanvasPointerInfo } from '@/components/ui/canvas';
+import { Canvas, CanvasFrame, CanvasGuides, CanvasMiniMap, useCanvas, type CanvasPointerInfo } from '@/components/ui/canvas';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSection, ContextMenuSeparator, ContextMenuShortcut } from '@/components/ui/context-menu';
 import { snapMove, toBoard, type Camera, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
 import { Icon } from '@/lib/icon';
@@ -647,6 +647,10 @@ export function Storyboard({ camera, onCameraChange, appearance, play, frameAt, 
           onCanvasDoubleClick={onDoubleClick}
           onNavigationStart={onNavigationStart}
           onCanvasKeyDown={onKeyDown}
+          // Every scene in the corner, the one being edited in the tint; press or drag to move the view there.
+          overlay={doc.scenes.length ? (
+            <CanvasMiniMap items={doc.scenes.map((s) => ({ id: s.id, ...sceneRect(s, device), className: primary?.frame === s.id ? 'fill-primary' : undefined }))} />
+          ) : null}
         >
           <PreviewContext.Provider value={b.preview}>
           <RelationLayer rels={[...relGeo.values()]} selected={selectedIds} />

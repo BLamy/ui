@@ -2,6 +2,7 @@
    menu bar, dock) and the power overlays (lock screen, sleep, restart, shut down). */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { Icon } from '@/lib/icon';
@@ -286,11 +287,17 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
             // An icon's own menu (Open or Show, Quit) with the dock's preferences under it. Right-clicking anywhere else on
             // the dock gets the preferences alone: the outer menu stands aside for an event this one has handled.
             <ContextMenu key={app.id} anchor="top" onOpenChange={onMenuOpenChange}>
-              <button type="button" aria-label={`${running ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={slot}>
-                <DockLabel dark={dark}>{app.name}</DockLabel>
-                <AppTile app={app} size={tile} />
-                {running ? <span aria-hidden="true" className={cn('absolute -bottom-1 size-1 rounded-full', dark ? 'bg-white/80' : 'bg-black/60')} /> : null}
-              </button>
+              {/* Resting on an icon trades its name label for a card about the app; never while a menu is up. */}
+              <HoverCardTrigger className="group/card" isDisabled={menuOpen}>
+                <button type="button" aria-label={`${running ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={slot}>
+                  <DockLabel dark={dark}>{app.name}</DockLabel>
+                  <AppTile app={app} size={tile} />
+                  {running ? <span aria-hidden="true" className={cn('absolute -bottom-1 size-1 rounded-full', dark ? 'bg-white/80' : 'bg-black/60')} /> : null}
+                </button>
+                <HoverCard placement="top" offset={14} className="w-64">
+                  <DockCard app={app} />
+                </HoverCard>
+              </HoverCardTrigger>
               {/* 14 = the usual 8 plus the dock's 6px padding: an icon's area starts inside it. */}
               <ContextMenuContent placement="top" offset={14} aria-label={`${app.name} dock menu`}>
                 <ContextMenuItem id="open" onAction={() => d.open(app.id)}>{running ? 'Show' : 'Open'}</ContextMenuItem>
@@ -316,13 +323,33 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
   );
 }
 
-/** The name above a Dock icon, on hover or keyboard focus. */
+/** What a Dock icon's hover card says: the app, what it is, and where its window is (in front, behind, in the Dock,
+    or not open), with the words Alfred also finds it by. */
+function DockCard({ app }: { app: DesktopApp }) {
+  const d = useDesktop();
+  const win = d.windows.find((w) => w.app === app.id);
+  const where = !win ? 'Not open' : win.minimized ? 'Minimized to the Dock' : d.front === app.id ? 'Open, in front' : 'Open, behind other windows';
+  return (
+    <div className="flex flex-col gap-2">
+      <HoverCardHeader media={<AppTile app={app} size={40} />} title={app.name} subtitle={(
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className={cn('size-1.5 rounded-full', win ? 'bg-primary' : 'bg-muted-foreground/40')} />
+          {where}
+        </span>
+      )} />
+      <p className="m-0 text-foreground">{app.description}.</p>
+      {app.keywords.length ? <p className="m-0 text-footnote text-muted-foreground">Alfred also finds it by {app.keywords.slice(0, 4).join(', ')}.</p> : null}
+    </div>
+  );
+}
+
+/** The name above a Dock icon, on hover or keyboard focus; its hover card takes its place once that opens. */
 function DockLabel({ dark, children }: { dark: boolean; children: ReactNode }) {
   return (
     <span
       aria-hidden="true"
       className={cn(
-        'pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 rounded-md px-2 py-1 text-caption font-medium whitespace-nowrap opacity-0 backdrop-blur-xl transition-opacity duration-150 group-hover/dock:opacity-100 group-focus-visible/dock:opacity-100',
+        'pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 rounded-md px-2 py-1 text-caption font-medium whitespace-nowrap opacity-0 backdrop-blur-xl transition-opacity duration-150 group-hover/dock:opacity-100 group-focus-visible/dock:opacity-100 group-data-[open]/card:invisible',
         dark ? 'bg-black/55 text-white/90' : 'bg-white/70 text-black/80 shadow-[0_2px_8px_rgba(0,0,0,.12)]',
       )}
     >

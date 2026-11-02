@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Spinner } from '@/components/ui/spinner';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { PROJECTS, type Chat } from '../lib/data';
+import { DOCS, PROJECTS, type Chat } from '../lib/data';
 import type { CodexState } from '../lib/use-codex';
 import { DotOrb } from './dot-orb';
 import { Rail } from './rail';
@@ -20,6 +21,51 @@ function Status({ status }: { status: Chat['status'] }) {
   if (status === 'running') return <Spinner spin size={14} className="text-muted-foreground" />;
   if (status) return <Icon name="branch" size={14} className={status === 'pr' ? 'text-destructive' : 'text-link'} />;
   return null;
+}
+
+const STATUS_LINE = { running: 'Working…', branch: 'Branch open', pr: 'Pull request open' } as const;
+
+/** A chat row's hover card: where it lives and what it's doing, then its latest message — the reply waiting, for a
+    Priority row — and, for a chat with dot, the documents beside it. What opening the row shows, at a glance. */
+function ChatCard({ chat }: { chat: Chat }) {
+  const message = [...chat.items].reverse().find((i): i is Extract<Chat['items'][number], { kind: 'message' }> => i.kind === 'message' && !!(i.text || i.list));
+  const docs = chat.docs.map((id) => DOCS.find((d) => d.id === id)).filter((d) => d != null);
+  return (
+    <>
+      <HoverCardHeader
+        media={chat.kind === 'dot' ? <DotOrb size={28} /> : <Icon name="folder" size={22} className="text-muted-foreground" />}
+        title={chat.title}
+        subtitle={chat.kind === 'dot' ? 'Chat with dot' : chat.project}
+      />
+      {(chat.status || chat.changes) && (
+        <div className="mt-3 flex items-center gap-2 text-footnote text-muted-foreground">
+          <Status status={chat.status} />
+          {chat.status && <span>{STATUS_LINE[chat.status]}</span>}
+          {chat.changes && (
+            <span className="ml-auto tabular-nums">
+              <span className="text-success">+{chat.changes.added.toLocaleString()}</span> <span className="text-destructive">−{chat.changes.removed.toLocaleString()}</span>
+            </span>
+          )}
+        </div>
+      )}
+      {message && (
+        <div className="mt-3 border-t border-border pt-2.5">
+          <div className="text-caption2 text-tertiary-foreground">{message.role === 'dot' ? 'dot' : 'You'}{chat.unread > 0 && ` · ${chat.unread} unread`}</div>
+          <p className="mt-0.5 mb-0 line-clamp-3 text-footnote leading-[1.45] text-foreground">{message.text || message.list?.[0]}</p>
+        </div>
+      )}
+      {!message && <p className="mt-3 mb-0 text-footnote text-tertiary-foreground">No messages yet</p>}
+      {docs.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {docs.map((d) => (
+            <span key={d.id} className="inline-flex max-w-full items-center gap-1 truncate rounded-full bg-secondary px-2 py-0.5 text-caption">
+              <span aria-hidden="true">{d.emoji}</span>{d.title}
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 const Label = ({ children }: { children: ReactNode }) => <div className="px-2.5 pt-4 pb-1 text-footnote text-tertiary-foreground">{children}</div>;
@@ -38,7 +84,11 @@ export function ChatSidebar({ codex, inbox }: { codex: CodexState; inbox: boolea
   const row = (c: Chat, nested = false) => (
     <SplitViewItem key={c.id} id={c.id} variant="pill" className={cn(ROW, nested && 'pl-8!')} onPress={pick(c)}>
       {c.kind === 'dot' && !nested && <DotOrb size={16} />}
-      <span className="min-w-0 flex-1 truncate">{c.title}</span>
+      {/* The title carries the chat's hover card, beside the sidebar. */}
+      <HoverCardTrigger className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 truncate">{c.title}</span>
+        <HoverCard placement="right" offset={16}><ChatCard chat={c} /></HoverCard>
+      </HoverCardTrigger>
       {c.unread > 0 && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-caption2 font-semibold text-primary-foreground">{c.unread}</span>}
       <Status status={c.status} />
     </SplitViewItem>

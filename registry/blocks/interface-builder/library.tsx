@@ -1,12 +1,16 @@
 /* The library (Xcode's ⇧⌘L): every component the catalog offers, searchable, grouped by kind. Drag one onto a scene
    (the canvas shows where it will land), or press it (Return) to add it to the selected container. Items are raw
-   elements because they carry a pointer drag, so they keep their own button role and keyboard handling. */
+   elements because they carry a pointer drag, so they keep their own button role and keyboard handling. Resting on one
+   (or tabbing to it) shows its hover card: the component drawn as it's inserted, where it comes from, and its props,
+   events and slots (previews.tsx). Pressing closes it, so it's never over the canvas a drag is aiming at. */
 import { useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from 'react';
+import { HoverCard, useHoverCard } from '@/components/ui/hover-card';
 import { SearchField } from '@/components/ui/search-field';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { LIBRARY, SECTIONS, specOf, type LibraryItem } from './catalog';
 import { libraryDrag, useLibraryDrag } from './dnd';
+import { LibraryCard } from './previews';
 import { findNode, placeOf } from './tree';
 import { useBuilder, type Builder } from './store';
 
@@ -57,8 +61,11 @@ export function LibraryList({ onDragStart, onInserted, autoFocus, className }: {
 }
 
 function LibraryRow({ item, onDragStart, onInsert }: { item: LibraryItem; onDragStart?: () => void; onInsert: () => void }) {
+  const b = useBuilder();
+  const card = useHoverCard<HTMLDivElement>();
   const start = useRef<{ x: number; y: number; id: number; dragging: boolean } | null>(null);
   const down = (e: PointerEvent<HTMLDivElement>) => {
+    card.close();
     if (e.button !== 0) return;
     start.current = { x: e.clientX, y: e.clientY, id: e.pointerId, dragging: false };
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -85,25 +92,31 @@ function LibraryRow({ item, onDragStart, onInsert }: { item: LibraryItem; onDrag
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onInsert(); }
   };
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={`${item.title}: ${item.description}`}
-      onPointerDown={down}
-      onPointerMove={move}
-      onPointerUp={up}
-      onPointerCancel={() => { if (start.current?.dragging) libraryDrag.cancel(); start.current = null; }}
-      onKeyDown={key}
-      className="group flex cursor-grab touch-none items-center gap-2.5 rounded-lg px-2 py-1.5 outline-none select-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
-    >
-      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-secondary text-primary group-hover:bg-background">
-        <Icon name={typeof item.icon === 'string' ? item.icon : undefined} shapes={typeof item.icon === 'string' ? undefined : item.icon} size={18} sw={1.8} />
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="truncate font-mono text-footnote font-medium text-foreground">{item.source === 'kit' ? `<${item.title}>` : item.title}</span>
-        <span className="truncate text-caption2 text-muted-foreground" title={item.description}>{item.description}</span>
-      </span>
-    </div>
+    <>
+      <div
+        {...card.triggerProps}
+        role="button"
+        tabIndex={0}
+        aria-label={`${item.title}: ${item.description}`}
+        onPointerDown={down}
+        onPointerMove={move}
+        onPointerUp={up}
+        onPointerCancel={() => { if (start.current?.dragging) libraryDrag.cancel(); start.current = null; }}
+        onKeyDown={key}
+        className="group flex cursor-grab touch-none items-center gap-2.5 rounded-lg px-2 py-1.5 outline-none select-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+      >
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-secondary text-primary group-hover:bg-background">
+          <Icon name={typeof item.icon === 'string' ? item.icon : undefined} shapes={typeof item.icon === 'string' ? undefined : item.icon} size={18} sw={1.8} />
+        </span>
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate font-mono text-footnote font-medium text-foreground">{item.source === 'kit' ? `<${item.title}>` : item.title}</span>
+          <span className="truncate text-caption2 text-muted-foreground">{item.description}</span>
+        </span>
+      </div>
+      <HoverCard {...card.cardProps} placement="end top" className="w-80">
+        <LibraryCard item={item} doc={b.doc} />
+      </HoverCard>
+    </>
   );
 }
 

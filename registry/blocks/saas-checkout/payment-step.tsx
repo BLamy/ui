@@ -1,10 +1,11 @@
 /* Step 3 — the card and the billing address, then the payment. The number groups itself as you type and shows its
    brand, the security code follows the brand's length, the postal code follows the country (and sets the tax).
    Paying waits on the mock processor; a decline puts its message under the field it is about and focus on it. The
-   test cards fill the form in one press. */
+   test cards fill the form in one press; resting on one shows its whole number and what the processor will answer. */
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
+import { HoverCard, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { IconSwap } from '@/components/ui/icon-swap';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,10 +15,10 @@ import { TextField } from '@/components/ui/text-field';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import {
-  cardBrand, cardNumberError, cvcError, cvcLength, expiryError, formatCardNumber, formatCvc, formatExpiry, formatPostal,
+  BRAND_NAMES, cardBrand, cardNumberError, cvcError, cvcLength, expiryError, formatCardNumber, formatCvc, formatExpiry, formatPostal,
   longDate, money, postalError, renewsOn,
 } from './checkout';
-import { COUNTRIES, PRODUCT, TEST_CARDS, type CountryId } from './data';
+import { COUNTRIES, DECLINES, PRODUCT, TEST_CARDS, type CountryId } from './data';
 import { BrandMark, ErrorText, SOFT_INK, StepActions, StepHeading, useFormattedInput, useStepErrors } from './parts';
 import { useCheckoutCtx } from './use-checkout';
 
@@ -141,6 +142,20 @@ export function PaymentStep() {
   );
 }
 
+/** A test card's hover card: the full number (selectable, to paste elsewhere), its brand, and the processor's answer. */
+function TestCardPreview({ test }: { test: (typeof TEST_CARDS)[number] }) {
+  const brand = cardBrand(test.number);
+  return (
+    <div className="flex flex-col gap-2">
+      <HoverCardHeader media={<BrandMark brand={brand} />} title={test.label} subtitle={`${BRAND_NAMES[brand]} test card`} />
+      <code className="block rounded-ctl bg-secondary px-2 py-1 text-footnote tabular-nums text-foreground select-text">{formatCardNumber(test.number)}</code>
+      <p className={cn('m-0 text-footnote leading-[18px]', SOFT_INK)}>
+        {test.outcome === 'success' ? 'The payment goes through.' : `Declined: “${DECLINES[test.outcome].message}”`} Any future expiry and any CVC.
+      </p>
+    </div>
+  );
+}
+
 /** Test mode: the processor's cards, each with a different ending. Pressing one fills the card fields. */
 function TestCards({ disabled, onPick }: { disabled: boolean; onPick: (number: string) => void }) {
   return (
@@ -151,11 +166,14 @@ function TestCards({ disabled, onPick }: { disabled: boolean; onPick: (number: s
       </p>
       <div role="group" aria-label="Test cards" className="flex flex-wrap gap-1.5">
         {TEST_CARDS.map((t) => (
-          <Button key={t.number} size="sm" variant="secondary" isDisabled={disabled} onPress={() => onPick(t.number)}
-            aria-label={`Use test card ending ${t.number.slice(-4)}: ${t.label.toLowerCase()}`} className="h-7 gap-1.5 px-2.5 font-medium">
-            <span className="tabular-nums">{t.number.slice(-4)}</span>
-            <span className={SOFT_INK}>{t.label}</span>
-          </Button>
+          <HoverCardTrigger key={t.number}>
+            <Button size="sm" variant="secondary" isDisabled={disabled} onPress={() => onPick(t.number)}
+              aria-label={`Use test card ending ${t.number.slice(-4)}: ${t.label.toLowerCase()}`} className="h-7 gap-1.5 px-2.5 font-medium">
+              <span className="tabular-nums">{t.number.slice(-4)}</span>
+              <span className={SOFT_INK}>{t.label}</span>
+            </Button>
+            <HoverCard placement="top"><TestCardPreview test={t} /></HoverCard>
+          </HoverCardTrigger>
         ))}
       </div>
     </div>

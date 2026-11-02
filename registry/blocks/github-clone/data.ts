@@ -10,6 +10,8 @@ export interface User {
   l: string;
   /** Profile picture (live data); the initials show without it. */
   avatar?: string;
+  /** Profile bio, for the person's hover card (sample data only: GitHub's lists don't carry it). */
+  bio?: string;
 }
 
 export interface Label {
@@ -20,13 +22,13 @@ export interface Label {
 }
 
 export const USERS = {
-  maya: { login: 'maya-chen', f: 'Maya', l: 'Chen' },
-  jonas: { login: 'jonasw', f: 'Jonas', l: 'Weber' },
-  priya: { login: 'priya-r', f: 'Priya', l: 'Raman' },
-  leo: { login: 'leodm', f: 'Leo', l: 'Dumont' },
-  sam: { login: 'samokafor', f: 'Sam', l: 'Okafor' },
-  ava: { login: 'avakim', f: 'Ava', l: 'Kim' },
-  bot: { login: 'orbit-bot', f: 'Orbit', l: 'Bot' },
+  maya: { login: 'maya-chen', f: 'Maya', l: 'Chen', bio: 'Maintainer of Orbit. Queues, Postgres and backoff curves.' },
+  jonas: { login: 'jonasw', f: 'Jonas', l: 'Weber', bio: 'Dashboard and DX. Berlin.' },
+  priya: { login: 'priya-r', f: 'Priya', l: 'Raman', bio: 'Database adapters at Acme. Ask me about LISTEN/NOTIFY.' },
+  leo: { login: 'leodm', f: 'Leo', l: 'Dumont', bio: 'Docs, examples and the occasional SQLite fix.' },
+  sam: { login: 'samokafor', f: 'Sam', l: 'Okafor', bio: 'Running Orbit in production at a payments startup.' },
+  ava: { login: 'avakim', f: 'Ava', l: 'Kim', bio: 'TypeScript, rate limits, tidy tables.' },
+  bot: { login: 'orbit-bot', f: 'Orbit', l: 'Bot', bio: 'Automation for acme/orbit: typos, labels, releases.' },
 } satisfies Record<string, User>;
 
 export const ME: User = { login: 'you', f: 'Alex', l: 'Rivera' };

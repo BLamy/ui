@@ -1655,6 +1655,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -1802,7 +1803,7 @@
       "name": "canvas",
       "type": "registry:ui",
       "title": "Canvas",
-      "description": "An infinite, pannable, zoomable surface: scroll to pan, pinch or ⌘-scroll to zoom, Space to drag the view, a dotted or ruled background that follows the camera, and pointer events handed to you in board coordinates. With selection outlines, resize and rotate handles, a marquee and alignment guides that keep their thickness at any zoom, and the frame math (hit tests, resize, rotate, snap) as plain functions.",
+      "description": "An infinite, pannable, zoomable surface: scroll to pan, pinch or ⌘-scroll to zoom, Space to drag the view, a dotted or ruled background that follows the camera, and pointer events handed to you in board coordinates. With selection outlines, resize and rotate handles, a marquee, alignment guides and a minimap that keep their thickness at any zoom, and the frame math (hit tests, resize, rotate, snap) as plain functions.",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -1825,6 +1826,7 @@
           "CanvasHandles",
           "CanvasMarquee",
           "CanvasGuides",
+          "CanvasMiniMap",
           "useCanvas"
         ]
       }
@@ -3004,6 +3006,37 @@
       ]
     },
     {
+      "name": "hover-card",
+      "type": "registry:ui",
+      "title": "Hover Card",
+      "description": "A card that previews what a trigger points at (a person, link, file or commit) while the pointer rests on it or keyboard focus lands on it; the pointer can move into it, one is open at a time, and touch never opens it.",
+      "dependencies": [
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/hover-card.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/hover-card.tsx"
+        }
+      ],
+      "meta": {
+        "page": "hover-card",
+        "exports": [
+          "HoverCard",
+          "HoverCardTrigger",
+          "HoverCardHeader",
+          "useHoverCard"
+        ]
+      }
+    },
+    {
       "name": "icon-swap",
       "type": "registry:ui",
       "title": "IconSwap",
@@ -3233,6 +3266,7 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/row-label.json",
@@ -5264,6 +5298,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/context-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/search-field.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -6320,6 +6355,7 @@
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/list.json",
@@ -6399,6 +6435,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/morph.json",
@@ -6482,6 +6519,7 @@
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/csv.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/input.json",
@@ -6604,6 +6642,11 @@
           "target": "components/blocks/apple-notes/dialogs.tsx"
         },
         {
+          "path": "registry/blocks/apple-notes/previews.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-notes/previews.tsx"
+        },
+        {
           "path": "registry/blocks/apple-notes/data.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-notes/data.ts"
@@ -6631,6 +6674,7 @@
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/input.json",
@@ -6703,6 +6747,11 @@
           "target": "components/blocks/apple-passwords/parts.tsx"
         },
         {
+          "path": "registry/blocks/apple-passwords/previews.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/apple-passwords/previews.tsx"
+        },
+        {
           "path": "registry/blocks/apple-passwords/vault.ts",
           "type": "registry:component",
           "target": "components/blocks/apple-passwords/vault.ts"
@@ -6742,6 +6791,7 @@
         "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/list.json",
@@ -6835,6 +6885,7 @@
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/navigation-stack.json",
@@ -6902,6 +6953,7 @@
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/index-bar.json",
         "https://blamy.github.io/ui/r/markdown-editor.json",
@@ -6989,6 +7041,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/floating-sheet.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/progress-stepper.json",
         "https://blamy.github.io/ui/r/theme.json",
@@ -7029,6 +7082,7 @@
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/side-drawer.json",
@@ -7108,6 +7162,11 @@
           "target": "components/blocks/discord-clone/components/member-list.tsx"
         },
         {
+          "path": "registry/blocks/discord-clone/components/user-card.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/discord-clone/components/user-card.tsx"
+        },
+        {
           "path": "registry/blocks/discord-clone/chat-theme.css",
           "type": "registry:file",
           "target": "components/blocks/discord-clone/chat-theme.css"
@@ -7144,6 +7203,7 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/pencilkit.json",
         "https://blamy.github.io/ui/r/plain-button.json",
@@ -7259,6 +7319,7 @@
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/credenza.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/list.json",
@@ -7330,6 +7391,11 @@
           "target": "components/blocks/github-clone/parts.tsx"
         },
         {
+          "path": "registry/blocks/github-clone/cards.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/github-clone/cards.tsx"
+        },
+        {
           "path": "registry/blocks/github-clone/repo-context.tsx",
           "type": "registry:component",
           "target": "components/blocks/github-clone/repo-context.tsx"
@@ -7393,6 +7459,7 @@
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/font-picker.json",
         "https://blamy.github.io/ui/r/google-fonts.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/kbd.json",
@@ -7580,6 +7647,11 @@
           "target": "components/blocks/interface-builder/player.tsx"
         },
         {
+          "path": "registry/blocks/interface-builder/previews.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/interface-builder/previews.tsx"
+        },
+        {
           "path": "registry/blocks/interface-builder/render.tsx",
           "type": "registry:component",
           "target": "components/blocks/interface-builder/render.tsx"
@@ -7657,6 +7729,7 @@
         "https://blamy.github.io/ui/r/filter.json",
         "https://blamy.github.io/ui/r/filter-input.json",
         "https://blamy.github.io/ui/r/filter-model.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/input.json",
@@ -7772,6 +7845,11 @@
           "target": "components/blocks/loop-qa/parts.tsx"
         },
         {
+          "path": "registry/blocks/loop-qa/cards.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/loop-qa/cards.tsx"
+        },
+        {
           "path": "registry/blocks/loop-qa/agent.ts",
           "type": "registry:component",
           "target": "components/blocks/loop-qa/agent.ts"
@@ -7811,6 +7889,7 @@
         "https://blamy.github.io/ui/r/command-menu.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/context-menu.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/kbd.json",
@@ -7941,6 +8020,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/artifact-chat-container.json",
         "https://blamy.github.io/ui/r/composer.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -7998,6 +8078,8 @@
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
+        "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/pencilkit.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -8027,7 +8109,7 @@
       "name": "replay-canvas",
       "type": "registry:block",
       "title": "Replay Canvas",
-      "description": "An app taken apart from its rrweb recordings, on a Figma-style canvas. Every recording is read for the pages it visits, the layers that open over them (dialogs, menus, sheets, popovers, toasts, found by being added at the top of the body or revealed by a class or attribute) and the states they go through; each frame is the recording itself (ReplayStage) paused at that moment, a layer cropped to just its panel and laid out beside the page it opened over. Segues run from where the click landed to what it opened, labelled with what was clicked: navigate, present, update and dismiss. Recordings fold into one map — pages by route pattern (/projects/:id), title or skeleton, layers by kind, structure and buttons, states by the control that led to them — so every recording added confirms what's there (counted) and fills in what isn't. Select a frame or segue to see the moments it was seen at and play the recording from there in ReplayPreview; drop more rrweb .json files anywhere to add them. Signed in to Replay, it lists your Replay QA projects and their test runs; pick a test run to load the recording of every journey in it. Hide the arrows to see only the dots where clicks landed; select a dot to draw its arrow. Sample: four sessions of a mock project tracker.",
+      "description": "An app taken apart from its rrweb recordings, on a Figma-style canvas. Every recording is read for the pages it visits, the layers that open over them (dialogs, menus, sheets, popovers, toasts, found by being added at the top of the body or revealed by a class or attribute) and the states they go through; each frame is the recording itself (ReplayStage) paused at that moment, a layer cropped to just its panel and laid out beside the page it opened over. Segues run from where the click landed to what it opened, labelled with what was clicked: navigate, present, update and dismiss. Recordings fold into one map — pages by route pattern (/projects/:id), title or skeleton, layers by kind, structure and buttons, states by the control that led to them — so every recording added confirms what's there (counted) and fills in what isn't. Select a frame or segue to see the moments it was seen at and play the recording from there in ReplayPreview; drop more rrweb .json files anywhere to add them. Signed in to Replay, it lists your Replay QA projects and their test runs; pick a test run to load the recording of every journey in it. Hide the arrows to see only the dots where clicks landed; select a dot to draw its arrow. Rest the pointer on a frame, a segue, a recording or a test run for a hover card about it; a minimap in the corner shows the whole map and moves the view. Sample: four sessions of a mock project tracker.",
       "categories": [
         "developer",
         "design",
@@ -8044,6 +8126,7 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/replay-preview.json",
@@ -8141,6 +8224,7 @@
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/disclosure.json",
         "https://blamy.github.io/ui/r/form.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/icon-swap.json",
         "https://blamy.github.io/ui/r/input.json",
@@ -8231,6 +8315,7 @@
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/format-bytes.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/spinner.json",
@@ -8311,6 +8396,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/avatar.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/list.json",
         "https://blamy.github.io/ui/r/search-field.json",
@@ -8358,6 +8444,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/strudel-player.json",
@@ -8365,7 +8452,8 @@
         "https://blamy.github.io/ui/r/strudel-syntax.json",
         "https://blamy.github.io/ui/r/tabs.json",
         "https://blamy.github.io/ui/r/theme.json",
-        "https://blamy.github.io/ui/r/tree.json"
+        "https://blamy.github.io/ui/r/tree.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -8416,6 +8504,7 @@
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/conversation.json",
         "https://blamy.github.io/ui/r/floating-sheet.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/plain-button.json",
@@ -8538,6 +8627,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/popover.json",
@@ -8589,6 +8679,8 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
+        "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/open-code.json",
         "https://blamy.github.io/ui/r/open-code-host.json",
         "https://blamy.github.io/ui/r/open-code-keychain.json",
@@ -8636,6 +8728,7 @@
         "https://blamy.github.io/ui/r/file-upload.json",
         "https://blamy.github.io/ui/r/filmstrip.json",
         "https://blamy.github.io/ui/r/format-bytes.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/playback.json",
@@ -8728,6 +8821,7 @@
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/context-menu.json",
         "https://blamy.github.io/ui/r/credenza.json",
+        "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/plain-button.json",
         "https://blamy.github.io/ui/r/segmented.json",

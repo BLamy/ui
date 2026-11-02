@@ -1,15 +1,17 @@
 /* The open list: large colored title and count, the "N Completed · Clear / Show" bar, sections of reminders, an
-   inline composer and the New Reminder button. Clearing the last open reminder bursts a small celebration. */
+   inline composer and the New Reminder button. Clearing the last open reminder bursts a small celebration. In the
+   smart lists, each list's heading previews that list (ListPreview). */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Button } from '@/components/ui/button';
 import { Celebrate } from '@/components/ui/celebrate';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { HoverCard, HoverCardTrigger } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { SYSTEM, type Reminder } from './data';
-import { ReminderRow } from './reminder-row';
+import { ListPreview, ReminderRow } from './reminder-row';
 import { useReminders } from './store';
 import { buildView, type View } from './views';
 
@@ -120,16 +122,22 @@ export function ListView() {
             </div>
           ) : null}
 
-          {view.groups.map((g, gi) => (
-            <section key={g.key} className={cn(g.title && 'pt-4')}>
-              {g.title ? <h2 className="m-0 px-5 pb-1 text-title font-bold tracking-[-.2px]" style={{ color: g.color }}>{g.title}</h2> : null}
-              {g.items.map((r) => (
-                <ReminderRow key={r.id} r={r} leaving={view.leaving(r)} phone={s.collapsed}
-                  color={api.lists.find((l) => l.id === r.list)?.color ?? view.color} />
-              ))}
-              {adding && gi === view.groups.length - 1 ? <Composer color={view.color} onAdd={add} onClose={() => setAdding(false)} /> : null}
-            </section>
-          ))}
+          {view.groups.map((g, gi) => {
+            // All, Flagged, Completed and search group by list: those headings are lists.
+            const of = list ? undefined : api.lists.find((l) => l.id === g.key);
+            return (
+              <section key={g.key} className={cn(g.title && 'pt-4')}>
+                {g.title ? <h2 className="m-0 px-5 pb-1 text-title font-bold tracking-[-.2px]" style={{ color: g.color }}>
+                  {of ? <HoverCardTrigger><span>{g.title}</span><HoverCard placement="bottom start"><ListPreview list={of} items={api.items} /></HoverCard></HoverCardTrigger> : g.title}
+                </h2> : null}
+                {g.items.map((r) => (
+                  <ReminderRow key={r.id} r={r} leaving={view.leaving(r)} phone={s.collapsed}
+                    color={api.lists.find((l) => l.id === r.list)?.color ?? view.color} />
+                ))}
+                {adding && gi === view.groups.length - 1 ? <Composer color={view.color} onAdd={add} onClose={() => setAdding(false)} /> : null}
+              </section>
+            );
+          })}
           {adding && !view.groups.length ? <Composer color={view.color} onAdd={add} onClose={() => setAdding(false)} /> : null}
         </div>
       </SplitViewContent>

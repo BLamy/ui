@@ -1,11 +1,11 @@
-import { useCallback, useLayoutEffect, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { Button, composeRenderProps } from 'react-aria-components';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { AdaptivePane } from '@/components/ui/adaptive-pane';
 import { SideDrawer } from '@/components/ui/side-drawer';
 import { useContainerWidth } from '@/lib/container';
 import { Icon } from '@/lib/icon';
-import { useAppearance, themeScopeProps, type Appearance } from '@/lib/theme';
+import { ThemeScopeContext, useAppearance, themeScopeProps, type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 import { ChatShellContext, useChatShell, useOptionalChatShell, type ChatShellContextValue } from './chat-shell-context';
@@ -69,22 +69,26 @@ export function ChatShell({
   }, []);
   const ctx: ChatShellContextValue = { width, compact: width < breakpoint, navOpen, setNavOpen, hasNav: navs > 0, registerNav };
   const scope = themeScopeProps({ scope: 'chat', appearance, tint });
+  // Published too, so overlays opened inside (hover cards, menus) portal out wearing the same chat scope.
+  const scopeState = useMemo(() => ({ scope: 'chat' as const, appearance, tint }), [appearance, tint]);
   return (
-    <ChatShellContext.Provider value={ctx}>
-      <div
-        ref={ref}
-        data-slot="chat-shell"
-        data-appearance={appearance}
-        data-compact={ctx.compact || undefined}
-        // A `chat` theme scope: the bl-theme's team-chat palette for everything inside the shell.
-        data-theme-scope={scope['data-theme-scope']}
-        className={cn('relative flex h-full w-full overflow-hidden bg-background font-sans text-foreground', scope.className, className)}
-        style={{ ...scope.style, ...style }}
-        {...props}
-      >
-        {children}
-      </div>
-    </ChatShellContext.Provider>
+    <ThemeScopeContext.Provider value={scopeState}>
+      <ChatShellContext.Provider value={ctx}>
+        <div
+          ref={ref}
+          data-slot="chat-shell"
+          data-appearance={appearance}
+          data-compact={ctx.compact || undefined}
+          // A `chat` theme scope: the bl-theme's team-chat palette for everything inside the shell.
+          data-theme-scope={scope['data-theme-scope']}
+          className={cn('relative flex h-full w-full overflow-hidden bg-background font-sans text-foreground', scope.className, className)}
+          style={{ ...scope.style, ...style }}
+          {...props}
+        >
+          {children}
+        </div>
+      </ChatShellContext.Provider>
+    </ThemeScopeContext.Provider>
   );
 }
 

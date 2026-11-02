@@ -21,6 +21,7 @@
     "commands.tsx",
     "dialogs.tsx",
     "parts.tsx",
+    "cards.tsx",
     "agent.ts",
     "data.ts",
     "recordings.ts"
