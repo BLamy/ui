@@ -66,7 +66,7 @@ Dark mode is shadcn's: the `.dark` class. `BLProvider` and `ThemeScope` put `lig
 
 The bl-theme is one such palette. Install it for the look on this site; leave it out and the parts wear your theme.
 
-{% tabs title="The iOS theme" sync="install" %}
+{% tabs title="Install the iOS theme" level="3" sync="install" %}
 {% tab title="npm" %}
 Import it after BL UI's stylesheet:
 
@@ -200,7 +200,7 @@ A scope sets only what it changes. Everything else (border, muted text, the bars
   scope="brand"
   appearance="dark"
   tint="#f43"
-  vars={{ radius: '0.25rem', card: '#111' }}
+  vars={{ radius: '0.25rem', background: '#111', foreground: '#f5f5f7' }}
   className="rounded-card bg-background p-4 text-foreground"
 >
   …
@@ -217,6 +217,8 @@ A scope sets only what it changes. Everything else (border, muted text, the bars
 `THEME_VARS` lists every variable name and `ThemeVar` is the union type. `themeScopeProps()` returns the same attribute, class and style for a root you render yourself, and `readThemeVars(el)` reads the resolved variables back.
 
 Scopes nest, and the nearest one wins: a `tint` inside a `dark` scope inside a `brand` scope resolves to the tint, then the dark values, then the brand ones, then the page.
+
+A custom named scope inherits variables it does not define. When giving it a dark surface inside a light page, set matching `foreground`, `card-foreground`, `popover-foreground`, and `muted-foreground` values so its text and overlays remain readable.
 
 ### Overlays follow their scope
 

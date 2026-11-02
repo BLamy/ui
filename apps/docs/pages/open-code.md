@@ -12,6 +12,18 @@ After refreshing, select **Unlock Passwords keychain** once. Vibecoder restarts 
 
 A runtime advertising `capabilities.credentialStore = 1` and `capabilities.connectionStore = 1` is required. Older runtimes are rejected when a configured store would be ignored. Deploy the companion OpenCode browser runtime together with this UI update.
 
+## Agent Browser MCP
+
+Vibecoder automatically attaches an `agent-browser` MCP server to OpenCode. The server follows the selected app iframe across port changes and reloads. With a provider connected, try: **“Use the browser tools to inspect the preview, click the counter twice, and verify its updated text.”** OpenCode can take a semantic DOM snapshot, click its `@refs`, fill and append text, select options, press keys, wait for elements, read text and URLs, navigate within the current app, and reload it. A snapshot gives stable refs within one document; take another after navigation.
+
+The embedded example's **Test browser tools** button calls the same host handlers used by MCP. It snapshots the live iframe, clicks its counter, reads the updated value, navigates to an app URL, and reloads to check reconnection. This check does not call a model. The OpenCode browser backend smoke page separately verifies real MCP discovery, host instructions, and tool calls through its upstream MCP client.
+
+The browser demo uses an **iframe adapter compatible with a subset of [Agent Browser's MCP tools](https://github.com/vercel-labs/agent-browser)**. The upstream native Rust/CDP server cannot execute inside the WASM container. This adapter uses DOM events inside the preview, including form submission and focus handling. Events are synthetic; it does not offer native screenshots, arbitrary tabs, CDP or trusted pointer events. Only supported arguments are advertised. Its snapshots describe DOM semantics rather than the browser's native accessibility tree.
+
+The adapter is installed into HTML responses at the host bridge before the unchanged AlmostNode service worker serves them. A separate MessageChannel carries tool commands into that app document. The host checks the selected frame, origin and session. Navigation is restricted to the selected virtual port; the agent cannot use these tools to inspect the host terminal, provider connection dialog, parent storage or another browser tab. App HTML must allow the injected script under its Content Security Policy. Closing or replacing a frame cancels pending calls. Navigation and reload create a fresh worker scope and repeat its handshake. App paths and query parameters travel in a URL fragment that stays in the browser, so the static Cloudflare host does not receive them.
+
+MCP stays inside the browser and uses OpenCode's upstream MCP client, tool registry and permission checks. No provider proxy is involved in executing browser tools. Provider access is still required for the model to decide which tools to call. Set `browserTools={false}` to disable the iframe tools. Hosts may also supply `mcpServers` on `OpenCodeHostBridge` to attach other trusted in-page MCP implementations; each provides a versioned tool catalog and an asynchronous `callTool(name, args, signal)` handler. The runtime must advertise `capabilities.hostMcp: 1`.
+
 ## Installation
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/open-code.json{% endcommand %}
@@ -61,18 +73,19 @@ Select **Connection** for the Tailscale/Cloudflare explanation. Tailscale routes
 
 ## Props
 
-| Prop                         | Purpose                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| `credentialStore`            | Supported encrypted host store. Never prompts or falls back to plaintext. |
-| `connectionStore`            | Encrypted connection choice, Tailscale node session and exit node.        |
-| `host` / `createHost`        | Borrow a host or create an owned one when starting. Choose one.           |
-| `runtimeUrl` / `loadRuntime` | Hosted browser module or custom runtime loader.                           |
-| `previewRuntimeUrl`          | Separate-origin AlmostNode worker/bootstrap host.                         |
-| `title`                      | Accessible component and frame name. Defaults to `OpenCode`.              |
-| `height`                     | Component height in pixels. Defaults to `620`.                            |
-| `theme`                      | `dark` or `light`. Changing it restarts the session.                      |
+| Prop                         | Purpose                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| `credentialStore`            | Supported encrypted host store. Never prompts or falls back to plaintext.                           |
+| `connectionStore`            | Encrypted connection choice, Tailscale node session and exit node.                                  |
+| `host` / `createHost`        | Borrow a host or create an owned one when starting. Choose one.                                     |
+| `runtimeUrl` / `loadRuntime` | Hosted browser module or custom runtime loader.                                                     |
+| `previewRuntimeUrl`          | Separate-origin AlmostNode worker/bootstrap host.                                                   |
+| `title`                      | Accessible component and frame name. Defaults to `OpenCode`.                                        |
+| `height`                     | Component height in pixels. Defaults to `620`.                                                      |
+| `theme`                      | `dark` or `light`. Changing it restarts the session.                                                |
 | `autoStart`                  | Start on mount and restore after keychain unlock. Defaults to `true`; `false` enables manual Start. |
-| `onReady`                    | Receives the mounted runtime session and host.                            |
-| `onStateChange`              | Observes idle, starting, running, error and stopped.                      |
+| `browserTools`               | Attach the iframe browser MCP tools. Defaults to `true`.                                            |
+| `onReady`                    | Receives the mounted runtime session and host.                                                      |
+| `onStateChange`              | Observes idle, starting, running, error and stopped.                                                |
 
 For small programs embedded in an AI response, use [TuiPreview](https://blamy.github.io/ui/#/tui-preview). Mount `OpenCode` when the response needs a complete editable workspace and app previews. An AI response must not provide an untrusted runtime module URL.

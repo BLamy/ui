@@ -16,7 +16,8 @@ const gestures: [string, string][] = [
 function ActiveName() {
   const value = useCommandActive()
   const name = value?.split(' ').slice(1).join(' ')
-  return <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>{name ? `:${name.replace(/ /g, '_')}:` : ''}</span>
+  const shortcode = name ? `:${name.replace(/ /g, '_')}:` : ''
+  return <span className="truncate" title={shortcode} style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>{shortcode}</span>
 }
 
 export default function EmojiGrid() {

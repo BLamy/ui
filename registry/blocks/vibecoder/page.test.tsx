@@ -75,7 +75,7 @@ it('loads both saved connections after refreshing and unlocking the shared Passw
     },
   );
   const runtime: OpenCodeRuntime = {
-    capabilities: { credentialStore: 1, connectionStore: 1 },
+    capabilities: { hostMcp: 1, credentialStore: 1, connectionStore: 1 },
     mount,
   };
   const host: OpenCodeHostBridge = {

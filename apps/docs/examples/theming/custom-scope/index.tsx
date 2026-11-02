@@ -18,8 +18,14 @@ export default function CustomScope() {
       vars={{
         radius: `${radius}px`,
         background: '#120C18',
+        foreground: '#F5F0FA',
         card: '#1D1426',
+        'card-foreground': '#F5F0FA',
         popover: '#261A33',
+        'popover-foreground': '#F5F0FA',
+        'muted-foreground': '#BEB3C8',
+        secondary: 'rgba(255,255,255,.12)',
+        'secondary-foreground': '#F5F0FA',
         border: 'rgba(255,255,255,.16)',
       }}
       className="mx-auto grid max-w-md gap-4 rounded-card bg-background p-5 text-foreground shadow-hairline"

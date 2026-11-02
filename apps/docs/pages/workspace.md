@@ -33,6 +33,8 @@ import {
 
 Increment the counter, type a note, then move those tabs. Tab content uses portals, so moving a tab preserves its React state, DOM and running effects. Inactive tabs stay mounted by default. Closing a tab unmounts it. `hiddenTabBehavior="activity"` pauses hidden effects with React 19.2; `"unmount"` releases hidden content entirely.
 
+Workspace is available from the current source build and the shadcn registry. The npm option requires a package release containing this component; use the registry installation while npm publishing awaits authentication.
+
 ## Usage
 
 ```tsx

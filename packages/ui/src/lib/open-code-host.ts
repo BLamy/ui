@@ -37,6 +37,22 @@ export interface OpenCodeProcessBridge {
   ): Promise<{ stdout: string; stderr: string; code: number }>;
 }
 
+/** A host-owned MCP server attached directly to the in-page OpenCode backend. */
+export interface OpenCodeMcpServer {
+  name: string;
+  version: '1';
+  instructions?: string;
+  tools: ReadonlyArray<{
+    name: string;
+    description: string;
+    inputSchema: { readonly type: 'object'; readonly [key: string]: unknown };
+  }>;
+  callTool(name: string, args: Record<string, unknown>, signal: AbortSignal): Promise<{
+    content: Array<{ type: 'text'; text: string }>;
+    isError?: boolean;
+  }>;
+}
+
 export interface OpenCodePort {
   port: number;
   url: string;
@@ -48,6 +64,8 @@ export interface OpenCodeHostBridge {
   directory: string;
   workspaceBridge: OpenCodeWorkspaceBridge;
   processBridge: OpenCodeProcessBridge;
+  /** Additional MCP servers implemented by a trusted host. */
+  mcpServers?: ReadonlyArray<OpenCodeMcpServer>;
   previews?: {
     /** Register the host's service worker before opening any preview. Must not reload the page. */
     ready(): Promise<void>;
@@ -329,13 +347,14 @@ export interface OpenCodeRuntimeSession {
 
 export interface OpenCodeRuntime {
   version?: string;
-  capabilities?: { credentialStore?: 1; connectionStore?: 1 };
+  capabilities?: { credentialStore?: 1; connectionStore?: 1; hostMcp?: number };
   mount(options: {
     container: HTMLElement;
     connectionContainer: HTMLElement;
     directory?: string;
     workspaceBridge?: OpenCodeWorkspaceBridge;
     processBridge?: OpenCodeProcessBridge;
+    mcpServers?: ReadonlyArray<OpenCodeMcpServer>;
     themeMode?: 'light' | 'dark';
     credentialStore?: OpenCodeCredentialStore;
     connectionStore?: OpenCodeConnectionStore;

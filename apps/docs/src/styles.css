@@ -208,6 +208,34 @@ a:hover {
   font-weight: revert-layer;
   color: revert-layer;
 }
+/* Lists in demos. The article's sheet (docstream) sets every `ul` / `ol` in an article to `list-style: disc|decimal`
+   and a 1.5em indent, and MarkdownView sets `ul` / `ol` 8px margins and `li` 3px margins. Those rules are unlayered,
+   so they beat a demo's own `list-none m-0 p-0`: a list item with no flex row of its own would take the article's bullet
+   or number, and the filter lists drew a grey gutter and 6px between rows (search-field capture, light and dark). Roll them back to the
+   layered styles so the demo's utilities decide. A list that sets none keeps the article's spacing (the layered
+   defaults below), and a list item that sets none gets no margin. Markdown rendered inside a demo keeps its own. */
+.dk-doc .docs-demo-canvas :is(ul, ol, li):not(:is(.docs-demo-canvas .wb-md, .docs-demo-canvas [data-docstream], .docs-demo-canvas .docs-article, .docs-demo-canvas .ProseMirror, .docs-demo-canvas .gb) *) {
+  margin: revert-layer;
+  padding: revert-layer;
+}
+.dk-doc .docs-demo-canvas :is(ul, ol):not(:is(.docs-demo-canvas .wb-md, .docs-demo-canvas [data-docstream], .docs-demo-canvas .docs-article, .docs-demo-canvas .ProseMirror, .docs-demo-canvas .gb) *) {
+  list-style: revert-layer;
+}
+@layer components {
+  .dk-doc .docs-demo-canvas ul:not(:is(.docs-demo-canvas .wb-md, .docs-demo-canvas [data-docstream], .docs-demo-canvas .docs-article, .docs-demo-canvas .ProseMirror, .docs-demo-canvas .gb) *) {
+    list-style: disc;
+    margin: 8px 0;
+    padding-left: 1.5em;
+  }
+  .dk-doc .docs-demo-canvas ol:not(:is(.docs-demo-canvas .wb-md, .docs-demo-canvas [data-docstream], .docs-demo-canvas .docs-article, .docs-demo-canvas .ProseMirror, .docs-demo-canvas .gb) *) {
+    list-style: decimal;
+    margin: 8px 0;
+    padding-left: 1.5em;
+  }
+  .dk-doc .docs-demo-canvas li:not(:is(.docs-demo-canvas .wb-md, .docs-demo-canvas [data-docstream], .docs-demo-canvas .docs-article, .docs-demo-canvas .ProseMirror, .docs-demo-canvas .gb) *) {
+    margin: 0;
+  }
+}
 .dk-nav {
   display: block;
   width: 100%;

@@ -77,6 +77,12 @@ Type `/` for headings, lists, tasks, quotes, code, hints, tabs, expandables, ste
 
 {% demo src="markdown-editor/slash-blocks" %}
 
+## Live XState and tscircuit previews
+
+Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as Mermaid. Edit the source directly in the rich editor: the result redraws after a short pause, and syntax errors stay inside the preview so you can keep typing. Type `/` and choose **XState diagram** or **tscircuit example** to insert a starting point. The circuit preview uses a hosted runtime and needs a network connection.
+
+{% demo src="docstream/diagrams" %}
+
 ## Props
 
 | Prop | Type | Default | Description |

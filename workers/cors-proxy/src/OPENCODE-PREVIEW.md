@@ -8,3 +8,9 @@ app files and responses stay in the browser and are never uploaded here.
 Refresh the vendored file when updating the core dependency. Keep it identical
 to the package's worker so the preview retains its resource rewriting and HMR
 behavior. The bootstrap itself stores no credentials or app contents.
+
+The optional `path` fragment selects a path inside the selected virtual port;
+fragments and app query parameters are never sent to the static host. The
+bootstrap rejects paths outside that port's prefix. MCP navigation and reload
+always create a fresh worker scope and repeat the handshake before opening the
+target, so a terminated worker cannot reuse a closed MessagePort.

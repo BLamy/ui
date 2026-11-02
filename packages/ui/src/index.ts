@@ -681,7 +681,7 @@ export { OpenCode } from './components/open-code';
 export { DEFAULT_OPENCODE_PREVIEW_URL } from './lib/open-code-preview';
 export type { OpenCodeProps, OpenCodeState } from './components/open-code';
 export { createAlmostNodeOpenCodeHost, createAgentWasmOpenCodeHost, loadOpenCodeRuntime, DEFAULT_OPENCODE_RUNTIME_URL } from './lib/open-code-host';
-export type { OpenCodeHostBridge, OpenCodePort, OpenCodeWorkspaceBridge, OpenCodeProcessBridge, OpenCodeCommand, OpenCodeRuntime, OpenCodeRuntimeSession, AlmostNodeOpenCodeContainer, AlmostNodeOpenCodeOptions } from './lib/open-code-host';
+export type { OpenCodeHostBridge, OpenCodePort, OpenCodeWorkspaceBridge, OpenCodeProcessBridge, OpenCodeCommand, OpenCodeMcpServer, OpenCodeRuntime, OpenCodeRuntimeSession, AlmostNodeOpenCodeContainer, AlmostNodeOpenCodeOptions } from './lib/open-code-host';
 
 export { createVaultOpenCodeCredentialStore, createVaultOpenCodeConnectionStore, OPENCODE_CREDENTIAL_SLOT, OPENCODE_CONNECTION_SLOT } from './lib/open-code-keychain';
 export type { OpenCodeCredentialStore, OpenCodeConnectionStore, OpenCodeKeychainStore } from './lib/open-code-host';

@@ -98,7 +98,7 @@ test('supported credential-store and OAuth header checks pass with synthetic cre
   test.skip(process.env.OPENCODE_KEYCHAIN_QA !== '1', 'Requires the unpublished companion runtime QA build.');
   await page.goto('/opencode/backend-smoke.html');
   await expect(page.locator('body')).toHaveAttribute('data-state', 'pass', { timeout: 60_000 });
-  await expect(page.getByRole('status')).toHaveText('16 passed; 0 failed');
+  await expect(page.getByRole('status')).toHaveText('19 passed; 0 failed');
   await page.screenshot({ path: testInfo.outputPath('opencode-keychain-checks.png'), fullPage: true });
   await testInfo.attach('Synthetic keychain and OAuth checks', { path: testInfo.outputPath('opencode-keychain-checks.png'), contentType: 'image/png' });
 });

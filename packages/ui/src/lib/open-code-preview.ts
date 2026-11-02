@@ -1,4 +1,6 @@
 import type { OpenCodeHostBridge } from '@/lib/open-code-host';
+import type { OpenCodeBrowser } from '@/lib/open-code-browser';
+import { injectOpenCodeBrowserAgent } from '@/lib/open-code-browser-agent';
 
 export const DEFAULT_OPENCODE_PREVIEW_URL =
   'https://bl-cors-proxy.brett-lamy.workers.dev/opencode-preview/';
@@ -8,6 +10,7 @@ export function openCodePreviewFrameUrl(
   session: string,
   port: number,
   hostUrl: string,
+  path = '/',
 ): string {
   const url = new URL(base, hostUrl);
   if (url.origin === new URL(hostUrl).origin)
@@ -17,7 +20,10 @@ export function openCodePreviewFrameUrl(
   if (!/^https?:$/.test(url.protocol) || !/^[a-f\d-]{36}$/.test(session))
     throw new Error('Invalid OpenCode preview host.');
   url.pathname = url.pathname.replace(/\/?$/, '/') + session + '/host.html';
+  if (!path.startsWith('/') || path.startsWith('//')) throw new Error('Invalid app preview path.');
   url.search = new URLSearchParams({ port: String(port) }).toString();
+  // Fragments stay in the browser: app paths/queries must not reach the static host.
+  url.hash = path === '/' ? '' : new URLSearchParams({ path }).toString();
   return url.href;
 }
 
@@ -36,8 +42,11 @@ export function connectOpenCodePreview(options: {
   port: number;
   url: string;
   onError(message: string): void;
+  browser?: OpenCodeBrowser;
+  onNavigate?(path: string): void;
 }): () => void {
   const origin = new URL(options.url).origin;
+  const disconnectBrowser = options.browser?.connect({ ...options, navigate: options.onNavigate });
   let channel: MessageChannel | undefined;
   const timeout = setTimeout(
     () =>
@@ -111,11 +120,16 @@ export function connectOpenCodePreview(options: {
           }),
         );
         if (closed) return;
-        const body = new Uint8Array(await response.arrayBuffer());
+        const headersOut = new Headers(response.headers);
+        const html = options.browser && response.body !== null && response.headers.get('content-type')?.includes('text/html') && data.method !== 'HEAD';
+        const body = html
+          ? new TextEncoder().encode(injectOpenCodeBrowserAgent(await response.text(), options.session, window.location.origin))
+          : new Uint8Array(await response.arrayBuffer());
+        if (html) headersOut.delete('content-length');
         const result = {
           statusCode: response.status,
           statusMessage: response.statusText,
-          headers: Object.fromEntries(response.headers),
+          headers: Object.fromEntries(headersOut),
         };
         if (data.streaming) {
           transport.postMessage({
@@ -181,5 +195,6 @@ export function connectOpenCodePreview(options: {
     clearInterval(keepalive);
     window.removeEventListener('message', receive);
     channel?.port1.close();
+    disconnectBrowser?.();
   };
 }

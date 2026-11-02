@@ -12,6 +12,7 @@ export function openCodePreview(request: Request): Response | undefined {
 <script>
 const session = location.pathname.split('/')[2];
 const port = Number(new URLSearchParams(location.search).get('port'));
+const path = new URLSearchParams(location.hash.slice(1)).get('path') || '/';
 let connected = false;
 addEventListener('message', async event => {
   if (connected || event.source !== parent || event.data?.type !== 'bl-opencode-preview:connect' || event.data.session !== session || !event.ports[0]) return;
@@ -26,7 +27,10 @@ addEventListener('message', async event => {
     worker.postMessage({ type: 'eruda-toggle', data: { enabled: false } });
     await controlled;
     parent.postMessage({ type: 'bl-opencode-preview:connected', session }, event.origin);
-    location.replace('./__virtual__/' + port + '/');
+    const base = new URL('./__virtual__/' + port + '/', location.href);
+    const target = new URL(base.pathname + path.replace(/^\\//, ''), base);
+    if (!path.startsWith('/') || path.startsWith('//') || target.origin !== base.origin || !target.pathname.startsWith(base.pathname)) throw new Error('Invalid app preview path');
+    location.replace(target.href);
   } catch (error) {
     document.querySelector('#status').textContent = error.message;
     parent.postMessage({ type: 'bl-opencode-preview:error', session, message: error.message }, event.origin);

@@ -1164,7 +1164,7 @@ export function CommandFooter({ legend = true, className, children }: CommandFoo
           </motion.span>
         ))}
       </AnimatePresence>
-      {children ? <div className="ml-auto flex items-center gap-2">{children}</div> : null}
+      {children ? <div className="ml-auto flex min-w-0 items-center gap-2">{children}</div> : null}
     </div>
   );
 }

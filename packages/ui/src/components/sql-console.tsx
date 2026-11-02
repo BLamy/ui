@@ -233,7 +233,7 @@ export function SqlConsole({
                 </TabPanel>
                 <TabPanel id="history" className="max-h-80 overflow-y-auto">
                   {history.entries.length ? (
-                    <ul className="flex flex-col gap-1">
+                    <ul className="m-0 flex list-none flex-col gap-1 p-0">
                       {history.entries.map((h) => (
                         <li key={h}>
                           <Button variant="ghost" size="sm" className="h-auto w-full justify-start px-2 py-1.5 text-start font-mono text-caption font-normal whitespace-normal break-all" onPress={() => { setValue(h); editor.current?.focus(); }}>

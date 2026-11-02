@@ -49,7 +49,7 @@ function fixture() {
   };
   const session = { dispose: vi.fn() };
   const mount = vi.fn(async () => session);
-  const runtime: OpenCodeRuntime = { mount };
+  const runtime: OpenCodeRuntime = { mount, capabilities: { hostMcp: 1 } };
   const loadRuntime = async () => runtime;
   const update = (next: OpenCodePort[]) => {
     ports = next;
@@ -69,6 +69,7 @@ it('mounts the configured bridge, opens new ports automatically, and borrows an 
     directory: '/workspace',
     workspaceBridge: f.host.workspaceBridge,
     processBridge: f.host.processBridge,
+    mcpServers: [expect.objectContaining({ name: 'agent-browser' })],
   });
   f.update([
     { port: 3000, url: `${window.location.origin}/__virtual__/3000/` },
@@ -88,6 +89,22 @@ it('mounts the configured bridge, opens new ports automatically, and borrows an 
   fireEvent.click(screen.getByRole('button', { name: 'Stop OpenCode' }));
   expect(f.session.dispose).toHaveBeenCalledTimes(1);
   expect(f.host.dispose).not.toHaveBeenCalled();
+});
+
+it('allows browser tools to be disabled and reports an incompatible runtime', async () => {
+  const f = fixture();
+  f.runtime.capabilities = undefined;
+  const view = render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} />);
+  await waitFor(() =>
+    expect(screen.getByRole('alert').textContent).toContain('host MCP update'),
+  );
+  expect(f.mount).not.toHaveBeenCalled();
+  view.unmount();
+  render(
+    <OpenCode host={f.host} loadRuntime={f.loadRuntime} browserTools={false} />,
+  );
+  await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
+  expect(f.mount.mock.calls[0]?.[0]).toMatchObject({ mcpServers: [] });
 });
 
 it('cleans up a mount that completes after Stop and disposes a factory-owned host', async () => {
@@ -144,7 +161,7 @@ it.each([true, false])(
   'passes the encrypted store and stops when availability changes from %s',
   async (initial) => {
     const f = fixture();
-    f.runtime.capabilities = { credentialStore: 1 };
+    f.runtime.capabilities = { hostMcp: 1, credentialStore: 1 };
     let unlocked = initial;
     let listener = () => {};
     const store: OpenCodeCredentialStore = {
@@ -209,7 +226,11 @@ it('refuses runtimes that cannot honor encrypted credential persistence', async 
 
 it('restarts automatically after keychain unlock, reloads both stores and stops on lock', async () => {
   const f = fixture();
-  f.runtime.capabilities = { credentialStore: 1, connectionStore: 1 };
+  f.runtime.capabilities = {
+    hostMcp: 1,
+    credentialStore: 1,
+    connectionStore: 1,
+  };
   let unlocked = false;
   const listeners = new Set<() => void>();
   const store: OpenCodeCredentialStore = {
@@ -260,7 +281,7 @@ it('restarts automatically after keychain unlock, reloads both stores and stops 
 
 it('refuses runtimes that would ignore the saved Tailscale connection', async () => {
   const f = fixture();
-  f.runtime.capabilities = { credentialStore: 1 };
+  f.runtime.capabilities = { hostMcp: 1, credentialStore: 1 };
   const store: OpenCodeCredentialStore = {
     version: 1,
     unlocked: () => true,
@@ -344,4 +365,43 @@ it('reconnects preview frames on reload and port changes without restarting Open
   expect(f.mount).toHaveBeenCalledTimes(1);
   expect(f.host.dispose).not.toHaveBeenCalled();
   expect(f.session.dispose).not.toHaveBeenCalled();
+});
+
+it('routes MCP navigation through a fresh worker bootstrap without restarting the terminal', async () => {
+  const f = fixture();
+  f.update([
+    { port: 3000, url: `${window.location.origin}/__virtual__/3000/` },
+  ]);
+  render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} />);
+  await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
+  const initial = screen.getByTitle('OpenCode · port 3000');
+  const initialUrl = new URL(initial.getAttribute('src') ?? '');
+  const options = f.mount.mock.calls[0]?.[0] as
+    Parameters<OpenCodeRuntime['mount']>[0] | undefined;
+  const server = options?.mcpServers?.find(
+    (entry) => entry.name === 'agent-browser',
+  );
+  if (!server) throw new Error('Browser MCP server missing');
+  const controller = new AbortController();
+  let navigation: Promise<unknown> = Promise.resolve();
+  act(() => {
+    navigation = server.callTool(
+      'agent_browser_open',
+      { url: '/deep?x=yes' },
+      controller.signal,
+    );
+  });
+  const rejected = expect(navigation).rejects.toThrow('cancelled');
+  const next = screen.getByTitle('OpenCode · port 3000');
+  const nextUrl = new URL(next.getAttribute('src') ?? '');
+  expect(next).not.toBe(initial);
+  expect(nextUrl.pathname).not.toBe(initialUrl.pathname);
+  expect(nextUrl.pathname).toMatch(/\/host\.html$/);
+  expect(nextUrl.searchParams.has('path')).toBe(false);
+  expect(new URLSearchParams(nextUrl.hash.slice(1)).get('path')).toBe(
+    '/deep?x=yes',
+  );
+  expect(f.mount).toHaveBeenCalledTimes(1);
+  controller.abort();
+  await rejected;
 });
