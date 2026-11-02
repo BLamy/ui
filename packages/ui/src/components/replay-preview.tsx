@@ -4,10 +4,11 @@
 export {
   ReplayPreview, formatReplayTime, getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt,
   getReplayDevtools, replayDevtoolsAt, getReplayInspections, resolveReplayInspections, replayInspectionAt,
+  ReplayStage, preloadReplayStage,
 } from '@brett_lamy/docstream/replay';
 export type {
   ReplayPreviewHandle, ReplayPreviewProps, ReplayEvent, ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack,
   ReplayConsoleEntry, ReplayConsoleLevel, ReplayDevtools, ReplayDevtoolsState, ReplayDevtoolsTab, ReplayRequest,
-  ReplayInspection, ReplayInspectionTab, ResolvedReplayInspection,
+  ReplayInspection, ReplayInspectionTab, ResolvedReplayInspection, ReplayStageHandle, ReplayStageLayout, ReplayStageProps,
 } from '@brett_lamy/docstream/replay';
 export { replayDemoEvents } from '@brett_lamy/docstream/replay/demo';

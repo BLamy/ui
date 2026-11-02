@@ -378,11 +378,12 @@ export type { ProgressRingProps, ProgressRingTone, CountdownRingProps, Countdown
 // ReplayPreview lives in docstream; re-exported here (see components/replay-preview.tsx)
 export {
   ReplayPreview, formatReplayTime, replayDemoEvents, getReplayMarkers, getReplayMeta, getReplayPointerTrack, replayPointerAt,
-  getReplayDevtools, replayDevtoolsAt,
+  getReplayDevtools, replayDevtoolsAt, ReplayStage, preloadReplayStage,
 } from './components/replay-preview';
 export type {
   ReplayPreviewHandle, ReplayPreviewProps, ReplayEvent, ReplayMarker, ReplayMarkerKind, ReplayMeta, ReplayPointerTrack,
   ReplayConsoleEntry, ReplayConsoleLevel, ReplayDevtools, ReplayDevtoolsState, ReplayDevtoolsTab, ReplayRequest,
+  ReplayStageHandle, ReplayStageLayout, ReplayStageProps,
 } from './components/replay-preview';
 // The STL viewer lives in docstream; re-exported here (see components/stl-viewer.tsx)
 export { StlViewer, parseStl, isStlUrl } from './components/stl-viewer';

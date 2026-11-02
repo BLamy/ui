@@ -38,6 +38,18 @@ The Interface Builder block is Xcode's storyboard for apps made of BL UI. Its li
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/interface-builder.json{% endcommand %}
 
+{% demo src="blocks/replay-canvas" layout="multi" %}
+
+The Replay Canvas block takes an app apart from its rrweb recordings, on a canvas like the Interface Builder's. Each recording is read for the pages it visits, the layers that open over them (dialogs, menus, sheets, popovers, toasts) and the states they go through. Each frame is the recording itself in a paused [ReplayStage](https://blamy.github.io/ui/#/replay-preview), with a layer cropped to just its panel beside the page it opened over. Segues run from where the click landed to what it opened, labelled with what was clicked. Recordings fold into one map: pages merge by route (`/projects/1` and `/projects/3` are `/projects/:id`), title or structure; layers merge by kind, structure and buttons; states merge by the control that led to them. Every recording you add (drop rrweb `.json` files anywhere on it) confirms what's already there and fills in what isn't. Select a frame or a segue to see the moments it was seen at and play the recording from there.
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/replay-canvas.json{% endcommand %}
+
+```tsx
+import ReplayCanvas from '@/components/blocks/replay-canvas/page';
+
+<ReplayCanvas recordings={[{ id: 'checkout', name: 'Checkout', events }, …]} />;
+```
+
 {% demo src="blocks/video-editor" layout="multi" %}
 
 The Video Editor block is iMovie and Final Cut in a page: a media library, a viewer that plays the edit live, an inspector and a timeline with a magnetic main track, titles over it and music under it. Drop files on the library (or drag cards onto a track), drag clips to move them, trim their edges, split at the playhead (S), dissolve between clips, give them a look, fill or fit the frame, set clips over the main track as picture in picture, and undo anything. [FFmpeg](https://blamy.github.io/ui/#/ffmpeg) does the reading and the writing on the device: it probes files, draws the filmstrips and waveforms, makes the sample clips and exports the timeline to WebM, MP4, GIF, MP3 or WAV with live progress and the command it ran. FFmpeg's threads need a cross-origin isolated page: in browsers other than Chrome, open the demo in its own tab. Where it can't run, the browser reads and plays what it can and exporting is off.

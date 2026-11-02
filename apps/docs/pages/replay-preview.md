@@ -176,6 +176,10 @@ const [events, setEvents] = useState<ReplayEvent[]>()
 
 rrweb doesn't fix a file format, so the example takes an event array, `{ events: [...] }`, or one event per line, gzipped or not, and checks `getReplayMeta(events).playable` (a full snapshot to start from) before handing the events over. A new `key` remounts the player, so each dropped recording plays from its start (the example keys on a drop counter, so dropping the same file again restarts it too).
 
+## Many recordings, one map
+
+The [Replay Canvas](https://blamy.github.io/ui/#/blocks/replay-canvas) block lays recordings out instead of playing them one at a time. It reads every recording for its pages, the dialogs, menus and sheets opened over them, and the clicks between them, then draws each one as a paused `ReplayStage` (the headless player under `ReplayPreview`, also exported here) on a canvas, with segues from each click to what it opened.
+
 ## Props
 
 | Prop | Default | Effect |

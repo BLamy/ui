@@ -1,0 +1,247 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Projects · Tandem</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; color: #18181b; background: #fafafa; }
+button { font: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+.top { display: flex; align-items: center; gap: 24px; height: 56px; padding: 0 28px; background: #fff; border-bottom: 1px solid #e4e4e7; }
+.logo { font-weight: 700; letter-spacing: -0.02em; font-size: 16px; }
+.logo b { color: #6d28d9; }
+.top nav a { color: #52525b; margin-right: 18px; }
+.top nav a.on { color: #18181b; font-weight: 600; }
+.sp { flex: 1; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; border: 0; background: linear-gradient(135deg, #a78bfa, #6d28d9); color: #fff; font-weight: 600; }
+main { padding: 28px; max-width: 1100px; }
+.head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+.sub { color: #71717a; margin: 2px 0 0; }
+.btn { border: 1px solid #d4d4d8; background: #fff; border-radius: 8px; padding: 7px 14px; }
+.btn.primary { border-color: #6d28d9; background: #6d28d9; color: #fff; font-weight: 600; }
+.btn.danger { border-color: #dc2626; background: #dc2626; color: #fff; font-weight: 600; }
+.rows { background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; overflow: hidden; }
+.row { display: grid; grid-template-columns: 1fr 140px 120px; align-items: center; padding: 13px 18px; border-bottom: 1px solid #f4f4f5; }
+.row:last-child { border-bottom: 0; }
+.row .name { font-weight: 600; }
+.pill { justify-self: start; font-size: 12px; border-radius: 999px; padding: 2px 9px; background: #f4f4f5; color: #52525b; }
+.pill.live { background: #dcfce7; color: #166534; }
+.muted { color: #71717a; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid #e4e4e7; margin: 6px 0 18px; }
+.tabs button { border: 0; background: none; padding: 9px 12px; color: #71717a; border-bottom: 2px solid transparent; }
+.tabs button.on { color: #18181b; border-bottom-color: #6d28d9; font-weight: 600; }
+.tasks { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; }
+.tasks li { padding: 12px 18px; border-bottom: 1px solid #f4f4f5; display: flex; gap: 10px; align-items: center; }
+.tasks li:last-child { border-bottom: 0; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #a1a1aa; }
+.dot.done { background: #22c55e; }
+.card { background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
+.card h3 { margin: 0 0 4px; font-size: 15px; }
+.switch { width: 40px; height: 24px; border-radius: 12px; border: 0; background: #d4d4d8; position: relative; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; }
+.switch.on { background: #6d28d9; }
+.switch.on::after { left: 19px; }
+.line { display: flex; align-items: center; justify-content: space-between; }
+.backdrop { position: fixed; inset: 0; background: rgba(24, 24, 27, .45); display: grid; place-items: center; }
+.dialog { width: 420px; background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, .25); }
+.dialog h2 { margin: 0 0 4px; font-size: 18px; }
+.dialog label { display: block; font-size: 12px; color: #71717a; margin: 14px 0 4px; }
+.dialog input, .dialog select, .sheet input { width: 100%; border: 1px solid #d4d4d8; border-radius: 8px; padding: 8px 10px; font: inherit; }
+.dialog input.bad { border-color: #dc2626; }
+.error { color: #dc2626; font-size: 12px; margin-top: 6px; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.menu { position: fixed; min-width: 180px; background: #fff; border: 1px solid #e4e4e7; border-radius: 10px; padding: 5px; box-shadow: 0 12px 32px rgba(0, 0, 0, .16); }
+.menu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 7px 10px; border-radius: 6px; }
+.menu button:hover { background: #f4f4f5; }
+.menu .red { color: #dc2626; }
+.menu hr { border: 0; border-top: 1px solid #f4f4f5; margin: 4px 0; }
+.sheet { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; background: #fff; border-left: 1px solid #e4e4e7; box-shadow: -12px 0 40px rgba(0, 0, 0, .12); padding: 24px; transform: translateX(100%); transition: transform .3s cubic-bezier(.32, .72, 0, 1); }
+.sheet.open { transform: none; }
+.sheet h2 { margin: 0 0 16px; font-size: 18px; }
+.sheet label { display: block; font-size: 12px; color: #71717a; margin: 14px 0 4px; }
+.popover { position: fixed; width: 300px; background: #fff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, .16); }
+.popover h4 { margin: 0 0 10px; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #18181b; color: #fff; border-radius: 10px; padding: 10px 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, .25); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">tan<b>dem</b></div>
+  <nav><a href="/projects" id="nav-projects">Projects</a><a href="/settings" id="nav-settings">Settings</a></nav>
+  <div class="sp"></div>
+  <button class="avatar" id="avatar" aria-label="Account" aria-haspopup="menu">BL</button>
+</header>
+<main id="main"></main>
+<aside class="sheet" id="sheet" role="dialog" aria-label="New task">
+  <h2>New task</h2>
+  <label>Title</label><input id="task-title" placeholder="What needs doing?">
+  <label>Assignee</label><input id="task-who" placeholder="Anyone">
+  <div class="actions"><button class="btn" id="sheet-cancel">Cancel</button><button class="btn primary" id="sheet-save">Save task</button></div>
+</aside>
+<script>
+const projects = [
+  { id: 1, name: 'Atlas', owner: 'Brett', status: 'Live', tasks: ['Ship onboarding', 'Audit color tokens', 'Write launch post'] },
+  { id: 2, name: 'Beacon', owner: 'Mara', status: 'Draft', tasks: ['Interview five customers'] },
+  { id: 3, name: 'Compass', owner: 'Jun', status: 'Live', tasks: ['Fix sync conflicts', 'Offline mode'] },
+  { id: 4, name: 'Delta', owner: 'Ana', status: 'Draft', tasks: [] },
+];
+let nextId = 7;
+const $ = (s) => document.querySelector(s);
+const main = $('#main');
+let layer = null;
+
+function closeLayer() { if (layer) { layer.remove(); layer = null; } }
+function toast(text) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = text;
+  document.body.append(t);
+  setTimeout(() => t.remove(), 1600);
+}
+function go(path) { history.pushState({}, '', path); render(); }
+
+function render() {
+  closeLayer();
+  $('#sheet').classList.remove('open');
+  const path = location.pathname;
+  document.querySelectorAll('.top nav a').forEach((a) => a.classList.toggle('on', path.startsWith(a.getAttribute('href'))));
+  const m = /^\/projects\/(\d+)/.exec(path);
+  if (m) return detail(projects.find((p) => p.id === +m[1]));
+  if (path.startsWith('/settings')) return settings();
+  list();
+}
+
+function list() {
+  document.title = 'Projects · Tandem';
+  main.innerHTML = `<div class="head"><div><h1>Projects</h1><p class="sub">${projects.length} projects in Studio</p></div>
+    <button class="btn primary" id="new-project">New project</button></div>
+    <div class="rows">${projects.map((p) => `<div class="row" data-id="${p.id}"><a class="name" href="/projects/${p.id}">${p.name}</a>
+      <span class="pill ${p.status === 'Live' ? 'live' : ''}">${p.status}</span><span class="muted">${p.owner}</span></div>`).join('')}</div>`;
+  $('#new-project').onclick = newProject;
+  main.querySelectorAll('.row').forEach((row) => {
+    row.oncontextmenu = (e) => { e.preventDefault(); rowMenu(projects.find((p) => p.id === +row.dataset.id), e.clientX, e.clientY); };
+  });
+}
+
+function detail(p) {
+  document.title = `${p.name} · Tandem`;
+  main.innerHTML = `<p class="muted"><a href="/projects" id="crumb">Projects</a> / ${p.name}</p>
+    <div class="head"><div><h1>${p.name}</h1><p class="sub">Owned by ${p.owner} · ${p.status}</p></div>
+    <div><button class="btn" id="share">Share</button> <button class="btn primary" id="add-task">Add task</button></div></div>
+    <div class="tabs"><button class="on">Tasks</button><button>Activity</button><button>Files</button></div>
+    <ul class="tasks" id="tasks">${p.tasks.length ? p.tasks.map((t, i) => `<li><span class="dot ${i === 0 ? 'done' : ''}"></span>${t}</li>`).join('') : '<li class="muted">No tasks yet</li>'}</ul>`;
+  $('#add-task').onclick = () => { $('#task-title').value = ''; $('#task-who').value = ''; $('#sheet').classList.add('open'); };
+  $('#share').onclick = (e) => share(p, e.currentTarget);
+  $('#sheet-cancel').onclick = () => $('#sheet').classList.remove('open');
+  $('#sheet-save').onclick = () => {
+    const title = $('#task-title').value.trim() || 'Untitled task';
+    p.tasks.push(title);
+    $('#sheet').classList.remove('open');
+    const ul = $('#tasks');
+    if (ul.querySelector('.muted')) ul.innerHTML = '';
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="dot"></span>${title}`;
+    ul.append(li);
+  };
+}
+
+function settings() {
+  document.title = 'Settings · Tandem';
+  main.innerHTML = `<div class="head"><div><h1>Settings</h1><p class="sub">Studio workspace</p></div></div>
+    <div class="card line"><div><h3>Email digests</h3><p class="sub">A summary of activity every Monday.</p></div><button class="switch on" id="digest" role="switch" aria-label="Email digests"></button></div>
+    <div class="card line"><div><h3>Delete workspace</h3><p class="sub">Removes every project and file. This can't be undone.</p></div><button class="btn danger" id="delete-ws">Delete workspace</button></div>`;
+  $('#digest').onclick = (e) => e.currentTarget.classList.toggle('on');
+  $('#delete-ws').onclick = () => confirmDialog('Delete workspace?', 'Every project in Studio will be deleted.', 'Delete workspace', () => toast('Workspace deleted'));
+}
+
+function modal(html) {
+  closeLayer();
+  layer = document.createElement('div');
+  layer.className = 'backdrop';
+  layer.innerHTML = html;
+  layer.onclick = (e) => { if (e.target === layer) closeLayer(); };
+  document.body.append(layer);
+  return layer;
+}
+
+function newProject() {
+  const el = modal(`<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="np-title"><h2 id="np-title">New project</h2><p class="sub">Projects group tasks, files and people.</p>
+    <label>Name</label><input id="np-name" placeholder="e.g. Atlas">
+    <label>Visibility</label><select id="np-vis"><option>Studio</option><option>Private</option></select>
+    <div id="np-error"></div>
+    <div class="actions"><button class="btn" id="np-cancel">Cancel</button><button class="btn primary" id="np-create">Create project</button></div></div>`);
+  el.querySelector('#np-cancel').onclick = closeLayer;
+  el.querySelector('#np-create').onclick = () => {
+    const name = el.querySelector('#np-name').value.trim();
+    if (!name) {
+      el.querySelector('#np-name').classList.add('bad');
+      el.querySelector('#np-error').innerHTML = '<p class="error">Give the project a name.</p>';
+      return;
+    }
+    const p = { id: nextId++, name, owner: 'Brett', status: 'Draft', tasks: [] };
+    projects.push(p);
+    go(`/projects/${p.id}`);
+    toast(`Created ${name}`);
+  };
+}
+
+function confirmDialog(title, body, action, done) {
+  const el = modal(`<div class="dialog" role="alertdialog" aria-modal="true"><h2>${title}</h2><p class="sub">${body}</p>
+    <div class="actions"><button class="btn" id="cd-cancel">Cancel</button><button class="btn danger" id="cd-ok">${action}</button></div></div>`);
+  el.querySelector('#cd-cancel').onclick = closeLayer;
+  el.querySelector('#cd-ok').onclick = () => { closeLayer(); done(); };
+}
+
+function floating(cls, html, x, y, role) {
+  closeLayer();
+  layer = document.createElement('div');
+  layer.className = cls;
+  layer.setAttribute('role', role);
+  layer.style.left = `${x}px`;
+  layer.style.top = `${y}px`;
+  layer.innerHTML = html;
+  document.body.append(layer);
+  return layer;
+}
+
+function rowMenu(p, x, y) {
+  const el = floating('menu', `<button data-a="open">Open</button><button data-a="rename">Rename</button><button data-a="dup">Duplicate</button><hr><button class="red" data-a="delete">Delete project</button>`, x, y, 'menu');
+  el.querySelector('[data-a=open]').onclick = () => go(`/projects/${p.id}`);
+  el.querySelector('[data-a=dup]').onclick = () => { closeLayer(); toast(`Duplicated ${p.name}`); };
+  el.querySelector('[data-a=rename]').onclick = closeLayer;
+  el.querySelector('[data-a=delete]').onclick = () => confirmDialog(`Delete ${p.name}?`, 'Its tasks and files go with it.', 'Delete project', () => {
+    projects.splice(projects.indexOf(p), 1);
+    list();
+    toast(`Deleted ${p.name}`);
+  });
+}
+
+function share(p, button) {
+  const r = button.getBoundingClientRect();
+  const el = floating('popover', `<h4>Share ${p.name}</h4><input placeholder="Add people by email" id="share-email">
+    <p class="sub" id="share-who">Only Studio members can see this project.</p>
+    <div class="actions"><button class="btn" id="share-link">Copy link</button><button class="btn primary" id="share-invite">Invite</button></div>`, r.right - 300, r.bottom + 8, 'dialog');
+  el.querySelector('#share-link').onclick = () => { el.querySelector('#share-link').textContent = 'Link copied'; };
+  el.querySelector('#share-invite').onclick = () => { el.querySelector('#share-who').textContent = `Invited ${el.querySelector('#share-email').value}.`; el.querySelector('#share-email').value = ''; };
+}
+
+$('#avatar').onclick = (e) => {
+  if (layer?.classList.contains('menu') && layer.dataset.k === 'account') return closeLayer();
+  const r = e.currentTarget.getBoundingClientRect();
+  const el = floating('menu', `<button data-a="profile">Brett Lamy</button><button data-a="settings">Settings</button><hr><button data-a="out">Sign out</button>`, r.right - 180, r.bottom + 8, 'menu');
+  el.dataset.k = 'account';
+  el.querySelector('[data-a=settings]').onclick = () => go('/settings');
+  el.querySelector('[data-a=profile]').onclick = closeLayer;
+  el.querySelector('[data-a=out]').onclick = closeLayer;
+};
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="/"]');
+  if (a) { e.preventDefault(); go(a.getAttribute('href')); return; }
+  if (layer && !layer.classList.contains('backdrop') && !layer.contains(e.target) && !e.target.closest('#avatar, #share')) closeLayer();
+});
+addEventListener('popstate', render);
+render();
+</script>
+</body>
+</html>
