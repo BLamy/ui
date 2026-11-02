@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test';
 import { openDemo } from './helpers.mjs';
 
 /* The Replay Canvas block: four rrweb sessions of Tandem folded into one map. Frames are the recordings paused (a layer
-   cropped to its panel), the outline and segues select, and a recording added from a file joins the same map. */
+   cropped to its panel, a page to its content, an update to the part it changed, the shared header on its own), the
+   outline and segues select, journeys can be followed, and a recording added from a file joins the same map. */
 test.use({ viewport: { width: 1500, height: 940 } });
 
 test.beforeEach(async ({ page }) => {
@@ -10,10 +11,21 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('maps the recordings into pages, layers and segues', async ({ page }) => {
-  await expect(page.locator('[data-slot=replay-canvas]')).toContainText('4 recordings → 3 pages · 9 layers');
-  await expect(page.locator('[data-rc-frame]')).toHaveCount(18);
+  await expect(page.locator('[data-slot=replay-canvas]')).toContainText('4 recordings → 3 pages · 9 layers · 1 shared');
+  await expect(page.locator('[data-rc-frame]')).toHaveCount(19);
   // Every frame's player comes up.
-  await expect(page.locator('[data-replay-stage]')).toHaveCount(18, { timeout: 20_000 });
+  await expect(page.locator('[data-replay-stage]')).toHaveCount(19, { timeout: 20_000 });
+});
+
+test('draws shared chrome once, and an update as just the part it changed', async ({ page }) => {
+  // The header every page has is a frame of its own; "Projects" in it leads to the Projects page.
+  await page.getByRole('button', { name: /^Header\s*shared/ }).click();
+  const inspector = page.locator('[data-slot=replay-canvas-inspector]');
+  await expect(inspector).toContainText('Shared chrome');
+  await expect(inspector).toContainText('Click “Projects” → Projects · Tandem');
+  // Toggling "Email digests" is the switch's row, not another 1280×800 screen.
+  const part = page.locator('[data-rc-frame$="Email digests"]').or(page.locator('[data-rc-frame*="switch"]'));
+  await expect.poll(async () => part.first().evaluate((el) => parseFloat(el.style.height)), { timeout: 15_000 }).toBeLessThan(200);
 });
 
 test('draws a layer cropped to its panel, beside its states', async ({ page }) => {
@@ -48,17 +60,34 @@ test('hides the arrows but keeps their dots; a dot draws its arrow', async ({ pa
   await page.getByRole('button', { name: /^Hide arrows/ }).click();
   await expect(arrows).toHaveCount(0);
   await expect(dots).toHaveCount(n);
-  const id = await dots.first().getAttribute('data-rc-segue');
-  await dots.first().click({ force: true });
+  // A dot draws its segue, and the rest of that journey's path.
+  const dot = dots.first();
+  const id = await dot.getAttribute('data-rc-segue');
+  const journey = await dot.evaluate((el) => el.closest('[data-rc-journey]').getAttribute('data-rc-journey'));
+  await dot.click({ force: true });
   await expect(page.locator('[data-slot=replay-canvas-inspector]')).toContainText('Segue');
-  await expect(arrows).toHaveCount(1);
-  await expect(arrows.first()).toHaveAttribute('data-rc-segue', id);
+  await expect(arrows.and(page.locator(`[data-rc-segue="${id}"]`))).not.toHaveCount(0);
+  const drawn = await arrows.evaluateAll((els) => els.map((el) => el.closest('[data-rc-journey]').getAttribute('data-rc-journey')));
+  expect(drawn.length).toBeGreaterThan(1);
+  expect(new Set(drawn.filter((j) => j !== journey)).size).toBeLessThanOrEqual(1); // the selected segue's other journeys
   await page.getByRole('button', { name: 'Show arrows' }).click();
   await expect(arrows).toHaveCount(n);
 });
 
+test('follows a journey: its steps numbered, the rest faded', async ({ page }) => {
+  await page.getByRole('button', { name: /^Follow Delete Beacon/ }).click();
+  await expect(page.getByRole('button', { name: /^Stop following Delete Beacon/ }).first()).toBeVisible();
+  const steps = page.locator('[data-rc-step]');
+  await expect(steps).toHaveCount(8);
+  await expect(steps.first()).toHaveText('1');
+  // Pressing empty board stops following.
+  const box = await page.locator('[data-slot=canvas]').boundingBox();
+  await page.mouse.click(box.x + 20, box.y + box.height - 20);
+  await expect(steps).toHaveCount(0);
+});
+
 test('previews a frame and a recording in hover cards', async ({ page }) => {
-  const frame = page.locator('[data-rc-frame]').first();
+  const frame = page.locator('[data-rc-frame^="page-"]').first();
   await frame.hover();
   const card = page.locator('[data-slot=hover-card]');
   await expect(card).toContainText(/Seen \d+× in \d+ recording/);
@@ -70,7 +99,7 @@ test('previews a frame and a recording in hover cards', async ({ page }) => {
 
 test('the minimap outlines the view and moves it when pressed', async ({ page }) => {
   const map = page.locator('[data-slot=canvas-minimap]');
-  await expect(map.locator('rect')).toHaveCount(19); // 18 frames and the view
+  await expect(map.locator('rect')).toHaveCount(20); // 19 frames and the view
   const board = page.locator('[data-slot=canvas-board]');
   const before = await board.evaluate((el) => el.style.transform);
   const box = await map.boundingBox();

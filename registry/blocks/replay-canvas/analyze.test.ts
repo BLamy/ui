@@ -84,4 +84,24 @@ describe('analyzeRecordings', () => {
       }
     }
   });
+
+  it('draws the header every page shares once, and clicks in it leave from it', () => {
+    const map = analyzeRecordings(SAMPLE_RECORDINGS);
+    expect(map.chrome.map((c) => [c.type, c.pages.length])).toEqual([['header', 3]]);
+    const header = map.chrome[0];
+    // The page frames show their content without it.
+    for (const p of map.pages) expect(p.states[0].evidence[0].scope).toBe('content');
+    const toProjects = map.segues.find((s) => s.label === 'Projects' && s.to.node === page(map, 'Projects · Tandem')!.id && s.from.node === header.id);
+    expect(toProjects?.kind).toBe('navigate');
+  });
+
+  it('draws an update that changes one part of the page as that part', () => {
+    const map = analyzeRecordings(SAMPLE_RECORDINGS);
+    const settings = page(map, 'Settings · Tandem')!;
+    const toggled = settings.states.find((s) => s.label === 'After “Email digests”')!;
+    expect(toggled.evidence[0].scope).toBe('part');
+    // A press outside that part afterwards leaves from the page, not the part.
+    const del = map.segues.find((s) => s.label === 'Delete workspace')!;
+    expect(del.from).toEqual({ node: settings.id, state: 'base' });
+  });
 });

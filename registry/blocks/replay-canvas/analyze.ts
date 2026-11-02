@@ -9,7 +9,11 @@
    are `/projects/:id`), their titles match, or their skeletons (the tag-and-class structure, no text) mostly do; layers
    by kind, structure and their buttons' labels; states by the control that led to them; segues by where they start,
    what was clicked and where they end. So each recording added confirms what's there (the counts go up) and fills in
-   what isn't, and every frame and segue keeps the moments (`Evidence`) it was seen at, to be drawn from any of them. */
+   what isn't, and every frame and segue keeps the moments (`Evidence`) it was seen at, to be drawn from any of them.
+   Two things keep the map small:
+   - an update that changes one part of the page (a switch, a row) is a frame of just that part, not another screen;
+   - chrome — a header, a navigation bar, a sidebar, a footer, by landmark or class — seen on two or more pages is a
+     frame of its own: the page frames show only their content, and what's clicked in the chrome leaves from it. */
 import type { ReplayEvent } from '@/components/ui/replay-preview';
 import { VDom, isElement, type MutationData, type VNode } from './vdom';
 
@@ -19,12 +23,15 @@ export interface Recording {
   events: ReplayEvent[];
 }
 
-/** A moment in one recording that shows something: `path` scopes the frame to a layer, `hide` hides open layers. */
+/** A moment in one recording that shows something: `path` scopes the frame to one element (a layer's panel, the
+ *  page's content without its chrome, the part an update changed, or the chrome itself), `hide` hides open layers. */
 export interface Evidence {
   recording: string;
   /** ms from the recording's first event. */
   time: number;
   path?: number[];
+  /** What `path` is when it isn't a layer: these keep the page's background. */
+  scope?: 'content' | 'part' | 'chrome';
   hide?: number[][];
 }
 
@@ -58,6 +65,22 @@ export interface OverlayNode {
   recordings: string[];
 }
 
+export type ChromeType = 'header' | 'nav' | 'sidebar' | 'footer';
+
+/** Chrome shared by pages: drawn once, the pages without it. */
+export interface ChromeNode {
+  kind: 'chrome';
+  id: string;
+  type: ChromeType;
+  label: string;
+  states: ScreenState[];
+  /** The pages it was seen on. */
+  pages: string[];
+  recordings: string[];
+}
+
+export type MapNode = PageNode | OverlayNode | ChromeNode;
+
 export type SegueKind = 'navigate' | 'present' | 'update' | 'dismiss';
 
 export interface StateRef {
@@ -88,6 +111,8 @@ export interface RecordingSummary {
 export interface AppMap {
   pages: PageNode[];
   overlays: OverlayNode[];
+  /** Chrome seen on two or more pages. */
+  chrome: ChromeNode[];
   segues: Segue[];
   entry: StateRef | null;
   recordings: RecordingSummary[];
@@ -145,6 +170,121 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   let both = 0;
   for (const x of a) if (b.has(x)) both++;
   return both / (a.size + b.size - both);
+}
+
+/* ── Chrome and parts ── */
+
+const CHROME_TAGS: Record<string, ChromeType> = { header: 'header', nav: 'nav', aside: 'sidebar', footer: 'footer' };
+const CHROME_ROLES: Record<string, ChromeType> = { banner: 'header', navigation: 'nav', complementary: 'sidebar', contentinfo: 'footer' };
+const CHROME_CLASS: [RegExp, ChromeType][] = [
+  [/^(app-|site-|page-)?(header|topbar|top-bar|navbar|appbar|app-bar|masthead)$/i, 'header'],
+  [/^(app-|site-)?(sidebar|side-bar|sidenav|side-nav|leftnav|rail)$/i, 'sidebar'],
+  [/^(app-|site-)?footer$/i, 'footer'],
+];
+const CHROME_LABEL: Record<ChromeType, string> = { header: 'Header', nav: 'Navigation', sidebar: 'Sidebar', footer: 'Footer' };
+const SKIP_TAGS = ['script', 'style', 'noscript', 'template', 'link', 'meta'];
+
+/** A layer, unless it holds most of the page: an app shell pinned full-screen (`position: fixed; inset: 0`) is layout. */
+function isLayer(vdom: VDom, n: VNode): boolean {
+  const body = vdom.body();
+  return isOverlayish(vdom, n) && !(body && vdom.elements(n).length > vdom.elements(body).length * 0.5);
+}
+
+function chromeType(n: VNode): ChromeType | undefined {
+  if (n.attrs.role === 'dialog' || n.attrs.role === 'alertdialog' || n.attrs['aria-modal'] === 'true') return undefined;
+  return CHROME_ROLES[n.attrs.role ?? ''] ?? CHROME_TAGS[n.tag] ?? CHROME_CLASS.find(([re]) => stableClasses(n).some((c) => re.test(c)))?.[1];
+}
+
+/** The words of an element's text, to tell chrome (the same labels on every page) from content. */
+const wordsOf = (vdom: VDom, n: VNode) => new Set(vdom.textOf(n).toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 1));
+
+/** The page's regions when it has no landmarks: where the layout splits into big blocks (a sidebar beside the rest, a
+ *  header above the content), every block but the biggest at each split, which is where the content goes on. Only the
+ *  shell's splits count — while the biggest block still holds most of the page — not the content's own columns. */
+function regionsOf(vdom: VDom, skip: Set<number>): { node: VNode; type: ChromeType }[] {
+  const body = vdom.body();
+  if (!body) return [];
+  const big = (n: VNode) => vdom.elements(n).length >= 6 && vdom.textOf(n).length >= 8;
+  const actions = (n: VNode) => vdom.elements(n).filter((e) => e.tag === 'a' || e.tag === 'button' || e.attrs.role === 'button' || e.attrs.role === 'link').length;
+  const out: { node: VNode; type: ChromeType }[] = [];
+  const all = vdom.elements(body).length;
+  let n = body;
+  for (let d = 0, splits = 0; d < 12 && splits < 2; d++) {
+    const kids = vdom.elementChildren(n).filter((c) => !skip.has(c.id) && !SKIP_TAGS.includes(c.tag) && !isLayer(vdom, c) && big(c));
+    if (!kids.length) break;
+    const content = kids.reduce((a, c) => (vdom.elements(c).length > vdom.elements(a).length ? c : a));
+    if (vdom.elements(content).length < all * 0.7) break;
+    if (kids.length > 1) {
+      splits++;
+      const at = vdom.elementChildren(n).indexOf(content);
+      for (const c of kids) {
+        if (c === content || vdom.elements(c).length < 10) continue;
+        const before = vdom.elementChildren(n).indexOf(c) < at;
+        out.push({ node: c, type: actions(c) >= 6 ? 'sidebar' : before ? 'header' : 'footer' });
+      }
+    }
+    n = content;
+  }
+  return out;
+}
+
+/** The page's chrome: the outermost landmarks outside `main` that aren't layers, else its layout's side regions. */
+function chromeOf(vdom: VDom, skip: Set<number>): { node: VNode; type: ChromeType; landmark: boolean }[] {
+  const body = vdom.body();
+  if (!body) return [];
+  const out: { node: VNode; type: ChromeType; landmark: boolean }[] = [];
+  const walk = (n: VNode, d: number) => {
+    if (!isElement(n) || skip.has(n.id) || d > 6 || SKIP_TAGS.includes(n.tag)) return;
+    if (n.tag === 'main' || n.attrs.role === 'main') return;
+    const type = chromeType(n);
+    if (type && vdom.elements(n).length >= 3 && vdom.textOf(n)) { out.push({ node: n, type, landmark: true }); return; }
+    if (isLayer(vdom, n)) return;
+    for (const c of vdom.elementChildren(n)) walk(c, d + 1);
+  };
+  for (const c of vdom.elementChildren(body)) walk(c, 0);
+  if (out.length) return out;
+  return regionsOf(vdom, skip).map((r) => ({ ...r, landmark: false }));
+}
+
+/** The page without its chrome: `main` if there is one, else the biggest chrome-free block beside it. */
+function contentOf(vdom: VDom, chrome: readonly VNode[], skip: Set<number>): VNode | undefined {
+  const body = vdom.body();
+  if (!body || !chrome.length) return undefined;
+  const main = vdom.find((e) => (e.tag === 'main' || e.attrs.role === 'main') && !chrome.some((c) => vdom.within(e.id, c.id)), body.id);
+  if (main) return main;
+  const ids = new Set(chrome.map((c) => c.id));
+  const hasChrome = (n: VNode) => chrome.some((c) => vdom.within(c.id, n.id));
+  let n = body;
+  for (let d = 0; d < 8; d++) {
+    const kids = vdom.elementChildren(n).filter((c) => !ids.has(c.id) && !skip.has(c.id) && !SKIP_TAGS.includes(c.tag) && !isLayer(vdom, c));
+    const top = kids.map((c) => ({ c, size: vdom.elements(c).length })).sort((a, b) => b.size - a.size)[0];
+    if (!top) return undefined;
+    if (!hasChrome(top.c)) return top.c;
+    n = top.c;
+  }
+  return undefined;
+}
+
+/** The part of the page an update changed, grown to a whole component (a row, a card), or nothing when the change is
+ *  spread over the page. */
+function partOf(vdom: VDom, ids: number[], chrome: readonly VNode[]): VNode | undefined {
+  const body = vdom.body();
+  const els = ids.map((id) => vdom.get(id)).map((n) => (n && n.type !== 2 ? vdom.get(n.parent) : n)).filter(isElement);
+  if (!body || !els.length) return undefined;
+  // The nearest element holding every change.
+  let part: VNode | undefined = els[0];
+  for (const e of els.slice(1)) while (part && !vdom.within(e.id, part.id)) part = vdom.get(part.parent);
+  if (!part) return undefined;
+  // Grown until it reads as a component: a few elements and some text of its own.
+  while (part.id !== body.id && (vdom.elements(part).length < 5 || vdom.textOf(part).length < 16)) {
+    const up = vdom.get(part.parent);
+    if (!up || up.id === body.id) break;
+    part = up;
+  }
+  const all = vdom.elements(body).length;
+  if (part.id === body.id || vdom.elements(part).length > all * 0.4) return undefined;
+  if (chrome.some((c) => vdom.within(c.id, part!.id))) return undefined;
+  return part;
 }
 
 /** A URL's route pattern: the path (or a hash route), ids as `:id`. */
@@ -250,12 +390,42 @@ interface PageEntry {
   tokens: Set<string>;
 }
 
+interface SegueObs {
+  kind: SegueKind;
+  from: StateRef;
+  to: StateRef;
+  action: Segue['action'];
+  trigger: { label: string; key: string };
+  point: { x: number; y: number };
+  ev: Evidence;
+  /** The chrome the click landed in: the segue leaves from it once it's shared. */
+  via?: string;
+}
+
 class MapBuilder {
   pages: PageEntry[] = [];
   overlays = new Map<string, OverlayNode>();
-  segues = new Map<string, Segue>();
+  chromes: { node: ChromeNode; tokens: Set<string>; words?: Set<string> }[] = [];
+  segueObs: SegueObs[] = [];
+  /** A page frame's content without its chrome, applied when that chrome turns out to be shared. */
+  contents = new Map<Evidence, { path: number[]; chrome: string[] }>();
   entry: StateRef | null = null;
   recordings: RecordingSummary[] = [];
+
+  /** `words` for chrome found by layout rather than landmarks: it must read the same too, or it's just content. */
+  chrome(type: ChromeType, label: string, tokens: Set<string>, page: string, recording: string, ev: Evidence, words?: Set<string>): ChromeNode {
+    let best = this.chromes.find((c) => c.node.type === type && jaccard(c.tokens, tokens) >= 0.6 && (!words || !c.words || jaccard(c.words, words) >= 0.6));
+    if (!best) {
+      best = { node: { kind: 'chrome', id: `chrome-${this.chromes.length + 1}`, type, label, states: [{ id: 'base', label, evidence: [] }], pages: [], recordings: [] }, tokens, words };
+      this.chromes.push(best);
+    }
+    const n = best.node;
+    if (!n.pages.includes(page)) n.pages.push(page);
+    if (!n.recordings.includes(recording)) n.recordings.push(recording);
+    const st = n.states[0];
+    if (st.evidence.length < MAX_EVIDENCE && !st.evidence.some((e) => e.recording === ev.recording)) st.evidence.push(ev);
+    return n;
+  }
 
   page(obs: PageObs, recording: string): PageNode {
     let best: PageEntry | undefined;
@@ -291,37 +461,49 @@ class MapBuilder {
     return o;
   }
 
-  nodeById(id: string): PageNode | OverlayNode | undefined {
+  nodeById(id: string): MapNode | undefined {
     return this.pages.find((p) => p.node.id === id)?.node ?? [...this.overlays.values()].find((o) => o.id === id);
   }
 
-  state(node: string, id: string, label: string, ev: Evidence): void {
+  state(node: string, id: string, label: string, ev: Evidence, content?: { path: number[]; chrome: string[] }): void {
     const n = this.nodeById(node);
     if (!n) return;
+    if (content) this.contents.set(ev, content);
     let s = n.states.find((x) => x.id === id);
     if (!s) n.states.push((s = { id, label, evidence: [] }));
     if (s.evidence.length < MAX_EVIDENCE && !s.evidence.some((e) => e.recording === ev.recording)) s.evidence.push(ev);
     else if (s.evidence.length < MAX_EVIDENCE) s.evidence.push(ev);
   }
 
-  segue(kind: SegueKind, from: StateRef, to: StateRef, action: Segue['action'], trigger: { label: string; key: string }, point: { x: number; y: number }, ev: Evidence) {
-    const key = `${from.node}/${from.state}|${action}|${trigger.key}|${to.node}/${to.state}`;
-    let s = this.segues.get(key);
-    if (!s) {
-      s = { id: `segue-${this.segues.size + 1}`, kind, from, to, action, label: trigger.label, point, evidence: [] };
-      this.segues.set(key, s);
-    } else if (!s.label.split(', ').includes(trigger.label) && trigger.key.startsWith('item:')) {
-      const seen = s.label.split(', ');
-      s.label = seen.length >= 3 ? s.label : [...seen, trigger.label].join(', ');
-    }
-    if (s.evidence.length < MAX_EVIDENCE * 2) s.evidence.push(ev);
+  segue(kind: SegueKind, from: StateRef, to: StateRef, action: Segue['action'], trigger: { label: string; key: string }, point: { x: number; y: number }, ev: Evidence, via?: string) {
+    this.segueObs.push({ kind, from, to, action, trigger, point, ev, via });
   }
 
   build(): AppMap {
+    // Chrome counts once it's on two pages: then page frames show their content, and clicks in it leave from it.
+    const shared = new Set(this.chromes.filter((c) => c.node.pages.length >= 2).map((c) => c.node.id));
+    for (const [ev, c] of this.contents) {
+      if (!ev.path && c.chrome.some((id) => shared.has(id))) { ev.path = c.path; ev.scope = 'content'; }
+    }
+    const segues = new Map<string, Segue>();
+    for (const o of this.segueObs) {
+      const from = o.via && shared.has(o.via) ? { node: o.via, state: 'base' } : o.from;
+      const key = `${from.node}/${from.state}|${o.action}|${o.trigger.key}|${o.to.node}/${o.to.state}`;
+      let s = segues.get(key);
+      if (!s) {
+        s = { id: `segue-${segues.size + 1}`, kind: o.kind, from, to: o.to, action: o.action, label: o.trigger.label, point: o.point, evidence: [] };
+        segues.set(key, s);
+      } else if (!s.label.split(', ').includes(o.trigger.label) && o.trigger.key.startsWith('item:')) {
+        const seen = s.label.split(', ');
+        s.label = seen.length >= 3 ? s.label : [...seen, o.trigger.label].join(', ');
+      }
+      if (s.evidence.length < MAX_EVIDENCE * 2) s.evidence.push(o.ev);
+    }
     return {
       pages: this.pages.map((p) => p.node),
       overlays: [...this.overlays.values()],
-      segues: [...this.segues.values()],
+      chrome: this.chromes.filter((c) => shared.has(c.node.id)).map((c) => c.node),
+      segues: [...segues.values()],
       entry: this.entry,
       recordings: this.recordings,
     };
@@ -354,6 +536,8 @@ interface Pending {
   removed: number[];
   attrs: { id: number; before: Record<string, string | undefined>; after: Record<string, unknown> }[];
   texts: number[];
+  /** The chrome the click landed in. */
+  via?: string;
 }
 
 function revealed(before: Record<string, string | undefined>, after: Record<string, unknown>): string[] | null {
@@ -391,17 +575,36 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
   let page: StateRef | null = null;
   let open: OpenLayer[] = [];
   let pending: Pending | null = null;
+  /** When the page's state is a frame of one part: that part. A click outside it leaves from the page itself. */
+  let part: number | null = null;
   let interactions = 0;
   let needEntry = false;
 
   const paths = (layers: OpenLayer[]) => layers.map((l) => vdom.path(l.node)).filter((p): p is number[] => !!p);
+  /** The chrome on the page now, each registered with the page it's on. */
+  const chromeNow = (pageId: string, time: number, found = chromeOf(vdom, new Set(open.map((l) => l.node)))) => found.flatMap(({ node, type, landmark }) => {
+    const path = vdom.path(node.id);
+    if (!path) return [];
+    const label = clip(node.attrs['aria-label'] || CHROME_LABEL[type], 32);
+    const c = b.chrome(type, label, skeleton(vdom, node, new Set(), 5), pageId, rec.id, { recording: rec.id, time, path, scope: 'chrome' }, landmark ? undefined : wordsOf(vdom, node));
+    return [{ id: c.id, node }];
+  });
+  /** The page without its chrome, kept with the evidence in case that chrome turns out to be shared. */
+  const contentNow = (chrome: { id: string; node: VNode }[]) => {
+    const content = contentOf(vdom, chrome.map((c) => c.node), new Set(open.map((l) => l.node)));
+    const path = content && vdom.path(content.id);
+    return path ? { path, chrome: chrome.map((c) => c.id) } : undefined;
+  };
   const enterPage = (time: number) => {
     const body = vdom.body();
     if (!body) return;
     const skip = new Set(open.map((l) => l.node));
-    const node = b.page({ route, title: vdom.title(), tokens: skeleton(vdom, body, skip) }, rec.id);
+    // Pages are told apart by what's in them, not the shell every page shares.
+    const found = chromeOf(vdom, skip);
+    const node = b.page({ route, title: vdom.title(), tokens: skeleton(vdom, body, new Set([...skip, ...found.map((f) => f.node.id)])) }, rec.id);
     page = { node: node.id, state: 'base' };
-    b.state(node.id, 'base', 'Page', { recording: rec.id, time, hide: paths(open) });
+    part = null;
+    b.state(node.id, 'base', 'Page', { recording: rec.id, time, hide: paths(open) }, contentNow(chromeNow(node.id, time, found)));
     if (!b.entry) b.entry = { ...page };
   };
 
@@ -439,14 +642,14 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
       open = fresh.map((f) => ({ id: '', state: 'open', node: f.node.id, reveal: f.reveal }));
       enterPage(settle);
       const pageNow = page as StateRef | null;
-      if (pageNow) b.segue('navigate', p.from, pageNow, p.action, p.trigger, p.point, segueEv);
+      if (pageNow) b.segue('navigate', p.from, pageNow, p.action, p.trigger, p.point, segueEv, p.via);
       for (const l of open) {
         const n = vdom.get(l.node)!;
         const type = overlayType(vdom, n);
         const id = overlayIdentity(vdom, n, type);
         l.id = b.overlay(id.key, type, id.label, pageNow?.node ?? '', rec.id).id;
         b.state(l.id, 'open', 'Open', { recording: rec.id, time: settle, path: vdom.path(l.node) ?? undefined });
-        b.segue('present', p.from, { node: l.id, state: 'open' }, p.action, p.trigger, p.point, segueEv);
+        b.segue('present', p.from, { node: l.id, state: 'open' }, p.action, p.trigger, p.point, segueEv, p.via);
       }
       return;
     }
@@ -475,7 +678,7 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
       const id = overlayIdentity(vdom, f.node, type);
       const o = b.overlay(id.key, type, id.label, host ?? '', rec.id);
       b.state(o.id, 'open', 'Open', { recording: rec.id, time: settle, path: vdom.path(f.node.id) ?? undefined });
-      b.segue('present', p.from, { node: o.id, state: 'open' }, p.action, p.trigger, p.point, segueEv);
+      b.segue('present', p.from, { node: o.id, state: 'open' }, p.action, p.trigger, p.point, segueEv, p.via);
       still = [...still.filter((l) => l.id !== o.id), { id: o.id, state: 'open', node: f.node.id, reveal: f.reveal }];
       changed = true;
     }
@@ -489,12 +692,23 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
     open = still;
     if (page && pageChanged) {
       const state = `after:${p.trigger.key}`;
-      b.state(page.node, state, `After “${p.trigger.label}”`, { recording: rec.id, time: settle, hide: paths(open) });
-      b.segue('update', p.from, { node: page.node, state }, p.action, p.trigger, p.point, segueEv);
+      // Just the part that changed when the change is in one place (a switch, a row); else the page.
+      const onPage = (id: number) => vdom.attached(id) && !inLayer(id) && underBody(vdom, id);
+      const touched = [
+        ...p.added.filter(onPage), ...p.attrs.map((a) => a.id).filter(onPage), ...p.texts.filter(onPage),
+        ...p.removedFrom.filter((id, i) => onPage(id) && !closedNodes.has(p.removed[i])),
+      ];
+      const chrome = chromeNow(page.node, settle);
+      const changedPart = partOf(vdom, touched, chrome.map((c) => c.node));
+      const partPath = changedPart && vdom.path(changedPart.id);
+      part = partPath ? changedPart!.id : null;
+      if (partPath) b.state(page.node, state, `After “${p.trigger.label}”`, { recording: rec.id, time: settle, path: partPath, scope: 'part' });
+      else b.state(page.node, state, `After “${p.trigger.label}”`, { recording: rec.id, time: settle, hide: paths(open) }, contentNow(chrome));
+      b.segue('update', p.from, { node: page.node, state }, p.action, p.trigger, p.point, segueEv, p.via);
       page = { node: page.node, state };
       changed = true;
     }
-    if (!changed && closed.length && page) b.segue('dismiss', p.from, page, p.action, p.trigger, p.point, segueEv);
+    if (!changed && closed.length && page) b.segue('dismiss', p.from, page, p.action, p.trigger, p.point, segueEv, p.via);
   };
 
   for (const e of events) {
@@ -539,6 +753,7 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
         interactions++;
         const target = data.id;
         const layer = [...open].reverse().find((l) => vdom.within(target, l.node));
+        const via = layer ? undefined : chromeNow((page as StateRef).node, time).find((c) => vdom.within(target, c.node.id))?.id;
         const anchor = [vdom.get(target), ...vdom.ancestors(target)].find((n) => n?.tag === 'a' && n.attrs.href);
         pending = {
           t: time,
@@ -546,11 +761,14 @@ function analyzeRecording(rec: Recording, b: MapBuilder) {
           target,
           point: { x: Number(data.x ?? 0), y: Number(data.y ?? 0) },
           trigger: triggerOf(vdom, target),
-          from: layer ? { node: layer.id, state: layer.state } : { ...(page as StateRef) },
+          from: layer ? { node: layer.id, state: layer.state }
+            : part !== null && !vdom.within(target, part) ? { node: (page as StateRef).node, state: 'base' }
+              : { ...(page as StateRef) },
           title: vdom.title(),
           link: anchor?.attrs.href,
           reload: false,
           added: [], removedFrom: [], removed: [], attrs: [], texts: [],
+          via,
         };
       }
     }

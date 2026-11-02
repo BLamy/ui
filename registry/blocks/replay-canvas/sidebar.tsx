@@ -11,7 +11,7 @@ import { formatReplayTime } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { AppMap, Recording } from './analyze';
-import { LAYER_ICON, type Selection } from './board';
+import { LAYER_ICON, nodeIcon, type Journey, type Selection } from './board';
 
 export interface SourceRecording extends Recording {
   enabled: boolean;
@@ -27,10 +27,15 @@ export interface SidebarProps {
   onSelect: (key: string) => void;
   /** The Replay QA pane, above the recordings, when signed in to Replay. */
   qa?: ReactNode;
+  /** Each recording's journey color; pressing its swatch follows it on the board. */
+  journeys: Journey[];
+  journey: string | null;
+  onJourney: (id: string | null) => void;
 }
 
-export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection, onSelect, qa }: SidebarProps) {
+export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection, onSelect, qa, journeys, journey, onJourney }: SidebarProps) {
   const summary = new Map(map.recordings.map((r) => [r.id, r]));
+  const colorOf = new Map(journeys.map((j) => [j.id, j.color]));
   const selected = selection?.kind === 'frame' ? selection.key : null;
   const row = (key: string, icon: string, label: string, depth: number, extra?: string) => (
     <PlainButton
@@ -70,6 +75,11 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
           const s = summary.get(r.id);
           return (
             <li key={r.id} className="group flex items-start gap-1 rounded-ctl px-1 py-1 hover:bg-secondary">
+              <PlainButton aria-label={journey === r.id ? `Stop following ${r.name}` : `Follow ${r.name}`} aria-pressed={journey === r.id} isDisabled={!r.enabled}
+                onPress={() => onJourney(journey === r.id ? null : r.id)}
+                className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent outline-none data-disabled:opacity-40 data-focus-visible:ring-2 data-focus-visible:ring-ring">
+                <span className={cn('size-2.5 rounded-full', journey === r.id && 'size-3.5 ring-2 ring-background')} style={{ background: colorOf.get(r.id) }} />
+              </PlainButton>
               <HoverCardTrigger className="min-w-0 flex-1">
                 <Checkbox isSelected={r.enabled} onChange={(on) => onToggle(r.id, on)} className="min-w-0 flex-1 items-start gap-2 text-footnote" aria-label={`Use ${r.name}`}>
                   <span className="flex min-w-0 flex-col">
@@ -93,6 +103,7 @@ export function Sidebar({ recordings, map, onToggle, onRemove, onAdd, selection,
       </ul>
       <div role="heading" aria-level={2} className="border-t border-border px-3 pt-3 pb-1 text-caption1 font-semibold uppercase tracking-wide text-muted-foreground">Map</div>
       <nav aria-label="Map outline" className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+        {map.chrome.map((c) => row(`${c.id}/base`, nodeIcon(c), c.label, 0, 'shared'))}
         {map.pages.map((p) => (
           <div key={p.id}>
             {row(`${p.id}/base`, 'doc', p.label, 0, p.route)}

@@ -7,13 +7,9 @@ import { PlainButton } from '@/components/ui/plain-button';
 import { ReplayPreview, formatReplayTime } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import type { AppMap, Evidence, OverlayNode, PageNode, Recording, Segue, SegueKind } from './analyze';
-import { actionVerb, KIND_TEXT, LAYER_ICON, type Selection } from './board';
+import type { AppMap, Evidence, MapNode, Recording, Segue, SegueKind } from './analyze';
+import { actionVerb, KIND_TEXT, nodeIcon, SEGUE_ICON, type Journey, type Selection } from './board';
 import { frameKey } from './layout';
-
-const KIND_DOT: Record<SegueKind, string> = {
-  navigate: 'bg-primary', present: 'bg-chart-2', update: 'bg-warning', dismiss: 'bg-muted-foreground',
-};
 
 export interface InspectorProps {
   map: AppMap;
@@ -22,10 +18,13 @@ export interface InspectorProps {
   onSelect: (s: Selection) => void;
   shown: Record<string, number>;
   onShow: (key: string, index: number) => void;
+  journeys: Journey[];
+  journey: string | null;
+  onJourney: (id: string | null) => void;
 }
 
-function nodeOf(map: AppMap, id: string): PageNode | OverlayNode | undefined {
-  return map.pages.find((p) => p.id === id) ?? map.overlays.find((o) => o.id === id);
+function nodeOf(map: AppMap, id: string): MapNode | undefined {
+  return map.pages.find((p) => p.id === id) ?? map.overlays.find((o) => o.id === id) ?? map.chrome.find((c) => c.id === id);
 }
 
 function refLabel(map: AppMap, node: string, state: string): string {
@@ -72,7 +71,7 @@ function SegueRow({ map, segue, onSelect, dir }: { map: AppMap; segue: Segue; on
       onPress={() => onSelect({ kind: 'segue', id: segue.id })}
       className="flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-footnote text-foreground outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring"
     >
-      <span className={cn('size-2 shrink-0 rounded-full', KIND_DOT[segue.kind])} />
+      <Icon name={SEGUE_ICON[segue.kind]} size={12} sw={2} className="shrink-0 text-muted-foreground" />
       <span className="truncate">
         {dir === 'out' ? `${actionVerb(segue.action)} “${segue.label}” → ${refLabel(map, other.node, other.state)}` : `${refLabel(map, other.node, other.state)} → ${actionVerb(segue.action)} “${segue.label}”`}
       </span>
@@ -96,7 +95,7 @@ function Player({ recording, time, label }: { recording: Recording | undefined; 
   );
 }
 
-export function Inspector({ map, recordings, selection, onSelect, shown, onShow }: InspectorProps) {
+export function Inspector({ map, recordings, selection, onSelect, shown, onShow, journeys, journey, onJourney }: InspectorProps) {
   if (selection?.kind === 'segue') {
     const s = map.segues.find((x) => x.id === selection.id);
     if (s) {
@@ -108,7 +107,7 @@ export function Inspector({ map, recordings, selection, onSelect, shown, onShow 
           <Section title="Segue">
             <p className="m-0 text-body font-semibold">{actionVerb(s.action)} “{s.label}”</p>
             <p className="m-0 mt-1 flex items-center gap-1.5 text-footnote text-muted-foreground">
-              <span className={cn('size-2 rounded-full', KIND_DOT[s.kind])} /> {KIND_TEXT[s.kind]} · seen {s.evidence.length}× in {recs} recording{recs === 1 ? '' : 's'}
+              <Icon name={SEGUE_ICON[s.kind]} size={12} sw={2} /> {KIND_TEXT[s.kind]} · seen {s.evidence.length}× in {recs} recording{recs === 1 ? '' : 's'}
             </p>
             <div className="mt-3 flex flex-col gap-1 text-footnote">
               <PlainButton onPress={() => onSelect({ kind: 'frame', key: frameKey(s.from) })} className="cursor-pointer truncate rounded-ctl border-0 bg-secondary px-2 py-1.5 text-left text-foreground outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
@@ -138,12 +137,12 @@ export function Inspector({ map, recordings, selection, onSelect, shown, onShow 
       const into = map.segues.filter((s) => frameKey(s.to) === selection.key);
       return (
         <Pane>
-          <Section title={n.kind === 'page' ? 'Page' : n.type}>
+          <Section title={n.kind === 'page' ? 'Page' : n.kind === 'chrome' ? 'Shared chrome' : n.type}>
             <p className="m-0 flex items-center gap-1.5 text-body font-semibold">
-              <Icon name={n.kind === 'page' ? 'doc' : LAYER_ICON[n.type]} size={15} sw={1.9} /> {n.label}
+              <Icon name={nodeIcon(n)} size={15} sw={1.9} /> {n.label}
             </p>
             <p className="m-0 mt-1 text-footnote text-muted-foreground">
-              {state.id === 'base' || state.id === 'open' ? (n.kind === 'page' ? 'As it first appears' : 'As it opens') : state.label}
+              {state.id === 'base' || state.id === 'open' ? (n.kind === 'page' ? 'As it first appears' : n.kind === 'chrome' ? 'Drawn once for every page it’s on' : 'As it opens') : state.label}
               {' · '}seen in {n.recordings.length} recording{n.recordings.length === 1 ? '' : 's'}
             </p>
             {n.kind === 'page' && (n.route || n.titles.length > 1) && (
@@ -151,6 +150,9 @@ export function Inspector({ map, recordings, selection, onSelect, shown, onShow 
                 {n.route && <><dt className="text-muted-foreground">Route</dt><dd className="m-0 font-mono">{n.route}</dd></>}
                 {n.titles.length > 1 && <><dt className="text-muted-foreground">Seen as</dt><dd className="m-0">{n.titles.join(', ')}</dd></>}
               </dl>
+            )}
+            {n.kind === 'chrome' && (
+              <p className="m-0 mt-2 text-footnote text-muted-foreground">On {n.pages.map((h) => nodeOf(map, h)?.label).join(', ')}</p>
             )}
             {n.kind === 'overlay' && n.hosts.length > 1 && (
               <p className="m-0 mt-2 text-footnote text-muted-foreground">Opened over {n.hosts.map((h) => nodeOf(map, h)?.label).join(', ')}</p>
@@ -170,23 +172,37 @@ export function Inspector({ map, recordings, selection, onSelect, shown, onShow 
       );
     }
   }
-  const states = map.pages.reduce((k, p) => k + p.states.length, 0) + map.overlays.reduce((k, o) => k + o.states.length, 0);
+  const states = [...map.pages, ...map.overlays, ...map.chrome].reduce((k, n) => k + n.states.length, 0);
   return (
     <Pane>
       <Section title="App map">
         <p className="m-0 text-footnote text-muted-foreground">
-          Built from {map.recordings.length} recording{map.recordings.length === 1 ? '' : 's'}: {map.pages.length} pages, {map.overlays.length} layers, {states} states and {map.segues.length} segues. Each recording you add is folded into the same map — what it confirms is counted, what’s new is added.
+          Built from {map.recordings.length} recording{map.recordings.length === 1 ? '' : 's'}: {map.pages.length} pages, {map.overlays.length} layers, {map.chrome.length} shared, {states} states and {map.segues.length} segues. Each recording you add is folded into the same map — what it confirms is counted, what’s new is added.
         </p>
+      </Section>
+      <Section title="Journeys">
+        <p className="m-0 mb-2 text-footnote text-muted-foreground">Each recording is a journey in its own color. Follow one to see its path, step by step.</p>
+        <ul className="m-0 flex list-none flex-col gap-0.5 p-0 text-footnote">
+          {journeys.filter((j) => map.recordings.some((r) => r.id === j.id)).map((j) => (
+            <li key={j.id}>
+              <PlainButton onPress={() => onJourney(journey === j.id ? null : j.id)} aria-pressed={journey === j.id}
+                className={cn('flex w-full cursor-pointer items-center gap-2 rounded-ctl border-0 bg-transparent px-2 py-1 text-left text-foreground outline-none hover:bg-secondary data-focus-visible:ring-2 data-focus-visible:ring-ring', journey === j.id && 'bg-secondary')}>
+                <span className="size-2.5 shrink-0 rounded-full" style={{ background: j.color }} />
+                <span className="truncate">{j.name}</span>
+              </PlainButton>
+            </li>
+          ))}
+        </ul>
       </Section>
       <Section title="Segues">
         <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-footnote">
           {(Object.keys(KIND_TEXT) as SegueKind[]).map((k) => (
-            <li key={k} className="flex items-center gap-2"><span className={cn('size-2 rounded-full', KIND_DOT[k])} />{KIND_TEXT[k]}</li>
+            <li key={k} className="flex items-center gap-2"><Icon name={SEGUE_ICON[k]} size={12} sw={2} className="text-muted-foreground" />{KIND_TEXT[k]}{k === 'dismiss' ? ' (dashed)' : ''}</li>
           ))}
         </ul>
       </Section>
       <Section title="Tips">
-        <p className="m-0 text-footnote text-muted-foreground">Click a frame or a segue to see where it came from. Double-click a frame to zoom to it. Scroll to pan, pinch or ⌘-scroll to zoom, ⌘0 to fit.</p>
+        <p className="m-0 text-footnote text-muted-foreground">Click a frame or a segue to see where it came from; click a segue’s dot to follow its journey. Double-click a frame to zoom to it. Scroll to pan, pinch or ⌘-scroll to zoom, ⌘0 to fit.</p>
       </Section>
     </Pane>
   );

@@ -12,11 +12,12 @@ import { useDocstreamEnv } from '@brett_lamy/docstream';
 import { getReplayMeta, type ReplayEvent } from '@/components/ui/replay-preview';
 import { fitCamera, unionRect, type Camera, type Rect } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
+import { PlainButton } from '@/components/ui/plain-button';
 import { Icon } from '@/lib/icon';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { analyzeRecordings, type Recording } from './analyze';
-import { Board, type Selection } from './board';
+import { Board, JOURNEY_COLORS, type Journey, type Selection } from './board';
 import { Inspector } from './inspector';
 import { layoutMap, type Crops } from './layout';
 import { QaAuthError, createQaClient, type QaProject, type QaTestRun } from './qa';
@@ -81,6 +82,8 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
   const [showDismiss, setShowDismiss] = useState(false);
   const [showArrows, setShowArrows] = useState(true);
   const [showMiniMap, setShowMiniMap] = useState(true);
+  /** The journey (recording) being followed on the board. */
+  const [journey, setJourney] = useState<string | null>(null);
   const [panes, setPanes] = useState<{ nav: boolean; inspector: boolean } | null>(null);
   const [dropping, setDropping] = useState(false);
   const canvas = useRef<HTMLDivElement>(null);
@@ -89,6 +92,9 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
 
   const enabled = useMemo(() => sources.filter((s) => s.enabled), [sources]);
   const map = useMemo(() => analyzeRecordings(enabled), [enabled]);
+  // Each recording is a journey with a color of its own, kept while it's in the list.
+  const journeys = useMemo<Journey[]>(() => sources.map((s, i) => ({ id: s.id, name: s.name, color: JOURNEY_COLORS[i % JOURNEY_COLORS.length] })), [sources]);
+  const following = journey ? journeys.find((j) => j.id === journey && enabled.some((s) => s.id === j.id)) : undefined;
   const byId = useMemo(() => new Map(sources.map((s) => [s.id, s as Recording])), [sources]);
   const viewport = useMemo(() => {
     const meta = enabled[0] ? getReplayMeta(enabled[0].events) : null;
@@ -188,9 +194,17 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
           <ToolButton icon="sidebar" label={navOpen ? 'Hide recordings' : 'Show recordings'} active={navOpen} onPress={() => setPanes({ nav: !navOpen, inspector: inspectorOpen })} />
           <div role="heading" aria-level={1} className="ml-1 text-subhead font-semibold">Replay Canvas</div>
           <p className="m-0 ml-2 min-w-0 truncate text-footnote text-muted-foreground">
-            {enabled.length} recording{enabled.length === 1 ? '' : 's'} → {map.pages.length} pages · {map.overlays.length} layers · {states} frames · {map.segues.length} segues
+            {enabled.length} recording{enabled.length === 1 ? '' : 's'} → {map.pages.length} pages · {map.overlays.length} layers ·{map.chrome.length ? ` ${map.chrome.length} shared ·` : ''} {states} frames · {map.segues.length} segues
           </p>
           <div className="flex-1" />
+          {following && (
+            <PlainButton aria-label={`Stop following ${following.name}`} onPress={() => setJourney(null)}
+              className="mr-1 flex max-w-64 cursor-pointer items-center gap-1.5 rounded-full border-0 bg-secondary py-1 pr-1.5 pl-2.5 text-footnote text-foreground outline-none hover:bg-secondary-strong data-focus-visible:ring-2 data-focus-visible:ring-ring">
+              <span className="size-2.5 shrink-0 rounded-full" style={{ background: following.color }} />
+              <span className="truncate">Following {following.name}</span>
+              <Icon name="xmark" size={11} sw={2.2} className="shrink-0 text-muted-foreground" />
+            </PlainButton>
+          )}
           <ToolButton icon="arrow-up-right" label={showArrows ? 'Hide arrows (dots stay; select one to see its arrow)' : 'Show arrows'} active={showArrows} onPress={() => setShowArrows((v) => !v)} />
           <ToolButton icon="xmark-circle" label={showDismiss ? 'Hide dismissals' : 'Show dismissals'} active={showDismiss} onPress={() => setShowDismiss((v) => !v)} />
           <ToolButton icon="grid" label={showMiniMap ? 'Hide minimap' : 'Show minimap'} active={showMiniMap} onPress={() => setShowMiniMap((v) => !v)} />
@@ -209,6 +223,9 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
                 selection={selection}
                 onSelect={focus}
                 qa={qa && <QaPanel client={qa} load={qaLoad} onOpen={openTestRun} />}
+                journeys={journeys}
+                journey={journey}
+                onJourney={setJourney}
               />
             </div>
           )}
@@ -227,6 +244,9 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
               showDismiss={showDismiss}
               showArrows={showArrows}
               showMiniMap={showMiniMap}
+              journeys={journeys}
+              journey={journey && enabled.some((s) => s.id === journey) ? journey : null}
+              onJourney={setJourney}
               shown={shown}
             />
             {!enabled.length && (
@@ -240,7 +260,8 @@ export default function ReplayCanvas({ recordings = SAMPLE_RECORDINGS, replayApi
           </div>
           {inspectorOpen && (
             <div className={cn('w-80 shrink-0', narrow && 'absolute inset-y-0 right-0 z-10 shadow-xl')}>
-              <Inspector map={map} recordings={byId} selection={selection} onSelect={setSelection} shown={shown} onShow={(key, i) => setShown((s) => ({ ...s, [key]: i }))} />
+              <Inspector map={map} recordings={byId} selection={selection} onSelect={setSelection} shown={shown} onShow={(key, i) => setShown((s) => ({ ...s, [key]: i }))}
+                journeys={journeys} journey={journey} onJourney={setJourney} />
             </div>
           )}
         </div>

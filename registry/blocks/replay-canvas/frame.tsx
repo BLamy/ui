@@ -1,8 +1,9 @@
 'use client';
 /* One frame on the board: the recording paused at a moment, drawn by rrweb at the recorded size. A page frame hides the
    layers that were open over it; a layer frame shows only the layer — its panel, not the backdrop behind it — and is
-   cropped to it, measured in the replayed page itself, so a modal is the size it was. Frames mount a few at a time
-   (each is a Replayer of its own). */
+   cropped to it, measured in the replayed page itself, so a modal is the size it was. The page's content (without
+   shared chrome), a part an update changed and the chrome itself are cropped the same way, on the page's own
+   background. Frames mount a few at a time (each is a Replayer of its own). */
 import { useEffect, useRef, useState } from 'react';
 import { ReplayStage, type ReplayEvent, type ReplayStageHandle } from '@/components/ui/replay-preview';
 import type { Rect } from '@/lib/canvas-math';
@@ -70,8 +71,9 @@ export function ScreenFrame({ events, evidence, viewport, crop, onCrop, order, c
     if (!evidence.path) return true;
     const layer = elementAtPath(doc, evidence.path);
     if (!layer) return false;
-    const panel = panelOf(layer, viewport.w, viewport.h) as HTMLElement;
-    for (const el of [doc.documentElement, doc.body]) el.style.setProperty('background', 'transparent', 'important');
+    // A layer shows its panel on nothing; a piece of the page is itself, on the page's background.
+    const panel = (evidence.scope ? layer : panelOf(layer, viewport.w, viewport.h)) as HTMLElement;
+    if (!evidence.scope) for (const el of [doc.documentElement, doc.body]) el.style.setProperty('background', 'transparent', 'important');
     doc.body.style.setProperty('visibility', 'hidden', 'important');
     panel.style.setProperty('visibility', 'visible', 'important');
     const r = panel.getBoundingClientRect();
@@ -86,15 +88,16 @@ export function ScreenFrame({ events, evidence, viewport, crop, onCrop, order, c
     return () => timers.forEach(clearTimeout);
   }, [ready]);
 
-  const layer = !!evidence.path;
-  const off = layer && crop ? crop : { x: 0, y: 0 };
+  const layer = !!evidence.path && !evidence.scope;
+  const cropped = !!evidence.path;
+  const off = cropped && crop ? crop : { x: 0, y: 0 };
   return (
     <div
       data-slot="replay-canvas-frame"
       className={cn('pointer-events-none relative size-full overflow-hidden', !layer && 'bg-background', !ready && 'animate-pulse bg-muted', className)}
     >
       {mounted && (
-        <div className="absolute" style={{ left: -off.x, top: -off.y, width: viewport.w, height: viewport.h, visibility: !layer || crop ? 'visible' : 'hidden' }}>
+        <div className="absolute" style={{ left: -off.x, top: -off.y, width: viewport.w, height: viewport.h, visibility: !cropped || crop ? 'visible' : 'hidden' }}>
           <ReplayStage
             ref={stage}
             events={events}
