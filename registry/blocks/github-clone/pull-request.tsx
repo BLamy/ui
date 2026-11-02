@@ -262,7 +262,7 @@ export function MergeBox({ pr, checks, threads }: { pr: PullDetail; checks: Chec
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const act = useAction();
-  const protection = useLoad(`${source.id}:protection:${pr.base}`, () => (can.admin ? source.protection(pr.base) : null)).data;
+  const protection = useLoad(`${source.id}:protection:${pr.base}:${can.admin}`, () => (can.admin ? source.protection(pr.base) : null)).data;
   const approvals = pr.reviewers.filter((r) => r.state === 'approved').length;
   const requests = pr.reviewers.filter((r) => r.state === 'changes').length;
   const passed = checks.filter((c) => c.status === 'success').length;

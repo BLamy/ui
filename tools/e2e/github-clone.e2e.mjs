@@ -13,6 +13,9 @@ const open = async (page, name, route) => {
   return errors;
 };
 const phone = { width: 422, height: 876 };
+/** react-aria's real input is visually hidden: a person clicks the label around it. */
+const tick = (page, name) => page.getByRole('checkbox', { name }).first().locator('xpath=ancestor::label').click();
+const code = (page, path) => page.getByRole('region', { name: `Code of ${path}` });
 
 test.describe('desktop', () => {
   test('an issue: required title, create, comment, edit, labels, close with a reason, reopen, counts', async ({ page }) => {
@@ -39,7 +42,7 @@ test.describe('desktop', () => {
     await box.fill('First line');
     await box.press('Enter');
     await box.pressSequentially('second line');
-    await expect(page.getByText('First line')).toHaveCount(0);
+    await expect(page.locator('[id^="issuecomment-"]')).toHaveCount(0);
     await box.press('ControlOrMeta+Enter');
     await expect(page.getByText(/First line\s*second line/).first()).toBeVisible();
     await expect(box).toHaveValue('');
@@ -110,7 +113,7 @@ test.describe('desktop', () => {
     await page.getByRole('tab', { name: 'Code' }).click();
     await page.getByRole('link', { name: 'Folder src' }).click();
     await page.getByRole('link', { name: 'File retry.ts' }).click();
-    await expect(page.getByLabel('src/retry.ts')).toContainText('applyJitter');
+    await expect(code(page, 'src/retry.ts')).toContainText('applyJitter');
   });
 
   for (const [n, text] of [[479, 'conflicts'], [486, 'Draft pull requests'], [484, 'Reviewers asked for changes'], [481, 'approving review']]) {
@@ -154,7 +157,7 @@ test.describe('desktop', () => {
     const diff = page.locator('[id="diff-src/retry.ts"]');
     await diff.waitFor({ timeout: 30_000 });
     // A thread is on its line.
-    await expect(page.getByText(/decorrelated. from the first commit/)).toBeVisible();
+    await expect(page.getByText(/from the first commit message/)).toBeVisible();
     await page.getByRole('button', { name: 'Resolve conversation' }).first().click();
     await expect(page.getByRole('button', { name: 'Unresolve conversation' }).first()).toBeVisible();
     // Start a review on a line.
@@ -180,7 +183,7 @@ test.describe('desktop', () => {
   test('viewed files, split diff, file filter, commit filter', async ({ page }) => {
     await page.goto(story('files-changed'));
     await expect(page.getByRole('status').filter({ hasText: '1 / 3 viewed' })).toBeVisible({ timeout: 30_000 });
-    await page.getByRole('checkbox', { name: 'Viewed' }).first().click();
+    await tick(page, 'Viewed');
     await expect(page.getByRole('status').filter({ hasText: '2 / 3 viewed' })).toBeVisible();
     await page.getByRole('button', { name: 'Split diff' }).click();
     await page.getByRole('textbox', { name: 'Filter changed files' }).fill('retries');
@@ -196,12 +199,12 @@ test.describe('desktop', () => {
     await open(page, 'light');
     await page.getByRole('link', { name: 'Folder src' }).click();
     await page.getByRole('link', { name: 'File retry.ts' }).click();
-    await expect(page.getByLabel('src/retry.ts')).not.toContainText('applyJitter');
+    await expect(code(page, 'src/retry.ts')).not.toContainText('applyJitter');
     // The switcher stays on the file.
     await page.getByRole('button', { name: /Switch branches or tags/ }).click();
-    await page.getByRole('searchbox', { name: /Find or create a branch/ }).fill('jitter');
+    await page.getByRole('textbox', { name: /Find or create a branch/ }).fill('jitter');
     await page.getByRole('option', { name: /feat\/retry-jitter/ }).click();
-    await expect(page.getByLabel('src/retry.ts')).toContainText('applyJitter');
+    await expect(code(page, 'src/retry.ts')).toContainText('applyJitter');
     await page.getByRole('button', { name: 'Blame' }).click();
     await expect(page.getByRole('region', { name: /Blame of src\/retry.ts/ }).getByText('retry: add jitter strategies').first()).toBeVisible();
     await page.getByRole('button', { name: 'Code' }).click();
@@ -214,6 +217,7 @@ test.describe('desktop', () => {
     await page.getByRole('textbox', { name: 'Go to file' }).fill('pgres');
     await page.keyboard.press('Enter');
     await expect(page.getByRole('heading', { level: 1, name: 'postgres.ts' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Go to file' })).toHaveCount(0);
     await page.keyboard.press('/');
     await page.getByRole('textbox', { name: /Search acme\/orbit/ }).fill('SKIP LOCKED');
     await expect(page.getByRole('region', { name: 'Search results' }).getByText('src/adapters/postgres.ts')).toBeVisible();
@@ -233,7 +237,7 @@ test.describe('desktop', () => {
     await expect(page.getByRole('heading', { name: 'Open a pull request' })).toBeVisible();
     await expect(page.getByText('1 ahead')).toBeVisible();
     await page.getByRole('textbox', { name: 'Description' }).fill('Fixes #485');
-    await page.getByRole('checkbox', { name: 'Create as draft' }).click();
+    await tick(page, 'Create as draft');
     await page.getByRole('button', { name: 'Create draft pull request' }).click();
     await expect(page.getByText('Draft', { exact: true }).first()).toBeVisible();
     await page.getByRole('tab', { name: /^Files changed/ }).click();
@@ -270,7 +274,7 @@ test.describe('desktop', () => {
     await expect(page.getByRole('button', { name: /Notifications for acme\/orbit: All Activity/ })).toBeVisible();
     await page.getByRole('button', { name: /Repository acme\/orbit/ }).click();
     await page.getByRole('textbox', { name: /Search repositories/ }).fill('hello');
-    await page.getByText('octo/hello-world').click();
+    await page.getByRole('button', { name: /octo\/hello-world/ }).click();
     await expect(page.getByRole('button', { name: /Repository octo\/hello-world/ })).toBeVisible();
     // Read-only here: no Settings; forking is how you change it.
     await expect(page.getByRole('tab', { name: 'Settings' })).toHaveCount(0);
@@ -342,8 +346,10 @@ test.describe('desktop', () => {
     await page.getByRole('menuitem', { name: 'Re-run failed jobs' }).click();
     await expect(page.getByText('attempt 2')).toBeVisible();
     await expect(page.getByText('Success').first()).toBeVisible();
-    await page.getByRole('button', { name: /test/ }).first().click();
-    await page.getByRole('button', { name: 'View log' }).click();
+    // The failed job started open; it stays open after the re-run.
+    const log = page.getByRole('button', { name: 'View log' }).first();
+    if (!(await log.isVisible())) await page.getByRole('button', { name: /test/ }).first().click();
+    await log.click();
     await expect(page.getByText(/Run test/).first()).toBeVisible();
     await page.getByRole('tab', { name: 'Actions' }).click();
     await page.getByRole('complementary', { name: 'Workflows' }).getByRole('link', { name: 'Release' }).click();
@@ -390,7 +396,7 @@ test.describe('desktop', () => {
     await page.getByRole('textbox', { name: 'Description' }).fill('A new description');
     await page.getByRole('button', { name: 'Save changes' }).click();
     await page.getByRole('navigation', { name: 'Settings' }).getByRole('link', { name: 'Pull requests' }).click();
-    await page.getByRole('checkbox', { name: 'Allow merge commits' }).click();
+    await tick(page, 'Allow merge commits');
     await page.goto(page.url().replace(/#.*/, '#/acme/orbit'));
     await page.getByRole('tab', { name: 'Insights' }).click();
     await expect(page.getByRole('heading', { name: 'Pulse' })).toBeVisible();
@@ -420,10 +426,10 @@ test.describe('desktop', () => {
     await page.getByRole('button', { name: /^Notifications: 3 unread/ }).click();
     await page.getByRole('button', { name: /Mark “Add exponential backoff/ }).click();
     await expect(page.getByRole('button', { name: /Mark “Add exponential backoff/ })).toHaveCount(0);
-    await page.getByRole('button', { name: /Jobs enqueued inside/ }).click();
+    await page.getByRole('button', { name: /Jobs enqueued inside/ }).first().click();
     await expect(page.getByRole('heading', { level: 1, name: /rolled-back/ })).toBeVisible();
     await page.getByRole('button', { name: 'Your pull requests' }).click();
-    await page.getByRole('radio', { name: 'Assigned' }).click();
+    await page.getByText('Assigned', { exact: true }).click();
     await expect(page.getByText(/Nothing here/)).toBeVisible();
   });
 });
@@ -444,9 +450,9 @@ test.describe('phone', () => {
     await page.getByRole('textbox', { name: 'Add a comment' }).fill('From a phone');
     await page.getByRole('button', { name: 'Comment', exact: true }).click();
     await expect(page.getByText('From a phone')).toBeVisible();
-    await page.getByRole('button', { name: /Close/ }).first().click();
-    await expect(page.getByText('Closed', { exact: true }).first()).toBeVisible();
-    await page.getByRole('button', { name: /Back|Issues/ }).first().click();
+    await page.getByRole('button', { name: /^Close issue/ }).click();
+    await expect(page.getByRole('button', { name: /^Reopen issue/ })).toBeVisible();
+    await page.getByRole('button', { name: /^(Back|orbit)$/ }).last().click();
     await expect(page.getByRole('link', { name: 'Support per-key rate limits' }).first()).toBeVisible();
   });
 
@@ -473,8 +479,8 @@ test.describe('phone', () => {
     await row.click();
     await page.getByRole('link', { name: 'File retry.ts' }).click();
     await expect(page.getByRole('button', { name: 'Blame' })).toBeVisible();
-    await page.getByRole('button', { name: /Back|src/ }).first().click();
-    await page.getByRole('button', { name: /Back|orbit/ }).first().click();
+    await page.getByRole('button', { name: /^(Back|src)$/ }).last().click();
+    await page.getByRole('button', { name: /^(Back|orbit)$/ }).last().click();
     await page.getByRole('tab', { name: /^Issues/ }).click();
     await page.getByRole('button', { name: /^Author/ }).click();
     await page.getByRole('option', { name: /avakim/ }).click();

@@ -122,7 +122,7 @@ function EmptyRepo() {
 function RecentlyPushed() {
   const { source, repo, viewer } = useRepo();
   const can = useCan();
-  const refs = useLoad(`${source.id}:branches:1`, () => (can.push && viewer ? source.branches(1) : null)).data;
+  const refs = useLoad(`${source.id}:recent-push:${can.push}:${viewer?.login ?? ''}`, () => (can.push && viewer ? source.branches(1) : null)).data;
   const candidate = refs?.items.find((b) => b.name !== repo.branch && !b.pull && (b.ahead ?? 0) > 0 && b.commit?.author.login === viewer?.login);
   const [dismissed, setDismissed] = useState<string | null>(null);
   if (!candidate || dismissed === candidate.name) return null;
@@ -382,7 +382,7 @@ function FolderActions({ path, gitRef }: { path: string; gitRef: string }) {
 function FolderReadme({ node, gitRef }: { node: FileNode; gitRef: string }) {
   const { source } = useRepo();
   const child = node.children?.find((n) => n.type === 'file' && /^readme(\.md|\.markdown)?$/i.test(n.name));
-  const text = useLoad(`${source.id}:file:${gitRef}:${child?.path ?? ''}`, () => (child ? source.file(child.path, gitRef) : null)).data;
+  const text = useLoad(`${source.id}:folder-readme:${gitRef}:${child?.path ?? ''}`, () => (child ? source.file(child.path, gitRef) : null)).data;
   if (!child || text == null) return null;
   return <Box header={<span className="flex items-center gap-2 font-semibold"><Oct name="book" className="text-muted-foreground" />{child.name}</span>}><Readme markdown={text} dir={node.path} gitRef={gitRef} /></Box>;
 }
@@ -395,7 +395,7 @@ export function FileViewer({ node, gitRef, line, blame }: { node: FileNode; gitR
   const can = useCan();
   const tooLarge = (node.size ?? 0) > TOO_LARGE;
   const isImage = IMAGE.test(node.name);
-  const file = useLoad<string | null>(`${source.id}:file:${gitRef}:${node.path}`, () => (tooLarge || isImage ? null : source.file(node.path, gitRef)));
+  const file = useLoad<string | null>(`${source.id}:file:${gitRef}:${node.path}:${tooLarge || isImage}`, () => (tooLarge || isImage ? null : source.file(node.path, gitRef)));
   const isMd = /\.(md|markdown|mdx)$/i.test(node.name);
   const [modeState, setMode] = useState<FileMode>(isMd ? 'preview' : 'code');
   const mode: FileMode = blame ? 'blame' : modeState === 'blame' ? (isMd ? 'preview' : 'code') : modeState;

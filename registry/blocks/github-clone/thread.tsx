@@ -20,7 +20,7 @@ export function ReactionBar({ target, reactions, className }: { target: CommentT
   const { participate } = useCan();
   const key = target.kind === 'issue' ? `i${target.number}` : `${target.kind}${target.id}`;
   const any = Object.keys(reactions).length > 0;
-  const mine = useLoad<Partial<Record<ReactionContent, number>>>(`${source.id}:reactions:${key}`, () => (any && viewer ? source.myReactions(target) : {})).data ?? {};
+  const mine = useLoad<Partial<Record<ReactionContent, number>>>(`${source.id}:reactions:${key}:${any}:${viewer?.login ?? ''}`, () => (any && viewer ? source.myReactions(target) : {})).data ?? {};
   const act = useAction();
   const toggle = (c: ReactionContent) => act.run(async () => { if (mine[c]) await source.unreact(target, mine[c]!); else await source.react(target, c); });
   const chip = 'inline-flex h-6 cursor-pointer items-center gap-1 rounded-full border px-2 text-caption outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary data-disabled:cursor-default group-data-[phone=true]/gh:h-9';

@@ -134,7 +134,7 @@ function AccountStatus({ keychain, gh, current }: { keychain: KeychainSignIn | n
 function RepoLists({ gh, q, current, onPick, row }: { gh: GitHub; q: string; current: string; onPick: (full: string) => void; row: string }) {
   const [tab, setTab] = useState<'yours' | 'stars'>('yours');
   const recent = useLoad(`recent:${gh.id}`, () => recentRepos(gh));
-  const stars = useLoad(`stars:${gh.id}`, () => (tab === 'stars' ? starredRepos(gh) : []));
+  const stars = useLoad(`stars:${gh.id}:${tab}`, () => (tab === 'stars' ? starredRepos(gh) : []));
   const results = useLoad(`search:${gh.id}:${q}`, () => (q && !repoFromInput(q) ? searchRepos(gh, q) : []));
   const rows = (list: RepoSummary[], label: string) => (list.length ? (
     <List className="max-h-[36vh] overflow-auto rounded-xl border border-border" aria-label={label}>
@@ -176,13 +176,18 @@ export function fuzzyScore(text: string, q: string): number | null {
     score += next - at;
     at = next;
   }
-  return score + (t.length - at);
+  const total = score + (t.length - at);
+  // A match inside the file name beats one spread across folders.
+  const name = t.slice(t.lastIndexOf('/') + 1);
+  let i = -1;
+  const inName = [...q.toLowerCase()].every((c) => (i = name.indexOf(c, i + 1)) >= 0);
+  return inName ? total - 1000 : total;
 }
 
 export function GoToFile({ open, onClose, gitRef, compact }: { open: boolean; onClose: () => void; gitRef: string; compact: boolean }) {
   const { source } = useRepo();
   const nav = useNav();
-  const tree = useLoad(`${source.id}:tree:${gitRef}`, () => (open ? source.tree(gitRef) : []));
+  const tree = useLoad(`${source.id}:goto-tree:${gitRef}:${open}`, () => (open ? source.tree(gitRef) : []));
   const [q, setQ] = useState('');
   const [at, setAt] = useState(0);
   useEffect(() => { if (open) { setQ(''); setAt(0); } }, [open]);
@@ -229,10 +234,10 @@ export function SearchDialog({ open, onClose, compact, initial }: { open: boolea
     const t = setTimeout(() => setQ(input.trim()), 300);
     return () => clearTimeout(t);
   }, [input]);
-  const issues = useLoad(`${source.id}:search-issues:${q}`, () => (open && q ? source.searchIssues(q, 1) : null));
-  const pulls = useLoad(`${source.id}:search-pulls:${q}`, () => (open && q ? source.searchPulls(q, 1) : null));
-  const code = useLoad(`${source.id}:search-code:${q}`, () => (open && q ? source.searchCode(q) : null));
-  const tree = useLoad(`${source.id}:tree:`, () => (open && q ? source.tree('') : []));
+  const issues = useLoad(`${source.id}:search-issues:${open}:${q}`, () => (open && q ? source.searchIssues(q, 1) : null));
+  const pulls = useLoad(`${source.id}:search-pulls:${open}:${q}`, () => (open && q ? source.searchPulls(q, 1) : null));
+  const code = useLoad(`${source.id}:search-code:${open}:${q}`, () => (open && q ? source.searchCode(q) : null));
+  const tree = useLoad(`${source.id}:search-tree:${open && !!q}`, () => (open && q ? source.tree('') : []));
   const fileHits = useMemo(() => (q ? flatten(tree.data ?? []).map((f) => ({ f, s: fuzzyScore(f.path, q) })).filter((x) => x.s != null).sort((a, b) => a.s! - b.s!).slice(0, 5).map((x) => x.f) : []), [q, tree.data]);
   const go = (r: Route) => { onClose(); nav.go(r); };
   const hit = 'flex min-h-9 w-full cursor-pointer items-start gap-2 border-0 border-t border-border bg-transparent px-3 py-1.5 text-left text-detail text-foreground outline-none first:border-t-0 hover:bg-accent focus-visible:bg-accent group-data-[phone=true]/gh:min-h-11';

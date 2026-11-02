@@ -138,17 +138,23 @@ function GithubApp({ width, dark, repo: initialRepo, token, github, sample: asSa
     const list = await recentRepos(liveClient);
     return list[0]?.full ?? null;
   });
-  const full = liveClient && !useSample ? chosen ?? recent.data ?? null : useSample || !chosen ? (useSample || !liveClient ? (chosen && !useSample ? chosen : SAMPLE_REPO) : SAMPLE_REPO) : chosen;
+  const full = useSample ? SAMPLE_REPO : chosen ?? (liveClient ? recent.data ?? null : SAMPLE_REPO);
   const source = useMemo(() => (full ? githubRepo(gh, full, { live: isLive }) : null), [gh, full, isLive]);
   const first = useRef<{ id: string; route: Route } | null>(null);
   if (source && !first.current) first.current = { id: source.id, route: fromHash?.route ?? initialRouteOf({ ...rest, width, dark }) };
   const pendingRoute = useRef<Route | null>(null);
+  /** The open repository's navigation: a link into the repository you're already in just goes there. */
+  const navRef = useRef<Nav | null>(null);
   const openRepo = useCallback((next: string, route?: Route | null) => {
+    if (next.toLowerCase() === full?.toLowerCase() && !useSample) {
+      if (route) navRef.current?.go(route);
+      return;
+    }
     pendingRoute.current = route ?? null;
     setUseSample(false);
     setChosen(next);
     if (liveClient) writeLast(account, next);
-  }, [account, liveClient]);
+  }, [account, liveClient, full, useSample]);
   const ui: Layout = { phone: width < 640, wide: width >= 1012, dark };
   const [toastQueue] = useState(() => createToastQueue());
   const picker = source ? (
@@ -176,7 +182,7 @@ function GithubApp({ width, dark, repo: initialRepo, token, github, sample: asSa
   const start = first.current?.id === source.id ? first.current.route : pendingRoute.current ?? { s: 'code' as const };
   return (
     <>
-      <RepoScreens key={source.id} ui={ui} width={width} source={source} keychain={keychain} openPicker={() => setPicking(true)} gh={gh} start={start} openRepo={openRepo} syncUrl={syncUrl} toast={(m) => toastQueue.show({ variant: 'hud', title: m })} />
+      <RepoScreens key={source.id} ui={ui} width={width} source={source} keychain={keychain} openPicker={() => setPicking(true)} gh={gh} start={start} openRepo={openRepo} navRef={navRef} syncUrl={syncUrl} toast={(m) => toastQueue.show({ variant: 'hud', title: m })} />
       {picker}
       <Toaster queue={toastQueue} inline placement="bottom" />
     </>
@@ -190,8 +196,8 @@ function parseHash(): { full: string; route: Route | null } | null {
   return { full: m[1], route: fromPath(m[2] ?? '') };
 }
 
-function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openRepo, syncUrl, toast }: {
-  ui: Layout; width: number; source: ReturnType<typeof githubRepo>; keychain: ReturnType<typeof useKeychainSignIn>; openPicker: () => void; gh: GitHub; start: Route; openRepo: (full: string, r?: Route | null) => void; syncUrl?: boolean; toast: (m: string) => void;
+function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openRepo, navRef, syncUrl, toast }: {
+  ui: Layout; width: number; source: ReturnType<typeof githubRepo>; keychain: ReturnType<typeof useKeychainSignIn>; openPicker: () => void; gh: GitHub; start: Route; openRepo: (full: string, r?: Route | null) => void; navRef: { current: Nav | null }; syncUrl?: boolean; toast: (m: string) => void;
 }) {
   const [route, setRoute] = useState<Route>(start);
   const stack = useRef<Route[]>([]);
@@ -237,6 +243,8 @@ function RepoScreens({ ui, width, source, keychain, openPicker, gh, start, openR
     search: (q) => setSearchOpen({ q }),
     goToFile: () => setFileOpen(true),
   }), [source.full, branch, refNames.join(), syncUrl, hashOf, openRepo]);
+
+  navRef.current = nav;
 
   // The browser's back and forward, and hand-edited hashes.
   useEffect(() => {

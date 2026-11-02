@@ -1,9 +1,9 @@
 /* GitHub's select menu: a button opening a searchable list. Multi-select applies when it closes (one write, one timeline
    event, however many boxes were ticked, as on GitHub); single-select applies at once. Arrow keys move through the list
    while typing filters it. <Menu> is the plain compact dropdown the block uses everywhere else. */
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import {
-  Autocomplete, Button as AriaButton, Dialog, DialogTrigger, Input, ListBox, ListBoxItem, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuSection, MenuTrigger, Header, SearchField, Separator, useFilter, type Key,
+  Autocomplete, Button as AriaButton, Dialog, DialogTrigger, Input, ListBox, ListBoxItem, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuSection, MenuTrigger, Header, Separator, TextField, useFilter, type Key,
 } from 'react-aria-components';
 import { Popover } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -65,45 +65,44 @@ export function SelectMenu({ title, trigger, triggerLabel, triggerClassName, ite
       <AriaButton aria-label={triggerLabel} isDisabled={isDisabled} className={triggerClassName ?? ghButton()}>{trigger}</AriaButton>
       <Popover placement="bottom end" className="w-[min(320px,calc(100vw-24px))]">
         <Dialog aria-label={title} className="flex max-h-[min(440px,70vh)] flex-col outline-none">
+          {/* Autocomplete keeps Escape for itself; here it means "done", which is what applies a multi-select. */}
+          <div className="contents" onKeyDownCapture={(e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); change(false); } }}>
           <header className="border-b border-border px-3 py-2 text-caption font-semibold">{title}</header>
           <Autocomplete filter={(text, input) => contains(text, input)} inputValue={q} onInputChange={setQ}>
-            <SearchField aria-label={`${title}: filter`} className="border-b border-border p-2" autoFocus>
+            <TextField aria-label={`${title}: filter`} className="border-b border-border p-2" autoFocus>
               <Input placeholder={filterPlaceholder} autoComplete="off" spellCheck={false}
-                className="box-border h-8 w-full rounded-md border border-border bg-background px-2 font-sans text-detail text-foreground outline-none select-text data-focused:border-primary data-focused:ring-1 data-focused:ring-primary group-data-[phone=true]/gh:h-11 [&::-webkit-search-cancel-button]:appearance-none" />
-            </SearchField>
-            <ListBox aria-label={title} selectionMode={multiple ? 'multiple' : 'single'} selectedKeys={multiple ? draft : selected} className="bl-scroll min-h-0 flex-1 overflow-y-auto outline-none"
+                className="box-border h-8 w-full rounded-md border border-border bg-background px-2 font-sans text-detail text-foreground outline-none select-text data-focused:border-primary data-focused:ring-1 data-focused:ring-primary group-data-[phone=true]/gh:h-11" />
+            </TextField>
+            {/* Multi-select is a real selection. Single-select is a list of actions: given both, react-aria runs the action and never selects. */}
+            <ListBox aria-label={title} selectionMode={multiple ? 'multiple' : undefined} selectedKeys={multiple ? draft : undefined} className="bl-scroll min-h-0 flex-1 overflow-y-auto outline-none"
               renderEmptyState={() => <div className="px-3 py-6 text-center text-caption text-muted-foreground">{loading ? 'Loading…' : empty}</div>}
-              onSelectionChange={(keys) => {
-                const ids = keys === 'all' ? items.map((i) => i.id) : ([...keys] as string[]);
-                if (multiple) setDraft(ids);
-                else {
-                  // Choosing the selected row again keeps it selected in react-aria's eyes: treat it as no change.
-                  const id = ids[0];
-                  if (id !== undefined && !selected.includes(id)) onApply(id === '__clear' ? [] : [id]);
-                  setOpen(false);
-                }
-              }}
+              onSelectionChange={multiple ? (keys) => setDraft(keys === 'all' ? items.map((i) => i.id) : ([...keys] as string[])) : undefined}
               onAction={multiple ? undefined : (key: Key) => {
-                if (String(key) === selected[0] || String(key) === '__clear') { if (String(key) === '__clear' && selected.length) onApply([]); setOpen(false); }
+                const id = String(key);
+                if (id === '__clear') { if (selected.length) onApply([]); }
+                else if (!selected.includes(id)) onApply([id]);
+                setOpen(false);
               }}>
               {clearLabel && !q && !multiple ? <Row item={{ id: '__clear', label: clearLabel }} /> : null}
-              {shown.map((i) => <Row key={i.id} item={i} />)}
+              {shown.map((i) => <Row key={i.id} item={i} current={!multiple && selected.includes(i.id)} />)}
             </ListBox>
           </Autocomplete>
           {footer ? <footer className="border-t border-border">{footer(q, () => change(false))}</footer> : null}
+          </div>
         </Dialog>
       </Popover>
     </DialogTrigger>
   );
 }
 
-function Row({ item }: { item: PickItem }) {
+function Row({ item, current }: { item: PickItem; current?: boolean }) {
   return (
     <ListBoxItem id={item.id} textValue={`${item.label} ${item.keywords ?? ''}`}
+      aria-current={current ? 'true' : undefined}
       className="group/row flex min-h-9 cursor-pointer items-center gap-2 border-t border-border px-3 py-1.5 text-detail text-foreground outline-none first:border-t-0 data-focused:bg-accent group-data-[phone=true]/gh:min-h-11">
       {({ isSelected }) => (
         <>
-          <span className="grid w-4 shrink-0 place-items-center">{isSelected ? <Oct name="check" size={14} /> : null}</span>
+          <span className="grid w-4 shrink-0 place-items-center">{isSelected || current ? <Oct name="check" size={14} /> : null}</span>
           {item.leading}
           <span className="min-w-0 flex-1">
             <span className="block truncate font-semibold">{item.label}</span>

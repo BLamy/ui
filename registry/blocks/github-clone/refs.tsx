@@ -1,7 +1,7 @@
 /* Refs: the branch/tag switcher (filter, tabs, create a branch from here), the Branches page (ahead/behind, its pull
    request, new, rename, delete) and the Tags page. */
-import { useState } from 'react';
-import { Autocomplete, Button as AriaButton, Dialog, DialogTrigger, Input, ListBox, ListBoxItem, SearchField, useFilter } from 'react-aria-components';
+import { useState, type KeyboardEvent } from 'react';
+import { Autocomplete, Button as AriaButton, Dialog, DialogTrigger, Input, ListBox, ListBoxItem, TextField, useFilter } from 'react-aria-components';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input as TextInput } from '@/components/ui/input';
@@ -48,23 +48,24 @@ export function RefPicker({ value, path = '' }: { value: string; path?: string }
       </AriaButton>
       <Popover placement="bottom start" className="w-[min(320px,calc(100vw-24px))]">
         <Dialog aria-label="Switch branches or tags" className="flex max-h-[min(460px,70vh)] flex-col outline-none">
+          <div className="contents" onKeyDownCapture={(e: KeyboardEvent) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setOpen(false); } }}>
           <header className="border-b border-border px-3 py-2 text-caption font-semibold">Switch branches/tags</header>
           <Autocomplete filter={(text, input) => contains(text, input)} inputValue={q} onInputChange={setQ}>
-            <SearchField aria-label={tab === 'branches' ? 'Find or create a branch' : 'Find a tag'} className="p-2" autoFocus>
+            <TextField aria-label={tab === 'branches' ? 'Find or create a branch' : 'Find a tag'} className="p-2" autoFocus>
               <Input placeholder={tab === 'branches' && can.push ? 'Find or create a branch…' : `Find a ${tab === 'branches' ? 'branch' : 'tag'}…`} autoComplete="off" spellCheck={false}
-                className="box-border h-8 w-full rounded-md border border-border bg-background px-2 font-sans text-detail text-foreground outline-none select-text data-focused:border-primary data-focused:ring-1 data-focused:ring-primary group-data-[phone=true]/gh:h-11 [&::-webkit-search-cancel-button]:appearance-none" />
-            </SearchField>
+                className="box-border h-8 w-full rounded-md border border-border bg-background px-2 font-sans text-detail text-foreground outline-none select-text data-focused:border-primary data-focused:ring-1 data-focused:ring-primary group-data-[phone=true]/gh:h-11" />
+            </TextField>
             <div role="group" aria-label="Kind of ref" className="flex gap-1 border-b border-border px-2">
               {(['branches', 'tags'] as const).map((t) => (
                 <Button key={t} aria-pressed={tab === t} onPress={() => setTab(t)} className={cn('h-8 cursor-pointer border-0 border-b-2 bg-transparent px-2 text-caption outline-none data-focus-visible:ring-2 data-focus-visible:ring-primary group-data-[phone=true]/gh:h-11', tab === t ? 'border-(--gh-tab) font-semibold text-foreground' : 'border-transparent text-muted-foreground')}>{t === 'branches' ? 'Branches' : 'Tags'}</Button>
               ))}
             </div>
-            <ListBox aria-label={tab} selectionMode="single" selectedKeys={[current]} className="bl-scroll min-h-0 flex-1 overflow-y-auto outline-none"
-              onAction={(key) => go(String(key))} onSelectionChange={() => {}}
+            <ListBox aria-label={tab} className="bl-scroll min-h-0 flex-1 overflow-y-auto outline-none"
+              onAction={(key) => go(String(key))}
               renderEmptyState={() => <div className="px-3 py-5 text-center text-caption text-muted-foreground">{tab === 'tags' ? 'Nothing to show' : 'No branches match'}</div>}>
               {list.map((name) => (
-                <ListBoxItem key={name} id={name} textValue={name} className="flex min-h-8 cursor-pointer items-center gap-2 border-t border-border px-3 py-1.5 font-mono text-caption text-foreground outline-none first:border-t-0 data-focused:bg-accent group-data-[phone=true]/gh:min-h-11">
-                  {({ isSelected }) => <><span className="grid w-4 shrink-0 place-items-center">{isSelected ? <Oct name="check" size={14} /> : null}</span><span className="min-w-0 flex-1 truncate">{name}</span>{name === repo.branch ? <span className="rounded-full border border-border px-1.5 font-sans text-caption2 text-muted-foreground">default</span> : null}</>}
+                <ListBoxItem key={name} id={name} textValue={name} aria-current={name === current ? 'true' : undefined} className="flex min-h-8 cursor-pointer items-center gap-2 border-t border-border px-3 py-1.5 font-mono text-caption text-foreground outline-none first:border-t-0 data-focused:bg-accent group-data-[phone=true]/gh:min-h-11">
+                  {() => <><span className="grid w-4 shrink-0 place-items-center">{name === current ? <Oct name="check" size={14} /> : null}</span><span className="min-w-0 flex-1 truncate">{name}</span>{name === repo.branch ? <span className="rounded-full border border-border px-1.5 font-sans text-caption2 text-muted-foreground">default</span> : null}</>}
                 </ListBoxItem>
               ))}
             </ListBox>
@@ -80,6 +81,7 @@ export function RefPicker({ value, path = '' }: { value: string; path?: string }
           <footer className="border-t border-border px-3 py-1.5 text-caption">
             <GhLink to={tab === 'branches' ? { s: 'branches' } : { s: 'tags' }} onNavigate={() => setOpen(false)} className="text-primary no-underline hover:underline">View all {tab}</GhLink>
           </footer>
+          </div>
         </Dialog>
       </Popover>
     </DialogTrigger>

@@ -22,7 +22,7 @@ export function GlobalHeader({ width }: { width: number }) {
   const nav = useNav();
   const can = useRepoCan();
   const [owner, name] = source.full.split('/');
-  const unread = useLoad('notifications-dot', () => (gh && viewer ? notificationCount(gh) : 0)).data ?? 0;
+  const unread = useLoad(`notifications-dot:${gh?.id}:${viewer?.login ?? ''}`, () => (gh && viewer ? notificationCount(gh) : 0)).data ?? 0;
   const createEntries: (MenuEntry | null)[] = [
     can.participate ? { id: 'issue', label: 'New issue', icon: <Oct name="issue" size={14} />, onAction: () => nav.go({ s: 'new-issue' }) } : null,
     repo && !repo.empty ? { id: 'pull', label: 'New pull request', icon: <Oct name="pr" size={14} />, onAction: () => nav.go({ s: 'compare' }) } : null,
@@ -116,8 +116,8 @@ export function RepoHeader() {
   const { repo, source, viewer, ui } = useRepo();
   const nav = useNav();
   const can = useCan();
-  const starred = useLoad(`${source.id}:starred`, () => (viewer ? source.starred() : false)).data ?? false;
-  const subscription = useLoad(`${source.id}:subscription`, () => (viewer ? source.subscription() : 'participating' as Subscription)).data ?? 'participating';
+  const starred = useLoad(`${source.id}:starred:${viewer?.login ?? ''}`, () => (viewer ? source.starred() : false)).data ?? false;
+  const subscription = useLoad(`${source.id}:subscription:${viewer?.login ?? ''}`, () => (viewer ? source.subscription() : 'participating' as Subscription)).data ?? 'participating';
   const act = useAction();
   const [forkOpen, setForkOpen] = useState(false);
   const signedIn = can.signedIn;
