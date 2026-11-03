@@ -1,0 +1,39 @@
+{
+  "name": "object-tree",
+  "title": "ObjectTree",
+  "description": "Values as a debugger shows them: scopes in collapsible sections, lazy children with loading and failed states, DevTools-style previews, getters, ranges for large collections, keyboard navigation and copying. Takes plain data, and any JSON-like value.",
+  "page": "object-tree",
+  "files": [
+    "components/object-tree.tsx"
+  ],
+  "exports": [
+    "ObjectTree",
+    "objectTreeRowVariants",
+    "ObjectValue",
+    "nodeFromValue",
+    "childrenOfValue",
+    "previewFromValue",
+    "previewText",
+    "previewTokens",
+    "copyTextOf"
+  ],
+  "imports": [
+    "ObjectTree",
+    "ObjectValue",
+    "nodeFromValue"
+  ],
+  "types": [
+    "ObjectTreeProps",
+    "ObjectValueProps",
+    "ObjectTreeNode",
+    "ObjectTreeRoot",
+    "ObjectTreeGetterResult",
+    "ValuePreview",
+    "ValueProperty",
+    "ValueMapEntry",
+    "ValueType",
+    "ValueTint",
+    "ValueToken",
+    "ValuePreviewOptions"
+  ]
+}

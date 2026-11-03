@@ -1,0 +1,13 @@
+{
+  "name": "call-stack-model",
+  "title": "CallStack logic",
+  "description": "CallStack's logic as plain functions: which rows a list of frames shows, and how a location reads.",
+  "files": [
+    "lib/call-stack.ts"
+  ],
+  "exports": [
+    "shortLocation",
+    "fullLocation",
+    "fileBaseName"
+  ]
+}

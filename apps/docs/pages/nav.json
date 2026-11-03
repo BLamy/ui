@@ -103,7 +103,9 @@
         { "id": "separator", "title": "Separator" },
         { "id": "kbd", "title": "Kbd" },
         { "id": "qr-svg", "title": "QrSvg" },
-        { "id": "spreadsheet", "title": "Spreadsheet" }
+        { "id": "spreadsheet", "title": "Spreadsheet" },
+        { "id": "log-list", "title": "LogList" },
+        { "id": "request-table", "title": "RequestTable" }
       ]
     },
     {
@@ -153,8 +155,12 @@
         { "id": "workspace", "title": "Workspace" },
         { "id": "markdown-editor", "title": "MarkdownEditor" },
         { "id": "syntax-highlighting", "title": "SyntaxHighlighting" },
+        { "id": "code-viewer", "title": "CodeViewer" },
         { "id": "pencilkit", "title": "PencilKit" },
         { "id": "replay-preview", "title": "ReplayPreview" },
+        { "id": "trace-timeline", "title": "TraceTimeline" },
+        { "id": "object-tree", "title": "ObjectTree" },
+        { "id": "call-stack", "title": "CallStack" },
         { "id": "workbench-shell", "title": "WorkbenchShell" },
         { "id": "workbench-theme", "title": "WorkbenchTheme" }
       ]

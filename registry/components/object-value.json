@@ -1,0 +1,8 @@
+{
+  "name": "object-value",
+  "title": "ObjectValue",
+  "description": "A value's one-line preview, tinted by type as DevTools does, for strings, numbers, objects, arrays, maps, sets, dates, regexps, errors, symbols and more. Long strings truncate, with Show more and Copy.",
+  "exports": [
+    "ObjectValue"
+  ]
+}

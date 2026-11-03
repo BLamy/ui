@@ -1,0 +1,14 @@
+{
+  "name": "code-viewer-gpu",
+  "title": "CodeViewer GPU highlighting",
+  "description": "An opt-in highlighter for CodeViewer on gpu-lexer. It answers a frame late, and where there's no WebGPU the viewer stays plain text.",
+  "files": [
+    "lib/code-viewer-gpu.ts"
+  ],
+  "exports": [
+    "createGpuCodeHighlight"
+  ],
+  "types": [
+    "GpuCodeHighlightOptions"
+  ]
+}

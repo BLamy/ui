@@ -1,0 +1,12 @@
+{
+  "name": "code-viewer-model",
+  "title": "CodeViewer logic",
+  "description": "CodeViewer's logic as plain functions: splitting lines, windowing long lines, its selection model, and a lexer that can resume in the middle of a long line.",
+  "files": [
+    "lib/code-viewer.ts"
+  ],
+  "exports": [
+    "splitCodeLines",
+    "lexCodeLine"
+  ]
+}

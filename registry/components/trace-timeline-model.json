@@ -1,0 +1,34 @@
+{
+  "name": "trace-timeline-model",
+  "title": "Trace timeline model",
+  "description": "The math and drawing behind TraceTimeline: linear and by-what-happened axes, stop selection and clustering, per-pixel pooling by binary search over sorted arrays, scrub speeds and re-anchoring, ruler ticks and time formatting, and one canvas drawing for both orientations.",
+  "files": [
+    "lib/trace-timeline.ts",
+    "lib/trace-timeline-draw.ts"
+  ],
+  "exports": [
+    "linearAxis",
+    "stopAxis",
+    "advanceAlong",
+    "selectStops",
+    "formatTraceTime",
+    "TRACE_SCRUB_SPEEDS"
+  ],
+  "types": [
+    "TraceActivity",
+    "TraceAxis",
+    "TraceDensity",
+    "TraceDiamonds",
+    "TraceKey",
+    "TraceLane",
+    "TraceMarkSeries",
+    "TraceRange",
+    "TraceRequest",
+    "TraceScrubSpeed",
+    "TraceStop",
+    "TraceStopMark",
+    "TraceThread",
+    "TraceTone",
+    "TraceWindow"
+  ]
+}

@@ -1800,6 +1800,59 @@
       }
     },
     {
+      "name": "call-stack-model",
+      "type": "registry:lib",
+      "title": "CallStack logic",
+      "description": "CallStack's logic as plain functions: which rows a list of frames shows, and how a location reads.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/call-stack.ts",
+          "type": "registry:lib",
+          "target": "lib/call-stack.ts"
+        }
+      ]
+    },
+    {
+      "name": "call-stack",
+      "type": "registry:ui",
+      "title": "CallStack",
+      "description": "Frames as a debugger lists them: the top frame marked, runs of framework and library frames folded, async boundaries as labelled separators, short locations with the full path a press away. Virtualized, on react-aria's GridList.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/call-stack-model.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/call-stack.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/call-stack.tsx"
+        }
+      ],
+      "meta": {
+        "page": "call-stack",
+        "exports": [
+          "CallStack",
+          "callStackRowVariants",
+          "shortLocation",
+          "fullLocation",
+          "fileBaseName"
+        ]
+      }
+    },
+    {
       "name": "canvas",
       "type": "registry:ui",
       "title": "Canvas",
@@ -1941,6 +1994,72 @@
           "Checkbox",
           "CheckboxGroup",
           "checkboxVariants"
+        ]
+      }
+    },
+    {
+      "name": "code-viewer-gpu",
+      "type": "registry:lib",
+      "title": "CodeViewer GPU highlighting",
+      "description": "An opt-in highlighter for CodeViewer on gpu-lexer. It answers a frame late, and where there's no WebGPU the viewer stays plain text.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/code-viewer-model.json",
+        "https://blamy.github.io/ui/r/syntax.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/code-viewer-gpu.ts",
+          "type": "registry:lib",
+          "target": "lib/code-viewer-gpu.ts"
+        }
+      ]
+    },
+    {
+      "name": "code-viewer-model",
+      "type": "registry:lib",
+      "title": "CodeViewer logic",
+      "description": "CodeViewer's logic as plain functions: splitting lines, windowing long lines, its selection model, and a lexer that can resume in the middle of a long line.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/code-viewer.ts",
+          "type": "registry:lib",
+          "target": "lib/code-viewer.ts"
+        }
+      ]
+    },
+    {
+      "name": "code-viewer",
+      "type": "registry:ui",
+      "title": "CodeViewer",
+      "description": "A read-only source view that stays smooth on a megabyte line and on hundreds of thousands of lines: windowed both ways, with pluggable gutters that stay put, a current line and column, line tints, inline markers, pluggable highlighting and its own selection and copy.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/code-viewer-model.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/code-viewer.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/code-viewer.tsx"
+        }
+      ],
+      "meta": {
+        "page": "code-viewer",
+        "exports": [
+          "CodeViewer",
+          "codeViewerLineVariants",
+          "codeViewerGutterCellVariants"
         ]
       }
     },
@@ -3290,6 +3409,62 @@
       }
     },
     {
+      "name": "log-list-model",
+      "type": "registry:lib",
+      "title": "LogList logic",
+      "description": "LogList's logic as plain functions, and the row window it and RequestTable share: measured heights, anchoring and scrolling far beyond what the DOM could hold.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/log-list-window.ts",
+          "type": "registry:lib",
+          "target": "lib/log-list-window.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/log-list.ts",
+          "type": "registry:lib",
+          "target": "lib/log-list.ts"
+        }
+      ]
+    },
+    {
+      "name": "log-list",
+      "type": "registry:ui",
+      "title": "LogList",
+      "description": "A virtualized log: levels, times, sources and rich messages in rows of any height, a you-are-here marker that dims what comes after it and moves without re-rendering, following with a way back, keyboard navigation and copying. Stays smooth at 100,000 rows.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria@^3.51.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/log-list-model.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/log-list.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/log-list.tsx"
+        }
+      ],
+      "meta": {
+        "page": "log-list",
+        "exports": [
+          "LogList",
+          "LogRowContent",
+          "logListVariants"
+        ]
+      }
+    },
+    {
       "name": "markdown-editor",
       "type": "registry:ui",
       "title": "MarkdownEditor",
@@ -3533,6 +3708,88 @@
           "NumberMorph"
         ]
       }
+    },
+    {
+      "name": "object-tree-model",
+      "type": "registry:lib",
+      "title": "ObjectTree logic",
+      "description": "ObjectTree's logic as plain functions: nodes, ranges for large collections, what's loaded and open, the rows they make, and nodes from any live value.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/object-tree-value.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/object-tree.ts",
+          "type": "registry:lib",
+          "target": "lib/object-tree.ts"
+        }
+      ]
+    },
+    {
+      "name": "object-tree",
+      "type": "registry:ui",
+      "title": "ObjectTree",
+      "description": "Values as a debugger shows them: scopes in collapsible sections, lazy children with loading and failed states, DevTools-style previews, getters, ranges for large collections, keyboard navigation and copying. Takes plain data, and any JSON-like value.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/object-tree-model.json",
+        "https://blamy.github.io/ui/r/object-tree-value.json",
+        "https://blamy.github.io/ui/r/object-value.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/object-tree.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/object-tree.tsx"
+        }
+      ],
+      "meta": {
+        "page": "object-tree",
+        "exports": [
+          "ObjectTree",
+          "objectTreeRowVariants",
+          "ObjectValue",
+          "nodeFromValue",
+          "childrenOfValue",
+          "previewFromValue",
+          "previewText",
+          "previewTokens",
+          "copyTextOf"
+        ]
+      }
+    },
+    {
+      "name": "object-value",
+      "type": "registry:ui",
+      "title": "ObjectValue",
+      "description": "A value's one-line preview, tinted by type as DevTools does, for strings, numbers, objects, arrays, maps, sets, dates, regexps, errors, symbols and more. Long strings truncate, with Show more and Copy.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/object-tree-value.json",
+        "https://blamy.github.io/ui/r/plain-button.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/object-value.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/object-value.tsx"
+        }
+      ]
     },
     {
       "name": "passkey-vault",
@@ -4000,6 +4257,64 @@
           "replayPointerAt",
           "getReplayDevtools",
           "replayDevtoolsAt"
+        ]
+      }
+    },
+    {
+      "name": "request-table-model",
+      "type": "registry:lib",
+      "title": "RequestTable logic",
+      "description": "RequestTable's logic as plain functions: names, sizes, status text, tones, sorting and the time range rows cover.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/format-bytes.json",
+        "https://blamy.github.io/ui/r/log-list-model.json",
+        "https://blamy.github.io/ui/r/sql-format.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/request-table.ts",
+          "type": "registry:lib",
+          "target": "lib/request-table.ts"
+        }
+      ]
+    },
+    {
+      "name": "request-table",
+      "type": "registry:ui",
+      "title": "RequestTable",
+      "description": "A virtualized table of requests: resizable, sortable columns, a waterfall with a playhead that moves without re-rendering, links to the other end of a call, and two-line rows when its container is narrow. Stays smooth at 10,000 rows.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1",
+        "react-aria@^3.51.0",
+        "react-aria-components@^1.20.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
+        "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/log-list-model.json",
+        "https://blamy.github.io/ui/r/request-table-model.json",
+        "https://blamy.github.io/ui/r/sql-format.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/request-table.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/request-table.tsx"
+        }
+      ],
+      "meta": {
+        "page": "request-table",
+        "exports": [
+          "RequestLink",
+          "RequestTable",
+          "REQUEST_COLUMNS",
+          "requestTableVariants"
         ]
       }
     },
@@ -5288,6 +5603,57 @@
       }
     },
     {
+      "name": "trace-timeline-model",
+      "type": "registry:lib",
+      "title": "Trace timeline model",
+      "description": "The math and drawing behind TraceTimeline: linear and by-what-happened axes, stop selection and clustering, per-pixel pooling by binary search over sorted arrays, scrub speeds and re-anchoring, ruler ticks and time formatting, and one canvas drawing for both orientations.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/trace-timeline-draw.ts",
+          "type": "registry:lib",
+          "target": "lib/trace-timeline-draw.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/trace-timeline.ts",
+          "type": "registry:lib",
+          "target": "lib/trace-timeline.ts"
+        }
+      ]
+    },
+    {
+      "name": "trace-timeline",
+      "type": "registry:ui",
+      "title": "TraceTimeline",
+      "description": "A long session on one clock, drawn on a canvas at most one thing per device pixel: a strip with a ruler, diamonds, density with marks over it, thread activity fetched for the view, requests and several lanes, or the same timeline as a rail for narrow windows with stops as dashes that swell around the pointer, a scrub that slows as you pull away, and pinch and wheel zoom. A slider, with the keyboard that implies.",
+      "dependencies": [
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
+        "https://blamy.github.io/ui/r/trace-timeline-model.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/trace-timeline.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/trace-timeline.tsx"
+        }
+      ],
+      "meta": {
+        "page": "trace-timeline",
+        "exports": [
+          "TraceTimeline",
+          "traceTimelineVariants"
+        ]
+      }
+    },
+    {
       "name": "tree",
       "type": "registry:ui",
       "title": "Tree",
@@ -5956,6 +6322,23 @@
           "path": "packages/ui/src/lib/morph-path.ts",
           "type": "registry:lib",
           "target": "lib/morph-path.ts"
+        }
+      ]
+    },
+    {
+      "name": "object-tree-value",
+      "type": "registry:lib",
+      "title": "Object Tree Value",
+      "description": "Object Tree Value — part of BL UI's library (lib/object-tree-value.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/object-tree-value.ts",
+          "type": "registry:lib",
+          "target": "lib/object-tree-value.ts"
         }
       ]
     },

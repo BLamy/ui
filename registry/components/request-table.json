@@ -1,0 +1,26 @@
+{
+  "name": "request-table",
+  "title": "RequestTable",
+  "description": "A virtualized table of requests: resizable, sortable columns, a waterfall with a playhead that moves without re-rendering, links to the other end of a call, and two-line rows when its container is narrow. Stays smooth at 10,000 rows.",
+  "page": "request-table",
+  "files": [
+    "components/request-table.tsx"
+  ],
+  "exports": [
+    "RequestLink",
+    "RequestTable",
+    "REQUEST_COLUMNS",
+    "requestTableVariants"
+  ],
+  "imports": [
+    "RequestTable",
+    "RequestLink"
+  ],
+  "types": [
+    "RequestColumn",
+    "RequestColumnId",
+    "RequestLinkProps",
+    "RequestTableHandle",
+    "RequestTableProps"
+  ]
+}

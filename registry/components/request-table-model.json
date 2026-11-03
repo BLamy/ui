@@ -1,0 +1,28 @@
+{
+  "name": "request-table-model",
+  "title": "RequestTable logic",
+  "description": "RequestTable's logic as plain functions: names, sizes, status text, tones, sorting and the time range rows cover.",
+  "files": [
+    "lib/request-table.ts"
+  ],
+  "exports": [
+    "isRequestFailed",
+    "requestDisplayName",
+    "requestDurationText",
+    "requestName",
+    "requestSizeText",
+    "requestStatusText",
+    "requestTimeRange",
+    "requestTone",
+    "sortRequests"
+  ],
+  "types": [
+    "RequestRow",
+    "RequestSort",
+    "RequestSortDirection",
+    "RequestSortValue",
+    "RequestColumnSize",
+    "RequestTimeRange",
+    "RequestTone"
+  ]
+}

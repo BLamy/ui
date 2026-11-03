@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (91 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (98 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -198,6 +198,31 @@ flex w-fit max-w-full flex-col text-foreground data-disabled:opacity-50
 | `plain` (default) | — |
 | `card` | `rounded-panel bg-secondary p-3` |
 
+## CallStack
+
+### `callStackRowVariants`
+
+Defined in `@/components/ui/call-stack`. Base classes:
+
+```text
+[ 'group/row flex h-full w-full cursor-default items-center gap-1.5 pr-2 text-caption leading-none text-foreground outline-none', 'data-hovered:bg-accent/50 data-selected:bg-accent data-focus-visible:[box-shadow:inset_0_0_0_2px_var(--ring)]', ]
+```
+
+**`kind`**
+
+| Value | Adds |
+| --- | --- |
+| `app` | — |
+| `framework` | `text-muted-foreground data-selected:text-foreground` |
+| `run` | `font-sans text-muted-foreground` |
+
+**`inRun`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `pl-5` |
+| `false` (default) | `pl-1` |
+
 ## Card
 
 ### `cardVariants`
@@ -232,6 +257,44 @@ Defined in `@/components/ui/checkbox`. Base classes:
 | --- | --- |
 | `circle` (default) | `rounded-full` |
 | `square` | `rounded-md` |
+
+## CodeViewer
+
+### `codeViewerLineVariants`
+
+Defined in `@/components/ui/code-viewer`. Base classes:
+
+```text
+pointer-events-none absolute inset-x-0 h-(--code-viewer-line)
+```
+
+**`tint`** — default `none`
+
+| Value | Adds |
+| --- | --- |
+| `none` (default) | — |
+| `current` | `bg-primary/15 shadow-[inset_3px_0_var(--primary)]` |
+| `info` | `bg-primary/10 shadow-[inset_3px_0_color-mix(in_srgb,var(--primary)_45%,transparent)]` |
+| `success` | `bg-success/15` |
+| `warning` | `bg-warning/15` |
+| `danger` | `bg-destructive/15` |
+| `muted` | `bg-secondary` |
+
+### `codeViewerGutterCellVariants`
+
+Defined in `@/components/ui/code-viewer`. Base classes:
+
+```text
+box-border flex h-full shrink-0 items-center overflow-hidden
+```
+
+**`align`** — default `center`
+
+| Value | Adds |
+| --- | --- |
+| `start` | `justify-start` |
+| `center` (default) | `justify-center` |
+| `end` | `justify-end` |
 
 ## ColorField
 
@@ -914,6 +977,23 @@ bl-btn group/item relative box-border flex cursor-pointer items-center gap-2.5 t
 | `inset` (default) | `[ 'min-h-11 px-4 py-[11px] text-body leading-[22px]', 'after:pointer-events-none after:absolute after:right-0 after:bottom-0 after:left-4 a…` |
 | `popup` | `[ 'min-h-9 rounded-lg py-[7px] pr-3 pl-2 text-subhead leading-5', 'data-focused:bg-accent data-pressed:bg-secondary-strong', ]` |
 
+## LogList
+
+### `logListVariants`
+
+Defined in `@/components/ui/log-list`. Base classes:
+
+```text
+@container relative flex h-full max-h-dvh w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground after:pointer-events-none after:absolute after:inset-0 after:z-3 after:rounded-[inherit] after:shadow-hairline after:content-['']
+```
+
+**`density`** — default `compact`
+
+| Value | Adds |
+| --- | --- |
+| `compact` (default) | `[--log-pad:3px]` |
+| `comfortable` | `[--log-pad:7px]` |
+
 ## MarkdownEditor
 
 ### `markdownEditorVariants`
@@ -939,6 +1019,31 @@ Defined in `@/components/ui/markdown-editor`. Base classes:
 | `sm` | `bl-mde-sm` |
 | `default` (default) | `bl-mde-md` |
 | `lg` | `bl-mde-lg` |
+
+## ObjectTree
+
+### `objectTreeRowVariants`
+
+Defined in `@/components/ui/object-tree`. Base classes:
+
+```text
+[ 'group/row flex h-full w-full cursor-default items-center gap-1 pr-1 outline-none', 'pl-[min(calc((var(--tree-item-level)-1)*var(--object-tree-indent)),25%)]', 'text-caption leading-none text-foreground', 'data-selected:bg-accent data-focus-visible:[box-shadow:inset_0_0_0_2px_var(--ring)]', ]
+```
+
+**`kind`**
+
+| Value | Adds |
+| --- | --- |
+| `node` | `font-mono data-hovered:bg-accent/50` |
+| `section` | `font-sans font-semibold shadow-hairline-b data-hovered:bg-accent/50` |
+| `range` | `font-mono text-muted-foreground data-hovered:bg-accent/50` |
+| `note` | `font-sans text-muted-foreground` |
+
+**`stale`**
+
+| Value | Adds |
+| --- | --- |
+| `true` | `opacity-60` |
 
 ## Passkey Enroll Dialog
 
@@ -1095,6 +1200,23 @@ Defined in `@/components/ui/radio-group`. Base classes:
 ```
 
 No variants.
+
+## RequestTable
+
+### `requestTableVariants`
+
+Defined in `@/components/ui/request-table`. Base classes:
+
+```text
+group/table relative flex h-full max-h-dvh w-full min-h-0 min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground after:pointer-events-none after:absolute after:inset-0 after:z-3 after:rounded-[inherit] after:shadow-hairline after:content-['']
+```
+
+**`density`** — default `compact`
+
+| Value | Adds |
+| --- | --- |
+| `compact` (default) | — |
+| `comfortable` | — |
 
 ## ScrollArea
 
@@ -1729,6 +1851,32 @@ isolate inline-flex w-fit items-center
 | `default` (default) | `gap-1` |
 | `filled` | `gap-0.5 rounded-[11px] bg-secondary p-0.5` |
 | `outline` | `gap-0 overflow-hidden rounded-ctl shadow-hairline` |
+
+## TraceTimeline
+
+### `traceTimelineVariants`
+
+Defined in `@/components/ui/trace-timeline`. Base classes:
+
+```text
+font-sans touch-none select-none
+```
+
+**`orientation`** — default `horizontal`
+
+| Value | Adds |
+| --- | --- |
+| `horizontal` (default) | `relative block h-(--tt-height) w-full cursor-crosshair bg-background -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--p…` |
+| `vertical` | `absolute top-(--tt-top) bottom-(--tt-bottom) z-80 w-(--tt-width) cursor-pointer rounded-lg -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[out…` |
+
+**`side`** — default `right`
+
+| Value | Adds |
+| --- | --- |
+| `right` (default) | — |
+| `left` | — |
+
+2 compound variants — see the source.
 
 ## Waveform
 

@@ -1,0 +1,25 @@
+{
+  "name": "trace-timeline",
+  "title": "TraceTimeline",
+  "description": "A long session on one clock, drawn on a canvas at most one thing per device pixel: a strip with a ruler, diamonds, density with marks over it, thread activity fetched for the view, requests and several lanes, or the same timeline as a rail for narrow windows with stops as dashes that swell around the pointer, a scrub that slows as you pull away, and pinch and wheel zoom. A slider, with the keyboard that implies.",
+  "page": "trace-timeline",
+  "files": [
+    "components/trace-timeline.tsx"
+  ],
+  "exports": [
+    "TraceTimeline",
+    "traceTimelineVariants"
+  ],
+  "imports": [
+    "TraceTimeline",
+    "linearAxis",
+    "stopAxis"
+  ],
+  "types": [
+    "TraceTimelineProps",
+    "TraceTimelineHandle",
+    "TraceValueInfo",
+    "TraceDrawStats",
+    "TraceFetchActivity"
+  ]
+}

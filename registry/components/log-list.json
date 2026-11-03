@@ -1,0 +1,23 @@
+{
+  "name": "log-list",
+  "title": "LogList",
+  "description": "A virtualized log: levels, times, sources and rich messages in rows of any height, a you-are-here marker that dims what comes after it and moves without re-rendering, following with a way back, keyboard navigation and copying. Stays smooth at 100,000 rows.",
+  "page": "log-list",
+  "files": [
+    "components/log-list.tsx"
+  ],
+  "exports": [
+    "LogList",
+    "LogRowContent",
+    "logListVariants"
+  ],
+  "imports": [
+    "LogList"
+  ],
+  "types": [
+    "LogListProps",
+    "LogListHandle",
+    "LogRowContentProps",
+    "LogRowState"
+  ]
+}

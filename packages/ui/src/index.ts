@@ -699,3 +699,34 @@ export type {
   WorkspaceChangedMeta, WorkspaceChangeReason, WorkspaceClassNames, WorkspaceStyles,
   WorkspaceNode, TabNode, TabsetNode, SplitNode, TabDropTarget, TabRenderProps,
 } from './components/workspace';
+
+// Debugging parts
+export { TraceTimeline, traceTimelineVariants } from './components/trace-timeline';
+export type { TraceTimelineProps, TraceTimelineHandle, TraceValueInfo, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
+export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime, TRACE_SCRUB_SPEEDS } from './lib/trace-timeline';
+export type { TraceActivity, TraceAxis, TraceDensity, TraceDiamonds, TraceKey, TraceLane, TraceMarkSeries, TraceRange, TraceRequest, TraceScrubSpeed, TraceStop, TraceStopMark, TraceThread, TraceTone, TraceWindow } from './lib/trace-timeline';
+export { CodeViewer, codeViewerLineVariants, codeViewerGutterCellVariants } from './components/code-viewer';
+export type { CodeViewerProps, CodeViewerHandle, CodeViewerGutter, CodeViewerMarker, CodeViewerLineDecoration, CodeViewerScrollOptions, CodeViewerScrollTarget, CodeViewerPosition, CodeViewerSelection, CodeViewerCopy, CodeHighlight, CodeHighlightContext, CodeToken, CodeTokenType, CodeViewerAlign } from './components/code-viewer';
+export { splitCodeLines, lexCodeLine } from './lib/code-viewer';
+export { createGpuCodeHighlight } from './lib/code-viewer-gpu';
+export type { GpuCodeHighlightOptions } from './lib/code-viewer-gpu';
+export { ObjectTree, objectTreeRowVariants } from './components/object-tree';
+export type { ObjectTreeProps } from './components/object-tree';
+export { ObjectValue } from './components/object-value';
+export type { ObjectValueProps } from './components/object-value';
+export { childrenOfValue, nodeFromValue } from './lib/object-tree';
+export type { ObjectTreeGetterResult, ObjectTreeNode, ObjectTreeRoot } from './lib/object-tree';
+export { copyTextOf, previewFromValue, previewText, previewTokens } from './lib/object-tree-value';
+export type { ValueMapEntry, ValuePreview, ValuePreviewOptions, ValueProperty, ValueTint, ValueToken, ValueType } from './lib/object-tree-value';
+export { CallStack, callStackRowVariants } from './components/call-stack';
+export type { CallStackProps } from './components/call-stack';
+export { fileBaseName, fullLocation, shortLocation } from './lib/call-stack';
+export type { CallStackFrame, CallStackFrameKind, CallStackLocation } from './lib/call-stack';
+export { LogList, LogRowContent, logListVariants } from './components/log-list';
+export type { LogListProps, LogListHandle, LogRowContentProps, LogRowState } from './components/log-list';
+export { LOG_LEVELS, countLogLevels, formatLogTime, logRowText, nodeText, normalizeLogLevel } from './lib/log-list';
+export type { LogLevel, LogLevelCounts, LogRow, RowId } from './lib/log-list';
+export { RequestLink, RequestTable, REQUEST_COLUMNS, requestTableVariants } from './components/request-table';
+export type { RequestColumn, RequestColumnId, RequestLinkProps, RequestTableHandle, RequestTableProps } from './components/request-table';
+export { isRequestFailed, requestDisplayName, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange, requestTone, sortRequests } from './lib/request-table';
+export type { RequestRow, RequestSort, RequestSortDirection, RequestSortValue, RequestColumnSize, RequestTimeRange, RequestTone } from './lib/request-table';
