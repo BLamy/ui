@@ -2,12 +2,12 @@
 import { memo, useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react';
 import { cva } from 'class-variance-authority';
 import { Canvas, CanvasGuides, CanvasMarquee, CanvasMiniMap, type CanvasMiniMapItem, type CanvasMiniMapProps, type CanvasPointerInfo, type CanvasProps } from '@/components/ui/canvas';
-import { centerOf, fitCamera, rectOf, toBoard, type Camera, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
+import { centerOf, fitCamera, intersects, rectOf, toBoard, type Camera, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
 import { connectionOf, connectionTargetAt, hitTestDiagram, movableNodes, offerConnection, stepDiagramGesture, type DiagramConnectionEnd, type DiagramGesture, type DiagramGestureEvent, type DiagramHit } from '@/lib/diagram-gesture';
 import { cameraToShow, describeEdge, describeNode, edgesByNode, nearestNode, stepFocus, type DiagramFocus, type DiagramFocusStep } from '@/lib/diagram-keyboard';
 import {
-  DIAGRAM_SIDES, NOTHING_SELECTED, addConnection, anchorNormal, anchorPoint, checkConnection, connectorPath, deleteItems, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, indexDiagram, labelBox, moveEdgeEnd, moveNodes, nearestSide, portPoint, regionDividers, sizeNodesToText,
+  DIAGRAM_SIDES, NOTHING_SELECTED, addConnection, anchorNormal, anchorPoint, checkConnection, connectorPath, deleteItems, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, indexDiagram, labelBox, moveEdgeEnd, moveNodes, nearestSide, portPoint, regionDividers, renderWindow, sizeNodesToText,
   type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramIndex, type DiagramNode, type DiagramPort, type DiagramSelection, type DiagramSide,
 } from '@/lib/diagram-model';
 import { DIAGRAM_TEXT_CLASS, estimateText, measureText, type TextMeasurer } from '@/lib/diagram-text';
@@ -231,7 +231,7 @@ interface Laid<N, E> {
   edgesAt: ReturnType<typeof edgesByNode>;
   containers: DiagramNode<N>[];
   leaves: DiagramNode<N>[];
-  edges: { edge: DiagramEdge<E>; geometry: ConnectorGeometry }[];
+  edges: { edge: DiagramEdge<E>; geometry: ConnectorGeometry; box: Rect }[];
   labels: { edge: DiagramEdge<E>; box: Rect }[];
   dividers: DiagramDivider[];
   bounds: Rect | null;
@@ -245,7 +245,7 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
   for (const edge of edges) {
     const geometry = geometries.get(edge.id);
     if (!geometry) continue;
-    drawn.push({ edge, geometry });
+    drawn.push({ edge, geometry, box: rectOf(geometry.pts) });
     if (edge.label) labels.push({ edge, box: edge.labelBox ?? labelBox(geometry.pts, text(edge.label, 'edge')) });
   }
   // Outer containers first, so what's inside draws over them, however the nodes were listed.
@@ -255,6 +255,25 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
   return {
     index, geometries, edgesAt: edgesByNode(drawn.map((d) => d.edge)), containers, leaves, edges: drawn, labels, dividers: regionDividers(index),
     bounds: diagramBounds(nodes, geometries.values(), labels.map((l) => l.box)),
+  };
+}
+
+/** How many nodes and edges a diagram can have before what's out of view stops being drawn. A small one's cheap to draw all
+ *  of, which leaves everything for a screen reader to find and a browser to print. */
+const CULL_ABOVE = 200;
+
+/** Only what touches `win`, and whatever `keep` says has to stay. An edge goes by its route, not its ends, so one crossing
+ *  the view with both ends far away still draws. */
+function within<N, E>(laid: Laid<N, E>, win: Rect, keep: DiagramFocus | null): Laid<N, E> {
+  const keepNode = keep?.kind === 'node' ? keep.id : null, keepEdge = keep?.kind === 'edge' ? keep.id : null;
+  const onNode = (n: DiagramNode<N>) => intersects(n, win) || n.id === keepNode;
+  return {
+    ...laid,
+    containers: laid.containers.filter(onNode),
+    leaves: laid.leaves.filter(onNode),
+    edges: laid.edges.filter((e) => intersects(e.box, win) || e.edge.id === keepEdge),
+    labels: laid.labels.filter((l) => intersects(l.box, win)),
+    dividers: laid.dividers.filter((d) => intersects({ x: Math.min(d.x1, d.x2), y: Math.min(d.y1, d.y2), w: Math.abs(d.x2 - d.x1), h: Math.abs(d.y2 - d.y1) }, win)),
   };
 }
 
@@ -335,6 +354,8 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   fitPadding?: number;
   /** Size each node to its words, measured in the real font, around its center. A node that holds others keeps its size. */
   autoSize?: boolean;
+  /** Draw only what's near the view. By default that's on above 200 nodes and edges. */
+  cull?: boolean;
   /** An overview in a corner, on `CanvasMiniMap`. */
   minimap?: boolean | Omit<CanvasMiniMapProps, 'items'>;
   /** Draws a node's insides, within a box it's placed in. Keep the function stable, as it's what the nodes memoize on. */
@@ -374,7 +395,7 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
 export function Diagram<N = unknown, E = unknown>({
   nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false, connectable: connectableProp,
   isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange, onActivate, describeNode: nodeLabel, describeEdge: edgeLabel,
-  camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, minimap, renderNode,
+  camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, cull, minimap, renderNode,
   background, panning, cursor, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style,
 }: DiagramProps<N, E>) {
   const selectable = selectableProp ?? editable;
@@ -543,6 +564,9 @@ export function Diagram<N = unknown, E = unknown>({
   };
   /* ── Focus: one tab stop, and the keys go from there ── */
   const focus = useRef<DiagramFocus | null>(null);
+  // What the keys have gone to stays drawn wherever it is, and gets its focus once it's there.
+  const [kept, setKept] = useState<DiagramFocus | null>(null);
+  const focusNext = useRef<{ item: DiagramFocus | null } | null>(null);
   const focusWithin = useRef(false);
   /** Where what's focused last was, so that if it's deleted focus can stay nearby. */
   const focusPlace = useRef<Pt | null>(null);
@@ -555,11 +579,18 @@ export function Diagram<N = unknown, E = unknown>({
     return r.w * camera.z > size.width || r.h * camera.z > size.height ? { x: g.mid.x - 1, y: g.mid.y - 1, w: 2, h: 2 } : r;
   };
   const focusEl = (item: DiagramFocus | null) => {
+    setKept(item);
+    focusNext.current = { item };
+  };
+  useLayoutEffect(() => {
+    const next = focusNext.current;
     const root = ref.current;
-    if (!root) return;
+    if (!next || !root) return;
+    focusNext.current = null;
+    const { item } = next;
     const el = item ? root.querySelector<HTMLElement | SVGElement>(item.kind === 'node' ? `[data-slot=diagram-node][data-node="${CSS.escape(item.id)}"]` : `[data-slot=diagram-edge][data-edge="${CSS.escape(item.id)}"]`) : null;
     (el ?? root.querySelector<HTMLElement>('[data-slot=canvas]'))?.focus({ preventScroll: true });
-  };
+  });
   const moveFocus = (item: DiagramFocus) => {
     focus.current = item;
     const box = boxOf(item);
@@ -735,19 +766,25 @@ export function Diagram<N = unknown, E = unknown>({
     }
   };
 
+  /* ── Only what's near the view gets drawn. Most frames of a pan don't change that, so they don't touch the board at all. ── */
+  const culling = cull ?? laid.index.nodes.length + laid.edges.length > CULL_ABOVE;
+  const windowRef = useRef<Rect | null>(null);
+  windowRef.current = culling ? renderWindow(windowRef.current, { x: -camera.x / camera.z, y: -camera.y / camera.z, w: size.width / camera.z, h: size.height / camera.z }) : null;
+  const drawWindow = windowRef.current;
+  const drawn = useMemo(() => (drawWindow ? within(laid, drawWindow, kept) : laid), [laid, drawWindow, kept]);
   const board = useMemo(() => (
-    <Board laid={laid} renderNode={renderNode as NodeViewProps['renderNode']} arrow={arrow} selection={selectedSets} selectable={selectable} describeNode={nodeLabel as DiagramProps<any, any>['describeNode']} describeEdge={edgeLabel as DiagramProps<any, any>['describeEdge']} />
-  ), [laid, renderNode, arrow, selectedSets, selectable, nodeLabel, edgeLabel]);
+    <Board laid={drawn} renderNode={renderNode as NodeViewProps['renderNode']} arrow={arrow} selection={selectedSets} selectable={selectable} describeNode={nodeLabel as DiagramProps<any, any>['describeNode']} describeEdge={edgeLabel as DiagramProps<any, any>['describeEdge']} />
+  ), [drawn, renderNode, arrow, selectedSets, selectable, nodeLabel, edgeLabel]);
   const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
   const zoom = camera.z < NODE_TEXT_ZOOM ? 'far' : camera.z < EDGE_LABEL_ZOOM ? 'mid' : 'near';
   const portDots = useMemo(() => handles.length ? (
     <div data-slot="diagram-ports" className="pointer-events-none absolute top-0 left-0" style={{ '--diagram-z': camera.z } as CSSProperties}>
-      {handles.map((h) => (h.hit.kind === 'end'
+      {(drawWindow ? handles.filter((h) => h.at.x >= drawWindow.x && h.at.x <= drawWindow.x + drawWindow.w && h.at.y >= drawWindow.y && h.at.y <= drawWindow.y + drawWindow.h) : handles).map((h) => (h.hit.kind === 'end'
         ? <span key={`end:${h.hit.end}`} data-slot="diagram-edge-end" data-end={h.hit.end} aria-hidden="true" className={EDGE_END} style={{ left: h.at.x, top: h.at.y }} />
         : h.hit.kind === 'port' ? <PortDot key={`${h.hit.id}/${h.hit.port ?? h.hit.side}`} at={h.at} node={h.hit.id} port={h.hit.port} side={h.hit.side} active={connectable} /> : null))}
     </div>
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ) : null, [handles, connectable, camera.z]);
+  ) : null, [handles, connectable, camera.z, drawWindow]);
   const connection = useMemo(() => {
     if (!connecting) return null;
     const index = laid.index;

@@ -393,6 +393,11 @@ export function CanvasMiniMap({ items, position = 'bottom-right', width = 184, h
   const ox = pad + ((width - pad * 2) - (x1 - x0) * k) / 2 - x0 * k;
   const oy = pad + ((height - pad * 2) - (y1 - y0) * k) / 2 - y0 * k;
   const frozen = useRef<{ k: number; ox: number; oy: number } | null>(null);
+  // Panning only moves the view's outline: the marks stay put unless the map rescales, and there may be thousands.
+  const marks = useMemo(() => items.map((it, i) => (
+    <rect key={it.id ?? i} x={ox + it.x * k} y={oy + it.y * k} width={Math.max(1.5, it.w * k)} height={Math.max(1.5, it.h * k)} rx={1.5}
+      className={it.className ?? 'fill-muted-foreground/35'} />
+  )), [items, k, ox, oy]);
 
   const moveTo = (e: ReactPointerEvent<SVGSVGElement>) => {
     // While dragging, map with the scale the drag began with, so the map doesn't rescale under the pointer.
@@ -421,10 +426,7 @@ export function CanvasMiniMap({ items, position = 'bottom-right', width = 184, h
       onPointerCancel={() => { frozen.current = null; }}
       onDoubleClick={(e) => e.stopPropagation()}
     >
-      {items.map((it, i) => (
-        <rect key={it.id ?? i} x={ox + it.x * k} y={oy + it.y * k} width={Math.max(1.5, it.w * k)} height={Math.max(1.5, it.h * k)} rx={1.5}
-          className={it.className ?? 'fill-muted-foreground/35'} />
-      ))}
+      {marks}
       <rect data-slot="canvas-minimap-view" x={ox + view.x * k} y={oy + view.y * k} width={view.w * k} height={view.h * k} rx={2}
         className="fill-primary/8 stroke-primary" strokeWidth={1.5} />
     </svg>

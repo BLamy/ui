@@ -1001,3 +1001,118 @@ test.describe('connecting', () => {
     expect(await page.locator('[data-slot=diagram-edge][data-edge=first]').getAttribute('d')).not.toBe(line0);
   });
 });
+
+test.describe('large', () => {
+  test.setTimeout(240_000);
+  const open = async (page, n, query = '') => {
+    await page.goto(`/?demo=diagram/large&theme=light&n=${n}${query}`, { waitUntil: 'load' });
+    await page.locator('[data-demo-status=ready]').waitFor({ timeout: 200_000 });
+    await page.locator('[data-slot=diagram-node]').first().waitFor({ timeout: 60_000 });
+  };
+  /** Every node that should be on screen right now, by the data, and whether it's in the DOM. */
+  const onScreen = (page) => page.evaluate(() => {
+    const canvas = document.querySelector('[data-slot=canvas]').getBoundingClientRect();
+    const c = window.__diagramLarge.camera();
+    const view = { x: -c.x / c.z, y: -c.y / c.z, w: canvas.width / c.z, h: canvas.height / c.z };
+    const hit = (n) => n.x < view.x + view.w && n.x + n.w > view.x && n.y < view.y + view.h && n.y + n.h > view.y;
+    const should = window.__diagramLarge.nodes().filter(hit).map((n) => n.id);
+    const drawn = new Set([...document.querySelectorAll('[data-slot=diagram-node]')].map((el) => el.dataset.node));
+    return { should: should.length, missing: should.filter((id) => !drawn.has(id)), drawn: drawn.size, total: window.__diagramLarge.nodes().length };
+  });
+  const jump = (page, x, y, z = 1) => page.evaluate(({ x, y, z }) => {
+    const b = window.__diagramLarge.bounds();
+    window.__diagramLarge.setCamera({ z, x: -(b.x + b.w * x) * z, y: -(b.y + b.h * y) * z });
+    return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }, { x, y, z });
+
+  /** Puts a leaf in the middle of the view: the graph has gaps, so a place on the board might have nothing there. */
+  const toNode = (page) => page.evaluate(() => {
+    const nodes = window.__diagramLarge.nodes().filter((n) => !n.kind);
+    const n = nodes[nodes.length >> 1];
+    const c = document.querySelector('[data-slot=canvas]').getBoundingClientRect();
+    window.__diagramLarge.setCamera({ z: 1, x: c.width / 2 - n.x, y: c.height / 2 - n.y });
+    return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  });
+
+  test('panning fast past what’s drawn: it’s there by the next frame, every time', async ({ page }) => {
+    await open(page, 500);
+    await jump(page, 0.2, 0.2);
+    const first = await onScreen(page);
+    expect(first.drawn).toBeLessThan(first.total / 2);
+    // Across the whole board, in big jumps, with no time for anything to catch up.
+    for (const [x, y] of [[0.9, 0.1], [0.1, 0.9], [0.8, 0.8], [0.05, 0.05], [0.5, 0.5], [0.95, 0.5], [0.3, 0.7]]) {
+      await jump(page, x, y);
+      const now = await onScreen(page);
+      expect(now.missing, `at ${x}, ${y}`).toEqual([]);
+    }
+  });
+
+  test('a real scroll a long way keeps up too', async ({ page }) => {
+    await open(page, 500);
+    await jump(page, 0.2, 0.2);
+    const c = await page.locator('[data-slot=canvas]').boundingBox();
+    await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2);
+    for (let i = 0; i < 12; i++) {
+      await page.mouse.wheel(900, 300);
+      const now = await onScreen(page);
+      expect(now.missing).toEqual([]);
+    }
+  });
+
+  test('select all with most of it out of view stays quick, and draws no more than it did', async ({ page }) => {
+    await open(page, 2000, '&editable');
+    await toNode(page);
+    const before = await page.locator('[data-slot=diagram-node]').count();
+    expect(before).toBeGreaterThan(0);
+    expect(before).toBeLessThan(400);
+    await page.locator('[data-slot=canvas]').focus();
+    const ms = await page.evaluate(async () => {
+      const t0 = performance.now();
+      document.querySelector('[data-slot=canvas]').dispatchEvent(new KeyboardEvent('keydown', { key: 'a', metaKey: true, ctrlKey: true, bubbles: true }));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return performance.now() - t0;
+    });
+    console.log(`select all of 2,000, drawing ${before}: ${Math.round(ms)} ms to the next frames`);
+    expect(await page.locator('[data-slot=diagram-node]').count()).toBe(before);
+    await expect(page.locator('[data-slot=diagram-node][data-selected]').first()).toBeVisible();
+    expect(ms).toBeLessThan(1000);
+    // And it's all selected, in or out of view: deleting takes the lot, and undo brings it back.
+    await page.keyboard.press('Delete');
+    await expect(page.locator('[data-slot=diagram-node]')).toHaveCount(0);
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count()).toBeGreaterThan(0);
+  });
+
+  test('what’s focused stays drawn, wherever it’s gone', async ({ page }) => {
+    await open(page, 500, '&editable');
+    await jump(page, 0.2, 0.2);
+    await page.locator('[data-slot=canvas]').focus();
+    // Over to the far end, which isn't drawn until focus gets there.
+    await page.keyboard.press('End');
+    const id = await page.evaluate(() => document.activeElement?.dataset.node);
+    const last = await page.evaluate(() => window.__diagramLarge.nodes().at(-1).id);
+    expect(id).toBe(last);
+    // Pan well away, and it's still in the DOM, with focus.
+    for (let i = 0; i < 40; i++) await page.keyboard.press('ControlOrMeta+ArrowLeft');
+    expect(await page.evaluate(() => document.activeElement?.dataset.node)).toBe(last);
+    const away = await onScreen(page);
+    expect(away.drawn).toBeLessThan(away.total);
+    // And every step through the graph lands on something that's there.
+    for (let i = 0; i < 20; i++) {
+      await page.keyboard.press('PageUp');
+      expect(await page.evaluate(() => document.activeElement?.dataset.slot)).toMatch(/diagram-(node|edge)/);
+    }
+  });
+
+  test('a minimap with 2,000 marks draws them all, and still moves the view', async ({ page }) => {
+    await open(page, 2000, '&minimap');
+    await toNode(page);
+    const marks = await page.locator('[data-slot=canvas-minimap] rect').count();
+    expect(marks).toBeGreaterThan(1900);
+    const map = await page.locator('[data-slot=canvas-minimap]').boundingBox();
+    const before = await page.locator('[data-slot=canvas-board]').getAttribute('style');
+    await page.mouse.click(map.x + 30, map.y + 30);
+    await expect.poll(() => page.locator('[data-slot=canvas-board]').getAttribute('style')).not.toBe(before);
+    expect((await onScreen(page)).missing).toEqual([]);
+  });
+});

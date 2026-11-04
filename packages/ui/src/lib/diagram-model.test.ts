@@ -3,7 +3,7 @@ import { distToPolyline, type Pt, type Rect } from '@/lib/canvas-math';
 import {
   ARROW_BROAD, ARROW_SLIM, anchorNormal, anchorPoint, ancestorsOf, arrowHead, closedD, connectorBounds, connectorPath, curvePath, descendantsOf, dirOf, distToConnector,
   addConnection, checkConnection, deleteItems, diagramBounds, edgeAt, edgeGeometries, edgeGeometry, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, moveEdgeEnd, moveNodes, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
-  polylinePath, portPoint, regionDividers, rerouteLabel, rerouteOrthogonal, selfLoopPath, simplifyRoute, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
+  polylinePath, portPoint, regionDividers, renderWindow, rerouteLabel, rerouteOrthogonal, selfLoopPath, simplifyRoute, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
 } from './diagram-model';
 
 const node = (id: string, x: number, y: number, w = 100, h = 40, extra: Partial<DiagramNode> = {}): DiagramNode => ({ id, x, y, w, h, ...extra });
@@ -707,5 +707,38 @@ describe('connections', () => {
     expect(e).toEqual({ id: 'e', from: 'a', to: 'c', label: 'x', kind: 'after' });
     expect(f).toBe(before[1]);
     expect(moveEdgeEnd(before, { edge: 'e', from: 'z', fromPort: 'r', to: 'c', toPort: 's' })[0]).toMatchObject({ from: 'z', fromPort: 'r', to: 'c', toPort: 's' });
+  });
+});
+
+describe('the window that gets drawn', () => {
+  const view = { x: 0, y: 0, w: 1000, h: 500 };
+
+  it('starts half as big again each way', () => {
+    expect(renderWindow(null, view)).toEqual({ x: -500, y: -250, w: 2000, h: 1000 });
+  });
+
+  it('stays the same while the view’s inside it, so a pan changes nothing', () => {
+    const win = renderWindow(null, view);
+    expect(renderWindow(win, { ...view, x: 300, y: 100 })).toBe(win);
+    expect(renderWindow(win, { ...view, x: -500, y: -250 })).toBe(win);
+  });
+
+  it('moves when the view leaves it, around where the view went', () => {
+    const win = renderWindow(null, view);
+    const moved = renderWindow(win, { ...view, x: 600 });
+    expect(moved).not.toBe(win);
+    expect(moved).toEqual({ x: 100, y: -250, w: 2000, h: 1000 });
+  });
+
+  it('grows when zooming out takes the view past it', () => {
+    const win = renderWindow(null, view);
+    expect(renderWindow(win, { x: -2000, y: -2000, w: 4000, h: 4000 })).toEqual({ x: -4000, y: -4000, w: 8000, h: 8000 });
+  });
+
+  it('shrinks when zooming in leaves it far larger than it needs to be', () => {
+    const win = renderWindow(null, view);
+    expect(renderWindow(win, { x: 100, y: 100, w: 500, h: 250 })).toBe(win);
+    const small = renderWindow(win, { x: 100, y: 100, w: 400, h: 200 });
+    expect(small).toEqual({ x: -100, y: 0, w: 800, h: 400 });
   });
 });

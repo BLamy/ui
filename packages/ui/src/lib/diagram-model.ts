@@ -451,11 +451,18 @@ function wallToChild(outer: DiagramBox, inner: DiagramBox): { wall: ConnectorEnd
 
 const portOf = (node: DiagramNode<unknown>, id: string | undefined) => (id ? node.ports?.find((p) => p.id === id) : undefined);
 
+const ownRoutes = new WeakMap<object, ConnectorGeometry>();
+
 /** The route of one edge: its `points` if it has them, otherwise one that fits how its ends sit. Null when an end doesn't
  *  exist. `spread` says how far along their shared side this edge's ends sit (see `edgeGeometries`), so parallel edges
  *  don't lie on top of each other. */
 export function edgeGeometry<N, E>(edge: DiagramEdge<E>, index: DiagramIndex<N>, spread?: { from?: number; to?: number; loop?: number }): ConnectorGeometry | null {
-  if (edge.points && edge.points.length >= 2) return polylinePath(edge.points);
+  if (edge.points && edge.points.length >= 2) {
+    // A route of its own doesn't depend on anything else, so it's only worked out once per edge object.
+    let g = ownRoutes.get(edge);
+    if (!g) { g = polylinePath(edge.points); ownRoutes.set(edge, g); }
+    return g;
+  }
   const a = index.byId.get(edge.from), b = index.byId.get(edge.to);
   if (!a || !b) return null;
   const pa = portOf(a, edge.fromPort), pb = portOf(b, edge.toPort);
@@ -859,4 +866,20 @@ export function moveEdgeEnd<E>(edges: readonly DiagramEdge<E>[], c: DiagramConne
     const { points: _p, labelBox: _l, fromPort: _f, toPort: _t, ...rest } = e;
     return { ...rest, from: c.from, to: c.to, ...(c.fromPort ? { fromPort: c.fromPort } : null), ...(c.toPort ? { toPort: c.toPort } : null) };
   });
+}
+
+/* ── What's worth drawing ── */
+
+/** How far past the view things get drawn, as a share of its size, so a pan has somewhere to go first. */
+const RENDER_MARGIN = 0.5;
+
+/** The part of the board to draw, given what was drawn last time and what's in view now. It only changes when the view leaves
+ *  it, or it's got much larger than the view needs, so most frames of a pan change nothing at all. */
+export function renderWindow(previous: Rect | null, view: Rect, margin = RENDER_MARGIN): Rect {
+  if (previous) {
+    const inside = view.x >= previous.x && view.y >= previous.y && view.x + view.w <= previous.x + previous.w && view.y + view.h <= previous.y + previous.h;
+    const roomy = previous.w <= view.w * (1 + margin * 2) * 2 && previous.h <= view.h * (1 + margin * 2) * 2;
+    if (inside && roomy) return previous;
+  }
+  return { x: view.x - view.w * margin, y: view.y - view.h * margin, w: view.w * (1 + margin * 2), h: view.h * (1 + margin * 2) };
 }

@@ -118,4 +118,67 @@ describe('Diagram', () => {
     expect(count(out, /fill-muted-foreground\/35/g)).toBe(2);
     expect(renderToString(<Diagram nodes={[]} />)).not.toContain('canvas-minimap');
   });
+
+  describe('drawing only what’s near the view', () => {
+    const far = (id: string, x: number): DiagramNode => ({ id, label: id, x, y: 0, w: 100, h: 40 });
+    const nodes = [far('left', -5000), far('here', 100), far('right', 5000)];
+    const crossing: DiagramEdge = { id: 'across', from: 'left', to: 'right', label: 'far', points: [{ x: -4900, y: 20 }, { x: 5000, y: 20 }], labelBox: { x: 4000, y: 0, w: 20, h: 11 } };
+    const at = { x: 0, y: 0, z: 1 };
+
+    it('leaves out what’s far away, when asked', () => {
+      const out = renderToString(<Diagram nodes={nodes} cull defaultCamera={at} />);
+      expect(out).toContain('data-node="here"');
+      expect(out).not.toContain('data-node="left"');
+      expect(out).not.toContain('data-node="right"');
+    });
+
+    it('draws an edge with both ends out of view, when it crosses the view', () => {
+      const out = renderToString(<Diagram nodes={nodes} edges={[crossing]} cull defaultCamera={at} />);
+      expect(out).toContain('data-edge="across"');
+      expect(out).not.toContain('data-node="left"');
+      // Its label's a long way off, so that isn't drawn.
+      expect(out).not.toContain('data-slot="diagram-edge-label"');
+      const missing = renderToString(<Diagram nodes={nodes} edges={[{ ...crossing, points: [{ x: 4000, y: 20 }, { x: 5000, y: 20 }] }]} cull defaultCamera={at} />);
+      expect(missing).not.toContain('data-edge="across"');
+    });
+
+    it('draws what’s just past the view, so a pan has somewhere to go', () => {
+      // The view's 1000 wide before it's measured, and half of that again is drawn each way.
+      const out = renderToString(<Diagram nodes={[far('near', 1400), far('beyond', 1600)]} cull defaultCamera={at} />);
+      expect(out).toContain('data-node="near"');
+      expect(out).not.toContain('data-node="beyond"');
+    });
+
+    it('draws everything when told to, and below the size where it starts', () => {
+      expect(renderToString(<Diagram nodes={nodes} defaultCamera={at} />)).toContain('data-node="left"');
+      expect(renderToString(<Diagram nodes={nodes} cull={false} defaultCamera={at} />)).toContain('data-node="left"');
+    });
+
+    it('starts on its own above 200 nodes and edges', () => {
+      const many = Array.from({ length: 201 }, (_, i) => far(`n${i}`, i * 300));
+      const out = renderToString(<Diagram nodes={many} defaultCamera={at} />);
+      expect(out).toContain('data-node="n0"');
+      expect(out).not.toContain('data-node="n200"');
+      expect(count(renderToString(<Diagram nodes={many.slice(0, 200)} defaultCamera={at} />), /data-slot="diagram-node"/g)).toBe(200);
+    });
+
+    it('draws what holds something in view, even with its walls out of view', () => {
+      const out = renderToString(<Diagram nodes={[{ id: 'box', kind: 'compound', x: -5000, y: -5000, w: 10000, h: 10000 }, far('here', 100)]} cull defaultCamera={at} />);
+      expect(out).toContain('data-node="box"');
+    });
+
+    it('leaves out ports that are far away', () => {
+      const ported = nodes.map((n) => ({ ...n, ports: [{ id: 'p', side: 'r' as const }] }));
+      const out = renderToString(<Diagram nodes={ported} cull defaultCamera={at} />);
+      expect(out).toContain('data-port-of="here"');
+      expect(out).not.toContain('data-port-of="left"');
+      expect(renderToString(<Diagram nodes={ported} defaultCamera={at} />)).toContain('data-port-of="left"');
+    });
+
+    it('goes by the zoom', () => {
+      const out = renderToString(<Diagram nodes={nodes} cull defaultCamera={{ x: 500, y: 300, z: 0.05 }} />);
+      expect(out).toContain('data-node="left"');
+      expect(out).toContain('data-node="right"');
+    });
+  });
 });
