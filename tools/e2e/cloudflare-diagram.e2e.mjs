@@ -338,10 +338,18 @@ test.describe('a system', () => {
     await expect.poll(() => issueCodes(page)).toEqual(['event-not-received']);
     await expect(issues(page).first()).toContainText('Consumer sends NOT_THIS to Room, whose machine doesn’t receive it.');
     await expect(panel(page).locator('[data-slot=cloudflare-event-problem]')).toContainText('NOT_THIS');
-    await expect(page.locator('[data-slot=diagram-edge][data-edge=tell-room]')).toHaveAttribute('data-kind', 'problem');
+    const line = page.locator('[data-slot=diagram-edge][data-edge=tell-room]');
+    await expect(line).toHaveAttribute('data-kind', 'problem');
+    // It looks wrong, and in more than its color: selected, it's the selection's, so that's looked at with it let go, below.
     expect((await json(page)).edges.find((e) => e.id === 'tell-room').events).toEqual(['FILE_READY', 'NOT_THIS']);
-    // It gets you to what it's about.
     await press(page, 'api');
+    const look = () => line.evaluate((el) => { const c = getComputedStyle(el); return { dashed: c.strokeDasharray !== 'none', marker: el.getAttribute('marker-end'), stroke: c.stroke }; });
+    const wrong = await look();
+    expect(wrong.dashed).toBe(true);
+    expect(wrong.marker).toMatch(/-problem\)$/);
+    const plain = await page.locator('[data-slot=diagram-edge][data-edge=upload]').evaluate((el) => getComputedStyle(el).stroke);
+    expect(wrong.stroke).not.toBe(plain);
+    // It gets you to what it's about.
     await expect(panel(page).locator('[data-slot=cloudflare-events]')).toHaveCount(0);
     await issues(page).first().locator('[data-slot=cloudflare-issue-show]').click();
     await expect(field).toHaveValue('FILE_READY, NOT_THIS');
@@ -412,10 +420,9 @@ test.describe('a system', () => {
     await expect(page.locator('[data-slot=state-diagram] [data-slot=diagram-node][data-node="room.empty"]')).toHaveCount(1);
     await expect(page.locator('[data-slot=cloudflare-machine-back]')).toBeFocused();
     await expect(page.locator('[data-slot=cloudflare-machine-bar]')).toContainText('Room’s machine');
-    // The board's out of reach underneath.
-    await expect(page.locator('[data-slot=cloudflare-panel]').locator('[data-slot=cloudflare-machine-open]')).not.toBeInViewport({ ratio: 1 }).catch(() => {});
-    const covered = await page.locator('[data-slot=cloudflare-diagram] > [inert]').count();
-    expect(covered).toBeGreaterThan(0);
+    // The board and its panel are out of reach underneath, and as they were.
+    await expect(page.locator('[data-slot=cloudflare-diagram] > [inert] [data-slot=diagram-node][data-node=room]')).toHaveCount(1);
+    await expect(page.locator('[data-slot=cloudflare-diagram] > [inert] [data-slot=cloudflare-machine-open]')).toHaveCount(1);
     // Renaming the event that's sent there means nothing receives it now.
     await page.locator('[data-slot=state-diagram] [data-slot=diagram-edge-label]', { hasText: 'FILE_READY' }).first().waitFor();
     const line = page.locator('[data-slot=state-diagram] [data-slot=diagram-edge][data-edge*="FILE_READY"]');
@@ -498,7 +505,7 @@ test.describe('a system', () => {
         { id: 'c', kind: 'not-a-real-thing', machine: 'nope', at: { x: 0, y: 300 } },
         { id: 'broken', kind: 'workers', machine: { initial: 'nowhere', states: { a: {} } }, at: { x: 700, y: 0 } },
       ],
-      edges: [{ from: 'a', to: 'b', via: 'made_up' }, { from: 'a', to: 'b', via: 'r2_buckets', binding: 'has spaces', operations: ['teleport'] }, { from: 'a', to: 'ghost', via: 'r2_buckets', binding: 'G', events: ['HELLO'] }, { from: 'a' }],
+      edges: [{ from: 'a', to: 'b', via: 'made_up' }, { from: 'a', to: 'b', via: 'r2_buckets', binding: 'has spaces', operations: ['teleport'] }, { from: 'a', to: 'ghost', via: 'r2_buckets', binding: 'G', events: ['HELLO'] }, { from: 'a', to: 'ghost2', via: 'r2_buckets', binding: 'H' }, { from: 'a' }],
       version: 2,
     }));
     await expect.poll(async () => (await loaded()).length).toBeGreaterThan(5);
@@ -518,7 +525,56 @@ test.describe('a system', () => {
     await expect(page.locator('[data-slot=state-diagram]')).toContainText('nowhere');
     await page.locator('[data-slot=cloudflare-machine-back]').click();
     await expect(service(page, 'broken')).toHaveCount(1);
+    // What can't be drawn isn't the board's to lose, carrying events or not.
+    const before = await issues(page).filter({ hasText: 'ghost' }).count();
+    expect(before).toBe(2);
+    const box = await service(page, 'a').boundingBox();
+    await page.mouse.move(box.x + 40, box.y + 12);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 40, box.y + 60, { steps: 4 });
+    await page.mouse.up();
+    await expect.poll(async () => (await json(page)).services.find((s) => s.id === 'a').at.y).toBeGreaterThan(0);
+    await expect(issues(page).filter({ hasText: 'ghost' })).toHaveCount(2);
+    expect((await json(page)).edges.map((e) => e.to).filter((t) => t === 'ghost' || t === 'ghost2').sort()).toEqual(['ghost', 'ghost2']);
     expect(errors.filter((e) => !/Failed to load resource/.test(e))).toEqual([]);
+  });
+
+  test('a machine that’s nothing like one, in a hand-edited file, doesn’t break anything', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    const shapes = [
+      { states: 3 },
+      { initial: 'a', states: { a: 3 } },
+      { on: 'x' },
+      { initial: 'a', states: { a: { on: { GO: { target: 5 } } } } },
+      { type: 'parallel', states: {} },
+      { id: 5, initial: 'a', states: { a: {} } },
+      { initial: 'a', states: { a: { invoke: { src: 7 } } } },
+      { initial: 'a', states: { a: { after: { soon: 'a' } } } },
+      { initial: 'a', states: { a: { always: 'nope' } } },
+      { initial: ['a'], states: { a: {} } },
+      {},
+    ];
+    for (const machine of shapes) {
+      await page.locator('[data-demo-json]').fill(JSON.stringify({ services: [{ id: 'm', kind: 'workers', machine, at: { x: 0, y: 0 } }, { id: 'w', kind: 'workers', at: { x: 400, y: 0 } }], edges: [{ from: 'w', to: 'm', via: 'services', binding: 'M', events: ['GO'] }] }));
+      await page.locator('[data-demo-load]').click();
+      await expect(service(page, 'w')).toHaveCount(1);
+      await press(page, 'm');
+      await panel(page).locator('[data-slot=cloudflare-machine-open]').click();
+      await expect(page.locator('[data-slot=state-diagram]'), JSON.stringify(machine)).toBeVisible();
+      await page.locator('[data-slot=cloudflare-machine-back]').click();
+      await expect(page.locator('[data-slot=state-diagram]'), JSON.stringify(machine)).toHaveCount(0);
+      await expect(service(page, 'm'), JSON.stringify(machine)).toHaveCount(1);
+    }
+    expect(errors).toEqual([]);
+  });
+
+  test('a place that’s nowhere near anything is left out, and the rest can still be seen', async ({ page }) => {
+    await page.locator('[data-demo-json]').fill(JSON.stringify({ services: [{ id: 'far', kind: 'r2', at: { x: 1e308, y: -1e308 } }, { id: 'near', kind: 'r2', at: { x: 0, y: 0 } }], edges: [] }));
+    await page.locator('[data-demo-load]').click();
+    await expect(page.locator('[data-demo-load-issues] li')).toContainText(['far: `at`']);
+    const box = await service(page, 'near').boundingBox();
+    expect(box.width).toBeGreaterThan(100);
   });
 
   test('two systems sharing a service are each their own', async ({ page }) => {
@@ -556,6 +612,71 @@ test.describe('a system', () => {
   });
 });
 
+test.describe('a system and wrangler.jsonc', () => {
+  const config = (page) => page.locator('[data-demo-config]');
+  const different = (page) => page.locator('[data-demo-differences]').getAttribute('data-demo-differences');
+  test.beforeEach(async ({ page }) => { await open(page, 'wrangler'); });
+
+  test('a config’s drawn, what changes is listed by name, and writing keeps its comments', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await expect(page.locator('[data-slot=cloudflare-service]')).toHaveCount(4);
+    await expect(service(page, 'api').locator('[data-slot=cloudflare-service-name]')).toHaveText('api');
+    await expect(service(page, 'r2:uploads').locator('[data-slot=cloudflare-service-name]')).toHaveText('uploads');
+    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'FILES' })).toHaveCount(1);
+    expect(await different(page)).toBe('');
+    const before = await config(page).inputValue();
+    // Nothing to write, and it's the same.
+    await page.locator('[data-demo-write]').click();
+    expect(await config(page).inputValue()).toBe(before);
+    // Taken off the board, it's listed, and written.
+    const box = await service(page, 'kv:abc123').boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + 10);
+    await panel(page).locator('[data-slot=cloudflare-delete]').click();
+    await expect.poll(() => different(page)).toBe('removed:SESSIONS');
+    await expect(page.locator('[data-demo-differences] li')).toHaveText('SESSIONS (KV Namespace) is in the config, and not in the system.');
+    // Renamed on the board, the same.
+    await pressOnEdge(page, 'api-r2_buckets-FILES');
+    const name = page.locator('[data-slot=cloudflare-binding-name] input');
+    await name.fill('UPLOADS');
+    await name.press('Enter');
+    await expect.poll(() => different(page)).toBe('renamed:UPLOADS removed:SESSIONS');
+    await page.locator('[data-demo-write]').click();
+    await expect.poll(() => different(page)).toBe('');
+    await expect(page.locator('[data-demo-differences] li')).toHaveText('The system and the file agree.');
+    expect(await config(page).inputValue()).toBe(before.replace('"binding": "FILES"', '"binding": "UPLOADS"').replace('"kv_namespaces": [{ "binding": "SESSIONS", "id": "abc123" }]', '"kv_namespaces": []'));
+    expect(errors).toEqual([]);
+  });
+
+  test('something new on the board goes in the file, and reading it back is the same', async ({ page }) => {
+    const search = page.locator('[data-slot=cloudflare-search] input');
+    await search.fill('d1');
+    await search.press('Enter');
+    await expect(service(page, 'd1')).toHaveCount(1);
+    expect(await different(page)).toBe('');
+    await connect(page, 'api', 'env', 'd1', 'binding:d1_databases');
+    await expect.poll(() => different(page)).toBe('added:D1_DATABASE');
+    await page.locator('[data-demo-write]').click();
+    await expect.poll(() => different(page)).toBe('');
+    await expect(config(page)).toHaveValue(/"d1_databases": \[\{ "binding": "D1_DATABASE" \}\]/);
+    await expect(config(page)).toHaveValue(/\/\/ the big one/);
+    await page.locator('[data-demo-read]').click();
+    await expect.poll(() => different(page)).toBe('');
+    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'D1_DATABASE' })).toHaveCount(1);
+  });
+
+  test('TOML’s refused by name, and what’s broken says where', async ({ page }) => {
+    await config(page).fill('name = "w"\n[[r2_buckets]]\nbinding = "F"\n');
+    await expect(page.locator('[data-demo-unreadable]')).toContainText('That’s TOML');
+    await expect(page.locator('[data-demo-write]')).toBeDisabled();
+    await expect(service(page, 'api')).toHaveCount(1);
+    await config(page).fill('{ "name": "w",\n  "main" "x" }');
+    await expect(page.locator('[data-demo-unreadable]')).toContainText('at line 2');
+    await config(page).fill('{ "name": "api", "new_thing": [{ "binding": "NEW" }] }');
+    await expect(page.locator('[data-demo-unreadable]')).toHaveCount(0);
+  });
+});
+
 test.describe('a system, at a phone’s size', () => {
   test.use({ viewport: { width: 390, height: 900 } });
 
@@ -578,6 +699,8 @@ test.describe('a system, at a phone’s size', () => {
     await page.locator('[data-slot=credenza] [data-slot=cloudflare-machine-open]').click();
     await expect(page.locator('[data-slot=state-diagram]')).toBeVisible();
     await expect(page.locator('[data-slot=cloudflare-machine-back]')).toBeFocused();
+    // The tray's gone while it's open, as it'd keep focus to itself.
+    await expect(page.locator('[data-slot=cloudflare-panel]')).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await page.locator('[data-slot=cloudflare-machine-back]').click();
     await expect(page.locator('[data-slot=state-diagram]')).toHaveCount(0);

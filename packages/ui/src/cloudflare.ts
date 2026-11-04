@@ -16,3 +16,5 @@ export {
   BINDING_NAME, EMPTY_SYSTEM, addService, checkMachines, edgeBinding, machineEvents, machineReceives, machinesPast, parseSystem, removeServices, searchCatalog, serviceName, sharedServices, systemToJson, validateSystem,
 } from './lib/cloudflare-system';
 export type { CloudflareSystem, SystemIssue } from './lib/cloudflare-system';
+export { WRANGLER_RESOURCE_FIELDS, compareWrangler, readWrangler, writeWrangler } from './lib/cloudflare-wrangler';
+export type { WranglerCompare, WranglerDifference, WranglerNeed, WranglerNote, WranglerOptions, WranglerRead, WranglerSetting, WranglerWrite } from './lib/cloudflare-wrangler';

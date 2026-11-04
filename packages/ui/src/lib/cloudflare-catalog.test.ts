@@ -202,6 +202,7 @@ describe('how it ships', () => {
     const own = [...graph('cloudflare.ts')];
     expect(own.some((f) => f.endsWith('cloudflare-catalog.generated.ts'))).toBe(true);
     expect(own.some((f) => f.endsWith('components/cloudflare-diagram.tsx'))).toBe(true);
+    expect(own.some((f) => f.endsWith('lib/cloudflare-wrangler.ts'))).toBe(true);
   });
 
   it('is about the size the docs say', () => {

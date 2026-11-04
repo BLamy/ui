@@ -3,7 +3,7 @@
  *
  *   node tools/cloudflare/check-package.mjs     (after a build, as it reads packages/ui/dist)
  *
- * 1. The catalog's only on its own entry: dist/index.js can't reach it, and dist/cloudflare.js can.
+ * 1. The catalog and what reads a Worker's config are only on their own entry: dist/index.js can't reach them, and dist/cloudflare.js can.
  * 2. There's no Cloudflare artwork anywhere: every image in the package, the registry and the docs' demos is compared with the
  *    images in Cloudflare's docs at the pinned ref, by hash, and every text file's searched for their SVG paths. A Cloudflare part's
  *    source mustn't draw any image at all. It fetches what it compares with once, into the generator's cache.
@@ -44,8 +44,10 @@ const DIST = join(ROOT, 'packages/ui/dist');
 if (!existsSync(join(DIST, 'index.js'))) findings.push('packages/ui/dist/index.js is missing: build first');
 else {
   if (reaches(join(DIST, 'index.js'), 'cloudflare-catalog.generated.js')) findings.push('the main entry can reach the catalog');
+  if (reaches(join(DIST, 'index.js'), 'cloudflare-wrangler.js')) findings.push('the main entry can reach what reads a Worker’s config, and jsonc-parser with it');
   if (!existsSync(join(DIST, 'cloudflare.js'))) findings.push('packages/ui/dist/cloudflare.js is missing');
   else if (!reaches(join(DIST, 'cloudflare.js'), 'cloudflare-catalog.generated.js')) findings.push('@brett_lamy/ui/cloudflare can’t reach the catalog');
+  else if (!reaches(join(DIST, 'cloudflare.js'), 'cloudflare-wrangler.js')) findings.push('@brett_lamy/ui/cloudflare can’t reach what reads a Worker’s config');
 }
 
 /* ── 2. Cloudflare's own images ── */
