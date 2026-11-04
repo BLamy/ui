@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CLOUDFLARE_CATALOG as C } from './cloudflare-catalog.generated';
 
@@ -168,9 +168,40 @@ describe('what runs code', () => {
 });
 
 describe('how it ships', () => {
-  it('isn’t in the main entry', () => {
-    const barrel = readFileSync(join(__dirname, '../index.ts'), 'utf8');
-    expect(barrel).not.toContain('cloudflare-catalog');
+  /** Everything an entry can load, however late. */
+  function graph(entry: string): Set<string> {
+    const src = join(__dirname, '..');
+    const seen = new Set<string>();
+    const queue = [join(src, entry)];
+    const resolveFrom = (file: string, spec: string) => {
+      const base = spec.startsWith('@/components/ui/') ? join(src, 'components', spec.slice('@/components/ui/'.length))
+        : spec.startsWith('@/') ? join(src, spec.slice(2))
+        : spec.startsWith('.') ? resolve(dirname(file), spec) : null;
+      if (!base) return null;
+      return [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts')].find((x) => existsSync(x) && x.match(/\.[tj]sx?$/)) ?? null;
+    };
+    while (queue.length) {
+      const file = queue.pop()!;
+      if (seen.has(file)) continue;
+      seen.add(file);
+      for (const m of readFileSync(file, 'utf8').matchAll(/(?:from\s*|import\s*\(\s*|import\s+)['"]([^'"]+)['"]/g)) {
+        const next = resolveFrom(file, m[1]!);
+        if (next) queue.push(next);
+      }
+    }
+    return seen;
+  }
+
+  it('isn’t in the main entry, however late it might load', () => {
+    const main = [...graph('index.ts')];
+    expect(main.length).toBeGreaterThan(100);
+    expect(main.filter((f) => /cloudflare/.test(f))).toEqual([]);
+  });
+
+  it('is on its own entry', () => {
+    const own = [...graph('cloudflare.ts')];
+    expect(own.some((f) => f.endsWith('cloudflare-catalog.generated.ts'))).toBe(true);
+    expect(own.some((f) => f.endsWith('components/cloudflare-diagram.tsx'))).toBe(true);
   });
 
   it('is about the size the docs say', () => {
