@@ -139,6 +139,31 @@ export function measureText(runs: readonly TextRun[], host?: Element | null, max
   }
 }
 
+/** How many runs to measure in one frame when there's no hurry. */
+const GENTLE_CHUNK = 250;
+
+/**
+ * Measures like `measureText`, a frame's worth at a time, so a large diagram doesn't stop the page: 5,000 labels in one go
+ * is a gap of about 80 ms. It starts on the next frame, so it doesn't add to whatever's being drawn on this one. A small
+ * diagram goes straight through, in the same tick.
+ */
+export async function measureTextGently(runs: readonly TextRun[], host?: Element | null, maxWidth = DIAGRAM_TEXT_MAX_WIDTH): Promise<TextMeasurer> {
+  if (runs.length > GENTLE_CHUNK) await nextFrame();
+  for (let i = 0; i + GENTLE_CHUNK < runs.length; i += GENTLE_CHUNK) {
+    // What this remembers is what the last call finds waiting for it.
+    measureText(runs.slice(i, i + GENTLE_CHUNK), host, maxWidth);
+    await nextFrame();
+  }
+  return measureText(runs, host, maxWidth);
+}
+
+/** The next frame, or soon, in a tab that isn't drawing any, for work that shouldn't take one frame all to itself. */
+export const nextFrame = () => new Promise<void>((resolve) => {
+  if (typeof requestAnimationFrame !== 'function') { resolve(); return; }
+  const fallback = setTimeout(resolve, 100);
+  requestAnimationFrame(() => { clearTimeout(fallback); resolve(); });
+});
+
 /* ── Fonts that arrive late ── */
 
 /** Calls `listener` whenever fonts have finished loading, which is when something measured earlier may be wrong. The sizes

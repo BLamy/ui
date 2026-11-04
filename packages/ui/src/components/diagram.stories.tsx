@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useMemo, useRef } from 'react';
 import { useCanvas } from '@/components/ui/canvas';
 import { Diagram, DiagramNodeBody } from '@/components/ui/diagram';
+import type { DiagramDraft } from '@/lib/diagram-layout';
+import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model';
 import { UPLOAD_EDGES, UPLOAD_NODES } from '../stories/diagram-machine';
 import { Phone } from '../stories/frame';
@@ -14,20 +17,20 @@ type Story = StoryObj<typeof Diagram>;
 
 /* The file-upload machine: 33 states, 36 transitions, compound and parallel states and self-loops, laid out ahead of time. */
 export const Machine: Story = {
-  render: () => <Phone w={1360} h={560}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1360} h={560}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} aria-label="File upload" /></Phone>,
 };
 
 export const MachineDark: Story = {
-  render: () => <Phone w={1360} h={560} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1360} h={560} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} aria-label="File upload" /></Phone>,
 };
 
 /** Close enough to read: the parallel state and its regions. */
 export const MachineCloseUp: Story = {
-  render: () => <Phone w={1000} h={700}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1000} h={700}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
 };
 
 export const MachineCloseUpDark: Story = {
-  render: () => <Phone w={1000} h={700} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1000} h={700} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
 };
 
 const KINDS: DiagramNode[] = [
@@ -109,22 +112,22 @@ export const EdgeKindsDark: Story = {
 
 /** At the smallest zoom: lines keep their thickness, and the text is gone. */
 export const ZoomMin: Story = {
-  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: 370, y: 170, z: 0.02 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: 370, y: 170, z: 0.02 }} aria-label="File upload" /></Phone>,
 };
 
 /** Below the point where an edge's label could be read, a node's can still be made out. */
 export const ZoomMiddle: Story = {
-  render: () => <Phone w={1200} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: 20, y: 80, z: 0.3 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1200} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: 20, y: 80, z: 0.3 }} aria-label="File upload" /></Phone>,
 };
 
 /** At the largest zoom: lines keep their thickness, and the text is big. */
 export const ZoomMax: Story = {
-  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize defaultCamera={{ x: -7836, y: -1224, z: 4 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: -7836, y: -1224, z: 4 }} aria-label="File upload" /></Phone>,
 };
 
 /** `CanvasMiniMap`, with the root left out so it isn't one solid block. */
 export const WithMiniMap: Story = {
-  render: () => <Phone w={1000} h={500}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize minimap defaultCamera={{ x: -1600, y: -100, z: 0.9 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1000} h={500}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} minimap defaultCamera={{ x: -1600, y: -100, z: 0.9 }} aria-label="File upload" /></Phone>,
 };
 
 function ZoomReadout() {
@@ -162,6 +165,25 @@ export const SizedToText: Story = {
 
 export const SizedToTextDark: Story = {
   render: () => <Phone w={700} h={400} dark><Diagram nodes={WORDY} autoSize /></Phone>,
+};
+
+/** The same machine with no positions at all: its words are measured, and ELK places it in a worker. */
+function LaidOutMachine() {
+  const draft = useMemo<DiagramDraft>(() => ({
+    nodes: UPLOAD_NODES.map(({ x: _x, y: _y, w: _w, h: _h, ...n }) => n),
+    edges: UPLOAD_EDGES.map(({ points: _p, labelBox: _l, ...e }) => e),
+  }), []);
+  const host = useRef<HTMLDivElement>(null);
+  const laid = useDiagramLayout(draft, { host });
+  return <div ref={host} className="absolute inset-0"><Diagram nodes={laid.nodes} edges={laid.edges} aria-label="File upload" /></div>;
+}
+
+export const LaidOut: Story = {
+  render: () => <Phone w={1360} h={560}><LaidOutMachine /></Phone>,
+};
+
+export const LaidOutDark: Story = {
+  render: () => <Phone w={1360} h={560} dark><LaidOutMachine /></Phone>,
 };
 
 /** Nothing to draw: it's an empty canvas, centered on the origin. */

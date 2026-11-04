@@ -5,7 +5,7 @@ import { UPLOAD_EDGES, UPLOAD_NODES } from './machine'
 export default function Machine() {
   return (
     <div className="relative h-full min-h-96 w-full">
-      <Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} autoSize minimap aria-label="A file upload" />
+      <Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} minimap aria-label="A file upload" />
     </div>
   )
 }

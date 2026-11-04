@@ -4,9 +4,12 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
-import { copyFileSync } from 'fs';
+import { copyFileSync, mkdirSync } from 'fs';
 import pkg from './package.json' with { type: 'json' };
 import { aliases } from '../../tools/alias.mjs';
+
+const DIAGRAM_WORKER_LINE = "new Worker(new URL('./layout-worker.js', import.meta.url), { type: 'module' })";
+const DIAGRAM_WORKER_STAND_IN = '__blDiagramLayoutWorker__()';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
@@ -33,6 +36,19 @@ export default defineConfig(() => ({
       name: 'bl-ffmpeg-worker',
       closeBundle: () =>
         copyFileSync(path.join(import.meta.dirname, 'src/lib/ffmpeg/ffmpeg-worker.js'), path.join(import.meta.dirname, 'dist/ffmpeg-worker.js')),
+    },
+    // The diagram layout worker stays a plain script beside its module, and it's the app's bundler that has to pick it up,
+    // because it imports ELK, an optional peer with another licence that mustn't end up in this package. So the line that
+    // starts it is hidden from this build's own worker handling, and put back as it was.
+    {
+      name: 'bl-diagram-layout-worker',
+      enforce: 'pre' as const,
+      transform: (code: string, id: string) => (id.endsWith('lib/diagram-layout/index.ts') ? code.replace(DIAGRAM_WORKER_LINE, DIAGRAM_WORKER_STAND_IN) : null),
+      renderChunk: (code: string) => (code.includes(DIAGRAM_WORKER_STAND_IN) ? code.replace(DIAGRAM_WORKER_STAND_IN, DIAGRAM_WORKER_LINE) : null),
+      closeBundle: () => {
+        mkdirSync(path.join(import.meta.dirname, 'dist/lib/diagram-layout'), { recursive: true });
+        copyFileSync(path.join(import.meta.dirname, 'src/lib/diagram-layout/layout-worker.js'), path.join(import.meta.dirname, 'dist/lib/diagram-layout/layout-worker.js'));
+      },
     },
   ],
   // Uncomment this if you are using workers.

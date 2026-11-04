@@ -82,6 +82,7 @@
     "@agent-wasm/tailscale-connect": "^1.39.98-t02582083d",
     "@electric-sql/pglite": "^0.5.8",
     "@electric-sql/pglite-tools": "^0.4.8",
+    "elkjs": "^0.12.1",
     "react": "^19",
     "react-dom": "^19"
   },
@@ -93,6 +94,9 @@
       "optional": true
     },
     "@electric-sql/pglite-tools": {
+      "optional": true
+    },
+    "elkjs": {
       "optional": true
     }
   },
@@ -125,6 +129,7 @@
     "@electric-sql/pglite-tools": "0.4.8",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
+    "elkjs": "0.12.1",
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.14.5"
   }

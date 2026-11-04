@@ -7,16 +7,15 @@ import { openDemo } from './helpers.mjs';
 const zoomOf = (page) => page.locator('[data-slot=diagram-layer]').evaluate((el) => Number(el.style.getPropertyValue('--diagram-z')));
 const strokeOf = (page, selector) => page.locator(selector).first().evaluate((el) => parseFloat(getComputedStyle(el).strokeWidth));
 
-/** ⌘-scrolls until the zoom's at or just past `target`, from either side. */
+/** ⌘-scrolls to `target`. One wheel event zooms by e^(-delta * 0.009), and at most 50 of delta counts. */
 async function zoomTo(page, target) {
   const c = await page.locator('[data-slot=canvas]').boundingBox();
   await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2);
   await page.keyboard.down('Control');
-  const out = (await zoomOf(page)) > target;
   for (let i = 0; i < 80; i++) {
     const z = await zoomOf(page);
-    if (out ? z <= target : z >= target) break;
-    await page.mouse.wheel(0, out ? 50 : -50);
+    if (Math.abs(z - target) < target * 0.002) break;
+    await page.mouse.wheel(0, Math.max(-50, Math.min(50, -Math.log(target / z) / 0.009)));
     await expect.poll(() => zoomOf(page)).not.toBe(z);
   }
   await page.keyboard.up('Control');
