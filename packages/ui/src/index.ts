@@ -41,6 +41,8 @@ export { NOTHING_SELECTED, deleteItems, moveNodes, rerouteLabel, rerouteOrthogon
 export type { DiagramSelection } from './lib/diagram-model';
 export { DRAG_THRESHOLD, EDGE_HIT_DISTANCE, SNAP_DISTANCE, hitTestDiagram, movableNodes, nodesInMarquee, stepDiagramGesture } from './lib/diagram-gesture';
 export type { DiagramGesture, DiagramGestureContext, DiagramGestureEvent, DiagramGestureStep, DiagramHit } from './lib/diagram-gesture';
+export { cameraToShow, describeEdge, describeNode, edgesByNode, focusOrder, nearestNode, nodeInDirection, stepFocus } from './lib/diagram-keyboard';
+export type { DiagramFocus, DiagramFocusContext, DiagramFocusStep } from './lib/diagram-keyboard';
 export { Diagram, DiagramNodeBody, diagramEdgeVariants, diagramNodeVariants } from './components/diagram';
 export type { DiagramChange, DiagramNodeBodyProps, DiagramProps } from './components/diagram';
 export type { AnimatedHeightProps, ContentSwapProps } from './components/animated-height';

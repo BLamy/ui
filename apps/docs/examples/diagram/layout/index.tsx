@@ -14,7 +14,7 @@ export default function Layout() {
     <div className="relative h-full min-h-96 w-full">
       {shown ? <Graph n={n} /> : null}
       <div className="absolute top-3 left-3 flex items-center gap-2 rounded-ctl bg-popover px-3 py-2 text-footnote text-foreground shadow-hairline">
-        {SIZES.map((size) => <Button key={size} size="sm" variant={size === n ? 'default' : 'secondary'} onPress={() => setN(size)}>{size}</Button>)}
+        {SIZES.map((size) => <Button key={size} size="sm" variant={size === n ? 'secondary' : 'ghost'} onPress={() => setN(size)}>{size}</Button>)}
         <Button size="sm" variant="secondary" onPress={() => setShown(!shown)}>{shown ? 'Remove it' : 'Bring it back'}</Button>
       </div>
     </div>

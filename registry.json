@@ -7750,6 +7750,7 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/diagram-gesture.json",
+        "https://blamy.github.io/ui/r/diagram-keyboard.json",
         "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/diagram-text.json",
         "https://blamy.github.io/ui/r/use-font-version.json",
@@ -8021,6 +8022,25 @@
           "path": "packages/ui/src/lib/diagram-gesture.ts",
           "type": "registry:lib",
           "target": "lib/diagram-gesture.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram-keyboard",
+      "type": "registry:lib",
+      "title": "Diagram Keyboard",
+      "description": "Diagram Keyboard — part of BL UI's library (lib/diagram-keyboard.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-keyboard.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-keyboard.ts"
         }
       ]
     },

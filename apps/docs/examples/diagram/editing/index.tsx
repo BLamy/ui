@@ -22,6 +22,7 @@ const EDGES: DiagramEdge[] = [
 ]
 
 // Drag anything: edges follow. Shift or ⌘ adds to the selection, a drag from nothing draws a marquee, Delete deletes, ⌘Z undoes.
+// Or Tab here and use the keys: arrows move between nodes and along edges, Enter opens, Shift and an arrow nudges.
 export default function Editing() {
   const params = new URLSearchParams(location.search)
   const controlled = !params.has('uncontrolled')
@@ -31,6 +32,7 @@ export default function Editing() {
   const [refuse, setRefuse] = useState(false)
   const [changes, setChanges] = useState<DiagramChange['reason'][]>([])
   const [selection, setSelection] = useState<DiagramSelection>({ nodes: [], edges: [] })
+  const [activated, setActivated] = useState('')
   const onChange = (change: DiagramChange) => {
     setChanges((c) => [...c, change.reason])
     if (!refuse) setData({ nodes: change.nodes, edges: change.edges })
@@ -39,13 +41,14 @@ export default function Editing() {
     <div className="grid h-full min-h-[560px] w-full grid-rows-[1fr_auto]">
       <div className="relative">
         {controlled
-          ? <Diagram editable nodes={data.nodes} edges={data.edges} onChange={onChange} onSelectionChange={setSelection} defaultCamera={defaultCamera} aria-label="A small workflow" />
-          : <Diagram editable defaultNodes={NODES} defaultEdges={EDGES} onChange={onChange} onSelectionChange={setSelection} defaultCamera={defaultCamera} aria-label="A small workflow" />}
+          ? <Diagram editable nodes={data.nodes} edges={data.edges} onChange={onChange} onSelectionChange={setSelection} onActivate={(item) => setActivated(item.id)} defaultCamera={defaultCamera} aria-label="A small workflow" />
+          : <Diagram editable={!params.has('readonly')} defaultNodes={NODES} defaultEdges={EDGES} onChange={onChange} onSelectionChange={setSelection} onActivate={(item) => setActivated(item.id)} defaultCamera={defaultCamera} aria-label="A small workflow" />}
       </div>
-      <div className="flex items-center gap-3 border-t border-border p-3 text-footnote text-muted-foreground">
+      <div className="flex items-center gap-3 border-t border-border p-3 text-footnote text-foreground">
         <Switch checked={refuse} onChange={setRefuse} aria-label="Refuse changes" />
         <span>Refuse changes</span>
         <span data-demo-changes={changes.join(' ')}>{changes.length} changes</span>
+        <span data-demo-activated={activated}>{activated ? `Opened ${activated}` : 'Enter opens'}</span>
         <span data-demo-selection={[...selection.nodes, ...selection.edges].join(' ')}>{selection.nodes.length + selection.edges.length} selected</span>
       </div>
     </div>

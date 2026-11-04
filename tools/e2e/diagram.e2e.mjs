@@ -526,3 +526,200 @@ test.describe('editing', () => {
     expect(await style()).toBe(before);
   });
 });
+
+test.describe('the keyboard', () => {
+  const open = async (page, query = '') => {
+    await page.goto(`/?demo=diagram/editing&theme=light${query}`, { waitUntil: 'load' });
+    await page.locator('[data-slot=diagram-node]').first().waitFor({ timeout: 30_000 });
+    await page.locator('[data-slot=canvas]').focus();
+  };
+  /** What has focus, as `node:a`, `edge:ab`, `canvas`, or something outside. */
+  const focused = (page) => page.evaluate(() => {
+    const el = document.activeElement;
+    if (el?.dataset.slot === 'diagram-node') return `node:${el.dataset.node}`;
+    if (el?.dataset.slot === 'diagram-edge') return `edge:${el.dataset.edge}`;
+    return el?.dataset.slot === 'canvas' ? 'canvas' : `other:${el?.tagName}`;
+  });
+  const press = async (page, ...keys) => { for (const k of keys) await page.keyboard.press(k); };
+
+  test('the diagram is one tab stop: every node and edge can be reached, and Tab leaves', async ({ page }) => {
+    await page.goto('/?demo=diagram/editing&theme=light', { waitUntil: 'load' });
+    await page.locator('[data-slot=diagram-node]').first().waitFor({ timeout: 30_000 });
+    await page.keyboard.press('Tab');
+    await expect.poll(() => focused(page)).toBe('canvas');
+    // Nothing inside is in the tab order.
+    const tabbable = await page.locator('[data-slot=diagram] [tabindex="0"]').count();
+    expect(tabbable).toBe(1);
+    await press(page, 'Home');
+    expect(await focused(page)).toBe('node:a');
+    const seen = new Set();
+    for (let i = 0; i < 12; i++) { seen.add(await focused(page)); await press(page, 'PageDown'); }
+    expect(seen.size).toBe(7 + 5);
+    expect(await focused(page)).toBe('node:a');
+    // Tab goes on out, so it isn't a trap.
+    await press(page, 'Tab');
+    expect(await focused(page)).toMatch(/^other:/);
+    await page.keyboard.press('Shift+Tab');
+    expect(await focused(page)).toBe('canvas');
+  });
+
+  test('arrows go between neighbours and along edges, and into and out of what holds things', async ({ page }) => {
+    await open(page);
+    await press(page, 'Home');
+    await press(page, 'ArrowRight');
+    expect(await focused(page)).toBe('node:b');
+    await press(page, 'ArrowDown');
+    expect(await focused(page)).toBe('node:c');
+    await press(page, 'ArrowUp');
+    expect(await focused(page)).toBe('node:b');
+    // From a node onto its edges, along them, and off the other end.
+    await press(page, ']');
+    expect(await focused(page)).toBe('edge:bc');
+    await press(page, ']');
+    expect(await focused(page)).toBe('edge:bk');
+    await press(page, 'ArrowRight');
+    expect(await focused(page)).toBe('node:kid1');
+    await press(page, 'Alt+ArrowUp');
+    expect(await focused(page)).toBe('node:box');
+    await press(page, 'Alt+ArrowDown');
+    expect(await focused(page)).toBe('node:kid1');
+    await press(page, '[');
+    expect(await focused(page)).toBe('edge:bk');
+    await press(page, 'ArrowLeft');
+    expect(await focused(page)).toBe('node:b');
+  });
+
+  test('a disconnected node can be reached, and left', async ({ page }) => {
+    await open(page);
+    await press(page, 'Home', 'ArrowDown');
+    expect(await focused(page)).toBe('node:far');
+    await press(page, 'ArrowUp');
+    expect(await focused(page)).toBe('node:a');
+  });
+
+  test('Enter opens what’s focused, and selects it; Shift+Enter adds to the selection', async ({ page }) => {
+    await open(page);
+    const selected = () => page.locator('[data-demo-selection]').getAttribute('data-demo-selection');
+    await press(page, 'Home', 'Enter');
+    await expect(page.locator('[data-demo-activated]')).toHaveAttribute('data-demo-activated', 'a');
+    expect(await selected()).toBe('a');
+    await expect(page.locator('[data-node=a]')).toHaveAttribute('aria-pressed', 'true');
+    await press(page, 'ArrowRight', 'Shift+Enter');
+    expect(await selected()).toBe('a b');
+    await expect(page.locator('[data-demo-activated]')).toHaveAttribute('data-demo-activated', 'a');
+    await press(page, 'Shift+Enter');
+    expect(await selected()).toBe('a');
+    await press(page, ']', 'Enter');
+    await expect(page.locator('[data-demo-activated]')).toHaveAttribute('data-demo-activated', 'bc');
+    await expect(page.locator('[data-slot=diagram-edge][data-edge=bc]')).toHaveAttribute('aria-pressed', 'true');
+    await press(page, 'Escape');
+    expect(await selected()).toBe('');
+    // A second Escape goes back up to the canvas.
+    await press(page, 'Escape');
+    expect(await focused(page)).toBe('canvas');
+  });
+
+  test('labels say what it is and what it connects to', async ({ page }) => {
+    await open(page);
+    await expect(page.locator('[data-node=b]')).toHaveAttribute('aria-label', 'Triage, node. 2 going out: done to Archive, open to Read. 1 coming in: sort from Inbox.');
+    await expect(page.locator('[data-node=kid2]')).toHaveAttribute('aria-label', 'Reply, node, in Review. 1 coming in: from Read.');
+    await expect(page.locator('[data-node=far]')).toHaveAttribute('aria-label', 'Elsewhere, node. Not connected to anything.');
+    await expect(page.locator('[data-slot=diagram-edge][data-edge=ab]')).toHaveAttribute('aria-label', 'sort, edge from Inbox to Triage.');
+    await expect(page.locator('[data-slot=diagram-edge][data-edge=loop]')).toHaveAttribute('aria-label', 'again, edge from Archive back to itself.');
+    // An accessibility tree sees them by those names.
+    await expect(page.getByRole('button', { name: 'sort, edge from Inbox to Triage.' })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: /^Inbox, node\./ })).toHaveCount(1);
+  });
+
+  test('the view follows the focus', async ({ page }) => {
+    await open(page);
+    await zoomTo(page, 3);
+    await page.locator('[data-slot=canvas]').focus();
+    const inView = (id) => page.evaluate((nodeId) => {
+      const c = document.querySelector('[data-slot=canvas]').getBoundingClientRect();
+      const r = document.querySelector(`[data-node="${nodeId}"]`).getBoundingClientRect();
+      return r.left >= c.left && r.right <= c.right && r.top >= c.top && r.bottom <= c.bottom;
+    }, id);
+    for (const [key, id] of [['Home', 'a'], ['ArrowRight', 'b'], ['ArrowDown', 'c'], ['End', 'far']]) {
+      await press(page, key);
+      expect(await focused(page)).toBe(`node:${id}`);
+      expect(await inView(id), id).toBe(true);
+    }
+    // ⌘ and an arrow moves the view on its own.
+    const before = await page.locator('[data-slot=canvas-board]').getAttribute('style');
+    await press(page, 'ControlOrMeta+ArrowLeft');
+    expect(await page.locator('[data-slot=canvas-board]').getAttribute('style')).not.toBe(before);
+  });
+
+  test('shift and an arrow nudges, with undo', async ({ page }) => {
+    await open(page);
+    const at = () => page.locator('[data-node=far]').evaluate((el) => [parseFloat(el.style.left), parseFloat(el.style.top)]);
+    await press(page, 'End');
+    expect(await focused(page)).toBe('node:far');
+    const was = await at();
+    await press(page, 'Shift+ArrowRight', 'Shift+ArrowRight', 'Shift+ArrowDown', 'Shift+Alt+ArrowLeft');
+    expect(await at()).toEqual([was[0] + 15, was[1] + 8]);
+    expect(await focused(page)).toBe('node:far');
+    await press(page, 'ControlOrMeta+z');
+    expect(await at()).toEqual([was[0] + 16, was[1] + 8]);
+    await expect(page.locator('[data-demo-changes]')).toHaveAttribute('data-demo-changes', 'move move move move undo');
+  });
+
+  test('deleting what’s focused leaves focus nearby, and an empty diagram leaves it on the canvas', async ({ page }) => {
+    await open(page);
+    await press(page, 'Home', 'ArrowRight');
+    expect(await focused(page)).toBe('node:b');
+    await press(page, 'Delete');
+    await expect(page.locator('[data-node=b]')).toHaveCount(0);
+    await expect.poll(() => focused(page)).toMatch(/^node:/);
+    // And the keys carry on from there.
+    const from = await focused(page);
+    await press(page, 'PageDown');
+    expect(await focused(page)).not.toBe(from);
+    // A deleted edge leaves focus on a node too.
+    await press(page, 'ControlOrMeta+z');
+    await press(page, 'Home', 'ArrowRight', ']');
+    expect(await focused(page)).toBe('edge:bc');
+    await press(page, 'Delete');
+    await expect(page.locator('[data-slot=diagram-edge][data-edge=bc]')).toHaveCount(0);
+    await expect.poll(() => focused(page)).toMatch(/^node:/);
+    // With nothing left, focus doesn't fall out of the diagram.
+    await press(page, 'ControlOrMeta+a', 'Delete');
+    await expect(page.locator('[data-slot=diagram-node]')).toHaveCount(0);
+    await expect.poll(() => focused(page)).toBe('canvas');
+    await press(page, 'ArrowRight', 'Home', 'PageDown', 'Enter');
+    expect(await focused(page)).toBe('canvas');
+  });
+
+  test('a controlled parent that refuses a delete keeps focus where it was', async ({ page }) => {
+    await open(page);
+    await page.locator('[data-slot=switch]').click();
+    await page.locator('[data-slot=canvas]').focus();
+    await press(page, 'Home', 'Delete');
+    await expect(page.locator('[data-demo-changes]')).toHaveAttribute('data-demo-changes', 'delete');
+    expect(await focused(page)).toBe('node:a');
+  });
+
+  test('keys that edit do nothing to a diagram that can’t be edited, even one holding its own data', async ({ page }) => {
+    await open(page, '&uncontrolled&readonly');
+    await press(page, 'Home', 'Delete', 'Shift+ArrowRight');
+    await expect(page.locator('[data-node=a]')).toHaveCount(1);
+    expect(await page.locator('[data-node=a]').evaluate((el) => el.style.left)).toBe('40px');
+    await expect(page.locator('[data-demo-changes]')).toHaveAttribute('data-demo-changes', '');
+  });
+
+  test('a read-only diagram is reached the same way, and has nothing to select', async ({ page }) => {
+    await page.goto('/?demo=diagram/machine&theme=light', { waitUntil: 'load' });
+    await page.locator('[data-slot=diagram-node]').first().waitFor({ timeout: 30_000 });
+    await page.locator('[data-slot=canvas]').focus();
+    await press(page, 'Home');
+    expect(await focused(page)).toBe('node:upload');
+    await press(page, 'Alt+ArrowDown');
+    expect(await focused(page)).toMatch(/^node:upload\./);
+    await expect(page.locator('[data-slot=diagram-node]').first()).not.toHaveAttribute('aria-pressed');
+    const before = await focused(page);
+    await press(page, 'Delete', 'ControlOrMeta+a');
+    expect(await focused(page)).toBe(before);
+    await expect(page.locator('[data-slot=diagram-node]')).toHaveCount(40);
+  });
+});
