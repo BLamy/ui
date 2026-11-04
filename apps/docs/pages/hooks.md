@@ -104,7 +104,7 @@ Documented on [Syntax, sessions and countdown hooks](https://blamy.github.io/ui/
 | Hook | Returns | Needs | Export |
 | --- | --- | --- | --- |
 | `useSyntaxTokens` | `{ lines, highlighter }` | nothing | public |
-| `useSyntaxHighlighting` | `{ code, language, variant, title, engine }` | `SyntaxHighlighting`; `null` outside | public |
+| `useCodeEditor` | `{ getValue, language, variant, title, engine }` | `CodeEditor`; `null` outside | public |
 | `useCountdown` | `{ remaining, period, elapsed, reset }` | nothing | public |
 | `useSessionRecording` | nothing | nothing | public |
 | `useSessions` | `SessionInfo[]`, newest first | nothing | public |
@@ -139,7 +139,7 @@ The `react-aria` hooks that BL UI builds on (`usePress`, `useClipboard`, `useDra
 
 ## Conventions
 
-- **Context hooks fail loudly or quietly, by design.** A hook whose component cannot work without it (`useSplitView`, `useComposer`, `useCommandMenu`) throws an error that names the component to wrap it in. A hook that only adds information (`useSplitViewColumn`, `useSplitViewBack`, `useTabViewTab`, `useSyntaxHighlighting`) returns `null`. A hook with a sensible global answer (`useToast`, `useAppearance`, `useMorphTransition`, `useTabView`) falls back to it.
+- **Context hooks fail loudly or quietly, by design.** A hook whose component cannot work without it (`useSplitView`, `useComposer`, `useCommandMenu`) throws an error that names the component to wrap it in. A hook that only adds information (`useSplitViewColumn`, `useSplitViewBack`, `useTabViewTab`, `useCodeEditor`) returns `null`. A hook with a sensible global answer (`useToast`, `useAppearance`, `useMorphTransition`, `useTabView`) falls back to it.
 - **Returned objects are rebuilt on each render.** The state objects from `useSplitView`, `useSidebar`, `useFloatingSheet`, `useComposer` and the like are new every render. Their function members are not always memoized either, so do not put the whole object, or a function taken from it, in a dependency array unless the page says that member is stable. The cases that are stable are called out: `useToast`'s API per queue, `useContainerWidth`'s `ref`, `usePersistentState`'s setter, and the `select`, `isSelected` and `toggleSidebar` callbacks of `useSplitView`.
 - **Browser APIs are guarded or run in effects.** From the source, nothing here needs `window`, `document` or `localStorage` to exist during a server render (measuring, listeners and recording start in effects; storage reads are guarded). Where the first client render can still differ from the server's (`usePersistentState`, `useSyntaxTokens`, `useAppearance`), the page for that hook says so.
 - **Reduced motion.** `useSpringTransition`, `useMorphTransition`, `useSheetDrag` and `useTitleFlight` honor `prefers-reduced-motion` themselves (an instant transition, a jump to rest, no flight). `useEdgeSwipe` and `usePullToRefresh` do not check it: they follow the finger, and what happens on release is up to the caller (`usePullToRefresh` always settles with its own spring transition).

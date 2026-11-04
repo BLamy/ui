@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { CodeEditor, type CodeEditorChange, type CodeEditorGutter, type CodeEditorHandle } from '@/components/ui/code-editor'
 import { Input } from '@/components/ui/input'
 import Safari from '@/components/blocks/safari/page'
 import ReplayCanvas, { type Recording } from '@/components/blocks/replay-canvas/page'
@@ -11,7 +12,8 @@ import { useTailscaleRouter } from '@/lib/tailscale-router/react'
 
 /* Test tooling, not a demo: `?harness=<name>` (dev server only; main.tsx never loads this in a production build)
    renders the Tailscale components on an in-memory tailnet, so tools/e2e can drive them without a Tailscale account.
-   The docs demos themselves run on the real tailnet and have no fake mode. */
+   The docs demos themselves run on the real tailnet and have no fake mode. CodeEditor is here for what a demo doesn't show:
+   the text and the changes behind what's on screen. */
 
 function Device() {
   const { status, selfName, tailnet } = useTailscaleStatus()
@@ -157,7 +159,77 @@ function ReplayCanvasLocal() {
   return recordings ? <div className="fixed inset-0" data-harness-ready><ReplayCanvas recordings={recordings} /></div> : <p>Loading {dir}…</p>
 }
 
+/** CodeEditor under test. The query says what to edit and how (`doc`, `wrap`, `gutters`, `mode`, `readOnly`), and `window.__editor` is
+ *  how tools/e2e reads what happened, since what's on screen is only part of it. */
+const HARNESS_DOCS: Record<string, () => string> = {
+  small: () => ['function greet(name) {', '  return `Hello, ${name}`;', '}', '', 'greet("world");'].join('\n'),
+  ninety: () => Array.from({ length: 99 }, (_, i) => `const line${i + 1} = ${i + 1};`).join('\n'),
+  empty: () => '',
+  tabs: () => ['function f() {', '\tif (x) {', '\t\treturn 1;', '\t}', '}'].join('\n'),
+  long: () => `first line\n${Array.from({ length: 60 }, (_, i) => `const value${i} = compute(${i}, "some text to fill the line up");`).join(' ')}\nlast line`,
+  'many-lines': () => Array.from({ length: 500_000 }, (_, i) => `const value${i} = compute(${i});`).join('\n'),
+  'long-line': () => {
+    const pieces = ['function a(b,c){return b+c}', 'var d="it",f=\'b\';', 'g=h/2/i;', 'if(m)n.o(p)&&q();', 'r=s?.t??u;', 'for(let i=0;i<10;i++)z[i]=i*1.5;'];
+    let out = ''
+    for (let i = 0; out.length < 1 << 20; i++) out += pieces[i % pieces.length]
+    return `first line\n${out}\nlast line`
+  },
+}
+
+function CodeEditorHarness() {
+  const params = new URLSearchParams(window.location.search)
+  const docName = params.get('doc') ?? 'small'
+  const initial = useMemo(() => (HARNESS_DOCS[docName] ?? HARNESS_DOCS.small)(), [docName])
+  const mode = params.get('mode') ?? 'uncontrolled'
+  const [value, setValue] = useState(initial)
+  const editor = useRef<CodeEditorHandle>(null)
+  const changes = useRef<CodeEditorChange[]>([])
+  const onChangeCalls = useRef(0)
+  const [breakpoints] = useState(() => new Set([2]))
+  const gutters = useMemo<CodeEditorGutter[] | undefined>(() => (params.get('gutters') ? [{
+    id: 'breakpoint',
+    width: 18,
+    onPress: () => {},
+    label: (line) => `Breakpoint on line ${line}`,
+    render: (line) => (breakpoints.has(line) ? <span data-testid="breakpoint" className="size-2 rounded-full bg-warning" /> : null),
+  }] : undefined), [breakpoints])
+  useEffect(() => {
+    Object.assign(window, { __editor: { handle: editor, changes, onChangeCalls, setValue, value: () => value } })
+  })
+  const shared = {
+    ref: editor,
+    language: 'js',
+    wrap: !!params.get('wrap'),
+    gutters,
+    'aria-label': 'the code',
+    title: params.get('title') ?? undefined,
+    showCopy: !!params.get('copy'),
+    variant: (params.get('variant') ?? 'default') as 'default' | 'ghost',
+  }
+  const size = params.get('auto') ? '' : 'h-[420px]'
+  return (
+    <div data-harness-ready className="grid gap-2">
+      <button type="button" data-testid="before">before</button>
+      <div className={size} data-testid="frame">
+        {params.get('readOnly') ? (
+          <CodeEditor {...shared} readOnly value={value} windowed={params.get('windowed') ? true : undefined} />
+        ) : mode === 'controlled' ? (
+          <CodeEditor {...shared} value={value} onChange={(next, change) => { onChangeCalls.current++; changes.current.push(change); setValue(next) }} />
+        ) : mode === 'upper' ? (
+          <CodeEditor {...shared} value={value} onChange={(next, change) => { changes.current.push(change); setValue(next.toUpperCase()) }} />
+        ) : mode === 'rejects' ? (
+          <CodeEditor {...shared} value={value} onChange={(_, change) => { changes.current.push(change) }} />
+        ) : (
+          <CodeEditor {...shared} defaultValue={initial} onEdit={(change) => { changes.current.push(change) }} />
+        )}
+      </div>
+      <button type="button" data-testid="after">after</button>
+    </div>
+  )
+}
+
 const HARNESSES: Record<string, () => React.ReactElement> = {
+  'code-editor': () => <CodeEditorHarness />,
   'tailscale-sign-in': () => <SignIn />,
   'tailscale-auth-key': () => <AuthKey />,
   'tailscale-router': () => <Router />,

@@ -1,9 +1,9 @@
 /* Playwright tests Loop QA generated from bugs: a list with each test's state, and the selected test's source
-   (SyntaxHighlighting) beside it — or, in a narrow container, on its own pushed page. */
+   (CodeEditor) beside it — or, in a narrow container, on its own pushed page. */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
-import { SyntaxHighlighting, SyntaxHighlightingContent, SyntaxHighlightingCopyButton, SyntaxHighlightingHeader, SyntaxHighlightingTitle } from '@/components/ui/syntax-highlighting';
+import { CodeEditor, CodeEditorContent, CodeEditorCopyButton, CodeEditorHeader, CodeEditorTitle } from '@/components/ui/code-editor';
 import { useContainerWidth } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -74,13 +74,13 @@ export function TestSource({ test: t }: { test: PlaywrightTest }) {
           <FromBug id={t.fromBug} />
         ) : null}
       </div>
-      <SyntaxHighlighting code={t.code} language="ts" className="overflow-hidden rounded-card border border-border">
-        <SyntaxHighlightingHeader>
-          <SyntaxHighlightingTitle>{t.file}</SyntaxHighlightingTitle>
-          <SyntaxHighlightingCopyButton label={`Copy ${t.file}`} />
-        </SyntaxHighlightingHeader>
-        <SyntaxHighlightingContent lineNumbers />
-      </SyntaxHighlighting>
+      <CodeEditor readOnly value={t.code} language="ts" className="overflow-hidden rounded-card border border-border">
+        <CodeEditorHeader>
+          <CodeEditorTitle>{t.file}</CodeEditorTitle>
+          <CodeEditorCopyButton label={`Copy ${t.file}`} />
+        </CodeEditorHeader>
+        <CodeEditorContent lineNumbers />
+      </CodeEditor>
     </div>
   );
 }

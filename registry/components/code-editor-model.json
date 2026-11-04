@@ -1,0 +1,19 @@
+{
+  "name": "code-editor-model",
+  "title": "CodeEditor logic",
+  "description": "CodeEditor's logic as plain functions: splitting lines, windowing long lines, its selection model, a lexer that can resume in the middle of a long line, and a document with commands and undo.",
+  "files": [
+    "lib/code-editor.ts",
+    "lib/code-document.ts"
+  ],
+  "exports": [
+    "splitCodeLines",
+    "splitEditorLines",
+    "lexCodeLine",
+    "lineAfterEdit",
+    "tooBigForPage",
+    "MAX_PAGE_LINES",
+    "MAX_PAGE_LINE_LENGTH",
+    "MAX_PAGE_CHARS"
+  ]
+}

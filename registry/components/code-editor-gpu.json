@@ -1,0 +1,14 @@
+{
+  "name": "code-editor-gpu",
+  "title": "CodeEditor GPU highlighting",
+  "description": "A highlighter for CodeEditor's windowed renderer on gpu-lexer. It answers a frame late, and where there's no WebGPU the editor stays plain text.",
+  "files": [
+    "lib/code-editor-gpu.ts"
+  ],
+  "exports": [
+    "createGpuCodeHighlight"
+  ],
+  "types": [
+    "GpuCodeHighlightOptions"
+  ]
+}

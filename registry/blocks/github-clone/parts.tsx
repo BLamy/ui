@@ -1,9 +1,9 @@
 /* Small GitHub-flavoured pieces the page composes: the palette, octicon-style glyphs, label chips, state icons,
    underline tabs, a line-numbered code view, a unified diff view and a file tree. Code is highlighted by the
-   library's SyntaxHighlighting (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
+   library's CodeEditor (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { SyntaxHighlighting, SyntaxTokens, useSyntaxTokens } from '@/components/ui/syntax-highlighting';
+import { CodeEditor, SyntaxTokens, useSyntaxTokens } from '@/components/ui/code-editor';
 import { TabViewIndicator, TabViewPanel, TabViewTab } from '@/components/ui/tab-view';
 import { Tree, type TreeNode } from '@/components/ui/tree';
 import { Icon, type IconName } from '@/lib/icon';
@@ -14,7 +14,7 @@ import type { FileNode, Label, PullRequest, User } from './data';
 /* ── Palette ──
    GitHub's Primer colors. The block is an app with its own palette: `GITHUB_THEME` overrides the theme's shadcn
    variables on the block's root (BLProvider / WorkbenchTheme `style`), so every utility and library part inside picks
-   them up. The --gh-* extras are GitHub's state / diff / button colors; --bl-syntax-* recolor SyntaxHighlighting
+   them up. The --gh-* extras are GitHub's state / diff / button colors; --bl-syntax-* recolor CodeEditor
    with Primer's prettylights palette. */
 const PRIMER = {
   light: {
@@ -249,10 +249,10 @@ export const githubMarkdown = cn(
   '[&_li]:my-1! [&_pre]:rounded-md!',
 );
 
-/* ── Code view ── GitHub's blob view: 12px mono, 20px lines, a line-number gutter (SyntaxHighlighting, ghost). */
+/* ── Code view ── GitHub's blob view: 12px mono, 20px lines, a line-number gutter (CodeEditor, ghost). */
 export function CodeView({ path, code }: { path: string; code: string }) {
   return (
-    <SyntaxHighlighting variant="ghost" code={code} language={languageFromPath(path)} lineNumbers aria-label={path}
+    <CodeEditor readOnly variant="ghost" value={code} language={languageFromPath(path)} lineNumbers aria-label={path}
       className="[--bl-syntax-font-size:12px] [--bl-syntax-line-height:20px] [--bl-syntax-padding-y:8px]" />
   );
 }

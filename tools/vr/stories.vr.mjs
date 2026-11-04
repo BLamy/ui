@@ -14,7 +14,7 @@ for (const s of stories) {
     await page.evaluate(() => document.fonts.ready);
     // Let entrance transitions, measured layouts, and seeded streams settle.
     await page.waitForTimeout(2500);
-    // SyntaxHighlighting shows plain text until the GPU lexer answers (data-highlighter="pending").
+    // CodeEditor in the page shows plain text until the GPU lexer answers (data-highlighter="pending").
     await expect(page.locator('[data-highlighter="pending"]')).toHaveCount(0, { timeout: 30000 });
     // …and in the -gpu projects it must really be the GPU, not the no-WebGPU fallback.
     if (test.info().project.name.endsWith('-gpu') && !s.id.includes('fallback'))

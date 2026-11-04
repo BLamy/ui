@@ -1,0 +1,8 @@
+{
+  "title": "Code Editor · editing half a million lines",
+  "status": "Live",
+  "variants": [
+    { "id": "lines", "label": "500,000 lines" },
+    { "id": "line", "label": "A megabyte on one line" }
+  ]
+}

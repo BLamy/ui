@@ -1,0 +1,9 @@
+{
+  "title": "Code Editor · highlighting",
+  "status": "Live",
+  "variants": [
+    { "id": "default", "label": "Default" },
+    { "id": "custom", "label": "Your own" },
+    { "id": "none", "label": "None" }
+  ]
+}

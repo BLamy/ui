@@ -1,5 +1,5 @@
-/* Syntax lexing for SyntaxHighlighting: gpu-lexer (a tiny WebGPU model that labels spans in any language) is the
-   highlighter. One device and one lexer are shared by every instance on the page: parse calls go through a single
+/* Syntax lexing for CodeEditor's snippets, and the token vocabulary its two renderers share: gpu-lexer (a tiny WebGPU model
+   that labels spans in any language) is the highlighter. One device and one lexer are shared by every instance on the page: parse calls go through a single
    FIFO queue, identical sources share one in-flight call, and results are cached by source text.
 
    A one-time adapter probe decides first. When WebGPU is unavailable (no `navigator.gpu`, no adapter, insecure
@@ -11,7 +11,8 @@ import { navigatorGpu, probeWebGPU, webgpuProbeResult } from '@/lib/webgpu';
 export { probeWebGPU } from '@/lib/webgpu';
 export type { WebGPUProbe } from '@/lib/webgpu';
 
-export type SyntaxTokenType =
+/** The library's token colors: each is a `bl-tok-<type>` class that reads a `--bl-syntax-*` property. */
+export type CodeTokenType =
   | 'plain'
   | 'comment'
   | 'string'
@@ -22,17 +23,31 @@ export type SyntaxTokenType =
   | 'constant'
   | 'operator';
 
-/** A labelled range of the source: half-open UTF-16 offsets (gpu-lexer's output shape). */
-export interface SyntaxSpan {
-  type: SyntaxTokenType;
-  start: number;
-  end: number;
+/** A labelled piece of text, whichever renderer draws it. The pieces of a highlighted range, joined, are that range. */
+export interface CodeToken {
+  text: string;
+  /** Colors it through the library's `bl-tok-*` classes. */
+  type: CodeTokenType;
+  /** A class of your own, as well as or instead of a color (`type: 'plain'`). */
+  className?: string;
 }
 
-/** A labelled piece of one line. */
-export interface SyntaxToken {
-  type: SyntaxTokenType;
-  text: string;
+/** The same as `CodeTokenType`, under the name it had first. */
+export type SyntaxTokenType = CodeTokenType;
+/** The same as `CodeToken`, under the name it had first. */
+export type SyntaxToken = CodeToken;
+
+/** The classes a token draws with. Empty for plain text with no class of its own, which needs no element. */
+export function codeTokenClass(token: Pick<CodeToken, 'className'> & { type?: CodeTokenType }): string {
+  const color = token.type && token.type !== 'plain' ? `bl-tok bl-tok-${token.type}` : '';
+  return token.className ? (color ? `${color} ${token.className}` : token.className) : color;
+}
+
+/** A labelled range of the source: half-open UTF-16 offsets (gpu-lexer's output shape). */
+export interface SyntaxSpan {
+  type: CodeTokenType;
+  start: number;
+  end: number;
 }
 
 /** What produced the tokens: `gpu` (gpu-lexer on WebGPU), `fallback` (no hardware WebGPU, or forced), `pending`

@@ -1,4 +1,4 @@
-/* The one-time WebGPU adapter probe the GPU-backed parts share (SyntaxHighlighting's gpu-lexer, Spreadsheet's sort and
+/* The one-time WebGPU adapter probe the GPU-backed parts share (CodeEditor's gpu-lexer, Spreadsheet's sort and
    histograms): is there an adapter at all, and is it real hardware or a software one (SwiftShader in headless CI,
    llvmpipe)? Each part decides from the answer whether its GPU path is worth taking. */
 

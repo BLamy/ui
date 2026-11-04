@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
    <ObjectValue value={{ type: 'string', value: 'hello' }} />
    <ObjectValue value={previewFromValue({ a: 1, b: [2, 3] })} /> ══ */
 
-/** The tints share SyntaxHighlighting's token colors, so a value and the code next to it read alike. */
+/** The tints share CodeEditor's token colors, so a value and the code next to it read alike. */
 const TINTS: Record<ValueTint, string> = {
   string: 'bl-tok-string',
   number: 'bl-tok-number',

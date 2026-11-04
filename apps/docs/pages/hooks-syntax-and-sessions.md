@@ -1,17 +1,17 @@
 # Syntax, sessions and countdown hooks
 
-Three groups of standalone hooks. `useSyntaxTokens` and `useSyntaxHighlighting` give you the tokens of highlighted code. `useCountdown` is a wall-clock timer. `useSessionRecording`, `useSessions`, `useSessionCloud` and `useCloud` record the page with rrweb into `localStorage`, list the recordings, and (optionally) sync them to a Durable Streams server. The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
+Three groups of standalone hooks. `useSyntaxTokens` and `useCodeEditor` give you the tokens and the text of highlighted code. `useCountdown` is a wall-clock timer. `useSessionRecording`, `useSessions`, `useSessionCloud` and `useCloud` record the page with rrweb into `localStorage`, list the recordings, and (optionally) sync them to a Durable Streams server. The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
 All seven are public.
 
 ```tsx
 // npm
 import {
-  useSyntaxTokens, useSyntaxHighlighting, useCountdown, useSessionRecording, useSessions, useSessionCloud, useCloud,
+  useSyntaxTokens, useCodeEditor, useCountdown, useSessionRecording, useSessions, useSessionCloud, useCloud,
 } from '@brett_lamy/ui'
 
 // shadcn registry (aliases)
-import { useSyntaxTokens, useSyntaxHighlighting } from '@/components/ui/syntax-highlighting'  // …/r/syntax-highlighting.json
+import { useSyntaxTokens, useCodeEditor } from '@/components/ui/code-editor'  // …/r/code-editor.json
 import { useCountdown } from '@/components/ui/progress-ring'                                  // …/r/progress-ring.json
 import { useSessionRecording, useSessions, useSessionCloud } from '@/lib/session-recorder'    // …/r/session-recorder.json
 import { useCloud } from '@/lib/durable-streams'                                              // …/r/durable-streams.json
@@ -19,9 +19,9 @@ import { useCloud } from '@/lib/durable-streams'                                
 
 ## `useSyntaxTokens`
 
-The lines of a piece of code as arrays of tokens, lexed on the GPU through the page's shared gpu-lexer. It returns plain lines at once and highlighted lines when the lexer answers. [SyntaxHighlighting](https://blamy.github.io/ui/#/syntax-highlighting) is built on it; use the hook to lay code out yourself (a diff with two gutters, an editor overlay).
+The lines of a piece of code as arrays of tokens, lexed on the GPU through the page's shared gpu-lexer. It returns plain lines at once and highlighted lines when the lexer answers. [CodeEditor](https://blamy.github.io/ui/#/code-editor) is built on it; use the hook to lay code out yourself (a diff with two gutters, an editor overlay).
 
-- **Export:** public, with `SyntaxTokens`, which renders one line of tokens as `bl-tok-<type>` spans. Registry item `syntax-highlighting`.
+- **Export:** public, with `SyntaxTokens`, which renders one line of tokens as `bl-tok-<type>` spans. Registry item `code-editor`.
 - **Needs:** nothing.
 
 ```ts
@@ -61,22 +61,22 @@ Behaviors to know:
 - **Server render.** On the server `webgpuSupported()` is `false`, so with `engine: 'auto'` the hook returns the **fallback** tokenizer's tokens synchronously. In a WebGPU browser the first client render has no result yet (plain text) until the lexer answers. If you server-render, that is a difference between the server HTML and the first client render; pass `engine="fallback"` for identical output on both. This is from reading the source, not from testing in an SSR app.
 - Changing `engine` re-lexes; changing `code` re-lexes (the previous request's result is ignored once it is stale).
 
-## `useSyntaxHighlighting`
+## `useCodeEditor`
 
-The `code`, `language`, `variant`, `title` and `engine` of the enclosing `SyntaxHighlighting`, for custom parts inside it (a toolbar with its own copy button, a status chip).
+The `getValue`, `language`, `variant`, `title` and `engine` of the enclosing `CodeEditor`, for custom parts inside it (a toolbar with its own copy button, a status chip). `getValue()` is the text as it is when you ask. On a huge document that takes a while, so ask when you need it rather than while rendering. `useSyntaxHighlighting` is the old name, and still returns `code`.
 
-- **Export:** public. Registry item `syntax-highlighting`.
-- **Needs:** a `SyntaxHighlighting` ancestor. **Outside it:** returns `null` (it does not throw).
+- **Export:** public. Registry item `code-editor`.
+- **Needs:** a `CodeEditor` ancestor. **Outside it:** returns `null` (it does not throw).
 
 ```ts
-function useSyntaxHighlighting(): { code: string; language?: string; variant: 'default' | 'ghost' | 'inline'; title?: ReactNode; engine?: SyntaxEngine } | null
+function useCodeEditor(): { getValue: () => string; language?: string; variant: 'default' | 'ghost' | 'inline'; title?: ReactNode; engine?: SyntaxEngine } | null
 ```
 
 ```tsx
-function LineCount() {
-  const ctx = useSyntaxHighlighting()
-  if (!ctx) return null
-  return <span>{ctx.code.split('\n').length} lines</span>
+function DownloadButton() {
+  const editor = useCodeEditor()
+  if (!editor) return null
+  return <Button onPress={() => download(editor.getValue())}>Download</Button>
 }
 ```
 

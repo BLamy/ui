@@ -77,7 +77,7 @@ const { schema, isLoading } = useSchema()
 
 ## SqlEditor
 
-A `<textarea>` (react-aria's `TextArea`) over a highlighted copy of its own text, so selection, IME, undo and mobile keyboards are the browser's and no editor library ships. Highlighting is `lib/sql-lex`, a small PostgreSQL lexer: keywords, types, functions, `'strings'`, `$$ bodies $$`, numbers and nested comments, computed synchronously. The page's shared highlighter (`SyntaxHighlighting`, gpu-lexer) was tried first: its no-WebGPU fallback is C-family shaped, so `--` comments and `select` / `where` are not recognised — and headless browsers have no hardware GPU — hence the dedicated lexer, which feeds the same `bl-tok-*` colors.
+A `<textarea>` (react-aria's `TextArea`) over a highlighted copy of its own text, so selection, IME, undo and mobile keyboards are the browser's and no editor library ships. Highlighting is `lib/sql-lex`, a small PostgreSQL lexer: keywords, types, functions, `'strings'`, `$$ bodies $$`, numbers and nested comments, computed synchronously. The page's shared highlighter (`CodeEditor`, gpu-lexer) was tried first: its no-WebGPU fallback is C-family shaped, so `--` comments and `select` / `where` are not recognised — and headless browsers have no hardware GPU — hence the dedicated lexer, which feeds the same `bl-tok-*` colors.
 
 Tab keeps its job of moving focus, so there is no indenting; that is deliberate (a keyboard trap fails accessibility). `ref` exposes `focus()` and `insert(text)`. `useSqlHistory(key?)` keeps the statements you ran, in localStorage when you pass a key (read after mount, so it is SSR-safe).
 

@@ -1,7 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
-/** Tests whose screens show SyntaxHighlighting (story ids / docs page ids). */
-const GPU = /syntaxhighlighting|syntax-highlighting|github-clone--(file-view|files-changed)|loop-qa--playwright-tests/;
+/** Tests whose screens show CodeEditor in the page (story ids / docs page ids). The windowed renderer labels its text with a lexer of its
+    own, so `organisms-codeeditor--` and its source views stay out of this. */
+const GPU = /syntaxhighlighting|syntax-highlighting|code-editor|codeeditor-read-only|github-clone--(file-view|files-changed)|loop-qa--playwright-tests/;
 const GPU_USE = { channel: 'chromium', launchOptions: { args: ['--enable-unsafe-webgpu'] } };
 
 /* Visual regression for every Storybook story. Baselines are local (gitignored): take them on a clean
@@ -9,7 +10,7 @@ const GPU_USE = { channel: 'chromium', launchOptions: { args: ['--enable-unsafe-
 export default defineConfig({
   testDir: '.',
   // `--project stories` needs Storybook on :6006; `--project docs` needs the docs dev server on :4417.
-  // SyntaxHighlighting lexes on WebGPU (gpu-lexer). Playwright's default headless shell has no WebGPU adapter,
+  // CodeEditor in the page lexes on WebGPU (gpu-lexer). Playwright's default headless shell has no WebGPU adapter,
   // so screens that show highlighted code run in full Chromium (`channel: 'chromium'`, new headless), which gets
   // the Metal adapter on macOS (--enable-unsafe-webgpu turns on SwiftShader where there is no GPU). Everything
   // else stays on the headless shell its baselines were taken with — the two render SVG/text slightly differently.

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { Segmented } from '@/components/ui/segmented';
-import { SyntaxHighlightingCopyButton } from '@/components/ui/syntax-highlighting';
+import { CodeEditorCopyButton } from '@/components/ui/code-editor';
 import { cn } from '@/lib/utils';
 import { CommitMessage, UserAvatar, UserName } from './cards';
 import type { FileNode } from './data';
@@ -282,7 +282,7 @@ export function FileViewer({ ui, node }: { ui: Layout; node: FileNode }) {
         {!ui.phone && file.data != null ? <span className="text-caption text-muted-foreground">{lines} lines · {(code.length / 1024).toFixed(1)} KB</span> : null}
         <span className="flex-1" />
         <Button className={cn(ghButton(), 'h-7 px-2.5 text-caption')} onPress={raw ? () => window.open(raw, '_blank', 'noopener') : undefined}>Raw</Button>
-        <SyntaxHighlightingCopyButton value={code} label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')} />
+        <CodeEditorCopyButton value={code} label="Copy raw file" className={cn(ghButton(), 'h-7 w-7 px-0')} />
       </div>
     }>
       {tooLarge ? (

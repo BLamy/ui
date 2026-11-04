@@ -160,7 +160,7 @@ With `onSelect`, a press selects and the chevron or a double press opens. Sectio
 
 ## Styling
 
-The tree is `data-slot="object-tree"` with rows in `object-tree-row`, whose `data-kind` is `node`, `section`, `range` or `note`; `objectTreeRowVariants` is their recipe. Set `--object-tree-indent` on it to change the indent, 14px by default. The value is `object-value`, with its type in `data-type`. Tints are SyntaxHighlighting's token colors, so a value and the code beside it read alike, and its `--bl-syntax-*` properties retheme both.
+The tree is `data-slot="object-tree"` with rows in `object-tree-row`, whose `data-kind` is `node`, `section`, `range` or `note`; `objectTreeRowVariants` is their recipe. Set `--object-tree-indent` on it to change the indent, 14px by default. The value is `object-value`, with its type in `data-type`. Tints are CodeEditor's token colors, so a value and the code beside it read alike, and its `--bl-syntax-*` properties retheme both.
 
 ## cva recipes
 

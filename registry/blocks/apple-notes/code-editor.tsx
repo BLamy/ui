@@ -1,5 +1,5 @@
 /* A code editor for source and text files: a plain <textarea> over a copy of its text highlighted by the library's
-   gpu-lexer (SyntaxHighlighting's `useSyntaxTokens`), beside line numbers. Selection, IME, spell-check off, find
+   gpu-lexer (the library's `useSyntaxTokens`), beside line numbers. Selection, IME, spell-check off, find
    (⌘F is the browser's) and undo are the browser's own: edits made by the keys below go through `insertText`, so
    ⌘Z undoes them too.
 
@@ -8,7 +8,7 @@
    ⌘S saves at once (edits also save on their own). */
 import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { TextArea } from 'react-aria-components';
-import { SyntaxTokens, useSyntaxTokens } from '@/components/ui/syntax-highlighting';
+import { SyntaxTokens, useSyntaxTokens } from '@/components/ui/code-editor';
 import { cn } from '@/lib/utils';
 
 /** Past this, the text shows plain (the highlighted copy would be most of the work). */

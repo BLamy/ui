@@ -49,7 +49,7 @@ export const PullRequest: Story = {
   render: (args) => <Full><GithubClone {...args} /></Full>,
 };
 
-/** The Code tab's file viewer: SyntaxHighlighting with GitHub's gutter and Primer colors. */
+/** The Code tab's file viewer: CodeEditor with GitHub's gutter and Primer colors. */
 export const FileView: Story = {
   args: { initialPath: 'src/queue.ts' },
   render: (args) => <Full><GithubClone {...args} /></Full>,

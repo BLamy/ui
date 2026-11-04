@@ -1,7 +1,7 @@
 /* The Code tab: the storyboard as React, generated as you edit. With an element selected it shows that element's
    JSX and its scene's file; otherwise any file of the app (App.tsx, each scene, the contexts, the runtime). */
 import { useMemo, useState } from 'react';
-import { SyntaxHighlighting } from '@/components/ui/syntax-highlighting';
+import { CodeEditor } from '@/components/ui/code-editor';
 import { PlainButton } from '@/components/ui/plain-button';
 import { Icon } from '@/lib/icon';
 import { generate, nodeSnippet } from './codegen';
@@ -27,7 +27,7 @@ export function CodePanel({ doc, scene, node }: { doc: Doc; scene: Scene | null;
     <>
       {snippet ? (
         <Section title="This element" help="Its JSX">
-          <SyntaxHighlighting code={snippet} language="tsx" showCopy maxHeight={260} className="text-caption2" />
+          <CodeEditor readOnly value={snippet} language="tsx" showCopy maxHeight={260} className="text-caption2" />
         </Section>
       ) : null}
       <Section title="File" action={(
@@ -36,7 +36,7 @@ export function CodePanel({ doc, scene, node }: { doc: Doc; scene: Scene | null;
         </PlainButton>
       )}>
         <ChoiceInput label="File" value={file.path} options={files.map((f) => ({ id: f.path, label: f.path }))} onChange={setPicked} />
-        <SyntaxHighlighting code={file.code} language="tsx" title={file.path} showCopy maxHeight={520} className="text-caption2" />
+        <CodeEditor readOnly value={file.code} language="tsx" title={file.path} showCopy maxHeight={520} className="text-caption2" />
         <Help>Scenes import the kit by the same paths the registry installs (@/components/ui/…), so the files drop into an app that has them.</Help>
       </Section>
     </>

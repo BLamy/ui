@@ -39,7 +39,7 @@ function fbInline(s: string): React.ReactNode[] {
   return out;
 }
 
-/* tiny JSX/TS highlighter for static code fences. The .wb-tok-* classes (styles.css) read SyntaxHighlighting's
+/* tiny JSX/TS highlighter for static code fences. The .wb-tok-* classes (styles.css) read CodeEditor's
    --bl-syntax-* knobs, defaulting to the Workbench code palette for the surrounding code surface. */
 const HLC = {
   kw: 'wb-tok-keyword',

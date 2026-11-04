@@ -83,4 +83,4 @@ It is for plain elements and [PlainButton](https://blamy.github.io/ui/#/plain-bu
 | `lib/row-label.ts` | internal | `RowLabelContext` and `useRowLabel`. A list row publishes its title's id so a Switch or Slider inside it is labelled by the row title unless it has its own label. |
 | `lib/persistent-host.tsx` | internal | How `ArtifactChatContainer` moves one composer and transcript between its docked column and its floating layer without remounting them: detached host elements portalled into, then re-attached to the current dock. |
 
-`lib/motion.ts`, `lib/theme.tsx`, `lib/icon.tsx` and `lib/syntax.ts` have their own pages: [Motion](https://blamy.github.io/ui/#/motion), [Theming](https://blamy.github.io/ui/#/theming), [Icons](https://blamy.github.io/ui/#/icons) and [SyntaxHighlighting](https://blamy.github.io/ui/#/syntax-highlighting).
+`lib/motion.ts`, `lib/theme.tsx`, `lib/icon.tsx` and `lib/syntax.ts` have their own pages: [Motion](https://blamy.github.io/ui/#/motion), [Theming](https://blamy.github.io/ui/#/theming), [Icons](https://blamy.github.io/ui/#/icons) and [CodeEditor](https://blamy.github.io/ui/#/code-editor).

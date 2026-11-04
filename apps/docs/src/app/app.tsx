@@ -63,6 +63,8 @@ function docsFiles(): Record<string, string> {
     }
     summary.push('');
   }
+  // Pages with no place in the sidebar: the pointer an old name leaves behind, so its links still land somewhere.
+  for (const p of NAV.standalone) if (p.id !== SITE_BLOCKS) files[`${p.id}.md`] = pageSource(p.id);
   // Blocks: the overview, then one wide page per block.
   summary.push('## Blocks', '', `* [Overview](${SITE_BLOCKS}/README.md)`);
   files[`${SITE_BLOCKS}/README.md`] = `---\nlayout: wide\n---\n\n${pageSource(SITE_BLOCKS)}`;

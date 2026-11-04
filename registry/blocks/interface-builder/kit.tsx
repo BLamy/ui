@@ -38,7 +38,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { Spinner, spinnerAnimations, type SpinnerAnimation } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
-import { SyntaxHighlighting } from '@/components/ui/syntax-highlighting';
+import { CodeEditor } from '@/components/ui/code-editor';
 import { TabBar } from '@/components/ui/tab-bar';
 import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs';
 import { FieldDescription, FieldError, TextField } from '@/components/ui/text-field';
@@ -1062,19 +1062,20 @@ export const KIT: Record<string, ComponentSpec> = {
   },
 
   /* ── Editors and workbench ── */
-  SyntaxHighlighting: {
-    type: 'SyntaxHighlighting', title: 'SyntaxHighlighting', section: 'Editors and workbench', source: 'kit', icon: 'terminal',
-    description: 'Code highlighted on the GPU by gpu-lexer: file header, copy button, line numbers, highlighted and diff lines, inline code.',
-    module: '@/components/ui/syntax-highlighting', tag: 'SyntaxHighlighting',
+  CodeEditor: {
+    type: 'CodeEditor', title: 'CodeEditor', section: 'Editors and workbench', source: 'kit', icon: 'terminal',
+    description: 'Code you can edit, or read-only code highlighted on the GPU by gpu-lexer: file header, copy button, line numbers, highlighted and diff lines, inline code.',
+    module: '@/components/ui/code-editor', tag: 'CodeEditor',
     props: [
-      { name: 'code', control: { kind: 'text', multiline: true, mono: true }, default: "const greeting = 'Hello';\nconsole.log(greeting);" },
+      { name: 'value', control: { kind: 'text', multiline: true, mono: true }, default: "const greeting = 'Hello';\nconsole.log(greeting);" },
       { name: 'language', control: { kind: 'enum', options: values('tsx', 'ts', 'js', 'json', 'css', 'bash', 'text') }, default: 'tsx' },
       { name: 'title', control: { kind: 'text' }, default: 'hello.ts' },
       { name: 'showCopy', control: { kind: 'boolean' }, default: true },
       { name: 'lineNumbers', control: { kind: 'boolean' }, default: false },
     ],
     events: [], layout: { width: 'fill' },
-    render: ({ p }) => <SyntaxHighlighting code={str(p.code)} language={str(p.language, 'tsx')} title={p.title ? str(p.title) : undefined} showCopy={!!p.showCopy} lineNumbers={!!p.lineNumbers} />,
+    render: ({ p }) => <CodeEditor readOnly value={str(p.value)} language={str(p.language, 'tsx')} title={p.title ? str(p.title) : undefined} showCopy={!!p.showCopy} lineNumbers={!!p.lineNumbers} />,
+    code: (g) => `<CodeEditor readOnly value={${g.expr('value')}} language={${g.expr('language')}} title={${g.expr('title')}}${g.expr('showCopy') === 'true' ? ' showCopy' : ''}${g.expr('lineNumbers') === 'true' ? ' lineNumbers' : ''} />`,
   },
 
   /* ── React ── */
