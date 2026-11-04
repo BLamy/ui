@@ -38,6 +38,12 @@
       "import": "./dist/opencode.js",
       "default": "./dist/opencode.js"
     },
+    "./cloudflare": {
+      "@org/source": "./src/cloudflare.ts",
+      "types": "./dist/cloudflare.d.ts",
+      "import": "./dist/cloudflare.js",
+      "default": "./dist/cloudflare.js"
+    },
     "./tailscale-sw.js": {
       "@org/source": "./src/lib/tailscale-router/tailscale-sw.js",
       "default": "./dist/tailscale-sw.js"

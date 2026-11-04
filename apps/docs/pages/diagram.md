@@ -193,6 +193,20 @@ It works at 10,000 nodes. These are medians of 3 runs, in headless Chromium on a
 
 The view is where it matters: the smallest zoom is 2%, so a board this size doesn't all fit on the screen even then, and what's drawn is what's near it.
 
+## A panel beside it
+
+`DiagramFrame` is what `StateDiagram` and `CloudflareDiagram` put their panels in: a column beside the board when there's the room, and a tray under it when there isn't, which is closed to begin with, and leaves the board uncovered to watch and press on. Either way there's a bar to open it again, which it hands you to put in `overlay`.
+
+```tsx
+const [host, size] = useContainerSize()
+
+<DiagramFrame host={host} size={size} title="Inspector" panel={<Inspector />} status={name}>
+  {(bar) => <Diagram nodes={nodes} edges={edges} overlay={bar} />}
+</DiagramFrame>
+```
+
+`DiagramPanelSection` and `DiagramPanelField` are the parts of a panel that the two of them share. The second changes something when you've finished with it, on Enter or on leaving it, and Escape puts it back.
+
 ## Server rendering
 
 `renderToString` draws it all, with no browser, and it hydrates with no mismatch: tested in TanStack Start and Next.js. With `useDiagramLayout`, pass a layout done ahead of time as `initial`, or the server draws nothing until the client's laid it out, as ELK's answer takes a while.
@@ -209,6 +223,7 @@ The view is where it matters: the smallest zoom is 2%, so a board this size does
 | `movable` | `editable` | Whether dragging and ⇧ with an arrow move things, for when where they are isn't up to you. |
 | `selectable` | `editable` | Selecting, one at a time or with a marquee. |
 | `connectable` | `editable` | Drawing connections, and moving an edge's ends. |
+| `portsOnly` | `false` | Connect only from named ports: no places to connect on a node without any, and no moving an edge's ends. |
 | `isValidConnection` | `checkConnection` | True, false or the reason. |
 | `createEdge` | an id and its ends | The edge for a new connection. |
 | `selection`, `defaultSelection`, `onSelectionChange` | nothing | What's selected, as `{ nodes, edges }`. |

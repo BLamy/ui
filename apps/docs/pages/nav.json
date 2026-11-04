@@ -123,7 +123,8 @@
         { "id": "adaptive-pane", "title": "AdaptivePane" },
         { "id": "canvas", "title": "Canvas" },
         { "id": "diagram", "title": "Diagram" },
-        { "id": "state-diagram", "title": "StateDiagram" }
+        { "id": "state-diagram", "title": "StateDiagram" },
+        { "id": "cloudflare-diagram", "title": "CloudflareDiagram" }
       ]
     },
     {

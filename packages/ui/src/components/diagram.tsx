@@ -338,6 +338,9 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   onSelectionChange?: (selection: DiagramSelection) => void;
   /** Let the pointer and the keys draw connections, and move an edge's ends. On when `editable` is. */
   connectable?: boolean;
+  /** Connect only from named ports: no places to connect on a node without any, and no moving an edge's ends, so that a press on
+   *  a port that has a selected edge at it starts a new one. */
+  portsOnly?: boolean;
   /** Whether a connection's allowed: true, false, or the reason it isn't, in words. The default keeps to `checkConnection`. */
   isValidConnection?: (connection: DiagramConnection) => boolean | string;
   /** Makes the edge for a new connection. The default's an edge with only its ends and an id. */
@@ -397,7 +400,7 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
 
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
-  nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false, movable: movableProp, connectable: connectableProp,
+  nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false, movable: movableProp, portsOnly = false, connectable: connectableProp,
   isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, lit = NOTHING_SELECTED, onSelectionChange, onActivate, noun, describeNode: nodeLabel, describeEdge: edgeLabel,
   camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, cull, minimap, renderNode,
   background, panning, cursor, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style,
@@ -531,6 +534,7 @@ export function Diagram<N = unknown, E = unknown>({
       for (const port of n.ports ?? []) out.push({ hit: { kind: 'port', id: n.id, port: port.id }, at: portPoint(n, port).p });
     }
     if (!connectable) return out;
+    if (portsOnly) return out;
     if (selection.nodes.length === 1 && !selection.edges.length) {
       const n = laid.index.byId.get(selection.nodes[0]);
       if (n && !n.ports?.length && n.kind !== 'root') for (const side of DIAGRAM_SIDES) out.push({ hit: { kind: 'port', id: n.id, side }, at: anchorPoint(n, side) });
@@ -540,7 +544,7 @@ export function Diagram<N = unknown, E = unknown>({
       if (g) out.push({ hit: { kind: 'end', id: selection.edges[0], end: 'from' }, at: g.start }, { hit: { kind: 'end', id: selection.edges[0], end: 'to' }, at: g.end });
     }
     return out;
-  }, [laid, selection, connectable]);
+  }, [laid, selection, connectable, portsOnly]);
   const labels = useMemo(() => laid.labels.map((l) => ({ id: l.edge.id, box: l.box })), [laid]);
   const hitAt = (p: Pt): DiagramHit => hitTestDiagram(p, { index: laid.index, geometries: laid.geometries, labels, handles: connectable ? handles : undefined }, camera.z);
   const interactive = selectable || editable || connectable;
@@ -647,12 +651,14 @@ export function Diagram<N = unknown, E = unknown>({
       const n = laid.index.byId.get(f.id);
       if (!n || n.kind === 'root') return;
       const port = n.ports?.find((p) => p.direction !== 'in')?.id;
+      if (portsOnly && !port) return;
       const g: DiagramGesture = { k: 'connect', fixed: { node: n.id, ...(port ? { port } : null) }, end: 'to', at: centerOf(n), over: null, valid: null, keyboard: true };
       gesture.current = g;
       setConnecting(g);
       setStatus(`Connecting from ${nameOf(n.id)}. Arrows choose what to connect to, P changes port, Enter connects, Escape cancels.`);
       return;
     }
+    if (portsOnly) return;
     const ends = connectContext?.edgeEnds(f.id);
     const route = laid.geometries.get(f.id);
     if (!ends || !route) return;
