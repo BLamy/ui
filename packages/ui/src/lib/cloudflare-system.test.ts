@@ -105,6 +105,12 @@ describe('a file edited by hand', () => {
     expect(issues.find((i) => i.message.includes('extra'))?.severity).toBe('warning');
   });
 
+  it('leaves out a place that’s nowhere near anything', () => {
+    const { system, issues } = read({ services: [{ id: 'a', kind: 'r2', at: { x: 1e308, y: 0 } }, { id: 'b', kind: 'r2', at: { x: 10_000_000, y: -10_000_000 } }, { id: 'c', kind: 'r2', at: { x: 0, y: 10_000_001 } }] });
+    expect(system.services).toEqual([{ id: 'a', kind: 'r2' }, { id: 'b', kind: 'r2', at: { x: 10_000_000, y: -10_000_000 } }, { id: 'c', kind: 'r2' }]);
+    expect(issues.map((i) => i.service)).toEqual(['a', 'c']);
+  });
+
   it('copes with an edge the same way', () => {
     const { system, issues } = read({
       services: [{ id: 'a', kind: 'workers' }],

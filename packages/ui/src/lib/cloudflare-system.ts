@@ -25,6 +25,9 @@ export interface SystemIssue {
 export const EMPTY_SYSTEM: CloudflareSystem = { services: [], edges: [] };
 
 const isPlain = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+/** How far from the middle a place can be. Past that, it's a mistake, and fitting it all in the view would leave nothing to see. */
+const FARTHEST = 10_000_000;
+const isPlace = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= FARTHEST;
 const areStrings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
 
 /* ── Saving and loading ── */
@@ -75,8 +78,8 @@ export function parseSystem(text: string): { system: CloudflareSystem; issues: S
     else if (s.binding !== undefined) odd('service-field', `${s.id}: \`binding\` has to be text, so it’s been left out.`, { service: s.id });
     if (typeof s.resource === 'string') made.resource = s.resource;
     else if (s.resource !== undefined) odd('service-field', `${s.id}: \`resource\` has to be text, so it’s been left out.`, { service: s.id });
-    if (isPlain(s.at) && Number.isFinite(s.at.x) && Number.isFinite(s.at.y)) made.at = { x: s.at.x as number, y: s.at.y as number };
-    else if (s.at !== undefined) odd('service-field', `${s.id}: \`at\` has to be numbers, so it’s been left out.`, { service: s.id });
+    if (isPlain(s.at) && isPlace(s.at.x) && isPlace(s.at.y)) made.at = { x: s.at.x as number, y: s.at.y as number };
+    else if (s.at !== undefined) odd('service-field', `${s.id}: \`at\` has to be numbers, up to ${FARTHEST} from the middle, so it’s been left out.`, { service: s.id });
     if (isPlain(s.machine)) made.machine = s.machine;
     else if (s.machine !== undefined) bad('service-field', `${s.id}: \`machine\` has to be a machine’s config, so it’s been left out.`, { service: s.id });
     for (const key of Object.keys(s)) if (!SERVICE_KEYS.has(key)) odd('unknown-field', `${s.id} has \`${key}\`, which a service doesn’t have, so it’s been left out.`, { service: s.id });
