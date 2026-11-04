@@ -1,0 +1,26 @@
+{
+  "name": "terminal-line",
+  "title": "Terminal line discipline",
+  "description": "Line editing, history, completion, Ctrl-C and a prompt, for a terminal with no PTY behind it: pure functions, and a shell that ties them to a command handler and outlives the component showing it.",
+  "files": [
+    "lib/terminal-line.ts"
+  ],
+  "exports": [
+    "createTerminalShell",
+    "createLineState",
+    "applyKey",
+    "applyCompletion",
+    "readKeys",
+    "renderLine",
+    "eraseLine",
+    "wordAtCursor",
+    "formatColumns",
+    "cellWidth",
+    "textWidth",
+    "stripAnsi",
+    "advance",
+    "toTerminalNewlines",
+    "trimTranscript",
+    "MAX_HISTORY"
+  ]
+}

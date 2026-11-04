@@ -1,0 +1,23 @@
+{
+  "name": "terminal",
+  "title": "Terminal",
+  "description": "A real terminal emulator on wterm, themed from the library's tokens in light and dark. It fills its container and refits as that resizes. Connect it to a PTY with onData and write, or run whole lines with no PTY: prompt and onCommand add line editing, history, completion and Ctrl-C.",
+  "page": "terminal",
+  "files": [
+    "components/terminal.tsx"
+  ],
+  "exports": [
+    "Terminal",
+    "terminalVariants"
+  ],
+  "imports": [
+    "Terminal"
+  ],
+  "types": [
+    "TerminalProps",
+    "TerminalHandle"
+  ],
+  "css": {
+    "@import \"@wterm/dom/css\" layer(components)": {}
+  }
+}
