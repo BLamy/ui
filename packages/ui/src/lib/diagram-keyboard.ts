@@ -81,7 +81,8 @@ export type DiagramFocusStep = keyof typeof DIRS | 'edge+' | 'edge-' | 'in' | 'o
 /** Everything that can be focused, in order: nodes, then edges. */
 export function focusOrder({ index, edges }: DiagramFocusContext): DiagramFocus[] {
   return [
-    ...index.nodes.map((n): DiagramFocus => ({ kind: 'node', id: n.id })),
+    // A root's the background: a pointer can't land on it, and it can't be selected or connected.
+    ...index.nodes.filter((n) => n.kind !== 'root').map((n): DiagramFocus => ({ kind: 'node', id: n.id })),
     ...edges.filter((e) => index.byId.has(e.from) && index.byId.has(e.to)).map((e): DiagramFocus => ({ kind: 'edge', id: e.id })),
   ];
 }
@@ -90,7 +91,7 @@ export function focusOrder({ index, edges }: DiagramFocusContext): DiagramFocus[
 export function stepFocus(current: DiagramFocus | null, step: DiagramFocusStep, ctx: DiagramFocusContext): DiagramFocus | null {
   const order = focusOrder(ctx);
   if (!order.length) return null;
-  const nodes = ctx.index.nodes;
+  const nodes = order.filter((f) => f.kind === 'node');
   if (step === 'first') return nodes.length ? { kind: 'node', id: nodes[0].id } : null;
   if (step === 'last') return nodes.length ? { kind: 'node', id: nodes[nodes.length - 1].id } : null;
   if (!current) return order[0];

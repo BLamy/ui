@@ -35,6 +35,20 @@ export interface MachineLike {
   implementations?: { delays?: Readonly<Record<string, unknown>> };
 }
 
+/** Where a transition's written in a machine's config. */
+export interface TransitionPlace {
+  /** The keys of its state, from the root. */
+  state: readonly string[];
+  /** That state's id. */
+  stateId: string;
+  /** The event, or null for `always`. */
+  event: string | null;
+  /** Its place in that event's list. */
+  index: number;
+  /** Which of its targets, when it has more than one. */
+  target: number;
+}
+
 /** What a state's edge stands for, for simulating and editing. */
 export interface StateEdgeData {
   /** The event that takes it: an event's name, or XState's own `xstate.after…` and `xstate.done…`. Absent on `always` and initial edges. */
@@ -77,7 +91,7 @@ const label = (name: string, guard: string | undefined) => (guard ? `${name} [${
 /** A machine as a draft for `useDiagramLayout`: a node for each state and each initial marker, and an edge for each way out,
  *  including `always`, `after`, `invoke` and transitions that stay where they are. Ids follow the machine's, and stay the
  *  same each time, so a state can be found again. */
-export function machineToDraft(machine: MachineLike, onEdge?: (transition: MachineTransition, edgeId: string) => void): DiagramDraft<StateNodeData, StateEdgeData> {
+export function machineToDraft(machine: MachineLike, onEdge?: (transition: MachineTransition, edgeId: string, place: TransitionPlace) => void): DiagramDraft<StateNodeData, StateEdgeData> {
   const nodes: DiagramDraftNode<StateNodeData>[] = [];
   const edges: DiagramEdge<StateEdgeData>[] = [];
   const used = new Map<string, number>();
@@ -86,7 +100,7 @@ export function machineToDraft(machine: MachineLike, onEdge?: (transition: Machi
     used.set(base, n + 1);
     return n ? `${base}#${n}` : base;
   };
-  const walk = (n: MachineStateNode, parent: string | null) => {
+  const walk = (n: MachineStateNode, parent: string | null, path: readonly string[]) => {
     const kids = Object.values(n.states ?? {});
     const invokes = (n.invoke ?? []).map((i) => srcName(i.src));
     const isRegion = n.parent?.type === 'parallel' && kids.length > 0;
@@ -102,27 +116,27 @@ export function machineToDraft(machine: MachineLike, onEdge?: (transition: Machi
     }
     for (const [event, list] of n.transitions) {
       const { name, kind: edgeKind } = describeEvent(event);
-      for (const t of list) {
+      list.forEach((t, index) => {
         const guard = guardName(t.guard);
         const internal = !t.target?.length;
-        for (const to of internal ? [n] : t.target!) {
+        (internal ? [n] : t.target!).forEach((to, target) => {
           const id = edgeId(`${n.id}:${event}->${to.id}`);
           edges.push({ id, from: n.id, to: to.id, kind: edgeKind, label: label(name, guard), data: { event, ...(guard ? { guard } : null), ...(internal ? { internal } : null) } });
-          onEdge?.(t, id);
-        }
-      }
+          onEdge?.(t, id, { state: path, stateId: n.id, event, index, target });
+        });
+      });
     }
-    for (const t of n.always ?? []) {
+    (n.always ?? []).forEach((t, index) => {
       const guard = guardName(t.guard);
-      for (const to of t.target?.length ? t.target : [n]) {
+      (t.target?.length ? t.target : [n]).forEach((to, target) => {
         const id = edgeId(`${n.id}:always->${to.id}`);
         edges.push({ id, from: n.id, to: to.id, kind: 'always', label: label('always', guard), data: { ...(guard ? { guard } : null) } });
-        onEdge?.(t, id);
-      }
-    }
-    for (const k of kids) walk(k, n.id);
+        onEdge?.(t, id, { state: path, stateId: n.id, event: null, index, target });
+      });
+    });
+    for (const k of kids) walk(k, n.id, [...path, k.key]);
   };
-  walk(machine.root, null);
+  walk(machine.root, null, []);
   return { nodes, edges };
 }
 
@@ -135,5 +149,24 @@ export function machineEdgeIds(machine: MachineLike): Map<MachineTransition, str
     if (ids) ids.push(id);
     else out.set(transition, [id]);
   });
+  return out;
+}
+
+/** Where each edge is written in the machine's config, by the ids `machineToDraft` gives them. An initial marker's isn't
+ *  there, as it's only drawn. */
+export function machineEdgePlaces(machine: MachineLike): Map<string, TransitionPlace> {
+  const out = new Map<string, TransitionPlace>();
+  machineToDraft(machine, (_transition, id, place) => { out.set(id, place); });
+  return out;
+}
+
+/** Where each state is in the machine's config, by its id: the keys from the root. */
+export function machineStatePaths(machine: MachineLike): Map<string, readonly string[]> {
+  const out = new Map<string, readonly string[]>();
+  const walk = (n: MachineStateNode, path: readonly string[]) => {
+    out.set(n.id, path);
+    for (const k of Object.values(n.states ?? {})) walk(k, [...path, k.key]);
+  };
+  walk(machine.root, []);
   return out;
 }

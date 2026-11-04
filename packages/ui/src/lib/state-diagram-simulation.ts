@@ -181,6 +181,8 @@ export function activeLeaves(root: MachineStateNode, ids: readonly string[]): st
 
 /* ── The simulation ── */
 
+/** How what's said about a machine that never settles begins. */
+export const NEVER_SETTLES = 'This machine never settles';
 /** How many `always` guards one event can go through before it's taken as never settling. */
 export const SETTLE_LIMIT = 2000;
 /** How many timers one move of the clock can fire before they're taken as never settling. */
@@ -282,7 +284,7 @@ export function createSimulation(xstate: XState, config: unknown, standIns: Simu
       [INLINE_GUARD]: () => true,
       // Every `always` comes through here, so one that goes round for ever comes through here for ever.
       [SETTLE]: (_args: unknown, params: { guard?: string } | undefined) => {
-        if (++settling > SETTLE_LIMIT) throw new Error(`This machine never settles: it was still going through always transitions after ${SETTLE_LIMIT} of them.`);
+        if (++settling > SETTLE_LIMIT) throw new Error(`${NEVER_SETTLES}: it was still going through always transitions after ${SETTLE_LIMIT} of them.`);
         return params?.guard ? guards[params.guard] ?? true : true;
       },
     },
@@ -413,7 +415,7 @@ export function createSimulation(xstate: XState, config: unknown, standIns: Simu
     advance: (ms) => {
       if (!isRunning()) return;
       if (!clock.advance(clock.now + ms, TIMER_LIMIT)) {
-        halted = `This machine never settles: it was still firing timers after ${TIMER_LIMIT} of them, with ${Math.round(clock.now)} ms gone.`;
+        halted = `${NEVER_SETTLES}: it was still firing timers after ${TIMER_LIMIT} of them, with ${Math.round(clock.now)} ms gone.`;
         actor?.stop();
         note('Stopped');
       }

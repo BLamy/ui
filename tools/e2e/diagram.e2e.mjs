@@ -1454,3 +1454,335 @@ test.describe('StateDiagram simulates', () => {
     await expect(now(page)).toHaveText('streaming');
   });
 });
+
+test.describe('StateDiagram edits', () => {
+  const node = (page, id) => page.locator(`[data-slot=diagram-node][data-node="${id}"]`);
+  const edge = (page, id) => page.locator(`[data-slot=diagram-edge][data-edge="${id}"]`);
+  const refusal = (page) => page.locator('[data-slot=edit-refusal]');
+  const field = (page, slot) => page.locator(`[data-slot=${slot}] input`);
+  const open = async (page, demo = 'state-diagram/edit') => {
+    await page.goto(`/?demo=${demo}&theme=light`, { waitUntil: 'load' });
+    await expect(page.locator('[data-slot=edit-panel]')).toBeVisible({ timeout: 30_000 });
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBeGreaterThan(3);
+  };
+  /** Presses on it. A container can have something over its middle, so a press goes just inside its corner. */
+  const select = async (page, id) => {
+    const b = await node(page, id).boundingBox();
+    await page.mouse.click(b.x + Math.min(b.width / 2, 12), b.y + Math.min(b.height / 2, 12));
+    await expect(node(page, id)).toHaveAttribute('data-selected', 'true');
+  };
+  /** Layers over the board don't take a press, so it goes where the pointer would. */
+  const pressOn = async (page, id) => {
+    const b = await node(page, id).boundingBox();
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  };
+  const rename = async (page, name) => {
+    await field(page, 'edit-name').fill(name);
+    await field(page, 'edit-name').press('Enter');
+  };
+  /** A real drag from the dot on one side of a selected state to the middle of another. */
+  const connect = async (page, from, to) => {
+    await select(page, from);
+    const dot = await page.locator(`[data-slot=diagram-port][data-port-of="${from}"][data-side=r]`).boundingBox();
+    const b = await node(page, to).boundingBox();
+    await page.mouse.move(dot.x + dot.width / 2, dot.y + dot.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+    await page.mouse.up();
+  };
+  const graph = (page) => page.evaluate(() => ({
+    nodes: [...document.querySelectorAll('[data-slot=diagram-node]')].map((n) => `${n.getAttribute('data-node')}:${n.getAttribute('data-kind')}`).sort(),
+    edges: [...document.querySelectorAll('[data-slot=diagram-edge]')].map((n) => n.getAttribute('data-edge')).sort(),
+    labels: [...document.querySelectorAll('[data-slot=diagram-edge-label]')].map((n) => n.textContent).sort(),
+  }));
+  const run = (page, name) => page.getByRole('radio', { name }).click({ force: true });
+
+  test('adds a state, names it, connects it with a real drag, and takes it all back', async ({ page }) => {
+    await open(page);
+    const before = await graph(page);
+    await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
+    await page.locator('[data-slot=edit-add-state]').click();
+    await expect(node(page, 'door.state')).toHaveAttribute('data-selected', 'true');
+    await expect(field(page, 'edit-name')).toHaveValue('state');
+    await rename(page, 'broken');
+    await expect(node(page, 'door.broken')).toHaveAttribute('data-selected', 'true');
+    await expect(node(page, 'door.state')).toHaveCount(0);
+    await expect(field(page, 'edit-name')).toHaveValue('broken');
+
+    await connect(page, 'door.broken', 'door.closed');
+    const made = edge(page, 'door.broken:EVENT->door.closed');
+    await expect(made).toHaveCount(1);
+    await expect(made).toHaveAttribute('data-selected', 'true');
+    await expect(field(page, 'edit-event')).toHaveValue('EVENT');
+    await field(page, 'edit-event').fill('REPAIR');
+    await field(page, 'edit-event').press('Enter');
+    await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveAttribute('data-selected', 'true');
+    await field(page, 'edit-guard').fill('canRepair');
+    await field(page, 'edit-guard').press('Enter');
+    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'REPAIR [canRepair]' })).toHaveCount(1);
+    // That name's new, with nothing behind it.
+    await expect(page.locator('[data-slot=edit-missing] [data-kind=guards]')).toContainText('canRepair');
+    await expect(page.locator('[data-slot=edit-missing] [data-kind=actors]')).toContainText('alarm');
+    await field(page, 'edit-guard').fill('');
+    await field(page, 'edit-guard').press('Enter');
+    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'canRepair' })).toHaveCount(0);
+    await expect(page.locator('[data-slot=edit-missing] [data-kind=guards]')).not.toContainText('canRepair');
+    // The same two states can be connected again.
+    await connect(page, 'door.broken', 'door.closed');
+    await expect(edge(page, 'door.broken:EVENT->door.closed')).toHaveCount(1);
+    await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveCount(1);
+
+    // Back through all of it, one at a time.
+    for (let i = 0; i < 7; i++) await page.locator('[data-slot=edit-undo]').click();
+    await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
+    await expect.poll(() => graph(page)).toEqual(before);
+    // And forward again.
+    for (let i = 0; i < 7; i++) await page.locator('[data-slot=edit-redo]').click();
+    await expect(page.locator('[data-slot=edit-redo]')).toBeDisabled();
+    await expect(edge(page, 'door.broken:EVENT->door.closed')).toHaveCount(1);
+    await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveCount(1);
+  });
+
+  test('renaming one that’s targeted from elsewhere keeps what goes to it', async ({ page }) => {
+    await open(page);
+    await select(page, 'door.closed');
+    await rename(page, 'shut');
+    await expect(node(page, 'door.shut')).toHaveAttribute('data-selected', 'true');
+    for (const id of ['door.open:CLOSE->door.shut', 'door.locked:UNLOCK->door.shut', 'door.shut:OPEN->door.open', 'door.shut:LOCK->door.locked']) await expect(edge(page, id)).toHaveCount(1);
+    // It's still where it starts.
+    await expect(edge(page, 'door.__initial->door.shut')).toHaveCount(1);
+    await expect(page.locator('[data-slot=edit-make-start]')).toBeDisabled();
+    await expect(page.locator('[data-slot=edit-refusal]')).toHaveCount(0);
+  });
+
+  test('refuses what XState won’t have, says why, and changes nothing', async ({ page }) => {
+    await open(page);
+    const before = await graph(page);
+    // Where a compound starts.
+    await select(page, 'door.closed');
+    await page.locator('[data-slot=edit-delete]').click();
+    await expect(refusal(page)).toContainText('closed');
+    await expect(refusal(page)).toHaveAttribute('role', 'alert');
+    expect(await graph(page)).toEqual(before);
+    await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
+    // A name that's taken, with the field going back to what it was.
+    await rename(page, 'open');
+    await expect(refusal(page)).toContainText('already a state called “open”');
+    await expect(field(page, 'edit-name')).toHaveValue('closed');
+    expect(await graph(page)).toEqual(before);
+    // A name that wouldn't work in a target.
+    await rename(page, 'a.b');
+    await expect(refusal(page)).toContainText('dot');
+    // The Delete key says the same, from the board.
+    await pressOn(page, 'door.open');
+    await pressOn(page, 'door.closed');
+    await page.keyboard.press('Delete');
+    await expect(refusal(page)).toContainText('closed');
+    expect(await graph(page)).toEqual(before);
+    // Starting somewhere else lets it go, and clears what was said.
+    await select(page, 'door.open');
+    await page.locator('[data-slot=edit-make-start]').click();
+    await expect(refusal(page)).toHaveCount(0);
+    await expect(edge(page, 'door.__initial->door.open')).toHaveCount(1);
+    await select(page, 'door.closed');
+    await page.locator('[data-slot=edit-delete]').click();
+    await expect(node(page, 'door.closed')).toHaveCount(0);
+    await expect(edge(page, 'door.open:CLOSE->door.closed')).toHaveCount(0);
+    // What only says where it starts can't be deleted.
+    const line = edge(page, 'door.__initial->door.open');
+    await expect(line).toHaveCount(1);
+    const b = await page.locator('[data-slot=diagram-node][data-node="door.__initial"]').boundingBox();
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+    await page.keyboard.press('Delete');
+    await expect(refusal(page)).toContainText('where it starts');
+    await expect(line).toHaveCount(1);
+  });
+
+  test('saved as JSON and loaded, it’s the same graph and the same run', async ({ page }) => {
+    await open(page);
+    await page.locator('[data-slot=edit-add-state]').click();
+    await rename(page, 'broken');
+    await connect(page, 'door.broken', 'door.closed');
+    await connect(page, 'door.closed', 'door.broken');
+    await expect(edge(page, 'door.closed:EVENT->door.broken')).toHaveCount(1);
+    await select(page, 'door.open');
+    await rename(page, 'ajar');
+    await expect(node(page, 'door.ajar')).toHaveCount(1);
+    const walk = async () => {
+      await run(page, 'Run');
+      await page.locator('[data-slot=simulation-reset]').click();
+      await page.locator('[data-slot=simulation-event][data-event=EVENT]').click();
+      await expect(page.locator('[data-slot=simulation-now]')).toHaveText('broken');
+      await page.locator('[data-slot=simulation-event][data-event=EVENT]').click();
+      await expect(page.locator('[data-slot=simulation-now]')).toHaveText('closed');
+      await page.locator('[data-slot=simulation-event][data-event=OPEN]').click();
+      await expect(page.locator('[data-slot=simulation-now]')).toHaveText('ajar');
+      await page.locator('[data-slot=simulation-next]').click();
+      await expect(page.locator('[data-slot=simulation-now]')).toHaveText('closed');
+      const log = await page.locator('[data-slot=simulation-log-entry]').allTextContents();
+      await run(page, 'Edit');
+      return log;
+    };
+    const graphBefore = await graph(page);
+    const runBefore = await walk();
+    expect(runBefore).toHaveLength(5);
+    await page.getByRole('button', { name: 'Save as JSON' }).click();
+    const saved = await page.getByRole('textbox', { name: 'The config, as JSON' }).inputValue();
+    expect(JSON.parse(saved).states.ajar.on.CLOSE).toBe('closed');
+    expect(JSON.parse(saved).initial).toBe('closed');
+    // Start from somewhere else altogether, so that loading really does something.
+    await page.getByRole('button', { name: 'Start again' }).click();
+    await expect(node(page, 'door.broken')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Load it' }).click();
+    await expect(node(page, 'door.broken')).toHaveCount(1);
+    await expect.poll(() => graph(page)).toEqual(graphBefore);
+    expect(await walk()).toEqual(runBefore);
+    // There's nothing to undo from something that's only been loaded.
+    await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
+    // And what XState won't have, from outside, says so.
+    for (const bad of [{ id: 'x', initial: 'nope', states: { a: {} } }, { id: 'x', initial: 'a', states: { a: { on: { GO: 'nope' } } } }]) {
+      await page.getByRole('textbox', { name: 'The config, as JSON' }).fill(JSON.stringify(bad));
+      await page.getByRole('button', { name: 'Load it' }).click();
+      await expect(page.locator('[data-slot=state-diagram-error]')).toContainText('nope');
+    }
+    // And something else again brings it back.
+    await page.getByRole('button', { name: 'Start again' }).click();
+    await expect(page.locator('[data-slot=state-diagram-error]')).toHaveCount(0);
+    await expect(node(page, 'door.closed')).toHaveCount(1);
+  });
+
+  test('editing while it’s running starts it over on the new machine, with the guards as they were', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    await open(page);
+    await run(page, 'Run');
+    await page.locator('[data-slot=simulation-event][data-event=OPEN]').click();
+    await expect(page.locator('[data-slot=simulation-now]')).toHaveText('open');
+    await expect(page.locator('[data-lit-of="door.open"]')).toHaveCount(1);
+    await page.locator('[data-guard=hasKey] [data-slot=switch]').click();
+    // A refused edit doesn't touch it.
+    await run(page, 'Edit');
+    await select(page, 'door.closed');
+    await page.locator('[data-slot=edit-delete]').click();
+    await expect(refusal(page)).toBeVisible();
+    await run(page, 'Run');
+    await expect(page.locator('[data-slot=simulation-now]')).toHaveText('open');
+    await expect(page.locator('[data-slot=simulation-log-entry]')).not.toHaveCount(1);
+    // Renaming what it's in, while the clock's running.
+    await page.locator('[data-slot=simulation-run]').click();
+    await run(page, 'Edit');
+    await select(page, 'door.open');
+    await rename(page, 'ajar');
+    await run(page, 'Run');
+    await expect(page.locator('[data-slot=simulation-now]')).toHaveText('closed');
+    await expect(page.locator('[data-slot=simulation-log-entry]')).toHaveCount(1);
+    await expect(page.locator('[data-lit-of="door.closed"]')).toHaveCount(1);
+    await expect(page.locator('[data-lit-of="door.open"]')).toHaveCount(0);
+    // The clock isn't running on its own.
+    await expect(page.getByRole('button', { name: 'Run', exact: true })).toBeVisible();
+    // The guard's as it was.
+    await expect(page.locator('[data-guard=hasKey] input')).not.toBeChecked();
+    expect(await page.locator('[data-slot=simulation-event]').evaluateAll((els) => els.map((el) => el.getAttribute('data-event')))).toEqual(['OPEN']);
+    // It runs what's there now.
+    await page.locator('[data-slot=simulation-event][data-event=OPEN]').click();
+    await expect(page.locator('[data-slot=simulation-now]')).toHaveText('ajar');
+    await expect(page.locator('[data-lit-of="door.ajar"]')).toHaveCount(1);
+    // Taking away what it's in.
+    await run(page, 'Edit');
+    await select(page, 'door.ajar');
+    await page.locator('[data-slot=edit-delete]').click();
+    await run(page, 'Run');
+    await expect(page.locator('[data-slot=simulation-now]')).toHaveText('closed');
+    expect(errors).toEqual([]);
+  });
+
+  test('nothing moves when it’s dragged, as positions are the layout’s, and the keys work', async ({ page }) => {
+    await open(page);
+    const before = await node(page, 'door.closed').boundingBox();
+    await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(before.x + 60, before.y + 60, { steps: 6 });
+    await page.mouse.up();
+    expect(await node(page, 'door.closed').boundingBox()).toEqual(before);
+    await expect(page.locator('[data-slot=edit-undo]')).toBeDisabled();
+
+    // Select with a press, and let the keys do the rest.
+    await select(page, 'door.jammed');
+    await page.keyboard.press('Delete');
+    await expect(node(page, 'door.jammed')).toHaveCount(0);
+    await expect(page.locator('[data-slot=edit-undo]')).toBeEnabled();
+    // ⌘Z from the board undoes it, and ⌘⇧Z does it again.
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(node(page, 'door.jammed')).toHaveCount(1);
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await expect(node(page, 'door.jammed')).toHaveCount(0);
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(node(page, 'door.jammed')).toHaveCount(1);
+    // In a field, it's for the field.
+    await select(page, 'door.jammed');
+    await page.locator('[data-slot=edit-add-state]').click();
+    await expect(field(page, 'edit-name')).toHaveValue('state');
+    await field(page, 'edit-name').fill('typed');
+    await field(page, 'edit-name').press('ControlOrMeta+z');
+    await expect(node(page, 'door.state')).toHaveCount(1);
+    await field(page, 'edit-name').press('Escape');
+    await expect(field(page, 'edit-name')).toHaveValue('state');
+    // C connects by keyboard, as on any Diagram.
+    const status = page.locator('[data-slot=diagram-status]');
+    await page.locator('[data-slot=canvas]').focus();
+    await page.keyboard.press('End');
+    await page.keyboard.press('c');
+    await expect(status).toContainText('Connecting from');
+    await page.keyboard.press('ArrowUp');
+    await expect(status).toContainText('To ');
+    await page.keyboard.press('Enter');
+    await expect.poll(async () => (await graph(page)).edges.filter((e) => e.includes(':EVENT->')).length).toBe(1);
+    await expect(refusal(page)).toHaveCount(0);
+  });
+
+  test('the phone: the tray has it all, with the board above to press on', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 780 });
+    await page.goto('/?demo=state-diagram/edit&theme=light', { waitUntil: 'load' });
+    const opener = page.locator('[data-slot=simulation-open]');
+    await expect(opener).toBeVisible({ timeout: 30_000 });
+    await opener.click();
+    await expect(page.locator('[data-slot=credenza]')).toBeVisible();
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBeGreaterThan(3);
+    await page.getByRole('radio', { name: 'Edit' }).click({ force: true });
+    await expect(page.locator('[data-slot=edit-panel]')).toBeVisible();
+    await select(page, 'door.open');
+    await expect(page.locator('[data-slot=credenza]')).toBeVisible();
+    await rename(page, 'ajar');
+    await expect(node(page, 'door.ajar')).toHaveCount(1);
+    await expect(edge(page, 'door.closed:OPEN->door.ajar')).toHaveCount(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  });
+
+  test('a machine’s own implementations count, and code in a config is pointed out', async ({ page }) => {
+    await page.setViewportSize({ width: 2000, height: 900 });
+    await open(page, 'state-diagram/edit-machine');
+    // It has all of its own, so nothing's listed, and neither is its code, as it isn't in the config.
+    await expect(page.locator('[data-slot=edit-missing]')).toHaveCount(0);
+    await expect(page.locator('[data-slot=edit-inline]')).toHaveCount(0);
+    await select(page, 'upload.worker.streaming');
+    await rename(page, 'receiving');
+    await expect(node(page, 'upload.worker.receiving')).toHaveCount(1);
+    await expect(page.locator('[data-slot=edit-missing]')).toHaveCount(0);
+    // A press on the middle of its line.
+    const line = edge(page, 'upload.worker.receiving:EOF->upload.worker.committing');
+    const at = await line.evaluate((el) => {
+      const p = el.getPointAtLength(el.getTotalLength() / 2);
+      const m = el.getScreenCTM();
+      return { x: m.a * p.x + m.e, y: m.d * p.y + m.f };
+    });
+    await page.mouse.click(at.x, at.y);
+    await expect(line).toHaveAttribute('data-selected', 'true');
+    await expect(field(page, 'edit-guard')).toBeVisible();
+    await field(page, 'edit-guard').fill('hasEnoughBytes');
+    await field(page, 'edit-guard').press('Enter');
+    await expect(page.locator('[data-slot=edit-missing] [data-kind=guards]')).toHaveText('guards: hasEnoughBytes');
+    await page.getByRole('button', { name: 'With code in it' }).click();
+    await expect(page.locator('[data-slot=edit-inline]')).toContainText('states.a.entry');
+  });
+});

@@ -328,6 +328,8 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   selectable?: boolean;
   /** Let the pointer and the keys move and delete things, with undo. */
   editable?: boolean;
+  /** Whether dragging and ⇧ with an arrow move things, for when where they are isn't up to you. On when `editable` is. */
+  movable?: boolean;
   selection?: DiagramSelection;
   defaultSelection?: DiagramSelection;
   /** What to pick out, apart from what's selected: where a machine is, and how it got there. Each lit node says so to a screen
@@ -395,13 +397,14 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
 
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
-  nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false, connectable: connectableProp,
+  nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onChange, selectable: selectableProp, editable = false, movable: movableProp, connectable: connectableProp,
   isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, lit = NOTHING_SELECTED, onSelectionChange, onActivate, noun, describeNode: nodeLabel, describeEdge: edgeLabel,
   camera: controlled, defaultCamera, onCameraChange, fitPadding = 24, autoSize, cull, minimap, renderNode,
   background, panning, cursor, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style,
 }: DiagramProps<N, E>) {
   const selectable = selectableProp ?? editable;
   const connectable = connectableProp ?? editable;
+  const movable = movableProp ?? editable;
   const [ref, size] = useContainerSize<HTMLDivElement>({ width: 1000, height: 700 });
   const [own, setOwn] = useState<Camera | null>(defaultCamera ?? null);
   const arrow = `diagram-arrow-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -487,7 +490,7 @@ export function Diagram<N = unknown, E = unknown>({
       return e ? { from: { node: e.from, ...(e.fromPort ? { port: e.fromPort } : null) }, to: { node: e.to, ...(e.toPort ? { port: e.toPort } : null) } } : null;
     },
   } : undefined;
-  const gestureContext = () => ({ index: laid.index, selection: selectionRef.current, zoom: camera.z, editable, connect: connectContext });
+  const gestureContext = () => ({ index: laid.index, selection: selectionRef.current, zoom: camera.z, editable: movable, connect: connectContext });
   const applyConnection = (c: DiagramConnection) => {
     const base = dataRef.current;
     if (c.edge) commit({ nodes: base.nodes, edges: moveEdgeEnd(base.edges, c as DiagramConnection & { edge: string }) }, 'reconnect');
@@ -726,7 +729,7 @@ export function Diagram<N = unknown, E = unknown>({
       change({ ...camera, x: camera.x + (e.key === 'ArrowLeft' ? by : e.key === 'ArrowRight' ? -by : 0), y: camera.y + (e.key === 'ArrowUp' ? by : e.key === 'ArrowDown' ? -by : 0) });
       return;
     }
-    if (arrow && e.shiftKey && editable) {
+    if (arrow && e.shiftKey && movable) {
       // Shift and an arrow nudges, what's selected or else what's focused: 8 at a time, or 1 with Alt.
       e.preventDefault();
       const sel = selectionRef.current.nodes;

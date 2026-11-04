@@ -97,3 +97,29 @@ const SPIN = { id: 'spin', initial: 'tick', states: { tick: { always: 'tock' }, 
 export const NeverSettles: Story = {
   render: () => <Phone w={900} h={360}><StateDiagram config={SPIN} simulate /></Phone>,
 };
+
+/** Editing: what's selected can be changed in the panel, and it writes to the config. */
+export const Editing: Story = {
+  render: () => <Phone w={1100} h={520}><StateDiagram config={DOOR} editable /></Phone>,
+};
+
+export const EditingDark: Story = {
+  render: () => <Phone w={1100} h={520} dark><StateDiagram config={DOOR} editable /></Phone>,
+};
+
+export const EditingAState: Story = {
+  render: () => <Phone w={1100} h={520}><StateDiagram config={DOOR} editable defaultSelection={{ nodes: ['door.open'], edges: [] }} /></Phone>,
+};
+
+export const EditingATransition: Story = {
+  render: () => <Phone w={1100} h={520}><StateDiagram config={DOOR} editable defaultSelection={{ nodes: [], edges: ['door.closed:LOCK->door.locked'] }} /></Phone>,
+};
+
+/** Editing and running at once, with the panel on Edit. An edit starts the run over. */
+export const EditingAndRunning: Story = {
+  render: () => <Phone w={1100} h={520}><StateDiagram config={DOOR} editable simulate /></Phone>,
+};
+
+export const EditingPhone: Story = {
+  render: () => <Phone w={390} h={700}><StateDiagram config={DOOR} direction="DOWN" editable defaultPanelOpen defaultSelection={{ nodes: ['door.open'], edges: [] }} /></Phone>,
+};

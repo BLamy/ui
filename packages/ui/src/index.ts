@@ -43,9 +43,14 @@ export { DRAG_THRESHOLD, EDGE_HIT_DISTANCE, PORT_HIT_DISTANCE, SNAP_DISTANCE, SN
 export type { DiagramConnectionEnd, DiagramGesture, DiagramGestureContext, DiagramGestureEvent, DiagramGestureStep, DiagramHit } from './lib/diagram-gesture';
 export { cameraToShow, describeEdge, describeNode, edgesByNode, focusOrder, nearestNode, nodeInDirection, stepFocus } from './lib/diagram-keyboard';
 export type { DiagramFocus, DiagramFocusContext, DiagramFocusStep } from './lib/diagram-keyboard';
-export { describeEvent, machineEdgeIds, machineToDraft } from './lib/state-diagram-model';
-export type { MachineLike, MachineStateNode, MachineTransition, StateEdgeData, StateNodeData } from './lib/state-diagram-model';
-export { SETTLE_LIMIT, SimulationClock, TIMER_LIMIT, activeLeaves, activeStateIds, createSimulation, standInConfig } from './lib/state-diagram-simulation';
+export { describeEvent, machineEdgeIds, machineEdgePlaces, machineStatePaths, machineToDraft } from './lib/state-diagram-model';
+export type { MachineLike, MachineStateNode, MachineTransition, StateEdgeData, StateNodeData, TransitionPlace } from './lib/state-diagram-model';
+export {
+  StateEditRefused, addState, addTransition, eventNameProblem, inlineCodeIn, missingImplementations, removeItems, removeState, removeTransition, renameState, setInitial, setTransitionEvent, setTransitionGuard,
+  setTransitionSource, setTransitionTarget, stateAt, stateNameProblem, targetText, tryEdit, uniqueName,
+} from './lib/state-diagram-edit';
+export type { EditOutcome, MachineConfig, MachineImplementations, StatePath } from './lib/state-diagram-edit';
+export { NEVER_SETTLES, SETTLE_LIMIT, SimulationClock, TIMER_LIMIT, activeLeaves, activeStateIds, createSimulation, standInConfig } from './lib/state-diagram-simulation';
 export type { MachineNames, Simulation, SimulationFinish, SimulationLogEntry, SimulationStandIns, SimulationState } from './lib/state-diagram-simulation';
 export { StateDiagram } from './components/state-diagram';
 export type { StateDiagramProps } from './components/state-diagram';

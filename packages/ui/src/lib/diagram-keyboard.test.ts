@@ -17,6 +17,17 @@ const ctx = { index: indexDiagram(nodes), edges };
 const n = (id: string): DiagramFocus => ({ kind: 'node', id });
 const e = (id: string): DiagramFocus => ({ kind: 'edge', id });
 
+describe('a root', () => {
+  it('isn’t somewhere focus goes, as it’s the background', () => {
+    const index = indexDiagram([node('r', 0, 0, { kind: 'root', w: 1000, h: 1000 }), node('a', 10, 10, { parent: 'r' }), node('b', 200, 10, { parent: 'r' })]);
+    const ctx = { index, edges: [] };
+    expect(focusOrder(ctx).map((f) => f.id)).toEqual(['a', 'b']);
+    expect(stepFocus(null, 'first', ctx)).toEqual({ kind: 'node', id: 'a' });
+    expect(stepFocus({ kind: 'node', id: 'a' }, 'previous', ctx)?.id).not.toBe('r');
+    expect(stepFocus({ kind: 'node', id: 'b' }, 'next', ctx)?.id).not.toBe('r');
+  });
+});
+
 describe('going a direction', () => {
   it('follows an edge if one goes that way', () => {
     expect(nodeInDirection('a', { x: 1, y: 0 }, ctx)).toBe('b');

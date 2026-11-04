@@ -206,6 +206,7 @@ The view is where it matters: the smallest zoom is 2%, so a board this size does
 | `nodes`, `edges`, `onChange` | — | Controlled data. |
 | `defaultNodes`, `defaultEdges` | — | Data left to the diagram. |
 | `editable` | `false` | The pointer and the keys move and delete, with undo. |
+| `movable` | `editable` | Whether dragging and ⇧ with an arrow move things, for when where they are isn't up to you. |
 | `selectable` | `editable` | Selecting, one at a time or with a marquee. |
 | `connectable` | `editable` | Drawing connections, and moving an edge's ends. |
 | `isValidConnection` | `checkConnection` | True, false or the reason. |
