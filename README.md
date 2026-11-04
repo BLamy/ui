@@ -1121,4 +1121,8 @@ Use `@brett_lamy/docstream-editor` when you need the editable TipTap experience 
 
 Use an `xstate` fence for a JSON machine config or static TypeScript `createMachine({...})` source, and a `tscircuit` fence for circuit TSX (`circuit.add(<board>...</board>)`). Both render the source beside its preview, like Mermaid. XState actions and guards are never executed. Circuit code runs in the hosted cross-origin [RunFrame](https://github.com/tscircuit/runframe), which requires a network connection. Its compiler starts in an isolated worker using a tested, pinned release; circuit source never executes in the host page. Runtime failures have a retry control.
 
+An `xstate` fence draws `invoke` too: what's invoked goes on a second line of its state, and `onDone` and `onError` are `done` and `error` edges. None of it runs, including an actor written inline, which is called `actor`.
+
+`parseXState`, which reads a config without running it, and `xstateToMermaid` are in `@brett_lamy/docstream/xstate/machine`. They're on their own entry because they load Babel and XState straight away, which the fence doesn't until it's displayed.
+
 The React components `XStateDiagram`, `XStatePreview`, `TsCircuit`, and `TsCircuitPreview` are available from the root entry and the lightweight `/xstate` and `/tscircuit` entries. Result-only previews support custom live editors.

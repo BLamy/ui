@@ -333,14 +333,16 @@ export const request = createMachine({
   initial: "idle",
   states: {
     idle: { on: { FETCH: "loading" } },
-    loading: { on: { RESOLVE: "success", REJECT: "failure" } },
+    loading: { invoke: { src: "fetchPage", onDone: "success", onError: "failure" } },
     failure: { on: { RETRY: "loading" } },
     success: { type: "final" }
   }
 })
 ```
 
-Import `XStateDiagram` or the result-only `XStatePreview` from `@brett_lamy/docstream/xstate` to use them directly. The parser and XState load only when a statechart is displayed.
+A state's `invoke` shows on a second line, with its `onDone` and `onError` as `done` and `error` edges. An actor written inline, like `fromPromise(...)`, is only called `actor`, and neither it nor its `input` runs. `after`, `always`, guards, parallel regions and history states are all drawn too, the same as a [`StateDiagram`](https://blamy.github.io/ui/#/state-diagram).
+
+Import `XStateDiagram` or the result-only `XStatePreview` from `@brett_lamy/docstream/xstate` to use them directly. The parser and XState load only when a statechart is displayed. To read a config yourself, `parseXState` and `xstateToMermaid` are in `@brett_lamy/docstream/xstate/machine`, which loads them straight away.
 
 ## tscircuit examples
 

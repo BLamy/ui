@@ -84,6 +84,18 @@ describe("entry boundaries", () => {
     expect(files.filter((f) => /^(src|dist)\/playground\//.test(f) && !/^(src|dist)\/playground\/project\.(ts|js|d\.ts)$/.test(f))).toEqual([])
   })
 
+  it("keeps Babel and XState out of what every entry loads straight away, but the one that's for them", () => {
+    for (const [name, target] of entries) {
+      if (name === "./xstate/machine") continue
+      expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "@babel/parser" || spec === "xstate"), name).toEqual([])
+    }
+  })
+
+  it("exports parseXState from its entry, in the published build", () => {
+    const code = 'import("./dist/xstate/machine.js").then((m) => console.log(typeof m.parseXState, typeof m.xstateToMermaid, Object.keys(m.parseXState("{ initial: \'a\', states: { a: {} } }")).join()))'
+    expect(execFileSync(process.execPath, ["--input-type=module", "-e", code], { cwd: root, encoding: "utf8" }).trim()).toBe("function function initial,states")
+  })
+
   it("imports only declared dependencies (or optional peers from their own entry)", () => {
     const declared = new Set([...Object.keys(pkg.dependencies), ...Object.keys(pkg.peerDependencies)])
     for (const [name, target] of entries) {

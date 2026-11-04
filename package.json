@@ -156,6 +156,12 @@
       "import": "./dist/xstate/index.js",
       "default": "./dist/xstate/index.js"
     },
+    "./xstate/machine": {
+      "source": "./src/xstate/machine.ts",
+      "types": "./dist/xstate/machine.d.ts",
+      "import": "./dist/xstate/machine.js",
+      "default": "./dist/xstate/machine.js"
+    },
     "./tscircuit": {
       "source": "./src/tscircuit/index.ts",
       "types": "./dist/tscircuit/index.d.ts",
