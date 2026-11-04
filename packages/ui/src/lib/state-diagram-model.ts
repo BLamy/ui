@@ -75,13 +75,15 @@ function guardName(guard: unknown): string | undefined {
   return 'guard';
 }
 
-const srcName = (src: unknown) => (typeof src === 'string' ? src : (src as { name?: string } | null)?.name || 'actor');
+/** XState gives an actor written inline a name of its own, which isn't anything to show. */
+const srcName = (src: unknown) => (typeof src === 'string' && !src.startsWith('xstate.invoke.') ? src : 'actor');
 
 /** What an event's called on a diagram, and what kind of edge it makes. */
 export function describeEvent(event: string): { name: string; kind: 'event' | 'after' | 'done' | 'invoke' } {
   if (event.startsWith('xstate.after.')) return { name: `after ${event.split('.')[2]}`, kind: 'after' };
   if (event.startsWith('xstate.done.actor.')) return { name: 'done', kind: 'invoke' };
   if (event.startsWith('xstate.error.actor.')) return { name: 'error', kind: 'invoke' };
+  if (event.startsWith('xstate.snapshot.')) return { name: 'snapshot', kind: 'invoke' };
   if (event.startsWith('xstate.done.state.')) return { name: 'done', kind: 'done' };
   return { name: event, kind: 'event' };
 }

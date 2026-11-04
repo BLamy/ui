@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createMachine, setup } from 'xstate';
+import { createMachine, fromPromise, setup } from 'xstate';
 import { toDirectedGraph } from 'xstate/graph';
 import { uploadMachine } from '../stories/upload-machine';
 import { describeEvent, machineToDraft, type MachineLike } from './state-diagram-model';
@@ -164,5 +164,20 @@ describe('what an event’s called', () => {
     expect(describeEvent('xstate.done.actor.0.m.s')).toEqual({ name: 'done', kind: 'invoke' });
     expect(describeEvent('xstate.error.actor.0.m.s')).toEqual({ name: 'error', kind: 'invoke' });
     expect(describeEvent('xstate.done.state.m.p')).toEqual({ name: 'done', kind: 'done' });
+  });
+
+  it('calls an actor written inline an actor, rather than what XState calls it', () => {
+    const m = createMachine({ id: 'm', initial: 'a', states: { a: { invoke: { src: fromPromise(async () => 1), onDone: 'b' } }, b: { invoke: [{ src: 'named' }, { src: fromPromise(async () => 2) }] } } });
+    const nodes = machineToDraft(m as never).nodes;
+    expect(nodes.find((n) => n.id === 'm.a')?.detail).toBe('invoke actor');
+    expect(nodes.find((n) => n.id === 'm.b')?.detail).toBe('invoke named, actor');
+    expect(nodes.find((n) => n.id === 'm.a')?.data?.invokes).toEqual(['actor']);
+  });
+
+  it('says what a snapshot edge is, the same as a done or an error', () => {
+    const m = createMachine({ id: 'm', initial: 'a', states: { a: { invoke: { src: 'x', onSnapshot: 'a', onDone: 'b' } }, b: {} } });
+    const edges = machineToDraft(m as never).edges.filter((e) => e.kind !== 'initial');
+    expect(edges.map((e) => e.label).sort()).toEqual(['done', 'snapshot']);
+    expect(edges.every((e) => e.kind === 'invoke')).toBe(true);
   });
 });
