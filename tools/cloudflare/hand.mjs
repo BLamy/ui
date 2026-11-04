@@ -135,6 +135,19 @@ export const NON_BINDING_SURFACE = [
   { product: 'cache', type: 'Cache', reachedBy: 'caches.default or caches.open, a global', doc: 'src/content/docs/workers/runtime-apis/cache.mdx' },
 ];
 
+/* ── What runs code ──
+   Only something running code has an `env`, so only these can have bindings. No source lists them. `handlerTypes` are the
+   types whose members are its handlers, which is what joins it to RECEIVES. Each doc is a page at the pinned ref that shows it. */
+export const RUNS_CODE = [
+  { product: 'workers', handlerTypes: ['ExportedHandler', 'WorkerEntrypoint'], doc: 'src/content/docs/workers/runtime-apis/bindings/index.mdx' },
+  { product: 'durable-objects', handlerTypes: ['DurableObject'], doc: 'src/content/docs/durable-objects/api/alarms.mdx', why: 'a class in a Worker, with its env' },
+  { product: 'workflows', handlerTypes: ['WorkflowEntrypoint', 'WorkflowStep'], doc: 'src/content/docs/workflows/build/workers-api.mdx', why: 'a class in a Worker, with its env' },
+  { product: 'pages', handlerTypes: [], doc: 'src/content/docs/pages/functions/bindings.mdx', why: 'Pages Functions have bindings' },
+  { product: 'agents', handlerTypes: [], doc: 'src/content/docs/agents/index.mdx', why: 'an Agent is a Durable Object class' },
+  { product: 'dynamic-workers', handlerTypes: [], doc: 'src/content/docs/dynamic-workers/getting-started.mdx', why: 'the loader hands it an env' },
+  { product: 'workers-for-platforms', handlerTypes: [], doc: 'src/content/docs/cloudflare-for-platforms/workers-for-platforms/index.mdx', why: "your customers' Workers" },
+];
+
 /* Which types hold the handlers, and which types the handlers hand over. */
 export const HANDLER_TYPES = ['ExportedHandler', 'DurableObject', 'WorkerEntrypoint', 'WorkflowEntrypoint'];
 export const CONTEXT_TYPES = ['MessageBatch', 'Message', 'ScheduledController', 'ForwardableEmailMessage', 'TraceItem', 'DurableObjectState', 'DurableObjectStorage', 'DurableObjectStub', 'WorkflowEvent', 'WorkflowStep', 'WorkflowInstance', 'AlarmInvocationInfo', 'TestController', 'Socket'];

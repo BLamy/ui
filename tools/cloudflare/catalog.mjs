@@ -29,7 +29,7 @@ import { promisify } from 'node:util';
 import { gzipSync } from 'node:zlib';
 import {
   BINDING_PRODUCT, CONTEXT_TYPES, ENV_MAP_KEYS, EVENT_SOURCE_PRODUCT, HANDLER_TYPES, NON_BINDING_SURFACE, OTHER_CONFIG_KEYS,
-  PROBE_EXTRA_FIELDS, PROBE_FIXED_NAMES, PROBE_VALUES, PRODUCT_OVERRIDES, RECEIVES,
+  PROBE_EXTRA_FIELDS, PROBE_FIXED_NAMES, PROBE_VALUES, PRODUCT_OVERRIDES, RECEIVES, RUNS_CODE,
 } from './hand.mjs';
 import { openTypes } from './workers-types.mjs';
 
@@ -525,6 +525,18 @@ for (const p of products) {
   };
 }
 
+// What runs code: checked like the rest of the hand tables.
+const runsCode = [];
+for (const r of RUNS_CODE) {
+  if (!products.some((p) => p.id === r.product)) throw new Error(`hand.mjs RUNS_CODE: no product ${r.product}`);
+  for (const t of r.handlerTypes) if (!types.describe(t).found) throw new Error(`hand.mjs RUNS_CODE: no type ${t}`);
+  await page(r.doc);
+  checked += 2 + r.handlerTypes.length;
+  runsCode.push(r);
+}
+const handlerOwners = new Set(RUNS_CODE.flatMap((r) => r.handlerTypes));
+for (const r of RECEIVES) if (!handlerOwners.has(r.handler.split('.')[0])) throw new Error(`hand.mjs RECEIVES ${r.id}: nothing in RUNS_CODE has ${r.handler}`);
+
 /* ══ What the audit found, as rules ══ */
 
 // Only something a diagram can place can have a binding, send a Worker something, or be reached from one.
@@ -532,6 +544,7 @@ const classOf = new Map(products.map((p) => [p.id, p.class]));
 const mustBeService = (id, what) => { if (id && classOf.get(id) !== 'service') throw new Error(`${what} points at ${id}, which is a ${classOf.get(id) ?? 'nothing'}, not a service`); };
 for (const b of bindings) mustBeService(b.product, `binding ${b.path}`);
 for (const r of receives) { mustBeService(r.from, `what's received ${r.id}`); mustBeService(r.via, `what's received ${r.id}`); }
+for (const r of RUNS_CODE) mustBeService(r.product, 'hand.mjs RUNS_CODE');
 for (const [k, v] of Object.entries(BINDING_PRODUCT)) for (const id of Object.values(v.alsoReaches ?? {})) mustBeService(id, `binding ${k}`);
 
 /* ══ The module ══ */
@@ -568,6 +581,7 @@ const catalog = {
   handlers: handlers.map(({ line: _l, ...h }) => h),
   contextTypes,
   receives,
+  runsCode,
   otherConfigKeys,
   nonBindingSurface,
   r2Notifications,

@@ -126,6 +126,15 @@ export interface CatalogReceive {
   doc?: string;
 }
 
+/** Something that runs code, and so has an `env`, which only these can have bindings on. */
+export interface CatalogRunner {
+  product: string;
+  /** The types whose members are its handlers. */
+  handlerTypes: string[];
+  doc: string;
+  why?: string;
+}
+
 export interface CatalogOtherKey {
   path: string;
   product: string;
@@ -155,6 +164,7 @@ export interface CloudflareCatalog {
   handlers: CatalogHandlers[];
   contextTypes: CatalogContextType[];
   receives: CatalogReceive[];
+  runsCode: CatalogRunner[];
   otherConfigKeys: CatalogOtherKey[];
   nonBindingSurface: CatalogSurface[];
   r2Notifications: { doc: string; categories: { category: string; actions: string[] }[] };

@@ -1393,13 +1393,13 @@ test.describe('StateDiagram simulates', () => {
   test('the phone: a tray, with the board still there to watch', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 780 });
     await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
-    const bar = page.locator('[data-slot=simulation-bar]');
+    const bar = page.locator('[data-slot=diagram-frame-bar]');
     await expect(bar).toBeVisible({ timeout: 30_000 });
     await expect(bar).toContainText('authenticating');
     await expect.poll(() => page.locator('[data-slot=diagram-lit]').count(), { timeout: 30_000 }).toBe(2);
     // It isn't in the way until it's asked for.
     await expect(page.locator('[data-slot=simulation-panel]')).toHaveCount(0);
-    await page.locator('[data-slot=simulation-open]').click();
+    await page.locator('[data-slot=diagram-frame-open]').click();
     const tray = page.locator('[data-slot=credenza]');
     await expect(tray).toBeVisible();
     // It stays within the window, and scrolls inside itself.
@@ -1408,7 +1408,7 @@ test.describe('StateDiagram simulates', () => {
     expect(box.x + box.width).toBeLessThanOrEqual(390);
     await expect.poll(async () => (await tray.boundingBox()).y).toBeGreaterThan(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-    const scroller = page.locator('[data-slot=simulation-tray]');
+    const scroller = page.locator('[data-slot=diagram-frame-tray]');
     expect(await scroller.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
     // It stays open while it's used, with the board changing above it, and none of the board under the tray or its shade.
     await finish(page, 'verifyToken: done').click();
@@ -1417,24 +1417,24 @@ test.describe('StateDiagram simulates', () => {
     const litNode = page.locator('[data-lit-of="upload.worker.streaming"]');
     await expect(litNode).toHaveCount(1);
     await expect.poll(async () => {
-      const [node, sheet, under] = await Promise.all([litNode.boundingBox(), tray.boundingBox(), page.locator('[data-slot=simulation-tray-host]').boundingBox()]);
+      const [node, sheet, under] = await Promise.all([litNode.boundingBox(), tray.boundingBox(), page.locator('[data-slot=diagram-frame-tray-host]').boundingBox()]);
       return node.y >= 0 && node.y + node.height <= sheet.y && node.y + node.height <= under.y;
     }).toBe(true);
     const board = await page.locator('[data-slot=canvas]').boundingBox();
-    const trayHost = await page.locator('[data-slot=simulation-tray-host]').boundingBox();
+    const trayHost = await page.locator('[data-slot=diagram-frame-tray-host]').boundingBox();
     expect(board.y + board.height).toBeLessThanOrEqual(trayHost.y + 0.5);
     // And closes, back to the bar, with what it's in now.
     await page.getByRole('button', { name: 'Close' }).click();
     await expect(page.locator('[data-slot=simulation-panel]')).toHaveCount(0);
     await expect(bar).toContainText('streaming');
-    await expect(page.locator('[data-slot=simulation-open]')).toBeFocused();
+    await expect(page.locator('[data-slot=diagram-frame-open]')).toBeFocused();
   });
 
   test('the panel can go away and come back, and the keys work it', async ({ page }) => {
     await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
     await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
     await page.locator('[data-slot=side-drawer]').getByRole('button', { name: 'Close Simulation' }).click();
-    const open = page.locator('[data-slot=simulation-open]');
+    const open = page.locator('[data-slot=diagram-frame-open]');
     await expect(open).toBeVisible();
     await expect(page.locator('[data-slot=side-drawer]')).toHaveCount(0);
     await open.click();
@@ -1836,11 +1836,11 @@ test.describe('StateDiagram edits', () => {
   test('with both on, focus goes to whichever’s showing', async ({ page }) => {
     await open(page);
     await page.getByRole('button', { name: 'Close State machine' }).click();
-    await page.locator('[data-slot=simulation-open]').click();
+    await page.locator('[data-slot=diagram-frame-open]').click();
     await expect(page.locator('[data-slot=edit-panel]')).toBeFocused();
     await run(page, 'Run');
     await page.getByRole('button', { name: 'Close State machine' }).click();
-    await page.locator('[data-slot=simulation-open]').click();
+    await page.locator('[data-slot=diagram-frame-open]').click();
     await expect(page.locator('[data-slot=simulation-panel]')).toBeFocused();
     // A line that says where it starts has nothing to change.
     await run(page, 'Edit');
@@ -1852,7 +1852,7 @@ test.describe('StateDiagram edits', () => {
   test('the phone: the tray has it all, with the board above to press on', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 780 });
     await page.goto('/?demo=state-diagram/edit&theme=light', { waitUntil: 'load' });
-    const opener = page.locator('[data-slot=simulation-open]');
+    const opener = page.locator('[data-slot=diagram-frame-open]');
     await expect(opener).toBeVisible({ timeout: 30_000 });
     await opener.click();
     await expect(page.locator('[data-slot=credenza]')).toBeVisible();
@@ -1879,8 +1879,8 @@ test.describe('StateDiagram edits', () => {
     await expect(page.locator('[data-slot=edit-missing]')).toHaveCount(0);
     // Closed and opened, focus goes to the panel, and back.
     await page.getByRole('button', { name: 'Close Edit' }).click();
-    await expect(page.locator('[data-slot=simulation-open]')).toBeFocused();
-    await page.locator('[data-slot=simulation-open]').press('Enter');
+    await expect(page.locator('[data-slot=diagram-frame-open]')).toBeFocused();
+    await page.locator('[data-slot=diagram-frame-open]').press('Enter');
     await expect(page.locator('[data-slot=edit-panel]')).toBeFocused();
     // A press on the middle of its line.
     const line = edge(page, 'upload.worker.receiving:EOF->upload.worker.committing');

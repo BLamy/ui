@@ -55,7 +55,7 @@ export class DiagramLayoutError extends Error {
 /* ── To ELK and back ── */
 
 interface ElkLabel { text?: string; x?: number; y?: number; width?: number; height?: number }
-interface ElkPort { id: string; layoutOptions?: Record<string, string>; width?: number; height?: number }
+interface ElkPort { id: string; x?: number; y?: number; layoutOptions?: Record<string, string>; width?: number; height?: number }
 interface ElkSection { startPoint: Pt; endPoint: Pt; bendPoints?: Pt[] }
 interface ElkEdge { id: string; sources: string[]; targets: string[]; labels?: ElkLabel[]; sections?: ElkSection[]; container?: string }
 export interface ElkGraph {
@@ -122,8 +122,15 @@ export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<Diagra
       el.height = n.h || size.h;
     }
     if (n.ports?.length) {
-      el.layoutOptions = { ...el.layoutOptions, 'elk.portConstraints': 'FIXED_SIDE' };
-      el.ports = n.ports.map((p) => ({ id: portId(n.id, p.id), width: 0, height: 0, layoutOptions: { 'elk.port.side': SIDE[p.side] } }));
+      // A node's size is known here, so its ports can stay where they're drawn, with routes ending at them. One that holds
+      // others is only as big as ELK makes it, so ELK says where they went, and `fromElkGraph` reads that back.
+      const known = el.width !== undefined && el.height !== undefined;
+      el.layoutOptions = { ...el.layoutOptions, 'elk.portConstraints': known ? 'FIXED_POS' : 'FIXED_SIDE' };
+      el.ports = n.ports.map((p) => {
+        const at = p.at ?? 0.5;
+        const place = !known ? null : p.side === 'l' ? { x: 0, y: at * el.height! } : p.side === 'r' ? { x: el.width!, y: at * el.height! } : p.side === 't' ? { x: at * el.width!, y: 0 } : { x: at * el.width!, y: el.height! };
+        return { id: portId(n.id, p.id), width: 0, height: 0, ...place, layoutOptions: { 'elk.port.side': SIDE[p.side] } };
+      });
     }
     elements.set(n.id, el);
   }
@@ -167,11 +174,13 @@ const round = (v: number) => Math.round(v * 100) / 100;
  *  parallel state's width, or height if they're side by side, which ELK doesn't do, so that dividers and titles line up. */
 export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
   const boxes = new Map<string, Rect>();
+  const placed = new Map<string, ElkGraph>();
   const origin = new Map<string, Pt>([[ROOT, { x: 0, y: 0 }]]);
   const visit = (el: ElkGraph, ox: number, oy: number) => {
     for (const c of el.children ?? []) {
       const x = ox + (c.x ?? 0), y = oy + (c.y ?? 0);
       origin.set(c.id, { x, y });
+      placed.set(c.id, c);
       boxes.set(c.id, { x: round(x), y: round(y), w: round(c.width ?? 0), h: round(c.height ?? 0) });
       visit(c, x, y);
     }
@@ -181,7 +190,15 @@ export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pi
   const nodes: DiagramNode<N>[] = [];
   for (const n of dedupe(draft.nodes)) {
     const box = boxes.get(n.id);
-    if (box) nodes.push({ ...n, ...box } as DiagramNode<N>);
+    if (!box) continue;
+    // A port ELK chose the place of is drawn there.
+    const ports = n.ports?.map((p) => {
+      const got = placed.get(n.id)?.ports?.find((q) => q.id === portId(n.id, p.id));
+      if (p.at !== undefined || got?.x === undefined || got.y === undefined) return p;
+      const at = p.side === 'l' || p.side === 'r' ? got.y / (box.h || 1) : got.x / (box.w || 1);
+      return { ...p, at: round(at) };
+    });
+    nodes.push({ ...n, ...box, ...(ports ? { ports } : null) } as DiagramNode<N>);
   }
   stretchRegions(nodes);
 

@@ -159,6 +159,14 @@ describe('what a Worker can receive', () => {
   });
 });
 
+describe('what runs code', () => {
+  it('names what can have bindings, and what holds each handler', () => {
+    expect(C.runsCode.map((r) => r.product)).toEqual(['workers', 'durable-objects', 'workflows', 'pages', 'agents', 'dynamic-workers', 'workers-for-platforms']);
+    const owners = new Set(C.runsCode.flatMap((r) => r.handlerTypes));
+    for (const r of C.receives) expect(owners.has(r.handler.split('.')[0]!), r.id).toBe(true);
+  });
+});
+
 describe('how it ships', () => {
   it('isn’t in the main entry', () => {
     const barrel = readFileSync(join(__dirname, '../index.ts'), 'utf8');

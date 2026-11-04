@@ -152,7 +152,7 @@ Editing while it's running starts it over on the new machine, with the guards as
 | `aria-label` | the machine's name | The region's name. |
 | `className`, `style` | — | Merged onto the root. |
 
-The root carries `data-slot="state-diagram"`, with `state-diagram-error` and `state-diagram-status` in it when they're needed. Under them it's a `Diagram`. The panel is `simulation-panel`, with `simulation-now`, `simulation-event`, `simulation-finish`, `simulation-next`, `simulation-run`, `simulation-time`, `simulation-guard`, `simulation-reset`, `simulation-log` and `simulation-error` in it, and `simulation-bar` is what opens it. While editing it's `edit-panel`, with `edit-refusal`, `edit-add-state`, `edit-undo`, `edit-redo`, `edit-name`, `edit-make-start`, `edit-add-inside`, `edit-event`, `edit-guard`, `edit-delete`, `edit-hint`, `edit-missing` and `edit-inline` in it.
+The root carries `data-slot="state-diagram"`, with `state-diagram-error` and `state-diagram-status` in it when they're needed. Under them it's a `Diagram`. The panel is `simulation-panel`, with `simulation-now`, `simulation-event`, `simulation-finish`, `simulation-next`, `simulation-run`, `simulation-time`, `simulation-guard`, `simulation-reset`, `simulation-log` and `simulation-error` in it, and `diagram-frame-bar` is what opens it. While editing it's `edit-panel`, with `edit-refusal`, `edit-add-state`, `edit-undo`, `edit-redo`, `edit-name`, `edit-make-start`, `edit-add-inside`, `edit-event`, `edit-guard`, `edit-delete`, `edit-hint`, `edit-missing` and `edit-inline` in it.
 
 ### `machineToDraft(machine)`
 

@@ -52,6 +52,8 @@ export {
 export type { EditOutcome, MachineConfig, MachineImplementations, StatePath } from './lib/state-diagram-edit';
 export { NEVER_SETTLES, SETTLE_LIMIT, SimulationClock, TIMER_LIMIT, activeLeaves, activeStateIds, createSimulation, standInConfig } from './lib/state-diagram-simulation';
 export type { MachineNames, Simulation, SimulationFinish, SimulationLogEntry, SimulationStandIns, SimulationState } from './lib/state-diagram-simulation';
+export { DiagramFrame, DiagramPanelField, DiagramPanelSection, PANEL_BESIDE_FROM } from './components/diagram-frame';
+export type { DiagramFrameProps } from './components/diagram-frame';
 export { StateDiagram } from './components/state-diagram';
 export type { StateDiagramProps } from './components/state-diagram';
 export { Diagram, DiagramNodeBody, diagramEdgeVariants, diagramNodeVariants } from './components/diagram';

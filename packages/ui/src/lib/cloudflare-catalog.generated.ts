@@ -315,6 +315,15 @@ export const CLOUDFLARE_CATALOG: CloudflareCatalog = {
     {"id":"notifications-webhook","from":"notifications","what":"Notifications webhook, plain HTTP","handler":"ExportedHandler.fetch","payload":"Request","config":null,"setup":"set in the dashboard; nothing in the schema or the types","doc":"src/content/docs/notifications/get-started/configure-webhooks.mdx"},
     {"id":"logpush-http","from":"logpush","what":"Logpush batch, plain HTTP","handler":"ExportedHandler.fetch","payload":"Request","config":null,"setup":"a Logpush job; nothing in the schema or the types","doc":"src/content/docs/logs/logpush/logpush-job/enable-destinations/http.mdx"},
   ],
+  "runsCode": [
+    {"product":"workers","handlerTypes":["ExportedHandler","WorkerEntrypoint"],"doc":"src/content/docs/workers/runtime-apis/bindings/index.mdx"},
+    {"product":"durable-objects","handlerTypes":["DurableObject"],"doc":"src/content/docs/durable-objects/api/alarms.mdx","why":"a class in a Worker, with its env"},
+    {"product":"workflows","handlerTypes":["WorkflowEntrypoint","WorkflowStep"],"doc":"src/content/docs/workflows/build/workers-api.mdx","why":"a class in a Worker, with its env"},
+    {"product":"pages","handlerTypes":[],"doc":"src/content/docs/pages/functions/bindings.mdx","why":"Pages Functions have bindings"},
+    {"product":"agents","handlerTypes":[],"doc":"src/content/docs/agents/index.mdx","why":"an Agent is a Durable Object class"},
+    {"product":"dynamic-workers","handlerTypes":[],"doc":"src/content/docs/dynamic-workers/getting-started.mdx","why":"the loader hands it an env"},
+    {"product":"workers-for-platforms","handlerTypes":[],"doc":"src/content/docs/cloudflare-for-platforms/workers-for-platforms/index.mdx","why":"your customers' Workers"},
+  ],
   "otherConfigKeys": [
     {"path":"containers","product":"containers","role":"runs a container behind a Durable Object class"},
     {"path":"cloudchamber","product":"containers","role":"older container settings"},
