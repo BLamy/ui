@@ -337,11 +337,6 @@ export const CLOUDFLARE_CATALOG: CloudflareCatalog = {
       {"category":"object-create","actions":["CompleteMultipartUpload","CopyObject","PutObject"]},
       {"category":"object-delete","actions":["DeleteObject","LifecycleDeletion"]},
     ],
-    "matchesWranglerBundle": true,
-    "bundle": {
-      "object-create": ["PutObject","CompleteMultipartUpload","CopyObject"],
-      "object-delete": ["DeleteObject","LifecycleDeletion"],
-    },
   },
   "eventSubscriptions": {
     "hub": "src/content/docs/queues/event-subscriptions/events-schemas.mdx",

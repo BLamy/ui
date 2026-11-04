@@ -361,7 +361,8 @@ async function readR2Notifications(bundle) {
   const text = await page(path);
   const rows = [...text.matchAll(/^\| `(object-[a-z]+)` \|[^|]*\| (.*) \|$/gm)].map((m) => ({ category: m[1], actions: [...m[2].matchAll(/`([^`]+)`/g)].map((a) => a[1]).sort() }));
   const agree = rows.every((r) => JSON.stringify([...(bundle.r2Categories[r.category] ?? [])].sort()) === JSON.stringify(r.actions)) && rows.length === Object.keys(bundle.r2Categories).length;
-  return { doc: path, categories: rows, matchesWranglerBundle: agree, bundle: bundle.r2Categories };
+  if (!agree) throw new Error(`R2's event categories in ${path} aren't the ones in wrangler's bundle`);
+  return { doc: path, categories: rows };
 }
 
 /* ══ Runtime surface ══ */

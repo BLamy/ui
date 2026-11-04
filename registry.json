@@ -8037,6 +8037,28 @@
       ]
     },
     {
+      "name": "cloudflare-catalog",
+      "type": "registry:lib",
+      "title": "Cloudflare Catalog",
+      "description": "Cloudflare Catalog — part of BL UI's library (lib/cloudflare-catalog.generated.ts, lib/cloudflare-catalog.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-catalog.generated.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-catalog.generated.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/cloudflare-catalog.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-catalog.ts"
+        }
+      ]
+    },
+    {
       "name": "container",
       "type": "registry:lib",
       "title": "Container",
